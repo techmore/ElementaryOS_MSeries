@@ -43,6 +43,7 @@ from typing import Any
 
 import codexbar_cache
 import codexbar_claude_history as history
+import codexbar_claude_handoff as handoff
 
 def cswap_path() -> str | None:
     local = pathlib.Path.home() / ".local/bin/cswap"
@@ -387,8 +388,9 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
             target = load_session(uuid)  # validate before stopping the app or changing the CLI
             current = read_json(app_root() / "config.json").get("lastKnownAccountUuid", "")
             captured = capture_app()
-            if current == uuid and captured == uuid:
-                return switch(cli, number) if number else (True, "The Claude app already uses this account.")
+            # lastKnownAccountUuid is only a persisted hint, not proof of the
+            # running UI's identity. An explicit desktop switch must still stop,
+            # restore the validated target and relaunch, even when hints match.
             if not captured:
                 current = read_json(session_root() / "pending-login.json").get("previous", "")
             if not current:
@@ -405,9 +407,12 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
                     exported = history.export_history(plan, session_root() / "code-history")
                 except OSError:
                     raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
+                brief = handoff.prepare(plan, session_root() / "handoffs",
+                    claude_cli() if cli_identity()[1] == current else None)
                 restore_app(target)
                 try:
                     report = history.import_missing(plan, exported)
+                    handoff.install(plan, brief)
                 except OSError:
                     raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
                 if number:
@@ -425,7 +430,10 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
                 return False, "The account was saved for the Claude app, but it could not restart. Open Claude from the dock."
             (session_root() / "pending-login.json").unlink(missing_ok=True)
             return True, ("Claude's app session was switched and the app restarted." +
-                          (" Claude Code's command line uses the same account." if number else "") + history_message(report))
+                          (" Claude Code's command line uses the same account." if number else "") + history_message(report) +
+                          (" A fresh Code conversation named Handoff contains your work brief. " +
+                           ("Summary generation was unavailable; it contains emergency excerpts. " if brief["receipt"]["kind"] == "emergency-excerpts" else "") +
+                           "Review the local brief before publishing it to GitHub." if brief else ""))
     except (OSError, ValueError, sqlite3.Error, TimeoutError, subprocess.SubprocessError) as error:
         # Never echo raw config, cookie data, or subprocess output on failure.
         return False, str(error) if isinstance(error, ValueError) else "Claude's app session could not be switched; try again after closing Claude."
@@ -452,6 +460,8 @@ def app_login(number: str) -> tuple[bool, str]:
                     exported = history.export_history(plan, session_root() / "code-history")
                 except OSError:
                     raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
+                brief = handoff.prepare(plan, session_root() / "handoffs",
+                    claude_cli() if cli_identity()[1] == current else None)
                 with contextlib.closing(sqlite3.connect(":memory:")) as db:
                     db.deserialize(original["cookies"])
                     db.execute("DELETE FROM cookies")
@@ -461,6 +471,7 @@ def app_login(number: str) -> tuple[bool, str]:
                 restore_app({"config": {}, "cookies": empty_cookies})
                 try:
                     report = history.import_missing(plan, exported)
+                    handoff.install(plan, brief)
                 except OSError:
                     raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
             except (OSError, ValueError, sqlite3.Error, TimeoutError):
@@ -658,6 +669,12 @@ def add(cli: str | None) -> tuple[bool, str]:
 
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
+    if command == "handoff-review":
+        try:
+            return handoff.review(session_root() / "handoffs")
+        except (OSError, ValueError, KeyError, ImportError):
+            print("No valid local handoff is available to review.", file=sys.stderr)
+            return 1
     cli = cswap_path()
     if command not in {"list", "history-preview"}:
         codexbar_cache.store("claude-list", {})  # every other command can change the accounts; never serve the old list
@@ -707,12 +724,20 @@ def main(arguments: list[str]) -> int:
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
     if command == "switch" and len(arguments) > 1:
+        started = time.time()
         if "--desktop" in arguments:
             uuid = account_uuid(arguments[1])
             ok, message = app_switch(uuid, cli, arguments[1]) if uuid else (False, "This saved account has no app identity. Sign in to it in Claude and save the login again.")
         else:
             ok, message = switch(cli, arguments[1])
-        print(json.dumps({"ok": ok, "message": message}))
+        handoff_ready = False
+        if ok and "--desktop" in arguments:
+            try:
+                latest = session_root() / "handoffs/latest.json"
+                handoff_ready = latest.stat().st_mtime >= started
+            except OSError:
+                pass
+        print(json.dumps({"ok": ok, "message": message, "handoffReady": handoff_ready}))
         return 0 if ok else 1
     print("usage: codexbar-claude.py list | login | add | app-save | switch <number> [--desktop] | app-switch <uuid> | history-preview <number>", file=sys.stderr)
     return 2

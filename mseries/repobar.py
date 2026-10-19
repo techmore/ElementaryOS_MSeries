@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 import fnmatch
 import hashlib
 import json
@@ -17,14 +19,17 @@ import time
 from urllib.parse import urlparse
 
 
-QUERY = """query($cursor: String) {
+QUERY = """query($cursor: String, $since1h: GitTimestamp!, $since24h: GitTimestamp!, $since30d: GitTimestamp!) {
   viewer {
     login
     repositories(first: 25, after: $cursor,
       affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
       orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
-        nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt
+        nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt homepageUrl
+        pagesDeploy: deployments(environments: ["github-pages"], first: 1, orderBy: {field: CREATED_AT, direction: DESC}) {
+          nodes { latestStatus { state environmentUrl } }
+        }
         primaryLanguage { name }
         repositoryTopics(first: 8) { nodes { topic { name } } }
         openIssues: issues(states: OPEN, first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) {
@@ -40,6 +45,9 @@ QUERY = """query($cursor: String) {
           target { ... on Commit {
             statusCheckRollup { state }
             history(first: 1) { nodes { committedDate messageHeadline url } }
+            commits1h: history(first: 1, since: $since1h) { totalCount }
+            commits24h: history(first: 1, since: $since24h) { totalCount }
+            commits30d: history(first: 1, since: $since30d) { totalCount }
           } }
         }
         latestRelease { name tagName publishedAt url }
@@ -58,13 +66,16 @@ DEFAULT_SETTINGS = {
     "version": 1,
     "host": "github.com",
     "refreshInterval": 300,
-    "repoLimit": 5,
+    "repoLimit": 20,
     "menuSort": "activity",
     "showForks": False,
     "showArchived": False,
     "activityScope": "all",
     "localRoot": "",
     "localDepth": 4,
+    "notifyCi": True,
+    "showContributions": True,
+    "contributionStyle": "dots",
     "repoStates": {},
 }
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -156,10 +167,15 @@ def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object,
     return data, fetched_at
 
 
-def _graphql(query: str, cursor: str | None = None) -> dict:
+def _graphql(query: str, cursor: str | None = None, variables: dict[str, str] | None = None,
+             extra: list[str] | None = None) -> dict:
     args = ["graphql", "-f", f"query={query}"]
+    for item in extra or []:
+        args.extend(["-F", item])
     if cursor:
         args.extend(["-F", f"cursor={cursor}"])
+    for name, value in (variables or {}).items():
+        args.extend(["-F", f"{name}={value}"])
     response = _run_gh(args)
     try:
         payload = json.loads(response.stdout)
@@ -171,43 +187,99 @@ def _graphql(query: str, cursor: str | None = None) -> dict:
     return payload
 
 
-def _query_page(cursor: str | None) -> dict:
-    return _graphql(QUERY, cursor)
+# Repository fields come from QUERY; listing ids first lets the expensive details load in parallel batches.
+REPO_FIELDS = QUERY[QUERY.index("nodes {", QUERY.index("repositories(")) + len("nodes {"):QUERY.index("pageInfo {")].rstrip().rstrip("}")
+IDS_QUERY = """query($cursor: String) {
+  viewer {
+    login
+    repositories(first: 100, after: $cursor,
+      affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
+      orderBy: {field: UPDATED_AT, direction: DESC}) {
+      nodes { id }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
+DETAILS_QUERY = ("query($ids: [ID!]!, $since1h: GitTimestamp!, $since24h: GitTimestamp!, $since30d: GitTimestamp!) {\n"
+                 "  nodes(ids: $ids) { ... on Repository {" + REPO_FIELDS + "} }\n}")
+DETAIL_BATCH = 25
 
 
-def fetch_snapshot() -> dict:
+def _query_page(cursor: str | None, since: dict[str, str]) -> dict:
+    return _graphql(QUERY, cursor, since)
+
+
+def _repository_ids() -> tuple[str, list[str]]:
     cursor = None
-    repos = []
     login = ""
-    for _ in range(40):
-        payload = _query_page(cursor)
-        viewer = payload.get("data", {}).get("viewer")
+    ids: list[str] = []
+    for _ in range(10):
+        payload = _graphql(IDS_QUERY, cursor)
+        viewer = (payload.get("data") or {}).get("viewer")
         if not viewer:
             raise RuntimeError("GitHub did not return the signed-in account")
         login = viewer.get("login", "")
-        connection = viewer.get("repositories", {})
-        repos.extend(connection.get("nodes") or [])
+        connection = viewer.get("repositories") or {}
+        ids.extend(node["id"] for node in connection.get("nodes") or [] if node and node.get("id"))
         page = connection.get("pageInfo") or {}
         if not page.get("hasNextPage"):
-            break
+            return login, ids
         cursor = page.get("endCursor")
         if not cursor:
             raise RuntimeError("GitHub pagination returned no cursor")
-    else:
-        raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
+    raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
+
+
+def _repository_details(ids: list[str], since: dict[str, str]) -> list[dict]:
+    payload = _graphql(DETAILS_QUERY, None, since, [f"ids[]={value}" for value in ids])
+    return [node for node in (payload.get("data") or {}).get("nodes") or [] if node]
+
+
+def fetch_snapshot() -> dict:
+    now = int(time.time())
+    since = {
+        "since1h": datetime.fromtimestamp(now - 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+        "since24h": datetime.fromtimestamp(now - 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+        "since30d": datetime.fromtimestamp(now - 30 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    login, ids = _repository_ids()
+    batches = [ids[start:start + DETAIL_BATCH] for start in range(0, len(ids), DETAIL_BATCH)]
+    # Detail batches and the independent extras run side by side; each is one `gh` process.
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        detail_jobs = [pool.submit(_repository_details, batch, since) for batch in batches]
+        pages_job = pool.submit(_pages_repositories)
+        for_you_job = pool.submit(_for_you)
+        contributions_job = pool.submit(_contributions)
+        repos = [repo for job in detail_jobs for repo in job.result()]
+        pages_names = pages_job.result()
+        for_you = for_you_job.result()
+        contributions = contributions_job.result()
 
     normalized = []
     settings = load_settings()
-    local_by_name = {}
+    local_by_name: dict[str, list[dict]] = {}
     if settings.get("localRoot"):
-        for local_repo in scan_local_projects(settings["localRoot"], int(settings.get("localDepth", 4))):
+        try:
+            scanned = scan_local_projects(settings["localRoot"], int(settings.get("localDepth", 4)))
+        except RuntimeError:
+            scanned = []
+        for local_repo in scanned:
             remote_name = local_repo.get("name", "")
             if REPO_RE.fullmatch(remote_name):
-                local_by_name.setdefault(remote_name, local_repo)
+                local_by_name.setdefault(remote_name, []).append(local_repo)
+        # The primary checkout is the folder named after the repository; worktrees and other clones follow.
+        for remote_name, checkouts in local_by_name.items():
+            short = remote_name.split("/", 1)[1].casefold()
+            checkouts.sort(key=lambda item: (Path(item["path"]).name.casefold() != short, item["path"]))
     for repo in repos:
         branch = repo.get("defaultBranchRef") or {}
         target = branch.get("target") or {}
         rollup = target.get("statusCheckRollup") or {}
+        commit_counts = {
+            "1h": int((target.get("commits1h") or {}).get("totalCount") or 0),
+            "24h": int((target.get("commits24h") or {}).get("totalCount") or 0),
+            "30d": int((target.get("commits30d") or {}).get("totalCount") or 0),
+        }
         issue_conn = repo.get("openIssues") or {}
         pull_conn = repo.get("openPullRequests") or {}
         latest_issue = (issue_conn.get("nodes") or [{}])[0]
@@ -237,6 +309,7 @@ def fetch_snapshot() -> dict:
             "openIssues": int(issue_conn.get("totalCount") or 0),
             "openPullRequests": int(pull_conn.get("totalCount") or 0),
             "branch": branch.get("name", ""),
+            "commitCounts": commit_counts,
             "ci": rollup.get("state", "UNKNOWN").upper(),
             "release": release.get("tagName", ""),
             "releaseName": release.get("name") or release.get("tagName", ""),
@@ -245,11 +318,14 @@ def fetch_snapshot() -> dict:
             "language": (repo.get("primaryLanguage") or {}).get("name", ""),
             "topics": [item.get("topic", {}).get("name", "") for item in (repo.get("repositoryTopics") or {}).get("nodes", [])],
             "recentActivity": recent[0] if recent else None,
-            "local": local_by_name.get(repo.get("nameWithOwner", "")),
+            "pagesUrl": _pages_url(repo, pages_names),
+            "homepage": _web_url(repo.get("homepageUrl") or ""),
+            "local": (local_by_name.get(repo.get("nameWithOwner", "")) or [None])[0],
+            "localCheckouts": [{key: item.get(key) for key in ("path", "branch", "dirtyFileCount", "ahead", "behind", "detached")}
+                               for item in local_by_name.get(repo.get("nameWithOwner", ""), [])],
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
-    now = int(time.time())
     try:
         rate_limit, rate_fetched_at = _api_json("rate_limit")
         rate_error = ""
@@ -257,7 +333,87 @@ def fetch_snapshot() -> dict:
         rate_limit, rate_fetched_at, rate_error = {}, 0, str(exc)
     return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
-            "settings": settings, "stale": False, "repos": normalized}
+            "settings": settings, "stale": False, "forYou": for_you,
+            "contributions": contributions, "repos": normalized}
+
+
+FOR_YOU_QUERY = """{
+  reviews: search(query: "is:pr is:open archived:false review-requested:@me", type: ISSUE, first: 5) {
+    issueCount
+    nodes { ... on PullRequest { title number url updatedAt repository { nameWithOwner } } }
+  }
+  assigned: search(query: "is:issue is:open archived:false assignee:@me", type: ISSUE, first: 5) {
+    issueCount
+    nodes { ... on Issue { title number url updatedAt repository { nameWithOwner } } }
+  }
+}"""
+
+
+CONTRIBUTIONS_QUERY = """{
+  viewer { contributionsCollection { contributionCalendar {
+    totalContributions
+    weeks { contributionDays { date contributionCount contributionLevel } }
+  } } }
+}"""
+LEVELS = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
+
+
+def _contributions() -> dict:
+    """The viewer's contribution calendar for the past year, as weeks of [date, count, level 0-4] days."""
+    try:
+        calendar = ((((_graphql(CONTRIBUTIONS_QUERY).get("data") or {}).get("viewer") or {})
+                     .get("contributionsCollection") or {}).get("contributionCalendar") or {})
+    except RuntimeError:
+        return {}
+    weeks = [[[day.get("date", ""), int(day.get("contributionCount") or 0), LEVELS.get(day.get("contributionLevel"), 0)]
+              for day in week.get("contributionDays") or []] for week in calendar.get("weeks") or []]
+    return {"total": int(calendar.get("totalContributions") or 0), "weeks": weeks} if weeks else {}
+
+
+def _for_you() -> dict:
+    """Pull requests waiting for the viewer's review and issues assigned to them; empty when GitHub cannot answer."""
+    try:
+        data = _graphql(FOR_YOU_QUERY).get("data") or {}
+    except RuntimeError:
+        return {}
+    result = {}
+    for key in ("reviews", "assigned"):
+        conn = data.get(key) or {}
+        items = [{"title": node.get("title", ""), "number": node.get("number", 0), "url": node.get("url", ""),
+                  "updatedAt": node.get("updatedAt", ""), "repo": (node.get("repository") or {}).get("nameWithOwner", "")}
+                 for node in conn.get("nodes") or [] if node.get("url")]
+        result[key] = {"count": int(conn.get("issueCount") or 0), "items": items}
+    return result
+
+
+def _pages_repositories() -> set[str]:
+    """Names of repositories with a published GitHub Pages site; REST is the only listing that includes branch-built sites."""
+    try:
+        result = _run_gh(["--paginate", "user/repos?per_page=100&affiliation=owner,collaborator,organization_member",
+                          "--jq", ".[] | select(.has_pages) | .full_name"], timeout=60)
+    except RuntimeError:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if REPO_RE.fullmatch(line.strip())}
+
+
+def _web_url(value: str) -> str:
+    value = value.strip()
+    parsed = urlparse(value)
+    return value if parsed.scheme in {"http", "https"} and parsed.netloc and "." in parsed.netloc else ""
+
+
+def _pages_url(repo: dict, pages_names: set[str]) -> str:
+    """The deployed Pages address (custom domains included) or, for branch-built sites, the github.io default."""
+    for node in (repo.get("pagesDeploy") or {}).get("nodes") or []:
+        status = node.get("latestStatus") or {}
+        if status.get("state") == "SUCCESS" and _web_url(status.get("environmentUrl") or ""):
+            return status["environmentUrl"]
+    name = repo.get("nameWithOwner", "")
+    if name not in pages_names or _hostname() != "github.com":
+        return ""
+    owner, repository = name.split("/", 1)
+    site = f"{owner.lower()}.github.io"
+    return f"https://{site}/" if repository.lower() == site else f"https://{site}/{repository}/"
 
 
 def write_cache(payload: dict) -> None:
@@ -423,6 +579,25 @@ def scan_local_projects(root: str, depth: int = 4) -> list[dict]:
     return found
 
 
+def clone_local_repo(name: str, settings: dict) -> dict:
+    """Clone a repository into the projects folder; never overwrites an existing folder."""
+    name = _safe_repo_name(name)
+    root = settings.get("localRoot", "")
+    if not root:
+        raise RuntimeError("Choose a projects folder in RepoBar Settings first")
+    destination = Path(root).expanduser().resolve() / name.split("/", 1)[1]
+    if destination.exists():
+        raise RuntimeError(f"{destination} already exists")
+    try:
+        result = subprocess.run(["gh", "repo", "clone", name, str(destination)], capture_output=True, text=True,
+                                timeout=600, check=False, env={**os.environ, "GH_HOST": _hostname()})
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("Clone did not finish within 10 minutes") from exc
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "Clone failed")
+    return {"cloned": name, "path": str(destination)}
+
+
 def sync_local_repo(path: str, confirmed: bool = False) -> dict:
     repo = _git_repo_status(Path(path).expanduser())
     if repo["dirty"]:
@@ -487,7 +662,7 @@ def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "
     if scope == "dashboard":
         pinned = [item for item in selected if item.get("repoState") == "pinned"]
         recent = [item for item in selected if item.get("repoState") != "hidden" and item not in pinned]
-        count = max(1, min(100, int(settings.get("repoLimit", 5))))
+        count = max(1, min(100, int(settings.get("repoLimit", 20))))
         selected = pinned + recent[:max(0, count - len(pinned))]
     if limit >= 0:
         selected = selected[:limit]
@@ -516,6 +691,16 @@ def _repo_details(name: str, endpoint: str, limit: int = 20, force: bool = False
         return _api_json(f"repos/{name}/events?per_page={max(1, min(100, limit))}", force=force)[0]
     if endpoint == "heatmap":
         return _api_json(f"repos/{name}/stats/commit_activity", force=force)[0]
+    if endpoint == "traffic":
+        # GitHub only shows the last 14 days of traffic, and only to people with push access.
+        try:
+            views, _ = _api_json(f"repos/{name}/traffic/views", force=force)
+            clones, _ = _api_json(f"repos/{name}/traffic/clones", force=force)
+        except RuntimeError as exc:
+            if "403" in str(exc) or "push access" in str(exc).lower() or "must have" in str(exc).lower():
+                raise RuntimeError("Traffic is visible only to people with push access") from exc
+            raise
+        return {"views": views, "clones": clones}
     raise RuntimeError("Unsupported repository detail")
 
 
@@ -568,10 +753,16 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci", "show-contributions"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
-        settings["showForks" if normalized == "show-forks" else "showArchived"] = value.lower() == "true"
+        member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
+                  "show-contributions": "showContributions"}[normalized]
+        settings[member] = value.lower() == "true"
+    elif normalized == "contribution-style":
+        if value not in {"squares", "dots", "fine"}:
+            raise RuntimeError("contribution-style must be squares, dots, or fine")
+        settings["contributionStyle"] = value
     elif normalized == "activity-scope":
         if value not in {"all", "my"}:
             raise RuntimeError("activity-scope must be all or my")
@@ -592,7 +783,9 @@ def _settings_set(key: str, value: str) -> dict:
     return {"key": normalized, "value": settings.get({"refresh-interval": "refreshInterval", "repo-limit": "repoLimit",
                                                         "menu-sort": "menuSort", "show-forks": "showForks",
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
-                                                        "local-root": "localRoot", "local-depth": "localDepth"}.get(normalized, normalized))}
+                                                        "local-root": "localRoot", "local-depth": "localDepth",
+                                                        "notify-ci": "notifyCi", "show-contributions": "showContributions",
+                                                        "contribution-style": "contributionStyle"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:
@@ -645,7 +838,7 @@ def main() -> int:
     repos_cmd.add_argument("--limit", type=int, default=-1)
     repo_cmd = commands.add_parser("repo", help="show one repository summary")
     repo_cmd.add_argument("name")
-    for name in ("issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"):
+    for name in ("issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap", "traffic"):
         item = commands.add_parser(name, help=f"show repository {name}")
         item.add_argument("name")
         item.add_argument("--limit", type=int, default=20)
@@ -663,7 +856,7 @@ def main() -> int:
     auth_cmd = commands.add_parser("auth", help="inspect or set up GitHub CLI authentication")
     auth_cmd.add_argument("action", choices=["status", "login"], default="status", nargs="?")
     local_cmd = commands.add_parser("local", help="scan local checkouts or explicitly fast-forward one")
-    local_cmd.add_argument("action", choices=["scan", "sync"], default="scan", nargs="?")
+    local_cmd.add_argument("action", choices=["scan", "sync", "clone"], default="scan", nargs="?")
     local_cmd.add_argument("path", nargs="?")
     local_cmd.add_argument("--root", default="")
     local_cmd.add_argument("--depth", type=int, default=0)
@@ -687,7 +880,7 @@ def main() -> int:
             if not match:
                 raise RuntimeError("Repository is not visible to the active GitHub account")
             _emit(match, args.plain)
-        elif args.command in {"issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"}:
+        elif args.command in {"issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap", "traffic"}:
             _emit(_repo_details(args.name, args.command, args.limit, args.refresh), args.plain)
         elif args.command in {"pin", "unpin", "hide", "show"}:
             _emit(set_repo_state(args.name, {"pin": "pinned", "unpin": "visible", "hide": "hidden", "show": "visible"}[args.command]))
@@ -708,7 +901,11 @@ def main() -> int:
             _emit(_auth_status())
         elif args.command == "local":
             settings = load_settings()
-            if args.action == "sync":
+            if args.action == "clone":
+                if not args.path:
+                    raise RuntimeError("Use `local clone OWNER/NAME`")
+                _emit(clone_local_repo(args.path, settings))
+            elif args.action == "sync":
                 if not args.path:
                     raise RuntimeError("Use `local sync PATH_OR_REPO [--yes]`")
                 _emit(sync_local_repo(_find_local_repo(args.path, settings), args.yes))

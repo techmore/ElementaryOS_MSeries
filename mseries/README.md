@@ -10,6 +10,17 @@ package behavior is tracked at the separate main-branch pin in
 
 **Current status, open problems and stretch goals: [`ROADMAP.md`](ROADMAP.md). Benchmarks: [`benchmarks/`](benchmarks/README.md).**
 
+English F5 speech is merged and activated with Nemotron CPU and optional native
+ANE/MLX engines; seven installed app routes passed within the quiet and memory guards. Read its
+[qualification ledger](dictation/QUALIFICATION-INDEX.md) before speech benchmarks
+or continuation work. Reuse completed receipts, including failures, and inspect
+the existing owned queue before starting anything. Current controls and scoped
+results are in [English F5 acceptance](dictation/F5-ENGLISH-ACCEPTANCE.md).
+
+[v0.0.1](releases/v0.0.1/README.md) is an English STT-only desktop-update candidate.
+Physical F5 in ChatGPT failed before capture; an accessibility/IBus launcher fix
+is staged for its next full launch. Post-relaunch human acceptance is pending.
+
 Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
 - Apple Silicon hardware reference: [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs) (audit pin in UPSTREAM-PINS.md)

@@ -7,16 +7,19 @@ namespace MSeries {
 
     private void test_preferences () {
         var prefs = new PanelPreferences ();
-        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints" }) {
+        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints", "showTokens" }) {
             assert (prefs.get_bool (key));
         }
+        assert (!prefs.get_bool ("compactQuota"));
+        assert (prefs.save_bool ("compactQuota", true));
+        assert (new PanelPreferences ().get_bool ("compactQuota"));
         assert (prefs.last_error == "");
         assert (!prefs.load ());
-        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints" }) {
+        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints", "showTokens" }) {
             assert (prefs.save_bool (key, false));
         }
         var restored = new PanelPreferences ();
-        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints" }) {
+        foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints", "showTokens" }) {
             assert (!restored.get_bool (key));
         }
         try {

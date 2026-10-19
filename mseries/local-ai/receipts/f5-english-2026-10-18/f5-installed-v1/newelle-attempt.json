@@ -1,0 +1,19 @@
+{
+  "complete": true,
+  "exit_code": 2,
+  "interruption": null,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 2700,
+    "max_temp_c": 63,
+    "cool_fan_rpm": 2700,
+    "resume_fan_rpm": 2600,
+    "burst_s": 3,
+    "sample_s": 1
+  },
+  "resources": {
+    "min_available_bytes": 12522635264,
+    "max_fan_rpm": 2503.0,
+    "max_temp_c": 48.733
+  }
+}

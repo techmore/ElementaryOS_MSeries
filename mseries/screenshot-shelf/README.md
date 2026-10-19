@@ -6,13 +6,14 @@ After a screenshot, a thumbnail appears bottom-right at a fixed size (280x180 ca
 
 | You do | What happens |
 | --- | --- |
-| Drag it into an app | The screenshot is **used, not kept**: its saved file is deleted 2 minutes after an accepted drop. |
+| Drag it into an app | The screenshot is **used, not kept**: its saved file moves to the **Trash** 2 minutes after an accepted drop (recoverable, never hard-deleted). Works with Flatpak apps such as Signal (see below). |
+| Press **Copy** | The full image goes on the clipboard; paste it anywhere (Ctrl+V). The file is kept. |
 | Hold **Alt** while dragging | The screenshot is used **and a copy is kept**; the thumbnail text changes to "Saving a copy (Alt)". |
 | Click it, or press **Markup** | Opens Swappy (the card stays) (arrows, shapes, text, highlight, blur, crop). The result is saved next to the original as `<name> (markup).png`. |
 | Click the x | The thumbnail goes away and the screenshot stays in `~/Downloads/Screenshots`. |
 | Ignore it | It goes away after 4 seconds. |
 
-A screenshot is only ever deleted by a drag without Alt, and only after the drop was accepted. A cancelled drag keeps it.
+A screenshot is only ever moved to the Trash by a drag without Alt, and only after the drop was accepted. A cancelled drag keeps it.
 
 `mseries-markup FILE` also works from the file manager (Open With, Markup): images open in Swappy, PDFs in Papers (which has its own annotations).
 
@@ -46,3 +47,28 @@ it was rebuilt from main with the Space/highlight patch. Shelf startup is now fi
 Screenshot PNG produced `showing` then `shelf done: expired` four seconds later. Both installed desktop
 entries validate. The shutter sound asset exists and event sounds are enabled; audible capture,
 Space highlight and drag-out still need a live check after the new Gala loads.
+
+## Flatpak drop targets (Signal) — fixed 2026-10-18
+
+Dragging the card into Signal did nothing, and the screenshot was then deleted. Cause: Signal is a Flatpak
+(`org.signal.Signal`) with **no filesystem permission**, so the dropped `file:///run/user/1000/mseries-shelf/...`
+path does not exist inside its sandbox. Signal accepted the drop, could not read the file and attached nothing;
+the shelf counted the accepted drop as "used" and hard-deleted the original 2 minutes later. Chromium/Electron
+does not read `application/vnd.portal.filetransfer`, so GTK's built-in portal handoff does not help it either.
+
+Fix: on drag start the staged copy is exported through the document portal (`org.freedesktop.portal.Documents.Add`,
+transient) and granted **read-only to the running Flatpak apps**. The drag offers `/run/user/1000/doc/<id>/<name>`,
+the same path inside every granted sandbox and on the host. Cleanup deletes the export (access revoked). The
+used original goes to the Trash instead of being deleted, and a **Copy** button offers clipboard paste
+(no file access needed).
+
+On this machine the host's portal FUSE mount at `/run/user/1000/doc` had vanished while the portal kept serving
+the already-running sandboxes (journal: `bwrap: Can't find source path /run/user/1000/doc/by-app/org.signal.Signal`
+when Signal was relaunched). In that state the shelf puts a hard link at the doc path so native apps still get a
+readable file. New Flatpak launches stay broken until the portal is restarted (log out and back in, or
+`systemctl --user restart xdg-document-portal` while no Flatpak apps are running).
+
+Checked headlessly (Xvfb, 2026-10-18): export readable from inside the running Signal sandbox (`flatpak enter`),
+unreadable after cleanup; drag content serializes to `text/uri-list`, `text/plain`, `application/vnd.portal.files`
+and `application/vnd.portal.filetransfer`; Copy puts a texture on the clipboard; original lands in the Trash;
+card renders with the Copy button. **Not yet checked:** a real hand drag into Signal on the desktop.

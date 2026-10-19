@@ -1,0 +1,8 @@
+#!/bin/sh
+# Starts the screen-share server for this user (24 h cap, local network). The share-demo script lives in the rupert-share checkout;
+# point to another location with ~/.config/rupert-share/core-path. Safe to run twice: it does nothing if one is already running.
+core=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/rupert-share/core-path" 2>/dev/null || echo "$HOME/Projects/rupert-share/core")
+[ -x "$core/scripts/share-demo.sh" ] || { echo "share-demo.sh not found in $core" >&2; exit 1; }
+if ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE '[:.]8799$'; then exit 0; fi
+pub=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/rupert-share/public-url" 2>/dev/null || true)   # e.g. https://tm-remote.stoverparc.org
+cd "$core" && exec setsid timeout --signal=TERM 24h scripts/share-demo.sh --lan --port 8799 ${pub:+--public "$pub"} >/dev/null 2>&1 </dev/null

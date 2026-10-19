@@ -25,11 +25,23 @@
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.
 - Keep the owner’s menu bar stable: stage routine indicator updates without restarting Wingpanel. Reload only when the owner explicitly requests it or to recover from a confirmed panel defect.
+- **Branches:** `dev` is the default branch and what the owner runs; `main` is the
+  frozen stable line (v0.0.1). Branch from
+  `origin/dev` and open PRs with `--base dev`; only release PRs (`dev` → `main`) and
+  urgent hotfixes go to `main`. See [mseries/BRANCHING.md](mseries/BRANCHING.md).
 - Commit and push completed, reviewed batches to GitHub. Use one agent for
   Git writes at a time. A delegated worker must report to its coordinator
   instead of committing unless explicitly assigned ownership of Git writes.
 - Codex/Claude handle implementation and review; OpenCode can handle build
   checks and log analysis. Read the latest handoff before starting work.
+- Before speech, dictation or voice work, read the [canonical qualification ledger](mseries/dictation/QUALIFICATION-INDEX.md)
+  and its [JSON index](mseries/dictation/qualification-index.json). Reuse completed
+  passes and failures; never repeat a comparable finished trial or duplicate an
+  owned queue. Inspect the units/lock and resume only incomplete cases with the
+  same recorded identity. Preserve prior receipts and update the ledger after a
+  concrete fix or deployment. For MCP/app workflows, first read
+  [the app integration record](mseries/local-ai/APP-INTEGRATION.md) and its retained
+  receipts; completed adapter/model cases are evidence to reuse too.
 - The owner explicitly approved OpenCode's configured provider receiving
   repository build configuration/handoffs and public GitHub Actions build
   logs (including environment/package details) for scoped build analysis.

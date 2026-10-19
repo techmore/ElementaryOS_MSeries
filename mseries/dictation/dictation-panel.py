@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """English dictation and optional English grammar suggestions. Text stays ephemeral."""
+import os
 import threading
 import time
 import gi
@@ -17,6 +18,7 @@ class DictationPanel(Gtk.Application):
         self.busy = False
         self.closed = False
         self.generation = 0
+        self.speech_only = os.environ.get('MSERIES_DICTATION_SPEECH_ONLY') == '1'
         self.review = review
         self.read_status = read_status
         self.live = LiveEnglishReview()
@@ -42,6 +44,11 @@ class DictationPanel(Gtk.Application):
         self.state = Gtk.Label(label='', xalign=0, wrap=True); box.append(self.state)
         self.original = self.editor(box, 'Original English transcript', editable=True)
         self.original.get_buffer().connect('changed', self.changed)
+        if self.speech_only:
+            self.message = Gtk.Label(label='Original English words stay in this field.', xalign=0, wrap=True)
+            box.append(self.message)
+            self.poll(); self.timer = GLib.timeout_add(500, self.poll); self.window.present()
+            return
         self.live_toggle = Gtk.CheckButton(label='Improve English grammar after dictation')
         self.live_toggle.set_active(True)
         self.live_toggle.connect('toggled', self.changed); box.append(self.live_toggle)
@@ -73,6 +80,7 @@ class DictationPanel(Gtk.Application):
 
     def changed(self, widget, *_):
         self.generation += 1
+        if self.speech_only: return
         self.copy.set_sensitive(False)
         self.edit_phase = getattr(self, 'phase', 'unavailable')
         self.force_clear = getattr(self, 'force_clear', False) or widget != self.original.get_buffer()
@@ -80,6 +88,7 @@ class DictationPanel(Gtk.Application):
             self.edit_id = GLib.idle_add(lambda: self.flush_changed(True))
 
     def flush_changed(self, from_idle=False):
+        if self.speech_only: return False
         if not getattr(self, 'edit_id', None): return False
         if not from_idle: GLib.source_remove(self.edit_id)
         self.edit_id = None
@@ -98,6 +107,7 @@ class DictationPanel(Gtk.Application):
         return False
 
     def observe_live(self):
+        if self.speech_only: return
         self.flush_changed()
         self.live.observe(self.text(self.original),
             self.live_toggle.get_active() and self.phase in ('ready','loading','listening','finishing'),
@@ -114,6 +124,7 @@ class DictationPanel(Gtk.Application):
             'unavailable':'Speech service is unavailable'}
         self.state.set_label(names.get(self.phase, names['unavailable']))
         self.record.set_sensitive(self.phase not in ('loading','listening','finishing'))
+        if self.speech_only: return True
         self.transform.set_sensitive(not self.busy and self.phase not in ('loading','listening','finishing'))
         self.observe_live()
         if not self.busy:
@@ -123,11 +134,13 @@ class DictationPanel(Gtk.Application):
         return True
 
     def start_review(self, *_):
+        if self.speech_only: return
         if self.busy or self.phase in ('loading','listening','finishing'): return
         self.live.session = False
         self.launch_review(self.text(self.original))
 
     def launch_review(self, source, request=None):
+        if self.speech_only: return
         generation = self.generation; self.busy = True; self.copy.set_sensitive(False)
         self.transform.set_sensitive(False)
         self.message.set_label('Reviewing English locally… Original text is preserved.')
@@ -150,6 +163,7 @@ class DictationPanel(Gtk.Application):
         threading.Thread(target=worker, daemon=True).start()
 
     def show_proposal(self, source, text, final):
+        if self.speech_only: return
         self.proposed.get_buffer().set_text(text); self.preview_source = source
         self.copy.set_sensitive(final)
         self.message.set_label('Check names, numbers and meaning before copying.' if final else 'English cleanup preview — wording may change as you speak.')

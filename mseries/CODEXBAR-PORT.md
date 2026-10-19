@@ -264,7 +264,7 @@ popover. `probe/run-probe.sh BUILD OUT light opencode-compact connected` preview
 
 ### Seven-day local processed tokens
 
-Every provider has a `7d local` total sourced from `codexbar-sessions.py`. These are rolling local
+Every provider has a `7d` total sourced from `codexbar-sessions.py`. These are rolling local
 coding-activity estimates across accounts/providers on this machine, not remaining plan tokens or
 ordinary ChatGPT/claude.ai chat totals. Input, output and cache reads/writes are included. Codex
 cached-input and reasoning-output breakdowns are already included in its totals; OpenCode's fallback
@@ -280,7 +280,97 @@ cache replaces the old cache-excluding definition. Caches remain private JSON un
 remains 60 seconds while open (15-second freshness on opening) and 900 seconds while closed.
 Cached session updates repaint the panel directly, without an extra upstream snapshot/refresh.
 Totals share the second row with alternate accounts, respect percentage visibility, and remain
-explained in accessible provider tooltips. The local-token native probe checks all three and bar height.
+explained in Settings > About. Provider tooltips retain the concise totals. The local-token native probe checks all three and bar height.
 
 Routine deployment leaves identical provider marks and the global icon cache untouched. Rebuild the
 icon cache only when the SVG contents actually change, to avoid needless invalidation of the live panel.
+
+### Wingpanel popup anchor lifetime
+
+`install-wingpanel-codexbar-left.sh` applies `patches/wingpanel-popover-lifetime.patch`
+to the pinned Wingpanel core in addition to the full-height/notch and clock-right patches.
+It retains a removed menu anchor until its popup is detached on switch/close. This fixes
+a reproduced use-after-finalization defect; see [crash evidence and tests](CODEXBAR-CRASH-2026-10-18.md).
+The installer stages the binary without restarting the live panel. Run
+`bash mseries/wingpanel-tests/run-popover-lifetime.sh` for the isolated four-case regression.
+
+### Performance boundaries and the quiet panel watch
+
+See [the 2026-10-18 audit](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md) for measurements,
+remaining modularity work and activation limits. Shared `codexbar_history.py` streams
+OpenCode's displayed 30-day windows, with read-only queries and no new app DB indexes.
+`HelperProcess.vala` bounds disposable native read helpers; account actions retain their
+existing lifecycle. Helper completion repaints cached cards without extra snapshot IPC.
+Install/deploy/image payloads must include both `codexbar_history.py` and the token module.
+
+`python3 ~/.local/lib/codexbar-cli/codexbar-wingpanel-watch.py` reports panel/launcher
+health and new categorized journal/core events using a private bounded checkpoint.
+It never controls processes. The owner's five-minute chat heartbeat consumes that report
+and stays quiet while unchanged. Retain the distinction between an unexplained PID
+transition and a confirmed crash. The heartbeat requires the app/host to be available;
+it is not a continuous availability guarantee.
+
+### Token-first ChatGPT/Codex and Claude rows
+
+When seven-day totals are available, ChatGPT/Codex and Claude show them beside the
+provider mark on the top row. Active quota/reset details and alternate accounts share
+the second row. OpenCode retains its quota-first order. The native token probe checks
+vertical ordering and the two-row height; display preferences and missing-data fallbacks
+remain supported. As with other native changes, routine deployment stages this layout
+for next login without reloading a healthy panel.
+
+ChatGPT/Codex and Claude's token-first heading also includes the active seven-day
+percentage and its reset countdown. Five-hour and alternate-account details remain
+on the lower row. The token probe asserts the weekly values share the token heading.
+
+## Saved OpenCode account cache and display density
+
+Saved-account console plans use a 3600-second cache and inactive quota uses 300
+seconds, scoped to database/account/workspace/sign-in identity. Manual Refresh
+bypasses both. Reset boundaries invalidate cached quota; failures back off and
+retain sanitized last-good values with a stale marker. The active account uses
+the upstream snapshot. Credential inventory stays live; no credentials or raw
+provider responses are persisted. Shared private JSON cache/locks require no new
+database or service.
+
+Native Display settings persist `showTokens` (default true) and `compactQuota`
+(default false) in Wingpanel's own preferences. Dropdown token counts remain
+available when hidden from the bar. Compact active quota dots show remaining
+balance (>70 green, 25–70 yellow, <25 red, percentage visible below 10); hover
+reports the measured percentage. Popup quotas stay literal; alternate bar accounts use matching dots with full values on hover.
+Menu bar marks use 13px; card marks retain their existing size.
+
+In visual dot mode, reset countdowns are hover-only on both bar rows, regardless
+of the literal-mode reset visibility preference. Active dot hover reports the
+measured percentage and reset state; alternate-account hover retains every window.
+The dropdown and literal mode still honor the existing reset preference.
+
+Explicit Claude desktop switches always stop/restore/relaunch after target
+validation, even when local account UUID hints match. Persisted identity hints
+and process existence do not verify the account authenticated by the main UI.
+
+Compact bar rows group by account: active 5H and 7D share the top row; alternate
+account windows share the lower row. Token location remains independently set.
+
+Numeric dot-mode percentages now appear below 15% in bold red (superseding the
+earlier below-10 rule). The green/yellow/red dot thresholds are unchanged.
+
+## Claude switch handoff extension
+
+Ship codexbar_claude_handoff.py alongside the history helper in installers, deploy
+and image payloads. Cross-account app Switch saves a private brief before auth
+changes and registers a fresh handoff-only Code conversation. A45-second tool-free
+Claude Code safe-mode call summarizes recent visible text; unavailable/mismatched
+login or exhausted quota produces labeled emergency excerpts. Originals stay intact.
+The native completion dialog offers a local GitHub review window. Only its explicit
+Publish action sends edited text to the workspace origin in a separate branch/draft
+PR. Emergency excerpts never automatically become public. No extra polling/service.
+See CODEXBAR-CLAUDE-HISTORY.md for qualifications and limits.
+
+Dot-mode numeric visibility is inclusive: remaining<=15% displays the written
+percentage in bold red; values above15% stay dot-only. This supersedes earlier
+below-15 wording and applies consistently to all provider/account rows.
+
+Dropdown quota bars and percentage labels use the same visual thresholds as the
+menu dots: green >70%, yellow25–70%, red<25%. The shared visual formatter is
+separate from ETA/alert warning thresholds.

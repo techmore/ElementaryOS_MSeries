@@ -1,0 +1,301 @@
+{
+  "schema": 1,
+  "complete": true,
+  "classification": "Source-compatibility evidence audit; no new inference or app checks",
+  "deployment": {
+    "receipt": "f5-deployment-v1/receipt.json",
+    "receipt_sha256": "3c4fc650df36b2ed7263e8911a2a5195dca267f0d06121b21049427770a8731e",
+    "merged_commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8"
+  },
+  "method": {
+    "file_hash": "SHA256 of exact frozen Python bytes, checked against the deployed runtime-file manifest",
+    "ast_hash": "SHA256 of ast.dump(ast.Module(body=selected_statements,type_ignores=[]),annotate_fields=True,include_attributes=False), UTF-8 encoded",
+    "bridge_commit_body": "Statements inside if method == Commit only; excludes Preview and other elif branches",
+    "bridge_commit_with_validation_prefix": "The enclosing Commit/Check/Preview branch validation prefix, then the Commit condition/body with an empty orelse",
+    "controller_committed_changed_body": "Statements inside if up.committed_changed only; excludes the adjacent removed Preview emission"
+  },
+  "apps": {
+    "code": {
+      "earlier_positive_asr": {
+        "receipt": "f5-real-app-qualified-v1/code/receipt.json",
+        "receipt_sha256": "c251f0c77f48905dbb9a6901f29606d2c9fce6832a3683ad8b9ed43b89775796",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": false,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-real-app-qualified-v1/code/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "80682294555c2ce497a914434d1042c8e5c24484f9ef0b7a3f8b4cc0a97e3218"
+          },
+          "dictation-input.py": {
+            "source": "f5-real-app-qualified-v1/code/evaluated-source/dictation/dictation-input.py",
+            "sha256": "af551bb327dead5d22ae80b0f956357d7fb3964128deebe6045f572e7996b4d8"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-real-app-qualified-v1/code/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-real-app-qualified-v1/code/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-real-app-qualified-v1/code/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "installed_safety_fixture": {
+        "receipt": "f5-installed-v2/code/receipt.json",
+        "receipt_sha256": "7dccfa93f7778fe73c5dd4046b169a9f3c10410faa97b6d0a68ba104f7d718c4",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": true,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-installed-v2/code/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+          },
+          "dictation-input.py": {
+            "source": "f5-installed-v2/code/evaluated-source/dictation/dictation-input.py",
+            "sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-installed-v2/code/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-installed-v2/code/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-installed-v2/code/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "core_exact_matches": [
+        "dictation-input-client.py",
+        "dictation_model.py",
+        "dictation_resources.py"
+      ],
+      "differing_production_files": {
+        "stream-dictate.py": {
+          "earlier_positive_sha256": "80682294555c2ce497a914434d1042c8e5c24484f9ef0b7a3f8b4cc0a97e3218",
+          "installed_safety_sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+        },
+        "dictation-input.py": {
+          "earlier_positive_sha256": "af551bb327dead5d22ae80b0f956357d7fb3964128deebe6045f572e7996b4d8",
+          "installed_safety_sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+        }
+      },
+      "positive_asr_all_core_files_exact_to_deployment": false,
+      "commit_ast_subtrees_equal": true
+    },
+    "newelle": {
+      "earlier_positive_asr": {
+        "receipt": "f5-real-app-qualified-v1/newelle/receipt.json",
+        "receipt_sha256": "c74979c0dad0ec5f101883437879022675461c088f3c94789757378dfddac57f",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": false,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-real-app-qualified-v1/newelle/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "80682294555c2ce497a914434d1042c8e5c24484f9ef0b7a3f8b4cc0a97e3218"
+          },
+          "dictation-input.py": {
+            "source": "f5-real-app-qualified-v1/newelle/evaluated-source/dictation/dictation-input.py",
+            "sha256": "af551bb327dead5d22ae80b0f956357d7fb3964128deebe6045f572e7996b4d8"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-real-app-qualified-v1/newelle/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-real-app-qualified-v1/newelle/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-real-app-qualified-v1/newelle/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "installed_safety_fixture": {
+        "receipt": "f5-installed-v2/newelle/receipt.json",
+        "receipt_sha256": "294cadabb114577759aa169f0d1715febb87f4d3ea4b0813c800d2aea9ce38a6",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": true,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-installed-v2/newelle/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+          },
+          "dictation-input.py": {
+            "source": "f5-installed-v2/newelle/evaluated-source/dictation/dictation-input.py",
+            "sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-installed-v2/newelle/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-installed-v2/newelle/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-installed-v2/newelle/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "core_exact_matches": [
+        "dictation-input-client.py",
+        "dictation_model.py",
+        "dictation_resources.py"
+      ],
+      "differing_production_files": {
+        "stream-dictate.py": {
+          "earlier_positive_sha256": "80682294555c2ce497a914434d1042c8e5c24484f9ef0b7a3f8b4cc0a97e3218",
+          "installed_safety_sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+        },
+        "dictation-input.py": {
+          "earlier_positive_sha256": "af551bb327dead5d22ae80b0f956357d7fb3964128deebe6045f572e7996b4d8",
+          "installed_safety_sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+        }
+      },
+      "positive_asr_all_core_files_exact_to_deployment": false,
+      "commit_ast_subtrees_equal": true
+    },
+    "tasks": {
+      "earlier_positive_asr": {
+        "receipt": "f5-real-tasks-qualified-v1/tasks/receipt.json",
+        "receipt_sha256": "6d46a235d03ae0d40b47e8547cd3c9b483faeddedc6c60709c76ba71c0bb517b",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": false,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-real-tasks-qualified-v1/tasks/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+          },
+          "dictation-input.py": {
+            "source": "f5-real-tasks-qualified-v1/tasks/evaluated-source/dictation/dictation-input.py",
+            "sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-real-tasks-qualified-v1/tasks/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-real-tasks-qualified-v1/tasks/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-real-tasks-qualified-v1/tasks/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "installed_safety_fixture": {
+        "receipt": "f5-installed-v2/tasks/receipt.json",
+        "receipt_sha256": "399e98a20357c253e2e3c49661bc7ba709b69edb3b52be17d36ca743a4a29e44",
+        "complete": true,
+        "passed": true,
+        "fixtures_only": true,
+        "frozen_core_files": {
+          "stream-dictate.py": {
+            "source": "f5-installed-v2/tasks/evaluated-source/dictation/stream-dictate.py",
+            "sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113"
+          },
+          "dictation-input.py": {
+            "source": "f5-installed-v2/tasks/evaluated-source/dictation/dictation-input.py",
+            "sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5"
+          },
+          "dictation-input-client.py": {
+            "source": "f5-installed-v2/tasks/evaluated-source/dictation/dictation-input-client.py",
+            "sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d"
+          },
+          "dictation_model.py": {
+            "source": "f5-installed-v2/tasks/evaluated-source/dictation/dictation_model.py",
+            "sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578"
+          },
+          "dictation_resources.py": {
+            "source": "f5-installed-v2/tasks/evaluated-source/dictation/dictation_resources.py",
+            "sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe"
+          }
+        },
+        "ast_subtrees": {
+          "bridge_commit_body_ast_sha256": "24540bdfe81798bfb62af929644d0bf9de1cbd75fa61afa73ca5af5d55015204",
+          "bridge_commit_with_validation_prefix_ast_sha256": "ef24b944d2cf9946497481777511b0dc2a325e969bbb6a80263b400b08e74e80",
+          "controller_committed_changed_body_ast_sha256": "10ba1f34549ae30bb04df558ef6e41a72fad827a5586487002318c69ce3b3430"
+        }
+      },
+      "core_exact_matches": [
+        "stream-dictate.py",
+        "dictation-input.py",
+        "dictation-input-client.py",
+        "dictation_model.py",
+        "dictation_resources.py"
+      ],
+      "differing_production_files": {},
+      "positive_asr_all_core_files_exact_to_deployment": true,
+      "commit_ast_subtrees_equal": true
+    }
+  },
+  "difference_scope": {
+    "dictation-input.py": "Preview now clears preedit instead of calling update_preedit_text_with_mode, because Chromium can confirm speculative composition before focus-out. Commit body and its token/focused-field validation prefix are AST-identical.",
+    "stream-dictate.py": "Removed speculative preview extraction/emission after stable commits. Whisper fallback changed from one blocking subprocess.run to bounded owned Popen polling with a cancellation callback and post-return interruption checks. Stable committed_changed emission body is AST-identical."
+  },
+  "conclusions": {
+    "tasks": "Earlier positive ASR insertion used byte-identical deployed core files; the installed app fixture separately verifies cancellation and suppressed preview.",
+    "code_and_newelle": "Earlier positive ASR results remain valid historical evidence. Exact installed-source fixtures verify field acquisition, suppressed preview, cancel cleanup, stale-token rejection and native engine restoration; they do not run positive ASR or a new positive commit trial. The compared production Commit path is unchanged."
+  },
+  "limits": [
+    "AST equality is scoped source-compatibility evidence, not a new behavioral or hardware test.",
+    "Full source hashes differ for Code/Newelle; do not relabel their earlier positive ASR trials as exact deployed-source trials.",
+    "Installed v2 fixtures intentionally omit the positive public-audio branch and have empty field-event traces.",
+    "No microphone, physical F5, audio playback, owner windows, real app contents, journals, settings or credentials were inspected by this audit.",
+    "Reuse the completed evidence and source pins; only investigate a concrete new regression or materially changed path rather than repeating completed ASR quality cases."
+  ],
+  "audit_actions": {
+    "read_only": true,
+    "model_inference": false,
+    "services_changed": false,
+    "windows_opened": false,
+    "git_changed": false,
+    "existing_receipts_changed": false
+  },
+  "privacy": {
+    "absolute_home_paths_exported": false,
+    "private_contents_exported": false,
+    "raw_logs_exported": false
+  }
+}

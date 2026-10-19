@@ -39,6 +39,35 @@
   "f5-browser-editors-v5": [
     "receipt.json"
   ],
+  "f5-debug-env-v1": [
+    "receipt.json"
+  ],
+  "f5-deployment-v1": [
+    "receipt.json"
+  ],
+  "f5-installed-v1": [
+    "gtk4-attempt.json",
+    "gtk3-attempt.json",
+    "qt6-attempt.json",
+    "brave-attempt.json",
+    "code-attempt.json",
+    "newelle-attempt.json",
+    "tasks-attempt.json",
+    "classification.json",
+    "gtk4/receipt.json",
+    "gtk3/receipt.json",
+    "qt6/receipt.json",
+    "brave/receipt.json"
+  ],
+  "f5-installed-v2": [
+    "classification.json",
+    "code-attempt.json",
+    "newelle-attempt.json",
+    "tasks-attempt.json",
+    "code/receipt.json",
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
   "f5-joined-voice-v1": [
     "receipt.json"
   ],
@@ -58,6 +87,13 @@
   "f5-payload-fixtures-v1": [
     "gtk3/receipt.json",
     "newelle/receipt.json"
+  ],
+  "f5-postdeploy-v1": [
+    "receipt.json",
+    "classification.json"
+  ],
+  "f5-publication-v1": [
+    "receipt.json"
   ],
   "f5-real-app-fixtures-v1": [
     "code/receipt.json",

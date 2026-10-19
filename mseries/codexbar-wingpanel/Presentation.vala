@@ -3,6 +3,21 @@ namespace MSeries {
     internal enum QuotaLevel { UNKNOWN, OK, LOW, CRITICAL }
 
     internal class Presentation : GLib.Object {
+        // Dense bar dots deliberately use different thresholds from quota warnings.
+        public static QuotaLevel visual_level (double remaining) {
+            if (remaining < 0) return QuotaLevel.UNKNOWN;
+            return remaining > 70 ? QuotaLevel.OK : remaining >= 25 ? QuotaLevel.LOW : QuotaLevel.CRITICAL;
+        }
+
+        public static string dot_color (double remaining) {
+            var level = visual_level (remaining);
+            return level == QuotaLevel.OK ? "success_color" : level == QuotaLevel.LOW ? "warning_color" : "error_color";
+        }
+
+        public static string dot_percent (double remaining) {
+            return remaining >= 0 && remaining <= 15 ? " %0.0f%%".printf (remaining) : "";
+        }
+
         public static QuotaLevel level_for (double remaining) {
             if (remaining < 0) return QuotaLevel.UNKNOWN;
             if (remaining <= 10) return QuotaLevel.CRITICAL;
@@ -134,7 +149,7 @@ namespace MSeries {
                 var single = new Json.Array ();
                 single.add_object_element (window.ref ());
                 var parts = account_quota (single, now_unix, show_percent, show_reset).split (" ↻", 2);
-                var level = level_for (remaining.get_double ());
+                var level = visual_level (remaining.get_double ());
                 var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
                 if (text.len > 0) text.append (" · ");
                 text.append (color.length > 0

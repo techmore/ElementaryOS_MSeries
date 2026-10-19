@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "status": "offline diagnostic image only; not installed or booted",
+  "source_sha256": "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa",
+  "diagnostic_sha256": "b7c6a3e74e1c90d4d5925551cdfa44d41e38f1e0f83d456c4a5eb1bea9dd8c35",
+  "modified_entries": [
+    "init",
+    "init_functions"
+  ],
+  "all_other_entries_unchanged": true,
+  "early_prefix_unchanged": true,
+  "suggested_additional_arguments": [
+    "initcall_debug",
+    "ignore_loglevel",
+    "log_buf_len=8M",
+    "plymouth.enable=0",
+    "rd.log=kmsg|console|file"
+  ],
+  "limits": "No persistent evidence is guaranteed before root mount. Capture visible last messages if a future authorized trial stalls. No driver fix or hardware boot qualification."
+}

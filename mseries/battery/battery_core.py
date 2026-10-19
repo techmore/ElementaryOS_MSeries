@@ -6,6 +6,7 @@ is used when it exists and the battery's own flow is the fallback.
 """
 import glob
 import json
+import re
 import os
 import shutil
 import sqlite3
@@ -56,15 +57,19 @@ def rd_num(path, scale=1.0):
         return None
 
 
+SYS = os.environ.get("MSERIES_BATTERY_SYSROOT", "")   # tests point this at a fake /sys
+
+
 def find_battery():
     """The laptop's own battery, not a mouse or keyboard (those report scope=Device)."""
-    for node in sorted(glob.glob("/sys/class/power_supply/*")):
+    for node in sorted(glob.glob(SYS + "/sys/class/power_supply/*")):
         if rd(node + "/type") == "Battery" and rd(node + "/scope", "System") != "Device":
             return node
     return None
 
 
-def read_devices(root="/sys/class/power_supply"):
+def read_devices(root=None):
+    root = root or SYS + "/sys/class/power_supply"
     """Accessory batteries (mouse, keyboard, ...): scope=Device. Many report only a level, not a percentage."""
     found = []
     for node in sorted(glob.glob(root + "/*")):
@@ -114,14 +119,14 @@ def device_summary(conn):
 
 
 def find_system_power():
-    for label in glob.glob("/sys/class/hwmon/hwmon*/power*_label"):
+    for label in glob.glob(SYS + "/sys/class/hwmon/hwmon*/power*_label"):
         if (rd(label) or "").lower() == "total system power":
             return label.replace("_label", "_input")
     return None
 
 
 def find_ac():
-    for node in sorted(glob.glob("/sys/class/power_supply/*")):
+    for node in sorted(glob.glob(SYS + "/sys/class/power_supply/*")):
         if rd(node + "/type") == "Mains":
             return node + "/online"
     return None
@@ -141,6 +146,46 @@ def connect(path=DB_PATH, readonly=False):
     return conn
 
 
+_APP_NAMES = {}
+
+
+def pretty_app(key):
+    """Display name for a cgroup/app id: the .desktop Name= if one exists, else a tidied version of the id."""
+    if key in _APP_NAMES:
+        return _APP_NAMES[key]
+    name = None
+    for base in ("/usr/share/applications", os.path.expanduser("~/.local/share/applications")):
+        for candidate in (key, key.lower()):
+            text = rd("%s/%s.desktop" % (base, candidate))
+            if text:
+                match = re.search(r"^Name=(.+)$", text, re.M)
+                if match:
+                    name = match.group(1).strip()
+                    break
+        if name:
+            break
+    if not name:
+        tail = key.split(".")[-1] if key.count(".") >= 2 else key
+        name = tail[:1].upper() + tail[1:] if tail.islower() else tail
+    _APP_NAMES[key] = name
+    return name
+
+
+def app_key(cgroup_text, comm):
+    """Stable per-application key from a process's cgroup: app-<launcher>-<name>-<pid>.scope, *.service, else comm."""
+    last = (cgroup_text or "").strip().splitlines()[-1].rsplit("/", 1)[-1] if cgroup_text and cgroup_text.strip() else ""
+    last = last.replace("\\x2d", "-")
+    match = re.match(r"app(?:-[a-z]+)?-(.+?)(?:-\d+)?\.scope$", last)
+    if match:
+        key = match.group(1)
+        return comm if "launcher" in key else key      # apps started from a launcher keep their own name
+    # Only system services name an app. User-session services (gala@wayland.service holds Wingpanel, the dock and
+    # other shell parts) would lump unrelated processes under one name, so those keep their own process name.
+    if last.endswith(".service") and "/system.slice/" in (cgroup_text or "") and not last.startswith(("user@", "session-")):
+        return last[:-8].split("@")[0].lstrip("_")
+    return comm
+
+
 class Sampler:
     """Reads one snapshot of power, CPU and process state; keeps the previous counters for deltas."""
 
@@ -149,7 +194,7 @@ class Sampler:
         self.battery = find_battery()
         self.sys_power = find_system_power()
         self.ac = find_ac()
-        self.backlight = (glob.glob("/sys/class/backlight/*") or [None])[0]
+        self.backlight = (glob.glob(SYS + "/sys/class/backlight/*") or [None])[0]
         self.prev_cpu = None
         self.prev_procs = {}
         self.prev_time = None
@@ -179,7 +224,7 @@ class Sampler:
         return ticks
 
     def cpu_mhz(self):
-        freqs = [rd_num(p, 0.001) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
+        freqs = [rd_num(p, 0.001) for p in glob.glob(SYS + "/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
         freqs = [f for f in freqs if f]
         return sum(freqs) / len(freqs) if freqs else None
 
@@ -207,8 +252,9 @@ class Sampler:
                 grouped = {}
                 for pid, (name, used) in procs.items():
                     before = self.prev_procs.get(pid)
-                    if before and before[0] == name and used >= before[1]:
-                        grouped[name] = grouped.get(name, 0) + used - before[1]
+                    if before and before[0] == name and used > before[1]:
+                        key = pretty_app(app_key(rd("%s/%s/cgroup" % (self.proc, pid)), name))
+                        grouped[key] = grouped.get(key, 0) + used - before[1]
                 # process ticks are in the same units as /proc/stat, summed over all CPUs
                 ranked = sorted(grouped.items(), key=lambda kv: -kv[1])[:TOP_N]
                 top = [[name, round(100.0 * ticks / dt, 1)] for name, ticks in ranked if ticks > 0]
@@ -348,24 +394,33 @@ def sessions(rows):
     return result
 
 
-USAGE_BANDS = [("Idle", 0, 10), ("Light", 10, 30), ("Moderate", 30, 60), ("Heavy", 60, 101)]
+USAGE_BANDS = [("Light", 0, 8), ("Moderate", 8, 15), ("Heavy", 15, 10000)]
 
 
 def usage_profile(rows):
-    """Average draw while unplugged by CPU load band, and what that means for runtime at full charge."""
+    """Average draw and full-charge runtime while unplugged, grouped by how hard the machine is working (watts).
+
+    Bands are by system power rather than CPU so they also cover history imported from UPower, which has watts only.
+    Each sample is weighted by the time it covers.
+    """
     out = []
     full_wh = next((r["full_uwh"] / 1e6 for r in reversed(rows) if r["full_uwh"]), None)
-    discharging = [r for r in rows if not r["ac"] and r["sys_w"] is not None and r["cpu_pct"] is not None]
+    on = [(i, r) for i, r in enumerate(rows) if not r["ac"] and r["sys_w"] is not None and r["sys_w"] > 0.5]
     for name, low, high in USAGE_BANDS:
-        sel = [r for r in discharging if low <= r["cpu_pct"] < high]
-        if not sel:
-            out.append({"band": name, "cpu_range": "%d–%d%%" % (low, min(high, 100)), "samples": 0,
-                        "hours": 0.0, "avg_w": None, "runtime_h": None})
+        seconds, weighted = 0.0, 0.0
+        for i, r in on:
+            if low <= r["sys_w"] < high:
+                nxt = rows[i + 1]["ts"] if i + 1 < len(rows) else r["ts"] + SAMPLE_SECONDS
+                dt = min(nxt - r["ts"], GAP_SECONDS)
+                seconds += dt
+                weighted += r["sys_w"] * dt
+        label = "%d–%d W" % (low, high) if high < 10000 else "%d W and up" % low
+        if seconds < 60:
+            out.append({"band": name, "cpu_range": label, "samples": 0, "hours": 0.0, "avg_w": None, "runtime_h": None})
             continue
-        avg = sum(r["sys_w"] for r in sel) / len(sel)
-        out.append({"band": name, "cpu_range": "%d–%d%%" % (low, min(high, 100)), "samples": len(sel),
-                    "hours": round(len(sel) * SAMPLE_SECONDS / 3600, 2), "avg_w": round(avg, 2),
-                    "runtime_h": round(full_wh / avg, 1) if full_wh and avg > 0 else None})
+        avg = weighted / seconds
+        out.append({"band": name, "cpu_range": label, "samples": int(seconds / SAMPLE_SECONDS), "hours": round(seconds / 3600, 2),
+                    "avg_w": round(avg, 2), "runtime_h": round(full_wh / avg, 1) if full_wh and avg > 0 else None})
     return out
 
 
@@ -384,20 +439,42 @@ def top_culprits(rows, limit=5):
     return [{"name": n, "avg_cpu": round(v / samples, 1)} for n, v in ranked]
 
 
+def typical_draw(rows):
+    """Median average draw of past unplugged runs of 30 min or more, for when there is no recent data to go on."""
+    draws = sorted(r["avg_w"] for r in sessions(rows) if r["seconds"] >= 1800 and r["avg_w"])
+    return draws[len(draws) // 2] if draws else None
+
+
 def estimate_runtime(rows, window_seconds=3600):
-    """Hours left at the recent draw, and hours from full at the same draw. None while plugged in."""
-    if not rows:
+    """Remaining and from-full runtime on battery.
+
+    Blends the last 10 minutes of draw (what you are doing now) with the last hour (what you have been doing); with
+    under five minutes on battery it falls back to your typical unplugged draw. Returns a range from the lighter and
+    heavier of the two, and what the estimate is based on. Empty while plugged in.
+    """
+    if not rows or rows[-1]["ac"]:
         return {}
     last = rows[-1]
-    recent = [r for r in rows if r["ts"] >= last["ts"] - window_seconds and r["sys_w"] is not None and not r["ac"]]
-    if not recent or last["ac"]:
-        return {}
-    avg = sum(r["sys_w"] for r in recent) / len(recent)
+    on = [r for r in rows if r["ts"] >= last["ts"] - window_seconds and r["sys_w"] is not None and not r["ac"]]
+    short = [r["sys_w"] for r in on if r["ts"] >= last["ts"] - 600]
+    long_ = [r["sys_w"] for r in on]
+    if len(long_) * SAMPLE_SECONDS >= 300:
+        short_avg = sum(short) / len(short) if short else sum(long_) / len(long_)
+        long_avg = sum(long_) / len(long_)
+        avg = 0.6 * short_avg + 0.4 * long_avg
+        low_w, high_w = min(short_avg, long_avg), max(short_avg, long_avg)
+        basis = "recent use"
+    else:
+        history = typical_draw(rows)
+        if not history:
+            return {}
+        avg = low_w = high_w = history
+        basis = "your typical use"
     if avg <= 0:
         return {}
-    left = (last["energy_uwh"] or 0) / 1e6 / avg
-    full = (last["full_uwh"] or 0) / 1e6 / avg
-    return {"avg_w": round(avg, 2), "hours_left": round(left, 2), "hours_full": round(full, 2)}
+    energy, full = (last["energy_uwh"] or 0) / 1e6, (last["full_uwh"] or 0) / 1e6
+    return {"avg_w": round(avg, 2), "hours_left": round(energy / avg, 2), "hours_full": round(full / avg, 2),
+            "left_low": round(energy / max(high_w, 0.1), 2), "left_high": round(energy / max(low_w, 0.1), 2), "basis": basis}
 
 
 def battery_health():
@@ -701,6 +778,7 @@ def summary_card(conn):
     est = estimate_runtime(rows)
     if est:
         headline = "%s left" % fmt_hours(est["hours_left"])
+        basis = est["basis"]
     elif last["status"] == "Charging" and last["batt_w"] and last["batt_w"] > 0.5 and last["energy_uwh"] and last["full_uwh"]:
         to_full = (last["full_uwh"] - last["energy_uwh"]) / 1e6 / last["batt_w"]
         headline = "Charging · %s to full" % fmt_hours(to_full)
@@ -709,6 +787,9 @@ def summary_card(conn):
         headline = ("%s typical runtime" % fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs))
                     if long_runs else "Plugged in")
     detail = ["%.0f%%" % last["pct"]] if last["pct"] is not None else []
+    if est:
+        spread = "%s–%s, " % (fmt_hours(est["left_low"]), fmt_hours(est["left_high"])) if est["left_low"] != est["left_high"] else ""
+        detail.append(spread + est["basis"])
     if last["sys_w"] is not None:
         detail.append("%.1f W" % last["sys_w"])
     recent = [r for r in rows if r["ts"] >= now - 6 * 3600 and r["sys_w"] is not None]
@@ -721,9 +802,194 @@ def summary_card(conn):
     return headline, " · ".join(detail), ",".join(points)
 
 
+def summary_extra(conn):
+    """Tab-separated rows for the panel dropdown, after the three card lines: stat, run, app and tip rows."""
+    now = int(time.time())
+    rows = fetch(conn, now - 14 * 86400)
+    out = []
+    health = battery_health()
+    runs = sessions(rows)
+    long_runs = [r for r in runs if r["seconds"] >= 1800 and r["projected_hours"]]
+    if long_runs:
+        out.append("stat\tTypical runtime\t%s\tfull charge, %d runs" % (
+            fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs)), len(long_runs)))
+    if health.get("health_pct"):
+        out.append("stat\tHealth\t%s%%\t%s · %d cycles" % (health["health_pct"], condition()["label"], health["cycles"] or 0))
+    for run in list(reversed([r for r in runs if r["seconds"] >= 600]))[:3]:
+        out.append("run\t%s\t%s\t%.0f%% → %.0f%%\t%s" % (
+            time.strftime("%a %H:%M", time.localtime(run["start"])), fmt_hours(run["seconds"] / 3600),
+            run["pct_start"] or 0, run["pct_end"] or 0, "%.1f W" % run["avg_w"] if run["avg_w"] else "—"))
+    for item in top_culprits(rows, 3):
+        out.append("app\t%s\t%.1f%% of CPU" % (item["name"], item["avg_cpu"]))
+    for dev in device_summary(conn):
+        shown = "%.0f%%" % dev["pct"] if dev["pct"] is not None else (dev["level"] or dev["status"] or "—")
+        shown = shown + (" · ~%.0f days" % dev["days_left"] if dev["days_left"] else "")
+        out.append("device\t%s\t%s\t" % (dev["name"].replace("Advanced Ergonomic ", ""), shown))
+    for item in profile_breakdown(rows):
+        out.append("profile\t%s\t%.1f W avg\t%s" % (item["label"], item["avg_w"], "idle %.1f W" % item["idle_w"] if item["idle_w"] else "%s on battery" % fmt_hours(item["hours"])))
+    for ev in [e for e in events(conn, now - 6 * 3600, limit=50) if e["kind"] in ("rise", "drop")][:3]:
+        cause = ev["detail"].replace("Other (GPU, display, radios, charging)", "Display, GPU or radios")
+        out.append("event\t%s\t%+.1f W\t%s" % (time.strftime("%H:%M", time.localtime(ev["ts"])), ev["delta_w"], cause))
+    drain = standby_drain(conn, now - 14 * 86400)
+    if drain["pct_per_hour"] is not None:
+        out.append("stat\tSleep drain\t%.2f%% / h\tasleep %.0f h on battery" % (drain["pct_per_hour"], drain["hours"]))
+    try:
+        tips = suggestions(conn, rows)
+    except Exception:
+        tips = []
+    if tips:
+        out.append("tip\t%s\t%s" % (tips[0]["title"], tips[0]["body"]))
+    return out
+
+
 def write_summary(conn, path=SUMMARY_PATH):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w") as handle:
-        handle.write("\n".join(summary_card(conn)))
+        handle.write("\n".join(list(summary_card(conn)) + summary_extra(conn)))
     os.replace(tmp, path)
+
+
+# ---- real history UPower already kept ------------------------------------------------------
+UPOWER_DIR = "/var/lib/upower"
+UPOWER_STATES = {"discharging": ("Discharging", 0), "charging": ("Charging", 1),
+                 "fully-charged": ("Full", 1), "pending-charge": ("Not charging", 1), "empty": ("Discharging", 0)}
+
+
+def _upower_series(path):
+    series = []
+    try:
+        with open(path) as handle:
+            for line in handle:
+                parts = line.split()
+                if len(parts) == 3:
+                    series.append((int(parts[0]), float(parts[1]), parts[2]))
+    except OSError:
+        pass
+    return series
+
+
+def import_upower(conn, directory=UPOWER_DIR):
+    """Backfill samples from UPower's own battery history (charge % and watts, since it was installed).
+
+    These rows have no CPU, brightness or process data (so they feed sessions, runtime and health, not the
+    by-usage or by-app views) and never overwrite or overlap rows this logger recorded itself.
+    Re-running replaces the earlier import. Returns the number of rows stored.
+    """
+    bat = find_battery()
+    full = rd_num(bat + "/energy_full") if bat else None
+    serial = rd(bat + "/serial_number") if bat else None
+    if not full or not serial:
+        return 0
+    charge = rate = None
+    for node in glob.glob(os.path.join(directory, "history-charge-*.dat")):
+        if serial in node:
+            charge, rate = _upower_series(node), _upower_series(node.replace("history-charge-", "history-rate-"))
+    if not charge:
+        return 0
+    own = conn.execute("SELECT MIN(ts) FROM samples WHERE cpu_pct IS NOT NULL").fetchone()[0]
+    cutoff = own if own is not None else int(time.time()) + 1
+    conn.execute("DELETE FROM samples WHERE cpu_pct IS NULL AND ts < ?", (cutoff,))
+    watts, index, count = 0.0, 0, 0
+    for ts, pct, state in charge:
+        if ts >= cutoff or state not in UPOWER_STATES or pct <= 0:
+            continue
+        while index < len(rate) and rate[index][0] <= ts:
+            watts = rate[index][1]
+            index += 1
+        status, ac = UPOWER_STATES[state]
+        flow = -watts if status == "Discharging" else (watts if status == "Charging" else 0.0)
+        conn.execute("INSERT OR IGNORE INTO samples (ts, status, ac, pct, energy_uwh, full_uwh, batt_w, sys_w, top) VALUES (?,?,?,?,?,?,?,?,?)",
+                     (ts, status, ac, pct, int(full * pct / 100), int(full), flow,
+                      watts if status == "Discharging" and watts > 0 else None, "[]"))
+        count += 1
+    conn.commit()
+    return count
+
+
+# ---- condition, daily usage and diagnostics ------------------------------------------------
+def condition():
+    """Apple-style battery condition from the gauge's own health flag and capacity versus design."""
+    bat = find_battery()
+    if not bat:
+        return {"label": "Unknown", "level": "unknown", "why": "No battery found"}
+    gauge = (rd(bat + "/health") or "").strip()
+    health = battery_health().get("health_pct")
+    if gauge and gauge.lower() not in ("good", "unknown"):
+        return {"label": "Service Recommended", "level": "bad", "why": "The battery gauge reports: %s" % gauge}
+    if health is not None and health < 80:
+        return {"label": "Service Recommended", "level": "bad", "why": "Capacity is %.0f%% of design (below 80%%)" % health}
+    if health is not None and health < 90:
+        return {"label": "Normal", "level": "ok", "why": "Capacity %.0f%% of design; gauge reports %s" % (health, gauge or "no fault")}
+    return {"label": "Normal", "level": "good", "why": "Capacity %s%% of design; gauge reports %s" % (health, gauge or "no fault")}
+
+
+def daily_usage(rows, days=10):
+    """Per local day: Wh drawn on battery, hours on battery, hours on the charger, lowest charge reached."""
+    out = {}
+    for i, r in enumerate(rows):
+        day = time.strftime("%Y-%m-%d", time.localtime(r["ts"]))
+        entry = out.setdefault(day, {"day": day, "wh": 0.0, "battery_h": 0.0, "charger_h": 0.0, "min_pct": None})
+        nxt = rows[i + 1]["ts"] if i + 1 < len(rows) else r["ts"] + SAMPLE_SECONDS
+        dt = min(nxt - r["ts"], GAP_SECONDS)
+        if r["ac"]:
+            entry["charger_h"] += dt / 3600
+        else:
+            entry["battery_h"] += dt / 3600
+            if r["sys_w"]:
+                entry["wh"] += r["sys_w"] * dt / 3600
+        if r["pct"] is not None and (entry["min_pct"] is None or r["pct"] < entry["min_pct"]):
+            entry["min_pct"] = r["pct"]
+    return [out[d] for d in sorted(out)][-days:]
+
+
+def diagnose(conn):
+    """Health checks on the battery stack: each (name, ok|warn|fail, detail)."""
+    checks = []
+    now = int(time.time())
+
+    def add(name, status, detail):
+        checks.append({"name": name, "status": status, "detail": detail})
+
+    bat = find_battery()
+    add("Battery sensor", "ok" if bat else "fail", os.path.basename(bat) if bat else "no laptop battery under /sys/class/power_supply")
+    add("System power sensor", "ok" if find_system_power() else "warn",
+        "SMC Total System Power" if find_system_power() else "missing; the logger falls back to battery flow while unplugged")
+    last = conn.execute("SELECT MAX(ts) FROM samples WHERE cpu_pct IS NOT NULL").fetchone()[0]
+    if last is None:
+        add("Logger", "fail", "no samples recorded; is mseries-battery-logger.service running?")
+    else:
+        age = now - last
+        add("Logger", "ok" if age <= GAP_SECONDS * 2 else "warn", "last live sample %d s ago" % age)
+    total = conn.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+    first = conn.execute("SELECT MIN(ts) FROM samples").fetchone()[0]
+    add("History", "ok" if total else "warn", "%d samples since %s" % (total, time.strftime("%Y-%m-%d %H:%M", time.localtime(first))) if first else "empty")
+    imported = conn.execute("SELECT COUNT(*) FROM samples WHERE cpu_pct IS NULL").fetchone()[0]
+    add("UPower backfill", "ok" if imported else "warn", "%d imported samples" % imported if imported else "none imported (history unavailable?)")
+    span = conn.execute("SELECT COUNT(*) FROM (SELECT 1 FROM samples WHERE cpu_pct IS NOT NULL AND ts > ? AND ac = 0 LIMIT 240)", (now - 14 * 86400,)).fetchone()[0]
+    add("Live data while unplugged", "ok" if span >= 240 else "warn",
+        "%d samples" % span if span >= 240 else "only %d live samples on battery; usage-level and per-app views need about an hour" % span)
+    try:
+        size = os.path.getsize(DB_PATH)
+        add("Database", "ok" if size < 200e6 else "warn", "%.1f MB, kept %d days" % (size / 1e6, RETENTION_DAYS))
+    except OSError:
+        add("Database", "warn", "size unknown")
+    cond = condition()
+    add("Battery condition", "ok" if cond["level"] in ("good", "ok") else "fail", "%s: %s" % (cond["label"], cond["why"]))
+    health = battery_health()
+    if health.get("temp_c") is not None:
+        add("Temperature", "ok" if health["temp_c"] < 40 else "warn", "%.0f °C" % health["temp_c"])
+    if health.get("limit_pct") is not None:
+        add("Charge limit", "ok", "charging stops at %d%%" % health["limit_pct"])
+    tool = shutil.which("notify-send")
+    add("Notifications", "ok" if tool else "warn", "notify-send available" if tool else "notify-send missing; high-drain alerts are silent")
+    return checks
+
+
+def diagnostics_markdown(conn):
+    lines = ["# Battery diagnostics", "", "Generated %s." % time.strftime("%Y-%m-%d %H:%M"), "",
+             "| Check | Result | Detail |", "|---|---|---|"]
+    for c in diagnose(conn):
+        lines.append("| %s | %s | %s |" % (c["name"], c["status"].upper(), c["detail"]))
+    lines += ["", report_markdown(conn, 14)]
+    return "\n".join(lines)

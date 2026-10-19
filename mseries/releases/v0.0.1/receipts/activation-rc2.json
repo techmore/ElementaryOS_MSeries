@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:08:38+00:00",
+  "complete": true,
+  "passed": true,
+  "classification": "RC2 source-only STT candidate activation/static readiness; no physical-F5 acceptance",
+  "source_commit": "13a8b847ef3c754cbe37fe68686463bb2ec9f269",
+  "archive_sha256": "d5c0e9b2b36f257edf6cba6e74bb39e5870205fa2ccb6645f39e7bff66d166a5",
+  "all_16_runtime_files_match": true,
+  "installer_and_manager_match": true,
+  "machine_helper_matches": true,
+  "transcript_only_launcher": true,
+  "strict_cpu_ibus_ready": true,
+  "unverified_fallback_disabled": true,
+  "test_capture_overrides_absent": true,
+  "input_preferences_preserved": true,
+  "everyday_4b_process_preserved": true,
+  "chatgpt_not_restarted": true,
+  "speech_unit_restarted_by_owned_installer": true,
+  "versioned_private_rollback": true,
+  "resources": {
+    "available_bytes": 13683703808,
+    "max_fan_rpm": 2489.0,
+    "max_temp_c": 42.331
+  },
+  "microphone_recorded": false,
+  "asr_model_inference": false,
+  "physical_f5": "still pending full ChatGPT relaunch",
+  "published_release": false,
+  "unset_debug_environment_names": [
+    "STREAM_KEEP",
+    "STREAM_DRY",
+    "STREAM_TEST_WAV",
+    "STREAM_TEST_RAW",
+    "STREAM_TEST_INSERT",
+    "STREAM_FORCE_FALLBACK",
+    "MSERIES_INPUT_TEST_SESSION"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "status": "diagnostic initramfs and non-default manual entry staged; not armed or booted",
+  "entry_id": "elementary-aurora20-enh1-diagnostic",
+  "image": "/boot/initrd.img-7.1.12-elementary-aurora20-enh1-diagnostic",
+  "image_sha256": "b7c6a3e74e1c90d4d5925551cdfa44d41e38f1e0f83d456c4a5eb1bea9dd8c35",
+  "additional_arguments": [
+    "initcall_debug",
+    "ignore_loglevel",
+    "log_buf_len=8M",
+    "plymouth.enable=0",
+    "rd.log=kmsg|console|file"
+  ],
+  "source_commit": "387d1ec9d84b4cf051773e5a170bdfe09809a204",
+  "next_entry_empty": true,
+  "grubenv_bytes_unchanged": true,
+  "protected_file_hashes_unchanged": {
+    "/boot/vmlinuz-aurora20-enh1": "21ee66cf7b7afd0a999c8e9087411aef4b121d1ecffab88989ba5cacf1dfdaa7",
+    "/boot/initrd.img-7.1.12-elementary-aurora20-enh1": "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa",
+    "/boot/vmlinuz-aurora-sep-20261017.20": "543d1efd2dffaf621d1d7d1ba092cec71ee955903ec63c112bbcd32d921edbbd",
+    "/boot/initrd.img-7.1.12-2-20261017.20-sep-ARCH": "ea7c89aae15adc9760a64226e9834c54a62e75f3f9dddde144e08b9c26aaecf3",
+    "/boot/m1n1/boot.bin": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+    "/boot/grub/grub.cfg": "d05353d41c61263c99ddaf10042132f1ebf46abe191521c3bbd5f5ca272b5602"
+  },
+  "custom_before_sha256": "9d79aa65ecc8404e8b9f881185076dfa8f66f2dff5ab1971fd664b9f243ba4c5",
+  "custom_after_sha256": "37d3604cb642571a4887e378c3adb73f8aad397edf0fdf09bdd1b44e0d8095e8",
+  "rollback_directory": "/var/lib/mseries-kernel-tests/staging/diagnostic-20261019T003558Z",
+  "reboot_performed": false,
+  "boot_qualification": false
+}
