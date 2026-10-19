@@ -90,10 +90,11 @@ exercised in an isolated login.
 with the separate experimental session files. It derives shared-library
 dependencies and requires `gnome-session` and `gtklock`. Build it locally with
 `OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
-current package from commit `2c8422f` is saved at
-`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+git2c8422f_arm64.deb`
-(SHA-256 `613415f318dcc7c3421d7eb3823b7e2f35525a1f75201f31677646f71e3f6ce8`).
-The package is for isolated qualification; the build script does not install it.
+The locally built arm64 package from commit `df9379c` is saved at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-xwayland-release/pantheon-rust-compositor_0.1.0+gitdf9379c_arm64.deb`
+(SHA-256 `f113fc8dfe04112eb11fbebd2b8d0b4b83e264afdea24b0c42ee15caab4efc75`).
+It includes the XWayland runtime dependency and is for isolated qualification;
+the build script does not install it.
 
 ## Dock HDMI boundary
 
