@@ -155,17 +155,25 @@ requests. Installed Wingpanel 8.0.4 also connected in an isolated D-Bus/Xvfb
 run forced to Wayland. Its client trace confirms it bound the shell global,
 sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
 and attached shared-memory buffers. Wingpanel requires
-`org.gnome.Mutter.DisplayConfig`; the compositor now serves the read-only
-`GetCurrentState` query it calls, with every tracked output's current mode,
-logical position, scale, and primary status. Native outputs now list all
-connector modes reported by DRM and mark active/preferred entries; the nested
-backend reports only its current Winit size. Output add/update/remove changes
-increment the state serial and emit `MonitorsChanged`. The service remains
-read-only and does not apply monitor modes or layouts. The isolated
+`org.gnome.Mutter.DisplayConfig`; the compositor serves its `GetCurrentState`
+query with every tracked output's current mode, logical position, scale, and
+primary status. Native outputs list connector modes reported by DRM and mark
+active/preferred entries; the nested backend reports its actual Winit size.
+`ApplyMonitorsConfig` validates serials, connector assignments, mode IDs, scale
+and transform. Native DRM mode changes use Smithay's shared output manager and
+roll back earlier changes if a later mode fails. Temporary layout, scale and
+transform changes update the Wayland outputs. Method 2 saves a per-user profile
+at `$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or
+`~/.config/pantheon-rust-compositor/monitors.conf`); native startup restores
+saved modes and layout. Output disabling, mirroring, unsupported properties and
+nested Winit mode changes are rejected. Output and configuration updates
+increment the serial and emit `MonitorsChanged`. Default and native DRM builds
+compile, but no native session or live monitor change has been run from this
+development session. The isolated
 Wingpanel run no longer reports missing DisplayConfig or Shell keybinding
 services. Pressing `Super+N` in the nested window produced the registered
 `AcceleratorActivated` signal. The sound indicator's media-key registrations
 also completed without its prior D-Bus error; physical media-key activation has
 not been checked. This is evidence of panel compatibility at the
-protocol/rendering path, not full session qualification. Applying monitor
-modes, Dock behavior and M-series DRM/KMS remain unqualified.
+protocol/rendering path, not full session qualification. Monitor configuration
+runtime, Dock behavior and M-series DRM/KMS remain unqualified.

@@ -5,7 +5,7 @@
 //! device owns the physical connectors. Output allocation and scanout are
 //! attached by the native output backend built on top of this manager.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -49,7 +49,9 @@ use smithay::{
 use crate::{
     PantheonCompositor,
     cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements},
-    display_config::{OutputModeSnapshot, OutputSnapshot},
+    display_config::{
+        OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
+    },
 };
 
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
@@ -131,6 +133,126 @@ struct ConnectedOutput {
 }
 
 impl NativeKmsDevice {
+    /// Apply output modes as one transaction. Smithay coordinates the shared
+    /// DRM device while retaining rendered content for every CRTC; if a mode
+    /// fails, previously switched outputs are restored before returning.
+    pub fn apply_modes(
+        &mut self,
+        renderer: &mut NativeRenderer,
+        state: &PantheonCompositor,
+        requested: &HashMap<String, Mode>,
+    ) -> Result<(), String> {
+        let mut gpu_renderer = renderer
+            .gpus
+            .single_renderer(&renderer.render_node)
+            .map_err(|error| format!("could not activate the display renderer: {error:?}"))?;
+        let mut render_elements = DrmOutputRenderElements::<
+            NativeMultiRenderer<'_>,
+            CursorRenderElement<NativeMultiRenderer<'_>>,
+        >::new();
+        for output in &self.outputs {
+            let elements = if state.session_locked {
+                render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
+            } else {
+                let space_elements = smithay::desktop::space::space_render_elements(
+                    &mut gpu_renderer,
+                    [&state.space],
+                    &output.output,
+                    output.output.current_scale().fractional_scale() as f32,
+                )
+                .map_err(|error| format!("could not prepare current output contents: {error:?}"))?;
+                let cursor_elements =
+                    render_cursor_elements(&mut gpu_renderer, state, &output.output);
+                let mut elements = space_elements
+                    .into_iter()
+                    .map(|element| match element {
+                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                            CursorRenderElement::from(surface)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                            CursorRenderElement::from(element)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                            unreachable!("SpaceRenderElements generic catcher is never constructed")
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                elements.extend(cursor_elements);
+                elements
+            };
+            render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
+        }
+
+        let mut changes = Vec::new();
+        for output in &self.outputs {
+            let Some(mode) = requested.get(&output.output.name()) else {
+                return Err(format!("no requested mode for {}", output.output.name()));
+            };
+            let target = output
+                .modes
+                .iter()
+                .find(|drm_mode| Mode::from(**drm_mode) == *mode)
+                .copied()
+                .ok_or_else(|| {
+                    format!(
+                        "requested mode is not supported by {}",
+                        output.output.name()
+                    )
+                })?;
+            let current = output.output.current_mode().ok_or_else(|| {
+                format!("{} has no current mode to restore", output.output.name())
+            })?;
+            let original = output
+                .modes
+                .iter()
+                .find(|drm_mode| Mode::from(**drm_mode) == current)
+                .copied()
+                .ok_or_else(|| {
+                    format!(
+                        "current mode is missing from {}'s DRM inventory",
+                        output.output.name()
+                    )
+                })?;
+            if target != original {
+                changes.push((output.crtc, target, original));
+            }
+        }
+
+        let mut applied = Vec::new();
+        for (crtc, target, original) in changes {
+            let result = {
+                let mut manager = self.manager.lock();
+                manager.use_mode(&crtc, target, &mut gpu_renderer, &render_elements)
+            };
+            if let Err(error) = result {
+                let mut rollback_errors = Vec::new();
+                for (rollback_crtc, rollback_mode) in applied.into_iter().rev() {
+                    let rollback_result = {
+                        let mut manager = self.manager.lock();
+                        manager.use_mode(
+                            &rollback_crtc,
+                            rollback_mode,
+                            &mut gpu_renderer,
+                            &render_elements,
+                        )
+                    };
+                    if let Err(rollback_error) = rollback_result {
+                        rollback_errors.push(format!("{rollback_error:?}"));
+                    }
+                }
+                if rollback_errors.is_empty() {
+                    return Err(format!("DRM rejected a requested display mode: {error:?}"));
+                }
+                return Err(format!(
+                    "DRM rejected a display mode ({error:?}) and rollback also failed: {}",
+                    rollback_errors.join("; ")
+                ));
+            }
+            applied.push((crtc, original));
+        }
+        Ok(())
+    }
+
     /// Open the first usable KMS device on the active libseat and initialize
     /// every connected connector with a compatible, unclaimed CRTC. Each
     /// output receives its own scanout surface while sharing the device,
@@ -179,7 +301,7 @@ impl NativeKmsDevice {
                     &mut gpu_renderer,
                     [&state.space],
                     &output.output,
-                    1.0,
+                    output.output.current_scale().fractional_scale() as f32,
                 )?;
                 let cursor_elements =
                     render_cursor_elements(&mut gpu_renderer, state, &output.output);
@@ -329,6 +451,12 @@ impl NativeKmsDevice {
                 .unwrap_or(info.modes()[0]);
             let mode = Mode::from(drm_mode);
             let available_modes = info.modes().to_vec();
+            let preferred_mode = available_modes
+                .iter()
+                .find(|candidate| candidate.mode_type().contains(ModeTypeFlags::PREFERRED))
+                .copied()
+                .map(Mode::from)
+                .unwrap_or(mode);
             let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
             let (physical_width, physical_height) = info.size().unwrap_or((0, 0));
             let output = Output::new(
@@ -341,7 +469,10 @@ impl NativeKmsDevice {
                     serial_number: "Unknown".into(),
                 },
             );
-            output.set_preferred(mode);
+            output.set_preferred(preferred_mode);
+            for available_mode in &available_modes {
+                output.add_mode(Mode::from(*available_mode));
+            }
             output.change_current_state(Some(mode), None, None, Some((0, 0).into()));
 
             let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
@@ -405,6 +536,7 @@ impl NativeKmsDevice {
                         refresh_millihz: mode.refresh,
                         modes: output_mode_snapshots(&output.modes),
                         scale: 1.0,
+                        transform: 0,
                         x,
                         y: 0,
                         primary: index == 0,
@@ -499,6 +631,7 @@ impl NativeKmsDevice {
         let (drm, notifier) = DrmDevice::new(drm_fd.clone(), true)?;
         let gbm = GbmDevice::new(drm_fd)?;
         let resources = drm.resource_handles()?;
+        let saved_configurations = load_saved_monitor_configurations();
 
         let mut discovered = Vec::new();
         for handle in resources.connectors() {
@@ -536,12 +669,32 @@ impl NativeKmsDevice {
                 continue;
             };
             claimed_crtcs.insert(crtc);
-            let mode = connector
+            let preferred_mode = connector
                 .modes()
                 .iter()
                 .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
                 .copied()
                 .unwrap_or(connector.modes()[0]);
+            let name = format!(
+                "{}-{}",
+                connector.interface().as_str(),
+                connector.interface_id()
+            );
+            let mode = saved_configurations
+                .get(&name)
+                .and_then(|saved| {
+                    connector.modes().iter().find(|mode| {
+                        let mode = Mode::from(**mode);
+                        format!(
+                            "{}x{}@{:.3}",
+                            mode.size.w,
+                            mode.size.h,
+                            f64::from(mode.refresh) / 1000.0
+                        ) == saved.mode
+                    })
+                })
+                .copied()
+                .unwrap_or(preferred_mode);
             connected.push(ConnectedOutput {
                 connector,
                 crtc,
@@ -581,7 +734,7 @@ impl NativeKmsDevice {
             CursorRenderElement<NativeMultiRenderer<'_>>,
         >::default();
         let mut outputs = Vec::with_capacity(connected.len());
-        let mut x = 0;
+        let mut next_x = 0;
         for selected in connected {
             let mode = Mode::from(selected.mode);
             let available_modes = selected.connector.modes().to_vec();
@@ -591,6 +744,21 @@ impl NativeKmsDevice {
                 selected.connector.interface().as_str(),
                 selected.connector.interface_id()
             );
+            let saved = saved_configurations.get(&name);
+            let x = saved.map_or(next_x, |saved| saved.x);
+            let y = saved.map_or(0, |saved| saved.y);
+            let scale = saved.map_or(1.0, |saved| saved.scale);
+            let primary = saved.map_or(outputs.is_empty(), |saved| saved.primary);
+            let transform = match saved.map_or(0, |saved| saved.transform) {
+                1 => smithay::utils::Transform::_90,
+                2 => smithay::utils::Transform::_180,
+                3 => smithay::utils::Transform::_270,
+                4 => smithay::utils::Transform::Flipped,
+                5 => smithay::utils::Transform::Flipped90,
+                6 => smithay::utils::Transform::Flipped180,
+                7 => smithay::utils::Transform::Flipped270,
+                _ => smithay::utils::Transform::Normal,
+            };
             let (physical_width, physical_height) = selected.connector.size().unwrap_or((0, 0));
             let output = Output::new(
                 name.clone(),
@@ -602,8 +770,22 @@ impl NativeKmsDevice {
                     serial_number: "Unknown".into(),
                 },
             );
-            output.set_preferred(mode);
-            output.change_current_state(Some(mode), None, None, Some((x, 0).into()));
+            let preferred_mode = available_modes
+                .iter()
+                .find(|candidate| candidate.mode_type().contains(ModeTypeFlags::PREFERRED))
+                .copied()
+                .map(Mode::from)
+                .unwrap_or(mode);
+            output.set_preferred(preferred_mode);
+            for available_mode in &available_modes {
+                output.add_mode(Mode::from(*available_mode));
+            }
+            output.change_current_state(
+                Some(mode),
+                Some(transform),
+                Some(smithay::output::Scale::Fractional(scale)),
+                Some((x, y).into()),
+            );
 
             let drm_output = match manager.lock().initialize_output(
                 selected.crtc,
@@ -622,7 +804,7 @@ impl NativeKmsDevice {
             };
 
             let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
-            state.space.map_output(&output, (x, 0));
+            state.space.map_output(&output, (x, y));
             state.display_config.update(OutputSnapshot {
                 connector: name.clone(),
                 vendor: "Apple".into(),
@@ -632,12 +814,13 @@ impl NativeKmsDevice {
                 height: mode.size.h,
                 refresh_millihz: mode.refresh,
                 modes: mode_snapshots,
-                scale: 1.0,
+                scale,
+                transform: transform_to_dbus(transform),
                 x,
-                y: 0,
-                primary: outputs.is_empty(),
+                y,
+                primary,
             });
-            x += mode.size.w;
+            next_x = next_x.max(x + (mode.size.w as f64 / scale).round() as i32);
             outputs.push(NativeKmsOutput {
                 connector: selected.connector.handle(),
                 crtc: selected.crtc,

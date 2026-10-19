@@ -1,12 +1,16 @@
 use std::collections::{HashMap, HashSet};
-use std::{ffi::OsString, sync::Arc};
+use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
     backend::renderer::element::memory::MemoryRenderBuffer,
     desktop::{PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
-        calloop::{EventLoop, Interest, LoopSignal, Mode, PostAction, generic::Generic},
+        calloop::{
+            EventLoop, Interest, LoopSignal, Mode, PostAction,
+            generic::Generic,
+            timer::{TimeoutAction, Timer},
+        },
         wayland_server::{
             Display, DisplayHandle,
             backend::{ClientData, ClientId, DisconnectReason},
@@ -26,7 +30,10 @@ use smithay::{
 };
 
 use crate::cursor::default_cursor_buffer;
-use crate::display_config::DisplayConfigHandle;
+use crate::display_config::{
+    ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
+    SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
+};
 #[cfg(feature = "native-drm")]
 use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
@@ -109,7 +116,17 @@ impl PantheonCompositor {
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
-        let display_config = DisplayConfigHandle::start();
+        let (display_config, apply_requests) = DisplayConfigHandle::start();
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_millis(25)),
+            move |_, _, state| {
+                while let Ok(request) = apply_requests.try_recv() {
+                    let result = state.apply_display_configuration(&request);
+                    let _ = request.response.send(result);
+                }
+                TimeoutAction::ToDuration(Duration::from_millis(25))
+            },
+        )?;
 
         // A seat is a group of keyboards, pointer and touch devices.
         // A seat typically has a pointer and maintains a keyboard focus and a pointer focus.
@@ -181,6 +198,179 @@ impl PantheonCompositor {
         if let Some(sender) = &self.native_redraw_sender {
             let _ = sender.send(());
         }
+    }
+
+    fn apply_display_configuration(&mut self, request: &ApplyRequest) -> Result<(), String> {
+        if request.logical_monitors.is_empty() {
+            return Err("at least one logical monitor is required".into());
+        }
+        if self.session_locked {
+            return Err("monitor configuration cannot change while the session is locked".into());
+        }
+
+        let outputs = self.space.outputs().cloned().collect::<Vec<_>>();
+        if request.logical_monitors.len() != outputs.len() {
+            return Err("disabling outputs and monitor mirroring are not supported yet".into());
+        }
+
+        let mut configurations = HashMap::new();
+        let mut saved_configurations = Vec::new();
+        let mut primary_count = 0;
+        for (x, y, scale, transform, primary, monitors, properties) in &request.logical_monitors {
+            if !scale.is_finite() || !(0.5..=4.0).contains(scale) {
+                return Err("monitor scale must be between 0.5 and 4.0".into());
+            }
+            if !properties.is_empty() {
+                return Err("logical monitor properties are not supported".into());
+            }
+            let transform_value = *transform;
+            let transform = match transform_value {
+                0 => smithay::utils::Transform::Normal,
+                1 => smithay::utils::Transform::_90,
+                2 => smithay::utils::Transform::_180,
+                3 => smithay::utils::Transform::_270,
+                4 => smithay::utils::Transform::Flipped,
+                5 => smithay::utils::Transform::Flipped90,
+                6 => smithay::utils::Transform::Flipped180,
+                7 => smithay::utils::Transform::Flipped270,
+                _ => return Err(format!("unknown monitor transform {transform_value}")),
+            };
+            if monitors.len() != 1 {
+                return Err("mirrored monitor groups are not supported yet".into());
+            }
+            let (connector, mode_id, monitor_properties) = &monitors[0];
+            if !monitor_properties.is_empty() {
+                return Err("monitor configuration properties are not supported".into());
+            }
+            let Some(output) = outputs.iter().find(|output| output.name() == *connector) else {
+                return Err(format!("monitor {connector} is no longer connected"));
+            };
+            let Some(mode) = output.modes().into_iter().find(|mode| {
+                format!(
+                    "{}x{}@{:.3}",
+                    mode.size.w,
+                    mode.size.h,
+                    f64::from(mode.refresh) / 1000.0
+                ) == *mode_id
+            }) else {
+                return Err(format!("mode {mode_id} is unavailable on {connector}"));
+            };
+            if configurations
+                .insert(
+                    connector.clone(),
+                    (*x, *y, *scale, transform, *primary, mode),
+                )
+                .is_some()
+            {
+                return Err(format!("monitor {connector} appears more than once"));
+            }
+            if *primary {
+                primary_count += 1;
+            }
+            saved_configurations.push(SavedMonitorConfiguration {
+                connector: connector.clone(),
+                mode: mode_id.clone(),
+                x: *x,
+                y: *y,
+                scale: *scale,
+                transform: transform_value,
+                primary: *primary,
+            });
+        }
+        if configurations.len() != outputs.len() {
+            return Err("every connected output must appear exactly once".into());
+        }
+        if primary_count != 1 {
+            return Err("exactly one primary monitor is required".into());
+        }
+
+        if request.method == 0 {
+            return Ok(());
+        }
+
+        let requested_modes = configurations
+            .iter()
+            .map(|(name, (_, _, _, _, _, mode))| (name.clone(), *mode))
+            .collect::<HashMap<_, _>>();
+        if outputs
+            .iter()
+            .any(|output| output.current_mode() != requested_modes.get(&output.name()).copied())
+        {
+            #[cfg(feature = "native-drm")]
+            {
+                let Some(mut backend) = self.native_backend.take() else {
+                    return Err("the nested backend cannot change display modes".into());
+                };
+                let result = backend
+                    .kms
+                    .apply_modes(&mut backend.renderer, self, &requested_modes);
+                self.native_backend = Some(backend);
+                result?;
+            }
+            #[cfg(not(feature = "native-drm"))]
+            return Err("this build cannot change native display modes".into());
+        }
+
+        let mut snapshots = Vec::with_capacity(outputs.len());
+        for output in outputs {
+            let (x, y, scale, transform, primary, mode) = configurations[&output.name()];
+            output.change_current_state(
+                Some(mode),
+                Some(transform),
+                Some(smithay::output::Scale::Fractional(scale)),
+                Some((x, y).into()),
+            );
+            self.space.map_output(&output, (x, y));
+            let physical = output.physical_properties();
+            snapshots.push(OutputSnapshot {
+                connector: output.name(),
+                vendor: physical.make,
+                product: physical.model,
+                serial: physical.serial_number,
+                width: mode.size.w,
+                height: mode.size.h,
+                refresh_millihz: mode.refresh,
+                modes: output
+                    .modes()
+                    .into_iter()
+                    .map(|mode| OutputModeSnapshot {
+                        width: mode.size.w,
+                        height: mode.size.h,
+                        refresh_millihz: mode.refresh,
+                        preferred: output.preferred_mode() == Some(mode),
+                    })
+                    .collect(),
+                scale,
+                transform: transform_to_dbus(transform),
+                x,
+                y,
+                primary,
+            });
+        }
+        self.display_config.update_many(snapshots);
+
+        self.last_work_area = None;
+        let panels = self
+            .space
+            .elements()
+            .filter_map(|window| {
+                let surface = window.toplevel()?.wl_surface();
+                self.is_panel_surface(surface).then(|| surface.clone())
+            })
+            .collect::<Vec<_>>();
+        for panel in panels {
+            self.update_panel(&panel, |_| {});
+        }
+        self.reconfigure_managed_windows();
+        self.space.refresh();
+        let _ = self.display_handle.flush_clients();
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+        if request.method == 2 {
+            save_monitor_configurations(&saved_configurations)
+                .map_err(|error| format!("could not save monitor configuration: {error}"))?;
+        }
+        Ok(())
     }
 
     fn init_wayland_listener(

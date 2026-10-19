@@ -84,11 +84,17 @@ its anchor/size/offset, reserves exclusive panel geometry, and updates already
 maximized windows when that work area changes. The last local `cargo check`
 and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
-Wayland session and rendered SHM buffers. The prototype serves the read-only
+Wayland session and rendered SHM buffers. The prototype serves the
 `org.gnome.Mutter.DisplayConfig.GetCurrentState` query Wingpanel uses, and
-Wingpanel completes that call. Native `GetCurrentState` now lists the modes
-reported by each DRM connector and marks current/preferred modes; it remains
-read-only and cannot apply mode, layout, scale or transform changes. It also
+Wingpanel completes that call. Native `GetCurrentState` lists connector modes
+reported by DRM and marks current/preferred modes. `ApplyMonitorsConfig` now
+validates serials, output assignments, mode IDs, scale and transform. Native
+mode changes use Smithay's shared output manager with rollback; temporary
+layout, scale and transform changes update Wayland outputs. Method 2 saves a
+per-user profile and native startup restores saved modes and layout. Disabling
+outputs, mirroring, unsupported properties and nested Winit mode changes are
+rejected. Both default and native DRM builds compile; runtime changes on the
+active M-series display remain unqualified. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
 `Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,

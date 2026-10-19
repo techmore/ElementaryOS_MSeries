@@ -5603,3 +5603,27 @@ is not implemented, mode changes and layout application remain unavailable,
 and no live display configuration was changed. Next: validate connector mode
 IDs against Pantheon Settings, then implement verified apply/rollback on the
 native KMS outputs.
+
+### Apply monitor configuration on the compositor thread — 2026-10-19
+
+Implemented `ApplyMonitorsConfig` on the DisplayConfig compatibility service.
+Requests validate the state serial, require each connected output exactly once,
+check mode IDs and scale/transform values, and reject unsupported mirroring,
+output disabling and per-monitor properties. Verify-only requests do not alter
+state. Temporary and persistent requests update output positions, scales,
+transforms and mode state; the nested Winit backend rejects mode changes.
+Native mode changes use Smithay's shared DRM output manager with rendered
+contents supplied for every CRTC, and roll back modes already switched if a
+later request fails. Persistent requests are written atomically to
+`$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or the user's
+`~/.config`) and native startup restores saved mode/layout values. The
+`MonitorsChanged` update is batched for a complete apply operation.
+
+Local verification: `cargo check -p pantheon-compositor --bin
+pantheon-compositor` and the same command with `--features native-drm` both
+pass; touched Rust files pass `rustfmt --check`; `git diff --check` passes.
+No native session, mode switch, or live output reconfiguration was attempted,
+so DRM behavior and settings-client round trips remain runtime-unqualified.
+Next: validate the D-Bus request against Pantheon Settings in an isolated
+nested session, then qualify mode rollback and persistent startup on hardware
+without replacing the active compositor until a recovery path is ready.

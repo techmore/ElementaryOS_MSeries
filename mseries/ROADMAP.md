@@ -29,7 +29,13 @@ and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
 service. The prototype now returns its read-only `GetCurrentState` query using
 all tracked output modes and logical positions, and increments the state serial
 on output add/update/remove before emitting `MonitorsChanged`; Wingpanel connects without the
-missing-service error. The compositor now serves Wingpanel's `org.gnome.Shell`
+missing-service error. `ApplyMonitorsConfig` validates connector assignments,
+mode IDs, scale and transform, applies native DRM mode changes through Smithay's
+shared output manager with rollback, and applies temporary layout changes.
+Method 2 saves a per-user monitor profile and native startup restores it.
+Disabling outputs, mirroring, unsupported properties and nested Winit mode
+changes are rejected. Both default and native DRM builds compile; live native
+mode changes remain unqualified. The compositor now serves Wingpanel's `org.gnome.Shell`
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now

@@ -12,7 +12,9 @@ use smithay::{
 
 use crate::PantheonCompositor;
 use crate::cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements};
-use crate::display_config::{OutputModeSnapshot, OutputSnapshot};
+use crate::display_config::{
+    OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
+};
 
 pub fn init_winit(
     event_loop: &mut EventLoop<PantheonCompositor>,
@@ -36,15 +38,29 @@ pub fn init_winit(
         },
     );
     let _global = output.create_global::<PantheonCompositor>(&state.display_handle);
+    let saved = load_saved_monitor_configurations().remove("winit");
+    let x = saved.as_ref().map_or(0, |saved| saved.x);
+    let y = saved.as_ref().map_or(0, |saved| saved.y);
+    let scale = saved.as_ref().map_or(1.0, |saved| saved.scale);
+    let transform = match saved.as_ref().map_or(7, |saved| saved.transform) {
+        0 => Transform::Normal,
+        1 => Transform::_90,
+        2 => Transform::_180,
+        3 => Transform::_270,
+        4 => Transform::Flipped,
+        5 => Transform::Flipped90,
+        6 => Transform::Flipped180,
+        _ => Transform::Flipped270,
+    };
     output.change_current_state(
         Some(mode),
-        Some(Transform::Flipped180),
-        None,
-        Some((0, 0).into()),
+        Some(transform),
+        Some(smithay::output::Scale::Fractional(scale)),
+        Some((x, y).into()),
     );
     output.set_preferred(mode);
 
-    state.space.map_output(&output, (0, 0));
+    state.space.map_output(&output, (x, y));
     state.display_config.update(OutputSnapshot {
         connector: "winit".into(),
         vendor: "Smithay".into(),
@@ -59,9 +75,10 @@ pub fn init_winit(
             refresh_millihz: mode.refresh,
             preferred: true,
         }],
-        scale: 1.0,
-        x: 0,
-        y: 0,
+        scale: output.current_scale().fractional_scale(),
+        transform: transform_to_dbus(output.current_transform()),
+        x: output.current_location().x,
+        y: output.current_location().y,
         primary: true,
     });
 
@@ -98,9 +115,10 @@ pub fn init_winit(
                             refresh_millihz: mode.refresh,
                             preferred: true,
                         }],
-                        scale: 1.0,
-                        x: 0,
-                        y: 0,
+                        scale: output.current_scale().fractional_scale(),
+                        transform: transform_to_dbus(output.current_transform()),
+                        x: output.current_location().x,
+                        y: output.current_location().y,
                         primary: true,
                     });
                 }
@@ -134,7 +152,7 @@ pub fn init_winit(
                                 &output,
                                 renderer,
                                 &mut framebuffer,
-                                1.0,
+                                output.current_scale().fractional_scale() as f32,
                                 0,
                                 [&state.space],
                                 &cursor_elements,

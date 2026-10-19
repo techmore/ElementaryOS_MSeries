@@ -11,13 +11,14 @@ LGPL-2.1-or-later. This copy advertises protocol version 2 and includes the
 M-series `set_offset` request already used by this repository's Gala/Dock
 patches. The source XML retains its copyright and SPDX notice.
 
-The read-only `org.gnome.Mutter.DisplayConfig.GetCurrentState` compatibility
-reply follows the public D-Bus contract in GNOME Mutter's
+The `org.gnome.Mutter.DisplayConfig` compatibility interface follows the public
+D-Bus contract in GNOME Mutter's
 `data/dbus-interfaces/org.gnome.Mutter.DisplayConfig.xml`
 (<https://gitlab.gnome.org/GNOME/mutter/-/blob/gnome-46/data/dbus-interfaces/org.gnome.Mutter.DisplayConfig.xml>).
-The Rust implementation is a fresh subset for Wingpanel's current read-only
-layout query; it does not copy Mutter implementation code or provide mode
-application.
+The Rust implementation is original code for the current output inventory and
+the supported subset of `ApplyMonitorsConfig`; it does not copy Mutter
+implementation code. Mirroring, output disabling, and other unsupported
+configuration properties return errors.
 
 The `org.gnome.Shell` accelerator compatibility surface follows the client
 interfaces in elementary/Wingpanel `lib/KeybindingHelper.vala` at
