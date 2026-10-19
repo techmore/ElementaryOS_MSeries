@@ -42,8 +42,10 @@ but has not been runtime-qualified.
 
 The configured primary connector is retained from monitor profiles and
 `ApplyMonitorsConfig`; native hotplug preserves it while connected, then falls
-back to the internal panel or first available output. Fallback placement and
-hotplug primary selection remain runtime-unqualified.
+back to the internal panel or first available output. Native hotplug also keeps
+the positions of outputs that remain connected and places newly discovered
+outputs beyond the current layout. Fallback placement and hotplug behavior
+remain runtime-unqualified.
 
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That

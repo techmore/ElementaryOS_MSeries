@@ -5672,3 +5672,17 @@ raises it and focuses it; destroying a minimized toplevel drops the retained
 entry. Default and `native-drm` compositor builds pass. This code has not been
 exercised with an app client; task-switcher discovery and runtime restoration
 remain unverified.
+
+### Preserve output layout during native hotplug — 2026-10-19
+
+Native connector reconciliation now captures existing logical output
+positions before removing disconnected outputs. Connected outputs retain those
+positions; newly discovered outputs are added to the right of the current
+layout, with their logical width accounting for scale. Connector snapshots
+retain the matching x/y positions and scale. This avoids resetting a user's
+multi-monitor arrangement whenever a connector changes. Local default
+`cargo check`/`cargo build` and the `native-drm` build pass. A repository-wide
+`cargo fmt --check` still reports unrelated formatting differences in
+`mseries-power` and `grabs/resize_grab.rs`; the touched native compositor
+source was formatted directly. No display session was launched and hotplug
+behavior remains unqualified on hardware.

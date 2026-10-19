@@ -382,6 +382,19 @@ impl NativeKmsDevice {
                 info.interface_id(),
             )
         });
+        // Keep the user's current layout for outputs that remain connected.
+        // Repacking every connector from x=0 here would silently erase a
+        // configured vertical or offset arrangement on any hotplug.
+        let existing_locations = self
+            .outputs
+            .iter()
+            .filter_map(|output| {
+                state
+                    .space
+                    .output_geometry(&output.output)
+                    .map(|geometry| (output.output.name(), geometry.loc))
+            })
+            .collect::<HashMap<_, _>>();
         let disconnected = self
             .outputs
             .iter()
@@ -536,31 +549,51 @@ impl NativeKmsDevice {
                 })
                 .or_else(|| self.outputs.first().map(|output| output.output.name()));
             state.primary_output_name = primary_output_name.clone();
-            let mut x = 0;
+            let mut next_x = state
+                .space
+                .outputs()
+                .filter_map(|output| state.space.output_geometry(output))
+                .map(|geometry| geometry.loc.x + geometry.size.w)
+                .max()
+                .unwrap_or(0);
             for output in &self.outputs {
-                state.space.map_output(&output.output, (x, 0));
+                let name = output.output.name();
+                let location = existing_locations.get(&name).copied().unwrap_or_else(|| {
+                    let location = (next_x, 0).into();
+                    if let Some(mode) = output.output.current_mode() {
+                        let scale = output.output.current_scale().fractional_scale() as f64;
+                        next_x += (mode.size.w as f64 / scale).round() as i32;
+                    }
+                    location
+                });
+                output
+                    .output
+                    .change_current_state(None, None, None, Some(location));
+                state.space.map_output(&output.output, location);
                 state.track_output_for_lock(&output.output);
                 if let Some(mode) = output.output.current_mode() {
-                    output
-                        .output
-                        .change_current_state(None, None, None, Some((x, 0).into()));
+                    let scale = output.output.current_scale().fractional_scale() as f64;
+                    let scale = if scale.is_finite() && scale > 0.0 {
+                        scale
+                    } else {
+                        1.0
+                    };
                     state.display_config.update(OutputSnapshot {
-                        connector: output.output.name(),
+                        connector: name.clone(),
                         vendor: "Apple".into(),
-                        product: output.output.name(),
+                        product: name,
                         serial: "Unknown".into(),
                         width: mode.size.w,
                         height: mode.size.h,
                         refresh_millihz: mode.refresh,
                         modes: output_mode_snapshots(&output.modes),
-                        scale: 1.0,
+                        scale,
                         transform: 0,
-                        x,
-                        y: 0,
+                        x: location.x,
+                        y: location.y,
                         primary: primary_output_name.as_deref()
                             == Some(output.output.name().as_str()),
                     });
-                    x += mode.size.w;
                 }
             }
 
