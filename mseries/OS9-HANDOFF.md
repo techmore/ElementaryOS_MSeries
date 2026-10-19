@@ -35,6 +35,32 @@ question is unverified), or (c) hold the CLI at v0.77.0 until upstream rebuilds.
 Also still owner-gated: the interactive `grok login` that gives the Grok card
 live credits — and that needs the CLI running first.
 
+### CodexBar CLI libxml2 shim — 2026-10-19 (resolved the same day)
+
+Option (b) was implemented and verified. `codexbar_install_cli_compat` in
+`mseries/lib-codexbar.sh` (called from `codexbar_install_helpers` and after the
+install-time rename) resolves the old soname from
+`~/.local/lib/codexbar-cli/compat/libxml2.so.2` and routes
+`codexbar-upstream` through a wrapper that points the loader there. The ABI
+question is answered empirically: the CLI runs correctly against libxml2 2.14
+for the paths the port check exercises. The shim is a no-op when the system
+provides `libxml2.so.2`, and the wrapper states when to delete it. The real
+binary's name is remembered in `codexbar-upstream.real` so reinstalls stay
+idempotent.
+
+The wrapper replaces the `codexbar-upstream` symlink, so the path is removed
+before the redirect — writing through that symlink truncates the real binary,
+which happened once during testing and was repaired by re-extracting the
+checksum-verified v0.78.0 tarball. No other component was affected (the panel
+module and desktop app do not use this binary).
+
+**Port check now passes end to end:** upstream CLI 0.78.0, `--all-accounts` and
+`--account` present, codex usage runs, `CODEX_HOME` honored, grok provider
+listed, **grok usage reports a credits window**, grok in the panel's provider
+order, and all helper tests. The remaining upstream item is reporting the
+soname break to steipete/CodexBar (owner's call; v0.78.0 is the latest
+release).
+
 ## CodexBar production hardening + Grok Build; upstream v0.78.0 — 2026-10-19 (Claude Code)
 
 **Pin:** `install-codexbar.sh` now pins upstream **v0.78.0** (was v0.77.0). Both Linux aarch64
