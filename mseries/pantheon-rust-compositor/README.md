@@ -89,9 +89,12 @@ This branch is **not yet ready to use as an experimental Pantheon session**.
 The nested backend is suitable for development and controlled protocol
 qualification, and the ARM64 `native-drm` package builds on the M-series host.
 Neither result demonstrates that the session can replace Gala. No isolated
-native login has been run, so actual scanout, keyboard/pointer input, app
-launch, IBus text commits, panel/dock behavior, lock/unlock and crash recovery
-are still unknown. Keep Gala selected and use the Rust compositor only in an
+native login has been run, so actual scanout, native keyboard/pointer input,
+application launch, IBus text commits, Dock behavior, lock/unlock and crash
+recovery are still unknown. Installed Wingpanel now binds the shell protocol
+and attaches shared-memory panel buffers in an isolated Xvfb run, but its
+keyboard module emits a critical assertion there; that does not qualify full
+panel behavior. Keep Gala selected and use the Rust compositor only in an
 explicitly isolated qualification session after its prerequisites are checked.
 
 The next gate is staged nested qualification with real GTK/Qt clients and the
