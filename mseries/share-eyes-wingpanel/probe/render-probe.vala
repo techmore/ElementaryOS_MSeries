@@ -1,8 +1,9 @@
 /* Headless: shows the indicator (panel widget + popover content) and snapshots both to PNGs. args: out-prefix [create-link] */
 int main (string[] args) {
     Gtk.init ();
+    Granite.init ();
     var ind = new MSeries.SharePanel () { notify_waiting = GLib.Environment.get_variable ("SHARE_NOTIFY") == "1", always_visible = true };
-    var w = new Gtk.Window ();
+    var w = new Gtk.Window () { default_width = int.parse (GLib.Environment.get_variable ("PROBE_W") ?? "0") };
     var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) { margin_start = 20, margin_end = 20, margin_top = 10, margin_bottom = 10 };
     
     box.append (ind);

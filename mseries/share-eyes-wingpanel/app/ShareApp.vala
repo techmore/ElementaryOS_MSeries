@@ -24,6 +24,7 @@ public class ShareApp : Gtk.Application {
             win.present ();
             return;
         }
+        Granite.init ();
         panel = new MSeries.SharePanel ();
         panel.margin_start = 6; panel.margin_end = 6; panel.margin_top = 6; panel.margin_bottom = 8;
         var header = new Gtk.HeaderBar ();
