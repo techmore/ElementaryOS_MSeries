@@ -29,7 +29,9 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && state.shell_compat.activate_key(keysym.modified_sym(), modifiers)
+                            && state
+                                .shell_compat
+                                .activate_key(keysym.modified_sym(), modifiers)
                         {
                             FilterResult::Intercept(())
                         } else {
@@ -78,11 +80,21 @@ impl PantheonCompositor {
                 pointer.frame(self);
             }
             InputEvent::PointerMotionAbsolute { event, .. } => {
-                let output = self.space.outputs().next().unwrap();
+                // Absolute devices report normalized coordinates. Map them over
+                // the complete logical desktop so a multi-output layout does
+                // not constrain the device to whichever output happens to be
+                // first in Space's iterator.
+                let Some(desktop_bounds) = self
+                    .space
+                    .outputs()
+                    .filter_map(|output| self.space.output_geometry(output))
+                    .reduce(|bounds, output| bounds.merge(output))
+                else {
+                    return;
+                };
 
-                let output_geo = self.space.output_geometry(output).unwrap();
-
-                let pos = event.position_transformed(output_geo.size) + output_geo.loc.to_f64();
+                let pos =
+                    event.position_transformed(desktop_bounds.size) + desktop_bounds.loc.to_f64();
 
                 let serial = SERIAL_COUNTER.next_serial();
 
@@ -150,12 +162,12 @@ impl PantheonCompositor {
             InputEvent::PointerAxis { event, .. } => {
                 let source = event.source();
 
-                let horizontal_amount = event
-                    .amount(Axis::Horizontal)
-                    .unwrap_or_else(|| event.amount_v120(Axis::Horizontal).unwrap_or(0.0) * 15.0 / 120.);
-                let vertical_amount = event
-                    .amount(Axis::Vertical)
-                    .unwrap_or_else(|| event.amount_v120(Axis::Vertical).unwrap_or(0.0) * 15.0 / 120.);
+                let horizontal_amount = event.amount(Axis::Horizontal).unwrap_or_else(|| {
+                    event.amount_v120(Axis::Horizontal).unwrap_or(0.0) * 15.0 / 120.
+                });
+                let vertical_amount = event.amount(Axis::Vertical).unwrap_or_else(|| {
+                    event.amount_v120(Axis::Vertical).unwrap_or(0.0) * 15.0 / 120.
+                });
                 let horizontal_amount_discrete = event.amount_v120(Axis::Horizontal);
                 let vertical_amount_discrete = event.amount_v120(Axis::Vertical);
 

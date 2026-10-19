@@ -5387,3 +5387,14 @@ it does not change the separate DCP/kernel diagnosis for dock HDMI G3. Native
 session startup remains unwired and no modesetting has been attempted. Next:
 build the optional native path around Smithay's multi-GPU renderer and validate
 it without taking over the active desktop.
+
+### Absolute pointer mapping — 2026-10-18
+
+Absolute pointer events previously mapped normalized coordinates against only
+the first output in Smithay `Space`. They now map against the union of logical
+output geometries, matching relative-pointer desktop bounds and allowing
+coordinates to reach secondary outputs. `rustfmt --edition 2024` on the changed
+file, `cargo check --bins`, and `cargo check --features native-drm --bins` pass
+on the M1 Pro build host. This is compile evidence only; no absolute-input
+device or multi-output runtime check was run. The pinned Smithay input and
+multi-GPU paths remain the next focus; native session startup is still absent.
