@@ -28,7 +28,11 @@ launches. After readiness, `dbus-update-activation-environment --systemd`
 publishes `WAYLAND_DISPLAY` to both D-Bus and the user manager, then the service
 queues `xdg-desktop-portal.service` asynchronously. This addresses a native
 handoff where early portal activation was skipped while the display variable
-was unset; the ordering change is staged and still needs native qualification.
+was unset. Package `0.1.0+git02447cb` passed one native ordering qualification:
+the portal service and its configured providers started within about one second
+of compositor readiness, without the previous 120-second activation timeout.
+The GNOME portal backend still warns that Mutter's private `ServiceChannel` is
+unavailable; dialogs and screen sharing are not qualified.
 
 The experimental service retries an unexpected compositor failure, with a
 two-second delay and a limit of three starts within one minute. Once the limit
@@ -47,9 +51,13 @@ Wingpanel service ran; the Dock service honored the existing user opt-out
 marker. The owner reported slow startup, and native panel appearance was not
 visually confirmed. The five-minute LightDM rollback returned to Gala. Portal
 clients timed out after activation was skipped before `WAYLAND_DISPLAY` was
-published, and native IBus portal activation failed. App behavior, lock/logout,
-crash recovery, external displays, and portal/IBus behavior remain unqualified.
-Keep Gala as the rollback session while these gates are addressed.
+published, and native IBus portal activation failed. A subsequent
+`0.1.0+git02447cb` login fixed that activation ordering; portal services and
+IBus started, and the user reported the session felt responsive. Its first
+DRM page-flip attempt returned `Device or resource busy` but the session stayed
+active. Native IBus text commit, GNOME portal functions, panel appearance,
+lock/logout, crash recovery and external displays remain unqualified. Keep Gala
+as the rollback session while these gates are addressed.
 
 The default desktop shell entries in `/etc/xdg/io.elementary.desktop.wm.shell`
 name `io.elementary.wingpanel` and `io.elementary.dock`. The experimental

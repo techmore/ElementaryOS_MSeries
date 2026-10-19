@@ -122,6 +122,15 @@ native startup, internal-panel scanout and automatic rollback only; native
 keyboard/pointer workflows, complete shell integration, external displays,
 wallpaper after the new renderer, lock/unlock and compositor-failure recovery remain open.
 
+A later qualification using package `0.1.0+git02447cb` confirmed that
+compositor readiness now publishes the Wayland display before portal startup:
+the portal service and providers came up within about one second, and IBus
+started without the previous 120-second activation timeout. The user reported
+the session felt responsive. This run still logged one initial DRM page-flip
+`Device or resource busy` error and a missing Mutter `ServiceChannel` warning
+from the GNOME portal backend. It does not qualify portal dialogs, screen
+sharing, native text commits, or a performance/power improvement over Gala.
+
 In private Xvfb, the release binary launched a GTK Wayland Zenity field;
 synthetic key events reached it, and IBus/Mozc committed `konnichiha` as
 `こんにちは` using `mozc-jp` with Hiragana enabled in a private profile. This

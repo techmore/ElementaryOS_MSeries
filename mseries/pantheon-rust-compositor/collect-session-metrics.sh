@@ -49,28 +49,30 @@ read_rss_kib() {
 }
 
 battery_sample() {
-  local supply
-  for supply in /sys/class/power_supply/BAT*; do
-    [[ -d $supply ]] || continue
-    local power capacity
-    power=NA
-    capacity=NA
-    if [[ -r $supply/power_now ]]; then
-      power=$(( $(<"$supply/power_now") / 1000 ))
-    elif [[ -r $supply/current_now && -r $supply/voltage_now ]]; then
-      power=$(( $(<"$supply/current_now") * $(<"$supply/voltage_now") / 1000000000 ))
-    fi
-    [[ -r $supply/capacity ]] && capacity=$(<"$supply/capacity")
-    echo "$power,$capacity"
-    return
+  local supply battery= status=NA power=NA capacity=NA ac_online=NA
+  for supply in /sys/class/power_supply/*; do
+    [[ -r $supply/type ]] || continue
+    case $(<"$supply/type") in
+      Battery) battery=$supply ;;
+      Mains) [[ -r $supply/online ]] && ac_online=$(<"$supply/online") ;;
+    esac
   done
-  echo "NA,NA"
+  if [[ -n $battery ]]; then
+    [[ -r $battery/status ]] && status=$(<"$battery/status")
+    if [[ -r $battery/power_now ]]; then
+      power=$(( $(<"$battery/power_now") / 1000 ))
+    elif [[ -r $battery/current_now && -r $battery/voltage_now ]]; then
+      power=$(( $(<"$battery/current_now") * $(<"$battery/voltage_now") / 1000000000 ))
+    fi
+    [[ -r $battery/capacity ]] && capacity=$(<"$battery/capacity")
+  fi
+  echo "$power,$status,$ac_online,$capacity"
 }
 
 sample_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 printf '# session=%s workload=%s display_mode=%s duration_s=%s interval_s=%s started_utc=%s\n' \
   "$session" "$workload" "$display_mode" "$duration" "$interval" "$sample_utc"
-printf 'utc,session,workload,display_mode,pid,process,cpu_percent_one_core,ram_kib,elapsed_s,battery_power_mw,battery_percent\n'
+printf 'utc,session,workload,display_mode,pid,process,cpu_percent_one_core,ram_kib,elapsed_s,battery_flow_mw,battery_status,ac_online,battery_percent\n'
 
 while read -r pid comm; do
   [[ -n ${pid:-} ]] || continue
@@ -89,8 +91,7 @@ while :; do
   now=$(date +%s)
   elapsed=$((now - start_epoch))
   battery=$(battery_sample)
-  battery_power=${battery%,*}
-  battery_percent=${battery#*,}
+  IFS=, read -r battery_power battery_status ac_online battery_percent <<< "$battery"
   sample_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   while read -r pid comm; do
     [[ -n ${pid:-} ]] || continue
@@ -103,9 +104,9 @@ while :; do
       cpu=NA
     fi
     rss=$(read_rss_kib "$pid")
-    printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+    printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
       "$sample_utc" "$session" "$workload" "$display_mode" "$pid" "$comm" "$cpu" "$rss" "$elapsed" \
-      "$battery_power" "$battery_percent"
+      "$battery_power" "$battery_status" "$ac_online" "$battery_percent"
     start_ticks[$pid]=$ticks
   done < <(process_list)
   (( now >= end_epoch )) && break

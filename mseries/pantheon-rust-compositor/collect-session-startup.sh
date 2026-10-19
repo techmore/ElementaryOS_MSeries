@@ -43,7 +43,7 @@ journalctl --user -b -o short-monotonic --no-pager \
   -u io.elementary.files.xdg-desktop-portal.service \
   -u xdg-desktop-portal-gnome.service \
   -u org.freedesktop.IBus.session.GNOME.service \
-  | grep -Ei 'Starting |Started |Stopped |Reached target |Failed|timed out|skipped|READY|Created new socket|Loaded Keymap|wallpaper|Creating new Output|GL Renderer|drm surface' \
+  | grep -Ei 'Starting |Started |Stopped |Reached target |Failed|timed out|skipped|READY|Created new socket|Loaded Keymap|wallpaper|Creating new Output|GL Renderer|drm surface|Pantheon panel surface requested|first Pantheon panel buffer committed' \
   || true
 
 printf '\n## Current login session\n'

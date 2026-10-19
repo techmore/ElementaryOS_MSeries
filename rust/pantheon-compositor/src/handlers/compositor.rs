@@ -8,8 +8,8 @@ use smithay::{
     wayland::{
         buffer::BufferHandler,
         compositor::{
-            CompositorClientState, CompositorHandler, CompositorState, get_parent,
-            is_sync_subsurface,
+            BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
+            SurfaceAttributes, get_parent, is_sync_subsurface, with_states,
         },
         shm::{ShmHandler, ShmState},
     },
@@ -34,6 +34,16 @@ impl CompositorHandler for PantheonCompositor {
     }
 
     fn commit(&mut self, surface: &WlSurface) {
+        if self.is_panel_surface(surface) {
+            let has_buffer = with_states(surface, |states| {
+                let mut attributes = states.cached_state.get::<SurfaceAttributes>();
+                matches!(
+                    attributes.current().buffer.as_ref(),
+                    Some(BufferAssignment::NewBuffer(_))
+                )
+            });
+            self.note_panel_buffer_commit(surface, has_buffer);
+        }
         on_commit_buffer_handler::<Self>(surface);
         if !is_sync_subsurface(surface) {
             let mut root = surface.clone();

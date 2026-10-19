@@ -56,6 +56,8 @@ pub struct PanelState {
     /// Whether the compositor has moved this panel out of view for its hide mode.
     pub hidden: bool,
     pub visible_in_multitasking_view: bool,
+    /// Whether this panel has committed its first non-null buffer this session.
+    pub first_buffer_committed: bool,
 }
 
 #[derive(Clone)]
@@ -229,6 +231,7 @@ impl
 impl PantheonCompositor {
     pub fn add_panel(&mut self, surface: WlSurface) {
         self.panels.insert(surface.id(), PanelState::default());
+        tracing::info!(surface = ?surface.id(), "Pantheon panel surface requested");
         let window_id = self
             .workspace_manager
             .windows()
@@ -243,6 +246,20 @@ impl PantheonCompositor {
             self.workspace_manager.remove_window(window_id);
         }
         self.position_panel(&surface);
+    }
+
+    pub fn note_panel_buffer_commit(&mut self, surface: &WlSurface, has_buffer: bool) {
+        if !has_buffer {
+            return;
+        }
+        let Some(panel) = self.panels.get_mut(&surface.id()) else {
+            return;
+        };
+        if panel.first_buffer_committed {
+            return;
+        }
+        panel.first_buffer_committed = true;
+        tracing::info!(surface = ?surface.id(), "first Pantheon panel buffer committed");
     }
 
     pub fn remove_panel(&mut self, surface: &WlSurface) {

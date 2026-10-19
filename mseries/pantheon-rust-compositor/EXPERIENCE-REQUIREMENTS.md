@@ -123,18 +123,26 @@ launching shell services. This is a responsiveness and activation-ordering
 pattern, not evidence that a full machine boot takes under one second. For
 this host, the last `systemd-analyze` report was 20.8 seconds to the system
 default target and 10.5 seconds to the graphical target; it does not include
-firmware time or measure login-to-usable. The native Rust run separately
-reached compositor readiness about one second after LightDM started, while
-portal requests later timed out after 120 seconds. Track firmware-to-greeter,
-login-to-compositor, login-to-panel, and login-to-usable as separate intervals.
+firmware time or measure login-to-usable. The first native Rust run reached
+compositor readiness about one second after LightDM started, while portal
+requests later timed out after 120 seconds. Package `0.1.0+git02447cb` fixed
+that portal ordering: providers started within about one second of compositor
+readiness. The user's latest report identifies a separate visible delay between
+wallpaper and Wingpanel; the compositor now logs each Pantheon panel request
+and its first non-null buffer commit so the next run can time client readiness.
+Track firmware-to-greeter, login-to-compositor, login-to-panel, and
+login-to-usable as separate intervals.
 
 References: [Omarchy shell architecture](https://github.com/maralcbr/omarchy-mx-mac/blob/main/shell/README.md), [Omarchy session autostart](https://github.com/omacom/omarchy/blob/quattro/default/hypr/autostart.lua). The Omarchy-MX README says that fork is feature-frozen and directs new Apple Silicon work to `omacom/omarchy-mac`.
 
 `collect-session-metrics.sh` provides a read-only, per-process CPU/RSS sampler
 for Gala or the Rust compositor, panels and dock. It records the session label,
-workload, display mode, timestamps and battery power/capacity when exported by
-sysfs. It does not measure GPU activity, frame/input latency, cold-start time,
-or crashes; those still require separate recorded observations. Run it for
+workload, display mode, timestamps, battery charge/discharge flow and capacity,
+and whether mains power is online when exported by sysfs. Battery flow while
+plugged in is not whole-system power draw; use matched battery-discharge runs
+or an external power meter for power comparisons. It does not measure GPU
+activity, frame/input latency, cold-start time, or crashes; those still require
+separate recorded observations. Run it for
 both sessions with matching display mode, duration, interval and workload,
 then retain stdout with the branch/package revision and journal evidence.
 For example, collect one-minute idle samples at a recorded mode with
