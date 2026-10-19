@@ -51,6 +51,23 @@ trees, frame pacing and input latency, a battery-discharge or external-meter
 power run, and native lock/recovery qualification — before the Rust session is
 selected for anything beyond isolated logins.
 
+## Build the current Rust Pantheon stack-integration package — 2026-10-19
+
+Built the arm64 `native-drm` release package from this branch (`ad6741d`) at
+`/home/sdolbec/Documents/Codex/2026-10-18/g/work/artifacts/pantheon-stack-integration-release/pantheon-rust-compositor_0.1.0+gitad6741d_arm64.deb`
+(SHA-256 `86892d12fc8769e7fd00e4970f9d723d1a9f666a981bc6b7319a0c52fdcef88d`).
+Package metadata, payload paths, executable modes and shared-library links were
+inspected: the compositor binary, the `pantheon-rust-session` wrapper, the
+`pantheon-rust-compositor@.service` template, the Wingpanel and Dock units, the
+GNOME session-target drop-in, the GNOME session file and the LightDM entry are
+all present, both binaries are mode 0755, and `ldd` resolves every library. The
+package supersedes the installed `0.1.0+git7a0ac92` but was **not installed**:
+upgrading the live package was not part of this batch, the running session is
+untouched, and Gala remains active. When an isolated qualification login is
+scheduled, upgrade with
+`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes --deb <package>`,
+then `--verify`, and keep Gala as the rollback.
+
 ## First native Rust compositor login and scanout — 2026-10-19
 
 Installed the ARM64 opt-in session package
