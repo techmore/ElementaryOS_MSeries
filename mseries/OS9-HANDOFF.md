@@ -1,5 +1,33 @@
 # OS 9 implementation / Claude Code handoff
 
+## enh1 diagnostic boot reached the desktop; crash triage after reboot — 2026-10-18 (Claude Code)
+
+**Kernel now:** `7.1.12-elementary-aurora20-enh1` via the one-shot
+`elementary-aurora20-enh1-diagnostic` entry (kernel and initrd hashes match staging).
+GRUB consumed `next_entry`, which is now empty, so the **next normal boot is
+`mseries-full-height` on `.20`**. The earlier enh1 hang did not reproduce: initramfs
+log shows every hook ran, no failed units, graphical target at 5.2 s, dock authorized,
+panel 3024x1964 full height, `/dev/udmabuf` + `/dev/dma_heap/system` present (the
+intended config delta), SEP/fprintd and speakers up. Kernel errors match the previous
+`.20` boot apart from deferred dp-phy probes. [Receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-boot.json).
+One boot only: candidate stays unqualified, original hang cause unknown, no
+suspend or repeat-boot test. Promotion is DeepSeek's/owner's call; no boot change made.
+
+**Crash triage across today's boots:**
+- Boot ending 19:53: Gala SEGV at 19:52 (`clutter_sprite_invalidate_cursor`, same
+  stack as #240), then the owner's power-button forced shutdown; the workqueue WARN
+  and DCP endpoint timeouts are in the shutdown path, after the crash.
+- Boot 19:57–22:48: real-session Gala SEGV at 21:43 with the same stack, before the
+  #244 libmutter fix was installed. Ended with a clean reboot.
+- Other cores that boot were our own headless tests (nested Gala, a Wingpanel started
+  from an agent session, test-agenda), not the owner's desktop.
+- Running Gala now maps `/usr/local/lib/mseries/gala/mutter-fix/libmutter-18.so.0`:
+  this is the first real session with the fix. Not yet proven over time.
+- WIP from before the reboot is on `origin/wip/reboot-save-20261018` (`e26c98a`).
+
+Next: watch `coredumpctl list gala` this session; the next reboot returns to `.20`
+unless the owner arms enh1 again.
+
 ## Release stages: F5 parity first, support assistants after — 2026-10-18
 
 Owner's order:
