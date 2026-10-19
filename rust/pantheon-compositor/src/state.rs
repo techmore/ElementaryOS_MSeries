@@ -24,7 +24,7 @@ use smithay::{
             FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
         },
         output::OutputManagerState,
-        selection::data_device::DataDeviceState,
+        selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
         session_lock::{LockSurface, SessionLockManagerState, SessionLocker},
         shell::xdg::XdgShellState,
         shm::ShmState,
@@ -83,6 +83,7 @@ pub struct PantheonCompositor {
     pub seat_state: SeatState<PantheonCompositor>,
     pub(crate) keyboard_config: crate::input::StartupKeyboardConfig,
     pub data_device_state: DataDeviceState,
+    pub primary_selection_state: PrimarySelectionState,
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
     pub shell_compat: ShellCompatHandle,
@@ -169,6 +170,7 @@ impl PantheonCompositor {
 
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
+        let primary_selection_state = PrimarySelectionState::new::<Self>(&dh);
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
@@ -299,6 +301,7 @@ impl PantheonCompositor {
             seat_state,
             keyboard_config,
             data_device_state,
+            primary_selection_state,
             pantheon_shell_state,
             display_config,
             shell_compat,

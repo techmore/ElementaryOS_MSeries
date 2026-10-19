@@ -13,6 +13,10 @@ use smithay::{
                 clear_data_device_selection, current_data_device_selection_userdata,
                 request_data_device_client_selection, set_data_device_selection,
             },
+            primary_selection::{
+                clear_primary_selection, current_primary_selection_userdata,
+                request_primary_client_selection, set_primary_selection,
+            },
         },
         xwayland_shell::XWaylandShellHandler,
     },
@@ -311,12 +315,10 @@ impl XwmHandler for PantheonCompositor {
         self.begin_x11_move(&window);
     }
 
-    fn allow_selection_access(&mut self, xwm: XwmId, selection: SelectionTarget) -> bool {
-        selection == SelectionTarget::Clipboard
-            && self
-                .x11_keyboard_focus
-                .as_ref()
-                .is_some_and(|surface| surface.xwm_id() == Some(xwm))
+    fn allow_selection_access(&mut self, xwm: XwmId, _selection: SelectionTarget) -> bool {
+        self.x11_keyboard_focus
+            .as_ref()
+            .is_some_and(|surface| surface.xwm_id() == Some(xwm))
     }
 
     fn send_selection(
@@ -326,19 +328,29 @@ impl XwmHandler for PantheonCompositor {
         mime_type: String,
         fd: std::os::fd::OwnedFd,
     ) {
-        if selection == SelectionTarget::Clipboard
-            && let Err(error) = request_data_device_client_selection(&self.seat, mime_type, fd)
-        {
-            tracing::warn!(
-                ?error,
-                "could not transfer the Wayland clipboard to XWayland"
-            );
+        match selection {
+            SelectionTarget::Clipboard => {
+                if let Err(error) = request_data_device_client_selection(&self.seat, mime_type, fd)
+                {
+                    tracing::warn!(?error, "could not transfer Wayland clipboard to XWayland");
+                }
+            }
+            SelectionTarget::Primary => {
+                if let Err(error) = request_primary_client_selection(&self.seat, mime_type, fd) {
+                    tracing::warn!(
+                        ?error,
+                        "could not transfer Wayland PRIMARY selection to XWayland"
+                    );
+                }
+            }
         }
     }
 
     fn new_selection(&mut self, _xwm: XwmId, selection: SelectionTarget, mime_types: Vec<String>) {
         if selection == SelectionTarget::Clipboard {
             set_data_device_selection(&self.display_handle, &self.seat, mime_types, ());
+        } else {
+            set_primary_selection(&self.display_handle, &self.seat, mime_types, ());
         }
     }
 
@@ -347,6 +359,10 @@ impl XwmHandler for PantheonCompositor {
             && current_data_device_selection_userdata(&self.seat).is_some()
         {
             clear_data_device_selection(&self.display_handle, &self.seat);
+        } else if selection == SelectionTarget::Primary
+            && current_primary_selection_userdata(&self.seat).is_some()
+        {
+            clear_primary_selection(&self.display_handle, &self.seat);
         }
     }
 
