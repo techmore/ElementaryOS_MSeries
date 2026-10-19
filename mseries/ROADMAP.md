@@ -1047,6 +1047,15 @@ Bible Gateway links, laid out with Granite/Wingpanel widgets. 22/22 private
 fixture groups pass in light and dark; the patch applies to the pin and rebuilds
 byte-identically. See [calendar/README.md](calendar/README.md#verse-of-the-day--tab).
 
+**Bible tab production readiness (2026-10-19).** The calendar panel (agenda,
+Tasks, Bible tab with daily verse and Titus study) is now a third pilot package,
+`mseries-wingpanel-datetime`. It is version-gated to datetime 2.4.2, diverts
+the stock plugin so daily upgrades can't overwrite it, and ships the accounts
+launcher. CI builds it, checks the bundled data and runs the private-EDS suite
+against the packaged library. The arrow buttons got accessible names.
+Remaining: apt publishing (signing key, #52) and moving the owner's desktop from
+the manual installer to the package.
+
 
 ## README status overview — 2026-10-18
 

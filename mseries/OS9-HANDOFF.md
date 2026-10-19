@@ -6413,3 +6413,30 @@ a real Wayland session.
 macOS: see `mseries/machine-lab/ROADMAP.md`, "QEMU vmapple on this Linux Mac". The `vmapple` machine can be built on Linux
 with small patches and then stops at the macOS-only `apple-gfx-mmio` device; a real boot needs Apple's firmware and a macOS 12 VM
 image, which were not downloaded.
+
+## Bible tab: production readiness — 2026-10-19 (branch claude/bible-tab-production)
+
+Findings: the patched calendar plugin had no protection against elementary's
+daily `io.elementary.panel.datetime` upgrades (the manual installer replaces
+the file, so an upgrade silently drops agenda/Tasks/Bible). Its 23-group suite
+ran only by hand. The icon-only arrow buttons had no accessible names. The
+greeter is not a concern: get_indicator returns null outside SESSION.
+
+Changes:
+- mseries/debs/build.sh: third pilot package `mseries-wingpanel-datetime` (pin
+  read from panel-factory-pins.json; ships /usr/bin/mseries-calendar-accounts;
+  Recommends EDS, GOA-gtk, Tasks). Per-package `<deb>_files` and
+  `<deb>_recommends` hooks. Recommends appears only when set; package dirs 0755.
+- mseries-debs.yml: datetime build deps (libecal/edataserver/ical/json-glib),
+  check-bundled-data.py, test-agenda.sh on the extracted package; PR paths
+  include the patch, mseries/calendar and the pins.
+- mseries/calendar/check-bundled-data.py: offline patch-vs-source data check
+  (verified to fail on a one-word edit).
+- Patch: accessible LABEL on previous/next (mode-specific).
+Verified locally: all three packages build, control files parse, SHA256SUMS
+check; the datetime package has the expected contents, Depends and diversion.
+Not done: apt publishing (key custody), installing the package on the owner's
+desktop (it would divert a file the manual installer already replaced, so
+switching needs `install-calendar-agenda.sh --uninstall` first), and live-panel
+checks.
+
