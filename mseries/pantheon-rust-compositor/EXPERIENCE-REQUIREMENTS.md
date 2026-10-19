@@ -115,6 +115,18 @@ baseline before calling the migration better or ready for daily use. Track
 startup and runtime faults with journal excerpts and crash signatures so
 regressions can be tied to a specific branch revision.
 
+`collect-session-metrics.sh` provides a read-only, per-process CPU/RSS sampler
+for Gala or the Rust compositor, panels and dock. It records the session label,
+workload, display mode, timestamps and battery power/capacity when exported by
+sysfs. It does not measure GPU activity, frame/input latency, cold-start time,
+or crashes; those still require separate recorded observations. Run it for
+both sessions with matching display mode, duration, interval and workload,
+then retain stdout with the branch/package revision and journal evidence.
+For example, collect one-minute idle samples at a recorded mode with
+`./collect-session-metrics.sh gala 60 idle 3024x1964 > gala-idle.csv` and
+repeat in the Rust session with the same arguments except `rust`. Collect a
+separate pair for each named workload; do not compare unlike runs.
+
 The nested prototype serves the Pantheon shell protocol v2, places a panel from
 its anchor/size/offset, and honors hide modes by tracking maximized/focused or
 overlapping windows. Pointer motion at the output edge reveals hidden panels;
