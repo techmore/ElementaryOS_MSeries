@@ -76,7 +76,7 @@ def cpio_bytes(files):
             for index, (name, data) in enumerate(files):
                 source = work / f"source-{index}"
                 source.write_bytes(data)
-                archive.add_files(str(source), pathname=name)
+                archive.add_file_from_memory(name, len(data), data)
         return archive_path.read_bytes()
 
 

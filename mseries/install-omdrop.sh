@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installs the vendored omdrop userspace (mseries/omdrop, from netmojo-systems/omdrop-plugin, MIT) for this user.
-# No sudo, no systemd units enabled, and NO radio driver: omdrop-awdl replaces the running brcmfmac kernel driver,
-# which is the kernel owner's decision. Without it AirDrop shows "Needs the Wi-Fi driver" and nothing listens.
+# No sudo or systemd activation. Radio helpers are a separate explicit installation
+# via install-omdrop-radio.sh; neither installer replaces the kernel driver.
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 dest="$HOME/.local/share/mseries-omdrop"

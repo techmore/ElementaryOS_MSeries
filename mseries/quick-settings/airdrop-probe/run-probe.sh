@@ -9,7 +9,7 @@ mkdir -p "$b/src" && cp "$here/meson.build" "$here/airdrop-probe.vala" "$repo/ms
 meson setup "$b/build" "$b/src" --buildtype=debug >/dev/null && ninja -C "$b/build" >/dev/null
 home=$(mktemp -d); mkdir -p "$home/share/icons/hicolor/scalable/apps"; cp "$repo/mseries/quick-settings/airdrop.svg" "$home/share/icons/hicolor/scalable/apps/mseries-airdrop-symbolic.svg"
 probe() { # scenario, stub dir
-  env -i PATH="$PATH" HOME="$home" OMDROP_CLI="$repo/mseries/omdrop-stub/omdrop" OMDROP_STUB_DIR="$2" PROBE_SCENARIO="$1" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 \
+  env -i PATH="$PATH" HOME="$home" OMDROP_CLI="$repo/mseries/omdrop-stub/omdrop" OMDROP_STUB_DIR="$2" PROBE_SCENARIO="$1" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 GTK_A11Y=none DBUS_SESSION_BUS_ADDRESS=unix:path=/nonexistent \
     GTK_THEME=io.elementary.stylesheet.blueberry GSK_RENDERER=cairo GDK_BACKEND=x11 xvfb-run -a -s "-screen 0 500x600x24" "$b/build/airdrop-probe" "$out/$1"
 }
 fail=0; check() { if grep -q -- "$2" <<<"$1"; then echo "ok   $3"; else echo "FAIL $3"; fail=1; fi; }

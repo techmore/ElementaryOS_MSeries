@@ -9,7 +9,7 @@
 #
 # install does NOT enable awdl0.service, does NOT create awdl0, does NOT start AWDL and does NOT touch the driver.
 # Creating awdl0 and opening a window are separate steps in mseries/omdrop-awdl/TEST-PLAN.md, run with the owner present.
-set -uo pipefail
+set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 src="$repo/mseries/omdrop-awdl"
 lib=/usr/lib/omdrop
@@ -37,7 +37,7 @@ preflight() {
   esac
   say "== kernel driver (no module is replaced)"
   local ko="/lib/modules/$(uname -r)/kernel/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko"
-  local parms; parms=$(modinfo -F parm "$ko"* 2>/dev/null)
+  local parms; parms=$(modinfo -F parm "$ko"* 2>/dev/null || true)
   check "running brcmfmac has the AWDL switch (awdl=1 creates via the vendor command)" grep -q '^awdl:' <<<"$parms"
   check "running brcmfmac has awdl_trace (the data-path gate counts tx completions with it)" grep -q '^awdl_trace:' <<<"$parms"
   if [ -r /sys/module/brcmfmac/parameters/awdl ]; then
@@ -67,6 +67,15 @@ need_root() { [ "$(id -u)" = 0 ] || exec sudo -- "$0" "$@"; }
 do_install() {
   need_root install
   [ -f "$src/userspace/omdrop-discoverable" ] || { say "vendored sources missing: $src" >&2; exit 1; }
+  # Never take ownership of another package's helpers or system configuration.
+  # A prior install must be explicitly uninstalled before replacing its manifest.
+  local existing
+  for existing in "$lib" /usr/share/polkit-1/actions/org.omarchy.omdrop.policy /usr/lib/systemd/system/awdl0.service /usr/lib/NetworkManager/conf.d/99-awdl-unmanaged.conf; do
+    if [ -e "$existing" ] || [ -L "$existing" ]; then
+      say "Refusing to overwrite $existing; inspect/uninstall the existing installation first." >&2
+      exit 1
+    fi
+  done
   install -d -m755 "$lib" "$lib/radio"
   : > "$files_list"
   put() { install -D -m"$1" "$2" "$3" && echo "$3" >> "$files_list"; }
@@ -95,6 +104,7 @@ do_install() {
 
 do_uninstall() {
   need_root uninstall
+  [ -f "$files_list" ] || { say "No mseries installation manifest; nothing removed."; return; }
   systemctl disable --now awdl0.service 2>/dev/null || true
   if ip link show awdl0 >/dev/null 2>&1 && [ -x "$lib/brcm_iovar.py" ]; then
     local sta; sta=$(for n in /sys/class/net/*; do n=${n##*/}; [ "$n" = awdl0 ] && continue; [ -d "/sys/class/net/$n/phy80211" ] && { echo "$n"; break; }; done)

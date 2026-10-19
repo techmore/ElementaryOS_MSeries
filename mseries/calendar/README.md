@@ -1,7 +1,7 @@
 # Pantheon calendar agenda
 
-The datetime indicator has **Events**, **Tasks** and **+** (Verse of the Day)
-tabs above the calendar's right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
+The datetime indicator has **Events**, **Tasks** and **+** (Bible: a daily
+verse and a Titus study) tabs above the calendar's right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
 date independently of the left calendar selection. Ended events are omitted;
 ongoing events remain visible. **Month**, **Week** and **Day** are available as
 explicit alternate views. Tasks shows
@@ -17,7 +17,29 @@ Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
 Identical UIDs in separate calendars do not hide each other's events.
 
-## Verse of the Day (+ tab)
+## Verse of the Day and Titus study (+ tab)
+
+A **Daily | Titus** toggle (styled like the Events view buttons) switches
+between the daily verse and a study of Titus. The choice and the study section
+are remembered in `~/.config/mseries/verse-of-the-day.ini`.
+
+### Titus study
+
+**Overview** describes the author, recipient, setting, date, themes and an
+outline. Nine sections follow the letter's natural breaks (1:1–4, 1:5–9,
+1:10–16, 2:1–5, 2:6–10, 2:11–15, 3:1–7, 3:8–11, 3:12–15) and together cover
+all 46 verses. Each section shows its WEB passage with small raised verse
+numbers, an **Insight** and a **Reflect** question. ◀ ▶ move between sections
+("7 of 9"), and **Overview** returns to the start. The link items search for
+sermons on the exact passage, and **Copy Passage** copies the reference and
+the plain text. Reopening the popup keeps your section, so you can follow a
+sermon series week by week.
+
+Insights and questions are original notes in `titus-study.txt` (GPL, like the
+patch). The passages come from the WEB, and `build-verses.py` checks that the
+sections cover every verse exactly once.
+
+### Daily verse
 
 The **+** tab shows one Bible verse a day under a Granite header. The header's
 second line uses the Events wording (**Today · Sunday, October 18**), and the
@@ -49,7 +71,7 @@ Friday, December 25**):
 | New Year’s Day (Jan 1) | Lamentations 3:22–23 |
 | Epiphany (Jan 6) | Matthew 2:10–11 |
 | Ash Wednesday (Easter − 46) | Joel 2:13 |
-| Palm Sunday (Easter − 7) | John 12:13 |
+| Palm Sunday (Easter − 7) | John 12:12–13 |
 | Good Friday (Easter − 2) | Isaiah 53:5 |
 | Easter Sunday | Matthew 28:6 |
 | Pentecost (Easter + 49) | Acts 2:4 |
@@ -62,8 +84,15 @@ are marked `@season` in `verse-references.txt` and left out of the random
 order. The other 394 verses get a seeded shuffle per year, so a year never
 repeats a verse; no state is stored.
 
-Text is the **World English Bible**, public domain (eBible.org), copied
-unchanged. To change the list, edit `verse-references.txt` (at least 366
+Text is the **World English Bible**, public domain (eBible.org). Words are
+never changed. Where a verse quotes a speech whose quotation marks open or
+close in a neighbouring verse, the reference is widened to include it (23
+verses, for example Exodus 14:13–14) when that stays short and reads naturally.
+Otherwise an unmatched mark at the very start or end of the excerpt is left
+out (35 verses, for example Joshua 1:9), as is usual when quoting a verse.
+Eleven verses keep an opening mark after a complete introduction ("He said to
+them, “Go into all the world…") because their quotation continues past the
+verse; dropping them would lose well-known verses such as Jeremiah 29:11. To change the list, edit `verse-references.txt` (at least 366
 entries) and download `engwebp_vpl.zip` and `engwebp_usfm.zip` from
 <https://ebible.org/Scriptures/>. Then run
 `python3 -I mseries/calendar/build-verses.py engwebp_vpl.txt 20-PSAengwebp.usfm`.
@@ -158,7 +187,7 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-All 22 workflow groups use synthetic local EDS sources. The verse group checks
+All 23 workflow groups use synthetic local EDS sources. The verse group checks
 the + tab, today's pick from the bundled list, every feast date in 2026–2028
 (including Easter-based dates in three years), a Christmas header on screen,
 unpadded single-digit dates, plus previous/next/Today

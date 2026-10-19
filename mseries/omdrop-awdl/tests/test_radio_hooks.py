@@ -752,6 +752,7 @@ radio_up
         self.assertTrue((self.run_dir / "rx_base").exists())
 
 
+@unittest.skipUnless((ROOT / "PKGBUILD").exists(), "Arch/DKMS packaging is deliberately excluded")
 class PackageTests(unittest.TestCase):
     def test_package_installs_every_hook_beside_the_library(self):
         with tempfile.TemporaryDirectory() as tmp:

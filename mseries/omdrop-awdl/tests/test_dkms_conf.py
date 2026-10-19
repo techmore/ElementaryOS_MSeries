@@ -28,6 +28,7 @@ NATIVE = "awdl_create_flags:interface_create flags for AWDL (uint)\ndebug:Level 
 STOCK = "debug:Level of debug output (int)\np2pon:Enable legacy p2p management functionality (int)\n"
 
 
+@unittest.skipUnless(CONF.exists(), "DKMS is deliberately excluded from this userspace-only vendor")
 class StandAsideTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
