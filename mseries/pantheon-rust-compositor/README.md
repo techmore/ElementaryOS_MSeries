@@ -31,6 +31,10 @@ restored, and Gala is active. Package `0.1.0+git8c784dc` also includes the
 wallpaper renderer, live wallpaper settings watcher, and Dock opt-out guard; it
 is installed but not qualified on native output. Package SHA-256:
 `a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`.
+The experimental LightDM entry now waits up to 30 seconds for the previous
+`gnome-session-pre.target` stop job to clear before starting GNOME. This
+addresses the observed transaction conflict in source; it still needs a new
+package build and native qualification.
 This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.
 

@@ -9,6 +9,13 @@ notification before session initialization continues. This follows the
 [GNOME session systemd documentation](https://gnome.pages.gitlab.gnome.org/gnome-session/re01.html)
 and the matching Pantheon units installed on this machine.
 
+The LightDM entry uses `pantheon-rust-session`, which waits for any queued stop
+job on `gnome-session-pre.target` to finish before starting GNOME. This avoids
+the systemd transaction conflict observed when a new login overlapped teardown
+of the prior session. The wait is bounded at 30 seconds and fails the login
+entry with a diagnostic if teardown remains stuck. This handoff fix is staged
+but still needs native login qualification.
+
 The session is named **Pantheon (Rust compositor, experimental)** and uses the
 separate `pantheon-rust-wayland` session ID. The existing
 `pantheon-wayland` entry and Gala units are not modified. The service binds

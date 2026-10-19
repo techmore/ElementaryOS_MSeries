@@ -30,6 +30,7 @@ cp -a "$ROOT/mseries/pantheon-rust-compositor/session/usr/." "$PACKAGE_ROOT/usr/
 find "$PACKAGE_ROOT" -type d -exec chmod 0755 {} +
 find "$PACKAGE_ROOT" -type f -exec chmod 0644 {} +
 chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-compositor"
+chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-rust-session"
 
 cat > "$OUTDIR/debian/control" <<'EOF'
 Source: pantheon-rust-compositor
