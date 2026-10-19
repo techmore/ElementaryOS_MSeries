@@ -4562,3 +4562,22 @@ free-space warning. Verified: builds, Broadway renders, pause/resume against a h
 Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; host had ~19 GiB free) and
 suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
 `~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.
+
+## Boot menu cleanup and upstream parity check — 2026-10-19 (Claude Code)
+
+**Boot menu (owner-approved).** Running kernel `7.1.12-elementary-aurora20-enh1` was booted from the manual
+*diagnostic* entry (`initcall_debug`, `ignore_loglevel`, `log_buf_len=8M`, `plymouth.enable=0`); the default was `.20`.
+`/boot/grub/custom.cfg` is now two entries: `elementary-aurora20` (STABLE, default, `vmlinuz-aurora-sep-20261017.20`, notch=1)
+and `elementary-aurora20-enh1` (DEV, `vmlinuz-aurora20-enh1`, clean cmdline; one-shot via `grub-reboot` still works). Stock Arch
+`7.1.13-3-2-ARCH` recovery stays in `grub.cfg`. Removed: nosep, hdmiaudio, full-height, diagnostic entries, the diagnostic initrd,
+9 old `custom.cfg.*`, `grubenv.pre-e4-*`. Backups: `~/boot-backups-20261019/` (local, not in Git). `grub-script-check` passes;
+no reboot was done after the change, so the new menu is unbooted. `/boot` 215 MiB free. Not touched: grubenv, m1n1, modules.
+Note: this boot logged "FAT-fs nvme0n1p4: Volume was not properly unmounted" and a replaced journal (previous shutdown was unclean); consider `fsck.vfat` on `/boot` from a safe state.
+
+**Upstream parity (read-only, 2026-10-19 ~09:30Z).** Aurora `integration/aurora` is ahead of `.20` by #147 (M4 wait state) and #149
+(macaudio selects MAX98357A); no release after `aurora-2026.10.17.20`. Neither looks J314S-relevant; not in `.20-enh1`. Draft/open PR #139
+(Asahi 7.2.10 + aurora + aurora-wip, now "ready for review", qualified on J700/J316s/J413, not J314S) remains the WIP track; stay build-only.
+PR #122 (HDMI-hold follow-ups) is **T6030 (M3 Pro)**, not the J314S/T6000, so it is NOT a dock fix for us; deprioritised. New upstream
+open PRs of note: #146/#148/#151/#152 are M3/G17 work, not J314S. Dock was unplugged this boot (all DRM external connectors disconnected,
+bolt dock `disconnected`), so no dock retrain log could be examined; re-check with the dock attached. Next: attach dock and capture
+DCP/dptx log over 10 min on enh1; test SEP probe on enh1; compare #139 `100-sep`/`200-dcp` topics against `.20-enh1` for J314S gaps.
