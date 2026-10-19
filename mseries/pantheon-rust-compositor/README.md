@@ -16,6 +16,9 @@ prioritized list and upstream feature radar are in
 For a stack drawing comparing existing elementary OS, Omarchy on Asahi, and
 the proposed Pantheon MVP—along with a tested-versus-open status table—see
 [`ARCHITECTURE-AND-STATUS.md`](ARCHITECTURE-AND-STATUS.md).
+For a visual comparison of Gala/Mutter and the Rust/Smithay migration stages,
+startup timing, CPU, memory, and power evidence, open the standalone
+[`migration dashboard`](dashboard.html).
 
 On 2026-10-19 the installed experimental session completed its first native
 M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
@@ -130,6 +133,18 @@ the session felt responsive. This run still logged one initial DRM page-flip
 `Device or resource busy` error and a missing Mutter `ServiceChannel` warning
 from the GNOME portal backend. It does not qualify portal dialogs, screen
 sharing, native text commits, or a performance/power improvement over Gala.
+
+The instrumented `0.1.0+git7a0ac92` login reached the first committed
+Wingpanel buffer about 2.2 seconds after the Rust session manager started
+(about 1.7 seconds after the compositor service started). The owner described
+this run's opening time as really good; the journal milestone measures panel
+buffer readiness, not first interactive use. The owner also reported that
+window corners look inconsistent and unwanted. This is now a visual
+acceptance issue; affected apps and window states still need examples. The
+3024×1964 panel mode looked too zoomed out, so the next Rust login should keep
+the high-resolution mode and try 2× logical UI scaling. These owner reports
+are tracked in [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md) and
+the [migration dashboard](dashboard.html).
 
 In private Xvfb, the release binary launched a GTK Wayland Zenity field;
 synthetic key events reached it, and IBus/Mozc committed `konnichiha` as
