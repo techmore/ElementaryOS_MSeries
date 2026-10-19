@@ -1,5 +1,12 @@
 # OS 9 implementation / Claude Code handoff
 
+## Branch model: `main` stable, `dev` integration — 2026-10-18
+
+`main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
+is where feature PRs merge. Release PRs `dev` → `main` promote batches and get a
+`v0.0.N` tag. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
+`mseries/BRANCHING.md`; AGENTS.md points to it.
+
 ## RepoBar compact contribution graph — 2026-10-18
 
 The contribution card now starts collapsed to a single line: one accent-toned
