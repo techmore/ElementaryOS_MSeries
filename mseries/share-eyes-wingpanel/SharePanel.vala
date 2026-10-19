@@ -26,6 +26,8 @@ namespace MSeries {
         /* In Quick Settings the section is always there; when no share server runs it offers to start one. */
         public bool always_visible { get; set; default = false; }
         private int last_waiting = 0;
+        private int last_watching = 0;
+        private bool auto_allow = FileUtils.test (GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "rupert-share", "auto-allow"), FileTest.EXISTS);
         private uint32 notification_id = 0;
 
         construct {
@@ -83,8 +85,10 @@ namespace MSeries {
                 : "Screen share ready · not sharing yet";
             bool offering = state.running && client.reachable && (client.live || client.link_count > 0);
             status_changed (state.running, offering, waiting, watching);
-            if (notify_waiting && waiting > last_waiting) notify_viewer.begin ();
+            if (notify_waiting && waiting > last_waiting) notify_viewer.begin ("Someone wants to watch your screen", "Open the eyes menu to allow or deny.");
+            if (notify_waiting && watching > last_watching && client.link_auto) notify_viewer.begin ("Someone joined your screen share", "Their link lets people in without asking. Open the eyes menu to remove them.");
             last_waiting = waiting;
+            last_watching = watching;
             if (spawn_dock_app && offering && tick_count++ % 3 == 0) ensure_dock_app.begin ();
             eyes.set_tooltip_text (tip);
             eyes.remove_css_class ("live");
@@ -98,15 +102,15 @@ namespace MSeries {
             busy = false;
         }
 
-        private async void notify_viewer () {
+        private async void notify_viewer (string summary, string body) {
             try {
                 var bus = yield GLib.Bus.get (GLib.BusType.SESSION);
                 var args = new GLib.VariantBuilder (new GLib.VariantType ("(susssasa{sv}i)"));
                 args.add ("s", "Screen Share");
                 args.add ("u", notification_id);
                 args.add ("s", "mseries-share-eyes-symbolic");
-                args.add ("s", "Someone wants to watch your screen");
-                args.add ("s", "Open the eyes menu to allow or deny.");
+                args.add ("s", summary);
+                args.add ("s", body);
                 args.add_value (new GLib.Variant.array (new GLib.VariantType ("s"), {}));
                 args.add_value (new GLib.Variant.array (new GLib.VariantType ("{sv}"), {}));
                 args.add ("i", 15000);
@@ -356,9 +360,37 @@ namespace MSeries {
             }
             if (client.viewer_link (state.viewer_base) == null) {
                 var mk = item ("list-add-symbolic", "Create viewer link", null, "Make a link to send to your viewer");
-                mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); act (); }); });
+                mk.clicked.connect (() => { client.create_link.begin (auto_allow, (o, r) => { client.create_link.end (r); act (); }); });
                 links.append (mk);
             }
+            // Opt-in, per link: people who open a link made while this is on skip the Allow step (you are still notified).
+            var auto_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { margin_top = 2 };
+            var auto_text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
+            auto_text.append (new Gtk.Label ("Let viewers in without asking") { halign = Gtk.Align.START, xalign = 0 });
+            var auto_hint = new Gtk.Label (client.link_auto ? "This link lets anyone who opens it in" : auto_allow ? "Applies to the next link you create" : "You approve each viewer")
+                { halign = Gtk.Align.START, xalign = 0 };
+            auto_hint.add_css_class ("dim-label");
+            auto_hint.add_css_class ("caption");
+            auto_text.append (auto_hint);
+            auto_row.append (auto_text);
+            var auto_switch = new Gtk.Switch () { active = auto_allow, valign = Gtk.Align.CENTER };
+            auto_switch.notify["active"].connect (() => {
+                auto_allow = auto_switch.active;
+                var f = GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "rupert-share", "auto-allow");
+                try {
+                    if (auto_allow) {
+                        GLib.DirUtils.create_with_parents (GLib.Path.get_dirname (f), 0700);
+                        GLib.FileUtils.set_contents (f, "1");
+                    } else {
+                        GLib.FileUtils.unlink (f);
+                    }
+                } catch (GLib.Error e) {
+                    warning ("%s", e.message);
+                }
+                act ();
+            });
+            auto_row.append (auto_switch);
+            links.append (auto_row);
             var cs = item ("dialog-password-symbolic", "Copy sign-in link", "this computer only",
                 "Opens the share page already signed in. Never send it to your viewer.");
             cs.clicked.connect (() => copy (state.login_url (), "Sign-in link"));
