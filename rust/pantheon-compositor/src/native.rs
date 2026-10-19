@@ -63,7 +63,6 @@ pub type NativeDrmOutput = DrmOutput<NativeAllocator, NativeExporter, (), DrmDev
 type NativeMultiRenderer<'a> = MultiRenderer<'a, 'a, GbmRendererBackend, GbmRendererBackend>;
 
 const OUTPUT_FORMATS: &[smithay::backend::allocator::Fourcc] = &[
-    smithay::backend::allocator::Fourcc::Abgr2101010,
     smithay::backend::allocator::Fourcc::Argb2101010,
     smithay::backend::allocator::Fourcc::Abgr8888,
     smithay::backend::allocator::Fourcc::Argb8888,

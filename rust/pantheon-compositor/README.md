@@ -154,12 +154,17 @@ snapshot it finds EGL rendering on `/dev/dri/card1` (`/dev/dri/renderD128`,
 Asahi) but KMS resource queries there return `Operation not supported`. The
 Apple display-controller `/dev/dri/card2` owns KMS and the connected internal
 `eDP-1` at 3024×1964@120 Hz; external connectors are currently disconnected.
-Card2 has no EGL device. The probe allocates 64×64 render/scanout GBM buffers on
-Asahi and attempts GBM DMA-BUF imports on Apple KMS. Implicit-modifier imports
-succeeded for AB30, AR30, AB24 and AR24. This supports the chosen cross-device
-path, but does not prove DRM framebuffer creation, atomic modesetting, or
-display scanout. The probe does not acquire DRM master, force a connector
-reprobe, or change modes.
+Card2 has no EGL device. The probe allocates render/scanout GBM buffers on
+Asahi at the internal panel's preferred 3024×1964 size and imports them into
+Apple GBM. It registers each imported buffer with `ADDFB2` and immediately
+removes the unassigned framebuffer. Imports succeeded for AB30, AR30, AB24 and
+AR24; framebuffer creation succeeded for AR30, AB24 and AR24, while AB30 was
+rejected with `EINVAL`. Native output formats now prefer the three formats
+accepted by Apple KMS and omit AB30. This qualifies cross-device import and
+framebuffer registration at the preferred panel size. It does not prove plane
+acceptance, atomic modesetting, or visible scanout. The probe does not acquire
+DRM master, attach a framebuffer to a plane, force a connector reprobe, or
+change modes.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output

@@ -12,17 +12,24 @@ use smithay::backend::{
     },
     egl::EGLDevice,
 };
+use smithay::reexports::drm::control::{Device as _, FbCmd2Flags};
 
-struct ReadOnlyDrmDevice(File);
+struct KmsTarget {
+    path: PathBuf,
+    width: u32,
+    height: u32,
+}
 
-impl AsFd for ReadOnlyDrmDevice {
+struct DrmDeviceFile(File);
+
+impl AsFd for DrmDeviceFile {
     fn as_fd(&self) -> BorrowedFd<'_> {
         self.0.as_fd()
     }
 }
 
-impl smithay::reexports::drm::Device for ReadOnlyDrmDevice {}
-impl smithay::reexports::drm::control::Device for ReadOnlyDrmDevice {}
+impl smithay::reexports::drm::Device for DrmDeviceFile {}
+impl smithay::reexports::drm::control::Device for DrmDeviceFile {}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let devices = EGLDevice::enumerate()?;
@@ -61,9 +68,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("No EGL devices found.");
     }
 
-    let kms_path = inspect_kms_connectors(hardware_render_path.as_deref())?;
-    match (hardware_render_path, kms_path) {
-        (Some(render_path), Some(kms_path)) => probe_cross_gpu_import(&render_path, &kms_path),
+    let kms_target = inspect_kms_connectors(hardware_render_path.as_deref())?;
+    match (hardware_render_path, kms_target) {
+        (Some(render_path), Some(kms_target)) => probe_cross_gpu_import(&render_path, &kms_target),
         _ => println!(
             "Cross-GPU GBM import: skipped (could not identify a hardware renderer and connected KMS device)."
         ),
@@ -74,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn inspect_kms_connectors(
     render_path: Option<&std::path::Path>,
-) -> Result<Option<PathBuf>, Box<dyn std::error::Error>> {
+) -> Result<Option<KmsTarget>, Box<dyn std::error::Error>> {
     use smithay::reexports::drm::control::Device as _;
 
     let mut cards = std::fs::read_dir("/dev/dri")?
@@ -95,7 +102,7 @@ fn inspect_kms_connectors(
     for path in cards {
         println!("KMS device {}:", path.display());
         let device = match File::open(&path) {
-            Ok(file) => ReadOnlyDrmDevice(file),
+            Ok(file) => DrmDeviceFile(file),
             Err(error) => {
                 println!("  cannot open read-only: {error}");
                 continue;
@@ -123,7 +130,23 @@ fn inspect_kms_connectors(
                         && connector.state()
                             == smithay::reexports::drm::control::connector::State::Connected
                     {
-                        connected_kms.get_or_insert_with(|| path.clone());
+                        let selected_mode = connector
+                            .modes()
+                            .iter()
+                            .find(|mode| {
+                                mode.mode_type().contains(
+                                    smithay::reexports::drm::control::ModeTypeFlags::PREFERRED,
+                                )
+                            })
+                            .or_else(|| connector.modes().first());
+                        if let Some(mode) = selected_mode {
+                            let (width, height) = mode.size();
+                            connected_kms.get_or_insert_with(|| KmsTarget {
+                                path: path.clone(),
+                                width: u32::from(width),
+                                height: u32::from(height),
+                            });
+                        }
                     }
                     for mode in connector.modes().iter().take(8) {
                         let (width, height) = mode.size();
@@ -142,12 +165,14 @@ fn inspect_kms_connectors(
 }
 
 /// Check whether the render GPU can allocate a scanout-capable DMA-BUF that
-/// the connected KMS device's GBM implementation can import. This does not
-/// create a DRM framebuffer, acquire DRM master, or change an output mode.
-fn probe_cross_gpu_import(render_path: &PathBuf, kms_path: &PathBuf) {
+/// the connected KMS device can import and register as a framebuffer. Created
+/// framebuffers are immediately removed; no plane or mode is changed and DRM
+/// master is not acquired.
+fn probe_cross_gpu_import(render_path: &PathBuf, kms_target: &KmsTarget) {
     println!("Cross-GPU GBM import preflight:");
     println!("  render node: {}", render_path.display());
-    println!("  KMS device: {}", kms_path.display());
+    println!("  KMS device: {}", kms_target.path.display());
+    println!("  preferred mode size: {}x{}", kms_target.width, kms_target.height);
 
     let render_file = match OpenOptions::new().read(true).write(true).open(render_path) {
         Ok(file) => file,
@@ -163,14 +188,18 @@ fn probe_cross_gpu_import(render_path: &PathBuf, kms_path: &PathBuf) {
             return;
         }
     };
-    let kms_file = match OpenOptions::new().read(true).write(true).open(kms_path) {
+    let kms_file = match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&kms_target.path)
+    {
         Ok(file) => file,
         Err(error) => {
             println!("  cannot open KMS device read/write: {error}");
             return;
         }
     };
-    let kms_gbm = match GbmDevice::new(kms_file) {
+    let kms_gbm = match GbmDevice::new(DrmDeviceFile(kms_file)) {
         Ok(gbm) => gbm,
         Err(error) => {
             println!("  cannot create KMS GBM device: {error}");
@@ -189,7 +218,12 @@ fn probe_cross_gpu_import(render_path: &PathBuf, kms_path: &PathBuf) {
         Fourcc::Argb8888,
     ];
     for format in formats {
-        let buffer = match allocator.create_buffer(64, 64, format, &[Modifier::Invalid]) {
+        let buffer = match allocator.create_buffer(
+            kms_target.width,
+            kms_target.height,
+            format,
+            &[Modifier::Invalid],
+        ) {
             Ok(buffer) => buffer,
             Err(error) => {
                 println!("  {format:?}: render allocation failed: {error}");
@@ -204,15 +238,29 @@ fn probe_cross_gpu_import(render_path: &PathBuf, kms_path: &PathBuf) {
             }
         };
         match dmabuf.import_to(&kms_gbm, GbmBufferFlags::SCANOUT) {
-            Ok(_) => println!(
-                "  {format:?} modifier {:?}: KMS GBM import succeeded",
-                dmabuf.format().modifier
-            ),
+            Ok(kms_buffer) => {
+                println!(
+                    "  {format:?} modifier {:?}: KMS GBM import succeeded",
+                    dmabuf.format().modifier
+                );
+                match kms_gbm.add_planar_framebuffer(&kms_buffer, FbCmd2Flags::empty()) {
+                    Ok(framebuffer) => {
+                        println!("    ADDFB2 registration succeeded");
+                        match kms_gbm.destroy_framebuffer(framebuffer) {
+                            Ok(()) => println!("    unassigned framebuffer removed"),
+                            Err(error) => println!(
+                                "    framebuffer removal failed; it will be released when the KMS fd closes: {error}"
+                            ),
+                        }
+                    }
+                    Err(error) => println!("    ADDFB2 registration failed: {error}"),
+                }
+            }
             Err(error) => println!(
                 "  {format:?} modifier {:?}: KMS GBM import failed: {error}",
                 dmabuf.format().modifier
             ),
         }
     }
-    println!("  framebuffer creation and modesetting were not attempted.");
+    println!("  No framebuffer was attached to a plane; modesetting was not attempted.");
 }

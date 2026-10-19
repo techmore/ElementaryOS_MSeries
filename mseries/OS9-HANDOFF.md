@@ -1,22 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
-## Mutter-minimal viable Rust compositor: cross-GPU import preflight — 2026-10-19
+## Mutter-minimal viable Rust compositor: KMS framebuffer preflight — 2026-10-19
 
 Ran the existing release-mode `pantheon-drm-probe` on the M1 Pro with
 `native-drm`. It found EGL rendering on Asahi `/dev/dri/card1` and
 `/dev/dri/renderD128`; Apple `/dev/dri/card2` owns the connected internal
 `eDP-1` at 3024×1964@120 Hz and currently reports the external connectors as
-disconnected. The probe allocated 64×64 scanout-capable DMA-BUFs on Asahi and
-successfully imported AB30, AR30, AB24 and AR24 into Apple GBM using the
-implicit modifier. It did not acquire DRM master, create DRM framebuffers,
-modeset, or change output state. This removes the basic GBM-import concern,
-but does not prove Apple `ADDFB2` acceptance, scanout, or an interactive native
-session. Gala stayed active. Next display gate: establish whether the Apple KMS
-device accepts an imported buffer as a framebuffer without committing a mode;
-only then plan the separately isolated native-session takeover.
+disconnected. The probe allocated scanout-capable DMA-BUFs on Asahi at the
+preferred panel size and imported AB30, AR30, AB24 and AR24 into Apple GBM using
+the implicit modifier. Apple KMS rejected AB30 with `EINVAL`, but accepted
+AR30, AB24 and AR24 as `ADDFB2` framebuffers; each was immediately removed
+without plane attachment. Native output format selection now omits AB30 and
+prefers the three formats that passed. The probe did not acquire DRM master,
+modeset, or change output state. Gala stayed active. This qualifies buffer
+import and framebuffer registration, not plane acceptance, visible scanout or
+an interactive native session. The next display gate requires an isolated
+session to attempt its first real modeset, with a tested return path.
 
-The release probe rebuilt successfully in 0.82 seconds locally. Working tree
-was clean before this handoff update; branch remains
+The release probe rebuilt successfully in 0.85 seconds locally, and the
+native compositor release binary built successfully. Branch:
 `codex/rust-mutter-pantheon`.
 
 ## Mutter-minimal viable Rust compositor progress — 2026-10-18

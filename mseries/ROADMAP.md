@@ -107,13 +107,16 @@ Smithay dependency feature now compiles locally after installing
 `libseat-dev`. The non-invasive `pantheon-drm-probe` reports the Asahi renderer
 on card1/renderD128, with KMS resource queries unsupported there. Card2 owns
 `eDP-1` and currently reports external connectors disconnected; card2 has no
-EGL device. A 2026-10-19 release-mode preflight allocated 64×64 scanout-capable
-DMA-BUFs on Asahi and successfully imported AB30, AR30, AB24 and AR24 into
-Apple GBM using the implicit modifier. The probe did not acquire DRM master,
-create DRM framebuffers, modeset, or change output state. This establishes GBM
-import compatibility only; KMS framebuffer creation, actual scanout and
-failure handling remain first-session requirements for this M1 Pro, not
-optional general multi-GPU support. The executable now keeps nested Winit as
+EGL device. A 2026-10-19 release-mode preflight allocated scanout-capable
+DMA-BUFs at the preferred 3024×1964 size on Asahi and imported AB30, AR30, AB24
+and AR24 into Apple GBM using the implicit modifier. Apple `ADDFB2` rejected
+AB30 with `EINVAL`; it accepted AR30, AB24 and AR24. Each unassigned test
+framebuffer was immediately removed. Native output formats now omit AB30 and
+prefer the three accepted formats. The probe did not acquire DRM master, attach
+a framebuffer to a plane, modeset, or change output state. This establishes
+cross-device import and KMS framebuffer registration only; atomic modesetting,
+visible scanout and failure handling remain first-session requirements for
+this M1 Pro, not optional general multi-GPU support. The executable now keeps nested Winit as
 its default and provides an explicit `--backend native` path behind
 `native-drm`; this wires libseat,
 libinput, connected outputs on the first usable KMS device, calloop rendering
