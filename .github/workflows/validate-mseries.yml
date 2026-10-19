@@ -145,6 +145,8 @@ jobs:
           python3 mseries/test-power-cap.py
           python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
           python3 mseries/test-power-install.py
+          python3 mseries/test-omdrop-installer.py
+          python3 -m unittest discover -s mseries/omdrop-awdl/tests
           bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
           python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
           for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
@@ -202,3 +204,5 @@ jobs:
           python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py
+          python3 mseries/test-omdrop-installer.py
+          python3 -m unittest discover -s mseries/omdrop-awdl/tests
