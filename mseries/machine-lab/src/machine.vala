@@ -400,6 +400,27 @@ public class Machine : Object {
         if (changed) {
             state_changed ();
         }
+        if (changed && !now && installer != null && installed ()) {
+            detach_managed_installer.begin ();
+        }
+    }
+
+    /* The guest has real data on its disk: stop booting the installer ISO. */
+    private async void detach_managed_installer () {
+        string? tool = find_mseries_vm ();
+        if (tool == null) {
+            return;
+        }
+        try {
+            var l = new SubprocessLauncher (SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+            yield l.spawnv ({ tool, "set", vm_name, "ISO", "" }).wait_async ();
+            yield l.spawnv ({ tool, "set", vm_name, "BOOT", "disk" }).wait_async ();
+            installer = null;
+            installer_detached ();
+            state_changed ();
+        } catch (Error e) {
+            append_log ("[could not detach installer: %s]\n".printf (e.message));
+        }
     }
 
     private void load_serial_tail () {
@@ -492,6 +513,9 @@ public class MachineStore : Object {
                     case "elementary": m.name = "elementary OS"; m.color = 0; break;
                     case "windows": m.name = "Windows 11"; m.color = 3; break;
                     default: m.name = n; m.color = 1; break;
+                }
+                if (kf.has_key ("c", "ISO") && kf.get_string ("c", "ISO") != "") {
+                    m.installer = kf.get_string ("c", "ISO");
                 }
                 if (kf.has_key ("c", "CPUS")) {
                     m.cpus = kf.get_integer ("c", "CPUS");
