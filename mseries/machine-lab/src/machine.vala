@@ -579,8 +579,8 @@ public class Readiness : Object {
             while (!dir.query_exists () && dir.get_parent () != null) {
                 dir = dir.get_parent ();
             }
-            var info = dir.query_filesystem_info ("filesystem:free");
-            return (int64) (info.get_attribute_uint64 ("filesystem:free") / 1073741824);
+            var info = dir.query_filesystem_info ("filesystem::free");
+            return (int64) (info.get_attribute_uint64 ("filesystem::free") / 1073741824);
         } catch (Error e) {
             return -1;
         }
