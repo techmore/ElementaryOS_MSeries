@@ -13,9 +13,50 @@ temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixtur
 was corrected using in-memory archive entries; receiver code is unchanged. CI now
 checks both vendored userspace suites. These are source/UI qualifications, not
 a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
-receive/send are still pending. No radio activation, panel reload or reboot was
+the subsequent parallel report records one iPhone receive pass. Send and real-panel
+acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
+obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
+No radio activation, panel reload or reboot was
 performed during this cleanup review. The diagnostic boot selection is untouched.
 
+## Calendar Tasks and Homeboard sync — 2026-10-18
+
+Branch `claude/calendar-tasks-homeboard`. The calendar dropdown's Tasks tab now
+groups tasks into Overdue / Today / Tomorrow / Next 7 days / Later / No due date,
+words due dates ("Overdue since yesterday", "Due Friday"), marks high priority
+(**!**), shows the category (Homeboard project) and **Repeats**, and puts a dot on
+the Tasks tab while anything is overdue. Completing a task offers **Undo** for
+eight seconds (non-repeating tasks). The composer gained a due selector (No date
+/ Today / Tomorrow / In a week) and now falls back to the default list when the
+chosen list disappears (bug found by the new test). A Homeboard strip shows the
+bridge's last sync and offers Sync now / Open Homeboard / Sign In…, talking to the
+bridge over D-Bus; it is hidden when the bridge is absent. Patch:
+`mseries/patches/datetime-agenda-tabs.patch` (applies cleanly to the pin); adds
+`json-glib-1.0` (already in the factory build packages).
+
+Verification: `bash mseries/calendar/test-agenda.sh build/libdatetime.so` passes
+all 27 groups (23 existing + 4 new) in light and dark on Xvfb with a private
+D-Bus and private XDG dirs, including `XDG_STATE_HOME`.
+
+Homeboard bridge (owner's private `techmore/homeboard`, `linux/`): due dates and
+priority now sync both ways, project names show as categories, local edits sync
+about two seconds after they happen (EDS view watcher, bursts coalesced), the
+autostart runs `--background` with no window, D-Bus actions `sync`/`connect`/`show`,
+409 stale-write retry, a cross-process lock, a richer status file, and failures no
+longer leave the status at "syncing". Its tests pass: 8 merge unit tests, the
+server revision test, and a new end-to-end test against a private EDS with a fake
+server (19 of 20 repeated runs passed; one early run errored before logs were
+captured and did not recur). Merged as
+[techmore/homeboard#8](https://github.com/techmore/homeboard/pull/8) (`26adc9f`).
+
+`mseries/install-homeboard-sync.sh` installs the bridge without its separate
+indicator (`--no-indicator`), removes the old browser-only launcher and starts the
+bridge in the background. Pinned to `26adc9f`; it refuses older revisions. Run on
+this desktop: files in `~/.local/lib/homeboard`, autostart with `--background`,
+the bridge running and exporting `sync`/`connect`/`show`; `panel.json` reports
+signed out. The updated calendar indicator is installed and Wingpanel reloaded.
+
+Next: owner chooses Sign In… in the calendar's Tasks tab, then check a real round trip (tick in the dropdown → Homeboard within seconds).
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
