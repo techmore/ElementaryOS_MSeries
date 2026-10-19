@@ -15,6 +15,7 @@ mod protocols;
 mod shell_compat;
 mod state;
 mod tiling;
+mod wakeups;
 mod wallpaper;
 mod winit;
 mod workspace;
@@ -78,7 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Launch requested clients against the compositor socket selected above.
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
 
-    event_loop.run(None, &mut state, move |_| {})?;
+    // The Gala-compat snapshot is republished after every dispatch, which
+    // is when any state it mirrors can have changed (no polling timer).
+    event_loop.run(None, &mut state, |state| state.publish_gala_snapshot())?;
     if let Some(error) = state.fatal_error.take() {
         return Err(io::Error::other(error).into());
     }
