@@ -40,6 +40,28 @@ No share was started, no viewer connected, and no media path was changed. The
 next step is the owner-run matched pair (1 vs 3 viewers) whenever a share is
 convenient; until then there is no measured cost for the share path either way.
 
+### Verify the collector against a real share — 2026-10-19
+
+Added `mseries/share-cost/probe-live-share.sh <rupert-share/core>`: it starts a
+throwaway **loopback-only** share server in a private `HOME` and
+`XDG_RUNTIME_DIR` (the live eyes panel sees nothing), marks the share live
+through the owner API, joins one viewer with a link token, then runs the
+collector for 15 seconds and reduces it. The probe proves the collector's
+share-state path end to end: `--require-live` passes, every row carries
+`share_live=True, share_viewers=1`, and the server role matches the `rupert-core`
+binary.
+
+The first probe run caught a real collector bug: the server role had been
+matched on any path under `rupert-share/core`, which also caught the launcher
+shell and state poller (two `bash` rows appeared as "server"). It now matches
+the binary (`rupert-core` as comm or as a path token). After the fix the roles
+are clean: browser ~2.4 % of one core (an idle Brave — no capture runs in the
+probe, so this is not sharing cost), gala ~23 %, Wingpanel ~0.7 %, PipeWire
+~0.1 %, `rupert-core` ~0.0 % at ~27 MiB RSS.
+
+The probe is not in CI (it needs the share checkout and a loopback port); it is
+a manual verification like the other share probes.
+
 ## Screen-share media path: options and decision gates — 2026-10-19
 
 Added `mseries/share-cost/MEDIA-PATH-OPTIONS.md`: the go/no-go frame for the
