@@ -147,6 +147,7 @@ jobs:
           python3 mseries/test-power-install.py
           python3 mseries/test-omdrop-installer.py
           python3 -m unittest discover -s mseries/omdrop-awdl/tests
+          python3 -m unittest discover -s mseries/omdrop/tests
           bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
           python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
           for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
@@ -189,7 +190,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install offline test tools
-        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
         run: |
           set -euo pipefail
@@ -206,3 +207,4 @@ jobs:
           python3 mseries/test-power-install.py
           python3 mseries/test-omdrop-installer.py
           python3 -m unittest discover -s mseries/omdrop-awdl/tests
+          python3 -m unittest discover -s mseries/omdrop/tests

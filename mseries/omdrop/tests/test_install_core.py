@@ -35,6 +35,7 @@ def probe_helper(backend, hardware=True):
     return f"#!/bin/sh\n[ \"$1\" = probe ] || exit 2\ncat <<'EOF'\n{answer}\nEOF\n"
 
 
+@unittest.skipUnless((ROOT / "core").is_dir(), "Optional Rust core is deliberately not vendored")
 class InstallCoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

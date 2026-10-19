@@ -154,6 +154,7 @@ class CoreHandoffTests(unittest.TestCase):
         link.symlink_to(OMDROP)
         self.assert_ran_here(self.run_omdrop("version", OMDROP_CORE=str(link)))
 
+    @unittest.skipUnless((ROOT / "core").is_dir(), "Optional Rust core is deliberately not vendored")
     def test_the_plugin_hands_off_to_its_own_core(self):
         # A CORE_MIN above core/'s own version would send no command to the
         # core this plugin builds.
