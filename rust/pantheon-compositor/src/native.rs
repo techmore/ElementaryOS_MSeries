@@ -30,7 +30,7 @@ use smithay::{
             Event as SessionEvent, Session,
             libseat::{LibSeatSession, LibSeatSessionNotifier},
         },
-        udev::all_gpus,
+        udev::{UdevBackend, UdevEvent, all_gpus},
     },
     output::{Mode, Output, PhysicalProperties},
     reexports::{
@@ -55,7 +55,11 @@ use crate::{
     display_config::{
         OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
     },
+    hotplug::{EventKind, HotplugScheduler, event_triggers_reconcile},
 };
+
+/// Grace period before a disabled output global is removed from clients.
+const GLOBAL_REMOVAL_DELAY: Duration = Duration::from_secs(2);
 
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
 pub type NativeGpuManager = GpuManager<GbmRendererBackend>;
@@ -129,6 +133,7 @@ pub struct NativeBackend {
     pub renderer: NativeRenderer,
     pub kms: NativeKmsDevice,
     session_paused: bool,
+    hotplug: HotplugScheduler,
 }
 
 struct ConnectedOutput {
@@ -734,9 +739,9 @@ impl NativeKmsDevice {
     }
 
     /// Reconcile connected DRM connectors with the outputs published to the
-    /// Wayland space. Smithay's DRM notifier reports page flips and failures,
-    /// so connector state is polled on a short timer instead of assuming a
-    /// hotplug event will arrive through that source.
+    /// Wayland space. Smithay's DRM notifier reports page flips and failures
+    /// only; connector changes arrive via the udev monitor (see
+    /// `crate::hotplug`) with a slow safety poll as backstop.
     fn refresh_connectors(
         &mut self,
         renderer: &mut NativeRenderer,
@@ -1075,7 +1080,7 @@ impl NativeKmsDevice {
         let now = Instant::now();
         self.pending_global_removals
             .retain(|(global, disabled_at)| {
-                if now.duration_since(*disabled_at) >= Duration::from_secs(2) {
+                if now.duration_since(*disabled_at) >= GLOBAL_REMOVAL_DELAY {
                     state
                         .display_handle
                         .remove_global::<PantheonCompositor>(global.clone());
@@ -1086,6 +1091,14 @@ impl NativeKmsDevice {
             });
 
         Ok(changed)
+    }
+
+    /// Earliest pending Wayland global removal, if any.
+    fn next_global_removal_deadline(&self) -> Option<Instant> {
+        self.pending_global_removals
+            .iter()
+            .map(|(_, disabled_at)| *disabled_at + GLOBAL_REMOVAL_DELAY)
+            .min()
     }
 
     fn open_output_device(
@@ -1382,6 +1395,7 @@ impl NativeBackend {
         session: LibSeatSession,
         session_notifier: LibSeatSessionNotifier,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let state_seat = session.seat();
         let mut renderer = NativeRenderer::initialize(&session)?;
         let mut kms = NativeKmsDevice::initialize(&session, &mut renderer, state)?;
         let drm_notifier = kms.notifier.take().expect("DRM notifier is present");
@@ -1476,6 +1490,7 @@ impl NativeBackend {
             renderer,
             kms,
             session_paused: false,
+            hotplug: HotplugScheduler::new(Instant::now(), false),
         });
         let mut consecutive_render_failures = 0;
         event_loop
@@ -1508,24 +1523,83 @@ impl NativeBackend {
                 state.native_backend = Some(backend);
             })?;
 
-        event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(2)),
-            |_, _, state| {
-                let Some(mut backend) = state.native_backend.take() else {
-                    return TimeoutAction::ToDuration(Duration::from_secs(2));
+        // Hotplug is event driven: a udev `drm` monitor schedules a debounced
+        // reconcile (plus one follow-up), and a slow safety poll covers a
+        // missed event. Without a monitor the old 2 s poll is kept.
+        let udev_backend = match UdevBackend::new(state_seat.as_str()) {
+            Ok(backend) => Some(backend),
+            Err(error) => {
+                tracing::warn!(?error, "udev drm monitor unavailable; polling connectors");
+                None
+            }
+        };
+        let hotplug = HotplugScheduler::new(Instant::now(), udev_backend.is_some());
+        let safety_interval = hotplug.safety_interval();
+        if let Some(backend) = state.native_backend.as_mut() {
+            backend.hotplug = hotplug;
+        }
+        let loop_handle = event_loop.handle();
+        if let Some(udev_backend) = udev_backend {
+            let timer_handle = loop_handle.clone();
+            loop_handle.insert_source(udev_backend, move |event, _, state| {
+                let (kind, device) = match event {
+                    UdevEvent::Added { device_id, .. } => (EventKind::Added, device_id),
+                    UdevEvent::Changed { device_id } => (EventKind::Changed, device_id),
+                    UdevEvent::Removed { device_id } => (EventKind::Removed, device_id),
                 };
-                if !backend.session_paused
-                    && let Err(error) = backend.kms.refresh_connectors(&mut backend.renderer, state)
-                {
-                    tracing::warn!(?error, "failed to reconcile native DRM connectors");
+                let Some(backend) = state.native_backend.as_mut() else {
+                    return;
+                };
+                if !event_triggers_reconcile(kind, device, backend.kms.node.dev_id()) {
+                    return;
                 }
-                state.native_backend = Some(backend);
-                TimeoutAction::ToDuration(Duration::from_secs(2))
-            },
-        )?;
+                let Some(deadline) = backend.hotplug.on_event(Instant::now()) else {
+                    return;
+                };
+                let armed = timer_handle
+                    .insert_source(Timer::from_deadline(deadline), |_, _, state| {
+                        reconcile_tick(state).0
+                    });
+                if let Err(error) = armed {
+                    tracing::warn!(?error, "failed to arm hotplug reconcile timer");
+                }
+            })?;
+        }
+        loop_handle.insert_source(Timer::from_duration(safety_interval), move |_, _, state| {
+            match reconcile_tick(state).1 {
+                Some(next_safety) => TimeoutAction::ToInstant(next_safety),
+                None => TimeoutAction::ToDuration(safety_interval),
+            }
+        })?;
         state.request_native_redraw();
         Ok(())
     }
+}
+
+/// Run one scheduler tick. Returns the timer action for an event-driven
+/// timer (drop when nothing is pending) and the next safety-poll instant.
+fn reconcile_tick(state: &mut PantheonCompositor) -> (TimeoutAction, Option<Instant>) {
+    let Some(mut backend) = state.native_backend.take() else {
+        return (TimeoutAction::Drop, None);
+    };
+    let now = Instant::now();
+    let removal = backend.kms.next_global_removal_deadline();
+    let tick = backend.hotplug.tick(now, removal);
+    if tick.reconcile
+        && !backend.session_paused
+        && let Err(error) = backend.kms.refresh_connectors(&mut backend.renderer, state)
+    {
+        tracing::warn!(?error, "failed to reconcile native DRM connectors");
+    }
+    // Removals queued by this very reconcile may need a later wakeup.
+    let removal = backend.kms.next_global_removal_deadline();
+    let next_event = [tick.next_event_deadline, removal]
+        .into_iter()
+        .flatten()
+        .min();
+    let action = next_event.map_or(TimeoutAction::Drop, TimeoutAction::ToInstant);
+    state.native_backend = Some(backend);
+    (action, Some(tick.next_safety))
 }
 
 impl NativeRenderer {
