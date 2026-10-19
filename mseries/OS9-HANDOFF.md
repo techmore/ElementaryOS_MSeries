@@ -6227,3 +6227,11 @@ firmware, NVMe disk). Findings:
   (boot manager hangs after reading 3 MiB) and AHCI `ide-cd` (the firmware does not list it as a boot device). Needs the
   virtio-win drivers: attach `virtio-win.iso` (`create ... --virtio-media`, or `EXTRA_MEDIA`) and load `vioscsi` from
   Setup's "Browse" dialog. Not done: that ISO is not downloaded yet.
+
+## 2026-10-19: Windows ARM64 install attempt and VirtIO media
+
+Downloaded Fedora's stable `virtio-win-0.1.302` ISO to `~/vms/downloads/virtio-win/virtio-win.iso` (837 MiB). Verification: the official Fedora stable RPM's published MD5 (`66f65c16ab3e8dfe12c2855a0d1ac303`) matched the downloaded RPM; the ISO extracted from that RPM had SHA-256 `303f7ae40dad495d6ae474fdc571df58958a4dbc5c37a522d80f9a203867949d`, matching the downloaded ISO. The ISO contains ARM64 `vioscsi`, `viostor` and `NetKVM` drivers. It is attached as `EXTRA_MEDIA` to `~/vms/windows/vm.conf` and to the isolated `windows-install-test4` guest.
+
+Install remains blocked before Windows Setup. Test4's virtual disk is blank (196 KiB allocated). Its ARM64 Windows ISO contains `EFI/BOOT/BOOTAA64.EFI`, `sources/boot.wim` and `sources/install.wim`, but AAVMF times out starting the installer from both SCSI CD-ROM and USB storage. Repeated with Secure Boot firmware and without it, with 4 GiB and 8 GiB RAM, and with a VGA device alongside ramfb; the same timeout recurred. No Windows files were installed. The test VM was stopped cleanly and retained for further diagnosis. PR #260 is merged to `dev` at `493fa2ba88b3f4ce651e29cfa13d7f4f7410f62f`.
+
+The companion `mseries-vm` change adds `EXTRA_BUS=usb` for presenting the extra driver ISO through USB storage. The USB path was exercised in test4, but the installer boot timeout means driver loading and installation remain unverified. Next: diagnose why this AAVMF build cannot complete the ARM64 Windows boot path, then continue Setup and load the storage driver if prompted.
