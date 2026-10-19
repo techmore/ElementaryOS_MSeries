@@ -5,6 +5,11 @@ using Gtk;
 public class Viewer : Gtk.Box {
     public Machine machine { get; construct; }
     public signal void toast (string message);
+    public signal void fullscreen_toggled (bool on);
+    public bool fullscreen { get; private set; default = false; }
+    private Gtk.Box exit_bar;
+    private Gtk.Box toolbar;
+    private uint hide_timer = 0;
 
     private Gtk.Picture picture;
     private Gtk.Stack stack;
@@ -63,9 +68,34 @@ public class Viewer : Gtk.Box {
         stack.add_named (off, "off");
         stack.add_named (picture, "screen");
         stack.add_css_class ("ml-screen-frame");
-        append (stack);
+
+        // Floating exit controls, shown in full screen.
+        exit_bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        exit_bar.halign = Gtk.Align.CENTER;
+        exit_bar.valign = Gtk.Align.START;
+        exit_bar.margin_top = 64;
+        exit_bar.add_css_class ("ml-fs-bar");
+        exit_bar.visible = false;
+        var exit_btn = new Gtk.Button.with_label ("Exit Full Screen");
+        exit_btn.add_css_class ("suggested-action");
+        exit_btn.clicked.connect (() => go_fullscreen (false));
+        exit_bar.append (exit_btn);
+        var rel_btn = new Gtk.Button.with_label ("Release Keyboard");
+        rel_btn.tooltip_text = "Give the keyboard and mouse back (Ctrl+Alt+G)";
+        rel_btn.clicked.connect (() => {
+            release_modifiers ();
+            captured = false;
+            update_hint ();
+            toast ("Keyboard released. Ctrl+Alt+F or F11 also leaves full screen.");
+        });
+        exit_bar.append (rel_btn);
+        var overlay = new Gtk.Overlay ();
+        overlay.child = stack;
+        overlay.add_overlay (exit_bar);
+        append (overlay);
 
         var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        toolbar = bar;
         bar.margin_top = 10;
         hint = new Gtk.Label ("Click the screen to use the keyboard and mouse in the machine. Ctrl+Alt+G gives them back.");
         hint.hexpand = true;
@@ -76,6 +106,10 @@ public class Viewer : Gtk.Box {
         size_label = new Gtk.Label ("");
         size_label.add_css_class ("ml-fineprint");
         bar.append (size_label);
+        var fs = new Gtk.Button.from_icon_name ("view-fullscreen-symbolic");
+        fs.tooltip_text = "Full screen (F11)";
+        fs.clicked.connect (() => go_fullscreen (!fullscreen));
+        bar.append (fs);
         var cad = new Gtk.Button.with_label ("Ctrl+Alt+Del");
         cad.clicked.connect (() => {
             foreach (var k in new string[] { "ctrl", "alt", "delete" }) machine.send_key (k, true);
@@ -136,6 +170,38 @@ public class Viewer : Gtk.Box {
         if (timer != 0) {
             Source.remove (timer);
         }
+    }
+
+    public void go_fullscreen (bool on) {
+        if (fullscreen == on) {
+            return;
+        }
+        fullscreen = on;
+        toolbar.visible = !on;
+        margin_start = on ? 0 : 24;
+        margin_end = on ? 0 : 24;
+        margin_bottom = on ? 0 : 16;
+        margin_top = on ? 0 : 4;
+        exit_bar.visible = on;
+        exit_bar.opacity = 1.0;
+        if (on) {
+            toast ("Full screen: move the pointer to the top for the exit button, or press F11 / Ctrl+Alt+F");
+            arm_hide ();
+        }
+        fullscreen_toggled (on);
+    }
+
+    private void arm_hide () {
+        if (hide_timer != 0) {
+            Source.remove (hide_timer);
+        }
+        hide_timer = Timeout.add (3000, () => {
+            hide_timer = 0;
+            if (fullscreen) {
+                exit_bar.opacity = 0.0;   // fades; still clickable once shown again
+            }
+            return Source.REMOVE;
+        });
     }
 
     /* Only fetch frames while this tab is on screen: ~30 fps while the screen
@@ -234,6 +300,10 @@ public class Viewer : Gtk.Box {
 
     // Pointer position inside the picture's displayed image, as 0..1.
     private void move_pointer (double x, double y, bool force) {
+        if (fullscreen && y < 140) {
+            exit_bar.opacity = 1.0;
+            arm_hide ();
+        }
         if (tex_w == 0 || tex_h == 0) {
             return;
         }
@@ -319,6 +389,14 @@ public class Viewer : Gtk.Box {
         if (evdev == 56 || evdev == 100) alt_down = down;
         if (!captured) {
             return false;
+        }
+        // Ctrl+Alt+F toggles full screen even while the keyboard is captured.
+        if (evdev == 33 && ctrl_down && alt_down) {
+            if (down) {
+                release_modifiers ();
+                go_fullscreen (!fullscreen);
+            }
+            return true;
         }
         // Ctrl+Alt+G releases the keyboard back to Machine Lab.
         if (evdev == 34 && ctrl_down && alt_down) {

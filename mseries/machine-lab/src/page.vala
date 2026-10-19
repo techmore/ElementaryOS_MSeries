@@ -10,6 +10,8 @@ public class MachinePage : Gtk.Box {
     public signal void changed ();          // a persisted setting changed
     public signal void remove_requested ();
     public signal void start_requested ();
+    public signal void fullscreen_toggled (bool on);
+    private Gtk.Widget header_handle;
 
     private Gtk.Label title;
     private Gtk.Label status_pill;
@@ -76,6 +78,10 @@ public class MachinePage : Gtk.Box {
         stack.add_titled (build_overview (), "overview", "Overview");
         viewer = new Viewer (machine);
         viewer.toast.connect ((m) => toast (m));
+        viewer.fullscreen_toggled.connect ((on) => {
+            header_handle.visible = !on;
+            fullscreen_toggled (on);
+        });
         stack.add_titled (viewer, "display", "Display");
         stack.add_titled (build_console (), "console", "Console");
         stack.add_titled (build_settings (), "settings", "Settings");
@@ -99,6 +105,7 @@ public class MachinePage : Gtk.Box {
         header.pack_end (more);
         var handle = new Gtk.WindowHandle ();
         handle.child = header;
+        header_handle = handle;
         append (handle);
         append (stack);
 
@@ -149,6 +156,13 @@ public class MachinePage : Gtk.Box {
         refresh ();
         int64 free = Readiness.free_gib ();
         toast (free >= 0 ? "Checked again: %d GiB free".printf ((int) free) : "Checked again");
+    }
+
+    public void toggle_fullscreen () {
+        if (stack.visible_child_name != "display") {
+            show_tab ("display");
+        }
+        viewer.go_fullscreen (!viewer.fullscreen);
     }
 
     public void show_tab (string name) {
