@@ -8,17 +8,19 @@ started, and Zenity appeared in the compositor's live Gala-compatible window
 snapshot with focus and the expected two-workspace count. On 2026-10-19 the
 opt-in LightDM session also completed its first native M1 Pro login and scanout:
 kernel DRM state showed the compositor's AR30 framebuffer active at 3024x1964,
-and the owner confirmed the desktop was usable. Startup felt slow, and Wingpanel
-and the bottom dock were absent because the experimental session does not start
-them yet. This proves the first native display path, not full Pantheon readiness
-or daily-use stability. Installed Wingpanel also
+and the owner confirmed the desktop was usable. Startup felt slow; Wingpanel,
+the bottom dock and a colored wallpaper/background were absent in the Rust
+session. A five-minute rollback returned LightDM to Gala, where the owner
+reported the background had returned. The native display path and automatic
+rollback are proven, but full Pantheon readiness and daily-use stability are
+not. Installed Wingpanel also
 connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
 and received a valid nested `GetCurrentState` response. It is not evidence for
-physical keyboard input or native display takeover. A private GTK/Wayland
+physical keyboard input or full shell integration. A private GTK/Wayland
 Zenity field now also receives nested key events and commits Japanese text
 through IBus/Mozc `mozc-jp` with a private Hiragana-on profile. F5 app behavior,
-host source switching, native display/input, and an experimental Pantheon login
-remain unqualified.
+host source switching, native input and full experimental Pantheon shell
+integration remain unqualified.
 
 Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
 clarified that the goal is to identify and implement the compositor features

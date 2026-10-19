@@ -14,6 +14,13 @@ Anything beyond those needs is conditional on a named app or workflow. The
 prioritized list and upstream feature radar are in
 [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md).
 
+On 2026-10-19 the installed experimental session completed its first native
+M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
+that startup felt slow; the Rust session had no Wingpanel, bottom dock, or
+colored wallpaper/background. A timed LightDM rollback returned to Gala and
+restored the background. This proves the native display path and rollback,
+not a complete Pantheon session or a performance/stability improvement.
+
 The nested prototype now handles the existing half-snap chords (`Super+Left`
 and `Super+Right`) and quarter-snap chords (`Super+Alt+U/I/J/K` plus the
 existing Super+keypad aliases). It computes rectangles from the focused

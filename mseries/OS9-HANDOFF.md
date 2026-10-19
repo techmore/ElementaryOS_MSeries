@@ -23,6 +23,23 @@ visible internal-panel scanout, but not full Pantheon readiness, external
 display use, input coverage, lock/logout/recovery, performance improvement or
 crash-rate improvement. Gala remains the rollback path.
 
+The installed desktop shell contract is `/etc/xdg/io.elementary.desktop.wm.shell`:
+desktop mode names `io.elementary.wingpanel` and `io.elementary.dock`, with
+`wait-for-n-panels=1`. The experimental session launched neither client, and
+its required-components list contains neither. The Rust session needs an
+equivalent managed shell-launch path plus a desktop background before it can
+replace Gala for normal Pantheon use.
+
+The five-minute rollback fired at 10:00:55 EDT. LightDM removed the temporary
+override and auto-logged into the original `pantheon-wayland` session; current
+logind state identifies that session, with Gala and Wingpanel running and the
+Rust compositor stopped. The owner reports the wallpaper/background is present
+again in Gala, while the Rust session had no colored background. This completes
+the bounded native-login trial and verifies the automatic return path. The
+experimental session still needs its wallpaper/background, Wingpanel and
+Dock startup integration investigated and wired in before another full Pantheon
+login attempt.
+
 Also passed an isolated XWayland smoke before native login: an X11 Zenity
 window mapped under Xvfb, accepted keyboard input, and appeared in the live
 window-list D-Bus query. Clipboard/PRIMARY transfers and broader X11 workflows

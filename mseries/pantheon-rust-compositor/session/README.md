@@ -32,9 +32,12 @@ binary at `/usr/bin/pantheon-compositor`; the repository's
 `../build-deb.sh` creates that arm64 package. On 2026-10-19 the installed opt-in
 session completed a native M1 Pro login and first scanout at 3024x1964 using an
 AR30 framebuffer. The owner confirmed the desktop became usable. Wingpanel and
-the bottom dock were missing, startup felt slow, and app behavior, lock/logout,
-recovery, performance and external-monitor use remain unqualified. Keep Gala as
-the rollback session while these gates are addressed.
+the bottom dock and colored wallpaper/background were missing, and startup felt
+slow. The five-minute LightDM rollback was exercised successfully and returned
+to Gala; the owner reports its background was visible again. App behavior,
+lock/logout, recovery under compositor failure, performance and external-monitor
+use remain unqualified. Keep Gala as the rollback session while these gates are
+addressed.
 
 The session carries forward the installed Pantheon settings-daemon, keyring,
 Orca and elementary settings-daemon targets. It intentionally does not promise
