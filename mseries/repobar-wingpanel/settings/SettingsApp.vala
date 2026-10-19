@@ -233,6 +233,9 @@ namespace MSeries {
                 choice ("menuSort", "menu-sort", { "activity", "prs", "issues", "stars", "repo" },
                     { "Recent activity", "Pull requests", "Issues", "Stars", "Name" })));
             add_row (dashboard, row ("Contribution graph", "Your activity over recent weeks", toggle_on ("showContributions", "show-contributions")));
+            add_row (dashboard, row ("Graph style", "Click the graph's heading to expand or collapse it",
+                choice ("contributionStyle", "contribution-style", { "dots", "fine", "squares" },
+                    { "Dots", "Fine dots", "Squares" })));
             add_row (dashboard, row ("Show forks", null, toggle ("showForks", "show-forks")));
             add_row (dashboard, row ("Show archived repositories", null, toggle ("showArchived", "show-archived")));
             return dashboard;

@@ -31,8 +31,11 @@ implementation; no macOS source or binary is copied into this project.
 - With a projects folder set, cards show every local checkout and worktree
   (Details → Checkouts) with branch and sync state, open them in Files or
   Terminal, and offer Clone for repositories you have not cloned yet.
-- A contribution graph (GitHub's calendar, accent-shaded, hover for each day)
-  sits at the top of the dashboard; turn it off in RepoBar Settings.
+- A contribution graph sits at the top of the dashboard. It starts collapsed to
+  one line (a toned mark per week plus this week's count); click its heading for
+  GitHub's day-by-day calendar (remembered). RepoBar Settings picks the style:
+  Dots (default), Fine dots (toned periods), or Squares, or turns it off
+  (`mseries-repobar settings set contribution-style dots|fine|squares`).
 - A For You card leads the dashboard with pull requests waiting on your review
   and issues assigned to you. Optional desktop notifications announce a default
   branch that starts failing CI or passes again (RepoBar Settings → Notifications).

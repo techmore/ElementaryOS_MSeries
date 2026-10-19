@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar compact contribution graph — 2026-10-18
+
+The contribution card now starts collapsed to a single line: one accent-toned
+mark per week (shade = that week's total relative to the busiest visible week)
+and this week's count. Clicking the heading expands GitHub's day-by-day calendar;
+the open/closed state is remembered in `~/.config/mseries/repobar/panel.ini`.
+New `contributionStyle` setting (Settings → Graph style, or
+`mseries-repobar settings set contribution-style dots|fine|squares`): Dots
+(default, 6 px circles), Fine dots (3 px toned periods), Squares (GitHub's 9 px
+look). Verified only by headless renders (light/dark, all three styles, collapsed
+and expanded, with the real cached snapshot) and CLI validation in a temporary
+HOME; not clicked on the live panel. `probe/run-probe.sh` honours
+`RB_CONTRIB_OPEN=1` to render it expanded.
+
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the

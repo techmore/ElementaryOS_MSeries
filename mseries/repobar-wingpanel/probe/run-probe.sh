@@ -26,6 +26,9 @@ scenarios=("$@"); [ ${#scenarios[@]} -gt 0 ] || scenarios=(healthy empty error)
 theme=io.elementary.stylesheet.blueberry; [ "$scheme" = dark ] && theme="$theme:dark"
 for name in "${scenarios[@]}"; do
   cp "$here/fixtures/$name.json" "$home/.cache/mseries/repobar/snapshot.json"
+  # RB_CONTRIB_OPEN=1 renders the contribution graph expanded (it starts collapsed).
+  mkdir -p "$home/.config/mseries/repobar"
+  printf '[panel]\ncontributionsExpanded=%s\n' "$([ -n "${RB_CONTRIB_OPEN:-}" ] && echo true || echo false)" > "$home/.config/mseries/repobar/panel.ini"
   env -i PATH="$PATH" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 \
     XDG_DATA_DIRS="$here/..:/usr/local/share:/usr/share" ${RB_SCOPE:+RB_SCOPE=$RB_SCOPE} ${RB_EXPAND:+RB_EXPAND=1} ${RB_DETAIL:+RB_DETAIL=$RB_DETAIL} ${RB_TOAST:+RB_TOAST=1} \
     RB_FIXTURE="$here/fixtures/$name.json" RB_ICONS="$here/../icons" \
