@@ -27,20 +27,17 @@ autostart runs `--background` with no window, D-Bus actions `sync`/`connect`/`sh
 longer leave the status at "syncing". Its tests pass: 8 merge unit tests, the
 server revision test, and a new end-to-end test against a private EDS with a fake
 server (19 of 20 repeated runs passed; one early run errored before logs were
-captured and did not recur). **Not committed:** the auto-mode permission check
-refused commits/pushes to that repository from this session. The full diff is
-`~/homeboard-elementary-sync-v2.patch` against `6d91c42`. Live install of the
-bridge (autostart) was also refused pending the owner's OK.
+captured and did not recur). Merged as
+[techmore/homeboard#8](https://github.com/techmore/homeboard/pull/8) (`26adc9f`).
 
 `mseries/install-homeboard-sync.sh` installs the bridge without its separate
 indicator (`--no-indicator`), removes the old browser-only launcher and starts the
-bridge in the background. It is pinned to `6d91c42` and refuses that revision as
-too old; bump the pin after the Homeboard change lands. Tested only in a sandboxed
-HOME on a private D-Bus with `HOMEBOARD_SOURCE`: files and `--background` autostart
-installed, D-Bus actions exported. Google sign-in remains the owner's step.
+bridge in the background. Pinned to `26adc9f`; it refuses older revisions. Run on
+this desktop: files in `~/.local/lib/homeboard`, autostart with `--background`,
+the bridge running and exporting `sync`/`connect`/`show`; `panel.json` reports
+signed out. The updated calendar indicator is installed and Wingpanel reloaded.
 
-Next: land the Homeboard change, bump the pin, install the bridge, owner signs in,
-then check a real round trip (tick in the dropdown → Homeboard within seconds).
+Next: owner chooses Sign In… in the calendar's Tasks tab, then check a real round trip (tick in the dropdown → Homeboard within seconds).
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the

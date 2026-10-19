@@ -8,7 +8,7 @@
 # Google sign-in is the owner's step: choose Sign In… in the Tasks tab afterwards.
 set -euo pipefail
 repository=https://github.com/techmore/homeboard.git
-commit=${HOMEBOARD_COMMIT:-6d91c42344abe3ca04299ea0e884d286d6db05ad}
+commit=${HOMEBOARD_COMMIT:-26adc9f6226a2971e88ba557f565d0eca54154c8}
 
 if [[ ${1:-} == --uninstall ]]; then
     rm -f "$HOME/.config/autostart/homeboard.desktop" \
