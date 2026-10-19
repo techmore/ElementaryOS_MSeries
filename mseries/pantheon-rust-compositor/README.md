@@ -77,6 +77,13 @@ a two-second delay, capped at three starts per minute. After that limit, its
 looping indefinitely. This is configuration only; a crash/restart has not been
 exercised in an isolated login.
 
+`build-deb.sh` builds an arm64 release binary with `native-drm` and packages it
+with the separate experimental session files. It derives shared-library
+dependencies and requires `gnome-session` and `gtklock`. Build it locally with
+`OUTDIR=/tmp/pantheon-rust-compositor-deb mseries/pantheon-rust-compositor/build-deb.sh`.
+The resulting package is for isolated qualification; it is not installed by
+the build script.
+
 ## Dock HDMI boundary
 
 The WD22TB4 HDMI goal remains in

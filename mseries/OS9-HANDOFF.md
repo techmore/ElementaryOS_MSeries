@@ -5723,3 +5723,15 @@ staged units and reported only expected unresolved install-time dependencies
 (`gnome-session-initialized.target`) and the not-yet-installed
 `/usr/bin/pantheon-compositor` path. The service remains uninstalled; no live
 crash, restart, login, or rollback was exercised.
+
+### Build an installable arm64 package without selecting the session — 2026-10-19
+
+Added `mseries/pantheon-rust-compositor/build-deb.sh`. On the local arm64 host
+it built the optimized `native-drm` executable and an arm64 Debian package
+containing the opt-in session files. `dpkg-shlibdeps` derived shared-library
+dependencies; the package also requires `gnome-session`, `gtklock`, `libegl1`
+and `libgles2`. `dpkg-deb --info` and `--contents` confirm the package metadata,
+binary and session units. Artifact:
+`/tmp/pantheon-rust-compositor-deb/pantheon-rust-compositor_0.1.0+gitbe5747a_arm64.deb`
+(SHA-256 `976823c9bc75c6f5f07cebe5967b4cab59ab38457f2196df7cef1fc8910a1038`).
+The package was not installed and the experimental session was not selected.

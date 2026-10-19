@@ -27,7 +27,8 @@ have not been exercised in a live GNOME session.
 
 The directory layout mirrors install paths below `usr/`. A distro package can
 stage the payload under its package root and install it with the compositor
-binary at `/usr/bin/pantheon-compositor`. Do not add these files to
+binary at `/usr/bin/pantheon-compositor`; the repository's
+`../build-deb.sh` creates that arm64 package. Do not add these files to
 the active host session until the native backend, login, app startup, lock,
 logout and recovery have been qualified on a separate session. Native DRM
 startup takes over the display device and has not been runtime-qualified on
