@@ -33,8 +33,9 @@ is installed but not qualified on native output. Package SHA-256:
 `a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`.
 The experimental LightDM entry now waits up to 30 seconds for the previous
 `gnome-session-pre.target` stop job to clear before starting GNOME. This
-addresses the observed transaction conflict in source; it still needs a new
-package build and native qualification.
+addresses the observed transaction conflict. Local ARM64 package
+`0.1.0+gite920d2e` includes the wrapper; its executable mode was verified in
+the built package. Native login qualification is still open.
 This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.
 
