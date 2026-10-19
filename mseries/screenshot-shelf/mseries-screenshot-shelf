@@ -235,6 +235,7 @@ class Shelf(Gtk.Window):
         self.dragging = False
         self.alt_seen = False
         self.cancelled = False
+        self.refused = False
         self.hover = False
         self.timer = None
         self.export = None
@@ -407,6 +408,9 @@ class Shelf(Gtk.Window):
     def on_drag_cancel(self, _source, _drag, reason):
         self.cancelled = True
         log(f"drag cancelled ({reason.value_nick})")
+        # The target refused the drop: put the image on the clipboard so one paste finishes the job.
+        self.copy_to_clipboard()
+        self.refused = True
         return False
 
     def on_drag_end(self, _source, _drag, _delete):
@@ -414,8 +418,12 @@ class Shelf(Gtk.Window):
         if self.cancelled:
             self.restart_timer()
             self.alt_seen = False
-            self.hint.set_label("Drag to use  ·  Alt keeps")
+            self.hint.set_label("Not accepted. Use Show")
+            self.hint.add_css_class("saving")
+            log("RESULT refused: no app took the drop (clipboard copy attempted; Show reveals the file)")
             return
+        self.hint.set_label("Dropped ✓")
+        log("RESULT accepted: an app took the drop")
         if self.alt_seen:
             log(f"used and kept (Alt): {os.path.basename(self.path)}")
             self.finish("used-kept", delay=DELETE_AFTER, delete_saved=False)
