@@ -14,6 +14,17 @@ Anything beyond those needs is conditional on a named app or workflow. The
 prioritized list and upstream feature radar are in
 [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md).
 
+The nested prototype now handles the existing half-snap chords (`Super+Left`
+and `Super+Right`) and quarter-snap chords (`Super+Alt+U/I/J/K` plus the
+existing Super+keypad aliases). It computes rectangles from the focused
+window's output work area, sends an xdg configure, and reflows managed tiles
+when panel/output work areas change. Starting a compositor move/resize or
+maximizing the window ends its managed tile. `Super+Shift+Left/Right` moves a
+window to the adjacent output while preserving its work-area offset (or tile
+position). These keyboard paths are compile checked only: runtime shortcut and
+multi-output behavior, drag-to-corner preview, and configurable Rust-side
+bindings remain open requirements.
+
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That
 explains why swapping out Mutter underneath Gala is not a drop-in operation.

@@ -65,6 +65,7 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
+            self.clear_tiling_for_surface(wl_surface);
             let pointer = seat.get_pointer().unwrap();
 
             let window = self
@@ -97,6 +98,7 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
+            self.clear_tiling_for_surface(wl_surface);
             let pointer = seat.get_pointer().unwrap();
 
             let window = self
@@ -193,6 +195,7 @@ impl XdgShellHandler for PantheonCompositor {
             .is_some_and(|focused| surface_has_root(&focused, wl_surface));
         self.initially_positioned.remove(&id);
         self.managed_windows.remove(&id);
+        self.tiled_windows.remove(&id);
         self.minimized_windows.remove(&id);
 
         let window = self

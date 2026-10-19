@@ -380,6 +380,7 @@ impl PantheonCompositor {
         };
 
         let surface_id = wl_surface.id();
+        self.clear_tiling_for_surface(wl_surface);
         let restore = *self
             .managed_windows
             .entry(surface_id.clone())
@@ -457,11 +458,14 @@ impl PantheonCompositor {
         for (surface, window, state) in managed {
             self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
+        self.reconfigure_tiled_windows();
     }
 }
 
 pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
     if state.is_panel_surface(surface) {
         state.update_panel(surface, |_| {});
+    } else {
+        state.update_tiling_after_commit(surface);
     }
 }

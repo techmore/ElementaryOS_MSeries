@@ -30,9 +30,10 @@ impl PantheonCompositor {
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
                             && !state.session_locked
-                            && state
-                                .shell_compat
-                                .activate_key(keysym.modified_sym(), modifiers)
+                            && (state.handle_tiling_shortcut(keysym.modified_sym(), modifiers)
+                                || state
+                                    .shell_compat
+                                    .activate_key(keysym.modified_sym(), modifiers))
                         {
                             FilterResult::Intercept(())
                         } else {

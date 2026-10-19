@@ -26,7 +26,16 @@ unimplemented/unqualified. Implemented relative pointer motion, pointer focus
 updates, and dispatch through active window move/resize grabs. Added xdg popup
 keyboard/pointer grabs rooted at managed toplevels, including nested serial
 validation; local `cargo check --bins` and `cargo build --bins` pass. Popup
-behavior is not yet runtime-qualified. Applying monitor modes, Dock behavior and
+behavior is not yet runtime-qualified. Added native `Super+Left/Right` half
+snapping and `Super+Alt+U/I/J/K` plus configured Super+keypad quarter aliases.
+Targets use each focused window's output work area and reflow with panel/output
+changes; compositor move/resize and maximize requests clear the managed tile.
+`Super+Shift+Left/Right` now moves a window to an adjacent output, preserving
+its relative work-area offset or tile position. The snapping and monitor-move
+code compile but have not been runtime-qualified. Drag-to-corner preview,
+configurable shortcut bindings, multi-output behavior, and client minimum-size
+handling remain to be implemented or verified. Applying
+monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
 are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Added

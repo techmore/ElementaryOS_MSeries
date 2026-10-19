@@ -45,6 +45,12 @@ tokens, consumes them after use and raises/focuses mapped target windows when
 the session is unlocked; app launch flows remain unverified. The
 `xdg_toplevel.set_minimized` request now unmaps and retains windows, which valid activation requests
 can restore at their previous position; this is not runtime-qualified.
+The compositor now handles the existing half-snap and quarter-snap keyboard
+chords, uses the focused window's output work area, and reflows tracked tiles
+when work areas change. `Super+Shift+Left/Right` moves a window to the adjacent
+output while preserving its work-area offset or tile position. This code is
+compile-checked only. Drag-to-corner preview, configurable Rust-side bindings,
+multi-output behavior, and runtime snapping qualification remain open.
 `ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now
 updates pointer focus and drives the compositor's existing move/resize grabs;

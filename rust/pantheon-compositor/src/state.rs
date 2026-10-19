@@ -80,6 +80,7 @@ pub struct PantheonCompositor {
     pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
+    pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
     pub minimized_windows: HashMap<
         smithay::reexports::wayland_server::backend::ObjectId,
         (Window, Point<i32, Logical>),
@@ -102,6 +103,24 @@ pub struct ManagedWindow {
     pub restore_size: Size<i32, Logical>,
     pub maximized: bool,
     pub fullscreen: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TilePosition {
+    Left,
+    Right,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
+#[derive(Clone)]
+pub struct TiledWindow {
+    pub position: TilePosition,
+    pub output: smithay::output::Output,
+    pub rect: smithay::utils::Rectangle<i32, Logical>,
+    pub committed_size: Size<i32, Logical>,
 }
 
 impl PantheonCompositor {
@@ -210,6 +229,7 @@ impl PantheonCompositor {
             panels: HashMap::new(),
             last_work_area: None,
             managed_windows: HashMap::new(),
+            tiled_windows: HashMap::new(),
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,

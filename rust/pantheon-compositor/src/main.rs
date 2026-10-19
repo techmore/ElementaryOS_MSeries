@@ -11,6 +11,7 @@ mod pantheon_shell;
 mod protocols;
 mod shell_compat;
 mod state;
+mod tiling;
 mod winit;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
