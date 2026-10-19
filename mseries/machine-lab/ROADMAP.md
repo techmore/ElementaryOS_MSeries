@@ -60,3 +60,6 @@ serial, ssh or screen sharing). Unknowns: whether the guest tolerates running on
 Update: with the GPU device skipped (`experiments/vmapple/linux-vmapple.patch`), the machine initialises and KVM then fails on the
 first run: `error: kvm run failed Invalid argument` at `PC=0x100000`. TCG runs silently on dummy firmware. See
 `experiments/vmapple/README.md` for the table and how to reproduce.
+
+Update 2: the KVM `Invalid argument` is the PMU: `-cpu host` turns it on and `vmapple` never sets the PMU interrupt. With
+`-cpu host,pmu=off` the vCPU runs under KVM (silently, on dummy firmware). First real blocker left: Apple's firmware and macOS images.
