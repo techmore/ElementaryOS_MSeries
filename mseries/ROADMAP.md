@@ -55,10 +55,15 @@ allocation and failure handling are first-session requirements for this M1 Pro,
 not optional general multi-GPU support. The read-only probe did not change
 modes. The executable now keeps nested Winit as its default and provides an
 explicit `--backend native` path behind `native-drm`; this wires libseat,
-libinput, the first DRM output, calloop rendering and vblank completion. Both
-build configurations pass locally. Native mode has not been launched because
-it deliberately takes over the active display; output hotplug, multiple
-outputs, session switching and actual M-series scanout remain unqualified.
+libinput, connected outputs on the first usable KMS device, calloop rendering
+and vblank completion. It prioritizes eDP and places additional outputs to its
+right. DisplayConfig no longer advertises a fabricated Winit output in native
+mode. Both build configurations pass locally. Native mode has not been
+launched because it deliberately takes over the active display; output hotplug,
+user-configured layouts, session switching and actual M-series scanout remain
+unqualified. Local `cargo check --bins` and `cargo build --bins` pass both with
+and without `native-drm`; they establish compilation only, not successful
+connector modesetting.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

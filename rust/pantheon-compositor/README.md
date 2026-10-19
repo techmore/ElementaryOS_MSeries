@@ -80,10 +80,11 @@ multi-GPU dependencies. The executable defaults to nested Winit; only
 `--backend native` starts the native session. That path initializes a hardware
 EGL/GBM renderer and a separate connected KMS output, publishes it as a
 Wayland output, assigns libinput to the active seat, and registers redraw,
-vblank, and session pause/resume sources with calloop. It currently selects
-one output. Hotplug, multiple-output lifecycle, display mode management,
-session-shell integration and M-series scanout/input behavior remain
-unqualified. Default and feature-enabled `cargo check --bins` and
+vblank, and session pause/resume sources with calloop. It initializes all
+connected outputs with compatible CRTCs on the selected KMS device, puts eDP
+first, and places other outputs to its right. Hotplug, changing display
+arrangement and modes, session-shell integration, and M-series scanout/input
+behavior remain unqualified. Default and feature-enabled `cargo check --bins` and
 `cargo build --bins` pass locally; builds do not initialize or take over a
 native session.
 

@@ -26,24 +26,6 @@ pub struct OutputSnapshot {
     pub primary: bool,
 }
 
-impl Default for OutputSnapshot {
-    fn default() -> Self {
-        Self {
-            connector: "winit".into(),
-            vendor: "Smithay".into(),
-            product: "Winit".into(),
-            serial: "Nested".into(),
-            width: 1280,
-            height: 800,
-            refresh_millihz: 60_000,
-            scale: 1.0,
-            x: 0,
-            y: 0,
-            primary: true,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct DisplayConfigHandle {
     updates: mpsc::Sender<DisplayConfigUpdate>,
@@ -151,7 +133,9 @@ fn serve_display_config(receiver: mpsc::Receiver<DisplayConfigUpdate>) {
         }
     };
 
-    let initial = HashMap::from([("winit".to_string(), OutputSnapshot::default())]);
+    // Backends publish their real outputs during startup. Avoid advertising a
+    // fabricated Winit monitor when native DRM is selected.
+    let initial = HashMap::new();
     let snapshot = Arc::new(Mutex::new((1, initial)));
     if let Err(error) = connection
         .object_server()

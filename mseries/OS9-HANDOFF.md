@@ -5443,22 +5443,30 @@ checks/builds passed locally.
 
 The executable now selects `nested` by default or accepts `--backend native`
 when built with `native-drm`. Native startup creates a libseat session, names
-the Wayland seat from that session, initializes the hardware renderer and first
-connected KMS output, assigns libinput to the active seat, and registers input,
-session pause/resume, DRM vblank and redraw-channel sources with calloop.
+the Wayland seat from that session, initializes the hardware renderer and all
+connected outputs with compatible CRTCs on the first usable KMS device, assigns
+libinput to the active seat, and registers input, session pause/resume, DRM
+vblank and redraw-channel sources with calloop. It prioritizes eDP, places
+additional outputs to its right, and shares one DRM manager/notifier across
+their scanout surfaces. DisplayConfig starts empty and only advertises outputs
+published by the selected backend, avoiding a phantom Winit monitor in native
+mode.
 Surface commits and input request redraws; vblank completes the matching
 queued frame and sends frame callbacks. The nested path remains independent and
 never creates a libseat session. Local `cargo check --bins`,
 `cargo check --bins --features native-drm`, and matching `cargo build --bins`
-commands pass. Formatting was applied only to the changed Rust sources;
+commands pass for the multi-output update, including both local feature-enabled
+and default builds. Formatting was applied only to the changed Rust sources;
 `cargo fmt --check` still reports pre-existing formatting differences elsewhere
 in the crate. Native mode was not launched:
 on this host it would take over the active display, so DRM initialization,
 scanout, physical input, pause/resume and the complete Pantheon session remain
-runtime-unverified. This first startup slice handles one output only; hotplug
-and multi-output lifecycle are still needed for the scoped M-series experience.
-Next: qualify the native path in a separate session or other safe hardware
-setup, then implement multi-output and hotplug lifecycle support.
+runtime-unverified. Connector enumeration and CRTC/output wiring only have
+compile evidence; the two-output M1 Pro topology has not been modeset. Hotplug,
+user-configured arrangement, monitor mode application, rollback, and connector
+removal lifecycle are still needed for the scoped M-series experience. Next:
+qualify native output initialization in a separate session or other safe
+hardware setup, then add dynamic connector lifecycle handling.
 
 ### Absolute pointer mapping — 2026-10-18
 

@@ -5,6 +5,7 @@
 //! device owns the physical connectors. Output allocation and scanout are
 //! attached by the native output backend built on top of this manager.
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::time::Duration;
 
@@ -66,19 +67,24 @@ pub struct NativeRenderer {
 }
 
 pub struct NativeKmsOutput {
-    pub node: DrmNode,
     pub connector: connector::Handle,
     pub crtc: smithay::reexports::drm::control::crtc::Handle,
     pub output: Output,
-    pub manager: NativeOutputManager,
     pub drm_output: NativeDrmOutput,
+    pub frame_pending: bool,
+}
+
+pub struct NativeKmsDevice {
+    pub node: DrmNode,
+    pub manager: NativeOutputManager,
+    pub outputs: Vec<NativeKmsOutput>,
     pub notifier: Option<DrmDeviceNotifier>,
 }
 
 pub struct NativeBackend {
     pub _session: LibSeatSession,
     pub renderer: NativeRenderer,
-    pub output: NativeKmsOutput,
+    pub kms: NativeKmsDevice,
 }
 
 struct ConnectedOutput {
@@ -87,10 +93,11 @@ struct ConnectedOutput {
     mode: smithay::reexports::drm::control::Mode,
 }
 
-impl NativeKmsOutput {
+impl NativeKmsDevice {
     /// Open the first usable KMS device on the active libseat and initialize
-    /// its preferred connected connector with buffers rendered on `renderer`.
-    /// This creates Smithay output state but does not queue or present a frame.
+    /// every connected connector with a compatible, unclaimed CRTC. Each
+    /// output receives its own scanout surface while sharing the device,
+    /// allocator, exporter and event source.
     pub fn initialize(
         session: &LibSeatSession,
         renderer: &mut NativeRenderer,
@@ -103,7 +110,7 @@ impl NativeKmsOutput {
                 _ => continue,
             };
             match Self::open_output_device(session, node, &path, renderer, state) {
-                Ok(output) => return Ok(output),
+                Ok(kms) => return Ok(kms),
                 Err(error) => last_error = Some(error),
             }
         }
@@ -121,30 +128,45 @@ impl NativeKmsOutput {
         &mut self,
         renderer: &mut NativeRenderer,
         state: &PantheonCompositor,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
-        let elements = smithay::desktop::space::space_render_elements(
-            &mut gpu_renderer,
-            [&state.space],
-            &self.output,
-            1.0,
-        )?;
-        let frame = self.drm_output.render_frame(
-            &mut gpu_renderer,
-            &elements,
-            [0.1, 0.1, 0.1, 1.0],
-            FrameFlags::DEFAULT,
-        )?;
-        if frame.is_empty {
-            return Ok(false);
+    ) -> Result<usize, Box<dyn std::error::Error>> {
+        let mut rendered = 0;
+        for output in &mut self.outputs {
+            if output.frame_pending {
+                continue;
+            }
+            let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
+            let elements = smithay::desktop::space::space_render_elements(
+                &mut gpu_renderer,
+                [&state.space],
+                &output.output,
+                1.0,
+            )?;
+            let frame = output.drm_output.render_frame(
+                &mut gpu_renderer,
+                &elements,
+                [0.1, 0.1, 0.1, 1.0],
+                FrameFlags::DEFAULT,
+            )?;
+            if frame.is_empty {
+                continue;
+            }
+            output.drm_output.queue_frame(())?;
+            output.frame_pending = true;
+            rendered += 1;
         }
-        self.drm_output.queue_frame(())?;
-        Ok(true)
+        Ok(rendered)
     }
 
-    pub fn frame_submitted(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.drm_output.frame_submitted()?;
-        Ok(())
+    pub fn frame_submitted(
+        &mut self,
+        crtc: smithay::reexports::drm::control::crtc::Handle,
+    ) -> Result<Option<Output>, Box<dyn std::error::Error>> {
+        let Some(output) = self.outputs.iter_mut().find(|output| output.crtc == crtc) else {
+            return Ok(None);
+        };
+        output.drm_output.frame_submitted()?;
+        output.frame_pending = false;
+        Ok(Some(output.output.clone()))
     }
 
     fn open_output_device(
@@ -164,12 +186,24 @@ impl NativeKmsOutput {
         let gbm = GbmDevice::new(drm_fd)?;
         let resources = drm.resource_handles()?;
 
-        let mut connected = Vec::new();
+        let mut discovered = Vec::new();
         for handle in resources.connectors() {
             let connector = drm.get_connector(*handle, false)?;
             if connector.state() != connector::State::Connected || connector.modes().is_empty() {
                 continue;
             }
+            discovered.push(connector);
+        }
+        discovered.sort_by_key(|connector| {
+            (
+                connector.interface() != connector::Interface::EmbeddedDisplayPort,
+                connector.interface_id(),
+            )
+        });
+
+        let mut connected = Vec::new();
+        let mut claimed_crtcs = HashSet::new();
+        for connector in discovered {
             let encoder = connector
                 .current_encoder()
                 .and_then(|handle| drm.get_encoder(handle).ok())
@@ -183,10 +217,11 @@ impl NativeKmsOutput {
             let Some(crtc) = resources
                 .filter_crtcs(encoder.possible_crtcs())
                 .into_iter()
-                .next()
+                .find(|crtc| !claimed_crtcs.contains(crtc))
             else {
                 continue;
             };
+            claimed_crtcs.insert(crtc);
             let mode = connector
                 .modes()
                 .iter()
@@ -200,13 +235,9 @@ impl NativeKmsOutput {
             });
         }
 
-        connected.sort_by_key(|output| {
-            output.connector.interface() != connector::Interface::EmbeddedDisplayPort
-        });
-        let selected = connected
-            .into_iter()
-            .next()
-            .ok_or("KMS device has no connected connector with a compatible CRTC")?;
+        if connected.is_empty() {
+            return Err("KMS device has no connected connector with a compatible CRTC".into());
+        }
 
         let output_allocator = renderer.output_allocator();
         let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
@@ -231,63 +262,81 @@ impl NativeKmsOutput {
             render_formats,
         );
 
-        let mode = Mode::from(selected.mode);
-        let name = format!(
-            "{}-{}",
-            selected.connector.interface().as_str(),
-            selected.connector.interface_id()
-        );
-        let (physical_width, physical_height) = selected.connector.size().unwrap_or((0, 0));
-        let output = Output::new(
-            name.clone(),
-            PhysicalProperties {
-                size: (physical_width as i32, physical_height as i32).into(),
-                subpixel: selected.connector.subpixel().into(),
-                make: "Apple".into(),
-                model: name.clone(),
-                serial_number: "Unknown".into(),
-            },
-        );
-        output.set_preferred(mode);
-        output.change_current_state(Some(mode), None, None, Some((0, 0).into()));
-
         let render_elements = DrmOutputRenderElements::<
             NativeMultiRenderer<'_>,
             WaylandSurfaceRenderElement<NativeMultiRenderer<'_>>,
         >::default();
-        let drm_output = manager.lock().initialize_output(
-            selected.crtc,
-            selected.mode,
-            &[selected.connector.handle()],
-            &output,
-            None,
-            &mut gpu_renderer,
-            &render_elements,
-        )?;
+        let mut outputs = Vec::with_capacity(connected.len());
+        let mut x = 0;
+        for selected in connected {
+            let mode = Mode::from(selected.mode);
+            let name = format!(
+                "{}-{}",
+                selected.connector.interface().as_str(),
+                selected.connector.interface_id()
+            );
+            let (physical_width, physical_height) = selected.connector.size().unwrap_or((0, 0));
+            let output = Output::new(
+                name.clone(),
+                PhysicalProperties {
+                    size: (physical_width as i32, physical_height as i32).into(),
+                    subpixel: selected.connector.subpixel().into(),
+                    make: "Apple".into(),
+                    model: name.clone(),
+                    serial_number: "Unknown".into(),
+                },
+            );
+            output.set_preferred(mode);
+            output.change_current_state(Some(mode), None, None, Some((x, 0).into()));
 
-        output.create_global::<PantheonCompositor>(&state.display_handle);
-        state.space.map_output(&output, (0, 0));
-        state.display_config.update(OutputSnapshot {
-            connector: name.clone(),
-            vendor: "Apple".into(),
-            product: name,
-            serial: "Unknown".into(),
-            width: mode.size.w,
-            height: mode.size.h,
-            refresh_millihz: mode.refresh,
-            scale: 1.0,
-            x: 0,
-            y: 0,
-            primary: true,
-        });
+            let drm_output = match manager.lock().initialize_output(
+                selected.crtc,
+                selected.mode,
+                &[selected.connector.handle()],
+                &output,
+                None,
+                &mut gpu_renderer,
+                &render_elements,
+            ) {
+                Ok(output) => output,
+                Err(error) => {
+                    tracing::warn!(%name, ?error, "could not initialize connected KMS output");
+                    continue;
+                }
+            };
+
+            output.create_global::<PantheonCompositor>(&state.display_handle);
+            state.space.map_output(&output, (x, 0));
+            state.display_config.update(OutputSnapshot {
+                connector: name.clone(),
+                vendor: "Apple".into(),
+                product: name,
+                serial: "Unknown".into(),
+                width: mode.size.w,
+                height: mode.size.h,
+                refresh_millihz: mode.refresh,
+                scale: 1.0,
+                x,
+                y: 0,
+                primary: outputs.is_empty(),
+            });
+            x += mode.size.w;
+            outputs.push(NativeKmsOutput {
+                connector: selected.connector.handle(),
+                crtc: selected.crtc,
+                output,
+                drm_output,
+                frame_pending: false,
+            });
+        }
+        if outputs.is_empty() {
+            return Err("could not initialize any connected KMS output".into());
+        }
 
         Ok(Self {
             node,
-            connector: selected.connector.handle(),
-            crtc: selected.crtc,
-            output,
             manager,
-            drm_output,
+            outputs,
             notifier: Some(notifier),
         })
     }
@@ -304,8 +353,8 @@ impl NativeBackend {
         session_notifier: LibSeatSessionNotifier,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut renderer = NativeRenderer::initialize(&session)?;
-        let mut output = NativeKmsOutput::initialize(&session, &mut renderer, state)?;
-        let drm_notifier = output.notifier.take().expect("DRM notifier is present");
+        let mut kms = NativeKmsDevice::initialize(&session, &mut renderer, state)?;
+        let drm_notifier = kms.notifier.take().expect("DRM notifier is present");
 
         let mut libinput_context = Libinput::new_with_udev::<
             LibinputSessionInterface<LibSeatSession>,
@@ -328,7 +377,7 @@ impl NativeBackend {
                 SessionEvent::PauseSession => {
                     libinput_context.suspend();
                     if let Some(backend) = state.native_backend.as_mut() {
-                        backend.output.manager.pause();
+                        backend.kms.manager.pause();
                     }
                     tracing::info!("native compositor session paused");
                 }
@@ -338,7 +387,7 @@ impl NativeBackend {
                         tracing::error!(?error, "failed to resume libinput");
                     }
                     if let Some(backend) = state.native_backend.as_mut() {
-                        if let Err(error) = backend.output.manager.lock().activate(false) {
+                        if let Err(error) = backend.kms.manager.lock().activate(false) {
                             tracing::error!(?error, "failed to reactivate DRM output");
                         }
                     }
@@ -354,14 +403,14 @@ impl NativeBackend {
                     let Some(backend) = state.native_backend.as_mut() else {
                         return;
                     };
-                    if crtc != backend.output.crtc {
-                        return;
-                    }
-                    if let Err(error) = backend.output.frame_submitted() {
-                        tracing::error!(?error, "failed to complete native DRM frame");
-                        return;
-                    }
-                    let output = backend.output.output.clone();
+                    let output = match backend.kms.frame_submitted(crtc) {
+                        Ok(Some(output)) => output,
+                        Ok(None) => return,
+                        Err(error) => {
+                            tracing::error!(?error, "failed to complete native DRM frame");
+                            return;
+                        }
+                    };
                     state.space.elements().for_each(|window| {
                         window.send_frame(
                             &output,
@@ -373,6 +422,7 @@ impl NativeBackend {
                     state.space.refresh();
                     state.popups.cleanup();
                     let _ = state.display_handle.flush_clients();
+                    state.request_native_redraw();
                 }
                 smithay::backend::drm::DrmEvent::Error(error) => {
                     tracing::error!(?error, "native DRM event source failed");
@@ -384,7 +434,7 @@ impl NativeBackend {
         state.native_backend = Some(Self {
             _session: session,
             renderer,
-            output,
+            kms,
         });
         event_loop
             .handle()
@@ -395,7 +445,7 @@ impl NativeBackend {
                 let Some(mut backend) = state.native_backend.take() else {
                     return;
                 };
-                if let Err(error) = backend.output.render(&mut backend.renderer, state) {
+                if let Err(error) = backend.kms.render(&mut backend.renderer, state) {
                     tracing::error!(?error, "native output render failed");
                 }
                 state.native_backend = Some(backend);
