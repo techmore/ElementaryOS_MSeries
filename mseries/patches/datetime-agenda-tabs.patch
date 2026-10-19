@@ -1072,6 +1072,48 @@ index 7b6ec63..b77c204 100644
 +        upcoming.components_removed.disconnect (update_components_model);
          var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
+diff --git a/src/Services/TimeManager.vala b/src/Services/TimeManager.vala
+index 7c23d7e..c91f531 100644
+--- a/src/Services/TimeManager.vala
++++ b/src/Services/TimeManager.vala
+@@ -92,7 +92,14 @@ public class DateTime.Services.TimeManager : Object {
+                                                     user_path,
+                                                     GLib.DBusProxyFlags.GET_INVALIDATED_PROPERTIES);
++            // An account the greeter has never stored a TimeFormat for has none:
++            // follow GSettings rather than testing a null string.
++            if (greeter_act.time_format == null) {
++                follow_clock_settings ();
++                return;
++            }
+             is_12h = ("12h" in greeter_act.time_format);
+             ((GLib.DBusProxy) greeter_act).g_properties_changed.connect ((changed_properties, invalidated_properties) => {
+-                if (changed_properties.lookup_value ("TimeFormat", GLib.VariantType.STRING) != null) {
++                if (changed_properties.lookup_value ("TimeFormat", GLib.VariantType.STRING) != null &&
++                    greeter_act.time_format != null) {
+                     is_12h = ("12h" in greeter_act.time_format);
+                 }
+@@ -100,12 +107,15 @@ public class DateTime.Services.TimeManager : Object {
+         } catch (Error e) {
+             critical (e.message);
+-            // Connect to the GSettings instead
+-            var clock_settings = new GLib.Settings ("org.gnome.desktop.interface");
+-            clock_settings.changed["clock-format"].connect (() => {
+-                is_12h = ("12h" in clock_settings.get_string ("clock-format"));
+-            });
++            follow_clock_settings ();
++        }
++    }
+ 
++    private void follow_clock_settings () {
++        var clock_settings = new GLib.Settings ("org.gnome.desktop.interface");
++        clock_settings.changed["clock-format"].connect (() => {
+             is_12h = ("12h" in clock_settings.get_string ("clock-format"));
+-        }
++        });
++
++        is_12h = ("12h" in clock_settings.get_string ("clock-format"));
+     }
+ 
 diff --git a/src/Widgets/ComponentRow.vala b/src/Widgets/ComponentRow.vala
 index 7a626ba..eed808f 100644
 --- a/src/Widgets/ComponentRow.vala
