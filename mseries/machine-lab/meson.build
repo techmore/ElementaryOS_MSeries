@@ -14,7 +14,7 @@ resources = gnome.compile_resources('machine-lab-resources',
 )
 
 executable('machine-lab',
-  'src/main.vala',
+  'src/main.vala', 'src/machine.vala', 'src/page.vala',
   resources,
   dependencies: [gtk, granite],
   install: true

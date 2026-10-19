@@ -2,7 +2,9 @@
 
 Native elementary OS look (Vala + GTK 4 + Granite 7) for running another Linux ARM64
 guest under QEMU/KVM with NAT networking. Flat sidebar of machines, hero header, spec cards,
-drag-and-drop installer picker, Start/Force Stop with live status, toast feedback, and
+multiple machines saved in ~/.config/machine-lab/machines.ini, Overview / Console / Settings tabs,
+per-machine CPU, memory, disk and SSH port, drag-and-drop installer, live status and uptime,
+streamed QEMU console, copyable SSH command, empty-state welcome, Ctrl+N, toasts, and
 light/dark + accent following the system.
 
 ```sh

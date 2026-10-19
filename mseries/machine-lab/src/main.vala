@@ -1,23 +1,78 @@
 /*
  * Machine Lab: run another Linux on this Mac.
  * Vala + GTK 4 + Granite 7, laid out like a first-party elementary OS app:
- * flat sidebar + content pane, hero header, spec cards, suggested action.
+ * flat sidebar of machines + content pane with tabs, suggested-action buttons,
+ * toasts, and an empty-state welcome.
  */
 using Gtk;
 
-public class MachineLab : Gtk.Application {
-    private string? installer_path = null;
-    private Subprocess? vm = null;
+public class MachineRow : Gtk.ListBoxRow {
+    public Machine machine { get; construct; }
+    private Gtk.Label name_label;
+    private Gtk.Label sub_label;
+    private Gtk.Box dot;
 
+    public MachineRow (Machine machine) {
+        Object (machine: machine);
+    }
+
+    construct {
+        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+        box.margin_top = 4;
+        box.margin_bottom = 4;
+        box.margin_start = 6;
+        box.margin_end = 6;
+
+        var overlay = new Gtk.Overlay ();
+        var icon = new Gtk.Image.from_icon_name ("computer");
+        icon.pixel_size = 32;
+        overlay.child = icon;
+        dot = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        dot.add_css_class ("ml-dot");
+        dot.halign = Gtk.Align.END;
+        dot.valign = Gtk.Align.END;
+        dot.width_request = 10;
+        dot.height_request = 10;
+        overlay.add_overlay (dot);
+        box.append (overlay);
+
+        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        text.valign = Gtk.Align.CENTER;
+        name_label = new Gtk.Label ("");
+        name_label.xalign = 0;
+        name_label.ellipsize = Pango.EllipsizeMode.END;
+        name_label.add_css_class ("ml-machine-name");
+        sub_label = new Gtk.Label ("");
+        sub_label.xalign = 0;
+        sub_label.add_css_class ("ml-machine-sub");
+        text.append (name_label);
+        text.append (sub_label);
+        box.append (text);
+        child = box;
+
+        machine.state_changed.connect (update);
+        update ();
+    }
+
+    public void update () {
+        name_label.label = machine.name;
+        sub_label.label = "%s · %d CPU · %d GiB".printf (
+            machine.running ? "Running" : "Stopped", machine.cpus, machine.mem_gib);
+        if (machine.running) {
+            dot.add_css_class ("running");
+        } else {
+            dot.remove_css_class ("running");
+        }
+    }
+}
+
+public class MachineLab : Gtk.Application {
+    private GenericArray<Machine> machines;
     private Gtk.ApplicationWindow window;
     private Granite.Toast toast;
-    private Gtk.Box drop_zone;
-    private Gtk.Label drop_title;
-    private Gtk.Label drop_detail;
-    private Gtk.Button start_button;
-    private Gtk.Button stop_button;
-    private Gtk.Label status_pill;
-    private Gtk.Label sidebar_sub;
+    private Gtk.ListBox list;
+    private Gtk.Stack content;
+    private HashTable<string, MachinePage> pages = new HashTable<string, MachinePage> (str_hash, str_equal);
 
     public MachineLab () {
         Object (
@@ -30,7 +85,6 @@ public class MachineLab : Gtk.Application {
         base.startup ();
         Granite.init ();
 
-        // Follow the system light/dark preference like other elementary apps.
         var gtk_settings = Gtk.Settings.get_default ();
         var granite_settings = Granite.Settings.get_default ();
         gtk_settings.gtk_application_prefer_dark_theme =
@@ -45,6 +99,15 @@ public class MachineLab : Gtk.Application {
         Gtk.StyleContext.add_provider_for_display (
             Gdk.Display.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         );
+
+        var new_action = new SimpleAction ("new-machine", null);
+        new_action.activate.connect (() => add_machine ());
+        add_action (new_action);
+        set_accels_for_action ("app.new-machine", { "<Control>n" });
+        set_accels_for_action ("app.quit", { "<Control>q" });
+        var quit = new SimpleAction ("quit", null);
+        quit.activate.connect (() => window.close ());
+        add_action (quit);
     }
 
     protected override void activate () {
@@ -52,19 +115,23 @@ public class MachineLab : Gtk.Application {
             window.present ();
             return;
         }
+        machines = MachineStore.load ();
 
         window = new Gtk.ApplicationWindow (this);
         window.title = "Machine Lab";
-        window.default_width = 880;
-        window.default_height = 600;
+        window.default_width = 940;
+        window.default_height = 640;
+        window.titlebar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { visible = false };
 
         var layout = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
         layout.append (build_sidebar ());
         layout.append (new Gtk.Separator (Gtk.Orientation.VERTICAL));
-        layout.append (build_content ());
 
-        // Hide the stock title bar: each pane brings its own flat header.
-        window.titlebar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { visible = false };
+        content = new Gtk.Stack ();
+        content.hexpand = true;
+        content.transition_type = Gtk.StackTransitionType.CROSSFADE;
+        content.add_named (build_empty_state (), "empty");
+        layout.append (content);
 
         var overlay = new Gtk.Overlay ();
         overlay.child = layout;
@@ -72,7 +139,17 @@ public class MachineLab : Gtk.Application {
         overlay.add_overlay (toast);
         window.child = overlay;
 
-        update_state ();
+        foreach (var m in machines.data) {
+            add_row_and_page (m);
+        }
+        select_first ();
+
+        window.close_request.connect (() => {
+            foreach (var m in machines.data) {
+                m.stop ();
+            }
+            return false;
+        });
         window.present ();
     }
 
@@ -81,7 +158,7 @@ public class MachineLab : Gtk.Application {
     private Gtk.Widget build_sidebar () {
         var side = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         side.add_css_class ("ml-sidebar");
-        side.width_request = 230;
+        side.width_request = 250;
 
         var header = new Gtk.HeaderBar ();
         header.add_css_class ("flat");
@@ -96,260 +173,187 @@ public class MachineLab : Gtk.Application {
         heading.add_css_class ("ml-sidebar-title");
         side.append (heading);
 
-        var list = new Gtk.ListBox ();
+        list = new Gtk.ListBox ();
         list.selection_mode = Gtk.SelectionMode.SINGLE;
         list.add_css_class ("navigation-sidebar");
-        list.vexpand = true;
+        list.row_selected.connect ((row) => {
+            if (row == null) {
+                content.visible_child_name = "empty";
+                return;
+            }
+            content.visible_child_name = ((MachineRow) row).machine.id;
+        });
+        var scroll = new Gtk.ScrolledWindow ();
+        scroll.vexpand = true;
+        scroll.child = list;
+        side.append (scroll);
 
-        var row_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
-        row_box.margin_top = 4;
-        row_box.margin_bottom = 4;
-        row_box.margin_start = 6;
-        row_box.margin_end = 6;
-        var icon = new Gtk.Image.from_icon_name ("computer");
-        icon.pixel_size = 32;
-        row_box.append (icon);
-
-        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-        text.valign = Gtk.Align.CENTER;
-        var name = new Gtk.Label ("Omarchy");
-        name.xalign = 0;
-        name.add_css_class ("ml-machine-name");
-        sidebar_sub = new Gtk.Label ("ARM64 · Stopped");
-        sidebar_sub.xalign = 0;
-        sidebar_sub.add_css_class ("ml-machine-sub");
-        text.append (name);
-        text.append (sidebar_sub);
-        row_box.append (text);
-
-        list.append (row_box);
-        list.select_row (list.get_row_at_index (0));
-        side.append (list);
-
+        side.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+        var add = new Gtk.Button ();
+        var add_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+        add_box.append (new Gtk.Image.from_icon_name ("list-add-symbolic"));
+        add_box.append (new Gtk.Label ("New Machine"));
+        add.child = add_box;
+        add.add_css_class ("flat");
+        add.margin_top = 6;
+        add.margin_bottom = 6;
+        add.margin_start = 6;
+        add.margin_end = 6;
+        add.halign = Gtk.Align.START;
+        add.tooltip_markup = Granite.markup_accel_tooltip ({ "<Control>n" }, "Create a new machine");
+        add.clicked.connect (() => add_machine ());
+        side.append (add);
         return side;
     }
 
-    // ---- Content ----------------------------------------------------------
-
-    private Gtk.Widget build_content () {
-        var pane = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-        pane.hexpand = true;
-
+    private Gtk.Widget build_empty_state () {
+        var page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         var header = new Gtk.HeaderBar ();
         header.add_css_class ("flat");
         header.decoration_layout = ":maximize";
         header.title_widget = new Gtk.Label ("");
         var handle = new Gtk.WindowHandle ();
         handle.child = header;
-        pane.append (handle);
+        page.append (handle);
 
-        var scroller = new Gtk.ScrolledWindow ();
-        scroller.vexpand = true;
-        scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
-        pane.append (scroller);
+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 10);
+        box.vexpand = true;
+        box.valign = Gtk.Align.CENTER;
+        box.halign = Gtk.Align.CENTER;
+        box.width_request = 380;
+        var icon = new Gtk.Image.from_icon_name ("computer");
+        icon.pixel_size = 128;
+        icon.add_css_class ("ml-empty-icon");
+        box.append (icon);
+        var t = new Gtk.Label ("No Machines Yet");
+        t.add_css_class ("title-1");
+        t.margin_top = 12;
+        box.append (t);
+        var d = new Gtk.Label ("Create a machine to run another Linux next to elementary OS, with full hardware acceleration.");
+        d.wrap = true;
+        d.justify = Gtk.Justification.CENTER;
+        d.add_css_class ("dim-label");
+        box.append (d);
+        var b = new Gtk.Button.with_label ("New Machine");
+        b.add_css_class ("suggested-action");
+        b.add_css_class ("pill");
+        b.halign = Gtk.Align.CENTER;
+        b.margin_top = 12;
+        b.clicked.connect (() => add_machine ());
+        box.append (b);
+        page.append (box);
+        return page;
+    }
 
-        var clamp = new Gtk.Box (Gtk.Orientation.VERTICAL, 20);
-        clamp.margin_start = 32;
-        clamp.margin_end = 32;
-        clamp.margin_bottom = 28;
-        clamp.halign = Gtk.Align.FILL;
-        clamp.width_request = 480;
-        scroller.child = clamp;
+    // ---- Machines ---------------------------------------------------------
 
-        // Hero
-        var hero = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 18);
-        var hero_icon = new Gtk.Image.from_icon_name ("computer");
-        hero_icon.pixel_size = 64;
-        hero_icon.add_css_class ("ml-hero-icon");
-        hero_icon.valign = Gtk.Align.START;
-        hero.append (hero_icon);
-
-        var hero_text = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-        hero_text.hexpand = true;
-        hero_text.valign = Gtk.Align.CENTER;
-        var title = new Gtk.Label ("Omarchy");
-        title.add_css_class ("title-1");
-        title.xalign = 0;
-        hero_text.append (title);
-
-        var subtitle = new Gtk.Label ("A second Linux, running side by side with elementary OS. It uses your Mac's hardware virtualization, so it stays fast.");
-        subtitle.wrap = true;
-        subtitle.xalign = 0;
-        subtitle.add_css_class ("dim-label");
-        hero_text.append (subtitle);
-
-        status_pill = new Gtk.Label ("Stopped");
-        status_pill.add_css_class ("ml-pill");
-        status_pill.halign = Gtk.Align.START;
-        status_pill.margin_top = 6;
-        hero_text.append (status_pill);
-        hero.append (hero_text);
-        clamp.append (hero);
-
-        // Specs
-        var specs = new Gtk.Grid ();
-        specs.column_homogeneous = true;
-        specs.row_homogeneous = true;
-        specs.column_spacing = 12;
-        specs.row_spacing = 12;
-        specs.attach (spec_card ("computer-symbolic", "4 virtual CPUs", "Processor"), 0, 0);
-        specs.attach (spec_card ("media-optical-symbolic", "6 GiB", "Memory"), 1, 0);
-        specs.attach (spec_card ("drive-harddisk-symbolic", "64 GiB", "Disk (grows as used)"), 0, 1);
-        specs.attach (spec_card ("network-wired-symbolic", "Shared network", "SSH on localhost:2222"), 1, 1);
-        clamp.append (specs);
-
-        // Installer drop zone
-        drop_zone = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
-        drop_zone.add_css_class ("ml-drop");
-        var drop_icon = new Gtk.Image.from_icon_name ("media-optical");
-        drop_icon.pixel_size = 48;
-        drop_zone.append (drop_icon);
-
-        var drop_text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-        drop_text.hexpand = true;
-        drop_text.valign = Gtk.Align.CENTER;
-        drop_title = new Gtk.Label ("Choose an installer");
-        drop_title.xalign = 0;
-        drop_title.add_css_class ("title-3");
-        drop_detail = new Gtk.Label ("Drop an ARM64 .iso here, or browse for one.");
-        drop_detail.xalign = 0;
-        drop_detail.ellipsize = Pango.EllipsizeMode.MIDDLE;
-        drop_detail.add_css_class ("dim-label");
-        drop_text.append (drop_title);
-        drop_text.append (drop_detail);
-        drop_zone.append (drop_text);
-
-        var browse = new Gtk.Button.with_label ("Browse…");
-        browse.valign = Gtk.Align.CENTER;
-        browse.clicked.connect (() => choose_installer.begin ());
-        drop_zone.append (browse);
-        clamp.append (drop_zone);
-
-        var target = new Gtk.DropTarget (typeof (Gdk.FileList), Gdk.DragAction.COPY);
-        target.enter.connect (() => { drop_zone.add_css_class ("hover"); return Gdk.DragAction.COPY; });
-        target.leave.connect (() => drop_zone.remove_css_class ("hover"));
-        target.drop.connect ((value) => {
-            drop_zone.remove_css_class ("hover");
-            var files = (Gdk.FileList) value.get_boxed ();
-            foreach (var f in files.get_files ()) {
-                set_installer (f.get_path ());
-                return true;
-            }
-            return false;
+    private void add_row_and_page (Machine m) {
+        var page = new MachinePage (m);
+        page.toast.connect (send_toast);
+        page.changed.connect (() => {
+            MachineStore.save (machines);
+            row_for (m).update ();
         });
-        drop_zone.add_controller (target);
-
-        // Actions
-        var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-        actions.halign = Gtk.Align.END;
-        stop_button = new Gtk.Button.with_label ("Force Stop");
-        stop_button.add_css_class (Granite.CssClass.DESTRUCTIVE);
-        stop_button.clicked.connect (stop_vm);
-        actions.append (stop_button);
-
-        start_button = new Gtk.Button.with_label ("Start Machine");
-        start_button.add_css_class (Granite.CssClass.SUGGESTED);
-        start_button.clicked.connect (start_vm);
-        actions.append (start_button);
-        clamp.append (actions);
-
-        var fine = new Gtk.Label ("Prototype: this boots the installer and leaves installing the system to you. Needs QEMU, UEFI firmware and access to /dev/kvm.");
-        fine.wrap = true;
-        fine.xalign = 0;
-        fine.add_css_class ("ml-fineprint");
-        clamp.append (fine);
-
-        return pane;
+        page.start_requested.connect (() => start_machine (m));
+        page.remove_requested.connect (() => confirm_remove.begin (m));
+        pages[m.id] = page;
+        content.add_named (page, m.id);
+        list.append (new MachineRow (m));
     }
 
-    private Gtk.Widget spec_card (string icon_name, string value, string label) {
-        var card = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
-        card.add_css_class ("ml-card");
-        card.add_css_class ("ml-spec");
-
-        var icon = new Gtk.Image.from_icon_name (icon_name);
-        icon.pixel_size = 24;
-        card.append (icon);
-
-        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-        text.valign = Gtk.Align.CENTER;
-        var v = new Gtk.Label (value);
-        v.xalign = 0;
-        v.add_css_class ("ml-spec-value");
-        var l = new Gtk.Label (label);
-        l.xalign = 0;
-        l.add_css_class ("ml-spec-label");
-        text.append (v);
-        text.append (l);
-        card.append (text);
-        return card;
-    }
-
-    // ---- State ------------------------------------------------------------
-
-    private bool is_running () {
-        return vm != null;
-    }
-
-    private void update_state () {
-        bool running = is_running ();
-        start_button.visible = !running;
-        stop_button.visible = running;
-        start_button.sensitive = installer_path != null;
-
-        status_pill.label = running ? "Running" : "Stopped";
-        if (running) {
-            status_pill.add_css_class ("running");
-            status_pill.remove_css_class ("stopped");
-        } else {
-            status_pill.remove_css_class ("running");
-            status_pill.add_css_class ("stopped");
+    private MachineRow row_for (Machine m) {
+        for (var r = list.get_row_at_index (0); r != null; r = list.get_row_at_index (r.get_index () + 1)) {
+            if (((MachineRow) r).machine == m) {
+                return (MachineRow) r;
+            }
         }
-        sidebar_sub.label = running ? "ARM64 · Running" : "ARM64 · Stopped";
+        assert_not_reached ();
+    }
 
-        if (installer_path != null) {
-            drop_zone.add_css_class ("chosen");
-            drop_title.label = Path.get_basename (installer_path);
-            drop_detail.label = installer_path;
+    private void select_first () {
+        var first = list.get_row_at_index (0);
+        if (first != null) {
+            list.select_row (first);
         } else {
-            drop_zone.remove_css_class ("chosen");
-            drop_title.label = "Choose an installer";
-            drop_detail.label = "Drop an ARM64 .iso here, or browse for one.";
+            content.visible_child_name = "empty";
         }
     }
 
-    private void set_installer (string? path) {
-        if (path == null) {
+    private void add_machine () {
+        var m = new Machine ();
+        m.id = "machine-%s".printf (Uuid.string_random ().substring (0, 8));
+        int n = machines.length + 1;
+        m.name = "Machine %d".printf (n);
+        int port = 2222;
+        bool clash = true;
+        while (clash) {
+            clash = false;
+            foreach (var o in machines.data) {
+                if (o.ssh_port == port) { port++; clash = true; }
+            }
+        }
+        m.ssh_port = port;
+        machines.add (m);
+        MachineStore.save (machines);
+        add_row_and_page (m);
+        list.select_row (row_for (m));
+        pages[m.id].show_tab ("settings");
+        send_toast ("Created %s".printf (m.name));
+    }
+
+    private void start_machine (Machine m) {
+        string? launcher = find_launcher ();
+        if (launcher == null) {
+            show_error ("The QEMU launcher was not found. Set MACHINE_LAB_LAUNCHER to the full path of run-vm.sh.");
             return;
         }
-        installer_path = path;
-        update_state ();
-    }
-
-    private void notify_user (string message) {
-        toast.title = message;
-        toast.send_notification ();
-    }
-
-    // ---- Actions ----------------------------------------------------------
-
-    private async void choose_installer () {
-        var chooser = new Gtk.FileDialog ();
-        chooser.title = "Choose an ARM64 installer image";
-        chooser.accept_label = "Choose";
-        var filter = new Gtk.FileFilter ();
-        filter.name = "Installer images";
-        filter.add_mime_type ("application/x-iso9660-image");
-        filter.add_pattern ("*.iso");
-        filter.add_pattern ("*.img");
-        var filters = new GLib.ListStore (typeof (Gtk.FileFilter));
-        filters.append (filter);
-        chooser.filters = filters;
+        if (!m.has_disk () && m.installer == null) {
+            show_error ("This machine has no disk yet. Choose an ARM64 installer image first.");
+            return;
+        }
+        foreach (var o in machines.data) {
+            if (o != m && o.running && o.ssh_port == m.ssh_port) {
+                show_error ("%s is already using SSH port %d. Change the port in Settings.".printf (o.name, o.ssh_port));
+                return;
+            }
+        }
         try {
-            var file = yield chooser.open (window, null);
-            set_installer (file.get_path ());
-        } catch (GLib.Error error) {
-            // GTK reports user cancellation through the same error path.
+            m.start (launcher);
+            send_toast ("Starting %s…".printf (m.name));
+        } catch (Error e) {
+            show_error (e.message);
+        }
+    }
+
+    private async void confirm_remove (Machine m) {
+        var dialog = new Gtk.AlertDialog ("Remove “%s”?".printf (m.name));
+        dialog.detail = "The machine is removed from Machine Lab. You can also delete its virtual disk, which cannot be undone.";
+        dialog.buttons = { "Cancel", "Remove", "Remove and Delete Disk" };
+        dialog.cancel_button = 0;
+        dialog.default_button = 0;
+        try {
+            int choice = yield dialog.choose (window, null);
+            if (choice == 0) return;
+            m.stop ();
+            if (choice == 2) {
+                m.delete_files ();
+            }
+            var row = row_for (m);
+            int idx = row.get_index ();
+            list.remove (row);
+            content.remove (pages[m.id]);
+            pages.remove (m.id);
+            machines.remove (m);
+            MachineStore.save (machines);
+            var next = list.get_row_at_index (int.min (idx, (int) machines.length - 1));
+            if (next != null) {
+                list.select_row (next);
+            } else {
+                content.visible_child_name = "empty";
+            }
+            send_toast ("Removed %s".printf (m.name));
+        } catch (Error e) {
+            // dialog dismissed
         }
     }
 
@@ -358,13 +362,10 @@ public class MachineLab : Gtk.Application {
         if (override_path != null && FileUtils.test (override_path, FileTest.IS_EXECUTABLE)) {
             return override_path;
         }
-
         string installed = "/usr/bin/machine-lab-run-vm";
         if (FileUtils.test (installed, FileTest.IS_EXECUTABLE)) {
             return installed;
         }
-
-        // Source tree: build/machine-lab -> ../launcher/run-vm.sh
         string exe_dir = Path.get_dirname (Environment.get_prgname () ?? "");
         string[] candidates = {
             Path.build_filename (exe_dir, "run-vm.sh"),
@@ -378,46 +379,9 @@ public class MachineLab : Gtk.Application {
         return null;
     }
 
-    private void start_vm () {
-        if (installer_path == null || is_running ()) {
-            return;
-        }
-        string? launcher = find_launcher ();
-        if (launcher == null) {
-            show_error ("The QEMU launcher was not found. Set MACHINE_LAB_LAUNCHER to the full path of run-vm.sh.");
-            return;
-        }
-
-        string vm_dir = Path.build_filename (Environment.get_user_data_dir (), "machine-lab", "omarchy-arm64");
-        try {
-            string[] argv = { launcher, installer_path, vm_dir };
-            vm = new Subprocess.newv (argv, SubprocessFlags.NONE);
-            vm.wait_async.begin (null, (obj, res) => {
-                try {
-                    vm.wait_async.end (res);
-                    int code = vm.get_if_exited () ? vm.get_exit_status () : -1;
-                    if (code > 0) {
-                        notify_user ("The machine stopped with an error (exit %d)".printf (code));
-                    } else {
-                        notify_user ("Machine stopped");
-                    }
-                } catch (Error e) {
-                    notify_user (e.message);
-                }
-                vm = null;
-                update_state ();
-            });
-            update_state ();
-            notify_user ("Starting Omarchy…");
-        } catch (Error error) {
-            show_error (error.message);
-        }
-    }
-
-    private void stop_vm () {
-        if (vm != null) {
-            vm.force_exit ();
-        }
+    private void send_toast (string message) {
+        toast.title = message;
+        toast.send_notification ();
     }
 
     private void show_error (string message) {
