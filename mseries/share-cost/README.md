@@ -73,3 +73,12 @@ Same CSV shape as `pantheon-rust-compositor/collect-session-metrics.sh` plus
 without a `role` column fall back to per-process grouping). Results can feed
 the Optimization repository's `powerlab` workflow the same way other
 measurements do.
+
+## What the baseline feeds
+
+[`MEDIA-PATH-OPTIONS.md`](MEDIA-PATH-OPTIONS.md) records the media-path options
+(keep P2P + TURN/tailnet polish, a Rust SFU with browser simulcast, server-side
+capture, or a stock SFU), what each changes about the consent model and threat
+model, and the decision gates. None of them is justified until the matched-pair
+baseline exists; that document is the go/no-go frame, this directory is the
+evidence.

@@ -40,6 +40,34 @@ No share was started, no viewer connected, and no media path was changed. The
 next step is the owner-run matched pair (1 vs 3 viewers) whenever a share is
 convenient; until then there is no measured cost for the share path either way.
 
+## Screen-share media path: options and decision gates — 2026-10-19
+
+Added `mseries/share-cost/MEDIA-PATH-OPTIONS.md`: the go/no-go frame for the
+question of whether the share media path should change, and whether Rust helps.
+It records the current architecture (browser `getDisplayMedia` → portal/PipeWire
+→ one P2P WebRTC connection per viewer; the Rust `rupert-core` server relays
+signaling only, no frames), the three-yeses consent model that must not
+regress, and four options:
+
+- **A — keep P2P, add TURN, surface the tailnet link, raise caps.** Configuration
+  and a small panel change; fixes reachability, not per-viewer cost.
+- **B — Rust SFU with browser simulcast uplink** (`str0m`, or `webrtc-rs`;
+  `oxpulse-sfu-kit` as young glue). One uplink, N forwarded downlinks, recording
+  becomes an egress tap, no new encode cost on the M1 Pro — but media now
+  transits the server, which changes the documented threat model, and admission
+  must gate media as it gates signaling today.
+- **C — server-side capture + software encode** (no hardware encoder on Asahi;
+  consent surface moves from the browser picker to a portal daemon).
+- **D — run a stock SFU** (self-hosted LiveKit) and keep our link/admission
+  layer.
+
+Decision gates: the matched-pair baseline from `collect-share-cost.sh`, AC
+watts, the owner's call on media-on-server, whether recording is actually
+required (TM-Remote's `feat/webrtc` scope), and which project is the home
+(`rupert-share` per the tracked issue; not the retail core). No option is
+justified until the baseline exists — this document deliberately recommends
+nothing on its own.
+
 ## Branch model: `main` stable, `dev` integration — 2026-10-18
 
 `main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
