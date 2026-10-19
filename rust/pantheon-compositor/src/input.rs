@@ -29,6 +29,14 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.move_grab_active
+                            && keysym.modified_sym()
+                                == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
+                        {
+                            state.cancel_move_snap();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && !state.session_locked
                             && (state.handle_tiling_shortcut(keysym.modified_sym(), modifiers)
                                 || state

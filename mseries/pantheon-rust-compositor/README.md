@@ -25,7 +25,10 @@ position). Shortcuts load at session startup from the existing Mutter half-tile,
 Pantheon quarter-tile, and GNOME monitor-move GSettings keys; built-in defaults
 apply if those schemas or keys are unavailable. Restart the session after
 changing bindings. These keyboard paths are compile checked only: runtime
-shortcut and multi-output behavior plus drag-to-corner preview remain open.
+shortcut and multi-output behavior remain open. During a compositor move, the
+40-logical-pixel output corners show a translucent quarter preview; releasing
+snaps the window, and Escape cancels the snap. Fixed-size windows are excluded.
+The drag preview and release path also need runtime qualification.
 
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That

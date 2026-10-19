@@ -8,9 +8,9 @@ use smithay::{
     desktop::Window,
     input::pointer::{
         AxisFrame, ButtonEvent, GestureHoldBeginEvent, GestureHoldEndEvent, GesturePinchBeginEvent,
-        GesturePinchEndEvent, GesturePinchUpdateEvent, GestureSwipeBeginEvent, GestureSwipeEndEvent,
-        GestureSwipeUpdateEvent, GrabStartData as PointerGrabStartData, MotionEvent, PointerGrab,
-        PointerInnerHandle, RelativeMotionEvent,
+        GesturePinchEndEvent, GesturePinchUpdateEvent, GestureSwipeBeginEvent,
+        GestureSwipeEndEvent, GestureSwipeUpdateEvent, GrabStartData as PointerGrabStartData,
+        MotionEvent, PointerGrab, PointerInnerHandle, RelativeMotionEvent,
     },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{Logical, Point},
@@ -37,6 +37,7 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         let new_location = self.initial_window_location.to_f64() + delta;
         data.space
             .map_element(self.window.clone(), new_location.to_i32_round(), true);
+        data.update_corner_snap_preview(&self.window, event.location);
     }
 
     fn relative_motion(
@@ -62,8 +63,16 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         const BTN_LEFT: u32 = 0x110;
 
         if !handle.current_pressed().contains(&BTN_LEFT) {
+            let snap = (!data.corner_snap_cancelled)
+                .then(|| data.corner_snap_preview.clone())
+                .flatten();
+            let window = self.window.clone();
             // No more buttons are pressed, release the grab.
             handle.unset_grab(self, data, event.serial, event.time, true);
+            data.finish_move_snap();
+            if let Some(snap) = snap {
+                data.commit_move_snap(&window, snap);
+            }
         }
     }
 
@@ -76,7 +85,11 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         handle.axis(data, details)
     }
 
-    fn frame(&mut self, data: &mut PantheonCompositor, handle: &mut PointerInnerHandle<'_, PantheonCompositor>) {
+    fn frame(
+        &mut self,
+        data: &mut PantheonCompositor,
+        handle: &mut PointerInnerHandle<'_, PantheonCompositor>,
+    ) {
         handle.frame(data);
     }
 
@@ -156,5 +169,7 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         &self.start_data
     }
 
-    fn unset(&mut self, _data: &mut PantheonCompositor) {}
+    fn unset(&mut self, data: &mut PantheonCompositor) {
+        data.finish_move_snap();
+    }
 }

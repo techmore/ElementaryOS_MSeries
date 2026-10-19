@@ -36,7 +36,9 @@ code compile but have not been runtime-qualified. Shortcuts load from the
 existing Mutter, Pantheon and GNOME GSettings schemas at session startup, with
 built-in defaults if a schema is unavailable. Drag-to-corner preview, live
 binding reload, multi-output behavior, and client minimum-size handling remain
-to be implemented or verified. Applying
+to be runtime-qualified. Implemented drag previews in the 40-logical-pixel
+output corners, Escape cancellation, fixed-size exclusion, and snap-on-release.
+Applying
 monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`

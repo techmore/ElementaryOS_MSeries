@@ -3,8 +3,11 @@ use smithay::{
     desktop::Window,
     input::keyboard::{Keysym, ModifiersState},
     reexports::wayland_server::Resource,
-    utils::{Logical, Rectangle, Size},
-    wayland::shell::xdg::ToplevelSurface,
+    utils::{Logical, Point, Rectangle, Size},
+    wayland::{
+        compositor,
+        shell::xdg::{SurfaceCachedState, ToplevelSurface},
+    },
 };
 
 use crate::shell_compat::{ParsedAccelerator, matches_accelerator, parse_accelerator};
@@ -20,6 +23,13 @@ enum TilingAction {
 struct TilingBinding {
     accelerator: ParsedAccelerator,
     action: TilingAction,
+}
+
+#[derive(Clone)]
+pub struct CornerSnapPreview {
+    pub output: smithay::output::Output,
+    pub position: TilePosition,
+    pub rect: Rectangle<i32, Logical>,
 }
 
 pub struct TilingBindings {
@@ -165,6 +175,95 @@ impl PantheonCompositor {
         let rect = tile_rect(self.work_area_for_output(output_geometry), position);
         self.managed_windows.remove(&surface.wl_surface().id());
         self.apply_tile(&surface, &window, output, position, rect);
+    }
+
+    pub(crate) fn update_corner_snap_preview(
+        &mut self,
+        window: &Window,
+        pointer: Point<f64, Logical>,
+    ) {
+        if self.corner_snap_cancelled {
+            return;
+        }
+        let Some(surface) = window.toplevel() else {
+            self.corner_snap_preview = None;
+            return;
+        };
+        if self.is_panel_surface(surface.wl_surface())
+            || self
+                .managed_windows
+                .get(&surface.wl_surface().id())
+                .is_some_and(|managed| managed.fullscreen)
+        {
+            self.corner_snap_preview = None;
+            return;
+        }
+        let (min_size, max_size) = compositor::with_states(surface.wl_surface(), |states| {
+            let mut cached = states.cached_state.get::<SurfaceCachedState>();
+            let current = cached.current();
+            (current.min_size, current.max_size)
+        });
+        let fixed_width = min_size.w > 0 && max_size.w == min_size.w;
+        let fixed_height = min_size.h > 0 && max_size.h == min_size.h;
+        if fixed_width && fixed_height {
+            self.corner_snap_preview = None;
+            return;
+        }
+
+        self.corner_snap_preview = self.space.outputs().find_map(|output| {
+            let geometry = self.space.output_geometry(output)?;
+            if !geometry.to_f64().contains(pointer) {
+                return None;
+            }
+            let near_left = pointer.x < (geometry.loc.x + 40) as f64;
+            let near_right = pointer.x >= (geometry.loc.x + geometry.size.w - 40) as f64;
+            let near_top = pointer.y < (geometry.loc.y + 40) as f64;
+            let near_bottom = pointer.y >= (geometry.loc.y + geometry.size.h - 40) as f64;
+            let position = match (near_left, near_right, near_top, near_bottom) {
+                (true, _, true, _) => TilePosition::TopLeft,
+                (_, true, true, _) => TilePosition::TopRight,
+                (true, _, _, true) => TilePosition::BottomLeft,
+                (_, true, _, true) => TilePosition::BottomRight,
+                _ => return None,
+            };
+            let rect = tile_rect(self.work_area_for_output(geometry), position);
+            Some(CornerSnapPreview {
+                output: output.clone(),
+                position,
+                rect,
+            })
+        });
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+    }
+
+    pub(crate) fn cancel_move_snap(&mut self) {
+        self.corner_snap_cancelled = true;
+        self.corner_snap_preview = None;
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+    }
+
+    pub(crate) fn finish_move_snap(&mut self) {
+        self.move_grab_active = false;
+        self.corner_snap_cancelled = false;
+        self.corner_snap_preview = None;
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+    }
+
+    pub(crate) fn commit_move_snap(&mut self, window: &Window, preview: CornerSnapPreview) {
+        let Some(surface) = window.toplevel().cloned() else {
+            return;
+        };
+        self.managed_windows.remove(&surface.wl_surface().id());
+        self.apply_tile(
+            &surface,
+            window,
+            preview.output,
+            preview.position,
+            preview.rect,
+        );
     }
 
     fn move_focused_window_to_output(&mut self, direction: i32) {

@@ -66,6 +66,9 @@ impl XdgShellHandler for PantheonCompositor {
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
             self.clear_tiling_for_surface(wl_surface);
+            self.move_grab_active = true;
+            self.corner_snap_cancelled = false;
+            self.corner_snap_preview = None;
             let pointer = seat.get_pointer().unwrap();
 
             let window = self

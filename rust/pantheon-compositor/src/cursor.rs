@@ -6,6 +6,7 @@ use smithay::{
             element::{
                 Kind, Wrap,
                 memory::{MemoryRenderBuffer, MemoryRenderBufferRenderElement},
+                solid::{SolidColorBuffer, SolidColorRenderElement},
                 surface::{WaylandSurfaceRenderElement, render_elements_from_surface_tree},
             },
         },
@@ -22,6 +23,7 @@ render_elements! {
     pub CursorRenderElement<R> where R: ImportAll + ImportMem;
     Surface=WaylandSurfaceRenderElement<R>,
     Memory=MemoryRenderBufferRenderElement<R>,
+    Solid=SolidColorRenderElement,
     WrappedSurface=Wrap<WaylandSurfaceRenderElement<R>>,
 }
 
@@ -77,7 +79,7 @@ where
     }
 
     let scale = Scale::from(output.current_scale().fractional_scale());
-    match &state.cursor_status {
+    let mut elements = match &state.cursor_status {
         CursorImageStatus::Hidden => Vec::new(),
         CursorImageStatus::Surface(surface) if surface.alive() => {
             let hotspot = with_states(surface, |states| {
@@ -119,7 +121,22 @@ where
             .into_iter()
             .collect()
         }
+    };
+
+    if let Some(preview) = state.corner_snap_preview.as_ref()
+        && preview.output.name() == output.name()
+    {
+        let buffer = SolidColorBuffer::new(preview.rect.size, [0.18, 0.46, 0.92, 1.0]);
+        let location = (preview.rect.loc - output_geometry.loc)
+            .to_f64()
+            .to_physical(scale)
+            .to_i32_round();
+        let element =
+            SolidColorRenderElement::from_buffer(&buffer, location, scale, 0.28, Kind::Unspecified);
+        elements.push(element.into());
     }
+
+    elements
 }
 
 pub fn render_lock_surface_elements<R>(
