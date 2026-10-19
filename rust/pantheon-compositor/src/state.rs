@@ -136,6 +136,7 @@ pub struct PantheonCompositor {
     pub cursor_status: CursorImageStatus,
     pub default_cursor: MemoryRenderBuffer,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
+    pub(crate) wallpaper_selection: Option<crate::wallpaper::WallpaperSelection>,
 
     pub seat: Seat<Self>,
     pub winit_redraw_sender: Option<channel::Sender<()>>,
@@ -278,6 +279,25 @@ impl PantheonCompositor {
                 TimeoutAction::ToDuration(Duration::from_secs(1))
             },
         )?;
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_secs(2)),
+            |_, _, state| {
+                match crate::wallpaper::configured_selection() {
+                    Ok(selection) if selection != state.wallpaper_selection => {
+                        state.wallpaper = selection
+                            .as_ref()
+                            .and_then(crate::wallpaper::load_wallpaper);
+                        state.wallpaper_selection = selection;
+                        state.request_native_redraw();
+                    }
+                    Ok(_) => {}
+                    Err(error) => {
+                        tracing::debug!(%error, "could not check desktop wallpaper settings")
+                    }
+                }
+                TimeoutAction::ToDuration(Duration::from_secs(2))
+            },
+        )?;
 
         // Notify clients that we have a pointer (mouse)
         // Here we assume that there is always pointer plugged in
@@ -288,6 +308,17 @@ impl PantheonCompositor {
         // Windows get a position and stacking order through mapping.
         // Outputs become views of a part of the Space and can be rendered via Space::render_output.
         let space = Space::default();
+
+        let wallpaper_selection = match crate::wallpaper::configured_selection() {
+            Ok(selection) => selection,
+            Err(error) => {
+                tracing::warn!(%error, "could not read desktop wallpaper settings");
+                None
+            }
+        };
+        let wallpaper = wallpaper_selection
+            .as_ref()
+            .and_then(crate::wallpaper::load_wallpaper);
 
         // Setup a wayland socket that will be used to accept clients
         let socket_name = Self::init_wayland_listener(display, event_loop)?;
@@ -374,7 +405,8 @@ impl PantheonCompositor {
             popups,
             cursor_status: CursorImageStatus::default_named(),
             default_cursor: default_cursor_buffer(),
-            wallpaper: crate::wallpaper::load_configured_wallpaper(),
+            wallpaper,
+            wallpaper_selection,
             seat,
             winit_redraw_sender: None,
             #[cfg(feature = "native-drm")]

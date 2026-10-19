@@ -14,11 +14,34 @@ pub(crate) struct Wallpaper {
     pub height: u32,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct WallpaperSelection {
+    uri: String,
+    picture_options: String,
+}
+
 /// Load the desktop wallpaper selected by GNOME's shared background settings.
 /// The decoded image is held as a CPU buffer and uploaded by Smithay's renderer
 /// as needed on each output device.
-pub(crate) fn load_configured_wallpaper() -> Option<Wallpaper> {
-    match try_load_configured_wallpaper() {
+pub(crate) fn configured_selection()
+-> Result<Option<WallpaperSelection>, Box<dyn std::error::Error>> {
+    let source = SettingsSchemaSource::default().ok_or("GSettings schemas are unavailable")?;
+    let schema = source
+        .lookup("org.gnome.desktop.background", true)
+        .ok_or("desktop background settings schema is unavailable")?;
+    let settings = Settings::new_full(&schema, None::<&SettingsBackend>, None);
+    let uri = settings.string("picture-uri");
+    if uri.is_empty() || uri == "file://" {
+        return Ok(None);
+    }
+    Ok(Some(WallpaperSelection {
+        uri: uri.to_string(),
+        picture_options: settings.string("picture-options").to_string(),
+    }))
+}
+
+pub(crate) fn load_wallpaper(selection: &WallpaperSelection) -> Option<Wallpaper> {
+    match try_load_wallpaper(selection) {
         Ok((buffer, width, height, path, picture_options)) => {
             tracing::info!(path = %path.display(), width, height, "loaded configured desktop wallpaper");
             Some(Wallpaper {
@@ -35,19 +58,11 @@ pub(crate) fn load_configured_wallpaper() -> Option<Wallpaper> {
     }
 }
 
-fn try_load_configured_wallpaper()
--> Result<(MemoryRenderBuffer, u32, u32, std::path::PathBuf, String), Box<dyn std::error::Error>> {
-    let source = SettingsSchemaSource::default().ok_or("GSettings schemas are unavailable")?;
-    let schema = source
-        .lookup("org.gnome.desktop.background", true)
-        .ok_or("desktop background settings schema is unavailable")?;
-    let settings = Settings::new_full(&schema, None::<&SettingsBackend>, None);
-    let uri = settings.string("picture-uri");
-    let picture_options = settings.string("picture-options").to_string();
-    if uri.is_empty() || uri == "file://" {
-        return Err("no desktop wallpaper URI is configured".into());
-    }
-    let file = gio::File::for_uri(&uri);
+fn try_load_wallpaper(
+    selection: &WallpaperSelection,
+) -> Result<(MemoryRenderBuffer, u32, u32, std::path::PathBuf, String), Box<dyn std::error::Error>>
+{
+    let file = gio::File::for_uri(&selection.uri);
     let path = file
         .path()
         .ok_or("configured wallpaper is not a local file")?;
@@ -78,5 +93,11 @@ fn try_load_configured_wallpaper()
         Transform::Normal,
         None,
     );
-    Ok((buffer, width, height, path, picture_options))
+    Ok((
+        buffer,
+        width,
+        height,
+        path,
+        selection.picture_options.clone(),
+    ))
 }
