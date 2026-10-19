@@ -1,5 +1,47 @@
 # OS 9 implementation / Claude Code handoff
 
+## Calendar Tasks and Homeboard sync — 2026-10-18
+
+Branch `claude/calendar-tasks-homeboard`. The calendar dropdown's Tasks tab now
+groups tasks into Overdue / Today / Tomorrow / Next 7 days / Later / No due date,
+words due dates ("Overdue since yesterday", "Due Friday"), marks high priority
+(**!**), shows the category (Homeboard project) and **Repeats**, and puts a dot on
+the Tasks tab while anything is overdue. Completing a task offers **Undo** for
+eight seconds (non-repeating tasks). The composer gained a due selector (No date
+/ Today / Tomorrow / In a week) and now falls back to the default list when the
+chosen list disappears (bug found by the new test). A Homeboard strip shows the
+bridge's last sync and offers Sync now / Open Homeboard / Sign In…, talking to the
+bridge over D-Bus; it is hidden when the bridge is absent. Patch:
+`mseries/patches/datetime-agenda-tabs.patch` (applies cleanly to the pin); adds
+`json-glib-1.0` (already in the factory build packages).
+
+Verification: `bash mseries/calendar/test-agenda.sh build/libdatetime.so` passes
+all 26 groups (22 existing + 4 new) in light and dark on Xvfb with a private
+D-Bus and private XDG dirs, including `XDG_STATE_HOME`.
+
+Homeboard bridge (owner's private `techmore/homeboard`, `linux/`): due dates and
+priority now sync both ways, project names show as categories, local edits sync
+about two seconds after they happen (EDS view watcher, bursts coalesced), the
+autostart runs `--background` with no window, D-Bus actions `sync`/`connect`/`show`,
+409 stale-write retry, a cross-process lock, a richer status file, and failures no
+longer leave the status at "syncing". Its tests pass: 8 merge unit tests, the
+server revision test, and a new end-to-end test against a private EDS with a fake
+server (19 of 20 repeated runs passed; one early run errored before logs were
+captured and did not recur). **Not committed:** the auto-mode permission check
+refused commits/pushes to that repository from this session. The full diff is
+`~/homeboard-elementary-sync-v2.patch` against `6d91c42`. Live install of the
+bridge (autostart) was also refused pending the owner's OK.
+
+`mseries/install-homeboard-sync.sh` installs the bridge without its separate
+indicator (`--no-indicator`), removes the old browser-only launcher and starts the
+bridge in the background. It is pinned to `6d91c42` and refuses that revision as
+too old; bump the pin after the Homeboard change lands. Tested only in a sandboxed
+HOME on a private D-Bus with `HOMEBOARD_SOURCE`: files and `--background` autostart
+installed, D-Bus actions exported. Google sign-in remains the owner's step.
+
+Next: land the Homeboard change, bump the pin, install the bridge, owner signs in,
+then check a real round trip (tick in the dropdown → Homeboard within seconds).
+
 ## Diagnostic candidate staged, no trial armed — 2026-10-18
 
 PR #229 merged as `387d1ec`. The diagnostic image regenerated from merged source

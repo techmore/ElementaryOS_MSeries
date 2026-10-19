@@ -920,6 +920,146 @@ class AgendaTest : Object {
         yield expect ("Retained draft", false);
     }
 
+    string? header_of (Gtk.Widget row) {
+        var header = ((Gtk.ListBoxRow) row).get_header () as Gtk.Label;
+        return header != null ? header.label : null;
+    }
+
+    void write_homeboard (string json) throws Error {
+        var dir = Path.build_filename (Environment.get_user_state_dir (), "homeboard");
+        DirUtils.create_with_parents (dir, 0700);
+        var temporary = Path.build_filename (dir, "panel.json.tmp");
+        FileUtils.set_contents (temporary, json);
+        FileUtils.rename (temporary, Path.build_filename (dir, "panel.json"));
+    }
+
+    string day (int offset) { return new GLib.DateTime.now_local ().add_days (offset).format ("%Y%m%d"); }
+
+    async void organized_task_checks () throws Error {
+        var stack = find_stack (widget);
+        stack.visible_child_name = "tasks";
+        var page = stack.get_page (stack.get_child_by_name ("tasks"));
+        add (tasks, todo ("Late task", false, "DUE;VALUE=DATE:" + day (-1) + "\r\n").replace ("UID:test-task", "UID:late"));
+        add (tasks, todo ("Today task", false, "DUE;VALUE=DATE:" + day (0) + "\r\n").replace ("UID:test-task", "UID:today"));
+        add (tasks, todo ("Urgent tomorrow", false, "DUE;VALUE=DATE:" + day (1) + "\r\nPRIORITY:1\r\nCATEGORIES:Kitchen\r\n").replace ("UID:test-task", "UID:urgent"));
+        add (tasks, todo ("Calm tomorrow", false, "DUE;VALUE=DATE:" + day (1) + "\r\n").replace ("UID:test-task", "UID:calm"));
+        add (tasks, todo ("Someday task").replace ("UID:test-task", "UID:someday"));
+        yield expect ("Someday task");
+        yield expect ("Urgent tomorrow");
+        yield expect ("Late task");
+        for (int i = 0; i < 5; i++) yield pause ();
+        var late = task_row (widget, "Late task");
+        var due_today = task_row (widget, "Today task");
+        var urgent = task_row (widget, "Urgent tomorrow");
+        var calm = task_row (widget, "Calm tomorrow");
+        var someday = task_row (widget, "Someday task");
+        int i_late = ((Gtk.ListBoxRow) late).get_index (), i_today = ((Gtk.ListBoxRow) due_today).get_index ();
+        int i_urgent = ((Gtk.ListBoxRow) urgent).get_index (), i_calm = ((Gtk.ListBoxRow) calm).get_index ();
+        int i_someday = ((Gtk.ListBoxRow) someday).get_index ();
+        assert (i_late < i_today && i_today < i_urgent && i_urgent < i_calm && i_calm < i_someday);
+        assert (header_of (late) == "Overdue" && header_of (due_today) == "Today");
+        assert (header_of (urgent) == "Tomorrow" && header_of (calm) == null && header_of (someday) == "No due date");
+        assert (contains (late, "Overdue since yesterday") && contains (due_today, "Due today"));
+        assert (contains (urgent, "Due tomorrow") && contains (urgent, " · agenda-test-tasks · Kitchen"));
+        assert (named (urgent, "task-priority") != null && named (calm, "task-priority") == null);
+        assert (named (someday, "task-due") == null);
+        assert (page.needs_attention);
+        preview ((Gtk.Window) widget.get_root (), "calendar-task-sections");
+        stdout.printf ("PASS task sections, overdue/today wording, priority-first order, project category and overdue tab dot\n");
+
+        tasks.remove_object_sync ("late", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Late task", false);
+        for (int n = 0; n < 100 && page.needs_attention; n++) yield pause ();
+        assert (!page.needs_attention);
+        var undo_bar = (Gtk.Revealer) named (widget, "task-undo-bar");
+        var undo = (Gtk.Button) named (widget, "task-undo");
+        task_check (due_today).active = true;
+        yield expect ("Today task", false);
+        yield expect ("Completed “Today task”");
+        assert (undo_bar.reveal_child && undo.visible);
+        undo.clicked ();
+        yield expect ("Today task");
+        ICal.Component reopened;
+        tasks.get_object_sync ("today", null, out reopened, null);
+        var record = new ECal.Component.from_icalcomponent (reopened.clone ());
+        assert (reopened.get_status () == ICal.PropertyStatus.NEEDSACTION);
+        assert (record.get_percent_complete () == 0 && record.get_completed () == null);
+        assert (reopened.get_due ().as_ical_string () == day (0));
+        for (int n = 0; n < 100 && undo_bar.reveal_child; n++) yield pause ();
+        assert (!undo_bar.reveal_child);
+        add (tasks, todo ("Weekly chore", false, "DTSTART;VALUE=DATE:" + day (0) + "\r\nDUE;VALUE=DATE:" + day (0) +
+            "\r\nRRULE:FREQ=WEEKLY;COUNT=3\r\n").replace ("UID:test-task", "UID:weekly"));
+        yield expect ("Weekly chore");
+        assert (contains (task_row (widget, "Weekly chore"), " · agenda-test-tasks · Repeats"));
+        task_check (task_row (widget, "Weekly chore")).active = true;
+        yield expect ("Completed · next one scheduled");
+        assert (undo_bar.reveal_child && !undo.visible);
+        stdout.printf ("PASS Undo reopens a panel-completed task; repeating tasks say the next one is scheduled\n");
+
+        var entry = (Gtk.Entry) named (widget, "task-title");
+        var due = (Gtk.DropDown) named (widget, "task-due");
+        assert (due.selected == 0);
+        due.selected = 2;
+        entry.text = "Quick dated task";
+        Signal.emit_by_name (entry, "activate");
+        yield expect ("Quick dated task");
+        for (int n = 0; n < 150 && !entry.sensitive; n++) yield pause ();
+        assert (due.selected == 0 && entry.text == "");
+        assert (contains (task_row (widget, "Quick dated task"), "Due tomorrow"));
+        SList<ECal.Component> saved;
+        tasks.get_object_list_as_comps_sync ("#t", out saved, null);
+        bool found = false;
+        foreach (var task in saved) {
+            if (task.get_icalcomponent ().get_summary () != "Quick dated task") continue;
+            var when = task.get_icalcomponent ().get_due ();
+            assert (when != null && when.is_date () && when.as_ical_string () == day (1));
+            found = true;
+        }
+        assert (found);
+        stdout.printf ("PASS quick-add due choice saves an all-day DUE and resets to No date\n");
+
+        var strip = named (widget, "homeboard-status");
+        assert (strip != null && !strip.visible);
+        var actions = new SimpleActionGroup ();
+        int synced = 0;
+        var sync_action = new SimpleAction ("sync", null);
+        sync_action.activate.connect (() => synced++);
+        actions.add_action (sync_action);
+        var bus = Bus.get_sync (BusType.SESSION);
+        bus.export_action_group ("/org/techmore/Homeboard", actions);
+        bool acquired = false;
+        Bus.own_name_on_connection (bus, "org.techmore.Homeboard", BusNameOwnerFlags.NONE, () => { acquired = true; }, null);
+        for (int n = 0; n < 100 && !acquired; n++) yield pause ();
+        assert (acquired);
+        write_homeboard ("{\"state\":\"signed-out\",\"signedIn\":false,\"status\":\"Sign in to Homeboard to sync\",\"tasks\":[]}");
+        for (int n = 0; n < 200 && !strip.visible; n++) yield pause ();
+        assert (strip.visible);
+        yield expect ("Sign in to Homeboard to sync");
+        assert (named (strip, "homeboard-connect").visible && !named (strip, "homeboard-sync").sensitive);
+        var stamp = new GLib.DateTime.now_utc ().add_minutes (-5).format_iso8601 ();
+        write_homeboard ("{\"state\":\"ok\",\"signedIn\":true,\"status\":\"Synced 4 tasks\",\"lastSuccess\":\"" + stamp + "\",\"tasks\":[]}");
+        yield expect ("Synced 4 tasks · 5 min ago");
+        preview ((Gtk.Window) widget.get_root (), "calendar-homeboard");
+        assert (!named (strip, "homeboard-connect").visible && named (strip, "homeboard-sync").sensitive);
+        bool close_requested = false;
+        ulong close_handler = indicator.close.connect (() => { close_requested = true; });
+        ((Gtk.Button) named (strip, "homeboard-sync")).clicked ();
+        yield expect ("Syncing…");
+        for (int n = 0; n < 100 && synced == 0; n++) yield pause ();
+        assert (synced == 1 && !close_requested);
+        SignalHandler.disconnect (indicator, close_handler);
+        write_homeboard ("{\"state\":\"ok\",\"signedIn\":true,\"status\":\"Synced 5 tasks\",\"lastSuccess\":\"" +
+            new GLib.DateTime.now_utc ().format_iso8601 () + "\",\"tasks\":[]}");
+        yield expect ("Synced 5 tasks · just now");
+        // Older bridges publish only a status sentence and an update time.
+        write_homeboard ("{\"status\":\"Synced 6 tasks\",\"updated_at\":\"" + new GLib.DateTime.now_utc ().format_iso8601 () + "\",\"tasks\":[]}");
+        yield expect ("Synced 6 tasks · just now");
+        stdout.printf ("PASS Homeboard strip: hidden until installed, sign-in/synced states, sync over D-Bus, legacy status file\n");
+        foreach (var uid in new string[] { "today", "urgent", "calm", "someday" }) {
+            tasks.remove_object_sync (uid, null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        }
+    }
+
     async void run () {
         try {
             registry = new E.SourceRegistry.sync (null);
@@ -998,6 +1138,7 @@ class AgendaTest : Object {
             yield expect ("Second calendar same UID");
             yield checkbox_checks ();
             yield quick_add_checks ();
+            yield organized_task_checks ();
             result = 0;
         } catch (Error e) { stderr.printf ("FAIL: %s\n", e.message); }
         loop.quit ();

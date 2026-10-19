@@ -503,18 +503,25 @@ index 28a4dd2..9d0bb78 100644
    </gresource>
  </gresources>
 diff --git a/meson.build b/meson.build
-index ec722ae..dd727e0 100644
+index ec722ae..61772f0 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -55,4 +55,8 @@ shared_module(
+@@ -55,4 +55,9 @@ shared_module(
      'src/Indicator.vala',
      'src/Widgets/ComponentRow.vala',
 +    'src/Widgets/TaskRow.vala',
 +    'src/Widgets/TaskComposer.vala',
++    'src/Widgets/HomeboardStatus.vala',
 +    'src/Widgets/TimeGrid.vala',
 +    'src/Widgets/DailyVerse.vala',
      'src/Widgets/PanelLabel.vala',
      'src/Widgets/calendar/CalendarModel.vala',
+@@ -67,4 +72,5 @@ shared_module(
+         dependency('granite-7', version: '>=7.7.0'),
+         dependency('gtk4'),
++        dependency('json-glib-1.0'),
+         libecal_dep,
+         dependency('libedataserver-1.2'),
 diff --git a/po/POTFILES b/po/POTFILES
 index 383cf96..f39b77f 100644
 --- a/po/POTFILES
@@ -527,10 +534,10 @@ index 383cf96..f39b77f 100644
 +src/Widgets/TimeGrid.vala
 +src/Widgets/DailyVerse.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..7f32ec1 100644
+index 7b6ec63..1a7f251 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
-@@ -25,5 +25,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -25,5 +25,27 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      private Widgets.CalendarView calendar;
      private Gtk.ListBox component_listbox;
 +    private Gtk.Stack agenda_stack;
@@ -548,9 +555,17 @@ index 7b6ec63..7f32ec1 100644
 +    private Gtk.SizeGroup calendar_size_group;
 +    private Gtk.Button grid_today;
 +    private DailyVerse daily_verse;
++    private Gtk.StackPage task_stack_page;
++    private Gtk.Revealer undo_revealer;
++    private Gtk.Label undo_label;
++    private Gtk.Button undo_button;
++    private uint undo_timer = 0;
++    private E.Source? undo_source = null;
++    private string? undo_uid = null;
++    private HomeboardStatus homeboard;
  
      public Indicator () {
-@@ -72,8 +86,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -72,8 +94,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
                  justify = Gtk.Justification.CENTER
              };
 +            empty_events = placeholder_label;
@@ -561,7 +576,7 @@ index 7b6ec63..7f32ec1 100644
 +                name = "agenda-events",
                  selection_mode = Gtk.SelectionMode.NONE
              };
-@@ -82,8 +98,106 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -82,8 +106,126 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
  
 -            var scrolled_window = new Gtk.ScrolledWindow () {
@@ -576,6 +591,7 @@ index 7b6ec63..7f32ec1 100644
 +            task_listbox.set_sort_func ((a, b) => {
 +                return ((TaskRow) a).compare ((TaskRow) b);
 +            });
++            task_listbox.set_header_func (task_header_func);
 +
 +            agenda_stack = new Gtk.Stack () { vexpand = true };
 +            var event_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
@@ -610,11 +626,11 @@ index 7b6ec63..7f32ec1 100644
 +            period_label = new Gtk.Label (null) {
 +                name = "agenda-period", hexpand = true, wrap = true,
 +                justify = Gtk.Justification.CENTER, max_width_chars = 30
-             };
++            };
 +            period_label.add_css_class ("heading");
 +            period_previous = new Gtk.Button.from_icon_name ("pan-start-symbolic") {
 +                name = "agenda-previous", valign = Gtk.Align.CENTER
-+            };
+             };
 +            period_next = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
 +                name = "agenda-next", valign = Gtk.Align.CENTER
 +            };
@@ -643,11 +659,30 @@ index 7b6ec63..7f32ec1 100644
 +            event_page.append (event_surface);
 +            agenda_stack.add_titled (event_page, "events", _("Events"));
 +            var task_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
++            homeboard = new HomeboardStatus ();
++            homeboard.link_opened.connect (() => close ());
++            task_page.append (homeboard);
 +            task_page.append (new TaskComposer ());
 +            task_page.append (new Gtk.ScrolledWindow () {
 +                hscrollbar_policy = Gtk.PolicyType.NEVER, child = task_listbox, vexpand = true
 +            });
-+            agenda_stack.add_titled (task_page, "tasks", _("Tasks"));
++            undo_label = new Gtk.Label (null) {
++                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 24
++            };
++            undo_button = new Gtk.Button.with_label (_("Undo")) { name = "task-undo", valign = Gtk.Align.CENTER };
++            undo_button.clicked.connect (() => undo_completion.begin ());
++            var undo_bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
++                margin_start = 12, margin_end = 6, margin_top = 3, margin_bottom = 3
++            };
++            undo_bar.append (undo_label);
++            undo_bar.append (undo_button);
++            undo_revealer = new Gtk.Revealer () {
++                name = "task-undo-bar", child = undo_bar, reveal_child = false,
++                transition_type = Gtk.RevealerTransitionType.SLIDE_UP
++            };
++            task_page.append (undo_revealer);
++            task_stack_page = agenda_stack.add_titled (task_page, "tasks", _("Tasks"));
++            Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS).task_completed.connect (show_undo);
 +            daily_verse = new DailyVerse ();
 +            daily_verse.link_opened.connect (() => close ());
 +            agenda_stack.add_titled (daily_verse, "verse", _("Verse of the Day")).icon_name = "list-add-symbolic";
@@ -671,7 +706,7 @@ index 7b6ec63..7f32ec1 100644
 +            });
  
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -95,14 +209,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,14 +237,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
  
              main_grid = new Gtk.Grid () {
 -                margin_top = 12
@@ -692,13 +727,13 @@ index 7b6ec63..7f32ec1 100644
 +            calendar_size_group.add_widget (agenda);
  
              calendar.day_double_click.connect (() => {
-@@ -111,4 +226,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -111,4 +254,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
  
              calendar.selection_changed.connect ((date) => {
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +254,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +282,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
  
 +            task_listbox.row_activated.connect ((row) => {
@@ -714,7 +749,7 @@ index 7b6ec63..7f32ec1 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,48 +277,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +305,86 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
  
 +    private void move_period (int direction) {
@@ -765,23 +800,66 @@ index 7b6ec63..7f32ec1 100644
 +        row.set_header (header);
      }
  
-     [CCode (instance_pos = -1)]
-     private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
+-    [CCode (instance_pos = -1)]
+-    private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
 -        var e1 = (ComponentRow) child1;
 -        var e2 = (ComponentRow) child2;
--
++    private void task_header_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
++        var row = (TaskRow) lbrow;
++        var before = lbbefore as TaskRow;
++        if (before != null && before.bucket == row.bucket) { row.set_header (null); return; }
++        var header = new Gtk.Label (row.bucket.label ()) {
++            xalign = 0, margin_start = 12, margin_end = 6, margin_top = before == null ? 2 : 8, margin_bottom = 2
++        };
++        header.add_css_class ("heading");
++        if (row.bucket == TaskRow.Bucket.OVERDUE) header.add_css_class ("error");
++        row.set_header (header);
++    }
+ 
 -        if (e1.start_time.compare (e2.start_time) != 0) {
 -            return e1.start_time.compare (e2.start_time);
 -        }
--
++    private void show_undo (E.Source source, string uid, string? rid, string title, bool recurring) {
++        // Repeating tasks advanced to their next occurrence; reopening belongs in Tasks.
++        undo_source = recurring ? null : source;
++        undo_uid = recurring ? null : uid;
++        undo_label.label = recurring ? _("Completed · next one scheduled") : _("Completed “%s”").printf (title);
++        undo_label.tooltip_text = undo_label.label;
++        undo_button.visible = !recurring;
++        undo_button.sensitive = true;
++        undo_revealer.reveal_child = true;
++        if (undo_timer != 0) GLib.Source.remove (undo_timer);
++        undo_timer = Timeout.add_seconds (8, () => {
++            undo_timer = 0;
++            undo_revealer.reveal_child = false;
++            undo_source = null;
++            undo_uid = null;
++            return GLib.Source.REMOVE;
++        });
++    }
+ 
 -        // If they have the same date, sort them wholeday first
 -        if (e1.is_allday) {
 -            return -1;
 -        } else if (e2.is_allday) {
 -            return 1;
--        }
--
++    private async void undo_completion () {
++        if (undo_source == null || undo_uid == null) return;
++        undo_button.sensitive = false;
++        try {
++            yield Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS).reopen_task (undo_source, undo_uid);
++            undo_revealer.reveal_child = false;
++            undo_source = null;
++            undo_uid = null;
++        } catch (Error e) {
++            undo_label.label = _("Couldn’t undo. Reopen it in Tasks.");
++            undo_label.tooltip_text = e.message;
+         }
++    }
+ 
 -        return 0;
++    [CCode (instance_pos = -1)]
++    private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
 +        var a = (ComponentRow) child1;
 +        var b = (ComponentRow) child2;
 +        var day = a.date.compare (b.date);
@@ -792,7 +870,7 @@ index 7b6ec63..7f32ec1 100644
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
  
-@@ -208,42 +328,89 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,42 +401,94 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
  
 -    private bool update_components () {
@@ -817,12 +895,18 @@ index 7b6ec63..7f32ec1 100644
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
  
 -        var components_on_day = new Gee.TreeMap<string, DateTime.ComponentRow> ();
+-
++        int overdue = 0;
 +        tasks_model.source_components.@foreach ((source, component_map) => {
 +            foreach (var comp in component_map.get_values ()) {
-+                task_listbox.append (new TaskRow (comp.get_icalcomponent (), source));
++                var task = new TaskRow (comp.get_icalcomponent (), source);
++                if (task.bucket == TaskRow.Bucket.OVERDUE) overdue++;
++                task_listbox.append (task);
 +            }
 +        });
- 
++        // A dot on the Tasks tab while anything is overdue.
++        task_stack_page.needs_attention = overdue > 0;
++
 +        var events_model = agenda_mode == "upcoming" ? Widgets.CalendarModel.get_upcoming () :
 +            Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
 +        period_previous.visible = period_next.visible = agenda_mode != "upcoming";
@@ -910,14 +994,14 @@ index 7b6ec63..7f32ec1 100644
 +                        else component_listbox.append (row);
                      }
                  }
-@@ -251,4 +418,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -251,4 +496,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          });
  
 +        if (timetable) time_grid.render (first, agenda_mode == "week" ? 7 : 1, timed_rows);
 +        else time_grid.clear ();
          update_components_idle_source = 0;
          return GLib.Source.REMOVE;
-@@ -268,8 +437,25 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +515,27 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          tasks_model.components_removed.connect (update_components_model);
  
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
@@ -927,11 +1011,13 @@ index 7b6ec63..7f32ec1 100644
 +        upcoming.refresh_upcoming ();
 +        if (upcoming_timer == 0) upcoming_timer = Timeout.add_seconds (60, () => {
 +            Widgets.CalendarModel.get_upcoming ().refresh_upcoming ();
-+            if (agenda_mode == "upcoming") idle_update_components ();
++            // Due wording ("Due today", "Overdue since…") rolls over with the clock too.
++            if (agenda_mode == "upcoming" || agenda_stack.visible_child_name == "tasks") idle_update_components ();
 +            return GLib.Source.CONTINUE;
 +        });
          calendar.refresh ();
 +        daily_verse.refresh ();
++        homeboard.reload ();
 +        idle_update_components ();
      }
  
@@ -1345,17 +1431,211 @@ index 0000000..4ea071d
 +        base.dispose ();
 +    }
 +}
+diff --git a/src/Widgets/HomeboardStatus.vala b/src/Widgets/HomeboardStatus.vala
+new file mode 100644
+index 0000000..933d454
+--- /dev/null
++++ b/src/Widgets/HomeboardStatus.vala
+@@ -0,0 +1,185 @@
++/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
++/*
++ * Homeboard sync status above the Tasks list. The Homeboard bridge keeps a dedicated
++ * "Homeboard" list in Evolution Data Server, so its tasks already appear as ordinary rows;
++ * this strip only reports the bridge's last sync and asks it to sync, sign in or open the
++ * board. It reads the status file the bridge publishes and never sees the device token.
++ * Hidden unless the bridge is installed.
++ */
++public class DateTime.HomeboardStatus : Gtk.Box {
++    public const string BOARD_URI = "https://tasks.stoverparc.org/board/";
++    private const string APP_ID = "org.techmore.Homeboard";
++
++    public signal void link_opened ();
++
++    private File status_file;
++    private FileMonitor? monitor;
++    private Gtk.Label status;
++    private Gtk.Spinner spinner;
++    private Gtk.Image icon;
++    private Gtk.Button sync_button;
++    private Gtk.Button connect_button;
++    private string summary = "";
++    private GLib.DateTime? last_success = null;
++    private bool signed_in = false;
++    private bool syncing = false;
++    private bool requested = false;
++    private uint age_timer = 0;
++
++    public HomeboardStatus () {
++        Object (orientation: Gtk.Orientation.HORIZONTAL, spacing: 6, name: "homeboard-status",
++            margin_start: 6, margin_end: 6, margin_bottom: 3);
++        status_file = File.new_build_filename (Environment.get_user_state_dir (), "homeboard", "panel.json");
++        icon = new Gtk.Image.from_icon_name ("emblem-synchronizing-symbolic");
++        spinner = new Gtk.Spinner () { visible = false };
++        append (icon);
++        append (spinner);
++        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true, valign = Gtk.Align.CENTER };
++        text.append (new Gtk.Label (_("Homeboard")) { xalign = 0, css_classes = { "heading" } });
++        status = new Gtk.Label (null) {
++            name = "homeboard-sync-status", xalign = 0, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 30
++        };
++        status.add_css_class ("dim-label");
++        var small = new Pango.AttrList ();
++        small.insert (Pango.attr_scale_new (0.85));
++        status.attributes = small;
++        text.append (status);
++        append (text);
++        connect_button = new Gtk.Button.with_label (_("Sign In…")) {
++            name = "homeboard-connect", valign = Gtk.Align.CENTER, visible = false,
++            tooltip_text = _("Sign in with Google to sync Homeboard tasks")
++        };
++        connect_button.add_css_class ("suggested-action");
++        connect_button.clicked.connect (() => { request ("connect"); link_opened (); });
++        append (connect_button);
++        sync_button = new Gtk.Button.from_icon_name ("view-refresh-symbolic") {
++            name = "homeboard-sync", valign = Gtk.Align.CENTER, tooltip_text = _("Sync with Homeboard now")
++        };
++        sync_button.add_css_class ("flat");
++        sync_button.clicked.connect (() => request ("sync"));
++        append (sync_button);
++        var open_board = new Gtk.Button.from_icon_name ("web-browser-symbolic") {
++            name = "homeboard-open", valign = Gtk.Align.CENTER, tooltip_text = _("Open Homeboard")
++        };
++        open_board.add_css_class ("flat");
++        open_board.clicked.connect (() => {
++            try { AppInfo.launch_default_for_uri (BOARD_URI, null); } catch (Error e) {
++                warning ("Could not open Homeboard: %s", e.message);
++            }
++            link_opened ();
++        });
++        append (open_board);
++        try {
++            monitor = status_file.monitor_file (FileMonitorFlags.WATCH_MOVES, null);
++            monitor.changed.connect (() => reload ());
++        } catch (Error e) {
++            warning ("Could not watch Homeboard status: %s", e.message);
++        }
++        map.connect (() => {
++            reload ();
++            if (age_timer == 0) age_timer = Timeout.add_seconds (30, () => { show_status (); return GLib.Source.CONTINUE; });
++        });
++        unmap.connect (() => {
++            if (age_timer != 0) { GLib.Source.remove (age_timer); age_timer = 0; }
++        });
++        reload ();
++    }
++
++    public static bool bridge_installed () {
++        return new DesktopAppInfo (APP_ID + ".desktop") != null ||
++            File.new_build_filename (Environment.get_user_state_dir (), "homeboard", "panel.json").query_exists ();
++    }
++
++    /* Re-read the bridge's status. Missing or malformed files keep the strip neutral. */
++    public void reload () {
++        visible = bridge_installed ();
++        summary = _("Not synced yet");
++        last_success = null;
++        signed_in = false;
++        syncing = false;
++        try {
++            uint8[] contents;
++            status_file.load_contents (null, out contents, null);
++            var parser = new Json.Parser ();
++            parser.load_from_data ((string) contents, contents.length);
++            var root = parser.get_root ();
++            if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
++                var object = root.get_object ();
++                var state = object.has_member ("state") ? object.get_string_member_with_default ("state", "") : "";
++                summary = object.get_string_member_with_default ("status", summary);
++                // Older bridges publish only a status sentence; anything but "Sign in…" means connected.
++                signed_in = object.has_member ("signedIn") ? object.get_boolean_member_with_default ("signedIn", false) :
++                    !summary.has_prefix ("Sign in") && summary != "Not connected";
++                syncing = state == "syncing";
++                var stamp = object.get_string_member_with_default ("lastSuccess",
++                    state == "ok" || !object.has_member ("state") ? object.get_string_member_with_default ("updated_at", "") : "");
++                if (stamp != "") last_success = new GLib.DateTime.from_iso8601 (stamp, null);
++            }
++        } catch (Error e) {
++            // No sync has run yet, or the bridge is mid-write; the next change event reloads.
++        }
++        if (!syncing) requested = false;
++        show_status ();
++    }
++
++    private void show_status () {
++        bool busy = syncing || requested;
++        spinner.visible = spinner.spinning = busy;
++        icon.visible = !busy;
++        sync_button.sensitive = !busy && signed_in;
++        connect_button.visible = !signed_in;
++        string text = busy ? _("Syncing…") : summary;
++        if (!busy && signed_in && last_success != null) {
++            text = "%s · %s".printf (summary, relative (last_success));
++        }
++        status.label = text;
++        status.tooltip_text = text;
++    }
++
++    private static string relative (GLib.DateTime when) {
++        var seconds = new GLib.DateTime.now_utc ().difference (when) / GLib.TimeSpan.SECOND;
++        if (seconds < 60) return _("just now");
++        if (seconds < 3600) return ngettext ("%d min ago", "%d min ago", (ulong) (seconds / 60)).printf ((int) (seconds / 60));
++        if (seconds < 86400) return ngettext ("%d hour ago", "%d hours ago", (ulong) (seconds / 3600)).printf ((int) (seconds / 3600));
++        return when.to_local ().format ("%b %e");
++    }
++
++    /* Ask the running bridge over D-Bus; start it in the background if it is not running. */
++    private void request (string action) {
++        if (action == "sync") {
++            requested = true;
++            show_status ();
++            // Stop spinning if the bridge never reports back (for example, it is offline).
++            Timeout.add_seconds (30, () => { if (requested) { requested = false; show_status (); } return GLib.Source.REMOVE; });
++        }
++        var parameters = new Variant.tuple ({
++            new Variant.string (action), new Variant.array (VariantType.VARIANT, {}),
++            new Variant.array (new VariantType ("{sv}"), {})
++        });
++        Bus.get.begin (BusType.SESSION, null, (obj, res) => {
++            try {
++                var bus = Bus.get.end (res);
++                bus.call.begin (APP_ID, "/org/techmore/Homeboard", "org.gtk.Actions", "Activate",
++                    parameters, null, DBusCallFlags.NO_AUTO_START, 5000, null,
++                    (o, r) => {
++                        try { bus.call.end (r); } catch (Error e) { launch (action); }
++                    });
++            } catch (Error e) {
++                launch (action);
++            }
++        });
++    }
++
++    private void launch (string action) {
++        var script = Path.build_filename (Environment.get_home_dir (), ".local", "lib", "homeboard", "desktop.py");
++        try {
++            AppInfo.create_from_commandline ("/usr/bin/python3 %s --background --%s".printf (Shell.quote (script), action),
++                null, AppInfoCreateFlags.NONE).launch (null, null);
++        } catch (Error e) {
++            warning ("Could not start Homeboard: %s", e.message);
++            requested = false;
++            summary = _("Homeboard isn’t installed");
++            show_status ();
++        }
++    }
++}
 diff --git a/src/Widgets/TaskComposer.vala b/src/Widgets/TaskComposer.vala
 new file mode 100644
-index 0000000..4e6095f
+index 0000000..b5a65ee
 --- /dev/null
 +++ b/src/Widgets/TaskComposer.vala
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,110 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +public class DateTime.TaskComposer : Gtk.Box {
 +    private Widgets.CalendarModel model;
 +    private Gtk.Entry title;
 +    private Gtk.DropDown lists;
++    private Gtk.DropDown due;
++    /* Due choices offered by the composer, in days from today; -1 is no date. */
++    private const int[] DUE_DAYS = { -1, 0, 1, 7 };
 +    private Gtk.Button add;
 +    private Gtk.Label error_label;
 +    private Gee.ArrayList<E.Source> sources;
@@ -1381,9 +1661,14 @@ index 0000000..4e6095f
 +        append (entry_row);
 +        lists = new Gtk.DropDown (null, null) { name = "task-list", hexpand = true };
 +        lists.update_property (Gtk.AccessibleProperty.LABEL, _("Task list"), -1);
++        due = new Gtk.DropDown.from_strings ({ _("No date"), _("Today"), _("Tomorrow"), _("In a week") }) {
++            name = "task-due", tooltip_text = _("Due date")
++        };
++        due.update_property (Gtk.AccessibleProperty.LABEL, _("Due date"), -1);
 +        var list_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
 +        list_row.append (new Gtk.Label (_("List")) { css_classes = { "dim-label", "caption" } });
 +        list_row.append (lists);
++        list_row.append (due);
 +        append (list_row);
 +        error_label = new Gtk.Label (_("Couldn’t add task. Try again.")) {
 +            name = "task-add-error", xalign = 0, wrap = true, max_width_chars = 30, visible = false
@@ -1405,11 +1690,14 @@ index 0000000..4e6095f
 +        refreshing = true;
 +        sources = model.writable_task_sources ();
 +        var names = new Gtk.StringList (null);
-+        string? wanted = preferred_uid ?? model.default_task_source_uid ();
++        // The list chosen earlier, else the default list (also when the chosen one went away), else the first.
++        string? fallback = model.default_task_source_uid ();
 +        uint selected = sources.size > 0 ? 0 : Gtk.INVALID_LIST_POSITION;
++        bool preferred_found = false;
 +        for (int i = 0; i < sources.size; i++) {
 +            names.append (sources[i].dup_display_name ());
-+            if (sources[i].get_uid () == wanted) selected = (uint) i;
++            if (sources[i].get_uid () == preferred_uid) { selected = (uint) i; preferred_found = true; }
++            else if (!preferred_found && sources[i].get_uid () == fallback) selected = (uint) i;
 +        }
 +        lists.model = names;
 +        lists.selected = selected;
@@ -1421,6 +1709,7 @@ index 0000000..4e6095f
 +        bool available = sources != null && lists.selected < sources.size;
 +        title.sensitive = !pending && available;
 +        lists.sensitive = !pending && available;
++        due.sensitive = !pending && available;
 +        add.sensitive = !pending && available && title.text.strip () != "";
 +        add.tooltip_text = pending ? _("Adding task…") : _("Add task");
 +        title.placeholder_text = available ? _("New task…") : _("No writable task lists");
@@ -1434,9 +1723,12 @@ index 0000000..4e6095f
 +        error_label.visible = false;
 +        refresh_controls ();
 +        try {
-+            yield model.create_task (source, submitted);
++            yield model.create_task (source, submitted, DUE_DAYS[due.selected]);
 +            preferred_uid = source.dup_uid ();
-+            if (title.text.strip () == submitted) title.text = "";
++            if (title.text.strip () == submitted) {
++                title.text = "";
++                due.selected = 0;
++            }
 +        } catch (Error e) {
 +            error_label.tooltip_text = e.message;
 +            error_label.visible = true;
@@ -1448,14 +1740,31 @@ index 0000000..4e6095f
 +}
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
-index 0000000..21e8ef2
+index 0000000..3ca846d
 --- /dev/null
 +++ b/src/Widgets/TaskRow.vala
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,160 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +public class DateTime.TaskRow : Gtk.ListBoxRow {
++    /* Sections shown above the rows, in display order. */
++    public enum Bucket { OVERDUE, TODAY, TOMORROW, WEEK, LATER, UNDATED;
++        public string label () {
++            switch (this) {
++                case OVERDUE: return _("Overdue");
++                case TODAY: return _("Today");
++                case TOMORROW: return _("Tomorrow");
++                case WEEK: return _("Next 7 days");
++                case LATER: return _("Later");
++                default: return _("No due date");
++            }
++        }
++    }
++
 +    public int64 due_sort { get; private set; default = int64.MAX; }
-+    private string title;
++    public Bucket bucket { get; private set; default = Bucket.UNDATED; }
++    public bool priority { get; private set; default = false; }
++    public bool recurring { get; private set; default = false; }
++    public string title { get; private set; }
 +    private E.Source source;
 +    private string uid;
 +    private string? rid;
@@ -1472,37 +1781,67 @@ index 0000000..21e8ef2
 +        uid = component.get_uid ();
 +        var recurrence = component.get_recurrenceid ();
 +        rid = recurrence != null && !recurrence.is_null_time () ? recurrence.as_ical_string () : null;
++        recurring = rid != null || component.get_first_property (ICal.PropertyKind.RRULE_PROPERTY) != null;
 +        key = Widgets.CalendarModel.completion_key (source, uid, rid);
 +        model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
++        // RFC 5545: 1–4 is high priority, 5 medium, 6–9 low and 0 undefined.
++        var priority_property = component.get_first_property (ICal.PropertyKind.PRIORITY_PROPERTY);
++        int level = priority_property != null ? priority_property.get_priority () : 0;
++        priority = level >= 1 && level <= 4;
 +        completion = new Gtk.CheckButton () { valign = Gtk.Align.START, margin_top = 4 };
 +        completion.update_property (Gtk.AccessibleProperty.LABEL, _("Complete task: %s").printf (title), -1);
 +        completion.toggled.connect (() => {
-+            if (!updating && completion.active) model.complete_task.begin (source, uid, rid);
++            if (!updating && completion.active) model.complete_task.begin (source, uid, rid, title, recurring);
 +        });
 +        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) {
 +            margin_start = 6, margin_end = 6, margin_top = 2, margin_bottom = 2
 +        };
-+        box.append (new Gtk.Label (title) {
++        var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
++        if (priority) {
++            var flag = new Gtk.Label ("!") { name = "task-priority", tooltip_text = _("High priority") };
++            flag.add_css_class ("error");
++            flag.add_css_class ("heading");
++            flag.update_property (Gtk.AccessibleProperty.LABEL, _("High priority"), -1);
++            title_row.append (flag);
++        }
++        title_row.append (new Gtk.Label (title) {
 +            xalign = 0, wrap = false, max_width_chars = 28, tooltip_text = title,
-+            ellipsize = Pango.EllipsizeMode.END
++            ellipsize = Pango.EllipsizeMode.END, hexpand = true
 +        });
++        box.append (title_row);
++
++        var small = new Pango.AttrList ();
++        small.insert (Pango.attr_scale_new (0.85));
++        var details = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 +        var due = component.get_due ();
-+        string detail = source.dup_display_name ();
++        Gtk.Label? due_label = null;
 +        if (due != null && !due.is_null_time ()) {
 +            var date = Util.ical_to_date_time (due);
 +            if (!due.is_date ()) date = date.to_local ();
-+            due_sort = date.to_unix ();
-+            detail += " · " + _("Due %s").printf (date.format (due.is_date () ? "%b %e" : "%b %e, %X"));
-+        } else {
-+            detail += " · " + _("No due date");
++            due_sort = due.is_date () ? Util.strip_time (date).to_unix () : date.to_unix ();
++            due_label = new Gtk.Label (describe_due (date, due.is_date ())) {
++                name = "task-due", xalign = 0, attributes = small
++            };
++            if (bucket == Bucket.OVERDUE) due_label.add_css_class ("error");
++            else if (bucket == Bucket.TODAY) due_label.add_css_class ("accent");
++            else due_label.add_css_class ("dim-label");
 +        }
-+        var subtitle = new Gtk.Label (detail) { xalign = 0, wrap = false, max_width_chars = 28,
-+            ellipsize = Pango.EllipsizeMode.END, tooltip_text = detail };
++        // Homeboard publishes its project as the first category; show it beside the list name.
++        string detail = source.dup_display_name ();
++        var categories = component.get_first_property (ICal.PropertyKind.CATEGORIES_PROPERTY);
++        if (categories != null && categories.get_categories () != null && categories.get_categories ().strip () != "") {
++            detail += " · " + categories.get_categories ().strip ();
++        }
++        if (recurring) detail += " · " + _("Repeats");
++        var subtitle = new Gtk.Label ((due_label != null ? " · " : "") + detail) {
++            xalign = 0, wrap = false, max_width_chars = 28, hexpand = true,
++            ellipsize = Pango.EllipsizeMode.END, attributes = small
++        };
 +        subtitle.add_css_class ("dim-label");
-+        var small = new Pango.AttrList ();
-+        small.insert (Pango.attr_scale_new (0.85));
-+        subtitle.attributes = small;
-+        box.append (subtitle);
++        if (due_label != null) details.append (due_label);
++        details.append (subtitle);
++        details.tooltip_text = (due_label != null ? due_label.label + " · " : "") + detail;
++        box.append (details);
 +        error_label = new Gtk.Label (_("Couldn’t complete task. Try again.")) {
 +            xalign = 0, wrap = true, max_width_chars = 28, visible = false
 +        };
@@ -1517,6 +1856,27 @@ index 0000000..21e8ef2
 +        child = row;
 +        model.completion_changed.connect (on_completion_changed);
 +        update_completion ();
++    }
++
++    /* Sets the row's bucket and returns its due wording, relative to today. */
++    private string describe_due (GLib.DateTime due, bool all_day) {
++        var now = new GLib.DateTime.now_local ();
++        var today = Util.strip_time (now);
++        var day = Util.strip_time (due);
++        int days = (int) (day.difference (today) / GLib.TimeSpan.DAY);
++        string clock = Granite.DateTime.get_default_time_format (Services.TimeManager.get_default ().is_12h, false);
++        string time = all_day ? "" : ", " + clock;
++        if (all_day ? days < 0 : due.compare (now) < 0) {
++            bucket = Bucket.OVERDUE;
++            if (days == 0) return due.format (_("Overdue since %s").printf (clock));
++            if (days == -1) return _("Overdue since yesterday");
++            return _("Overdue since %s").printf (due.format (due.get_year () == now.get_year () ? "%b %e" : "%b %e, %Y"));
++        }
++        if (days == 0) { bucket = Bucket.TODAY; return due.format (_("Due today") + time); }
++        if (days == 1) { bucket = Bucket.TOMORROW; return due.format (_("Due tomorrow") + time); }
++        if (days < 7) { bucket = Bucket.WEEK; return due.format (_("Due %A") + time); }
++        bucket = Bucket.LATER;
++        return due.format (_("Due ") + (due.get_year () == now.get_year () ? "%b %e" : "%b %e, %Y") + time);
 +    }
 +
 +    private void on_completion_changed (string changed_key) {
@@ -1538,7 +1898,9 @@ index 0000000..21e8ef2
 +    }
 +
 +    public int compare (TaskRow other) {
++        if (bucket != other.bucket) return bucket < other.bucket ? -1 : 1;
 +        if (due_sort != other.due_sort) return due_sort < other.due_sort ? -1 : 1;
++        if (priority != other.priority) return priority ? -1 : 1;
 +        return title.collate (other.title);
 +    }
 +}
@@ -1838,10 +2200,10 @@ index 0000000..4f453dd
 +    }
 +}
 diff --git a/src/Widgets/calendar/CalendarModel.vala b/src/Widgets/calendar/CalendarModel.vala
-index 9301281..626fd9a 100644
+index 9301281..b761bde 100644
 --- a/src/Widgets/calendar/CalendarModel.vala
 +++ b/src/Widgets/calendar/CalendarModel.vala
-@@ -43,8 +43,137 @@ namespace DateTime.Widgets {
+@@ -43,8 +43,173 @@ namespace DateTime.Widgets {
          public signal void components_removed (E.Source source, Gee.Collection<ECal.Component> components);
  
 +        private HashTable<string, uint> generations;
@@ -1901,7 +2263,8 @@ index 9301281..626fd9a 100644
 +            return source != null ? source.dup_uid () : null;
 +        }
 +
-+        public async string create_task (E.Source source, string title) throws Error {
++        /* due_in_days < 0 leaves the task undated; otherwise it is due that many days from today, all day. */
++        public async string create_task (E.Source source, string title, int due_in_days = -1) throws Error {
 +            string summary = title.strip ();
 +            if (summary == "") throw new IOError.INVALID_ARGUMENT (_("Enter a task title"));
 +            var client = source_client[source.dup_uid ()];
@@ -1912,6 +2275,13 @@ index 9301281..626fd9a 100644
 +            task.set_uid (Uuid.string_random ());
 +            task.set_summary (summary);
 +            task.set_status (ICal.PropertyStatus.NEEDSACTION);
++            if (due_in_days >= 0) {
++                var day = new GLib.DateTime.now_local ().add_days (due_in_days);
++                var due = new ICal.Time.null_time ();
++                due.set_date (day.get_year (), day.get_month (), day.get_day_of_month ());
++                due.set_is_date (true);
++                task.set_due (due);
++            }
 +            var record = new ECal.Component.from_icalcomponent (task);
 +            var timestamp = new ICal.Time.from_timet_with_zone (
 +                (time_t) new GLib.DateTime.now_utc ().to_unix (), 0, ICal.Timezone.get_utc_timezone ());
@@ -1946,7 +2316,10 @@ index 9301281..626fd9a 100644
 +            if (failure != null) throw failure;
 +        }
 +
-+        public async void complete_task (E.Source source, string uid, string? rid) {
++        /* Emitted after a panel checkbox saved a completion, so the panel can offer Undo. */
++        public signal void task_completed (E.Source source, string uid, string? rid, string title, bool recurring);
++
++        public async void complete_task (E.Source source, string uid, string? rid, string title = "", bool recurring = false) {
 +            var key = completion_key (source, uid, rid);
 +            if (completing_tasks.contains (key)) return;
 +            completing_tasks.add (key);
@@ -1970,6 +2343,10 @@ index 9301281..626fd9a 100644
 +                    if (!(yield client.modify_object (edited.get_icalcomponent (), scope, ECal.OperationFlags.NONE, null))) {
 +                        throw new IOError.FAILED (_("Could not save task completion"));
 +                    }
++                    completing_tasks.remove (key);
++                    completion_changed (key);
++                    task_completed (source, uid, rid, title, recurring);
++                    return;
 +                }
 +            } catch (Error e) {
 +                completion_errors[key] = e.message;
@@ -1977,9 +2354,30 @@ index 9301281..626fd9a 100644
 +            completing_tasks.remove (key);
 +            completion_changed (key);
 +        }
++
++        /* Undo a panel completion of a non-repeating task: back to needs-action, newer edits kept. */
++        public async void reopen_task (E.Source source, string uid) throws Error {
++            var client = source_client[source.dup_uid ()];
++            if (client == null) throw new IOError.NOT_CONNECTED (_("Task list is unavailable"));
++            if (client.is_readonly ()) throw new IOError.PERMISSION_DENIED (_("This task list is read-only"));
++            ICal.Component latest;
++            yield client.get_object (uid, null, null, out latest);
++            if (latest.get_status () != ICal.PropertyStatus.COMPLETED) return;
++            var edited = new ECal.Component.from_icalcomponent (latest.clone ());
++            edited.set_status (ICal.PropertyStatus.NEEDSACTION);
++            edited.set_percent_complete (0);
++            edited.set_completed (null);
++            var timestamp = new ICal.Time.from_timet_with_zone (
++                (time_t) new GLib.DateTime.now_utc ().to_unix (), 0, ICal.Timezone.get_utc_timezone ());
++            edited.set_last_modified (timestamp);
++            edited.set_sequence (latest.get_sequence () + 1);
++            if (!(yield client.modify_object (edited.get_icalcomponent (), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null))) {
++                throw new IOError.FAILED (_("Could not reopen task"));
++            }
++        }
  
          private static HashTable<ECal.ClientSourceType, CalendarModel> calendar_model;
-@@ -64,10 +193,10 @@ namespace DateTime.Widgets {
+@@ -64,10 +229,10 @@ namespace DateTime.Widgets {
          }
  
 -        public CalendarModel (ECal.ClientSourceType source_type) {
@@ -1993,13 +2391,13 @@ index 9301281..626fd9a 100644
 +            generations = new HashTable<string, uint> (str_hash, str_equal);
  
              source_client = new HashTable<string, ECal.Client> (str_hash, str_equal);
-@@ -83,4 +212,5 @@ namespace DateTime.Widgets {
+@@ -83,4 +248,5 @@ namespace DateTime.Widgets {
              compute_ranges ();
              notify["month-start"].connect (on_parameter_changed);
 +            open.begin ();
          }
  
-@@ -90,4 +220,8 @@ namespace DateTime.Widgets {
+@@ -90,4 +256,8 @@ namespace DateTime.Widgets {
                  registry.source_removed.connect (remove_source);
                  registry.source_added.connect ((source) => add_source_async.begin (source));
 +                registry.source_changed.connect ((source) => {
@@ -2008,7 +2406,7 @@ index 9301281..626fd9a 100644
 +                });
  
                  // Add sources
-@@ -143,11 +277,10 @@ namespace DateTime.Widgets {
+@@ -143,11 +313,10 @@ namespace DateTime.Widgets {
              unowned string uid = source.get_uid ();
  
 -            if (!source_view.contains (uid)) {
@@ -2023,7 +2421,7 @@ index 9301281..626fd9a 100644
 +                if (current_view != null) current_view.stop ();
              } catch (Error e) {
                  warning (e.message);
-@@ -158,8 +291,13 @@ namespace DateTime.Widgets {
+@@ -158,8 +327,13 @@ namespace DateTime.Widgets {
                  source_client.remove (uid);
              }
 -
@@ -2041,7 +2439,7 @@ index 9301281..626fd9a 100644
 +            }
          }
  
-@@ -175,4 +313,9 @@ namespace DateTime.Widgets {
+@@ -175,4 +349,9 @@ namespace DateTime.Widgets {
  
          private void compute_ranges () {
 +            if (upcoming_range) {
@@ -2051,7 +2449,7 @@ index 9301281..626fd9a 100644
 +            }
              var month_end = month_start.add_full (0, 1, -1);
  
-@@ -214,4 +357,16 @@ namespace DateTime.Widgets {
+@@ -214,4 +393,16 @@ namespace DateTime.Widgets {
  
          private void load_source (E.Source source) {
 +            load_source_async.begin (source);
@@ -2068,7 +2466,7 @@ index 9301281..626fd9a 100644
 +            }
              /* create empty source-component map */
              var components = new Gee.TreeMultiMap<string, ECal.Component> (
-@@ -219,5 +374,9 @@ namespace DateTime.Widgets {
+@@ -219,5 +410,9 @@ namespace DateTime.Widgets {
                  (GLib.CompareDataFunc<ECal.Component>?) Util.calcomponent_compare_func
              );
 +            var previous = source_components.get (source);
@@ -2078,14 +2476,14 @@ index 9301281..626fd9a 100644
 +            if (removed.size > 0) components_removed (source, removed.read_only_view);
              /* query client view */
              var iso_first = ECal.isodate_from_time_t ((time_t)data_range.first_dt.to_unix ());
-@@ -226,5 +385,5 @@ namespace DateTime.Widgets {
+@@ -226,5 +421,5 @@ namespace DateTime.Widgets {
              var query = @"(occur-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
              if (source_type == ECal.ClientSourceType.TASKS) {
 -                query = @"AND (NOT is-completed?) (due-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
 +                query = "(not (is-completed?))";
              }
  
-@@ -238,18 +397,22 @@ namespace DateTime.Widgets {
+@@ -238,18 +433,22 @@ namespace DateTime.Widgets {
              }
  
 -            debug ("Getting client-view for source '%s'", source.dup_display_name ());
@@ -2122,7 +2520,7 @@ index 9301281..626fd9a 100644
 +            }
          }
  
-@@ -260,10 +423,24 @@ namespace DateTime.Widgets {
+@@ -260,10 +459,24 @@ namespace DateTime.Widgets {
              }
  
 +            var extension = source_type == ECal.ClientSourceType.TASKS ? E.SOURCE_EXTENSION_TASK_LIST : E.SOURCE_EXTENSION_CALENDAR;
@@ -2149,14 +2547,14 @@ index 9301281..626fd9a 100644
 +                return;
              }
  
-@@ -277,5 +454,5 @@ namespace DateTime.Widgets {
+@@ -277,5 +490,5 @@ namespace DateTime.Widgets {
          private void debug_component (E.Source source, ECal.Component component) {
              unowned ICal.Component comp = component.get_icalcomponent ();
 -            debug (@"Component ['$(comp.get_summary())', $(source.dup_display_name()), $(comp.get_uid()))]");
 +            debug ("Component [%s, %s, %s]", comp.get_summary () ?? _("Untitled event"), source.dup_display_name (), comp.get_uid ());
          }
  
-@@ -283,18 +460,5 @@ namespace DateTime.Widgets {
+@@ -283,18 +496,5 @@ namespace DateTime.Widgets {
          private void on_parameter_changed () {
              compute_ranges ();
 -            load_all_sources ();
@@ -2176,7 +2574,7 @@ index 9301281..626fd9a 100644
 +            if (source_type == ECal.ClientSourceType.EVENTS) load_all_sources ();
          }
  
-@@ -309,6 +473,12 @@ namespace DateTime.Widgets {
+@@ -309,6 +509,12 @@ namespace DateTime.Widgets {
              objects.foreach ((comp) => {
                  unowned string uid = comp.get_uid ();
 +                if (source_type == ECal.ClientSourceType.TASKS) {
@@ -2190,7 +2588,7 @@ index 9301281..626fd9a 100644
 +                client.generate_instances_for_object_sync (comp, (time_t) data_range.first_dt.to_unix (), (time_t) data_range.last_dt.add_days (1).to_unix (), null, (comp, start, end) => {
                      var component = new ECal.Component.from_icalcomponent (comp);
  #else
-@@ -331,16 +501,17 @@ namespace DateTime.Widgets {
+@@ -331,16 +537,17 @@ namespace DateTime.Widgets {
  #endif
              debug (@"Received $(objects.length()) modified component(s) for source '%s'", source.dup_display_name ());
 -            var updated_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
@@ -2219,7 +2617,7 @@ index 9301281..626fd9a 100644
 -            components_updated (source, updated_components.read_only_view);
          }
  
-@@ -352,4 +523,8 @@ namespace DateTime.Widgets {
+@@ -352,4 +559,8 @@ namespace DateTime.Widgets {
              debug (@"Received $(cids.length()) removed component(s) for source '%s'", source.dup_display_name ());
              var components = source_components.get (source);
 +            if (source_type == ECal.ClientSourceType.EVENTS) {
@@ -2228,7 +2626,7 @@ index 9301281..626fd9a 100644
 +            }
              var removed_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
  
-@@ -366,4 +541,7 @@ namespace DateTime.Widgets {
+@@ -366,4 +577,7 @@ namespace DateTime.Widgets {
              });
  
 +            foreach (var component in removed_components) {

@@ -7,7 +7,14 @@ ongoing events remain visible. **Month**, **Week** and **Day** are available as
 explicit alternate views. Tasks shows
 all incomplete tasks
 from selected, enabled elementary Tasks lists, including tasks with no due
-date. Dated tasks sort first, then undated tasks alphabetically. Activate a
+date, in sections: **Overdue**, **Today**, **Tomorrow**, **Next 7 days**,
+**Later** and **No due date**. Within a section, tasks sort by due time, then
+high-priority tasks (iCalendar priority 1–4, marked **!**), then title. Each row
+says when it is due in words ("Overdue since yesterday", "Due today", "Due
+Friday"; overdue in red, today in the accent colour), its list, its category
+(Homeboard puts the project name there) and **Repeats** for repeating tasks.
+The Tasks tab shows a dot while anything is overdue. Wording and sections roll
+over each minute while the tab is open. Activate a
 task row to open elementary Tasks for editing. Check its checkbox to complete it
 directly in the panel; the same EDS record updates in Tasks. The checkbox is
 disabled while saving and for read-only/unavailable lists. A failed save restores
@@ -142,7 +149,7 @@ artifact path live in `../panel-factory-pins.json`.
 
 Prerequisites: `git meson ninja-build valac pkg-config libwingpanel-9-dev
 libgranite-7-dev libgtk-4-dev libadwaita-1-dev libecal2.0-dev
-libedataserver1.2-dev libical-dev` plus the installed datetime 2.4.2 package.
+libedataserver1.2-dev libical-dev libjson-glib-dev` plus the installed datetime 2.4.2 package.
 
 Run `bash mseries/install-calendar-agenda.sh`; reload Wingpanel to activate.
 The installer saves the package-versioned original and replaces the library by
@@ -158,7 +165,7 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-All 22 workflow groups use synthetic local EDS sources. The verse group checks
+All 26 workflow groups use synthetic local EDS sources. The verse group checks
 the + tab, today's pick from the bundled list, every feast date in 2026–2028
 (including Easter-based dates in three years), a Christmas header on screen,
 unpadded single-digit dates, plus previous/next/Today
@@ -185,6 +192,26 @@ to retain synthetic rendered previews.
 Google OAuth and remote round trips require the owner's
 Google sign-in and are separate from these local tests.
 
+## Homeboard
+
+[Homeboard](https://tasks.stoverparc.org/board/)'s bridge keeps a dedicated
+**Homeboard** list in Evolution Data Server, so Homeboard tasks appear in the
+Tasks tab like any other list, with due dates, priority and project names; ticking
+or adding one here syncs to Homeboard within a few seconds. Install the bridge with
+`bash mseries/install-homeboard-sync.sh` (pinned `techmore/homeboard` revision, or
+`HOMEBOARD_SOURCE=/path/to/checkout`). It installs without the separate Homeboard
+indicator and starts in the background at login.
+
+When the bridge is installed, a **Homeboard** strip sits above the composer:
+the last sync ("Synced 12 tasks · 9 open · 2 min ago"), a spinner while syncing,
+**Sync now**, **Open Homeboard** and, when signed out, **Sign In…** (Google
+sign-in in the browser; the owner's step). The strip reads the bridge's
+`~/.local/state/homeboard/panel.json` (no token is ever in it) and asks the
+bridge to act through its D-Bus actions (`org.techmore.Homeboard`, `app.sync` /
+`app.connect`), starting it in the background if it is not running. Without the
+bridge the strip stays hidden. Older bridges that publish only a status sentence
+are still read.
+
 ## Completing tasks in the panel
 
 Checkboxes write to the existing source/UID/recurrence record. Before saving, the
@@ -192,20 +219,33 @@ model fetches its latest version so newer edits are preserved. Completion record
 use EDS’s recurrence-aware helper, a UTC modification time and an incremented
 sequence. Repeated clicks are suppressed while a save is pending; checking a box
 does not open Tasks or close the dropdown. Completed tasks leave the incomplete
-list; repeating tasks retain their next occurrence. Undo/reopening and editing
-remain available in the Tasks app. No personal task is changed by the tests.
+list; repeating tasks retain their next occurrence. For eight seconds an
+**Undo** bar below the list offers to reopen the task (needs-action, 0 %, no
+completion time, newer edits kept). Repeating tasks say "next one scheduled"
+instead, since their series already advanced; reopen those in Tasks. Editing
+remains in the Tasks app. No personal task is changed by the tests.
 
 The private-D-Bus fixture also checks persisted status/percent/timestamp, stale
 row edits, identical UIDs in different lists, recurring advancement, and a
-missing-record failure with checkbox/error recovery.
+missing-record failure with checkbox/error recovery. Further groups check the
+sections and their order, overdue/today wording, priority-first order, category
+text and the overdue tab dot; Undo restoring the stored record (and the
+repeating-task message); the date selector writing an all-day DUE; and the
+Homeboard strip (hidden until installed, signed-out and synced states, Sync now
+reaching a stand-in `org.techmore.Homeboard` on the private bus, the older status
+format). The fixture sets its own `XDG_STATE_HOME`, so the real Homeboard status
+is never read.
 
 
 ## Adding tasks in the panel
 
 Type a title in **New task…**, choose a writable **List**, then press Enter or
 click **Add**. The selector initially uses the default Tasks list when available
-and retains your chosen list while the panel runs. New tasks have no due date and
-appear in the same EDS list in elementary Tasks; use Tasks to add dates or details.
+and retains your chosen list while the panel runs; if that list goes away, it
+returns to the default list. The date selector beside it offers **No date**,
+**Today**, **Tomorrow** and **In a week** (an all-day due date) and resets to
+No date after each add. New tasks appear in the same EDS list in elementary
+Tasks; use Tasks to add times or details.
 
 Saving disables repeat submission and keeps the dropdown open. Blank titles are
 ignored. Failed saves retain the draft and show a retry error; unavailable or
