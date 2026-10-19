@@ -99,9 +99,19 @@ confirms a fixture issue, while direct keyboard interaction remains untested.
 Keep Gala selected and use the Rust compositor only in an
 explicitly isolated qualification session after its prerequisites are checked.
 
+The compositor now exposes Dock's `org.pantheon.gala.DesktopIntegration`
+D-Bus interface. Window enumeration, app IDs, focus state and focusing a
+window are implemented. A temporary Wayland window was returned with its app
+ID and focus state; a direct `FocusWindow` call focused it. The current model
+exposes one workspace and does not implement overview or cross-workspace
+movement.
+The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
+but also logged its known asynchronous workspace-initialization critical, so
+Dock interaction is still not qualified end to end.
+
 The next gate is staged nested qualification with real GTK/Qt clients and the
-existing Pantheon shell clients, including IBus focus/commit behavior. After
-that passes, run the package in a separate native login with a tested recovery
+existing Pantheon shell clients, including Dock launcher/window switching and
+IBus focus/commit behavior. After that passes, run the package in a separate native login with a tested recovery
 path. Only record it as an experimental session that works after those runtime
 gates pass; a successful compile or package build is not that evidence.
 

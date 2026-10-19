@@ -94,9 +94,17 @@ The Dock's existing hide modes now drive compositor visibility: maximize and
 overlap modes hide while their condition is true, `always` starts hidden, and
 pointer motion at the panel's output edge reveals it. Hiding releases the
 panel's work area; revealing it restores that area and reconfigures managed
-windows. The active host Dock setting is `overlapping-window`. The transition
-is immediate; animated hiding and runtime Dock interaction remain unqualified.
-Blur, overview behavior and multi-output Dock behavior also remain open. The
+windows. The active host Dock setting is `overlapping-window`. A nested Xvfb
+run of Dock 8.3.3 bound the shell protocol, requested anchor and hide mode, and
+attached shared-memory buffers. The compositor now exposes the Gala
+`DesktopIntegration` D-Bus contract used by Dock, including a live window list
+and focus requests; a temporary Wayland window appeared in `GetWindows`, and
+`FocusWindow` routed back to the compositor. The current workspace model is
+single-workspace: moving/reordering windows across workspaces and Gala's
+multitasking view are not implemented. Stock Dock also logged its existing
+workspace-startup race during the nested smoke, so full Dock behavior remains
+unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
+open. The
 compositor implements Smithay's `ext-session-lock-v1`: it blanks each output
 until its lock surface is ready, confines input to the locker, and restores the
 prior keyboard focus on unlock. It exports the observed

@@ -44,6 +44,7 @@ use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
 };
+use crate::gala_compat::{DesktopSnapshot, GalaAction, GalaCompatHandle, GalaWindow};
 #[cfg(feature = "native-drm")]
 use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
@@ -110,6 +111,7 @@ pub struct PantheonCompositor {
     pub input_method_manager_state: InputMethodManagerState,
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
+    pub(crate) gala_compat: GalaCompatHandle,
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
@@ -295,6 +297,17 @@ impl PantheonCompositor {
                 }
             })?;
         let shell_compat = ShellCompatHandle::start(socket_name.clone(), osd_redraw_sender);
+        let (gala_compat, gala_actions) = GalaCompatHandle::start();
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_millis(100)),
+            move |_, _, state| {
+                while let Ok(action) = gala_actions.try_recv() {
+                    state.handle_gala_action(action);
+                }
+                state.publish_gala_snapshot();
+                TimeoutAction::ToDuration(Duration::from_millis(100))
+            },
+        )?;
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
@@ -337,6 +350,7 @@ impl PantheonCompositor {
             input_method_manager_state,
             pantheon_shell_state,
             display_config,
+            gala_compat,
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
@@ -375,6 +389,138 @@ impl PantheonCompositor {
         if let Some(sender) = &self.winit_redraw_sender {
             let _ = sender.send(());
         }
+    }
+
+    fn publish_gala_snapshot(&self) {
+        let focus = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus());
+        let windows = self
+            .space
+            .elements()
+            .map(|window| {
+                let app_id = if let Some(toplevel) = window.toplevel() {
+                    smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
+                        states
+                            .data_map
+                            .get::<smithay::wayland::shell::xdg::XdgToplevelSurfaceData>()
+                            .and_then(|attributes| attributes.lock().ok())
+                            .and_then(|attributes| attributes.app_id.clone())
+                            .unwrap_or_default()
+                    })
+                } else if let Some(surface) = window.x11_surface() {
+                    let class = surface.class();
+                    if class.is_empty() {
+                        surface.title()
+                    } else {
+                        class
+                    }
+                } else {
+                    String::new()
+                };
+                let has_focus = window
+                    .toplevel()
+                    .is_some_and(|toplevel| focus.as_ref() == Some(toplevel.wl_surface()))
+                    || window
+                        .x11_surface()
+                        .is_some_and(|surface| self.x11_keyboard_focus.as_ref() == Some(surface));
+                GalaWindow {
+                    uid: window.id() as u64,
+                    app_id,
+                    has_focus,
+                    workspace_index: 0,
+                    time_appeared_on_workspace: window.id() as i64,
+                }
+            })
+            .collect();
+        self.gala_compat.update(DesktopSnapshot {
+            windows,
+            active_workspace: 0,
+            workspace_count: 1,
+        });
+    }
+
+    fn handle_gala_action(&mut self, action: GalaAction) {
+        match action {
+            GalaAction::FocusWindow(uid) => self.focus_window_by_uid(uid),
+            GalaAction::ShowWindowsFor(app_id) => {
+                let uid = self
+                    .space
+                    .elements()
+                    .find(|window| self.window_app_id(window).as_deref() == Some(app_id.as_str()))
+                    .map(|window| window.id() as u64);
+                if let Some(uid) = uid {
+                    self.focus_window_by_uid(uid);
+                }
+            }
+            GalaAction::MoveWindowToWorkspace(uid, index) => {
+                if index != 0 {
+                    tracing::warn!(uid, index, "Dock requested an unavailable workspace");
+                }
+            }
+            GalaAction::ActivateWorkspace(index) => {
+                if index != 0 {
+                    tracing::warn!(index, "Dock requested an unavailable workspace");
+                }
+            }
+            GalaAction::ReorderWorkspace(index, new_index) => {
+                if index != new_index {
+                    tracing::warn!(index, new_index, "Dock requested workspace reordering");
+                }
+            }
+            GalaAction::PerformAction(action) => {
+                tracing::warn!(
+                    action,
+                    "Dock requested a Gala action that is not implemented"
+                );
+            }
+        }
+    }
+
+    fn window_app_id(&self, window: &Window) -> Option<String> {
+        if let Some(toplevel) = window.toplevel() {
+            smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
+                states
+                    .data_map
+                    .get::<smithay::wayland::shell::xdg::XdgToplevelSurfaceData>()
+                    .and_then(|attributes| attributes.lock().ok())
+                    .and_then(|attributes| attributes.app_id.clone())
+            })
+        } else {
+            window.x11_surface().map(|surface| {
+                let class = surface.class();
+                if class.is_empty() {
+                    surface.title()
+                } else {
+                    class
+                }
+            })
+        }
+    }
+
+    fn focus_window_by_uid(&mut self, uid: u64) {
+        let Some(window) = self
+            .space
+            .elements()
+            .find(|window| window.id() as u64 == uid)
+            .cloned()
+        else {
+            return;
+        };
+        self.space.raise_element(&window, true);
+        let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+        if let Some(toplevel) = window.toplevel() {
+            if !self.session_locked
+                && let Some(keyboard) = self.seat.get_keyboard()
+            {
+                keyboard.set_focus(self, Some(toplevel.wl_surface().clone()), serial);
+            }
+        } else if let Some(surface) = window.x11_surface().cloned() {
+            self.set_x11_keyboard_focus(Some(surface), serial);
+        }
+        self.refresh_panel_visibility();
+        self.request_native_redraw();
     }
 
     #[cfg(feature = "native-drm")]

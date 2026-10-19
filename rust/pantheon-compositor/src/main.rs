@@ -2,6 +2,7 @@
 
 mod cursor;
 mod display_config;
+mod gala_compat;
 mod grabs;
 mod handlers;
 mod input;
