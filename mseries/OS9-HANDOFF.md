@@ -6183,3 +6183,21 @@ installer's root partition is LVM so the disk could not be inspected without roo
 disk with a console on serial (kernel args `console=ttyAMA0 earlycon`) or boot the live ISO with the disk attached and
 read `/boot/grub/grub.cfg` and the initramfs; kernel work belongs to DeepSeek per the coordination rule.
 Machine Lab: ARM64 now listed on every machine, plus a Connect section (display, console, SSH terminal).
+
+## 2026-10-19: why the installed elementary OS is silent on QEMU (diagnosed, not fixed)
+
+Booted the same ISO live with the installed disk attached and read the guest's files (read-only mount, no kernel or
+image changes). The installed system has two kernels: generic `7.0.0-38-generic` (what the live ISO uses, boots fine) and
+`7.1.13-elementary-fairydust-usb4`. GRUB's default entry picks the newest, the Fairydust kernel, with a hidden menu
+(`GRUB_TIMEOUT_STYLE=hidden`, timeout 0) and `quiet splash`. The Fairydust config has:
+
+- `# CONFIG_PCI_HOST_GENERIC is not set`: no driver for QEMU virt's generic PCIe host, so no PCI devices at all
+  (virtio-pci is a module, `CONFIG_VIRTIO_PCI=m`, and cannot find a bus; the root LV on the virtio disk is unreachable).
+- `# CONFIG_SYSFB_SIMPLEFB is not set` and `# CONFIG_FB_EFI is not set`: no EFI framebuffer, so no display either.
+- `CONFIG_DRM_VIRTIO_GPU=m`: not usable without the PCI bus.
+
+The generic 7.0.0-38 kernel has `PCI_HOST_GENERIC=y`, `SYSFB_SIMPLEFB=y`, `VIRTIO_PCI=y`. Root is ext4 on LVM (`data-root`),
+swap is `/dev/mapper/cryptswap` in fstab. Result: it is the Apple-only Fairydust config, not a broken install.
+Options (kernel work belongs to DeepSeek): add `PCI_HOST_GENERIC=y` and `SYSFB_SIMPLEFB=y` (or `FB_EFI`) to the Fairydust
+config so it also boots on QEMU virt, or make the VM install default to the generic kernel (GRUB_DEFAULT set to the
+7.0.0-38 entry). Not tried: either fix, because changing the guest's boot config was outside this task's scope.
