@@ -26,7 +26,9 @@ meson setup "$work/build" "$work/source" --buildtype=release >/dev/null
 ninja -C "$work/build"
 mkdir -p "$work/schemas"
 cp "$work/source/data/datetime.gschema.xml" "$work/schemas/io.elementary.desktop.wingpanel.datetime.gschema.xml"
-# Keep the system schemas (clock format, interface) visible next to the indicator's own.
-cp /usr/share/glib-2.0/schemas/*.gschema.xml "$work/schemas/" 2>/dev/null || true
+# Keep the system schemas (clock format, interface) and their enums visible next to
+# the indicator's own.
+cp /usr/share/glib-2.0/schemas/*.xml "$work/schemas/" 2>/dev/null || true
+cp "$work/source/data/datetime.gschema.xml" "$work/schemas/io.elementary.desktop.wingpanel.datetime.gschema.xml"
 glib-compile-schemas "$work/schemas"
 GSETTINGS_SCHEMA_DIR="$work/schemas" bash "$repo/mseries/calendar/test-agenda.sh" "$work/build/libdatetime.so"
