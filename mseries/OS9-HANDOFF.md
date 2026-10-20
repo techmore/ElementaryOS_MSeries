@@ -25,6 +25,23 @@ and meeting join remain unverified. This is a web integration, not a native Team
 factory-image qualification. See `mseries/teams-web/README.md` for commands,
 support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
 
+## UI fixes installed after PR #321 — 2026-10-20
+
+PR #321 merged into `dev` as `9cb1c70`; all ten CI checks passed. Updated the
+existing Orchard launcher binary at `~/.local/bin/com.github.techmore.orchard-incus`,
+Battery UI at `/usr/libexec/mseries/battery/mseries-battery-app.py`, and Apple
+Passwords UI at `~/.local/share/mseries/icloud-passwords/gui/app.py`. Each installed
+file byte-matches the tested build/source. Existing Battery core and Passwords
+worker already matched the merged source, so no full installer was rerun.
+
+Installed-file smoke checks passed on private Xvfb/D-Bus with temporary config/data:
+Battery mapped and handled a mocked dark preference notification; Passwords
+scrolled at 540 × 420 and allowed Sign In focus with its worker stubbed; the actual
+installed Orchard binary stayed alive without GTK criticals. No live application,
+logger, panel, account, VM or wallpaper was restarted/changed. Reopen Orchard for
+Incus, Battery and Apple Passwords (Experimental) to load the fixes. Live user
+interaction and hardware theme switching remain to be tried. File hashes and
+backup location: `mseries/receipts/ui-consistency-install-2026-10-20.json`.
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
 Owner visually confirmed the native Pantheon dock, then explicitly requested
