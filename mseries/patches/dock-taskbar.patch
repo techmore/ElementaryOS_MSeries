@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..7e97f28 100644
+index d97686d..b61d2bf 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,133 @@ backgrounditem .close-button {
+@@ -203,3 +203,187 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -106,8 +106,8 @@ index d97686d..7e97f28 100644
 +}
 +
 +dock-window.taskbar .taskbar-row button.taskbar-search {
-+    min-width: 50px;
-+    padding: 5px 14px;
++    min-width: 200px;
++    padding: 10px 22px;
 +    border-radius: 999px;
 +    background: rgba(255, 255, 255, 0.85);
 +    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -135,6 +135,60 @@ index d97686d..7e97f28 100644
 +.taskbar-power-item {
 +    padding: 6px 12px;
 +    min-width: 180px;
++}
++
++dock-window.taskbar .taskbar-search label {
++    font-size: 1.25em;
++}
++
++dock-window.taskbar .taskbar-search image {
++    -gtk-icon-size: 24px;
++}
++
++popover.start-menu > contents {
++    padding: 0;
++    border-radius: 8px;
++    background: rgba(243, 243, 243, 0.97);
++    color: rgba(0, 0, 0, 0.9);
++}
++
++popover.start-menu .start-search {
++    min-height: 36px;
++    border-radius: 999px;
++    background: white;
++    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), inset 0 -1px 0 0 #0078d4;
++}
++
++popover.start-menu .start-section-title {
++    font-weight: 600;
++}
++
++popover.start-menu .start-pill {
++    padding: 2px 10px;
++    border-radius: 4px;
++    background: white;
++    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
++}
++
++popover.start-menu .start-tile {
++    padding: 8px 2px;
++    border-radius: 4px;
++}
++
++popover.start-menu .start-tile:hover,
++popover.start-menu .start-list row:hover {
++    background: rgba(0, 0, 0, 0.05);
++}
++
++popover.start-menu .start-list {
++    background: none;
++}
++
++popover.start-menu .start-footer {
++    padding: 10px 32px;
++    border-radius: 0 0 8px 8px;
++    background: rgba(0, 0, 0, 0.04);
++    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.06);
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
@@ -519,12 +573,351 @@ index 652c549..d639ac2 100644
              }
  
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
+diff --git a/src/StartMenu.vala b/src/StartMenu.vala
+new file mode 100644
+index 0000000..91a1392
+--- /dev/null
++++ b/src/StartMenu.vala
+@@ -0,0 +1,333 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0
++ * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
++ *
++ * M-series taskbar mode: a Windows 11-style Start menu. Search on top, pinned
++ * apps (the dock's launchers) with an "All apps" list, recent files as
++ * "Recommended", and the user plus a power button along the bottom.
++ */
++
++public class Dock.StartMenu : Gtk.Popover {
++    private const int PINNED_COLUMNS = 6;
++    private const int PINNED_MAX = 18;
++    private const int RECOMMENDED_MAX = 6;
++
++    private Gtk.SearchEntry search_entry;
++    private Gtk.Stack stack;
++    private Gtk.FlowBox pinned_box;
++    private Gtk.ListBox all_apps_list;
++    private Gtk.ListBox results_list;
++    private Gtk.Grid recommended_grid;
++    private Gtk.Button all_apps_button;
++    private Gtk.Popover power_menu;
++
++    construct {
++        has_arrow = false;
++        position = TOP;
++        add_css_class ("start-menu");
++
++        search_entry = new Gtk.SearchEntry () {
++            placeholder_text = _("Search for apps, settings, and documents"),
++            hexpand = true
++        };
++        search_entry.add_css_class ("start-search");
++        search_entry.search_changed.connect (update_search);
++        search_entry.activate.connect (launch_first_result);
++        search_entry.stop_search.connect (() => popdown ());
++
++        // Home page: Pinned + Recommended.
++        var pinned_title = new Gtk.Label (_("Pinned")) { xalign = 0, hexpand = true };
++        pinned_title.add_css_class ("start-section-title");
++        all_apps_button = new Gtk.Button.with_label (_("All apps ›"));
++        all_apps_button.add_css_class ("start-pill");
++        all_apps_button.clicked.connect (() => {
++            stack.visible_child_name = stack.visible_child_name == "all" ? "home" : "all";
++            all_apps_button.label = stack.visible_child_name == "all" ? _("‹ Back") : _("All apps ›");
++        });
++        var pinned_header = new Gtk.Box (HORIZONTAL, 0);
++        pinned_header.append (pinned_title);
++        pinned_header.append (all_apps_button);
++
++        pinned_box = new Gtk.FlowBox () {
++            min_children_per_line = PINNED_COLUMNS,
++            max_children_per_line = PINNED_COLUMNS,
++            selection_mode = NONE,
++            homogeneous = true,
++            row_spacing = 4,
++            column_spacing = 4
++        };
++        pinned_box.child_activated.connect ((child) => {
++            launch ((AppInfo) child.get_data<AppInfo> ("app"));
++        });
++
++        var recommended_title = new Gtk.Label (_("Recommended")) { xalign = 0 };
++        recommended_title.add_css_class ("start-section-title");
++        recommended_grid = new Gtk.Grid () {
++            column_homogeneous = true,
++            row_spacing = 4,
++            column_spacing = 12
++        };
++
++        var home = new Gtk.Box (VERTICAL, 12);
++        home.append (pinned_header);
++        home.append (pinned_box);
++        home.append (recommended_title);
++        home.append (recommended_grid);
++
++        all_apps_list = new Gtk.ListBox () { selection_mode = NONE };
++        all_apps_list.add_css_class ("start-list");
++        all_apps_list.row_activated.connect ((row) => launch ((AppInfo) row.get_data<AppInfo> ("app")));
++        var all_scroller = new Gtk.ScrolledWindow () {
++            child = all_apps_list,
++            hscrollbar_policy = NEVER,
++            vexpand = true
++        };
++
++        results_list = new Gtk.ListBox () { selection_mode = NONE };
++        results_list.add_css_class ("start-list");
++        results_list.row_activated.connect ((row) => launch ((AppInfo) row.get_data<AppInfo> ("app")));
++        var results_scroller = new Gtk.ScrolledWindow () {
++            child = results_list,
++            hscrollbar_policy = NEVER,
++            vexpand = true
++        };
++
++        stack = new Gtk.Stack () {
++            transition_type = CROSSFADE,
++            vexpand = true
++        };
++        stack.add_named (home, "home");
++        stack.add_named (all_scroller, "all");
++        stack.add_named (results_scroller, "results");
++
++        var body = new Gtk.Box (VERTICAL, 16) {
++            margin_top = 24,
++            margin_bottom = 16,
++            margin_start = 32,
++            margin_end = 32
++        };
++        body.append (search_entry);
++        body.append (stack);
++
++        // Footer: user on the left, power on the right.
++        var user_row = new Gtk.Box (HORIZONTAL, 10);
++        user_row.append (new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 32 });
++        var name = Environment.get_real_name ();
++        if (name == null || name == "" || name == "Unknown") {
++            name = Environment.get_user_name ();
++        }
++        user_row.append (new Gtk.Label (name));
++        var user_button = new Gtk.Button () {
++            child = user_row,
++            tooltip_text = _("Accounts")
++        };
++        user_button.add_css_class ("flat");
++        user_button.clicked.connect (() => {
++            popdown ();
++            TaskbarRow.spawn ({ "io.elementary.settings", "settings://accounts" });
++        });
++
++        var power_button = new Gtk.Button.from_icon_name ("system-shutdown-symbolic") {
++            tooltip_text = _("Power")
++        };
++        power_button.add_css_class ("flat");
++        power_button.update_property (Gtk.AccessibleProperty.LABEL, _("Power"), -1);
++        power_menu = TaskbarRow.build_power_menu (this);
++        power_menu.set_parent (power_button);
++        power_button.clicked.connect (() => power_menu.popup ());
++
++        var footer = new Gtk.Box (HORIZONTAL, 0);
++        footer.add_css_class ("start-footer");
++        footer.append (user_button);
++        footer.append (new Gtk.Box (HORIZONTAL, 0) { hexpand = true });
++        footer.append (power_button);
++
++        var content = new Gtk.Box (VERTICAL, 0) {
++            width_request = 680,
++            height_request = 720
++        };
++        content.append (body);
++        content.append (footer);
++        child = content;
++
++        show.connect (() => {
++            search_entry.text = "";
++            stack.visible_child_name = "home";
++            all_apps_button.label = _("All apps ›");
++            populate ();
++            search_entry.grab_focus ();
++        });
++    }
++
++    ~StartMenu () {
++        power_menu.unparent ();
++    }
++
++    private static List<AppInfo> visible_apps () {
++        var apps = new List<AppInfo> ();
++        foreach (var app in AppInfo.get_all ()) {
++            if (app.should_show ()) {
++                apps.insert_sorted (app, (a, b) => a.get_display_name ().collate (b.get_display_name ()));
++            }
++        }
++        return apps;
++    }
++
++    private void populate () {
++        while (pinned_box.get_first_child () != null) {
++            pinned_box.remove (pinned_box.get_first_child ());
++        }
++        var pinned_count = 0;
++        var settings = new Settings ("io.elementary.dock");
++        foreach (var id in settings.get_strv ("launchers")) {
++            var app = new DesktopAppInfo (id);
++            if (app != null && pinned_count < PINNED_MAX) {
++                pinned_box.append (pinned_tile (app));
++                pinned_count++;
++            }
++        }
++        if (pinned_count == 0) {
++            foreach (var app in visible_apps ()) {
++                if (pinned_count++ >= PINNED_MAX) {
++                    break;
++                }
++                pinned_box.append (pinned_tile (app));
++            }
++        }
++
++        fill_list (all_apps_list, visible_apps ());
++        populate_recommended ();
++    }
++
++    private Gtk.FlowBoxChild pinned_tile (AppInfo app) {
++        var tile = new Gtk.Box (VERTICAL, 6) {
++            halign = CENTER
++        };
++        tile.append (new Gtk.Image.from_gicon (app.get_icon () ?? new ThemedIcon ("application-x-executable")) {
++            pixel_size = 40
++        });
++        tile.append (new Gtk.Label (app.get_display_name ()) {
++            ellipsize = END,
++            max_width_chars = 10,
++            justify = CENTER
++        });
++        var child = new Gtk.FlowBoxChild () {
++            child = tile,
++            tooltip_text = app.get_display_name ()
++        };
++        child.add_css_class ("start-tile");
++        child.set_data<AppInfo> ("app", app);
++        return child;
++    }
++
++    private static void fill_list (Gtk.ListBox list, List<AppInfo> apps) {
++        list.remove_all ();
++        foreach (var app in apps) {
++            var row_box = new Gtk.Box (HORIZONTAL, 12) {
++                margin_top = 4,
++                margin_bottom = 4,
++                margin_start = 8
++            };
++            row_box.append (new Gtk.Image.from_gicon (app.get_icon () ?? new ThemedIcon ("application-x-executable")) {
++                pixel_size = 32
++            });
++            row_box.append (new Gtk.Label (app.get_display_name ()) { xalign = 0, ellipsize = END });
++            var row = new Gtk.ListBoxRow () { child = row_box };
++            row.set_data<AppInfo> ("app", app);
++            list.append (row);
++        }
++    }
++
++    private void populate_recommended () {
++        while (recommended_grid.get_first_child () != null) {
++            recommended_grid.remove (recommended_grid.get_first_child ());
++        }
++        var items = Gtk.RecentManager.get_default ().get_items ();
++        items.sort ((a, b) => (int) (b.get_modified ().to_unix () - a.get_modified ().to_unix ()));
++        var shown = 0;
++        foreach (var item in items) {
++            if (shown >= RECOMMENDED_MAX) {
++                break;
++            }
++            if (!item.exists ()) {
++                continue;
++            }
++            var uri = item.get_uri ();
++            var row = new Gtk.Box (HORIZONTAL, 10);
++            row.append (new Gtk.Image.from_gicon (item.get_gicon () ?? new ThemedIcon ("text-x-generic")) {
++                pixel_size = 32
++            });
++            var labels = new Gtk.Box (VERTICAL, 0);
++            labels.append (new Gtk.Label (item.get_display_name ()) { xalign = 0, ellipsize = MIDDLE, max_width_chars = 24 });
++            var age = new Gtk.Label (Granite.DateTime.get_relative_datetime (item.get_modified ())) { xalign = 0 };
++            age.add_css_class ("dim-label");
++            labels.append (age);
++            row.append (labels);
++            var button = new Gtk.Button () { child = row, tooltip_text = item.get_uri_display () };
++            button.add_css_class ("flat");
++            button.clicked.connect (() => {
++                popdown ();
++                try {
++                    AppInfo.launch_default_for_uri (uri, null);
++                } catch (Error e) {
++                    warning ("Start menu could not open %s: %s", uri, e.message);
++                }
++            });
++            recommended_grid.attach (button, shown % 2, shown / 2);
++            shown++;
++        }
++        if (shown == 0) {
++            var empty = new Gtk.Label (_("Files you open recently will show up here.")) { xalign = 0 };
++            empty.add_css_class ("dim-label");
++            recommended_grid.attach (empty, 0, 0);
++        }
++    }
++
++    private void update_search () {
++        var query = search_entry.text.strip ().down ();
++        if (query == "") {
++            stack.visible_child_name = "home";
++            return;
++        }
++        var matches = new List<AppInfo> ();
++        foreach (var app in visible_apps ()) {
++            var haystack = app.get_display_name ().down ();
++            var description = app.get_description ();
++            if (description != null) {
++                haystack += " " + description.down ();
++            }
++            if (app is DesktopAppInfo) {
++                foreach (var keyword in ((DesktopAppInfo) app).get_keywords ()) {
++                    haystack += " " + keyword.down ();
++                }
++            }
++            if (query in haystack) {
++                matches.append (app);
++            }
++        }
++        fill_list (results_list, matches);
++        stack.visible_child_name = "results";
++    }
++
++    private void launch_first_result () {
++        if (stack.visible_child_name != "results") {
++            return;
++        }
++        var row = results_list.get_row_at_index (0);
++        if (row != null) {
++            launch ((AppInfo) row.get_data<AppInfo> ("app"));
++        }
++    }
++
++    private void launch (AppInfo? app) {
++        if (app == null) {
++            return;
++        }
++        popdown ();
++        try {
++            app.launch (null, get_display ().get_app_launch_context ());
++        } catch (Error e) {
++            warning ("Start menu could not launch %s: %s", app.get_id (), e.message);
++        }
++    }
++}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..24df7dc
+index 0000000..b5cf8aa
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,442 @@
+@@ -0,0 +1,447 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -551,6 +944,7 @@ index 0000000..24df7dc
 +    private Gtk.Label date_label;
 +    private uint clock_timeout_id = 0;
 +    private DBusProxy? upower = null;
++    private StartMenu start_menu;
 +    private Gtk.Button weather_button;
 +    private Gtk.Image weather_image;
 +    private Gtk.Label weather_temp;
@@ -587,10 +981,12 @@ index 0000000..24df7dc
 +        };
 +        start_button.add_css_class ("taskbar-start");
 +        start_button.update_property (Gtk.AccessibleProperty.LABEL, _("Start"), -1);
-+        start_button.clicked.connect (open_launcher);
++        start_menu = new StartMenu ();
++        start_menu.set_parent (start_button);
++        start_button.clicked.connect (() => start_menu.popup ());
 +
 +        // Right-click (like Windows' Win+X menu) or long-press: session and power actions.
-+        var power_menu = build_power_menu ();
++        var power_menu = build_power_menu (null);
 +        power_menu.set_parent (start_button);
 +        var secondary = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
 +        secondary.pressed.connect (() => power_menu.popup ());
@@ -611,7 +1007,7 @@ index 0000000..24df7dc
 +        };
 +        search_button.add_css_class ("taskbar-search");
 +        search_button.update_property (Gtk.AccessibleProperty.LABEL, _("Search"), -1);
-+        search_button.clicked.connect (open_launcher);
++        search_button.clicked.connect (() => start_menu.popup ());
 +
 +        center_box = new Gtk.Box (HORIZONTAL, 4) {
 +            valign = FILL
@@ -726,6 +1122,7 @@ index 0000000..24df7dc
 +    }
 +
 +    ~TaskbarRow () {
++        start_menu.unparent ();
 +        if (weather_timeout_id != 0) {
 +            Source.remove (weather_timeout_id);
 +        }
@@ -735,7 +1132,7 @@ index 0000000..24df7dc
 +        center_layout.unparent ();
 +    }
 +
-+    private Gtk.Popover build_power_menu () {
++    internal static Gtk.Popover build_power_menu (Gtk.Popover? owner) {
 +        var box = new Gtk.Box (VERTICAL, 2) {
 +            margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6
 +        };
@@ -762,6 +1159,7 @@ index 0000000..24df7dc
 +            var action = items[i, 2];
 +            button.clicked.connect (() => {
 +                popover.popdown ();
++                owner?.popdown ();
 +                run_session_action.begin (action);
 +            });
 +            box.append (button);
@@ -861,7 +1259,7 @@ index 0000000..24df7dc
 +        return button;
 +    }
 +
-+    private static void spawn (string[] argv) {
++    internal static void spawn (string[] argv) {
 +        try {
 +            Process.spawn_async (
 +                null, argv, null,
@@ -996,13 +1394,14 @@ index 9cac739..a071a6b 100644
          gesture_click.button = Gdk.BUTTON_PRIMARY;
          gesture_click.released.connect (switch_to_new_workspace);
 diff --git a/src/meson.build b/src/meson.build
-index 052d4a5..5b97a4d 100644
+index 052d4a5..a77498c 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -8,6 +8,7 @@ sources = [
+@@ -8,6 +8,8 @@ sources = [
      'ItemGroup.vala',
      'ItemManager.vala',
      'MainWindow.vala',
++    'StartMenu.vala',
 +    'Taskbar.vala',
      'DisplayConfig.vala',
      'RenderNodeWalker.vala',
