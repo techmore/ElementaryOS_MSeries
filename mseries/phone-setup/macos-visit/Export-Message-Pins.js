@@ -89,6 +89,15 @@ function makeSnapshot(identifiers, metadata) {
             source_os: ObjC.unwrap($.NSProcessInfo.processInfo.operatingSystemVersionString),
             pins: pins, metadata: metadata};
 }
+function saveSnapshot(snapshot, path) {
+    if (path[0] !== '/') fail('Choose an absolute output path');
+    var error = $();
+    var text = $(JSON.stringify(snapshot, null, 2) + '\n');
+    if (!text.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error))
+        fail('Could not save the private export');
+    if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error))
+        fail('Could not secure the private export permissions');
+}
 function selfTest() {
     console.log('Pin fixture: Objective-C adapter');
     ObjC.registerSubclass({name: 'MSeriesPinReaderFixture', methods: {
@@ -123,6 +132,13 @@ function selfTest() {
         var diagnostic = {};
         var cached = readPinCache(path, diagnostic);
         if (!cached || cached.source !== 'macos-pin-cache' || cached.pins[1].apple_identifier !== 'group-fixture' || diagnostic.cache !== 'readable') fail('Binary cache read test failed');
+        var output = path + '.json';
+        try {
+            saveSnapshot(cached, output);
+            var exported = JSON.parse(ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError(output, $.NSUTF8StringEncoding, error)));
+            var attributes = $.NSFileManager.defaultManager.attributesOfItemAtPathError(output, error);
+            if (exported.pins.length !== 2 || Number(ObjC.unwrap(attributes.objectForKey('NSFilePosixPermissions'))) !== 384) fail('Private JSON export round trip failed');
+        } finally {$.NSFileManager.defaultManager.removeItemAtPathError(output, error);}
         console.log('Pin fixture: denied cache');
         if (ObjC.unwrap($.NSUserName()) !== 'root') {
             if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 0}), path, error)) fail('Could not prepare denied-read fixture');
@@ -176,13 +192,7 @@ function run(args) {
         }
         if (probe) return JSON.stringify({status: 'ready', source: snapshot.source, count: snapshot.pins.length, diagnostics: diagnostics, content_printed: false});
         var path = args[1];
-        if (path[0] !== '/') fail('Choose an absolute output path');
-        var error = $();
-        var text = $(JSON.stringify(snapshot, null, 2) + '\n');
-        if (!text.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error))
-            fail('Could not save the private export');
-        if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error))
-            fail('Could not secure the private export permissions');
+        saveSnapshot(snapshot, path);
         return 'Exported ' + snapshot.pins.length + ' ordered Messages pins. This is a snapshot; no phone settings changed.';
     } catch (error) {
         if (probe) return JSON.stringify({status: 'unavailable', reason: String(error.message || error), diagnostics: diagnostics, content_printed: false});

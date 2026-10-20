@@ -7,6 +7,9 @@ here=$(cd -- "$(dirname -- "$0")" && pwd)
 destination=${1:-"$HOME/Downloads/MSeries-Message-Pins"}
 mkdir -p "$destination"
 target="$destination/apple-message-pins.json"
+receipt="$destination/MSeries-Message-Pins-COMPLETE.txt"
+rm -f "$receipt"
+trap 'printf "\nPIN EXPORT NOT COMPLETE. Previous exports are retained; resolve the reported error before returning to Linux.\n" >&2' ERR
 if [ -e "$target" ]; then
   cp -p "$target" "$destination/apple-message-pins-before-$(date -u +%Y%m%dT%H%M%SZ).json"
 fi
@@ -17,5 +20,7 @@ open -a Messages
 read -r -p 'When the Mac’s pins match your iPhone, press Return to export: ' _
 /usr/bin/osascript -l JavaScript "$here/Export-Message-Pins.js" --output "$target"
 (cd "$destination" && shasum -a 256 apple-message-pins.json > APPLE-PINS-SHA256SUMS)
+(cd "$destination" && shasum -a 256 -c APPLE-PINS-SHA256SUMS)
+printf 'Pin snapshot and checksum verified: %s\nSource: Apple Messages local pin configuration. Linux import remains to be confirmed.\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$receipt"
 printf 'Saved private pin snapshot: %s\n' "$target"
 printf '%s\n' 'On Linux: Messages → menu → Import iPhone Pins. Check the conversation matches before importing.'

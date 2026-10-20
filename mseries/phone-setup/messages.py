@@ -446,6 +446,9 @@ class Messages(Gtk.Application):
         missing = sum(key not in self.threads for key in effective_choices(self.threads, self.pin_state))
         self.pin_notice((_('Pins from Mac · %s') % stamp) + (_(' · %d need matching') % missing if missing else ''))
         self.pin_note.set_tooltip_text(_('This is the Mac’s exported pin order. Changes on your iPhone require a new export. Review Imported Pins to match missing conversations.'))
+        if snapshot.get('source_modified_at'):
+            modified = datetime.fromisoformat(snapshot['source_modified_at']).astimezone().strftime('%x %X')
+            self.pin_note.set_tooltip_text(self.pin_note.get_tooltip_text() + '\n' + (_('Apple pin settings last changed: %s') % modified))
 
     def import_pins(self, *_args):
         chooser = Gtk.FileDialog(title=_('Import iPhone Pins'))
