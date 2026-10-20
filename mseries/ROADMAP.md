@@ -23,9 +23,10 @@ cases pass; GSettings monitoring and Pantheon runtime parity remain unverified.
 
 The upstream scope audit now records the 153 repositories visible in the
 official Elementary GitHub organization (`mseries/rust/elementary-org-census.json`).
-Only ten currently have full per-project pins and parity records in
-`elementary-projects.json`; reconcile OS package/build manifests against this
-census to identify every shipped source before further migration claims.
+Eleven projects now have full source records, including ten direct image
+dependencies and the metapackage source. The ARM64 seed map lists 59 candidate
+image sources; 48 still need full pin, license, and parity review, and the
+resolved PPA package closure still needs independent verification.
 
 ## Omacom userspace support — 2026-10-17
 

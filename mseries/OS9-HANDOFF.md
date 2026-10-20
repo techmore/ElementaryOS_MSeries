@@ -5,12 +5,17 @@
 The latest scope audit found 153 public repositories in the official
 Elementary GitHub organization. `mseries/rust/elementary-org-census.json` now
 records each repository separately with its default branch and explicit
-scope-review status; the detailed pinned source register still has only ten
-direct image/customization dependencies. The rename from
+scope-review status. The configured ARM64 desktop seed snapshot maps 58
+candidate repositories plus the OS build repository. `elementary/metapackages`
+is now separately pinned, alongside ten direct image/customization source
+records. The 59-project image map has 48 projects still needing full pin,
+license, and parity review; the resolved PPA package closure also needs
+independent verification. The rename from
 `wingpanel-indicator-sound` to `panel-sound` is recorded as an alias. This
 census is discovery evidence, not proof that all image packages or upstream
-projects have been identified. Next, reconcile the OS package/build manifests
-to the full set of shipped Elementary sources before claiming coverage.
+projects have been identified. Next, verify each of the 59 package/repository
+links against source package metadata, then pin the resolved PPA package set
+before claiming complete project coverage.
 
 The launcher-key watcher and Homeboard launcher installer are committed Rust
 candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live

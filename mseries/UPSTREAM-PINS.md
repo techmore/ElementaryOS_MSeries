@@ -50,9 +50,19 @@ Current source pin locations include `install-gala-*.sh` and
 `install-battery-eta.sh` for panel-power; `build-network-indicator` and
 `install-network-throughput.sh` for panel-network; `build-quick-settings` and
 `install-quick-settings-brightness.sh` for quick-settings; and the dedicated
-sound/keyboard indicator installers. The ten-project ledger is now established;
-extending the same source/pin/license/parity contract to every other upstream
-dependency and every local project remains open.
+sound/keyboard indicator installers. The ten direct project pins are
+established; extending the same source/pin/license/parity contract to every
+other upstream dependency and every local project remains open.
+
+The configured Resolute desktop seed snapshot is tracked separately as
+`elementary/metapackages` at `6e6466507f7f5b32e73594c5e727a49f0be58d0f`.
+`mseries/rust/elementary-image-projects.json` maps its four ARM64 desktop and
+Pantheon seed files to 58 candidate Elementary repositories, plus the OS build
+repository, in the 59-project image source map. This is a package seed mapping,
+not an installed-package receipt: 46 repository mappings still need
+source-package confirmation (48 of the 59 source records do not yet have full
+pins/license/parity records), and the active PPA package versions are not
+pinned by this source commit.
 
 ## Wingpanel network speed readout
 

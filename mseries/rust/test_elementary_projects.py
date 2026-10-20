@@ -43,7 +43,10 @@ class ElementaryProjectRegister(unittest.TestCase):
             with self.subTest(census_repository=repository["name"]):
                 self.assertEqual(repository["url"], f"https://github.com/elementary/{repository['name']}")
                 self.assertTrue(repository["default_branch"])
-                self.assertEqual(repository["scope_status"], "review-required")
+                self.assertIn(
+                    repository["scope_status"],
+                    {"review-required", "image-package-source-candidate", "detailed-source-record"},
+                )
 
         registered_names = {project_id.split("/", 1)[1] for project_id in ids}
         self.assertTrue(registered_names.issubset(census_by_name))
@@ -69,6 +72,44 @@ class ElementaryProjectRegister(unittest.TestCase):
                 self.assertTrue(pin_locations, "pin needs an authoritative source file")
                 for relative_path in pin_locations:
                     self.assertIn(project["pin"]["value"], (ROOT / relative_path).read_text())
+
+    def test_image_metapackage_projects_have_independent_rust_records(self):
+        manifest = json.loads((Path(__file__).with_name("elementary-image-projects.json")).read_text())
+        projects = manifest["projects"]
+        self.assertEqual(manifest["project_count"], len(projects))
+        self.assertEqual(len(projects), 59)
+        self.assertEqual(len({project["repository"] for project in projects}), len(projects))
+        census = json.loads((Path(__file__).with_name("elementary-org-census.json")).read_text())
+        census_names = {
+            name
+            for repository in census["repositories"]
+            for name in [repository["name"], *repository.get("repository_aliases", [])]
+        }
+        aliases = {
+            alias: repository["name"]
+            for repository in census["repositories"]
+            for alias in repository.get("repository_aliases", [])
+        }
+        detailed_names = {
+            aliases.get(project["id"].split("/", 1)[1], project["id"].split("/", 1)[1])
+            for project in REGISTER["projects"]
+        }
+        self.assertTrue(detailed_names.issubset({project["repository"] for project in projects}))
+        self.assertTrue({project["repository"] for project in projects}.issubset(census_names))
+        self.assertTrue(all(project["image_presence_status"] for project in projects))
+        for project in projects:
+            with self.subTest(image_project=project["repository"]):
+                self.assertTrue(project["packages"])
+                self.assertTrue(project["source_files"])
+                self.assertTrue(project["rust_migration_status"])
+                self.assertTrue(project["rust_project_target"])
+                self.assertTrue(project["repository_mapping_status"])
+                self.assertTrue(project["source_pin_status"])
+                self.assertTrue(project["license_status"])
+
+        for source_file in manifest["upstream_metapackages"]["seed_files"]:
+            self.assertTrue(source_file["blob_sha"])
+            self.assertIn(source_file["path"], {"desktop-arm64", "desktop-recommends-arm64", "pantheon-recommends-arm64", "pantheon-shell-arm64"})
 
 
 if __name__ == "__main__":

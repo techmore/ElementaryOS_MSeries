@@ -109,6 +109,12 @@
       "open_prs": true
     },
     {
+      "repo": "elementary/metapackages",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
       "repo": "elementary/panel-power",
       "base": "main",
       "discover_branches": true,

@@ -1,0 +1,1169 @@
+{
+  "schema": 1,
+  "description": "Elementary upstream projects represented in the selected image's ARM64 desktop metapackage seed files. This is a candidate source set, not an installed-package receipt.",
+  "observed_on": "2026-10-20",
+  "image_inputs": [
+    "mkosi.images/base/mkosi.conf.d/elementary.conf"
+  ],
+  "image_inputs_note": "The local image installs elementary-desktop, elementary-minimal, and elementary-standard with recommends enabled; metapackage seed membership is not an independent proof of the resolved installed package set.",
+  "upstream_metapackages": {
+    "url": "https://github.com/elementary/metapackages",
+    "ref": "resolute",
+    "commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+    "license": "GPL-2.0",
+    "license_file": "COPYING",
+    "seed_files": [
+      {
+        "path": "desktop-arm64",
+        "blob_sha": "26ed912a792f46ef58bea75ebb7f6835741a27c7",
+        "url": "https://github.com/elementary/metapackages/blob/6e6466507f7f5b32e73594c5e727a49f0be58d0f/desktop-arm64"
+      },
+      {
+        "path": "desktop-recommends-arm64",
+        "blob_sha": "46293ac2f32df5063c9e0e53d91106bb3198b646",
+        "url": "https://github.com/elementary/metapackages/blob/6e6466507f7f5b32e73594c5e727a49f0be58d0f/desktop-recommends-arm64"
+      },
+      {
+        "path": "pantheon-recommends-arm64",
+        "blob_sha": "7b94bbb6cb28c1e8d8f316933135dce64589c9b3",
+        "url": "https://github.com/elementary/metapackages/blob/6e6466507f7f5b32e73594c5e727a49f0be58d0f/pantheon-recommends-arm64"
+      },
+      {
+        "path": "pantheon-shell-arm64",
+        "blob_sha": "33b2abb993e701f4b5bf5cf7fd449f18748f978d",
+        "url": "https://github.com/elementary/metapackages/blob/6e6466507f7f5b32e73594c5e727a49f0be58d0f/pantheon-shell-arm64"
+      }
+    ]
+  },
+  "project_count": 59,
+  "projects": [
+    {
+      "repository": "appcenter",
+      "packages": [
+        "io.elementary.appcenter"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/appcenter",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "applications-menu",
+      "packages": [
+        "io.elementary.applications-menu"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/applications-menu",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "bluetooth-daemon",
+      "packages": [
+        "io.elementary.bluetooth-daemon"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/bluetooth-daemon",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "code",
+      "packages": [
+        "io.elementary.code"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/code",
+      "default_branch": "master",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "contractor",
+      "packages": [
+        "contractor"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/contractor",
+      "default_branch": "master",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "default-settings",
+      "packages": [
+        "elementary-default-settings"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/default-settings",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "dock",
+      "packages": [
+        "io.elementary.dock"
+      ],
+      "source_files": [
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/dock",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust dock/window-switcher project preserving the Pantheon launcher and dock contracts."
+    },
+    {
+      "repository": "files",
+      "packages": [
+        "pantheon-files"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/files",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust file manager project preserving Files' file, portal, mount, and desktop integration contracts."
+    },
+    {
+      "repository": "fonts",
+      "packages": [
+        "fonts-elementary-core"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/fonts",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "gala",
+      "packages": [
+        "gala"
+      ],
+      "source_files": [
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/gala",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust compositor/window-manager project preserving Gala's compositor, plugin, and desktop-session contracts."
+    },
+    {
+      "repository": "greeter",
+      "packages": [
+        "io.elementary.greeter"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/greeter",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "initial-setup",
+      "packages": [
+        "io.elementary.initial-setup"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/initial-setup",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "mail",
+      "packages": [
+        "io.elementary.mail"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/mail",
+      "default_branch": "master",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "metapackages",
+      "packages": [
+        "pantheon-shell"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64",
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/metapackages",
+      "default_branch": "resolute",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "confirmed; Elementary metapackage source defines pantheon-shell",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "GPL-2.0; COPYING at pinned revision",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "Replace seed-to-Debian metapackage generation with an independent Rust project preserving package closure and amd64/arm64 outputs."
+    },
+    {
+      "repository": "monitor",
+      "packages": [
+        "io.elementary.monitor"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/monitor",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "notifications",
+      "packages": [
+        "io.elementary.notifications"
+      ],
+      "source_files": [
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/notifications",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "onboarding",
+      "packages": [
+        "io.elementary.onboarding"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/onboarding",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "os",
+      "packages": [
+        "elementary/os"
+      ],
+      "source_files": [
+        "mkosi.conf",
+        "Justfile",
+        "assemble-iso.sh"
+      ],
+      "url": "https://github.com/elementary/os",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "direct image build source",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A Rust project for every executable image-build, installer, and update component, with generated declarative mkosi inputs where the upstream interface requires them; full build-contract parity is required."
+    },
+    {
+      "repository": "panel-bluetooth",
+      "packages": [
+        "io.elementary.panel.bluetooth"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-bluetooth",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "panel-datetime",
+      "packages": [
+        "io.elementary.panel.datetime"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-datetime",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "panel-keyboard",
+      "packages": [
+        "io.elementary.panel.keyboard"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-keyboard",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust keyboard-layout indicator preserving layout selection, Wingpanel, and accessibility behavior."
+    },
+    {
+      "repository": "panel-network",
+      "packages": [
+        "io.elementary.panel.network"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-network",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "daemon-candidate-only; full-indicator-port-not-started",
+      "rust_project_target": "A Rust panel network indicator plus separate Rust usage service preserving NetworkManager, Wingpanel, SQLite, and DNS-event contracts."
+    },
+    {
+      "repository": "panel-nightlight",
+      "packages": [
+        "io.elementary.panel.nightlight"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-nightlight",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "panel-notifications",
+      "packages": [
+        "io.elementary.panel.notifications"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-notifications",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "panel-power",
+      "packages": [
+        "io.elementary.panel.power"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-power",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust panel-power indicator preserving UPower state, settings, and Wingpanel plugin behavior."
+    },
+    {
+      "repository": "panel-sound",
+      "packages": [
+        "io.elementary.panel.sound"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/panel-sound",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [
+        "wingpanel-indicator-sound"
+      ],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded; legacy source URL redirects to this canonical repository",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "GPL-3.0-or-later; installed package copyright and upstream COPYING",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust sound indicator preserving PulseAudio/PipeWire, player-control, and Wingpanel behavior."
+    },
+    {
+      "repository": "pantheon-agent-polkit",
+      "packages": [
+        "pantheon-agent-polkit"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/pantheon-agent-polkit",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "photos",
+      "packages": [
+        "pantheon-photos"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/photos",
+      "default_branch": "master",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "plymouth-theme",
+      "packages": [
+        "plymouth-theme-elementary"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/plymouth-theme",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "portals",
+      "packages": [
+        "io.elementary.portals"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/portals",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "quick-settings",
+      "packages": [
+        "io.elementary.quick-settings"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/quick-settings",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A Rust Quick Settings host and extension API that preserves system controls and allows independent Rust widgets."
+    },
+    {
+      "repository": "session-settings",
+      "packages": [
+        "io.elementary.session-settings"
+      ],
+      "source_files": [
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/session-settings",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings",
+      "packages": [
+        "io.elementary.settings"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-applications",
+      "packages": [
+        "io.elementary.settings.applications"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-applications",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-bluetooth",
+      "packages": [
+        "io.elementary.settings.bluetooth"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-bluetooth",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-daemon",
+      "packages": [
+        "io.elementary.settings-daemon"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-daemon",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-datetime",
+      "packages": [
+        "io.elementary.settings.datetime"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-datetime",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-desktop",
+      "packages": [
+        "io.elementary.settings.desktop"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-desktop",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-display",
+      "packages": [
+        "io.elementary.settings.display"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-display",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-keyboard",
+      "packages": [
+        "io.elementary.settings.keyboard"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-keyboard",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-locale",
+      "packages": [
+        "io.elementary.settings.locale"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-locale",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-mouse-touchpad",
+      "packages": [
+        "io.elementary.settings.mouse-touchpad"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-mouse-touchpad",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-network",
+      "packages": [
+        "io.elementary.settings.network"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-network",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-notifications",
+      "packages": [
+        "io.elementary.settings.notifications"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-notifications",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-onlineaccounts",
+      "packages": [
+        "io.elementary.settings.onlineaccounts"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-onlineaccounts",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-power",
+      "packages": [
+        "io.elementary.settings.power"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-power",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-printers",
+      "packages": [
+        "io.elementary.settings.printers"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-printers",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-screentime-limits",
+      "packages": [
+        "io.elementary.settings.screentime-limits"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-screentime-limits",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-security-privacy",
+      "packages": [
+        "io.elementary.settings.security-privacy"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-security-privacy",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-sharing",
+      "packages": [
+        "io.elementary.settings.sharing"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-sharing",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-sound",
+      "packages": [
+        "io.elementary.settings.sound"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-sound",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-system",
+      "packages": [
+        "io.elementary.settings.system"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-system",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-useraccounts",
+      "packages": [
+        "io.elementary.settings.useraccounts"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-useraccounts",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "settings-wacom",
+      "packages": [
+        "io.elementary.settings.wacom"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/settings-wacom",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "shortcut-overlay",
+      "packages": [
+        "io.elementary.shortcut-overlay"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/shortcut-overlay",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "sideload",
+      "packages": [
+        "io.elementary.sideload"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/sideload",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "tasks",
+      "packages": [
+        "io.elementary.tasks"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/tasks",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "terminal",
+      "packages": [
+        "io.elementary.terminal"
+      ],
+      "source_files": [
+        "pantheon-recommends-arm64"
+      ],
+      "url": "https://github.com/elementary/terminal",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "name-derived; confirm against source package metadata",
+      "source_pin_status": "not-yet-pinned",
+      "license_status": "not-yet-reviewed",
+      "rust_migration_status": "not-started",
+      "rust_project_target": "Create an independent Rust project after confirming the package-to-repository mapping and auditing behavior."
+    },
+    {
+      "repository": "wingpanel",
+      "packages": [
+        "io.elementary.wingpanel",
+        "io.elementary.wingpanel"
+      ],
+      "source_files": [
+        "desktop-recommends-arm64",
+        "pantheon-shell-arm64"
+      ],
+      "url": "https://github.com/elementary/wingpanel",
+      "default_branch": "main",
+      "archived": false,
+      "census_aliases": [],
+      "image_presence_status": "metapackage-seed-input; installed package closure not independently verified",
+      "repository_mapping_status": "recorded-in-existing-pinned-register",
+      "source_pin_status": "recorded-in-elementary-projects.json",
+      "license_status": "recorded-in-elementary-projects.json",
+      "rust_migration_status": "not-started-full-project",
+      "rust_project_target": "A separate Rust panel host and indicator-extension system that preserves the current Wingpanel protocols and desktop integration."
+    }
+  ]
+}

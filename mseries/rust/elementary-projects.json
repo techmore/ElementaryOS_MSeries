@@ -138,6 +138,19 @@
       "parity_contract": ["layout listing and selection", "active layout state", "popover rendering", "keyboard input and accessibility"],
       "intentional_enhancements": [],
       "qualification": "The source and plugin digest are pinned; the selected-state initialization patch is a bug fix, not an enhancement."
+    },
+    {
+      "id": "elementary/metapackages",
+      "url": "https://github.com/elementary/metapackages",
+      "default_branch": "resolute",
+      "license": {"spdx": "GPL-2.0", "evidence": "COPYING at the pinned source revision."},
+      "pin": {"kind": "git-commit-audit-baseline", "value": "6e6466507f7f5b32e73594c5e727a49f0be58d0f", "record": "mseries/rust/elementary-image-projects.json", "meaning": "Pinned package-seed source snapshot for mapping the configured desktop image; the image currently consumes PPA-built metapackages rather than building this source checkout."},
+      "local_consumers": ["mkosi.images/base/mkosi.conf.d/elementary.conf", "mseries/rust/elementary-image-projects.json"],
+      "rust_target": "A separate Rust package-selection and metapackage generator preserving Elementary seed semantics, Debian package relationships, and amd64/arm64 outputs.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["same package membership for minimal, standard, desktop, and Pantheon profiles", "same architecture-specific package relationships and recommends", "reproducible Debian metapackage outputs and dependency closure"],
+      "intentional_enhancements": [],
+      "qualification": "Pinned seed files identify 58 repository candidates represented in the ARM64 desktop inputs plus the OS build source; source-package mappings, actual resolved package closure, and Rust generator parity remain to be verified."
     }
   ]
 }

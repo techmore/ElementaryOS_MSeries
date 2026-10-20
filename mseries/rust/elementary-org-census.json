@@ -75,7 +75,7 @@
       "url": "https://github.com/elementary/appcenter",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "366461768",
@@ -123,7 +123,7 @@
       "url": "https://github.com/elementary/applications-menu",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "138646905",
@@ -163,7 +163,7 @@
       "url": "https://github.com/elementary/bluetooth-daemon",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "51956466",
@@ -235,7 +235,7 @@
       "url": "https://github.com/elementary/code",
       "default_branch": "master",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "216071417",
@@ -259,7 +259,7 @@
       "url": "https://github.com/elementary/contractor",
       "default_branch": "master",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "367144838",
@@ -291,7 +291,7 @@
       "url": "https://github.com/elementary/default-settings",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "193580468",
@@ -307,7 +307,7 @@
       "url": "https://github.com/elementary/dock",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "69786468",
@@ -395,7 +395,7 @@
       "url": "https://github.com/elementary/files",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "335489738",
@@ -435,7 +435,7 @@
       "url": "https://github.com/elementary/fonts",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "91378740",
@@ -443,7 +443,7 @@
       "url": "https://github.com/elementary/gala",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "341356141",
@@ -467,7 +467,7 @@
       "url": "https://github.com/elementary/greeter",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "339475475",
@@ -523,7 +523,7 @@
       "url": "https://github.com/elementary/initial-setup",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "70621652",
@@ -587,7 +587,7 @@
       "url": "https://github.com/elementary/mail",
       "default_branch": "master",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "429380086",
@@ -603,7 +603,7 @@
       "url": "https://github.com/elementary/metapackages",
       "default_branch": "resolute",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "45198771",
@@ -619,7 +619,7 @@
       "url": "https://github.com/elementary/monitor",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88930117",
@@ -635,7 +635,7 @@
       "url": "https://github.com/elementary/notifications",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "180742929",
@@ -643,7 +643,7 @@
       "url": "https://github.com/elementary/onboarding",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "95488077",
@@ -651,7 +651,7 @@
       "url": "https://github.com/elementary/os",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "131585804",
@@ -667,7 +667,7 @@
       "url": "https://github.com/elementary/panel-bluetooth",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "84972140",
@@ -675,7 +675,7 @@
       "url": "https://github.com/elementary/panel-datetime",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88290188",
@@ -683,7 +683,7 @@
       "url": "https://github.com/elementary/panel-keyboard",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "89284322",
@@ -691,7 +691,7 @@
       "url": "https://github.com/elementary/panel-network",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "113915711",
@@ -699,7 +699,7 @@
       "url": "https://github.com/elementary/panel-nightlight",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88562992",
@@ -707,7 +707,7 @@
       "url": "https://github.com/elementary/panel-notifications",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88550890",
@@ -715,7 +715,7 @@
       "url": "https://github.com/elementary/panel-power",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "87730460",
@@ -726,7 +726,7 @@
       "repository_aliases": [
         "wingpanel-indicator-sound"
       ],
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "84490643",
@@ -742,7 +742,7 @@
       "url": "https://github.com/elementary/pantheon-agent-polkit",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "831032302",
@@ -766,7 +766,7 @@
       "url": "https://github.com/elementary/photos",
       "default_branch": "master",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "145015240",
@@ -782,7 +782,7 @@
       "url": "https://github.com/elementary/plymouth-theme",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "171329776",
@@ -790,7 +790,7 @@
       "url": "https://github.com/elementary/portals",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "106158633",
@@ -822,7 +822,7 @@
       "url": "https://github.com/elementary/quick-settings",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "28281918",
@@ -862,7 +862,7 @@
       "url": "https://github.com/elementary/session-settings",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87963908",
@@ -870,7 +870,7 @@
       "url": "https://github.com/elementary/settings",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "84180108",
@@ -878,7 +878,7 @@
       "url": "https://github.com/elementary/settings-applications",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87756428",
@@ -886,7 +886,7 @@
       "url": "https://github.com/elementary/settings-bluetooth",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "285391137",
@@ -894,7 +894,7 @@
       "url": "https://github.com/elementary/settings-daemon",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87989914",
@@ -902,7 +902,7 @@
       "url": "https://github.com/elementary/settings-datetime",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "84980530",
@@ -910,7 +910,7 @@
       "url": "https://github.com/elementary/settings-desktop",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88540034",
@@ -918,7 +918,7 @@
       "url": "https://github.com/elementary/settings-display",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87462275",
@@ -926,7 +926,7 @@
       "url": "https://github.com/elementary/settings-keyboard",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "274196913",
@@ -942,7 +942,7 @@
       "url": "https://github.com/elementary/settings-locale",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88210751",
@@ -950,7 +950,7 @@
       "url": "https://github.com/elementary/settings-mouse-touchpad",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88916715",
@@ -958,7 +958,7 @@
       "url": "https://github.com/elementary/settings-network",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88233219",
@@ -966,7 +966,7 @@
       "url": "https://github.com/elementary/settings-notifications",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87957936",
@@ -974,7 +974,7 @@
       "url": "https://github.com/elementary/settings-onlineaccounts",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "89030183",
@@ -982,7 +982,7 @@
       "url": "https://github.com/elementary/settings-power",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88236157",
@@ -990,7 +990,7 @@
       "url": "https://github.com/elementary/settings-printers",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "747914711",
@@ -1006,7 +1006,7 @@
       "url": "https://github.com/elementary/settings-screentime-limits",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88917494",
@@ -1014,7 +1014,7 @@
       "url": "https://github.com/elementary/settings-security-privacy",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87971867",
@@ -1022,7 +1022,7 @@
       "url": "https://github.com/elementary/settings-sharing",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "87968143",
@@ -1030,7 +1030,7 @@
       "url": "https://github.com/elementary/settings-sound",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88659335",
@@ -1038,7 +1038,7 @@
       "url": "https://github.com/elementary/settings-system",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "88902047",
@@ -1046,7 +1046,7 @@
       "url": "https://github.com/elementary/settings-useraccounts",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "197141588",
@@ -1054,7 +1054,7 @@
       "url": "https://github.com/elementary/settings-wacom",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "109286759",
@@ -1062,7 +1062,7 @@
       "url": "https://github.com/elementary/shortcut-overlay",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "189505510",
@@ -1070,7 +1070,7 @@
       "url": "https://github.com/elementary/sideload",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "118526020",
@@ -1134,7 +1134,7 @@
       "url": "https://github.com/elementary/tasks",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "89505955",
@@ -1142,7 +1142,7 @@
       "url": "https://github.com/elementary/terminal",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "image-package-source-candidate"
     },
     {
       "id": "226164278",
@@ -1198,7 +1198,7 @@
       "url": "https://github.com/elementary/wingpanel",
       "default_branch": "main",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "detailed-source-record"
     },
     {
       "id": "88289484",
@@ -1234,4 +1234,3 @@
     }
   ]
 }
-

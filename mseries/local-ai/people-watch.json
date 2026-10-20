@@ -210,6 +210,12 @@
     "group": "elementary"
   },
   {
+    "repo": "elementary/metapackages",
+    "who": "elementary maintainers",
+    "why": "Package seeds define the default image and Pantheon application set; Rust migration needs package-closure parity",
+    "group": "elementary"
+  },
+  {
     "repo": "elementary/panel-power",
     "who": "elementary maintainers",
     "why": "Power indicator source used by the local battery ETA integration",
