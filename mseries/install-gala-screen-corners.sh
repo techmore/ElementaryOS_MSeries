@@ -107,6 +107,15 @@ sudo tee "$launcher" >/dev/null <<'LAUNCHER'
 flag="$HOME/.cache/mseries-gala-failed"
 patched=/usr/local/lib/mseries/gala/bin/gala
 libs=/usr/local/lib/mseries/gala/lib
+# Patched libmutter from install-gala-mutter-fix.sh, used only while it matches the system mutter.
+mfix=/usr/local/lib/mseries/gala/mutter-fix
+if [ -r "$mfix/mutter-version" ] && [ -e "$mfix/libmutter-18.so.0" ]; then
+  if [ "$(cat "$mfix/mutter-version")" = "$(dpkg-query -W -f='${Version}' libmutter-18-0 2>/dev/null)" ]; then
+    libs="$mfix:$libs"
+  else
+    logger -t mseries-gala "patched libmutter is for $(cat "$mfix/mutter-version"), system has another version; not using it"
+  fi
+fi
 
 use_stock() {
   logger -t mseries-gala "$1; starting stock /usr/bin/gala"

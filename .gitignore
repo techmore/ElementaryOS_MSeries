@@ -22,6 +22,10 @@ local-build-records/
 *.efi
 __pycache__/
 *.pyc
+/rust/target/
 mseries/gala-drawers/build/
 mkosi.packages/
 /mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
+
+# Rust build output
+rust/target/

@@ -30,7 +30,7 @@ const Preset[] presets = {
     { "Blank x86-64", "Emulated: bring any amd64 .iso", 2, 4, 16, 3, "", "", "x86_64" }
 };
 
-public class MachineRow : Gtk.ListBoxRow {
+public class MachineRow : SidebarRow {
     public Machine machine { get; construct; }
     private Gtk.Label name_label;
     private Gtk.Label sub_label;
@@ -38,7 +38,9 @@ public class MachineRow : Gtk.ListBoxRow {
     private Gtk.Image icon;
 
     public signal void group_changed ();
-    public int group { get { return machine.is_fresh () ? 1 : 0; } }
+    public override int group { get { return machine.is_fresh () ? 1 : 0; } }
+    public override string sort_key { owned get { return machine.name.down (); } }
+    public override string header_title { owned get { return group == 0 ? "YOUR MACHINES" : "NEW — NOT INSTALLED"; } }
 
     public MachineRow (Machine machine) {
         Object (machine: machine);
@@ -106,6 +108,10 @@ public class MachineLab : Gtk.Application {
     private Gtk.ListBox list;
     private Gtk.Stack content;
     private bool special_page = false;
+    private HashTable<string, IncusPage> incus_pages = new HashTable<string, IncusPage> (str_hash, str_equal);
+    private HashTable<string, IncusRow> incus_rows = new HashTable<string, IncusRow> (str_hash, str_equal);
+    private bool incus_busy = false;
+    private bool incus_seen = false;
     private Gtk.Widget sidebar_box;
     private Gtk.Widget sidebar_sep;
     private HashTable<string, MachinePage> pages = new HashTable<string, MachinePage> (str_hash, str_equal);
@@ -151,18 +157,18 @@ public class MachineLab : Gtk.Application {
         set_accels_for_action ("app.new-machine", { "<Control>n" });
         var refresh_action = new SimpleAction ("refresh", null);
         refresh_action.activate.connect (() => {
-            var row = list.get_selected_row ();
+            var row = list.get_selected_row () as MachineRow;
             if (row != null) {
-                pages[((MachineRow) row).machine.id].recheck ();
+                pages[row.machine.id].recheck ();
             }
         });
         add_action (refresh_action);
         set_accels_for_action ("app.refresh", { "F5", "<Control>r" });
         var fs_action = new SimpleAction ("fullscreen", null);
         fs_action.activate.connect (() => {
-            var row = list.get_selected_row ();
+            var row = list.get_selected_row () as MachineRow;
             if (row != null) {
-                pages[((MachineRow) row).machine.id].toggle_fullscreen ();
+                pages[row.machine.id].toggle_fullscreen ();
             }
         });
         add_action (fs_action);
@@ -194,6 +200,7 @@ public class MachineLab : Gtk.Application {
         layout.append (sidebar_sep);
 
         content = new Gtk.Stack ();
+        content.hhomogeneous = false;   // a wide hidden page must not widen the window
         content.hexpand = true;
         content.transition_type = Gtk.StackTransitionType.CROSSFADE;
         content.add_named (build_empty_state (), "empty");
@@ -226,7 +233,92 @@ public class MachineLab : Gtk.Application {
         foreach (var m in machines.data) {
             m.poll ();
         }
+        Timeout.add_seconds (3, () => {
+            refresh_incus.begin ();
+            return Source.CONTINUE;
+        });
+        refresh_incus.begin ();
         window.present ();
+    }
+
+    // ---- Incus ----
+
+    /* Reconcile the sidebar with `incus list`: add, update and remove rows and pages. */
+    private async void refresh_incus () {
+        if (incus_busy) {
+            return;
+        }
+        incus_busy = true;
+        string? error;
+        var list_now = yield IncusClient.list_instances (out error);
+        incus_busy = false;
+        if (list_now == null) {
+            return;   // Incus not installed or not reachable: no rows, and New Machine explains why
+        }
+        incus_seen = true;
+        var live = new HashTable<string, bool> (str_hash, str_equal);
+        foreach (var inst in list_now.data) {
+            live[inst.name] = true;
+            var row = incus_rows[inst.name];
+            if (row != null) {
+                row.update (inst);
+                incus_pages[inst.name].update (inst);
+            } else {
+                var page = new IncusPage (inst);
+                page.toast.connect (send_toast);
+                page.changed.connect (() => refresh_incus.begin ());
+                incus_pages[inst.name] = page;
+                content.add_named (page, "incus:" + inst.name);
+                var r = new IncusRow (inst);
+                incus_rows[inst.name] = r;
+                list.append (r);
+            }
+        }
+        var gone = new GenericArray<string> ();
+        incus_rows.foreach ((name, r) => {
+            if (!live.contains (name)) {
+                gone.add (name);
+            }
+        });
+        foreach (var name in gone.data) {
+            var r = incus_rows[name];
+            bool was_selected = list.get_selected_row () == r;
+            list.remove (r);
+            content.remove (incus_pages[name]);
+            incus_rows.remove (name);
+            incus_pages.remove (name);
+            if (was_selected) {
+                var next = list.get_row_at_index (0);
+                if (next != null) {
+                    list.select_row (next);
+                } else {
+                    content.visible_child_name = "empty";
+                }
+            }
+        }
+        list.invalidate_sort ();
+        list.invalidate_headers ();
+    }
+
+    private void show_incus_dialog () {
+        int n = (int) incus_rows.size () + 1;
+        string name = "lab-%d".printf (n);
+        while (incus_rows.contains (name)) {
+            n++;
+            name = "lab-%d".printf (n);
+        }
+        var dialog = new IncusCreateDialog (window, name);
+        dialog.created.connect ((created_name) => {
+            send_toast ("Created %s".printf (created_name));
+            refresh_incus.begin ((o, res) => {
+                refresh_incus.end (res);
+                var row = incus_rows[created_name];
+                if (row != null) {
+                    list.select_row (row);
+                }
+            });
+        });
+        dialog.present ();
     }
 
     // ---- Sidebar ----------------------------------------------------------
@@ -249,18 +341,18 @@ public class MachineLab : Gtk.Application {
         list.selection_mode = Gtk.SelectionMode.SINGLE;
         list.add_css_class ("navigation-sidebar");
         list.set_sort_func ((a, b) => {
-            var ra = (MachineRow) a;
-            var rb = (MachineRow) b;
+            var ra = (SidebarRow) a;
+            var rb = (SidebarRow) b;
             if (ra.group != rb.group) return ra.group - rb.group;
-            return strcmp (ra.machine.name.down (), rb.machine.name.down ());
+            return strcmp (ra.sort_key, rb.sort_key);
         });
         list.set_header_func ((row, before) => {
-            var r = (MachineRow) row;
-            if (before != null && ((MachineRow) before).group == r.group) {
+            var r = (SidebarRow) row;
+            if (before != null && ((SidebarRow) before).group == r.group) {
                 row.set_header (null);
                 return;
             }
-            var h = new Gtk.Label (r.group == 0 ? "YOUR MACHINES" : "NEW — NOT INSTALLED");
+            var h = new Gtk.Label (r.header_title);
             h.xalign = 0;
             h.add_css_class ("ml-sidebar-title");
             row.set_header (h);
@@ -273,6 +365,11 @@ public class MachineLab : Gtk.Application {
                 return;
             }
             special_page = false;
+            var ir = row as IncusRow;
+            if (ir != null) {
+                content.visible_child_name = "incus:" + ir.instance.name;
+                return;
+            }
             content.visible_child_name = ((MachineRow) row).machine.id;
         });
         var scroll = new Gtk.ScrolledWindow ();
@@ -324,6 +421,27 @@ public class MachineLab : Gtk.Application {
             item.clicked.connect (() => { pop.popdown (); add_machine (preset); });
             pbox.append (item);
         }
+        var incus_item = new Gtk.Button ();
+        incus_item.add_css_class ("flat");
+        var incus_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+        var incus_ic = new Gtk.Image.from_icon_name ("package-x-generic");
+        incus_ic.pixel_size = 28;
+        incus_ic.add_css_class ("ml-row-icon");
+        incus_ic.add_css_class ("ml-c-1");
+        incus_box.append (incus_ic);
+        var incus_tb = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        var incus_n = new Gtk.Label ("Incus container or VM…");
+        incus_n.xalign = 0;
+        incus_n.add_css_class ("ml-machine-name");
+        var incus_d = new Gtk.Label ("Seconds to start · shares this Mac's kernel (containers)");
+        incus_d.xalign = 0;
+        incus_d.add_css_class ("ml-machine-sub");
+        incus_tb.append (incus_n);
+        incus_tb.append (incus_d);
+        incus_box.append (incus_tb);
+        incus_item.child = incus_box;
+        incus_item.clicked.connect (() => { pop.popdown (); show_incus_dialog (); });
+        pbox.append (incus_item);
         var mac_item = new Gtk.Button ();
         mac_item.add_css_class ("flat");
         var mac_lbl = new Gtk.Label ("macOS (experimental)…");
@@ -401,6 +519,34 @@ public class MachineLab : Gtk.Application {
             grid.attach (card, i % 2, i / 2);
             i++;
         }
+        var inc = new Gtk.Button ();
+        inc.add_css_class ("flat");
+        var ib = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        ib.add_css_class ("ml-gallery-card");
+        var ii = new Gtk.Image.from_icon_name ("package-x-generic");
+        ii.pixel_size = 40;
+        ii.add_css_class ("ml-row-icon");
+        ii.add_css_class ("ml-c-1");
+        ib.append (ii);
+        var it = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        it.valign = Gtk.Align.CENTER;
+        var in_ = new Gtk.Label ("Incus container or VM");
+        in_.xalign = 0;
+        in_.add_css_class ("ml-spec-value");
+        var ibl = new Gtk.Label ("Light Linux in seconds, via Incus");
+        ibl.xalign = 0;
+        ibl.add_css_class ("ml-spec-label");
+        var isp = new Gtk.Label ("ARM64 · native · starts in seconds");
+        isp.xalign = 0;
+        isp.add_css_class ("ml-fineprint");
+        it.append (in_);
+        it.append (ibl);
+        it.append (isp);
+        ib.append (it);
+        inc.child = ib;
+        inc.clicked.connect (() => show_incus_dialog ());
+        grid.attach (inc, i % 2, i / 2);
+        i++;
         var mac = new Gtk.Button ();
         mac.add_css_class ("flat");
         var mb = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
@@ -463,8 +609,9 @@ public class MachineLab : Gtk.Application {
 
     private MachineRow row_for (Machine m) {
         for (var r = list.get_row_at_index (0); r != null; r = list.get_row_at_index (r.get_index () + 1)) {
-            if (((MachineRow) r).machine == m) {
-                return (MachineRow) r;
+            var mr = r as MachineRow;
+            if (mr != null && mr.machine == m) {
+                return mr;
             }
         }
         assert_not_reached ();

@@ -1,0 +1,28 @@
+diff --git a/src/compositor/meta-surface-actor-wayland.c b/src/compositor/meta-surface-actor-wayland.c
+index ef15a89f50d2db864e7e61567178e8fa0611e86c..decb0f37b52c9771fbc3192ce9303f945ab2d6b8 100644
+--- a/src/compositor/meta-surface-actor-wayland.c
++++ b/src/compositor/meta-surface-actor-wayland.c
+@@ -257,12 +257,18 @@ meta_surface_actor_wayland_get_cursor_for_sprite (ClutterActor  *actor,
+                                                   ClutterSprite *sprite)
+ {
+   MetaSurfaceActorWayland *self = META_SURFACE_ACTOR_WAYLAND (actor);
+-  MetaWaylandSurface *surface = meta_surface_actor_wayland_get_surface (self);
+-  MetaWaylandCompositor *wayland_compositor =
+-    meta_wayland_surface_get_compositor (surface);
+-  ClutterCursor *cursor;
++  MetaWaylandSurface *surface;
++  MetaWaylandCompositor *wayland_compositor = NULL;
++  ClutterCursor *cursor = NULL;
++
++  surface = meta_surface_actor_wayland_get_surface (self);
++
++  if (surface)
++    wayland_compositor = meta_wayland_surface_get_compositor (surface);
++
++  if (wayland_compositor)
++    cursor = meta_wayland_compositor_get_cursor (wayland_compositor, sprite);
+ 
+-  cursor = meta_wayland_compositor_get_cursor (wayland_compositor, sprite);
+   if (!cursor)
+     return NULL;
+ 

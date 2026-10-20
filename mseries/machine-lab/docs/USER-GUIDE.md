@@ -45,6 +45,20 @@ SPICE agent (`spice-vdagent`; the elementary OS image already has it). What work
 Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
 QEMU's clipboard channel yet (issue #264).
 
+## Incus containers and VMs
+
+Machine Lab lists your Incus instances in the sidebar under "INCUS · CONTAINERS AND VMS", next to its own machines, so
+containers and VMs are managed in one place. It uses the `incus` command (your user needs the `incus-admin` group and the Incus
+service running: `sudo systemctl start incus`).
+
+- **See:** state, address, memory in use, image, snapshots and processor limit, refreshed every few seconds.
+- **Act:** Start, Stop (graceful, then forced if the guest ignores it), Restart, Pause and Resume, Open Terminal (an `incus exec`
+  shell in Terminal), Delete (asks first, removes the instance and its snapshots), and a Log tab with the console log.
+- **Create:** New Machine, "Incus container or VM…": pick a name, Container or Virtual machine, an image (Ubuntu, Debian,
+  Alpine, Fedora, Arch or any image alias such as `images:alpine/edge`) and optional CPU and memory limits. Containers share this
+  Mac's kernel and start in seconds; Incus VMs run their own kernel under KVM. Instances here are ARM64, like the host.
+- Incus VMs do not get the Display tab yet (use the Log tab or Open Terminal).
+
 ## x86-64 (emulated) machines
 
 Pick one of the "(x86-64)" presets or "Blank x86-64". They need `qemu-system-x86` and `ovmf` (the Overview setup check says so) and

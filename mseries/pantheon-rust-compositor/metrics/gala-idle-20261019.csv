@@ -1,0 +1,14 @@
+# session=gala workload=idle display_mode=internal-panel duration_s=30 interval_s=5 started_utc=2026-10-19T15:37:54Z
+utc,session,workload,display_mode,pid,process,cpu_percent_one_core,ram_kib,elapsed_s,battery_power_mw,battery_percent
+2026-10-19T15:37:59Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,5,NA,NA
+2026-10-19T15:37:59Z,gala,idle,internal-panel,375918,gala,11.20,178720,5,NA,NA
+2026-10-19T15:38:04Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,10,NA,NA
+2026-10-19T15:38:04Z,gala,idle,internal-panel,375918,gala,11.20,178720,10,NA,NA
+2026-10-19T15:38:09Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,15,NA,NA
+2026-10-19T15:38:09Z,gala,idle,internal-panel,375918,gala,11.00,178720,15,NA,NA
+2026-10-19T15:38:14Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,20,NA,NA
+2026-10-19T15:38:14Z,gala,idle,internal-panel,375918,gala,10.80,178720,20,NA,NA
+2026-10-19T15:38:19Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,25,NA,NA
+2026-10-19T15:38:19Z,gala,idle,internal-panel,375918,gala,11.20,178720,25,NA,NA
+2026-10-19T15:38:24Z,gala,idle,internal-panel,375906,mseries-gala,0.00,1760,30,NA,NA
+2026-10-19T15:38:24Z,gala,idle,internal-panel,375918,gala,11.20,178720,30,NA,NA
