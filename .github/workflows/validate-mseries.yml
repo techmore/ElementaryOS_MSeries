@@ -167,6 +167,7 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
           libgtk-4-dev libjson-glib-dev libgee-0.8-dev libgranite-7-dev sassc gettext
+          libadwaita-1-dev libx11-dev libwayland-dev libwayland-bin
           python3 xvfb xauth dbus-x11 librsvg2-common
       - name: Provide Granite 7.7 and the pinned Wingpanel indicator API when the distro lacks them
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/prefix" >> "$GITHUB_ENV"
@@ -175,6 +176,7 @@ jobs:
           meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          bash mseries/dock-taskbar/test-build.sh
 
   calendar-agenda:
     name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)
