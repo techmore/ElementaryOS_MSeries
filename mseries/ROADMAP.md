@@ -2331,3 +2331,13 @@ performed during this cleanup review. The diagnostic boot selection is untouched
 ## Session reconciliation — 2026-10-20
 
 Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.
+
+### Experimental iPhone onboarding and macOS guest preparation (2026-10-20)
+
+`codex/messaging-macos-lab`: native Connect iPhone wizard, optional BlueFerry
+integration and personal Bubbles build prepared. iPhone 14 Pro/iOS 27.0.1 MAP
+permissions remain blocked; do not advertise working messaging yet. Machine Lab
+has read-only VMApple readiness checks and current pinned Linux/KVM research;
+M1 Pro boot, iMessage activation and dock-triggered full state save/restore are
+not qualified. See `phone-setup/README.md` and
+`machine-lab/experiments/vmapple/README.md`.

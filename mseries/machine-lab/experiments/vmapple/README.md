@@ -1,4 +1,61 @@
-# QEMU vmapple on Linux/KVM (experiment, 2026-10-19)
+# macOS on Linux/KVM: experimental lane (2026-10-20)
+
+The older dummy-firmware experiment below is retained as historical evidence.
+It does not establish a macOS boot. The new Machine Lab page runs read-only
+readiness checks, not launch attempts against made-up machine or CPU names.
+
+## Current external evidence
+
+- [Steelbrain's Asahi experiment](https://github.com/steelbrain/experiment-macOS-arm64-on-asahi-linux-arm64/tree/657bb2423ec8d572b22a97dd33563dbba1680e6a), published 2026-08-18: Ventura 13.6 (22G120), M2 Pro,
+  Fedora Asahi 42, custom 6.19.14-vmapple2 kernel, eight guest vCPUs and graphical
+  Setup Assistant. Graphics used llvmpipe. This is an upstream report, not our reproduction.
+- [Reims vGPU](https://github.com/steelbrain/reims-vgpu/tree/2ce320931917e8a07a00243f53656f8cd11306b2), inspected 2026-10-20: active graphics work, beta status.
+  Its ordinary ARM/macOS-host and x86/Linux-host demonstrations do not prove ARM/Linux support here.
+- Apple KVM APVMKEY, APCTL and KERNKEY context handling, QEMU's Apple hypercall and
+  interrupt handling, and the Reims display patches are separate prerequisites.
+  Our installed Aurora .20 has not been qualified for them. Do not install a
+  replacement kernel or change boot defaults as part of application deployment.
+
+## Prepare the host and the macOS visit
+
+`python3 launcher/macos-check.py` reports ARM host, KVM access, QEMU VMApple,
+firmware, guest files and qualification separately. Environment variables:
+`QEMU_VMAPPLE` selects an experimental QEMU executable; `MACOS_DIR` selects the
+bundle directory (default `~/vms/macos`). Both may also be passed as CLI options.
+A successful file check never proves a boot or working iMessage.
+
+Bring back `AVPBooter.vmapple2.bin`, `disk.img`, `aux.img` and `vm.json` from the
+same provisioned VM; retain `aux.img.trimmed` if provisioning produced it.
+The upstream proof uses `macosvm` on native macOS to provision the Ventura IPSW.
+Use its pinned provisioning instructions and preserve sparse disks with
+`rsync --sparse`. Merely copying the native macOS partition is not sufficient.
+Firmware from a newer installed macOS may not match the Ventura restore chain.
+Keep all Apple files, identities, hardware codes and account state outside Git.
+The current Linux filesystem has about 19 GiB free; it is not ready for an
+IPSW download plus guest provisioning and large VM-stack builds.
+
+Bubbles activation is a separate native-Mac export, not an identity copied from
+this VM. Mac Hardware Info must export a full OABS blob (Prevent sharing off).
+Bubbles accepts that blob; its 517-byte raw-validation import path is stubbed in
+this revision, and short MB codes are not resolved by its local-hardware UI.
+
+## Qualification sequence and dock policy
+
+1. Review/rebase the pinned upstream KVM patches against a separate Aurora source tree.
+2. Build kernel/QEMU/Reims separately; retain the known working kernel and boot entry.
+3. Boot a matching macOS bundle on this M1 Pro; record CPU, memory, rendering and power.
+4. Verify Apple Account/iMessage, then BlueBubbles, without inferring activation from a GUI boot.
+5. Qualify full memory/device save-to-disk, process exit, and restored network/Apple push connections.
+6. Only then connect resume/start to dock attachment and save/exit to undocking,
+   with a clean shutdown fallback. Dock detection must identify the actual WD22TB4,
+   not assume that any charger or display means docked.
+
+Machine Lab's existing Pause keeps RAM; its disk snapshots omit RAM. Neither
+meets the requested undocked state with QEMU stopped and guest RAM released.
+There is no published support date for this host. This branch provides preparation
+and honest readiness reporting; it does not claim a working macOS launcher.
+
+## Historical experiment, 2026-10-19
 
 Question: can a Linux Mac present Apple's virtual Mac platform with QEMU's upstream `vmapple` machine, so macOS can be a guest?
 

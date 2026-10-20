@@ -14,7 +14,7 @@ Tracked as GitHub issues in `techmore/ElementaryOS_MSeries`. Status as of 2026-1
 | Snapshots (restore points) | this PR | take/restore/delete verified in the UI and with real qemu-img; offline only, no memory state |
 | Incus containers and VMs panel | this PR | listing, lifecycle, terminal, log and create verified; no Display tab for Incus VMs yet |
 | x86-64 emulated machines | this PR | built and labelled; boot not tested (needs qemu-system-x86 + ovmf on the host) |
-| macOS (experimental) | [#267](https://github.com/techmore/ElementaryOS_MSeries/issues/267) | attempt page done and shows how it fails; emulation route not attempted |
+| macOS (experimental) | [#267](https://github.com/techmore/ElementaryOS_MSeries/issues/267) | read-only readiness page and current ARM/KVM research recorded on codex/messaging-macos-lab; M1 Pro boot, iMessage and dock save/restore unqualified |
 
 ## Windows network driver: what the investigation found
 
@@ -29,49 +29,13 @@ the NetKVM driver is installed from `D:\NetKVM\w11\ARM64` through its **Install 
 So the "network driver" problem is a stale OOBE page plus a manual driver step, not a missing driver. The virtio-win ISO also
 has `viogpu`, `vioinput`, `Balloon` and the guest agent for ARM64, which are not installed yet (see #265).
 
-## macOS: what the experiment shows
+## macOS: current research lane (2026-10-20)
 
-The macOS (experimental) page in the app runs real commands and records the output (this Mac, 2026-10-19):
+See [the VMApple experiment](experiments/vmapple/README.md) for pinned external
+ARM/Linux graphical-boot evidence, our historical dummy-firmware run, native
+macOS artifact collection, and the M1 Pro qualification sequence. The readiness
+page no longer treats the absence of Apple's host framework as proof that a
+Linux/KVM guest is impossible. No guest boot or kernel deployment occurred.
 
-1. `ls /System/Library/Frameworks/Virtualization.framework`: no such file or directory (macOS hosts only).
-2. `qemu-system-aarch64 -machine apple-silicon-vm`: `unsupported machine type: "apple-silicon-vm"`.
-3. `qemu-system-aarch64 -machine virt,accel=kvm -cpu Haswell`: `unable to find CPU model 'Haswell'`.
-4. `qemu-system-x86_64`: not installed (and it could only emulate, never use KVM, on an ARM host).
-5. Emulating an Intel Mac in software: not attempted (Apple recovery image, OpenCore, tens of times slower).
-
-## macOS: where the firmware can come from (2026-10-20)
-
-Probed read-only (details in `experiments/vmapple/README.md`): this Mac's macOS container is encrypted by the Secure Enclave and
-unreadable from Linux; its Recovery volume mounts but has no `AVPBooter`. So a real macOS boot needs the three Apple files made on
-a Mac running macOS (`macosvm`). `experiments/vmapple/run-vmapple.sh` boots them on the patched QEMU as soon as they exist in
-`~/vms/macos`, and the macOS page now has an AVPBooter probe. Verdict: macOS-on-Linux-KVM is blocked on inputs, not on this
-machine model; not claimed as working.
-
-## macOS: QEMU `vmapple` on this Linux Mac (2026-10-19)
-
-Built QEMU master (11.1.50) in `~/src/qemu-vmapple` with two local patches and ran its `vmapple` machine under KVM:
-
-1. `hw/vmapple/Kconfig` required HVF and selected the macOS-only graphics device, and `configs/devices/aarch64-softmmu/default.mak`
-   set `CONFIG_VMAPPLE=n`. Removing those three lines makes `vmapple` appear in `-machine help` on Linux.
-2. `hw/vmapple/aes.c` does not compile with gcc (`char hex[MAX_LEN * 2 + 1] = ""` with `static const size_t MAX_LEN`); an
-   `enum` constant fixes it (worth sending upstream).
-
-Then, with `-accel kvm`:
-
-- `-M vmapple,uuid=1` alone: `Parameter 'uuid' expects integer` (the docs derive it from the VM's UUID with `contrib/vmapple/uuid.sh`).
-- With `uuid=1`: `No AUX device. Please specify one as pflash drive.` (needs the aux storage of a real macOS VM).
-- With blank aux and root pflash plus a dummy `-bios`: `unknown type 'apple-gfx-mmio'`. `vmapple.c` creates Apple's
-  paravirtual GPU unconditionally; that device is built from `ParavirtualizedGraphics.framework`, which exists only on macOS.
-  This is the first hard Linux blocker. Stubbing it out (skip the device when the type is missing) is the obvious next patch,
-  but it was not applied or built: the sandbox declined further edits to this externally sourced code, so the attempt stops here.
-
-What a real boot still needs: Apple's `AVPBooter.vmapple2.bin` copied from a macOS install, aux and root images from a macOS 12 VM
-made with Virtualization.framework (`macosvm`), and an answer for graphics (none exists on Linux; the guest would be headless over
-serial, ssh or screen sharing). Unknowns: whether the guest tolerates running on KVM with Apple's cores instead of HVF.
-
-Update: with the GPU device skipped (`experiments/vmapple/linux-vmapple.patch`), the machine initialises and KVM then fails on the
-first run: `error: kvm run failed Invalid argument` at `PC=0x100000`. TCG runs silently on dummy firmware. See
-`experiments/vmapple/README.md` for the table and how to reproduce.
-
-Update 2: the KVM `Invalid argument` is the PMU: `-cpu host` turns it on and `vmapple` never sets the PMU interrupt. With
-`-cpu host,pmu=off` the vCPU runs under KVM (silently, on dummy firmware). First real blocker left: Apple's firmware and macOS images.
+The undocked requirement is full VM state saved to disk and QEMU stopped;
+existing pause/resume and offline disk snapshots do not meet it.

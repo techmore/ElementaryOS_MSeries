@@ -7850,3 +7850,45 @@ Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passw
 Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
 
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
+
+## iPhone messaging and experimental macOS lane — 2026-10-20
+
+Branch `codex/messaging-macos-lab` (experimental, not merged): installed a personal
+ARM64 BlueFerry build from 60fd7ef1 (3734 upstream tests passed, 16 skipped) and
+Bubbles from 9c677ec7 (438 tests passed, 1 ignored after HEIC decoder installation).
+Bubbles starts, but Apple activation awaits a native-macOS hardware export.
+BlueFerry bonds with the iPhone 14 Pro/iOS 27.0.1; PBAP opens but MAP is denied
+with 0x43. The missing iPhone permission switches persist after clean re-pair
+and a targeted restoration of normal HFP roles. Related open upstream #263 is
+not proof of the same root cause. No message delivery is qualified.
+
+Added an optional native GTK4/Granite Connect iPhone wizard, live MAP-gated
+readiness, explicit passkey confirmation, async checks, bounded recovery, and
+credential-free previews. `mseries/install-phone-setup.sh` installs it without
+replacing BlueFerry; initial live startup and fixture layouts checked. Full
+pairing through this wrapper is unverified. Details: `mseries/phone-setup/README.md`.
+
+Machine Lab's old impossible-machine probes are replaced with read-only
+host/KVM/QEMU/Apple-artifact/qualification checks. Pinned upstream M2 Pro
+ARM/Linux graphical-boot research and dock save-to-disk requirements are retained
+in `machine-lab/experiments/vmapple/README.md`. The component builds and its tests
+pass; no experimental kernel, VM firmware or guest was installed or booted.
+Existing working Machine Lab remains installed; the modified page is branch-only.
+
+Native Mac visit kit prepared in this chat's outputs: official Mac Hardware Info
+v1.2.0 (universal ARM64/x86_64 verified), private clipboard export helper and
+instructions. Kit files contain no hardware identity. Linux had about 19 GiB
+free; full guest provisioning/builds require additional storage. Next: complete
+Bubbles activation after Mac export; investigate iOS 27 permission behavior;
+review/rebase the pinned KVM patches separately before any hardware trial.
+
+Follow-up: contacts now genuinely synchronized (727 cached). Message MAP remains
+0x43. Added `mseries-phone-status` live read-only diagnostics, persistent latest
+transport results and per-phone recovery history. Status never pretends to read
+iOS permission switch positions. A transient profile reconnect preserves the
+last verified denial rather than sending the user through a new recovery loop.
+Native pairing copy now says confirm on the computer first, then Pair on the
+phone; iOS version is not requested on the opening page. Guided window remains
+offscreen while the established BlueFerry session is used. The cleared-target
+polling regression has a test; existing approved bond was restored without
+re-pairing. No successful message delivery yet.
