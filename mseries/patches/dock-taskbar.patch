@@ -350,7 +350,7 @@ index 0377885..40f991f 100644
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 652c549..d639ac2 100644
+index 652c549..e17031b 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -573,7 +573,7 @@ index 652c549..d639ac2 100644
  #if WORKSPACE_SWITCHER
                  panel.request_visible_in_multitasking_view ();
  #endif
-@@ -214,13 +351,24 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -214,12 +351,27 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private static Wl.RegistryListener registry_listener;
      private void init_panel () {
@@ -591,15 +591,18 @@ index 652c549..d639ac2 100644
              // manually set shadow width since the additional margin we add to avoid icons clipping when
              // bouncing isn't added by default and instead counts to the frame
 -            var item_manager_width = ItemManager.get_default ().get_width ();
++            if (taskbar_mode) {
++                // The flush taskbar has no floating shadow. Shadow insets derived from a
++                // surface that grew (e.g. while the Start menu lays out) produced a negative
++                // window-geometry height, a fatal xdg_surface invalid_size error in smithay.
++                size.set_shadow_width (0, 0, 0, 0);
++                return;
++            }
 +            var item_manager_width = get_content_width ();
              var shadow_size = (surface.width - item_manager_width) / 2;
-+            if (taskbar_mode) {
-+                shadow_size = int.max (0, shadow_size);
-+            }
              var top_margin = TOP_MARGIN + shadow_size - 1;
              size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
-         });
-@@ -229,8 +377,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -229,8 +381,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              apply_panel_offset ();
              // manually set input region since container's shadow are is the content of the window
              // and it still gets window events
@@ -612,7 +615,7 @@ index 652c549..d639ac2 100644
              var top_margin = TOP_MARGIN + shadow_size;
  
              if (drawers_panel != null && drawers_panel.get_visible ()) {
-@@ -261,11 +412,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -261,11 +416,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              if (widget_border_radius != null) {
                  border_radius = widget_border_radius;
              }
@@ -629,7 +632,7 @@ index 652c549..d639ac2 100644
              } else {
                  update_panel_x11 ();
              }
-@@ -298,10 +453,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -298,10 +457,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
              var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
  
