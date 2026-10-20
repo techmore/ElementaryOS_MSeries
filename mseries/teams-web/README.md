@@ -96,8 +96,8 @@ without profile copying. These tests do not authenticate or send messages.
 
 Installed on the J314S with Brave 155.1.97.59 using its Default profile. The launch
 command was dispatched to the browser and diagnostics confirm the selected mode;
-the actual Brave window, dock grouping and authenticated state have not been
-visually qualified. A separate temporary in-app browser reached Microsoft's normal
+the owner subsequently confirmed successful sign-in using the Brave workflow.
+Dock grouping has not been visually qualified. A separate temporary in-app browser reached Microsoft's normal
 sign-in page from the Teams URL; that is not proof of authentication in Brave.
 Live message delivery, microphone/camera, notification delivery, screen sharing,
 meeting join and suspend/resume remain unverified pending user sign-in and a real

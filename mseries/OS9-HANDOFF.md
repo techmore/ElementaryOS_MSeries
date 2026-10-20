@@ -19,12 +19,11 @@ profiles, preserving sessions across reinstall/uninstall, and sharing the Brave
 profile without copying it. Shell syntax, ShellCheck and desktop-file validation
 pass. Local `--check` confirms Brave session mode; launch was dispatched to the
 browser. A separate temporary in-app browser reached Microsoft's sign-in page.
-Actual Brave sign-in/window appearance, dock grouping, message delivery,
-notifications, camera/microphone, screen sharing and meeting join remain
-unverified. This is a web integration, not a native Teams reimplementation or
+Owner confirmed that the Brave workflow worked and signed them in. Dock
+grouping, message delivery, notifications, camera/microphone, screen sharing
+and meeting join remain unverified. This is a web integration, not a native Teams reimplementation or
 factory-image qualification. See `mseries/teams-web/README.md` for commands,
-support boundaries and sources. Next: owner sign-in, then a real meeting/media
-and notification check; use Chrome mode if Brave is incompatible with the tenant.
+support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
 
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
