@@ -22,8 +22,9 @@ Verification: all 18 native-feature compositor unit tests pass, including
 three new move/shrink/offset geometry cases; release build succeeds. Private
 Xvfb/D-Bus integration passes bottom-edge X11 clearance, native/X11 snapping,
 minimize/restore, focus preservation on initial/repeated dock activation, and
-typing. Python controller tests (5) and shell syntax pass. The new binary
-is being staged for next login; native hardware window movement remains
+typing. Python controller tests (5) and shell syntax pass. Installed package `0.1.0+gitdbc7b14` using `sudo dpkg -i`;
+service daemon-reload completed without restarting the dock or compositor.
+The new binary is staged for next login; native hardware window movement remains
 pending that login. The live dock remains the patched Vala/GTK Pantheon dock
 hosted by Rust; no Rust dock rewrite is claimed.
 
