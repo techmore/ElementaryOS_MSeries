@@ -21,6 +21,9 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label disk_v;
     private Gtk.Label net_v;
     private Gtk.Label arch_v;
+    private Gtk.Label spec_note_unused;
+    private Gtk.Label arch_note;
+    private Gtk.Box emu_banner;
     private Gtk.Label ssh_cmd;
     private Gtk.Image hero_icon;
     private Gtk.Label hero_sub;
@@ -286,6 +289,19 @@ public class MachinePage : Gtk.Box {
         hero.append (text);
         clamp.append (hero);
 
+        // Emulation warning, shown for x86-64 machines.
+        emu_banner = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+        emu_banner.add_css_class ("ml-warn");
+        var emu_title = new Gtk.Label ("Emulated: much slower than your ARM64 machines");
+        emu_title.xalign = 0;
+        emu_title.add_css_class ("title-4");
+        var emu_text = new Gtk.Label ("An x86-64 machine runs in software (no hardware acceleration), roughly 10 to 50 times slower than an ARM64 guest. Installs and boots take a long time. Give it few CPUs, be patient, and prefer ARM64 when you can.");
+        emu_text.xalign = 0;
+        emu_text.wrap = true;
+        emu_banner.append (emu_title);
+        emu_banner.append (emu_text);
+        clamp.append (emu_banner);
+
         // Guided first run: shown only for a machine that has never been installed.
         setup_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         setup_card.add_css_class ("ml-card");
@@ -307,7 +323,7 @@ public class MachinePage : Gtk.Box {
             }
         });
         setup_card.append (step_row (1, "Get an ARM64 installer",
-            "Download a Linux ARM64 .iso, or use one you already have.", get_button, out step1_detail));
+            machine.emulated ? "Download a Linux x86-64 (amd64) .iso, or use one you already have." : "Download a Linux ARM64 .iso, or use one you already have.", get_button, out step1_detail));
         var pick = new Gtk.Button.with_label ("Choose…");
         pick.valign = Gtk.Align.CENTER;
         pick.clicked.connect (() => choose_installer.begin ());
@@ -369,12 +385,11 @@ public class MachinePage : Gtk.Box {
         specs.row_homogeneous = true;
         specs.column_spacing = 12;
         specs.row_spacing = 12;
-        specs.attach (spec_card ("computer-symbolic", out cpu_v, "Processor"), 0, 0);
-        specs.attach (spec_card ("media-optical-symbolic", out mem_v, "Memory"), 1, 0);
-        specs.attach (spec_card ("drive-harddisk-symbolic", out disk_v, "Disk, grows as used"), 0, 1);
-        specs.attach (spec_card ("network-wired-symbolic", out net_v, "Network"), 1, 1);
-        specs.attach (spec_card ("applications-system-symbolic", out arch_v, "Architecture · native ARM64, not x86-64 / amd64"), 0, 2, 2, 1);
-        arch_v.label = "ARM64 (aarch64)";
+        specs.attach (spec_card ("computer-symbolic", out cpu_v, out spec_note_unused, "Processor"), 0, 0);
+        specs.attach (spec_card ("media-optical-symbolic", out mem_v, out spec_note_unused, "Memory"), 1, 0);
+        specs.attach (spec_card ("drive-harddisk-symbolic", out disk_v, out spec_note_unused, "Disk, grows as used"), 0, 1);
+        specs.attach (spec_card ("network-wired-symbolic", out net_v, out spec_note_unused, "Network"), 1, 1);
+        specs.attach (spec_card ("applications-system-symbolic", out arch_v, out arch_note, ""), 0, 2, 2, 1);
         clamp.append (specs);
 
         // Readiness
@@ -589,7 +604,7 @@ public class MachinePage : Gtk.Box {
         return row;
     }
 
-    private Gtk.Widget spec_card (string icon_name, out Gtk.Label value, string label) {
+    private Gtk.Widget spec_card (string icon_name, out Gtk.Label value, out Gtk.Label note, string label) {
         var card = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
         card.add_css_class ("ml-card");
         card.add_css_class ("ml-spec");
@@ -604,6 +619,7 @@ public class MachinePage : Gtk.Box {
         var l = new Gtk.Label (label);
         l.xalign = 0;
         l.add_css_class ("ml-spec-label");
+        note = l;
         t.append (value);
         t.append (l);
         card.append (t);
@@ -866,8 +882,8 @@ public class MachinePage : Gtk.Box {
             get_button.sensitive = !machine.checking;
             step2_title.label = "Or use your own installer";
         } else {
-            step1_title.label = "Get an ARM64 installer";
-            step1_detail.label = "Download a Linux ARM64 .iso, or use one you already have.";
+            step1_title.label = machine.emulated ? "Get an x86-64 installer" : "Get an ARM64 installer";
+            step1_detail.label = machine.emulated ? "Download a Linux x86-64 (amd64) .iso, or use one you already have." : "Download a Linux ARM64 .iso, or use one you already have.";
             get_button.label = "Get ISO";
             step2_title.label = "Choose the installer file";
         }
@@ -879,11 +895,16 @@ public class MachinePage : Gtk.Box {
             creds_real = creds;
             creds_label.label = creds_shown ? creds : mask_credentials (creds);
         }
-        hero_sub.label = "ARM64 · " + (managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
+        emu_banner.visible = machine.emulated;
+        arch_v.label = machine.emulated ? "x86-64 (amd64), emulated" : "ARM64 (aarch64)";
+        arch_note.label = machine.emulated
+            ? "Architecture · software emulation, not hardware accelerated: expect it to be slow"
+            : "Architecture · native ARM64, not x86-64 / amd64";
+        hero_sub.label = machine.arch_label + (machine.emulated ? " · emulated · " : " · ") + (managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
-            : "Linux ARM64 · installed");
+            : "installed");
 
-        var problems = Readiness.problems ();
+        var problems = Readiness.problems (machine.arch);
         bool installing = running && machine.installer != null;
         start_button.visible = !running;
         stop_button.visible = running;
@@ -929,8 +950,8 @@ public class MachinePage : Gtk.Box {
             drop_zone.remove_css_class ("chosen");
             drop_title.label = !fresh ? "Boots from its disk" : "Drop an installer here";
             drop_detail.label = !fresh
-                ? "Attach an ARM64 .iso only if you want to reinstall."
-                : "Drop an ARM64 .iso here, or browse for one.";
+                ? "Attach an installer .iso only if you want to reinstall."
+                : (machine.emulated ? "Drop an x86-64 .iso here, or browse for one." : "Drop an ARM64 .iso here, or browse for one.");
         }
 
         for (int i = 0; i < 8; i++) {
@@ -1015,7 +1036,7 @@ public class MachinePage : Gtk.Box {
 
     private async void choose_installer () {
         var chooser = new Gtk.FileDialog ();
-        chooser.title = "Choose an ARM64 installer image";
+        chooser.title = machine.emulated ? "Choose an x86-64 installer image" : "Choose an ARM64 installer image";
         chooser.accept_label = "Choose";
         var filter = new Gtk.FileFilter ();
         filter.name = "Installer images";
