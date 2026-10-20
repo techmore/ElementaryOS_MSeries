@@ -30,6 +30,7 @@ patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
 patch=$repo/mseries/patches/dock-drawers.patch
 startup_patch=$repo/mseries/patches/dock-workspace-startup.patch
+taskbar_patch=$repo/mseries/patches/dock-taskbar.patch
 
 mode=${1:-install}
 case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
@@ -69,6 +70,7 @@ git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$patch"
 git -C "$source_dir" apply "$startup_patch"
+git -C "$source_dir" apply "$taskbar_patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null

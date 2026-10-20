@@ -304,8 +304,8 @@ def activate_dock(state):
 
     taskbar = schema.has_key("taskbar-mode")
     if schema.has_key("icon-size"):
-        # A full-width taskbar is about 48 px tall; the floating dock keeps larger icons.
-        settings.set_int("icon-size", 32 if taskbar else 40)
+        # The taskbar draws 48 px icons in its 72 px bar; the floating dock uses 40 px.
+        settings.set_int("icon-size", 48 if taskbar else 40)
     if schema.has_key("autohide-mode"):
         settings.set_string("autohide-mode", "never")
     if taskbar:

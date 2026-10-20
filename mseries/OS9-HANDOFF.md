@@ -21,8 +21,16 @@ Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work
   demo, Work Mode is ON and uses Microsoft's stock Windows 11 Bloom (`img0.jpg` from the GitHub mirror
   viridivn/windows11wallpapers), installed locally only at `~/.local/share/backgrounds/windows11-bloom.jpg`
   and NOT committed (Microsoft copyright; repo policy forbids bundling).
-- In progress: dock `taskbar-mode` patch (full-width silver bar, Start, clock/status) and top-bar hiding
-  in the Rust compositor while Work Mode is active.
+- Dock `taskbar-mode` (`mseries/patches/dock-taskbar.patch`, applied by install-dock-drawers.sh): full-width
+  72 px silver bar, weather (wttr.in, 30 min) bottom-left, CSS four-pane Start + Search pill (both open
+  Slingshot via Wingpanel) left of centred 48 px launchers, network/sound/battery + clock at right. Fixed a
+  half-width bar (GTK 4 monitor geometry is already logical; it was divided by scale). Installed binary-only
+  into ~/.local/lib/mseries/dock (wrapper untouched; previous binary kept as `io.elementary.dock.pre-taskbar`)
+  and dock reloaded on owner request; owner reviewed it live ("looking good"). `--build-only` passes clean.
+- Top bar: compositor D-Bus `org.techmore.mseries.Panels.SetTopPanelMode` (runtime-only); helper hides it
+  while active. New compositor installed via install-pantheon-rust-compositor.sh; loads at next login.
+- Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
+  bottom-right icon whose dropdown opens after a 0.5 s hover.
 - Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
 
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
