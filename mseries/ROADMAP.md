@@ -49,6 +49,16 @@ the installer. Any future tracking fix must preserve the complete customized
 taskbar source and be isolated-tested first. No compositor or Wingpanel restart
 was performed. The safe icon/launcher PR excludes the native dock experiment.
 
+## Work Mode integration reconciled — 2026-10-20
+
+#329 now preserves current gesture/cursor and floating-window clearance behavior
+alongside taskbar modes, and selects the size-system token appropriate to the dock.
+Nine Work Mode tests, 41 compositor tests, strict Clippy, native dock/settings builds
+and private window/focus/typing checks pass. #337's status-note conflicts are
+reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
+See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
+remaining native taskbar/network and Teams/Outlook qualification checks.
+
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
 Owner requested the official Teams dock icon and that the dock Mail button open
