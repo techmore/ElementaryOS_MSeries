@@ -36,6 +36,8 @@ sed -i "s|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g" "$source_d
 
 git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-bluetooth.patch"
 install -m 0644 "$SRCDIR/mseries/quick-settings/Bluetooth.vala" "$source_dir/src/Widgets/Bluetooth.vala"
+git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-layout.patch"
+install -m 0644 "$SRCDIR/mseries/quick-settings/Controls.vala" "$source_dir/src/Widgets/Controls.vala"
 meson setup "$build_dir" "$source_dir" \
     --prefix=/usr \
     --libdir=lib/aarch64-linux-gnu \

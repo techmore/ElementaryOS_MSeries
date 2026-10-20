@@ -2,10 +2,16 @@
  * Mac-style "Sound Output" list for the Quick Settings gear menu. Every PipeWire sink is a row
  * (built-in speakers and headphones, Bluetooth, AirPlay, USB, displays) with its connection type
  * underneath; clicking a row makes it the default output through wpctl and WirePlumber moves the
- * playing streams. The list is re-read each time the menu opens and every few seconds while open. */
+ * playing streams. The section is one line (the current output) until opened, because a Mac with
+ * AirPlay receivers on the network can have a long list. It is re-read each time the menu opens and
+ * every few seconds while open. */
 public class QuickSettings.AudioOutput : Gtk.Box {
     private Gtk.Box rows;
-    private Gtk.Widget title;
+    private Gtk.Button header;
+    private Gtk.Image header_icon;
+    private Gtk.Label current;
+    private Gtk.Image chevron;
+    private Gtk.Revealer revealer;
     private uint refresh_id = 0;
     private bool refreshing = false;
 
@@ -15,13 +21,34 @@ public class QuickSettings.AudioOutput : Gtk.Box {
 
         // This widget stays visible so it still gets map signals; only its contents hide when
         // there is nothing to list (a hidden widget is never mapped, so it would never refresh).
-        title = new Granite.HeaderLabel (_("Sound Output")) { margin_top = 6, visible = false };
+        header_icon = new Gtk.Image.from_icon_name ("audio-speakers-symbolic");
+        var name = new Gtk.Label (_("Sound Output")) { xalign = 0 };
+        current = new Gtk.Label ("") { xalign = 0, ellipsize = END, max_width_chars = 30 };
+        current.add_css_class ("dim-label");
+        current.add_css_class ("caption");
+        var text = new Gtk.Box (VERTICAL, 0) { hexpand = true, valign = CENTER };
+        text.append (name);
+        text.append (current);
+        chevron = new Gtk.Image.from_icon_name ("pan-end-symbolic");
+        var line = new Gtk.Box (HORIZONTAL, 9);
+        line.append (header_icon);
+        line.append (text);
+        line.append (chevron);
+        header = new Gtk.Button () { child = line, visible = false };
+        header.add_css_class ("flat");
+        header.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Sound Output") });
+
         rows = new Gtk.Box (VERTICAL, 0);
-        append (title);
-        append (rows);
-        append (new AirPlayOutputs ());
+        var body = new Gtk.Box (VERTICAL, 0);
+        body.append (rows);
+        body.append (new AirPlayOutputs ());
+        revealer = new Gtk.Revealer () { child = body, transition_type = SLIDE_DOWN };
+        header.clicked.connect (() => { set_expanded (!revealer.reveal_child); });
+        append (header);
+        append (revealer);
 
         map.connect (() => {
+            set_expanded (false);
             refresh.begin ();
             refresh_id = Timeout.add_seconds (3, () => {
                 refresh.begin ();
@@ -36,6 +63,12 @@ public class QuickSettings.AudioOutput : Gtk.Box {
         });
     }
 
+    private void set_expanded (bool open) {
+        revealer.reveal_child = open;
+        chevron.icon_name = open ? "pan-down-symbolic" : "pan-end-symbolic";
+        header.tooltip_text = open ? _("Hide outputs") : _("Choose an output");
+    }
+
     private async void refresh () {
         if (refreshing) return;
         refreshing = true;
@@ -46,7 +79,8 @@ public class QuickSettings.AudioOutput : Gtk.Box {
             rebuild (AudioOutputModel.parse (stdout_text ?? "[]"));
         } catch (Error e) {
             info ("Sound outputs unavailable: %s", e.message);
-            title.visible = false;
+            header.visible = false;
+            revealer.visible = false;
         }
         refreshing = false;
     }
@@ -55,9 +89,15 @@ public class QuickSettings.AudioOutput : Gtk.Box {
         for (var child = rows.get_first_child (); child != null; child = rows.get_first_child ()) {
             rows.remove (child);
         }
-        title.visible = outputs.length > 0;
+        header.visible = outputs.length > 0;
+        revealer.visible = outputs.length > 0;
+        current.label = "";
         foreach (var output in outputs) {
             rows.append (build_row (output));
+            if (output.is_default) {
+                current.label = output.description;
+                header_icon.icon_name = output.icon_name;
+            }
         }
     }
 
@@ -91,6 +131,7 @@ public class QuickSettings.AudioOutput : Gtk.Box {
         } catch (Error e) {
             warning ("Could not switch sound output: %s", e.message);
         }
+        set_expanded (false);
         refresh.begin ();
     }
 }

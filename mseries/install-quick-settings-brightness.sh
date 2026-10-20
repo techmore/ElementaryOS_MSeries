@@ -26,11 +26,14 @@ install -m644 "$repo/mseries/quick-settings/AudioOutput.vala" "$work/source/src/
 install -m644 "$repo/mseries/quick-settings/AirPlayOutputs.vala" "$work/source/src/Widgets/AirPlayOutputs.vala"
 git -C "$work/source" apply "$repo/mseries/patches/quick-settings-bluetooth.patch"
 install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Widgets/Bluetooth.vala"
+# Card layout, shared slider row and the Volume slider.
+git -C "$work/source" apply "$repo/mseries/patches/quick-settings-layout.patch"
+install -m644 "$repo/mseries/quick-settings/Controls.vala" "$work/source/src/Widgets/Controls.vala"
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
 install -m644 "$repo/mseries/quick-settings/AirDropPanel.vala" "$work/source/src/Widgets/AirDropPanel.vala"
 sed -i "s|    'Widgets' / 'ChargeLimit.vala',|    'Widgets' / 'ChargeLimit.vala',\n    'Widgets' / 'AirDropPanel.vala',\n    'Widgets' / 'ShareState.vala',\n    'Widgets' / 'ShareClient.vala',\n    'Widgets' / 'SharePanel.vala',|; s|        wl_client_dep,|        wl_client_dep,\n        dependency('json-glib-1.0'),\n        dependency('libsoup-3.0'),|" "$work/source/src/meson.build"
-sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });\n            main_box.append (new MSeries.AirDropPanel ());|' "$work/source/src/PopoverWidget.vala"
+sed -i 's|            // mseries:sharing|            var sharing = new Card ();\n            sharing.add_row (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });\n            sharing.add_row (new MSeries.AirDropPanel ());\n            main_box.append (sharing);|' "$work/source/src/PopoverWidget.vala"
 grep -q AirDropPanel "$work/source/src/PopoverWidget.vala" && grep -q SharePanel "$work/source/src/PopoverWidget.vala" && grep -q libsoup "$work/source/src/meson.build" && grep -q "'SharePanel.vala'" "$work/source/src/meson.build" \
   || { echo 'could not wire the share section into Quick Settings' >&2; exit 1; }
 install -m644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$work/mseries-share-eyes-symbolic.svg"
