@@ -164,6 +164,38 @@ the separate snap geometry discrepancy.
 
 
 
+## Windows Work Mode work-network trigger — 2026-10-20 (Claude)
+
+Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work Mode:
+- New rule *Only on work networks*: GSettings `network-trigger`, `work-public-ips` (IPs/CIDR),
+  `public-ip-service` (default `https://api.ipify.org`). All enabled rules must pass (schedule AND network).
+  Lookup happens only when the other rules pass; cached 15 min per default-route fingerprint, 30 min grace on
+  failure. `--public-ip` does a fresh lookup; `--status` never queries.
+- Panel: Work Network group (switch, validated IP/CIDR entry with Apply, Check/Add current address),
+  live Current state row, HH:MM-validated time entries with Apply (previously every keystroke was written
+  and ticked), schedule/network rows insensitive while their rule is off.
+- Review fixes: the panel ran `mseries-work-mode --tick` through PATH, which may not include `~/.local/bin`
+  for Switchboard; it now starts `mseries-work-mode.service` (serialized by systemd, debounced). Ticks take a
+  state lock. Wallpaper sets `picture-options` to `zoom` (original restored). A missing dock schema no
+  longer aborts the helper (`Gio.Settings.new` aborts; schema is looked up first).
+- Tests: `mseries/work-mode/test_work_mode.py` (keyfile GSettings, local fake IP service,
+  `MSERIES_WORK_MODE_NO_SERVICES=1`) — 5 pass locally; added to `validate-mseries.yml`.
+- Azure Bloom (original CC0, `work-mode-azure-bloom.svg` → PNG) is the new bundled default. For the owner's
+  demo, Work Mode is ON and uses Microsoft's stock Windows 11 Bloom (`img0.jpg` from the GitHub mirror
+  viridivn/windows11wallpapers), installed locally only at `~/.local/share/backgrounds/windows11-bloom.jpg`
+  and NOT committed (Microsoft copyright; repo policy forbids bundling).
+- Dock `taskbar-mode` (`mseries/patches/dock-taskbar.patch`, applied by install-dock-drawers.sh): full-width
+  72 px silver bar, weather (wttr.in, 30 min) bottom-left, CSS four-pane Start + Search pill (both open
+  Slingshot via Wingpanel) left of centred 48 px launchers, network/sound/battery + clock at right. Fixed a
+  half-width bar (GTK 4 monitor geometry is already logical; it was divided by scale). Installed binary-only
+  into ~/.local/lib/mseries/dock (wrapper untouched; previous binary kept as `io.elementary.dock.pre-taskbar`)
+  and dock reloaded on owner request; owner reviewed it live ("looking good"). `--build-only` passes clean.
+- Top bar: compositor D-Bus `org.techmore.mseries.Panels.SetTopPanelMode` (runtime-only); helper hides it
+  while active. New compositor installed via install-pantheon-rust-compositor.sh; loads at next login.
+- Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
+  bottom-right icon whose dropdown opens after a 0.5 s hover.
+- Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
+
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
 
 Owner asked to restore a dock for minimized apps. State found: the fixed

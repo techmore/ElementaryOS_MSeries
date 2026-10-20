@@ -226,6 +226,13 @@ families were source-inspected, not newly rendered or hardware-qualified.
 Next: apply the skill to the next scoped UI change and refine conventions from
 that review; the source map is an inspection baseline, not a frozen design.
 
+## Windows Work Mode work-network trigger — 2026-10-20
+
+Windows Work Mode can now be limited to work networks identified by public IP or CIDR,
+combined with the weekday schedule. Lookup is cached per uplink and only made when the
+other rules pass. Remaining: visual panel review, a real scheduled/network transition,
+and the active dock appearance.
+
 ## Work Mode wallpaper — 2026-10-20
 
 Added a native Switchboard panel under Personal with a Windows Work Mode switch, a

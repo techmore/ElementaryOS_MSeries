@@ -1,0 +1,923 @@
+diff --git a/data/Application.css b/data/Application.css
+index d97686d..da12d74 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -203,3 +203,128 @@ backgrounditem .close-button {
+     font-size: 0.7em;
+     opacity: 0.65;
+ }
++
++/* M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
++ * bar flush to the bottom edge. Everything below is scoped to .taskbar. */
++dock-window.taskbar dock {
++    background: rgba(236, 238, 241, 0.92);
++    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.08);
++    border-radius: 0;
++    opacity: 1;
++    min-height: 72px;
++}
++
++dock-window.taskbar.dark dock {
++    background: rgba(40, 42, 46, 0.92);
++    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
++}
++
++dock-window.taskbar.reduce-transparency dock {
++    background: rgb(236, 238, 241);
++}
++
++dock-window.taskbar.dark.reduce-transparency dock {
++    background: rgb(40, 42, 46);
++}
++
++dock-window.taskbar launcher,
++dock-window.taskbar backgrounditem,
++dock-window.taskbar icongroup {
++    padding-top: 12px;
++}
++
++dock-window.taskbar bottom-margin {
++    min-height: 8px;
++}
++
++dock-window.taskbar .taskbar-row {
++    color: rgba(0, 0, 0, 0.87);
++}
++
++dock-window.taskbar.dark .taskbar-row {
++    color: rgba(255, 255, 255, 0.92);
++}
++
++dock-window.taskbar .taskbar-row button {
++    background: none;
++    border: none;
++    box-shadow: none;
++    border-radius: 4px;
++    color: inherit;
++    min-height: 0;
++    min-width: 0;
++    padding: 4px 6px;
++    transition: background 100ms ease-in-out;
++}
++
++dock-window.taskbar .taskbar-row button:hover {
++    background: rgba(0, 0, 0, 0.05);
++}
++
++dock-window.taskbar .taskbar-row button:active {
++    background: rgba(0, 0, 0, 0.03);
++}
++
++dock-window.taskbar.dark .taskbar-row button:hover {
++    background: rgba(255, 255, 255, 0.08);
++}
++
++dock-window.taskbar.dark .taskbar-row button:active {
++    background: rgba(255, 255, 255, 0.05);
++}
++
++dock-window.taskbar .taskbar-row button.taskbar-start {
++    padding: 6px 8px;
++    -gtk-icon-size: 24px;
++}
++
++dock-window.taskbar .taskbar-row button.taskbar-start image {
++    color: @accent_color;
++}
++
++dock-window.taskbar .taskbar-status image {
++    -gtk-icon-size: 16px;
++}
++
++dock-window.taskbar .taskbar-clock label {
++    font-size: 0.8em;
++    font-feature-settings: "tnum";
++}
++
++dock-window.taskbar .taskbar-logo-pane {
++    min-width: 9px;
++    min-height: 9px;
++    background: #0078d4;
++    border-radius: 1px;
++}
++
++dock-window.taskbar.dark .taskbar-logo-pane {
++    background: #4cc2ff;
++}
++
++dock-window.taskbar .taskbar-row button.taskbar-search {
++    min-width: 50px;
++    padding: 5px 14px;
++    border-radius: 999px;
++    background: rgba(255, 255, 255, 0.85);
++    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
++}
++
++dock-window.taskbar.dark .taskbar-row button.taskbar-search {
++    background: rgba(255, 255, 255, 0.08);
++    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
++}
++
++dock-window.taskbar .taskbar-search label {
++    opacity: 0.7;
++}
++
++dock-window.taskbar .taskbar-weather-temp {
++    font-size: 1.02em;
++    font-weight: 600;
++}
++
++dock-window.taskbar .taskbar-weather-desc {
++    font-size: 0.9em;
++    opacity: 0.75;
++}
+diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
+index d81d4b8..27abd02 100644
+--- a/data/dock.gschema.xml
++++ b/data/dock.gschema.xml
+@@ -26,6 +26,12 @@
+       <summary>An ordered array of app id's to show as launchers</summary>
+       <description>An ordered array of app id's to show as launchers</description>
+     </key>
++
++    <key type="b" name="taskbar-mode">
++      <default>false</default>
++      <summary>Show the dock as a full-width taskbar</summary>
++      <description>M-series: a Windows 11-style bar flush to the bottom edge with a Start button, centred launchers, status icons and a clock. Applies live.</description>
++    </key>
+   </schema>
+   <schema path="/io/elementary/dock/keybindings/" id="io.elementary.dock.keybindings">
+     <key type="as" name="launch-dock-1">
+diff --git a/src/BaseItem.vala b/src/BaseItem.vala
+index 0522be3..4b9c91a 100644
+--- a/src/BaseItem.vala
++++ b/src/BaseItem.vala
+@@ -106,9 +106,12 @@ public class Dock.BaseItem : Gtk.Box {
+ 
+         bind_property ("tooltip-text", tooltip_label, "label");
+ 
+-        icon_size = dock_settings.get_int ("icon-size");
++        icon_size = ItemManager.get_icon_size ();
+         dock_settings.changed["icon-size"].connect (() => {
+-            icon_size = dock_settings.get_int ("icon-size");
++            icon_size = ItemManager.get_icon_size ();
++        });
++        dock_settings.changed["taskbar-mode"].connect (() => {
++            icon_size = ItemManager.get_icon_size ();
+         });
+ 
+         fade = new Adw.TimedAnimation (
+diff --git a/src/ItemGroup.vala b/src/ItemGroup.vala
+index cc51fe5..2a7b0a0 100644
+--- a/src/ItemGroup.vala
++++ b/src/ItemGroup.vala
+@@ -41,6 +41,7 @@
+         current_children.items_changed.connect (queue_relayout);
+ 
+         settings.changed["icon-size"].connect (queue_relayout);
++        settings.changed["taskbar-mode"].connect (queue_relayout);
+ 
+         var animation_target = new Adw.PropertyAnimationTarget (this, "width-request");
+ 
+@@ -80,7 +81,7 @@
+     }
+ 
+     private static int get_launcher_size () {
+-        return settings.get_int ("icon-size") + Launcher.PADDING * 2;
++        return ItemManager.get_launcher_size ();
+     }
+ 
+     private void on_resized () {
+diff --git a/src/ItemManager.vala b/src/ItemManager.vala
+index 0377885..40f991f 100644
+--- a/src/ItemManager.vala
++++ b/src/ItemManager.vala
+@@ -36,7 +36,9 @@
+             valign = START,
+             margin_top = Launcher.PADDING,
+         };
+-        settings.bind ("icon-size", separator, "height-request", GET);
++        separator.height_request = get_icon_size ();
++        settings.changed["icon-size"].connect (() => separator.height_request = get_icon_size ());
++        settings.changed["taskbar-mode"].connect (() => separator.height_request = get_icon_size ());
+ #endif
+ 
+         append (app_group);
+@@ -176,6 +178,16 @@
+     }
+ 
+     public static int get_launcher_size () {
+-        return settings.get_int ("icon-size") + Launcher.PADDING * 2;
++        return get_icon_size () + Launcher.PADDING * 2;
++    }
++
++    // M-series taskbar mode uses 48 px icons in a 72 px bar.
++    public const int TASKBAR_ICON_SIZE = 48;
++
++    public static int get_icon_size () {
++        if (settings == null) {
++            settings = new Settings ("io.elementary.dock");
++        }
++        return settings.get_boolean ("taskbar-mode") ? TASKBAR_ICON_SIZE : settings.get_int ("icon-size");
+     }
+ }
+diff --git a/src/MainWindow.vala b/src/MainWindow.vala
+index 652c549..d639ac2 100644
+--- a/src/MainWindow.vala
++++ b/src/MainWindow.vala
+@@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+     private DrawersPanel? drawers_panel = null;
+     private Gtk.GestureClick panel_click;
+ 
++    // M-series taskbar mode (taskbar-mode key): a full-width Windows 11-style bar.
++    private Gtk.Overlay overlay;
++    private Gtk.Box dock_box;
++    private BottomMargin dock_bottom_margin;
++    private Gtk.SizeGroup size_group;
++    private TaskbarRow? taskbar_row = null;
++    private bool taskbar_mode = false;
++    private bool taskbar_signals_connected = false;
++    private int taskbar_width = 0;
++    private bool panel_initialized = false;
++
+     class construct {
+         set_css_name ("dock-window");
+     }
+@@ -47,19 +58,20 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         resizable = false;
+         titlebar = new Gtk.Label ("") { visible = false };
+ 
+-        var dock_box = new Gtk.Box (VERTICAL, 0);
++        dock_box = new Gtk.Box (VERTICAL, 0);
+         dock_box.append (new Container ());
+-        dock_box.append (new BottomMargin ());
++        dock_bottom_margin = new BottomMargin ();
++        dock_box.append (dock_bottom_margin);
+ 
+         unowned var launcher_manager = ItemManager.get_default ();
+ 
+         // Don't clip launchers to dock background https://github.com/elementary/dock/issues/275
+-        var overlay = new Gtk.Overlay () {
++        overlay = new Gtk.Overlay () {
+             child = dock_box
+         };
+         overlay.add_overlay (launcher_manager);
+ 
+-        var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.BOTH);
++        size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.BOTH);
+         size_group.add_widget (dock_box);
+         size_group.add_widget (launcher_manager);
+ 
+@@ -80,12 +92,14 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+         settings.changed["autohide-mode"].connect (() => {
+             if (panel != null) {
+-                panel.set_hide_mode (settings.get_enum ("autohide-mode"));
++                panel.set_hide_mode (get_hide_mode ());
+             } else {
+                 update_panel_x11 ();
+             }
+         });
+ 
++        settings.changed["taskbar-mode"].connect (update_taskbar_mode);
++
+         var transparency_schema = SettingsSchemaSource.get_default ().lookup ("io.elementary.desktop.wingpanel", true);
+         if (transparency_schema != null && transparency_schema.has_key ("use-transparency")) {
+             transparency_settings = new Settings ("io.elementary.desktop.wingpanel");
+@@ -102,6 +116,128 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         });
+         init_panel_move ();
+         init_drawers_panel_gesture ();
++
++        if (settings.get_boolean ("taskbar-mode")) {
++            update_taskbar_mode ();
++        }
++    }
++
++    private int get_hide_mode () {
++        // The taskbar always stays visible, like the Windows taskbar.
++        return taskbar_mode ? 0 : settings.get_enum ("autohide-mode");
++    }
++
++    private int get_content_width () {
++        return taskbar_mode ? taskbar_width : ItemManager.get_default ().get_width ();
++    }
++
++    // Switches between the floating dock and the taskbar without restarting.
++    private void update_taskbar_mode () {
++        var enabled = settings.get_boolean ("taskbar-mode");
++        if (enabled == taskbar_mode) {
++            return;
++        }
++
++        taskbar_mode = enabled;
++        unowned var launcher_manager = ItemManager.get_default ();
++
++        if (enabled) {
++            if (taskbar_row == null) {
++                taskbar_row = new TaskbarRow ();
++                overlay.add_overlay (taskbar_row);
++            }
++            connect_taskbar_signals ();
++
++            size_group.remove_widget (launcher_manager);
++            overlay.remove_overlay (launcher_manager);
++            launcher_manager.valign = END;
++            taskbar_row.center_box.append (launcher_manager);
++            taskbar_row.visible = true;
++
++            dock_bottom_margin.visible = false;
++            dock_box.height_request = TaskbarRow.HEIGHT;
++            add_css_class ("taskbar");
++            update_taskbar_width ();
++        } else {
++            taskbar_row.center_box.remove (launcher_manager);
++            launcher_manager.valign = FILL;
++            overlay.add_overlay (launcher_manager);
++            size_group.add_widget (launcher_manager);
++            taskbar_row.visible = false;
++
++            dock_bottom_margin.visible = true;
++            dock_box.width_request = -1;
++            dock_box.height_request = -1;
++            taskbar_width = 0;
++            remove_css_class ("taskbar");
++        }
++
++        // Keep the drawer panel stacked above the launchers, as at startup.
++        overlay.remove_overlay (drawers_panel);
++        overlay.add_overlay (drawers_panel);
++
++        // Blur shape and hide mode depend on the mode; resend both.
++        initialized_blur = false;
++        if (panel != null) {
++            panel.set_hide_mode (get_hide_mode ());
++        } else if (get_realized ()) {
++            update_panel_x11 ();
++        }
++        queue_resize ();
++    }
++
++    private void connect_taskbar_signals () {
++        if (taskbar_signals_connected) {
++            return;
++        }
++        taskbar_signals_connected = true;
++
++        Granite.Settings.get_default ().notify["prefers-color-scheme"].connect (update_taskbar_style);
++        update_taskbar_style ();
++
++        get_display ().get_monitors ().items_changed.connect (update_taskbar_width);
++    }
++
++    private void update_taskbar_style () {
++        var dark = Granite.Settings.get_default ().prefers_color_scheme == DARK;
++        if (dark) {
++            add_css_class ("dark");
++        } else {
++            remove_css_class ("dark");
++        }
++    }
++
++    // The bar spans the monitor the dock is on (logical pixels).
++    private void update_taskbar_width () {
++        if (!taskbar_mode) {
++            return;
++        }
++
++        Gdk.Monitor? monitor = null;
++        var surface = get_surface ();
++        if (surface != null) {
++            monitor = get_display ().get_monitor_at_surface (surface);
++        }
++        if (monitor == null) {
++            var monitors = get_display ().get_monitors ();
++            if (monitors.get_n_items () > 0) {
++                monitor = (Gdk.Monitor) monitors.get_item (0);
++            }
++        }
++
++        var width = 0;
++        if (monitor != null) {
++            // GTK 4 monitor geometry is already in logical (surface) pixels.
++            width = monitor.geometry.width;
++        }
++        if (width <= 0) {
++            return;
++        }
++
++        if (width != taskbar_width) {
++            taskbar_width = width;
++            dock_box.width_request = width;
++        }
+     }
+ 
+     // Hold Command (Control) + Option and click the dock to show or hide the drawer
+@@ -138,7 +274,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+             button = Gdk.BUTTON_PRIMARY
+         };
+         drag.drag_begin.connect ((start_x, start_y) => {
+-            if (panel == null || panel.get_version () < 2 ||
++            if (taskbar_mode || panel == null || panel.get_version () < 2 ||
+                     (drag.get_current_event_state () & Gdk.ModifierType.CONTROL_MASK) == 0) {
+                 drag.set_state (Gtk.EventSequenceState.DENIED);
+                 return;
+@@ -168,10 +304,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+     private void apply_panel_offset () {
+         if (panel != null && panel.get_version () >= 2) {
+-            var offset = panel_offset;
++            // The taskbar is always centred (full width), whatever the saved offset.
++            var offset = taskbar_mode ? 0 : panel_offset;
+             var surface = get_surface ();
+             var monitor = get_display ().get_monitor_at_surface (surface);
+-            if (monitor != null) {
++            if (monitor != null && !taskbar_mode) {
+                 var monitor_width = monitor.geometry.width;
+                 if (!Services.DisplayConfig.is_logical_layout ()) {
+                     monitor_width /= get_scale_factor ();
+@@ -204,7 +341,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+                 panel = desktop_shell.get_panel (wl_surface);
+                 panel.set_anchor (BOTTOM);
+                 apply_panel_offset ();
+-                panel.set_hide_mode (settings.get_enum ("autohide-mode"));
++                panel.set_hide_mode (get_hide_mode ());
+ #if WORKSPACE_SWITCHER
+                 panel.request_visible_in_multitasking_view ();
+ #endif
+@@ -214,13 +351,24 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+     private static Wl.RegistryListener registry_listener;
+     private void init_panel () {
++        // Taskbar mode re-parents the launchers, which realizes them again.
++        if (panel_initialized) {
++            return;
++        }
++        panel_initialized = true;
++
+         unowned var surface = (Gdk.Toplevel) get_surface ();
++        surface.enter_monitor.connect (() => update_taskbar_width ());
++        update_taskbar_width ();
+ 
+         surface.compute_size.connect ((surface, size) => {
+             // manually set shadow width since the additional margin we add to avoid icons clipping when
+             // bouncing isn't added by default and instead counts to the frame
+-            var item_manager_width = ItemManager.get_default ().get_width ();
++            var item_manager_width = get_content_width ();
+             var shadow_size = (surface.width - item_manager_width) / 2;
++            if (taskbar_mode) {
++                shadow_size = int.max (0, shadow_size);
++            }
+             var top_margin = TOP_MARGIN + shadow_size - 1;
+             size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
+         });
+@@ -229,8 +377,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+             apply_panel_offset ();
+             // manually set input region since container's shadow are is the content of the window
+             // and it still gets window events
+-            var item_manager_width = ItemManager.get_default ().get_width ();
++            var item_manager_width = get_content_width ();
+             var shadow_size = (width - item_manager_width) / 2;
++            if (taskbar_mode) {
++                shadow_size = int.max (0, shadow_size);
++            }
+             var top_margin = TOP_MARGIN + shadow_size;
+ 
+             if (drawers_panel != null && drawers_panel.get_visible ()) {
+@@ -261,11 +412,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+             if (widget_border_radius != null) {
+                 border_radius = widget_border_radius;
+             }
++            if (taskbar_mode) {
++                // Square, flush bar: no rounded blur and no floating gap.
++                border_radius = 0;
++            }
+ 
+             initialized_blur = true;
+ 
+             if (panel != null) {
+-                panel.add_blur (0, 0, 0, BottomMargin.get_size (), border_radius);
++                panel.add_blur (0, 0, 0, taskbar_mode ? 0 : BottomMargin.get_size (), border_radius);
+             } else {
+                 update_panel_x11 ();
+             }
+@@ -298,10 +453,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+             var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
+ 
+-            var value = "anchor=8:hide-mode=%d:restore-previous-region=1:visible-in-multitasking-view=1".printf (settings.get_enum ("autohide-mode"));
++            var value = "anchor=8:hide-mode=%d:restore-previous-region=1:visible-in-multitasking-view=1".printf (get_hide_mode ());
+ 
+             if (initialized_blur) {
+-                value += ":blur=0,0,0,%d,%d".printf (BottomMargin.get_size (), border_radius);
++                value += ":blur=0,0,0,%d,%d".printf (taskbar_mode ? 0 : BottomMargin.get_size (), border_radius);
+             }
+ 
+             xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+new file mode 100644
+index 0000000..8ddb29f
+--- /dev/null
++++ b/src/Taskbar.vala
+@@ -0,0 +1,361 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0
++ * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
++ *
++ * M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
++ * row with a Start button left of the centred launchers and a status area plus
++ * clock on the right. Created only when the mode is first enabled, so the
++ * regular dock does no extra work.
++ */
++
++public class Dock.TaskbarRow : Gtk.Widget {
++    public const int HEIGHT = 72;
++
++    /** The launchers (ItemManager) are moved in here while taskbar mode is on. */
++    public Gtk.Box center_box { get; private set; }
++
++    private Gtk.CenterBox center_layout;
++    private Gtk.Image network_image;
++    private Gtk.Button network_button;
++    private Gtk.Button battery_button;
++    private Gtk.Image battery_image;
++    private Gtk.Button clock_button;
++    private Gtk.Label time_label;
++    private Gtk.Label date_label;
++    private uint clock_timeout_id = 0;
++    private DBusProxy? upower = null;
++    private Gtk.Button weather_button;
++    private Gtk.Image weather_image;
++    private Gtk.Label weather_temp;
++    private Gtk.Label weather_desc;
++    private uint weather_timeout_id = 0;
++
++    class construct {
++        set_layout_manager_type (typeof (Gtk.BinLayout));
++        set_css_name ("taskbar-row");
++    }
++
++    construct {
++        add_css_class ("taskbar-row");
++        hexpand = true;
++
++        // Four-pane start glyph drawn with CSS so no icon theme is needed.
++        var logo = new Gtk.Grid () {
++            row_spacing = 2,
++            column_spacing = 2,
++            valign = CENTER,
++            halign = CENTER
++        };
++        logo.add_css_class ("taskbar-logo");
++        for (int i = 0; i < 4; i++) {
++            var pane = new Gtk.Box (HORIZONTAL, 0);
++            pane.add_css_class ("taskbar-logo-pane");
++            logo.attach (pane, i % 2, i / 2);
++        }
++        var start_button = new Gtk.Button () {
++            child = logo,
++            tooltip_text = _("Start"),
++            valign = CENTER,
++            focusable = false
++        };
++        start_button.add_css_class ("taskbar-start");
++        start_button.update_property (Gtk.AccessibleProperty.LABEL, _("Start"), -1);
++        start_button.clicked.connect (open_launcher);
++
++        var search_content = new Gtk.Box (HORIZONTAL, 8);
++        search_content.append (new Gtk.Image.from_icon_name ("system-search-symbolic"));
++        search_content.append (new Gtk.Label (_("Search")) { xalign = 0 });
++        var search_button = new Gtk.Button () {
++            child = search_content,
++            tooltip_text = _("Search apps"),
++            valign = CENTER,
++            focusable = false
++        };
++        search_button.add_css_class ("taskbar-search");
++        search_button.update_property (Gtk.AccessibleProperty.LABEL, _("Search"), -1);
++        search_button.clicked.connect (open_launcher);
++
++        center_box = new Gtk.Box (HORIZONTAL, 4) {
++            valign = FILL
++        };
++        center_box.append (start_button);
++        center_box.append (search_button);
++
++        weather_image = new Gtk.Image.from_icon_name ("weather-few-clouds-symbolic") {
++            pixel_size = 38
++        };
++        weather_temp = new Gtk.Label ("—") { xalign = 0 };
++        weather_temp.add_css_class ("taskbar-weather-temp");
++        weather_desc = new Gtk.Label (_("Weather")) { xalign = 0 };
++        weather_desc.add_css_class ("taskbar-weather-desc");
++        var weather_labels = new Gtk.Box (VERTICAL, 0) { valign = CENTER };
++        weather_labels.append (weather_temp);
++        weather_labels.append (weather_desc);
++        var weather_content = new Gtk.Box (HORIZONTAL, 8);
++        weather_content.append (weather_image);
++        weather_content.append (weather_labels);
++        weather_button = new Gtk.Button () {
++            child = weather_content,
++            valign = CENTER,
++            margin_start = 8,
++            focusable = false,
++            tooltip_text = _("Weather")
++        };
++        weather_button.add_css_class ("taskbar-weather");
++        weather_button.clicked.connect (() => refresh_weather.begin ());
++
++        network_image = new Gtk.Image.from_icon_name ("network-wireless-signal-excellent-symbolic");
++        network_button = make_status_button (network_image, _("Network"), "settings://network");
++
++        var volume_button = make_status_button (
++            new Gtk.Image.from_icon_name ("audio-volume-high-symbolic"), _("Sound"), "settings://sound"
++        );
++
++        battery_image = new Gtk.Image.from_icon_name ("battery-full-symbolic");
++        battery_button = make_status_button (battery_image, _("Power"), "settings://power");
++
++        var status_box = new Gtk.Box (HORIZONTAL, 0) {
++            valign = CENTER
++        };
++        status_box.add_css_class ("taskbar-status");
++        status_box.append (network_button);
++        status_box.append (volume_button);
++        status_box.append (battery_button);
++
++        time_label = new Gtk.Label (null) {
++            halign = END
++        };
++        date_label = new Gtk.Label (null) {
++            halign = END
++        };
++        var clock_labels = new Gtk.Box (VERTICAL, 0) {
++            valign = CENTER
++        };
++        clock_labels.append (time_label);
++        clock_labels.append (date_label);
++
++        clock_button = new Gtk.Button () {
++            child = clock_labels,
++            valign = CENTER,
++            focusable = false
++        };
++        clock_button.add_css_class ("taskbar-clock");
++        clock_button.clicked.connect (() => {
++            if (Environment.find_program_in_path ("io.elementary.calendar") != null) {
++                spawn ({ "io.elementary.calendar" });
++            }
++        });
++
++        var end_box = new Gtk.Box (HORIZONTAL, 4) {
++            valign = FILL,
++            margin_end = 8
++        };
++        end_box.append (status_box);
++        end_box.append (clock_button);
++
++        center_layout = new Gtk.CenterBox () {
++            start_widget = weather_button,
++            center_widget = center_box,
++            end_widget = end_box,
++            hexpand = true
++        };
++        center_layout.set_parent (this);
++
++        var network_monitor = NetworkMonitor.get_default ();
++        network_monitor.network_changed.connect (update_network);
++        network_monitor.notify["connectivity"].connect (update_network);
++        update_network ();
++
++        init_upower.begin ();
++
++        refresh_weather.begin ();
++        weather_timeout_id = Timeout.add_seconds (30 * 60, () => {
++            refresh_weather.begin ();
++            return Source.CONTINUE;
++        });
++
++        map.connect (() => {
++            update_clock ();
++            schedule_clock ();
++        });
++        unmap.connect (() => {
++            if (clock_timeout_id != 0) {
++                Source.remove (clock_timeout_id);
++                clock_timeout_id = 0;
++            }
++        });
++        update_clock ();
++    }
++
++    ~TaskbarRow () {
++        if (weather_timeout_id != 0) {
++            Source.remove (weather_timeout_id);
++        }
++        if (clock_timeout_id != 0) {
++            Source.remove (clock_timeout_id);
++        }
++        center_layout.unparent ();
++    }
++
++    private static void open_launcher () {
++        // Slingshot is a Wingpanel indicator; Wingpanel's command line toggles it.
++        spawn ({ "io.elementary.wingpanel", "--toggle-indicator=app-launcher" });
++    }
++
++    // Current conditions from wttr.in (location from the public IP), refreshed every 30 minutes.
++    private async void refresh_weather () {
++        try {
++            var process = new Subprocess.newv (
++                { "curl", "-sf", "--max-time", "8", "https://wttr.in/?format=%t|%C" },
++                SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_SILENCE
++            );
++            string? output;
++            yield process.communicate_utf8_async (null, null, out output, null);
++            if (!process.get_successful () || output == null || !output.contains ("|")) {
++                return;
++            }
++            var parts = output.strip ().split ("|", 2);
++            var temp = parts[0].strip ();
++            if (temp.has_prefix ("+")) {
++                temp = temp.substring (1);
++            }
++            var condition = parts[1].strip ();
++            weather_temp.label = temp;
++            weather_desc.label = condition;
++            weather_image.icon_name = weather_icon (condition.down ());
++            weather_button.tooltip_text = "%s, %s".printf (temp, condition);
++            weather_button.update_property (Gtk.AccessibleProperty.LABEL, "%s, %s".printf (temp, condition), -1);
++        } catch (Error e) {
++            debug ("Taskbar weather unavailable: %s", e.message);
++        }
++    }
++
++    private static string weather_icon (string condition) {
++        if ("thunder" in condition) return "weather-storm-symbolic";
++        if ("snow" in condition || "sleet" in condition || "ice" in condition) return "weather-snow-symbolic";
++        if ("rain" in condition || "drizzle" in condition || "shower" in condition) return "weather-showers-symbolic";
++        if ("fog" in condition || "mist" in condition || "haze" in condition) return "weather-fog-symbolic";
++        if ("overcast" in condition || "cloudy" in condition && !("partly" in condition)) return "weather-overcast-symbolic";
++        if ("partly" in condition || "cloud" in condition) return "weather-few-clouds-symbolic";
++        return "weather-clear-symbolic";
++    }
++
++    private Gtk.Button make_status_button (Gtk.Image image, string label, string uri) {
++        var button = new Gtk.Button () {
++            child = image,
++            tooltip_text = label,
++            focusable = false
++        };
++        button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
++        button.clicked.connect (() => {
++            spawn ({ "io.elementary.settings", uri });
++        });
++        return button;
++    }
++
++    private static void spawn (string[] argv) {
++        try {
++            Process.spawn_async (
++                null, argv, null,
++                SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
++                null, null
++            );
++        } catch (Error e) {
++            warning ("Taskbar could not start %s: %s", argv[0], e.message);
++        }
++    }
++
++    private void update_network () {
++        var monitor = NetworkMonitor.get_default ();
++        string icon;
++        string description;
++        if (!monitor.network_available || monitor.connectivity == LOCAL) {
++            icon = "network-wireless-offline-symbolic";
++            description = _("Network: offline");
++        } else if (monitor.connectivity == FULL) {
++            icon = "network-wireless-signal-excellent-symbolic";
++            description = _("Network: connected");
++        } else {
++            icon = "network-wireless-no-route-symbolic";
++            description = _("Network: limited connectivity");
++        }
++        network_image.icon_name = icon;
++        network_button.tooltip_text = description;
++        network_button.update_property (Gtk.AccessibleProperty.LABEL, description, -1);
++    }
++
++    private async void init_upower () {
++        try {
++            upower = yield new DBusProxy.for_bus (
++                SYSTEM, DBusProxyFlags.DO_NOT_AUTO_START, null,
++                "org.freedesktop.UPower",
++                "/org/freedesktop/UPower/devices/DisplayDevice",
++                "org.freedesktop.UPower.Device"
++            );
++            upower.g_properties_changed.connect (update_battery);
++        } catch (Error e) {
++            debug ("Taskbar: UPower unavailable: %s", e.message);
++            upower = null;
++        }
++        update_battery ();
++    }
++
++    private void update_battery () {
++        var present = upower?.get_cached_property ("IsPresent");
++        var icon = upower?.get_cached_property ("IconName");
++        var percentage = upower?.get_cached_property ("Percentage");
++
++        if (present != null && !present.get_boolean ()) {
++            // Desktops without a battery: the Power page is still one click away.
++            battery_image.icon_name = "battery-missing-symbolic";
++            battery_button.tooltip_text = _("Power");
++            battery_button.update_property (Gtk.AccessibleProperty.LABEL, _("Power"), -1);
++            return;
++        }
++
++        if (icon != null && icon.get_string () != "") {
++            battery_image.icon_name = icon.get_string ();
++        }
++
++        if (percentage != null) {
++            var description = _("Battery: %.0f%%").printf (percentage.get_double ());
++            battery_button.tooltip_text = description;
++            battery_button.update_property (Gtk.AccessibleProperty.LABEL, description, -1);
++        }
++    }
++
++    private void schedule_clock () {
++        if (clock_timeout_id != 0) {
++            Source.remove (clock_timeout_id);
++        }
++        var now = new DateTime.now_local ();
++        clock_timeout_id = Timeout.add_seconds ((uint) (60 - now.get_second ()), () => {
++            clock_timeout_id = 0;
++            update_clock ();
++            schedule_clock ();
++            return Source.REMOVE;
++        });
++    }
++
++    private static bool is_12h () {
++        var schema = SettingsSchemaSource.get_default ().lookup ("org.gnome.desktop.interface", true);
++        if (schema == null || !schema.has_key ("clock-format")) {
++            return false;
++        }
++        return new Settings ("org.gnome.desktop.interface").get_string ("clock-format") == "12h";
++    }
++
++    private void update_clock () {
++        var now = new DateTime.now_local ();
++        var time_text = now.format (Granite.DateTime.get_default_time_format (is_12h (), false));
++        var date_text = now.format ("%x");
++        time_label.label = time_text;
++        date_label.label = date_text;
++
++        var full_date = now.format (Granite.DateTime.get_default_date_format (true, true, true));
++        clock_button.tooltip_text = full_date;
++        clock_button.update_property (
++            Gtk.AccessibleProperty.LABEL, "%s, %s".printf (time_text, full_date), -1
++        );
++    }
++}
+diff --git a/src/WorkspaceSystem/DynamicWorkspaceItem.vala b/src/WorkspaceSystem/DynamicWorkspaceItem.vala
+index 9cac739..a071a6b 100644
+--- a/src/WorkspaceSystem/DynamicWorkspaceItem.vala
++++ b/src/WorkspaceSystem/DynamicWorkspaceItem.vala
+@@ -30,18 +30,11 @@ public class Dock.DynamicWorkspaceIcon : ContainerItem, WorkspaceItem {
+         WorkspaceSystem.get_default ().workspaces.items_changed.connect (update_active_state);
+         WindowSystem.get_default ().notify["active-workspace"].connect (update_active_state);
+ 
+-        dock_settings.bind_with_mapping (
+-            "icon-size", image, "pixel_size", DEFAULT | GET,
+-            (value, variant, user_data) => {
+-                var icon_size = variant.get_int32 ();
+-                value.set_int (icon_size / 2);
+-                return true;
+-            },
+-            (value, expected_type, user_data) => {
+-                return new Variant.maybe (null, null);
+-            },
+-            null, null
+-        );
++        // Follows BaseItem.icon_size so taskbar mode's compact icons apply too.
++        bind_property ("icon-size", image, "pixel-size", SYNC_CREATE, (binding, from_value, ref to_value) => {
++            to_value.set_int (from_value.get_int () / 2);
++            return true;
++        });
+ 
+         gesture_click.button = Gdk.BUTTON_PRIMARY;
+         gesture_click.released.connect (switch_to_new_workspace);
+diff --git a/src/meson.build b/src/meson.build
+index 052d4a5..5b97a4d 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -8,6 +8,7 @@ sources = [
+     'ItemGroup.vala',
+     'ItemManager.vala',
+     'MainWindow.vala',
++    'Taskbar.vala',
+     'DisplayConfig.vala',
+     'RenderNodeWalker.vala',
+     'AppSystem' / 'App.vala',

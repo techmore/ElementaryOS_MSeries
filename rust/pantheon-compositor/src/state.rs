@@ -125,6 +125,9 @@ pub struct PantheonCompositor {
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    /// Runtime-only top-panel suppression (Windows Work Mode). Lives only in
+    /// compositor memory, so every new session starts with the top bar shown.
+    pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
@@ -411,6 +414,7 @@ impl PantheonCompositor {
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
+            top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
             x11_managed_windows: HashMap::new(),
@@ -628,6 +632,12 @@ impl PantheonCompositor {
             GalaAction::PerformAction(2) => self.maximize_focused_window(),
             GalaAction::PerformAction(3) => self.minimize_focused_window(),
             GalaAction::PerformAction(4) => self.launch_panel_main_menu(),
+            GalaAction::SetTopPanelMode(mode) => {
+                let mode = crate::pantheon_shell::TopPanelMode::from_u32(mode)
+                    .ok_or_else(|| format!("unknown top panel mode {mode}"))?;
+                self.set_top_panel_mode(mode);
+                Ok(())
+            }
             GalaAction::PerformAction(action) => Err(format!(
                 "Gala action {action} is not implemented by this compositor"
             )),

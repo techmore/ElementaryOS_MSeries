@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use smithay::{
-    desktop::Window,
+    desktop::{PopupManager, Window},
     reexports::wayland_server::{
         Client, DataInit, Dispatch, DisplayHandle, GlobalDispatch, New, Resource,
         backend::GlobalId, protocol::wl_surface::WlSurface,
@@ -58,6 +58,83 @@ pub struct PanelState {
     pub visible_in_multitasking_view: bool,
     /// Whether this panel has committed its first non-null buffer this session.
     pub first_buffer_committed: bool,
+}
+
+/// Runtime override for top-anchored panels (Wingpanel), set over D-Bus by
+/// Windows Work Mode so the bottom dock acts as the only taskbar.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TopPanelMode {
+    /// The panel's own hide mode applies and it reserves its exclusive zone.
+    #[default]
+    Normal,
+    /// Moved out of view with no exclusive zone; shown only while one of its
+    /// menus is open (for example the Super-key applications menu).
+    Hidden,
+    /// Like `Hidden`, but pointer contact with the top edge also reveals it.
+    Autohide,
+}
+
+impl TopPanelMode {
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Normal),
+            1 => Some(Self::Hidden),
+            2 => Some(Self::Autohide),
+            _ => None,
+        }
+    }
+}
+
+const ANCHOR_TOP: u32 = 0;
+
+/// The hidden state forced by `mode`, or `None` when the panel's own hide
+/// mode applies.
+pub(crate) fn top_panel_override(
+    mode: TopPanelMode,
+    anchor: Option<u32>,
+    has_open_menu: bool,
+    pointer_reveals: bool,
+) -> Option<bool> {
+    if anchor != Some(ANCHOR_TOP) {
+        return None;
+    }
+    match mode {
+        TopPanelMode::Normal => None,
+        TopPanelMode::Hidden => Some(!has_open_menu),
+        TopPanelMode::Autohide => Some(!has_open_menu && !pointer_reveals),
+    }
+}
+
+/// Whether a panel shrinks the work area. A suppressed top panel never does,
+/// even while briefly revealed for a menu, so windows are not resized.
+pub(crate) fn panel_reserves_work_area(
+    mode: TopPanelMode,
+    anchor: Option<u32>,
+    hidden: bool,
+) -> bool {
+    if anchor.is_none() || hidden {
+        return false;
+    }
+    !(anchor == Some(ANCHOR_TOP) && mode != TopPanelMode::Normal)
+}
+
+/// How far a window rectangle must move up (and the height it must shrink to)
+/// so it never extends below `work`'s bottom edge — the top of a bottom panel.
+/// Returns `None` when the window already clears it.
+pub(crate) fn clear_of_bottom_panel(
+    rect: Rectangle<i32, Logical>,
+    work: Rectangle<i32, Logical>,
+) -> Option<(i32, Option<i32>)> {
+    let work_bottom = work.loc.y + work.size.h;
+    let rect_bottom = rect.loc.y + rect.size.h;
+    if rect_bottom <= work_bottom {
+        return None;
+    }
+    if rect.size.h > work.size.h {
+        // Too tall to fit: pin to the top of the work area and shrink.
+        return Some((work.loc.y, Some(work.size.h)));
+    }
+    Some((rect.loc.y - (rect_bottom - work_bottom), None))
 }
 
 #[derive(Clone)]
@@ -296,7 +373,7 @@ impl PantheonCompositor {
     ) -> Rectangle<i32, Logical> {
         let (mut top, mut bottom, mut left, mut right) = (0, 0, 0, 0);
         for (surface_id, panel) in &self.panels {
-            if panel.anchor.is_none() || panel.hidden {
+            if !panel_reserves_work_area(self.top_panel_mode, panel.anchor, panel.hidden) {
                 continue;
             }
             let Some(window) = self.space.elements().find(|window| {
@@ -573,7 +650,16 @@ impl PantheonCompositor {
                 4 => true,
                 _ => false,
             };
-            let hidden = should_hide && !pointer_reveals_panel;
+            let has_open_menu = window
+                .toplevel()
+                .is_some_and(|top| PopupManager::popups_for_surface(top.wl_surface()).next().is_some());
+            let hidden = top_panel_override(
+                self.top_panel_mode,
+                panel.anchor,
+                has_open_menu,
+                pointer_at_edge || pointer_over_panel,
+            )
+            .unwrap_or(should_hide && !pointer_reveals_panel);
             if panel.hidden != hidden {
                 panel.hidden = hidden;
                 self.panels.insert(surface_id.clone(), panel);
@@ -601,6 +687,23 @@ impl PantheonCompositor {
             }
             self.request_native_redraw();
         }
+    }
+
+    /// Apply a Windows Work Mode top-panel override. Idempotent; the state is
+    /// not persisted, so a new session always starts in `Normal`.
+    pub fn set_top_panel_mode(&mut self, mode: TopPanelMode) {
+        if self.top_panel_mode == mode {
+            return;
+        }
+        tracing::info!(?mode, "top panel mode changed");
+        self.top_panel_mode = mode;
+        self.refresh_panel_visibility();
+        // The exclusive zone can change without a hidden-state change (for
+        // example while a menu keeps the panel revealed).
+        if self.refresh_work_areas() {
+            self.reconfigure_managed_windows();
+        }
+        self.request_native_redraw();
     }
 
     fn window_overlaps_panel(
@@ -720,6 +823,68 @@ impl PantheonCompositor {
         self.space.map_element(window.clone(), target.loc, false);
     }
 
+    /// Hard stop: a regular window may never sit behind a bottom panel (the
+    /// Windows Work Mode taskbar or dock). Moves it up, or shrinks it when it
+    /// is taller than the work area. Panels and fullscreen windows are exempt.
+    pub(crate) fn keep_clear_of_bottom_panels(&mut self, window: &Window) {
+        if let Some(toplevel) = window.toplevel() {
+            let id = toplevel.wl_surface().id();
+            if self.panels.contains_key(&id)
+                || self.managed_windows.get(&id).is_some_and(|managed| managed.fullscreen)
+            {
+                return;
+            }
+        }
+        let Some(location) = self.space.element_location(window) else {
+            return;
+        };
+        let Some(rect) = self.space.element_geometry(window) else {
+            return;
+        };
+        let Some(output) = self
+            .space
+            .outputs_for_element(window)
+            .first()
+            .cloned()
+            .or_else(|| self.primary_output())
+        else {
+            return;
+        };
+        let Some(output_geometry) = self.space.output_geometry(&output) else {
+            return;
+        };
+        let work = self.work_area_for_output(output_geometry);
+        if work.loc.y + work.size.h >= output_geometry.loc.y + output_geometry.size.h {
+            return; // No bottom panel reserves space on this output.
+        }
+        let Some((new_y, new_height)) = clear_of_bottom_panel(rect, work) else {
+            return;
+        };
+        if let Some(height) = new_height {
+            if let Some(toplevel) = window.toplevel() {
+                toplevel.with_pending_state(|state| {
+                    state.size = Some(Size::from((rect.size.w, height)));
+                });
+                toplevel.send_pending_configure();
+            } else if let Some(x11) = window.x11_surface() {
+                let target = Rectangle::new(Point::from((rect.loc.x, new_y)), Size::from((rect.size.w, height)));
+                if let Err(error) = x11.configure(Some(target)) {
+                    tracing::warn!(?error, "could not shrink X11 window above the taskbar");
+                }
+            }
+        }
+        // element_location is the element origin; geometry may be offset from it.
+        let shifted = Point::from((location.x, location.y + (new_y - rect.loc.y)));
+        self.space.map_element(window.clone(), shifted, false);
+    }
+
+    pub(crate) fn keep_all_clear_of_bottom_panels(&mut self) {
+        let windows: Vec<Window> = self.space.elements().cloned().collect();
+        for window in windows {
+            self.keep_clear_of_bottom_panels(&window);
+        }
+    }
+
     pub(crate) fn reconfigure_managed_windows(&mut self) {
         let mut managed = Vec::new();
         for window in self.space.elements() {
@@ -736,51 +901,7 @@ impl PantheonCompositor {
             self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
         self.reconfigure_tiled_windows();
-        self.constrain_floating_windows();
-    }
-
-    /// Reserve visible panel space for ordinary apps without raising or focusing them.
-    fn constrain_floating_windows(&mut self) {
-        let windows: Vec<_> = self.space.elements().cloned().collect();
-        for window in windows {
-            if let Some(surface) = Self::tile_surface(&window)
-                && (self.is_panel_surface(&surface)
-                    || self.tiled_windows.contains_key(&surface.id())
-                    || self.managed_windows.contains_key(&surface.id()))
-            {
-                continue;
-            }
-            if let Some(surface) = window.x11_surface()
-                && (surface.is_override_redirect() || surface.is_fullscreen())
-            {
-                continue;
-            }
-            let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
-                continue;
-            };
-            let Some(output_geometry) = self.space.output_geometry(&output) else {
-                continue;
-            };
-            let Some(location) = self.space.element_location(&window) else {
-                continue;
-            };
-            let current = Rectangle::new(location, window.geometry().size);
-            let area = self.work_area_for_output(output_geometry);
-            let target = fit_window_to_work_area(current, area);
-            if target == current {
-                continue;
-            }
-            if let Some(surface) = window.toplevel() {
-                surface.with_pending_state(|state| state.size = Some(target.size));
-                surface.send_pending_configure();
-            } else if let Some(surface) = window.x11_surface()
-                && let Err(error) = surface.configure(Some(target))
-            {
-                tracing::warn!(?error, "could not fit X11 window above dock");
-                continue;
-            }
-            self.space.map_element(window, target.loc, false);
-        }
+        self.keep_all_clear_of_bottom_panels();
     }
 }
 
@@ -790,54 +911,85 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
     } else {
         state.update_tiling_after_commit(surface);
         state.refresh_panel_visibility();
+        if let Some(window) = state.find_window_for_surface(surface) {
+            state.keep_clear_of_bottom_panels(&window);
+        }
     }
 }
 
-/// Move first; shrink only when the window cannot fit inside the usable area.
-fn fit_window_to_work_area(
-    rect: Rectangle<i32, Logical>,
-    area: Rectangle<i32, Logical>,
-) -> Rectangle<i32, Logical> {
-    let size = Size::from((
-        rect.size.w.min(area.size.w).max(1),
-        rect.size.h.min(area.size.h).max(1),
-    ));
-    let x = rect.loc.x.clamp(
-        area.loc.x,
-        (area.loc.x + area.size.w - size.w).max(area.loc.x),
-    );
-    let y = rect.loc.y.clamp(
-        area.loc.y,
-        (area.loc.y + area.size.h - size.h).max(area.loc.y),
-    );
-    Rectangle::new((x, y).into(), size)
-}
-
 #[cfg(test)]
-mod work_area_tests {
+mod tests {
     use super::*;
 
+    fn rect(x: i32, y: i32, w: i32, h: i32) -> Rectangle<i32, Logical> {
+        Rectangle::new(Point::from((x, y)), Size::from((w, h)))
+    }
+
     #[test]
-    fn moves_overlapping_window_without_resizing() {
-        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
-        let rect = Rectangle::new((100, 800).into(), (640, 400).into());
+    fn window_above_the_taskbar_is_left_alone() {
+        assert_eq!(clear_of_bottom_panel(rect(0, 100, 800, 600), rect(0, 0, 1920, 1008)), None);
+        assert_eq!(clear_of_bottom_panel(rect(0, 408, 800, 600), rect(0, 0, 1920, 1008)), None);
+    }
+
+    #[test]
+    fn window_behind_the_taskbar_moves_up() {
+        assert_eq!(clear_of_bottom_panel(rect(0, 500, 800, 600), rect(0, 0, 1920, 1008)), Some((408, None)));
+    }
+
+    #[test]
+    fn window_taller_than_the_work_area_is_pinned_and_shrunk() {
         assert_eq!(
-            fit_window_to_work_area(rect, area),
-            Rectangle::new((100, 592).into(), (640, 400).into())
+            clear_of_bottom_panel(rect(0, 50, 800, 1200), rect(0, 32, 1920, 976)),
+            Some((32, Some(976)))
         );
     }
 
     #[test]
-    fn shrinks_oversized_window_on_offset_monitor() {
-        let area = Rectangle::new((-1920, 32).into(), (1920, 960).into());
-        let rect = Rectangle::new((-2000, 0).into(), (2200, 1080).into());
-        assert_eq!(fit_window_to_work_area(rect, area), area);
+    fn mode_values_round_trip() {
+        assert_eq!(TopPanelMode::from_u32(0), Some(TopPanelMode::Normal));
+        assert_eq!(TopPanelMode::from_u32(1), Some(TopPanelMode::Hidden));
+        assert_eq!(TopPanelMode::from_u32(2), Some(TopPanelMode::Autohide));
+        assert_eq!(TopPanelMode::from_u32(3), None);
+        assert_eq!(TopPanelMode::default(), TopPanelMode::Normal);
     }
 
     #[test]
-    fn leaves_clear_window_in_place() {
-        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
-        let rect = Rectangle::new((100, 100).into(), (640, 400).into());
-        assert_eq!(fit_window_to_work_area(rect, area), rect);
+    fn normal_mode_and_other_anchors_keep_their_own_hide_mode() {
+        for anchor in [None, Some(0), Some(1), Some(2), Some(3)] {
+            assert_eq!(top_panel_override(TopPanelMode::Normal, anchor, false, false), None);
+        }
+        for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
+            // The bottom dock is never affected.
+            assert_eq!(top_panel_override(mode, Some(1), false, true), None);
+            assert_eq!(top_panel_override(mode, None, false, false), None);
+        }
+    }
+
+    #[test]
+    fn hidden_mode_reveals_only_for_open_menus() {
+        let mode = TopPanelMode::Hidden;
+        assert_eq!(top_panel_override(mode, Some(0), false, false), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), false, true), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), true, false), Some(false));
+    }
+
+    #[test]
+    fn autohide_mode_also_reveals_at_the_edge() {
+        let mode = TopPanelMode::Autohide;
+        assert_eq!(top_panel_override(mode, Some(0), false, false), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), false, true), Some(false));
+        assert_eq!(top_panel_override(mode, Some(0), true, false), Some(false));
+    }
+
+    #[test]
+    fn suppressed_top_panel_never_reserves_work_area() {
+        assert!(panel_reserves_work_area(TopPanelMode::Normal, Some(0), false));
+        assert!(!panel_reserves_work_area(TopPanelMode::Normal, Some(0), true));
+        assert!(!panel_reserves_work_area(TopPanelMode::Normal, None, false));
+        for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
+            assert!(!panel_reserves_work_area(mode, Some(0), false));
+            assert!(panel_reserves_work_area(mode, Some(1), false));
+            assert!(!panel_reserves_work_area(mode, Some(1), true));
+        }
     }
 }
