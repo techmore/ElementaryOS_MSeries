@@ -380,7 +380,7 @@ index 0377885..40f991f 100644
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 652c549..0520f77 100644
+index 652c549..eb79bd9 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -611,7 +611,7 @@ index 652c549..0520f77 100644
  #if WORKSPACE_SWITCHER
                  panel.request_visible_in_multitasking_view ();
  #endif
-@@ -214,12 +359,32 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -214,12 +359,34 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private static Wl.RegistryListener registry_listener;
      private void init_panel () {
@@ -637,15 +637,17 @@ index 652c549..0520f77 100644
 +                // Frame exactly the bar (full monitor width, bottom TaskbarRow.HEIGHT px) so the
 +                // compositor sets it flush; clamp so the geometry is always at least 1x1.
 +                var side = int.max (0, (surface.width - int.min (taskbar_width, surface.width)) / 2);
-+                var top = int.max (0, surface.height - int.min (TaskbarRow.HEIGHT, surface.height));
-+                size.set_shadow_width (side, side, top, 0);
++                // GTK keeps the same margin below the content as at the sides.
++                var bottom = int.min (side, int.max (0, surface.height - TaskbarRow.HEIGHT));
++                var top = int.max (0, surface.height - TaskbarRow.HEIGHT - bottom);
++                size.set_shadow_width (side, side, top, bottom);
 +                return;
 +            }
 +            var item_manager_width = get_content_width ();
              var shadow_size = (surface.width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size - 1;
              size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
-@@ -229,8 +394,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -229,8 +396,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              apply_panel_offset ();
              // manually set input region since container's shadow are is the content of the window
              // and it still gets window events
@@ -658,7 +660,7 @@ index 652c549..0520f77 100644
              var top_margin = TOP_MARGIN + shadow_size;
  
              if (drawers_panel != null && drawers_panel.get_visible ()) {
-@@ -261,11 +429,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -261,11 +431,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              if (widget_border_radius != null) {
                  border_radius = widget_border_radius;
              }
@@ -675,7 +677,7 @@ index 652c549..0520f77 100644
              } else {
                  update_panel_x11 ();
              }
-@@ -298,10 +470,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -298,10 +472,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
              var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
  
