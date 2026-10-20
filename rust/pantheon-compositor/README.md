@@ -232,7 +232,7 @@ resist rather than wrap. Overview cells preserve window proportions. Reduced
 motion skips release settling. See the reproducible nested qualification in
 `mseries/pantheon-rust-compositor/gesture-tests/README.md`; physical sensitivity,
 native frame pacing and multi-output/mixed-XWayland previews remain unqualified.
-These changes are staged in PR #326 and are not installed on the live session.
+These changes are in PR #326 and installed for the next login from combined deployment source `314652f`, preserving the independently staged Work Mode compositor. The running session still uses the previous binary. See `mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md`.
 
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed
