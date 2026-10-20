@@ -562,7 +562,7 @@ public class MachinePage : Gtk.Box {
         actions.append (start_button);
         clamp.append (actions);
 
-        var fine = new Gtk.Label ("Needs QEMU, UEFI firmware and access to /dev/kvm. With an installer attached the machine boots it; remove it with the eject button once the system is installed.");
+        var fine = new Gtk.Label ((machine.emulated ? "Needs QEMU and UEFI firmware (no /dev/kvm needed: x86-64 is emulated). " : "Needs QEMU, UEFI firmware and access to /dev/kvm. ") + "With an installer attached the machine boots it; remove it with the eject button once the system is installed.");
         fine.wrap = true;
         fine.xalign = 0;
         fine.add_css_class ("ml-fineprint");
