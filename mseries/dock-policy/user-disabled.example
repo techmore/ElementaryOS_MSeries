@@ -1,0 +1,4 @@
+Disabled at the user's explicit request on 2026-10-18.
+The floating dock repeatedly steals attention and prevents typing.
+Do not re-enable or change dock appearance without explicit GUI approval.
+Approval must expire after 90 seconds and cancel without changes.
