@@ -1,0 +1,780 @@
+diff --git a/src/Indicator.vala b/src/Indicator.vala
+index 75c1699..88fbe03 100644
+--- a/src/Indicator.vala
++++ b/src/Indicator.vala
+@@ -110,6 +110,7 @@ public class Power.Indicator : Wingpanel.Indicator {
+             watts = display_device.energy_rate;
+         }
+ 
++        Widgets.WattSettings.get_default ().watts = watts;
+         display_widget.show_power_draw (watts, display_device.is_charging);
+     }
+ 
+diff --git a/src/Services/DBusInterfaces/Device.vala b/src/Services/DBusInterfaces/Device.vala
+index 627ed20..82627e0 100644
+--- a/src/Services/DBusInterfaces/Device.vala
++++ b/src/Services/DBusInterfaces/Device.vala
+@@ -49,6 +49,8 @@ namespace Power.Services.DBusInterfaces {
+         public abstract bool online { public get; public set; }
+         public abstract bool power_supply { public get; public set; }
+         public abstract double capacity { public get; public set; }
++        public abstract int32 charge_cycles { public get; public set; }
++        public abstract uint32 charge_end_threshold { public get; public set; }
+         public abstract double energy { public get; public set; }
+         public abstract double energy_empty { public get; public set; }
+         public abstract double energy_full { public get; public set; }
+diff --git a/src/Services/Device.vala b/src/Services/Device.vala
+index ed1a735..1083529 100644
+--- a/src/Services/Device.vala
++++ b/src/Services/Device.vala
+@@ -133,6 +133,8 @@ public class Power.Services.Device : Object {
+     public bool online { get; private set; }
+     public bool power_supply { get; private set; }
+     public double capacity { get; private set; }
++    public int charge_cycles { get; private set; }
++    public uint charge_end_threshold { get; private set; }
+     public string description { get; private set; }
+     public double energy { get; private set; }
+     public double energy_empty { get; private set; }
+@@ -197,6 +199,8 @@ public class Power.Services.Device : Object {
+         online = device.online;
+         power_supply = device.power_supply;
+         capacity = device.capacity;
++        charge_cycles = device.charge_cycles;
++        charge_end_threshold = device.charge_end_threshold;
+         energy = device.energy;
+         energy_empty = device.energy_empty;
+         energy_full = device.energy_full;
+diff --git a/src/Widgets/BatteryHero.vala b/src/Widgets/BatteryHero.vala
+new file mode 100644
+index 0000000..a3e8872
+--- /dev/null
++++ b/src/Widgets/BatteryHero.vala
+@@ -0,0 +1,289 @@
++/*
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ * SPDX-FileCopyrightText: 2026 M-Series elementary OS port
++ */
++
++/** Shared look for the battery menu; matches the CodexBar dropdown (cards, chips, dock). */
++public class Power.Widgets.MenuStyle : Object {
++    private static bool installed = false;
++
++    public static void install (Gdk.Display display) {
++        if (installed) {
++            return;
++        }
++        installed = true;
++
++        var style = new Gtk.CssProvider ();
++        style.load_from_string (
++            ".mseries-battery { font-size: 8pt; } " +
++            ".mseries-battery .caption { font-size: 7pt; } " +
++            ".mseries-battery .numeric { font-feature-settings: \"tnum\"; } " +
++            ".mseries-battery .section-title { font-size: 7pt; font-weight: 700; opacity: 0.6; margin: 2px 4px 0 4px; } " +
++            ".mseries-battery .card { padding: 6px 8px; border-radius: 10px; background: alpha(currentColor, 0.06); } " +
++            ".mseries-battery .hero-percent { font-size: 22pt; font-weight: 800; font-feature-settings: \"tnum\"; } " +
++            ".mseries-battery .hero-state { font-weight: 700; } " +
++            ".mseries-battery .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
++            "  background: alpha(currentColor, 0.1); } " +
++            ".mseries-battery .chip.ok { background: alpha(@success_color, 0.22); color: @success_color; } " +
++            ".mseries-battery .chip.low { background: alpha(@warning_color, 0.22); color: @warning_color; } " +
++            ".mseries-battery .chip.critical { background: alpha(@error_color, 0.22); color: @error_color; } " +
++            ".mseries-battery progressbar trough, .mseries-battery progressbar progress { min-height: 6px; border-radius: 3px; } " +
++            ".mseries-battery progressbar.ok progress { background: @success_color; } " +
++            ".mseries-battery progressbar.low progress { background: @warning_color; } " +
++            ".mseries-battery progressbar.critical progress { background: @error_color; } " +
++            ".mseries-battery .tile { padding: 4px 2px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
++            ".mseries-battery .tile-value { font-weight: 700; font-feature-settings: \"tnum\"; } " +
++            ".mseries-battery .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
++            ".mseries-battery .mseries-dock button { padding: 4px 6px; border-radius: 9px; min-height: 0; min-width: 0; } " +
++            ".mseries-battery .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
++            ".mseries-battery .mseries-dock button:checked { background: alpha(@accent_color, 0.22); color: @accent_color; } " +
++            ".mseries-battery .prefs-row, .mseries-battery .prefs-row label { font-size: 8pt; } " +
++            ".mseries-battery .devices row { background: none; border-radius: 8px; padding: 0; } " +
++            ".mseries-battery .devices row:hover { background: alpha(currentColor, 0.08); }"
++        );
++        Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++    }
++}
++
++/** One small stat (value over caption); hides itself when there is nothing to show. */
++public class Power.Widgets.StatTile : Gtk.Box {
++    private Gtk.Label value_label;
++
++    public StatTile (string title) {
++        Object (orientation: Gtk.Orientation.VERTICAL, spacing: 0, homogeneous: false, hexpand: true);
++
++        value_label = new Gtk.Label ("") { halign = Gtk.Align.CENTER };
++        value_label.add_css_class ("tile-value");
++
++        var title_label = new Gtk.Label (title) { halign = Gtk.Align.CENTER };
++        title_label.add_css_class ("caption");
++        title_label.add_css_class ("dim-label");
++
++        add_css_class ("tile");
++        append (value_label);
++        append (title_label);
++    }
++
++    public void set_stat (string? text, string? tooltip = null) {
++        visible = text != null;
++        value_label.label = text ?? "";
++        tooltip_text = tooltip;
++    }
++}
++
++/** Headline card: charge level, state, time estimate, and the numbers that matter. */
++public class Power.Widgets.BatteryHero : Gtk.Box {
++    private Services.DeviceManager dm;
++    private Services.Device? battery = null;
++
++    private Gtk.Image icon;
++    private Gtk.Label percent_label;
++    private Gtk.Label detail_label;
++    private Gtk.Label chip_label;
++    private Gtk.ProgressBar bar;
++    private Gtk.Label energy_label;
++    private Gtk.Label limit_label;
++    private StatTile power_tile;
++    private StatTile health_tile;
++    private StatTile cycles_tile;
++    private StatTile temp_tile;
++
++    construct {
++        dm = Services.DeviceManager.get_default ();
++
++        orientation = Gtk.Orientation.VERTICAL;
++        spacing = 6;
++        add_css_class ("card");
++
++        icon = new Gtk.Image () { pixel_size = 40, valign = Gtk.Align.CENTER };
++
++        percent_label = new Gtk.Label ("") { halign = Gtk.Align.START };
++        percent_label.add_css_class ("hero-percent");
++
++        detail_label = new Gtk.Label ("") { halign = Gtk.Align.START, xalign = 0, wrap = true };
++        detail_label.add_css_class ("hero-state");
++
++        var text_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true, valign = Gtk.Align.CENTER };
++        text_box.append (percent_label);
++        text_box.append (detail_label);
++
++        chip_label = new Gtk.Label ("") { valign = Gtk.Align.START };
++        chip_label.add_css_class ("chip");
++
++        var top = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
++        top.append (icon);
++        top.append (text_box);
++        top.append (chip_label);
++
++        bar = new Gtk.ProgressBar ();
++
++        energy_label = new Gtk.Label ("") { halign = Gtk.Align.START, hexpand = true };
++        energy_label.add_css_class ("caption");
++        energy_label.add_css_class ("dim-label");
++        energy_label.add_css_class ("numeric");
++
++        limit_label = new Gtk.Label ("") { halign = Gtk.Align.END, visible = false };
++        limit_label.add_css_class ("caption");
++        limit_label.add_css_class ("dim-label");
++
++        var energy_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        energy_row.append (energy_label);
++        energy_row.append (limit_label);
++
++        power_tile = new StatTile (_("Power"));
++        health_tile = new StatTile (_("Health"));
++        cycles_tile = new StatTile (_("Cycles"));
++        temp_tile = new StatTile (_("Temp"));
++
++        var tiles = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { homogeneous = true };
++        tiles.append (power_tile);
++        tiles.append (health_tile);
++        tiles.append (cycles_tile);
++        tiles.append (temp_tile);
++
++        append (top);
++        append (bar);
++        append (energy_row);
++        append (tiles);
++
++        // Peripherals share the list; the internal battery is the first device of type BATTERY.
++        foreach (var device in dm.devices.values) {
++            adopt (device);
++        }
++        dm.battery_registered.connect ((path, device) => adopt (device));
++
++        dm.display_device.properties_updated.connect (refresh);
++        WattSettings.get_default ().notify["watts"].connect (refresh);
++        refresh ();
++    }
++
++    private void adopt (Services.Device device) {
++        if (battery != null || device.device_type != Services.Device.Type.BATTERY) {
++            return;
++        }
++        battery = device;
++        battery.properties_updated.connect (refresh);
++        refresh ();
++    }
++
++    private static string format_duration (int64 seconds) {
++        int64 minutes = (seconds + 30) / 60;
++        if (minutes < 1) {
++            minutes = 1;
++        }
++        if (minutes >= 60) {
++            ///Translators: duration such as "1 h 24 min"
++            return _("%lld h %02lld min").printf (minutes / 60, minutes % 60);
++        }
++        ///Translators: duration such as "24 min"
++        return _("%lld min").printf (minutes);
++    }
++
++    private void set_level (string level) {
++        foreach (unowned var name in new string[] { "ok", "low", "critical" }) {
++            bar.remove_css_class (name);
++            chip_label.remove_css_class (name);
++        }
++        if (level != "") {
++            bar.add_css_class (level);
++            chip_label.add_css_class (level);
++        }
++    }
++
++    private void refresh () {
++        var overall = dm.display_device;
++        if (overall == null) {
++            return;
++        }
++
++        var info = battery ?? overall;
++        double percentage = overall.percentage;
++        var state = overall.state;
++
++        icon.icon_name = overall.get_icon_name_for_battery ();
++        percent_label.label = _("%.0f%%").printf (percentage);
++        bar.fraction = (percentage / 100.0).clamp (0.0, 1.0);
++
++        uint limit = battery != null ? battery.charge_end_threshold : 0;
++        bool at_limit = limit > 0 && limit < 100 && percentage >= limit - 3
++            && state != Services.Device.State.CHARGING;
++
++        string chip;
++        string level = "ok";
++        string detail;
++
++        switch (state) {
++            case Services.Device.State.CHARGING:
++                chip = _("Charging");
++                detail = overall.time_to_full > 0
++                    ? _("%s until full").printf (format_duration (overall.time_to_full))
++                    : _("Estimating time…");
++                break;
++            case Services.Device.State.FULLY_CHARGED:
++                chip = _("Full");
++                detail = _("Fully charged");
++                break;
++            case Services.Device.State.PENDING_CHARGE:
++            case Services.Device.State.PENDING_DISCHARGE:
++                chip = at_limit ? _("Limit reached") : _("Plugged in");
++                detail = at_limit
++                    ? _("Holding at %u%% to protect the battery").printf (limit)
++                    : _("Not charging");
++                break;
++            default:
++                if (percentage < 10) {
++                    chip = _("Critical");
++                    level = "critical";
++                } else if (percentage < 20) {
++                    chip = _("Low");
++                    level = "low";
++                } else {
++                    chip = _("On battery");
++                    level = "";
++                }
++                detail = overall.time_to_empty > 0
++                    ? _("%s remaining").printf (format_duration (overall.time_to_empty))
++                    : _("Estimating time…");
++                break;
++        }
++
++        chip_label.label = chip;
++        detail_label.label = detail;
++        set_level (level);
++
++        if (info.energy_full > 0) {
++            ///Translators: stored energy out of capacity, e.g. "49.5 of 63.1 Wh"
++            energy_label.label = _("%.1f of %.1f Wh").printf (info.energy, info.energy_full);
++        } else {
++            energy_label.label = "";
++        }
++
++        limit_label.visible = limit > 0 && limit < 100;
++        limit_label.label = _("Charge limit %u%%").printf (limit);
++
++        double watts = WattSettings.get_default ().watts;
++        power_tile.set_stat (
++            watts >= 0.1 ? _("%.1f W").printf (watts) : _("0 W"),
++            _("Power drawn by the whole computer right now")
++        );
++
++        double health = info.capacity;
++        if (health <= 0 && info.energy_full_design > 0) {
++            health = 100.0 * info.energy_full / info.energy_full_design;
++        }
++        health_tile.set_stat (
++            health > 0 ? _("%.0f%%").printf (health) : null,
++            _("Maximum capacity compared with when the battery was new (%.1f of %.1f Wh)")
++                .printf (info.energy_full, info.energy_full_design)
++        );
++
++        cycles_tile.set_stat (
++            info.charge_cycles > 0 ? "%d".printf (info.charge_cycles) : null,
++            _("Full charge cycles")
++        );
++        temp_tile.set_stat (
++            info.temperature > 0 ? _("%.0f °C").printf (info.temperature) : null,
++            _("Battery temperature")
++        );
++    }
++}
+diff --git a/src/Widgets/DeviceList.vala b/src/Widgets/DeviceList.vala
+index 14613b5..b65980f 100644
+--- a/src/Widgets/DeviceList.vala
++++ b/src/Widgets/DeviceList.vala
+@@ -29,7 +29,9 @@ public class Power.Widgets.DeviceList : Granite.Bin {
+         };
+         listbox.set_sort_func (sort_function);
+ 
++        listbox.add_css_class ("devices");
+         child = listbox;
++        visible = false;
+ 
+         entries = new Gee.HashMap<string, Power.Widgets.DeviceRow> ();
+         path_entries = new Gee.HashMap<Gtk.ListBoxRow, string> ();
+@@ -60,6 +62,11 @@ public class Power.Widgets.DeviceList : Granite.Bin {
+     }
+ 
+     private void add_battery (string device_path, Services.Device battery) {
++        // The internal battery is shown by the headline card, not as a row.
++        if (battery.device_type == Services.Device.Type.BATTERY) {
++            return;
++        }
++
+         var device_row = new Power.Widgets.DeviceRow (battery);
+ 
+         entries.@set (device_path, device_row);
+@@ -67,6 +74,7 @@ public class Power.Widgets.DeviceList : Granite.Bin {
+ 
+         listbox.append (device_row);
+         listbox.invalidate_sort ();
++        visible = true;
+     }
+ 
+     private void remove_battery (string device_path) {
+@@ -74,9 +82,10 @@ public class Power.Widgets.DeviceList : Granite.Bin {
+             return;
+         }
+ 
+-        entries.@get (device_path).destroy ();
++        listbox.remove (entries.@get (device_path));
+ 
+         entries.unset (device_path);
++        visible = entries.size > 0;
+     }
+ 
+     [CCode (instance_pos = -1)]
+diff --git a/src/Widgets/DeviceRow.vala b/src/Widgets/DeviceRow.vala
+index f523db1..7f29777 100644
+--- a/src/Widgets/DeviceRow.vala
++++ b/src/Widgets/DeviceRow.vala
+@@ -29,12 +29,12 @@ public class Power.Widgets.DeviceRow : Gtk.ListBoxRow {
+ 
+     construct {
+         device_image = new Gtk.Image.from_icon_name ("battery") {
+-            pixel_size = 48,
++            pixel_size = 32,
+             margin_end = 3
+         };
+ 
+         battery_image = new Gtk.Image () {
+-            pixel_size = 32,
++            pixel_size = 16,
+             halign = Gtk.Align.END,
+             valign = Gtk.Align.END
+         };
+@@ -66,6 +66,17 @@ public class Power.Widgets.DeviceRow : Gtk.ListBoxRow {
+         grid.attach (title_label, 1, 0);
+         grid.attach (info_label, 1, 1);
+ 
++        var percent_label = new Gtk.Label ("") { hexpand = true, halign = Gtk.Align.END };
++        percent_label.add_css_class ("numeric");
++        percent_label.add_css_class ("dim-label");
++        grid.attach (percent_label, 2, 0, 1, 2);
++        battery.properties_updated.connect (() => {
++            percent_label.label = _("%.0f%%").printf (battery.percentage);
++        });
++        percent_label.label = _("%.0f%%").printf (battery.percentage);
++        info_label.add_css_class ("caption");
++        info_label.add_css_class ("dim-label");
++
+         child = grid;
+         update_icons ();
+ 
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index 9055c04..a0ff1b9 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -157,6 +157,8 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+ public class Power.Widgets.WattSettings : Object {
+     private static WattSettings? instance = null;
+     public bool enabled { get; set; default = true; }
++    /** Latest whole-machine draw in watts, shared with the menu; not persisted. */
++    public double watts { get; set; default = 0.0; }
+ 
+     public static unowned WattSettings get_default () {
+         if (instance == null) instance = new WattSettings ();
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 9b38b42..d191a2a 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -22,8 +22,6 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+ 
+     private static Services.DeviceManager dm;
+ 
+-    private Gtk.Revealer device_separator_revealer;
+-
+     private PowerModeList power_mode_list;
+ 
+     public PopoverWidget (bool is_in_session) {
+@@ -34,126 +32,134 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+         dm = Services.DeviceManager.get_default ();
+     }
+ 
++    private static Gtk.Label section_title (string text) {
++        var label = new Gtk.Label (text.up ()) { halign = Gtk.Align.START };
++        label.add_css_class ("section-title");
++        return label;
++    }
++
+     construct {
+         var settings = new GLib.Settings ("io.elementary.panel.power");
+ 
+-        var device_list = new DeviceList ();
++        add_css_class ("mseries-battery");
++        MenuStyle.install (Gdk.Display.get_default ());
++
++        var hero = new BatteryHero ();
++        var hero_revealer = new Gtk.Revealer () { child = hero };
+ 
+-        var device_list_revealer = new Gtk.Revealer () {
+-            child = device_list,
+-        };
+-
+-        var device_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
+-            margin_top = 3,
+-            margin_bottom = 3
+-        };
+-
+-        device_separator_revealer = new Gtk.Revealer () {
+-            child = device_separator,
+-        };
+-
+-        var last_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
+-            margin_top = 3,
+-            margin_bottom = 3
+-        };
+-
+-        var last_separator_revealer = new Gtk.Revealer () {
+-            reveal_child = dm.brightness != -1,
+-            child = last_separator,
+-        };
+-
+-        var show_percent_switch = new Granite.SwitchModelButton (_("Show Percentage"));
+-        show_percent_switch.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
+-
+-        var show_percent_sep = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
+-            margin_top = 3,
+-            margin_bottom = 3
+-        };
+-
+-        var show_percent_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+-        show_percent_box.append (show_percent_switch);
+-        var show_watts_switch = new Granite.SwitchModelButton (_("Show Watts in Menu Bar"));
+-        show_watts_switch.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
++        var device_list = new DeviceList ();
++        var devices_title = section_title (_("Devices"));
++        var devices_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
++        devices_box.append (devices_title);
++        devices_box.append (device_list);
++        device_list.bind_property ("visible", devices_box, "visible", GLib.BindingFlags.SYNC_CREATE);
++
++        var show_percent_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER };
++        var show_watts_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER };
+         WattSettings.get_default ().bind_property (
+             "enabled", show_watts_switch, "active",
+             GLib.BindingFlags.SYNC_CREATE | GLib.BindingFlags.BIDIRECTIONAL
+         );
+-        show_percent_box.append (show_watts_switch);
+-        show_percent_box.append (show_percent_sep);
+ 
+-        var show_percent_revealer = new Gtk.Revealer () {
+-            child = show_percent_box,
+-        };
++        var prefs_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
++        prefs_box.add_css_class ("card");
++        prefs_box.append (pref_row (_("Show Percentage"), show_percent_switch));
++        prefs_box.append (pref_row (_("Show Watts in Menu Bar"), show_watts_switch));
+ 
+-        power_mode_list = new PowerModeList ();
+-
+-        var power_mode_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
+-            margin_top = 3,
+-            margin_bottom = 3
+-        };
++        var prefs_revealer = new Gtk.Revealer () { child = prefs_box };
+ 
+-        var show_settings_button = new Wingpanel.PopoverMenuItem () {
+-            margin_bottom = 3,
+-            text = _("Power Settings…")
+-        };
++        power_mode_list = new PowerModeList ();
+ 
+         orientation = VERTICAL;
+-        append (show_percent_revealer);
+-        append (device_list_revealer);
+-        append (device_separator_revealer);
++        spacing = 6;
++        margin_top = 8;
++        margin_bottom = 6;
++        margin_start = 6;
++        margin_end = 6;
++        width_request = 300;
++
++        append (hero_revealer);
++        append (devices_box);
+ 
+         if (dm.backlight.present) {
+-            var screen_brightness = new ScreenBrightness ();
+-            append (screen_brightness);
++            var display_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { visible = dm.brightness != -1 };
++            display_box.append (section_title (_("Display")));
++            display_box.append (new ScreenBrightness ());
++            dm.brightness_changed.connect ((brightness) => display_box.visible = brightness != -1);
++            append (display_box);
+         }
+ 
+         if (PowerModeList.successfully_initialized) {
+-            append (power_mode_separator);
+-            append (power_mode_list);
++            var mode_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
++            mode_box.append (section_title (_("Power Mode")));
++            mode_box.append (power_mode_list);
++            append (mode_box);
+         }
+ 
+-        if (is_in_session) {
+-            append (last_separator_revealer);
+-            append (show_settings_button);
+-        }
++        append (prefs_revealer);
+ 
+-        update_device_separator_revealer ();
++        if (is_in_session) {
++            var dock = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 2) { homogeneous = true };
++            dock.add_css_class ("mseries-dock");
++
++            var settings_button = make_dock_button (_("Power Settings…"), "preferences-system-symbolic");
++            settings_button.clicked.connect (() => {
++                launch ("settings://power");
++                popdown ();
++            });
++            dock.append (settings_button);
++
++            if (Environment.find_program_in_path ("gnome-power-statistics") != null) {
++                var stats_button = make_dock_button (_("Battery History"), "document-open-recent-symbolic");
++                stats_button.clicked.connect (() => {
++                    try {
++                        AppInfo.create_from_commandline ("gnome-power-statistics", "", AppInfoCreateFlags.NONE).launch (null, null);
++                    } catch (Error e) {
++                        warning ("Failed to open Power Statistics: %s", e.message);
++                    }
++                    popdown ();
++                });
++                dock.append (stats_button);
++            }
+ 
+-        dm.notify["has-battery"].connect ((s, p) => {
+-            update_device_separator_revealer ();
+-        });
++            append (dock);
++        }
+ 
+         settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
+ 
+-        dm.bind_property (
+-            "has-battery",
+-            device_list_revealer,
+-            "reveal-child",
+-            GLib.BindingFlags.DEFAULT | GLib.BindingFlags.SYNC_CREATE
+-        );
++        dm.bind_property ("has-battery", hero_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
++        dm.bind_property ("has-battery", prefs_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
++    }
+ 
+-        if (dm.has_battery && dm.display_device.is_a_battery) {
+-            show_percent_revealer.reveal_child = true;
+-        }
++    private static Gtk.Widget pref_row (string text, Gtk.Switch toggle) {
++        var label = new Gtk.Label (text) { halign = Gtk.Align.START, hexpand = true };
++        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
++        row.append (label);
++        row.append (toggle);
++        return row;
++    }
+ 
+-        show_settings_button.clicked.connect (() => {
+-            try {
+-                AppInfo.launch_default_for_uri ("settings://power", null);
+-            } catch (Error e) {
+-                warning ("Failed to open power settings: %s", e.message);
+-            }
+-        });
++    private static Gtk.Button make_dock_button (string label, string icon_name) {
++        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { halign = Gtk.Align.CENTER };
++        box.append (new Gtk.Image.from_icon_name (icon_name));
++        box.append (new Gtk.Label (label));
++        var button = new Gtk.Button () { child = box };
++        button.add_css_class ("flat");
++        return button;
++    }
+ 
+-        dm.brightness_changed.connect ((brightness) => {
+-            if (brightness != -1) {
+-                last_separator_revealer.reveal_child = true;
+-            } else {
+-                last_separator_revealer.reveal_child = false;
+-            }
+-        });
++    private static void launch (string uri) {
++        try {
++            AppInfo.launch_default_for_uri (uri, null);
++        } catch (Error e) {
++            warning ("Failed to open %s: %s", uri, e.message);
++        }
+     }
+ 
+-    private void update_device_separator_revealer () {
+-        device_separator_revealer.reveal_child = dm.backlight.present && dm.has_battery;
++    private void popdown () {
++        var popover = (Gtk.Popover?) get_ancestor (typeof (Gtk.Popover));
++        if (popover != null) {
++            popover.popdown ();
++        }
+     }
+ }
+diff --git a/src/Widgets/PowerModeList.vala b/src/Widgets/PowerModeList.vala
+index 8fd2656..9ff809a 100644
+--- a/src/Widgets/PowerModeList.vala
++++ b/src/Widgets/PowerModeList.vala
+@@ -58,11 +58,10 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
+ 
+         insert_action_group (ACTION_GROUP_PREFIX, action_group);
+ 
+-        orientation = VERTICAL;
+-        margin_start = 6;
+-        margin_top = 6;
+-        margin_bottom = 6;
+-        margin_end = 6;
++        orientation = HORIZONTAL;
++        spacing = 2;
++        homogeneous = true;
++        add_css_class ("mseries-dock");
+ 
+         saver_radio = new PowerModeCheck ("power-mode-powersaver-symbolic", _("Power Saver"), "power-saver");
+         balanced_radio = new PowerModeCheck ("power-mode-balanced-symbolic", _("Balanced"), "balanced");
+@@ -93,7 +92,7 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
+         performance_radio.action_name = action;
+     }
+ 
+-    private class PowerModeCheck : Gtk.CheckButton {
++    private class PowerModeCheck : Gtk.ToggleButton {
+         public string icon_name { get; construct; }
+         public new string label { get; construct; }
+         public string profile { get; construct; }
+@@ -107,24 +106,20 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
+         }
+ 
+         construct {
+-            var image = new Gtk.Image.from_icon_name (icon_name);
++            var image = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+ 
+             var label_widget = new Gtk.Label (label);
++            label_widget.add_css_class ("caption");
+ 
+-            var box = new Gtk.Box (HORIZONTAL, 6) {
+-                halign = START,
+-                margin_top = 3,
+-                margin_bottom = 3,
+-                margin_start = 2,
+-                margin_end = 3
+-            };
++            var box = new Gtk.Box (VERTICAL, 2) { halign = CENTER };
+             box.append (image);
+             box.append (label_widget);
+ 
+             child = box;
+             action_target = profile;
+ 
+-            get_style_context ().add_class ("image-button");
++            tooltip_text = label;
++            add_css_class ("flat");
+         }
+     }
+ }
+diff --git a/src/Widgets/ScreenBrightness.vala b/src/Widgets/ScreenBrightness.vala
+index 8ea91f1..4ab7f7e 100644
+--- a/src/Widgets/ScreenBrightness.vala
++++ b/src/Widgets/ScreenBrightness.vala
+@@ -32,22 +32,19 @@ public class Power.Widgets.ScreenBrightness : Granite.Bin {
+         var touchpad_settings = new GLib.Settings ("org.gnome.desktop.peripherals.touchpad");
+         touchpad_settings.bind ("natural-scroll", this, "natural-scroll-touchpad", SettingsBindFlags.DEFAULT);
+ 
+-        var image = new Gtk.Image.from_icon_name ("brightness-display-symbolic") {
+-            pixel_size = 48
++        var image = new Gtk.Image.from_icon_name ("display-brightness-symbolic") {
++            pixel_size = 16
+         };
+ 
+         brightness_slider = new Gtk.Scale.with_range (Gtk.Orientation.HORIZONTAL, 0, 100, 10) {
+-            margin_end = 6,
+             hexpand = true,
+-            draw_value = false,
+-            width_request = 175
++            draw_value = false
+         };
+ 
+         var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
+-            hexpand = true,
+-            margin_start = 6,
+-            margin_end = 12
++            hexpand = true
+         };
++        box.add_css_class ("card");
+ 
+         box.append (image);
+         box.append (brightness_slider);
+diff --git a/src/meson.build b/src/meson.build
+index 40051eb..9818546 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -22,6 +22,7 @@ files = files(
+     'Services/DBusInterfaces/PowerProfile.vala',
+     'Services/Device.vala',
+     'Services/DeviceManager.vala',
++    'Widgets/BatteryHero.vala',
+     'Widgets/DeviceList.vala',
+     'Widgets/DeviceRow.vala',
+     'Widgets/DisplayWidget.vala',

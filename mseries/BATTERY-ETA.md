@@ -108,3 +108,17 @@ approved by the owner, then Escape) and captured with the screenshot portal. It 
 six-hour sparkline, Typical runtime, Health, recent runs, power changes, accessories) above the stock brightness slider and
 power profiles, under the "Show Percentage" and "Show Watts in Menu Bar" switches. Stat values were indented against their
 labels; fixed (heading style instead of h4). Rows are one line each at the popover's width.
+
+## Battery menu redesign — 2026-10-19
+
+`patches/panel-power-battery-menu.patch` (applied last by `install-battery-eta.sh`) restyles the Wingpanel battery menu to match the
+CodexBar dropdown (8 pt type, rounded cards, chips, the `mseries-dock` pill): a headline card with big percentage, state chip, time
+remaining/until full, level bar (green/amber/red), stored Wh, and tiles for Power (W), Health, Charge cycles and Temperature; an
+"at charge limit" state when UPower reports a charge-end threshold (e.g. holding at 80%); peripherals as compact rows with percentages
+(the internal battery is no longer duplicated as a row); a slim brightness card; power mode as a segmented dock; the two toggles in
+one card; and a footer dock with Power Settings and Battery History. UPower `ChargeCycles` and `ChargeEndThreshold` are newly read.
+
+**Not applied by the installer (2026-10-19 merge):** dev's owner-verified Battery History dropdown (`panel-power-battery-history.patch`) is the shipped menu, and this redesign no longer applies on top of it (`PopoverWidget.vala` hunk fails). Re-base the redesign onto the history patch before switching.
+
+Verified (before the merge): all four patches apply in order to `elementary/panel-power` at `e05723d`, and the module builds in release mode with no errors.
+Not verified: how it looks on screen, and installation (needs sudo and a Wingpanel restart): run `bash mseries/install-battery-eta.sh`.

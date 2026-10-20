@@ -39,6 +39,119 @@ upgraded to `5a7feb9`.
 Not verified: a live round trip with the server — the owner is still signed out.
 Next: owner signs in from the Tasks tab, then check both directions.
 
+
+## Pointer stuck at the top edge: Gala panel barrier patch — 2026-10-19 (Claude Code)
+
+Owner reported the mouse sometimes sticks at the top of the screen until slid sideways to the edge. Cause
+found by reading the pinned Gala source (`f079143`): `HideTracker` creates a pointer barrier along the
+panel's edge for **every** panel, including Wingpanel, which never auto-hides. The barrier spans the
+screen minus 50px at each end, which matches "slide to the edge frees it". Its release logic also only
+released after a later hit more than 150ms past the trigger. Added `mseries/patches/gala-panel-barrier.patch`
+(applied last by `install-gala-screen-corners.sh`): no barrier when the panel's hide mode is NEVER (and it
+is rebuilt when the mode changes), non-retriggering barriers release right after triggering, and a null
+guard in `~Barrier`. The patched tree compiles (meson/ninja, scratch build, nothing installed).
+**Installed 2026-10-19 18:00** (old binary kept as `gala.pre-barrier`; no unresolved libraries); active at next login. **Not confirmed on hardware:** replacing `/usr/local/lib/mseries/gala/bin/gala` was
+declined by the permission classifier, and the compositor only changes at next login. The cause is
+inferred from code, not reproduced. Install by building with the installer's prefix and copying only the
+binary (the installer's launcher heredoc is older than the live `mseries-gala`, so do not rerun it blindly);
+after login, check whether the stick is gone.
+
+## CodexBar dropdown compacted — 2026-10-19
+
+Owner asked to shrink the CodexBar dropdown and keep it that way. In `codexbar-wingpanel/Indicator.vala`,
+reduced its requested width and maximum content height from 340px to 300px, base text 9pt to 8pt, provider
+titles 9.5pt to 8.5pt, captions 8pt to 7pt, and tightened card, button and section spacing. The compact
+style is compiled into the Wingpanel indicator module, so it is loaded on each Wingpanel startup. Built
+with Meson/Ninja, installed at `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`, and restarted
+Wingpanel. Verified the installed module contains the 8pt dropdown style and the Wingpanel process is
+running again. The tests in the deploy script were not run.
+
+## CodexBar panel font shrink — 2026-10-19 (Claude Code)
+
+Owner reported the CodexBar bar text was too large (it may also have made the Applications menu hard to
+open). Changed `.mseries-codexbar-bar` sizes in `codexbar-wingpanel/Indicator.vala`: label 8.5->7.5pt,
+reset/secondary 7.5->6.5pt. Tests pass, `deploy-codexbar.sh` ran (Wingpanel and CodexBar restarted), owner
+confirmed it looks right; pushed as `fa563ce`. **Open:** whether the Applications menu not opening is fully
+fixed is not confirmed; the dock (`io.elementary.dock`) is still stopped. Documented in `CODEXBAR-PORT.md`.
+
+## Phosphene local media feasibility — 2026-10-19
+
+Reviewed Phosphene `v4.19.5` at `287a964` against the 32 GB M1 Pro/T6000 and
+our elementary OS ARM64 + omarchy-mlx Vulkan stack. The project now describes
+Linux on Apple Silicon as community-maintained/best-effort, though the checked
+Pinokio installer still gates on Darwin/ARM64. The video stack is MLX-specific;
+compatibility with our Vulkan fork is unproven. Phosphene lists 48 GB for
+advanced features and 36 GB+ for compact-Q8 Hailuo H3, exceeding this host's
+memory. Its 27.5 GB LTX base is model download/storage size, not asserted runtime
+RAM. No software or weights were installed and no renders were run. Decision:
+do not prioritize a port; reconsider with a specific media need or backend
+support. Full evidence and privacy/license caveats:
+[`local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md`](local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md).
+
+## omarchy-mlx main candidate and planned model A/B — 2026-10-19
+
+Candidate `61495cb` built in `~/.cache/omarchy-mlx-candidate-61495cb`, isolated
+beside installed v0.7.33. No runtime was installed or replaced. Four selected
+C++ test binaries passed; `omarchy_matmul_family_tests` passed 41/43, with two
+MoE gather_qmm tile tests throwing on empty CPU reference data in the CPU-off
+build (cause suspected, unconfirmed). Receipt:
+`mseries/local-ai/receipts/2026-10-19-omarchy-mlx-candidate-build.md`.
+
+Model A/B has not run. Readiness check at 08:00 EDT found
+`mseries-ai-everyday.service` failed because its configured 4B target was
+incomplete and offline mode refused a download; no MLX worker was running.
+Since then, a Python wheel for `61495cb` was built and installed in an isolated
+cache-local venv. It imports mlx-lm 0.31.3 and completes a tiny GPU sum on
+Honeykrisp. Build used CPU=OFF because LAPACKE development files are absent;
+Python 3.14 headers were unpacked to the candidate cache without system package
+installation. The wheel is `0.32.4.dev202610191211+61495cb`, while omarchy-mlx's
+lock labels its pinned MLX archive 0.32.3; the hash-verified archive's
+`mlx/version.h` says 0.32.4. Resolve/document this mismatch before any bump.
+
+The pinned 4B model download is complete in the normal HF cache and verified
+against the catalog hashes. A separate diagnostics
+wheel proves a synthetic 8192-element float32 Sum dispatches `ReduceRowF32`
+on G13S; this does not prove the 4B model reaches it. At the latest machine
+sample, 12.26 GiB was available, below the 12.5 GiB admission needed for the
+6.5 GiB model plus 6 GiB desktop reserve. No model generation has run and no
+service was started or stopped; everyday remains failed from its earlier
+missing-weights launch. Detailed A/B gates are in
+`mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`. Next: wait until
+memory admission passes, verify baseline service readiness, and run the model
+comparison only in the planned quiet window. Do not force admission or
+interrupt the owner's desktop.
+
+## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
+
+`sudo apt upgrade` (gala r3203->r3204, panel power/sound/bluetooth, granite, settings-daemon, pantheon-files,
+claude-desktop 2.42304.2) finished cleanly; `dpkg --audit` empty. The upgrade overwrote our patched
+`libpower.so`, `libsound.so` and `libbluetooth.so` with stock builds. Re-ran `install-battery-eta.sh`
+(Wingpanel restarted by it, still running) and `install-sound-indicator-fix.sh` (needs a Wingpanel reload to
+show). `check-codexbar-port.sh` passed. **Open:** the patched Bluetooth indicator has no installer or patch in
+the repo and is stock again (nothing saved before the upgrade); the running session still uses the old Gala until
+re-login; snapping/PiP gala plugins are not checked against the new `libgala0`. Lesson: re-run the
+indicator installers after every `apt upgrade` that touches `io.elementary.panel.*`.
+
+## Dock icons halved — 2026-10-18 (Claude Code)
+
+Owner asked for the applications tray icons at half size. Ran
+`gsettings set io.elementary.dock icon-size 24` (was 48, the dock's setting; dconf only, no repo
+files). Verified by reading the key back (24). Not visually checked on screen. To revert:
+`gsettings reset io.elementary.dock icon-size`. If "applications tray" meant the Applications
+menu or drawers instead, that is still at its default size.
+
+Owner then clarified they meant the Applications menu. Upstream has no icon-size setting, so
+`mseries/install-applications-menu-half-icons.sh` builds elementary/applications-menu at
+`06d7170` (8.0.4, matches the installed package) with `patches/applications-menu-half-icons.patch`
+(grid 64->32, list rows 32->16, search results 32->16) and installs `libslingshot.so`
+(package build backed up by `lib-backup.sh`; `--uninstall` restores it). Needed
+`libswitchboard-3-dev` and `libzeitgeist-2.0-dev` to build. Installed and `ldd` clean; **not yet
+loaded**: Wingpanel was not restarted, so it shows after the next reload/login, and the result is
+not visually checked. The dock stays at 24; revert it if only the menu was wanted.
+
+Follow-up: the same patch now also makes the grid page 7x4 (28 apps, was 5x3 = 15), label width
+12 chars, row spacing 12, to roughly keep the popover footprint. Rebuilt, installed and Wingpanel
+reloaded; layout not visually checked.
 ## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
 
 PR #271 (production hardening: the valac nested-ternary use-after-free behind the
@@ -1142,6 +1255,17 @@ rendering, performance unverified**. System changes: FEX apt source + key, /usr/
 `/etc/ld.so.conf.d/mseries-libkrun.conf`. Prior art: no official Discord arm64 Linux build exists (support thread open
 for years); ArmCord/Legcord and Vesktop wrap the web app. macOS Discord is Mach-O; only its JS could be reused.
 
+## Screenshots: click a window with Command+Shift+4; fixed persistent thumbnail — 2026-10-18 (Claude Code)
+
+Command is Ctrl here, so Command+Shift+4 is Gala's `area-screenshot`. New `mseries/patches/gala-screenshot-window-pick.patch`
+(on top of screen-corners + panel-offset, applied by `install-gala-screen-corners.sh`): in that selector a plain click
+(no drag) captures the topmost window under the pointer via Gala's own window capture; dragging still selects an
+area. The shelf (`screenshot-shelf/mseries-screenshot-shelf`) now draws every shot in a fixed 280x180 card, bottom-right,
+that stays until the x, a drag-and-drop or the next shot (no 7 s expiry; Markup no longer dismisses it).
+**Verified:** patched Gala compiles and links; installed to the private prefix (takes effect at next login);
+shelf installed and running; card renders at identical size for wide and tall images (headless snapshot).
+**Not verified:** the click-to-capture on the real session (needs re-login), card position and drag-out on the
+real screen (no test window was put on the owner's display). Next: re-login, press Command+Shift+4, click a window.
 ## Battery panel in first boot — 2026-10-18 (Claude Code)
 
 `install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
@@ -5448,6 +5572,25 @@ Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-cod
 
 Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.
 
+## Network panel: compact low rates and Command-hover — 2026-10-18
+
+`network-panel-compact.patch`, applied after saturation by `install-network-throughput.sh`, shows `<1 MB/s` independently for down/up below 1,000,000 bytes/s. The panel retains decimal byte units and its existing 10-second average. Command (Super/Meta) while hovering reveals the existing measured B/s, kB/s or MB/s values; releasing it or leaving restores compact values. A motion controller samples modifiers every 50 ms only while hovered so pressing Command after entering works without keyboard focus. Unmap/dispose removes the hover timer; dispose also removes the rate timer. The less-than label is escaped before Pango markup, preserving saturation highlighting. The image payload already ships every patches/*.patch file.
+
+Verified: all installer patches apply against pinned panel-network `8685ec8e55a45e48da0c12931a353cd440d11664`, full release Meson/Ninja build and link, no missing shared libraries, bash syntax check. An isolated GTK/Xvfb harness checked 0, 999, 1,000, 999,999, 1,000,000 and 2,000,000 bytes/s in compact/exact modes and the rendered literal less-than. Installed with `bash mseries/install-network-throughput.sh`; Wingpanel reloaded and remains running, no network/markup errors in the reload logs. Live Command-hover by eye remains unverified; next check is owner hover/Command/release on the menu bar. This affects the compact panel text; popover graph readings retain their existing precision.
+
+## Battery watts switch and network hover repair — 2026-10-18
+
+Owner reported Command-hover did not work. This desktop uses `ctrl:swap_lwin_lctl`, so physical Command maps to Control, which the original mask missed. A keyboard injection harness confirmed Control support, but Wayland modifier updates also depend on keyboard focus. The final fix avoids this dependency: hovering anywhere over the network icon/readout reveals measured values, with Command optional; leaving/unmapping restores compact `<1 MB/s` values. The motion controller now attaches in capture phase to the whole display. The modifier polling timer was removed. The existing 10-second network sampling interval remains.
+
+Battery menu now includes **Show Watts in Menu Bar**, alongside Show Percentage. `panel-power-watts-toggle.patch` adds a shared per-user preference in `~/.config/mseries/battery-meter.ini`, enabled by default; binding it to the watts revealer visibility keeps it hidden across sensor updates and restores the latest reading when re-enabled. `install-battery-eta.sh` applies the third patch; no system GSettings schemas are changed.
+
+Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harness for whole-display hover, leave and unmap transitions; battery switch binding, immediate hide/show, hidden state across fresh readings, saved-off reload in a second process. Both installers ran on the desktop; power restart passed the repair script's survival check. Final network build/reinstall and panel survival verified. Live hover and switch by eye remain for the owner. Changes committed/pushed on the dedicated network-panel-compact branch because the shared checkout branch has divergent remote history; unrelated working files are preserved.
+
+## Ethernet panel icon: recognizable socket — 2026-10-18
+
+Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
+
+Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
 ## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
 
 The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
@@ -6313,6 +6456,29 @@ Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; h
 suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
 `~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.
 
+## Boot menu cleanup and upstream parity check — 2026-10-19 (Claude Code)
+
+**Boot menu (owner-approved).** Running kernel `7.1.12-elementary-aurora20-enh1` was booted from the manual
+*diagnostic* entry (`initcall_debug`, `ignore_loglevel`, `log_buf_len=8M`, `plymouth.enable=0`); the default was `.20`.
+`/boot/grub/custom.cfg` is now two entries: `elementary-aurora20` (STABLE, default, `vmlinuz-aurora-sep-20261017.20`, notch=1)
+and `elementary-aurora20-enh1` (DEV, `vmlinuz-aurora20-enh1`, clean cmdline; one-shot via `grub-reboot` still works). Stock Arch
+`7.1.13-3-2-ARCH` recovery stays in `grub.cfg`. Removed: nosep, hdmiaudio, full-height, diagnostic entries, the diagnostic initrd,
+9 old `custom.cfg.*`, `grubenv.pre-e4-*`. Backups: `~/boot-backups-20261019/` (local, not in Git). `grub-script-check` passes;
+no reboot was done after the change, so the new menu is unbooted. `/boot` 215 MiB free. Not touched: grubenv, m1n1, modules.
+Note: this boot logged "FAT-fs nvme0n1p4: Volume was not properly unmounted" and a replaced journal (previous shutdown was unclean); consider `fsck.vfat` on `/boot` from a safe state.
+
+**Upstream parity (read-only, 2026-10-19 ~09:30Z).** Aurora `integration/aurora` is ahead of `.20` by #147 (M4 wait state) and #149
+(macaudio selects MAX98357A); no release after `aurora-2026.10.17.20`. Neither looks J314S-relevant; not in `.20-enh1`. Draft/open PR #139
+(Asahi 7.2.10 + aurora + aurora-wip, now "ready for review", qualified on J700/J316s/J413, not J314S) remains the WIP track; stay build-only.
+PR #122 (HDMI-hold follow-ups) is **T6030 (M3 Pro)**, not the J314S/T6000, so it is NOT a dock fix for us; deprioritised. New upstream
+open PRs of note: #146/#148/#151/#152 are M3/G17 work, not J314S. Dock was unplugged this boot (all DRM external connectors disconnected,
+bolt dock `disconnected`), so no dock retrain log could be examined; re-check with the dock attached. Next: attach dock and capture
+DCP/dptx log over 10 min on enh1; test SEP probe on enh1; compare #139 `100-sep`/`200-dcp` topics against `.20-enh1` for J314S gaps.
+
+## 2026-10-19 — Battery menu redesign (not yet installed)
+New `mseries/patches/panel-power-battery-menu.patch`, wired into `install-battery-eta.sh`; details in `mseries/BATTERY-ETA.md`. Builds clean; visual check and live install pending. Next: run the installer, restart the panel, owner reviews the look.
+Installed live 2026-10-19 with `bash mseries/install-battery-eta.sh`; Wingpanel restarted and stayed running. Owner visual review of the new battery menu still pending.
+Follow-up 2026-10-19: rendered the menu headlessly (Xvfb, elementary theme) and fixed wrapped toggle labels, an empty "Display" heading, and the raised power-mode buttons; reinstalled. The harness lacks the panel's power-mode icons, so those were not seen rendered.
 ## 2026-10-19: elementary OS ARM64 install test in Machine Lab's VM
 
 Booted the CI ISO `elementaryos-9.0-daily-arm64.20261013230825.iso` (SHA-256 verified) in QEMU/KVM, headless, and drove the

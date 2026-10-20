@@ -206,6 +206,14 @@ second-account authorization still requires owner browser approval. Account acti
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
 
+## Panel sizing
+
+The Wingpanel bar text is styled in `install_style` in `codexbar-wingpanel/Indicator.vala`
+(`.mseries-codexbar-bar` rules): main label 7.5pt, `.seg-reset` and `.seg-secondary` 6.5pt.
+The dropdown is deliberately compact: 300px requested width and 300px maximum page height, 8pt base text,
+8.5pt provider titles, 7pt captions, reduced card/button padding and 6px section spacing. To resize again,
+edit `Indicator.vala` and run `bash mseries/deploy-codexbar.sh`.
+
 ### Switch lifecycle
 
 ChatGPT's panel Switch uses `codexbar-accounts.py switch <exact-id> --desktop`: confirms before editing,

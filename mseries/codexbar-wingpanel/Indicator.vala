@@ -85,12 +85,12 @@ namespace MSeries {
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
                 margin_top = 8,
-                margin_bottom = 6,
-                margin_start = 8,
-                margin_end = 8,
-                width_request = 340
+                margin_bottom = 5,
+                margin_start = 6,
+                margin_end = 6,
+                width_request = 300
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
@@ -117,9 +117,9 @@ namespace MSeries {
             refresh_button.clicked.connect (() => refresh_usage (true));
 
             // Three pages keep every section above the fold; Quota is the default.
-            quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
-            sessions_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
-            spend_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            sessions_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            spend_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             pages = new Gtk.Stack () {
                 hhomogeneous = true,
                 vhomogeneous = false,
@@ -139,7 +139,7 @@ namespace MSeries {
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
                 min_content_height = 150,
-                max_content_height = 340
+                max_content_height = 300
             };
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
@@ -218,12 +218,12 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-codexbar { font-size: 9pt; } " +
-                ".mseries-codexbar .caption { font-size: 8pt; } " +
-                ".mseries-codexbar .provider-title { font-weight: 700; font-size: 9.5pt; } " +
+                ".mseries-codexbar { font-size: 8pt; } " +
+                ".mseries-codexbar .caption { font-size: 7pt; } " +
+                ".mseries-codexbar .provider-title { font-weight: 700; font-size: 8.5pt; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
                 ".mseries-codexbar .numeric { font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar .card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .card { padding: 5px 8px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
@@ -241,10 +241,10 @@ namespace MSeries {
                 ".mseries-codexbar .dot-bad { color: @error_color; } " +
                 ".mseries-codexbar .dot-off { opacity: 0.45; } " +
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
-                ".mseries-codexbar button { padding: 3px 6px; } " +
+                ".mseries-codexbar button { padding: 2px 5px; } " +
                 ".mseries-codexbar .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-codexbar .mseries-bar { margin-top: 2px; } " +
-                ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
+                ".mseries-codexbar .mseries-dock button { padding: 5px 9px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar .account-line { min-height: 0; } " +
                 ".mseries-codexbar .account-name { font-size: 8pt; } " +
@@ -255,10 +255,10 @@ namespace MSeries {
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
-                ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-codexbar-bar .seg-reset { font-size: 7pt; opacity: 0.7; } " +
-                ".mseries-codexbar-bar .seg-secondary { font-size: 6.75pt; } " +
+                ".mseries-codexbar-bar label { font-size: 7.5pt; font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 6.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 6.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
@@ -954,6 +954,25 @@ namespace MSeries {
                 return;
             }
             tell ("Switched ChatGPT account", message);
+        }
+
+        /* A small native confirm dialog; used for the ChatGPT restart offer after a Codex switch. */
+        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "Cancel", save_label };
+            dialog.cancel_button = 0;
+            dialog.default_button = 1;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1) {
+                        on_save ();
+                    }
+                } catch (Error e) {
+                    // dismissed
+                }
+            });
         }
 
         private AccountDialog? codex_login_dialog = null;
