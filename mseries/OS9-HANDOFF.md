@@ -7718,3 +7718,10 @@ unchanged (953205), so the running panel still has the previous build mapped and
 the packaged one (with the TimeFormat fix and accessible arrow names) loads at
 the next login. Rollback: `sudo dpkg -r mseries-wingpanel-datetime` (postrm
 removes the diversion and puts the stock plugin back).
+
+## Machine Lab 0.6.0 to 0.8.0 (2026-10-19)
+- 0.6.0 Incus panel, 0.7.0 disk snapshots (Settings tab, qemu-img), 0.8.0 ready-made images (import qcow2/raw/vmdk/vdi, xz/zst/gz, UTM zip; save disk as compressed qcow2; backing-file refusal, format allow-list, free-space check). All merged to `dev` (PRs 287, 294, 296) with CI green; installed from a current `dev` checkout.
+- Verified: unit tests against real qemu-img/xz; Incus, snapshot take and list, and the new-machine image card in headless Broadway. Not verified: the image file-chooser flow end to end, importing the real 3.9 GB Omarchy UTM zip, booting an imported image, Incus VM Display tab.
+- Removed the unmeasured "10 to 50 times slower" x86 claim (my timing run hung; no ARM64 vs x86 numbers yet).
+- Gotcha: `mseries/install-machine-lab.sh` builds from the checkout it runs in; run it from a current `dev` checkout.
+- Next: import the Omarchy UTM zip into a throwaway machine and boot it; host-to-guest clipboard (#263); file copy (#264).
