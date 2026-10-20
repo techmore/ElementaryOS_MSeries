@@ -35,6 +35,7 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/sbin" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-resume-fix" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
+    ! -path "$BUILDROOT/usr/sbin/mseries-wifi-doctor" \
     ! -path "$BUILDROOT/usr/libexec" \
     ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
     ! -path "$BUILDROOT/usr/lib" \
