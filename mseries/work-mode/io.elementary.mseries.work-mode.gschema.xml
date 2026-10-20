@@ -42,9 +42,9 @@
       <description>HTTPS endpoint that returns the caller's public IP address as plain text. Contacted only while the work-network rule is on.</description>
     </key>
     <key name="work-wallpaper" type="s">
-      <default>'/usr/share/backgrounds/mseries/work-mode-blue-flow.png'</default>
+      <default>'/usr/share/backgrounds/mseries/work-mode-azure-bloom.png'</default>
       <summary>Work wallpaper image</summary>
-      <description>Image file used while Windows Work Mode is active. Starts with the supplied Blue Flow wallpaper.</description>
+      <description>Image file used while Windows Work Mode is active. Starts with the supplied Azure Bloom wallpaper.</description>
     </key>
   </schema>
 </schemalist>

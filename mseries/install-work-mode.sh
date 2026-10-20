@@ -18,7 +18,7 @@ if [[ ${1:-} == --uninstall ]]; then
   systemctl --user stop mseries-work-mode-dock.service 2>/dev/null || true
   rm -f "$bin" "$launch_dock" "$unit_dir/mseries-work-mode.service" "$unit_dir/mseries-work-mode.timer" "$unit_dir/mseries-work-mode-dock.service"
   background_dir="$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries"
-  sudo rm -f "$plug" "$schema_dir/$schema" "$background_dir/work-mode-blue-flow.png" "$background_dir/work-mode-blue-ribbons.png" "$background_dir/work-mode-violet-arc.png" "$background_dir/work-mode-forest-flow.png"
+  sudo rm -f "$plug" "$schema_dir/$schema" "$background_dir/work-mode-azure-bloom.png" "$background_dir/work-mode-blue-flow.png" "$background_dir/work-mode-blue-ribbons.png" "$background_dir/work-mode-violet-arc.png" "$background_dir/work-mode-forest-flow.png"
   sudo rmdir "$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries" 2>/dev/null || true
   sudo glib-compile-schemas "$schema_dir"
   systemctl --user daemon-reload

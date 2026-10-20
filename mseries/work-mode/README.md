@@ -2,7 +2,7 @@
 
 Windows Work Mode is an elementary OS System Settings panel for a Windows-inspired
 work setup. Open **System Settings → Personal → Windows Work Mode** to turn it on,
-choose one of four supplied wallpapers or another image, enable a weekday schedule
+choose one of five supplied wallpapers or another image, enable a weekday schedule
 with local start and end times, or limit it to work networks identified by public IP. While active, it also shows the existing elementary
 bottom dock with a 40-pixel icon size and no auto-hide. Your pinned apps and native
 running-window behavior stay in the dock. This is a launcher dock preview, not a
@@ -10,8 +10,10 @@ complete Windows taskbar: it does not add Start, search, system tray or widgets.
 The usual wallpaper and dock preferences are snapshotted and restored when Windows
 Work Mode turns off or the work window ends.
 
-The included choices are Blue Flow, Blue Ribbons, Violet Arc, and Forest Flow.
-The three newer choices are original artwork generated for this project; none of
+The included choices are Azure Bloom (the default), Blue Flow, Blue Ribbons, Violet Arc,
+and Forest Flow. Azure Bloom is rendered from `work-mode-azure-bloom.svg` in this
+directory (`rsvg-convert -w 3840 -h 2160`), original CC0 artwork for this project. The
+other newer choices are original artwork generated for this project; none of
 the bundled files are copied from Windows Spotlight or Microsoft themes. A custom
 image can be selected through the file chooser.
 

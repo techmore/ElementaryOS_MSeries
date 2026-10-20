@@ -228,13 +228,24 @@ def systemctl(*args):
     ).returncode
 
 
+# The patched dock reads its schema from a private directory (see install-dock-drawers.sh).
+PRIVATE_DOCK_SCHEMAS = Path.home() / ".local/lib/mseries/dock/share/glib-2.0/schemas"
+DOCK_KEYS = ("icon-size", "autohide-mode", "taskbar-mode")
+
+
 def dock_settings():
     # Gio.Settings.new aborts the process for a missing schema, so look it up first.
-    source = Gio.SettingsSchemaSource.get_default()
-    if source is None or source.lookup(DOCK_SCHEMA, True) is None:
+    default = Gio.SettingsSchemaSource.get_default()
+    source = default
+    if (PRIVATE_DOCK_SCHEMAS / "gschemas.compiled").is_file():
+        try:
+            source = Gio.SettingsSchemaSource.new_from_directory(str(PRIVATE_DOCK_SCHEMAS), default, False)
+        except GLib.Error:
+            source = default
+    schema = source.lookup(DOCK_SCHEMA, True) if source is not None else None
+    if schema is None:
         return None, None
-    settings = Gio.Settings.new(DOCK_SCHEMA)
-    return settings, settings.props.settings_schema
+    return Gio.Settings.new_full(schema, None, None), schema
 
 
 def dock_running():
@@ -261,7 +272,7 @@ def activate_dock(state):
             "original": {},
             "started_by_work_mode": False,
         }
-        for key in ("icon-size", "autohide-mode"):
+        for key in DOCK_KEYS:
             if schema.has_key(key):
                 dock["original"][key] = settings.get_value(key).print_(True)
         if not dock_running() and systemctl("start", DOCK_UNIT) == 0:
@@ -270,10 +281,14 @@ def activate_dock(state):
     elif dock.get("started_by_work_mode") and systemctl("is-active", "--quiet", DOCK_UNIT) != 0:
         systemctl("start", DOCK_UNIT)
 
+    taskbar = schema.has_key("taskbar-mode")
     if schema.has_key("icon-size"):
-        settings.set_int("icon-size", 40)
+        # A full-width taskbar is about 48 px tall; the floating dock keeps larger icons.
+        settings.set_int("icon-size", 32 if taskbar else 40)
     if schema.has_key("autohide-mode"):
         settings.set_string("autohide-mode", "never")
+    if taskbar:
+        settings.set_boolean("taskbar-mode", True)
 
 
 def restore_dock(state):
@@ -282,9 +297,13 @@ def restore_dock(state):
         return
     settings, schema = dock_settings()
     if settings is not None:
-        for key, value in dock.get("original", {}).items():
+        original = dock.get("original", {})
+        for key, value in original.items():
             if schema.has_key(key):
                 settings.set_value(key, GLib.Variant.parse(None, value, None, None))
+        # Snapshots taken before the taskbar existed must still leave the floating dock.
+        if schema.has_key("taskbar-mode") and "taskbar-mode" not in original:
+            settings.set_boolean("taskbar-mode", False)
     if dock.get("started_by_work_mode"):
         systemctl("stop", DOCK_UNIT)
     state["dock"] = {"available": dock.get("available", False), "applied": False}

@@ -45,6 +45,7 @@ namespace MSeriesWorkMode {
                     subtitle = wallpaper_name ()
                 };
                 var wallpaper_options = new Gtk.StringList (null);
+                wallpaper_options.append ("Azure Bloom");
                 wallpaper_options.append ("Blue Flow");
                 wallpaper_options.append ("Blue Ribbons");
                 wallpaper_options.append ("Violet Arc");
@@ -54,19 +55,12 @@ namespace MSeriesWorkMode {
                 };
                 wallpaper_dropdown.selected = wallpaper_option_index ();
                 wallpaper_dropdown.notify["selected"].connect (() => {
-                    switch (wallpaper_dropdown.selected) {
-                    case 0:
-                        set_bundled_wallpaper ("work-mode-blue-flow.png", wallpaper);
-                        break;
-                    case 1:
-                        set_bundled_wallpaper ("work-mode-blue-ribbons.png", wallpaper);
-                        break;
-                    case 2:
-                        set_bundled_wallpaper ("work-mode-violet-arc.png", wallpaper);
-                        break;
-                    case 3:
-                        set_bundled_wallpaper ("work-mode-forest-flow.png", wallpaper);
-                        break;
+                    string[] files = {
+                        "work-mode-azure-bloom.png", "work-mode-blue-flow.png", "work-mode-blue-ribbons.png",
+                        "work-mode-violet-arc.png", "work-mode-forest-flow.png"
+                    };
+                    if (wallpaper_dropdown.selected < files.length) {
+                        set_bundled_wallpaper (files[wallpaper_dropdown.selected], wallpaper);
                     }
                 });
                 wallpaper.add_suffix (wallpaper_dropdown);
@@ -312,6 +306,7 @@ namespace MSeriesWorkMode {
                 return "No image selected";
             }
             switch (GLib.Path.get_basename (path)) {
+            case "work-mode-azure-bloom.png": return "Azure Bloom";
             case "work-mode-blue-flow.png": return "Blue Flow";
             case "work-mode-blue-ribbons.png": return "Blue Ribbons";
             case "work-mode-violet-arc.png": return "Violet Arc";
@@ -323,10 +318,11 @@ namespace MSeriesWorkMode {
         private uint wallpaper_option_index () {
             var basename = GLib.Path.get_basename (settings.get_string ("work-wallpaper"));
             switch (basename) {
-            case "work-mode-blue-flow.png": return 0;
-            case "work-mode-blue-ribbons.png": return 1;
-            case "work-mode-violet-arc.png": return 2;
-            case "work-mode-forest-flow.png": return 3;
+            case "work-mode-azure-bloom.png": return 0;
+            case "work-mode-blue-flow.png": return 1;
+            case "work-mode-blue-ribbons.png": return 2;
+            case "work-mode-violet-arc.png": return 3;
+            case "work-mode-forest-flow.png": return 4;
             default: return Gtk.INVALID_LIST_POSITION;
             }
         }
