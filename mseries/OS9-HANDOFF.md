@@ -7892,3 +7892,12 @@ phone; iOS version is not requested on the opening page. Guided window remains
 offscreen while the established BlueFerry session is used. The cleared-target
 polling regression has a test; existing approved bond was restored without
 re-pairing. No successful message delivery yet.
+
+Mac visit follow-up: public, credential-free helpers and a complete checklist now
+live under `mseries/phone-setup/macos-visit`. The downloader fetches the official
+Mac Hardware Info archive, verifies the retained SHA-256 and pins our helper
+fetches to an explicit Git commit. The checklist covers full OABS export,
+cross-OS transfer (USB or password-encrypted private-cloud archive), optional
+Ventura guest provisioning and the before-reboot gate. No private export, Apple
+binary or VM identity is committed. bash syntax and shellcheck pass; native Mac
+execution and Apple activation remain unverified.

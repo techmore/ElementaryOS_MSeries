@@ -2341,3 +2341,13 @@ has read-only VMApple readiness checks and current pinned Linux/KVM research;
 M1 Pro boot, iMessage activation and dock-triggered full state save/restore are
 not qualified. See `phone-setup/README.md` and
 `machine-lab/experiments/vmapple/README.md`.
+
+## One-visit Mac activation kit — 2026-10-20
+
+Experimental messaging branch now includes a public downloadable Mac checklist
+and pinned helper downloader at `phone-setup/macos-visit/`. Messaging requires
+the genuine native hardware export and private transfer back to Linux. Optional
+Machine Lab guest collection is documented for the same visit, with storage and
+compatibility limits explicit. Shell checks pass; macOS execution and Bubbles
+activation still require the owner. No claim that future VM work will never need
+another macOS visit.
