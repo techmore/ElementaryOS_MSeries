@@ -2363,3 +2363,9 @@ No-external-drive path: collector accepts an existing internal exFAT shared
 partition. Creating one remains a separate capacity/backup/resize decision on
 macOS; the collector performs no partition operations. Merely leaving the bundle
 in macOS Downloads is not accessible from this Linux installation.
+
+Native messaging redo: prior failed audio workaround rolled back; installed
+Connect iPhone gains bounded Retry Connection without unpairing and stable
+blocked/service/disconnected states. MAP transport and CONNECT probes all still
+receive iPhone Forbidden. Text delivery remains the blocker, not solved by UI
+checks or contact sync. No further VM/partition work is part of this retry.

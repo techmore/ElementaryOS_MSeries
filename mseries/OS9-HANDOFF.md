@@ -7922,3 +7922,18 @@ apfs-fuse). Live Linux free space is now about 11 GiB. A proposed 120 GiB shared
 exFAT partition would require a separately approved and capacity-checked macOS
 APFS shrink; no partition mutation was attempted. A folder or APFS volume in the
 existing encrypted container does not solve cross-OS access.
+
+Messaging-only follow-up: owner requested undo/redo and continued native build.
+Restored only KEEP_PHONE_AUDIO_ON_PHONE from the private pre-HFP backup; existing
+phone target/bond and contact data retained. Added native Retry Connection with
+bond preflight, bounded backend restart/status wait and cancellation; Refresh
+Status stays read-only. Consolidated blocked/inactive/unavailable/disconnected
+presentation in setup_core so historical denials do not repeat toggle questions
+or claim the phone is currently connected. Installed updated files.
+
+Deep probes confirm remote SDP MAP 1.4, RFCOMM 2 and L2CAP 4107; OBEX CONNECT
+receives 0xc3 Forbidden over both transports. A fresh obexd/quiet interval,
+CONNECT variants and hands-free connection all failed. Raw capture files stay
+mode-0600 outside Git. Native retry live result remains access-denied with the
+bond retained; 18 scoped checks pass. No successful message session or delivery.
+No re-pair, reboot, kernel, partition or Wingpanel change was made.
