@@ -101,11 +101,14 @@ if [ "\$1" = install ] || [ "\$1" = upgrade ]; then
     --divert "$soname.mseries-orig" "$soname" >/dev/null
 fi
 EOF
+  # No panel restart here: AGENTS.md keeps the owner's menu bar stable, and an
+  # apt upgrade must not reload Wingpanel uninvited. dpkg replaces the plugin by
+  # rename, so the running panel keeps the old copy until the next login.
   cat > "$pkg/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
 if [ "$1" = configure ]; then
-  pkill -x io.elementary.w 2>/dev/null || true
+  echo "M-series panel plugin updated; it loads at the next login." >&2
 fi
 EOF
   cat > "$pkg/DEBIAN/postrm" <<EOF
