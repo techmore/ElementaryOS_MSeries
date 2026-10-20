@@ -26,6 +26,18 @@ void capture (Gtk.Widget button, string name) {
     }
 }
 
+void capture_bell (Gtk.Button button) {
+    var directory = Environment.get_variable ("MSERIES_NOTIFICATION_PROBE_EXPORT");
+    if (directory == null) return;
+    var paintable = new Gtk.WidgetPaintable (button.child);
+    var snapshot = new Gtk.Snapshot ();
+    paintable.snapshot (snapshot, button.child.get_width (), button.child.get_height ());
+    var node = snapshot.to_node ();
+    assert (node != null);
+    var texture = button.get_native ().get_renderer ().render_texture (node, null);
+    assert (texture.save_to_png (Path.build_filename (directory, "bell.png")));
+}
+
 int main () {
     Gtk.init ();
     Gtk.Settings.get_default ().gtk_application_prefer_dark_theme =
@@ -52,6 +64,7 @@ int main () {
             button.clicked ();
             break;
         case 1:
+            capture_bell (button);
             capture (button, "history");
             var reply = find_label (button, "Reply");
             assert (reply != null);

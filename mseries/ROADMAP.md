@@ -13,9 +13,9 @@ dock=72 logical pixels, with declared fallback insets. A live popup measured
 360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
 from the right. No compositor or Wingpanel restart was required.
 
-The native taskbar bell is beside the clock. The bell now uses a 34-pixel
-icon and 2-pixel theme-derived border. The unread badge uses a soft neutral tint
-and subtle outline instead of a bright accent. History uses native typography, app/time
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+with a soft native background and no bright accent. History uses native typography, app/time
 metadata, bounded previews and compact Open/Reply actions; context controls use
 flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
 secondary click offers Mark all as read and Do Not Disturb. The service retains

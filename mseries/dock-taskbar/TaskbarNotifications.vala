@@ -28,12 +28,14 @@ public class Dock.TaskbarNotifications : Gtk.Box {
     construct {
         orientation = Gtk.Orientation.VERTICAL;
         valign = Gtk.Align.CENTER;
-        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 34 };
-        count = new Gtk.Label ("") { visible = false };
+        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 30 };
+        count = new Gtk.Label ("") {
+            visible = false, halign = Gtk.Align.CENTER, valign = Gtk.Align.CENTER,
+            margin_top = 2, can_target = false
+        };
         count.add_css_class ("badge");
-        var face = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
-        face.append (icon);
-        face.append (count);
+        var face = new Gtk.Overlay () { child = icon };
+        face.add_overlay (count);
         button = new Gtk.Button () { child = face, valign = Gtk.Align.CENTER };
         button.add_css_class ("mseries-notification-bell");
         install_style ();
@@ -119,20 +121,24 @@ public class Dock.TaskbarNotifications : Gtk.Box {
         var provider = new Gtk.CssProvider ();
         provider.load_from_string ("""
             button.mseries-notification-bell {
-                border: 2px solid alpha(currentColor, 0.35);
+                border: none;
+                box-shadow: none;
                 border-radius: 8px;
                 padding: 4px 8px;
             }
             button.mseries-notification-bell label.badge {
-                background-color: alpha(currentColor, 0.10);
+                background-color: @theme_bg_color;
                 background-image: none;
                 color: inherit;
-                border: 1px solid alpha(currentColor, 0.14);
+                border: none;
                 border-radius: 999px;
                 box-shadow: none;
                 text-shadow: none;
-                padding: 2px 6px;
-                font-weight: 500;
+                padding: 0 1px;
+                min-width: 0;
+                min-height: 0;
+                font-size: 9px;
+                font-weight: 600;
             }
             popover.mseries-notification-popup > contents { padding: 4px; }
             .mseries-notification-popup button.flat {
