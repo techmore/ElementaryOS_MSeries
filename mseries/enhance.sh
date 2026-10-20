@@ -9,7 +9,8 @@
 # Modules (all on by default; each is idempotent and independent):
 #   tuning    zram swap (zstd, half of RAM), zswap off, ModemManager off, AppCenter
 #             background daemon not autostarted for new users, faster apt defaults
-#             (no Translation downloads, no pdiffs, retries, lock wait)
+#             (no Translation downloads, no pdiffs, retries, lock wait,
+#             no per-install man-db index rebuild)
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
 #   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
@@ -112,6 +113,12 @@ Acquire::Retries "3";
 // Wait for a concurrent apt/PackageKit run instead of aborting.
 DPkg::Lock::Timeout "120";
 EOF2
+  # man-db's trigger rebuilds the man index on nearly every apt run (55 times in one
+  # session's log); the daily man-db.timer still keeps the index current.
+  rm -f "$R/var/lib/man-db/auto-update"
+  if [[ $R == "" ]] && command -v debconf-set-selections >/dev/null; then
+    echo 'man-db man-db/auto-update boolean false' | debconf-set-selections || true
+  fi
   # This Mac has no modem.
   systemctl --root="${ROOT}" disable ModemManager.service >/dev/null 2>&1 || true
   # AppCenter's background daemon (~680 MB resident) is not started for new
