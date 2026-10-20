@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
-    backend::renderer::element::memory::MemoryRenderBuffer,
     desktop::{PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
@@ -40,7 +39,6 @@ use smithay::{
     },
 };
 
-use crate::cursor::default_cursor_buffer;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -151,7 +149,7 @@ pub struct PantheonCompositor {
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
     pub cursor_status: CursorImageStatus,
-    pub default_cursor: MemoryRenderBuffer,
+    pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
     pub(crate) wallpaper_selection: Option<crate::wallpaper::WallpaperSelection>,
 
@@ -277,6 +275,14 @@ impl PantheonCompositor {
             },
         )?;
         event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(&["org.gnome.desktop.interface"]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_cursor_theme();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
             crate::wakeups::watch_settings(&["org.gnome.desktop.background"]),
             |event, _, state| {
                 if matches!(event, channel::Event::Msg(())) {
@@ -396,7 +402,9 @@ impl PantheonCompositor {
             initially_positioned: HashSet::new(),
             popups,
             cursor_status: CursorImageStatus::default_named(),
-            default_cursor: default_cursor_buffer(),
+            cursor_theme: crate::cursor_theme::CursorTheme::load(
+                crate::cursor_theme::configured_selection(),
+            ),
             wallpaper,
             wallpaper_selection,
             seat,
@@ -442,6 +450,15 @@ impl PantheonCompositor {
             }
         }
         self.keyboard_config = config;
+    }
+
+    /// Reload the compositor cursor when the interface cursor theme or size changed.
+    fn refresh_cursor_theme(&mut self) {
+        let selection = crate::cursor_theme::configured_selection();
+        if &selection != self.cursor_theme.selection() {
+            self.cursor_theme = crate::cursor_theme::CursorTheme::load(selection);
+            self.request_native_redraw();
+        }
     }
 
     /// Reload the wallpaper when the configured URI or crop mode changed.
