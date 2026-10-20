@@ -38,6 +38,10 @@ Orchard's app and dropdown before additional management features.
   private Xvfb, D-Bus and temporary HOME/config/cache/data; no hardware or accounts
   are operated. Both themes pass. Quick Settings previews show the shared controls,
   not a claim that every service-backed section was exercised.
+- The shared-control preview initializes GTK only; it does not need Granite
+  desktop-settings initialization or AccountsService on a headless runner. Native
+  Orchard fixture windows use the same approach, verified against a private bus
+  with no AccountsService; the production app keeps its desktop integration.
 - CI now runs these shared-control/summary probes in both themes and builds/tests
   the native Orchard module (the earlier Orchard job only covered its Python port).
 - Light/dark screenshots of the changed widgets, Orchard's dashboard and indicator
@@ -48,8 +52,9 @@ Orchard's app and dropdown before additional management features.
 ## Runtime and limits
 
 No live panel reload is part of this work. CodexBar's required deployment stages
-its module for next login while preserving Wingpanel and the daemon; record the
-actual deploy result in the handoff. Quick Settings, Power and Orchard changes
+its module for next login while preserving Wingpanel and the daemon. This deploy
+passed all 17 tests and retained both PID lists; see
+`receipts/panel-ui-codexbar-stage-2026-10-20.json`. Quick Settings, Power and Orchard changes
 remain built artifacts on this branch until installed. The owner's existing
 Battery and Orchard apps remain available throughout the review.
 

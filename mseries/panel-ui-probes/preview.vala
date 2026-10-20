@@ -19,7 +19,7 @@ void save_preview (Gtk.Widget widget, Gtk.Window window, string path) {
     assert (window.get_renderer ().render_texture (node, null).save_to_png (path));
 }
 int main (string[] args) {
-    Gtk.init (); Granite.init ();
+    Gtk.init (); // These primitive fixture widgets do not need Granite desktop settings.
     var outer = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { margin_top = 12, margin_bottom = 12, margin_start = 12, margin_end = 12 };
     outer.add_css_class ("background");
     var window = new Gtk.Window () { child = outer, decorated = false };

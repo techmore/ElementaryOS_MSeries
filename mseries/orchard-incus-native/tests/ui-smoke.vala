@@ -13,7 +13,7 @@ Gtk.Button? find_button (Gtk.Widget root, string label) {
     return null;
 }
 int main () {
-    Gtk.init (); Granite.init ();
+    Gtk.init (); // Fixture windows do not initialize the desktop AccountsService integration.
     var app = new Gtk.Application ("com.github.techmore.orchardincus.Test.T" + Uuid.string_random ().replace ("-", ""), ApplicationFlags.DEFAULT_FLAGS);
     try { app.register (null); } catch (Error e) { return 1; }
     var main_window = new MainWindow (app);

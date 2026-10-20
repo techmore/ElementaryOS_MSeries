@@ -16,8 +16,9 @@ and Power modules compile; private BlueZ checks and shared slider/Battery summar
 probes pass. Light/dark private renders were inspected. CI coverage now includes
 the shared widget probes and native Orchard build/tests. See `PANEL-UI-REVIEW.md`
 for details and limitations. No panel reload; Quick Settings/Power/Orchard are
-built but not installed. CodexBar staging is pending the required post-push deploy without restart;
-the actual result will be recorded after verification.
+built but not installed. CodexBar post-push staging passed all 17 tests, and the panel/daemon PID lists
+were unchanged. Its module loads at next login; native Settings takes effect
+on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
 
 ## Native UI consistency review — 2026-10-20
 
