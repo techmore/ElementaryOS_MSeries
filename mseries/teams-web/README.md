@@ -63,7 +63,7 @@ python3 mseries/install-outlook-web.py
 `--pin` adds Teams to the existing elementary dock launcher list once. The Outlook
 installer replaces only the pinned `io.elementary.mail.desktop` entry with
 **Outlook (Web)**, opening `https://outlook.office.com/mail/` in the selected Brave
-profile. It keeps the existing elementary Mail icon and does not change the
+profile. It fetches the official transparent Outlook SVG and does not change the
 system `mailto:` handler. The original ordered launcher list is retained in
 `$XDG_CONFIG_HOME/mseries/outlook-web/dock-before.json`. Reinstalling preserves
 that first backup and does not duplicate pins. No dock or panel restart is used.
@@ -90,6 +90,19 @@ Microsoft provides the web application and its updates; the browser provides its
 normal password manager, notification and media permission controls. Offline use
 and parity with every Windows/macOS Teams feature are not promised. Closing the
 window follows the browser's lifecycle; this is not a separate background daemon.
+
+Outlook's official transparent SVG comes from
+[Microsoft's Office CDN](https://res-1.cdn.office.net/files/fabric/assets/brand-icons/product/svg/outlook_48x1.svg).
+Its checksum is pinned in `install-outlook-web.py`. Offline reinstalls preserve
+an installed SVG; a fresh offline installation falls back to elementary Mail's
+icon. The old white-backed PNG is removed after a successful SVG download.
+No Microsoft asset is redistributed in Git.
+
+The launchers advertise the observed Brave window classes for dock matching.
+A native running-marker experiment was rolled back because its build omitted
+an existing Windows taskbar customization. The original taskbar executable and
+schema are preserved. Native matching/marker work is separate from these safe
+icon and launcher updates and is not installed or wired into the installer.
 
 ## Diagnostics and removal
 

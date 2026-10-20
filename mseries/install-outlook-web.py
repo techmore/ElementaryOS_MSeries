@@ -9,9 +9,24 @@ import shutil
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'teams-web'))
 from teams import BRAVE_BROWSERS, brave_profile, roots
+import official_icon
 from setup import atomic_write, desktop_quote, refresh_desktop
 
 APP_ID = 'org.techmore.mseries.OutlookWeb'
+ICON_URL = 'https://res-1.cdn.office.net/files/fabric/assets/brand-icons/product/svg/outlook_48x1.svg'
+ICON_SHA256 = '0884e0478f7e073163febe67eaff20be97ae38373b0866c9668f81c2f6bd26c2'
+
+
+def install_icon(data):
+    path = data / 'icons/hicolor/scalable/apps' / (APP_ID + '.svg')
+    try:
+        atomic_write(path, official_icon.download_asset(ICON_URL, ICON_SHA256))
+        for size in ('180x180', '256x256'):
+            (data / 'icons/hicolor' / size / 'apps' / (APP_ID + '.png')).unlink(missing_ok=True)
+    except (OSError, ValueError):
+        pass  # Preserve an installed official icon during offline upgrades.
+    return APP_ID if path.exists() else 'io.elementary.mail'
+
 
 
 def replace_mail(launchers):
@@ -34,6 +49,7 @@ def install(settings=None):
     profile = brave_profile()
     _, data = roots()
     desktop = data / 'applications' / (APP_ID + '.desktop')
+    icon_name = install_icon(data)
     entry = f'''[Desktop Entry]
 Version=1.0
 Type=Application
@@ -41,11 +57,12 @@ Name=Outlook (Web)
 GenericName=Mail
 Comment=Outlook Web using your existing Brave sign-in
 Exec={desktop_quote(browser)} {desktop_quote('--profile-directory=' + profile)} --app=https://outlook.office.com/mail/
-Icon=io.elementary.mail
+Icon={icon_name}
 Terminal=false
 Categories=Network;Email;
 Keywords=Mail;Email;Microsoft;Outlook;
 StartupNotify=true
+StartupWMClass=brave-outlook.office.com__mail_-{profile}
 '''
     atomic_write(desktop, entry)
     refresh_desktop(data)
