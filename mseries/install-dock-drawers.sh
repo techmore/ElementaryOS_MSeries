@@ -87,6 +87,10 @@ cat > "$wrapper" <<LAUNCHER
 #!/bin/sh
 # ElementaryOS_MSeries: run the patched dock (drawer slots) with a stock fallback.
 # Delete this file (or run install-dock-drawers.sh --revert) and log out/in to revert.
+# Preserve the owner's opt-out across installs and all fallback paths.
+if [ -e "\${XDG_CONFIG_HOME:-\$HOME/.config}/mseries/dock/user-disabled" ]; then
+  exec /usr/bin/sleep infinity
+fi
 flag="\$HOME/.cache/mseries-dock-failed"
 patched="$patched"
 stock="$stock"

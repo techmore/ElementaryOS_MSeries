@@ -213,6 +213,9 @@ impl XwmHandler for PantheonCompositor {
     }
 
     fn destroyed_window(&mut self, _xwm: XwmId, surface: X11Surface) {
+        if let Some(wl_surface) = surface.wl_surface() {
+            self.clear_tiling_for_surface(&wl_surface);
+        }
         self.x11_managed_windows.remove(&surface.window_id());
         self.x11_minimized_windows.remove(&surface.window_id());
         let id = self
@@ -431,6 +434,9 @@ impl PantheonCompositor {
         let Some(window) = self.find_x11_window(surface) else {
             return;
         };
+        if let Some(wl_surface) = surface.wl_surface() {
+            self.clear_tiling_for_surface(&wl_surface);
+        }
         let id = surface.window_id();
         let restore = *self
             .x11_managed_windows

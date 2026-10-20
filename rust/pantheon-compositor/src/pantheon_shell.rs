@@ -135,9 +135,14 @@ impl
                 state.update_panel(surface, |panel| panel.anchor = Some(anchor.into()));
             }
             protocol::io_elementary_pantheon_panel_v1::Request::Focus => {
-                if state.find_window_for_surface(surface).is_some()
+                // The bottom dock has no keyboard UI. Its requests must not
+                // interrupt typing; top-panel menus retain their focus path.
+                if !state.session_locked
+                    && state.panels.get(&surface.id()).is_some_and(|panel| panel.anchor == Some(0))
+                    && state.find_window_for_surface(surface).is_some()
                     && let Some(keyboard) = state.seat.get_keyboard()
                 {
+                    state.set_x11_keyboard_focus(None, SERIAL_COUNTER.next_serial());
                     keyboard.set_focus(
                         state,
                         Some(surface.clone()),
