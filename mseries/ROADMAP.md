@@ -2267,3 +2267,5 @@ obsolete stacked base to main and retained the merged Calendar/Homeboard changes
 No radio activation, panel reload or reboot was
 performed during this cleanup review. The diagnostic boot selection is untouched.
 
+
+- Audit (2026-10-19): AUDIT-DEEPER Aurora unified 7.2.10 (DCP/CIO/PMP vs carried patches) and elementary kmscon default (#917) at the next elementary sync. See mseries/upstream-audits/daily/2026-10-19.md.
