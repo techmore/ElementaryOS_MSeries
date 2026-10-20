@@ -194,6 +194,10 @@ impl SwipeGestureState {
         })
     }
 
+    pub(crate) fn preview(&self) -> (Point<f64, Logical>, FingerBindings, bool) {
+        (self.delta, self.bindings, self.overview_open)
+    }
+
     pub(crate) fn update(&mut self, delta: Point<f64, Logical>) {
         self.delta += delta;
     }

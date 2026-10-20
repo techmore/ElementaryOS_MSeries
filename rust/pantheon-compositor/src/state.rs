@@ -97,7 +97,7 @@ pub struct PantheonCompositor {
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
     pub xdg_activation_state: XdgActivationState,
-    loop_handle: LoopHandle<'static, PantheonCompositor>,
+    pub(crate) loop_handle: LoopHandle<'static, PantheonCompositor>,
     activation_sweep_armed: bool,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
@@ -138,6 +138,7 @@ pub struct PantheonCompositor {
     pub corner_snap_cancelled: bool,
     pub move_grab_active: bool,
     /// In-flight touchpad gesture and whether the compositor or a client owns it.
+    pub(crate) gesture_animation: Option<crate::gesture_animation::GestureAnimation>,
     pub(crate) active_gesture: Option<crate::gestures::ActiveGesture>,
     /// Gesture bindings from elementary's and the M-series gesture settings.
     pub(crate) gesture_bindings: crate::gestures::GestureBindings,
@@ -413,6 +414,7 @@ impl PantheonCompositor {
             corner_snap_preview: None,
             corner_snap_cancelled: false,
             move_grab_active: false,
+            gesture_animation: None,
             active_gesture: None,
             gesture_bindings: crate::gestures::GestureBindings::load(),
             peripheral_settings: crate::touchpad::PeripheralSettings::load(),
@@ -877,7 +879,7 @@ impl PantheonCompositor {
         self.activate_workspace(target)
     }
 
-    fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
+    pub(crate) fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot switch workspaces while the session is locked".into());
         }
@@ -893,6 +895,7 @@ impl PantheonCompositor {
     }
 
     fn switch_workspace(&mut self, workspace: usize) -> Result<(), String> {
+        self.discard_gesture_animation();
         let current = self.workspace_manager.active();
         if workspace >= self.workspace_manager.workspace_count() {
             return Err("workspace index is outside the current workspace list".into());
@@ -984,7 +987,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
+    pub(crate) fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot move windows while the session is locked".into());
         }

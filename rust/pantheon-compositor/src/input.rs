@@ -123,6 +123,14 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.gesture_animation.is_some()
+                        {
+                            state.cancel_active_gesture(time);
+                            if keysym.modified_sym() == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into() {
+                                return FilterResult::Intercept(());
+                            }
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && keysym.modified_sym()
                                 == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
                             && state.handle_overview_key()
@@ -246,6 +254,9 @@ impl PantheonCompositor {
                 let button = event.button_code();
 
                 let button_state = event.state();
+                if button_state == ButtonState::Pressed {
+                    self.cancel_active_gesture(event.time());
+                }
 
                 if !self.session_locked
                     && ButtonState::Pressed == button_state
@@ -405,7 +416,8 @@ impl PantheonCompositor {
                 .is_some_and(|pointer| pointer.is_grabbed())
     }
 
-    fn gesture_swipe_begin(&mut self, fingers: u32, time: InputTime) {
+    pub(crate) fn gesture_swipe_begin(&mut self, fingers: u32, time: InputTime) {
+        self.discard_gesture_animation();
         let owned = self
             .gestures_available()
             .then(|| {
@@ -432,11 +444,12 @@ impl PantheonCompositor {
         );
     }
 
-    fn gesture_swipe_update(&mut self, delta: Point<f64, Logical>, time: InputTime) {
+    pub(crate) fn gesture_swipe_update(&mut self, delta: Point<f64, Logical>, time: InputTime) {
         if !self.gestures_available()
             && matches!(self.active_gesture, Some(ActiveGesture::Swipe(_)))
         {
             self.active_gesture = None;
+            self.discard_gesture_animation();
         }
         match self.active_gesture.as_mut() {
             Some(ActiveGesture::Swipe(gesture)) => gesture.update(delta),
@@ -446,12 +459,18 @@ impl PantheonCompositor {
             }
             _ => {}
         }
+        if let Some(ActiveGesture::Swipe(gesture)) = self.active_gesture {
+            self.update_gesture_animation(gesture);
+        }
     }
 
-    fn gesture_swipe_end(&mut self, cancelled: bool, time: InputTime) {
+    pub(crate) fn gesture_swipe_end(&mut self, cancelled: bool, time: InputTime) {
         match self.active_gesture.take() {
             Some(ActiveGesture::Swipe(gesture)) => {
-                self.apply_gesture_outcome(gesture.finish(cancelled || !self.gestures_available()));
+                let cancelled = cancelled || !self.gestures_available();
+                if !self.release_gesture_animation(cancelled) {
+                    self.apply_gesture_outcome(gesture.finish(cancelled));
+                }
             }
             Some(ActiveGesture::ForwardedSwipe) => {
                 let pointer = self.seat.get_pointer().unwrap();
@@ -469,6 +488,7 @@ impl PantheonCompositor {
     }
 
     fn gesture_pinch_begin(&mut self, fingers: u32, time: InputTime) {
+        self.discard_gesture_animation();
         let owned = self
             .gestures_available()
             .then(|| crate::gestures::PinchGestureState::begin(&self.gesture_bindings, fingers))
@@ -500,6 +520,7 @@ impl PantheonCompositor {
             && matches!(self.active_gesture, Some(ActiveGesture::Pinch(_)))
         {
             self.active_gesture = None;
+            self.discard_gesture_animation();
         }
         match self.active_gesture.as_mut() {
             Some(ActiveGesture::Pinch(gesture)) => gesture.update(scale),
@@ -542,6 +563,7 @@ impl PantheonCompositor {
     /// End client sequences before focus moves to the lock surface, and discard
     /// compositor sequences so unlocking cannot complete an old gesture.
     pub(crate) fn cancel_active_gesture(&mut self, time: InputTime) {
+        self.discard_gesture_animation();
         match self.active_gesture {
             Some(ActiveGesture::Swipe(_) | ActiveGesture::ForwardedSwipe) => {
                 self.gesture_swipe_end(true, time);

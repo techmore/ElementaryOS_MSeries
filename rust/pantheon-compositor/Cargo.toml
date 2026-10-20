@@ -8,6 +8,8 @@ description = "Mutter-minimal Rust Wayland compositor for elementary OS"
 
 [features]
 default = []
+# Private nested input socket for deterministic headless animation qualification.
+gesture-probe = []
 # Dependencies for the explicit opt-in native M-series DRM/session backend.
 native-drm = [
     "smithay/backend_drm",

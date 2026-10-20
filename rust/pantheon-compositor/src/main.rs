@@ -3,6 +3,9 @@
 mod cursor;
 mod display_config;
 mod gala_compat;
+mod gesture_animation;
+#[cfg(feature = "gesture-probe")]
+mod gesture_probe;
 mod gestures;
 mod grabs;
 mod handlers;
@@ -70,6 +73,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     };
+
+    #[cfg(feature = "gesture-probe")]
+    if matches!(backend, BackendChoice::Nested) {
+        crate::gesture_probe::install(&mut event_loop)?;
+    }
 
     crate::xwayland::start(
         &mut event_loop,
