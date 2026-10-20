@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..9e4eb60 100644
+index d97686d..cc2cd11 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,242 @@ backgrounditem .close-button {
+@@ -203,3 +203,246 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -244,6 +244,10 @@ index d97686d..9e4eb60 100644
 +dock-window.taskbar.dark popover.start-menu .start-footer {
 +    background: rgba(0, 0, 0, 0.2);
 +    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
++}
++
++dock-window.taskbar .taskbar-weather image.weather-sun {
++    color: #f9a825;
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
@@ -1056,10 +1060,10 @@ index 0000000..aee416b
 +}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..07a2042
+index 0000000..709156e
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,470 @@
+@@ -0,0 +1,476 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1394,6 +1398,12 @@ index 0000000..07a2042
 +            weather_temp.label = temp;
 +            weather_desc.label = condition;
 +            weather_image.icon_name = weather_icon (condition.down ());
++            // Sunny conditions get a Windows-style yellow-orange sun.
++            if (weather_image.icon_name == "weather-clear-symbolic" || weather_image.icon_name == "weather-few-clouds-symbolic") {
++                weather_image.add_css_class ("weather-sun");
++            } else {
++                weather_image.remove_css_class ("weather-sun");
++            }
 +            weather_button.tooltip_text = "%s, %s".printf (temp, condition);
 +            weather_button.update_property (Gtk.AccessibleProperty.LABEL, "%s, %s".printf (temp, condition), -1);
 +        } catch (Error e) {
