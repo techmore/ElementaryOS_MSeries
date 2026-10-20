@@ -7763,6 +7763,12 @@ removes the diversion and puts the stock plugin back).
 - Gotcha: `mseries/install-machine-lab.sh` builds from the checkout it runs in; run it from a current `dev` checkout.
 - Next: import the Omarchy UTM zip into a throwaway machine and boot it; host-to-guest clipboard (#263); file copy (#264).
 
+### CodexBar QuickSwitch width fix — 2026-10-20
+
+- Reduced the Wingpanel popover minimum width to 240 px, capped dynamic plan/email/quota labels, and moved status text above the action dock so those horizontal widths no longer add together.
+- Added a compact-width render assertion to the headless probe. All 11 light-theme indicator fixtures passed at a 280 px target; captured content canvas was 268 px wide. Long account labels ellipsize and the bottom actions remain visible.
+- `bash mseries/deploy-codexbar.sh --restart`: all 17 Meson test groups passed and installed the module. The script's default restart did not select Wayland in this session; relaunched Wingpanel with `GDK_BACKEND=wayland`. Live verification: Wingpanel PID 146186 maps `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`; CodexBar background daemon PID 2088 is running.
+- Source is on `fix/codexbar-quickswitch-width`, based on `dev`; PR #315 opened against dev; merge awaits CI.
 ### Calendar panel / Bible tab: production ready — 2026-10-20 (PR #299 -> dev d4bc8f9)
 
 Live: the owner's Wingpanel (started 2026-10-19 21:46, after the package
