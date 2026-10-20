@@ -7816,3 +7816,27 @@ Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passw
 Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
 
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
+
+
+## Calendar GitHub outcome tracker — 2026-10-20
+
+Added a native GitHub tab alongside Events/Tasks/Bible in the existing pinned
+datetime patch. The default persistent outcomes are techmore/rupert#207 and
+techmore/tm-daedalus#17, each with a deployment milestone and native sub-issue
+gates created after a source/CI audit. No merchant actions or live scans were
+performed. Main-branch checks, exact-head linked PR checks and gate completion
+remain separate from release/recovery/acceptance evidence.
+
+The resource-bundled Python helper uses the current user's gh login, read-only
+GraphQL, bounded requests, private atomic cache, stable configured ordering and
+dated offline evidence. It refreshes only on opening/manual request and every
+five minutes while the tab is visible; there is no notification daemon. See
+mseries/calendar/README.md for configuration. Package revision 0mseries3 adds
+python3/gh recommendations. Existing calendar behavior is preserved.
+
+Verification: native Meson/Ninja build; five focused Python behavior tests;
+full private EDS/GTK/Xvfb suite (28 groups including GitHub offline/retry);
+bundled Python/Vala/data identity; clean patch application matching the full
+tested source tree; shell syntax and git diff whitespace checks. GTK preview
+visually inspected. Packaging/install and final activation are recorded below
+when completed. Wingpanel must not be restarted for this routine update.

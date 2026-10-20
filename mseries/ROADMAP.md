@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## GitHub deployment outcomes in Calendar — 2026-10-20
+
+A GitHub tab tracks Rupert deployment ready (#207 in techmore/rupert) and
+Daedalus deployment ready (#17 in techmore/tm-daedalus), with stable priority,
+native sub-issue gate progress, next actions, exact-commit CI and blueprint/
+milestone/PR links. Refresh is read-only on opening, manually and every five
+minutes while visible; offline evidence retains its date. Unknown/skipped/
+cancelled checks do not count as passing. Release/recovery and operator
+acceptance stay explicit GitHub gates. The feature uses the existing gh login.
+Local native compilation and offline GTK/EDS integration are validated; live
+menu activation waits for the next login. See mseries/calendar/README.md.
+
 ## Work Mode wallpaper — 2026-10-20
 
 Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
