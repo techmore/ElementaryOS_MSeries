@@ -13,6 +13,17 @@ SPEC.loader.exec_module(INVENTORY)
 
 
 class InventoryRoles(unittest.TestCase):
+    def test_elementary_seed_compiler_is_a_separate_unverified_project(self):
+        document = json.loads(INVENTORY.render())
+        project = next(
+            item for item in document["projects"]
+            if item["id"] == "elementary/package-generator"
+        )
+        self.assertIn("mseries/rust/seed-compiler/src/lib.rs", project["items"])
+        self.assertIn("mseries/rust/seed-compiler/src/main.rs", project["items"])
+        self.assertEqual("candidate-implemented-unverified", project["migration_status"])
+        self.assertEqual("implementation-present-unverified", project["parity_contract_status"])
+
     def test_atomic_app_reference_and_rust_cli_share_one_project_record(self):
         document = json.loads(INVENTORY.render())
         project = next(item for item in document["projects"] if item["id"] == "mseries/atomic-app")

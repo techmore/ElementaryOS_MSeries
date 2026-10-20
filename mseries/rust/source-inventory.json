@@ -14,9 +14,9 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 789,
-  "component_count": 237,
-  "project_count": 204,
+  "item_count": 795,
+  "component_count": 238,
+  "project_count": 205,
   "components": [
     {
       "id": "apt-repository/common-files",
@@ -2686,6 +2686,23 @@
       ]
     },
     {
+      "id": "mseries/rust/seed-compiler",
+      "ownership": "mseries-maintained",
+      "item_count": 6,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 2,
+        "recorded-non-code-input": 4
+      },
+      "items": [
+        "mseries/rust/seed-compiler/Cargo.lock",
+        "mseries/rust/seed-compiler/Cargo.toml",
+        "mseries/rust/seed-compiler/LICENSE",
+        "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/src/lib.rs",
+        "mseries/rust/seed-compiler/src/main.rs"
+      ]
+    },
+    {
       "id": "mseries/rust/wifi-resume",
       "ownership": "mseries-maintained",
       "item_count": 6,
@@ -3288,6 +3305,29 @@
       "parity_contract_status": "not-applicable",
       "parity_contract": "not-applicable",
       "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
+    },
+    {
+      "id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "item_count": 6,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 2,
+        "recorded-non-code-input": 4
+      },
+      "items": [
+        "mseries/rust/seed-compiler/Cargo.lock",
+        "mseries/rust/seed-compiler/Cargo.toml",
+        "mseries/rust/seed-compiler/LICENSE",
+        "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/src/lib.rs",
+        "mseries/rust/seed-compiler/src/main.rs"
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-implemented-unverified",
+      "parity_contract_status": "implementation-present-unverified",
+      "parity_contract": "Implementation exists, but feature-level parity has not been verified.",
+      "enhancement_review_status": "not-reviewed",
       "intentional_enhancements": []
     },
     {
@@ -14592,6 +14632,66 @@
       "language": "python",
       "role": "verification",
       "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/Cargo.lock",
+      "path": "mseries/rust/seed-compiler/Cargo.lock",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/Cargo.toml",
+      "path": "mseries/rust/seed-compiler/Cargo.toml",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/LICENSE",
+      "path": "mseries/rust/seed-compiler/LICENSE",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/README.md",
+      "path": "mseries/rust/seed-compiler/README.md",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/src/lib.rs",
+      "path": "mseries/rust/seed-compiler/src/lib.rs",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/src/main.rs",
+      "path": "mseries/rust/seed-compiler/src/main.rs",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
     },
     {
       "id": "mseries/rust/test_elementary_projects.py",

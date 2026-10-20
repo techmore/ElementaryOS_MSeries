@@ -32,12 +32,14 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/desktop-settings/",
     "mseries/rust/launcher-keys/",
     "mseries/rust/homeboard-launcher/",
+    "mseries/rust/seed-compiler/",
 )
 RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = (
     "mseries/rust/iso-assembly/",
     "mseries/rust/desktop-settings/",
     "mseries/rust/launcher-keys/",
     "mseries/rust/homeboard-launcher/",
+    "mseries/rust/seed-compiler/",
 )
 RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
@@ -57,6 +59,7 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/desktop-settings/": "mseries/apply-desktop-settings",
     "mseries/rust/launcher-keys/": "mseries/mseries-launcher-keys",
     "mseries/rust/homeboard-launcher/": "mseries/install-homeboard-launcher",
+    "mseries/rust/seed-compiler/": "elementary/package-generator",
 }
 PROJECT_PATH_OVERRIDES = {
     "mseries/atomic-app.py": "mseries/atomic-app",

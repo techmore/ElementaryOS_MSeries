@@ -1,0 +1,10 @@
+[package]
+name = "elementary-seed-compiler"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Independently authored Rust seed parser for the Elementary package selection migration"
+
+[[bin]]
+name = "elementary-seed-compiler"
+path = "src/main.rs"

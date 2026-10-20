@@ -98,6 +98,13 @@ class ElementaryProjectRegister(unittest.TestCase):
             aliases.get(project["id"].split("/", 1)[1], project["id"].split("/", 1)[1])
             for project in REGISTER["projects"]
         }
+        inputs_path = Path(__file__).with_name("elementary-build-inputs.json")
+        build_inputs = json.loads(inputs_path.read_text())
+        separate_seed_inputs = {
+            item["id"].split("/", 1)[1] for item in build_inputs["inputs"]
+        }
+        self.assertEqual(separate_seed_inputs, {"seeds", "platform"})
+        detailed_names -= separate_seed_inputs
         self.assertTrue(detailed_names.issubset({project["repository"] for project in projects}))
         self.assertTrue({project["repository"] for project in projects}.issubset(census_names))
         self.assertTrue(all(project["image_presence_status"] for project in projects))

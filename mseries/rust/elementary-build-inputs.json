@@ -4,8 +4,8 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate (Ubuntu package; source revision not yet pinned)",
-    "behavior_status": "Rust seed parsing, dependency closure, and Debian output parity have not started.",
-    "license_gate": "Do not copy or port source from a repository with unverified licensing; retain links and hashes as provenance only."
+    "behavior_status": "An independently authored Rust parser composes explicitly supplied seed collections and resolves seed inheritance, architecture filters, and blacklists; archive dependency closure and Debian output parity have not started.",
+    "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
     {
@@ -100,6 +100,47 @@
         "Germinate feature inheritance",
         "same resolved package sets for the selected Ubuntu release and architectures"
       ]
+    }
+  ],
+  "local_projects": [
+    {
+      "id": "elementary/package-generator",
+      "path": "mseries/rust/seed-compiler/",
+      "license": "MIT",
+      "status": "candidate-implemented-unverified",
+      "implemented": [
+        "STRUCTURE declarations and included collection merge",
+        "seed inheritance graph",
+        "seed headers and documented entry forms",
+        "architecture include/exclude qualifiers",
+        "seed-level package and source blacklist filtering"
+      ],
+      "not_implemented": [
+        "feature-aware package dependency semantics",
+        "archive Packages parsing and dependency closure",
+        "source-package binary expansion",
+        "metapackage-map and Debian control generation"
+      ],
+      "parity_status": "Unit fixtures pass; no differential comparison against Germinate yet.",
+      "intentional_enhancements": [],
+      "enhancement_review_status": "No generator enhancements selected before package parity is established."
+    }
+  ],
+  "reference_projects": [
+    {
+      "id": "ubuntu/germinate",
+      "source_url": "https://git.launchpad.net/germinate",
+      "suite": "resolute",
+      "version": "2.49",
+      "source_archive": "https://archive.ubuntu.com/ubuntu/pool/main/g/germinate/germinate_2.49.tar.xz",
+      "source_archive_md5": "2979c65ed6220759c8730d882124126b",
+      "license": {
+        "spdx": "GPL-2.0-or-later",
+        "evidence": "Ubuntu Germinate manpages state GPL version 2 or later."
+      },
+      "role": "Behavior reference for seed expansion and metapackage generation; the Rust package-generator crate is intended to replace this build behavior.",
+      "pin_status": "Ubuntu Resolute source version and archive MD5 recorded; Git revision and SHA-256 verification remain open.",
+      "watch_status": "Not covered by the Elementary GitHub branch watcher; recheck Ubuntu Resolute source-package updates during the weekly dependency review."
     }
   ]
 }

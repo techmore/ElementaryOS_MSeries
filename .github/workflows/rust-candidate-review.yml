@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge iso-label atomic-app iso-assembly desktop-settings launcher-keys homeboard-launcher; do
+          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge iso-label atomic-app iso-assembly desktop-settings launcher-keys homeboard-launcher seed-compiler; do
             manifest="mseries/rust/$crate/Cargo.toml"
             cargo fmt --check --manifest-path "$manifest"
             cargo test --manifest-path "$manifest" --locked

@@ -2669,9 +2669,14 @@ which the pinned `elementary/metapackages` project consumes through Germinate.
 Their source commits and selected seed-file blob hashes are in
 `mseries/rust/elementary-build-inputs.json`; neither repository declares a
 license at the audited revision, so no seed content was copied into the Rust
-lane. The Rust parser, profile resolver, package closure, and Debian output
-parity are not started. The source register and branch/PR watchers now include
-both repositories. The generated file inventory has 789 paths (707 local, 82
-Elementary-owned upstream), 237 path groups, and 204 path-derived projects.
-This expands input tracking only; it is not a package-generator conversion or
-image parity claim. Changes remain local on `rust`.
+lane. That register separately pins Ubuntu Resolute Germinate 2.49 as the
+behavior reference, with source SHA-256 verification still open. An
+independently authored parser candidate now handles seed structure,
+included collections, inheritance, headers, documented entry types, seed-level
+blacklists, and architecture qualifiers. Its six Rust unit tests pass. Archive
+package closure and Debian output parity are not implemented or compared with
+Germinate. The source register and branch/PR watchers now include both
+repositories. The generated file inventory has 795 paths (713 local, 82
+Elementary-owned upstream), 238 path groups, and 205 path-derived projects.
+The crate is an unqualified Rust candidate, not a package-generator or image
+parity claim. Changes remain local on `rust`.
