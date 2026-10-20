@@ -178,6 +178,11 @@ jobs:
           bash -n transform/elementary-grow.sh
           bash -n bin/elementary-mac-setup
           for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
+          for f in mseries/share-cost/*.sh; do bash -n "$f"; done
+          python3 -m py_compile mseries/share-cost/summarize-share-cost.py
+          python3 mseries/share-cost/test-summarize-share-cost.py
+          python3 -m py_compile mseries/share-cost/compare-share-cost.py
+          python3 mseries/share-cost/test-compare-share-cost.py
           for f in mseries/pantheon-rust-compositor/*.sh; do bash -n "$f"; done
           python3 -m py_compile mseries/pantheon-rust-compositor/summarize-metrics.py
           python3 mseries/pantheon-rust-compositor/test-summarize-metrics.py
