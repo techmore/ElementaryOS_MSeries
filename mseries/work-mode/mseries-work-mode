@@ -188,10 +188,13 @@ def tick():
             if background_schema.has_key("picture-options"):
                 background.set_string("picture-options", "zoom")
             activate_dock(state)
+            # Idempotent; repeated each tick so a restarted compositor hides the bar again.
+            set_top_panel_mode(1)
             state["applied"] = True
         elif state.get("applied"):
             restore_background(background, state)
             restore_dock(state)
+            set_top_panel_mode(0)
             state.update({"original": None, "applied": False})
         Gio.Settings.sync()
         save_state(state)
@@ -211,6 +214,7 @@ def restore():
         state = load_state()
         restore_background(background, state)
         restore_dock(state)
+        set_top_panel_mode(0)
         state.update({"original": None, "applied": False})
         Gio.Settings.sync()
         save_state(state)
@@ -246,6 +250,23 @@ def dock_settings():
     if schema is None:
         return None, None
     return Gio.Settings.new_full(schema, None, None), schema
+
+
+PANELS = ("org.pantheon.gala", "/org/techmore/mseries/Panels", "org.techmore.mseries.Panels")
+
+
+def set_top_panel_mode(mode):
+    """Hide (1) or restore (0) the top bar via the M-Series compositor; runtime-only, so a crash or
+    new login always brings the bar back. Older compositors lack the interface: leave the bar alone."""
+    if NO_SERVICES:
+        return False
+    try:
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        bus.call_sync(*PANELS, "SetTopPanelMode", GLib.Variant("(u)", (mode,)),
+                      None, Gio.DBusCallFlags.NO_AUTO_START, 2000, None)
+        return True
+    except GLib.Error:
+        return False
 
 
 def dock_running():

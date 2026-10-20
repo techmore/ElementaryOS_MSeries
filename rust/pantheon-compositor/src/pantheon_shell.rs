@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use smithay::{
-    desktop::Window,
+    desktop::{PopupManager, Window},
     reexports::wayland_server::{
         Client, DataInit, Dispatch, DisplayHandle, GlobalDispatch, New, Resource,
         backend::GlobalId, protocol::wl_surface::WlSurface,
@@ -58,6 +58,64 @@ pub struct PanelState {
     pub visible_in_multitasking_view: bool,
     /// Whether this panel has committed its first non-null buffer this session.
     pub first_buffer_committed: bool,
+}
+
+/// Runtime override for top-anchored panels (Wingpanel), set over D-Bus by
+/// Windows Work Mode so the bottom dock acts as the only taskbar.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TopPanelMode {
+    /// The panel's own hide mode applies and it reserves its exclusive zone.
+    #[default]
+    Normal,
+    /// Moved out of view with no exclusive zone; shown only while one of its
+    /// menus is open (for example the Super-key applications menu).
+    Hidden,
+    /// Like `Hidden`, but pointer contact with the top edge also reveals it.
+    Autohide,
+}
+
+impl TopPanelMode {
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Normal),
+            1 => Some(Self::Hidden),
+            2 => Some(Self::Autohide),
+            _ => None,
+        }
+    }
+}
+
+const ANCHOR_TOP: u32 = 0;
+
+/// The hidden state forced by `mode`, or `None` when the panel's own hide
+/// mode applies.
+pub(crate) fn top_panel_override(
+    mode: TopPanelMode,
+    anchor: Option<u32>,
+    has_open_menu: bool,
+    pointer_reveals: bool,
+) -> Option<bool> {
+    if anchor != Some(ANCHOR_TOP) {
+        return None;
+    }
+    match mode {
+        TopPanelMode::Normal => None,
+        TopPanelMode::Hidden => Some(!has_open_menu),
+        TopPanelMode::Autohide => Some(!has_open_menu && !pointer_reveals),
+    }
+}
+
+/// Whether a panel shrinks the work area. A suppressed top panel never does,
+/// even while briefly revealed for a menu, so windows are not resized.
+pub(crate) fn panel_reserves_work_area(
+    mode: TopPanelMode,
+    anchor: Option<u32>,
+    hidden: bool,
+) -> bool {
+    if anchor.is_none() || hidden {
+        return false;
+    }
+    !(anchor == Some(ANCHOR_TOP) && mode != TopPanelMode::Normal)
 }
 
 #[derive(Clone)]
@@ -296,7 +354,7 @@ impl PantheonCompositor {
     ) -> Rectangle<i32, Logical> {
         let (mut top, mut bottom, mut left, mut right) = (0, 0, 0, 0);
         for (surface_id, panel) in &self.panels {
-            if panel.anchor.is_none() || panel.hidden {
+            if !panel_reserves_work_area(self.top_panel_mode, panel.anchor, panel.hidden) {
                 continue;
             }
             let Some(window) = self.space.elements().find(|window| {
@@ -573,7 +631,16 @@ impl PantheonCompositor {
                 4 => true,
                 _ => false,
             };
-            let hidden = should_hide && !pointer_reveals_panel;
+            let has_open_menu = window
+                .toplevel()
+                .is_some_and(|top| PopupManager::popups_for_surface(top.wl_surface()).next().is_some());
+            let hidden = top_panel_override(
+                self.top_panel_mode,
+                panel.anchor,
+                has_open_menu,
+                pointer_at_edge || pointer_over_panel,
+            )
+            .unwrap_or(should_hide && !pointer_reveals_panel);
             if panel.hidden != hidden {
                 panel.hidden = hidden;
                 self.panels.insert(surface_id.clone(), panel);
@@ -601,6 +668,23 @@ impl PantheonCompositor {
             }
             self.request_native_redraw();
         }
+    }
+
+    /// Apply a Windows Work Mode top-panel override. Idempotent; the state is
+    /// not persisted, so a new session always starts in `Normal`.
+    pub fn set_top_panel_mode(&mut self, mode: TopPanelMode) {
+        if self.top_panel_mode == mode {
+            return;
+        }
+        tracing::info!(?mode, "top panel mode changed");
+        self.top_panel_mode = mode;
+        self.refresh_panel_visibility();
+        // The exclusive zone can change without a hidden-state change (for
+        // example while a menu keeps the panel revealed).
+        if self.refresh_work_areas() {
+            self.reconfigure_managed_windows();
+        }
+        self.request_native_redraw();
     }
 
     fn window_overlaps_panel(
@@ -745,5 +829,59 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
     } else {
         state.update_tiling_after_commit(surface);
         state.refresh_panel_visibility();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mode_values_round_trip() {
+        assert_eq!(TopPanelMode::from_u32(0), Some(TopPanelMode::Normal));
+        assert_eq!(TopPanelMode::from_u32(1), Some(TopPanelMode::Hidden));
+        assert_eq!(TopPanelMode::from_u32(2), Some(TopPanelMode::Autohide));
+        assert_eq!(TopPanelMode::from_u32(3), None);
+        assert_eq!(TopPanelMode::default(), TopPanelMode::Normal);
+    }
+
+    #[test]
+    fn normal_mode_and_other_anchors_keep_their_own_hide_mode() {
+        for anchor in [None, Some(0), Some(1), Some(2), Some(3)] {
+            assert_eq!(top_panel_override(TopPanelMode::Normal, anchor, false, false), None);
+        }
+        for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
+            // The bottom dock is never affected.
+            assert_eq!(top_panel_override(mode, Some(1), false, true), None);
+            assert_eq!(top_panel_override(mode, None, false, false), None);
+        }
+    }
+
+    #[test]
+    fn hidden_mode_reveals_only_for_open_menus() {
+        let mode = TopPanelMode::Hidden;
+        assert_eq!(top_panel_override(mode, Some(0), false, false), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), false, true), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), true, false), Some(false));
+    }
+
+    #[test]
+    fn autohide_mode_also_reveals_at_the_edge() {
+        let mode = TopPanelMode::Autohide;
+        assert_eq!(top_panel_override(mode, Some(0), false, false), Some(true));
+        assert_eq!(top_panel_override(mode, Some(0), false, true), Some(false));
+        assert_eq!(top_panel_override(mode, Some(0), true, false), Some(false));
+    }
+
+    #[test]
+    fn suppressed_top_panel_never_reserves_work_area() {
+        assert!(panel_reserves_work_area(TopPanelMode::Normal, Some(0), false));
+        assert!(!panel_reserves_work_area(TopPanelMode::Normal, Some(0), true));
+        assert!(!panel_reserves_work_area(TopPanelMode::Normal, None, false));
+        for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
+            assert!(!panel_reserves_work_area(mode, Some(0), false));
+            assert!(panel_reserves_work_area(mode, Some(1), false));
+            assert!(!panel_reserves_work_area(mode, Some(1), true));
+        }
     }
 }
