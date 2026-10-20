@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..654cb55 100644
+index d97686d..52cceb4 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,241 @@ backgrounditem .close-button {
+@@ -203,3 +203,242 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -10,7 +10,7 @@ index d97686d..654cb55 100644
 +/* M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
 + * bar flush to the bottom edge. Everything below is scoped to .taskbar. */
 +dock-window.taskbar dock {
-+    background: rgba(236, 238, 241, 0.92);
++    background: rgba(238, 240, 243, 0.96);
 +    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.08);
 +    border-radius: 0;
 +    opacity: 1;
@@ -18,8 +18,9 @@ index d97686d..654cb55 100644
 +}
 +
 +dock-window.taskbar.dark dock {
-+    background: rgba(40, 42, 46, 0.92);
-+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
++    /* Windows 11 silver in both styles. */
++    background: rgba(238, 240, 243, 0.96);
++    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.08);
 +}
 +
 +dock-window.taskbar.reduce-transparency dock {
@@ -27,7 +28,7 @@ index d97686d..654cb55 100644
 +}
 +
 +dock-window.taskbar.dark.reduce-transparency dock {
-+    background: rgb(40, 42, 46);
++    background: rgb(238, 240, 243);
 +}
 +
 +dock-window.taskbar launcher,
@@ -45,7 +46,7 @@ index d97686d..654cb55 100644
 +}
 +
 +dock-window.taskbar.dark .taskbar-row {
-+    color: rgba(255, 255, 255, 0.92);
++    color: rgba(0, 0, 0, 0.87);
 +}
 +
 +dock-window.taskbar .taskbar-row button {
@@ -379,7 +380,7 @@ index 0377885..40f991f 100644
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 652c549..e77549e 100644
+index 652c549..0520f77 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -441,7 +442,7 @@ index 652c549..e77549e 100644
          var transparency_schema = SettingsSchemaSource.get_default ().lookup ("io.elementary.desktop.wingpanel", true);
          if (transparency_schema != null && transparency_schema.has_key ("use-transparency")) {
              transparency_settings = new Settings ("io.elementary.desktop.wingpanel");
-@@ -102,6 +116,128 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -102,6 +116,136 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          });
          init_panel_move ();
          init_drawers_panel_gesture ();
@@ -485,6 +486,12 @@ index 652c549..e77549e 100644
 +
 +            dock_bottom_margin.visible = false;
 +            dock_box.height_request = TaskbarRow.HEIGHT;
++            // Keep the bar, its background and the row in the bottom HEIGHT px, which is
++            // what the window geometry frames, so the bar sits flush on the screen edge.
++            dock_box.valign = END;
++            overlay.valign = END;
++            taskbar_row.valign = END;
++            taskbar_row.height_request = TaskbarRow.HEIGHT;
 +            add_css_class ("taskbar");
 +            update_taskbar_width ();
 +        } else {
@@ -497,6 +504,8 @@ index 652c549..e77549e 100644
 +            dock_bottom_margin.visible = true;
 +            dock_box.width_request = -1;
 +            dock_box.height_request = -1;
++            dock_box.valign = FILL;
++            overlay.valign = FILL;
 +            taskbar_width = 0;
 +            remove_css_class ("taskbar");
 +        }
@@ -570,7 +579,7 @@ index 652c549..e77549e 100644
      }
  
      // Hold Command (Control) + Option and click the dock to show or hide the drawer
-@@ -138,7 +274,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -138,7 +282,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              button = Gdk.BUTTON_PRIMARY
          };
          drag.drag_begin.connect ((start_x, start_y) => {
@@ -579,7 +588,7 @@ index 652c549..e77549e 100644
                      (drag.get_current_event_state () & Gdk.ModifierType.CONTROL_MASK) == 0) {
                  drag.set_state (Gtk.EventSequenceState.DENIED);
                  return;
-@@ -168,10 +304,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -168,10 +312,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private void apply_panel_offset () {
          if (panel != null && panel.get_version () >= 2) {
@@ -593,7 +602,7 @@ index 652c549..e77549e 100644
                  var monitor_width = monitor.geometry.width;
                  if (!Services.DisplayConfig.is_logical_layout ()) {
                      monitor_width /= get_scale_factor ();
-@@ -204,7 +341,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -204,7 +349,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
                  panel = desktop_shell.get_panel (wl_surface);
                  panel.set_anchor (BOTTOM);
                  apply_panel_offset ();
@@ -602,7 +611,7 @@ index 652c549..e77549e 100644
  #if WORKSPACE_SWITCHER
                  panel.request_visible_in_multitasking_view ();
  #endif
-@@ -214,12 +351,32 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -214,12 +359,32 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private static Wl.RegistryListener registry_listener;
      private void init_panel () {
@@ -636,7 +645,7 @@ index 652c549..e77549e 100644
              var shadow_size = (surface.width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size - 1;
              size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
-@@ -229,8 +386,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -229,8 +394,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              apply_panel_offset ();
              // manually set input region since container's shadow are is the content of the window
              // and it still gets window events
@@ -649,7 +658,7 @@ index 652c549..e77549e 100644
              var top_margin = TOP_MARGIN + shadow_size;
  
              if (drawers_panel != null && drawers_panel.get_visible ()) {
-@@ -261,11 +421,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -261,11 +429,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              if (widget_border_radius != null) {
                  border_radius = widget_border_radius;
              }
@@ -666,7 +675,7 @@ index 652c549..e77549e 100644
              } else {
                  update_panel_x11 ();
              }
-@@ -298,10 +462,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -298,10 +470,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
              var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
  
