@@ -1,5 +1,215 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
+
+The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
+candidate was packaged locally and checked in private Xvfb: Winit and XWayland
+started, and Zenity appeared in the compositor's live Gala-compatible window
+snapshot with focus and the expected two-workspace count. On 2026-10-19 the
+opt-in LightDM session also completed its first native M1 Pro login and scanout:
+kernel DRM state showed the compositor's AR30 framebuffer active at 3024x1964,
+and the owner confirmed the desktop was usable. Startup felt slow; Wingpanel,
+the bottom dock and a colored wallpaper/background were absent in the Rust
+session. A five-minute rollback returned LightDM to Gala, where the owner
+reported the background had returned. The native display path and automatic
+rollback are proven, but full Pantheon readiness and daily-use stability are
+not. Installed Wingpanel also
+connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
+and received a valid nested `GetCurrentState` response. It is not evidence for
+physical keyboard input or full shell integration. A private GTK/Wayland
+Zenity field now also receives nested key events and commits Japanese text
+through IBus/Mozc `mozc-jp` with a private Hiragana-on profile. F5 app behavior,
+host source switching, native input and full experimental Pantheon shell
+integration remain unqualified.
+
+Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
+clarified that the goal is to identify and implement the compositor features
+needed by the M-series/Pantheon experience, not port Mutter or reproduce all
+its features. The scoped requirements and upstream feature radar are in
+[`pantheon-rust-compositor/README.md`](pantheon-rust-compositor/README.md) and
+[`EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+The list is grounded in this repo's notch-aware panel, dock work area, display
+profiles/hotplug, window snapping, input and session work. Features such as
+Xwayland, IBus, accessibility and screencasting are conditional on an actual
+supported workflow. The measured M1 Pro requires cross-device rendering:
+Asahi `/dev/dri/card1` supplies EGL/renderD128 but no KMS resources, while Apple
+`/dev/dri/card2` owns connected displays and has no EGL device. The opt-in Smithay nested prototype in
+`rust/pantheon-compositor/` passes local `cargo check` and `cargo build`. It
+advertises Pantheon's protocol v2, places
+panel surfaces using anchor/size/offset, and applies exclusive panel geometry
+when configuring maximized windows. A changed panel work area now reconfigures
+already maximized windows, while unchanged panel repaints do not send redundant
+configures. Work-area caches now cover every active output; maximized/fullscreen
+windows and popup constraints use the output containing their window, and panel
+removal triggers work-area reflow. New committed toplevels are centered and
+cascaded in the focused window's work area, falling back to the pointer output
+and then the primary output; they are activated and focused. Absolute pointer events map to all logical
+outputs. The configured primary connector is retained through monitor profile
+application and hotplug while it remains connected, falling back to eDP or the
+first available output. These new behaviors are compile-checked but not runtime-qualified. The
+v2 protocol probe completed a nested Xvfb run and sent panel requests over the
+Wayland socket. Installed Wingpanel 8.0.4 also connected in an
+isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
+and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
+service. The prototype now returns its read-only `GetCurrentState` query using
+all tracked output modes and logical positions, and increments the state serial
+on output add/update/remove before emitting `MonitorsChanged`; Wingpanel connects without the
+missing-service error. `ApplyMonitorsConfig` validates connector assignments,
+mode IDs, scale and transform, applies native DRM mode changes through Smithay's
+shared output manager with rollback, and applies temporary layout changes.
+Method 2 saves a per-user monitor profile and native startup restores it.
+Native output disable/re-enable is implemented, including persistence of the
+enabled state and keeping disabled connectors in the monitor inventory.
+Native transitions keep existing outputs live while staging replacements, and
+can atomically reassign one CRTC to a different connector when the encoder
+supports it. Outputs outside the requested set are retired after all requested
+outputs are active; failures attempt to restore the prior set, modes and layout.
+The path builds but still needs hardware and failure qualification.
+Mirroring, unsupported properties and nested Winit monitor-set changes remain
+rejected. Both default and native DRM builds compile; live native mode and
+output-set changes remain unqualified. The compositor advertises
+`wp_fractional_scale_v1` and `wp_viewporter`, updating window surface scale
+preferences from mapped outputs. Moving surfaces across differently scaled
+outputs still needs runtime verification. The compositor also serves Wingpanel's `org.gnome.Shell`
+accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
+an isolated nested run. `xdg-activation-v1` now validates recent seat-backed
+tokens, consumes them after use and raises/focuses mapped target windows when
+the session is unlocked; app launch flows remain unverified. The
+`xdg_toplevel.set_minimized` request now unmaps and retains windows, which valid activation requests
+can restore at their previous position; this is not runtime-qualified.
+The compositor now handles the existing half-snap and quarter-snap keyboard
+chords, uses the focused window's output work area, and reflows tracked tiles
+when work areas change. `Super+Shift+Left/Right` moves a window to the adjacent
+output while preserving its work-area offset or tile position. This code is
+compile-checked only. It loads shortcut arrays from the installed Mutter,
+Pantheon and GNOME GSettings schemas at session startup, with built-in defaults
+when those schemas are unavailable. Drag-to-corner preview, live binding
+reload, multi-output behavior, and runtime snapping qualification remain open.
+The keyboard's XKB model, active layout, options, and repeat settings now load
+from the user's GNOME input-source and keyboard schemas. A one-second settings
+poll applies layout/option and repeat changes to connected Wayland clients.
+Live behavior has only been compile-checked. The M1 Pro currently selects US
+XKB with `ctrl:swap_lwin_lctl`; its installed `mozc-jp` IBus source is inactive
+and remains conditional.
+Quarter drag previews now appear in the 40-logical-pixel output corners,
+Escape cancels the snap, fixed-size windows are excluded, and release applies
+the selected quarter. This path is compile-checked only.
+`ShowOSD` renders a minimal brightness/volume indicator with icon and level
+meter; text labels, full Pantheon styling, lock-screen action modes and physical
+media-key activation remain unimplemented or unqualified. Relative pointer motion now
+updates pointer focus and drives the compositor's existing move/resize grabs;
+xdg popup requests now install Smithay keyboard/pointer grabs for managed
+toplevel roots. Both features build locally; popup behavior has not been
+runtime-qualified. Autohide, blur, multi-output reflow, monitor mode
+application, Dock behavior and full session integration remain unqualified.
+The first internal-panel native scanout is confirmed; external output, input,
+stability and comparative performance work remains. A public search found elementary's
+[Gala](https://github.com/elementary/gala) still based on libmutter, with no
+first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
+remains a separate workstream. Read-only enumeration on the current M-series
+host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
+`/dev/dri/card2`, and connected `eDP-1`/`DP-2` outputs; this is device presence,
+not evidence of compositor modesetting. The opt-in native DRM path is
+implemented while keeping nested Winit as the default. The `native-drm`
+Smithay dependency feature now compiles locally after installing
+`libseat-dev`. The non-invasive `pantheon-drm-probe` reports the Asahi renderer
+on card1/renderD128, with KMS resource queries unsupported there. Card2 owns
+`eDP-1` and currently reports external connectors disconnected; card2 has no
+EGL device. A 2026-10-19 release-mode preflight allocated scanout-capable
+DMA-BUFs at the preferred 3024×1964 size on Asahi and imported AB30, AR30, AB24
+and AR24 into Apple GBM using the implicit modifier. Apple `ADDFB2` rejected
+AB30 with `EINVAL`; it accepted AR30, AB24 and AR24. Each unassigned test
+framebuffer was immediately removed. Native output formats now omit AB30 and
+prefer the three accepted formats. The probe did not acquire DRM master, attach
+a framebuffer to a plane, modeset, or change output state. This establishes
+cross-device import and KMS framebuffer registration. All three DRM plane
+objects also advertise AR30, AB24 and AR24, though the non-master query reports
+no current CRTC/framebuffer assignment. Plane routing, atomic modesetting,
+visible scanout and failure handling remain first-session requirements for
+this M1 Pro, not optional general multi-GPU support. The executable now keeps nested Winit as
+its default and provides an explicit `--backend native` path behind
+`native-drm`; this wires libseat,
+libinput, connected outputs on the first usable KMS device, calloop rendering
+and vblank completion. It prioritizes eDP and places additional outputs to its
+right. DisplayConfig no longer advertises a fabricated Winit output in native
+mode. Both build configurations pass locally. Native mode has not been
+launched because it deliberately takes over the active display. Connector
+addition/removal reconciliation is implemented with a two-second poll. On
+hotplug, connected outputs keep their current positions and new outputs are
+placed after the existing layout. Hotplug, saved-layout restore, session
+switching and actual M-series scanout remain unqualified. Local
+`cargo check --bins` and `cargo build --bins` pass with and without
+`native-drm`; they establish compilation only, not successful
+connector modesetting.
+
+Read-only DisplayConfig now lists the modes reported by each native DRM
+connector, including current/preferred flags and timing-derived refresh rates.
+It still cannot apply a requested mode, position, scale or transform; native
+mode/layout configuration and rollback are the next display-settings work.
+
+Smithay's `ext-session-lock-v1` is implemented in both rendering backends:
+applications are hidden behind lock surfaces or black, input is confined to
+the locker, and lock confirmation waits for each mapped output to present a
+cleared frame. Default and `native-drm` builds pass. Real locker behavior,
+authentication/PAM integration, nested runtime behavior and native lock/unlock
+remain unqualified; the compositor does not provide the lock-screen UI.
+
+The compositor can now optionally send systemd `READY=1` after its Wayland
+listener and selected backend initialize (`--notify-systemd`). On native
+startup, readiness follows renderer and connected-output initialization. This
+provides a truthful readiness boundary used by the repository-only opt-in
+service; it does not install or switch the host login session. Native
+runtime/session behavior remains unqualified.
+
+A separate `pantheon-rust-wayland` session payload now mirrors the installed
+GNOME session/systemd contract: a unique login entry, a compositor component
+hidden under systemd, a notify service with an explicit Wayland socket, and a
+session-target drop-in preserving the installed Pantheon support services.
+The service retries unexpected exits after two seconds, capped at three starts
+per minute, then requests the session shutdown target. It is repository-only
+and has not been installed or runtime-qualified. The next gate is native-session
+qualification in an isolated login, including socket/environment handoff,
+ordinary apps, lock/logout and failure recovery.
+
+The experimental compositor can now be deployed onto the existing stack beside
+Gala with `mseries/install-pantheon-rust-compositor.sh` (dry run by default;
+`--status`/`--verify` read-only; `--install`, `--select`, `--restore-gala`,
+`--uninstall` need root and `--yes`). The Gala package, binary and
+`pantheon-wayland` session entry are never modified, no unit is started or
+enabled, and selecting the Rust session only rewrites the LightDM autologin
+drop-in with a backup. `summarize-metrics.py` reduces the retained session
+captures to per-process mean/median/min/max, and the public performance page
+`docs/rust-compositor-performance.html` (linked from the build monitor)
+publishes them with the honest status: idle compositor CPU is about 11.1 % of
+one core in both sessions under unmatched workloads, whole-system power is
+unmeasured, and no performance win is established.
+
+The prototype now recognizes native libinput touchpad swipes for workspace
+navigation and the overview: non-cancelled three-or-more-finger swipes that
+pass a 90-logical-pixel threshold with horizontal dominance select the adjacent
+workspace in the content-following direction and stop at the first/last
+workspace, and an upward swipe of the same size toggles the grid overview.
+Gestures are ignored while the session is locked or a move, resize or popup
+grab is active; pinch gestures remain unrecognized. The state machine lives in
+`rust/pantheon-compositor/src/gestures.rs` with unit tests; `cargo test -p
+pantheon-compositor` passes, both default and `native-drm` builds check, and
+clippy is clean.
+
+`PerformAction(1)` no longer errors: it toggles a grid overview ("expose")
+implemented in `rust/pantheon-compositor/src/overview.rs`. The mode arranges
+each output's active-workspace windows into a centered grid inside the work
+area, saves and restores plain, tiled, maximized and fullscreen arrangements,
+focuses a clicked window and closes on Escape or a second toggle. A private
+Xvfb/Winit D-Bus smoke with two GTK Wayland windows opened and closed the mode
+and the compositor logged both transitions; the grid layout has unit tests.
+Scaled thumbnails, animations, drag reorganization and native qualification
+remain open.
+
+The installed nested Winit backend never emits gesture events, so physical
+M-series trackpad qualification, user-configurable bindings and where the
+overview lands on the keyboard-accessible path remain open. Gala is still the
+active session and no package was installed from this batch.
+
 ## CodexBar: Grok Build, upstream v0.78.0 and native CI — 2026-10-19
 
 Done on `claude/codexbar-grok-production`: Grok Build card and local tokens; upstream pin v0.78.0
