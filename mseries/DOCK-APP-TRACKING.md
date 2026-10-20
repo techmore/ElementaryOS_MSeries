@@ -41,8 +41,11 @@ or repeat the incompatible deployment. No further live dock changes are authoriz
 The source-only combined build applies the existing drawers, workspace/startup,
 and **complete Windows taskbar patch**, then this app-tracking patch, all on
 upstream elementary/dock `8b45a68a122947ad3a6427bf6e159ec2acf04ad0`. The complete committed Taskbar.vala baseline is unchanged by this patch.
-Newer live StartMenu/CodexBar customizations owned by the recovery chat still
-require reconciliation before any deployment. The native combined build passes.
+A second isolated build also combines the patch with the recovery chat’s full
+current Taskbar, StartMenu and TaskbarCodexBar sources. All three files remain
+byte-identical after applying the patch and the combined native build passes.
+The preservation receipt is `dock-tests/receipts/taskbar-source-preservation-2026-10-20.json`.
+This is source/build validation only; it is not installed or live-qualified. The native combined build passes.
 The original GPL headers are retained; the resolver is GPL-3.0-or-later.
 
 ## Verification
@@ -65,5 +68,6 @@ These checks do not qualify the final combined taskbar visually or on live input
 
 Next gates: owner confirmation of desktop recovery; review the full customized
 build and source provenance; isolated combined-taskbar UI/focus/typing checks;
-then separately authorize a coordinated live deployment. Keep this PR draft
+then separately authorize a coordinated live deployment owned by the recovery
+coordinator. Keep this PR draft
 until those gates are met. Do not let the icon PR's automatic merge apply here.
