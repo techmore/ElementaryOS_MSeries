@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Microsoft's Teams web client in a dedicated supported-browser window."""
+"""Run Microsoft's Teams web client in a desktop app window."""
 import argparse
 import json
 import os

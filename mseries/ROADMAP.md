@@ -10,6 +10,26 @@ reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
 See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
 remaining native taskbar/network and Teams/Outlook qualification checks.
 
+## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
+
+Owner requested the official Teams dock icon and that the dock Mail button open
+Outlook Web. Teams now fetches the website's icon directly from Microsoft's CDN,
+verifies the pinned source checksum, extracts the original 256-pixel PNG without
+alteration, and refreshes the local GTK icon cache. The Microsoft asset is not
+redistributed in Git. Teams was pinned through `install-teams.sh --pin`.
+`install-outlook-web.py` replaces only the elementary Mail dock pin with Outlook
+Web in Brave's Default profile; the original launcher order is backed up locally.
+The system mailto handler remains `io.elementary.mail.desktop`. No panel/dock
+restart or media-stack changes. The Outlook launch was accepted by the existing
+Brave session; authenticated mailbox access was not observed.
+
+Fourteen offline tests pass, including actual Gio Outlook dispatch with a recording
+browser, pin preservation/idempotence, official-icon checksum rejection, unchanged
+ICO-to-PNG extraction and offline icon preservation. The host GTK icon theme now
+resolves Teams to the official PNG and Outlook to the installed elementary Mail
+icon. Both desktop entries validate. Owner sign-in to Teams remains confirmed;
+live media, dock grouping and Outlook mailbox operation remain unverified.
+
 ## Open PR integration review — 2026-10-20
 
 Scratch-ignore PR #335 merged. Reviewed #322/#334/#320/#312/#324/#326 with
@@ -248,6 +268,7 @@ cancelled checks do not count as passing. Release/recovery and operator
 acceptance stay explicit GitHub gates. The feature uses the existing gh login.
 Local native compilation and offline GTK/EDS integration are validated; live
 menu activation waits for the next login. See mseries/calendar/README.md.
+
 ## Microsoft Teams web desktop integration — 2026-10-20
 
 No prior Teams native port was found in the repository or remote branches. Per
