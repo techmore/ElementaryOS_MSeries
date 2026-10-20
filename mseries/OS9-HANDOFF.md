@@ -7653,7 +7653,8 @@ installing the .deb. Apt publishing still waits on the signing key (#52).
 ## Machine Lab x86 emulation boot check (2026-10-19)
 - Installed `qemu-system-x86` and `ovmf` (owner-approved). Booted Alpine virt 3.24.2 x86_64 (sha256 verified) under TCG: q35, `-cpu max`, OVMF, serial console. Reached the Alpine login prompt (kernel 6.18.52-0-virt). Tested with a direct QEMU command, not through Machine Lab's own x86 launch path.
 - Follow-up: `launcher/run-vm.sh` with `MACHINE_ARCH=x86_64` (Machine Lab's own x86 path, q35 + OVMF, virtio-vga) booted the same ISO to the login prompt within 45 s; a QMP `screendump` over `qmp-view.sock` showed the console. Throwaway VM removed.
-- Not yet verified: launching x86 from the GUI window, the Display tab on x86, timing versus ARM64 KVM.
+- GUI check (headless Broadway, isolated XDG dirs): an x86 machine entry showed the emulation banner, Start Installer launched QEMU, and the Display tab showed the Alpine login. Found and fixed: the install via `install-machine-lab.sh` from a stale checkout had left an old launcher in `~/.local/bin`; always run it from a current `dev` checkout. Overview footer no longer asks emulated machines for /dev/kvm.
+- Not yet verified: timing versus ARM64 KVM; keyboard input on x86 in a real Wayland window.
 ## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
 
 The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
