@@ -25,6 +25,7 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label arch_note;
     private Gtk.Box emu_banner;
     private Gtk.Label ssh_cmd;
+    private SnapshotsCard? snapshots = null;
     private Gtk.Image hero_icon;
     private Gtk.Label hero_sub;
     private Gtk.Box setup_card;
@@ -800,7 +801,10 @@ public class MachinePage : Gtk.Box {
             machine.ssh_port = (int) port_spin.get_value ();
             changed (); refresh ();
         });
-        settings_form.append (form_row ("SSH port on this Mac", null, port_spin, true));
+        settings_form.append (form_row ("SSH port on this Mac", null, port_spin));
+        snapshots = new SnapshotsCard (machine);
+        snapshots.toast.connect ((m) => toast (m));
+        settings_form.append (snapshots);
 
         foreach (var s in new Gtk.Scale[] { cpu_scale, mem_scale, disk_scale }) {
             s.draw_value = false;
@@ -855,6 +859,10 @@ public class MachinePage : Gtk.Box {
     // ---- State ------------------------------------------------------------
 
     public void refresh () {
+        if (snapshots != null) {
+            snapshots.visible = !machine.managed;
+            snapshots.update ();
+        }
         bool running = machine.running;
         bool managed = machine.managed;
         bool fresh = machine.is_fresh ();

@@ -45,6 +45,14 @@ SPICE agent (`spice-vdagent`; the elementary OS image already has it). What work
 Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
 QEMU's clipboard channel yet (issue #264).
 
+## Snapshots (restore points)
+
+Open a machine's Settings tab and use **Snapshots** to save a restore point of its disk before an upgrade or an experiment.
+Shut the machine down first: a snapshot saves the disk, not the running memory. **Restore…** rolls the disk back to that point
+(everything done since is lost, so it asks first) and the bin icon deletes a snapshot. Names may use letters, numbers, dots, dashes
+and underscores. Snapshots live inside the machine's `disk.qcow2` and grow it as the machine changes; deleting the machine removes
+them. They are not a backup: if the disk file is lost, so are they. Not available for guests managed by `mseries-vm`.
+
 ## Incus containers and VMs
 
 Machine Lab lists your Incus instances in the sidebar under "INCUS · CONTAINERS AND VMS", next to its own machines, so
