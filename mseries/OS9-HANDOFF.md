@@ -11,17 +11,17 @@ Switchboard plug startup crash: the plug was touching an instance field before
 its GObject base constructor. The plug is now installed at
 `/usr/lib/aarch64-linux-gnu/switchboard-3/personal/`, the schema is compiled
 system-wide, and `mseries-work-mode.timer` is enabled and active. GSettings
-reports Work Mode disabled and no work wallpaper selected, so the existing
-desktop wallpaper was left alone. A separate Windows 11-inspired Blue Flow
-work wallpaper now ships with the panel and is the default for new installs;
-this asset/default is on `codex/work-mode-wallpaper-default` and has not yet
-been installed locally. After moving the base `Object` construction
-ahead of instance-field initialization, rebuilt and reinstalled the module.
-Reopening System Settings exited cleanly; the only new output was GTK sizing and
-software-renderer warnings, with no second crash. The exact panel contents have
-not been visually inspected. Next: inspect the Work Mode panel, select a work
-image, and verify live schedule transitions. The fix is on
-`codex/work-mode-load-fix` (merged as PR #306).
+reports Work Mode disabled, preserving the existing desktop wallpaper, and the
+work wallpaper points to `/usr/share/backgrounds/mseries/work-mode-blue-flow.png`.
+The bundled Windows 11-inspired Blue Flow image is installed. The timer is
+active/enabled, and helper status reports Off. A clean System Settings launch
+after the constructor-order fix exited without another crash; the panel has not
+been visually inspected. An isolated GSettings/keyfile run verified that a
+manual tick applies the work wallpaper and disabling Work Mode restores both
+original wallpaper URIs and picture options; the live desktop wallpaper was
+not changed during this check. A real scheduled transition is still unverified.
+PR #304 added the panel and scheduler, PR #306 fixed plug startup, and PR #308
+bundled the default wallpaper; all are merged to `dev`.
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 

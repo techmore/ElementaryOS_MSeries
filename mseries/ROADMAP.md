@@ -5,12 +5,12 @@
 Added a native Switchboard panel under Personal with a Work Mode switch, a
 work-wallpaper picker, weekday scheduling, and start/end times. A per-user
 systemd timer checks once a minute and restores the wallpaper that was active
-before Work Mode began. The panel and timer are installed on the J314S desktop;
-a Windows 11-inspired Blue Flow wallpaper is now bundled and selected by default
-in source, pending installation.
-The first launch found a Switchboard constructor-order crash, now fixed and
-reinstalled; System Settings exits cleanly on relaunch. Visually inspect the
-panel, then select an image and verify actual wallpaper transitions.
+before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
+Flow wallpaper are installed on the J314S desktop. Work Mode remains off, so
+the existing wallpaper is unchanged. The Switchboard constructor-order crash
+is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
+run passed apply/restore checks without changing the live desktop. Visual panel
+inspection and a real scheduled transition remain open.
 
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
