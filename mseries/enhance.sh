@@ -8,7 +8,8 @@
 #
 # Modules (all on by default; each is idempotent and independent):
 #   tuning    zram swap (zstd, half of RAM), zswap off, ModemManager off, AppCenter
-#             background daemon not autostarted for new users
+#             background daemon not autostarted for new users, faster apt defaults
+#             (no Translation downloads, no pdiffs, retries, lock wait)
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
 #   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
@@ -100,6 +101,17 @@ EOF
 # ElementaryOS_MSeries: zram already compresses swap
 w /sys/module/zswap/parameters/enabled - - - - 0
 EOF
+  put 0644 /etc/apt/apt.conf.d/90-mseries-speed <<'EOF2'
+// ElementaryOS_MSeries: faster apt on a fast link.
+// No Translation-* index downloads (the desktop is not localised from apt metadata).
+Acquire::Languages "none";
+// Fetch whole indices; applying pdiffs is slower than downloading them on broadband.
+Acquire::PDiffs "false";
+// Retry flaky mirror connections instead of failing the whole update.
+Acquire::Retries "3";
+// Wait for a concurrent apt/PackageKit run instead of aborting.
+DPkg::Lock::Timeout "120";
+EOF2
   # This Mac has no modem.
   systemctl --root="${ROOT}" disable ModemManager.service >/dev/null 2>&1 || true
   # AppCenter's background daemon (~680 MB resident) is not started for new
@@ -110,7 +122,7 @@ Type=Application
 Name=AppCenter (background updates disabled)
 Hidden=true
 EOF
-  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users"
+  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users, faster apt defaults"
 }
 
 mod_power() {

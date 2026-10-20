@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## Faster apt defaults — 2026-10-19 (Claude)
+
+Branch `claude/apt-speed`. The `tuning` module in `mseries/enhance.sh` now also writes
+`/etc/apt/apt.conf.d/90-mseries-speed`: no `Translation-*` downloads, no pdiffs, 3 retries, and a 120 s dpkg
+lock wait. `--force-unsafe-io` was left out on purpose (power loss could corrupt the dpkg database).
+Verified: `bash mseries/test-apt-tuning.sh` (installs into a scratch root, checks `apt-config dump`),
+`test-apt-batch.sh`, `test-image-wiring.py`, `test-codexbar-deploy.py`, `test-elementary-mac-setup.sh` all pass.
+Not measured on hardware: real `apt update` timing, and the config is not yet installed on the running system
+(it lands with the next `enhance.sh` run or image build). Optional next: `nala` for parallel downloads.
+
 ## Rust compositor: grid overview for PerformAction(1) and upward swipe — 2026-10-19
 
 Branch `codex/rust-gala-stack-integration`, worktree
@@ -7682,3 +7692,20 @@ an opt-in Rust login session entry once the compositor has DRM/KMS, input and lo
 - **Wiring:** new `patches/quick-settings-layout.patch` (applies after the bluetooth patch) reorders `PopoverWidget`; it leaves a `// mseries:sharing` marker that `install-quick-settings-brightness.sh` replaces with the Sharing card. Added to the installer, `mkosi.images/apple-silicon/build-quick-settings` and `enhance.sh`'s payload list. `debs/build.sh` is not updated (it also lacks the audio and Bluetooth patches).
 - **Verified:** full plugin compiles against pinned upstream `fb721d4` both with and without the share/AirDrop sed; `test-bluetooth.sh`, `test_audio_output_model.sh` and the AirPlay render pass; light and dark headless renders under Xvfb with the elementary stylesheet look correct.
 - **Not verified:** the live Wingpanel popover (not installed, not reloaded, per the stable-menu-bar rule), the Volume slider writing to real audio, and the Sharing card (screen-share/AirDrop) rendered. Install with `bash mseries/install-quick-settings-brightness.sh`, then reload Wingpanel or log in.
+
+### Owner desktop switched to the calendar package — 2026-10-19
+
+With the owner's approval the desktop moved from the manual installer to
+`mseries-wingpanel-datetime_2.4.2-0mseries1` (built from dev d1ab81e with
+`ONLY=mseries-wingpanel-datetime mseries/debs/build.sh`; the postinst does not
+restart Wingpanel). Steps: the package's library passed 27/27 groups first;
+`install-calendar-agenda.sh --uninstall` restored the saved original, whose md5
+32d1b400… matches dpkg's record for the stock 2.4.2+r1073 plugin, and removed
+/usr/local/bin/mseries-calendar-accounts; then `sudo dpkg -i` the package.
+Verified: diversion to libdatetime.so.mseries-orig (stock md5), package
+`install ok installed`, `dpkg -V` clean, installed plugin byte-identical to the
+tested build, /usr/bin/mseries-calendar-accounts present. Wingpanel PID
+unchanged (953205), so the running panel still has the previous build mapped and
+the packaged one (with the TimeFormat fix and accessible arrow names) loads at
+the next login. Rollback: `sudo dpkg -r mseries-wingpanel-datetime` (postrm
+removes the diversion and puts the stock plugin back).
