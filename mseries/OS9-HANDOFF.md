@@ -1,5 +1,55 @@
 # OS 9 implementation / Claude Code handoff
 
+## Working iPhone messages and native Messages app — 2026-10-20
+
+The controlled 5.87 trial now has **real send and receive evidence**. Root-owned
+BlueZ 5.87 bluetoothd/obexd/client run from a scoped prefix; bearer methods were
+verified on the actual daemon. The fresh upstream Connect-first pairing exposed
+Hands-Free and produced Classic + LE keys. After the owner enabled the newly
+visible Show Message Notifications switch, MAP/MNS opened. One authorized self
+text was sent and received, followed by an authorized contact test and two real
+incoming replies. Contacts retained; optional ANCS remains unavailable. No
+message contents, phone numbers or keys enter Git. The combination worked; the
+trial does not isolate a single causal change.
+
+Fixed the live candidate's version-detection mismatch by matching bluetoothctl
+to the daemon in scoped service/launcher PATHs. BlueFerry otherwise read distro
+CLI 5.85 and selected compatibility despite 5.87 running. Persistent drop-ins
+are installed without restarting the working message session. Reproducible
+installer/rollback: `mseries/install-messaging-bluez.sh`. Distro binaries,
+kernel/bootloader and Wingpanel remain untouched. The pairing flow removed only
+BlueFerry's phone-audio restriction; normal Hands-Free is now offered.
+
+New `mseries-messages` / Messages desktop entry: GTK 4 + Granite 7, conversation
+sidebar/search, plain-text bubbles, explicit contact/address selection,
+contact-photo avatars with initials fallback, larger sidebar names,
+multiline composer/Ctrl+Enter, per-conversation drafts while open, pending and
+retry states, responsive navigation, theme following and original app icon.
+Backend transport, encrypted history and group routing stay upstream. Setup
+hands off to this native client; advanced group setup remains in BlueFerry.
+
+Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect,
+on manual refresh and after five minutes between successful reads, using wall
+time so suspend counts. Snapshot merges preserve known group routes and dedupe
+MAP handles. Inbox-only snapshots stay in memory; no plaintext archive is added.
+A live query returned 11 entries. Complete iCloud history and sent-history import
+are not supported; controlled sleep/missed-message recovery and reboot remain
+unverified. Source details: `phone-setup/UPSTREAM-REVIEW.md`, user behavior and
+rollback: `phone-setup/README.md`.
+
+Contact-photo caching was explicitly requested and enabled; a real PBAP sync
+returned 727 contacts and 34 photos while MAP stayed connected.
+
+Verification: 26 setup/protocol/reconnect/model tests and 7 private-display GTK
+checks; light/dark/narrow synthetic screenshots reviewed. Draft routing across
+conversation switches, duplicate-send prevention, failed-send retry retention,
+group identity tokens, malicious addresses, search, offline state and narrow
+navigation covered. Live native app started, MAP stayed connected, and recent
+inbox rendering loaded without startup errors. Final send through the redesigned
+composer and assistive-technology traversal remain hardware/UI follow-ups.
+Localization strings are extractable; translated catalogs are not shipped.
+
+
 ## Transparent Outlook icon; dock deployment recovered — 2026-10-20
 
 Outlook now fetches the transparent, checksum-pinned Office SVG directly from
