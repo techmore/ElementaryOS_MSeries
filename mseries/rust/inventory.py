@@ -25,7 +25,29 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/wifi-resume/",
     "mseries/rust/netusage/",
     "mseries/rust/panel-provenance/",
+    "mseries/rust/keyboard-backlight/",
 )
+PROJECT_PREFIX_OVERRIDES = {
+    "mseries/rust/mseries-power/": "mseries/power",
+    "mseries/rust/wifi-resume/": "mseries/wifi-resume",
+    "mseries/rust/netusage/": "mseries/netspeed/netusage",
+    "mseries/rust/panel-provenance/": "mseries/panel",
+    "mseries/rust/keyboard-backlight/": "mseries/keyboard-backlight",
+}
+PROJECT_PATH_OVERRIDES = {
+    "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",
+    "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",
+    "mseries/install-keyboard-backlight.sh": "mseries/keyboard-backlight",
+    "mseries/install-power.sh": "mseries/power",
+    "mseries/test-power-cap.py": "mseries/power",
+    "mseries/test-power-install.py": "mseries/power",
+    "mseries/test-wifi-resume.py": "mseries/wifi-resume",
+    "mseries/install-netusage-policy.sh": "mseries/netspeed/netusage",
+    "mseries/panel-factory-pins.json": "mseries/panel",
+    "mseries/install-sound-indicator-fix.sh": "mseries/panel",
+    "mseries/install-keyboard-indicator-fix.sh": "mseries/panel",
+    "mseries/install-brightness-bridge.sh": "mseries/brightness",
+}
 EXCLUDED_PARTS = {".git", "__pycache__", "target", "build", ".pytest_cache"}
 LANGUAGES = {
     ".c": "c", ".cc": "cpp", ".cpp": "cpp", ".h": "c-header",
@@ -99,9 +121,30 @@ def component_id(path: Path) -> str:
     return "image-build/" + path.stem
 
 
+def project_id(path: Path, ownership: str) -> str:
+    """Join separately stored files that implement or verify one project."""
+    text = path.as_posix()
+    if ownership == "elementary-os-upstream":
+        return "upstream/elementary/os"
+    if text in PROJECT_PATH_OVERRIDES:
+        return PROJECT_PATH_OVERRIDES[text]
+    for prefix, project in PROJECT_PREFIX_OVERRIDES.items():
+        if text.startswith(prefix):
+            return project
+    return component_id(path)
+
+
 def render() -> str:
     items = []
-    for path in source_paths():
+    paths = source_paths()
+    scoped_paths = {path.as_posix() for path in paths}
+    stale_overrides = sorted(set(PROJECT_PATH_OVERRIDES) - scoped_paths)
+    if stale_overrides:
+        raise ValueError(f"project overrides refer to unscoped paths: {stale_overrides}")
+    for prefix in PROJECT_PREFIX_OVERRIDES:
+        if not any(path.startswith(prefix) for path in scoped_paths):
+            raise ValueError(f"project prefix has no scoped files: {prefix}")
+    for path in paths:
         text = path.as_posix()
         item_role = role(path)
         local = (
@@ -113,11 +156,13 @@ def render() -> str:
                 "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
             }
         )
+        ownership = "mseries-maintained" if local else "elementary-os-upstream"
         items.append({
             "id": text,
             "path": text,
             "component_id": component_id(path),
-            "ownership": "mseries-maintained" if local else "elementary-os-upstream",
+            "project_id": project_id(path, ownership),
+            "ownership": ownership,
             "language": LANGUAGES.get(path.suffix.lower(), "binary-or-data" if not path.suffix else "data"),
             "role": item_role,
             "rust_status": (
@@ -147,13 +192,33 @@ def render() -> str:
             },
             "items": [record["id"] for record in records],
         })
+    project_groups: dict[str, list[dict[str, str]]] = {}
+    for item in items:
+        project_groups.setdefault(item["project_id"], []).append(item)
+    projects = []
+    for project, records in sorted(project_groups.items()):
+        owners = {record["ownership"] for record in records}
+        if len(owners) != 1:
+            raise ValueError(f"project {project} mixes ownership classes: {sorted(owners)}")
+        projects.append({
+            "id": project,
+            "ownership": records[0]["ownership"],
+            "item_count": len(records),
+            "rust_status_counts": {
+                status: sum(record["rust_status"] == status for record in records)
+                for status in sorted({record["rust_status"] for record in records})
+            },
+            "items": [record["id"] for record in records],
+        })
     document = {
         "schema": 2,
         "generated_by": "mseries/rust/inventory.py",
         "scope": list(DIRECTORIES) + list(ROOT_FILES),
         "item_count": len(items),
         "component_count": len(components),
+        "project_count": len(projects),
         "components": components,
+        "projects": projects,
         "items": items,
     }
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
