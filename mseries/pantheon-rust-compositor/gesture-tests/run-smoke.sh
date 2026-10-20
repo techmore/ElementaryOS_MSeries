@@ -101,3 +101,23 @@ send end
 send status
 sleep 0.1
 python3 "$(dirname "$0")/check-receipts.py" "$GESTURE_TEST_OUT"
+if [[ ${GESTURE_TEST_RECORD:-0} == 1 ]]; then
+  send animations on
+  send workspace 0
+  ffmpeg -nostdin -loglevel error -f x11grab -framerate 30 -video_size 1280x800 -i "$DISPLAY" -t 3.5 -c:v libx264 -pix_fmt yuv420p -y "$GESTURE_TEST_OUT/overview-motion.mp4" &
+  recording_pid=$!
+  sleep 0.2
+  python3 - "$RUNTIME/gesture-probe" <<'PYPROBE'
+import socket,sys,time
+with socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM) as s:
+ def send(command): s.sendto(command.encode(),sys.argv[1])
+ for direction in [-1,1]:
+  send('begin')
+  for _ in range(20):
+   send(f'update 0 {12*direction}')
+   time.sleep(0.025)
+  send('end')
+  time.sleep(0.65)
+PYPROBE
+  wait "$recording_pid"
+fi

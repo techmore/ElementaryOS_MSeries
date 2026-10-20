@@ -225,7 +225,13 @@ overview and maximize. Four-finger pinch-in opens the application launcher via
 Locking, session suspension and device removal cancel in-flight sequences;
 owned actions cannot finish during a pointer grab. Recognizer tests and a nested
 GTK protocol smoke pass, but physical trackpad qualification remains open.
-Actions currently fire on release; finger-following animations remain open.
+Workspace and overview swipes now render previews that follow finger movement.
+Release springs to the chosen endpoint using velocity, or back on cancellation;
+workspace/focus/geometry changes commit only at completion. Workspace edges
+resist rather than wrap. Overview cells preserve window proportions. Reduced
+motion skips release settling. See the reproducible nested qualification in
+`mseries/pantheon-rust-compositor/gesture-tests/README.md`; physical sensitivity,
+native frame pacing and multi-output/mixed-XWayland previews remain unqualified.
 These changes are staged in PR #326 and are not installed on the live session.
 
 Xdg popup requests now resolve their root to a managed toplevel and install

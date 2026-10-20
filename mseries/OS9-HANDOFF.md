@@ -1,5 +1,40 @@
 # OS 9 implementation / Claude Code handoff
 
+## Finger-following workspace and overview gestures — 2026-10-20 (Codex)
+
+Continued PR #326 from `codex/gesture-animation` and merged latest `dev`
+through `25011bc`, retaining the newer dock clearance implementation.
+`gesture_animation.rs` now tracks swipe progress, velocity and a bounded
+critically damped release spring. Horizontal swipes render the active and
+adjacent workspaces offset under the fingers, resisting at the ends; vertical
+swipes scale/move windows toward or away from the overview grid. Workspace,
+focus and client geometry change only at completion. Cancelled/short swipes
+spring back. Escape, clicks, locks, grabs, session suspension, device removal,
+workspace changes and replacement gestures discard stale previews. The release
+animation honors `org.gnome.desktop.interface enable-animations`. Thumbnail
+rectangles preserve aspect ratio without enlargement. The steady overview
+still configures clients once at completion; it is not yet a persistent
+thumbnail compositor. Both native and nested renderers share scene assembly,
+and hidden neighbor windows receive frame callbacks while previewed.
+
+Validation: 32 all-feature compositor tests pass; default and all-feature
+Clippy checks pass with warnings denied. The private `gesture-probe` build
+feature permits deterministic nested swipe input and is absent from normal
+package builds. Its self-contained Xvfb/D-Bus/GTK Cairo smoke passes actual
+pixel-bound checks for workspace displacement, cancel/restore, edge resistance,
+overview shrink/separation/open/close, interrupted springs and reduced-motion
+release. Selected screenshots were inspected and a 3.5-second motion recording
+was retained under `mseries/pantheon-rust-compositor/gesture-tests/receipts/2026-10-20/`.
+Reproduction commands and measured limits are in that directory's parent README.
+The first GTK Vulkan fixture run lost nested surfaces; the Cairo fixture is the
+qualified path, not a Vulkan pass. Three lint-only cleanups in the newly merged
+`pantheon_shell.rs` retain the dock behavior. `git diff --check` passes.
+
+No animation package installed and no live desktop restarted. The independently
+staged dock compositor package remains separate. Next: physical M-series
+trackpad tuning (360 units per output, 8-unit axis threshold), native frame
+pacing, multiple-output/mixed-XWayland previews and hardware lock/grab tests.
+
 ## Trackpad gesture review and dev integration — 2026-10-20 (Codex)
 
 Continued PR #326 on `claude/trackpad-gestures`. Merged `origin/dev` at
