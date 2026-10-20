@@ -120,4 +120,9 @@ eq $'--user stop elementary-mac-user-enhance.timer\n--user stop elementary-mac-u
   "$(cat "$mseries_timer_calls")" "completed user setup stops timer and path"
 find "$root" "$state" -mindepth 1 -delete; rmdir "$root" "$state"
 
+# The first-boot run loop (one requirements install, retry policy) has its own tests.
+if ! firstboot_out=$(bash "$here/test-enhance-firstboot.sh" 2>&1); then
+  grep -v '^ok' <<<"$firstboot_out" >&2; fails=$((fails + 1))
+fi
+
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }

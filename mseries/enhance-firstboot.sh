@@ -28,13 +28,21 @@
 # The patched components are built from pinned upstream commits and gated on the
 # installed package version: on a different version the module is skipped with
 # the reason in the log, never forced.
+#
+# Build requirements for every pending module are installed in one apt-get call
+# before the first module runs (#47); a module only installs its own when that
+# combined step fails. A failure that would repeat (missing package, file or
+# commit) is not retried on later boots; only network trouble is. `--retry`
+# clears either kind.
 # shellcheck disable=SC1010  # "done" is a state name here, not the keyword
 set -uo pipefail
 
 STATE=${ELEMENTARY_MAC_STATE:-/var/lib/elementary-mac/enhance}
 LOG=${ELEMENTARY_MAC_LOG:-/var/log/elementary-mac-enhance.log}
-PAYLOAD=/usr/share/elementary-mac
+PAYLOAD=${ELEMENTARY_MAC_PAYLOAD:-/usr/share/elementary-mac}
+COMPATIBLE=${ELEMENTARY_MAC_COMPATIBLE:-/proc/device-tree/compatible}
 MAX_ATTEMPTS=3
+DEPS_READY=0   # 1 once the combined requirements install succeeded
 PATH=$PAYLOAD/shim:$PATH   # `sudo` as a no-op: the install scripts were written for a user account
 export PATH DEBIAN_FRONTEND=noninteractive
 
@@ -75,6 +83,48 @@ state() { # state MODULE -> done | skipped | failed:N | pending
   else echo pending; fi
 }
 
+# Output that means "try again later" rather than "this will fail the same way".
+transient() { # transient OUTPUT-FILE
+  grep -qiE 'could not resolve|temporary failure in name resolution|connection (timed out|reset|refused)|network is unreachable|failed to fetch|unable to connect|could not connect|curl: \((6|7|28|35|52|55|56)\)|tls handshake|timed out|rate limit|hash sum mismatch|HTTP/[0-9.]+ (429|502|503|504)' "$1"
+}
+
+# Record a failed step: another attempt next boot for network trouble, final
+# otherwise (the reason is kept for --status). (#47)
+fail_module() { # fail_module MODULE ATTEMPTS EXIT OUTPUT-FILE WHAT
+  local m=$1 attempts=$2 rc=$3 out=$4 what=$5 reason
+  if transient "$out"; then
+    echo $((attempts + 1)) >"$STATE/$m.attempts"
+    log "$m: $what failed (exit $rc), looks like a network problem; attempt $((attempts + 1)) of $MAX_ATTEMPTS"
+    return
+  fi
+  reason=$(grep -m1 -iE 'unable to locate package|no such file|not found|fatal:|error' "$out" | head -c 160)
+  echo "$MAX_ATTEMPTS" >"$STATE/$m.attempts"
+  printf '%s\n' "${reason:-$what failed (exit $rc)}" >"$STATE/$m.reason"
+  log "$m: $what failed (exit $rc) and would fail the same way again; not retried. Fix it, then: elementary-mac-enhance --retry $m (${reason:-see $LOG})"
+}
+
+# One apt-get for the requirements of every module that is still going to run,
+# so the same packages are not resolved and fetched up to twelve times (#47).
+# When it fails (one unavailable package fails the whole transaction) each
+# module falls back to installing its own, so one bad package blocks only its module.
+install_requirements_once() { # install_requirements_once MODULE...
+  local m p pkgs=() seen=" "
+  for m in "$@"; do
+    case $(state "$m") in done | skipped | "failed:$MAX_ATTEMPTS") continue ;; esac
+    [[ -z ${SCRIPT[$m]:-} || -f $PAYLOAD/mseries/${SCRIPT[$m]} ]] || continue   # skipped as missing payload
+    for p in ${DEPS[$m]:-}; do
+      [[ $seen == *" $p "* ]] || { pkgs+=("$p"); seen+="$p "; }
+    done
+  done
+  (( ${#pkgs[@]} )) || return 0
+  log "installing the build requirements of all pending modules in one step (${#pkgs[@]} packages)"
+  if apt-get install -y --no-install-recommends "${pkgs[@]}" >>"$LOG" 2>&1; then
+    DEPS_READY=1
+  else
+    log "combined install failed; each module installs its own requirements"
+  fi
+}
+
 have_network() { ip route 2>/dev/null | grep -q '^default '; }
 
 wait_for_network() {
@@ -96,42 +146,53 @@ run_module() {
   (( attempts >= MAX_ATTEMPTS )) && { log "$m: gave up after $attempts attempts (see $LOG; --retry $m)"; return; }
 
   log "$m: starting"
-  if [[ -n ${DEPS[$m]:-} ]]; then
+  out=$(mktemp)
+  if [[ -n ${DEPS[$m]:-} ]] && (( ! DEPS_READY )); then
     # shellcheck disable=SC2086  # a word list on purpose
-    if ! apt-get install -y --no-install-recommends ${DEPS[$m]} >>"$LOG" 2>&1; then
-      apt-get update >>"$LOG" 2>&1
+    if ! apt-get install -y --no-install-recommends ${DEPS[$m]} >"$out" 2>&1; then
+      apt-get update >>"$out" 2>&1
       # shellcheck disable=SC2086
-      apt-get install -y --no-install-recommends ${DEPS[$m]} >>"$LOG" 2>&1 || {
-        echo $((attempts + 1)) >"$STATE/$m.attempts"; log "$m: build requirements unavailable; will retry"; return; }
+      apt-get install -y --no-install-recommends ${DEPS[$m]} >>"$out" 2>&1; rc=$?
+      cat "$out" >>"$LOG"
+      if (( rc != 0 )); then
+        fail_module "$m" "$attempts" "$rc" "$out" "installing build requirements"
+        unlink "$out"
+        return
+      fi
+    else
+      cat "$out" >>"$LOG"
     fi
   fi
 
   if [[ -z $script ]]; then
     log "$m: dependencies installed"
     touch "$STATE/$m.done"
-    rm -f "$STATE/$m.attempts"
+    rm -f "$STATE/$m.attempts" "$STATE/$m.reason"
+    unlink "$out"
     return
   fi
 
-  out=$(mktemp)
   bash "$script" >"$out" 2>&1; rc=$?
   cat "$out" >>"$LOG"
   if (( rc == 0 )); then
-    log "$m: done"; touch "$STATE/$m.done"; rm -f "$STATE/$m.attempts"
+    log "$m: done"; touch "$STATE/$m.done"; rm -f "$STATE/$m.attempts" "$STATE/$m.reason"
   elif grep -qE "targets .* (found|need)|This patch targets|Patch targets|not applicable here|Not an Apple" "$out"; then
     # Not applicable to this package version: a final answer, not a failure to retry.
     log "$m: not applicable here ($(grep -m1 -E 'targets' "$out" || echo see log)); skipped"
     touch "$STATE/$m.skipped"
   else
-    echo $((attempts + 1)) >"$STATE/$m.attempts"
-    log "$m: failed (exit $rc); attempt $((attempts + 1)) of $MAX_ATTEMPTS"
+    fail_module "$m" "$attempts" "$rc" "$out" "install"
   fi
   unlink "$out"
 }
 
 status() {
-  local m
-  for m in "${DEFAULT[@]}" firefox; do printf '%-10s %s\n' "$m" "$(state "$m")"; done
+  local m s
+  for m in "${DEFAULT[@]}" firefox; do
+    s=$(state "$m")
+    [[ -f $STATE/$m.reason ]] && s="$s (not retried: $(cat "$STATE/$m.reason"); fix, then --retry $m)"
+    printf '%-10s %s\n' "$m" "$s"
+  done
   [[ -f $STATE/finished ]] && echo "all modules settled (service retired)"
   return 0
 }
@@ -154,18 +215,20 @@ main() {
     --status) status; return ;;
     --retry)
       for m in "${DEFAULT[@]}" firefox; do
-        [[ -z $target || $target == "$m" ]] && unlink "$STATE/$m.attempts" 2>/dev/null
+        [[ -z $target || $target == "$m" ]] && rm -f "$STATE/$m.attempts" "$STATE/$m.reason"
       done
       rm -f "$STATE/finished"
       ;;
   esac
-  [[ $EUID -eq 0 ]] || { echo "run as root" >&2; return 1; }
-  grep -Faiq 'apple,' /proc/device-tree/compatible 2>/dev/null || { log "not an Apple device-tree machine; nothing to do"; touch "$STATE/finished"; return 0; }
+  # ELEMENTARY_MAC_FAKE_ROOT=1 is for the test suite, which puts a fake apt-get on PATH.
+  [[ $EUID -eq 0 || ${ELEMENTARY_MAC_FAKE_ROOT:-} == 1 ]] || { echo "run as root" >&2; return 1; }
+  grep -Faiq 'apple,' "$COMPATIBLE" 2>/dev/null || { log "not an Apple device-tree machine; nothing to do"; touch "$STATE/finished"; return 0; }
 
   wait_for_network || { log "no network after 5 minutes; will try again next boot"; return 0; }
   apt-get update >>"$LOG" 2>&1 || true
 
   local todo=("${DEFAULT[@]}" "${extra[@]}")
+  install_requirements_once "${todo[@]}"
   for m in "${todo[@]}"; do
     [[ -n ${SCRIPT[$m]:-} || -n ${DEPS[$m]:-} ]] || { log "unknown module $m"; continue; }
     case $(state "$m") in done | skipped) continue ;; esac
