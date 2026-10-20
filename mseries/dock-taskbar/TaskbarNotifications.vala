@@ -28,7 +28,7 @@ public class Dock.TaskbarNotifications : Gtk.Box {
     construct {
         orientation = Gtk.Orientation.VERTICAL;
         valign = Gtk.Align.CENTER;
-        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 48 };
+        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 38 };
         count = new Gtk.Label ("") { visible = false };
         count.add_css_class ("badge");
         var face = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);

@@ -71,7 +71,7 @@ apply/revert. Reboot configuration checks do not claim a physical reboot test.
 
 ## Notification bell
 
-The bell uses a 48-pixel icon with a 2-pixel theme-derived border. History and
+The bell uses a 38-pixel icon with a 2-pixel theme-derived border. History and
 context menus follow native theme colors and controls, with compact Open/Reply
 actions and bounded previews.
 
