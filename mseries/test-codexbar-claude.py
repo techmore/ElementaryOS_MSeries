@@ -120,6 +120,18 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual(data["activePlan"], "pro")
         self.assertNotIn(SECRET, MODULE.json.dumps(data))
 
+    def test_profile_upgrade_overrides_issue_time_plan_and_is_identity_checked(self):
+        credentials = [{"claudeAiOauth": {"accessToken": SECRET, "expiresAt": 9999999999999,
+                                          "subscriptionType": "pro"}}]
+        upgraded = {"account": {"uuid": "upgrade-test"}, "organization": {
+            "organization_type": "claude_max", "rate_limit_tier": "default_claude_max_20x"}}
+        with mock.patch.object(MODULE, "fetch_profile", return_value=upgraded) as fetch:
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1000), "max20x")
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1001), "max20x")
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(MODULE.profile_plan("different-account", credentials, now=1000), "")
+        self.assertNotIn(SECRET, MODULE.json.dumps(MODULE.codexbar_cache.load("claude-plan-upgrade-test")))
+
     def test_missing_or_corrupt_plan_stays_unknown(self):
         path = self.home / ".local/share/claude-swap/credentials/.creds-1-work@example.com.enc"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -196,6 +208,8 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["activeEmail"], "work@example.com")
+        self.assertEqual(data["displayEmail"], "me@example.com")
+        self.assertEqual([a["panelActive"] for a in data["accounts"]], [False, True])
         self.assertEqual([a["active"] for a in data["accounts"]], [True, False])
         self.assertEqual(data["desktop"], {"installed": True, "email": "me@example.com", "differs": True})
         self.assertIn("me@example.com", data["desktopNote"])
@@ -208,6 +222,7 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["desktop"], {"installed": True, "email": "", "differs": True})
+        self.assertFalse(any(a["panelActive"] for a in data["accounts"]))
         self.assertIn("a different account", data["desktopNote"])
 
     def test_add_explains_a_missing_login_and_reports_success(self):
