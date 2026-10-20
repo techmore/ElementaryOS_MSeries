@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..52cceb4 100644
+index d97686d..39ca1fd 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -203,3 +203,242 @@ backgrounditem .close-button {
@@ -10,7 +10,7 @@ index d97686d..52cceb4 100644
 +/* M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
 + * bar flush to the bottom edge. Everything below is scoped to .taskbar. */
 +dock-window.taskbar dock {
-+    background: rgba(238, 240, 243, 0.96);
++    background: rgba(222, 225, 229, 0.96);
 +    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.08);
 +    border-radius: 0;
 +    opacity: 1;
@@ -19,7 +19,7 @@ index d97686d..52cceb4 100644
 +
 +dock-window.taskbar.dark dock {
 +    /* Windows 11 silver in both styles. */
-+    background: rgba(238, 240, 243, 0.96);
++    background: rgba(222, 225, 229, 0.96);
 +    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.08);
 +}
 +
@@ -28,7 +28,7 @@ index d97686d..52cceb4 100644
 +}
 +
 +dock-window.taskbar.dark.reduce-transparency dock {
-+    background: rgb(238, 240, 243);
++    background: rgb(222, 225, 229);
 +}
 +
 +dock-window.taskbar launcher,
