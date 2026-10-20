@@ -2,7 +2,7 @@
 
 Machine Lab runs other operating systems on this Mac with QEMU. ARM64 (aarch64) machines run under KVM at near-native
 speed. x86-64 / amd64 machines are supported too, but only by **software emulation**: no hardware acceleration, so they are
-roughly 10 to 50 times slower. Every x86-64 machine is labelled "emulated" and shows a warning.
+far slower than ARM64 guests (a small Alpine ISO boots to a login prompt in under a minute; a full desktop takes much longer). Every x86-64 machine is labelled "emulated" and shows a warning.
 
 ## Install
 
