@@ -7985,3 +7985,24 @@ Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passw
 Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
 
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
+
+
+## Claude account/quota identity fix — 2026-10-20
+
+- Upstream remains pinned to v0.78.0. The app and CLI were signed into different
+  accounts; the old summary selected the CLI quota. The helper now exposes a separate
+  panel selection for the app while preserving CLI switching identity. Unknown app
+  identities show unavailable quota rather than another login's numbers. Custom
+  account data takes precedence over upstream's CLI-only Claude snapshot entry.
+- Live profile verification confirmed a Max 20× subscription whose issued OAuth
+  credential still reported Pro. Read-only profile lookup, identity validation,
+  six-hour private plan cache and backoff now correct that label; no tokens are
+  refreshed or included in helper output/cache.
+- Verified: 43 Claude helper tests; all 17 Meson groups; full
+  `bash mseries/check-codexbar-port.sh` pass including live snapshot schema;
+  split app/CLI fixture rendered in light/dark and inspected. Tests cover upgraded
+  plan, cache reuse, rejected wrong-account profile and unknown desktop login.
+- Deploy with `bash mseries/deploy-codexbar.sh` after push, preserving Wingpanel and
+  daemon. Helpers take effect on next invocation; native module loads at next login.
+  Live panel visual acceptance and interactive account switching are unverified.
+  Next: verify the app account/header and matching quota after next login.

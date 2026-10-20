@@ -1,6 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
 
+## Claude account and usage display — 2026-10-20
+
+CodexBar now selects the Claude app account for the main quota when its login differs
+from the CLI, and names the CLI login separately. Current profile metadata corrects
+stale Pro labels after Max upgrades. Verified with live account metadata, 43 helper
+tests, 17 panel test groups and the custom-port check; split-login fixtures render in
+both themes. Routine deployment stages the native module for next login; live visual
+acceptance remains pending.
+
 ## October 20 desktop focus and snapping
 
 - Implemented XWayland tiling/monitor movement, left/right drag snap zones, panel
