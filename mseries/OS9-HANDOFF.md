@@ -1,3 +1,10 @@
+## Solid black taskbar markers — 2026-10-20
+
+Owner requested another darkening pass. Light-mode running markers now use
+solid black instead of 80% black; opacity remains 1. Native resource rebuild
+and diff check passed. Installed privately and restarted pantheon-dock.service,
+which is active. Focused blue and dark-theme markers retain their colors.
+
 ## Running-marker contrast correction — 2026-10-20
 
 Owner requested noticeably darker taskbar markers after the prior color change.

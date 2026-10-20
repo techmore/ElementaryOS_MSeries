@@ -33,7 +33,7 @@ index 8efd72d..0abec9f 100644
 +
 +/* Match Windows taskbar state: gray for open apps; blue only for focus. */
 +dock-window.taskbar .running-indicator, dock-window.taskbar .running-indicator:disabled {
-+    min-width: 8px; min-height: 3px; opacity: 1; background: rgba(0, 0, 0, 0.80);
++    min-width: 8px; min-height: 3px; opacity: 1; background: #000000;
 +}
 +dock-window.taskbar.dark .running-indicator, dock-window.taskbar.dark .running-indicator:disabled { background: rgba(255, 255, 255, 0.35); }
 +dock-window.taskbar .multiple-windows .running-indicator { min-width: 12px; }

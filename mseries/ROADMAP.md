@@ -2945,3 +2945,5 @@ All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
 
 - 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
