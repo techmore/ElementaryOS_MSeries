@@ -7725,3 +7725,30 @@ removes the diversion and puts the stock plugin back).
 - Removed the unmeasured "10 to 50 times slower" x86 claim (my timing run hung; no ARM64 vs x86 numbers yet).
 - Gotcha: `mseries/install-machine-lab.sh` builds from the checkout it runs in; run it from a current `dev` checkout.
 - Next: import the Omarchy UTM zip into a throwaway machine and boot it; host-to-guest clipboard (#263); file copy (#264).
+
+### Calendar panel / Bible tab: production ready — 2026-10-20 (PR #299 -> dev d4bc8f9)
+
+Live: the owner's Wingpanel (started 2026-10-19 21:46, after the package
+install) maps the packaged libdatetime.so (same inode as the file) and its
+journal has no criticals, warnings or errors.
+
+Upgrade protection is now proven in CI: mseries/debs/test-divert.sh (CI-only)
+installs each pilot package, force-reinstalls the stock package, checks that ours
+survived and the stock copy landed in the diverted path, then removes it and
+checks the stock plugin, no diversion and no leftover files. It passes for the
+datetime, network and quick-settings packages.
+
+The proof found two packaging bugs, both fixed:
+- mseries-quick-settings no longer built after the card layout (SliderRow in
+  Controls.vala). New mseries/quick-settings/prepare-source.sh is shared by the
+  factory image and the package builder.
+- Depends bounds rejected elementary daily bases that use ~ (1.4.0~r556 < 1.4.0)
+  and admitted next-minor dailies (1.4.1~ < 1.4.1). Now (>= X~, << next~).
+  Packaging revision 0mseries2.
+
+Owner desktop upgraded (approved) to mseries-wingpanel-datetime 2.4.2-0mseries2
+from d4bc8f9 after 27/27 groups: dpkg -i over 0mseries1, diversion kept, stock
+original md5 unchanged, dpkg -V clean, installed == tested build, Wingpanel PID
+unchanged (loads at next login). Only remaining item: apt publishing, which
+waits on the owner's signing-key decision (#52).
+
