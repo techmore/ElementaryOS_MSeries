@@ -8058,9 +8058,18 @@ No bootloader, kernel, running audio stack, hardware configuration, Wingpanel pr
   `bash mseries/check-codexbar-port.sh` pass including live snapshot schema;
   split app/CLI fixture rendered in light/dark and inspected. Tests cover upgraded
   plan, cache reuse, rejected wrong-account profile and unknown desktop login.
-- Pushed as PR #328 (`codex/codexbar-claude-active-account` → `dev`), CI pending.
+- Merged PR #328 (`codex/codexbar-claude-active-account` → `dev`) as `25011bc` after all CI passed.
   `bash mseries/deploy-codexbar.sh` passed all 17 groups and installed successfully;
   Wingpanel PID 2136 and daemon PID 2129 stayed running. The installed helper was
   rechecked against live account metadata. Native module loads at next login.
   Live panel visual acceptance and interactive account switching are unverified.
   Next: verify the app account/header and matching quota after next login.
+- Owner confirmed the Claude app is signed in as the work (cybersecuritypilot) account.
+  The previously running Wingpanel (started 09:43) predated the 09:49 module install, so
+  it still showed the CLI login. Ran `bash mseries/deploy-codexbar.sh --restart` from
+  merged `25011bc`: 17/17 Meson groups OK; Wingpanel PID 64704 (Wayland env) maps the
+  new `libcodexbar.so`; daemon PID 2129 kept running. Live helper output: panel account
+  sean.dolbec@… Pro (Anthropic profile confirms `claude_pro`), 5 h 73% / 7 d 25% left;
+  CLI account sdolbec1@… Max 20× (profile `default_claude_max_20x`), 5 h 0% left
+  (matches Anthropic's usage API: 100% used). Visual inspection of the panel was not
+  done (no screenshots of the owner's desktop); interactive switching remains unverified.
