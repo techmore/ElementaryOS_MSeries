@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dropdown and Orchard visual polish — 2026-10-20
+
+Branch `codex/panel-ui-polish` applies the UI specialist skill to CodexBar, Quick
+Settings, Orchard and Battery's dropdown. The owner prioritized Orchard visual
+polish before feature expansion. Changes include readable CodexBar cards, labeled
+Quick Settings sliders, grouped Orchard dropdown metrics/instance rows, a
+responsive Orchard dashboard and selection-only bulk toolbar, and a compact
+Battery summary with expandable activity and an explicit app launcher.
+
+Validation: CodexBar's 17 tests and custom-port check pass (pin remains v0.78.0);
+Orchard's five native suites pass, including seven indicator transitions, row
+identity on unchanged refresh and selection/clear behavior. Patched Quick Settings
+and Power modules compile; private BlueZ checks and shared slider/Battery summary
+probes pass. Light/dark private renders were inspected. CI coverage now includes
+the shared widget probes and native Orchard build/tests. See `PANEL-UI-REVIEW.md`
+for details and limitations. No panel reload; Quick Settings/Power/Orchard are
+built but not installed. CodexBar post-push staging passed all 17 tests, and the panel/daemon PID lists
+were unchanged. Its module loads at next login; native Settings takes effect
+on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
 ## Top bar increased to 130% and managed service restored — 2026-10-20
 
 Owner reported that 115% was not visibly larger and confirmed the target is

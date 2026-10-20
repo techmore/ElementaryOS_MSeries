@@ -483,6 +483,17 @@ namespace MSeries {
             GLib.Object (application_id: "com.steipete.CodexBar.Settings", flags: ApplicationFlags.DEFAULT_FLAGS);
         }
 
+        protected override void startup () {
+            base.startup ();
+            Granite.init ();
+            var settings = Gtk.Settings.get_default ();
+            var desktop = Granite.Settings.get_default ();
+            settings.gtk_application_prefer_dark_theme = desktop.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+            desktop.notify["prefers-color-scheme"].connect (() => {
+                settings.gtk_application_prefer_dark_theme = desktop.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+            });
+        }
+
         protected override void activate () {
             var window = active_window;
             if (window == null) {
