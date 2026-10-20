@@ -7670,6 +7670,7 @@ removes the diversion and puts the stock plugin back).
 ## Machine Lab x86 emulation boot check (2026-10-19)
 - Installed `qemu-system-x86` and `ovmf` (owner-approved). Booted Alpine virt 3.24.2 x86_64 (sha256 verified) under TCG: q35, `-cpu max`, OVMF, serial console. Reached the Alpine login prompt (kernel 6.18.52-0-virt). Tested with a direct QEMU command, not through Machine Lab's own x86 launch path.
 - Not yet verified: boot via the Machine Lab UI, Display tab on x86, timing versus ARM64 KVM.
+
 ## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
 
 The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
