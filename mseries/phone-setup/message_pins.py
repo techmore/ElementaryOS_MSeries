@@ -48,10 +48,16 @@ def read_snapshot(path):
     return validate_snapshot(value)
 
 
-def suggested_matches(snapshot, threads):
+def suggested_matches(snapshot, threads, previous=None):
     """Only exact, unique individual addresses. Group names are never identity."""
     result = []
+    known = {}
+    if previous and previous.get('snapshot'):
+        known = {pin['apple_identifier']: key for pin, key in zip(previous['snapshot']['pins'], previous['choices']) if key in threads}
     for pin in snapshot['pins']:
+        if pin['apple_identifier'] in known:
+            result.append(known[pin['apple_identifier']])
+            continue
         address = address_key(pin['apple_identifier'])
         matches = [t['key'] for t in threads.values() if address and not t.get('is_group') and len(t.get('recipients', [])) == 1 and address_key(t['recipients'][0]) == address]
         result.append(matches[0] if len(matches) == 1 else None)
@@ -68,8 +74,20 @@ def matched_state(snapshot, choices, threads):
     return dict(version=1, snapshot=snapshot, choices=list(choices))
 
 
+def effective_choices(threads, state):
+    choices = list(state.get('choices', []))
+    if state.get('snapshot'):
+        suggested = suggested_matches(state['snapshot'], threads)
+        for index, key in enumerate(choices):
+            # Only phone-only/new individual identities get promoted. Never
+            # replace a missing group or an unresolved explicit choice by name.
+            if key and key not in threads and key.startswith(('inbox:', 'new:')):
+                choices[index] = suggested[index]
+    return choices
+
+
 def ordered_keys(threads, state):
-    selected = [key for key in state.get('choices', []) if key in threads]
+    selected = [key for key in effective_choices(threads, state) if key in threads]
     ranks = {key: len(selected) - index for index, key in enumerate(selected)}
     return sorted(threads, key=lambda key: (ranks.get(key, 0), threads[key].get('last_ts', '')), reverse=True)
 

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from message_pins import SCHEMA, read_snapshot, validate_snapshot, suggested_matches, matched_state, ordered_keys
+from message_pins import SCHEMA, read_snapshot, validate_snapshot, suggested_matches, matched_state, ordered_keys, effective_choices
 
 
 def snapshot(ids=None):
@@ -58,6 +58,17 @@ class PinTests(unittest.TestCase):
         value = snapshot();value['pins'] = []
         self.assertEqual(matched_state(value, [], threads())['choices'], [])
         with self.assertRaises(ValueError): validate_snapshot({'status':'unavailable'})
+
+    def test_reimport_keeps_explicit_group_match_when_apple_reorders(self):
+        state = matched_state(snapshot(), ['alex', 'group'], threads())
+        reordered = snapshot(['opaque-group', '+15550100123'])
+        self.assertEqual(suggested_matches(reordered, threads(), state), ['group', 'alex'])
+
+    def test_phone_only_individual_promotes_without_group_guessing(self):
+        state = dict(snapshot=snapshot(), choices=['inbox:+15550100123', 'missing-group'])
+        self.assertEqual(effective_choices(threads(), state), ['alex', 'missing-group'])
+        state['choices'][0] = None
+        self.assertEqual(effective_choices(threads(), state), [None, 'missing-group'])
 
 
 if __name__ == '__main__': unittest.main()

@@ -20,7 +20,7 @@ from blueferry.client import BackendClient
 from blueferry.bus import get_system_bus
 from blueferry.recipients import validate_recipient
 from messages_model import ConversationState, merge_inbox
-from message_pins import PinStore, profile_key, read_snapshot, suggested_matches, matched_state, ordered_keys
+from message_pins import PinStore, profile_key, read_snapshot, suggested_matches, matched_state, ordered_keys, effective_choices
 
 _ = gettext.gettext
 APP_ID = 'io.elementary.mseries.Messages'
@@ -355,7 +355,7 @@ class Messages(Gtk.Application):
 
     def populate(self):
         order = ordered_keys(self.threads, self.pin_state)
-        pinned = set(self.pin_state['choices'])
+        pinned = set(effective_choices(self.threads, self.pin_state))
         # Avoid destroying focus/selection when a status poll changes nothing.
         signatures = [(key, self.threads[key]['name'], key in pinned, self.threads[key].get('unread_count', 0), self.threads[key]['messages'][-1].get('body', '') if self.threads[key]['messages'] else '') for key in order]
         if signatures != getattr(self, 'row_signature', None):
@@ -443,7 +443,7 @@ class Messages(Gtk.Application):
             self.pin_notice('')
             return
         stamp = datetime.fromisoformat(snapshot['captured_at']).astimezone().strftime('%x %X')
-        missing = sum(key not in self.threads for key in self.pin_state['choices'])
+        missing = sum(key not in self.threads for key in effective_choices(self.threads, self.pin_state))
         self.pin_notice((_('Pins from Mac · %s') % stamp) + (_(' · %d need matching') % missing if missing else ''))
         self.pin_note.set_tooltip_text(_('This is the Mac’s exported pin order. Changes on your iPhone require a new export. Review Imported Pins to match missing conversations.'))
 
@@ -470,12 +470,15 @@ class Messages(Gtk.Application):
 
     def review_pins(self, *_args):
         if self.pin_state.get('snapshot'):
-            self.show_pin_review(self.pin_state['snapshot'], self.pin_state['choices'])
+            self.show_pin_review(self.pin_state['snapshot'], effective_choices(self.threads, self.pin_state))
         else:
             self.import_pins()
 
     def show_pin_review(self, snapshot, previous=None):
         dialog = Gtk.Window(title=_('Import iPhone Pins'), transient_for=self.window, destroy_with_parent=True, modal=True, default_width=480, default_height=540)
+        header = Gtk.HeaderBar()
+        header.set_title_widget(label(_('Import iPhone Pins'), 'title'))
+        dialog.set_titlebar(header)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_top=18, margin_bottom=18, margin_start=20, margin_end=20)
         box.append(label(_('Your people, in the same order.'), 'title-2', xalign=0, wrap=True))
         box.append(label(_('Match the pins exported from Apple Messages. Groups need your selection. This imports a snapshot; it does not change your iPhone.'), 'dim-label', xalign=0, wrap=True, max_width_chars=48))
@@ -483,7 +486,7 @@ class Messages(Gtk.Application):
         box.append(Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER, child=rows))
         keys = sorted(self.threads, key=lambda key: self.threads[key]['name'].casefold())
         names = [_('Not matched yet')] + [self.threads[key]['name'] for key in keys]
-        choices = previous if previous is not None else suggested_matches(snapshot, self.threads)
+        choices = previous if previous is not None else suggested_matches(snapshot, self.threads, self.pin_state)
         dropdowns = []
         for index, pin in enumerate(snapshot['pins']):
             row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -496,7 +499,15 @@ class Messages(Gtk.Application):
             dropdown.set_factory(factory)
             dropdown.set_selected(keys.index(choices[index])+1 if choices[index] in keys else 0)
             dropdown.update_property([Gtk.AccessibleProperty.LABEL], [_('Conversation for pin %d') % (index+1)])
-            row.append(dropdown);rows.append(row);dropdowns.append(dropdown)
+            row.append(dropdown)
+            details = label('', 'dim-label', xalign=0, wrap=True, max_width_chars=42)
+            def describe_match(control, *_args, destination=details):
+                key = keys[control.get_selected()-1] if control.get_selected() else None
+                addresses = ', '.join(self.threads.get(key, {}).get('recipients', []))
+                destination.set_label(addresses or _('Choose a conversation, or leave this pin for later.'))
+                control.set_tooltip_text(self.threads.get(key, {}).get('name', '') + ('\n' + addresses if addresses else ''))
+            dropdown.connect('notify::selected', describe_match);describe_match(dropdown)
+            row.append(details);rows.append(row);dropdowns.append(dropdown)
         if not snapshot['pins']:
             rows.append(label(_('Apple Messages exported an empty pin list. Importing it clears this computer’s imported pins.'), xalign=0, wrap=True, max_width_chars=45))
         error_label = label('', 'error', xalign=0, wrap=True, visible=False)
@@ -505,6 +516,13 @@ class Messages(Gtk.Application):
         cancel = Gtk.Button(label=_('Cancel'));cancel.connect('clicked', lambda *_a: dialog.close());actions.append(cancel)
         apply = Gtk.Button(label=_('Import Pins'));apply.add_css_class('suggested-action');actions.append(apply)
         box.append(actions);dialog.set_child(box)
+        dialog.set_default_widget(apply)
+        keys_controller = Gtk.EventControllerKey()
+        def key_pressed(_c, key, _code, _mods):
+            if key == Gdk.KEY_Escape:
+                dialog.close();return True
+            return False
+        keys_controller.connect('key-pressed', key_pressed);dialog.add_controller(keys_controller)
         state = dict(alive=True)
         dialog.connect('close-request', lambda *_a: state.update(alive=False) or False)
         def save(*_args):

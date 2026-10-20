@@ -119,6 +119,8 @@ function run(args) {
             fail('Could not secure the private export permissions');
         return 'Exported ' + snapshot.pins.length + ' ordered Messages pins. This is a snapshot; no phone settings changed.';
     } catch (error) {
+        if (diagnostics.process_supported === false)
+            error = new Error('No readable pin configuration. IMCore reports this helper process as unsupported; account initialization and permissions are not established. A successful export has not been verified.');
         if (probe) return JSON.stringify({status: 'unavailable', reason: String(error.message || error), diagnostics: diagnostics, content_printed: false});
         throw error;
     }
