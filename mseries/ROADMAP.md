@@ -2793,3 +2793,33 @@ performed during this cleanup review. The diagnostic boot selection is untouched
 ## Session reconciliation — 2026-10-20
 
 Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.
+
+## Windows taskbar + CodexBar persistence — 2026-10-20
+
+The canonical dock installer now applies the complete Windows taskbar stack and
+CodexBar integration through `mseries/dock-taskbar/prepare-source.sh`. Source guards
+reject a missing TaskbarRow, StartMenu, schema or CodexBar item. The taskbar button
+sits left of Wi-Fi with a separate divider/gap; hover opens the shared native quota
+menu without a keyboard grab, click pins it, leave closes after a crossing grace.
+Owner requested larger popup text: 25% larger, 320-pixel body and 420-pixel
+scroll viewport; the change is scoped to the taskbar popup.
+The newer native Start menu and scoped Windows 11 CSS are included in the patch.
+Teams' official icon and Outlook's transparent official SVG/launcher metadata are
+retained. No icon asset is redistributed; existing local pins are unchanged.
+
+A clean-build/linked-type/GTK hover regression check is wired into CodexBar CI;
+`install-dock-drawers.sh --build-only` also runs the isolated hover probe before
+any install. Tests use fake HOME/backend and cannot restart the desktop. See
+`mseries/dock-taskbar/README.md`. Persistence work does not install/restart the dock;
+the earlier complete Windows taskbar/CodexBar local deployment stays in place.
+Do not deploy an app-tracking-only dock build lacking this full stack.
+
+## Work Mode integration reconciled — 2026-10-20
+
+#329 now preserves current gesture/cursor and floating-window clearance behavior
+alongside taskbar modes, and selects the size-system token appropriate to the dock.
+Nine Work Mode tests, 41 compositor tests, strict Clippy, native dock/settings builds
+and private window/focus/typing checks pass. #337's status-note conflicts are
+reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
+See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
+remaining native taskbar/network and Teams/Outlook qualification checks.
