@@ -1,0 +1,13 @@
+[package]
+name = "mseries-keyboard-backlight"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust candidate for ambient keyboard lighting on Apple Silicon"
+license = "GPL-3.0-or-later"
+
+[[bin]]
+name = "mseries-keyboard-backlight-rs"
+path = "src/main.rs"
+
+[dependencies]

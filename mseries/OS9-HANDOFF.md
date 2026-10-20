@@ -2490,3 +2490,11 @@ mkosi and podman. The weekly arm64 image job has not run, and no target image or
 device qualification is claimed. Changes remain on the local `rust` branch;
 no publication occurred. Next: run the arm64 image admission job when available,
 then continue the per-component inventory and parity conversions.
+
+The next component, ambient keyboard lighting, now has a dependency-free Rust
+candidate at `mseries/rust/keyboard-backlight/`. Six tests cover ALS sensor
+selection, Python-compatible rounding and curve behavior, manual override
+pause, deadband, and step sizing; format, Clippy, and release-build checks pass.
+It remains uninstalled because the live busctl/loginctl integration has not
+received same-host parity or Apple Silicon image admission. The daily Rust
+candidate workflow now builds this crate too. Inventory: 745 scoped files.

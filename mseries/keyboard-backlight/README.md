@@ -1,5 +1,12 @@
 # Ambient keyboard lighting
 
+The current Python helper remains the installed implementation. A separate
+Rust candidate is under `mseries/rust/keyboard-backlight/`; it preserves the
+sensor selection, ambient-light curve, manual override pause, deadband,
+logind session/lid gates, UPower controls, `--step`, and `--once` behavior.
+The candidate is not installed yet: its D-Bus/login integration still needs
+same-host parity checks and Apple Silicon image admission.
+
 Install on the elementary desktop:
 
 ```sh

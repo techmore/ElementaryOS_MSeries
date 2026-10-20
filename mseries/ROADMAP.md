@@ -263,6 +263,10 @@ image exposes the existing verifier path. Full arm64 image admission is still
 open. The cadence workflow runs Rust checks daily and builds a non-publishing
 arm64 image weekly; the schedule only activates after the workflow reaches the
 default branch. See the [2026-10-20 handoff](OS9-HANDOFF.md#2026-10-20--rust-panel-tool-integration-and-parity-follow-up).
+The keyboard-backlight service has a dependency-free Rust candidate with five
+unit tests for sensor selection, rounding, ambient curve, manual override pause,
+deadband and step sizing. It is not installed; live logind/UPower parity and
+image admission remain open. The file inventory now covers 745 paths.
 
 ## Implemented; runtime validation pending
 
