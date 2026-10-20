@@ -14,8 +14,8 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 769,
-  "component_count": 233,
+  "item_count": 774,
+  "component_count": 234,
   "project_count": 204,
   "components": [
     {
@@ -2521,18 +2521,34 @@
       ]
     },
     {
+      "id": "mseries/rust/iso-assembly",
+      "ownership": "mseries-maintained",
+      "item_count": 4,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 1,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/iso-assembly/Cargo.lock",
+        "mseries/rust/iso-assembly/Cargo.toml",
+        "mseries/rust/iso-assembly/README.md",
+        "mseries/rust/iso-assembly/src/main.rs"
+      ]
+    },
+    {
       "id": "mseries/rust/iso-label",
       "ownership": "mseries-maintained",
-      "item_count": 5,
+      "item_count": 6,
       "rust_status_counts": {
         "candidate-parity-verified-in-use": 1,
-        "candidate-parity-verified-not-installed": 1,
+        "candidate-parity-verified-not-installed": 2,
         "recorded-non-code-input": 3
       },
       "items": [
         "mseries/rust/iso-label/Cargo.lock",
         "mseries/rust/iso-label/Cargo.toml",
         "mseries/rust/iso-label/README.md",
+        "mseries/rust/iso-label/src/lib.rs",
         "mseries/rust/iso-label/src/main.rs",
         "mseries/rust/iso-label/test-parity.py"
       ]
@@ -3246,17 +3262,23 @@
     {
       "id": "image-build/assemble-iso",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-implemented-unverified": 1,
+        "not-assessed": 1,
+        "recorded-non-code-input": 3
       },
       "items": [
-        "assemble-iso.sh"
+        "assemble-iso.sh",
+        "mseries/rust/iso-assembly/Cargo.lock",
+        "mseries/rust/iso-assembly/Cargo.toml",
+        "mseries/rust/iso-assembly/README.md",
+        "mseries/rust/iso-assembly/src/main.rs"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
-      "migration_status": "not-started",
-      "parity_contract_status": "not-defined",
-      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "migration_status": "candidate-implemented-unverified",
+      "parity_contract_status": "implementation-present-unverified",
+      "parity_contract": "Implementation exists, but feature-level parity has not been verified.",
       "enhancement_review_status": "not-reviewed",
       "intentional_enhancements": []
     },
@@ -5309,10 +5331,10 @@
     {
       "id": "mseries/iso-label",
       "ownership": "mseries-maintained",
-      "item_count": 7,
+      "item_count": 8,
       "rust_status_counts": {
         "candidate-parity-verified-in-use": 1,
-        "candidate-parity-verified-not-installed": 1,
+        "candidate-parity-verified-not-installed": 2,
         "not-assessed": 2,
         "recorded-non-code-input": 3
       },
@@ -5321,6 +5343,7 @@
         "mseries/rust/iso-label/Cargo.lock",
         "mseries/rust/iso-label/Cargo.toml",
         "mseries/rust/iso-label/README.md",
+        "mseries/rust/iso-label/src/lib.rs",
         "mseries/rust/iso-label/src/main.rs",
         "mseries/rust/iso-label/test-parity.py",
         "mseries/test-iso-label.sh"
@@ -14012,6 +14035,46 @@
       "rust_status": "not-assessed"
     },
     {
+      "id": "mseries/rust/iso-assembly/Cargo.lock",
+      "path": "mseries/rust/iso-assembly/Cargo.lock",
+      "component_id": "mseries/rust/iso-assembly",
+      "project_id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-assembly/Cargo.toml",
+      "path": "mseries/rust/iso-assembly/Cargo.toml",
+      "component_id": "mseries/rust/iso-assembly",
+      "project_id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-assembly/README.md",
+      "path": "mseries/rust/iso-assembly/README.md",
+      "component_id": "mseries/rust/iso-assembly",
+      "project_id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-assembly/src/main.rs",
+      "path": "mseries/rust/iso-assembly/src/main.rs",
+      "component_id": "mseries/rust/iso-assembly",
+      "project_id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
+    },
+    {
       "id": "mseries/rust/iso-label/Cargo.lock",
       "path": "mseries/rust/iso-label/Cargo.lock",
       "component_id": "mseries/rust/iso-label",
@@ -14040,6 +14103,16 @@
       "language": "markdown",
       "role": "documentation-or-record",
       "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-label/src/lib.rs",
+      "path": "mseries/rust/iso-label/src/lib.rs",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/rust/iso-label/src/main.rs",

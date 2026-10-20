@@ -1,5 +1,16 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust OS migration checkpoint — 2026-10-20
+
+The local `rust` branch now has separate `atomic-app`, `iso-label`, and
+`iso-assembly` crates. `assemble-iso.sh` is a compatibility launcher for the
+Rust ISO orchestration; the inner xorriso container still runs its fixed Linux
+image commands. Atomic app activation is wired behind its opt-in Signal path.
+Cargo checks pass for the ISO crates. A full Linux image build and runtime
+parity review remain open; the macOS development host has no mkosi/podman.
+Continue the per-project inventory and core Elementary conversions before any
+claim of whole-OS parity or default cutover.
+
 ## Omacom userspace improvements — 2026-10-17
 
 [Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,

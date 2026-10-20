@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Rust OS build pipeline — 2026-10-20
+
+`assemble-iso.sh` now delegates to `mseries/rust/iso-assembly`, which owns
+the ISO staging, APT metadata, release substitutions, and xorriso-container
+invocation. The ISO label formatter is a shared Rust library. Cargo checks pass;
+the macOS host lacks the Linux image tools, so full ISO assembly and parity
+remain unverified. Continue with mkosi/package selection and the core desktop
+projects; retain per-project pins and promotion gates for daily upstream syncs.
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and

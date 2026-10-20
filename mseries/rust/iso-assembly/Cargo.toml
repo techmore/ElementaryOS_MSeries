@@ -1,0 +1,12 @@
+[package]
+name = "mseries-iso-assembly"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+mseries-iso-label = { path = "../iso-label" }
+
+[[bin]]
+name = "mseries-iso-assembly"
+path = "src/main.rs"

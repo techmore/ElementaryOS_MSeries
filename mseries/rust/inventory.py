@@ -28,7 +28,9 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/keyboard-backlight/",
     "mseries/rust/iso-label/",
     "mseries/rust/atomic-app/",
+    "mseries/rust/iso-assembly/",
 )
+RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = ("mseries/rust/iso-assembly/",)
 RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
     "mseries/rust/netusage/",
@@ -43,6 +45,7 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/brightness-bridge/": "mseries/brightness",
     "mseries/rust/iso-label/": "mseries/iso-label",
     "mseries/rust/atomic-app/": "mseries/atomic-app",
+    "mseries/rust/iso-assembly/": "image-build/assemble-iso",
 }
 PROJECT_PATH_OVERRIDES = {
     "mseries/atomic-app.py": "mseries/atomic-app",
@@ -197,6 +200,8 @@ def rust_status(text: str, local: bool, item_role: str) -> str:
         return "retain-upstream"
     if text in RUST_IN_USE_PATHS:
         return "candidate-parity-verified-in-use"
+    if text.startswith(RUST_IMPLEMENTED_UNVERIFIED_PREFIXES):
+        return "candidate-implemented-unverified"
     if text.startswith(RUST_FUNCTIONAL_PREFIXES):
         return "candidate-functional-tests-passing-not-installed"
     if text.startswith(RUST_CANDIDATE_PREFIXES):
@@ -235,6 +240,9 @@ def migration_metadata(project: str, ownership: str, records: list[dict[str, str
     elif "candidate-functional-tests-passing-not-installed" in statuses:
         migration = "candidate-functional-tests-passing-not-installed"
         parity = "functional-checks-only"
+    elif "candidate-implemented-unverified" in statuses:
+        migration = "candidate-implemented-unverified"
+        parity = "implementation-present-unverified"
     elif "candidate-parity-verified-not-installed" in statuses:
         migration = "candidate-parity-verified-not-installed"
         parity = "candidate-parity-evidence-present"
@@ -245,7 +253,13 @@ def migration_metadata(project: str, ownership: str, records: list[dict[str, str
         "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
         "migration_status": migration,
         "parity_contract_status": parity,
-        "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed." if parity == "not-defined" else "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+        "parity_contract": (
+            "Feature-level behavior and interface baselines must be recorded before full parity can be claimed."
+            if parity == "not-defined"
+            else "Implementation exists, but feature-level parity has not been verified."
+            if parity == "implementation-present-unverified"
+            else "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity."
+        ),
         "enhancement_review_status": "not-reviewed",
         "intentional_enhancements": [],
     }
