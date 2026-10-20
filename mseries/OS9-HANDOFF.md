@@ -8790,3 +8790,13 @@ retention, existing hover/focus/leave/pin probe, shell checks and light/dark fix
 inspection pass locally. Live read-only matching resolves both open Brave apps.
 Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
 See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
+
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
