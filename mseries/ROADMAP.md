@@ -21,6 +21,21 @@ the installer. Any future tracking fix must preserve the complete customized
 taskbar source and be isolated-tested first. No compositor or Wingpanel restart
 was performed. The safe icon/launcher PR excludes the native dock experiment.
 
+## Work Mode and Teams/Outlook deployment — 2026-10-20
+
+Historical 11:39 deployment snapshot. The later #338 recovery entry above
+supersedes the dock binary and launcher/icon status; its owner-recovery hold
+remains in force. This receipt does not authorize another dock deployment.
+
+Merged dev `8d85efe` is installed: Work Mode helper/settings, native dock, Teams
+and Outlook shortcuts, and compositor package. Wingpanel and the running
+compositor are unchanged; the compositor loads at next login. A concurrent dock
+service restart was observed; its current binary matches the installed build.
+Existing settings/pins/wallpaper and Brave session selection are preserved.
+See OS9-HANDOFF.md and the deployment receipt for checks and backups. Respect
+the #338 recovery hold before further dock deployment or restart; native
+taskbar/window-clearance and Teams/Outlook qualification remain open.
+
 ## Work Mode integration reconciled — 2026-10-20
 
 #329 now preserves current gesture/cursor and floating-window clearance behavior
