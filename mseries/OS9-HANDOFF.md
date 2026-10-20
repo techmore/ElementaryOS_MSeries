@@ -31,6 +31,57 @@ No live deployment is part of this draft. Owner recovery confirmation and
 isolated combined-taskbar UI/focus/typing validation remain gates. See
 `mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
 
+## Working iPhone messages and native Messages app — 2026-10-20
+
+The controlled 5.87 trial now has **real send and receive evidence**. Root-owned
+BlueZ 5.87 bluetoothd/obexd/client run from a scoped prefix; bearer methods were
+verified on the actual daemon. The fresh upstream Connect-first pairing exposed
+Hands-Free and produced Classic + LE keys. After the owner enabled the newly
+visible Show Message Notifications switch, MAP/MNS opened. One authorized self
+text was sent and received, followed by an authorized contact test and two real
+incoming replies. Contacts retained; optional ANCS remains unavailable. No
+message contents, phone numbers or keys enter Git. The combination worked; the
+trial does not isolate a single causal change.
+
+Fixed the live candidate's version-detection mismatch by matching bluetoothctl
+to the daemon in scoped service/launcher PATHs. BlueFerry otherwise read distro
+CLI 5.85 and selected compatibility despite 5.87 running. Persistent drop-ins
+are installed without restarting the working message session. Reproducible
+installer/rollback: `mseries/install-messaging-bluez.sh`. Distro binaries,
+kernel/bootloader and Wingpanel remain untouched. The pairing flow removed only
+BlueFerry's phone-audio restriction; normal Hands-Free is now offered.
+
+New `mseries-messages` / Messages desktop entry: GTK 4 + Granite 7, conversation
+sidebar/search, plain-text bubbles, explicit contact/address selection,
+contact-photo avatars with initials fallback, larger sidebar names,
+multiline composer/Ctrl+Enter, per-conversation drafts while open, pending and
+retry states, responsive navigation, theme following and original app icon.
+Backend transport, encrypted history and group routing stay upstream. Setup
+hands off to this native client; advanced group setup remains in BlueFerry.
+
+Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect
+and logind resume,
+on manual refresh and after five minutes between successful reads, using wall
+time so suspend counts. Snapshot merges preserve known group routes and dedupe
+MAP handles. Inbox-only snapshots stay in memory; no plaintext archive is added.
+A live query returned 11 entries. Complete iCloud history and sent-history import
+are not supported; controlled sleep/missed-message recovery and reboot remain
+unverified. Source details: `phone-setup/UPSTREAM-REVIEW.md`, user behavior and
+rollback: `phone-setup/README.md`.
+
+Contact-photo caching was explicitly requested and enabled; a real PBAP sync
+returned 727 contacts and 34 photos while MAP stayed connected.
+
+Verification: 26 setup/protocol/reconnect/model tests and 9 private-display GTK
+checks; light/dark/narrow synthetic screenshots reviewed. Draft routing across
+conversation switches, duplicate-send prevention, failed-send retry retention,
+group identity tokens, malicious addresses, search, offline state and narrow
+navigation covered. Live native app started, MAP stayed connected, and recent
+inbox rendering loaded without startup errors. Final send through the redesigned
+composer and assistive-technology traversal remain hardware/UI follow-ups.
+Localization strings are extractable; translated catalogs are not shipped.
+
+
 ## Transparent Outlook icon; dock deployment recovered — 2026-10-20
 
 Outlook now fetches the transparent, checksum-pinned Office SVG directly from
@@ -8421,6 +8472,112 @@ Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live
 
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
 
+## iPhone messaging and experimental macOS lane — 2026-10-20
+
+Branch `codex/messaging-macos-lab` (experimental, not merged): installed a personal
+ARM64 BlueFerry build from 60fd7ef1 (3734 upstream tests passed, 16 skipped) and
+Bubbles from 9c677ec7 (438 tests passed, 1 ignored after HEIC decoder installation).
+Bubbles starts, but Apple activation awaits a native-macOS hardware export.
+BlueFerry bonds with the iPhone 14 Pro/iOS 27.0.1; PBAP opens but MAP is denied
+with 0x43. The missing iPhone permission switches persist after clean re-pair
+and a targeted restoration of normal HFP roles. Related open upstream #263 is
+not proof of the same root cause. No message delivery is qualified.
+
+Added an optional native GTK4/Granite Connect iPhone wizard, live MAP-gated
+readiness, explicit passkey confirmation, async checks, bounded recovery, and
+credential-free previews. `mseries/install-phone-setup.sh` installs it without
+replacing BlueFerry; initial live startup and fixture layouts checked. Full
+pairing through this wrapper is unverified. Details: `mseries/phone-setup/README.md`.
+
+Machine Lab's old impossible-machine probes are replaced with read-only
+host/KVM/QEMU/Apple-artifact/qualification checks. Pinned upstream M2 Pro
+ARM/Linux graphical-boot research and dock save-to-disk requirements are retained
+in `machine-lab/experiments/vmapple/README.md`. The component builds and its tests
+pass; no experimental kernel, VM firmware or guest was installed or booted.
+Existing working Machine Lab remains installed; the modified page is branch-only.
+
+Native Mac visit kit prepared in this chat's outputs: official Mac Hardware Info
+v1.2.0 (universal ARM64/x86_64 verified), private clipboard export helper and
+instructions. Kit files contain no hardware identity. Linux had about 19 GiB
+free; full guest provisioning/builds require additional storage. Next: complete
+Bubbles activation after Mac export; investigate iOS 27 permission behavior;
+review/rebase the pinned KVM patches separately before any hardware trial.
+
+Follow-up: contacts now genuinely synchronized (727 cached). Message MAP remains
+0x43. Added `mseries-phone-status` live read-only diagnostics, persistent latest
+transport results and per-phone recovery history. Status never pretends to read
+iOS permission switch positions. A transient profile reconnect preserves the
+last verified denial rather than sending the user through a new recovery loop.
+Native pairing copy now says confirm on the computer first, then Pair on the
+phone; iOS version is not requested on the opening page. Guided window remains
+offscreen while the established BlueFerry session is used. The cleared-target
+polling regression has a test; existing approved bond was restored without
+re-pairing. No successful message delivery yet.
+
+Mac visit follow-up: public, credential-free helpers and a complete checklist now
+live under `mseries/phone-setup/macos-visit`. The downloader fetches the official
+Mac Hardware Info archive, verifies the retained SHA-256 and pins our helper
+fetches to an explicit Git commit. The checklist covers full OABS export,
+cross-OS transfer (USB or password-encrypted private-cloud archive), optional
+Ventura guest provisioning and the before-reboot gate. No private export, Apple
+binary or VM identity is committed. bash syntax and shellcheck pass; native Mac
+execution and Apple activation remain unverified.
+
+One-script follow-up: `phone-setup/macos-visit/Collect-Everything.command` now
+combines official hardware-helper download/export, pinned macosvm 0.2-3 (GitHub
+release SHA-256 verified), Ventura IPSW, native firmware provenance, restore,
+owner-confirmed native guest startup/shutdown and checksummed external exFAT
+transfer. Requires 100 GiB on both macOS staging and external destination.
+No Homebrew, drive formatting, reboot or account login is automated. Incomplete
+restores are preserved; completed restore/startup markers enable resume. Final
+collection receipt requires re-reading all external hashes. Mock failure-gate
+tests cover invalid export, restore/config/native startup failures, corrupt
+external copy and completed-stage resume; bash syntax and shellcheck pass.
+macOS execution, actual restore and Linux guest boot remain unverified.
+
+Storage correction: existing internal exFAT destinations are now accepted by
+the collector, with the same filesystem/free-space/hash gates. No partition is
+created or resized. The ordinary macOS APFS data volume remains inaccessible
+from Linux (prior KeyManager failure; hardware/SEP encryption unsupported by
+apfs-fuse). Live Linux free space is now about 11 GiB. A proposed 120 GiB shared
+exFAT partition would require a separately approved and capacity-checked macOS
+APFS shrink; no partition mutation was attempted. A folder or APFS volume in the
+existing encrypted container does not solve cross-OS access.
+
+Messaging-only follow-up: owner requested undo/redo and continued native build.
+Restored only KEEP_PHONE_AUDIO_ON_PHONE from the private pre-HFP backup; existing
+phone target/bond and contact data retained. Added native Retry Connection with
+bond preflight, bounded backend restart/status wait and cancellation; Refresh
+Status stays read-only. Consolidated blocked/inactive/unavailable/disconnected
+presentation in setup_core so historical denials do not repeat toggle questions
+or claim the phone is currently connected. Installed updated files.
+
+Deep probes confirm remote SDP MAP 1.4, RFCOMM 2 and L2CAP 4107; OBEX CONNECT
+receives 0xc3 Forbidden over both transports. A fresh obexd/quiet interval,
+CONNECT variants and hands-free connection all failed. Raw capture files stay
+mode-0600 outside Git. Native retry live result remains access-denied with the
+bond retained; 18 scoped checks pass. No successful message session or delivery.
+No re-pair, reboot, kernel, partition or Wingpanel change was made.
+
+Upstream messaging audit: `phone-setup/UPSTREAM-REVIEW.md` pins current BlueFerry
+60fd7ef1 and Tether 9088422a, compares the live stack against protocol/pairing
+guides, and records BlueZ 5.85 compatibility limitations (upstream latest 5.87;
+Ubuntu candidate remains 5.85). 152 installed backend/GTK Python modules match
+upstream; Qt files are intentionally not installed. Forced compact/global
+discovery and OBEX server filters did not solve access and are removed. The
+BR/EDR advertising flag was intentional BlueZ behavior, not a proven bug. HFP
+SLC completed but MAP remained denied. Original discovery restored after stopping
+the advertisement to avoid EBUSY; packaged BlueFerry/obex commands and WirePlumber
+are active. No new re-pair or message send occurred. Next meaningful trial is
+a matched isolated BlueZ 5.87 build with verified bearer API, not more setup UI.
+
+Staged BlueZ 5.87 candidate from release commit 65d11ede: native ARM64 bluetoothd
+and obexd built in this chat's work/bluez-5.87, with 34 GObex and 134 SDP unit
+tests passing. No make install or new dependencies; live stack remains 5.85.
+Service-only configure options/limitations recorded in the upstream review.
+Current kernel is 7.1.12-2-20261017.20-sep-ARCH; unchanged by this work. The
+experimental bearer API and real iPhone delivery still need a controlled live
+trial; do not infer permission success from these software checks.
 
 ## Calendar GitHub outcome tracker — 2026-10-20
 
@@ -8696,3 +8853,14 @@ checks pass. Updated receipt/screenshot under review-339-2026-10-20.
 No desktop deployment or Wingpanel restart; #339 remains draft because recovery
 confirmation, complete representative acceptance and coordinated deployment gates
 remain unmet. Respect the explicit no-deploy instruction.
+
+### PR #339 closed by the recovery coordinator during review
+
+The coordinator closed #339 at 12:05:17 as superseded by merged #342 and reported
+its coordinated deployment complete. That closure stopped CI for subsequent
+pushes; the old PR was not reopened. Retained the additional alias/activation/menu
+hardening and isolated-input regression on `codex/taskbar-tracking-review-followup`
+for a new draft follow-up. The original tracking integration is already in dev;
+this task did not deploy or restart anything. The follow-up still lacks complete
+representative native visual/input acceptance, and its live qualification cannot
+be performed under the current no-deploy instruction.

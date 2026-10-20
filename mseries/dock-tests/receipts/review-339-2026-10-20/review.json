@@ -34,9 +34,14 @@
   "deployed": false,
   "restarted_wingpanel": false,
   "remaining_gates": [
-    "Owner confirmation of desktop recovery",
-    "Representative app/alias activation, complete light/dark visual acceptance and physical-input qualification",
-    "Separately authorized coordinated live deployment; prohibited by current request"
+    "Complete representative real-app/light-dark/physical-input acceptance of the additional hardening",
+    "Separately authorized live qualification of the follow-up; deployment prohibited by current request"
   ],
-  "superseding_pr": 342
+  "superseding_pr": 342,
+  "original_pr_disposition": {
+    "number": 339,
+    "state": "closed as superseded by PR342 during review",
+    "coordinator_report": "https://github.com/techmore/ElementaryOS_MSeries/pull/339#issuecomment-6295334357",
+    "followup_branch": "codex/taskbar-tracking-review-followup"
+  }
 }

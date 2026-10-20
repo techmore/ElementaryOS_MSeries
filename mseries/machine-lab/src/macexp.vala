@@ -1,5 +1,4 @@
-/* "macOS (experimental)": runs real probes against this Mac and shows,
- * step by step, why a macOS guest cannot run here and how each route fails. */
+/* Read-only preparation checks for the experimental Linux/KVM macOS lane. */
 using Gtk;
 
 public class MacExperiment : Gtk.Box {
@@ -58,7 +57,7 @@ public class MacExperiment : Gtk.Box {
         title.add_css_class ("title-1");
         title.xalign = 0;
         text.append (title);
-        var sub = new Gtk.Label ("An honest attempt: each step runs a real command on this Mac and shows what happens.");
+        var sub = new Gtk.Label ("Check this machine and the files needed for an experimental macOS guest. No VM is started.");
         sub.wrap = true;
         sub.xalign = 0;
         sub.add_css_class ("dim-label");
@@ -70,7 +69,7 @@ public class MacExperiment : Gtk.Box {
         steps_box.add_css_class ("ml-card");
         clamp.append (steps_box);
 
-        run_button = new Gtk.Button.with_label ("Run the experiment");
+        run_button = new Gtk.Button.with_label ("Check readiness");
         run_button.add_css_class ("suggested-action");
         run_button.halign = Gtk.Align.END;
         run_button.clicked.connect (() => run.begin ());
@@ -113,19 +112,17 @@ public class MacExperiment : Gtk.Box {
     }
 
     private Step[] steps () {
+        var helper = Environment.find_program_in_path ("machine-lab-macos-check");
+        if (helper == null) {
+            helper = Config.MACOS_CHECK_SOURCE;
+        }
         return {
-            Step () { title = "This Mac's processor", detail = "What the host is.",
-                argv = { "sh", "-c", "uname -m; tr '\\0' ' ' < /proc/device-tree/compatible; echo" }, pass_when = "info" },
-            Step () { title = "Apple's Virtualization framework", detail = "How macOS guests run on Apple Silicon (macOS hosts only).",
-                argv = { "ls", "/System/Library/Frameworks/Virtualization.framework" }, pass_when = "fail" },
-            Step () { title = "A QEMU machine type for Apple virtual hardware", detail = "Ask QEMU for an Apple VM machine.",
-                argv = { "qemu-system-aarch64", "-machine", "apple-silicon-vm", "-display", "none", "-S" }, pass_when = "fail" },
-            Step () { title = "Apple's AVPBooter firmware", detail = "The boot ROM Apple's virtual Mac platform needs (QEMU's vmapple machine).",
-                argv = { "sh", "-c", "f=\"$HOME/vms/macos/AVPBooter.vmapple2.bin\"; if [ -r \"$f\" ]; then echo \"found $f\"; else echo 'AVPBooter.vmapple2.bin: not found. It ships inside macOS and cannot be redistributed; this Mac own macOS volumes are hardware-encrypted, and its Recovery image does not contain it.'; exit 1; fi" }, pass_when = "fail" },
-            Step () { title = "An x86-64 CPU under hardware acceleration", detail = "Intel macOS needs an x86 CPU; ask KVM for one.",
-                argv = { "qemu-system-aarch64", "-machine", "virt,accel=kvm", "-cpu", "Haswell", "-display", "none", "-S" }, pass_when = "fail" },
-            Step () { title = "An x86-64 emulator installed", detail = "Software emulation is the only x86 route on an ARM Mac.",
-                argv = { "sh", "-c", "command -v qemu-system-x86_64 || { echo 'qemu-system-x86_64: not installed'; exit 1; }" }, pass_when = "fail" }
+            Step () { title = "Linux ARM64 host", detail = "Check the host architecture.", argv = { "python3", helper, "--check", "host" } },
+            Step () { title = "Hardware virtualization", detail = "Check access to /dev/kvm.", argv = { "python3", helper, "--check", "kvm" } },
+            Step () { title = "VMApple machine", detail = "Check QEMU_VMAPPLE, or the system QEMU.", argv = { "python3", helper, "--check", "qemu" } },
+            Step () { title = "Apple boot firmware", detail = "Check MACOS_DIR, or ~/vms/macos.", argv = { "python3", helper, "--check", "firmware" } },
+            Step () { title = "Provisioned macOS guest", detail = "Disk, AUX and vm.json from the same VM are required.", argv = { "python3", helper, "--check", "guest" } },
+            Step () { title = "Hardware qualification", detail = "M1 Pro/Aurora boot and save/restore are not verified.", argv = { "python3", helper, "--check", "qualification" }, pass_when = "info" }
         };
     }
 
@@ -159,26 +156,6 @@ public class MacExperiment : Gtk.Box {
             row.append (t);
             steps_box.append (row);
         }
-        // Last row: the emulation route, which needs downloads and is not attempted.
-        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
-        row.add_css_class ("ml-form-row");
-        var mark = new Gtk.Label ("–");
-        mark.add_css_class ("ml-step-skip");
-        mark.width_request = 22;
-        mark.valign = Gtk.Align.START;
-        row.append (mark);
-        var t = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-        var tl = new Gtk.Label ("Emulating an Intel Mac in software");
-        tl.xalign = 0;
-        tl.add_css_class ("ml-spec-value");
-        var dl = new Gtk.Label ("Not attempted: it needs Apple's recovery image and an OpenCore boot disk (downloads), and runs tens of times slower than native.");
-        dl.xalign = 0;
-        dl.wrap = true;
-        dl.add_css_class ("ml-spec-label");
-        t.append (tl);
-        t.append (dl);
-        row.append (t);
-        steps_box.append (row);
     }
 
     private void log (string text) {
@@ -220,7 +197,7 @@ public class MacExperiment : Gtk.Box {
             bool ok = code == 0;
             if (all[i].pass_when == "info") {
                 marks[i].label = "i";
-                marks[i].add_css_class ("ml-step-ok");
+                marks[i].add_css_class ("ml-step-skip");
             } else if (!ok) {
                 marks[i].label = "✗";
                 marks[i].add_css_class ("ml-step-fail");
@@ -233,10 +210,10 @@ public class MacExperiment : Gtk.Box {
             }
             yield sleep_ms (350);
         }
-        verdict_title.label = blocked > 0 ? "macOS can't run here, and now you can see why" : "Every probe passed";
-        verdict_text.label = "A native macOS guest needs Apple's Virtualization framework and virtual hardware, which exist only on macOS hosts, so QEMU on this Linux Mac has no machine type for it. An Intel macOS guest would need x86 emulation in software, because KVM cannot present an x86 CPU on ARM. What does work: your internal macOS at the boot picker (hold the power button), or a macOS VM on a Mac running macOS reached over the network.";
+        verdict_title.label = blocked > 0 ? "More preparation is needed" : "Files present; guest boot remains unverified";
+        verdict_text.label = "An upstream experiment reached Ventura Setup Assistant on an M2 Pro using patched Linux KVM, QEMU and Reims graphics. This M1 Pro/Aurora configuration is not qualified. Prepare the matching guest files during a macOS visit; keep the working host kernel in place. Dock-controlled save/restore and iMessage still need separate tests.";
         verdict_card.visible = true;
-        run_button.label = "Run again";
+        run_button.label = "Check again";
         run_button.sensitive = true;
         running = false;
     }

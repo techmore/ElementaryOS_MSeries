@@ -19,7 +19,7 @@ add_project_arguments(['--pkg', 'posix'], language: 'vala')
 config = configure_file(
   input: 'src/config.vala.in',
   output: 'config.vala',
-  configuration: {'VERSION': meson.project_version()}
+  configuration: {'VERSION': meson.project_version(), 'MACOS_CHECK_SOURCE': meson.current_source_dir() / 'launcher/macos-check.py'}
 )
 
 executable('machine-lab',
@@ -53,3 +53,11 @@ test('machine logic', test_exe,
   env: {'FAKE_QMP': meson.current_source_dir() / 'tests/fake-qmp.py'},
   timeout: 60
 )
+
+install_data('launcher/macos-check.py',
+  install_dir: get_option('bindir'),
+  install_mode: 'rwxr-xr-x',
+  rename: 'machine-lab-macos-check')
+
+test('macOS readiness', find_program('python3'),
+  args: [meson.current_source_dir() / 'tests/test-macos-check.py'])

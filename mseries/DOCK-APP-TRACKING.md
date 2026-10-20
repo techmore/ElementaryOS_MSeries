@@ -75,3 +75,11 @@ Keep #339 draft: the recorded recovery-confirmation and representative acceptanc
 gates remain unproven, and the coordinated live-deployment gate cannot be
 completed under the owner's explicit no-deploy instruction. Do not treat #342's
 merge as authorization to deploy this follow-up.
+
+### Supersession confirmed
+
+The recovery coordinator closed #339 as superseded at 12:05:17 and reported the
+#342 coordinated deployment complete. The original tracking integration is already
+in dev. This review's extra hardening is retained in a separate draft follow-up,
+not an attempted merge/redeployment of #339. The follow-up's representative native
+acceptance remains unqualified; no deployment or Wingpanel restart was performed.
