@@ -41,6 +41,12 @@ Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work
   `~/.local/share/applications/io.elementary.files.desktop` (Icon=windows-work-mode-folder); delete that file
   to revert. The owner's `io.elementary.dock launchers` list held six duplicated ids (shown as doubled apps);
   deduplicated in place, order kept, still clean after a dock restart. Cause of the duplication unknown.
+- Restart readiness (2026-10-20): root/home are persistent btrfs; LightDM autologins the Rust session.
+  Installed compositor `0.1.0+git432fe4b` (a local build that contains f970354's clamp and Panels
+  interface). Work Mode state, dock taskbar-mode, wallpaper and Win11-dark icon theme persist in dconf
+  and ~/.local. New: `mseries-work-mode.service` is WantedBy gnome-session-initialized.target (after
+  wingpanel/dock, 2 s delay), so the top bar hides at login instead of after the 30 s timer start.
+  The cold-boot path itself is still unobserved.
 - Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
   bottom-right icon whose dropdown opens after a 0.5 s hover.
 - Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.

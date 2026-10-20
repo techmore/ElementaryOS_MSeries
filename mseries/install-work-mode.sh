@@ -14,6 +14,7 @@ schema_dir="$(pkg-config --variable=datadir glib-2.0)/glib-2.0/schemas"
 
 if [[ ${1:-} == --uninstall ]]; then
   systemctl --user disable --now mseries-work-mode.timer 2>/dev/null || true
+  systemctl --user disable mseries-work-mode.service 2>/dev/null || true
   if [[ -x $bin ]]; then "$bin" --restore || true; fi
   systemctl --user stop mseries-work-mode-dock.service 2>/dev/null || true
   rm -f "$bin" "$launch_dock" "$unit_dir/mseries-work-mode.service" "$unit_dir/mseries-work-mode.timer" "$unit_dir/mseries-work-mode-dock.service"
@@ -51,6 +52,7 @@ sudo ninja -C "$build" install
 sudo glib-compile-schemas "$schema_dir"
 systemctl --user daemon-reload
 systemctl --user enable --now mseries-work-mode.timer
+systemctl --user enable mseries-work-mode.service
 
 echo 'Installed Windows Work Mode in System Settings → Personal → Windows Work Mode.'
 echo 'Choose a work wallpaper, turn Windows Work Mode on, and optionally set work hours.'
