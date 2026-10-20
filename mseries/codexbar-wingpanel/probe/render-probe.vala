@@ -180,6 +180,12 @@ int main (string[] args) {
             assert (!menu.contains ("Malformed") && !menu.contains ("not an object"));
             assert (menu.contains ("763K tokens"));
         }
+        if (Environment.get_variable ("CB_ASSERT_GROK_FREE") != null) {
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("Signed in as me@grok.example on the Free plan"));
+            assert (!menu.contains ("run grok login"));
+            assert (find_button (popover_body, "Sign in…") == null);
+        }
         if (Environment.get_variable ("CB_ASSERT_GROK_SIGNIN") != null) {
             var menu = local_label_text (popover_body);
             assert (menu.contains ("If you are signed out, run grok login"));

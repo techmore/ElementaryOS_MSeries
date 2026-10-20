@@ -37,8 +37,10 @@ for candidate in "${GROK_HOME:-$HOME/.grok}/bin/grok" "$HOME/.local/bin/grok"; d
   [[ -z $grok_bin && -x $candidate ]] && grok_bin=$candidate
 done
 if [[ -n $grok_bin ]]; then
-  if grok_json=$("$cli" usage --provider grok --format json 2>/dev/null) && grep -q '"primary"' <<<"$grok_json"; then
+  if grok_json=$("$cli" usage --provider grok --format json 2>/dev/null) && grep -Eq '"primary" *: *\{' <<<"$grok_json"; then
     ok "grok usage reports a credits window"
+  elif grok_json=$("$cli" usage --provider grok --format json 2>/dev/null) && grep -q '"accountEmail"' <<<"$grok_json"; then
+    ok "grok is signed in (plan has no credits window; the card says so)"
   else
     note "grok usage returned no credits window (run grok login, or check network)"
   fi
