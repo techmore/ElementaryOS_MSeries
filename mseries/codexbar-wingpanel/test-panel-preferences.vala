@@ -10,6 +10,11 @@ namespace MSeries {
         foreach (var key in new string[] { "showPercent", "showReset", "showAccounts", "showHints", "showTokens" }) {
             assert (prefs.get_bool (key));
         }
+        assert (!prefs.get_bool ("showHoverInfo"));
+        assert (prefs.save_bool ("showHoverInfo", true));
+        assert (new PanelPreferences ().get_bool ("showHoverInfo"));
+        assert (prefs.save_bool ("showHoverInfo", false));
+        assert (!new PanelPreferences ().get_bool ("showHoverInfo"));
         assert (!prefs.get_bool ("compactQuota"));
         assert (prefs.save_bool ("compactQuota", true));
         assert (new PanelPreferences ().get_bool ("compactQuota"));

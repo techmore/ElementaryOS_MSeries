@@ -213,6 +213,7 @@ namespace MSeries {
 
         private void reload_display_preferences () {
             if (!display_preferences.load ()) return;
+            apply_panel_hover (panel_display);
             panel_digest = "";
             last_digest = "";
             if (panel_entries != null) {
@@ -1328,9 +1329,18 @@ namespace MSeries {
                     quota_theme_color (widget, "error_color", "#c6262e")) : "");
         }
 
-        /* The tooltip is for the pointer; assistive tech needs the same summary as the widget's name. */
+        /* Gate only the top-panel subtree; keep menu tooltips and accessible labels intact. */
+        private void apply_panel_hover (Gtk.Widget widget) {
+            widget.has_tooltip = display_preferences.get_bool ("showHoverInfo") && widget.tooltip_text != null;
+            for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+                apply_panel_hover (child);
+            }
+        }
+
+        /* Assistive tech always gets the summary, including when pointer tooltips are disabled. */
         private void set_panel_summary (string text) {
             panel_display.set_tooltip_text (text);
+            apply_panel_hover (panel_display);
             panel_display.update_property (Gtk.AccessibleProperty.LABEL, text.replace ("\n\n", ". ").replace ("\n", ", "), -1);
         }
 
@@ -1502,6 +1512,7 @@ namespace MSeries {
                 }
             }
             if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
+            apply_panel_hover (panel_display);
         }
 
         private Json.Array? active_panel_windows (string provider) {
