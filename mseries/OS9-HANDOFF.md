@@ -7526,3 +7526,7 @@ build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
 Switching to the package means `install-calendar-agenda.sh --uninstall`, then
 installing the .deb. Apt publishing still waits on the signing key (#52).
 
+
+## Machine Lab x86 emulation boot check (2026-10-19)
+- Installed `qemu-system-x86` and `ovmf` (owner-approved). Booted Alpine virt 3.24.2 x86_64 (sha256 verified) under TCG: q35, `-cpu max`, OVMF, serial console. Reached the Alpine login prompt (kernel 6.18.52-0-virt). Tested with a direct QEMU command, not through Machine Lab's own x86 launch path.
+- Not yet verified: boot via the Machine Lab UI, Display tab on x86, timing versus ARM64 KVM.
