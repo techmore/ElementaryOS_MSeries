@@ -17,6 +17,12 @@ Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work
   longer aborts the helper (`Gio.Settings.new` aborts; schema is looked up first).
 - Tests: `mseries/work-mode/test_work_mode.py` (keyfile GSettings, local fake IP service,
   `MSERIES_WORK_MODE_NO_SERVICES=1`) — 5 pass locally; added to `validate-mseries.yml`.
+- Azure Bloom (original CC0, `work-mode-azure-bloom.svg` → PNG) is the new bundled default. For the owner's
+  demo, Work Mode is ON and uses Microsoft's stock Windows 11 Bloom (`img0.jpg` from the GitHub mirror
+  viridivn/windows11wallpapers), installed locally only at `~/.local/share/backgrounds/windows11-bloom.jpg`
+  and NOT committed (Microsoft copyright; repo policy forbids bundling).
+- In progress: dock `taskbar-mode` patch (full-width silver bar, Start, clock/status) and top-bar hiding
+  in the Rust compositor while Work Mode is active.
 - Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
 
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
