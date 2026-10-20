@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
-    backend::renderer::element::memory::MemoryRenderBuffer,
     desktop::{PopupGrab, PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
@@ -40,7 +39,6 @@ use smithay::{
     },
 };
 
-use crate::cursor::default_cursor_buffer;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -97,7 +95,7 @@ pub struct PantheonCompositor {
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
     pub xdg_activation_state: XdgActivationState,
-    loop_handle: LoopHandle<'static, PantheonCompositor>,
+    pub(crate) loop_handle: LoopHandle<'static, PantheonCompositor>,
     activation_sweep_armed: bool,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
@@ -140,8 +138,18 @@ pub struct PantheonCompositor {
     pub corner_snap_preview: Option<CornerSnapPreview>,
     pub corner_snap_cancelled: bool,
     pub move_grab_active: bool,
-    /// In-flight three-or-more-finger swipe, if the active backend reports one.
-    pub(crate) swipe_gesture: Option<crate::gestures::SwipeGestureState>,
+    /// In-flight touchpad gesture and whether the compositor or a client owns it.
+    pub(crate) gesture_animation: Option<crate::gesture_animation::GestureAnimation>,
+    pub(crate) active_gesture: Option<crate::gestures::ActiveGesture>,
+    /// Gesture bindings from elementary's and the M-series gesture settings.
+    pub(crate) gesture_bindings: crate::gestures::GestureBindings,
+    /// Touchpad and mouse settings applied to every libinput device.
+    pub(crate) peripheral_settings: crate::touchpad::PeripheralSettings,
+    /// libinput devices, kept so settings changes can be re-applied.
+    #[cfg(feature = "native-drm")]
+    pub(crate) input_devices: Vec<smithay::reexports::input::Device>,
+    /// Registers `zwp_pointer_gestures_v1` so clients receive forwarded gestures.
+    pub pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     /// Active grid overview ("expose") session, if any.
     pub(crate) overview: Option<crate::overview::OverviewState>,
     pub minimized_windows: HashMap<
@@ -154,7 +162,7 @@ pub struct PantheonCompositor {
     /// stack per seat, so a grab from another root must end this one first.
     pub active_popup_grab: Option<(WlSurface, PopupGrab<PantheonCompositor>)>,
     pub cursor_status: CursorImageStatus,
-    pub default_cursor: MemoryRenderBuffer,
+    pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
     pub(crate) wallpaper_selection: Option<crate::wallpaper::WallpaperSelection>,
 
@@ -230,6 +238,8 @@ impl PantheonCompositor {
                 .is_some_and(|data| data.is_ibus_input_method_client)
         });
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
+        let pointer_gestures_state =
+            smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
             crate::wakeups::forward("display-apply", apply_requests),
@@ -276,6 +286,30 @@ impl PantheonCompositor {
             |event, _, state| {
                 if matches!(event, channel::Event::Msg(())) {
                     state.refresh_keyboard_config();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(crate::gestures::SETTINGS_SCHEMAS),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.gesture_bindings = crate::gestures::GestureBindings::load();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(crate::touchpad::SETTINGS_SCHEMAS),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_peripheral_settings();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(&["org.gnome.desktop.interface"]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_cursor_theme();
                 }
             },
         )?;
@@ -393,14 +427,22 @@ impl PantheonCompositor {
             corner_snap_preview: None,
             corner_snap_cancelled: false,
             move_grab_active: false,
-            swipe_gesture: None,
+            gesture_animation: None,
+            active_gesture: None,
+            gesture_bindings: crate::gestures::GestureBindings::load(),
+            peripheral_settings: crate::touchpad::PeripheralSettings::load(),
+            #[cfg(feature = "native-drm")]
+            input_devices: Vec::new(),
+            pointer_gestures_state,
             overview: None,
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
             active_popup_grab: None,
             cursor_status: CursorImageStatus::default_named(),
-            default_cursor: default_cursor_buffer(),
+            cursor_theme: crate::cursor_theme::CursorTheme::load(
+                crate::cursor_theme::configured_selection(),
+            ),
             wallpaper,
             wallpaper_selection,
             seat,
@@ -426,6 +468,15 @@ impl PantheonCompositor {
         }
     }
 
+    /// Re-read the touchpad and mouse settings and apply them to every device.
+    fn refresh_peripheral_settings(&mut self) {
+        self.peripheral_settings = crate::touchpad::PeripheralSettings::load();
+        #[cfg(feature = "native-drm")]
+        for device in &mut self.input_devices {
+            crate::touchpad::apply(&self.peripheral_settings, device);
+        }
+    }
+
     /// Re-read the keyboard settings and apply any difference.
     fn refresh_keyboard_config(&mut self) {
         let config = crate::input::startup_keyboard_config();
@@ -446,6 +497,15 @@ impl PantheonCompositor {
             }
         }
         self.keyboard_config = config;
+    }
+
+    /// Reload the compositor cursor when the interface cursor theme or size changed.
+    fn refresh_cursor_theme(&mut self) {
+        let selection = crate::cursor_theme::configured_selection();
+        if &selection != self.cursor_theme.selection() {
+            self.cursor_theme = crate::cursor_theme::CursorTheme::load(selection);
+            self.request_native_redraw();
+        }
     }
 
     /// Reload the wallpaper when the configured URI or crop mode changed.
@@ -768,18 +828,78 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    /// Apply the outcome of an in-flight touchpad swipe. Workspace changes stop
+    /// Apply the outcome of a finished touchpad gesture. Workspace changes stop
     /// at the first and last workspace instead of creating or wrapping.
     pub(crate) fn apply_swipe_outcome(
         &mut self,
-        outcome: crate::gestures::SwipeOutcome,
+        outcome: crate::gestures::GestureOutcome,
     ) -> Result<(), String> {
+        use crate::gestures::GestureOutcome;
         match outcome {
-            crate::gestures::SwipeOutcome::None => Ok(()),
-            crate::gestures::SwipeOutcome::NextWorkspace => self.switch_workspace_relative(1),
-            crate::gestures::SwipeOutcome::PreviousWorkspace => self.switch_workspace_relative(-1),
-            crate::gestures::SwipeOutcome::ToggleOverview => self.toggle_overview(),
+            GestureOutcome::None => Ok(()),
+            GestureOutcome::SwitchWorkspace(delta) => self.switch_workspace_relative(delta),
+            GestureOutcome::MoveWindowToWorkspace(delta) => {
+                self.move_focused_window_relative(delta)
+            }
+            GestureOutcome::CycleWindows(forward) => self.cycle_windows(forward),
+            GestureOutcome::ToggleOverview => self.toggle_overview(),
+            GestureOutcome::CloseOverview => {
+                if self.overview_active() {
+                    self.toggle_overview()
+                } else {
+                    Ok(())
+                }
+            }
+            GestureOutcome::ToggleMaximized => self.maximize_focused_window(),
+            GestureOutcome::OpenLauncher => self.launch_panel_main_menu(),
         }
+    }
+
+    /// Take the focused window to the adjacent workspace and follow it there.
+    fn move_focused_window_relative(&mut self, delta: i32) -> Result<(), String> {
+        let window = self
+            .focused_window()
+            .ok_or_else(|| "there is no focused application window to move".to_string())?;
+        let target = self.workspace_manager.active() as i32 + delta;
+        if target < 0 || target as usize >= self.workspace_manager.workspace_count() {
+            return Err("no adjacent workspace in that direction".into());
+        }
+        self.move_window_to_workspace(window.id() as u64, target)?;
+        self.activate_workspace(target)?;
+        self.focus_window_by_uid(window.id() as u64)
+    }
+
+    /// Rotate focus through this workspace's application windows. Forward
+    /// raises the bottom-most window, so repeated swipes visit every window;
+    /// backward returns to the window under the focused one, like Alt+Tab.
+    fn cycle_windows(&mut self, forward: bool) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot switch windows while the session is locked".into());
+        }
+        let windows = self
+            .space
+            .elements()
+            .filter(|window| {
+                self.workspace_manager.workspace_for(window.id())
+                    == Some(self.workspace_manager.active())
+                    && window
+                        .x11_surface()
+                        .is_none_or(|surface| !surface.is_override_redirect())
+                    && window
+                        .toplevel()
+                        .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if windows.len() < 2 {
+            return Err("there is no other window to switch to".into());
+        }
+        let target = if forward {
+            &windows[0]
+        } else {
+            &windows[windows.len() - 2]
+        };
+        self.focus_window_by_uid(target.id() as u64)
     }
 
     fn switch_workspace_relative(&mut self, delta: i32) -> Result<(), String> {
@@ -790,7 +910,7 @@ impl PantheonCompositor {
         self.activate_workspace(target)
     }
 
-    fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
+    pub(crate) fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot switch workspaces while the session is locked".into());
         }
@@ -806,6 +926,7 @@ impl PantheonCompositor {
     }
 
     fn switch_workspace(&mut self, workspace: usize) -> Result<(), String> {
+        self.discard_gesture_animation();
         let current = self.workspace_manager.active();
         if workspace >= self.workspace_manager.workspace_count() {
             return Err("workspace index is outside the current workspace list".into());
@@ -897,7 +1018,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
+    pub(crate) fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot move windows while the session is locked".into());
         }

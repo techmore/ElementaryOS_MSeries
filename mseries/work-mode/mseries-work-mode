@@ -343,12 +343,21 @@ def activate_dock(state):
 
     taskbar = schema.has_key("taskbar-mode")
     if schema.has_key("icon-size"):
-        # The taskbar draws 48 px icons in its 72 px bar; the floating dock uses 40 px.
-        settings.set_int("icon-size", 48 if taskbar else 40)
+        settings.set_int("icon-size", size_system_dock("work-taskbar" if taskbar else "work", 48 if taskbar else 40))
     if schema.has_key("autohide-mode"):
         settings.set_string("autohide-mode", "never")
     if taskbar:
         settings.set_boolean("taskbar-mode", True)
+
+
+def size_system_dock(mode, fallback):
+    """Dock token from the M-Series size system (#332) when it is adopted."""
+    tool = which("mseries-ui-scale") or str(Path.home() / ".local/bin/mseries-ui-scale")
+    try:
+        result = subprocess.run([tool, "--dock-size", mode], capture_output=True, text=True, timeout=5, check=False)
+        return int(result.stdout) if result.returncode == 0 else fallback
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return fallback
 
 
 def restore_dock(state):

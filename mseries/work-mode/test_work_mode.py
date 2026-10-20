@@ -3,11 +3,13 @@
 
 import http.server
 import os
+import runpy
 import shutil
 import subprocess
 import tempfile
 import threading
 import unittest
+from unittest.mock import MagicMock, patch
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -82,6 +84,33 @@ class WorkModeTest(unittest.TestCase):
 
     def wallpaper_applied(self):
         return self.wallpaper.as_uri() in self.gget("org.gnome.desktop.background", "picture-uri")
+
+    def test_dock_modes_use_adopted_size_tokens_and_keep_legacy_fallbacks(self):
+        helper = runpy.run_path(str(HELPER))
+        activate = helper["activate_dock"]
+        namespace = activate.__globals__
+        tool = self.root / "size-tool"
+        tool.write_text("#!/bin/sh\ncase \"$2\" in work-taskbar) echo 60;; work) echo 44;; *) exit 1;; esac\n")
+        tool.chmod(0o755)
+        for taskbar in (False, True):
+            schema = MagicMock()
+            schema.has_key.side_effect = lambda key: key in {"icon-size", "autohide-mode"} or (taskbar and key == "taskbar-mode")
+            settings = MagicMock()
+            settings.get_value.return_value.print_.return_value = "24"
+            for adopted in (False, True):
+                settings.reset_mock()
+                with patch.dict(namespace, {
+                    "dock_settings": lambda: (settings, schema),
+                    "dock_running": lambda: True,
+                    "which": lambda name: str(tool) if adopted else str(self.root / "missing-tool"),
+                }):
+                    activate({})
+                expected = (60 if taskbar else 44) if adopted else (48 if taskbar else 40)
+                settings.set_int.assert_called_once_with("icon-size", expected)
+                if taskbar:
+                    settings.set_boolean.assert_called_once_with("taskbar-mode", True)
+                else:
+                    settings.set_boolean.assert_not_called()
 
     def test_manual_on_and_restore(self):
         self.gset(SCHEMA, "enabled", True)

@@ -1,3 +1,8 @@
+Owner update — 2026-10-20: explicitly requested permanent dock enablement,
+no auto-hide, and windows moved clear of the dock. This supersedes the prior
+disabled-state request for this deployment. Future unrelated changes still use
+the approval helper unless directly authorized by the owner.
+
 # Dock incident and required approval
 
 The user reported a floating dock that steals attention and prevents typing, and explicitly

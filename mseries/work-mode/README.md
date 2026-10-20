@@ -4,9 +4,11 @@ Windows Work Mode is an elementary OS System Settings panel for a Windows-inspir
 work setup. Open **System Settings → Personal → Windows Work Mode** to turn it on,
 choose one of five supplied wallpapers or another image, enable a weekday schedule
 with local start and end times, or limit it to work networks identified by public IP. While active, it also shows the existing elementary
-bottom dock with a 40-pixel icon size and no auto-hide. Your pinned apps and native
-running-window behavior stay in the dock. This is a launcher dock preview, not a
-complete Windows taskbar: it does not add Start, search, system tray or widgets.
+bottom dock without auto-hide. The patched dock uses a full-width taskbar with Start,
+Search, weather and status controls; stock dock builds retain their floating layout.
+Icon sizes follow the adopted size system's `work-taskbar` or `work` token, with
+48/40-pixel defaults when it is unavailable. Pinned apps and native running-window
+behavior stay in the dock. See the taskbar section below for its controls.
 The usual wallpaper and dock preferences are snapshotted and restored when Windows
 Work Mode turns off or the work window ends.
 

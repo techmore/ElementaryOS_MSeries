@@ -45,3 +45,21 @@ during marker I/O or timer-stop failure. A live five-second watchdog exercise,
 with the real dock left disabled throughout, fired the stop service successfully
 on October 20. Runtime policy was then restored to 60 seconds. The post-login
 native trial is pending; this setup is not its result.
+
+## Dock-only retry after a snapping failure
+
+Use `--dock-only` to test the dock independently of native snapping. The fixed
+compositor requirement, explicit Start, focus and typing checks, and both stop
+mechanisms still apply. The report marks snapping as skipped, not passed.
+Use a separate `--report` path to preserve the previous attempt. Repeated Stop
+clicks preserve the first terminal result.
+
+The owner's October 20 post-reboot report showed window width 960 against monitor
+width 2419; the left snapping check failed before `arm()` ever ran. No dock
+launch occurred. `FocusRoutingVersion=1` confirms the updated compositor loaded.
+The cause of that snapping discrepancy remains unqualified.
+
+`--visible` temporarily selects `autohide-mode=never` and 48-pixel icons while
+the trial runs. Normal stop, focus loss and window close restore prior values.
+A forced controller kill can leave these display preferences changed; the
+independent watchdog still stops the dock and restores its disabled marker.

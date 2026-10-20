@@ -265,15 +265,17 @@ impl XdgShellHandler for PantheonCompositor {
         if let Some((old_root, mut old)) = self.active_popup_grab.take() {
             if !old.has_ended() && old_root != root {
                 old.ungrab(PopupUngrabStrategy::All);
-                if let Some(pointer) = seat.get_pointer() {
-                    if pointer.is_grabbed() && !pointer.has_grab(serial) {
-                        pointer.unset_grab(self, serial, smithay::backend::input::InputTime::now());
-                    }
+                if let Some(pointer) = seat.get_pointer()
+                    && pointer.is_grabbed()
+                    && !pointer.has_grab(serial)
+                {
+                    pointer.unset_grab(self, serial, smithay::backend::input::InputTime::now());
                 }
-                if let Some(keyboard) = seat.get_keyboard() {
-                    if keyboard.is_grabbed() && !keyboard.has_grab(serial) {
-                        keyboard.unset_grab(self);
-                    }
+                if let Some(keyboard) = seat.get_keyboard()
+                    && keyboard.is_grabbed()
+                    && !keyboard.has_grab(serial)
+                {
+                    keyboard.unset_grab(self);
                 }
             } else if !old.has_ended() {
                 self.active_popup_grab = Some((old_root, old));

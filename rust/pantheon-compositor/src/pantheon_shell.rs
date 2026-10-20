@@ -650,9 +650,11 @@ impl PantheonCompositor {
                 4 => true,
                 _ => false,
             };
-            let has_open_menu = window
-                .toplevel()
-                .is_some_and(|top| PopupManager::popups_for_surface(top.wl_surface()).next().is_some());
+            let has_open_menu = window.toplevel().is_some_and(|top| {
+                PopupManager::popups_for_surface(top.wl_surface())
+                    .next()
+                    .is_some()
+            });
             let hidden = top_panel_override(
                 self.top_panel_mode,
                 panel.anchor,
@@ -827,10 +829,18 @@ impl PantheonCompositor {
     /// Windows Work Mode taskbar or dock). Moves it up, or shrinks it when it
     /// is taller than the work area. Panels and fullscreen windows are exempt.
     pub(crate) fn keep_clear_of_bottom_panels(&mut self, window: &Window) {
+        if let Some(surface) = window.x11_surface()
+            && (surface.is_override_redirect() || surface.is_fullscreen())
+        {
+            return;
+        }
         if let Some(toplevel) = window.toplevel() {
             let id = toplevel.wl_surface().id();
             if self.panels.contains_key(&id)
-                || self.managed_windows.get(&id).is_some_and(|managed| managed.fullscreen)
+                || self
+                    .managed_windows
+                    .get(&id)
+                    .is_some_and(|managed| managed.fullscreen)
             {
                 return;
             }
@@ -860,18 +870,22 @@ impl PantheonCompositor {
         let Some((new_y, new_height)) = clear_of_bottom_panel(rect, work) else {
             return;
         };
-        if let Some(height) = new_height {
-            if let Some(toplevel) = window.toplevel() {
-                toplevel.with_pending_state(|state| {
-                    state.size = Some(Size::from((rect.size.w, height)));
-                });
-                toplevel.send_pending_configure();
-            } else if let Some(x11) = window.x11_surface() {
-                let target = Rectangle::new(Point::from((rect.loc.x, new_y)), Size::from((rect.size.w, height)));
-                if let Err(error) = x11.configure(Some(target)) {
-                    tracing::warn!(?error, "could not shrink X11 window above the taskbar");
-                }
+        if let Some(x11) = window.x11_surface() {
+            let target = Rectangle::new(
+                Point::from((rect.loc.x, new_y)),
+                Size::from((rect.size.w, new_height.unwrap_or(rect.size.h))),
+            );
+            if let Err(error) = x11.configure(Some(target)) {
+                tracing::warn!(?error, "could not fit X11 window above the taskbar");
+                return;
             }
+        } else if let Some(height) = new_height
+            && let Some(toplevel) = window.toplevel()
+        {
+            toplevel.with_pending_state(|state| {
+                state.size = Some(Size::from((rect.size.w, height)));
+            });
+            toplevel.send_pending_configure();
         }
         // element_location is the element origin; geometry may be offset from it.
         let shifted = Point::from((location.x, location.y + (new_y - rect.loc.y)));
@@ -901,7 +915,52 @@ impl PantheonCompositor {
             self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
         self.reconfigure_tiled_windows();
+        self.constrain_floating_windows();
         self.keep_all_clear_of_bottom_panels();
+    }
+
+    /// Reserve visible panel space for ordinary apps without raising or focusing them.
+    fn constrain_floating_windows(&mut self) {
+        let windows: Vec<_> = self.space.elements().cloned().collect();
+        for window in windows {
+            if let Some(surface) = Self::tile_surface(&window)
+                && (self.is_panel_surface(&surface)
+                    || self.tiled_windows.contains_key(&surface.id())
+                    || self.managed_windows.contains_key(&surface.id()))
+            {
+                continue;
+            }
+            if let Some(surface) = window.x11_surface()
+                && (surface.is_override_redirect() || surface.is_fullscreen())
+            {
+                continue;
+            }
+            let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
+                continue;
+            };
+            let Some(output_geometry) = self.space.output_geometry(&output) else {
+                continue;
+            };
+            let Some(location) = self.space.element_location(&window) else {
+                continue;
+            };
+            let current = Rectangle::new(location, window.geometry().size);
+            let area = self.work_area_for_output(output_geometry);
+            let target = fit_window_to_work_area(current, area);
+            if target == current {
+                continue;
+            }
+            if let Some(surface) = window.toplevel() {
+                surface.with_pending_state(|state| state.size = Some(target.size));
+                surface.send_pending_configure();
+            } else if let Some(surface) = window.x11_surface()
+                && let Err(error) = surface.configure(Some(target))
+            {
+                tracing::warn!(?error, "could not fit X11 window above dock");
+                continue;
+            }
+            self.space.map_element(window, target.loc, false);
+        }
     }
 }
 
@@ -927,13 +986,22 @@ mod tests {
 
     #[test]
     fn window_above_the_taskbar_is_left_alone() {
-        assert_eq!(clear_of_bottom_panel(rect(0, 100, 800, 600), rect(0, 0, 1920, 1008)), None);
-        assert_eq!(clear_of_bottom_panel(rect(0, 408, 800, 600), rect(0, 0, 1920, 1008)), None);
+        assert_eq!(
+            clear_of_bottom_panel(rect(0, 100, 800, 600), rect(0, 0, 1920, 1008)),
+            None
+        );
+        assert_eq!(
+            clear_of_bottom_panel(rect(0, 408, 800, 600), rect(0, 0, 1920, 1008)),
+            None
+        );
     }
 
     #[test]
     fn window_behind_the_taskbar_moves_up() {
-        assert_eq!(clear_of_bottom_panel(rect(0, 500, 800, 600), rect(0, 0, 1920, 1008)), Some((408, None)));
+        assert_eq!(
+            clear_of_bottom_panel(rect(0, 500, 800, 600), rect(0, 0, 1920, 1008)),
+            Some((408, None))
+        );
     }
 
     #[test]
@@ -956,7 +1024,10 @@ mod tests {
     #[test]
     fn normal_mode_and_other_anchors_keep_their_own_hide_mode() {
         for anchor in [None, Some(0), Some(1), Some(2), Some(3)] {
-            assert_eq!(top_panel_override(TopPanelMode::Normal, anchor, false, false), None);
+            assert_eq!(
+                top_panel_override(TopPanelMode::Normal, anchor, false, false),
+                None
+            );
         }
         for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
             // The bottom dock is never affected.
@@ -983,13 +1054,70 @@ mod tests {
 
     #[test]
     fn suppressed_top_panel_never_reserves_work_area() {
-        assert!(panel_reserves_work_area(TopPanelMode::Normal, Some(0), false));
-        assert!(!panel_reserves_work_area(TopPanelMode::Normal, Some(0), true));
+        assert!(panel_reserves_work_area(
+            TopPanelMode::Normal,
+            Some(0),
+            false
+        ));
+        assert!(!panel_reserves_work_area(
+            TopPanelMode::Normal,
+            Some(0),
+            true
+        ));
         assert!(!panel_reserves_work_area(TopPanelMode::Normal, None, false));
         for mode in [TopPanelMode::Hidden, TopPanelMode::Autohide] {
             assert!(!panel_reserves_work_area(mode, Some(0), false));
             assert!(panel_reserves_work_area(mode, Some(1), false));
             assert!(!panel_reserves_work_area(mode, Some(1), true));
         }
+    }
+}
+
+/// Move first; shrink only when the window cannot fit inside the usable area.
+fn fit_window_to_work_area(
+    rect: Rectangle<i32, Logical>,
+    area: Rectangle<i32, Logical>,
+) -> Rectangle<i32, Logical> {
+    let size = Size::from((
+        rect.size.w.min(area.size.w).max(1),
+        rect.size.h.min(area.size.h).max(1),
+    ));
+    let x = rect.loc.x.clamp(
+        area.loc.x,
+        (area.loc.x + area.size.w - size.w).max(area.loc.x),
+    );
+    let y = rect.loc.y.clamp(
+        area.loc.y,
+        (area.loc.y + area.size.h - size.h).max(area.loc.y),
+    );
+    Rectangle::new((x, y).into(), size)
+}
+
+#[cfg(test)]
+mod work_area_tests {
+    use super::*;
+
+    #[test]
+    fn moves_overlapping_window_without_resizing() {
+        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((100, 800).into(), (640, 400).into());
+        assert_eq!(
+            fit_window_to_work_area(rect, area),
+            Rectangle::new((100, 592).into(), (640, 400).into())
+        );
+    }
+
+    #[test]
+    fn shrinks_oversized_window_on_offset_monitor() {
+        let area = Rectangle::new((-1920, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((-2000, 0).into(), (2200, 1080).into());
+        assert_eq!(fit_window_to_work_area(rect, area), area);
+    }
+
+    #[test]
+    fn leaves_clear_window_in_place() {
+        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((100, 100).into(), (640, 400).into());
+        assert_eq!(fit_window_to_work_area(rect, area), rect);
     }
 }

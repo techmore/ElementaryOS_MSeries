@@ -54,6 +54,18 @@ impl CompositorHandler for PantheonCompositor {
                 .space
                 .elements()
                 .find(|w| w.toplevel().is_some_and(|top| top.wl_surface() == &root))
+                .cloned()
+                .or_else(|| {
+                    self.workspace_manager
+                        .windows()
+                        .into_iter()
+                        .map(|(window, _, _)| window)
+                        .find(|window| {
+                            window
+                                .toplevel()
+                                .is_some_and(|top| top.wl_surface() == &root)
+                        })
+                })
             {
                 window.on_commit();
             }
