@@ -14,6 +14,7 @@ private class MetricRow : Object {
 
 public class Dashboard : Gtk.Box {
     private Gtk.Label headline;
+    private Gtk.FlowBox metrics;
     private Gtk.Label memory;
     private Gtk.Label cpu;
     private Gtk.Label network;
@@ -38,15 +39,36 @@ public class Dashboard : Gtk.Box {
         Object (orientation: Gtk.Orientation.VERTICAL, spacing: 16, margin_top: 24, margin_bottom: 24, margin_start: 24, margin_end: 24);
         headline = new Gtk.Label ("Waiting for a sample…") { xalign = 0 };
         headline.add_css_class ("title-2");
-        append (headline);
+        var intro = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        intro.append (new Gtk.Image.from_icon_name ("orchard-incus-symbolic") { pixel_size = 32 });
+        var titles = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+        headline.wrap = true;
+        titles.append (headline);
+        var subtitle = new Gtk.Label ("Your local containers and virtual machines") { xalign = 0, wrap = true };
+        subtitle.add_css_class ("dim-label"); titles.append (subtitle);
+        intro.append (titles); append (intro);
+        metrics = new Gtk.FlowBox () {
+            selection_mode = Gtk.SelectionMode.NONE, homogeneous = true,
+            min_children_per_line = 1, max_children_per_line = 2,
+            column_spacing = 8, row_spacing = 8
+        };
+        append (metrics);
         cpu = metric ("CPU usage", cpu_graph);
         memory = metric ("Memory usage", memory_graph);
         network = metric ("Network throughput", network_graph);
-        disk = new Gtk.Label ("") { xalign = 0 };
-        append (disk);
-        storage = new Gtk.Label ("Storage accounting is loading…") { xalign = 0, wrap = true }; append (storage);
+        disk = new Gtk.Label ("Root-disk usage · waiting for data") { xalign = 0, wrap = true, max_width_chars = 24 };
+        storage = new Gtk.Label ("Storage accounting is loading…") { xalign = 0, wrap = true, max_width_chars = 24 };
+        storage.add_css_class ("dim-label");
+        var storage_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { width_request = 200 };
+        storage_card.add_css_class ("orchard-metric-card");
+        var storage_title = new Gtk.Label ("Storage") { xalign = 0 };
+        storage_title.add_css_class ("heading");
+        storage_card.append (storage_title); storage_card.append (disk); storage_card.append (storage);
+        metrics.insert (storage_card, -1);
         int.try_parse (preferences.read ("stats-sort", "0"), out sort_column);
         reverse = preferences.read ("stats-reverse", "false") == "true";
+        var table_title = new Gtk.Label ("Instance activity") { xalign = 0, margin_top = 8 };
+        table_title.add_css_class ("heading"); append (table_title);
         var headings = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { homogeneous = true };
         string[] columns = { "Instance", "Memory", "CPU cores", "Network /s", "Root disk" };
         for (int i = 0; i < columns.length; i++) {
@@ -68,8 +90,13 @@ public class Dashboard : Gtk.Box {
         restore_history ();
     }
     private Gtk.Label metric (string title, OrchardSparkline graph) {
-        var label = new Gtk.Label (title) { xalign = 0 };
-        append (label); append (graph);
+        var label = new Gtk.Label (title) { xalign = 0, wrap = true, max_width_chars = 24 };
+        var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { width_request = 200 };
+        card.add_css_class ("orchard-metric-card");
+        label.add_css_class ("heading");
+        graph.content_height = 64;
+        card.append (label); card.append (graph);
+        metrics.insert (card, -1);
         return label;
     }
     public void update (Instance[] items) {
@@ -164,6 +191,10 @@ public class Dashboard : Gtk.Box {
             if (sort_column != 0 && left != right) order = left > right ? -1 : 1;
             return reverse ? -order : order;
         });
+        if (rows == null) {
+            var empty = new Gtk.Label ("Start an instance to see its resource activity here.") { xalign = 0, wrap = true, margin_top = 8, margin_bottom = 8 };
+            empty.add_css_class ("dim-label"); table.append (empty);
+        }
         foreach (var sample in rows) {
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { homogeneous = true };
             string[] values = { sample.name, sample.memory_known ? format_size ((uint64) sample.memory) : "—", !sample.cpu_known ? "—" : "%.2f".printf (sample.cpu), !sample.network_known ? "—" : format_size ((uint64) sample.network), sample.disk_known ? format_size ((uint64) sample.disk) : "—" };

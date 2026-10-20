@@ -2,6 +2,7 @@ public class OrchardSparkline : Gtk.DrawingArea {
     private double[] samples = {};
     private int64[] timestamps = {};
     private uint sample_limit;
+    public uint sample_count { get { return (uint) samples.length; } }
     public OrchardSparkline (uint limit = 28800) {
         sample_limit = uint.max (2, limit);
         content_height = 90;
@@ -10,7 +11,9 @@ public class OrchardSparkline : Gtk.DrawingArea {
             if (samples.length < 2) return;
             double maximum = 0.01;
             foreach (var value in samples) maximum = double.max (maximum, value);
-            cr.set_source_rgba (0.35, 0.65, 0.18, 0.9);
+            Gdk.RGBA accent;
+            if (!get_style_context ().lookup_color ("accent_color", out accent)) accent = get_color ();
+            cr.set_source_rgba (accent.red, accent.green, accent.blue, 0.9);
             cr.set_line_width (2);
             double span = double.max (1, timestamps[timestamps.length - 1] - timestamps[0]);
             for (int i = 0; i < samples.length; i++) {

@@ -1,5 +1,19 @@
+Gtk.Widget? find_selection (Gtk.Widget root) {
+    if (root is Gtk.CheckButton) return root;
+    for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_selection (child); if (found != null) return found;
+    }
+    return null;
+}
+Gtk.Button? find_button (Gtk.Widget root, string label) {
+    if (root is Gtk.Button && ((Gtk.Button) root).label == label) return (Gtk.Button) root;
+    for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_button (child, label); if (found != null) return found;
+    }
+    return null;
+}
 int main () {
-    Gtk.init (); Granite.init ();
+    Gtk.init (); // Fixture windows do not initialize the desktop AccountsService integration.
     var app = new Gtk.Application ("com.github.techmore.orchardincus.Test.T" + Uuid.string_random ().replace ("-", ""), ApplicationFlags.DEFAULT_FLAGS);
     try { app.register (null); } catch (Error e) { return 1; }
     var main_window = new MainWindow (app);
@@ -28,6 +42,15 @@ int main () {
     print ("Orchard minimum width: %d; allocated: %d\n", minimum, main_window.get_width ());
     assert (minimum <= 720);
     assert (main_window.get_width () <= 720);
+    var selected = (Gtk.CheckButton) find_selection (main_window.child);
+    var clear = find_button (main_window.child, "Clear selection");
+    assert (selected != null && clear != null);
+    var bulk = clear.get_ancestor (typeof (Gtk.FlowBox));
+    assert (!bulk.visible);
+    selected.active = true;
+    assert (bulk.visible);
+    clear.clicked ();
+    assert (!bulk.visible);
     // Named menu actions must remain available after removing the crowded toolbar.
     assert (main_window.lookup_action ("resources") != null);
     string[] menu_actions = { "resources", "models", "sandboxes", "system", "mounts", "logs", "preferences" };
@@ -48,7 +71,7 @@ int main () {
         assert (found);
     }
     main_window.activate_action ("dashboard", null);
-    main_window.navigate_uri ("orchard://containers");
+    main_window.navigate_uri (Environment.get_variable ("ORCHARD_UI_PAGE") == "dashboard" ? "orchard://dashboard" : "orchard://containers");
     var capture_path = Environment.get_variable ("ORCHARD_UI_CAPTURE");
     if (capture_path != null) {
         // Navigation invalidates the current render node; wait for the next layout/frame.

@@ -17,18 +17,28 @@ public class MainWindow : Gtk.ApplicationWindow {
     private Gtk.Entry group_label;
     private GenericSet<string> selected_names = new GenericSet<string> (str_hash, str_equal);
     private Gtk.Label selection_status;
+    private Gtk.FlowBox bulk_bar;
     private Preferences preferences = new Preferences ();
     private GenericSet<string> pending = new GenericSet<string> (str_hash, str_equal);
 
     public MainWindow (Gtk.Application app) {
         Object (application: app, default_width: 1040, default_height: 560, title: "Orchard for Incus");
 
+        add_css_class ("orchard-window");
+        var style = new Gtk.CssProvider ();
+        style.load_from_string (
+            ".orchard-window .orchard-metric-card { padding: 14px; border-radius: 12px; background: alpha(currentColor, 0.045); box-shadow: inset 0 0 0 1px alpha(currentColor, 0.07); } " +
+            ".orchard-window .orchard-metric-card .heading { font-size: 1.05em; } " +
+            ".orchard-window .orchard-list row { padding: 6px 0; border-bottom: 1px solid alpha(currentColor, 0.07); } " +
+            ".orchard-window .orchard-sidebar { border-right: 1px solid alpha(currentColor, 0.08); }");
+        Gtk.StyleContext.add_provider_for_display (get_display (), style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         var header = new Gtk.HeaderBar ();
         var refresh = new Gtk.Button.from_icon_name ("view-refresh-symbolic") { tooltip_text = "Refresh" };
         refresh.clicked.connect (() => { reload.begin (); });
         header.pack_end (refresh);
-        var add = new Gtk.Button.from_icon_name ("list-add-symbolic") { tooltip_text = "New instance" };
+        var add = new Gtk.Button.with_label ("New Instance…") { tooltip_text = "New instance" };
         add.clicked.connect (() => { open_new_instance (); });
+        add.add_css_class ("suggested-action");
         header.pack_start (add);
         refresh.update_property (Gtk.AccessibleProperty.LABEL, "Refresh", -1);
         add.update_property (Gtk.AccessibleProperty.LABEL, "New instance", -1);
@@ -57,6 +67,7 @@ public class MainWindow : Gtk.ApplicationWindow {
 
         var list = new Gtk.ListView (new Gtk.NoSelection (store), make_factory ());
         list.add_css_class ("rich-list");
+        list.add_css_class ("orchard-list");
         var scroller = new Gtk.ScrolledWindow () { child = list, vexpand = true };
 
         status_label = new Gtk.Label ("") { margin_top = 6, margin_bottom = 6, xalign = 0, margin_start = 12 };
@@ -100,7 +111,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         });
         ((Gtk.Widget) this).add_controller (keys);
         box.append (filters);
-        var bulk_bar = new Gtk.FlowBox () {
+        bulk_bar = new Gtk.FlowBox () {
             selection_mode = Gtk.SelectionMode.NONE, homogeneous = false,
             min_children_per_line = 1, max_children_per_line = 6,
             column_spacing = 8, row_spacing = 8,
@@ -109,7 +120,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         selection_status = new Gtk.Label ("0 selected") { xalign = 0, hexpand = true }; bulk_bar.insert (selection_status, -1);
         var select_all = new Gtk.Button.with_label ("Select visible"); select_all.clicked.connect (() => {
             for (uint i = 0; i < store.get_n_items (); i++) selected_names.add (((Instance) store.get_item (i)).name);
-            selection_status.label = "%u selected".printf (selected_names.length); reload.begin ();
+            update_selection_ui (); reload.begin ();
         }); bulk_bar.insert (select_all, -1);
         string[] verbs = { "start", "stop", "delete" };
         foreach (var verb in verbs) {
@@ -117,7 +128,8 @@ public class MainWindow : Gtk.ApplicationWindow {
             var action = verb;
             button.clicked.connect (() => confirm_bulk (action)); bulk_bar.insert (button, -1);
         }
-        var clear = new Gtk.Button.with_label ("Clear selection"); clear.clicked.connect (() => { selected_names.remove_all (); selection_status.label = "0 selected"; reload.begin (); }); bulk_bar.insert (clear, -1);
+        var clear = new Gtk.Button.with_label ("Clear selection"); clear.clicked.connect (() => { selected_names.remove_all (); update_selection_ui (); reload.begin (); }); bulk_bar.insert (clear, -1);
+        bulk_bar.visible = false;
         box.append (bulk_bar);
         box.append (scroller);
         box.append (status_label);
@@ -128,6 +140,8 @@ public class MainWindow : Gtk.ApplicationWindow {
         content_stack.add_titled (new Gtk.ScrolledWindow () { child = dashboard }, "dashboard", "Dashboard");
         content_stack.add_titled (box, "instances", "Instances");
         var sidebar = new Gtk.StackSidebar () { stack = content_stack, width_request = 150 };
+        sidebar.add_css_class ("navigation-sidebar");
+        sidebar.add_css_class ("orchard-sidebar");
         var layout = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0); layout.append (sidebar); layout.append (content_stack);
         var overlay = new Gtk.Overlay () { child = layout };
         overlay.add_overlay (toast);
@@ -136,6 +150,11 @@ public class MainWindow : Gtk.ApplicationWindow {
         reload.begin ();
         poll_id = Timeout.add_seconds (3, () => { reload.begin (); return Source.CONTINUE; });
         close_request.connect (() => { Source.remove (poll_id); return false; });
+    }
+
+    private void update_selection_ui () {
+        selection_status.label = "%u selected".printf (selected_names.length);
+        bulk_bar.visible = selected_names.length > 0;
     }
 
     private Gtk.ListItemFactory make_factory () {
@@ -201,7 +220,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             selected.update_property (Gtk.AccessibleProperty.LABEL, "Select " + n, -1);
             ids.f = selected.toggled.connect (() => {
                 if (selected.active) selected_names.add (n); else selected_names.remove (n);
-                selection_status.label = "%u selected".printf (selected_names.length);
+                update_selection_ui ();
             });
             toggle.sensitive = !pending.contains (n);
             item.set_data<HandlerIds> ("ids", ids);
@@ -391,7 +410,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             foreach (var item in items) live_names.add (item.name);
             string[] gone = {}; selected_names.foreach ((name) => { if (!live_names.contains (name)) gone += name; });
             foreach (var name in gone) selected_names.remove (name);
-            selection_status.label = "%u selected".printf (selected_names.length);
+            update_selection_ui ();
             if (dashboard != null) dashboard.update (items);
             if (get_monotonic_time () - last_storage_refresh > 60000000) refresh_storage.begin ();
             store.remove_all ();
@@ -592,7 +611,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             pending.remove (name);
         }
         yield reload ();
-        selection_status.label = "%u selected".printf (selected_names.length);
+        update_selection_ui ();
         var outcome = new Gtk.AlertDialog ("%d of %d actions completed".printf (success, names.length)) { detail = failures.str == "" ? "All selected operations succeeded." : failures.str };
         outcome.show (this);
     }
