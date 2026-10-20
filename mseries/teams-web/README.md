@@ -45,9 +45,33 @@ as default, independently of this launcher. Restore your previous browser throug
 System Settings if necessary. On the owner's J314S, Chrome 155.0.8059.84 arm64 was
 installed and Brave was restored as the default.
 
+## Official Teams dock icon and Outlook Mail shortcut
+
+The installer fetches Microsoft's current Teams website icon from
+[Microsoft's own CDN](https://teams.public.onecdn.static.microsoft/evergreen-assets/icons/microsoft_teams_logo_refresh_v2025.ico).
+The source asset is checksum pinned in `official_icon.py`; its 256-pixel PNG is
+extracted unchanged from the ICO. No Microsoft image is committed to the repo.
+The icon receipt is stored locally as `icon-source.json`. Offline upgrades keep
+an installed official icon; a fresh offline install uses our generic fallback.
+The installer rebuilds the local GTK icon cache so the dock can resolve it.
+
+```sh
+bash mseries/install-teams.sh --pin
+python3 mseries/install-outlook-web.py
+```
+
+`--pin` adds Teams to the existing elementary dock launcher list once. The Outlook
+installer replaces only the pinned `io.elementary.mail.desktop` entry with
+**Outlook (Web)**, opening `https://outlook.office.com/mail/` in the selected Brave
+profile. It keeps the existing elementary Mail icon and does not change the
+system `mailto:` handler. The original ordered launcher list is retained in
+`$XDG_CONFIG_HOME/mseries/outlook-web/dock-before.json`. Reinstalling preserves
+that first backup and does not duplicate pins. No dock or panel restart is used.
+Outlook mailbox authentication and message sending are not claimed as verified.
+
 ## Desktop and meeting links
 
-The per-user installer writes the executable, original generic chat icon and
+The per-user installer writes the executable, icon and
 `.desktop` entry beneath `$XDG_DATA_HOME` (normally `~/.local/share`). Configuration
 is `$XDG_CONFIG_HOME/mseries/teams-web/config.json` (normally `~/.config`). In
 isolated mode, its `profile/` directory has mode 0700 and is separate from your
@@ -88,11 +112,12 @@ shellcheck mseries/install-teams.sh
 desktop-file-validate "$HOME/.local/share/applications/org.techmore.mseries.TeamsWeb.desktop"
 ```
 
-Ten offline tests exercise executable launch with a recording browser, desktop
+Fourteen offline tests exercise executable launch with a recording browser, desktop
 Exec parsing through Gio (including spaces, percent signs, quotes and backslashes),
 deep-link preservation/rejection, private profile permissions, diagnosis, corrupt
 configuration, session-preserving upgrades/uninstall, and Brave profile reuse
-without profile copying. These tests do not authenticate or send messages.
+without profile copying. They also cover official-icon checksum rejection, PNG extraction,
+offline cache preservation, pinning and Outlook desktop dispatch. These tests do not authenticate or send messages.
 
 Installed on the J314S with Brave 155.1.97.59 using its Default profile. The launch
 command was dispatched to the browser and diagnostics confirm the selected mode;
