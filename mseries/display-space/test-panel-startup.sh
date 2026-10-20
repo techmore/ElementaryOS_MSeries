@@ -19,7 +19,7 @@ trap cleanup EXIT
 git -C "$test_dir" init -q
 git -C "$test_dir" fetch -q --depth=1 "${MSERIES_WINGPANEL_SOURCE:-https://github.com/elementary/wingpanel.git}" 6b8ae0453b1fd6dc07bd246642998011f04b2125
 git -C "$test_dir" checkout -q --detach FETCH_HEAD
-for patch in wingpanel-full-height wingpanel-clockright-order wingpanel-startup-layout; do
+for patch in wingpanel-full-height wingpanel-clockright-order wingpanel-startup-layout wingpanel-content-scale; do
     git -C "$test_dir" apply "$repo/mseries/patches/$patch.patch"
 done
 cp "$repo/mseries/display-space/test-panel-startup.vala" "$test_dir/src/"

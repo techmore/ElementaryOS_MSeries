@@ -24,6 +24,11 @@ responses = [
     {"type": "error", "error": "Fixture daemon unavailable"},
     {"type": "sync", "metadata": [{"name": "recovered", "status": "Running"}]},
 ]
+for index, item in enumerate(responses[0]["metadata"]):
+    if item.get("status") == "Running":
+        item["state"] = {"cpu": {"usage": 1000000000}, "memory": {"usage": (index+1)*536870912}}
+responses.insert(1, responses[0])  # Identical refresh must preserve row widgets/focus.
+responses.insert(5, {"type": "sync", "metadata": []})  # Empty recovery must replace the error placeholder.
 
 
 class Handler(http.server.BaseHTTPRequestHandler):

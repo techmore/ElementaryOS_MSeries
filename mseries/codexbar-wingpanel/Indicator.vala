@@ -85,11 +85,11 @@ namespace MSeries {
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-                margin_top = 8,
-                margin_bottom = 5,
-                margin_start = 6,
-                margin_end = 6,
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+                margin_top = 10,
+                margin_bottom = 10,
+                margin_start = 10,
+                margin_end = 10,
                 // Keep the quick-switch popover compact. GTK treats width_request as a minimum;
                 // the child rows below also ellipsize/wrap their dynamic labels to fit.
                 width_request = 240
@@ -213,6 +213,7 @@ namespace MSeries {
 
         private void reload_display_preferences () {
             if (!display_preferences.load ()) return;
+            apply_panel_hover (panel_display);
             panel_digest = "";
             last_digest = "";
             if (panel_entries != null) {
@@ -225,16 +226,16 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-codexbar { font-size: 8pt; } " +
-                ".mseries-codexbar .caption { font-size: 7pt; } " +
-                ".mseries-codexbar .provider-title { font-weight: 700; font-size: 8.5pt; } " +
+                ".mseries-codexbar { font-size: 1em; } " +
+                ".mseries-codexbar .caption { font-size: 0.9em; } " +
+                ".mseries-codexbar .provider-title { font-weight: 700; font-size: 1.05em; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
                 ".mseries-codexbar .numeric { font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar .card { padding: 5px 8px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
-                ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-codexbar .card { padding: 10px; border-radius: 10px; background: alpha(currentColor, 0.045); box-shadow: inset 0 0 0 1px alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 0.9em; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
-                ".mseries-codexbar .plan { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; background: alpha(currentColor, 0.1); } " +
+                ".mseries-codexbar .plan { padding: 0 7px; border-radius: 99px; font-size: 0.9em; background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 6px; border-radius: 3px; } " +
                 ".mseries-codexbar progressbar.level-ok progress { background: @success_color; } " +
                 ".mseries-codexbar progressbar.level-low progress { background: @warning_color; } " +
@@ -254,14 +255,14 @@ namespace MSeries {
                 ".mseries-codexbar .mseries-dock button { padding: 5px 9px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar .account-line { min-height: 0; } " +
-                ".mseries-codexbar .account-name { font-size: 8pt; } " +
-                ".mseries-codexbar .account-meta { font-size: 7pt; } " +
+                ".mseries-codexbar .account-name { font-size: 1em; } " +
+                ".mseries-codexbar .account-meta { font-size: 0.9em; } " +
                 ".mseries-codexbar .account-line button { padding: 2px 8px; min-height: 0; } " +
                 ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
                 ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
-                ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
+                ".mseries-codexbar .mseries-switcher button { padding: 5px 6px; } " +
                 ".mseries-codexbar-bar label { font-size: 7.5pt; font-feature-settings: \"tnum\"; } " +
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
                 ".mseries-codexbar-bar .seg-reset { font-size: 6.5pt; opacity: 0.7; } " +
@@ -1328,9 +1329,18 @@ namespace MSeries {
                     quota_theme_color (widget, "error_color", "#c6262e")) : "");
         }
 
-        /* The tooltip is for the pointer; assistive tech needs the same summary as the widget's name. */
+        /* Gate only the top-panel subtree; keep menu tooltips and accessible labels intact. */
+        private void apply_panel_hover (Gtk.Widget widget) {
+            widget.has_tooltip = display_preferences.get_bool ("showHoverInfo") && widget.tooltip_text != null;
+            for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+                apply_panel_hover (child);
+            }
+        }
+
+        /* Assistive tech always gets the summary, including when pointer tooltips are disabled. */
         private void set_panel_summary (string text) {
             panel_display.set_tooltip_text (text);
+            apply_panel_hover (panel_display);
             panel_display.update_property (Gtk.AccessibleProperty.LABEL, text.replace ("\n\n", ". ").replace ("\n", ", "), -1);
         }
 
@@ -1502,6 +1512,7 @@ namespace MSeries {
                 }
             }
             if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
+            apply_panel_hover (panel_display);
         }
 
         private Json.Array? active_panel_windows (string provider) {
@@ -2019,18 +2030,20 @@ namespace MSeries {
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
                                                owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true,
                                                Json.Object? resets = null) {
-            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var line = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            line.append (heading);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
             name.set_tooltip_text (email);
-            // One row: badges, name, plan and resets on the left, quota and time-to-reset to their right, then Switch.
+            // Keep identity and Switch together; give quota/reset details their own readable line.
             name.add_css_class ("account-name");
             name.ellipsize = Pango.EllipsizeMode.END;  // the start of an address identifies it better than the middle
             name.width_chars = 8;
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { hexpand = true };
             identity.append (build_hint_badges (candidate_id));
             identity.append (name);
-            // The plan lives in the tooltip here: the single row has no room for a badge beside the quota.
+            // Retain the plan in the tooltip so the compact identity row stays uncluttered.
             var plan_text = Presentation.plan_label (plan);
             name.set_tooltip_text (plan_text.length > 0 ? "%s · %s".printf (email, plan_text) : email);
             if (resets != null) {
@@ -2038,11 +2051,11 @@ namespace MSeries {
                 chip.margin_start = 2;
                 identity.append (chip);
             }
-            line.append (identity);
+            heading.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
-                xalign = 1, valign = Gtk.Align.CENTER, justify = Gtk.Justification.RIGHT,
-                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 18
+                xalign = 0, valign = Gtk.Align.CENTER, justify = Gtk.Justification.LEFT,
+                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 28
             };  // two windows fit on the row; a third wraps instead of widening the popover
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
@@ -2065,7 +2078,7 @@ namespace MSeries {
                 popdown_from (button);
                 on_switch ();
             });
-            line.append (button);
+            heading.append (button);
             return line;
         }
 
@@ -2146,10 +2159,10 @@ namespace MSeries {
             var level = Presentation.visual_level (remaining);
             var eta = QuotaEta.from_window (window, stale, now_unix);
 
-            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var name = new Gtk.Label (Presentation.short_window_label (label, (int) JsonBoundary.integer (window, "minutes"))) {
-                xalign = 0, width_request = 34
+                xalign = 0, hexpand = true
             };
             name.add_css_class ("window-name");
             row.append (name);
@@ -2162,7 +2175,7 @@ namespace MSeries {
             if (level == QuotaLevel.CRITICAL) progress.add_css_class ("level-critical");
             var spoken = known ? "%0.0f percent remaining".printf (remaining) : "usage not reported yet";
             progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
-            row.append (progress);
+
             var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
                 xalign = 1, width_request = 58
             };
@@ -2177,6 +2190,7 @@ namespace MSeries {
             reset_label.set_tooltip_text (reset);
             if (display_preferences.get_bool ("showReset")) row.append (reset_label);
             group.append (row);
+            group.append (progress);
 
             // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
             if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
@@ -2187,7 +2201,7 @@ namespace MSeries {
                         ? Presentation.window_caption (reset, eta.state, eta.detail)
                         : eta.state == EtaState.EXHAUSTED ? "Limit reached" : eta.detail;
                 }
-                var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
+                var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true };
                 caption.add_css_class ("caption");
                 caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
                     eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");

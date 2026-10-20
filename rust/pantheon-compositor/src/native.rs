@@ -21,6 +21,7 @@ use smithay::{
     },
     backend::{
         egl::{EGLContext, EGLDevice, EGLDisplay, context::ContextPriority},
+        input::InputEvent,
         libinput::{LibinputInputBackend, LibinputSessionInterface},
         renderer::{
             gles::GlesRenderer,
@@ -48,10 +49,7 @@ use smithay::{
 
 use crate::{
     PantheonCompositor,
-    cursor::{
-        CursorRenderElement, render_cursor_elements, render_lock_surface_elements,
-        render_wallpaper_element,
-    },
+    cursor::{CursorRenderElement, render_desktop_elements, render_lock_surface_elements},
     display_config::{
         OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
     },
@@ -164,32 +162,8 @@ impl NativeKmsDevice {
             let elements = if state.session_locked {
                 render_lock_surface_elements(gpu_renderer, state, render_output)
             } else {
-                let space_elements = smithay::desktop::space::space_render_elements(
-                    gpu_renderer,
-                    [&state.space],
-                    render_output,
-                    render_output.current_scale().fractional_scale() as f32,
-                )
-                .map_err(|error| format!("could not prepare output frame: {error:?}"))?;
-                let cursor_elements = render_cursor_elements(gpu_renderer, state, render_output);
-                let mut elements = cursor_elements;
-                elements.extend(space_elements.into_iter().map(|element| match element {
-                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                        CursorRenderElement::from(surface)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                        CursorRenderElement::from(element)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                        unreachable!("SpaceRenderElements generic catcher is never constructed")
-                    }
-                }));
-                if let Some(wallpaper) =
-                    render_wallpaper_element(gpu_renderer, state, render_output)
-                {
-                    elements.push(wallpaper);
-                }
-                elements
+                render_desktop_elements(gpu_renderer, state, render_output)
+                    .map_err(|error| format!("could not prepare output frame: {error:?}"))?
             };
             render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
         }
@@ -533,33 +507,8 @@ impl NativeKmsDevice {
             let elements = if state.session_locked {
                 render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
             } else {
-                let space_elements = smithay::desktop::space::space_render_elements(
-                    &mut gpu_renderer,
-                    [&state.space],
-                    &output.output,
-                    output.output.current_scale().fractional_scale() as f32,
-                )
-                .map_err(|error| format!("could not prepare current output contents: {error:?}"))?;
-                let cursor_elements =
-                    render_cursor_elements(&mut gpu_renderer, state, &output.output);
-                let mut elements = cursor_elements;
-                elements.extend(space_elements.into_iter().map(|element| match element {
-                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                        CursorRenderElement::from(surface)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                        CursorRenderElement::from(element)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                        unreachable!("SpaceRenderElements generic catcher is never constructed")
-                    }
-                }));
-                if let Some(wallpaper) =
-                    render_wallpaper_element(&mut gpu_renderer, state, &output.output)
-                {
-                    elements.push(wallpaper);
-                }
-                elements
+                render_desktop_elements(&mut gpu_renderer, state, &output.output)
+                    .map_err(|error| format!("could not prepare output contents: {error:?}"))?
             };
             render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
         }
@@ -679,32 +628,7 @@ impl NativeKmsDevice {
             let elements = if state.session_locked {
                 render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
             } else {
-                let space_elements = smithay::desktop::space::space_render_elements(
-                    &mut gpu_renderer,
-                    [&state.space],
-                    &output.output,
-                    output.output.current_scale().fractional_scale() as f32,
-                )?;
-                let cursor_elements =
-                    render_cursor_elements(&mut gpu_renderer, state, &output.output);
-                let mut elements = cursor_elements;
-                elements.extend(space_elements.into_iter().map(|element| match element {
-                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                        CursorRenderElement::from(surface)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                        CursorRenderElement::from(element)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                        unreachable!("SpaceRenderElements generic catcher is never constructed")
-                    }
-                }));
-                if let Some(wallpaper) =
-                    render_wallpaper_element(&mut gpu_renderer, state, &output.output)
-                {
-                    elements.push(wallpaper);
-                }
-                elements
+                render_desktop_elements(&mut gpu_renderer, state, &output.output)?
             };
             let frame = output.drm_output.render_frame(
                 &mut gpu_renderer,
@@ -1410,6 +1334,18 @@ impl NativeBackend {
         event_loop
             .handle()
             .insert_source(libinput_backend, |event, _, state| {
+                match &event {
+                    InputEvent::DeviceAdded { device } => {
+                        let mut device = device.clone();
+                        crate::touchpad::apply(&state.peripheral_settings, &mut device);
+                        state.input_devices.push(device);
+                    }
+                    InputEvent::DeviceRemoved { device } => {
+                        state.cancel_active_gesture(smithay::backend::input::InputTime::now());
+                        state.input_devices.retain(|known| known != device);
+                    }
+                    _ => {}
+                }
                 state.process_input_event(event);
                 #[cfg(feature = "native-drm")]
                 state.request_native_redraw();
@@ -1419,6 +1355,7 @@ impl NativeBackend {
             session_notifier,
             move |event, _, state| match event {
                 SessionEvent::PauseSession => {
+                    state.cancel_active_gesture(smithay::backend::input::InputTime::now());
                     libinput_context.suspend();
                     if let Some(backend) = state.native_backend.as_mut() {
                         backend.kms.manager.pause();
@@ -1464,7 +1401,7 @@ impl NativeBackend {
                         }
                     };
                     state.confirm_lock_output_frame(&output.name());
-                    state.space.elements().for_each(|window| {
+                    state.gesture_frame_windows().iter().for_each(|window| {
                         window.send_frame(
                             &output,
                             state.start_time.elapsed(),

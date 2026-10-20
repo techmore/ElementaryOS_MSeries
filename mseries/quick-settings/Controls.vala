@@ -16,10 +16,10 @@ namespace QuickSettings {
             css.load_from_string (
                 "quicksettings .mseries-card {" +
                 " background: alpha(@text_color, 0.06);" +
-                " border-radius: 9px;" +
+                " border-radius: 12px;" +
                 " box-shadow: inset 0 0 0 1px alpha(@text_color, 0.08);" +
                 " margin: 0 0.666rem 0.666rem;" +
-                " padding: 0.333rem 0; }" +
+                " padding: 0.5rem 0; }" +
                 "quicksettings .mseries-card scalebox { padding: 0.333rem 0.75rem; }" +
                 "quicksettings .mseries-card scalebox scale { margin: 0; }" +
                 "quicksettings .mseries-card scale trough { min-height: 6px; border-radius: 3px; }" +
@@ -30,6 +30,7 @@ namespace QuickSettings {
                 " background: alpha(@text_color, 0.10); box-shadow: none; }" +
                 "quicksettings button.mseries-slider-icon:hover { background: alpha(@text_color, 0.18); }" +
                 "quicksettings .mseries-slider-icon.muted { background: alpha(@text_color, 0.04); color: alpha(@text_color, 0.5); }" +
+                "quicksettings .mseries-slider-title { font-weight: 600; }" +
                 "quicksettings .mseries-slider-value { font-feature-settings: \"tnum\"; min-width: 3.2em; }" +
                 "quicksettings .mseries-card button.flat { border-radius: 6px; margin: 0 0.333rem; }"
             );
@@ -93,8 +94,8 @@ namespace QuickSettings {
         }
 
         construct {
-            orientation = HORIZONTAL;
-            spacing = 9;
+            orientation = VERTICAL;
+            spacing = 6;
 
             icon_image = new Gtk.Image.from_icon_name (icon_for (0, false));
             if (clickable) {
@@ -120,9 +121,16 @@ namespace QuickSettings {
             percentage.add_css_class (Granite.CssClass.DIM);
             percentage.add_css_class ("mseries-slider-value");
 
-            append (icon_widget);
-            append (slider);
-            append (percentage);
+            var heading = new Gtk.Box (HORIZONTAL, 8);
+            var name = new Gtk.Label (title) { xalign = 0, hexpand = true, wrap = true };
+            name.add_css_class ("mseries-slider-title");
+            heading.append (name);
+            heading.append (percentage);
+            var controls = new Gtk.Box (HORIZONTAL, 9);
+            controls.append (icon_widget);
+            controls.append (slider);
+            append (heading);
+            append (controls);
 
             slider.value_changed.connect (on_value_changed);
         }
