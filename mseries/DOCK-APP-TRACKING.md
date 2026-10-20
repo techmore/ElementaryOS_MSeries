@@ -4,8 +4,10 @@
 This draft leaves the owner’s Windows taskbar binary and private schema untouched. This
 patch is not applied by the default installer. Explicit build-only qualification
 is available with `bash mseries/install-dock-drawers.sh --build-running-apps-only`.
-That mode requires the complete Taskbar.vala and taskbar-mode schema, verifies
-Taskbar.vala stays byte-identical, builds, and exits before installation.
+That mode first uses the canonical `dock-taskbar/prepare-source.sh` path from
+PR #341. It verifies Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala and all
+shared CodexBar Vala sources stay byte-identical, builds, runs the real GTK hover/
+focus probe, and exits before installation.
 
 ## Problem and proposed fix
 
@@ -38,8 +40,9 @@ Official Teams/Outlook icons, launchers and pins were preserved. The recovery ch
 the owner’s newer StartMenu and CodexBar changes. Do not restore an older binary
 or repeat the incompatible deployment. No further live dock changes are authorized by this draft.
 
-The source-only combined build applies the existing drawers, workspace/startup,
-and **complete Windows taskbar patch**, then this app-tracking patch, all on
+The source-only combined build uses the canonical helper to apply drawers,
+workspace/startup, complete Windows taskbar and taskbar-CodexBar patches, and
+copy the shared native CodexBar sources. Only then is this tracking patch applied, on
 upstream elementary/dock `8b45a68a122947ad3a6427bf6e159ec2acf04ad0`. The complete committed Taskbar.vala baseline is unchanged by this patch.
 A second isolated build also combines the patch with the recovery chat’s full
 current Taskbar, StartMenu and TaskbarCodexBar sources. All three files remain
@@ -56,6 +59,9 @@ bash mseries/dock-tests/test-startup.sh
 python3 mseries/dock-tests/test-launcher.py
 bash mseries/install-dock-drawers.sh --build-running-apps-only
 ```
+
+The canonical preparation path, build-only guard and GTK hover/focus probe
+also pass at dev `689ffdf6aca2cbddf1f54637de22e45d0fb29d38`.
 
 Three native tests compile the actual AppResolver and AppSystem against controlled
 services and real private desktop entries. They cover normal/browser/unknown IDs,
