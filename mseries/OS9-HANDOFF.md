@@ -2511,3 +2511,20 @@ project table also records the Asahi package source, M-series quick-settings wid
 optimization reference as distinct update items, and group local mkosi overlay
 files with the Apple Silicon image integration. Semantic boundary review remains
 open for the remaining groups.
+
+## 2026-10-20 — Rust brightness bridge D-Bus fixture
+
+Added a private session-bus integration harness for the Rust GNOME brightness
+service. Its fake Mutter endpoint implements `Backlight` and `SetBacklight`;
+the harness checks dim/restore, preserving a manual change during dimming,
+`BrightnessChanged`, ambient target conversion and validation, and both
+GSettings gates. The fixture compiles successfully with the host GIO headers,
+and the Rust crate still passes format, Clippy with warnings denied, and all
+five unit tests.
+
+The integration run could not start here: this macOS `dbus-daemon` requires a
+launchd session socket, while the sandbox denies binding a private Unix socket.
+The harness is now part of the arm64 CI candidate job; its run is pending. The
+Rust bridge remains uninstalled pending that result and full arm64 image
+admission. The current inventory is 755 scoped files (673 local and 82
+elementary-owned upstream inputs), 230 path groups, and 206 project IDs.

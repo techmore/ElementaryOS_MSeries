@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 753,
+  "item_count": 755,
   "component_count": 230,
   "project_count": 206,
   "components": [
@@ -2462,9 +2462,9 @@
     {
       "id": "mseries/rust/brightness-bridge",
       "ownership": "mseries-maintained",
-      "item_count": 6,
+      "item_count": 8,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 6
+        "candidate-functional-tests-passing-not-installed": 8
       },
       "items": [
         "mseries/rust/brightness-bridge/.gitignore",
@@ -2472,7 +2472,9 @@
         "mseries/rust/brightness-bridge/Cargo.toml",
         "mseries/rust/brightness-bridge/README.md",
         "mseries/rust/brightness-bridge/build.rs",
-        "mseries/rust/brightness-bridge/src/main.rs"
+        "mseries/rust/brightness-bridge/src/main.rs",
+        "mseries/rust/brightness-bridge/test-dbus-runtime.py",
+        "mseries/rust/brightness-bridge/tests/mock-mutter.c"
       ]
     },
     {
@@ -3472,9 +3474,9 @@
     {
       "id": "mseries/brightness",
       "ownership": "mseries-maintained",
-      "item_count": 9,
+      "item_count": 11,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 6,
+        "candidate-functional-tests-passing-not-installed": 8,
         "not-assessed": 3
       },
       "items": [
@@ -3486,7 +3488,9 @@
         "mseries/rust/brightness-bridge/Cargo.toml",
         "mseries/rust/brightness-bridge/README.md",
         "mseries/rust/brightness-bridge/build.rs",
-        "mseries/rust/brightness-bridge/src/main.rs"
+        "mseries/rust/brightness-bridge/src/main.rs",
+        "mseries/rust/brightness-bridge/test-dbus-runtime.py",
+        "mseries/rust/brightness-bridge/tests/mock-mutter.c"
       ]
     },
     {
@@ -12589,6 +12593,26 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/test-dbus-runtime.py",
+      "path": "mseries/rust/brightness-bridge/test-dbus-runtime.py",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/tests/mock-mutter.c",
+      "path": "mseries/rust/brightness-bridge/tests/mock-mutter.c",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "c",
+      "role": "verification",
       "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
