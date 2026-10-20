@@ -5,16 +5,23 @@ use gio::{
 use smithay::{
     backend::input::{
         AbsolutePositionEvent, Axis, AxisSource, ButtonState, Event, GestureBeginEvent,
-        GestureEndEvent, GestureSwipeUpdateEvent, InputBackend, InputEvent, KeyboardKeyEvent,
-        PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
+        GestureEndEvent, GesturePinchUpdateEvent as _, GestureSwipeUpdateEvent as _, InputBackend,
+        InputEvent, InputTime, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
+        PointerMotionEvent,
     },
     input::{
         keyboard::{FilterResult, KeyboardTarget, XkbConfig},
-        pointer::{AxisFrame, ButtonEvent, MotionEvent, RelativeMotionEvent},
+        pointer::{
+            AxisFrame, ButtonEvent, GestureHoldBeginEvent, GestureHoldEndEvent,
+            GesturePinchBeginEvent, GesturePinchEndEvent, GesturePinchUpdateEvent,
+            GestureSwipeBeginEvent, GestureSwipeEndEvent, GestureSwipeUpdateEvent, MotionEvent,
+            RelativeMotionEvent,
+        },
     },
-    utils::SERIAL_COUNTER,
+    utils::{Logical, Point, SERIAL_COUNTER},
 };
 
+use crate::gestures::ActiveGesture;
 use crate::state::PantheonCompositor;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -115,6 +122,14 @@ impl PantheonCompositor {
                     serial,
                     time,
                     |state, modifiers, keysym| {
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.gesture_animation.is_some()
+                        {
+                            state.cancel_active_gesture(time);
+                            if keysym.modified_sym() == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into() {
+                                return FilterResult::Intercept(());
+                            }
+                        }
                         if key_state == smithay::backend::input::KeyState::Pressed
                             && keysym.modified_sym()
                                 == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
@@ -239,6 +254,9 @@ impl PantheonCompositor {
                 let button = event.button_code();
 
                 let button_state = event.state();
+                if button_state == ButtonState::Pressed {
+                    self.cancel_active_gesture(event.time());
+                }
 
                 if !self.session_locked
                     && ButtonState::Pressed == button_state
@@ -335,36 +353,231 @@ impl PantheonCompositor {
                 pointer.frame(self);
             }
             InputEvent::GestureSwipeBegin { event, .. } => {
-                // Workspace switching must not race a compositor move/resize
-                // grab, a popup grab, or the lock screen. In those states the
-                // sequence is dropped rather than deferred.
-                let pointer_grabbed = self
-                    .seat
-                    .get_pointer()
-                    .is_some_and(|pointer| pointer.is_grabbed());
-                if self.session_locked || pointer_grabbed {
-                    self.swipe_gesture = None;
-                } else {
-                    self.swipe_gesture =
-                        Some(crate::gestures::SwipeGestureState::begin(event.fingers()));
-                }
+                self.gesture_swipe_begin(event.fingers(), event.time());
             }
             InputEvent::GestureSwipeUpdate { event, .. } => {
-                if let Some(gesture) = self.swipe_gesture.as_mut() {
-                    gesture.update(event.delta());
-                }
+                self.gesture_swipe_update(event.delta(), event.time());
             }
             InputEvent::GestureSwipeEnd { event, .. } => {
-                let outcome = self
-                    .swipe_gesture
-                    .take()
-                    .map(|gesture| gesture.finish(event.cancelled()))
-                    .unwrap_or(crate::gestures::SwipeOutcome::None);
-                if let Err(error) = self.apply_swipe_outcome(outcome) {
-                    tracing::debug!(%error, "touchpad swipe did not change workspace");
-                }
+                self.gesture_swipe_end(event.cancelled(), event.time());
+            }
+            InputEvent::GesturePinchBegin { event, .. } => {
+                self.gesture_pinch_begin(event.fingers(), event.time());
+            }
+            InputEvent::GesturePinchUpdate { event, .. } => {
+                self.gesture_pinch_update(
+                    event.delta(),
+                    event.scale(),
+                    event.rotation(),
+                    event.time(),
+                );
+            }
+            InputEvent::GesturePinchEnd { event, .. } => {
+                self.gesture_pinch_end(event.cancelled(), event.time());
+            }
+            InputEvent::GestureHoldBegin { event, .. } => {
+                // Holds always belong to the client (GTK stops kinetic
+                // scrolling with them); libinput cancels a hold before a
+                // swipe or pinch begins.
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_hold_begin(
+                    self,
+                    &GestureHoldBeginEvent {
+                        serial: SERIAL_COUNTER.next_serial(),
+                        time: event.time(),
+                        fingers: event.fingers(),
+                    },
+                );
+            }
+            InputEvent::GestureHoldEnd { event, .. } => {
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_hold_end(
+                    self,
+                    &GestureHoldEndEvent {
+                        serial: SERIAL_COUNTER.next_serial(),
+                        time: event.time(),
+                        cancelled: event.cancelled(),
+                    },
+                );
             }
             _ => {}
+        }
+    }
+}
+
+impl PantheonCompositor {
+    /// The compositor only claims gestures when no grab, lock or overview
+    /// state could be confused by them; otherwise they go to the client.
+    fn gestures_available(&self) -> bool {
+        !self.session_locked
+            && !self
+                .seat
+                .get_pointer()
+                .is_some_and(|pointer| pointer.is_grabbed())
+    }
+
+    pub(crate) fn gesture_swipe_begin(&mut self, fingers: u32, time: InputTime) {
+        self.discard_gesture_animation();
+        let owned = self
+            .gestures_available()
+            .then(|| {
+                crate::gestures::SwipeGestureState::begin(
+                    &self.gesture_bindings,
+                    fingers,
+                    self.overview_active(),
+                )
+            })
+            .flatten();
+        if let Some(gesture) = owned {
+            self.active_gesture = Some(ActiveGesture::Swipe(gesture));
+            return;
+        }
+        self.active_gesture = Some(ActiveGesture::ForwardedSwipe);
+        let pointer = self.seat.get_pointer().unwrap();
+        pointer.gesture_swipe_begin(
+            self,
+            &GestureSwipeBeginEvent {
+                serial: SERIAL_COUNTER.next_serial(),
+                time,
+                fingers,
+            },
+        );
+    }
+
+    pub(crate) fn gesture_swipe_update(&mut self, delta: Point<f64, Logical>, time: InputTime) {
+        if !self.gestures_available()
+            && matches!(self.active_gesture, Some(ActiveGesture::Swipe(_)))
+        {
+            self.active_gesture = None;
+            self.discard_gesture_animation();
+        }
+        match self.active_gesture.as_mut() {
+            Some(ActiveGesture::Swipe(gesture)) => gesture.update(delta),
+            Some(ActiveGesture::ForwardedSwipe) => {
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_swipe_update(self, &GestureSwipeUpdateEvent { time, delta });
+            }
+            _ => {}
+        }
+        if let Some(ActiveGesture::Swipe(gesture)) = self.active_gesture {
+            self.update_gesture_animation(gesture);
+        }
+    }
+
+    pub(crate) fn gesture_swipe_end(&mut self, cancelled: bool, time: InputTime) {
+        match self.active_gesture.take() {
+            Some(ActiveGesture::Swipe(gesture)) => {
+                let cancelled = cancelled || !self.gestures_available();
+                if !self.release_gesture_animation(cancelled) {
+                    self.apply_gesture_outcome(gesture.finish(cancelled));
+                }
+            }
+            Some(ActiveGesture::ForwardedSwipe) => {
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_swipe_end(
+                    self,
+                    &GestureSwipeEndEvent {
+                        serial: SERIAL_COUNTER.next_serial(),
+                        time,
+                        cancelled,
+                    },
+                );
+            }
+            other => self.active_gesture = other,
+        }
+    }
+
+    fn gesture_pinch_begin(&mut self, fingers: u32, time: InputTime) {
+        self.discard_gesture_animation();
+        let owned = self
+            .gestures_available()
+            .then(|| crate::gestures::PinchGestureState::begin(&self.gesture_bindings, fingers))
+            .flatten();
+        if let Some(gesture) = owned {
+            self.active_gesture = Some(ActiveGesture::Pinch(gesture));
+            return;
+        }
+        self.active_gesture = Some(ActiveGesture::ForwardedPinch);
+        let pointer = self.seat.get_pointer().unwrap();
+        pointer.gesture_pinch_begin(
+            self,
+            &GesturePinchBeginEvent {
+                serial: SERIAL_COUNTER.next_serial(),
+                time,
+                fingers,
+            },
+        );
+    }
+
+    fn gesture_pinch_update(
+        &mut self,
+        delta: Point<f64, Logical>,
+        scale: f64,
+        rotation: f64,
+        time: InputTime,
+    ) {
+        if !self.gestures_available()
+            && matches!(self.active_gesture, Some(ActiveGesture::Pinch(_)))
+        {
+            self.active_gesture = None;
+            self.discard_gesture_animation();
+        }
+        match self.active_gesture.as_mut() {
+            Some(ActiveGesture::Pinch(gesture)) => gesture.update(scale),
+            Some(ActiveGesture::ForwardedPinch) => {
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_pinch_update(
+                    self,
+                    &GesturePinchUpdateEvent {
+                        time,
+                        delta,
+                        scale,
+                        rotation,
+                    },
+                );
+            }
+            _ => {}
+        }
+    }
+
+    fn gesture_pinch_end(&mut self, cancelled: bool, time: InputTime) {
+        match self.active_gesture.take() {
+            Some(ActiveGesture::Pinch(gesture)) => {
+                self.apply_gesture_outcome(gesture.finish(cancelled || !self.gestures_available()));
+            }
+            Some(ActiveGesture::ForwardedPinch) => {
+                let pointer = self.seat.get_pointer().unwrap();
+                pointer.gesture_pinch_end(
+                    self,
+                    &GesturePinchEndEvent {
+                        serial: SERIAL_COUNTER.next_serial(),
+                        time,
+                        cancelled,
+                    },
+                );
+            }
+            other => self.active_gesture = other,
+        }
+    }
+
+    /// End client sequences before focus moves to the lock surface, and discard
+    /// compositor sequences so unlocking cannot complete an old gesture.
+    pub(crate) fn cancel_active_gesture(&mut self, time: InputTime) {
+        self.discard_gesture_animation();
+        match self.active_gesture {
+            Some(ActiveGesture::Swipe(_) | ActiveGesture::ForwardedSwipe) => {
+                self.gesture_swipe_end(true, time);
+            }
+            Some(ActiveGesture::Pinch(_) | ActiveGesture::ForwardedPinch) => {
+                self.gesture_pinch_end(true, time);
+            }
+            None => {}
+        }
+    }
+
+    fn apply_gesture_outcome(&mut self, outcome: crate::gestures::GestureOutcome) {
+        if let Err(error) = self.apply_swipe_outcome(outcome) {
+            tracing::debug!(%error, ?outcome, "touchpad gesture had no effect");
         }
     }
 }

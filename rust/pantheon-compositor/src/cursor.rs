@@ -25,6 +25,7 @@ render_elements! {
     Memory=MemoryRenderBufferRenderElement<R>,
     Solid=SolidColorRenderElement,
     WrappedSurface=Wrap<WaylandSurfaceRenderElement<R>>,
+    Animated=smithay::backend::renderer::element::utils::RelocateRenderElement<smithay::backend::renderer::element::utils::RescaleRenderElement<WaylandSurfaceRenderElement<R>>>,
 }
 
 /// Built-in pointer used only when the configured cursor theme cannot be read.
@@ -362,4 +363,138 @@ where
         1.0,
         Kind::Unspecified,
     )
+}
+
+/// Shared scene assembly for nested and native outputs. Preview transforms
+/// never remap windows, so keyboard/pointer focus and workspace order stay put.
+pub fn render_desktop_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Result<Vec<CursorRenderElement<R>>, smithay::output::OutputNoMode>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    use crate::gesture_animation::PreviewKind;
+    use smithay::backend::renderer::element::{
+        AsRenderElements,
+        utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
+    };
+    use smithay::desktop::space::SpaceRenderElements;
+    let mut elements = render_cursor_elements(renderer, state, output);
+    if let (Some(animation), Some(area)) = (
+        &state.gesture_animation,
+        state.space.output_geometry(output),
+    ) {
+        let scale = Scale::from(output.current_scale().fractional_scale());
+        let mut windows = Vec::new();
+        for window in state.space.elements().rev() {
+            let Some(location) = state.space.element_location(window) else {
+                continue;
+            };
+            let from = Rectangle::new(location, window.geometry().size);
+            let mut to = from;
+            match animation.kind {
+                PreviewKind::Workspace => {
+                    if state.workspace_manager.workspace_for(window.id())
+                        == Some(animation.workspace)
+                    {
+                        to.loc.x += (animation.progress * area.size.w as f64).round() as i32;
+                    }
+                }
+                PreviewKind::Overview { .. } => {
+                    if let Some(preview) = animation
+                        .windows
+                        .iter()
+                        .find(|entry| entry.window == *window)
+                    {
+                        let t = animation.progress.clamp(0.0, 1.0);
+                        to.loc.x = (preview.from.loc.x as f64
+                            + (preview.to.loc.x - preview.from.loc.x) as f64 * t)
+                            .round() as i32;
+                        to.loc.y = (preview.from.loc.y as f64
+                            + (preview.to.loc.y - preview.from.loc.y) as f64 * t)
+                            .round() as i32;
+                        to.size.w = (preview.from.size.w as f64
+                            + (preview.to.size.w - preview.from.size.w) as f64 * t)
+                            .round() as i32;
+                        to.size.h = (preview.from.size.h as f64
+                            + (preview.to.size.h - preview.from.size.h) as f64 * t)
+                            .round() as i32;
+                    }
+                }
+            }
+            if from.overlaps(area) {
+                windows.push((window.clone(), from, to));
+            }
+        }
+        if animation.kind == PreviewKind::Workspace {
+            for step in [-1_i32, 1] {
+                let index = animation.workspace as i32 + step;
+                if index < 0 {
+                    continue;
+                }
+                for (window, location) in state
+                    .workspace_manager
+                    .windows_in(index as usize)
+                    .into_iter()
+                    .rev()
+                {
+                    if state
+                        .minimized_windows
+                        .values()
+                        .any(|(known, _)| known == &window)
+                        || state
+                            .x11_minimized_windows
+                            .values()
+                            .any(|(known, _)| known == &window)
+                    {
+                        continue;
+                    }
+                    let from = Rectangle::new(location, window.geometry().size);
+                    if !from.overlaps(area) {
+                        continue;
+                    }
+                    let mut to = from;
+                    to.loc.x +=
+                        ((animation.progress + step as f64) * area.size.w as f64).round() as i32;
+                    windows.push((window, from, to));
+                }
+            }
+        }
+        for (window, from, to) in windows {
+            let origin =
+                (from.loc - window.geometry().loc - area.loc).to_physical_precise_round(scale);
+            let anchor = (from.loc - area.loc).to_physical_precise_round(scale);
+            let offset = (to.loc - from.loc).to_physical_precise_round(scale);
+            let resize = Scale::from((
+                to.size.w.max(1) as f64 / from.size.w.max(1) as f64,
+                to.size.h.max(1) as f64 / from.size.h.max(1) as f64,
+            ));
+            let surfaces: Vec<WaylandSurfaceRenderElement<R>> =
+                window.render_elements(renderer, origin, scale, 1.0);
+            elements.extend(surfaces.into_iter().map(|surface| {
+                CursorRenderElement::Animated(RelocateRenderElement::from_element(
+                    RescaleRenderElement::from_element(surface, anchor, resize),
+                    offset,
+                    Relocate::Relative,
+                ))
+            }));
+        }
+    } else {
+        elements.extend(
+            smithay::desktop::space::space_render_elements(renderer, [&state.space], output, 1.0)?
+                .into_iter()
+                .map(|element| match element {
+                    SpaceRenderElements::Surface(surface) => CursorRenderElement::from(surface),
+                    SpaceRenderElements::Element(element) => CursorRenderElement::from(element),
+                    SpaceRenderElements::_GenericCatcher(_) => unreachable!(),
+                }),
+        );
+    }
+    if let Some(wallpaper) = render_wallpaper_element(renderer, state, output) {
+        elements.push(wallpaper);
+    }
+    Ok(elements)
 }

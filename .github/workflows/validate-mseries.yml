@@ -73,6 +73,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Exercise BlueZ controls without touching hardware
         run: bash mseries/quick-settings/tests/test-bluetooth.sh
+      - name: Validate shared sliders and battery summary in both themes
+        run: |
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme light
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme dark
 
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
@@ -80,13 +84,21 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK and Granite test dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
         run: |
           python3 -m py_compile mseries/orchard-incus/orchard_incus/*.py mseries/orchard-incus/tools/*.py
           xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
             PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
             python3 -m unittest discover -s mseries/orchard-incus/tests
+
+      - name: Prepare native indicator API
+        run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
+      - name: Build and test native Orchard windows and dropdown
+        run: |
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          meson compile -C "$RUNNER_TEMP/orchard-native"
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
 
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
@@ -101,12 +113,14 @@ jobs:
           python3 mseries/dock-tests/test-launcher.py
 
   desktop-space:
-    name: Native notch GTK allocation (arm64)
+    name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK test dependencies
-        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev xvfb xauth build-essential
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential
+      - name: Test top-bar 130 percent measurement and allocation
+        run: bash mseries/display-space/test-panel-scale.sh
       - name: Test production notch geometry and crowded panel allocation
         run: bash mseries/display-space/test-notch-layout.sh
       - name: Verify exact-kernel boot profile and rollback

@@ -41,6 +41,221 @@ resolves Teams to the official PNG and Outlook to the installed elementary Mail
 icon. Both desktop entries validate. Owner sign-in to Teams remains confirmed;
 live media, dock grouping and Outlook mailbox operation remain unverified.
 
+## Gesture package staged for next login — 2026-10-20 (Codex)
+
+PR #326 CI passed before the latest cursor integration. Merged `dev` through
+`6073858` into the feature branch, keeping the themed cursor and all three
+settings watchers. Its 33 all-feature tests pass. The first release package
+(PR-only source `806cde7`) was deliberately not installed: another task had
+staged compositor `432fe4b` with unmerged Windows Work Mode/top-panel/taskbar
+clearance changes. A separate `codex/gesture-deployment` branch combines those
+exact installed compositor changes with gestures at `314652f`; PR #326 does not
+absorb the unrelated Work Mode feature. Combined build passes 38 all-feature
+tests, warnings-denied all-feature Clippy, release packaging and the isolated
+GTK Cairo gesture pixel/state smoke. The packaging helper now honors
+`CARGO_TARGET_DIR` for shared worktree builds.
+
+Installed `0.1.0+git432fe4b+gestures.20261020` with `sudo -n dpkg -i`, followed
+only by `systemctl --user daemon-reload`. Production binary excludes the
+`gesture-probe` socket and retains the Work Mode D-Bus panel interface. Strict
+schema validation, all shared-library resolution, installed payload SHA-256,
+`gsettings get org.techmore.mseries.gestures four-finger-pinch-in` (`'launcher'`),
+and the installer's read-only `--verify` pass. Compositor PID 1944 and Wingpanel
+PID 2135/start times and the running compositor executable hash are unchanged:
+**installed but not loaded**. No compositor restart or logout was requested.
+The dock PID changed 153271 → 160644 at 10:38:17 during concurrent work; this
+task issued no dock restart and the unit contents did not change. Dock is
+active; attribution of that separate restart is unverified, so an unchanged
+whole-session claim is not made.
+
+Package, exact prior-binary rollback .deb, deployment JSON and smoke receipts
+are retained in `~/Documents/Codex/gesture-animation-package-20261020/`.
+See `mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md` for source
+revisions, hashes, rollback command and limits. Next: owner logs out/in normally
+when ready; then qualify physical workspace/overview gestures, tap/natural
+scroll preferences, native pacing, multiple monitors and mixed XWayland windows.
+
+## Finger-following workspace and overview gestures — 2026-10-20 (Codex)
+
+Continued PR #326 from `codex/gesture-animation` and merged latest `dev`
+through `25011bc`, retaining the newer dock clearance implementation.
+`gesture_animation.rs` now tracks swipe progress, velocity and a bounded
+critically damped release spring. Horizontal swipes render the active and
+adjacent workspaces offset under the fingers, resisting at the ends; vertical
+swipes scale/move windows toward or away from the overview grid. Workspace,
+focus and client geometry change only at completion. Cancelled/short swipes
+spring back. Escape, clicks, locks, grabs, session suspension, device removal,
+workspace changes and replacement gestures discard stale previews. The release
+animation honors `org.gnome.desktop.interface enable-animations`. Thumbnail
+rectangles preserve aspect ratio without enlargement. The steady overview
+still configures clients once at completion; it is not yet a persistent
+thumbnail compositor. Both native and nested renderers share scene assembly,
+and hidden neighbor windows receive frame callbacks while previewed.
+
+Validation: 32 all-feature compositor tests pass; default and all-feature
+Clippy checks pass with warnings denied. The private `gesture-probe` build
+feature permits deterministic nested swipe input and is absent from normal
+package builds. Its self-contained Xvfb/D-Bus/GTK Cairo smoke passes actual
+pixel-bound checks for workspace displacement, cancel/restore, edge resistance,
+overview shrink/separation/open/close, interrupted springs and reduced-motion
+release. Selected screenshots were inspected and a 3.5-second motion recording
+was retained under `mseries/pantheon-rust-compositor/gesture-tests/receipts/2026-10-20/`.
+Reproduction commands and measured limits are in that directory's parent README.
+The first GTK Vulkan fixture run lost nested surfaces; the Cairo fixture is the
+qualified path, not a Vulkan pass. Three lint-only cleanups in the newly merged
+`pantheon_shell.rs` retain the dock behavior. `git diff --check` passes.
+
+No animation package installed and no live desktop restarted. The independently
+staged dock compositor package remains separate. Next: physical M-series
+trackpad tuning (360 units per output, 8-unit axis threshold), native frame
+pacing, multiple-output/mixed-XWayland previews and hardware lock/grab tests.
+
+## Trackpad gesture review and dev integration — 2026-10-20 (Codex)
+
+Continued PR #326 on `claude/trackpad-gestures`. Merged `origin/dev` at
+`1740443`, resolving the two handoff/roadmap conflicts while retaining both
+sets of entries and the newer corner-snapping implementation. Review fixed
+in-flight gestures surviving a lock or pointer grab: owned actions now check
+availability on updates and release; locking cancels sequences before focus
+moves; native session suspension and device removal cancel sequences too.
+Window cycling now restricts candidates to managed application windows on the
+active workspace. Invalid/zero/negative pinch scales cannot launch an app.
+The touchpad `click-method=none` setting now explicitly disables libinput's
+software click method (the Rust input 0.10 enum omits this C API value).
+
+Verification: `cargo test -p pantheon-compositor` passes 16 tests (including
+cancelled/invalid pinch regression cases); `cargo clippy -p pantheon-compositor
+--all-targets -- -D warnings` and the same command with `--features native-drm`
+pass. `glib-compile-schemas --strict --dry-run` on the packaged schema passes;
+`bash mseries/pantheon-rust-compositor/test-session-units.sh` passes (the host's
+unrelated spice-vdagent unit emits an existing Install-section warning).
+`git diff --check` passes. Updated the compositor README, architecture status
+and public performance page to describe implemented versus unqualified work.
+No package installed and no running session restarted. Physical device
+configuration, lock/grab interruption on hardware and actual application zoom
+remain unverified. Next: native trackpad qualification and finger-following
+workspace/overview animation; actions still fire on release.
+
+## Rust compositor: macOS-style trackpad gestures and touchpad settings — 2026-10-20 (Claude)
+
+Branch `claude/trackpad-gestures` (from `origin/dev`). The live session runs
+`pantheon-compositor --backend native`. Before this change it recognized only
+3-finger workspace and overview swipes, never applied libinput device options
+(so tap-to-click stayed off whatever Switchboard said) and sent no gestures to
+applications.
+
+- `src/touchpad.rs`: reads `org.gnome.desktop.peripherals.touchpad` and
+  `.mouse` (tap-to-click, tap-and-drag/lock, tap button map, natural scroll,
+  two-finger/edge scrolling, disable-while-typing, middle-click emulation,
+  left-handed, click method, speed, accel profile, send-events). It applies
+  them to each libinput device when the device is added. A GSettings watcher
+  re-applies them to every known device when a key changes, so the
+  Switchboard Mouse & Touchpad plug works live.
+- `zwp_pointer_gestures_v1` (v3) is now registered. Gestures the compositor
+  does not claim are sent to the focused client: two-finger pinch-to-zoom,
+  unbound swipes, and every hold gesture (GTK uses holds to stop kinetic
+  scrolling).
+- `src/gestures.rs` rewritten around bindings read live from elementary's
+  `io.elementary.desktop.wm.gestures` (3/4-finger horizontal: switch-to-workspace,
+  move-to-workspace, switch-windows; swipe up: multitasking-view,
+  toggle-maximized). New `org.techmore.mseries.gestures` schema (shipped in
+  the package under `session/usr/share/glib-2.0/schemas`) adds the pinch
+  elementary lacks: `four-finger-pinch-in` defaults to `launcher` (Launchpad);
+  `three-finger-pinch-in` defaults to `none`. With the overview open, any
+  multi-finger vertical swipe closes it (macOS swipe-down). Five fingers use
+  the four-finger bindings. New compositor actions: move the focused window
+  to the adjacent workspace and follow it; cycle windows on the workspace.
+
+Verification (this host, no session taken over, nothing installed):
+`cargo check -p pantheon-compositor --bins --features native-drm`, `cargo clippy`
+(default workspace and `native-drm`, all targets) clean, `cargo test -p
+pantheon-compositor` 14/14 pass (9 gesture, 2 touchpad, 3 overview).
+`glib-compile-schemas --strict --dry-run` accepts the new schema. Headless smoke
+(Xvfb + `dbus-run-session`, private `XDG_RUNTIME_DIR`, nested Winit backend):
+a GTK Wayland client saw `zwp_pointer_gestures_v1` v3 and created swipe, pinch
+and hold gesture objects.
+
+Not verified: physical trackpad behaviour (the nested backend emits no
+gestures), libinput option application on the real device, thresholds
+(90 px swipe, 0.7 pinch scale) on the M1 Pro panel, and app pinch-zoom in
+Firefox/GTK. The new binary is not installed; that needs a package build and a
+compositor restart, which ends the owner's session. Next: finger-following
+(1:1) workspace and overview animations, and a pinch-out action (show
+desktop) once the compositor has that action.
+## Dropdown and Orchard visual polish — 2026-10-20
+
+Branch `codex/panel-ui-polish` applies the UI specialist skill to CodexBar, Quick
+Settings, Orchard and Battery's dropdown. The owner prioritized Orchard visual
+polish before feature expansion. Changes include readable CodexBar cards, labeled
+Quick Settings sliders, grouped Orchard dropdown metrics/instance rows, a
+responsive Orchard dashboard and selection-only bulk toolbar, and a compact
+Battery summary with expandable activity and an explicit app launcher.
+
+Validation: CodexBar's 17 tests and custom-port check pass (pin remains v0.78.0);
+Orchard's five native suites pass, including seven indicator transitions, row
+identity on unchanged refresh and selection/clear behavior. Patched Quick Settings
+and Power modules compile; private BlueZ checks and shared slider/Battery summary
+probes pass. Light/dark private renders were inspected. CI coverage now includes
+the shared widget probes and native Orchard build/tests. See `PANEL-UI-REVIEW.md`
+for details and limitations. No panel reload; Quick Settings/Power/Orchard are
+built but not installed. CodexBar post-push staging passed all 17 tests, and the panel/daemon PID lists
+were unchanged. Its module loads at next login; native Settings takes effect
+on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
+## Top bar increased to 130% and managed service restored — 2026-10-20
+
+Owner reported that 115% was not visibly larger and confirmed the target is
+Wingpanel in the Rust desktop session. Increased `CONTENT_SCALE` to 1.30 for
+all groups together, with matching production measurement/coordinate tests and
+CI wording. Built and installed the updated panel; `test-panel-scale.sh` passed.
+
+Found the manually launched panel was no longer running, while the native
+`pantheon-wingpanel.service` had stayed inactive since the original reload.
+Restored the existing managed service instead of launching another unmanaged
+instance. This uses its existing `GSK_RENDERER=gl` setting for the Rust compositor;
+the earlier manual launch had omitted that setting and logged repeated Vulkan
+surface-loss warnings. The service is active (PID 153373), its executable bytes
+match the newly installed build, and its renderer environment is `gl`. CodexBar
+hover information remains off; upstream pin remains v0.78.0. Physical visual
+size awaits owner feedback. Future reloads in the Rust session should use
+`systemctl --user restart pantheon-wingpanel.service`.
+
+## Entire top bar enlarged 15% — 2026-10-20
+
+Owner clarified that the whole top bar should be bigger. Added
+`wingpanel-content-scale.patch`: native IndicatorBar measurement and allocation
+scale all three groups by 1.15, including Applications, clock, explicit icon/font
+sizes, CodexBar, RepoBar, status controls and their spacing. This replaces the
+uncommitted CodexBar-only size adjustment, so CodexBar is not scaled twice.
+Notch/monitor geometry remains in monitor coordinates. Both native Wingpanel
+installers apply the patch; CI runs the isolated scale check.
+
+Built and installed with `bash mseries/install-wingpanel-codexbar-left.sh` and
+reloaded Wingpanel using `GDK_BACKEND=wayland` (PID 117166; running executable
+bytes match the installed binary). The CodexBar hover preference remains false;
+upstream CodexBar pin remains v0.78.0. `test-panel-scale.sh` passed for production
+measurement and 1.15 coordinate transforms. `test-panel-startup.sh` passed,
+including monitor-width measurement, 20 clock reparent transitions and Gala
+readiness. Physical visual size and dropdown interaction await owner feedback.
+Next: tune only if the owner wants a different scale.
+
+## CodexBar hover information toggle — 2026-10-20
+
+Added **Display > Wingpanel > Hover information**, default off, stored locally as
+`showHoverInfo` in `~/.config/codexbar/wingpanel.json`. It gates pointer tooltips
+throughout the panel subtree, including provider marks, quota dots and hints.
+Menu tooltips and accessible labels remain available. Atomic preference changes
+apply to cached widgets without a provider request. Set the owner's preference
+to false, installed with `bash mseries/deploy-codexbar.sh --restart`, and loaded
+the module in the running Wayland Wingpanel (PID 75113; mapped inode matches the
+installed module). The interrupted reload needed an explicit relaunch with
+`GDK_BACKEND=wayland` because the executor exports `GDK_BACKEND=x11`. The existing
+CodexBar daemon stayed running (PID 2088). Upstream pin remains v0.78.0.
+
+Verification: native build and all 17 Meson tests passed, including preference
+persistence/default-off and recursive live hover enable/disable checks;
+`bash mseries/check-codexbar-port.sh` passed. Pointer behavior on the physical
+desktop has not been visually inspected. Next: owner can enable the toggle to
+restore hover details if desired.
 ## Microsoft Teams web desktop integration — 2026-10-20
 
 No prior Teams native port was found in the repository or remote branches. Per
@@ -8235,3 +8450,33 @@ and end-to-end link opening remain unverified until the next login.
 - Next: review the open feature PRs individually with their applicable CI and
   qualification requirements; preserve intentional draft handoffs and gated
   work. No running desktop services or installed software were changed.
+
+## Open PR integration review — 2026-10-20
+
+- PR #335 (remaining local-scratch ignore rules) merged into dev as `fb8a283`;
+  both documents in its original description had already landed.
+- Reviewed non-draft PRs #322, #334, #320, #312, #324 and #326. Reconciled only
+  conflicting handoff/roadmap records, preserving both sides. Integrated these
+  candidates in that order for combined CI before merging; existing owner
+  worktrees and their local changes were not reset. Final merge dispositions
+  are available from each GitHub PR.
+- Combined-source local verification: ten offline Teams tests, five calendar
+  tracker tests, all four calendar bundled-source/data identity checks, and
+  33 compositor tests with Rust 1.98.1 and all features passed. A fresh isolated
+  Xvfb gesture render run passed displacement, cancellation, edge resistance,
+  overview scale/restore and interrupted-spring checks; receipts retained at
+  `/tmp/mseries-pr-readiness-gesture-smoke/` for this session. This adds no native
+  hardware qualification. Clippy was not rerun: the selected 1.98.1 toolchain
+  lacks that component; prior feature-branch Clippy evidence remains recorded.
+- `bash mseries/check-codexbar-port.sh` passed against the combined source; pin
+  remains v0.78.0. Required `bash mseries/deploy-codexbar.sh` passed all 17 tests
+  and staged the module/settings/helpers. Wingpanel PID 2152 and CodexBar daemon
+  PID 2140 retain their 10:58:14 local start times. No panel restart; the native
+  module loads at next login. Deploy log: `/tmp/mseries-pr-readiness-codexbar-deploy.log`.
+- Leave #329 open: current head `9e5725c` conflicts in the Work Mode runner and
+  compositor `pantheon_shell.rs`/`state.rs`, with no CI checks reported for that
+  latest head. Earlier network-rule CI does not qualify its later taskbar and
+  compositor changes. Next: reconcile these runtime changes with current dev,
+  then validate the integrated Work Mode/taskbar behavior.
+- Drafts #323, #272, #248 and #185 retain their intentional experimental/handoff
+  gates. No kernel, bootloader, running compositor or audio stack was replaced.

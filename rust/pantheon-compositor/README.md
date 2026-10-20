@@ -215,15 +215,24 @@ xdg move/resize grab implementations to receive physical pointer motion.
 Multi-output bounds, pointer constraints, and hardware input remain
 unqualified.
 
-Native libinput swipe gestures are now recognized for workspace navigation and
-the overview: three-or-more-finger swipes that are not cancelled and that
-travel past a logical-pixel threshold with horizontal dominance select the
-adjacent workspace, stopping at the first and last workspace, while an upward
-swipe of the same size toggles the grid overview. Gestures are dropped
-while the session is locked or a pointer grab (move, resize or popup) is
-active. Pinch gestures remain unrecognized. The recognition state machine has
-unit tests; the libinput event path is compile-checked only and no physical
-trackpad qualification has been run.
+Native libinput devices now receive touchpad and mouse preferences at hotplug
+and whenever GNOME peripheral settings change, including tap-to-click, natural
+scrolling, speed and click method. Three/four-finger swipes follow elementary's
+gesture settings for workspace navigation, moving windows, window cycling,
+overview and maximize. Four-finger pinch-in opens the application launcher via
+`org.techmore.mseries.gestures`; unclaimed gestures reach applications through
+`zwp_pointer_gestures_v1` v3. Two-finger pinch zoom remains application input.
+Locking, session suspension and device removal cancel in-flight sequences;
+owned actions cannot finish during a pointer grab. Recognizer tests and a nested
+GTK protocol smoke pass, but physical trackpad qualification remains open.
+Workspace and overview swipes now render previews that follow finger movement.
+Release springs to the chosen endpoint using velocity, or back on cancellation;
+workspace/focus/geometry changes commit only at completion. Workspace edges
+resist rather than wrap. Overview cells preserve window proportions. Reduced
+motion skips release settling. See the reproducible nested qualification in
+`mseries/pantheon-rust-compositor/gesture-tests/README.md`; physical sensitivity,
+native frame pacing and multi-output/mixed-XWayland previews remain unqualified.
+These changes are in PR #326 and installed for the next login from combined deployment source `314652f`, preserving the independently staged Work Mode compositor. The running session still uses the previous binary. See `mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md`.
 
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed
