@@ -8790,3 +8790,13 @@ retention, existing hover/focus/leave/pin probe, shell checks and light/dark fix
 inspection pass locally. Live read-only matching resolves both open Brave apps.
 Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
 See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
+
+## Darker running-app markers — 2026-10-20
+
+Owner requested darker gray running dots/pills. The complete taskbar now uses
+65% black in light mode and 35% white in dark mode (previously 45% / 55%).
+Focused blue markers, geometry, Start menu, CodexBar and app icons are unchanged.
+Full canonical native build/schema, actual Launcher startup/focus/close/reopen
+and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
+All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
+only in these two marker colors.
