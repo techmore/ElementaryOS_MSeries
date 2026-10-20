@@ -2,7 +2,7 @@
 
 Machine Lab runs other operating systems on this Mac with QEMU. ARM64 (aarch64) machines run under KVM at near-native
 speed. x86-64 / amd64 machines are supported too, but only by **software emulation**: no hardware acceleration, so they are
-roughly 10 to 50 times slower. Every x86-64 machine is labelled "emulated" and shows a warning.
+far slower than ARM64 guests (a small Alpine ISO boots to a login prompt in under a minute; a full desktop takes much longer). Every x86-64 machine is labelled "emulated" and shows a warning.
 
 ## Install
 
@@ -44,6 +44,29 @@ machines are stopped).
 SPICE agent (`spice-vdagent`; the elementary OS image already has it). What works today: copy in the guest, paste on the Mac. Copy on the
 Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
 QEMU's clipboard channel yet (issue #264).
+
+## Ready-made images (skip the installer)
+
+Every Mac here is Apple Silicon, so an ARM64 disk set up on one works on the others. On a new machine, **Or start from a
+ready-made image → Use an Image…** loads a bootable disk instead of running an installer. It accepts `.qcow2`, `.img`, `.raw`,
+`.vmdk`, `.vdi`, compressed `.xz`, `.zst` or `.gz` disks, and a UTM `.zip` bundle (the biggest disk inside is used, so the Omarchy
+UTM zip works). The image is converted into the machine's own `disk.qcow2`, so the original is never modified.
+
+To make an image, shut a machine down and choose **⋮ → Save Disk as Image…**: it writes a compressed qcow2 you can reuse or hand
+to another Mac. Notes:
+- The image must boot on its own with UEFI (a bootloader on its EFI partition). Firmware settings are not carried over.
+- It keeps the accounts, passwords and SSH host keys of the machine it came from. Change the password on first boot, and do not
+  share an image that contains anything private.
+- Safety checks: only qcow2, raw, vmdk and vdi are accepted; an image that points at another file on its original computer is
+  refused (it could otherwise expose files from this Mac to the guest); and Machine Lab checks free space first.
+
+## Snapshots (restore points)
+
+Open a machine's Settings tab and use **Snapshots** to save a restore point of its disk before an upgrade or an experiment.
+Shut the machine down first: a snapshot saves the disk, not the running memory. **Restore…** rolls the disk back to that point
+(everything done since is lost, so it asks first) and the bin icon deletes a snapshot. Names may use letters, numbers, dots, dashes
+and underscores. Snapshots live inside the machine's `disk.qcow2` and grow it as the machine changes; deleting the machine removes
+them. They are not a backup: if the disk file is lost, so are they. Not available for guests managed by `mseries-vm`.
 
 ## Incus containers and VMs
 

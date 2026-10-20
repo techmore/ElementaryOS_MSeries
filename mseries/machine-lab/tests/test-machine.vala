@@ -203,6 +203,192 @@ void test_incus_empty_and_bad_json () {
     assert_true (threw);
 }
 
+void test_snapshot_parse_and_tags () {
+    string listing = "Snapshot list:\nID        TAG               VM SIZE                DATE     VM CLOCK     ICOUNT\n"
+        + "1         before-upgrade       0 B 2026-10-19 21:40:11  0:00:00.000          0\n"
+        + "2         clean.install    1.5 MiB 2026-10-19 22:01:09  0:00:00.000          0\n";
+    var list = Snapshots.parse (listing);
+    assert_cmpint (list.length, CompareOperator.EQ, 2);
+    assert_cmpstr (list[0].tag, CompareOperator.EQ, "before-upgrade");
+    assert_cmpstr (list[0].size, CompareOperator.EQ, "0 B");
+    assert_cmpstr (list[1].size, CompareOperator.EQ, "1.5 MiB");
+    assert_cmpstr (list[1].taken, CompareOperator.EQ, "2026-10-19 22:01:09");
+    assert_cmpint (Snapshots.parse ("").length, CompareOperator.EQ, 0);
+    assert_cmpint (Snapshots.parse ("Snapshot list:\n").length, CompareOperator.EQ, 0);
+    assert_true (Snapshots.valid_tag ("pre-1.2_final"));
+    assert_false (Snapshots.valid_tag (""));
+    assert_false (Snapshots.valid_tag ("has space"));
+    assert_false (Snapshots.valid_tag ("semi;colon"));
+    assert_false (Snapshots.valid_tag (string.nfill (49, 'a')));
+}
+
+async int snapshot_flow (string disk) {
+    string o;
+    bool ok = yield Snapshots.run (disk, { "-c", "one" }, out o);
+    assert_true (ok);
+    ok = yield Snapshots.run (disk, { "-c", "two" }, out o);
+    assert_true (ok);
+    ok = yield Snapshots.run (disk, { "-d", "one" }, out o);
+    assert_true (ok);
+    yield Snapshots.run (disk, { "-l" }, out o);
+    int n = Snapshots.parse (o).length;
+    ok = yield Snapshots.run (disk, { "-a", "missing" }, out o);
+    assert_false (ok);
+    return n;
+}
+
+void test_snapshot_roundtrip () {
+    if (Environment.find_program_in_path ("qemu-img") == null) {
+        Test.skip ("qemu-img not installed");
+        return;
+    }
+    string dir = "";
+    try {
+        dir = DirUtils.make_tmp ("ml-snap-XXXXXX");
+    } catch (Error e) {
+        Test.fail ();
+        return;
+    }
+    string disk = Path.build_filename (dir, "disk.qcow2");
+    try {
+        Process.spawn_sync (null, { "qemu-img", "create", "-f", "qcow2", disk, "64M" }, null,
+            SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL, null);
+    } catch (Error e) {
+        Test.fail ();
+        return;
+    }
+    var loop = new MainLoop ();
+    int count = -1;
+    snapshot_flow.begin (disk, (obj, res) => {
+        count = snapshot_flow.end (res);
+        loop.quit ();
+    });
+    loop.run ();
+    assert_cmpint (count, CompareOperator.EQ, 1);
+    FileUtils.unlink (disk);
+    DirUtils.remove (dir);
+}
+
+string img_tmp () {
+    try {
+        return DirUtils.make_tmp ("ml-img-XXXXXX");
+    } catch (Error e) {
+        Test.fail ();
+        return "";
+    }
+}
+
+void sh (string cmd) {
+    try {
+        Process.spawn_command_line_sync ("sh -c '" + cmd.replace ("'", "'\\''") + "'");
+    } catch (Error e) {
+        Test.fail ();
+    }
+}
+
+void test_images_helpers () {
+    assert_cmpstr (DiskImages.kind_of ("a.qcow2.xz"), CompareOperator.EQ, "xz");
+    assert_cmpstr (DiskImages.kind_of ("A.ZIP"), CompareOperator.EQ, "zip");
+    assert_cmpstr (DiskImages.kind_of ("a.img"), CompareOperator.EQ, "disk");
+    assert_true (DiskImages.is_disk_name ("Data/ABC.QCOW2"));
+    assert_false (DiskImages.is_disk_name ("config.plist"));
+    string listing = "Archive:  x.zip\n"
+        + "drwxr-xr-x  3.0 unx        0 bx stor 25-01-01 10:00 Omarchy.utm/\n"
+        + "-rw-r--r--  3.0 unx     2048 bx defN 25-01-01 10:00 Omarchy.utm/config.plist\n"
+        + "-rw-r--r--  3.0 unx  4194304 bx defN 25-01-01 10:00 Omarchy.utm/Data/efi_vars.qcow2\n"
+        + "-rw-r--r--  3.0 unx 34359738368 b- 3922294645 defF 25-Jan-01 10:00 Omarchy 4.utm/Data/disk one.qcow2\n";
+    assert_cmpstr (DiskImages.pick_zip_entry (listing), CompareOperator.EQ, "Omarchy 4.utm/Data/disk one.qcow2");
+    assert_null (DiskImages.pick_zip_entry ("Archive: x\n"));
+    var i = DiskImages.parse_info ("{\"format\":\"qcow2\",\"virtual-size\":1073741824}");
+    assert_true (i != null);
+    assert_cmpstr (i.format, CompareOperator.EQ, "qcow2");
+    assert_false (i.has_backing);
+    var b = DiskImages.parse_info ("{\"format\":\"qcow2\",\"virtual-size\":1,\"backing-filename\":\"/etc/x\"}");
+    assert_true (b.has_backing);
+    assert_true (DiskImages.parse_info ("nope") == null);
+}
+
+async bool img_flow (string src, string dir, out string msg) {
+    return yield DiskImages.import_image (src, dir, out msg);
+}
+
+bool run_import (string src, string dir, out string msg) {
+    var loop = new MainLoop ();
+    bool ok = false;
+    string m = "";
+    img_flow.begin (src, dir, (obj, res) => {
+        ok = img_flow.end (res, out m);
+        loop.quit ();
+    });
+    loop.run ();
+    msg = m;
+    return ok;
+}
+
+void test_images_import_export () {
+    foreach (var tool in new string[] { "qemu-img", "xz" }) {
+        if (Environment.find_program_in_path (tool) == null) {
+            Test.skip (tool + " not installed");
+            return;
+        }
+    }
+    string w = img_tmp ();
+    string msg;
+    sh ("qemu-img create -q -f raw '%s/plain.img' 8M".printf (w));
+    sh ("qemu-img create -q -f qcow2 '%s/base.qcow2' 8M && qemu-img create -q -f qcow2 -b '%s/base.qcow2' -F qcow2 '%s/over.qcow2'".printf (w, w, w));
+    sh ("cp '%s/plain.img' '%s/packed.img' && xz -f '%s/packed.img'".printf (w, w, w));
+    sh ("echo hello > '%s/junk.img'".printf (w));
+
+    // A plain raw disk is converted to qcow2 and the machine counts as installed.
+    string d1 = Path.build_filename (w, "m1");
+    DiskImages.margin_bytes = 0;   // /tmp may be small; the margin is not what is under test
+    assert_true (run_import (Path.build_filename (w, "plain.img"), d1, out msg));
+    assert_true (FileUtils.test (Path.build_filename (d1, "disk.qcow2"), FileTest.EXISTS));
+    assert_true (FileUtils.test (Path.build_filename (d1, "imported"), FileTest.EXISTS));
+    assert_false (FileUtils.test (Path.build_filename (d1, ".import"), FileTest.EXISTS));
+
+    // A compressed disk is unpacked first.
+    string d2 = Path.build_filename (w, "m2");
+    assert_true (run_import (Path.build_filename (w, "packed.img.xz"), d2, out msg));
+    assert_true (FileUtils.test (Path.build_filename (d2, "disk.qcow2"), FileTest.EXISTS));
+
+    // An image that leans on another file is refused, and nothing is left behind.
+    string d3 = Path.build_filename (w, "m3");
+    assert_false (run_import (Path.build_filename (w, "over.qcow2"), d3, out msg));
+    assert_true (msg.contains ("depends on another file"));
+    assert_false (FileUtils.test (Path.build_filename (d3, "disk.qcow2"), FileTest.EXISTS));
+
+    // Garbage is refused with a clear message.
+    string d4 = Path.build_filename (w, "m4");
+    assert_false (run_import (Path.build_filename (w, "junk.img"), d4, out msg));
+    assert_false (FileUtils.test (Path.build_filename (d4, "disk.qcow2"), FileTest.EXISTS));
+
+    // Export writes a readable qcow2.
+    var loop = new MainLoop ();
+    bool ok = false;
+    string em = "";
+    string dest = Path.build_filename (w, "saved.qcow2");
+    export_flow.begin (d1, dest, (obj, res) => {
+        ok = export_flow.end (res, out em);
+        loop.quit ();
+    });
+    loop.run ();
+    assert_true (ok);
+    string info = "";
+    try {
+        Process.spawn_command_line_sync ("qemu-img info --output=json '%s'".printf (dest), out info);
+    } catch (Error e) {
+        Test.fail ();
+    }
+    assert_true (info.contains ("\"format\": \"qcow2\""));
+
+    sh ("rm -rf '%s'".printf (w));
+}
+
+async bool export_flow (string dir, string dest, out string msg) {
+    return yield DiskImages.export_image (dir, dest, out msg);
+}
+
 void test_incus_names () {
     assert_true (IncusClient.valid_name ("lab-1"));
     assert_true (IncusClient.valid_name ("a"));
@@ -234,5 +420,9 @@ int main (string[] args) {
     Test.add_func ("/incus/parse", test_incus_parse);
     Test.add_func ("/incus/empty-and-bad-json", test_incus_empty_and_bad_json);
     Test.add_func ("/incus/names", test_incus_names);
+    Test.add_func ("/snapshots/parse-and-tags", test_snapshot_parse_and_tags);
+    Test.add_func ("/snapshots/roundtrip", test_snapshot_roundtrip);
+    Test.add_func ("/images/helpers", test_images_helpers);
+    Test.add_func ("/images/import-export", test_images_import_export);
     return Test.run ();
 }

@@ -91,6 +91,17 @@ jobs:
           cat out/mseries-debs/BUILD-PROVENANCE.txt
           (cd out/mseries-debs && sha256sum --check SHA256SUMS)
 
+      - name: Prove each package survives a stock upgrade and rolls back cleanly
+        run: |
+          set -euo pipefail
+          d=out/mseries-debs
+          bash mseries/debs/test-divert.sh "$d"/mseries-wingpanel-datetime_*.deb \
+            io.elementary.panel.datetime 'verse-of-the-day.ini'
+          bash mseries/debs/test-divert.sh "$d"/mseries-wingpanel-network_*.deb \
+            io.elementary.panel.network 'Show speed in menu bar'
+          bash mseries/debs/test-divert.sh "$d"/mseries-quick-settings_*.deb \
+            io.elementary.quick-settings 'KeyboardBrightness'
+
       - name: Upload plugin packages
         uses: actions/upload-artifact@v7
         with:

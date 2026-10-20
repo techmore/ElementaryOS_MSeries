@@ -39,3 +39,18 @@ feature off fixes it without touching the code: **`-cpu host,pmu=off`** (a code 
 
 Remaining open questions: whether a real AVPBooter and macOS 12 images get further under KVM (Apple cores instead of HVF), and what
 to do about graphics (none on Linux).
+
+## Where the Apple parts can and cannot come from (checked 2026-10-20)
+
+Run `run-vmapple.sh` once these three files are in `~/vms/macos` (it refuses with a clear list until then).
+
+- **This Mac's own macOS install: no.** The 717 GB APFS container (`nvme0n1p2`) and the 2.3 GB one (`p3`) cannot be opened from Linux:
+  `apfs-fuse` (built from github.com/sgan81/apfs-fuse) fails with `Initialization of KeyManager failed`, because Apple Silicon
+  volumes are encrypted with keys held by the Secure Enclave.
+- **This Mac's Recovery volume: no.** `p6` mounts read-only, but its `arm64eBaseSystem.dmg` (readable with `7z`) has only Virtualization
+  *plists*, no `AVPBooter` and no `Virtualization.framework`. Mounted read-only, nothing written, unmounted again.
+- **A macOS IPSW from Apple: likely has the firmware, not usable alone.** The restore image's system disk should contain
+  `Virtualization.framework/Resources/AVPBooter.vmapple2.bin` (not verified: ~15 GB download not done), but turning an IPSW into the
+  aux and root images is `VZMacOSInstaller` / `macosvm`, which only exist on macOS.
+- **Practical route:** on any Mac running macOS, `macosvm` creates `aux.img` and `root.img` from an IPSW and the framework carries
+  `AVPBooter.vmapple2.bin`; copy the three files here. Nothing in this repository ships them.

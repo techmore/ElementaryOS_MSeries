@@ -12,6 +12,10 @@
 # plus the firstboot-only extras from mseries/install-network-throughput.sh.
 set -euo pipefail
 
+# Packaging revision: bump when the packaging itself changes (scripts,
+# control fields) so apt and dpkg see an upgrade, not a same-version reinstall.
+REVISION=0mseries2
+
 OUTDIR=${OUTDIR:?set OUTDIR to the output directory}
 HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=${REPO_ROOT:-$(cd -- "$HERE/../.." && pwd)}
@@ -82,12 +86,15 @@ build_plugin() {
   local hook=${deb//-/_} recommends=""
   if declare -F "${hook}_files" >/dev/null; then "${hook}_files" "$ROOT" "$pkg"; fi
   if declare -F "${hook}_recommends" >/dev/null; then recommends="Recommends: $("${hook}_recommends")"$'\n'; fi
+  # The ~ on both bounds matters: elementary daily versions such as
+  # 1.4.0~r556 sort below 1.4.0, and 1.4.1~r600 below 1.4.1. Without it the
+  # package would reject its own base and accept the next minor's ABI.
   cat > "$pkg/DEBIAN/control" <<EOF
 Package: $deb
-Version: $gate-0mseries1
+Version: $gate-$REVISION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $base (>= $gate), $base (<< ${gate%.*}.$((${gate##*.} + 1)))
+Depends: $base (>= $gate~), $base (<< ${gate%.*}.$((${gate##*.} + 1))~)
 ${recommends}Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
  Replaces the stock plugin via dpkg-divert; version-gated to the $gate.x ABI.
 EOF
@@ -122,8 +129,8 @@ EOF
   bash -n "$pkg/DEBIAN/preinst"; bash -n "$pkg/DEBIAN/postinst"; bash -n "$pkg/DEBIAN/postrm"
   # Package directories must not inherit the build user's umask.
   find "$pkg" -type d -exec chmod 0755 {} +
-  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-0mseries1_arm64.deb" >/dev/null
-  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-0mseries1_arm64.deb")"
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-${REVISION}_arm64.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-${REVISION}_arm64.deb")"
 }
 
 # --- per-package extras ----------------------------------------------------
@@ -146,10 +153,8 @@ network_extra() { # ROOT SRC
   python3 "$1/mseries/netspeed/wire-network-usage.py" "$2"
 }
 
-quick_extra() { # ROOT SRC
-  install -m 0644 "$1/mseries/quick-settings/ScreenBrightness.vala" "$2/src/Widgets/"
-  install -m 0644 "$1/mseries/quick-settings/KeyboardBrightness.vala" "$2/src/Widgets/"
-  install -m 0644 "$1/mseries/quick-settings/ChargeLimit.vala" "$2/src/Widgets/"
+quick_extra() { # ROOT SRC: the same patches and widgets as the factory image
+  bash "$1/mseries/quick-settings/prepare-source.sh" "$1" "$2"
 }
 
 build_plugin mseries-wingpanel-network io.elementary.panel.network 8.0.1 \
@@ -165,7 +170,6 @@ build_plugin mseries-quick-settings io.elementary.quick-settings 1.4.0 \
   src/libquick-settings.so 'KeyboardBrightness' \
   https://github.com/elementary/quick-settings.git \
   fb721d4b5640a2a25ae011370c8fe8aaff8d93f4 \
-  mseries/patches/quick-settings-brightness.patch \
   -- quick_extra
 
 # Same pin as the factory image (panel-factory-pins.json), so the two cannot drift.

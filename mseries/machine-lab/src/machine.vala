@@ -52,7 +52,7 @@ public class Machine : Object {
 
     /* An empty disk file is just a placeholder: installed means the guest wrote real data. */
     public bool installed () {
-        return disk_used_bytes () >= 1073741824;
+        return disk_used_bytes () >= 1073741824 || FileUtils.test (Path.build_filename (dir, "imported"), FileTest.EXISTS);
     }
 
     public bool is_fresh () {
