@@ -1,5 +1,13 @@
 # Hardware test receipts and release freezes
 
+
+October 20 observation: `.20-enh1` is running with a matching live/image build
+ID, PMP ready and internal plus dock DP displays connected. Two retained earlier
+candidate captures passed scoped GPU/fsync smoke. This boot's automated capture
+failed on Rust DisplayConfig's missing `PowerSaveMode`; mode enumeration works.
+No suspend/recovery or matched power acceptance follows. Details are in the
+[desktop/kernel handoff](../../OS9-HANDOFF.md#window-snapping-recovery-and-dock-focus-audit--2026-10-20).
+
 ## Later hotplug and module cleanup — 2026-10-18
 
 [Follow-up report](2026-10-18-j314s-hotplug-and-module-cleanup.md): orphan `.19`/Fairydust module trees archived and

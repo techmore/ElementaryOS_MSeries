@@ -242,6 +242,9 @@ impl XdgShellHandler for PantheonCompositor {
     }
 
     fn grab(&mut self, surface: PopupSurface, seat_resource: wl_seat::WlSeat, serial: Serial) {
+        if self.session_locked {
+            return;
+        }
         let seat = Seat::from_resource(&seat_resource).unwrap();
         let kind = PopupKind::Xdg(surface);
         let Ok(root_surface) = find_popup_root_surface(&kind) else {
@@ -268,6 +271,7 @@ impl XdgShellHandler for PantheonCompositor {
                 grab.ungrab(PopupUngrabStrategy::All);
                 return;
             }
+            self.set_x11_keyboard_focus(None, serial);
             keyboard.set_focus(self, grab.current_grab(), serial);
             keyboard.set_grab(self, PopupKeyboardGrab::new(&grab), serial);
         }
@@ -383,7 +387,13 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
         // so the panel/dock keeps its reserved space.
         let surface_id = surface.id();
         let size = window.geometry().size;
-        if size.w > 0 && size.h > 0 && !state.initially_positioned.contains(&surface_id) {
+        // Shell panels own their placement and must not take keyboard focus
+        // when they first attach a buffer or reappear after autohide.
+        if !state.is_panel_surface(surface)
+            && size.w > 0
+            && size.h > 0
+            && !state.initially_positioned.contains(&surface_id)
+        {
             let cascade = (state.space.elements().count().saturating_sub(1) % 10) as i32 * 24;
             let focused_output = state
                 .seat
@@ -431,11 +441,9 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                 state.initially_positioned.insert(surface_id);
 
                 let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                state
-                    .seat
-                    .get_keyboard()
-                    .unwrap()
-                    .set_focus(state, Some(surface.clone()), serial);
+                if !state.session_locked {
+                    state.focus_window_keyboard(&window, serial);
+                }
                 state.space.elements().for_each(|window| {
                     if let Some(toplevel) = window.toplevel() {
                         toplevel.send_pending_configure();

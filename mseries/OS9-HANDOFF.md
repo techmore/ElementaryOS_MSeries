@@ -20,6 +20,121 @@ built but not installed. CodexBar post-push staging passed all 17 tests, and the
 were unchanged. Its module loads at next login; native Settings takes effect
 on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
 
+
+## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
+
+Owner asked to restore a dock for minimized apps. State found: the fixed
+compositor `0.1.0+git83b3f14` is installed, but the live session (started
+07:38) still runs the older binary (hash mismatch; no `FocusRoutingVersion`),
+so the dock trial and `mseries-restore-windows` both correctly refuse to run.
+The `user-disabled` marker and approval policy are unchanged. The pending
+login trial marker and one-time autostart are still in place.
+
+PR #314 CI failed `test_user_disabled_blocks_patched_and_stock_fallback`
+because GitHub runners export `XDG_CONFIG_HOME`. The wrapper then looked
+outside the test's private home and missed the marker. The test now sets
+`XDG_CONFIG_HOME` inside that home. `test-launcher.py` passes locally with a
+foreign `XDG_CONFIG_HOME`. Merged `origin/dev` into the branch; the
+handoff/roadmap conflicts were additive, so both sides were kept.
+Next: owner logs out and back in normally, then clicks Start in the trial
+window. A permanent enable still goes through `mseries-dock-change`
+approval.
+
+
+## Approved safe re-login and 60-second dock trial — 2026-10-20
+
+Owner explicitly requested normal logout/login, native snapping/focus checks,
+and a one-minute dock trial with automatic disable. Added
+[`dock-trial/`](dock-trial/README.md): a GTK test window, fail-closed compositor
+identity/capability check, an independent user timer and native dock
+`RuntimeMaxSec=60s`, `Restart=no`, 3-second stop timeout and control-group cleanup.
+The disabled marker is preserved exactly and restored by ExecStopPost as well
+as the timer. The dock is not started until the fixed compositor is loaded and
+the owner clicks Start. A focus departure, GUI close, failed text delivery or
+Stop button ends it early. No user text is logged.
+
+Installed the controller and one-time Pantheon autostart locally; after login it
+opens the test window and removes its autostart entry. The next login still
+selects pantheon-rust-wayland. Five controller regression tests pass. Exercised
+the actual independent stop timer at five seconds with the dock disabled; user
+journal records a successful stop service at 08:09:38 EDT. Restored both limits
+to 60 seconds. The original disable-marker hash is unchanged. Old running
+compositor was correctly rejected by the readiness gate. Native post-login
+result remains pending, and will be written to this chat's outputs/dock-trial.json.
+The normal session-manager logout flow is used, without force; any unsaved-work
+or inhibitor prompts remain for the owner. No boot or kernel changes.
+
+
+## Window snapping, recovery and dock focus audit — 2026-10-20
+
+Branch `codex/window-snapping-recovery`, from origin/dev `734326b`.
+Owner requested snapping first, kernel takeaways, then a deep dock focus audit
+before re-enabling. The dock remains disabled; no forced logout or compositor,
+Wingpanel, audio, kernel or bootloader restart/change.
+
+- XWayland snapping now uses the common focused-window lookup and configures
+  X11 halves/quarters, drag previews, work-area reflow, monitor movement and
+  overview restoration. Left/right edge dragging selects halves; corners retain
+  quarter precedence. Physical dragging and mixed-display movement remain open.
+- Panels no longer receive ordinary first-buffer app placement/focus. Bottom
+  dock protocol focus and panel xdg activation are excluded; top-panel focus
+  remains, with a lock check. Popup grabs also reject locked sessions.
+- A new runtime regression caught a separate concrete typing failure: native
+  Wayland restore after X11 focus left `x11_keyboard_focus` set. Desktop-interface
+  focus and activation now use the shared helper; panel/popups clear X11 routing.
+- `mseries/window-recovery/` adds the explicitly launched recovery chooser,
+  `--list` and `--focus UID`. It restores minimized windows without a dock or
+  periodic focus/keyboard grabs. The private command and desktop launcher are
+  installed now; package payload includes both. New compositor metadata adds
+  window titles to distinguish multiple windows of an app. The recovery tool
+  refuses mutation on an older compositor lacking `FocusRoutingVersion`;
+  the fresh-login boundary also applies to recovery, not just snapping.
+- Rebuilt and installed the private patched dock using the existing repeat-
+  activation/startup patch, without launching it on the live desktop. The
+  installer-generated wrapper now retains the user-disable guard ahead of every
+  fallback. The native Rust package uses a new launcher that selects the private
+  wrapper before distro fallback, preserving the marker.
+- Verification: 15 native-feature unit tests, clippy with warnings denied;
+  dock native startup/activation stubs; eight wrapper regression tests. Private
+  Xvfb + D-Bus runtime smoke checks X11 left/right 640x800 geometry on 1280x800,
+  minimize/restore through the new recovery command, dock first-buffer and
+  repeated-activation focus preservation, actual text after dock activation,
+  native Wayland half snapping and actual typing after mixed-client restore.
+  Earlier isolated dock runs emitted intermittent GLib catalog/list-store
+  warnings; final expanded run passed, broader catalog/menu stability is open.
+- Detailed evidence and remaining boundaries:
+  [focus audit](pantheon-rust-compositor/FOCUS-AUDIT-2026-10-20.md),
+  [recovery usage/regression](window-recovery/README.md).
+
+Kernel findings: current non-diagnostic `.20-enh1` boot's live GNU build ID
+matches the staged image (`21ee66cf…dfdaa7`); image and original initramfs hashes
+match the October 18 staging record. PMP firmware is ready; eDP and dock DP-1
+are connected. DisplayConfig reports 3024x1964@120 at 1.25 and external
+1920x1080@60 at 1. Current automatic capture failed because DisplayConfig
+`PowerSaveMode` is absent in Rust, while `GetCurrentState` works. Do not count
+this as a kernel hardware failure or manufacture the missing capture. Two prior
+candidate captures passed scoped boot/PMP/idle counters, GPU shader/readback and
+1 MiB fsync/readback; their 29.66 W and 11.40 W medians were uncontrolled desktop
+workloads, not a kernel A/B win. Sleep/resume, recovery, sustained VRR and energy
+qualification remain open. Boot journal also reports an unclean FAT boot volume
+and journal plus a dock Ethernet firmware-patch load warning; no mounted-volume
+repair or kernel/firmware policy change was attempted.
+
+Deployment receipt: built implementation commit `83b3f14`, installed package
+`0.1.0+git83b3f14` with `dpkg -i`, then only ran user-manager daemon-reload.
+`dpkg -V` is clean. The old compositor PID 1935 remains alive on its prior
+executable; the dock remains inactive and the disable marker SHA256 remains
+`b8847b2f0ada5f957ae232c86c9a2435bb04e5463b46dfbe36a93b9d64649ff2`.
+A reconstructed previous-package rollback is retained in the private chat work
+folder. The new package SHA256 is
+`c814251254a62ec4fe565a2259ed4da6a4fc17a65d38bf9dbcbde8503f787eed`.
+[PR #314](https://github.com/techmore/ElementaryOS_MSeries/pull/314) targets dev.
+The private recovery command was updated too; its refusal on the old live
+session was checked without requesting focus.
+
+Next login must load the staged compositor before any dock re-enable. Keep the
+disable marker until that runtime is confirmed and the owner wants a live trial.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard

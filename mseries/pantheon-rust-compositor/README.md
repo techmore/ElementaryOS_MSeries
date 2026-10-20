@@ -1,5 +1,16 @@
 # Mutter-minimal viable Rust for elementaryOS M-series
 
+## October 20 window recovery and focus audit
+
+The window-snapping update supports XWayland halves/quarters and left/right
+edge drag zones as well as native Wayland. A separate explicitly launched
+[window recovery chooser](../window-recovery/README.md) restores minimized apps
+without the dock. The [focus audit](FOCUS-AUDIT-2026-10-20.md) records panel first-
+buffer focus, repeated dock activation, native launcher bypass and opt-out fixes.
+The private dock has been rebuilt; the live dock remains disabled. Compositor
+updates take effect at a fresh login, with no forced logout or panel restart.
+
+
 Working title: **Mutter-Minimal-Viable-Rust_elementaryos-mseries**. The goal is
 a focused Rust compositor for the Pantheon experience on our M-series machines.
 Mutter is the proven reference; porting Mutter itself or reproducing all of its
