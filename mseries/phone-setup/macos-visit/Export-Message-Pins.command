@@ -23,4 +23,6 @@ read -r -p 'When the Mac’s pins match your iPhone, press Return to export: ' _
 (cd "$destination" && shasum -a 256 -c APPLE-PINS-SHA256SUMS)
 printf 'Pin snapshot and checksum verified: %s\nSource: Apple Messages local pin configuration. Linux import remains to be confirmed.\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$receipt"
 printf 'Saved private pin snapshot: %s\n' "$target"
+printf '%s\n' 'Before returning to Linux, keep this folder on your private NAS or other Linux-accessible storage and verify APPLE-PINS-SHA256SUMS there.'
+printf '%s\n' 'A snapshot left only in macOS Downloads has not been transferred.'
 printf '%s\n' 'On Linux: Messages → menu → Import iPhone Pins. Check the conversation matches before importing.'

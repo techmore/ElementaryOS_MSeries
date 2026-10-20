@@ -1,6 +1,8 @@
 /* Original MSeries read-only IMCore adapter. Run with macOS osascript -l JavaScript.
  * Makes no Apple Events calls, signing overrides or SIP changes.
  * Private interfaces are probed at runtime; unavailable is never an empty list.
+ * Pin-store domain/key reference: beeper/platform-imessage (MIT), Defaults.swift
+ * at 79383860ff40b5c146b209bd438b33e05b0a6d22. No upstream code is copied.
  */
 ObjC.import('Foundation');
 
