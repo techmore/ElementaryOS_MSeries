@@ -2569,3 +2569,20 @@ Elementary-owned upstream), 230 directory groups, and 206 project IDs. Next:
 expand the semantic project ledger beyond the ten core Elementary repositories
 and begin parity conversion one independently built project at a time. Changes
 remain local on `rust`; publication has not been authorized.
+
+## 2026-10-20 — Rust ISO volume-label conversion
+
+Added the dependency-free `mseries/rust/iso-label/` CLI and changed
+`assemble-iso.sh` to compute the ISO 9660 label through the Rust crate. The
+normalization preserves the shell helper's uppercase ASCII filtering,
+hyphen-to-underscore mapping, and 32-byte truncation. The old helper remains a
+differential reference. Two Rust unit tests and six Python/Rust vs shell cases
+pass; format, Clippy, release build, shell fixture, and assembly-script syntax
+checks pass. Both the daily Rust candidate and wiring-validation workflows now
+build and compare the Rust command.
+
+The inventory now includes the root ISO assembler and groups the Rust crate,
+legacy reference, and fixtures as one migration project: 764 items (682 local,
+82 Elementary-owned upstream), 232 path groups, and 206 project IDs. The Rust
+helper is in use in the ISO build path; this does not qualify the complete image
+or convert the rest of the assembly pipeline. Changes remain local on `rust`.

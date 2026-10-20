@@ -21,6 +21,7 @@ local-build-records/
 .mkosi-private
 *.efi
 __pycache__/
+**/target/
 *.pyc
 mseries/gala-drawers/build/
 mkosi.packages/

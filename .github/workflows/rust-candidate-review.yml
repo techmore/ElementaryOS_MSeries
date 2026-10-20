@@ -21,6 +21,7 @@ on:
       - 'mseries/test-power-cap.py'
       - '.github/workflows/rust-candidate-review.yml'
       - 'Justfile'
+      - 'assemble-iso.sh'
       - 'mkosi.conf'
       - 'mkosi.images/**'
       - 'packages.arm64'
@@ -51,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge; do
+          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge iso-label; do
             manifest="mseries/rust/$crate/Cargo.toml"
             cargo fmt --check --manifest-path "$manifest"
             cargo test --manifest-path "$manifest" --locked
@@ -66,6 +67,8 @@ jobs:
             mseries/rust/keyboard-backlight/target/release/mseries-keyboard-backlight-rs
           python3 mseries/rust/brightness-bridge/test-dbus-runtime.py \
             mseries/rust/brightness-bridge/target/release/mseries-brightness-bridge-rs
+          python3 mseries/rust/iso-label/test-parity.py \
+            mseries/rust/iso-label/target/release/mseries-iso-label
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-power-cap.py
 

@@ -11,10 +11,11 @@
     "mseries",
     "Justfile",
     "mkosi.conf",
-    "packages.arm64"
+    "packages.arm64",
+    "assemble-iso.sh"
   ],
-  "item_count": 758,
-  "component_count": 230,
+  "item_count": 764,
+  "component_count": 232,
   "project_count": 206,
   "components": [
     {
@@ -61,7 +62,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 28,
       "rust_status_counts": {
-        "retain-upstream": 28
+        "recorded-non-code-input": 23,
+        "retain-upstream": 5
       },
       "items": [
         "mkosi.images/base/mkosi.conf",
@@ -99,7 +101,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 2,
       "rust_status_counts": {
-        "retain-upstream": 2
+        "recorded-non-code-input": 1,
+        "retain-upstream": 1
       },
       "items": [
         "mkosi.images/driver-broadcom/get-module-only",
@@ -111,7 +114,7 @@
       "ownership": "elementary-os-upstream",
       "item_count": 1,
       "rust_status_counts": {
-        "retain-upstream": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.images/driver-broadcom-addon/mkosi.conf"
@@ -122,7 +125,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 2,
       "rust_status_counts": {
-        "retain-upstream": 2
+        "recorded-non-code-input": 1,
+        "retain-upstream": 1
       },
       "items": [
         "mkosi.images/driver-nvidia/get-module-only",
@@ -134,7 +138,7 @@
       "ownership": "elementary-os-upstream",
       "item_count": 1,
       "rust_status_counts": {
-        "retain-upstream": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.images/driver-nvidia-addon/mkosi.conf"
@@ -145,7 +149,7 @@
       "ownership": "elementary-os-upstream",
       "item_count": 1,
       "rust_status_counts": {
-        "retain-upstream": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.images/ext-sdk/mkosi.conf"
@@ -156,7 +160,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 2,
       "rust_status_counts": {
-        "retain-upstream": 2
+        "recorded-non-code-input": 1,
+        "retain-upstream": 1
       },
       "items": [
         "mkosi.images/ext-virt/mkosi.conf",
@@ -168,8 +173,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 17,
       "rust_status_counts": {
-        "recorded-non-code-input": 1,
-        "retain-upstream": 16
+        "recorded-non-code-input": 14,
+        "retain-upstream": 3
       },
       "items": [
         "mkosi.images/liveiso/iso-flatpaks.chroot",
@@ -196,7 +201,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 3,
       "rust_status_counts": {
-        "retain-upstream": 3
+        "recorded-non-code-input": 2,
+        "retain-upstream": 1
       },
       "items": [
         "mkosi.images/modules-db/mkosi.conf.d/arch.arm64.conf",
@@ -209,8 +215,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 27,
       "rust_status_counts": {
-        "recorded-non-code-input": 1,
-        "retain-upstream": 26
+        "recorded-non-code-input": 26,
+        "retain-upstream": 1
       },
       "items": [
         "mkosi.images/sysupdate/mkosi.conf",
@@ -251,6 +257,17 @@
       },
       "items": [
         "Justfile"
+      ]
+    },
+    {
+      "id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "item_count": 1,
+      "rust_status_counts": {
+        "not-assessed": 1
+      },
+      "items": [
+        "assemble-iso.sh"
       ]
     },
     {
@@ -2473,7 +2490,8 @@
       "ownership": "mseries-maintained",
       "item_count": 8,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 8
+        "candidate-functional-tests-passing-not-installed": 4,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/rust/brightness-bridge/.gitignore",
@@ -2487,11 +2505,29 @@
       ]
     },
     {
+      "id": "mseries/rust/iso-label",
+      "ownership": "mseries-maintained",
+      "item_count": 5,
+      "rust_status_counts": {
+        "candidate-parity-verified-in-use": 1,
+        "candidate-parity-verified-not-installed": 1,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/iso-label/Cargo.lock",
+        "mseries/rust/iso-label/Cargo.toml",
+        "mseries/rust/iso-label/README.md",
+        "mseries/rust/iso-label/src/main.rs",
+        "mseries/rust/iso-label/test-parity.py"
+      ]
+    },
+    {
       "id": "mseries/rust/keyboard-backlight",
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 5
+        "candidate-parity-verified-not-installed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/rust/keyboard-backlight/.gitignore",
@@ -2522,7 +2558,8 @@
       "ownership": "mseries-maintained",
       "item_count": 6,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6
+        "candidate-parity-verified-not-installed": 2,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/rust/mseries-power/.gitignore",
@@ -2538,7 +2575,8 @@
       "ownership": "mseries-maintained",
       "item_count": 7,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 7
+        "candidate-functional-tests-passing-not-installed": 2,
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/rust/netusage/.gitignore",
@@ -2555,7 +2593,8 @@
       "ownership": "mseries-maintained",
       "item_count": 6,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6
+        "candidate-parity-verified-not-installed": 2,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/rust/panel-provenance/.gitignore",
@@ -2571,7 +2610,8 @@
       "ownership": "mseries-maintained",
       "item_count": 6,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6
+        "candidate-parity-verified-not-installed": 2,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/rust/wifi-resume/.gitignore",
@@ -3164,6 +3204,17 @@
       ]
     },
     {
+      "id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "item_count": 1,
+      "rust_status_counts": {
+        "not-assessed": 1
+      },
+      "items": [
+        "assemble-iso.sh"
+      ]
+    },
+    {
       "id": "image-build/mkosi",
       "ownership": "mseries-maintained",
       "item_count": 1,
@@ -3493,8 +3544,9 @@
       "ownership": "mseries-maintained",
       "item_count": 11,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 8,
-        "not-assessed": 3
+        "candidate-functional-tests-passing-not-installed": 4,
+        "not-assessed": 3,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/brightness/shell-bridge.py",
@@ -4583,12 +4635,21 @@
     {
       "id": "mseries/iso-label",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 7,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-parity-verified-in-use": 1,
+        "candidate-parity-verified-not-installed": 1,
+        "not-assessed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
-        "mseries/iso-label.sh"
+        "mseries/iso-label.sh",
+        "mseries/rust/iso-label/Cargo.lock",
+        "mseries/rust/iso-label/Cargo.toml",
+        "mseries/rust/iso-label/README.md",
+        "mseries/rust/iso-label/src/main.rs",
+        "mseries/rust/iso-label/test-parity.py",
+        "mseries/test-iso-label.sh"
       ]
     },
     {
@@ -4651,9 +4712,9 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 5,
+        "candidate-parity-verified-not-installed": 2,
         "not-assessed": 3,
-        "recorded-non-code-input": 1
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/install-keyboard-backlight.sh",
@@ -4975,9 +5036,9 @@
       "ownership": "mseries-maintained",
       "item_count": 12,
       "rust_status_counts": {
-        "candidate-functional-tests-passing-not-installed": 7,
+        "candidate-functional-tests-passing-not-installed": 2,
         "not-assessed": 3,
-        "recorded-non-code-input": 2
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/install-netusage-policy.sh",
@@ -5103,9 +5164,9 @@
       "ownership": "mseries-maintained",
       "item_count": 11,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6,
+        "candidate-parity-verified-not-installed": 2,
         "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/install-keyboard-indicator-fix.sh",
@@ -5185,9 +5246,9 @@
       "ownership": "mseries-maintained",
       "item_count": 22,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6,
+        "candidate-parity-verified-not-installed": 2,
         "not-assessed": 9,
-        "recorded-non-code-input": 7
+        "recorded-non-code-input": 11
       },
       "items": [
         "mseries/install-power.sh",
@@ -5539,17 +5600,6 @@
       ]
     },
     {
-      "id": "mseries/test-iso-label",
-      "ownership": "mseries-maintained",
-      "item_count": 1,
-      "rust_status_counts": {
-        "not-assessed": 1
-      },
-      "items": [
-        "mseries/test-iso-label.sh"
-      ]
-    },
-    {
       "id": "mseries/test-kernel-config",
       "ownership": "mseries-maintained",
       "item_count": 1,
@@ -5779,8 +5829,9 @@
       "ownership": "mseries-maintained",
       "item_count": 7,
       "rust_status_counts": {
-        "candidate-parity-verified-not-installed": 6,
-        "not-assessed": 1
+        "candidate-parity-verified-not-installed": 2,
+        "not-assessed": 1,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/rust/wifi-resume/.gitignore",
@@ -5797,7 +5848,8 @@
       "ownership": "elementary-os-upstream",
       "item_count": 82,
       "rust_status_counts": {
-        "retain-upstream": 82
+        "recorded-non-code-input": 69,
+        "retain-upstream": 13
       },
       "items": [
         "mkosi.images/base/mkosi.conf",
@@ -6065,6 +6117,16 @@
       "rust_status": "not-assessed"
     },
     {
+      "id": "assemble-iso.sh",
+      "path": "assemble-iso.sh",
+      "component_id": "image-build/assemble-iso",
+      "project_id": "image-build/assemble-iso",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
       "id": "bin/elementary-mac-setup",
       "path": "bin/elementary-mac-setup",
       "component_id": "installer/elementary-mac-setup",
@@ -6302,7 +6364,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.conf.d/core.conf",
@@ -6312,7 +6374,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.conf.d/elementary.conf",
@@ -6322,7 +6384,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/boot/loader/loader.conf",
@@ -6332,7 +6394,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system-preset/01-systemd.preset",
@@ -6342,7 +6404,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system-preset/10-elementary.preset",
@@ -6352,7 +6414,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system-preset/20-networking-defaults.preset",
@@ -6362,7 +6424,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/apparmor-firstboot.service",
@@ -6372,7 +6434,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/preset-global.service",
@@ -6382,7 +6444,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/user-preset/01-user.preset",
@@ -6392,7 +6454,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/zram-generator.conf",
@@ -6402,7 +6464,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/00-session.conf",
@@ -6412,7 +6474,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-net.conf",
@@ -6422,7 +6484,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-system.conf",
@@ -6432,7 +6494,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/99-factory.conf",
@@ -6442,7 +6504,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/etc.conf",
@@ -6452,7 +6514,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/login.conf",
@@ -6462,7 +6524,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/resolved-default.conf",
@@ -6472,7 +6534,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/var.conf",
@@ -6482,7 +6544,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.finalize",
@@ -6512,7 +6574,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.profiles/daily/mkosi.postinst.chroot",
@@ -6532,7 +6594,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.profiles/proposed/mkosi.conf",
@@ -6542,7 +6604,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.profiles/proposed/mkosi.postinst.chroot",
@@ -6562,7 +6624,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/base/mkosi.profiles/stable/mkosi.postinst.chroot",
@@ -6582,7 +6644,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/driver-broadcom/get-module-only",
@@ -6602,7 +6664,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/driver-nvidia-addon/mkosi.conf",
@@ -6612,7 +6674,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/driver-nvidia/get-module-only",
@@ -6632,7 +6694,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/ext-sdk/mkosi.conf",
@@ -6642,7 +6704,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/ext-virt/mkosi.conf",
@@ -6652,7 +6714,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/ext-virt/mkosi.postinst.chroot",
@@ -6682,7 +6744,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
@@ -6702,7 +6764,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/iso_root/boot/grub/grub.cfg",
@@ -6712,7 +6774,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/iso_root/casper/filesystem.manifest-remove",
@@ -6722,7 +6784,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/iso_root/dists/stable/Release",
@@ -6732,7 +6794,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/opt/repart-target/40-root.conf",
@@ -6742,7 +6804,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/usr/lib/systemd/system/apparmor.service.d/99_enable_in_live_mode.conf",
@@ -6752,7 +6814,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/usr/sbin/elementary-install",
@@ -6782,7 +6844,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.profiles/fairydust/mkosi.conf",
@@ -6792,7 +6854,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.profiles/x86-64/mkosi.conf",
@@ -6802,7 +6864,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.repart/00-esp.conf",
@@ -6812,7 +6874,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.repart/40-root.conf",
@@ -6822,7 +6884,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.repart/50-home.conf",
@@ -6832,7 +6894,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/modules-db/mkosi.conf.d/arch.arm64.conf",
@@ -6842,7 +6904,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/modules-db/mkosi.conf.d/arch.x86-64.conf",
@@ -6852,7 +6914,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/modules-db/mkosi.finalize",
@@ -6872,7 +6934,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
@@ -6892,7 +6954,7 @@
       "ownership": "elementary-os-upstream",
       "language": "binary",
       "role": "asset-or-binary-input",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/10-usr-verity-sig.transfer",
@@ -6902,7 +6964,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/11-usr-verity.transfer",
@@ -6912,7 +6974,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/12-usr.transfer",
@@ -6922,7 +6984,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/20-uki.transfer",
@@ -6932,7 +6994,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-broadcom-addon.transfer",
@@ -6942,7 +7004,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-broadcom.feature",
@@ -6952,7 +7014,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-broadcom.transfer",
@@ -6962,7 +7024,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-nvidia-addon.transfer",
@@ -6972,7 +7034,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-nvidia.feature",
@@ -6982,7 +7044,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/driver-nvidia.transfer",
@@ -6992,7 +7054,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/ext-sdk.feature",
@@ -7002,7 +7064,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/ext-sdk.transfer",
@@ -7012,7 +7074,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/ext-virt.feature",
@@ -7022,7 +7084,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/sysupdate.d/ext-virt.transfer",
@@ -7032,7 +7094,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/tmpfiles.d/pm.conf",
@@ -7042,7 +7104,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/udev/rules.d/99-udisks-system.rules",
@@ -7052,7 +7114,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.postinst.chroot",
@@ -7072,7 +7134,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/10-usr-verity-sig.conf",
@@ -7082,7 +7144,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/11-usr-verity.conf",
@@ -7092,7 +7154,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/12-usr.conf",
@@ -7102,7 +7164,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/20-usr-verify-sig-bside.conf",
@@ -7112,7 +7174,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/21-usr-verity-bside.conf",
@@ -7122,7 +7184,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.repart/22-usr-bside.conf",
@@ -7132,7 +7194,7 @@
       "ownership": "elementary-os-upstream",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/ATOMIC-APP-DEPLOYMENT.md",
@@ -12572,7 +12634,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/brightness-bridge/Cargo.lock",
@@ -12582,7 +12644,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/brightness-bridge/Cargo.toml",
@@ -12592,7 +12654,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/brightness-bridge/README.md",
@@ -12602,7 +12664,7 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/brightness-bridge/build.rs",
@@ -12665,6 +12727,56 @@
       "rust_status": "not-assessed"
     },
     {
+      "id": "mseries/rust/iso-label/Cargo.lock",
+      "path": "mseries/rust/iso-label/Cargo.lock",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-label/Cargo.toml",
+      "path": "mseries/rust/iso-label/Cargo.toml",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-label/README.md",
+      "path": "mseries/rust/iso-label/README.md",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/iso-label/src/main.rs",
+      "path": "mseries/rust/iso-label/src/main.rs",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-in-use"
+    },
+    {
+      "id": "mseries/rust/iso-label/test-parity.py",
+      "path": "mseries/rust/iso-label/test-parity.py",
+      "component_id": "mseries/rust/iso-label",
+      "project_id": "mseries/iso-label",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
       "id": "mseries/rust/keyboard-backlight/.gitignore",
       "path": "mseries/rust/keyboard-backlight/.gitignore",
       "component_id": "mseries/rust/keyboard-backlight",
@@ -12672,7 +12784,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/keyboard-backlight/Cargo.lock",
@@ -12682,7 +12794,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/keyboard-backlight/Cargo.toml",
@@ -12692,7 +12804,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/keyboard-backlight/src/main.rs",
@@ -12722,7 +12834,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/mseries-power/Cargo.lock",
@@ -12732,7 +12844,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/mseries-power/Cargo.toml",
@@ -12742,7 +12854,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/mseries-power/README.md",
@@ -12752,7 +12864,7 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/mseries-power/src/main.rs",
@@ -12782,7 +12894,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/netusage/Cargo.lock",
@@ -12792,7 +12904,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/netusage/Cargo.toml",
@@ -12802,7 +12914,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/netusage/README.md",
@@ -12812,7 +12924,7 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/netusage/netusage-rs.service",
@@ -12822,7 +12934,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-functional-tests-passing-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/netusage/src/main.rs",
@@ -12852,7 +12964,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/panel-provenance/Cargo.lock",
@@ -12862,7 +12974,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/panel-provenance/Cargo.toml",
@@ -12872,7 +12984,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/panel-provenance/README.md",
@@ -12882,7 +12994,7 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/panel-provenance/src/main.rs",
@@ -12932,7 +13044,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/wifi-resume/Cargo.lock",
@@ -12942,7 +13054,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/wifi-resume/Cargo.toml",
@@ -12952,7 +13064,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/wifi-resume/README.md",
@@ -12962,7 +13074,7 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
-      "rust_status": "candidate-parity-verified-not-installed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/wifi-resume/src/main.rs",
@@ -13178,7 +13290,7 @@
       "id": "mseries/test-iso-label.sh",
       "path": "mseries/test-iso-label.sh",
       "component_id": "mseries/test-iso-label",
-      "project_id": "mseries/test-iso-label",
+      "project_id": "mseries/iso-label",
       "ownership": "mseries-maintained",
       "language": "shell",
       "role": "verification",

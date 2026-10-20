@@ -252,8 +252,8 @@ unstarted. See the Rust lane plan in `mseries/rust/README.md`.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-758 file records (676 M-series-maintained paths and 82 elementary-owned upstream
-inputs) grouped into 230 first-pass, path-derived components. Semantic project
+764 file records (682 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 232 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
@@ -275,9 +275,12 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 758 paths, 230 directory groups, and 206 project IDs.
+file inventory now covers 764 paths, 232 directory groups, and 206 project IDs.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
+The ISO volume-label helper is now an independent, dependency-free Rust CLI used
+by `assemble-iso.sh`; its two unit tests and six comparisons against the legacy
+shell helper pass. See the [Rust lane](rust/README.md).
 The six-hour watch now records each of the ten core Elementary repositories
 independently and captures their branch/PR heads without changing source pins.
 The brightness bridge now has a native-GIO Rust candidate with five policy

@@ -2,7 +2,6 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-source "$SCRIPT_DIR/mseries/iso-label.sh"
 cd "$SCRIPT_DIR/mkosi.output/"
 
 SEARCH_DIR=.
@@ -18,7 +17,9 @@ else
     SQUASHFS_LEVEL="${SQUASHFS_LEVEL:-15}"
 fi
 
-ISO_LABEL=$(iso_volume_label "$PROFILE" "$ARCH")
+ISO_LABEL=$(cargo run --quiet --locked \
+    --manifest-path "$SCRIPT_DIR/mseries/rust/iso-label/Cargo.toml" -- \
+    "$PROFILE" "$ARCH")
 
 case "$ARCH" in
     arm64|aarch64) DEB_ARCH=arm64 ;;

@@ -1,0 +1,9 @@
+[package]
+name = "mseries-iso-label"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "mseries-iso-label"
+path = "src/main.rs"

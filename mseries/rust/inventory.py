@@ -19,14 +19,16 @@ DIRECTORIES = (
     ".github/workflows",
     "mseries",
 )
-ROOT_FILES = ("Justfile", "mkosi.conf", "packages.arm64")
+ROOT_FILES = ("Justfile", "mkosi.conf", "packages.arm64", "assemble-iso.sh")
 RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/mseries-power/",
     "mseries/rust/wifi-resume/",
     "mseries/rust/netusage/",
     "mseries/rust/panel-provenance/",
     "mseries/rust/keyboard-backlight/",
+    "mseries/rust/iso-label/",
 )
+RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
     "mseries/rust/netusage/",
     "mseries/rust/brightness-bridge/",
@@ -38,8 +40,11 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/panel-provenance/": "mseries/panel",
     "mseries/rust/keyboard-backlight/": "mseries/keyboard-backlight",
     "mseries/rust/brightness-bridge/": "mseries/brightness",
+    "mseries/rust/iso-label/": "mseries/iso-label",
 }
 PROJECT_PATH_OVERRIDES = {
+    "mseries/iso-label.sh": "mseries/iso-label",
+    "mseries/test-iso-label.sh": "mseries/iso-label",
     "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",
     "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",
     "mseries/install-keyboard-backlight.sh": "mseries/keyboard-backlight",
@@ -179,6 +184,21 @@ def project_id(path: Path, ownership: str) -> str:
     return component_id(path)
 
 
+def rust_status(text: str, local: bool, item_role: str) -> str:
+    """Keep data/documentation distinct from executable migration state."""
+    if item_role in {"documentation-or-record", "asset-or-binary-input", "configuration-or-data"}:
+        return "recorded-non-code-input"
+    if not local:
+        return "retain-upstream"
+    if text in RUST_IN_USE_PATHS:
+        return "candidate-parity-verified-in-use"
+    if text.startswith(RUST_FUNCTIONAL_PREFIXES):
+        return "candidate-functional-tests-passing-not-installed"
+    if text.startswith(RUST_CANDIDATE_PREFIXES):
+        return "candidate-parity-verified-not-installed"
+    return "not-assessed"
+
+
 def render() -> str:
     items = []
     paths = source_paths()
@@ -210,17 +230,7 @@ def render() -> str:
             "ownership": ownership,
             "language": language(path),
             "role": item_role,
-            "rust_status": (
-                "candidate-functional-tests-passing-not-installed"
-                if text.startswith(RUST_FUNCTIONAL_PREFIXES)
-                else "candidate-parity-verified-not-installed"
-                if text.startswith(RUST_CANDIDATE_PREFIXES)
-                else "retain-upstream"
-                if not local
-                else "recorded-non-code-input"
-                if item_role in {"documentation-or-record", "asset-or-binary-input", "configuration-or-data"}
-                else "not-assessed" if local else "retain-upstream"
-            ),
+            "rust_status": rust_status(text, local, item_role),
         })
     component_groups: dict[str, list[dict[str, str]]] = {}
     for item in items:
