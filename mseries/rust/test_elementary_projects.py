@@ -26,7 +26,27 @@ class ElementaryProjectRegister(unittest.TestCase):
         projects = REGISTER["projects"]
         ids = [project["id"] for project in projects]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(set(ids), REQUIRED)
+        self.assertTrue(REQUIRED.issubset(set(ids)))
+        census = json.loads((Path(__file__).with_name("elementary-org-census.json")).read_text())
+        repositories = census["repositories"]
+        names = [repository["name"] for repository in repositories]
+        self.assertEqual(census["repository_count"], len(repositories))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(len(repositories), 153)
+        census_by_name = {
+            name: repository
+            for repository in repositories
+            for name in [repository["name"], *repository.get("repository_aliases", [])]
+        }
+
+        for repository in repositories:
+            with self.subTest(census_repository=repository["name"]):
+                self.assertEqual(repository["url"], f"https://github.com/elementary/{repository['name']}")
+                self.assertTrue(repository["default_branch"])
+                self.assertEqual(repository["scope_status"], "review-required")
+
+        registered_names = {project_id.split("/", 1)[1] for project_id in ids}
+        self.assertTrue(registered_names.issubset(census_by_name))
         people = json.loads((ROOT / "mseries/local-ai/people-watch.json").read_text())
         branches = json.loads((ROOT / "mseries/local-ai/branch-watch.json").read_text())["sources"]
         people_repos = {item["repo"] for item in people if "repo" in item}

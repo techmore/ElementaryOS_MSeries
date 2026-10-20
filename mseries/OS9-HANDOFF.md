@@ -2,6 +2,21 @@
 
 ## Rust OS migration checkpoint — 2026-10-20
 
+The latest scope audit found 153 public repositories in the official
+Elementary GitHub organization. `mseries/rust/elementary-org-census.json` now
+records each repository separately with its default branch and explicit
+scope-review status; the detailed pinned source register still has only ten
+direct image/customization dependencies. The rename from
+`wingpanel-indicator-sound` to `panel-sound` is recorded as an alias. This
+census is discovery evidence, not proof that all image packages or upstream
+projects have been identified. Next, reconcile the OS package/build manifests
+to the full set of shipped Elementary sources before claiming coverage.
+
+The launcher-key watcher and Homeboard launcher installer are committed Rust
+candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live
+desktop behavior remains unverified. The GTK launcher and core shell apps are
+still not ported.
+
 The local `rust` branch now has separate `atomic-app`, `iso-label`, and
 `iso-assembly` crates. `assemble-iso.sh` is a compatibility launcher for the
 Rust ISO orchestration; the inner xorriso container still runs its fixed Linux

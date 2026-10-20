@@ -5,8 +5,12 @@ elementary OS image and its M-series customizations in Rust. Every independently
 built or shipped upstream project gets its own source record and Rust target;
 every local customization gets its own migration record. Upstream source stays
 as the behavioral baseline until its Rust replacement passes parity and image
-qualification. The first registry covers the ten core Elementary repositories;
-it is not the complete project inventory.
+qualification. The detailed source register currently covers ten direct
+Elementary image and customization dependencies. A separate dated census
+records all 153 repositories visible in the [official Elementary organization](https://github.com/orgs/elementary/repositories)
+on 2026-10-20; the other repositories remain individually marked for scope
+review. The census does not yet prove which repositories feed the selected
+image or finish their Rust conversion contracts.
 
 ## Goals
 
@@ -64,7 +68,7 @@ its declared build/customization scope, including the root ISO assembler, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-786 files (704 local and 82 elementary-owned upstream inputs) currently form
+787 files (705 local and 82 elementary-owned upstream inputs) currently form
 237 directory groups and 204 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -72,7 +76,7 @@ Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
 current scope contains 262 implementation files (249 local), 41 upstream
-patches, and 265 configuration/data files. Semantic project boundaries and
+patches, and 266 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
 Each of the 204 generated project records now states its Rust target or
@@ -281,7 +285,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`; the Signal installer uses the staged binary
   or builds it from source when Cargo is available. Full image admission and a
   live Signal cycle remain open.
-- The full file inventory currently contains 786 items (704 M-series-maintained
+- The full file inventory currently contains 787 items (705 M-series-maintained
   and 82 elementary-owned upstream inputs), 237 directory groups, and 204
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

@@ -21,6 +21,12 @@ The launcher shortcut watchdog has its own Rust crate at
 used by the settings coordinator on current factory images. Its three unit
 cases pass; GSettings monitoring and Pantheon runtime parity remain unverified.
 
+The upstream scope audit now records the 153 repositories visible in the
+official Elementary GitHub organization (`mseries/rust/elementary-org-census.json`).
+Only ten currently have full per-project pins and parity records in
+`elementary-projects.json`; reconcile OS package/build manifests against this
+census to identify every shipped source before further migration claims.
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
