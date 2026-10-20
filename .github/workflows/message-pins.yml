@@ -30,6 +30,7 @@ jobs:
         run: |
           python3 mseries/phone-setup/test_message_pins.py
           python3 mseries/phone-setup/test_messages.py
+          python3 mseries/phone-setup/test_message_media.py
           bash mseries/phone-setup/test-pin-keyring.sh
           dbus-run-session --config-file=mseries/phone-setup/test-bus.conf -- xvfb-run -a python3 mseries/phone-setup/test_messages_gui.py
   macos-reader:

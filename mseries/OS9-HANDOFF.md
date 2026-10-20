@@ -28,8 +28,44 @@ from `origin/dev`; presentation only, no change to sending, routing or storage.
 - Not verified: live phone, real contact photos, suspend/resume. The owner's open
   Messages window was not restarted; relaunch `mseries-messages` after
   `bash mseries/install-phone-setup.sh`.
+- Merged `codex/messages-readability` (PR #352) into this branch so nothing is
+  lost: phonebook name resolution, media-link preview cards and the unread dot
+  left of the avatar with 1.4em names now live in the new structure. Their two
+  GTK tests pass unchanged. After this lands, PR #352 is redundant.
+- Verification after the merge: 30 model, 5 media and 45 GTK tests pass, no GTK
+  warnings; light, dark and narrow renders with cached photo/GIF cards reviewed.
+- Installed on the owner's desktop and relaunched; the previous window (from the
+  readability branch) was closed first. Not verified against live media links.
 - Next: in-app group participant confirmation (still routed to Advanced
   BlueFerry), a keyboard-shortcuts overlay, and Enter-to-send as an opt-in.
+## Native media-link rendering — 2026-10-20
+
+Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.
+Uses a separate two-worker pool, RAM-only capped cache and decoded-frame bounds;
+private-network targets, credentials and nonstandard ports are rejected. Sent
+links auto-load, incoming links require Load Preview unless already cached.
+Real test links sent to self were received fully in backend threads; MAP subject
+summaries truncated longer bodies to 128 characters, so summary equality alone
+was an inadequate receipt. Actual GTK rendering passed for YouTube 480×360
+thumbnail, photo 500×477 and GIF 400×400/44 frames, including frame advancement,
+light/dark/narrow review. Playback opens YouTube externally; MAP image/GIF
+attachment payloads remain unavailable. Tests: 11 message models, five media
+models, 17 private GTK checks. README includes the requested frontend integration
+prompt; this is the existing GTK/Granite-over-BlueFerry architecture.
+
+## Messages names and unread indicators — 2026-10-20
+
+Enlarged sidebar names to 1.4em and favorite names to 1.1em semibold. Added
+blue unread dots immediately left of avatars in list and favorites, preserving
+their position when photos load. Cached phonebook is now paged fully and used
+for exact unique name resolution, with upstream-style NANP alternate matching;
+groups, ambiguous contacts and international suffixes are never guessed.
+Snapshot-only messages contribute explicit unread state. 11 model and 16 private
+GTK checks pass. Phonebook refreshed (727 address entries). Three user-authorized
+YouTube/photo/GIF text links were sent to self and verified as full incoming
+backend messages. MAP summaries truncate long subjects at 128 characters; native
+image/video/GIF rendering remains unfinished, and attachment payloads remain
+unavailable through this MAP path. Pin snapshot is still not imported.
 
 ## Native favorites and visible Messages launcher — 2026-10-20
 
