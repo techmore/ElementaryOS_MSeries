@@ -1,5 +1,20 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native media-link rendering — 2026-10-20
+
+Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.
+Uses a separate two-worker pool, RAM-only capped cache and decoded-frame bounds;
+private-network targets, credentials and nonstandard ports are rejected. Sent
+links auto-load, incoming links require Load Preview unless already cached.
+Real test links sent to self were received fully in backend threads; MAP subject
+summaries truncated longer bodies to 128 characters, so summary equality alone
+was an inadequate receipt. Actual GTK rendering passed for YouTube 480×360
+thumbnail, photo 500×477 and GIF 400×400/44 frames, including frame advancement,
+light/dark/narrow review. Playback opens YouTube externally; MAP image/GIF
+attachment payloads remain unavailable. Tests: 11 message models, five media
+models, 17 private GTK checks. README includes the requested frontend integration
+prompt; this is the existing GTK/Granite-over-BlueFerry architecture.
+
 ## Messages names and unread indicators — 2026-10-20
 
 Enlarged sidebar names to 1.4em and favorite names to 1.1em semibold. Added
