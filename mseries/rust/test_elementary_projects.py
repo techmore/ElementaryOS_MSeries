@@ -45,7 +45,7 @@ class ElementaryProjectRegister(unittest.TestCase):
                 self.assertTrue(repository["default_branch"])
                 self.assertIn(
                     repository["scope_status"],
-                    {"review-required", "image-package-source-candidate", "detailed-source-record"},
+                    {"review-required", "image-package-source-candidate", "detailed-source-record", "build-source-input"},
                 )
 
         registered_names = {project_id.split("/", 1)[1] for project_id in ids}
@@ -60,8 +60,12 @@ class ElementaryProjectRegister(unittest.TestCase):
                 self.assertEqual(project["url"], f"https://github.com/{project['id']}")
                 self.assertIn(project["id"], people_repos)
                 self.assertIn(project["id"], branch_repos)
-                self.assertRegex(project["license"]["spdx"], r"^(?:GPL|LGPL)-[0-9.]+(?:-or-later)?$")
                 self.assertTrue(project["license"]["evidence"])
+                if project["license"]["spdx"] is None:
+                    self.assertEqual(project["rust_status"], "source-license-unverified")
+                    self.assertRegex(project["license"]["evidence"], r"(?i)no license|unverified")
+                else:
+                    self.assertRegex(project["license"]["spdx"], r"^(?:GPL|LGPL)-[0-9.]+(?:-or-later)?$")
                 self.assertTrue(project["pin"]["value"])
                 self.assertTrue(project["rust_target"])
                 self.assertTrue(project["parity_contract"])

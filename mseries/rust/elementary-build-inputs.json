@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "description": "Pinned source records for Elementary's upstream metapackage generation inputs. These inputs are separate from the 59 candidate image-package repositories.",
+  "generator_contract": {
+    "upstream_project": "elementary/metapackages",
+    "reference_generator": "Germinate (Ubuntu package; source revision not yet pinned)",
+    "behavior_status": "Rust seed parsing, dependency closure, and Debian output parity have not started.",
+    "license_gate": "Do not copy or port source from a repository with unverified licensing; retain links and hashes as provenance only."
+  },
+  "inputs": [
+    {
+      "id": "elementary/seeds",
+      "url": "https://github.com/elementary/seeds",
+      "branch": "resolute",
+      "commit": "14c2cf95b32962b857589a0bac3198f80a331bce",
+      "license": {
+        "spdx": null,
+        "status": "unverified",
+        "evidence": "The pinned repository tree has no LICENSE, COPYING, or COPYRIGHT file, and GitHub repository metadata declares no license."
+      },
+      "role": "Elementary profile seed definitions consumed by Germinate and elementary/metapackages.",
+      "files": [
+        {
+          "path": "README.md",
+          "blob_sha": "978caa2d3d18d896fe2e5b8a7fd43d6c6772082d",
+          "role": "Identifies this repository as Germinate seed input."
+        },
+        {
+          "path": "STRUCTURE",
+          "blob_sha": "800aa37209ca1920ed8f0b11ed59cc0bf8620bff",
+          "role": "Profile inheritance, feature flags, and include platform.resolute."
+        },
+        {
+          "path": "desktop",
+          "blob_sha": "1dee7f0c6197fa857b8780cdb83716fcbbca1df3",
+          "role": "Desktop profile package seed."
+        },
+        {
+          "path": "pantheon-shell",
+          "blob_sha": "04fb661c3671a8eba44a311649618c1de44c3c4b",
+          "role": "Pantheon shell profile package seed."
+        },
+        {
+          "path": "artwork",
+          "blob_sha": "7d0657faafee7dca05852b6db1c67054af4cea61",
+          "role": "Artwork profile package seed."
+        }
+      ],
+      "rust_status": "source-license-unverified",
+      "rust_target": "Keep this upstream seed repository as a separately pinned data source; implement an independently authored Rust parser and profile resolver only after license review.",
+      "parity_contract": [
+        "profile inheritance and includes",
+        "feature and architecture qualifiers",
+        "package inclusion, recommendations, and exclusions",
+        "same resolved package sets for desktop and Pantheon profiles"
+      ]
+    },
+    {
+      "id": "elementary/platform",
+      "url": "https://github.com/elementary/platform",
+      "branch": "resolute",
+      "commit": "6d11ad3e4e4d65a20c4b63e2a2159f0683f9bf4f",
+      "license": {
+        "spdx": null,
+        "status": "unverified",
+        "evidence": "The pinned repository tree has no LICENSE, COPYING, or COPYRIGHT file, and GitHub repository metadata declares no license."
+      },
+      "role": "Ubuntu base platform seed structure and package seeds included by elementary/seeds STRUCTURE.",
+      "files": [
+        {
+          "path": "README.md",
+          "blob_sha": "448ff4d862cc6b54791b7814685f7fcb2fb9b566",
+          "role": "Documents the Ubuntu platform seed origin."
+        },
+        {
+          "path": "STRUCTURE",
+          "blob_sha": "b7bd5372bcaf4c7932417cac1f45ec2d02827c62",
+          "role": "Base profile relationships and Germinate features."
+        },
+        {
+          "path": "minimal",
+          "blob_sha": "37a6570770be006ae2f4853c8fd58e3c2fc84710",
+          "role": "Minimal base package seed."
+        },
+        {
+          "path": "standard",
+          "blob_sha": "8b4035f498c0732597286464bb10843eb5de3587",
+          "role": "Standard base package seed."
+        },
+        {
+          "path": "desktop-common",
+          "blob_sha": "45892598688a75afbfe3fd76758c79ea856bec54",
+          "role": "Common desktop package seed."
+        }
+      ],
+      "rust_status": "source-license-unverified",
+      "rust_target": "Keep this upstream seed repository as a separately pinned data source; implement an independently authored Rust parser and profile resolver only after license review.",
+      "parity_contract": [
+        "platform profile relationships",
+        "Germinate feature inheritance",
+        "same resolved package sets for the selected Ubuntu release and architectures"
+      ]
+    }
+  ]
+}

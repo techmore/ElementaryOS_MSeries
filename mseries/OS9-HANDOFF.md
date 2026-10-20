@@ -7,9 +7,12 @@ Elementary GitHub organization. `mseries/rust/elementary-org-census.json` now
 records each repository separately with its default branch and explicit
 scope-review status. The configured ARM64 desktop seed snapshot maps 58
 candidate repositories plus the OS build repository. `elementary/metapackages`
-is now separately pinned, alongside ten direct image/customization source
-records. The 59-project image map has 48 projects still needing full pin,
-license, and parity review; the resolved PPA package closure also needs
+is separately pinned, and its two seed inputs, `elementary/seeds` and
+`elementary/platform`, now have distinct source records.
+Neither seed repository declares a license at the audited commit; their content
+is not copied into Rust. These records accompany ten direct
+image/customization source records. The 59-project image map has 48 projects
+still needing full pin, license, and parity review; the resolved PPA package closure also needs
 independent verification. The rename from
 `wingpanel-indicator-sound` to `panel-sound` is recorded as an alias. This
 census is discovery evidence, not proof that all image packages or upstream
@@ -2592,7 +2595,9 @@ replacements are still unstarted.
 
 Added `mseries/rust/elementary-projects.json` for elementary/os, Gala,
 Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
-Sound Indicator, and Keyboard Indicator. Each record links its current source
+Sound Indicator, Keyboard Indicator, metapackages, seeds, and platform. Added
+`elementary-build-inputs.json` with separate seed and platform commit/file hashes
+and explicit unverified-license status. Each record links its current source
 pin and consumers, license evidence, Rust replacement target, behavioral parity
 contract, and intentional M-series enhancements. The registry test checks that
 all ten sources appear in both upstream watchers and that pin values remain in
@@ -2655,3 +2660,18 @@ Updated both Rust CI workflows to build the crate and run the parity suite.
 Inventory now has 769 paths (687 local, 82 Elementary-owned upstream), 233
 directory groups, and 204 project records. This remains a candidate pending
 image and live application qualification. Changes remain local on `rust`.
+
+
+## 2026-10-20 — Elementary package-generator inputs
+
+Added separate source records for `elementary/seeds` and `elementary/platform`,
+which the pinned `elementary/metapackages` project consumes through Germinate.
+Their source commits and selected seed-file blob hashes are in
+`mseries/rust/elementary-build-inputs.json`; neither repository declares a
+license at the audited revision, so no seed content was copied into the Rust
+lane. The Rust parser, profile resolver, package closure, and Debian output
+parity are not started. The source register and branch/PR watchers now include
+both repositories. The generated file inventory has 789 paths (707 local, 82
+Elementary-owned upstream), 237 path groups, and 204 path-derived projects.
+This expands input tracking only; it is not a package-generator conversion or
+image parity claim. Changes remain local on `rust`.

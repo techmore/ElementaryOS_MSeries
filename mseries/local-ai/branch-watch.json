@@ -131,6 +131,18 @@
       "base": "main",
       "discover_branches": true,
       "open_prs": true
+    },
+    {
+      "repo": "elementary/seeds",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/platform",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
     }
   ]
 }

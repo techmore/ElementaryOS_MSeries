@@ -14,7 +14,7 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 788,
+  "item_count": 789,
   "component_count": 237,
   "project_count": 204,
   "components": [
@@ -2617,13 +2617,14 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 7,
+      "item_count": 8,
       "rust_status_counts": {
         "not-assessed": 3,
-        "recorded-non-code-input": 4
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/rust/README.md",
+        "mseries/rust/elementary-build-inputs.json",
         "mseries/rust/elementary-image-projects.json",
         "mseries/rust/elementary-org-census.json",
         "mseries/rust/elementary-projects.json",
@@ -6476,13 +6477,14 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 7,
+      "item_count": 8,
       "rust_status_counts": {
         "not-assessed": 3,
-        "recorded-non-code-input": 4
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/rust/README.md",
+        "mseries/rust/elementary-build-inputs.json",
         "mseries/rust/elementary-image-projects.json",
         "mseries/rust/elementary-org-census.json",
         "mseries/rust/elementary-projects.json",
@@ -14120,6 +14122,16 @@
       "language": "rust",
       "role": "implementation",
       "rust_status": "candidate-implemented-unverified"
+    },
+    {
+      "id": "mseries/rust/elementary-build-inputs.json",
+      "path": "mseries/rust/elementary-build-inputs.json",
+      "component_id": "mseries/rust/migration-lane",
+      "project_id": "mseries/rust/migration-lane",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/rust/elementary-image-projects.json",

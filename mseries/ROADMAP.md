@@ -270,11 +270,14 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The Rust branch's long-term scope now explicitly includes independent Rust
 replacements for the executable Elementary OS product stack as well as M-series
-customizations. The first machine-readable register covers the ten core
-Elementary repositories in `mseries/rust/elementary-projects.json`; it records
+customizations. The machine-readable register covers the ten core Elementary repositories,
+the metapackage generator, and its two distinct seed inputs in
+`mseries/rust/elementary-projects.json`; it records
 source pins, license evidence, parity contracts, replacement status, and
 intentional enhancements separately. All ten full-project replacements remain
-unstarted. The generated inventory also gives every one of its 206 local and
+unstarted; the seed parser and package-closure generator are also not started,
+and the seed input licenses remain unverified. The generated inventory also
+gives every one of its 204 local and
 upstream path-derived project records an explicit Rust target or non-code
 disposition, migration status, parity-contract status, and enhancement-review
 status. These records expose work still awaiting semantic and feature-level
@@ -285,8 +288,8 @@ review; they do not claim that review is complete. See the Rust lane plan in
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-769 file records (687 M-series-maintained paths and 82 elementary-owned upstream
-inputs) grouped into 233 first-pass, path-derived components. Semantic project
+789 file records (707 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 237 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
@@ -308,7 +311,10 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 769 paths, 233 directory groups, and 204 project IDs.
+file inventory now covers 789 paths (707 local and 82 Elementary-owned upstream),
+237 directory groups, and 204 project IDs. The source register now also tracks
+metapackages plus the seeds and platform inputs; their Rust package generator is
+not started and the seed licenses are unverified.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
 The ISO volume-label helper is now an independent, dependency-free Rust CLI used

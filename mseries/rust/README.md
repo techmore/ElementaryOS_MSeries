@@ -5,11 +5,14 @@ elementary OS image and its M-series customizations in Rust. Every independently
 built or shipped upstream project gets its own source record and Rust target;
 every local customization gets its own migration record. Upstream source stays
 as the behavioral baseline until its Rust replacement passes parity and image
-qualification. The detailed source register currently covers ten direct
-Elementary image/customization dependencies plus the metapackage source. The
-ARM64 desktop seed files map 58 repository candidates, plus the OS build
-repository, in `elementary-image-projects.json`; 48 still need
-repository/package, pin, and license confirmation. A separate dated census
+qualification. The detailed source register covers ten direct Elementary
+image/customization dependencies, the metapackage source, and its two separate
+seed inputs (`elementary/seeds` and `elementary/platform`). The seed inputs are
+pinned in `elementary-build-inputs.json`; both currently lack license evidence,
+so no upstream seed content is copied into the Rust lane. The ARM64 desktop seed
+files map 58 repository candidates, plus the OS build repository, in
+`elementary-image-projects.json`; 48 still need repository/package, pin, and
+license confirmation. A separate dated census
 records all 153 repositories visible in the [official Elementary organization](https://github.com/orgs/elementary/repositories)
 on 2026-10-20; the other repositories remain individually marked for scope
 review. The census does not yet prove which repositories feed the selected
@@ -62,7 +65,7 @@ and dependency needs; it is not a reason to couple unrelated projects.
 
 `elementary-projects.json` is the machine-readable source, pin, license,
 replacement target, parity contract, and separately scoped enhancement ledger
-for the ten core Elementary repositories. `source-inventory.json` covers the
+for ten direct Elementary repositories, the metapackage generator, and two seed inputs. `source-inventory.json` covers the
 current repository paths and creates path-based item IDs, but semantic ownership
 review and complete project records are still needed before conversion.
 
@@ -71,7 +74,7 @@ its declared build/customization scope, including the root ISO assembler, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-788 files (706 local and 82 elementary-owned upstream inputs) currently form
+789 files (707 local and 82 elementary-owned upstream inputs) currently form
 237 directory groups and 204 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -114,6 +117,8 @@ audit.
 | `mseries/mseries-launcher-keys` | Re-registers launcher shortcuts when the media-keys shortcut list changes | Rust watcher is staged and selected by the settings coordinator; Python remains an older-image fallback | `mseries/rust/launcher-keys/`; unit-tested, live GSettings/Pantheon parity remains open |
 | `mseries/install-homeboard-launcher` | Writes the current user's Homeboard `.desktop` launcher | Rust candidate exists; the shell installer remains the active reference | `mseries/rust/homeboard-launcher/`; desktop-menu discovery remains unverified |
 | `elementary/metapackages` | Selects the default Elementary package sets and Pantheon components | Source is pinned as an audit baseline; Rust seed-to-Debian generator remains not started | `elementary-image-projects.json`; resolve package closure and amd64/arm64 output parity |
+| `elementary/seeds` | Defines Elementary desktop, Pantheon, and SDK package profiles | Separate pinned data input; license unverified; Rust parser/resolver not started | `elementary-build-inputs.json`; profile inheritance, qualifiers, and package-set parity |
+| `elementary/platform` | Supplies Ubuntu base profiles included by Elementary seeds | Separate pinned data input; license unverified; Rust parser/resolver not started | `elementary-build-inputs.json`; release/architecture package-set parity |
 | `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
 | `AsahiLinux/linux` (Fairydust) | Experimental Apple Silicon kernel and local dock/display patches | Track as its own Rust kernel replacement, including Rust-for-Linux interfaces and each hardware patch | Per-patch source and hardware gates in `mseries/fairydust/`; parity must include boot, devices and recovery |
 | `omacom/linux-aurora` | Released Apple Silicon kernel candidate and optional enhancements | Track an independent Rust kernel replacement and preserve matched recipe/config/package inputs | `mseries/aurora/release.json` and `mseries/aurora/enhancements/`; separate package and hardware qualification |
@@ -289,7 +294,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`; the Signal installer uses the staged binary
   or builds it from source when Cargo is available. Full image admission and a
   live Signal cycle remain open.
-- The full file inventory currently contains 788 items (706 M-series-maintained
+- The full file inventory currently contains 789 items (707 M-series-maintained
   and 82 elementary-owned upstream inputs), 237 directory groups, and 204
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

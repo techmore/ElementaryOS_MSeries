@@ -774,7 +774,7 @@
       "url": "https://github.com/elementary/platform",
       "default_branch": "resolute",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "build-source-input"
     },
     {
       "id": "160410740",
@@ -854,7 +854,7 @@
       "url": "https://github.com/elementary/seeds",
       "default_branch": "resolute",
       "archived": false,
-      "scope_status": "review-required"
+      "scope_status": "build-source-input"
     },
     {
       "id": "106142822",

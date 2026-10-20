@@ -26,10 +26,11 @@ the OS 9 source audit; recheck the upstream branch before the next port.
 
 ## Elementary desktop project watch records
 
-The upstream watch roster tracks each Elementary repository used by an M-series
-customization as a separate source item: `elementary/os`, `gala`, `wingpanel`,
-`dock`, `files`, `quick-settings`, `panel-network`, `panel-power`,
-`wingpanel-indicator-sound`, and `panel-keyboard`. The six-hour watcher reads
+The upstream watch roster tracks Elementary application/image projects and
+build inputs separately: the ten direct image/customization dependencies,
+`elementary/metapackages`, `elementary/seeds`, and `elementary/platform`. The
+seed inputs are pinned in [`rust/elementary-build-inputs.json`](rust/elementary-build-inputs.json);
+their licenses are unverified and no seed data has been copied. The six-hour watcher reads
 this project roster from [`rust/elementary-projects.json`](rust/elementary-projects.json),
 compares default-branch heads to the recorded pins, and captures branch heads
 and open pull-request heads into a retained artifact. Changes surface in the
@@ -54,8 +55,11 @@ sound/keyboard indicator installers. The ten direct project pins are
 established; extending the same source/pin/license/parity contract to every
 other upstream dependency and every local project remains open.
 
-The configured Resolute desktop seed snapshot is tracked separately as
-`elementary/metapackages` at `6e6466507f7f5b32e73594c5e727a49f0be58d0f`.
+The configured Resolute desktop seed snapshot is tracked separately across
+`elementary/metapackages`, `elementary/seeds`, and `elementary/platform`; the latter
+two are generator inputs with unverified licenses. Their commits and selected
+file hashes are recorded in `mseries/rust/elementary-build-inputs.json`. The
+metapackage source is at at `6e6466507f7f5b32e73594c5e727a49f0be58d0f`.
 `mseries/rust/elementary-image-projects.json` maps its four ARM64 desktop and
 Pantheon seed files to 58 candidate Elementary repositories, plus the OS build
 repository, in the 59-project image source map. This is a package seed mapping,

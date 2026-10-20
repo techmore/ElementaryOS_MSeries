@@ -145,7 +145,7 @@
   },
   {
     "repo": "JoseExposito/touchegg",
-    "who": "José Expósito",
+    "who": "Jos\u00e9 Exp\u00f3sito",
     "why": "Pinned gesture daemon baked into the immutable factory image; review releases for Gala compatibility",
     "group": "desktop"
   },
@@ -219,6 +219,18 @@
     "repo": "elementary/panel-power",
     "who": "elementary maintainers",
     "why": "Power indicator source used by the local battery ETA integration",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/seeds",
+    "who": "elementary maintainers",
+    "why": "Elementary package profile seed input for Germinate; source and license need ongoing review",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/platform",
+    "who": "elementary maintainers",
+    "why": "Ubuntu base-platform seed input for Elementary package closure; source and license need ongoing review",
     "group": "elementary"
   }
 ]
