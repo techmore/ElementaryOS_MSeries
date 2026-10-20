@@ -33,7 +33,7 @@ startup_patch=$repo/mseries/patches/dock-workspace-startup.patch
 taskbar_patch=$repo/mseries/patches/dock-taskbar.patch
 
 mode=${1:-install}
-case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
+case $mode in install|--build-only|--build-running-apps-only|--revert) ;; *) echo "Usage: $0 [--build-only|--build-running-apps-only|--revert]" >&2; exit 2;; esac
 if [[ $mode == --revert ]]; then
   rm -f "$wrapper"
   echo "Reverted: the stock dock ($stock) is used at your next login."
@@ -71,12 +71,21 @@ git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$patch"
 git -C "$source_dir" apply "$startup_patch"
 git -C "$source_dir" apply "$taskbar_patch"
+# Experimental source-only qualification: preserve the complete Windows taskbar.
+# This mode can never install or reload the live dock.
+if [[ $mode == --build-running-apps-only ]]; then
+  test -s "$source_dir/src/Taskbar.vala"
+  grep -q 'name="taskbar-mode"' "$source_dir/data/dock.gschema.xml"
+  taskbar_hash=$(sha256sum "$source_dir/src/Taskbar.vala" | cut -d ' ' -f 1)
+  git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
+  test "$taskbar_hash" = "$(sha256sum "$source_dir/src/Taskbar.vala" | cut -d ' ' -f 1)"
+fi
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
 glib-compile-schemas --strict --dry-run "$source_dir/data"
-if [[ $mode == --build-only ]]; then
+if [[ $mode == --build-only || $mode == --build-running-apps-only ]]; then
   echo 'Native dock build and schema validation passed; installed dock unchanged.'
   exit 0
 fi

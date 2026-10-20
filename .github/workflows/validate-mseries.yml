@@ -120,6 +120,7 @@ jobs:
       - name: Verify activation, delayed Gala readiness and session stops
         run: |
           bash mseries/dock-tests/test-startup.sh
+          bash mseries/dock-tests/test-running-apps.sh
           python3 mseries/dock-tests/test-launcher.py
 
   desktop-space:

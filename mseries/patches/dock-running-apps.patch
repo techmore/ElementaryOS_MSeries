@@ -1,0 +1,264 @@
+diff --git a/data/Application.css b/data/Application.css
+index d97686d..3ec697b 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -169,12 +169,20 @@ backgrounditem .close-button {
+ }
+ 
+ .running-indicator {
+-    color: @selected_fg_color;
+-    -gtk-icon-size: 9px;
++    min-width: 10px;
++    min-height: 3px;
++    margin-bottom: 3px;
++    border-radius: 2px;
++    background: mix(@fg_color, @bg_color, 0.45);
++    opacity: 0.8;
++}
++
++.multiple-windows .running-indicator {
++    min-width: 14px;
+ }
+ 
+ .running-indicator:disabled {
+-    color: @fg_color;
++    opacity: 0.45;
+ }
+ 
+ .drawers-panel {
+diff --git a/src/AppSystem/App.vala b/src/AppSystem/App.vala
+index e4aabd3..a5d175e 100644
+--- a/src/AppSystem/App.vala
++++ b/src/AppSystem/App.vala
+@@ -149,7 +149,7 @@ public class Dock.App : Object {
+             } else if (windows.length == 1) {
+                 WindowSystem.get_default ().desktop_integration.focus_window.begin (windows[0].uid);
+             } else if (WindowSystem.get_default ().desktop_integration != null) {
+-                WindowSystem.get_default ().desktop_integration.show_windows_for.begin (app_info.get_id ());
++                WindowSystem.get_default ().desktop_integration.show_windows_for.begin (windows[0].app_id);
+             }
+         } catch (Error e) {
+             critical (e.message);
+diff --git a/src/AppSystem/AppResolver.vala b/src/AppSystem/AppResolver.vala
+new file mode 100644
+index 0000000..f3a2015
+--- /dev/null
++++ b/src/AppSystem/AppResolver.vala
+@@ -0,0 +1,104 @@
++/* SPDX-License-Identifier: GPL-3.0-or-later
++ * Copyright 2026 ElementaryOS_MSeries contributors
++ */
++
++// The compositor's app-id is a window-system identity, not necessarily a
++// desktop filename. Resolve installed entries before creating a transient item.
++public class Dock.AppResolver : Object {
++    private static AppResolver? instance;
++    public static AppResolver get_default () {
++        if (instance == null) {
++            instance = new AppResolver ();
++        }
++        return instance;
++    }
++
++    private HashTable<string, DesktopAppInfo> ids;
++    private HashTable<string, DesktopAppInfo> classes;
++    private HashTable<string, DesktopAppInfo> executables;
++    private HashTable<string, bool> ambiguous_executables;
++    private HashTable<string, DesktopAppInfo> resolved;
++
++    public AppResolver () {
++        reload ();
++        AppInfoMonitor.get ().changed.connect (reload);
++    }
++
++    private void reload () {
++        ids = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
++        classes = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
++        executables = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
++        ambiguous_executables = new HashTable<string, bool> (str_hash, str_equal);
++        resolved = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
++        foreach (var info in AppInfo.get_all ()) {
++            var desktop = info as DesktopAppInfo;
++            if (desktop == null || desktop.get_id () == null) {
++                continue;
++            }
++            var id = desktop.get_id ().casefold ();
++            ids[id] = desktop;
++            var startup_class = desktop.get_startup_wm_class ();
++            if (startup_class != null && startup_class != "") {
++                classes[startup_class.casefold ()] = desktop;
++            }
++            var executable = desktop.get_executable ();
++            if (executable != null && executable != "") {
++                var name = Path.get_basename (executable).casefold ();
++                if (executables.contains (name)) {
++                    ambiguous_executables[name] = true;
++                } else {
++                    executables[name] = desktop;
++                }
++            }
++        }
++    }
++
++    public DesktopAppInfo? resolve (string window_id) {
++        if (resolved.contains (window_id)) {
++            return resolved[window_id];
++        }
++        var key = window_id.casefold ();
++        DesktopAppInfo? info = ids[key];
++        if (info == null && !key.has_suffix (".desktop")) {
++            info = ids[key + ".desktop"];
++        }
++        if (info == null) {
++            info = classes[key];
++        }
++        if (info == null && !ambiguous_executables.contains (key)) {
++            info = executables[key];
++        }
++        if (info == null) {
++            info = transient_app (window_id);
++        }
++        if (info != null) {
++            resolved[window_id] = info;
++        }
++        return info;
++    }
++
++    private DesktopAppInfo? transient_app (string window_id) {
++        // Track windows without installed launchers too. Never turn an untrusted
++        // window identity into a shell command, or persist a fake installed app.
++        var directory = Path.build_filename (Environment.get_user_runtime_dir (), "mseries-dock-apps");
++        var filename = Checksum.compute_for_string (ChecksumType.SHA256, window_id) + ".desktop";
++        var path = Path.build_filename (directory, filename);
++        var key = new KeyFile ();
++        key.set_string ("Desktop Entry", "Type", "Application");
++        key.set_string ("Desktop Entry", "Name", window_id == "" ? "Application" : window_id);
++        key.set_string ("Desktop Entry", "Exec", "/usr/bin/false");
++        key.set_string ("Desktop Entry", "Icon", "application-default-icon");
++        key.set_boolean ("Desktop Entry", "NoDisplay", true);
++        key.set_boolean ("Desktop Entry", "X-MSeries-Transient", true);
++        try {
++            if (DirUtils.create_with_parents (directory, 0700) != 0) {
++                return null;
++            }
++            FileUtils.set_contents (path, key.to_data ());
++            return new DesktopAppInfo.from_filename (path);
++        } catch (Error error) {
++            warning ("Could not create a running-window dock item: %s", error.message);
++            return null;
++        }
++    }
++}
+diff --git a/src/AppSystem/AppSystem.vala b/src/AppSystem/AppSystem.vala
+index 3ba2fc5..3d97e6f 100644
+--- a/src/AppSystem/AppSystem.vala
++++ b/src/AppSystem/AppSystem.vala
+@@ -36,7 +36,9 @@ public class Dock.AppSystem : Object, UnityClient {
+     public async void load () {
+         foreach (string app_id in settings.get_strv ("launchers")) {
+             var app_info = new GLib.DesktopAppInfo (app_id);
+-            add_app (app_info, true);
++            if (app_info != null) {
++                add_app (app_info, true);
++            }
+         }
+ 
+         yield sync_windows ();
+@@ -77,7 +79,7 @@ public class Dock.AppSystem : Object, UnityClient {
+ 
+         for (uint i = 0; i < apps_store.get_n_items (); i++) {
+             var app = (App) apps_store.get_item (i);
+-            if (app.pinned) {
++            if (app.pinned && !app.app_info.get_boolean ("X-MSeries-Transient")) {
+                 new_pinned_ids += app.app_info.get_id ();
+             }
+         }
+@@ -90,13 +92,12 @@ public class Dock.AppSystem : Object, UnityClient {
+ 
+         var app_window_list = new GLib.HashTable<App, GLib.GenericArray<Window>> (direct_hash, direct_equal);
+         foreach (var window in windows) {
+-            App? app = id_to_app[window.app_id];
++            var app_info = AppResolver.get_default ().resolve (window.app_id);
++            if (app_info == null) {
++                continue;
++            }
++            App? app = id_to_app[app_info.get_id ()];
+             if (app == null) {
+-                var app_info = new GLib.DesktopAppInfo (window.app_id);
+-                if (app_info == null) {
+-                    continue;
+-                }
+-
+                 app = add_app (app_info, false);
+             }
+ 
+diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
+index 9b2d05d..a737e13 100644
+--- a/src/AppSystem/Launcher.vala
++++ b/src/AppSystem/Launcher.vala
+@@ -38,16 +38,12 @@ public class Dock.Launcher : BaseItem {
+     private Adw.TimedAnimation bounce_down;
+     private Adw.TimedAnimation shake;
+ 
+-    private Gtk.Image? second_running_indicator;
+     private bool multiple_windows_open {
+         set {
+-            if (value && second_running_indicator == null) {
+-                second_running_indicator = new Gtk.Image.from_icon_name ("pager-checked-symbolic");
+-                second_running_indicator.add_css_class ("running-indicator");
+-                running_box.append (second_running_indicator);
+-            } else if (!value && second_running_indicator != null) {
+-                running_box.remove (second_running_indicator);
+-                second_running_indicator = null;
++            if (value) {
++                running_box.add_css_class ("multiple-windows");
++            } else {
++                running_box.remove_css_class ("multiple-windows");
+             }
+         }
+     }
+@@ -77,7 +73,9 @@ public class Dock.Launcher : BaseItem {
+         insert_action_group (App.ACTION_GROUP_PREFIX, app.app_action_group);
+ 
+         var shell_section = new Menu ();
+-        shell_section.append (_("Keep in Dock"), ACTION_PREFIX + PINNED_ACTION);
++        if (!app.app_info.get_boolean ("X-MSeries-Transient")) {
++            shell_section.append (_("Keep in Dock"), ACTION_PREFIX + PINNED_ACTION);
++        }
+ 
+         if (Environment.find_program_in_path ("io.elementary.appcenter") != null) {
+             shell_section.append (_("Uninstall"), App.ACTION_PREFIX + App.UNINSTALL_ACTION);
+@@ -130,7 +128,7 @@ public class Dock.Launcher : BaseItem {
+         overlay.add_overlay (badge_container);
+         overlay.add_overlay (progress_revealer);
+ 
+-        var running_indicator = new Gtk.Image.from_icon_name ("pager-checked-symbolic");
++        var running_indicator = new Gtk.Box (HORIZONTAL, 0);
+         running_indicator.add_css_class ("running-indicator");
+ 
+         running_box = new Gtk.Box (HORIZONTAL, 0) {
+diff --git a/src/WindowSystem/Window.vala b/src/WindowSystem/Window.vala
+index 76dd315..9ad58a4 100644
+--- a/src/WindowSystem/Window.vala
++++ b/src/WindowSystem/Window.vala
+@@ -35,7 +35,7 @@ public class Dock.Window : GLib.Object {
+             time_appeared_on_workspace = (int64) properties["time-appeared-on-workspace"];
+         }
+ 
+-        var app_info = new GLib.DesktopAppInfo (app_id);
++        var app_info = AppResolver.get_default ().resolve (app_id);
+         if (app_info != null) {
+             var icon = app_info.get_icon ();
+             if (icon != null && Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_gicon (icon)) {
+diff --git a/src/meson.build b/src/meson.build
+index 052d4a5..f89bc46 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -12,6 +12,7 @@ sources = [
+     'RenderNodeWalker.vala',
+     'AppSystem' / 'App.vala',
+     'AppSystem' / 'AppSystem.vala',
++    'AppSystem' / 'AppResolver.vala',
+     'AppSystem' / 'Launcher.vala',
+     'AppSystem' / 'PoofPopover.vala',
+     'AppSystem' / 'Background' / 'BackgroundApp.vala',
