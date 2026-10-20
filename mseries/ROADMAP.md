@@ -2,7 +2,9 @@
 
 ## PR #339 reviewed; qualification gates remain — 2026-10-20
 
-Fixed ambiguous app matching, mixed-identity activation and overridden gray pills.
+Reconciled with concurrent #342; its startup/focus markers and focused-blue
+style are preserved. Fixed ambiguous app matching, mixed-identity activation and
+invalid transient app-management actions.
 Five native tests, eight wrapper checks, complete taskbar build/preservation and
 private focus/typing checks pass. Source-only review receipt and screenshot are
 retained under `mseries/dock-tests/receipts/review-339-2026-10-20/`. No deployment
@@ -2860,3 +2862,19 @@ and private window/focus/typing checks pass. #337's status-note conflicts are
 reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
 See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
 remaining native taskbar/network and Teams/Outlook qualification checks.
+
+## Teams/Outlook running markers and larger CodexBar popup — 2026-10-20
+
+App tracking is now applied after the full canonical taskbar stack, with SHA-256
+protection of Taskbar/StartMenu/CodexBar/shared sources and linked-type checks.
+Brave StartupWMClass identities resolve to the existing official-icon launchers.
+Markers synchronize for already-open apps at startup; open apps are gray, focused
+apps blue, and closed pins unmarked. The owner requested another 25% font increase:
+CodexBar uses 1.5625em, 400-pixel minimum body and 480-pixel scrolling viewport.
+
+Clean native build, schemas, actual GTK Launcher startup/focus/close/reopen probe,
+three resolver/AppSystem tests including both Teams/Outlook lifecycle and pin
+retention, existing hover/focus/leave/pin probe, shell checks and light/dark fixture
+inspection pass locally. Live read-only matching resolves both open Brave apps.
+Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
+See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.

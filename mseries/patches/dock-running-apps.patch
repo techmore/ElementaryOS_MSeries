@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index 2fd9409..d3b4705 100644
+index 8efd72d..0abec9f 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -169,12 +169,27 @@ backgrounditem .close-button {
+@@ -169,12 +169,20 @@ backgrounditem .close-button {
  }
  
  .running-indicator {
@@ -16,13 +16,6 @@ index 2fd9409..d3b4705 100644
 +    opacity: 0.8;
 +}
 +
-+/* The taskbar has a fixed silver surface in both schemes. Keep its marker
-+ * neutral and visibly darker than that surface instead of mixing theme colors
-+ * into a gray indistinguishable from the bar. */
-+dock-window.taskbar .running-indicator {
-+    background: rgba(0, 0, 0, 0.6);
-+}
-+
 +.multiple-windows .running-indicator {
 +    min-width: 14px;
  }
@@ -33,38 +26,19 @@ index 2fd9409..d3b4705 100644
  }
  
  .drawers-panel {
-@@ -389,31 +404,6 @@ popover.start-menu .start-footer {
-     box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.06);
- }
+@@ -618,3 +626,12 @@ dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #b
+ dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
  
--/* Windows 11 running indicator: a short grey pill, longer and accent blue when focused. */
--dock-window.taskbar .running-indicator {
--    -gtk-icon-source: none;
--    -gtk-icon-size: 1px;
--    min-width: 18px;
--    min-height: 4px;
--    margin-top: 2px;
--    border-radius: 2px;
--    background: #0078d4;
--    transition: min-width 150ms ease-out, background 150ms ease-out;
--}
--
--dock-window.taskbar .running-indicator:disabled {
--    min-width: 7px;
--    background: rgba(0, 0, 0, 0.45);
--}
--
--dock-window.taskbar.dark .running-indicator {
--    background: #4cc2ff;
--}
--
--dock-window.taskbar.dark .running-indicator:disabled {
--    background: rgba(255, 255, 255, 0.55);
--}
--
- /* Windows 11 dark Start/Search panel, following the dark style preference. */
- dock-window.taskbar.dark popover.start-menu > contents {
-     background: rgba(32, 32, 32, 0.97);
+ .taskbar-codexbar-popup { font-size: 1.5625em; }
++
++/* Match Windows taskbar state: gray for open apps; blue only for focus. */
++dock-window.taskbar .running-indicator {
++    min-width: 8px; min-height: 3px; background: rgba(0, 0, 0, 0.45);
++}
++dock-window.taskbar.dark .running-indicator { background: rgba(255, 255, 255, 0.55); }
++dock-window.taskbar .multiple-windows .running-indicator { min-width: 12px; }
++dock-window.taskbar launcher.focused .running-indicator { min-width: 18px; background: #0078d4; }
++dock-window.taskbar.dark launcher.focused .running-indicator { background: #4cc2ff; }
 diff --git a/src/AppSystem/App.vala b/src/AppSystem/App.vala
 index e4aabd3..3fec27e 100644
 --- a/src/AppSystem/App.vala
@@ -262,7 +236,7 @@ index 3ba2fc5..3d97e6f 100644
              }
  
 diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
-index 9b2d05d..e7b7f1b 100644
+index 9b2d05d..b65f8ac 100644
 --- a/src/AppSystem/Launcher.vala
 +++ b/src/AppSystem/Launcher.vala
 @@ -38,16 +38,12 @@ public class Dock.Launcher : BaseItem {
@@ -309,6 +283,25 @@ index 9b2d05d..e7b7f1b 100644
          running_indicator.add_css_class ("running-indicator");
  
          running_box = new Gtk.Box (HORIZONTAL, 0) {
+@@ -491,11 +489,18 @@ public class Dock.Launcher : BaseItem {
+     }
+ 
+     private void update_active_state () {
++        bool focused = false;
++        foreach (var window in app.windows) focused |= window.has_focus;
++        if (focused) add_css_class ("focused");
++        else remove_css_class ("focused");
+         if (!app.running) {
+             state = HIDDEN;
+         } else {
+             state = app.running_on_active_workspace ? State.ACTIVE : State.INACTIVE;
+             multiple_windows_open = app.windows.length > 1;
+         }
++        // Initial windows may already be known before notify handlers connect.
++        running_revealer.reveal_child = !moving && state != HIDDEN;
++        running_revealer.sensitive = state == ACTIVE;
+     }
+ }
 diff --git a/src/WindowSystem/Window.vala b/src/WindowSystem/Window.vala
 index 76dd315..9ad58a4 100644
 --- a/src/WindowSystem/Window.vala

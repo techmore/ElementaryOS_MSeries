@@ -1,17 +1,17 @@
 {
   "reviewed_head": "8aacd9fe5f8b99b82fa970d7177efad17cbd5833",
   "upstream_dock": "8b45a68a122947ad3a6427bf6e159ec2acf04ad0",
-  "canonical_dev": "689ffdf6aca2cbddf1f54637de22e45d0fb29d38",
+  "canonical_dev": "0b4fcf499362a9b5ece92da722c6ed95a820867b",
   "fixes": [
     "Reject ambiguous StartupWMClass/case-folded aliases while retaining exact case-sensitive IDs",
     "Mixed raw window IDs focus a window instead of showing an incomplete compositor group",
-    "Remove competing taskbar accent/wide-marker CSS; neutral visible 10x3/14x3 pills",
-    "Hide Uninstall as well as Keep in Dock for transient placeholder launchers"
+    "Hide Uninstall as well as Keep in Dock for transient placeholder launchers",
+    "Preserve PR342 startup/focus marker synchronization and gray-open/blue-focused styling; remove obsolete double application in build-only alias"
   ],
   "protected_sources": {
     "src/Taskbar.vala": "b3c0dce77c717195aa83094e4295278fdf93d7e3099e9a7631458b3e6186ff31",
     "src/StartMenu.vala": "5c29b1beecc1b3e2be94ef6fa332cc69e7b119316108ca78fa255dd26ca295df",
-    "src/TaskbarCodexBar.vala": "4246e608d7c321b497889af5e3b6b532042f212ae434954754494725b92a9b05",
+    "src/TaskbarCodexBar.vala": "66288ed4e03c9b0d7a44cd3da5ca4b80512a177b5d183ee2a753e31a2d5792dd",
     "src/codexbar/AccountDialog.vala": "5a7a5714348b063dec1a3f4d4140c471cb03372e0ce7f82bac3ec4934f4750d5",
     "src/codexbar/HelperProcess.vala": "80d4177877eff03fe23b37862d45ff3b70a241491e6d418f3228ee77bd5610ed",
     "src/codexbar/Indicator.vala": "2c2f035b0bdc80564a209784c29696849200771f4afe44deced5116fc978d169",
@@ -28,7 +28,8 @@
     "canonical_native_build_and_schema": "passed",
     "gtk_hover_focus_pin_leave": "passed",
     "combined_taskbar_nested_snap_restore_focus_typing": "passed",
-    "combined_screenshot_review": "Gray pills and full taskbar/Start/CodexBar group present; isolated fixture has fallback icons. Not a complete real-app/light-dark/hardware visual acceptance."
+    "combined_screenshot_review": "PR342 complete bar and gray-open/blue-focused markers retained. Fixture fallback icons remain; not complete real-app/light-dark/hardware acceptance.",
+    "actual_launcher_initial_focus_close_reopen": "passed in canonical build"
   },
   "deployed": false,
   "restarted_wingpanel": false,
@@ -36,5 +37,6 @@
     "Owner confirmation of desktop recovery",
     "Representative app/alias activation, complete light/dark visual acceptance and physical-input qualification",
     "Separately authorized coordinated live deployment; prohibited by current request"
-  ]
+  ],
+  "superseding_pr": 342
 }

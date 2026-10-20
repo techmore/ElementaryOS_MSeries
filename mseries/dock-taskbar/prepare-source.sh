@@ -12,6 +12,11 @@ mkdir -p "$source_dir/src/codexbar"
 for source in Indicator JsonBoundary HelperProcess AccountDialog PanelPreferences RefreshPolicy QuotaEta Presentation; do
   cp "$repo/mseries/codexbar-wingpanel/$source.vala" "$source_dir/src/codexbar/"
 done
+# Tracking may change launcher matching/markers, never taskbar/Start/CodexBar.
+sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
+  "$source_dir/src/TaskbarCodexBar.vala" "$source_dir"/src/codexbar/*.vala > "$source_dir/.mseries-preserved.sha256"
+git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
+sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'
 import pathlib, sys

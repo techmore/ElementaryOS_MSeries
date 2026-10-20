@@ -72,7 +72,7 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         if (indicator == null) {
             indicator = new MSeries.CodexBarIndicator ();
             popup.child = indicator.get_widget ();
-            popup.child.width_request = 320;
+            popup.child.width_request = 400;
             expand_scroll_area (popup.child);
         }
         if (popup.visible && popup.autohide != interactive) popup.popdown ();
@@ -85,7 +85,7 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
     }
     private void expand_scroll_area (Gtk.Widget widget) {
         if (widget is Gtk.ScrolledWindow) {
-            ((Gtk.ScrolledWindow) widget).max_content_height = 420;
+            ((Gtk.ScrolledWindow) widget).max_content_height = 480;
         }
         for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
             expand_scroll_area (child);

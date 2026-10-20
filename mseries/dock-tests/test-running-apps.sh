@@ -16,7 +16,6 @@ else
     git -C "$source_dir" checkout -q --detach FETCH_HEAD
 fi
 bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
-git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 cat > "$test_dir/schemas/io.elementary.dock.gschema.xml" <<'XML'
 <schemalist><schema id="io.elementary.dock" path="/io/elementary/dock/">
 <key name="launchers" type="as"><default>[]</default></key>

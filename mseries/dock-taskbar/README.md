@@ -2,13 +2,13 @@
 
 `install-dock-drawers.sh` uses `prepare-source.sh` as its canonical source path.
 It applies the pinned upstream dock, drawers, startup, **Windows taskbar**, then
-CodexBar/Start-menu integration patches. It copies the CodexBar indicator sources
+CodexBar/Start-menu integration and app-tracking patches. It copies the CodexBar indicator sources
 from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 `TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
 
 CodexBar sits left of Wi-Fi with a divider and 12 logical pixels on each side.
-Popup text is 25% larger, with a 320-pixel minimum body width and a
-420-pixel scroll viewport so the larger rows remain usable.
+Popup text is another 25% larger (1.5625em total), with a 400-pixel minimum body width and a
+480-pixel scroll viewport so the larger rows remain usable.
 Hover waits 250 ms and opens the existing native menu without a keyboard grab.
 Leaving gives 450 ms to cross into the popup; clicking pins/toggles the menu.
 The updated native Start menu and its scoped Windows 11 stylesheet are bundled
@@ -50,3 +50,5 @@ entries and ordered pins were checked unchanged. Repository persistence adds the
 scoped Start CSS to the resource bundle (the same CSS was previously user-local).
 This repository change is validated without another live dock deployment.
 Live Wayland hover/placement acceptance remains distinct from fixture results.
+
+Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).

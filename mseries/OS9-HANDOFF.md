@@ -8666,3 +8666,33 @@ confirmation, complete representative visual/input qualification and separately
 authorized coordinated deployment gates are met. The current no-deploy request
 precludes completing the deployment gate. Next: recovery-owner confirmation and
 remaining acceptance work; do not infer permission from passing CI.
+
+## Teams/Outlook running markers and larger CodexBar popup — 2026-10-20
+
+App tracking is now applied after the full canonical taskbar stack, with SHA-256
+protection of Taskbar/StartMenu/CodexBar/shared sources and linked-type checks.
+Brave StartupWMClass identities resolve to the existing official-icon launchers.
+Markers synchronize for already-open apps at startup; open apps are gray, focused
+apps blue, and closed pins unmarked. The owner requested another 25% font increase:
+CodexBar uses 1.5625em, 400-pixel minimum body and 480-pixel scrolling viewport.
+
+Clean native build, schemas, actual GTK Launcher startup/focus/close/reopen probe,
+three resolver/AppSystem tests including both Teams/Outlook lifecycle and pin
+retention, existing hover/focus/leave/pin probe, shell checks and light/dark fixture
+inspection pass locally. Live read-only matching resolves both open Brave apps.
+Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
+See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
+
+### PR #339 review reconciled with concurrent #342
+
+#342 landed during review and supersedes the original draft. Rebased the remaining
+identity/activation/transient-menu fixes onto dev `0b4fcf4`, retaining #342's
+startup/focus marker-state behavior and gray-open/blue-focused styling. The earlier
+all-gray CSS experiment was not carried forward. Removed duplicate patch
+application from the compatibility build-only mode, since canonical preparation
+now applies tracking. Current full build/schema, five native tests, eight wrapper
+tests, actual marker/hover GTK probes and private combined-taskbar focus/typing
+checks pass. Updated receipt/screenshot under review-339-2026-10-20.
+No desktop deployment or Wingpanel restart; #339 remains draft because recovery
+confirmation, complete representative acceptance and coordinated deployment gates
+remain unmet. Respect the explicit no-deploy instruction.

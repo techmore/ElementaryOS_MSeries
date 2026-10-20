@@ -66,19 +66,15 @@ git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
-# Experimental source-only qualification on the canonical complete taskbar.
-# Never install or restart anything from this mode.
-if [[ $mode == --build-running-apps-only ]]; then
-  sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
-    "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/codexbar/"*.vala \
-    > "$work_dir/taskbar-sources.sha256"
-  git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
-  sha256sum --check "$work_dir/taskbar-sources.sha256" >/dev/null
-fi
+# --build-running-apps-only is a build-only compatibility alias. Canonical
+# preparation now applies tracking and validates shared-source preservation.
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
+for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockAppResolver; do
+  strings "$build_dir/src/io.elementary.dock" | grep -F "$component" > /dev/null
+done
 glib-compile-schemas --strict --dry-run "$source_dir/data"
 bash "$repo/mseries/dock-taskbar/test-hover.sh"
 if [[ $mode == --build-only || $mode == --build-running-apps-only ]]; then

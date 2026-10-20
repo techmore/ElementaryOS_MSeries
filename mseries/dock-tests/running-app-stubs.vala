@@ -79,28 +79,34 @@ namespace RunningTest {
     }
     void running_lifecycle () {
         var settings = new Settings ("io.elementary.dock");
-        settings.set_strv ("launchers", {"missing.desktop", "org.techmore.mseries.TeamsWeb.desktop"});
+        settings.set_strv ("launchers", {"missing.desktop", "org.techmore.mseries.TeamsWeb.desktop", "org.techmore.mseries.OutlookWeb.desktop"});
         var loop = new MainLoop ();
         var system = Dock.AppSystem.get_default ();
         system.load.begin (() => loop.quit ());
         loop.run ();
-        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 1);
+        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 2);
         var windows = new GenericArray<Dock.Window> ();
         windows.add (new Dock.Window ("brave-teams.microsoft.com__v2_-Default"));
         windows.add (new Dock.Window ("brave-teams.microsoft.com__v2_-Default"));
+        windows.add (new Dock.Window ("brave-outlook.office.com__mail_-Default"));
         windows.add (new Dock.Window ("io.elementary.appcenter"));
         windows.add (new Dock.Window ("Uninstalled Utility"));
         Dock.WindowSystem.get_default ().windows = windows;
         sync ();
-        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 3);
+        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 4);
         var teams = system.get_app ("org.techmore.mseries.TeamsWeb.desktop");
+        var outlook = system.get_app ("org.techmore.mseries.OutlookWeb.desktop");
+        assert_true (outlook.running);
+        assert_cmpuint (outlook.windows.length, CompareOperator.EQ, 1);
         assert_true (teams.running);
         assert_cmpuint (teams.windows.length, CompareOperator.EQ, 2);
         assert_true (system.get_app ("io.elementary.appcenter.desktop").running);
         Dock.WindowSystem.get_default ().windows = new GenericArray<Dock.Window> ();
         sync ();
-        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 1);
+        assert_cmpuint (system.apps.get_n_items (), CompareOperator.EQ, 2);
         assert_false (teams.running);
+        assert_false (outlook.running);
+        assert_true (outlook.pinned);
         assert_true (teams.pinned);
     }
     int main (string[] args) {
