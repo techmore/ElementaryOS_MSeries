@@ -1,0 +1,46 @@
+diff --git a/src/PopoverWidget.vala b/src/PopoverWidget.vala
+index 5ba266c..884f153 100644
+--- a/src/PopoverWidget.vala
++++ b/src/PopoverWidget.vala
+@@ -77,11 +77,24 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
+         main_box = new Gtk.Box (VERTICAL, 0);
+         main_box.append (toggle_box);
+         if (server_type == SESSION) {
+-            main_box.append (new KeyboardBrightness ());
+-            main_box.append (new ScreenBrightness ());
+-            main_box.append (new ChargeLimit ());
+-            main_box.append (new Bluetooth ());
+-            main_box.append (new AudioOutput ());
++            // Related rows live in rounded cards (see Controls.vala). A card hides itself when
++            // everything in it is unavailable on this machine.
++            var controls = new Card ();
++            controls.add_row (new Volume ());
++            controls.add_row (new ScreenBrightness ());
++            controls.add_row (new KeyboardBrightness ());
++            main_box.append (controls);
++
++            var connections = new Card ();
++            connections.add_row (new Bluetooth ());
++            connections.add_row (new AudioOutput ());
++            main_box.append (connections);
++
++            // mseries:sharing
++
++            var battery = new Card ();
++            battery.add_row (new ChargeLimit ());
++            main_box.append (battery);
+         }
+         main_box.append (scale_box);
+         main_box.append (new Gtk.Separator (HORIZONTAL));
+diff --git a/src/meson.build b/src/meson.build
+index 5ffbaf4..9671882 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -26,6 +26,7 @@ sources = [
+     'Widgets' / 'SettingsToggle.vala',
+     'Widgets' / 'SessionBox.vala',
+     'Widgets' / 'TextScale.vala',
++    'Widgets' / 'Controls.vala',
+     'Widgets' / 'ScreenBrightness.vala',
+     'Widgets' / 'KeyboardBrightness.vala',
+     'Widgets' / 'ChargeLimit.vala',
