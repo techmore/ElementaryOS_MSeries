@@ -13,8 +13,14 @@ first terminal report rather than overwriting it on a later Stop click.
 Validated with Python compilation (warnings treated as errors) and all five
 controller safety tests. Installed the updated controller and requested the
 owner's saved GUI approval for a 60-second dock-only trial; result goes to
-`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. Live visibility and
-focus result pending. Next: inspect this receipt and dock journal; investigate
+`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. The dock-only attempt ran 09:47:11–09:47:14: typing passed, then a focus
+departure stopped it. Owner saw no dock. Journal confirms a first panel buffer.
+Live preferences are overlapping-window auto-hide and 24-pixel icons. Added
+`--visible` for temporarily disabling auto-hide with 48-pixel icons, restoring
+preferences on normal finish/close. Presented the required approval for this
+visibility test; result pending in `visible-20261020.json`. Rust workspace has
+no dock crate: the current dock is the patched Vala/GTK dock hosted by the Rust
+compositor; a full Rust dock port is still outstanding. Next: inspect this receipt and dock journal; investigate
 the separate snap geometry discrepancy.
 
 

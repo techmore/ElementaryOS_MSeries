@@ -121,7 +121,7 @@ def arm(seconds):
         raise
 
 
-def gui(seconds, after_login, dock_only=False):
+def gui(seconds, after_login, dock_only=False, visible=False):
     if after_login:
         pending = STATE / 'pending-login-trial'
         if not pending.exists():
@@ -153,6 +153,7 @@ def gui(seconds, after_login, dock_only=False):
             self.running = False
             self.step = 0
             self.started = None
+            self.saved_preferences = None
 
         def save(self):
             OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -241,6 +242,13 @@ def gui(seconds, after_login, dock_only=False):
             try:
                 if not self.own_focus():
                     raise RuntimeError('Test window was not focused')
+                if visible:
+                    settings = Gio.Settings.new('io.elementary.dock')
+                    self.saved_preferences = {key: settings.get_value(key) for key in
+                                              ('autohide-mode', 'icon-size')}
+                    settings.set_string('autohide-mode', 'never')
+                    settings.set_int('icon-size', 48)
+                    Gio.Settings.sync()
                 arm(seconds)
                 self.running = True
                 self.dock_started = time.monotonic()
@@ -296,6 +304,7 @@ def gui(seconds, after_login, dock_only=False):
         def finish(self, reason):
             self.running = False
             stop()
+            self.restore_preferences()
             if self.record['status'].startswith('stopped-') or self.record['status'] == 'completed-bounded-trial':
                 return
             self.record['status'] = reason
@@ -305,9 +314,18 @@ def gui(seconds, after_login, dock_only=False):
             self.label.set_label('Dock stopped; disabled state restored.\nResult: ' + reason + '\n'
                 'Return to the chat to review the result or request a longer trial.')
 
+        def restore_preferences(self):
+            if self.saved_preferences is not None:
+                settings = Gio.Settings.new('io.elementary.dock')
+                for key, value in self.saved_preferences.items():
+                    settings.set_value(key, value)
+                Gio.Settings.sync()
+                self.saved_preferences = None
+
         def close(self, *_):
             if self.running:
                 self.finish('stopped-window-closed')
+            self.restore_preferences()
             return False
 
     Trial().run([])
@@ -322,6 +340,8 @@ def main():
     parser.add_argument('--stop', action='store_true')
     parser.add_argument('--configure', action='store_true')
     parser.add_argument('--after-login', action='store_true')
+    parser.add_argument('--visible', action='store_true',
+                        help='Temporarily use 48-pixel icons and no auto-hide')
     parser.add_argument('--dock-only', action='store_true',
                         help='Test dock focus and typing independently of snapping')
     args = parser.parse_args()
@@ -335,7 +355,7 @@ def main():
     elif args.configure:
         configure(args.seconds)
     else:
-        gui(args.seconds, args.after_login, args.dock_only)
+        gui(args.seconds, args.after_login, args.dock_only, args.visible)
 
 
 if __name__ == '__main__':

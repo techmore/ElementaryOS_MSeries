@@ -58,3 +58,8 @@ The owner's October 20 post-reboot report showed window width 960 against monito
 width 2419; the left snapping check failed before `arm()` ever ran. No dock
 launch occurred. `FocusRoutingVersion=1` confirms the updated compositor loaded.
 The cause of that snapping discrepancy remains unqualified.
+
+`--visible` temporarily selects `autohide-mode=never` and 48-pixel icons while
+the trial runs. Normal stop, focus loss and window close restore prior values.
+A forced controller kill can leave these display preferences changed; the
+independent watchdog still stops the dock and restores its disabled marker.
