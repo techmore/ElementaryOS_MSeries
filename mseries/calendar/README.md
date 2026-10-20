@@ -210,7 +210,8 @@ pin, applies the same patch and ships the plugin plus
 Its preinst uses `dpkg-divert` to move the stock plugin aside, so an upgrade
 of the stock package can't overwrite ours. The manual installer above has no
 such protection. A new upstream minor version is refused by the dependency
-instead of loading a plugin built for another ABI.
+instead of loading a plugin built for another ABI. Installing or upgrading the package
+doesn't restart Wingpanel; the new plugin loads at the next login.
 
 The **M-series plugin packages** workflow builds it on every change to the
 patch, `mseries/calendar/` or the panel pins. It then runs
