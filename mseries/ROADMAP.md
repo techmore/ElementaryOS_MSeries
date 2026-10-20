@@ -2269,5 +2269,5 @@ performed during this cleanup review. The diagnostic boot selection is untouched
 
 
 ## CodexBar QuickSwitch width — 2026-10-20
-- Compact popover layout landed in the working `dev`-based feature branch: 240 px minimum width, bounded dynamic labels, status and action dock on separate rows.
+- Compact popover layout landed in the `dev`-based feature branch (PR #315): 240 px minimum width, bounded dynamic labels, status and action dock on separate rows.
 - Verified 11/11 headless render fixtures at a 280 px target (268 px captured content), 17/17 Meson test groups, and the live Wingpanel mapping the installed module. See `OS9-HANDOFF.md` for the deployment detail.
