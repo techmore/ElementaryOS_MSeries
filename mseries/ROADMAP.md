@@ -1,5 +1,34 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Desktop message notification popups — 2026-10-20
+
+Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
+The user-local service is enabled/active as `mseries-desktop-notifications.service`,
+using GTK3/Xwayland override-redirect popups for placement without a compositor
+or Wingpanel restart. It implements the freedesktop notification interface,
+shows up to three bottom-right cards, preserves focus, and dispatches supplied
+Open/Reply actions. It retains no history; no notification center, inline reply,
+images, sound, or native Wayland placement is claimed. Existing DND is respected;
+per-app elementary notification preferences and full accessibility qualification
+remain open. The installer stages by default; `--activate` enables/restarts only
+this service. BlueFerry uses the existing separate version-matched backend overlay
+at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
+as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
+(https://github.com/erikwb/blueferry); this repository does not redistribute its
+full source. Rebase the backend overlay after package upgrades.
+
+Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
+Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
+replacement, expiry, close and DND were checked using synthetic content only.
+Retained screenshots are fixtures. Live synthetic notification geometry was
+360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
+and bottom. The service remains active/enabled and BlueFerry remains active.
+BlueFerry notification tests (92) and combined overlay tests (201) passed; its
+Reply action opens the existing conversation through opaque-handle activation.
+No real phone messages were sent or deliberately marked read by these checks.
+Actual phone-notification click-to-app focus and next-login startup remain
+unverified. This is transformed-desktop work, not factory-image qualification.
+
 ## Working iPhone messages and native Messages app — 2026-10-20
 
 The controlled 5.87 trial now has **real send and receive evidence**. Root-owned

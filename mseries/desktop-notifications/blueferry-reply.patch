@@ -1,0 +1,36 @@
+diff --git a/src/blueferry/sinks/libnotify.py b/src/blueferry/sinks/libnotify.py
+index 0ae64c7..df76c2f 100644
+--- a/src/blueferry/sinks/libnotify.py
++++ b/src/blueferry/sinks/libnotify.py
+@@ -345,7 +345,7 @@ class LibnotifySink:
+             # A deliberate dismissal is propagated as mark-read. Expiration
+             # is reason=1 and therefore leaves the iPhone's read state alone.
+             handle = str(getattr(event, "handle", "") or "")
+-            actions = ["default", "Open conversation"] if handle else []
++            actions = ["default", "Open conversation", "reply", "Reply"] if handle else []
+             hints = _notification_hints(handle)
+             photo = self._photo_uri(event)
+             if photo:
+@@ -1051,15 +1051,20 @@ class LibnotifySink:
+             if str(action) in _CALL_ACTIONS and callback is not None:
+                 callback(call_id, str(action))
+             return
+-        if str(action) != "default":
++        if str(action) not in ("default", "reply"):
+             return
+         handle = getattr(self, "_open_messages", {}).get(nid_i)
++        # Reply opens the existing conversation composer; it never invokes an
++        # app rule or an iPhone action, even for a forged notification action.
++        if str(action) == "reply" and not handle:
++            return
+         callback = getattr(self, "_on_open_message", None)
+         token = getattr(self, "_activation_tokens", {}).pop(nid_i, "")
+         if handle and callback is not None:
+             callback(handle, token)
+             return
+-        self._activate_app_popup(nid_i, token)
++        if str(action) == "default":
++            self._activate_app_popup(nid_i, token)
+ 
+     def open_click(self, click_id: str, token: str) -> bool:
+         """A shell ran a popup's argv; treat it exactly like a live click."""
