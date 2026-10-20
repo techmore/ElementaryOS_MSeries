@@ -18,7 +18,9 @@ VERSION=${DEB_VERSION:-0.1.0+git$(git -C "$ROOT" rev-parse --short HEAD)}
 cargo build --release --manifest-path "$ROOT/rust/Cargo.toml" \
   -p pantheon-compositor --bin pantheon-compositor --features native-drm
 
-BIN="$ROOT/rust/target/release/pantheon-compositor"
+# Honor a shared Cargo target directory so isolated worktrees can reuse builds.
+TARGET_DIR=$(realpath "${CARGO_TARGET_DIR:-$ROOT/rust/target}")
+BIN="$TARGET_DIR/release/pantheon-compositor"
 [[ -x $BIN ]] || { echo "error: compositor build produced no executable" >&2; exit 1; }
 if ldd "$BIN" | grep -q 'not found'; then
   echo "error: compositor binary has unresolved shared libraries" >&2

@@ -1,0 +1,10 @@
+2026-10-20T13:59:47.624869Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=1
+2026-10-20T13:59:48.975808Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=1 overview=false preview=false windows=1
+2026-10-20T13:59:50.048271Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=1
+2026-10-20T13:59:51.378661Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=1
+2026-10-20T13:59:52.916653Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=2
+2026-10-20T13:59:53.790905Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=true preview=false windows=2
+2026-10-20T13:59:55.059611Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=true preview=false windows=2
+2026-10-20T13:59:55.922897Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=2
+2026-10-20T13:59:56.981930Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=0 overview=false preview=false windows=2
+2026-10-20T13:59:57.058935Z  INFO pantheon_compositor::gesture_probe: gesture probe status workspace=1 overview=false preview=false windows=0

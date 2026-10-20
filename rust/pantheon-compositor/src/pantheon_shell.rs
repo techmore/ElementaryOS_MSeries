@@ -743,18 +743,17 @@ impl PantheonCompositor {
     fn constrain_floating_windows(&mut self) {
         let windows: Vec<_> = self.space.elements().cloned().collect();
         for window in windows {
-            if let Some(surface) = Self::tile_surface(&window) {
-                if self.is_panel_surface(&surface)
+            if let Some(surface) = Self::tile_surface(&window)
+                && (self.is_panel_surface(&surface)
                     || self.tiled_windows.contains_key(&surface.id())
-                    || self.managed_windows.contains_key(&surface.id())
-                {
-                    continue;
-                }
+                    || self.managed_windows.contains_key(&surface.id()))
+            {
+                continue;
             }
-            if let Some(surface) = window.x11_surface() {
-                if surface.is_override_redirect() || surface.is_fullscreen() {
-                    continue;
-                }
+            if let Some(surface) = window.x11_surface()
+                && (surface.is_override_redirect() || surface.is_fullscreen())
+            {
+                continue;
             }
             let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
                 continue;
@@ -774,11 +773,11 @@ impl PantheonCompositor {
             if let Some(surface) = window.toplevel() {
                 surface.with_pending_state(|state| state.size = Some(target.size));
                 surface.send_pending_configure();
-            } else if let Some(surface) = window.x11_surface() {
-                if let Err(error) = surface.configure(Some(target)) {
-                    tracing::warn!(?error, "could not fit X11 window above dock");
-                    continue;
-                }
+            } else if let Some(surface) = window.x11_surface()
+                && let Err(error) = surface.configure(Some(target))
+            {
+                tracing::warn!(?error, "could not fit X11 window above dock");
+                continue;
             }
             self.space.map_element(window, target.loc, false);
         }
