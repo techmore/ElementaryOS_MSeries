@@ -104,3 +104,15 @@ units now set `GSK_RENDERER=gl`. `../test-session-units.sh` statically checks
 the ordering, restart and renderer settings. Native visibility after this
 change is NOT yet verified; the proper long-term fix is `linux-dmabuf` in the
 compositor. No native session was started for this change.
+
+## linux-dmabuf (2026-10-19)
+
+The compositor can now advertise `zwp_linux_dmabuf_v1` v4 with default
+feedback, which Mesa needs to pick the real GPU (`libEGL: failed to get driver
+name for fd -1` and Vulkan `SURFACE_LOST` are the symptoms without it).
+Nested: created when the renderer has a render node and dmabuf formats; the
+Xvfb/llvmpipe test host has neither, so only the graceful skip was exercised
+headless. Native: OFF by default and compile-checked only; enable per service
+with `PANTHEON_ENABLE_DMABUF=1` (systemd drop-in) for a trial, keeping
+`GSK_RENDERER=gl` until it is proven. Failure mode to watch: a client dmabuf
+import failing and the app showing nothing.

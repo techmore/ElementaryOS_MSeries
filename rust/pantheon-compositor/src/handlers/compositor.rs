@@ -75,3 +75,37 @@ impl ShmHandler for PantheonCompositor {
         &self.shm_state
     }
 }
+
+impl smithay::wayland::dmabuf::DmabufHandler for PantheonCompositor {
+    fn dmabuf_state(&mut self) -> &mut smithay::wayland::dmabuf::DmabufState {
+        &mut self.dmabuf_state
+    }
+
+    fn dmabuf_imported(
+        &mut self,
+        _global: &smithay::wayland::dmabuf::DmabufGlobal,
+        dmabuf: smithay::backend::allocator::dmabuf::Dmabuf,
+        notifier: smithay::wayland::dmabuf::ImportNotifier,
+    ) {
+        #[cfg_attr(not(feature = "native-drm"), allow(unused_mut))]
+        let mut imported = self
+            .dmabuf_importer
+            .as_mut()
+            .is_some_and(|import| import(&dmabuf));
+        #[cfg(feature = "native-drm")]
+        if !imported && let Some(backend) = self.native_backend.as_mut() {
+            use smithay::backend::renderer::ImportDma;
+            let node = backend.renderer.render_node;
+            imported = backend
+                .renderer
+                .gpus
+                .single_renderer(&node)
+                .is_ok_and(|mut renderer| renderer.import_dmabuf(&dmabuf, None).is_ok());
+        }
+        if imported {
+            let _ = notifier.successful::<PantheonCompositor>();
+        } else {
+            notifier.failed();
+        }
+    }
+}

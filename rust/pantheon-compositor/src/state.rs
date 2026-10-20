@@ -20,6 +20,7 @@ use smithay::{
     utils::{Logical, Point, Size},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
+        dmabuf::DmabufState,
         fractional_scale::{
             FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
         },
@@ -85,6 +86,11 @@ pub struct PantheonCompositor {
     pub compositor_state: CompositorState,
     pub xdg_shell_state: XdgShellState,
     pub shm_state: ShmState,
+    pub dmabuf_state: DmabufState,
+    /// Imports a client dmabuf with the active renderer; `None` until a backend
+    /// that owns a renderer installs one (then the global is also created).
+    pub dmabuf_importer:
+        Option<Box<dyn FnMut(&smithay::backend::allocator::dmabuf::Dmabuf) -> bool>>,
     pub output_manager_state: OutputManagerState,
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
@@ -196,6 +202,7 @@ impl PantheonCompositor {
         let compositor_state = CompositorState::new::<Self>(&dh);
         let xdg_shell_state = XdgShellState::new::<Self>(&dh);
         let shm_state = ShmState::new::<Self>(&dh, vec![]);
+        let dmabuf_state = DmabufState::new();
         let popups = PopupManager::default();
 
         let output_manager_state = OutputManagerState::new_with_xdg_output::<Self>(&dh);
@@ -332,6 +339,8 @@ impl PantheonCompositor {
             compositor_state,
             xdg_shell_state,
             shm_state,
+            dmabuf_state,
+            dmabuf_importer: None,
             output_manager_state,
             fractional_scale_manager_state,
             viewporter_state,

@@ -25,6 +25,7 @@ pub fn init_winit(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let (backend, winit) = winit::init()?;
     let backend = Rc::new(RefCell::new(backend));
+    init_dmabuf(&backend, state);
 
     let mode = Mode {
         size: backend.borrow().window_size(),
@@ -243,4 +244,49 @@ pub fn init_winit(
     backend.borrow().window().request_redraw();
 
     Ok(())
+}
+
+/// Advertise `zwp_linux_dmabuf_v1` (v4 feedback) so GTK/Mesa clients can use
+/// the GPU instead of falling back to wl_shm and software rendering. Feedback
+/// needs the renderer's render node; without it no global is created.
+fn init_dmabuf(
+    backend: &Rc<RefCell<winit::WinitGraphicsBackend<GlesRenderer>>>,
+    state: &mut PantheonCompositor,
+) {
+    use smithay::backend::{egl::EGLDevice, renderer::ImportDma};
+    use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
+
+    let (node, formats) = {
+        let mut guard = backend.borrow_mut();
+        let renderer = guard.renderer();
+        let node = EGLDevice::device_for_display(renderer.egl_context().display())
+            .and_then(|device| device.try_get_render_node());
+        (node, renderer.dmabuf_formats())
+    };
+    let Ok(Some(node)) = node else {
+        tracing::warn!("nested renderer has no render node; linux-dmabuf not advertised");
+        return;
+    };
+    if formats.iter().next().is_none() {
+        tracing::warn!("nested renderer exposes no dmabuf formats; linux-dmabuf not advertised");
+        return;
+    }
+    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats).build() {
+        Ok(feedback) => feedback,
+        Err(error) => {
+            tracing::warn!(%error, "could not build dmabuf feedback; linux-dmabuf not advertised");
+            return;
+        }
+    };
+    let importer = backend.clone();
+    state.dmabuf_importer = Some(Box::new(move |dmabuf| {
+        importer
+            .try_borrow_mut()
+            .is_ok_and(|mut backend| backend.renderer().import_dmabuf(dmabuf, None).is_ok())
+    }));
+    let dh = state.display_handle.clone();
+    state
+        .dmabuf_state
+        .create_global_with_default_feedback::<PantheonCompositor>(&dh, &feedback);
+    tracing::info!("advertising linux-dmabuf v4 on the nested renderer");
 }

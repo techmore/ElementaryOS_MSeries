@@ -48,4 +48,4 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 git = "https://github.com/Smithay/smithay.git"
 rev = "023b78b1c5a05ca512767cacc07efca55fae8be4"
 default-features = false
-features = ["backend_winit", "wayland_frontend", "desktop", "xwayland"]
+features = ["backend_winit", "backend_drm", "wayland_frontend", "desktop", "xwayland"]

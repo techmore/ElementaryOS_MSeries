@@ -1571,9 +1571,45 @@ impl NativeBackend {
                 None => TimeoutAction::ToDuration(safety_interval),
             }
         })?;
+        advertise_dmabuf(state);
         state.request_native_redraw();
         Ok(())
     }
+}
+
+/// Opt-in `zwp_linux_dmabuf_v1` for native clients. Off by default until a
+/// native trial has qualified it: set `PANTHEON_ENABLE_DMABUF=1` for the
+/// compositor service. Without it clients use wl_shm (software GTK rendering).
+fn advertise_dmabuf(state: &mut PantheonCompositor) {
+    use smithay::backend::renderer::ImportDma;
+    use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
+
+    if std::env::var_os("PANTHEON_ENABLE_DMABUF").is_none_or(|value| value != "1") {
+        return;
+    }
+    let Some(backend) = state.native_backend.as_mut() else {
+        return;
+    };
+    let node = backend.renderer.render_node;
+    let formats = match backend.renderer.gpus.single_renderer(&node) {
+        Ok(renderer) => renderer.dmabuf_formats(),
+        Err(error) => {
+            tracing::warn!(?error, "no renderer for linux-dmabuf; not advertised");
+            return;
+        }
+    };
+    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats).build() {
+        Ok(feedback) => feedback,
+        Err(error) => {
+            tracing::warn!(%error, "could not build dmabuf feedback; linux-dmabuf not advertised");
+            return;
+        }
+    };
+    let dh = state.display_handle.clone();
+    state
+        .dmabuf_state
+        .create_global_with_default_feedback::<PantheonCompositor>(&dh, &feedback);
+    tracing::info!("advertising linux-dmabuf v4 on the native renderer");
 }
 
 /// Run one scheduler tick. Returns the timer action for an event-driven
