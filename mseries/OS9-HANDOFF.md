@@ -39,14 +39,17 @@ wallpaper-source decision in `mseries/ROADMAP.md`.
 
 ### Wallpaper options follow-up — 2026-10-20
 
-Branch `codex/windows-work-mode-wallpaper-options` adds three original generated
-wallpapers (Blue Ribbons, Violet Arc, Forest Flow) alongside Blue Flow. The
-Switchboard panel now exposes all four bundled options plus custom file selection.
-Meson installs the image set and the uninstaller removes it. This branch is not
-yet merged or installed on the J314S desktop; Work Mode remains off and desktop
-state has not been touched. The Windows Spotlight/theme source decision remains:
-do not bundle Microsoft images without redistribution permission. Build and UI
-validation, then PR/merge/install are still pending.
+PR #317 (`afde2f3`) merged the three original generated wallpapers (Blue Ribbons,
+Violet Arc, Forest Flow) alongside Blue Flow. The Switchboard panel exposes all
+four bundled options and custom file selection. Meson installs the image set and
+the uninstaller removes it. The set was installed on the J314S desktop on
+2026-10-20. Post-install verification: Work Mode `false`, default wallpaper URI
+unchanged, dock icon size `24`, auto-hide `overlapping-window`, schedule timer
+active, Work Mode dock service inactive, and all four images present under
+`/usr/share/backgrounds/mseries`. The Switchboard panel and active dock have not
+been visually inspected, and the schedule transition remains unverified. The
+Windows Spotlight/theme source decision remains: do not bundle Microsoft images
+without redistribution permission.
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
