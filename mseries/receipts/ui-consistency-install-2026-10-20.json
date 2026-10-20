@@ -1,0 +1,30 @@
+{
+  "installed_at": "2026-10-20T13:12:24.920986+00:00",
+  "source_pr": 321,
+  "source_merge": "9cb1c70c2ae958facc9fefbca671e1d02cf5c862",
+  "files": [
+    {
+      "app": "Orchard",
+      "path": "/home/sdolbec/.local/bin/com.github.techmore.orchard-incus",
+      "sha256": "ca8625a38aebeb046b35fc3c93cbfe92f2ca008229051d82092304ab48e88f25"
+    },
+    {
+      "app": "Battery",
+      "path": "/usr/libexec/mseries/battery/mseries-battery-app.py",
+      "sha256": "73879cc673b98bfe729cfd49d579eb7d0731b686890f4ee0162279fa3526aae2"
+    },
+    {
+      "app": "Apple Passwords",
+      "path": "/home/sdolbec/.local/share/mseries/icloud-passwords/gui/app.py",
+      "sha256": "8c4e7c496d6ae0594d9260f55016a1f1c92d3f98af44837cc91ce67a06de46db"
+    }
+  ],
+  "verification": [
+    "Installed files byte-match tested build/source",
+    "Installed Battery mapped on private display; mocked dark preference notification passed",
+    "Installed Passwords short-window scroll and focus passed with worker stubbed",
+    "Installed Orchard actual executable stayed alive during isolated startup without GTK criticals"
+  ],
+  "runtime": "Apps are installed for next launch; no live app, panel or service restarted",
+  "backups": "/home/sdolbec/Documents/Codex/2026-10-20/can-x20/work/ui-consistency-install/backups"
+}
