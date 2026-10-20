@@ -53,6 +53,28 @@ class GuiTests(unittest.TestCase):
         self.app.window.destroy()
         self.app.quit()
 
+    def test_signin_remains_reachable_in_short_window(self):
+        import time
+        settings = self.gui.Gtk.Settings.get_default()
+        original_font = settings.props.gtk_font_name
+        self.addCleanup(settings.set_property, 'gtk-font-name', original_font)
+        settings.props.gtk_font_name = 'Sans 14'
+        self.app.window.set_default_size(540, 420)
+        context = self.gui.GLib.MainContext.default()
+        deadline = time.monotonic() + 0.5
+        while time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            time.sleep(0.01)
+        self.assertLessEqual(self.app.window.get_height(), 440)
+        scroll = self.app.stack.get_child_by_name('login')
+        adjustment = scroll.get_vadjustment()
+        self.assertGreater(adjustment.get_upper(), adjustment.get_page_size())
+        adjustment.set_value(adjustment.get_upper() - adjustment.get_page_size())
+        self.assertGreater(adjustment.get_value(), 0)
+        self.assertTrue(self.app.signin.grab_focus())
+        self.assertTrue(self.app.signin.get_sensitive())
+
     def test_empty_and_synced_vault(self):
         self.app.event(None, {'type':'vault', 'credentials':[], 'signed_in':False, 'joined':False})
         self.assertEqual(self.app.stack.get_visible_child_name(), 'login')
