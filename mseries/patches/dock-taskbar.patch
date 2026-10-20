@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..99cf11d 100644
+index d97686d..7e97f28 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,128 @@ backgrounditem .close-button {
+@@ -203,3 +203,133 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -77,7 +77,7 @@ index d97686d..99cf11d 100644
 +}
 +
 +dock-window.taskbar .taskbar-row button.taskbar-start {
-+    padding: 6px 8px;
++    padding: 10px 14px;
 +    -gtk-icon-size: 24px;
 +}
 +
@@ -95,8 +95,8 @@ index d97686d..99cf11d 100644
 +}
 +
 +dock-window.taskbar .taskbar-logo-pane {
-+    min-width: 9px;
-+    min-height: 9px;
++    min-width: 18px;
++    min-height: 18px;
 +    background: #0078d4;
 +    border-radius: 1px;
 +}
@@ -130,6 +130,11 @@ index d97686d..99cf11d 100644
 +dock-window.taskbar .taskbar-weather-desc {
 +    font-size: 1.1em;
 +    opacity: 0.75;
++}
++
++.taskbar-power-item {
++    padding: 6px 12px;
++    min-width: 180px;
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
@@ -516,10 +521,10 @@ index 652c549..d639ac2 100644
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..2acbc7f
+index 0000000..24df7dc
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,361 @@
+@@ -0,0 +1,442 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -563,8 +568,8 @@ index 0000000..2acbc7f
 +
 +        // Four-pane start glyph drawn with CSS so no icon theme is needed.
 +        var logo = new Gtk.Grid () {
-+            row_spacing = 2,
-+            column_spacing = 2,
++            row_spacing = 4,
++            column_spacing = 4,
 +            valign = CENTER,
 +            halign = CENTER
 +        };
@@ -583,6 +588,17 @@ index 0000000..2acbc7f
 +        start_button.add_css_class ("taskbar-start");
 +        start_button.update_property (Gtk.AccessibleProperty.LABEL, _("Start"), -1);
 +        start_button.clicked.connect (open_launcher);
++
++        // Right-click (like Windows' Win+X menu) or long-press: session and power actions.
++        var power_menu = build_power_menu ();
++        power_menu.set_parent (start_button);
++        var secondary = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
++        secondary.pressed.connect (() => power_menu.popup ());
++        start_button.add_controller (secondary);
++        var long_press = new Gtk.GestureLongPress ();
++        long_press.pressed.connect (() => power_menu.popup ());
++        start_button.add_controller (long_press);
++        start_button.tooltip_text = _("Start (right-click for power options)");
 +
 +        var search_content = new Gtk.Box (HORIZONTAL, 8);
 +        search_content.append (new Gtk.Image.from_icon_name ("system-search-symbolic"));
@@ -717,6 +733,76 @@ index 0000000..2acbc7f
 +            Source.remove (clock_timeout_id);
 +        }
 +        center_layout.unparent ();
++    }
++
++    private Gtk.Popover build_power_menu () {
++        var box = new Gtk.Box (VERTICAL, 2) {
++            margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6
++        };
++        var popover = new Gtk.Popover () {
++            child = box,
++            has_arrow = false,
++            position = TOP
++        };
++        popover.add_css_class ("menu");
++        string[,] items = {
++            { "system-lock-screen-symbolic", _("Lock"), "lock" },
++            { "system-log-out-symbolic", _("Log Out…"), "logout" },
++            { "system-reboot-symbolic", _("Restart…"), "reboot" },
++            { "system-shutdown-symbolic", _("Shut Down…"), "shutdown" },
++            { "preferences-system-symbolic", _("System Settings"), "settings" }
++        };
++        for (int i = 0; i < items.length[0]; i++) {
++            var row = new Gtk.Box (HORIZONTAL, 12);
++            row.append (new Gtk.Image.from_icon_name (items[i, 0]));
++            row.append (new Gtk.Label (items[i, 1]) { xalign = 0, hexpand = true });
++            var button = new Gtk.Button () { child = row };
++            button.add_css_class ("flat");
++            button.add_css_class ("taskbar-power-item");
++            var action = items[i, 2];
++            button.clicked.connect (() => {
++                popover.popdown ();
++                run_session_action.begin (action);
++            });
++            box.append (button);
++        }
++        return popover;
++    }
++
++    // Log out, restart and shut down go through the session manager, which shows
++    // elementary's own confirmation dialog, so a misclick never ends the session.
++    private static async void run_session_action (string action) {
++        if (action == "lock") {
++            spawn ({ "loginctl", "lock-session" });
++            return;
++        }
++        if (action == "settings") {
++            spawn ({ "io.elementary.settings" });
++            return;
++        }
++        string method;
++        Variant? parameters = null;
++        switch (action) {
++        case "logout":
++            method = "Logout";
++            parameters = new Variant ("(u)", 0);
++            break;
++        case "reboot":
++            method = "Reboot";
++            break;
++        default:
++            method = "Shutdown";
++            break;
++        }
++        try {
++            var bus = yield Bus.get (SESSION);
++            yield bus.call (
++                "org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
++                method, parameters, null, DBusCallFlags.NONE, -1
++            );
++        } catch (Error e) {
++            warning ("Taskbar %s failed: %s", action, e.message);
++        }
 +    }
 +
 +    private static void open_launcher () {
