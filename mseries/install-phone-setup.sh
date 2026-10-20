@@ -2,7 +2,7 @@
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 command -v blueferry >/dev/null || { echo 'Install BlueFerry backend and GTK client first.' >&2; exit 1; }
-python3 -c 'import gi, dbus; gi.require_version("Gtk", "4.0"); gi.require_version("Granite", "7.0")'
+python3 -c 'import gi, dbus; gi.require_version("Gtk", "4.0"); gi.require_version("Granite", "7.0"); gi.require_version("GdkPixbuf", "2.0")'
 python3 "$here/phone-setup/test_setup.py"
 python3 "$here/phone-setup/test_protocol.py"
 python3 "$here/phone-setup/test_connection.py"

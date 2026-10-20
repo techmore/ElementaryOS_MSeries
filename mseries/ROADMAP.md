@@ -28,7 +28,8 @@ retry states, responsive navigation, theme following and original app icon.
 Backend transport, encrypted history and group routing stay upstream. Setup
 hands off to this native client; advanced group setup remains in BlueFerry.
 
-Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect,
+Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect
+and logind resume,
 on manual refresh and after five minutes between successful reads, using wall
 time so suspend counts. Snapshot merges preserve known group routes and dedupe
 MAP handles. Inbox-only snapshots stay in memory; no plaintext archive is added.
@@ -40,7 +41,7 @@ rollback: `phone-setup/README.md`.
 Contact-photo caching was explicitly requested and enabled; a real PBAP sync
 returned 727 contacts and 34 photos while MAP stayed connected.
 
-Verification: 26 setup/protocol/reconnect/model tests and 7 private-display GTK
+Verification: 26 setup/protocol/reconnect/model tests and 9 private-display GTK
 checks; light/dark/narrow synthetic screenshots reviewed. Draft routing across
 conversation switches, duplicate-send prevention, failed-send retry retention,
 group identity tokens, malicious addresses, search, offline state and narrow
