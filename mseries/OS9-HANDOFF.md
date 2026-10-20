@@ -1,6 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
 
+## Windows Work Mode work-network trigger — 2026-10-20 (Claude)
+
+Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work Mode:
+- New rule *Only on work networks*: GSettings `network-trigger`, `work-public-ips` (IPs/CIDR),
+  `public-ip-service` (default `https://api.ipify.org`). All enabled rules must pass (schedule AND network).
+  Lookup happens only when the other rules pass; cached 15 min per default-route fingerprint, 30 min grace on
+  failure. `--public-ip` does a fresh lookup; `--status` never queries.
+- Panel: Work Network group (switch, validated IP/CIDR entry with Apply, Check/Add current address),
+  live Current state row, HH:MM-validated time entries with Apply (previously every keystroke was written
+  and ticked), schedule/network rows insensitive while their rule is off.
+- Review fixes: the panel ran `mseries-work-mode --tick` through PATH, which may not include `~/.local/bin`
+  for Switchboard; it now starts `mseries-work-mode.service` (serialized by systemd, debounced). Ticks take a
+  state lock. Wallpaper sets `picture-options` to `zoom` (original restored). A missing dock schema no
+  longer aborts the helper (`Gio.Settings.new` aborts; schema is looked up first).
+- Tests: `mseries/work-mode/test_work_mode.py` (keyfile GSettings, local fake IP service,
+  `MSERIES_WORK_MODE_NO_SERVICES=1`) — 5 pass locally; added to `validate-mseries.yml`.
+- Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
+
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
 
 Owner asked to restore a dock for minimized apps. State found: the fixed
