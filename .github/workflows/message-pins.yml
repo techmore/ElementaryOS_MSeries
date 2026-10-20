@@ -1,0 +1,28 @@
+name: Apple Messages pin reader
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - mseries/phone-setup/macos-visit/Export-Message-Pins.*
+      - .github/workflows/message-pins.yml
+jobs:
+  macos-reader:
+    name: Read-only IMCore adapter (macOS)
+    runs-on: macos-26
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Exercise Objective-C return signatures and ordered configuration
+        run: |
+          bash -n mseries/phone-setup/macos-visit/Export-Message-Pins.command
+          osascript -l JavaScript mseries/phone-setup/macos-visit/Export-Message-Pins.js --self-test
+      - name: Probe private interface without an Apple account
+        run: |
+          osascript -l JavaScript mseries/phone-setup/macos-visit/Export-Message-Pins.js --probe > "$RUNNER_TEMP/pin-reader-probe.json"
+          python3 - "$RUNNER_TEMP/pin-reader-probe.json" <<'PY'
+          import json, sys
+          result = json.load(open(sys.argv[1]))
+          assert result['status'] in ('ready', 'unavailable')
+          assert result['content_printed'] is False
+          print(result)
+          PY
