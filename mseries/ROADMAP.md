@@ -1,5 +1,39 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Gesture package staged for next login — 2026-10-20 (Codex)
+
+PR #326 CI passed before the latest cursor integration. Merged `dev` through
+`6073858` into the feature branch, keeping the themed cursor and all three
+settings watchers. Its 33 all-feature tests pass. The first release package
+(PR-only source `806cde7`) was deliberately not installed: another task had
+staged compositor `432fe4b` with unmerged Windows Work Mode/top-panel/taskbar
+clearance changes. A separate `codex/gesture-deployment` branch combines those
+exact installed compositor changes with gestures at `314652f`; PR #326 does not
+absorb the unrelated Work Mode feature. Combined build passes 38 all-feature
+tests, warnings-denied all-feature Clippy, release packaging and the isolated
+GTK Cairo gesture pixel/state smoke. The packaging helper now honors
+`CARGO_TARGET_DIR` for shared worktree builds.
+
+Installed `0.1.0+git432fe4b+gestures.20261020` with `sudo -n dpkg -i`, followed
+only by `systemctl --user daemon-reload`. Production binary excludes the
+`gesture-probe` socket and retains the Work Mode D-Bus panel interface. Strict
+schema validation, all shared-library resolution, installed payload SHA-256,
+`gsettings get org.techmore.mseries.gestures four-finger-pinch-in` (`'launcher'`),
+and the installer's read-only `--verify` pass. Compositor PID 1944 and Wingpanel
+PID 2135/start times and the running compositor executable hash are unchanged:
+**installed but not loaded**. No compositor restart or logout was requested.
+The dock PID changed 153271 → 160644 at 10:38:17 during concurrent work; this
+task issued no dock restart and the unit contents did not change. Dock is
+active; attribution of that separate restart is unverified, so an unchanged
+whole-session claim is not made.
+
+Package, exact prior-binary rollback .deb, deployment JSON and smoke receipts
+are retained in `~/Documents/Codex/gesture-animation-package-20261020/`.
+See `mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md` for source
+revisions, hashes, rollback command and limits. Next: owner logs out/in normally
+when ready; then qualify physical workspace/overview gestures, tap/natural
+scroll preferences, native pacing, multiple monitors and mixed XWayland windows.
+
 ## Finger-following workspace and overview gestures — 2026-10-20 (Codex)
 
 Continued PR #326 from `codex/gesture-animation` and merged latest `dev`
