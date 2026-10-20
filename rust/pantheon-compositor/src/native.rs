@@ -717,8 +717,10 @@ impl NativeKmsDevice {
                 FrameFlags::DEFAULT,
             )?;
             if frame.is_empty {
+                crate::redraw_stats::frame_empty();
                 continue;
             }
+            crate::redraw_stats::frame_queued();
             output.drm_output.queue_frame(())?;
             output.frame_pending = true;
             rendered += 1;
@@ -1449,6 +1451,7 @@ impl NativeBackend {
             .handle()
             .insert_source(drm_notifier, |event, _, state| match event {
                 smithay::backend::drm::DrmEvent::VBlank(crtc) => {
+                    crate::redraw_stats::vblank();
                     let Some(backend) = state.native_backend.as_mut() else {
                         return;
                     };

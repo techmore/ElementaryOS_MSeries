@@ -14,6 +14,7 @@ pub mod native;
 mod overview;
 mod pantheon_shell;
 mod protocols;
+mod redraw_stats;
 mod shell_compat;
 mod state;
 mod tiling;

@@ -282,6 +282,16 @@ impl PantheonCompositor {
             },
         )?;
 
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_secs(30)),
+            |_, _, _| {
+                if let Some(line) = crate::redraw_stats::report() {
+                    tracing::info!("{line}");
+                }
+                TimeoutAction::ToDuration(Duration::from_secs(30))
+            },
+        )?;
+
         // Notify clients that we have a pointer (mouse)
         // Here we assume that there is always pointer plugged in
         seat.add_pointer();
@@ -405,6 +415,7 @@ impl PantheonCompositor {
     }
 
     pub fn request_native_redraw(&self) {
+        crate::redraw_stats::request();
         self.request_winit_redraw();
         #[cfg(feature = "native-drm")]
         if let Some(sender) = &self.native_redraw_sender {

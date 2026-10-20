@@ -1,4 +1,5 @@
 use crate::{PantheonCompositor, grabs::resize_grab, pantheon_shell, state::ClientState};
+use smithay::reexports::wayland_server::Resource as _;
 use smithay::{
     backend::renderer::utils::on_commit_buffer_handler,
     reexports::wayland_server::{
@@ -34,6 +35,12 @@ impl CompositorHandler for PantheonCompositor {
     }
 
     fn commit(&mut self, surface: &WlSurface) {
+        crate::redraw_stats::commit(
+            surface
+                .client()
+                .and_then(|client| client.get_credentials(&self.display_handle).ok())
+                .map(|credentials| credentials.pid as u32),
+        );
         if self.is_panel_surface(surface) {
             let has_buffer = with_states(surface, |states| {
                 let mut attributes = states.cached_state.get::<SurfaceAttributes>();
