@@ -1,3 +1,9 @@
+## Running markers: small lighter adjustment — 2026-10-20
+
+Owner requested a touch lighter: final marker color is #606060 in both modes,
+replacing #555555. Focused blue is unchanged. Native resource rebuild and diff
+check passed; privately installed and taskbar service reloaded and active.
+
 ## Running-marker final lighter adjustment — 2026-10-20
 
 Owner requested a little lighter again: running markers now use #555555 in
