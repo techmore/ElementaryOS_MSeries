@@ -13,7 +13,7 @@ dock=72 logical pixels, with declared fallback insets. A live popup measured
 360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
 from the right. No compositor or Wingpanel restart was required.
 
-The native taskbar bell is beside the clock. The bell now uses a 38-pixel
+The native taskbar bell is beside the clock. The bell now uses a 34-pixel
 icon and 2-pixel theme-derived border. The unread badge uses a soft neutral tint
 and subtle outline instead of a bright accent. History uses native typography, app/time
 metadata, bounded previews and compact Open/Reply actions; context controls use
