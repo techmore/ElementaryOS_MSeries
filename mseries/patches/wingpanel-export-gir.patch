@@ -1,0 +1,27 @@
+diff --git a/lib/meson.build b/lib/meson.build
+index 9580b25..2f1e45c 100644
+--- a/lib/meson.build
++++ b/lib/meson.build
+@@ -29,9 +29,21 @@ libwingpanel_lib = library(
+     config_header,
+     dependencies: [libwingpanel_deps, config_vapi],
+     vala_header: 'wingpanel-9.h',
++    vala_gir: 'Wingpanel-9.gir',
+     version: meson.project_version(),
+     install: true,
+-    install_dir: [true, join_paths(get_option('includedir'), 'wingpanel-9'), true]
++    install_dir: [true, join_paths(get_option('includedir'), 'wingpanel-9'), true, join_paths(get_option('datadir'), 'gir-1.0')]
++)
++
++# Typelib so non-Vala languages (Rust via gtk-rs gir, Python, JS) can use the indicator API.
++g_ir_compiler = find_program('g-ir-compiler')
++custom_target(
++    'wingpanel-typelib',
++    command: [g_ir_compiler, '--shared-library', libwingpanel_lib.full_path(), '--output', '@OUTPUT@', join_paths(meson.current_build_dir(), 'Wingpanel-9.gir')],
++    output: 'Wingpanel-9.typelib',
++    depends: libwingpanel_lib,
++    install: true,
++    install_dir: join_paths(get_option('libdir'), 'girepository-1.0')
+ )
+ 
+ pkg.generate(

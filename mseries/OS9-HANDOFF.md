@@ -351,6 +351,129 @@ Details → Checkouts drops the repository-name prefix from worktree folders
 the dashboard labels its two groups "Pinned" and "Recently updated". Verified by
 headless renders (real snapshot, light; fixture with a pin, dark) only.
 
+## Matched-pair reducer for share cost — 2026-10-19
+
+Added `mseries/share-cost/compare-share-cost.py` (+ seven tests): it groups
+captures by expected viewer count, refuses a set whose recorded workload,
+display mode, duration, interval or browser differ, refuses a capture whose
+observed viewer count or AC state disagrees with its header, and applies the
+README rule — a difference counts only when it exceeds the larger
+within-condition spread, with at least two captures per condition. The
+summarizer now also reduces the SMC `system_power_w` column, which the README
+already told readers to use. CI compiles and runs both share-cost test files.
+
+The matched pair itself is still pending the owner's live share and real
+viewers. No performance claim has been made.
+
+## Screen-share media path: owner decision — 2026-10-19
+
+Recorded the owner's media-path decision for the share-cost work. Media stays
+**peer-to-peer**: the Rust-SFU, server-side-capture and stock-SFU options are
+rejected for this MVP, and no screen-share media plane is to be built in
+`rupert-share`, TM-Remote, or anywhere else. The work stays in this repository
+(`ElementaryOS_MSeries`); the existing demo server is a dependency used to
+produce the baseline, not a home for streaming work.
+
+- `mseries/share-cost/MEDIA-PATH-OPTIONS.md` now opens with that decision,
+  marks options B/C/D rejected, and narrows the gates to the matched-pair
+  baseline. Option A (TURN deployment plus the tailnet link label in
+  `mseries/share-eyes-wingpanel`) is the only candidate; the baseline decides
+  only whether the viewer cap can be raised.
+- The matched pair has not produced a result yet. It requires AC power, one
+  fixed fullscreen content, and real 1 vs 3 admitted viewers; the earlier
+  attempt found the host on battery and no live share. The collector and
+  reducer are unchanged and their tests pass.
+
+## Screen-share cost baseline harness — 2026-10-19
+
+Added `mseries/share-cost/`: a read-only collector and reducer that measure what
+a live screen share costs this desktop, so the resource question has a baseline
+before anyone changes the media path. The share stack today is Rust on the
+server side (`rupert-share/core`, `src/share.rs`) with peer-to-peer WebRTC from
+the owner's browser — each viewer is a separate encode chain in that browser —
+and its own test record lists owner-browser CPU while sharing as never measured.
+This closes that gap on the desktop side.
+
+- `collect-share-cost.sh <duration> <workload> <viewers> [interval]` samples the
+  owner browser, share server, panel, compositor and PipeWire capture path from
+  `/proc`, the SMC `power1_input` rail (node `macsmc_hwmon`, whole-system watts
+  on AC), battery state, and the launcher's `state.json` viewer count. It never
+  starts, stops or touches a share, the portal or PipeWire; `--require-live`
+  fails unless the launcher reports a live share. Same CSV shape as
+  `pantheon-rust-compositor/collect-session-metrics.sh` plus `role`, power and
+  share-state columns.
+- `summarize-share-cost.py` (+ test) reduces a capture per role — processes are
+  summed per sample, because that is the cost the desktop feels — and also reads
+  the session captures (no `role` column → per-process grouping).
+- `README.md` records the protocol: matched pairs with only the viewer count
+  changed, ≥60 s arms, alternating 1 → 3 → 1 → 3, conditions recorded, AC for
+  CPU comparisons (the battery frequency cap skews them), and the viewer side
+  explicitly out of scope.
+
+Verified locally: `bash -n` and `shellcheck -S warning` clean, five reducer
+tests pass, and a 15-second smoke capture on the live desktop (no share running)
+reported the expected roles — browser 2.6 % of one core, gala 22.8 %, Wingpanel
+1.2 %, PipeWire ~0 % — with whole-system power 15–16 W on battery. Two collector
+bugs were found and fixed by that smoke run: the SMC total-power rail is on the
+node named `macsmc_hwmon` (`macsmc_battery` reports battery flow, which first
+produced a negative "system power"), and the elementary clients are matched on
+their full path because `comm` is truncated at 15 characters
+(`io.elementary.w`).
+
+No share was started, no viewer connected, and no media path was changed. The
+next step is the owner-run matched pair (1 vs 3 viewers) whenever a share is
+convenient; until then there is no measured cost for the share path either way.
+
+### Verify the collector against a real share — 2026-10-19
+
+Added `mseries/share-cost/probe-live-share.sh <rupert-share/core>`: it starts a
+throwaway **loopback-only** share server in a private `HOME` and
+`XDG_RUNTIME_DIR` (the live eyes panel sees nothing), marks the share live
+through the owner API, joins one viewer with a link token, then runs the
+collector for 15 seconds and reduces it. The probe proves the collector's
+share-state path end to end: `--require-live` passes, every row carries
+`share_live=True, share_viewers=1`, and the server role matches the `rupert-core`
+binary.
+
+The first probe run caught a real collector bug: the server role had been
+matched on any path under `rupert-share/core`, which also caught the launcher
+shell and state poller (two `bash` rows appeared as "server"). It now matches
+the binary (`rupert-core` as comm or as a path token). After the fix the roles
+are clean: browser ~2.4 % of one core (an idle Brave — no capture runs in the
+probe, so this is not sharing cost), gala ~23 %, Wingpanel ~0.7 %, PipeWire
+~0.1 %, `rupert-core` ~0.0 % at ~27 MiB RSS.
+
+The probe is not in CI (it needs the share checkout and a loopback port); it is
+a manual verification like the other share probes.
+
+## Screen-share media path: options and decision gates — 2026-10-19
+
+Added `mseries/share-cost/MEDIA-PATH-OPTIONS.md`: the go/no-go frame for the
+question of whether the share media path should change, and whether Rust helps.
+It records the current architecture (browser `getDisplayMedia` → portal/PipeWire
+→ one P2P WebRTC connection per viewer; the Rust `rupert-core` server relays
+signaling only, no frames), the three-yeses consent model that must not
+regress, and four options:
+
+- **A — keep P2P, add TURN, surface the tailnet link, raise caps.** Configuration
+  and a small panel change; fixes reachability, not per-viewer cost.
+- **B — Rust SFU with browser simulcast uplink** (`str0m`, or `webrtc-rs`;
+  `oxpulse-sfu-kit` as young glue). One uplink, N forwarded downlinks, recording
+  becomes an egress tap, no new encode cost on the M1 Pro — but media now
+  transits the server, which changes the documented threat model, and admission
+  must gate media as it gates signaling today.
+- **C — server-side capture + software encode** (no hardware encoder on Asahi;
+  consent surface moves from the browser picker to a portal daemon).
+- **D — run a stock SFU** (self-hosted LiveKit) and keep our link/admission
+  layer.
+
+Decision gates: the matched-pair baseline from `collect-share-cost.sh`, AC
+watts, the owner's call on media-on-server, whether recording is actually
+required (TM-Remote's `feat/webrtc` scope), and which project is the home
+(`rupert-share` per the tracked issue; not the retail core). No option is
+justified until the baseline exists — this document deliberately recommends
+nothing on its own.
+
 ## Branch model: `main` stable, `dev` integration — 2026-10-18
 
 `main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
@@ -6629,3 +6752,22 @@ build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
 Switching to the package means `install-calendar-agenda.sh --uninstall`, then
 installing the .deb. Apt publishing still waits on the signing key (#52).
 
+## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
+
+The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
+surface when a popup closes (symbolized with Ubuntu dbgsym). Upstream fix `c18af474` is not in Ubuntu 50.1-0ubuntu2.4.
+New `mseries/install-gala-mutter-fix.sh` rebuilds Ubuntu's exact mutter with that one patch and installs only
+`libmutter-18.so.0` beside the patched Gala; the launcher uses it only while the system mutter version matches.
+Installed on the owner's machine; `mseries/test-gala-mutter-fix.sh` passes headless. The crash was not reproduced; the
+next Pantheon session is the real test. After an Ubuntu mutter update, re-run the installer (the launcher logs and skips
+a stale build). Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## Rust bindings to Pantheon libraries — 2026-10-18 (Claude)
+
+Strategy: keep Gala, Wingpanel, Dock and Granite upstream Vala; write new code in Rust against them via GIR;
+rewrite only with evidence (the compositor, on Codex's `codex/rust-mutter-pantheon`). New `rust/granite-smoke`
+uses crates.io `granite-rs 3.3.0` with system Granite 7.8.1 and GTK 4.22: PASS under Xvfb. Needed workaround:
+gtk4 feature `v4_20` (granite-rs does not enable `v4_10`, so `gtk::Accessible` is missing). New
+`mseries/patches/wingpanel-export-gir.patch` makes Wingpanel export `Wingpanel-9.gir` + typelib; built and loaded in
+a sandbox, not installed. All upstream pins and update steps: `mseries/RUST-UPSTREAM-MAINTENANCE.md`. Next:
+an opt-in Rust login session entry once the compositor has DRM/KMS, input and lock screen.
