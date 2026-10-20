@@ -15,6 +15,11 @@
   <provides><binary>machine-lab</binary></provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.0" date="2026-10-19">
+      <description>
+        <p>Clipboard sharing with guests over the QEMU D-Bus display (text, guest to host verified).</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-10-19">
       <description>
         <p>Display tab with full screen, in-app mouse and keyboard, a macOS experiment page, masked credentials, a non-blocking status poll and a test suite.</p>

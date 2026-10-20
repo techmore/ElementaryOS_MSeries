@@ -26,7 +26,16 @@ ninja qemu-system-aarch64
 | blank aux/root pflash, before item 4 | `unknown type 'apple-gfx-mmio'` |
 | after item 4, `-accel kvm`, dummy firmware | `apple-gfx-mmio is not available` warning, then **`error: kvm run failed Invalid argument` at `PC=0000000000100000`** with all registers zero: KVM refuses the very first `KVM_RUN` |
 | same, `-accel tcg -cpu max` | runs silently (executes the zero-filled "firmware"), no output |
+| **`-accel kvm -cpu host,pmu=off`** | **the vCPU runs** (no KVM error; still alive after 15 s), silently executing the zero-filled "firmware" |
 
 The real firmware (`AVPBooter.vmapple2.bin`) and a macOS 12 VM's aux/root images were not used (they come from a Mac and Apple's servers),
-so this shows how far the **machine model** gets, not a macOS boot. Open questions: why KVM returns EINVAL on the first run (likely vCPU or
-GIC setup that `vmapple` expects HVF to provide), and what to do about graphics (none on Linux).
+so this shows how far the **machine model** gets, not a macOS boot. 
+## Why KVM said `Invalid argument` (found)
+
+`strace -e ioctl` against the working `virt` machine shows three extra `KVM_SET_DEVICE_ATTR` calls on the vCPU fd that `vmapple` never makes:
+`virt` sets the PMU interrupt and initialises the PMU (`kvm_arm_pmu_set_irq`, `kvm_arm_pmu_init`), and `-cpu host` enables the PMU
+feature by default. With the PMU feature on and no PMU interrupt configured, the first `KVM_RUN` fails with `EINVAL`. Turning the
+feature off fixes it without touching the code: **`-cpu host,pmu=off`** (a code fix would set the PMU IRQ as `virt.c` does).
+
+Remaining open questions: whether a real AVPBooter and macOS 12 images get further under KVM (Apple cores instead of HVF), and what
+to do about graphics (none on Linux).

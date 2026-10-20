@@ -6,8 +6,8 @@ Tracked as GitHub issues in `techmore/ElementaryOS_MSeries`. Status as of 2026-1
 | --- | --- | --- |
 | Display tab (frames, mouse, keyboard) | merged (#258, #259) | done; Wayland keyboard path unverified |
 | Full screen with clear exit controls | this PR | done: F11, Ctrl+Alt+F (works while the keyboard is captured), floating Exit Full Screen / Release Keyboard bar |
-| Bidirectional clipboard (text) | [#263](https://github.com/techmore/ElementaryOS_MSeries/issues/263) | not started: vdagent channel + guest agent |
-| Object copy/paste, drag-and-drop, file transfer | [#264](https://github.com/techmore/ElementaryOS_MSeries/issues/264) | not started: needs #263 |
+| Bidirectional clipboard (text) | [#263](https://github.com/techmore/ElementaryOS_MSeries/issues/263) | guest to host works (verified); host to guest not working yet, see `experiments/clipboard/README.md` |
+| Object copy/paste, drag-and-drop, file transfer | [#264](https://github.com/techmore/ElementaryOS_MSeries/issues/264) | blocked upstream: QEMU's D-Bus clipboard only carries text; needs a file-transfer channel or shared folder |
 | Windows: virtio-win drivers, unattended install | [#265](https://github.com/techmore/ElementaryOS_MSeries/issues/265) | manual procedure documented; network driver investigated |
 | Display: resize to window, cursor, audio, faster stream, WebRTC | [#266](https://github.com/techmore/ElementaryOS_MSeries/issues/266) | not started |
 | macOS (experimental) | [#267](https://github.com/techmore/ElementaryOS_MSeries/issues/267) | attempt page done and shows how it fails; emulation route not attempted |
@@ -60,3 +60,6 @@ serial, ssh or screen sharing). Unknowns: whether the guest tolerates running on
 Update: with the GPU device skipped (`experiments/vmapple/linux-vmapple.patch`), the machine initialises and KVM then fails on the
 first run: `error: kvm run failed Invalid argument` at `PC=0x100000`. TCG runs silently on dummy firmware. See
 `experiments/vmapple/README.md` for the table and how to reproduce.
+
+Update 2: the KVM `Invalid argument` is the PMU: `-cpu host` turns it on and `vmapple` never sets the PMU interrupt. With
+`-cpu host,pmu=off` the vCPU runs under KVM (silently, on dummy firmware). First real blocker left: Apple's firmware and macOS images.

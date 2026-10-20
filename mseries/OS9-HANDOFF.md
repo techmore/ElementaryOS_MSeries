@@ -1,5 +1,45 @@
 # OS 9 implementation / Claude Code handoff
 
+## Homeboard Tasks sync: production hardening — 2026-10-19
+
+Branch `claude/homeboard-production` (from `dev`).
+
+Bridge (`techmore/homeboard`): [#9](https://github.com/techmore/homeboard/pull/9)
+merged as `eae570c`, [#10](https://github.com/techmore/homeboard/pull/10) merged as
+`5a7feb9` (the installer pin).
+A locked keyring now times out after 20 s with a clear status (it could stall every
+sync before); routine syncs back off 2/4/8 … max 15 min after failures; malformed
+remote text is emptied/trimmed instead of failing every sync; the first sync after a
+new Homeboard list is created waits for the calendar factory to see it (this was the
+unexplained 1-in-20 test error from the first round, now reproduced and fixed: 5/5
+clean runs after). The session restarts the bridge if it exits, D-Bus activation
+starts it on demand, `install.sh` records `VERSION`, replaces a running bridge of
+another revision (`app.quit`, with a fallback for bridges without it) and supports
+`--uninstall`. Journal logs carry counts and failures only. New Homeboard CI
+(`elementary-bridge.yml`): unit tests, server guard, EDS round trip, installer
+lifecycle — passing on GitHub's runner. #10 fixes two gaps found during the live
+upgrade: installer-started bridges logged to /dev/null, and an old `sync.lock` stayed
+0664.
+
+Calendar (`mseries/patches/datetime-agenda-tabs.patch`): the Homeboard strip uses
+D-Bus activation (the direct launch remains for older bridges), icon buttons have
+accessible names, `HomeboardStatus.vala` is in `po/POTFILES`. New CI job
+**Calendar Events/Tasks/Homeboard agenda** builds the pinned indicator with the patch
+on arm64 Ubuntu and runs all 27 groups (`mseries/calendar/ci-test-agenda.sh`; 27/27
+locally, 27/27 on GitHub's runner). The runner needs Ubuntu's Granite, AccountsService
+and elementary's `io.elementary.pantheon.AccountsService.xml` (pinned
+`elementary/default-settings` `915d1a0`, identical to this desktop's copy): the clock
+reads its `TimeFormat`, and the fixture treats any GTK critical as fatal.
+
+`mseries/install-homeboard-sync.sh` is now a pinned wrapper around the bridge's own
+installer (start, upgrade, `--uninstall`). Run live: the running bridge was replaced
+by `eae570c` (new PID, `quit` action, D-Bus service file, AutoRestart present), then
+upgraded to `5a7feb9`.
+
+Not verified: a live round trip with the server — the owner is still signed out.
+Next: owner signs in from the Tasks tab, then check both directions.
+
+
 ## Pointer stuck at the top edge: Gala panel barrier patch — 2026-10-19 (Claude Code)
 
 Owner reported the mouse sometimes sticks at the top of the screen until slid sideways to the edge. Cause
@@ -6539,3 +6579,53 @@ a real Wayland session.
 macOS: see `mseries/machine-lab/ROADMAP.md`, "QEMU vmapple on this Linux Mac". The `vmapple` machine can be built on Linux
 with small patches and then stops at the macOS-only `apple-gfx-mmio` device; a real boot needs Apple's firmware and a macOS 12 VM
 image, which were not downloaded.
+
+## Bible tab: production readiness — 2026-10-19 (branch claude/bible-tab-production)
+
+Findings: the patched calendar plugin had no protection against elementary's
+daily `io.elementary.panel.datetime` upgrades (the manual installer replaces
+the file, so an upgrade silently drops agenda/Tasks/Bible). Its 23-group suite
+ran only by hand. The icon-only arrow buttons had no accessible names. The
+greeter is not a concern: get_indicator returns null outside SESSION.
+
+Changes:
+- mseries/debs/build.sh: third pilot package `mseries-wingpanel-datetime` (pin
+  read from panel-factory-pins.json; ships /usr/bin/mseries-calendar-accounts;
+  Recommends EDS, GOA-gtk, Tasks). Per-package `<deb>_files` and
+  `<deb>_recommends` hooks. Recommends appears only when set; package dirs 0755.
+- mseries-debs.yml: datetime build deps (libecal/edataserver/ical/json-glib),
+  check-bundled-data.py, test-agenda.sh on the extracted package; PR paths
+  include the patch, mseries/calendar and the pins.
+- mseries/calendar/check-bundled-data.py: offline patch-vs-source data check
+  (verified to fail on a one-word edit).
+- Patch: accessible LABEL on previous/next (mode-specific).
+Verified locally: all three packages build, control files parse, SHA256SUMS
+check; the datetime package has the expected contents, Depends and diversion.
+Not done: apt publishing (key custody), installing the package on the owner's
+desktop (it would divert a file the manual installer already replaced, so
+switching needs `install-calendar-agenda.sh --uninstall` first), and live-panel
+checks.
+
+### Bible tab production readiness: merged — 2026-10-19 (PR #277 -> dev ca2cc6b)
+
+Running the suite on a clean CI runner found an upstream bug we ship:
+TimeManager.vala tested `"12h" in time_format` on the user's AccountsService
+record without a null check. An account the greeter never stored a TimeFormat
+for (a new or externally created user, a CI runner) raised a string_contains
+critical and never set the clock format. Our patch now falls back to the
+org.gnome.desktop.interface clock-format setting in that case (fb119d7).
+
+CI lessons for the packages job: a private-EDS GTK test also needs
+AccountsService on the system bus, plus elementary's
+io.elementary.pantheon.AccountsService interface. elementary-default-settings
+itself can't install on the Ubuntu runner (it needs flatpak >= 1.17), so the job
+extracts just that XML from the daily .deb.
+
+Verified: packages job green (build, bundled-data check, 27/27 test groups on
+the library extracted from the .deb, metadata, upload); all validation jobs green
+(including the separate Calendar Events/Tasks/Homeboard job); 27/27 locally.
+Owner's desktop not changed: the running panel is still the manual-install
+build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
+Switching to the package means `install-calendar-agenda.sh --uninstall`, then
+installing the .deb. Apt publishing still waits on the signing key (#52).
+

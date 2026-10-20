@@ -442,8 +442,19 @@ cmd_start() {
           -qmp "unix:$dir/qmp.sock,server=on,wait=off"
           -qmp "unix:$dir/qmp-view.sock,server=on,wait=off"
           -msg timestamp=on)
+    if [[ ${CLIPBOARD:-off} == on ]]; then
+        # Clipboard sharing: SPICE agent channel plus QEMU's D-Bus display (Machine Lab connects to it).
+        cmd+=(-chardev "qemu-vdagent,id=vdagent,clipboard=on,mouse=off"
+              -device virtio-serial-pci
+              -device "virtserialport,chardev=vdagent,name=com.redhat.spice.0")
+    fi
     if (( headless )); then
-        cmd+=(-display none)
+        if [[ ${CLIPBOARD:-off} == on ]]; then
+            # shellcheck disable=SC2054
+            cmd+=(-display dbus,p2p=on)
+        else
+            cmd+=(-display none)
+        fi
     elif [[ $GL == on ]]; then
         # shellcheck disable=SC2054
         cmd+=(-display gtk,gl=on)
@@ -627,6 +638,7 @@ cmd_set() {
         TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         GPU) [[ $value == virtio || $value == ramfb ]] || die "GPU must be virtio or ramfb" ;;
+        CLIPBOARD) [[ $value == on || $value == off ]] || die "CLIPBOARD must be on or off" ;;
         EXTRA_BUS) [[ $value == scsi || $value == usb ]] || die "EXTRA_BUS must be scsi or usb" ;;
         CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
         DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;

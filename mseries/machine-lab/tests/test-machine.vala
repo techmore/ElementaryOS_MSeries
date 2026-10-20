@@ -23,6 +23,7 @@ void test_store_round_trip () {
     m.color = 6;
     m.installer = "/tmp/x.iso";
     m.recipe = "omarchy";
+    m.clipboard = true;
     list.add (m);
     var managed = new Machine ();      // managed guests are rediscovered, never saved
     managed.id = "vm-omarchy";
@@ -41,12 +42,13 @@ void test_store_round_trip () {
     assert_cmpint (back[0].color, CompareOperator.EQ, 6);
     assert_cmpstr (back[0].installer, CompareOperator.EQ, "/tmp/x.iso");
     assert_cmpstr (back[0].recipe, CompareOperator.EQ, "omarchy");
+    assert_true (back[0].clipboard);
 }
 
 void test_discovery () {
     var vms = Path.build_filename (tmp_dir, "vms");
     write_file (Path.build_filename (vms, "omarchy", "vm.conf"),
-        "# comment\nGUEST=omarchy\nCPUS=4\nMEMORY_MB=4096\nISO=\nBOOT=disk\n");
+        "# comment\nGUEST=omarchy\nCPUS=4\nMEMORY_MB=4096\nISO=\nBOOT=disk\nCLIPBOARD=on\n");
     write_file (Path.build_filename (vms, "elementary", "vm.conf"),
         "GUEST=elementary\nCPUS=2\nMEMORY_MB=3000\nISO=/x/y/elementaryos.iso\n");
     DirUtils.create_with_parents (Path.build_filename (vms, "downloads"), 0755);   // not a VM
@@ -67,6 +69,7 @@ void test_discovery () {
     assert_cmpstr (omarchy.name, CompareOperator.EQ, "Omarchy");
     assert_cmpint (omarchy.cpus, CompareOperator.EQ, 4);
     assert_cmpint (omarchy.mem_gib, CompareOperator.EQ, 4);
+    assert_true (omarchy.clipboard);
     assert_null (omarchy.installer);
     assert_cmpint (elem.mem_gib, CompareOperator.EQ, 3);              // 3000 MiB rounds to 3 GiB
     assert_cmpstr (elem.installer, CompareOperator.EQ, "/x/y/elementary.iso".replace ("elementary.iso", "elementaryos.iso"));

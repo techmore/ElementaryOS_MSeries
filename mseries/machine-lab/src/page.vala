@@ -54,6 +54,11 @@ public class MachinePage : Gtk.Box {
     private Gtk.Button stop_button;
     private Gtk.Stack stack;
     private Viewer viewer;
+    private ClipboardBridge? bridge = null;
+    private uint bridge_retry = 0;
+    private bool bridge_starting = false;
+    private Gtk.Switch clip_switch;
+    private Gtk.Label clip_note;
     private bool was_running = false;
     private Gtk.Box settings_form;
     private Gtk.Label settings_note;
@@ -114,6 +119,7 @@ public class MachinePage : Gtk.Box {
         stack.notify["visible-child-name"].connect (() => {
             viewer.set_active (stack.visible_child_name == "display");
         });
+        machine.state_changed.connect (sync_bridge);
         machine.state_changed.connect (refresh);
         machine.state_changed.connect (() => {
             // Take the user to the screen as soon as a machine starts.
@@ -172,6 +178,55 @@ public class MachinePage : Gtk.Box {
         } catch (RegexError e) {
             return "••••••••";
         }
+    }
+
+    /* Start or stop the clipboard bridge to match the machine's state and setting. */
+    private void sync_bridge () {
+        bool want = machine.running && machine.clipboard;
+        if (!want) {
+            if (bridge_retry != 0) {
+                Source.remove (bridge_retry);
+                bridge_retry = 0;
+            }
+            if (bridge != null) {
+                bridge.stop ();
+                bridge = null;
+            }
+            return;
+        }
+        if (bridge != null || bridge_retry != 0) {
+            return;
+        }
+        int tries = 0;
+        bridge_retry = Timeout.add_seconds (1, () => {
+            // QEMU's D-Bus display serves one client at a time (each new connection takes
+            // over the exported objects), so never start a second bridge while one is up
+            // or still connecting.
+            if (bridge != null || !machine.running || !machine.clipboard) {
+                bridge_retry = 0;
+                return Source.REMOVE;
+            }
+            if (bridge_starting) {
+                return Source.CONTINUE;
+            }
+            if (tries >= 20) {
+                bridge_retry = 0;
+                toast ("Clipboard sharing needs this machine restarted: it was started without it");
+                return Source.REMOVE;
+            }
+            tries++;
+            var b = new ClipboardBridge (machine);
+            b.status.connect ((m) => toast (m));
+            bridge_starting = true;
+            b.start.begin ((obj, res) => {
+                bridge_starting = false;
+                if (b.start.end (res)) {
+                    bridge = b;
+                    toast ("Clipboard shared with %s".printf (machine.name));
+                }
+            });
+            return Source.CONTINUE;
+        });
     }
 
     public void toggle_fullscreen () {
@@ -632,6 +687,35 @@ public class MachinePage : Gtk.Box {
         settings_form.add_css_class ("ml-card");
         clamp.append (settings_form);
 
+        // Clipboard sharing is its own card: it can be switched for managed guests too.
+        var clip_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        clip_card.add_css_class ("ml-card");
+        var clip_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        clip_row.add_css_class ("ml-form-row");
+        var clip_text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        clip_text.hexpand = true;
+        var clip_title = new Gtk.Label ("Share clipboard");
+        clip_title.xalign = 0;
+        clip_title.add_css_class ("ml-spec-value");
+        clip_note = new Gtk.Label ("Copy and paste text and images between this Mac and the machine. The guest needs the SPICE agent (spice-vdagent); this applies the next time the machine starts.");
+        clip_note.xalign = 0;
+        clip_note.wrap = true;
+        clip_note.add_css_class ("ml-spec-label");
+        clip_text.append (clip_title);
+        clip_text.append (clip_note);
+        clip_row.append (clip_text);
+        clip_switch = new Gtk.Switch ();
+        clip_switch.valign = Gtk.Align.CENTER;
+        clip_switch.notify["active"].connect (() => {
+            if (loading) return;
+            machine.apply_clipboard (clip_switch.active);
+            changed ();
+            if (!clip_switch.active) sync_bridge ();
+        });
+        clip_row.append (clip_switch);
+        clip_card.append (clip_row);
+        clamp.append (clip_card);
+
         int cores = (int) get_num_processors ();
         int host_gib = host_memory_gib ();
 
@@ -883,6 +967,8 @@ public class MachinePage : Gtk.Box {
         }
 
         loading = true;
+        clip_switch.active = machine.clipboard;
+        clip_switch.sensitive = !running;
         if (swatches.length == 8) swatches[machine.color.clamp (0, 7)].active = true;
         if (name_entry.text != machine.name) name_entry.text = machine.name;
         cpu_scale.set_value (machine.cpus);

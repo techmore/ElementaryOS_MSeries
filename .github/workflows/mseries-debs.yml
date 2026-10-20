@@ -19,6 +19,9 @@ on:
     paths:
       - "mseries/debs/**"
       - ".github/workflows/mseries-debs.yml"
+      - "mseries/panel-factory-pins.json"
+      - "mseries/patches/datetime-agenda-tabs.patch"
+      - "mseries/calendar/**"
 
 permissions:
   contents: read
@@ -48,12 +51,35 @@ jobs:
             libpulse-dev libcanberra-dev libgee-0.8-dev \
             libgnome-desktop-4-dev libibus-1.0-dev \
             libpackagekit-glib2-dev libportal-dev libaccountsservice-dev libwayland-dev \
-            io.elementary.panel.network io.elementary.quick-settings
+            libecal2.0-dev libedataserver1.2-dev libical-dev libjson-glib-dev \
+            io.elementary.panel.network io.elementary.quick-settings io.elementary.panel.datetime
 
       - name: Build pilot plugin packages
         run: |
           chmod +x mseries/debs/build.sh
           OUTDIR=out/mseries-debs bash mseries/debs/build.sh
+
+      - name: Check the calendar data bundled in the patch
+        run: python3 mseries/calendar/check-bundled-data.py
+
+      - name: Test the packaged calendar panel (private EDS, Xvfb)
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends \
+            evolution-data-server gsettings-desktop-schemas dbus-x11 xvfb xauth accountsservice
+          # Granite reads the colour-scheme preference from AccountsService with
+          # elementary's io.elementary.pantheon extension on the system bus, as on
+          # every elementary desktop. The full elementary-default-settings package
+          # needs a newer flatpak than the runner has, so take only that interface.
+          (cd "$RUNNER_TEMP" && apt-get download elementary-default-settings)
+          dpkg-deb -x "$RUNNER_TEMP"/elementary-default-settings_*.deb "$RUNNER_TEMP/eds-settings"
+          sudo install -D -m 0644 \
+            "$RUNNER_TEMP/eds-settings/usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml" \
+            /usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml
+          sudo systemctl restart accounts-daemon
+          dpkg-deb -x out/mseries-debs/mseries-wingpanel-datetime_*.deb "$RUNNER_TEMP/datetime"
+          bash mseries/calendar/test-agenda.sh \
+            "$RUNNER_TEMP/datetime/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so"
 
       - name: Verify package metadata
         run: |
