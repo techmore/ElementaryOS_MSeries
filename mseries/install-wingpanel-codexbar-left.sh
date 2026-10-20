@@ -55,6 +55,9 @@ git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-startup-layout.patch
 git -C "$source_dir" apply --check "$repo/mseries/patches/wingpanel-popover-lifetime.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-popover-lifetime.patch"
 
+# Enlarge all top-bar indicators together, preserving notch geometry.
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-content-scale.patch"
+
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release
 ninja -C "$build_dir"
 meson test -C "$build_dir" --print-errorlogs
