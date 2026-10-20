@@ -74,6 +74,9 @@ fn is_ibus_input_method_stream(stream: &std::os::unix::net::UnixStream) -> bool 
         .is_some_and(|name| name == "ibus-daemon")
 }
 
+/// Imports a client dmabuf with the active renderer.
+pub type DmabufImporter = Box<dyn FnMut(&smithay::backend::allocator::dmabuf::Dmabuf) -> bool>;
+
 pub struct PantheonCompositor {
     pub start_time: std::time::Instant,
     pub socket_name: OsString,
@@ -89,8 +92,7 @@ pub struct PantheonCompositor {
     pub dmabuf_state: DmabufState,
     /// Imports a client dmabuf with the active renderer; `None` until a backend
     /// that owns a renderer installs one (then the global is also created).
-    pub dmabuf_importer:
-        Option<Box<dyn FnMut(&smithay::backend::allocator::dmabuf::Dmabuf) -> bool>>,
+    pub dmabuf_importer: Option<DmabufImporter>,
     pub output_manager_state: OutputManagerState,
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
