@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Open PR integration review — 2026-10-20
+
+Scratch-ignore PR #335 merged. Reviewed #322/#334/#320/#312/#324/#326 with
+combined-source CI and preserved both sets of conflicting status notes. Local
+Teams, calendar tracker, bundled identity, 33 compositor tests and isolated
+gesture rendering pass. CodexBar v0.78.0 custom-port check and routine staging
+pass; the module loads at next login without a panel restart. See OS9-HANDOFF.md
+for receipts and GitHub PRs for final merge outcomes. Next: #329 needs runtime
+conflict resolution and checks for its latest taskbar/compositor head; intentional
+drafts remain gated. Native gesture and live UI qualification remain open.
+
 ## Gesture package staged for next login — 2026-10-20 (Codex)
 
 PR #326 CI passed before the latest cursor integration. Merged `dev` through
