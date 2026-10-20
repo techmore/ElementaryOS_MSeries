@@ -14,8 +14,8 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 774,
-  "component_count": 234,
+  "item_count": 778,
+  "component_count": 235,
   "project_count": 204,
   "components": [
     {
@@ -2521,6 +2521,21 @@
       ]
     },
     {
+      "id": "mseries/rust/desktop-settings",
+      "ownership": "mseries-maintained",
+      "item_count": 4,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 1,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/desktop-settings/Cargo.lock",
+        "mseries/rust/desktop-settings/Cargo.toml",
+        "mseries/rust/desktop-settings/README.md",
+        "mseries/rust/desktop-settings/src/main.rs"
+      ]
+    },
+    {
       "id": "mseries/rust/iso-assembly",
       "ownership": "mseries-maintained",
       "item_count": 4,
@@ -3440,17 +3455,23 @@
     {
       "id": "mseries/apply-desktop-settings",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-implemented-unverified": 1,
+        "not-assessed": 1,
+        "recorded-non-code-input": 3
       },
       "items": [
-        "mseries/apply-desktop-settings.py"
+        "mseries/apply-desktop-settings.py",
+        "mseries/rust/desktop-settings/Cargo.lock",
+        "mseries/rust/desktop-settings/Cargo.toml",
+        "mseries/rust/desktop-settings/README.md",
+        "mseries/rust/desktop-settings/src/main.rs"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
-      "migration_status": "not-started",
-      "parity_contract_status": "not-defined",
-      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "migration_status": "candidate-implemented-unverified",
+      "parity_contract_status": "implementation-present-unverified",
+      "parity_contract": "Implementation exists, but feature-level parity has not been verified.",
       "enhancement_review_status": "not-reviewed",
       "intentional_enhancements": []
     },
@@ -14013,6 +14034,46 @@
       "language": "c",
       "role": "verification",
       "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/desktop-settings/Cargo.lock",
+      "path": "mseries/rust/desktop-settings/Cargo.lock",
+      "component_id": "mseries/rust/desktop-settings",
+      "project_id": "mseries/apply-desktop-settings",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/desktop-settings/Cargo.toml",
+      "path": "mseries/rust/desktop-settings/Cargo.toml",
+      "component_id": "mseries/rust/desktop-settings",
+      "project_id": "mseries/apply-desktop-settings",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/desktop-settings/README.md",
+      "path": "mseries/rust/desktop-settings/README.md",
+      "component_id": "mseries/rust/desktop-settings",
+      "project_id": "mseries/apply-desktop-settings",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/desktop-settings/src/main.rs",
+      "path": "mseries/rust/desktop-settings/src/main.rs",
+      "component_id": "mseries/rust/desktop-settings",
+      "project_id": "mseries/apply-desktop-settings",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
     },
     {
       "id": "mseries/rust/elementary-projects.json",

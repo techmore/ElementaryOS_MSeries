@@ -76,6 +76,10 @@ jobs:
           cargo clippy --manifest-path mseries/rust/iso-label/Cargo.toml --locked --all-targets -- -D warnings
           cargo build --release --manifest-path mseries/rust/iso-label/Cargo.toml --locked
           python3 mseries/rust/iso-label/test-parity.py mseries/rust/iso-label/target/release/mseries-iso-label
+          cargo fmt --check --manifest-path mseries/rust/desktop-settings/Cargo.toml
+          cargo test --manifest-path mseries/rust/desktop-settings/Cargo.toml --locked
+          cargo clippy --manifest-path mseries/rust/desktop-settings/Cargo.toml --locked --all-targets -- -D warnings
+          cargo build --release --manifest-path mseries/rust/desktop-settings/Cargo.toml --locked
           bash mseries/test-greeter-obex-fix.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh

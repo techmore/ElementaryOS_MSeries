@@ -21,6 +21,13 @@ install -Dm755 "$here/rust/panel-provenance/target/release/mseries-panel-provena
 cargo build --locked --release --manifest-path "$here/rust/atomic-app/Cargo.toml"
 install -Dm755 "$here/rust/atomic-app/target/release/mseries-atomic-app" \
     "$stage/usr/libexec/mseries/atomic-app"
+cargo build --locked --release --manifest-path "$here/rust/desktop-settings/Cargo.toml"
+install -Dm755 "$here/rust/desktop-settings/target/release/mseries-desktop-settings" \
+    "$stage/usr/libexec/mseries/apply-desktop-settings"
+install -Dm755 "$here/mseries-launcher.py" \
+    "$stage/usr/share/elementary-mac/mseries/mseries-launcher.py"
+install -Dm755 "$here/mseries-launcher-keys.py" \
+    "$stage/usr/share/elementary-mac/mseries/mseries-launcher-keys.py"
 install -Dm644 "$here/panel-factory-pins.json" "$stage/usr/share/mseries/panel-factory-pins.json"
 install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
 install -Dm644 "$here/video-decode/90-mseries-avd.conf" "$stage/etc/sysctl.d/90-mseries-avd.conf"

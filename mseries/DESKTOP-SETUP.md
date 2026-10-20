@@ -39,7 +39,10 @@ and removing the two `mseries-launcher` entries from
 
 ## Command shortcuts and brightness
 
-Run `python3 mseries/apply-desktop-settings.py` as the desktop user.
+Run `bash mseries/post-install.sh --only settings` as the desktop user. The
+settings stage invokes `/usr/libexec/mseries/apply-desktop-settings`, built in
+Rust and included in the factory image. The former Python implementation stays
+in `mseries/apply-desktop-settings.py` as a behavior reference.
 It preserves existing XKB options and adds `ctrl:swap_lwin_lctl`: left
 Command becomes Ctrl (C/V/A/Z/S etc.), and physical left Ctrl becomes Super.
 Right Command is unchanged. Remove that option from

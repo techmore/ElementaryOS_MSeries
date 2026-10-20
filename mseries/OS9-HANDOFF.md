@@ -11,6 +11,13 @@ parity review remain open; the macOS development host has no mkosi/podman.
 Continue the per-project inventory and core Elementary conversions before any
 claim of whole-OS parity or default cutover.
 
+The owner-session desktop settings coordinator has since been ported to
+`mseries/rust/desktop-settings`, staged as `/usr/libexec/mseries/apply-desktop-settings`,
+and called by the existing `settings` user stage. The old Python implementation
+is retained as a reference. GSettings/Pantheon runtime parity is still open;
+four GVariant transport unit cases pass, and the factory build has not yet been
+run on Linux from this checkpoint.
+
 ## Omacom userspace improvements — 2026-10-17
 
 [Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,

@@ -29,8 +29,12 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/iso-label/",
     "mseries/rust/atomic-app/",
     "mseries/rust/iso-assembly/",
+    "mseries/rust/desktop-settings/",
 )
-RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = ("mseries/rust/iso-assembly/",)
+RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = (
+    "mseries/rust/iso-assembly/",
+    "mseries/rust/desktop-settings/",
+)
 RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
     "mseries/rust/netusage/",
@@ -46,10 +50,12 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/iso-label/": "mseries/iso-label",
     "mseries/rust/atomic-app/": "mseries/atomic-app",
     "mseries/rust/iso-assembly/": "image-build/assemble-iso",
+    "mseries/rust/desktop-settings/": "mseries/apply-desktop-settings",
 }
 PROJECT_PATH_OVERRIDES = {
     "mseries/atomic-app.py": "mseries/atomic-app",
     "mseries/test-atomic-app.py": "mseries/atomic-app",
+    "mseries/apply-desktop-settings.py": "mseries/apply-desktop-settings",
     "mseries/ATOMIC-APP-DEPLOYMENT.md": "mseries/atomic-app",
     "mseries/iso-label.sh": "mseries/iso-label",
     "mseries/test-iso-label.sh": "mseries/iso-label",

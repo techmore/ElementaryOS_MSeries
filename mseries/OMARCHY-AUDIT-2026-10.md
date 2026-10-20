@@ -34,9 +34,9 @@ package version; image build/boot and live-panel operation still need checks.
 
 | Area | Local implementation | Audit disposition |
 | --- | --- | --- |
-| Display brightness and OSD | `mkosi.images/apple-silicon/overlay/usr/libexec/mseries-brightness`, `mseries/apply-desktop-settings.py` | Pantheon-specific translation already present; preserve the working path. |
+| Display brightness and OSD | `mkosi.images/apple-silicon/overlay/usr/libexec/mseries-brightness`, `mseries/rust/desktop-settings` (Python reference retained) | Pantheon-specific translation already present; preserve the working path. |
 | Keyboard brightness slider | `mseries/quick-settings/KeyboardBrightness.vala`, installed by `mseries/install-quick-settings-brightness.sh` and `mkosi.images/apple-silicon/build-quick-settings` | Present in manual post-install, transform firstboot, and factory overlay build; ISO build/boot and visible UI checks remain. |
-| Command shortcuts, screenshots, window controls | `mseries/apply-desktop-settings.py` | Already translated for Gala; Hyprland bindings should not be copied. |
+| Command shortcuts, screenshots, window controls | `mseries/rust/desktop-settings` | Already translated for Gala; Hyprland bindings should not be copied. |
 | Wi-Fi firmware and resume | Apple image firmware/resume scripts and systemd services | The recovery script now has focused regression coverage; factory-image provisioning and live suspend/resume still need an M1 Pro image test. |
 | Early Apple HID loading | Apple image initramfs module configuration | Port exists; check the actual booted Arch initramfs as well as the Ubuntu image. |
 | Dock USB and Ethernet | `mseries/fairydust/usb4/` | USB2 peripherals and USB3 Ethernet verified in the kit's current report; older desktop/port-map wording was stale. DP tunneling remains a separate unresolved feature. |

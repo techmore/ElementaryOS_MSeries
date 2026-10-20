@@ -9,6 +9,13 @@ the macOS host lacks the Linux image tools, so full ISO assembly and parity
 remain unverified. Continue with mkosi/package selection and the core desktop
 projects; retain per-project pins and promotion gates for daily upstream syncs.
 
+The owner-session settings coordinator has also moved to
+`mseries/rust/desktop-settings` and is staged at
+`/usr/libexec/mseries/apply-desktop-settings`. The regular `settings` stage
+invokes it; image construction does not apply user settings. Runtime parity on
+Pantheon remains to be checked. Its GVariant array/string transport has four
+passing unit cases, but the user-session flow has not run in an image.
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
