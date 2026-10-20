@@ -55,6 +55,48 @@ persistence/default-off and recursive live hover enable/disable checks;
 `bash mseries/check-codexbar-port.sh` passed. Pointer behavior on the physical
 desktop has not been visually inspected. Next: owner can enable the toggle to
 restore hover details if desired.
+## Microsoft Teams web desktop integration — 2026-10-20
+
+No prior Teams native port was found in the repository or remote branches. Per
+owner direction, `codex/teams-native` adds the actual Microsoft Teams web client
+as a per-user application shortcut, with an isolated Chrome/Edge mode and an
+explicit `--use-brave-session` mode. The latter reuses the selected regular Brave
+profile through Brave itself; no cookies, password databases or tokens are copied.
+Installed on this J314S using Brave 155.1.97.59, profile `Default`. Chrome
+155.0.8059.84 arm64 was also installed from Google's official package as the
+Microsoft-listed browser fallback. Its package selected Chrome as default;
+Brave was restored (`xdg-settings get default-web-browser` reports
+`brave-browser.desktop`). No panel restart or audio-stack changes.
+
+Verification: ten offline launcher/integration tests pass, including real Gio
+Desktop Exec parsing with special paths, deep-link validation, private isolated
+profiles, preserving sessions across reinstall/uninstall, and sharing the Brave
+profile without copying it. Shell syntax, ShellCheck and desktop-file validation
+pass. Local `--check` confirms Brave session mode; launch was dispatched to the
+browser. A separate temporary in-app browser reached Microsoft's sign-in page.
+Owner confirmed that the Brave workflow worked and signed them in. Dock
+grouping, message delivery, notifications, camera/microphone, screen sharing
+and meeting join remain unverified. This is a web integration, not a native Teams reimplementation or
+factory-image qualification. See `mseries/teams-web/README.md` for commands,
+support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
+
+## UI fixes installed after PR #321 — 2026-10-20
+
+PR #321 merged into `dev` as `9cb1c70`; all ten CI checks passed. Updated the
+existing Orchard launcher binary at `~/.local/bin/com.github.techmore.orchard-incus`,
+Battery UI at `/usr/libexec/mseries/battery/mseries-battery-app.py`, and Apple
+Passwords UI at `~/.local/share/mseries/icloud-passwords/gui/app.py`. Each installed
+file byte-matches the tested build/source. Existing Battery core and Passwords
+worker already matched the merged source, so no full installer was rerun.
+
+Installed-file smoke checks passed on private Xvfb/D-Bus with temporary config/data:
+Battery mapped and handled a mocked dark preference notification; Passwords
+scrolled at 540 × 420 and allowed Sign In focus with its worker stubbed; the actual
+installed Orchard binary stayed alive without GTK criticals. No live application,
+logger, panel, account, VM or wallpaper was restarted/changed. Reopen Orchard for
+Incus, Battery and Apple Passwords (Experimental) to load the fixes. Live user
+interaction and hardware theme switching remain to be tried. File hashes and
+backup location: `mseries/receipts/ui-consistency-install-2026-10-20.json`.
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
 Owner visually confirmed the native Pantheon dock, then explicitly requested
@@ -8098,6 +8140,40 @@ Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
 
 
+## Calendar GitHub outcome tracker — 2026-10-20
+
+Added a native GitHub tab alongside Events/Tasks/Bible in the existing pinned
+datetime patch. The default persistent outcomes are techmore/rupert#207 and
+techmore/tm-daedalus#17, each with a deployment milestone and native sub-issue
+gates created after a source/CI audit. No merchant actions or live scans were
+performed. Main-branch checks, exact-head linked PR checks and gate completion
+remain separate from release/recovery/acceptance evidence.
+
+The resource-bundled Python helper uses the current user's gh login, read-only
+GraphQL, bounded requests, private atomic cache, stable configured ordering and
+dated offline evidence. It refreshes only on opening/manual request and every
+five minutes while the tab is visible; there is no notification daemon. See
+mseries/calendar/README.md for configuration. Package revision 0mseries3 adds
+python3/gh recommendations. Existing calendar behavior is preserved.
+
+Verification: native Meson/Ninja build; five focused Python behavior tests;
+full private EDS/GTK/Xvfb suite (28 groups including GitHub offline/retry);
+bundled Python/Vala/data identity; clean patch application matching the full
+tested source tree; shell syntax and git diff whitespace checks. GTK preview
+visually inspected. Packaging/install and final activation are recorded below
+when completed. Wingpanel must not be restarted for this routine update.
+
+Installed `mseries-wingpanel-datetime 2.4.2-0mseries3` from source commit
+`f5622505b6b9bbb64faa821d83f9f1085e0353e6`. Debian archive SHA-256:
+`2727f066432b0c05507b77d58af40d52c7e5c700d0cf2df5d080fec8c210804e`.
+The packaged helper matches source; installed library matches package bytes,
+ldd has no missing libraries and dpkg -V is clean. The original diverted
+plugin SHA-256 remains `77c8110e3f8e749b8481bb0fd847ddabe2b8989e8f86bef193c3e93fabfb984b`.
+Wingpanel PID 169014 is unchanged; the new tab loads at the next login.
+All 28 integration groups also passed on the final source. GitHub live reads
+returned both outcomes (five/six gates) and current exact-commit CI; this does
+not establish deployment readiness for either app. Live calendar activation
+and end-to-end link opening remain unverified until the next login.
 ## Claude account/quota identity fix — 2026-10-20
 
 - Upstream remains pinned to v0.78.0. The app and CLI were signed into different

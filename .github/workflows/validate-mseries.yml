@@ -24,6 +24,18 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  teams-web:
+    name: Teams desktop launcher contracts
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install desktop integration test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
+      - name: Test without browsers, accounts or network
+        run: |
+          bash -n mseries/install-teams.sh
+          python3 -B -m unittest discover -s mseries/teams-web -p 'test_*.py' -v
+
   speech-release:
     name: English F5 release contracts (arm64)
     runs-on: ubuntu-26.04-arm

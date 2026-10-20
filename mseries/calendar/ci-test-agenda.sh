@@ -8,6 +8,7 @@ set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 work=$(realpath -m "${1:?usage: ci-test-agenda.sh WORKDIR}")
 mkdir -p "$work"
+python3 "$repo/mseries/calendar/test-github-tracker.py"
 while IFS='=' read -r key value; do export "$key=$value"; done \
     < <(bash "$repo/mseries/codexbar-wingpanel/probe/ci-build-deps.sh" "$work/prefix")
 readarray -t pin < <(python3 - "$repo/mseries/panel-factory-pins.json" <<'PY'

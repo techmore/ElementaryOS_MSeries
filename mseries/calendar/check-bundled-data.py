@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-BUNDLED = ("daily-verses.tsv", "titus-study.tsv")
+BUNDLED = ("daily-verses.tsv", "titus-study.tsv", "github-tracker.py", "GitHubTracker.vala")
 
 
 def new_files(patch: str) -> dict:
@@ -20,8 +20,8 @@ def new_files(patch: str) -> dict:
                 files[current] = lines
             current, lines = None, []
             name = line.split(" b/", 1)[1]
-            if name.startswith("data/") and name[5:] in BUNDLED:
-                current = name[5:]
+            if (name.startswith("data/") or name == "src/Widgets/GitHubTracker.vala") and name.rsplit('/', 1)[-1] in BUNDLED:
+                current = name.rsplit('/', 1)[-1]
         elif current and line.startswith("+") and not line.startswith("+++"):
             lines.append(line[1:])
         elif current and line.startswith("-") and not line.startswith("---"):
