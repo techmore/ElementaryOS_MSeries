@@ -14,8 +14,8 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 778,
-  "component_count": 235,
+  "item_count": 782,
+  "component_count": 236,
   "project_count": 204,
   "components": [
     {
@@ -2582,6 +2582,21 @@
         "mseries/rust/keyboard-backlight/Cargo.toml",
         "mseries/rust/keyboard-backlight/src/main.rs",
         "mseries/rust/keyboard-backlight/test-parity.py"
+      ]
+    },
+    {
+      "id": "mseries/rust/launcher-keys",
+      "ownership": "mseries-maintained",
+      "item_count": 4,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 1,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/launcher-keys/Cargo.lock",
+        "mseries/rust/launcher-keys/Cargo.toml",
+        "mseries/rust/launcher-keys/README.md",
+        "mseries/rust/launcher-keys/src/main.rs"
       ]
     },
     {
@@ -5831,17 +5846,23 @@
     {
       "id": "mseries/mseries-launcher-keys",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-implemented-unverified": 1,
+        "not-assessed": 1,
+        "recorded-non-code-input": 3
       },
       "items": [
-        "mseries/mseries-launcher-keys.py"
+        "mseries/mseries-launcher-keys.py",
+        "mseries/rust/launcher-keys/Cargo.lock",
+        "mseries/rust/launcher-keys/Cargo.toml",
+        "mseries/rust/launcher-keys/README.md",
+        "mseries/rust/launcher-keys/src/main.rs"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
-      "migration_status": "not-started",
-      "parity_contract_status": "not-defined",
-      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "migration_status": "candidate-implemented-unverified",
+      "parity_contract_status": "implementation-present-unverified",
+      "parity_contract": "Implementation exists, but feature-level parity has not been verified.",
       "enhancement_review_status": "not-reviewed",
       "intentional_enhancements": []
     },
@@ -14244,6 +14265,46 @@
       "language": "python",
       "role": "verification",
       "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/launcher-keys/Cargo.lock",
+      "path": "mseries/rust/launcher-keys/Cargo.lock",
+      "component_id": "mseries/rust/launcher-keys",
+      "project_id": "mseries/mseries-launcher-keys",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/launcher-keys/Cargo.toml",
+      "path": "mseries/rust/launcher-keys/Cargo.toml",
+      "component_id": "mseries/rust/launcher-keys",
+      "project_id": "mseries/mseries-launcher-keys",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/launcher-keys/README.md",
+      "path": "mseries/rust/launcher-keys/README.md",
+      "component_id": "mseries/rust/launcher-keys",
+      "project_id": "mseries/mseries-launcher-keys",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/launcher-keys/src/main.rs",
+      "path": "mseries/rust/launcher-keys/src/main.rs",
+      "component_id": "mseries/rust/launcher-keys",
+      "project_id": "mseries/mseries-launcher-keys",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
     },
     {
       "id": "mseries/rust/mseries-power/.gitignore",

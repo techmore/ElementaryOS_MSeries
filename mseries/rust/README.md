@@ -64,15 +64,15 @@ its declared build/customization scope, including the root ISO assembler, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-778 files (696 local and 82 elementary-owned upstream inputs) currently form
-235 directory groups and 204 project records. Explicit overrides join Rust
+782 files (700 local and 82 elementary-owned upstream inputs) currently form
+236 directory groups and 204 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
-current scope contains 260 implementation files (247 local), 41 upstream
-patches, and 261 configuration/data files. Semantic project boundaries and
+current scope contains 261 implementation files (248 local), 41 upstream
+patches, and 263 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
 Each of the 204 generated project records now states its Rust target or
@@ -89,7 +89,8 @@ feature parity have not been verified; it is explicitly marked
 `candidate-implemented-unverified`.
 The per-user desktop-settings coordinator is also implemented in Rust and
 staged as a user-invoked image tool; its Pantheon/GSettings runtime parity is
-still unverified.
+still unverified. The launcher key watchdog is also implemented in Rust and
+staged separately; its GSettings/Pantheon runtime behavior remains unverified.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -101,6 +102,7 @@ audit.
 |---|---|---|---|
 | `image-build/assemble-iso` | Stages the mkosi output and creates the bootable live ISO | Rust crate owns orchestration; existing shell entry point launches it | `mseries/rust/iso-assembly/`; full Linux build and feature parity remain open |
 | `mseries/apply-desktop-settings` | Applies owner-session shortcuts, launcher, screenshot redirect, title buttons, and brightness autostart | Rust crate is staged as a user-invoked tool; the Python implementation remains its comparison reference | `mseries/rust/desktop-settings/`; GSettings and Pantheon runtime parity remain open |
+| `mseries/mseries-launcher-keys` | Re-registers launcher shortcuts when the media-keys shortcut list changes | Rust watcher is staged and selected by the settings coordinator; Python remains an older-image fallback | `mseries/rust/launcher-keys/`; unit-tested, live GSettings/Pantheon parity remains open |
 | `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
 | `AsahiLinux/linux` (Fairydust) | Experimental Apple Silicon kernel and local dock/display patches | Track as its own Rust kernel replacement, including Rust-for-Linux interfaces and each hardware patch | Per-patch source and hardware gates in `mseries/fairydust/`; parity must include boot, devices and recovery |
 | `omacom/linux-aurora` | Released Apple Silicon kernel candidate and optional enhancements | Track an independent Rust kernel replacement and preserve matched recipe/config/package inputs | `mseries/aurora/release.json` and `mseries/aurora/enhancements/`; separate package and hardware qualification |
@@ -276,8 +278,8 @@ individually.
   `/usr/libexec/mseries/atomic-app`; the Signal installer uses the staged binary
   or builds it from source when Cargo is available. Full image admission and a
   live Signal cycle remain open.
-- The full file inventory currently contains 769 items (687 M-series-maintained
-  and 82 elementary-owned upstream inputs), 233 directory groups, and 204
+- The full file inventory currently contains 782 items (700 M-series-maintained
+  and 82 elementary-owned upstream inputs), 236 directory groups, and 204
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity
   plan.

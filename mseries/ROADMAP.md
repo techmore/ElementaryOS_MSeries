@@ -16,6 +16,11 @@ invokes it; image construction does not apply user settings. Runtime parity on
 Pantheon remains to be checked. Its GVariant array/string transport has four
 passing unit cases, but the user-session flow has not run in an image.
 
+The launcher shortcut watchdog has its own Rust crate at
+`mseries/rust/launcher-keys`, staged as `/usr/libexec/mseries/launcher-keys` and
+used by the settings coordinator on current factory images. Its three unit
+cases pass; GSettings monitoring and Pantheon runtime parity remain unverified.
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and

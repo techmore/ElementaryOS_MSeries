@@ -4,7 +4,8 @@ This crate replaces the owner-session setup in `mseries/apply-desktop-settings.p
 It preserves existing XKB and screenshot shortcuts, writes the custom launcher
 bindings through GSettings, applies the existing Pantheon/window/power settings,
 creates the screenshot redirect only when safe, and installs user autostart files
-for the launcher key watcher and brightness helper.
+for the Rust launcher key watcher and brightness helper. Older images without
+the Rust watcher keep the Python helper fallback.
 
 The factory image stages the binary at
 `/usr/libexec/mseries/apply-desktop-settings` and stages its launcher assets under

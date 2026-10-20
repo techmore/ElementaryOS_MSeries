@@ -21,6 +21,9 @@ install -Dm755 "$here/rust/panel-provenance/target/release/mseries-panel-provena
 cargo build --locked --release --manifest-path "$here/rust/atomic-app/Cargo.toml"
 install -Dm755 "$here/rust/atomic-app/target/release/mseries-atomic-app" \
     "$stage/usr/libexec/mseries/atomic-app"
+cargo build --locked --release --manifest-path "$here/rust/launcher-keys/Cargo.toml"
+install -Dm755 "$here/rust/launcher-keys/target/release/mseries-launcher-keys" \
+    "$stage/usr/libexec/mseries/launcher-keys"
 cargo build --locked --release --manifest-path "$here/rust/desktop-settings/Cargo.toml"
 install -Dm755 "$here/rust/desktop-settings/target/release/mseries-desktop-settings" \
     "$stage/usr/libexec/mseries/apply-desktop-settings"

@@ -50,7 +50,7 @@ fn apply() -> Result<()> {
     let launcher = home.join(".local/bin/mseries-launcher");
     copy_executable(&assets.join("mseries-launcher.py"), &launcher)?;
     let keys_helper = home.join(".local/libexec/mseries-launcher-keys");
-    copy_executable(&assets.join("mseries-launcher-keys.py"), &keys_helper)?;
+    copy_executable(&launcher_keys_helper(&assets)?, &keys_helper)?;
     let keys_autostart = home.join(".config/autostart/mseries-launcher-keys.desktop");
     write_autostart(&keys_autostart, "M-series launcher shortcuts", &keys_helper)?;
     run(Command::new(&keys_helper).arg("--once"))?;
@@ -197,6 +197,19 @@ fn brightness_helper() -> Result<PathBuf> {
         Ok(source)
     } else {
         Err(format!("brightness helper is missing: {}", source.display()).into())
+    }
+}
+
+fn launcher_keys_helper(assets: &Path) -> Result<PathBuf> {
+    let installed = PathBuf::from("/usr/libexec/mseries/launcher-keys");
+    if installed.is_file() {
+        return Ok(installed);
+    }
+    let reference = assets.join("mseries-launcher-keys.py");
+    if reference.is_file() {
+        Ok(reference)
+    } else {
+        Err(format!("launcher key helper is missing: {}", reference.display()).into())
     }
 }
 

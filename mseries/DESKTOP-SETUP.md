@@ -31,8 +31,9 @@ Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
 height up from the bottom (`HEIGHT_FROM_BOTTOM` in the script).
 The shortcuts are registered by `~/.local/libexec/mseries-launcher-keys`, which
-starts at Pantheon login and re-adds them if `custom-keybindings` is ever emptied
-(it was after one reboot, leaving the per-shortcut entries orphaned). Undo by
+starts at Pantheon login and re-adds them if `custom-keybindings` changes. The
+factory image installs this helper from the Rust `launcher-keys` crate; older
+images without the binary use the retained Python helper. Undo by
 deleting `~/.config/autostart/mseries-launcher-keys.desktop`, stopping that helper,
 and removing the two `mseries-launcher` entries from
 `org.gnome.settings-daemon.plugins.media-keys custom-keybindings`.

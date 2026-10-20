@@ -30,10 +30,12 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/atomic-app/",
     "mseries/rust/iso-assembly/",
     "mseries/rust/desktop-settings/",
+    "mseries/rust/launcher-keys/",
 )
 RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = (
     "mseries/rust/iso-assembly/",
     "mseries/rust/desktop-settings/",
+    "mseries/rust/launcher-keys/",
 )
 RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
@@ -51,11 +53,13 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/atomic-app/": "mseries/atomic-app",
     "mseries/rust/iso-assembly/": "image-build/assemble-iso",
     "mseries/rust/desktop-settings/": "mseries/apply-desktop-settings",
+    "mseries/rust/launcher-keys/": "mseries/mseries-launcher-keys",
 }
 PROJECT_PATH_OVERRIDES = {
     "mseries/atomic-app.py": "mseries/atomic-app",
     "mseries/test-atomic-app.py": "mseries/atomic-app",
     "mseries/apply-desktop-settings.py": "mseries/apply-desktop-settings",
+    "mseries/mseries-launcher-keys.py": "mseries/mseries-launcher-keys",
     "mseries/ATOMIC-APP-DEPLOYMENT.md": "mseries/atomic-app",
     "mseries/iso-label.sh": "mseries/iso-label",
     "mseries/test-iso-label.sh": "mseries/iso-label",
