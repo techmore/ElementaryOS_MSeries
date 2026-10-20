@@ -14,9 +14,9 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 764,
-  "component_count": 232,
-  "project_count": 206,
+  "item_count": 769,
+  "component_count": 233,
+  "project_count": 204,
   "components": [
     {
       "id": "apt-repository/common-files",
@@ -2486,6 +2486,22 @@
       ]
     },
     {
+      "id": "mseries/rust/atomic-app",
+      "ownership": "mseries-maintained",
+      "item_count": 5,
+      "rust_status_counts": {
+        "candidate-parity-verified-not-installed": 2,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/atomic-app/Cargo.lock",
+        "mseries/rust/atomic-app/Cargo.toml",
+        "mseries/rust/atomic-app/README.md",
+        "mseries/rust/atomic-app/src/main.rs",
+        "mseries/rust/atomic-app/test-parity.py"
+      ]
+    },
+    {
       "id": "mseries/rust/brightness-bridge",
       "ownership": "mseries-maintained",
       "item_count": 8,
@@ -3436,35 +3452,27 @@
     {
       "id": "mseries/atomic-app",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 8,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-parity-verified-not-installed": 2,
+        "not-assessed": 2,
+        "recorded-non-code-input": 4
       },
       "items": [
-        "mseries/atomic-app.py"
+        "mseries/ATOMIC-APP-DEPLOYMENT.md",
+        "mseries/atomic-app.py",
+        "mseries/rust/atomic-app/Cargo.lock",
+        "mseries/rust/atomic-app/Cargo.toml",
+        "mseries/rust/atomic-app/README.md",
+        "mseries/rust/atomic-app/src/main.rs",
+        "mseries/rust/atomic-app/test-parity.py",
+        "mseries/test-atomic-app.py"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
-      "migration_status": "not-started",
-      "parity_contract_status": "not-defined",
-      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "migration_status": "candidate-parity-verified-not-installed",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
       "enhancement_review_status": "not-reviewed",
-      "intentional_enhancements": []
-    },
-    {
-      "id": "mseries/atomic-app-deployment",
-      "ownership": "mseries-maintained",
-      "item_count": 1,
-      "rust_status_counts": {
-        "recorded-non-code-input": 1
-      },
-      "items": [
-        "mseries/ATOMIC-APP-DEPLOYMENT.md"
-      ],
-      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
-      "migration_status": "non-code-only",
-      "parity_contract_status": "not-applicable",
-      "parity_contract": "not-applicable",
-      "enhancement_review_status": "not-applicable",
       "intentional_enhancements": []
     },
     {
@@ -6509,23 +6517,6 @@
       "intentional_enhancements": []
     },
     {
-      "id": "mseries/test-atomic-app",
-      "ownership": "mseries-maintained",
-      "item_count": 1,
-      "rust_status_counts": {
-        "not-assessed": 1
-      },
-      "items": [
-        "mseries/test-atomic-app.py"
-      ],
-      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
-      "migration_status": "verification-only",
-      "parity_contract_status": "not-applicable",
-      "parity_contract": "not-applicable",
-      "enhancement_review_status": "not-applicable",
-      "intentional_enhancements": []
-    },
-    {
       "id": "mseries/test-build-status",
       "ownership": "mseries-maintained",
       "item_count": 1,
@@ -8444,7 +8435,7 @@
       "id": "mseries/ATOMIC-APP-DEPLOYMENT.md",
       "path": "mseries/ATOMIC-APP-DEPLOYMENT.md",
       "component_id": "mseries/atomic-app-deployment",
-      "project_id": "mseries/atomic-app-deployment",
+      "project_id": "mseries/atomic-app",
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
@@ -13871,6 +13862,56 @@
       "rust_status": "recorded-non-code-input"
     },
     {
+      "id": "mseries/rust/atomic-app/Cargo.lock",
+      "path": "mseries/rust/atomic-app/Cargo.lock",
+      "component_id": "mseries/rust/atomic-app",
+      "project_id": "mseries/atomic-app",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/atomic-app/Cargo.toml",
+      "path": "mseries/rust/atomic-app/Cargo.toml",
+      "component_id": "mseries/rust/atomic-app",
+      "project_id": "mseries/atomic-app",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/atomic-app/README.md",
+      "path": "mseries/rust/atomic-app/README.md",
+      "component_id": "mseries/rust/atomic-app",
+      "project_id": "mseries/atomic-app",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/atomic-app/src/main.rs",
+      "path": "mseries/rust/atomic-app/src/main.rs",
+      "component_id": "mseries/rust/atomic-app",
+      "project_id": "mseries/atomic-app",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/atomic-app/test-parity.py",
+      "path": "mseries/rust/atomic-app/test-parity.py",
+      "component_id": "mseries/rust/atomic-app",
+      "project_id": "mseries/atomic-app",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
       "id": "mseries/rust/brightness-bridge/.gitignore",
       "path": "mseries/rust/brightness-bridge/.gitignore",
       "component_id": "mseries/rust/brightness-bridge",
@@ -14444,7 +14485,7 @@
       "id": "mseries/test-atomic-app.py",
       "path": "mseries/test-atomic-app.py",
       "component_id": "mseries/test-atomic-app",
-      "project_id": "mseries/test-atomic-app",
+      "project_id": "mseries/atomic-app",
       "ownership": "mseries-maintained",
       "language": "python",
       "role": "verification",

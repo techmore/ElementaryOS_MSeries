@@ -27,6 +27,7 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/panel-provenance/",
     "mseries/rust/keyboard-backlight/",
     "mseries/rust/iso-label/",
+    "mseries/rust/atomic-app/",
 )
 RUST_IN_USE_PATHS = {"mseries/rust/iso-label/src/main.rs"}
 RUST_FUNCTIONAL_PREFIXES = (
@@ -41,8 +42,12 @@ PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/keyboard-backlight/": "mseries/keyboard-backlight",
     "mseries/rust/brightness-bridge/": "mseries/brightness",
     "mseries/rust/iso-label/": "mseries/iso-label",
+    "mseries/rust/atomic-app/": "mseries/atomic-app",
 }
 PROJECT_PATH_OVERRIDES = {
+    "mseries/atomic-app.py": "mseries/atomic-app",
+    "mseries/test-atomic-app.py": "mseries/atomic-app",
+    "mseries/ATOMIC-APP-DEPLOYMENT.md": "mseries/atomic-app",
     "mseries/iso-label.sh": "mseries/iso-label",
     "mseries/test-iso-label.sh": "mseries/iso-label",
     "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",

@@ -65,6 +65,12 @@ jobs:
           bash -n mseries/iso-label.sh
           bash -n mseries/test-iso-label.sh
           bash mseries/test-iso-label.sh
+          python3 mseries/test-atomic-app.py
+          cargo fmt --check --manifest-path mseries/rust/atomic-app/Cargo.toml
+          cargo test --manifest-path mseries/rust/atomic-app/Cargo.toml --locked
+          cargo clippy --manifest-path mseries/rust/atomic-app/Cargo.toml --locked --all-targets -- -D warnings
+          cargo build --release --manifest-path mseries/rust/atomic-app/Cargo.toml --locked
+          python3 mseries/rust/atomic-app/test-parity.py mseries/rust/atomic-app/target/release/mseries-atomic-app
           cargo fmt --check --manifest-path mseries/rust/iso-label/Cargo.toml
           cargo test --manifest-path mseries/rust/iso-label/Cargo.toml --locked
           cargo clippy --manifest-path mseries/rust/iso-label/Cargo.toml --locked --all-targets -- -D warnings

@@ -105,10 +105,10 @@ class AtomicAppTests(unittest.TestCase):
         with patch.object(APP, 'sync_directory', wraps=APP.sync_directory) as sync:
             with APP.Store(self.root, 'demo'):
                 pass
-        synced = [call.args[0] for call in sync.call_args_list]
-        self.assertIn(self.directory, synced)
-        self.assertIn(self.root, synced)
-        self.assertIn(self.root / 'demo', synced)
+        synced = [call.args[0].resolve() for call in sync.call_args_list]
+        self.assertIn(self.directory.resolve(), synced)
+        self.assertIn(self.root.resolve(), synced)
+        self.assertIn((self.root / 'demo').resolve(), synced)
 
     def test_escaping_symlink_is_rejected(self):
         (self.sources[1] / 'escape').symlink_to('/etc/passwd')

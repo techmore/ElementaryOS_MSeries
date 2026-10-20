@@ -4,8 +4,8 @@
 # as mkosi.images/modules-db/mkosi.finalize). Package payloads installed
 # above are discarded here. The liveiso aarch64 profile and sysupdate arm64
 # drop-in must explicitly install runtime packages; ExtraTrees does not run apt.
-# What survives here is selected configuration, hardware helpers, and the
-# version-gated Wingpanel plugins built below.
+# What survives here is selected configuration, hardware helpers, the atomic
+# app tool, and version-gated Wingpanel plugins built below.
 set -euo pipefail
 
 BUILDROOT=$(realpath "$BUILDROOT")
@@ -34,6 +34,8 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-resume-fix" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
     ! -path "$BUILDROOT/usr/libexec" \
+    ! -path "$BUILDROOT/usr/libexec/mseries" \
+    ! -path "$BUILDROOT/usr/libexec/mseries/atomic-app" \
     ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
     ! -path "$BUILDROOT/usr/lib" \
     ! -path "$BUILDROOT/usr/lib/omarchy-mlx*" \

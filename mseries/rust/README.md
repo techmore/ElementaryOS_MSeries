@@ -64,18 +64,18 @@ its declared build/customization scope, including the root ISO assembler, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-764 files (682 local and 82 elementary-owned upstream inputs) currently form
-232 directory groups and 206 project records. Explicit overrides join Rust
+769 files (687 local and 82 elementary-owned upstream inputs) currently form
+233 directory groups and 204 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
-current scope contains 256 implementation files (243 local), 41 upstream
-patches, and 255 configuration/data files. Semantic project boundaries and
+current scope contains 257 implementation files (244 local), 41 upstream
+patches, and 257 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
-Each of the 206 generated project records now states its Rust target or
+Each of the 204 generated project records now states its Rust target or
 non-code disposition, migration status, parity-contract status, and whether
 intentional enhancements have been reviewed. These path-derived records make
 the entire work list explicit; code projects still marked `not-started` need
@@ -127,6 +127,7 @@ audit.
 | `mseries-power` | Privileged charge/power command and profile policy | Rust candidate implemented in its own crate; not installed by default | Thirteen differential cases currently pass; full contracts and target-device qualification remain open; see `mseries-power/README.md` |
 | M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
 | Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Eight unit tests plus 16 same-fixture Python/Rust socket and DNS cases pass; daemon restart and device-session qualification remain open; see `netusage/README.md` |
+| Atomic app deployment | Verified release trees, per-app lock, durable generation switch, launch and rollback | Rust CLI candidate built into the Apple Silicon factory staging layer; opt-in Signal installer selects it, Python remains the behavior reference | Four Rust unit tests and eight paired Python/Rust CLI scenarios pass; existing nine-case Python suite passes; full arm64 image and Signal update/rollback qualification remain open; see `atomic-app/README.md` |
 | Ambient keyboard lighting | User service, AOP ALS sensor, UPower and logind session gates | Rust candidate in its own crate; current Python helper remains installed | Six Rust core tests and fake UPower/logind Python/Rust parity pass; live system and image admission remain open; see `keyboard-backlight/` |
 | Pantheon brightness compatibility | GNOME Shell Brightness D-Bus name, Mutter backlight property, GSettings policy, and BrightnessChanged signal | Rust GIO candidate added; Python bridge remains installed | Five Rust policy tests and native GIO link/build pass; private-bus fake-Mutter harness added to arm64 CI, but its run and image admission remain open; see `brightness-bridge/README.md` |
 | Factory panel provenance tools | Package-version, ABI-path and plugin-digest gate used during image assembly | Rust `verify` and `record` now run in the image build and stage under the existing verifier path; Python remains as parity/rollback baseline | Rust unit checks and Python/Rust command parity fixtures pass; full arm64 image admission remains open; see `panel-provenance/README.md` |
@@ -256,8 +257,15 @@ individually.
   by `assemble-iso.sh`. It matches the legacy shell function on six
   normalization cases and passes two Rust unit tests, format, Clippy, and
   release build checks. The shell helper remains as a parity reference.
-- The full file inventory currently contains 764 items (682 M-series-maintained
-  and 82 elementary-owned upstream inputs), 232 directory groups, and 206
+- The opt-in atomic app deployment CLI now has a Rust candidate with locked
+  `serde_json`, `libc`, and UUID dependencies. It matches the Python reference
+  across eight paired release, update, launch, rollback, path-safety, and
+  concurrency scenarios. The factory staging script builds it into
+  `/usr/libexec/mseries/atomic-app`; the Signal installer uses the staged binary
+  or builds it from source when Cargo is available. Full image admission and a
+  live Signal cycle remain open.
+- The full file inventory currently contains 769 items (687 M-series-maintained
+  and 82 elementary-owned upstream inputs), 233 directory groups, and 204
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity
   plan.

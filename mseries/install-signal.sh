@@ -9,6 +9,18 @@ case ${1:-} in
 esac
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
+atomic_binary=
+if (( atomic )); then
+  atomic_binary=${MSERIES_ATOMIC_APP_BIN:-/usr/libexec/mseries/atomic-app}
+  if [[ ! -x $atomic_binary ]]; then
+    if ! command -v cargo >/dev/null 2>&1; then
+      echo 'The Rust atomic-app command is missing; use an image that stages /usr/libexec/mseries/atomic-app or install Rust and Cargo.' >&2
+      exit 1
+    fi
+    cargo build --locked --release --manifest-path "$repo/mseries/rust/atomic-app/Cargo.toml"
+    atomic_binary="$repo/mseries/rust/atomic-app/target/release/mseries-atomic-app"
+  fi
+fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 curl -fLsS https://updates.signal.org/desktop/signal-desktop-beta_arm64.AppImage -o "$work/signal.AppImage"
@@ -22,8 +34,8 @@ grep -q '^\[GNUPG:\] VALIDSIG 4B16B7232DFAA439AD791002EF9F501F13EED94C ' "$work/
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
 (cd "$work" && ./signal.AppImage --appimage-extract >/dev/null)
 if (( atomic )); then
-  install -Dm755 "$repo/mseries/atomic-app.py" "$HOME/.local/libexec/mseries-atomic-app"
-  python3 "$repo/mseries/atomic-app.py" --app signal-desktop-beta deploy \
+  install -Dm755 "$atomic_binary" "$HOME/.local/libexec/mseries-atomic-app"
+  "$HOME/.local/libexec/mseries-atomic-app" --app signal-desktop-beta deploy \
     --source "$work/squashfs-root" --entrypoint AppRun \
     --artifact-sha256 "$(sha256sum "$work/signal.AppImage" | cut -d' ' -f1)" \
     --publisher-fingerprint 4B16B7232DFAA439AD791002EF9F501F13EED94C
@@ -32,7 +44,7 @@ if (( atomic )); then
     cp -p "$HOME/.local/bin/signal-desktop" "$HOME/.local/bin/signal-desktop.before-atomic"
   fi
   launcher_tmp=$(mktemp "$HOME/.local/bin/.signal-desktop.XXXXXX")
-  printf '#!/bin/bash\nexec /usr/bin/python3 %q --app signal-desktop-beta run -- "$@"\n' \
+  printf '#!/bin/bash\nexec %q --app signal-desktop-beta run -- "$@"\n' \
     "$HOME/.local/libexec/mseries-atomic-app" >"$launcher_tmp"
   chmod 755 "$launcher_tmp"
   mv -f "$launcher_tmp" "$HOME/.local/bin/signal-desktop"

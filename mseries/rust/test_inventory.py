@@ -13,6 +13,15 @@ SPEC.loader.exec_module(INVENTORY)
 
 
 class InventoryRoles(unittest.TestCase):
+    def test_atomic_app_reference_and_rust_cli_share_one_project_record(self):
+        document = json.loads(INVENTORY.render())
+        project = next(item for item in document["projects"] if item["id"] == "mseries/atomic-app")
+        self.assertIn("mseries/atomic-app.py", project["items"])
+        self.assertIn("mseries/rust/atomic-app/src/main.rs", project["items"])
+        self.assertIn("mseries/rust/atomic-app/test-parity.py", project["items"])
+        self.assertEqual("candidate-parity-verified-not-installed", project["migration_status"])
+        self.assertEqual("candidate-parity-evidence-present", project["parity_contract_status"])
+
     def test_every_project_has_a_separate_migration_and_parity_record(self):
         document = json.loads(INVENTORY.render())
         projects = document["projects"]

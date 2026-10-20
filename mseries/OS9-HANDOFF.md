@@ -2592,3 +2592,28 @@ Rust target or non-code disposition, migration status, parity-contract status,
 and separate enhancement-review status. Candidate evidence is not represented
 as full project parity; projects without feature-level contracts remain marked
 for semantic review.
+
+## 2026-10-20 — atomic app activation Rust candidate
+
+Added the independent `mseries/rust/atomic-app/` Rust CLI for the existing
+Signal `--atomic` release flow. It validates release paths and entrypoints,
+preserves file permissions and modification times, stages and syncs complete
+trees, serializes writers with `flock`, atomically replaces the generation
+selector, and retains the Python implementation as the behavior reference.
+`mseries/stage-factory-enhancements.sh` builds the binary into
+`/usr/libexec/mseries/atomic-app`; the Signal installer copies that staged
+binary before opting into Rust. It can build from the checked-out crate when
+Cargo is available on a system without the staged binary.
+
+Validation: four Rust unit tests including post-switch sync failure, Clippy
+with warnings denied, release build, eight paired Python/Rust CLI scenarios
+(deploy/update, status, launch, rollback, validation failures, symlinks,
+concurrency, and metadata), plus all nine legacy Python tests pass. The former
+macOS path assertion was corrected to compare canonical temp paths. The full
+Apple Silicon image build and a real Signal ARM64 install/update/rollback cycle
+remain pending; the default non-atomic Signal install is unchanged.
+
+Updated both Rust CI workflows to build the crate and run the parity suite.
+Inventory now has 769 paths (687 local, 82 Elementary-owned upstream), 233
+directory groups, and 204 project records. This remains a candidate pending
+image and live application qualification. Changes remain local on `rust`.

@@ -11,7 +11,7 @@ fi
 app="$appdir/AppRun"
 launcher="\"$app\" --use-tray-icon %U"
 if [[ $atomic == 1 ]]; then
-  launcher="/usr/bin/python3 \"$HOME/.local/libexec/mseries-atomic-app\" --app signal-desktop-beta run -- --use-tray-icon %U"
+  launcher="\"$HOME/.local/libexec/mseries-atomic-app\" --app signal-desktop-beta run -- --use-tray-icon %U"
 fi
 test -x "$app" || { echo 'Install Signal with mseries/install-signal.sh first.' >&2; exit 1; }
 icon="$appdir/usr/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
