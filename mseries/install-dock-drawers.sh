@@ -28,9 +28,6 @@ prefix=${HOME}/.local/lib/mseries/dock
 wrapper=${HOME}/.local/bin/io.elementary.dock
 patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
-patch=$repo/mseries/patches/dock-drawers.patch
-startup_patch=$repo/mseries/patches/dock-workspace-startup.patch
-taskbar_patch=$repo/mseries/patches/dock-taskbar.patch
 
 mode=${1:-install}
 case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
@@ -41,15 +38,15 @@ if [[ $mode == --revert ]]; then
   exit 0
 fi
 
-for tool in git meson ninja valac pkg-config glib-compile-schemas; do
+for tool in git meson ninja valac pkg-config glib-compile-schemas python3 xvfb-run; do
   command -v "$tool" >/dev/null || { echo "Missing $tool." >&2; missing=1; }
 done
-for mod in gtk4 granite-7 libadwaita-1 gee-0.8 gala x11 wayland-client; do
+for mod in gtk4 granite-7 libadwaita-1 gee-0.8 gala x11 wayland-client wingpanel-9 json-glib-1.0; do
   pkg-config --exists "$mod" 2>/dev/null || { echo "Missing development files for $mod" >&2; missing=1; }
 done
 if [[ ${missing:-0} == 1 ]]; then
   echo 'Install build requirements with:' >&2
-  echo '  sudo apt install git meson ninja-build valac libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libgala-dev libx11-dev libwayland-dev' >&2
+  echo '  sudo apt install git meson ninja-build valac libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libgala-dev libx11-dev libwayland-dev libjson-glib-dev xvfb xauth' >&2
   exit 1
 fi
 
@@ -68,14 +65,13 @@ git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
-git -C "$source_dir" apply "$patch"
-git -C "$source_dir" apply "$startup_patch"
-git -C "$source_dir" apply "$taskbar_patch"
+bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
 glib-compile-schemas --strict --dry-run "$source_dir/data"
+bash "$repo/mseries/dock-taskbar/test-hover.sh"
 if [[ $mode == --build-only ]]; then
   echo 'Native dock build and schema validation passed; installed dock unchanged.'
   exit 0

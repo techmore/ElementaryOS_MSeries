@@ -1,0 +1,403 @@
+diff --git a/data/Application.css b/data/Application.css
+index 2286e87..7f684ad 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -465,3 +465,154 @@ dock-window.taskbar .taskbar-logo-pane.taskbar-logo-pane-lit,
+ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
+     background: linear-gradient(to top left, #005f6b, #7fd8f0);
+ }
++
++/* CodexBar forms its own group beside the system status controls. */
++.taskbar-codexbar-button { padding: 8px; min-width: 24px; min-height: 24px; border-radius: 6px; }
++.taskbar-codexbar-separator { opacity: 0.35; }
++
++/* Windows 11 Start appearance, owner requested 2026-10-20.
++ * Reference: https://support.microsoft.com/en-us/windows/experience/personalization/customize-the-windows-start-menu
++ * Scoped to the dock's existing native Start menu. */
++popover.start-menu {
++  font-family: "Segoe UI", "Noto Sans", sans-serif;
++  font-size: 14px;
++}
++popover.start-menu > contents {
++  padding: 0;
++  border-radius: 12px;
++  border: 1px solid rgba(0, 0, 0, 0.12);
++  background: #f3f3f3;
++  color: #1b1b1b;
++  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
++}
++popover.start-menu .start-search {
++  min-height: 36px;
++  padding: 0 14px;
++  border-radius: 6px;
++  border: 1px solid rgba(0, 0, 0, 0.08);
++  background: #ffffff;
++  color: #1b1b1b;
++  box-shadow: inset 0 -2px #0078d4;
++}
++popover.start-menu .start-search:focus-within {
++  box-shadow: inset 0 -2px #0078d4, 0 0 0 1px rgba(0,120,212,0.22);
++}
++popover.start-menu .start-section-title {
++  font-size: 14px;
++  font-weight: 600;
++  margin: 8px 0;
++}
++popover.start-menu .start-pill {
++  min-height: 24px;
++  padding: 0 12px;
++  border-radius: 4px;
++  background-image: none;
++  background-color: #fafafa;
++  color: #1b1b1b;
++  border: 1px solid rgba(0,0,0,0.08);
++  box-shadow: 0 1px 1px rgba(0,0,0,0.04);
++}
++popover.start-menu .start-tile {
++  padding: 10px 3px;
++  border-radius: 6px;
++  background: transparent;
++  border: 1px solid transparent;
++}
++popover.start-menu .start-tile label { font-size: 12px; }
++popover.start-menu .start-list { background: transparent; }
++popover.start-menu .start-list row {
++  padding: 6px 8px;
++  border-radius: 6px;
++}
++popover.start-menu .start-tile:hover,
++popover.start-menu .start-list row:hover,
++popover.start-menu .start-pill:hover { background-color: rgba(0,0,0,0.045); }
++popover.start-menu .start-tile:focus-visible,
++popover.start-menu .start-list row:focus-visible,
++popover.start-menu button:focus-visible { outline: 2px solid #0078d4; outline-offset: -2px; }
++popover.start-menu .start-footer {
++  min-height: 56px;
++  padding: 6px 32px;
++  border-radius: 0 0 12px 12px;
++  background: #e9e9e9;
++  box-shadow: inset 0 1px rgba(0,0,0,0.06);
++}
++popover.start-menu .start-footer button {
++  padding: 6px 10px;
++  border-radius: 5px;
++  background: transparent;
++  border: 1px solid transparent;
++  box-shadow: none;
++}
++popover.start-menu .start-footer button:hover { background: rgba(0,0,0,0.05); }
++dock-window.taskbar.dark popover.start-menu > contents {
++  background: #242424;
++  color: #ffffff;
++  border-color: rgba(255,255,255,0.10);
++  box-shadow: 0 12px 36px rgba(0,0,0,0.45);
++}
++dock-window.taskbar.dark popover.start-menu .start-search {
++  background: #1b1b1b;
++  color: #ffffff;
++  border-color: rgba(255,255,255,0.08);
++  box-shadow: inset 0 -2px #60cdff;
++}
++dock-window.taskbar.dark popover.start-menu .start-search:focus-within {
++  box-shadow: inset 0 -2px #60cdff, 0 0 0 1px rgba(96,205,255,0.22);
++}
++dock-window.taskbar.dark popover.start-menu .start-pill {
++  background: #323232;
++  color: #ffffff;
++  border-color: rgba(255,255,255,0.07);
++}
++dock-window.taskbar.dark popover.start-menu .start-tile:hover,
++dock-window.taskbar.dark popover.start-menu .start-list row:hover,
++dock-window.taskbar.dark popover.start-menu .start-pill:hover { background: rgba(255,255,255,0.065); }
++dock-window.taskbar.dark popover.start-menu .start-footer {
++  background: #1c1c1c;
++  box-shadow: inset 0 1px rgba(255,255,255,0.055);
++}
++dock-window.taskbar.dark popover.start-menu .start-footer button:hover { background: rgba(255,255,255,0.065); }
++dock-window.taskbar.dark popover.start-menu .start-tile:focus-visible,
++dock-window.taskbar.dark popover.start-menu .start-list row:focus-visible,
++dock-window.taskbar.dark popover.start-menu button:focus-visible { outline-color: #60cdff; }
++popover.start-menu .start-footer button { color: #1b1b1b; }
++dock-window.taskbar.dark popover.start-menu .start-footer button { color: #ffffff; }
++dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
++/* Compact Windows 11 proportions and acrylic-like layered surfaces. */
++popover.start-menu { font-family: "Segoe UI", "Arimo", sans-serif; font-size: 13px; }
++popover.start-menu > contents {
++  border-radius: 8px;
++  background: linear-gradient(135deg, rgba(243,246,252,0.98), rgba(242,242,247,0.97));
++}
++popover.start-menu .start-search {
++  min-height: 32px;
++  border-radius: 999px;
++  padding: 0 14px;
++  box-shadow: inset 0 -1px rgba(0,0,0,0.12);
++}
++popover.start-menu .start-search:focus-within { box-shadow: inset 0 -2px #0078d4; }
++popover.start-menu .start-section-title { font-size: 14px; margin: 4px 0; }
++popover.start-menu .start-tile { min-height: 66px; padding: 6px 0; border-radius: 4px; }
++popover.start-menu .start-tile label { font-size: 12px; }
++popover.start-menu .start-pill { min-height: 23px; font-size: 12px; padding: 0 9px; }
++popover.start-menu .start-recent { padding: 8px; border-radius: 4px; }
++popover.start-menu .start-recent:hover { background: rgba(0,0,0,0.045); }
++popover.start-menu .start-footer { min-height: 58px; padding: 4px 40px; border-radius: 0 0 8px 8px; background: rgba(225,229,238,0.85); }
++popover.start-menu .start-footer button image { border-radius: 999px; }
++dock-window.taskbar.dark popover.start-menu > contents {
++  background: linear-gradient(135deg, rgba(38,42,53,0.98), rgba(31,32,39,0.98));
++}
++dock-window.taskbar.dark popover.start-menu .start-search {
++  background: rgba(16,18,24,0.65);
++  box-shadow: inset 0 -1px rgba(255,255,255,0.12);
++}
++dock-window.taskbar.dark popover.start-menu .start-search:focus-within { box-shadow: inset 0 -2px #60cdff; }
++dock-window.taskbar.dark popover.start-menu .start-footer { background: rgba(23,25,32,0.85); }
++dock-window.taskbar.dark popover.start-menu .start-recent:hover { background: rgba(255,255,255,0.06); }
++popover.start-menu .start-recent { color: #1b1b1b; }
++popover.start-menu .start-recent .dim-label { color: #606060; opacity: 1; }
++popover.start-menu .start-search placeholder { color: #606060; }
++dock-window.taskbar.dark popover.start-menu .start-recent { color: #ffffff; }
++dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #bcbcbc; }
++dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
+diff --git a/meson.build b/meson.build
+index b3a8c61..c5266f3 100644
+--- a/meson.build
++++ b/meson.build
+@@ -49,6 +49,8 @@ dependencies = [
+     adw_dep,
+     m_dep,
+     wl_client_dep,
++    dependency('wingpanel-9'),
++    dependency('json-glib-1.0'),
+     pantheon_desktop_shell_dep
+ ]
+ 
+diff --git a/src/StartMenu.vala b/src/StartMenu.vala
+index aee416b..105ef82 100644
+--- a/src/StartMenu.vala
++++ b/src/StartMenu.vala
+@@ -31,10 +31,11 @@ public class Dock.StartMenu : Gtk.Popover {
+     construct {
+         has_arrow = false;
+         position = TOP;
++        margin_bottom = 12;
+         add_css_class ("start-menu");
+ 
+         search_entry = new Gtk.SearchEntry () {
+-            placeholder_text = _("Search for apps, settings, and documents"),
++            placeholder_text = _("Search for apps and settings"),
+             hexpand = true
+         };
+         search_entry.add_css_class ("start-search");
+@@ -50,6 +51,7 @@ public class Dock.StartMenu : Gtk.Popover {
+         all_apps_button.clicked.connect (() => {
+             stack.visible_child_name = stack.visible_child_name == "all" ? "home" : "all";
+             all_apps_button.label = stack.visible_child_name == "all" ? _("‹ Back") : _("All apps ›");
++            pinned_title.label = stack.visible_child_name == "all" ? _("All apps") : _("Pinned");
+         });
+         var pinned_header = new Gtk.Box (HORIZONTAL, 0);
+         pinned_header.append (pinned_title);
+@@ -60,14 +62,14 @@ public class Dock.StartMenu : Gtk.Popover {
+             max_children_per_line = PINNED_COLUMNS,
+             selection_mode = NONE,
+             homogeneous = true,
+-            row_spacing = 4,
+-            column_spacing = 4
++            row_spacing = 2,
++            column_spacing = 0
+         };
+         pinned_box.child_activated.connect ((child) => {
+             launch ((AppInfo) child.get_data<AppInfo> ("app"));
+         });
+ 
+-        var recommended_title = new Gtk.Label (_("Recommended")) { xalign = 0 };
++        var recommended_title = new Gtk.Label (_("Recommended")) { xalign = 0, hexpand = true };
+         recommended_title.add_css_class ("start-section-title");
+         recommended_grid = new Gtk.Grid () {
+             column_homogeneous = true,
+@@ -76,9 +78,19 @@ public class Dock.StartMenu : Gtk.Popover {
+         };
+ 
+         var home = new Gtk.Box (VERTICAL, 12);
+-        home.append (pinned_header);
++        // Navigation stays outside the stack so All apps always has a Back button.
+         home.append (pinned_box);
+-        home.append (recommended_title);
++        var recommended_header = new Gtk.Box (HORIZONTAL, 0);
++        recommended_header.append (recommended_title);
++        var more = new Gtk.Button.with_label (_("More ›"));
++        more.add_css_class ("start-pill");
++        more.clicked.connect (() => {
++            popdown ();
++            try { AppInfo.launch_default_for_uri ("recent:///", null); }
++            catch (Error e) { warning ("Could not open recent files: %s", e.message); }
++        });
++        recommended_header.append (more);
++        home.append (recommended_header);
+         home.append (recommended_grid);
+ 
+         all_apps_list = new Gtk.ListBox () { selection_mode = NONE };
+@@ -103,17 +115,21 @@ public class Dock.StartMenu : Gtk.Popover {
+             transition_type = CROSSFADE,
+             vexpand = true
+         };
+-        stack.add_named (home, "home");
++        var home_scroll = new Gtk.ScrolledWindow () {
++            child = home, hscrollbar_policy = NEVER, vexpand = true
++        };
++        stack.add_named (home_scroll, "home");
+         stack.add_named (all_scroller, "all");
+         stack.add_named (results_scroller, "results");
+ 
+         var body = new Gtk.Box (VERTICAL, 16) {
+             margin_top = 24,
+             margin_bottom = 16,
+-            margin_start = 32,
+-            margin_end = 32
++            margin_start = 40,
++            margin_end = 40
+         };
+         body.append (search_entry);
++        body.append (pinned_header);
+         body.append (stack);
+ 
+         // Footer: user on the left, power on the right.
+@@ -150,8 +166,8 @@ public class Dock.StartMenu : Gtk.Popover {
+         footer.append (power_button);
+ 
+         var content = new Gtk.Box (VERTICAL, 0) {
+-            width_request = 680,
+-            height_request = 720
++            width_request = 640,
++            height_request = 680
+         };
+         content.append (body);
+         content.append (footer);
+@@ -163,6 +179,7 @@ public class Dock.StartMenu : Gtk.Popover {
+         show.connect (() => {
+             search_entry.text = "";
+             all_apps_button.label = _("All apps ›");
++            pinned_title.label = _("Pinned");
+             populate ();
+             if (search_mode) {
+                 fill_list (results_list, visible_apps ());
+@@ -198,20 +215,32 @@ public class Dock.StartMenu : Gtk.Popover {
+         while (pinned_box.get_first_child () != null) {
+             pinned_box.remove (pinned_box.get_first_child ());
+         }
+-        var pinned_count = 0;
++        var selected = new Gee.HashSet<string> ();
+         var settings = new Settings ("io.elementary.dock");
++        // Keep the owner's pinned apps first, then fill a familiar three-row app grid.
+         foreach (var id in settings.get_strv ("launchers")) {
+             var app = new DesktopAppInfo (id);
+-            if (app != null && pinned_count < PINNED_MAX) {
++            if (app != null && selected.size < PINNED_MAX && selected.add (id)) {
+                 pinned_box.append (pinned_tile (app));
+-                pinned_count++;
+             }
+         }
+-        if (pinned_count == 0) {
+-            foreach (var app in visible_apps ()) {
+-                if (pinned_count++ >= PINNED_MAX) {
+-                    break;
+-                }
++        string[] essentials = {
++            "io.elementary.settings.desktop", "io.elementary.calendar.desktop",
++            "io.elementary.photos.desktop", "io.elementary.music.desktop",
++            "io.elementary.videos.desktop", "io.elementary.tasks.desktop",
++            "io.elementary.calculator.desktop", "io.elementary.code.desktop",
++            "io.elementary.terminal.desktop", "org.gnome.TextEditor.desktop",
++            "brave-browser.desktop", "org.gnome.clocks.desktop"
++        };
++        foreach (var id in essentials) {
++            var app = new DesktopAppInfo (id);
++            if (app != null && app.should_show () && selected.size < PINNED_MAX && selected.add (id)) {
++                pinned_box.append (pinned_tile (app));
++            }
++        }
++        foreach (var app in visible_apps ()) {
++            if (selected.size >= PINNED_MAX) break;
++            if (app.get_id () != null && selected.add (app.get_id ())) {
+                 pinned_box.append (pinned_tile (app));
+             }
+         }
+@@ -221,15 +250,20 @@ public class Dock.StartMenu : Gtk.Popover {
+     }
+ 
+     private Gtk.FlowBoxChild pinned_tile (AppInfo app) {
+-        var tile = new Gtk.Box (VERTICAL, 6) {
++        var tile = new Gtk.Box (VERTICAL, 8) {
+             halign = CENTER
+         };
+         tile.append (new Gtk.Image.from_gicon (app.get_icon () ?? new ThemedIcon ("application-x-executable")) {
+-            pixel_size = 40
++            pixel_size = 32
+         });
+         tile.append (new Gtk.Label (app.get_display_name ()) {
+             ellipsize = END,
+-            max_width_chars = 10,
++            max_width_chars = 11,
++            width_chars = 10,
++            wrap = true,
++            wrap_mode = Pango.WrapMode.WORD_CHAR,
++            lines = 2,
++            height_request = 32,
+             justify = CENTER
+         });
+         var child = new Gtk.FlowBoxChild () {
+@@ -280,11 +314,13 @@ public class Dock.StartMenu : Gtk.Popover {
+             });
+             var labels = new Gtk.Box (VERTICAL, 0);
+             labels.append (new Gtk.Label (item.get_display_name ()) { xalign = 0, ellipsize = MIDDLE, max_width_chars = 24 });
++            labels.hexpand = true;
+             var age = new Gtk.Label (Granite.DateTime.get_relative_datetime (item.get_modified ())) { xalign = 0 };
+             age.add_css_class ("dim-label");
+             labels.append (age);
+             row.append (labels);
+-            var button = new Gtk.Button () { child = row, tooltip_text = item.get_uri_display () };
++            var button = new Gtk.Button () { child = row, tooltip_text = item.get_uri_display (), hexpand = true };
++            button.add_css_class ("start-recent");
+             button.add_css_class ("flat");
+             button.clicked.connect (() => {
+                 popdown ();
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+index 7e3a8a8..a6b8597 100644
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -188,6 +188,17 @@ public class Dock.TaskbarRow : Gtk.Widget {
+             valign = FILL,
+             margin_end = 8
+         };
++        var codexbar_group = new Gtk.Box (HORIZONTAL, 0) { valign = CENTER };
++        codexbar_group.append (new TaskbarCodexBar ());
++        var group_separator = new Gtk.Separator (VERTICAL) {
++            height_request = 24,
++            valign = CENTER,
++            margin_start = 12,
++            margin_end = 12
++        };
++        group_separator.add_css_class ("taskbar-codexbar-separator");
++        codexbar_group.append (group_separator);
++        end_box.append (codexbar_group);
+         end_box.append (status_box);
+         end_box.append (clock_button);
+ 
+diff --git a/src/meson.build b/src/meson.build
+index a77498c..e363e98 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,5 +1,15 @@
+ sources = [
+     'Application.vala',
++    'TaskbarCodexBar.vala',
++    'codexbar/Indicator.vala',
++    'codexbar/JsonBoundary.vala',
++    'codexbar/HelperProcess.vala',
++    'codexbar/AccountDialog.vala',
++    'codexbar/PanelPreferences.vala',
++    'codexbar/RefreshPolicy.vala',
++    'codexbar/QuotaEta.vala',
++    'codexbar/Presentation.vala',
++
+     'BaseIconGroup.vala',
+     'BaseItem.vala',
+     'BottomMargin.vala',
