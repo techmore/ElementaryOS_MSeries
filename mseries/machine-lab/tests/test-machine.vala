@@ -203,6 +203,72 @@ void test_incus_empty_and_bad_json () {
     assert_true (threw);
 }
 
+void test_snapshot_parse_and_tags () {
+    string listing = "Snapshot list:\nID        TAG               VM SIZE                DATE     VM CLOCK     ICOUNT\n"
+        + "1         before-upgrade       0 B 2026-10-19 21:40:11  0:00:00.000          0\n"
+        + "2         clean.install    1.5 MiB 2026-10-19 22:01:09  0:00:00.000          0\n";
+    var list = Snapshots.parse (listing);
+    assert_cmpint (list.length, CompareOperator.EQ, 2);
+    assert_cmpstr (list[0].tag, CompareOperator.EQ, "before-upgrade");
+    assert_cmpstr (list[0].size, CompareOperator.EQ, "0 B");
+    assert_cmpstr (list[1].size, CompareOperator.EQ, "1.5 MiB");
+    assert_cmpstr (list[1].taken, CompareOperator.EQ, "2026-10-19 22:01:09");
+    assert_cmpint (Snapshots.parse ("").length, CompareOperator.EQ, 0);
+    assert_cmpint (Snapshots.parse ("Snapshot list:\n").length, CompareOperator.EQ, 0);
+    assert_true (Snapshots.valid_tag ("pre-1.2_final"));
+    assert_false (Snapshots.valid_tag (""));
+    assert_false (Snapshots.valid_tag ("has space"));
+    assert_false (Snapshots.valid_tag ("semi;colon"));
+    assert_false (Snapshots.valid_tag (string.nfill (49, 'a')));
+}
+
+async int snapshot_flow (string disk) {
+    string o;
+    bool ok = yield Snapshots.run (disk, { "-c", "one" }, out o);
+    assert_true (ok);
+    ok = yield Snapshots.run (disk, { "-c", "two" }, out o);
+    assert_true (ok);
+    ok = yield Snapshots.run (disk, { "-d", "one" }, out o);
+    assert_true (ok);
+    yield Snapshots.run (disk, { "-l" }, out o);
+    int n = Snapshots.parse (o).length;
+    ok = yield Snapshots.run (disk, { "-a", "missing" }, out o);
+    assert_false (ok);
+    return n;
+}
+
+void test_snapshot_roundtrip () {
+    if (Environment.find_program_in_path ("qemu-img") == null) {
+        Test.skip ("qemu-img not installed");
+        return;
+    }
+    string dir = "";
+    try {
+        dir = DirUtils.make_tmp ("ml-snap-XXXXXX");
+    } catch (Error e) {
+        Test.fail ();
+        return;
+    }
+    string disk = Path.build_filename (dir, "disk.qcow2");
+    try {
+        Process.spawn_sync (null, { "qemu-img", "create", "-f", "qcow2", disk, "64M" }, null,
+            SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL, null);
+    } catch (Error e) {
+        Test.fail ();
+        return;
+    }
+    var loop = new MainLoop ();
+    int count = -1;
+    snapshot_flow.begin (disk, (obj, res) => {
+        count = snapshot_flow.end (res);
+        loop.quit ();
+    });
+    loop.run ();
+    assert_cmpint (count, CompareOperator.EQ, 1);
+    FileUtils.unlink (disk);
+    DirUtils.remove (dir);
+}
+
 void test_incus_names () {
     assert_true (IncusClient.valid_name ("lab-1"));
     assert_true (IncusClient.valid_name ("a"));
@@ -234,5 +300,7 @@ int main (string[] args) {
     Test.add_func ("/incus/parse", test_incus_parse);
     Test.add_func ("/incus/empty-and-bad-json", test_incus_empty_and_bad_json);
     Test.add_func ("/incus/names", test_incus_names);
+    Test.add_func ("/snapshots/parse-and-tags", test_snapshot_parse_and_tags);
+    Test.add_func ("/snapshots/roundtrip", test_snapshot_roundtrip);
     return Test.run ();
 }
