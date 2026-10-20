@@ -1,0 +1,16 @@
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -212,2 +212,3 @@
+         end_box.append (clock_button);
++        end_box.append (new TaskbarNotifications ());
+ 
+diff --git a/src/meson.build b/src/meson.build
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,4 +1,5 @@
+ sources = [
+     'Application.vala',
+     'TaskbarCodexBar.vala',
++    'TaskbarNotifications.vala',
+     'codexbar/Indicator.vala',
