@@ -30,12 +30,17 @@ def extract_png(raw):
     return max(images, key=lambda item: item[0])[1]
 
 
-def download():
-    with urlopen(URL, timeout=15) as response:
+def download_asset(url, checksum):
+    with urlopen(url, timeout=15) as response:
         # Require Microsoft's HTTPS origin even if the asset starts redirecting.
-        if response.url != URL:
+        if response.url != url:
             raise ValueError('Unexpected icon redirect')
         raw = response.read(LIMIT + 1)
-    if len(raw) > LIMIT or hashlib.sha256(raw).hexdigest() != SHA256:
+    if len(raw) > LIMIT or hashlib.sha256(raw).hexdigest() != checksum:
         raise ValueError('The upstream icon changed; review its new checksum before updating')
-    return extract_png(raw)
+    return raw
+
+
+def download(url=URL, checksum=SHA256):
+    raw = download_asset(url, checksum)
+    return raw if raw.startswith(PNG) else extract_png(raw)
