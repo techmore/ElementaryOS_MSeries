@@ -56,6 +56,18 @@ qualification remain open. Boot journal also reports an unclean FAT boot volume
 and journal plus a dock Ethernet firmware-patch load warning; no mounted-volume
 repair or kernel/firmware policy change was attempted.
 
+Deployment receipt: built implementation commit `83b3f14`, installed package
+`0.1.0+git83b3f14` with `dpkg -i`, then only ran user-manager daemon-reload.
+`dpkg -V` is clean. The old compositor PID 1935 remains alive on its prior
+executable; the dock remains inactive and the disable marker SHA256 remains
+`b8847b2f0ada5f957ae232c86c9a2435bb04e5463b46dfbe36a93b9d64649ff2`.
+A reconstructed previous-package rollback is retained in the private chat work
+folder. The new package SHA256 is
+`c814251254a62ec4fe565a2259ed4da6a4fc17a65d38bf9dbcbde8503f787eed`.
+[PR #314](https://github.com/techmore/ElementaryOS_MSeries/pull/314) targets dev.
+The private recovery command was updated too; its refusal on the old live
+session was checked without requesting focus.
+
 Next login must load the staged compositor before any dock re-enable. Keep the
 disable marker until that runtime is confirmed and the owner wants a live trial.
 
