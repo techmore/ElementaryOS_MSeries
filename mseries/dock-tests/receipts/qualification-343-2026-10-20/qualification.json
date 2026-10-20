@@ -1,0 +1,114 @@
+{
+  "candidate": "4bbc080a48a839b738a44bb8ed0410179a2b572b",
+  "scope": "Source-merge qualification: actual production GTK App/Launcher classes, private Xvfb display and recording compositor, real XTEST pointer/keyboard events. No desktop deployment.",
+  "schemes": [
+    "light",
+    "dark"
+  ],
+  "checks": [
+    "Canonical pinned-upstream full taskbar build and protected source hashes",
+    "Actual Launcher initial/open/focus/closed/reopened states",
+    "Five native identity/AppSystem/activation regressions",
+    "Eight wrapper regressions retained from review",
+    "Real hover crossing retains entry focus and accepts typed text",
+    "Mixed raw Teams identities dispatch FocusWindow(101), not partial ShowWindowsFor",
+    "Homogeneous Outlook identities dispatch ShowWindowsFor using exact raw identity",
+    "Unknown transient dispatches FocusWindow(301)",
+    "Actual secondary-click menus omit Keep/Uninstall/View for transient items, retain Keep for installed launchers",
+    "Escape dismisses both native context menus; typing works afterward",
+    "Light/dark visual inspection: complete original fixture icons, visible gray/open and blue/focused markers, no marker for closed pin"
+  ],
+  "visual_review": "Passed for changed production launcher controls in both themes. Uses original fixture icons and real Teams/Outlook identity patterns, not browser sessions or redistributed vendor assets. Prior combined taskbar snapping/focus/typing receipt retained.",
+  "recordings": {
+    "light": {
+      "theme": "light",
+      "markers": [
+        {
+          "visible": true,
+          "focused": false,
+          "width": 12,
+          "height": 3
+        },
+        {
+          "visible": true,
+          "focused": true,
+          "width": 18,
+          "height": 3
+        },
+        {
+          "visible": true,
+          "focused": false,
+          "width": 8,
+          "height": 3
+        },
+        {
+          "visible": false,
+          "focused": false,
+          "width": 7,
+          "height": 3
+        }
+      ],
+      "events": [
+        "focus:101",
+        "show:brave-outlook.office.com__mail_-Default",
+        "focus:301"
+      ],
+      "pointer_hover_preserves_typing": true,
+      "mixed_alias_activation_focuses_window": true,
+      "homogeneous_alias_activation_uses_full_group": true,
+      "transient_menu_hides_invalid_actions": true,
+      "native_context_menu_escape": true,
+      "typing_after_actions": true
+    },
+    "dark": {
+      "theme": "dark",
+      "markers": [
+        {
+          "visible": true,
+          "focused": false,
+          "width": 12,
+          "height": 3
+        },
+        {
+          "visible": true,
+          "focused": true,
+          "width": 18,
+          "height": 3
+        },
+        {
+          "visible": true,
+          "focused": false,
+          "width": 8,
+          "height": 3
+        },
+        {
+          "visible": false,
+          "focused": false,
+          "width": 7,
+          "height": 3
+        }
+      ],
+      "events": [
+        "focus:101",
+        "show:brave-outlook.office.com__mail_-Default",
+        "focus:301"
+      ],
+      "pointer_hover_preserves_typing": true,
+      "mixed_alias_activation_focuses_window": true,
+      "homogeneous_alias_activation_uses_full_group": true,
+      "transient_menu_hides_invalid_actions": true,
+      "native_context_menu_escape": true,
+      "typing_after_actions": true
+    }
+  },
+  "deployed": false,
+  "restarted_wingpanel": false,
+  "deferred_to_separate_deployment_acceptance": [
+    "Physical M-series/Wayland performance and placement",
+    "Authenticated browser application/media behavior",
+    "Any deployment, installation or desktop-service reload"
+  ],
+  "source_merge_gate": "passed locally; updated-head GitHub CI still required",
+  "reconciled_base": "4cf7a90",
+  "reconciled_verification": "Full clean canonical build and both-theme real input rerun passed after merging dev, including darker running markers; screenshots refreshed and visually inspected."
+}

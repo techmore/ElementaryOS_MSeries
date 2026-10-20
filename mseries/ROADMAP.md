@@ -1,5 +1,56 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## PR #343 source-merge qualification passed — 2026-10-20
+
+Production GTK launcher controls pass light/dark visual inspection and real
+private-display click/hover/menu/Escape/typing checks. Mixed and uniform window
+identities dispatch the expected compositor actions; transient menus are correct.
+The canonical clean build now runs these checks in CI. Receipts/screenshots:
+`mseries/dock-tests/receipts/qualification-343-2026-10-20/`. No desktop deployment
+or Wingpanel restart. Next: updated-head CI and source merge; hardware deployment
+acceptance remains separate and requires its own authorization.
+
+## PR #339 superseded; review hardening retained — 2026-10-20
+
+Reconciled with concurrent #342; its startup/focus markers and focused-blue
+style are preserved. Fixed ambiguous app matching, mixed-identity activation and
+invalid transient app-management actions.
+Five native tests, eight wrapper checks, complete taskbar build/preservation and
+private focus/typing checks pass. Source-only review receipt and screenshot are
+retained under `mseries/dock-tests/receipts/review-339-2026-10-20/`. No deployment
+or Wingpanel restart. Next: owner recovery confirmation, representative visual/
+input acceptance and separately authorized deployment for the hardening follow-up.
+The coordinator closed #339 as superseded by #342 during this review; do not reopen
+the obsolete PR. The original tracking integration has already landed.
+
+## Tracking draft reconciled with canonical taskbar preparation — 2026-10-20
+
+Draft #339 now uses #341's canonical `mseries/dock-taskbar/prepare-source.sh`
+for both its production-method test and its explicit build-only mode. The latter
+hashes Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala and all copied shared
+CodexBar Vala sources before applying the experimental tracking patch, verifies
+all remain byte-identical, performs the complete build/schema and GTK hover/focus
+checks, then exits before installation. Default installation remains unchanged.
+Three tracking regressions, eight wrapper tests, the full canonical native build
+and the real GTK hover/focus/leave/pin probe pass against dev `689ffdf6`.
+No live files, settings or services were changed. The deployed #341 taskbar and
+icons remain under the recovery coordinator's ownership; #339 remains draft and
+undeployed pending its review/visual/input/deployment gates.
+
+## Draft app tracking preserves complete taskbar source — 2026-10-20
+
+The app-ID/running-pill fix is now source-only and includes an explicit
+`--build-running-apps-only` qualification mode. It applies after the complete
+Windows taskbar patch, requires Taskbar.vala and the taskbar-mode schema,
+verifies Taskbar.vala remains byte-identical, builds and exits before install.
+Default installation is unchanged. Three native resolver/AppSystem tests and
+eight wrapper regressions pass; the complete taskbar+tracking native build passes.
+The earlier incompatible deployment was rolled back; the restored live Windows
+taskbar binary/schema and official Teams/Outlook icons/pins are preserved.
+No live deployment is part of this draft. Owner recovery confirmation and
+isolated combined-taskbar UI/focus/typing validation remain gates. See
+`mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
+
 ## Import the iPhone's Messages pins — requested 2026-10-20
 
 Candidate PR #349 adds the ordered native import/review and encrypted mapping

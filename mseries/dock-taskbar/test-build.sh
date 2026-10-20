@@ -16,6 +16,7 @@ else
 fi
 bash "$here/prepare-source.sh" "$work/source"
 cp "$here/../dock-tests/test-marker-state.vala" "$work/source/src/test-marker-state.vala"
+cp "$here/../dock-tests/test-launcher-qualification.vala" "$work/source/src/test-launcher-qualification.vala"
 cat >> "$work/source/src/meson.build" <<'MESON'
 marker_sources = []
 foreach source : sources
@@ -24,6 +25,7 @@ foreach source : sources
   endif
 endforeach
 executable('test-markers', gresource, marker_sources, 'test-marker-state.vala', dependencies: dependencies)
+executable('test-launcher-qualification', gresource, marker_sources, 'test-launcher-qualification.vala', dependencies: dependencies)
 MESON
 meson setup "$work/build" "$work/source" --buildtype=release
 meson compile -C "$work/build"
@@ -33,6 +35,8 @@ for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockAppResolve
   strings "$work/build/src/io.elementary.dock" | grep -F "$component" > /dev/null
 done
 bash "$here/../dock-tests/test-markers.sh" "$work/source" "$work/build"
+GSETTINGS_SCHEMA_DIR="$work/source/data" python3 "$here/../dock-tests/test-launcher-qualification.py" \
+  "$work/build/src/test-launcher-qualification" "${MSERIES_QUALIFICATION_OUT:-$work/qualification}"
 bash "$here/test-hover.sh"
 bash "$here/../dock-tests/test-running-apps.sh"
 echo 'PASS complete Windows taskbar + CodexBar clean build; no deployment'
