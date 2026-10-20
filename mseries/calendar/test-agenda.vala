@@ -1158,6 +1158,18 @@ class AgendaTest : Object {
             for (int i = 0; i < 5; i++) yield pause ();
             preview (window, "calendar-tasks");
             stdout.printf ("PASS tabs, separate calendars with shared UID, undated task\n");
+            find_stack (widget).visible_child_name = "github";
+            yield expect ("Rupert deployment ready");
+            yield expect ("Daedalus deployment ready");
+            yield expect ("1 of 2 gates complete");
+            yield expect ("main CI: failing · last observed");
+            yield expect ("main CI: unknown · last observed");
+            yield expect ("Next: Verify fresh restore");
+            for (int i = 0; i < 6; i++) yield pause ();
+            yield expect ("Refresh unavailable. Check network and gh auth status.");
+            assert (named (widget, "github-refresh").sensitive);
+            preview (window, "calendar-github");
+            stdout.printf ("PASS GitHub outcomes: persistent priority, gate progress, CI failure/unknown, offline evidence and retry\n");
             yield verse_checks (window);
             yield study_checks (window);
             find_stack (widget).visible_child_name = "tasks";

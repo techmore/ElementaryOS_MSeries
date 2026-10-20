@@ -14,7 +14,7 @@ set -euo pipefail
 
 # Packaging revision: bump when the packaging itself changes (scripts,
 # control fields) so apt and dpkg see an upgrade, not a same-version reinstall.
-REVISION=0mseries2
+REVISION=0mseries3
 
 OUTDIR=${OUTDIR:?set OUTDIR to the output directory}
 HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -142,7 +142,7 @@ mseries_wingpanel_datetime_files() { # ROOT PKGDIR
   install -D -m 0755 "$1/mseries/calendar/accounts" "$2/usr/bin/mseries-calendar-accounts"
 }
 mseries_wingpanel_datetime_recommends() {
-  echo 'evolution-data-server, gnome-online-accounts-gtk, io.elementary.tasks'
+  echo 'evolution-data-server, gnome-online-accounts-gtk, io.elementary.tasks, python3, gh'
 }
 
 network_extra() { # ROOT SRC
