@@ -29,6 +29,11 @@ Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work
   and dock reloaded on owner request; owner reviewed it live ("looking good"). `--build-only` passes clean.
 - Top bar: compositor D-Bus `org.techmore.mseries.Panels.SetTopPanelMode` (runtime-only); helper hides it
   while active. New compositor installed via install-pantheon-rust-compositor.sh; loads at next login.
+- After re-login (compositor `0.1.0+gitf970354` loaded): the owner reports the taskbar/space reservation
+  working. Start is double size; right-click/long-press opens Lock, Log Out…, Restart…, Shut Down…, System
+  Settings (via org.gnome.SessionManager, so elementary's confirm dialog appears). The installed helper was
+  stale (no top-bar call); reinstalled it, and `TopPanelMode` now reads 1 (hidden). The Start left-click path
+  (Slingshot via Wingpanel while the bar is hidden) still needs owner confirmation.
 - Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
   bottom-right icon whose dropdown opens after a 0.5 s hover.
 - Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
