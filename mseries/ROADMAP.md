@@ -2949,3 +2949,5 @@ only in these two marker colors.
 - 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
 
 - 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.

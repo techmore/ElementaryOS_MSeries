@@ -1,3 +1,10 @@
+## Running-marker final lighter adjustment — 2026-10-20
+
+Owner requested a little lighter again: running markers now use #555555 in
+both modes, replacing #444444. Focused blue is unchanged. Native resource
+rebuild and diff check passed; private binary installed and taskbar service
+restarted and active.
+
 ## Owner-tuned charcoal running markers — 2026-10-20
 
 The owner's desktop prefers dark mode, while the taskbar is intentionally silver
