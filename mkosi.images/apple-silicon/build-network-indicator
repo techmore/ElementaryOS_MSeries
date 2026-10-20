@@ -6,6 +6,10 @@ readonly source_commit=8685ec8e55a45e48da0c12931a353cd440d11664
 readonly expected_version_prefix=8.0.1
 readonly plugin=usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so
 
+cargo build --locked --release --manifest-path \
+    "$SRCDIR/mseries/rust/panel-provenance/Cargo.toml"
+readonly panel_provenance="$SRCDIR/mseries/rust/panel-provenance/target/release/mseries-panel-provenance-rs"
+
 version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
     io.elementary.panel.network 2>/dev/null || true)
 # The panel package is installed as a build dependency so this gate checks the
@@ -47,5 +51,5 @@ if ! grep -aFq 'Show speed in menu bar' "$build_dir/libnetwork.so"; then
 fi
 install -D -m 0644 "$build_dir/libnetwork.so" "$DESTDIR/$plugin"
 
-python3 "$SRCDIR/mseries/panel/record-artifact" --root "$DESTDIR" \
+"$panel_provenance" record --root "$DESTDIR" \
     --pins "$SRCDIR/mseries/panel-factory-pins.json" --name network --commit "$source_commit"

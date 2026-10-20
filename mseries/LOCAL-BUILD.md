@@ -5,6 +5,8 @@ Checked 2026-10-13 on the owner's M1 Pro running elementary OS 9.
 ## Current outcome
 
 - Native aarch64 host, 10 online CPUs, about 32 GB physical RAM.
+- `cargo` is now a required host tool because the Apple Silicon factory
+  scripts build and stage the Rust panel provenance verifier.
 - Installed `just` 1.45.0-1 and `podman` 5.7.0+ds2-3build1 from the Ubuntu
   archive, with six runtime dependencies. No existing packages were upgraded
   or removed. `zstd` and `rsync` were already installed.

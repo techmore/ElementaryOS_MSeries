@@ -82,7 +82,7 @@ jobs:
           docker-images: true
           swap-storage: false
       - name: Install image build tools
-        run: sudo apt-get update && sudo apt-get install -y just mtools podman zstd rsync
+        run: sudo apt-get update && sudo apt-get install -y cargo rustc just mtools podman zstd rsync
       - name: Record candidate source and pins
         run: |
           mkdir -p build-record

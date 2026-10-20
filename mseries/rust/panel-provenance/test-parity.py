@@ -90,6 +90,12 @@ class PanelProvenanceParity(unittest.TestCase):
         rust = run([str(BINARY), "verify", "--root", str(root), "--pins", str(PINS)], self.env)
         self.assertEqual((python.returncode, python.stdout, python.stderr), (rust.returncode, rust.stdout, rust.stderr))
 
+        alias = self.base / "verify-panel-packages"
+        alias.unlink(missing_ok=True)
+        alias.symlink_to(BINARY)
+        rust = run([str(alias), "--root", str(root), "--pins", str(PINS)], self.env)
+        self.assertEqual((python.returncode, python.stdout, python.stderr), (rust.returncode, rust.stdout, rust.stderr))
+
         python = run([sys.executable, str(PY_VERIFY), "--root", str(root), "--pins", str(PINS), "--only", "network"], self.env)
         rust = run([str(BINARY), "verify", "--root", str(root), "--pins", str(PINS), "--only", "network"], self.env)
         self.assertEqual((python.returncode, python.stdout, python.stderr), (rust.returncode, rust.stdout, rust.stderr))
@@ -111,17 +117,30 @@ class PanelProvenanceParity(unittest.TestCase):
         self.record_python_all(root)
         entry = self.pins["indicators"][1]
         artifact = root / entry["plugin"]
+        original = artifact.read_bytes()
         artifact.unlink()
         python = run([sys.executable, str(PY_VERIFY), "--root", str(root), "--pins", str(PINS)], self.env)
         rust = run([str(BINARY), "verify", "--root", str(root), "--pins", str(PINS)], self.env)
         self.assertEqual((python.returncode, python.stdout, python.stderr), (rust.returncode, rust.stdout, rust.stderr))
 
-        artifact.parent.mkdir(parents=True, exist_ok=True)
+        artifact.write_bytes(original)
         artifact.write_text("tampered plugin\n")
         python = run([sys.executable, str(PY_VERIFY), "--root", str(root), "--pins", str(PINS)], self.env)
         rust = run([str(BINARY), "verify", "--root", str(root), "--pins", str(PINS)], self.env)
         self.assertEqual((python.returncode, python.stdout, python.stderr), (rust.returncode, rust.stdout, rust.stderr))
 
+    def test_usage_errors_keep_argparse_exit_status(self):
+        root = self.make_root("usage-errors")
+        python = run([sys.executable, str(PY_VERIFY), "--root", str(root), "--pins", str(PINS), "--only", "unknown"], self.env)
+        rust = run([str(BINARY), "verify", "--root", str(root), "--pins", str(PINS), "--only", "unknown"], self.env)
+        self.assertEqual((python.returncode, rust.returncode), (2, 2))
+        self.assertIn("Unknown indicators", python.stderr)
+        self.assertIn("Unknown indicators", rust.stderr)
+
+        entry = self.pins["indicators"][0]
+        python = run([sys.executable, str(PY_RECORD), "--root", str(root), "--pins", str(PINS), "--name", entry["name"], "--commit", "wrong"], self.env)
+        rust = run([str(BINARY), "record", "--root", str(root), "--pins", str(PINS), "--name", entry["name"], "--commit", "wrong"], self.env)
+        self.assertEqual((python.returncode, rust.returncode), (2, 2))
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -11,7 +11,13 @@ if [[ -f $root/etc/dconf/profile/user ]]; then
     install -Dm644 "$root/etc/dconf/profile/user" "$stage/etc/dconf/profile/user"
 fi
 bash "$here/enhance.sh" --root "$stage" --only tuning,power,diagnostics,audio,session,theme,payload
-install -Dm755 "$here/panel/verify-package-versions" "$stage/usr/libexec/mseries/verify-panel-packages"
+if ! command -v cargo >/dev/null 2>&1; then
+    echo 'cargo is required to build the Rust panel package verifier' >&2
+    exit 1
+fi
+cargo build --locked --release --manifest-path "$here/rust/panel-provenance/Cargo.toml"
+install -Dm755 "$here/rust/panel-provenance/target/release/mseries-panel-provenance-rs" \
+    "$stage/usr/libexec/mseries/verify-panel-packages"
 install -Dm644 "$here/panel-factory-pins.json" "$stage/usr/share/mseries/panel-factory-pins.json"
 install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
 install -Dm644 "$here/video-decode/90-mseries-avd.conf" "$stage/etc/sysctl.d/90-mseries-avd.conf"

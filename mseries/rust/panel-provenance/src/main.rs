@@ -12,9 +12,9 @@ fn usage() -> &'static str {
     "Usage:\n  mseries-panel-provenance-rs verify --root ROOT [--pins FILE] [--only NAME ...] [--skip-plugins]\n  mseries-panel-provenance-rs record --root ROOT --pins FILE --name NAME --commit SHA"
 }
 
-fn fail(message: impl AsRef<str>) -> ExitCode {
+fn fail_with_code(message: impl AsRef<str>, code: u8) -> ExitCode {
     eprintln!("{}", message.as_ref());
-    ExitCode::from(1)
+    ExitCode::from(code)
 }
 
 struct CliArgs {
@@ -325,10 +325,23 @@ fn record(root: &Path, pins_path: &Path, name: &str, commit: &str) -> Result<Str
 }
 
 fn main() -> ExitCode {
-    let args: Vec<String> = env::args().skip(1).collect();
+    let mut args: Vec<String> = env::args().skip(1).collect();
+    let invoked_as = env::args()
+        .next()
+        .and_then(|path| {
+            PathBuf::from(path)
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+        })
+        .unwrap_or_default();
+    if invoked_as == "verify-panel-packages" {
+        args.insert(0, "verify".into());
+    } else if invoked_as == "record-panel-artifact" {
+        args.insert(0, "record".into());
+    }
     let parsed = match parse_args(&args) {
         Ok(value) => value,
-        Err(error) => return fail(error),
+        Err(error) => return fail_with_code(error, 2),
     };
     let result = if parsed.command == "verify" {
         verify(
@@ -345,7 +358,15 @@ fn main() -> ExitCode {
             println!("{message}");
             ExitCode::SUCCESS
         }
-        Err(error) => fail(error),
+        Err(error) => {
+            let usage_error = error == "Unsupported panel pin schema"
+                || error.starts_with("Unknown indicators:")
+                || error.starts_with("Unknown indicator:")
+                || error == "Built source commit does not match pin table"
+                || error == "Unexpected Wingpanel ABI path"
+                || error.starts_with("Missing or empty built plugin:");
+            fail_with_code(error, if usage_error { 2 } else { 1 })
+        }
     }
 }
 

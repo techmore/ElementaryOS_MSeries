@@ -240,7 +240,7 @@ See [OMARCHY-M-ROADMAP.md](OMARCHY-M-ROADMAP.md) and the pinned discovery roster
 in [upstreams/omarchy-m.json](upstreams/omarchy-m.json). Integration and the Rust
 migration remain ongoing; announcement targets are not hardware test results.
 
-### Rust migration status — 2026-10-17
+### Rust migration status — 2026-10-20
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
@@ -257,10 +257,12 @@ current Python service. The daily upstream watcher exists. The new daily/weekly
 candidate workflow is defined but its schedules activate only from the default
 branch.
 A Rust panel-provenance candidate also matches both Python factory tools on
-version, artifact, digest, ABI-path and filtering fixtures; the image build
-continues to use Python until an arm64 image candidate passes. The new cadence
-workflow runs Rust checks daily and builds a non-publishing arm64 image weekly;
-the schedule only activates after the workflow reaches the default branch.
+version, artifact, digest, ABI-path, filtering, and CLI exit-status fixtures.
+The branch's factory scripts now build and call the Rust tool, and the staged
+image exposes the existing verifier path. Full arm64 image admission is still
+open. The cadence workflow runs Rust checks daily and builds a non-publishing
+arm64 image weekly; the schedule only activates after the workflow reaches the
+default branch. See the [2026-10-20 handoff](OS9-HANDOFF.md#2026-10-20--rust-panel-tool-integration-and-parity-follow-up).
 
 ## Implemented; runtime validation pending
 

@@ -2443,11 +2443,14 @@ extensions: 742 paths are assigned to 228 first-pass path-derived component
 groups. This added extensionless hooks, workflow files, documents and inputs;
 semantic component boundaries and conversion status still need review.
 
-The panel provenance candidate adds Rust `verify` and `record` commands for the
-existing factory pin gate. Its unit checks and Python/Rust fixtures cover package
-version acceptance/rejection, `--only`, `--skip-plugins`, artifact output,
-missing plugins and digest mismatch. The image still invokes the Python tools;
-full arm64 image admission remains open.
+The panel provenance tool now replaces the Python commands in the Rust
+branch's three factory build scripts; the staged image exposes the Rust binary
+at the existing `verify-panel-packages` command path. Its unit checks and
+Python/Rust fixtures cover package version acceptance/rejection, `--only`,
+`--skip-plugins`, that legacy invocation path, artifact output, missing plugins
+and digest mismatch. Cargo is required both on the host finalizer and in the
+Apple Silicon BuildPackages environment. Full arm64 image admission remains
+open.
 
 Added `rust-candidate-review.yml`: it runs Rust parity/build checks daily and
 builds a non-publishing arm64 image artifact weekly after those checks pass.
@@ -2469,3 +2472,21 @@ through a full arm64 image build, then continue with the brightness and keyboard
 backlight components. Full semantic inventory remains open; the cadence workflow
 is prepared but its scheduled runs are inactive until it reaches the default
 branch.
+
+## 2026-10-20 — Rust panel tool integration and parity follow-up
+
+The factory desktop-indicator, network-indicator and quick-settings build
+scripts now compile and call the Rust panel-provenance tool. The Rust executable
+is staged at the existing `verify-panel-packages` path, including matching
+Python/Rust command behavior for invalid CLI input. `cargo` is declared in the
+mkosi build environment, local preflight, and image-building CI dependencies.
+The Python tools remain the differential reference and rollback source.
+
+Validation passed: two Rust unit tests, five Python/Rust CLI parity tests,
+`cargo fmt --check`, Clippy with warnings denied, release build, three local
+preflight tests, workflow YAML parsing, shell syntax checks, inventory check and
+`git diff --check`. The full mkosi image was not built: this host lacks `just`,
+mkosi and podman. The weekly arm64 image job has not run, and no target image or
+device qualification is claimed. Changes remain on the local `rust` branch;
+no publication occurred. Next: run the arm64 image admission job when available,
+then continue the per-component inventory and parity conversions.

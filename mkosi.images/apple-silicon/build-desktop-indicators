@@ -2,7 +2,10 @@
 # Bake the pinned sound/keyboard fixes without modifying the running desktop.
 set -euo pipefail
 pins="$SRCDIR/mseries/panel-factory-pins.json"
-python3 "$SRCDIR/mseries/panel/verify-package-versions" \
+cargo build --locked --release --manifest-path \
+    "$SRCDIR/mseries/rust/panel-provenance/Cargo.toml"
+panel_provenance="$SRCDIR/mseries/rust/panel-provenance/target/release/mseries-panel-provenance-rs"
+"$panel_provenance" verify \
     --root "$BUILDROOT" --pins "$pins" --only sound keyboard --skip-plugins
 
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-desktop-indicators.XXXXXX")
@@ -38,7 +41,7 @@ while IFS=$'\t' read -r name repository commit plugin patch; do
         exit 1
     fi
     install -D -m 0644 "$artifact" "$DESTDIR/$plugin"
-    python3 "$SRCDIR/mseries/panel/record-artifact" \
+    "$panel_provenance" record \
         --root "$DESTDIR" --pins "$pins" --name "$name" --commit "$commit"
 
     # Preserve the upstream's actual license file, not just an SPDX assertion.
