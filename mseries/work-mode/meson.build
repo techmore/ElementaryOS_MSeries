@@ -24,6 +24,7 @@ install_data('io.elementary.mseries.work-mode.gschema.xml',
     install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas'))
 
 install_data(
+    'work-mode-azure-bloom.png',
     'work-mode-blue-flow.png',
     'work-mode-blue-ribbons.png',
     'work-mode-violet-arc.png',

@@ -152,6 +152,7 @@ impl SessionLockHandler for PantheonCompositor {
             return;
         }
 
+        self.cancel_active_gesture(smithay::backend::input::InputTime::now());
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.seat.get_pointer().unwrap().unset_grab(
             self,

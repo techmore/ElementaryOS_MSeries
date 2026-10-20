@@ -57,7 +57,7 @@ class Passwords(Gtk.Application):
         self.window.set_child(root)
         self.status = Gtk.Label(label='Read your iCloud passwords on this Mac.', xalign=0, wrap=True, selectable=True)
         root.append(self.status)
-        self.stack = Gtk.Stack(vexpand=True)
+        self.stack = Gtk.Stack(vexpand=True, vhomogeneous=False, hhomogeneous=False)
         root.append(self.stack)
         self.build_login()
         self.build_vault()
@@ -83,7 +83,7 @@ class Passwords(Gtk.Application):
     def build_login(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16,
                       halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        box.set_size_request(420, -1)
+        box.set_size_request(360, -1)
         icon = Gtk.Image.new_from_icon_name('dialog-password')
         icon.set_pixel_size(64)
         box.append(icon)
@@ -123,7 +123,10 @@ class Passwords(Gtk.Application):
         steps = Gtk.Label(label='Sign in  →  Verify device  →  Unlock keychain', wrap=True)
         steps.add_css_class('dim-label')
         box.append(steps)
-        self.stack.add_named(box, 'login')
+        # A short window or enlarged text must not hide the sign-in action.
+        login_scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER,
+                                         vexpand=True, child=box)
+        self.stack.add_named(login_scroll, 'login')
 
     def build_vault(self):
         pane = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, vexpand=True)

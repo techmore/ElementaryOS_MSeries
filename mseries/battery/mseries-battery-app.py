@@ -360,9 +360,11 @@ class BatteryWindow(Gtk.ApplicationWindow):
         header.add_css_class("titlebar")
         header.set_title_widget(Gtk.Label(label="Battery", css_classes=["title"]))
         export = Gtk.Button(icon_name="document-save-as-symbolic", tooltip_text="Save a Markdown report")
+        export.update_property([Gtk.AccessibleProperty.LABEL], ["Save a Markdown report"])
         export.connect("clicked", self.on_export)
         header.pack_end(export)
         prefs = Gtk.Button(icon_name="preferences-system-symbolic", tooltip_text="Preferences")
+        prefs.update_property([Gtk.AccessibleProperty.LABEL], ["Preferences"])
         prefs.connect("clicked", lambda _b: PreferencesWindow(self).present())
         header.pack_end(prefs)
         self.set_titlebar(header)
@@ -882,10 +884,18 @@ class BatteryApp(Gtk.Application):
         Gtk.Application.do_startup(self)
         if hasattr(Granite, "init"):
             Granite.init()
+        self.desktop_settings = Granite.Settings.get_default()
+        self.desktop_settings.connect("notify::prefers-color-scheme", self.update_color_scheme)
+        self.update_color_scheme()
         provider = Gtk.CssProvider()
         provider.load_from_data(CSS)
         from gi.repository import Gdk
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    def update_color_scheme(self, *_args):
+        Gtk.Settings.get_default().set_property(
+            "gtk-application-prefer-dark-theme",
+            self.desktop_settings.get_prefers_color_scheme() == Granite.SettingsColorScheme.DARK)
 
     def do_activate(self):
         window = self.props.active_window or BatteryWindow(self)

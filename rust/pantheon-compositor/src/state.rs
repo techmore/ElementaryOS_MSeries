@@ -2,8 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
-    backend::renderer::element::memory::MemoryRenderBuffer,
-    desktop::{PopupManager, Space, Window, WindowSurfaceType},
+    desktop::{PopupGrab, PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
         calloop::{
@@ -40,7 +39,6 @@ use smithay::{
     },
 };
 
-use crate::cursor::default_cursor_buffer;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -97,7 +95,7 @@ pub struct PantheonCompositor {
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
     pub xdg_activation_state: XdgActivationState,
-    loop_handle: LoopHandle<'static, PantheonCompositor>,
+    pub(crate) loop_handle: LoopHandle<'static, PantheonCompositor>,
     activation_sweep_armed: bool,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
@@ -127,6 +125,9 @@ pub struct PantheonCompositor {
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    /// Runtime-only top-panel suppression (Windows Work Mode). Lives only in
+    /// compositor memory, so every new session starts with the top bar shown.
+    pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
@@ -137,8 +138,18 @@ pub struct PantheonCompositor {
     pub corner_snap_preview: Option<CornerSnapPreview>,
     pub corner_snap_cancelled: bool,
     pub move_grab_active: bool,
-    /// In-flight three-or-more-finger swipe, if the active backend reports one.
-    pub(crate) swipe_gesture: Option<crate::gestures::SwipeGestureState>,
+    /// In-flight touchpad gesture and whether the compositor or a client owns it.
+    pub(crate) gesture_animation: Option<crate::gesture_animation::GestureAnimation>,
+    pub(crate) active_gesture: Option<crate::gestures::ActiveGesture>,
+    /// Gesture bindings from elementary's and the M-series gesture settings.
+    pub(crate) gesture_bindings: crate::gestures::GestureBindings,
+    /// Touchpad and mouse settings applied to every libinput device.
+    pub(crate) peripheral_settings: crate::touchpad::PeripheralSettings,
+    /// libinput devices, kept so settings changes can be re-applied.
+    #[cfg(feature = "native-drm")]
+    pub(crate) input_devices: Vec<smithay::reexports::input::Device>,
+    /// Registers `zwp_pointer_gestures_v1` so clients receive forwarded gestures.
+    pub pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     /// Active grid overview ("expose") session, if any.
     pub(crate) overview: Option<crate::overview::OverviewState>,
     pub minimized_windows: HashMap<
@@ -147,8 +158,11 @@ pub struct PantheonCompositor {
     >,
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
+    /// The seat's current popup grab and its root surface. Smithay keeps one grab
+    /// stack per seat, so a grab from another root must end this one first.
+    pub active_popup_grab: Option<(WlSurface, PopupGrab<PantheonCompositor>)>,
     pub cursor_status: CursorImageStatus,
-    pub default_cursor: MemoryRenderBuffer,
+    pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
     pub(crate) wallpaper_selection: Option<crate::wallpaper::WallpaperSelection>,
 
@@ -224,6 +238,8 @@ impl PantheonCompositor {
                 .is_some_and(|data| data.is_ibus_input_method_client)
         });
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
+        let pointer_gestures_state =
+            smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
             crate::wakeups::forward("display-apply", apply_requests),
@@ -270,6 +286,30 @@ impl PantheonCompositor {
             |event, _, state| {
                 if matches!(event, channel::Event::Msg(())) {
                     state.refresh_keyboard_config();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(crate::gestures::SETTINGS_SCHEMAS),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.gesture_bindings = crate::gestures::GestureBindings::load();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(crate::touchpad::SETTINGS_SCHEMAS),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_peripheral_settings();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(&["org.gnome.desktop.interface"]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_cursor_theme();
                 }
             },
         )?;
@@ -377,6 +417,7 @@ impl PantheonCompositor {
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
+            top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
             x11_managed_windows: HashMap::new(),
@@ -386,13 +427,22 @@ impl PantheonCompositor {
             corner_snap_preview: None,
             corner_snap_cancelled: false,
             move_grab_active: false,
-            swipe_gesture: None,
+            gesture_animation: None,
+            active_gesture: None,
+            gesture_bindings: crate::gestures::GestureBindings::load(),
+            peripheral_settings: crate::touchpad::PeripheralSettings::load(),
+            #[cfg(feature = "native-drm")]
+            input_devices: Vec::new(),
+            pointer_gestures_state,
             overview: None,
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
+            active_popup_grab: None,
             cursor_status: CursorImageStatus::default_named(),
-            default_cursor: default_cursor_buffer(),
+            cursor_theme: crate::cursor_theme::CursorTheme::load(
+                crate::cursor_theme::configured_selection(),
+            ),
             wallpaper,
             wallpaper_selection,
             seat,
@@ -418,6 +468,15 @@ impl PantheonCompositor {
         }
     }
 
+    /// Re-read the touchpad and mouse settings and apply them to every device.
+    fn refresh_peripheral_settings(&mut self) {
+        self.peripheral_settings = crate::touchpad::PeripheralSettings::load();
+        #[cfg(feature = "native-drm")]
+        for device in &mut self.input_devices {
+            crate::touchpad::apply(&self.peripheral_settings, device);
+        }
+    }
+
     /// Re-read the keyboard settings and apply any difference.
     fn refresh_keyboard_config(&mut self) {
         let config = crate::input::startup_keyboard_config();
@@ -438,6 +497,15 @@ impl PantheonCompositor {
             }
         }
         self.keyboard_config = config;
+    }
+
+    /// Reload the compositor cursor when the interface cursor theme or size changed.
+    fn refresh_cursor_theme(&mut self) {
+        let selection = crate::cursor_theme::configured_selection();
+        if &selection != self.cursor_theme.selection() {
+            self.cursor_theme = crate::cursor_theme::CursorTheme::load(selection);
+            self.request_native_redraw();
+        }
     }
 
     /// Reload the wallpaper when the configured URI or crop mode changed.
@@ -476,24 +544,32 @@ impl PantheonCompositor {
                     .is_none_or(|toplevel| !self.is_panel_surface(toplevel.wl_surface()))
             })
             .map(|(window, workspace_index, _)| {
-                let app_id = if let Some(toplevel) = window.toplevel() {
+                let (app_id, title) = if let Some(toplevel) = window.toplevel() {
                     smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                         states
                             .data_map
                             .get::<smithay::wayland::shell::xdg::XdgToplevelSurfaceData>()
                             .and_then(|attributes| attributes.lock().ok())
-                            .and_then(|attributes| attributes.app_id.clone())
+                            .map(|attributes| {
+                                (
+                                    attributes.app_id.clone().unwrap_or_default(),
+                                    attributes.title.clone().unwrap_or_default(),
+                                )
+                            })
                             .unwrap_or_default()
                     })
                 } else if let Some(surface) = window.x11_surface() {
                     let class = surface.class();
-                    if class.is_empty() {
-                        surface.title()
-                    } else {
-                        class
-                    }
+                    (
+                        if class.is_empty() {
+                            surface.title()
+                        } else {
+                            class
+                        },
+                        surface.title(),
+                    )
                 } else {
-                    String::new()
+                    (String::new(), String::new())
                 };
                 let has_focus = window
                     .toplevel()
@@ -504,6 +580,7 @@ impl PantheonCompositor {
                 GalaWindow {
                     uid: window.id() as u64,
                     app_id,
+                    title,
                     has_focus,
                     workspace_index: workspace_index as i32,
                     time_appeared_on_workspace: window.id() as i64,
@@ -559,6 +636,12 @@ impl PantheonCompositor {
             GalaAction::PerformAction(2) => self.maximize_focused_window(),
             GalaAction::PerformAction(3) => self.minimize_focused_window(),
             GalaAction::PerformAction(4) => self.launch_panel_main_menu(),
+            GalaAction::SetTopPanelMode(mode) => {
+                let mode = crate::pantheon_shell::TopPanelMode::from_u32(mode)
+                    .ok_or_else(|| format!("unknown top panel mode {mode}"))?;
+                self.set_top_panel_mode(mode);
+                Ok(())
+            }
             GalaAction::PerformAction(action) => Err(format!(
                 "Gala action {action} is not implemented by this compositor"
             )),
@@ -587,7 +670,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn focused_window(&self) -> Option<Window> {
+    pub(crate) fn focused_window(&self) -> Option<Window> {
         if let Some(surface) = self
             .seat
             .get_keyboard()
@@ -739,32 +822,84 @@ impl PantheonCompositor {
         }
         self.space.raise_element(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-        if let Some(toplevel) = window.toplevel() {
-            if !self.session_locked
-                && let Some(keyboard) = self.seat.get_keyboard()
-            {
-                keyboard.set_focus(self, Some(toplevel.wl_surface().clone()), serial);
-            }
-        } else if let Some(surface) = window.x11_surface().cloned() {
-            self.set_x11_keyboard_focus(Some(surface), serial);
-        }
+        self.focus_window_keyboard(&window, serial);
         self.refresh_panel_visibility();
         self.request_native_redraw();
         Ok(())
     }
 
-    /// Apply the outcome of an in-flight touchpad swipe. Workspace changes stop
+    /// Apply the outcome of a finished touchpad gesture. Workspace changes stop
     /// at the first and last workspace instead of creating or wrapping.
     pub(crate) fn apply_swipe_outcome(
         &mut self,
-        outcome: crate::gestures::SwipeOutcome,
+        outcome: crate::gestures::GestureOutcome,
     ) -> Result<(), String> {
+        use crate::gestures::GestureOutcome;
         match outcome {
-            crate::gestures::SwipeOutcome::None => Ok(()),
-            crate::gestures::SwipeOutcome::NextWorkspace => self.switch_workspace_relative(1),
-            crate::gestures::SwipeOutcome::PreviousWorkspace => self.switch_workspace_relative(-1),
-            crate::gestures::SwipeOutcome::ToggleOverview => self.toggle_overview(),
+            GestureOutcome::None => Ok(()),
+            GestureOutcome::SwitchWorkspace(delta) => self.switch_workspace_relative(delta),
+            GestureOutcome::MoveWindowToWorkspace(delta) => {
+                self.move_focused_window_relative(delta)
+            }
+            GestureOutcome::CycleWindows(forward) => self.cycle_windows(forward),
+            GestureOutcome::ToggleOverview => self.toggle_overview(),
+            GestureOutcome::CloseOverview => {
+                if self.overview_active() {
+                    self.toggle_overview()
+                } else {
+                    Ok(())
+                }
+            }
+            GestureOutcome::ToggleMaximized => self.maximize_focused_window(),
+            GestureOutcome::OpenLauncher => self.launch_panel_main_menu(),
         }
+    }
+
+    /// Take the focused window to the adjacent workspace and follow it there.
+    fn move_focused_window_relative(&mut self, delta: i32) -> Result<(), String> {
+        let window = self
+            .focused_window()
+            .ok_or_else(|| "there is no focused application window to move".to_string())?;
+        let target = self.workspace_manager.active() as i32 + delta;
+        if target < 0 || target as usize >= self.workspace_manager.workspace_count() {
+            return Err("no adjacent workspace in that direction".into());
+        }
+        self.move_window_to_workspace(window.id() as u64, target)?;
+        self.activate_workspace(target)?;
+        self.focus_window_by_uid(window.id() as u64)
+    }
+
+    /// Rotate focus through this workspace's application windows. Forward
+    /// raises the bottom-most window, so repeated swipes visit every window;
+    /// backward returns to the window under the focused one, like Alt+Tab.
+    fn cycle_windows(&mut self, forward: bool) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot switch windows while the session is locked".into());
+        }
+        let windows = self
+            .space
+            .elements()
+            .filter(|window| {
+                self.workspace_manager.workspace_for(window.id())
+                    == Some(self.workspace_manager.active())
+                    && window
+                        .x11_surface()
+                        .is_none_or(|surface| !surface.is_override_redirect())
+                    && window
+                        .toplevel()
+                        .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if windows.len() < 2 {
+            return Err("there is no other window to switch to".into());
+        }
+        let target = if forward {
+            &windows[0]
+        } else {
+            &windows[windows.len() - 2]
+        };
+        self.focus_window_by_uid(target.id() as u64)
     }
 
     fn switch_workspace_relative(&mut self, delta: i32) -> Result<(), String> {
@@ -775,7 +910,7 @@ impl PantheonCompositor {
         self.activate_workspace(target)
     }
 
-    fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
+    pub(crate) fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot switch workspaces while the session is locked".into());
         }
@@ -791,6 +926,7 @@ impl PantheonCompositor {
     }
 
     fn switch_workspace(&mut self, workspace: usize) -> Result<(), String> {
+        self.discard_gesture_animation();
         let current = self.workspace_manager.active();
         if workspace >= self.workspace_manager.workspace_count() {
             return Err("workspace index is outside the current workspace list".into());
@@ -882,7 +1018,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
+    pub(crate) fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
         if self.session_locked {
             return Err("cannot move windows while the session is locked".into());
         }
@@ -1773,6 +1909,9 @@ impl XdgActivationHandler for PantheonCompositor {
         while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
             root = parent;
         }
+        if self.is_panel_surface(&root) {
+            return;
+        }
         let managed = self
             .workspace_manager
             .windows()
@@ -1800,20 +1939,13 @@ impl XdgActivationHandler for PantheonCompositor {
             }
         }
         self.space.raise_element(&window, true);
-        if let Some(surface) = window
-            .toplevel()
-            .map(|toplevel| toplevel.wl_surface().clone())
-        {
-            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-            if let Some(keyboard) = self.seat.get_keyboard() {
-                keyboard.set_focus(self, Some(surface), serial);
+        let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+        self.focus_window_keyboard(&window, serial);
+        self.space.elements().for_each(|window| {
+            if let Some(toplevel) = window.toplevel() {
+                toplevel.send_pending_configure();
             }
-            self.space.elements().for_each(|window| {
-                if let Some(toplevel) = window.toplevel() {
-                    toplevel.send_pending_configure();
-                }
-            });
-        }
+        });
         self.refresh_panel_visibility();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();

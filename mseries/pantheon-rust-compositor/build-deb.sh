@@ -18,7 +18,9 @@ VERSION=${DEB_VERSION:-0.1.0+git$(git -C "$ROOT" rev-parse --short HEAD)}
 cargo build --release --manifest-path "$ROOT/rust/Cargo.toml" \
   -p pantheon-compositor --bin pantheon-compositor --features native-drm
 
-BIN="$ROOT/rust/target/release/pantheon-compositor"
+# Honor a shared Cargo target directory so isolated worktrees can reuse builds.
+TARGET_DIR=$(realpath "${CARGO_TARGET_DIR:-$ROOT/rust/target}")
+BIN="$TARGET_DIR/release/pantheon-compositor"
 [[ -x $BIN ]] || { echo "error: compositor build produced no executable" >&2; exit 1; }
 if ldd "$BIN" | grep -q 'not found'; then
   echo "error: compositor binary has unresolved shared libraries" >&2
@@ -27,10 +29,14 @@ fi
 
 install -D -m 0755 "$BIN" "$PACKAGE_ROOT/usr/bin/pantheon-compositor"
 cp -a "$ROOT/mseries/pantheon-rust-compositor/session/usr/." "$PACKAGE_ROOT/usr/"
+install -D -m 0755 "$ROOT/mseries/window-recovery/restore-windows.py" "$PACKAGE_ROOT/usr/bin/mseries-restore-windows"
+install -D -m 0644 "$ROOT/mseries/window-recovery/mseries-restore-windows.desktop" "$PACKAGE_ROOT/usr/share/applications/mseries-restore-windows.desktop"
 find "$PACKAGE_ROOT" -type d -exec chmod 0755 {} +
 find "$PACKAGE_ROOT" -type f -exec chmod 0644 {} +
 chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-compositor"
 chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-rust-session"
+chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-rust-dock"
+chmod 0755 "$PACKAGE_ROOT/usr/bin/mseries-restore-windows"
 
 cat > "$OUTDIR/debian/control" <<'EOF'
 Source: pantheon-rust-compositor
@@ -60,7 +66,7 @@ Package: pantheon-rust-compositor
 Version: $VERSION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland
+Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland, python3-gi, zenity
 Description: experimental Rust compositor for the Pantheon M-series session
  An opt-in Smithay Wayland compositor and a separate experimental GNOME session.
 EOF

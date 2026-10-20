@@ -10,7 +10,7 @@ import threading
 if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
     sys.exit(77)
 state={'status':'Stopped','memory':{'usage':0},'cpu':{'usage':0},'network':{},'disk':{}}
-instance={'name':'fixture','type':'container','status':'Stopped','architecture':'aarch64','description':'Fixture','ephemeral':False,'profiles':['default'],'config':{},'expanded_config':{},'devices':{},'expanded_devices':{},'state':state}
+instance={'name':'fixture-with-a-long-name-that-must-not-widen-the-window','type':'container','status':'Stopped','architecture':'aarch64','description':'Fixture','ephemeral':False,'profiles':['default'],'config':{},'expanded_config':{},'devices':{},'expanded_devices':{},'state':state}
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *_):pass
     def do_GET(self):

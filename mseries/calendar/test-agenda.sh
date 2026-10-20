@@ -8,6 +8,16 @@ trap 'rm -rf "$state"' EXIT
 mkdir -p "$state"/{config,data,cache,state,runtime}
 chmod 700 "$state/runtime"
 mkdir -p "$state/bin"
+# GitHub tests are offline; never use the owner's login or contact GitHub.
+cat > "$state/bin/gh" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod 700 "$state/bin/gh"
+mkdir -p "$state/cache/mseries"
+cat > "$state/cache/mseries/github-tracker.json" <<'EOF'
+{"version":1,"outcomes":[{"repo":"techmore/rupert","issue":207,"title":"Rupert deployment ready","observed_at":"2026-01-01T00:00:00Z","ci":"failing","branch":"main","sha":"1234567890","next":"Verify fresh restore","gates":[{"title":"Recovery verified","state":"CLOSED","stateReason":"COMPLETED","url":"https://github.com/techmore/rupert/issues/202"},{"title":"Operator acceptance","state":"OPEN","url":"https://github.com/techmore/rupert/issues/205"}]},{"repo":"techmore/tm-daedalus","issue":17,"title":"Daedalus deployment ready","ci":"unknown","next":"Review blockers"}]}
+EOF
 cat > "$state/bin/io.elementary.calendar" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$AGENDA_OPEN_LOG"
