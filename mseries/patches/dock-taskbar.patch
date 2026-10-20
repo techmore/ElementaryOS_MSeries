@@ -350,7 +350,7 @@ index 0377885..40f991f 100644
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 652c549..e17031b 100644
+index 652c549..8b95f4b 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -573,7 +573,7 @@ index 652c549..e17031b 100644
  #if WORKSPACE_SWITCHER
                  panel.request_visible_in_multitasking_view ();
  #endif
-@@ -214,12 +351,27 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -214,12 +351,28 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private static Wl.RegistryListener registry_listener;
      private void init_panel () {
@@ -584,7 +584,8 @@ index 652c549..e17031b 100644
 +        panel_initialized = true;
 +
          unowned var surface = (Gdk.Toplevel) get_surface ();
-+        surface.enter_monitor.connect (() => update_taskbar_width ());
++        // Not on enter_monitor: a popup reaching another output (the Start menu) made the
++        // bar resize to that monitor and lose its edges. Monitor hotplug still updates it.
 +        update_taskbar_width ();
  
          surface.compute_size.connect ((surface, size) => {
@@ -602,7 +603,7 @@ index 652c549..e17031b 100644
              var shadow_size = (surface.width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size - 1;
              size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
-@@ -229,8 +381,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -229,8 +382,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              apply_panel_offset ();
              // manually set input region since container's shadow are is the content of the window
              // and it still gets window events
@@ -615,7 +616,7 @@ index 652c549..e17031b 100644
              var top_margin = TOP_MARGIN + shadow_size;
  
              if (drawers_panel != null && drawers_panel.get_visible ()) {
-@@ -261,11 +416,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -261,11 +417,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              if (widget_border_radius != null) {
                  border_radius = widget_border_radius;
              }
@@ -632,7 +633,7 @@ index 652c549..e17031b 100644
              } else {
                  update_panel_x11 ();
              }
-@@ -298,10 +457,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -298,10 +458,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
              var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
  
