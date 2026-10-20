@@ -1,5 +1,45 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
+
+Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
+(`sdolbec@100.127.99.74`, Tailscale `sdolbec-ser8`; Tailscale SSH asks for a
+browser check on first connect). Production checkout is `/opt/rupert`, served by
+`rupert-web` (Puma) and `rupert-jobs` (Solid Queue), public at
+`rupert.stoverparc.org`.
+
+- **Manual update.** Moved `/opt/rupert` from `cb2fa52c` (#214) to `main`. `main`
+  failed `db:migrate` with `DuplicateMigrationVersionError`: two migrations shared
+  `20261020140000`, and production had already applied `create_workspace_deployments`
+  under it. [techmore/rupert#218](https://github.com/techmore/rupert/pull/218)
+  renumbered `create_bank_statement_accounts` to `20261020150000`; it was deployed,
+  then merged as `85cd0eb` and redeployed. Pre-deploy DB copy:
+  `/root/pre-deploy/production-20261020-202316.sqlite3` in the container.
+- **Failed jobs.** 129 failed Solid Queue jobs (mostly Square/Shopify sync DNS
+  failures and C-Trax labor reads from 10-19/10-20) were retried. One
+  `OperationsBriefJob` (DNS failure) was left failed on purpose because it may
+  send a brief. Final retry outcome was not checked.
+- **Concurrent deploys.** Someone else fast-forwarded production to `bbf367de`
+  (#222) at 22:44 UTC during this session. Manual deploys and the timer below do
+  not share a lock.
+- **Auto-deployer.** `rupert-autodeploy.timer` runs inside the container every
+  5 minutes (`/usr/local/sbin/rupert-autodeploy.sh`, units in
+  `/etc/systemd/system/`). It deploys `origin/main` only for a fast-forward onto a
+  clean checkout with `CI (sqlite3)` and `CI (postgresql)` green, takes a SQLite
+  backup first (last 5 in `/var/backups/rupert-autodeploy`), then runs bundle,
+  `db:migrate`, `assets:precompile`, restarts web/jobs and checks `/up`. On a failed
+  health check it rolls the code back; migrations are not reverted. Source is in
+  `deploy/ser8/` via [techmore/rupert#226](https://github.com/techmore/rupert/pull/226)
+  (merged as `d6ffe34`).
+- **Verified.** The timer deployed `d6ffe34` itself at 23:43 UTC
+  (`deploying bbf367de -> d6ffe341`, `deployed d6ffe341, healthy`); web/jobs active
+  with `NRestarts=0`; public `/up` 200. Logs: `journalctl -u rupert-autodeploy` in
+  the container; dry run: `DRY_RUN=1 /usr/local/sbin/rupert-autodeploy.sh`.
+- **Unverified / next.** Migration and rollback paths have not run under the
+  timer. Logged-in pages were not checked (needs an owner sign-in). The owner's
+  local `~/Projects/rupert` `main` is 1 ahead (`9e3d51e` email campaigns, not
+  upstream) and ~174 behind with uncommitted edits; left untouched.
+
 ## Native Messages experience landed on dev — 2026-10-20
 
 PR #353 merged into `dev` as `0bb46b7d` after all checks passed. It carries the
