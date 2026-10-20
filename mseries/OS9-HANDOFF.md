@@ -7840,3 +7840,15 @@ bundled Python/Vala/data identity; clean patch application matching the full
 tested source tree; shell syntax and git diff whitespace checks. GTK preview
 visually inspected. Packaging/install and final activation are recorded below
 when completed. Wingpanel must not be restarted for this routine update.
+
+Installed `mseries-wingpanel-datetime 2.4.2-0mseries3` from source commit
+`f5622505b6b9bbb64faa821d83f9f1085e0353e6`. Debian archive SHA-256:
+`2727f066432b0c05507b77d58af40d52c7e5c700d0cf2df5d080fec8c210804e`.
+The packaged helper matches source; installed library matches package bytes,
+ldd has no missing libraries and dpkg -V is clean. The original diverted
+plugin SHA-256 remains `77c8110e3f8e749b8481bb0fd847ddabe2b8989e8f86bef193c3e93fabfb984b`.
+Wingpanel PID 169014 is unchanged; the new tab loads at the next login.
+All 28 integration groups also passed on the final source. GitHub live reads
+returned both outcomes (five/six gates) and current exact-commit CI; this does
+not establish deployment readiness for either app. Live calendar activation
+and end-to-end link opening remain unverified until the next login.
