@@ -11,10 +11,10 @@ StartLimitBurst=3
 Type=simple
 # See pantheon-wingpanel.service: no linux-dmabuf, so avoid GTK4's Vulkan renderer.
 Environment=GSK_RENDERER=gl
-# Respect the local user's opt-out even though this unit launches the distro
-# binary directly rather than resolving the per-user Dock wrapper through PATH.
+# Keep the owner's opt-out. The launcher resolves the patched per-user dock
+# before falling back to the distribution binary.
 ExecCondition=/usr/bin/test ! -e %h/.config/mseries/dock/user-disabled
-ExecStart=/usr/bin/io.elementary.dock
+ExecStart=/usr/bin/pantheon-rust-dock
 Restart=on-failure
 RestartSec=2s
 TimeoutStopSec=5s

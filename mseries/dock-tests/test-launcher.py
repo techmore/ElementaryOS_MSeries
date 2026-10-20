@@ -73,6 +73,21 @@ sys.exit(int(os.environ.get('CHILD_MODE', '0')))
         self.assertTrue(self.child_pid.exists())
         return process, int(self.child_pid.read_text())
 
+    def test_user_disabled_blocks_patched_and_stock_fallback(self):
+        marker = self.home / '.config/mseries/dock/user-disabled'
+        marker.parent.mkdir(parents=True)
+        marker.touch()
+        self.patched.unlink()  # Even a missing patched binary must not start stock.
+        process = subprocess.Popen(['sh', self.wrapper], env=self.env)
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                process.wait(timeout=.15)
+            self.assertFalse(self.stock_ran.exists())
+            self.assertFalse(self.child_pid.exists())
+        finally:
+            process.terminate()
+            process.wait(timeout=3)
+
     def test_normal_exit_does_not_fallback(self):
         self.assertEqual(self.run_wrapper(), 0)
         self.assertFalse(self.flag.exists())

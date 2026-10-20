@@ -1,0 +1,9 @@
+#!/bin/sh
+# Use the owner's patched dock and keep their opt-out ahead of every fallback.
+if [ -e "${XDG_CONFIG_HOME:-$HOME/.config}/mseries/dock/user-disabled" ]; then
+    exit 0
+fi
+if [ -x "$HOME/.local/bin/io.elementary.dock" ]; then
+    exec "$HOME/.local/bin/io.elementary.dock"
+fi
+exec /usr/bin/io.elementary.dock

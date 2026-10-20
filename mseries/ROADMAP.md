@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+
+## October 20 desktop focus and snapping
+
+- Implemented XWayland tiling/monitor movement, left/right drag snap zones, panel
+  first-buffer/activation focus protections, and an explicit window-recovery
+  chooser. See [focus audit](pantheon-rust-compositor/FOCUS-AUDIT-2026-10-20.md).
+- Keep the live dock opt-out while the older compositor runs; qualify the new
+  native login before considering dock activation. Physical edge dragging,
+  mixed-display snapping and all context-menu paths remain owner acceptance.
+- `.20-enh1` is booted with PMP ready and two connected displays. Earlier scoped
+  GPU/fsync captures passed; the current capture failed because Rust lacks
+  DisplayConfig `PowerSaveMode`, not because display enumeration failed.
+  Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
+
 ## Work Mode wallpaper — 2026-10-20
 
 Added a native Switchboard panel under Personal with a Work Mode switch, a
