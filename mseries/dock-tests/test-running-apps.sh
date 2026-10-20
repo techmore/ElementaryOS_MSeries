@@ -15,9 +15,8 @@ else
     git -C "$source_dir" fetch -q --depth=1 https://github.com/elementary/dock.git 8b45a68a122947ad3a6427bf6e159ec2acf04ad0
     git -C "$source_dir" checkout -q --detach FETCH_HEAD
 fi
-for patch in dock-drawers dock-workspace-startup dock-taskbar dock-running-apps; do
-    git -C "$source_dir" apply "$repo/mseries/patches/$patch.patch"
-done
+bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
+git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 cat > "$test_dir/schemas/io.elementary.dock.gschema.xml" <<'XML'
 <schemalist><schema id="io.elementary.dock" path="/io/elementary/dock/">
 <key name="launchers" type="as"><default>[]</default></key>

@@ -17,6 +17,27 @@ No live deployment is part of this draft. Owner recovery confirmation and
 isolated combined-taskbar UI/focus/typing validation remain gates. See
 `mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
 
+## Transparent Outlook icon; dock deployment recovered — 2026-10-20
+
+Outlook now fetches the transparent, checksum-pinned Office SVG directly from
+Microsoft's CDN. The old white-backed touch icon was removed locally. GTK
+resolves the SVG and its corner alpha is verified zero. Teams/Outlook icons,
+launcher entries and dock pins are retained; both launchers advertise their
+observed Brave StartupWMClass. Fourteen offline web-launcher tests pass.
+
+A live app-tracking experiment incorrectly rebuilt the dock without the owner's
+existing Windows Taskbar.vala customization, replacing the intended bottom bar.
+The recovery chat restored the retained pre-change binary, SHA256
+`960642d81bd83c4ec06be02c6a37ffa6967a874ddd42e4011827bc696002541f`.
+This chat verified that hash, active dock service and private `taskbar-mode=true`.
+All further dock deployments/restarts are stopped pending owner recovery
+confirmation. Icons/launchers remain installed; native tracking/pill changes
+were rolled back with the incompatible executable. The experimental source and
+tests are retained separately in this task's scratch directory, not wired into
+the installer. Any future tracking fix must preserve the complete customized
+taskbar source and be isolated-tested first. No compositor or Wingpanel restart
+was performed. The safe icon/launcher PR excludes the native dock experiment.
+
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
 Owner requested the official Teams dock icon and that the dock Mail button open
@@ -8551,3 +8572,65 @@ live qualification limits remain: real schedule/network transitions, taskbar
 interaction across hardware displays, Teams media and Outlook mailbox access.
 Next: merge only after the updated heads pass GitHub checks; then qualify those
 remaining live interactions separately.
+
+## Merged Work Mode and Teams/Outlook deployed — 2026-10-20
+
+Historical snapshot recorded at 11:39. The later recovery in PR #338 supersedes
+the dock binary and launcher/icon state described here. Retain this receipt
+as evidence of that deployment, not as current dock-state certification. The
+#338 owner-recovery hold remains in force; no additional deployment or restart
+is authorized by merging this record.
+
+Owner requested deployment without restarting Wingpanel. Installed from merged
+dev `8d85efe`: `install-work-mode.sh`, `install-dock-drawers.sh`,
+`install-teams.sh --pin`, and `python3 mseries/install-outlook-web.py`. Built and
+installed `pantheon-rust-compositor 0.1.0+git8d85efe` with Rust 1.98.1 using
+`mseries/pantheon-rust-compositor/build-deb.sh`, then `sudo dpkg -i` and
+`systemctl --user daemon-reload`. dpkg's git-derived version string compared as
+a downgrade from git188a7ca; installed content is the newer merged source.
+
+Verified: Work Mode and Teams helper byte comparisons; Work Mode timer active
+and helper reports Active; both desktop entries validate; Teams retains Brave
+Default session; GTK resolves the official Teams PNG and elementary Mail icon;
+Work Mode plugin has no missing libraries; compositor `dpkg -V` is clean.
+Work Mode settings, dock pins/preferences, wallpaper and interface/icon settings
+are byte-identical to the before snapshot. The pinned Win11 themes and retained
+license/source records already match the merged installer. Default mailto handler
+remains elementary Mail. No browser was launched or authentication data copied.
+
+Wingpanel PID 2152, CodexBar daemon PID 2140 and compositor PID 1983 retain their
+10:58:14 start times. The merged compositor is staged for next login; reopen
+System Settings to load the new plug. The dock service restarted at 11:38:34
+while deployment was in progress, without a restart command from this task;
+the journal records a service stop/start, not a proven cause. At the receipt time, dock child
+PID 142356 byte-matches the installed merged binary. Do not claim the dock PID
+was preserved. Hardware window clearance with the merged compositor remains
+unverified until next login. Teams media/notifications and authenticated Outlook
+mailbox operation remain unverified.
+
+Receipt: `mseries/receipts/work-mode-teams-deploy-2026-10-20.json`. Private backups
+and build/install logs: `~/.local/state/mseries/deployments/20261020-113734-work-mode-teams/`.
+Next: respect #338's recovery hold before further dock deployment/restart;
+after recovery confirmation, qualify the merged compositor and remaining
+Teams/Outlook interactions. No Wingpanel, compositor,
+kernel, bootloader or audio-stack restart was performed.
+
+## Windows taskbar + CodexBar persistence — 2026-10-20
+
+The canonical dock installer now applies the complete Windows taskbar stack and
+CodexBar integration through `mseries/dock-taskbar/prepare-source.sh`. Source guards
+reject a missing TaskbarRow, StartMenu, schema or CodexBar item. The taskbar button
+sits left of Wi-Fi with a separate divider/gap; hover opens the shared native quota
+menu without a keyboard grab, click pins it, leave closes after a crossing grace.
+Owner requested larger popup text: 25% larger, 320-pixel body and 420-pixel
+scroll viewport; the change is scoped to the taskbar popup.
+The newer native Start menu and scoped Windows 11 CSS are included in the patch.
+Teams' official icon and Outlook's transparent official SVG/launcher metadata are
+retained. No icon asset is redistributed; existing local pins are unchanged.
+
+A clean-build/linked-type/GTK hover regression check is wired into CodexBar CI;
+`install-dock-drawers.sh --build-only` also runs the isolated hover probe before
+any install. Tests use fake HOME/backend and cannot restart the desktop. See
+`mseries/dock-taskbar/README.md`. Persistence work does not install/restart the dock;
+the earlier complete Windows taskbar/CodexBar local deployment stays in place.
+Do not deploy an app-tracking-only dock build lacking this full stack.
