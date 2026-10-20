@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..eab81ed 100644
+index d97686d..a5a002c 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -203,3 +203,128 @@ backgrounditem .close-button {
@@ -106,7 +106,7 @@ index d97686d..eab81ed 100644
 +}
 +
 +dock-window.taskbar .taskbar-row button.taskbar-search {
-+    min-width: 200px;
++    min-width: 50px;
 +    padding: 5px 14px;
 +    border-radius: 999px;
 +    background: rgba(255, 255, 255, 0.85);
@@ -516,7 +516,7 @@ index 652c549..d639ac2 100644
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..71a6d7d
+index 0000000..4338da5
 --- /dev/null
 +++ b/src/Taskbar.vala
 @@ -0,0 +1,361 @@
@@ -586,7 +586,7 @@ index 0000000..71a6d7d
 +
 +        var search_content = new Gtk.Box (HORIZONTAL, 8);
 +        search_content.append (new Gtk.Image.from_icon_name ("system-search-symbolic"));
-+        search_content.append (new Gtk.Label (_("Search")) { xalign = 0, hexpand = true });
++        search_content.append (new Gtk.Label (_("Search")) { xalign = 0 });
 +        var search_button = new Gtk.Button () {
 +            child = search_content,
 +            tooltip_text = _("Search apps"),
