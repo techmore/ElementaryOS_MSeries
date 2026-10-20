@@ -158,7 +158,7 @@ index 2286e87..2fd9409 100644
 +dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #bcbcbc; }
 +dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
 +
-+.taskbar-codexbar-popup { font-size: 1.25em; }
++.taskbar-codexbar-popup { font-size: 1.5625em; }
 diff --git a/meson.build b/meson.build
 index b3a8c61..c5266f3 100644
 --- a/meson.build
