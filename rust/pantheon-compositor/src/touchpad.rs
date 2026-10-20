@@ -300,7 +300,19 @@ mod libinput {
             ClickMethod::Fingers => Some(input::ClickMethod::Clickfinger),
             ClickMethod::Areas => Some(input::ClickMethod::ButtonAreas),
             ClickMethod::Default => device.config_click_default_method(),
-            ClickMethod::None => None,
+            ClickMethod::None => {
+                // input 0.10's safe enum omits LIBINPUT_CONFIG_CLICK_METHOD_NONE.
+                // SAFETY: this Device owns a live libinput reference and NONE is
+                // the documented value for disabling software button methods.
+                use input::AsRaw;
+                unsafe {
+                    input::ffi::libinput_device_config_click_set_method(
+                        device.as_raw_mut(),
+                        input::ffi::libinput_config_click_method_LIBINPUT_CONFIG_CLICK_METHOD_NONE,
+                    );
+                }
+                None
+            }
         };
         if let Some(click) = click
             && device.config_click_methods().contains(&click)

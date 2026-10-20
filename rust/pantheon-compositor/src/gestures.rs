@@ -251,7 +251,8 @@ impl PinchGestureState {
     }
 
     pub(crate) fn finish(self, cancelled: bool) -> GestureOutcome {
-        if cancelled || self.scale > PINCH_IN_SCALE {
+        if cancelled || !self.scale.is_finite() || self.scale <= 0.0 || self.scale > PINCH_IN_SCALE
+        {
             return GestureOutcome::None;
         }
         match self.action {
@@ -384,6 +385,19 @@ mod tests {
         let bindings = GestureBindings::default();
         assert!(PinchGestureState::begin(&bindings, 2).is_none());
         assert!(PinchGestureState::begin(&bindings, 3).is_none());
+    }
+
+    #[test]
+    fn cancelled_and_invalid_pinches_never_launch() {
+        let bindings = GestureBindings::default();
+        for scale in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -1.0] {
+            let mut pinch = PinchGestureState::begin(&bindings, 4).unwrap();
+            pinch.update(scale);
+            assert_eq!(pinch.finish(false), GestureOutcome::None);
+        }
+        let mut pinch = PinchGestureState::begin(&bindings, 4).unwrap();
+        pinch.update(0.5);
+        assert_eq!(pinch.finish(true), GestureOutcome::None);
     }
 
     #[test]

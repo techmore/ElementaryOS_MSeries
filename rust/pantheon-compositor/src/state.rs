@@ -847,9 +847,11 @@ impl PantheonCompositor {
             .space
             .elements()
             .filter(|window| {
-                window
-                    .x11_surface()
-                    .is_none_or(|surface| !surface.is_override_redirect())
+                self.workspace_manager.workspace_for(window.id())
+                    == Some(self.workspace_manager.active())
+                    && window
+                        .x11_surface()
+                        .is_none_or(|surface| !surface.is_override_redirect())
                     && window
                         .toplevel()
                         .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))

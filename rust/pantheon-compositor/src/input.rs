@@ -433,6 +433,11 @@ impl PantheonCompositor {
     }
 
     fn gesture_swipe_update(&mut self, delta: Point<f64, Logical>, time: InputTime) {
+        if !self.gestures_available()
+            && matches!(self.active_gesture, Some(ActiveGesture::Swipe(_)))
+        {
+            self.active_gesture = None;
+        }
         match self.active_gesture.as_mut() {
             Some(ActiveGesture::Swipe(gesture)) => gesture.update(delta),
             Some(ActiveGesture::ForwardedSwipe) => {
@@ -446,7 +451,7 @@ impl PantheonCompositor {
     fn gesture_swipe_end(&mut self, cancelled: bool, time: InputTime) {
         match self.active_gesture.take() {
             Some(ActiveGesture::Swipe(gesture)) => {
-                self.apply_gesture_outcome(gesture.finish(cancelled));
+                self.apply_gesture_outcome(gesture.finish(cancelled || !self.gestures_available()));
             }
             Some(ActiveGesture::ForwardedSwipe) => {
                 let pointer = self.seat.get_pointer().unwrap();
@@ -491,6 +496,11 @@ impl PantheonCompositor {
         rotation: f64,
         time: InputTime,
     ) {
+        if !self.gestures_available()
+            && matches!(self.active_gesture, Some(ActiveGesture::Pinch(_)))
+        {
+            self.active_gesture = None;
+        }
         match self.active_gesture.as_mut() {
             Some(ActiveGesture::Pinch(gesture)) => gesture.update(scale),
             Some(ActiveGesture::ForwardedPinch) => {
@@ -512,7 +522,7 @@ impl PantheonCompositor {
     fn gesture_pinch_end(&mut self, cancelled: bool, time: InputTime) {
         match self.active_gesture.take() {
             Some(ActiveGesture::Pinch(gesture)) => {
-                self.apply_gesture_outcome(gesture.finish(cancelled));
+                self.apply_gesture_outcome(gesture.finish(cancelled || !self.gestures_available()));
             }
             Some(ActiveGesture::ForwardedPinch) => {
                 let pointer = self.seat.get_pointer().unwrap();
@@ -526,6 +536,20 @@ impl PantheonCompositor {
                 );
             }
             other => self.active_gesture = other,
+        }
+    }
+
+    /// End client sequences before focus moves to the lock surface, and discard
+    /// compositor sequences so unlocking cannot complete an old gesture.
+    pub(crate) fn cancel_active_gesture(&mut self, time: InputTime) {
+        match self.active_gesture {
+            Some(ActiveGesture::Swipe(_) | ActiveGesture::ForwardedSwipe) => {
+                self.gesture_swipe_end(true, time);
+            }
+            Some(ActiveGesture::Pinch(_) | ActiveGesture::ForwardedPinch) => {
+                self.gesture_pinch_end(true, time);
+            }
+            None => {}
         }
     }
 

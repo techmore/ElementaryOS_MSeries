@@ -1,5 +1,31 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Trackpad gesture review and dev integration — 2026-10-20 (Codex)
+
+Continued PR #326 on `claude/trackpad-gestures`. Merged `origin/dev` at
+`1740443`, resolving the two handoff/roadmap conflicts while retaining both
+sets of entries and the newer corner-snapping implementation. Review fixed
+in-flight gestures surviving a lock or pointer grab: owned actions now check
+availability on updates and release; locking cancels sequences before focus
+moves; native session suspension and device removal cancel sequences too.
+Window cycling now restricts candidates to managed application windows on the
+active workspace. Invalid/zero/negative pinch scales cannot launch an app.
+The touchpad `click-method=none` setting now explicitly disables libinput's
+software click method (the Rust input 0.10 enum omits this C API value).
+
+Verification: `cargo test -p pantheon-compositor` passes 16 tests (including
+cancelled/invalid pinch regression cases); `cargo clippy -p pantheon-compositor
+--all-targets -- -D warnings` and the same command with `--features native-drm`
+pass. `glib-compile-schemas --strict --dry-run` on the packaged schema passes;
+`bash mseries/pantheon-rust-compositor/test-session-units.sh` passes (the host's
+unrelated spice-vdagent unit emits an existing Install-section warning).
+`git diff --check` passes. Updated the compositor README, architecture status
+and public performance page to describe implemented versus unqualified work.
+No package installed and no running session restarted. Physical device
+configuration, lock/grab interruption on hardware and actual application zoom
+remain unverified. Next: native trackpad qualification and finger-following
+workspace/overview animation; actions still fire on release.
+
 ## Rust compositor: macOS-style trackpad gestures and touchpad settings — 2026-10-20 (Claude)
 
 Branch `claude/trackpad-gestures` (from `origin/dev`). The live session runs

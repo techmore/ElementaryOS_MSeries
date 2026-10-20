@@ -215,15 +215,18 @@ xdg move/resize grab implementations to receive physical pointer motion.
 Multi-output bounds, pointer constraints, and hardware input remain
 unqualified.
 
-Native libinput swipe gestures are now recognized for workspace navigation and
-the overview: three-or-more-finger swipes that are not cancelled and that
-travel past a logical-pixel threshold with horizontal dominance select the
-adjacent workspace, stopping at the first and last workspace, while an upward
-swipe of the same size toggles the grid overview. Gestures are dropped
-while the session is locked or a pointer grab (move, resize or popup) is
-active. Pinch gestures remain unrecognized. The recognition state machine has
-unit tests; the libinput event path is compile-checked only and no physical
-trackpad qualification has been run.
+Native libinput devices now receive touchpad and mouse preferences at hotplug
+and whenever GNOME peripheral settings change, including tap-to-click, natural
+scrolling, speed and click method. Three/four-finger swipes follow elementary's
+gesture settings for workspace navigation, moving windows, window cycling,
+overview and maximize. Four-finger pinch-in opens the application launcher via
+`org.techmore.mseries.gestures`; unclaimed gestures reach applications through
+`zwp_pointer_gestures_v1` v3. Two-finger pinch zoom remains application input.
+Locking, session suspension and device removal cancel in-flight sequences;
+owned actions cannot finish during a pointer grab. Recognizer tests and a nested
+GTK protocol smoke pass, but physical trackpad qualification remains open.
+Actions currently fire on release; finger-following animations remain open.
+These changes are staged in PR #326 and are not installed on the live session.
 
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed

@@ -1418,6 +1418,7 @@ impl NativeBackend {
                         state.input_devices.push(device);
                     }
                     InputEvent::DeviceRemoved { device } => {
+                        state.cancel_active_gesture(smithay::backend::input::InputTime::now());
                         state.input_devices.retain(|known| known != device);
                     }
                     _ => {}
@@ -1431,6 +1432,7 @@ impl NativeBackend {
             session_notifier,
             move |event, _, state| match event {
                 SessionEvent::PauseSession => {
+                    state.cancel_active_gesture(smithay::backend::input::InputTime::now());
                     libinput_context.suspend();
                     if let Some(backend) = state.native_backend.as_mut() {
                         backend.kms.manager.pause();
