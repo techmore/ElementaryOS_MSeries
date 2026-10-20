@@ -1,5 +1,26 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Transparent Outlook icon; dock deployment recovered — 2026-10-20
+
+Outlook now fetches the transparent, checksum-pinned Office SVG directly from
+Microsoft's CDN. The old white-backed touch icon was removed locally. GTK
+resolves the SVG and its corner alpha is verified zero. Teams/Outlook icons,
+launcher entries and dock pins are retained; both launchers advertise their
+observed Brave StartupWMClass. Fourteen offline web-launcher tests pass.
+
+A live app-tracking experiment incorrectly rebuilt the dock without the owner's
+existing Windows Taskbar.vala customization, replacing the intended bottom bar.
+The recovery chat restored the retained pre-change binary, SHA256
+`960642d81bd83c4ec06be02c6a37ffa6967a874ddd42e4011827bc696002541f`.
+This chat verified that hash, active dock service and private `taskbar-mode=true`.
+All further dock deployments/restarts are stopped pending owner recovery
+confirmation. Icons/launchers remain installed; native tracking/pill changes
+were rolled back with the incompatible executable. The experimental source and
+tests are retained separately in this task's scratch directory, not wired into
+the installer. Any future tracking fix must preserve the complete customized
+taskbar source and be isolated-tested first. No compositor or Wingpanel restart
+was performed. The safe icon/launcher PR excludes the native dock experiment.
+
 ## Work Mode integration reconciled — 2026-10-20
 
 #329 now preserves current gesture/cursor and floating-window clearance behavior

@@ -59,6 +59,9 @@ class Install(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='teams-web-')
         self.addCleanup(self.temp.cleanup)
         self.icon_download = patch('official_icon.download', side_effect=OSError('Offline test'))
+        self.asset_download = patch('official_icon.download_asset', side_effect=OSError('Offline test'))
+        self.asset_download.start()
+        self.addCleanup(self.asset_download.stop)
         self.icon_download.start()
         self.addCleanup(self.icon_download.stop)
         self.home = Path(self.temp.name)
@@ -90,7 +93,7 @@ class Install(unittest.TestCase):
                 self.values = values
                 return True
         settings = Settings()
-        with patch('shutil.which', return_value=str(self.browser)), patch.object(outlook, 'refresh_desktop'):
+        with patch('shutil.which', return_value=str(self.browser)), patch.object(outlook, 'refresh_desktop'), patch('official_icon.download_asset', return_value=b'<svg xmlns="http://www.w3.org/2000/svg"/>'):
             desktop = outlook.install(settings)
             outlook.install(settings)
         self.assertEqual(settings.values, ['files.desktop', outlook.APP_ID + '.desktop', 'browser.desktop'])
@@ -98,6 +101,10 @@ class Install(unittest.TestCase):
         self.assertEqual(backup['launchers'][1], 'io.elementary.mail.desktop')
         self.assertIn('--app=https://outlook.office.com/mail/', desktop.read_text())
         self.assertNotIn('MimeType=', desktop.read_text())
+        self.assertIn('Icon=' + outlook.APP_ID, desktop.read_text())
+        with patch('shutil.which', return_value=str(self.browser)), patch.object(outlook, 'refresh_desktop'):
+            outlook.install(settings)  # Offline reinstalls preserve the official SVG.
+        self.assertIn('Icon=' + outlook.APP_ID, desktop.read_text())
         subprocess.run(['desktop-file-validate', str(desktop)], check=True)
         from gi.repository import Gio
         app = Gio.DesktopAppInfo.new_from_filename(str(desktop))
@@ -177,7 +184,7 @@ class Install(unittest.TestCase):
         self.assertFalse(any(a.startswith('--user-data-dir=') for a in arguments))
         self.assertFalse(any(a.startswith('--class=') for a in arguments))
         self.assertFalse((self.config / 'mseries/teams-web/profile').exists())
-        self.assertNotIn('StartupWMClass=', desktop.read_text())
+        self.assertIn('StartupWMClass=brave-teams.microsoft.com__v2_-Profile 2', desktop.read_text())
         self.assertEqual(json.loads(state.read_text())['profile']['last_used'], 'Profile 2')
         state.write_text(json.dumps({'profile': {'last_used': 'Default'}}))
         with patch.dict(os.environ, {'PATH': str(self.home) + os.pathsep + os.environ['PATH']}):
