@@ -25,7 +25,8 @@
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.
 - Keep the owner’s menu bar stable: stage routine indicator updates without restarting Wingpanel. Reload only when the owner explicitly requests it or to recover from a confirmed panel defect.
-- **Branches:** `main` is stable (the v0.0.1 line); `dev` is integration. Branch from
+- **Branches:** `dev` is the default branch and what the owner runs; `main` is the
+  frozen stable line (v0.0.1). Branch from
   `origin/dev` and open PRs with `--base dev`; only release PRs (`dev` → `main`) and
   urgent hotfixes go to `main`. See [mseries/BRANCHING.md](mseries/BRANCHING.md).
 - Commit and push completed, reviewed batches to GitHub. Use one agent for

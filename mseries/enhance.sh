@@ -330,12 +330,13 @@ mod_theme() {
 mod_payload() {
   local prefix=/usr/share/elementary-mac f
   for f in install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
+           install-icloud-passwords.sh icloud-passwords/setup.py icloud-passwords/app.py icloud-passwords/worker.py icloud-passwords/gsa-errors.patch icloud-passwords/notification-wait.patch icloud-passwords/chromium-key.pub icloud-passwords/README.md \
            display-space/full_height_boot.py display-space/dock_profile.py \
            calendar/accounts lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf video-decode/brave-youtube install-native-firefox.sh install-touchegg.sh \
            install-network-throughput.sh install-quick-settings-brightness.sh install-bluetooth-control-center.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh install-battery-eta.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_claude_handoff.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_claude_handoff.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh lib-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \

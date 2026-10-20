@@ -349,6 +349,11 @@ All seven installed app routes passed within the quiet and memory guards. Read t
 benchmarks or continuation work; reuse completed evidence and inspect the
 existing queue first.
 
+The [v0.0.1 English F5 desktop update](mseries/releases/v0.0.1/README.md) is a
+release candidate. A fresh ChatGPT physical-F5 attempt failed before recording;
+its input compatibility launcher is staged and awaits a full app relaunch and
+owner check. No v0.0.1 release is published yet.
+
 ---
 
 ## Other ways in

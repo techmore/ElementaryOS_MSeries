@@ -24,6 +24,23 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  speech-release:
+    name: English F5 release contracts (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install private GTK test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
+      - name: Verify source-only release, rollback and host checks
+        run: |
+          bash -n mseries/releases/v0.0.1/install.sh
+          python3 -B -m unittest discover -s mseries/releases -p 'test_*.py'
+          python3 -B mseries/releases/v0.0.1/test_preflight.py
+      - name: Verify transcript-only UI without microphone or models
+        run: |
+          python3 -B mseries/dictation/speech-only-panel-smoke.py
+          python3 -B mseries/dictation/speech-only-panel-smoke.py --default-review
+
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm
@@ -72,6 +89,69 @@ jobs:
       - name: Verify exact-kernel boot profile and rollback
         run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
 
+  machine-lab:
+    name: Machine Lab build and logic tests (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev python3 appstream desktop-file-utils xvfb xauth
+      - name: Build and run the logic tests (persistence, discovery, QMP transport)
+        run: |
+          meson setup build-ml mseries/machine-lab
+          meson compile -C build-ml
+          xvfb-run -a meson test -C build-ml --print-errorlogs
+      - name: Check the version flag and desktop metadata
+        run: |
+          xvfb-run -a build-ml/machine-lab --version
+          desktop-file-validate mseries/machine-lab/data/io.github.mseries.MachineLab.desktop
+          appstreamcli validate --no-net mseries/machine-lab/data/io.github.mseries.MachineLab.metainfo.xml
+      - name: Build the Debian package
+        run: |
+          sudo apt-get install -y dpkg-dev
+          MACHINE_LAB_OUTPUT_DIR="$RUNNER_TEMP/ml-deb" bash mseries/machine-lab/build-deb.sh
+
+  codexbar-wingpanel:
+    name: CodexBar Wingpanel module, render and interaction probes (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native build and headless test dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
+          libgtk-4-dev libjson-glib-dev libgee-0.8-dev libgranite-7-dev sassc gettext
+          python3 xvfb xauth dbus-x11 librsvg2-common
+      - name: Provide Granite 7.7 and the pinned Wingpanel indicator API when the distro lacks them
+        run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/prefix" >> "$GITHUB_ENV"
+      - name: Build the module; run unit tests, generated-C guard, Switch/ingestion/token/Grok probes
+        run: |
+          meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
+          ninja -C "$RUNNER_TEMP/codexbar"
+          meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+
+  calendar-agenda:
+    name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build and headless EDS test dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
+          libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
+          libical-dev evolution-data-server gsettings-desktop-schemas libglib2.0-bin python3 xvfb xauth dbus
+          dbus-x11 librsvg2-common accountsservice
+      - name: Add elementary's AccountsService extension (the clock reads its TimeFormat)
+        run: |
+          # elementary/default-settings, GPL-3.0; the same file elementary OS installs.
+          url=https://raw.githubusercontent.com/elementary/default-settings/915d1a0b63865ce3f0d44a68318d55ef9ca90fe6/accountsservice/io.elementary.pantheon.AccountsService.xml
+          sudo curl -fsSL "$url" -o /usr/share/dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml
+          sudo mkdir -p /usr/share/accountsservice/interfaces
+          sudo ln -sf ../../dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml /usr/share/accountsservice/interfaces/
+          sudo systemctl restart accounts-daemon
+      - name: Build the pinned indicator with our patch and run every agenda group
+        run: bash mseries/calendar/ci-test-agenda.sh "$RUNNER_TEMP/agenda"
+
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
@@ -102,7 +182,7 @@ jobs:
           python3 -m py_compile mseries/pantheon-rust-compositor/summarize-metrics.py
           python3 mseries/pantheon-rust-compositor/test-summarize-metrics.py
           python3 mseries/pantheon-rust-compositor/summarize-metrics.py mseries/pantheon-rust-compositor/metrics/*.csv > /dev/null
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/install-pantheon-rust-compositor.sh
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
           bash -n mseries/vms/mseries-vm
           bash mseries/vms/test-mseries-vm.sh
           bash mseries/test-quieter-sound-theme.sh
@@ -126,6 +206,8 @@ jobs:
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
           bash -n mseries/deploy-codexbar.sh
+          bash -n mseries/lib-codexbar.sh
+          bash -n mseries/install-codexbar-wingpanel.sh
           python3 mseries/test-codexbar-deploy.py
           bash -n mseries/check-codexbar-port.sh
           python3 mseries/test-codexbar-cache.py
@@ -160,6 +242,8 @@ jobs:
           python3 mseries/video-decode/test-brave-factory.py
           python3 mseries/video-decode/test-youtube-launch.py
           shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
+          shellcheck -S warning mseries/calendar/ci-test-agenda.sh mseries/install-homeboard-sync.sh
+          shellcheck -S warning mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py

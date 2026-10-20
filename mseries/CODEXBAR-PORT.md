@@ -13,12 +13,13 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 | Wrapper that follows the active OpenCode v2 OAuth account, with a legacy Go key fallback (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
 | Shared helper cache and locks (polling limits: per-answer TTL, exponential backoff on failure, last-good data kept, private `0600` files under `~/.cache/codexbar-mseries`; one `flock` around Codex sign-in writes) | `codexbar_cache.py` | none |
 | Sessions helper (incremental transcript index: only changed files are parsed) | `codexbar-sessions.py`, `codexbar_tokens.py` | none (reads local data) |
+| Grok Build card: mark, Codex/Claude/OpenCode/Grok order, token-first bar row, product-share/reset-credit lines, `grok login` and open-in-terminal via `xdg-terminal-exec`; local 7-day tokens and sign-in email | `Indicator.vala`, `icons/grok.svg`, `codexbar-sessions.py` (`grok_session`) | upstream `grok` provider (v0.78.0+: CLI billing via `_x.ai/billing`); Grok's `~/.grok/sessions/*/*/usage.json` (`grok usage` envelope); `auth.json` scope keys for the email only |
 | OpenCode local usage, account plans and switching | `codexbar-opencode-local.py` | reads `opencode.db` read-only; activates via `opencode auth switch opencode <credential-id>` |
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
 | Claude CLI accounts via claude-swap, plus native Claude desktop sessions. CLI keeps the app login separate; Switch validates the target session, quits the native app, saves its final encrypted session, merges the target login without changing preferences, switches the CLI and relaunches the app. Set up app preserves the previous session and locally clears the login for one-time sign-in without sending a logout request. Automatic list capture remembers the app login; the redundant manual “Save Claude app login” panel button has been removed. | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, `configs/.claude-config-*.json`; installed Claude `config.json` keys `lastKnownAccountUuid`, `oauth:tokenCache`, `oauth:tokenCacheV2`, SQLite `Cookies` (or `Network/Cookies`), `gtk-launch com.anthropic.Claude` |
 | Claude local Code context carry-over | `codexbar_claude_history.py`, [design/evidence](CODEXBAR-CLAUDE-HISTORY.md) | installed Claude desktop account/org Code index and local `.claude/projects` transcripts; private exports and create-only imports after app exit |
-| Installers / deploy / CI | `install-codexbar.sh`, `install-codexbar-wingpanel.sh`, `deploy-codexbar.sh`, `check-codexbar-port.sh`, `.github/workflows/validate-mseries.yml`, `enhance.sh` payload list | version pin `version=vX.Y.Z` |
+| Installers / deploy / CI | `lib-codexbar.sh` (the single helper/mark list), `install-codexbar.sh`, `install-codexbar-wingpanel.sh`, `deploy-codexbar.sh`, `check-codexbar-port.sh`, `.github/workflows/validate-mseries.yml` (`codexbar-wingpanel` job: native build, unit tests and Xvfb probes via `probe/ci-build-deps.sh`), `enhance.sh` payload list | version pin `version=vX.Y.Z` |
 
 ## Upgrade checklist
 
@@ -42,7 +43,8 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 - `~/.local/bin/codexbar` is the wrapper, not upstream's binary (upstream's CLI is `codexbar-upstream`).
 - Account stores: `~/.local/share/codexbar-mseries/codex-accounts` (private, 0600) and claude-swap's own store. Never commit these.
 
-Quota and account cards, like the top-panel readout, always order Codex first, Claude second, OpenCode Go third.
+Quota and account cards, like the top-panel readout, always order Codex first, Claude second, OpenCode Go third,
+Grok fourth; any other provider upstream reports follows.
 
 ## Polling and cache
 
@@ -53,7 +55,8 @@ Who polls what, so a new feature does not quietly add requests:
 | `codexbar-linux --snapshot` (local IPC, upstream owns provider fetching) | panel timer | 5 s while the popover is open or a refresh runs, 30 s otherwise |
 | `codexbar-accounts.py usage` (saved Codex accounts; the active one comes from the snapshot) | popover open | cached 15 min per account, parallel, `--force` from the Refresh button |
 | `codexbar-claude.py list` | popover open | cached 2 min, cleared by any other Claude command |
-| `codexbar-sessions.py`, `codexbar-opencode-local.py` | popover open | local reads; transcripts are re-parsed only when their size or mtime changed |
+| `codexbar-sessions.py`, `codexbar-opencode-local.py` | popover open | local reads; transcripts and Grok `usage.json` files are re-parsed only when their size or mtime changed |
+| Grok credits (`codexbar usage --provider grok`, upstream) | snapshot refresh | upstream owns it: `grok agent stdio` RPC (4 s init, 3 s billing), then the CLI-proxy REST fallback |
 | Everything above with the popover closed | background tick | every 15 min |
 
 `codexbar_cache.py` owns the on-disk cache (`~/.cache/codexbar-mseries`, `0700`/`0600`), the failure backoff (60 s doubling
@@ -202,6 +205,14 @@ expected approval URL in a live begin/cancel smoke test with saved IDs preserved
 second-account authorization still requires owner browser approval. Account activation was checked with OpenCode v2.0.32,
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
+
+## Panel sizing
+
+The Wingpanel bar text is styled in `install_style` in `codexbar-wingpanel/Indicator.vala`
+(`.mseries-codexbar-bar` rules): main label 7.5pt, `.seg-reset` and `.seg-secondary` 6.5pt.
+The dropdown is deliberately compact: 300px requested width and 300px maximum page height, 8pt base text,
+8.5pt provider titles, 7pt captions, reduced card/button padding and 6px section spacing. To resize again,
+edit `Indicator.vala` and run `bash mseries/deploy-codexbar.sh`.
 
 ### Switch lifecycle
 
@@ -374,3 +385,39 @@ below-15 wording and applies consistently to all provider/account rows.
 Dropdown quota bars and percentage labels use the same visual thresholds as the
 menu dots: green >70%, yellow25–70%, red<25%. The shared visual formatter is
 separate from ETA/alert warning thresholds.
+
+## Grok Build
+
+Upstream added a Grok provider for xAI's Grok Build CLI; v0.78.0 restored its CLI billing (the
+`_x.ai/billing` ACP method over `grok agent stdio`, then `cli-chat-proxy.grok.com/v1/billing?format=credits`
+with the `~/.grok/auth.json` bearer). Upstream owns credentials, fetching and the snapshot; we add the
+elementary layer. `install-codexbar.sh` appends `grok` to `providerOrder` only when a `grok` binary is
+installed (PATH, `~/.grok/bin`, `~/.local/bin`). Browser-cookie import is macOS-only upstream and unused here.
+
+- **Card and bar.** Grok ranks after OpenCode Go with a terminal-prompt mark (original glyph, not a brand logo).
+  Its single weekly credits window sits beside the seven-day token count; the lower bar row is omitted when the
+  binding window is that same weekly window (this also applies to any provider whose only window is weekly).
+  The tier comes from upstream (`SuperGrok`, `SuperGrok Heavy`).
+- **Details.** Upstream's `details` sections (product shares of the same credit pool such as Grok Build/Grok Chat,
+  and usage-limit reset coupons) render as compact lines. Every section and row is type-checked; malformed
+  entries are skipped, at most four sections of eight rows.
+- **Sign-in and opening.** Clicking the card opens `grok` in the default terminal (`xdg-terminal-exec`, installed by
+  `install-codexbar.sh`). With no credits data, **Sign in…** runs `grok login` the same way; without a terminal
+  launcher it falls back to Settings.
+- **Local tokens.** `codexbar-sessions.py` reads only `<encoded cwd>/<session>/usage.json` (the persisted
+  `grok usage` envelope), counts completed turns by `endedAt`, and uses `totalTokens` (input + output; cached
+  input and reasoning are subsets). Forked/resumed history is deduplicated by turn fingerprint, symlinked and
+  artifact/terminal trees are skipped, files over 8 MB are ignored, and parses are cached under
+  `grok-usage-v1`. Costs are reported as 0: subscription credits are not dollars. `GROK_HOME` is honored.
+- **Identity.** The helper reads only the `email` of the SuperGrok OIDC entry (falling back to the legacy session
+  entry), as upstream does for its identity row. Tokens and other fields are never read out; tests assert it.
+- **Probes.** `probe/run-grok-probe.sh BUILD_DIR` renders the `grok` and `grok-signin` fixtures, asserts order,
+  layout, details and the email, and clicks **Sign in…** against a fake terminal to confirm `grok login` is launched.
+
+## Generated-C guard
+
+valac 0.56 frees the owned inner value of a nested conditional that mixes a literal with a call or
+concatenation before copying it. This printed garbage alternate-account countdowns and dropdown quota
+captions until 2026-10-19. `probe/check-generated-c.py` (Meson test `generated-c-temporaries`) fails the
+build when that borrowed-then-freed shape appears in any generated C. Write such strings with an explicit
+`string` declaration and `if`/`else`.

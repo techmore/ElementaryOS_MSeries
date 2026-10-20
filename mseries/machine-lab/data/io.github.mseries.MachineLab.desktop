@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Machine Lab
+Comment=Run another Linux on this Mac
+Exec=machine-lab
+Icon=io.github.mseries.MachineLab
+Terminal=false
+Type=Application
+Categories=System;Emulator;
+Keywords=virtual;machine;vm;qemu;
+StartupWMClass=io.github.mseries.MachineLab

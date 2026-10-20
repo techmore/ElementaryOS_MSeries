@@ -128,8 +128,12 @@ namespace MSeries {
                 var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
                 var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
                 var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
-                var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
-                    : countdown_text (reset.to_unix () - now_unix);
+                // Explicit owned string: valac frees the owned inner value of a nested
+                // literal/call ternary before copying it (use-after-free in generated C).
+                string eta = "?";
+                if (reset != null) {
+                    eta = reset.to_unix () <= now_unix ? "now" : countdown_text (reset.to_unix () - now_unix);
+                }
                 if (parts.len > 0) parts.append (" · ");
                 parts.append (label);
                 if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));

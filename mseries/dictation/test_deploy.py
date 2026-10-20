@@ -22,6 +22,19 @@ resources = load('dictation_resources_test', HERE / 'dictation_resources.py')
 
 
 class DeploymentTests(unittest.TestCase):
+    def test_speech_only_panel_launcher_is_explicit_and_default_compatible(self):
+        payload = Mock()
+        deploy.install_panel(payload)
+        normal = payload.install.call_args.args[1].decode()
+        self.assertIn('optional transcript review', normal)
+        self.assertNotIn('MSERIES_DICTATION_SPEECH_ONLY', normal)
+        deploy.install_panel(payload, speech_only=True)
+        speech = payload.install.call_args.args[1].decode()
+        self.assertIn('Exec="/usr/bin/env" "MSERIES_DICTATION_SPEECH_ONLY=1" "/usr/bin/python3"', speech)
+        self.assertNotIn('optional transcript review', speech)
+        self.assertNotIn('voice-assistant', speech)
+        self.assertEqual(payload.install.call_args.args[2], 0o644)
+
     def test_browser_override_keeps_actions_and_urls(self):
         text = '[Desktop Entry]\nName=Browser\nExec=/usr/bin/brave-browser-stable %U\n\n[Desktop Action private]\nExec=brave-browser --incognito %U\n'
         result = deploy.brave_override(text)

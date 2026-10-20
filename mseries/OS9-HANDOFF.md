@@ -297,11 +297,363 @@ it has not been launched in a real session. The WD22TB4 HDMI G3
 DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
+## Homeboard Tasks sync: production hardening — 2026-10-19
+
+Branch `claude/homeboard-production` (from `dev`).
+
+Bridge (`techmore/homeboard`): [#9](https://github.com/techmore/homeboard/pull/9)
+merged as `eae570c`, [#10](https://github.com/techmore/homeboard/pull/10) merged as
+`5a7feb9` (the installer pin).
+A locked keyring now times out after 20 s with a clear status (it could stall every
+sync before); routine syncs back off 2/4/8 … max 15 min after failures; malformed
+remote text is emptied/trimmed instead of failing every sync; the first sync after a
+new Homeboard list is created waits for the calendar factory to see it (this was the
+unexplained 1-in-20 test error from the first round, now reproduced and fixed: 5/5
+clean runs after). The session restarts the bridge if it exits, D-Bus activation
+starts it on demand, `install.sh` records `VERSION`, replaces a running bridge of
+another revision (`app.quit`, with a fallback for bridges without it) and supports
+`--uninstall`. Journal logs carry counts and failures only. New Homeboard CI
+(`elementary-bridge.yml`): unit tests, server guard, EDS round trip, installer
+lifecycle — passing on GitHub's runner. #10 fixes two gaps found during the live
+upgrade: installer-started bridges logged to /dev/null, and an old `sync.lock` stayed
+0664.
+
+Calendar (`mseries/patches/datetime-agenda-tabs.patch`): the Homeboard strip uses
+D-Bus activation (the direct launch remains for older bridges), icon buttons have
+accessible names, `HomeboardStatus.vala` is in `po/POTFILES`. New CI job
+**Calendar Events/Tasks/Homeboard agenda** builds the pinned indicator with the patch
+on arm64 Ubuntu and runs all 27 groups (`mseries/calendar/ci-test-agenda.sh`; 27/27
+locally, 27/27 on GitHub's runner). The runner needs Ubuntu's Granite, AccountsService
+and elementary's `io.elementary.pantheon.AccountsService.xml` (pinned
+`elementary/default-settings` `915d1a0`, identical to this desktop's copy): the clock
+reads its `TimeFormat`, and the fixture treats any GTK critical as fatal.
+
+`mseries/install-homeboard-sync.sh` is now a pinned wrapper around the bridge's own
+installer (start, upgrade, `--uninstall`). Run live: the running bridge was replaced
+by `eae570c` (new PID, `quit` action, D-Bus service file, AutoRestart present), then
+upgraded to `5a7feb9`.
+
+Not verified: a live round trip with the server — the owner is still signed out.
+Next: owner signs in from the Tasks tab, then check both directions.
+
+
+## Pointer stuck at the top edge: Gala panel barrier patch — 2026-10-19 (Claude Code)
+
+Owner reported the mouse sometimes sticks at the top of the screen until slid sideways to the edge. Cause
+found by reading the pinned Gala source (`f079143`): `HideTracker` creates a pointer barrier along the
+panel's edge for **every** panel, including Wingpanel, which never auto-hides. The barrier spans the
+screen minus 50px at each end, which matches "slide to the edge frees it". Its release logic also only
+released after a later hit more than 150ms past the trigger. Added `mseries/patches/gala-panel-barrier.patch`
+(applied last by `install-gala-screen-corners.sh`): no barrier when the panel's hide mode is NEVER (and it
+is rebuilt when the mode changes), non-retriggering barriers release right after triggering, and a null
+guard in `~Barrier`. The patched tree compiles (meson/ninja, scratch build, nothing installed).
+**Installed 2026-10-19 18:00** (old binary kept as `gala.pre-barrier`; no unresolved libraries); active at next login. **Not confirmed on hardware:** replacing `/usr/local/lib/mseries/gala/bin/gala` was
+declined by the permission classifier, and the compositor only changes at next login. The cause is
+inferred from code, not reproduced. Install by building with the installer's prefix and copying only the
+binary (the installer's launcher heredoc is older than the live `mseries-gala`, so do not rerun it blindly);
+after login, check whether the stick is gone.
+
+## CodexBar dropdown compacted — 2026-10-19
+
+Owner asked to shrink the CodexBar dropdown and keep it that way. In `codexbar-wingpanel/Indicator.vala`,
+reduced its requested width and maximum content height from 340px to 300px, base text 9pt to 8pt, provider
+titles 9.5pt to 8.5pt, captions 8pt to 7pt, and tightened card, button and section spacing. The compact
+style is compiled into the Wingpanel indicator module, so it is loaded on each Wingpanel startup. Built
+with Meson/Ninja, installed at `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`, and restarted
+Wingpanel. Verified the installed module contains the 8pt dropdown style and the Wingpanel process is
+running again. The tests in the deploy script were not run.
+
+## CodexBar panel font shrink — 2026-10-19 (Claude Code)
+
+Owner reported the CodexBar bar text was too large (it may also have made the Applications menu hard to
+open). Changed `.mseries-codexbar-bar` sizes in `codexbar-wingpanel/Indicator.vala`: label 8.5->7.5pt,
+reset/secondary 7.5->6.5pt. Tests pass, `deploy-codexbar.sh` ran (Wingpanel and CodexBar restarted), owner
+confirmed it looks right; pushed as `fa563ce`. **Open:** whether the Applications menu not opening is fully
+fixed is not confirmed; the dock (`io.elementary.dock`) is still stopped. Documented in `CODEXBAR-PORT.md`.
+
+## Phosphene local media feasibility — 2026-10-19
+
+Reviewed Phosphene `v4.19.5` at `287a964` against the 32 GB M1 Pro/T6000 and
+our elementary OS ARM64 + omarchy-mlx Vulkan stack. The project now describes
+Linux on Apple Silicon as community-maintained/best-effort, though the checked
+Pinokio installer still gates on Darwin/ARM64. The video stack is MLX-specific;
+compatibility with our Vulkan fork is unproven. Phosphene lists 48 GB for
+advanced features and 36 GB+ for compact-Q8 Hailuo H3, exceeding this host's
+memory. Its 27.5 GB LTX base is model download/storage size, not asserted runtime
+RAM. No software or weights were installed and no renders were run. Decision:
+do not prioritize a port; reconsider with a specific media need or backend
+support. Full evidence and privacy/license caveats:
+[`local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md`](local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md).
+
+## omarchy-mlx main candidate and planned model A/B — 2026-10-19
+
+Candidate `61495cb` built in `~/.cache/omarchy-mlx-candidate-61495cb`, isolated
+beside installed v0.7.33. No runtime was installed or replaced. Four selected
+C++ test binaries passed; `omarchy_matmul_family_tests` passed 41/43, with two
+MoE gather_qmm tile tests throwing on empty CPU reference data in the CPU-off
+build (cause suspected, unconfirmed). Receipt:
+`mseries/local-ai/receipts/2026-10-19-omarchy-mlx-candidate-build.md`.
+
+Model A/B has not run. Readiness check at 08:00 EDT found
+`mseries-ai-everyday.service` failed because its configured 4B target was
+incomplete and offline mode refused a download; no MLX worker was running.
+Since then, a Python wheel for `61495cb` was built and installed in an isolated
+cache-local venv. It imports mlx-lm 0.31.3 and completes a tiny GPU sum on
+Honeykrisp. Build used CPU=OFF because LAPACKE development files are absent;
+Python 3.14 headers were unpacked to the candidate cache without system package
+installation. The wheel is `0.32.4.dev202610191211+61495cb`, while omarchy-mlx's
+lock labels its pinned MLX archive 0.32.3; the hash-verified archive's
+`mlx/version.h` says 0.32.4. Resolve/document this mismatch before any bump.
+
+The pinned 4B model download is complete in the normal HF cache and verified
+against the catalog hashes. A separate diagnostics
+wheel proves a synthetic 8192-element float32 Sum dispatches `ReduceRowF32`
+on G13S; this does not prove the 4B model reaches it. At the latest machine
+sample, 12.26 GiB was available, below the 12.5 GiB admission needed for the
+6.5 GiB model plus 6 GiB desktop reserve. No model generation has run and no
+service was started or stopped; everyday remains failed from its earlier
+missing-weights launch. Detailed A/B gates are in
+`mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`. Next: wait until
+memory admission passes, verify baseline service readiness, and run the model
+comparison only in the planned quiet window. Do not force admission or
+interrupt the owner's desktop.
+
+## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
+
+`sudo apt upgrade` (gala r3203->r3204, panel power/sound/bluetooth, granite, settings-daemon, pantheon-files,
+claude-desktop 2.42304.2) finished cleanly; `dpkg --audit` empty. The upgrade overwrote our patched
+`libpower.so`, `libsound.so` and `libbluetooth.so` with stock builds. Re-ran `install-battery-eta.sh`
+(Wingpanel restarted by it, still running) and `install-sound-indicator-fix.sh` (needs a Wingpanel reload to
+show). `check-codexbar-port.sh` passed. **Open:** the patched Bluetooth indicator has no installer or patch in
+the repo and is stock again (nothing saved before the upgrade); the running session still uses the old Gala until
+re-login; snapping/PiP gala plugins are not checked against the new `libgala0`. Lesson: re-run the
+indicator installers after every `apt upgrade` that touches `io.elementary.panel.*`.
+
+## Dock icons halved — 2026-10-18 (Claude Code)
+
+Owner asked for the applications tray icons at half size. Ran
+`gsettings set io.elementary.dock icon-size 24` (was 48, the dock's setting; dconf only, no repo
+files). Verified by reading the key back (24). Not visually checked on screen. To revert:
+`gsettings reset io.elementary.dock icon-size`. If "applications tray" meant the Applications
+menu or drawers instead, that is still at its default size.
+
+Owner then clarified they meant the Applications menu. Upstream has no icon-size setting, so
+`mseries/install-applications-menu-half-icons.sh` builds elementary/applications-menu at
+`06d7170` (8.0.4, matches the installed package) with `patches/applications-menu-half-icons.patch`
+(grid 64->32, list rows 32->16, search results 32->16) and installs `libslingshot.so`
+(package build backed up by `lib-backup.sh`; `--uninstall` restores it). Needed
+`libswitchboard-3-dev` and `libzeitgeist-2.0-dev` to build. Installed and `ldd` clean; **not yet
+loaded**: Wingpanel was not restarted, so it shows after the next reload/login, and the result is
+not visually checked. The dock stays at 24; revert it if only the menu was wanted.
+
+Follow-up: the same patch now also makes the grid page 7x4 (28 apps, was 5x3 = 15), label width
+12 chars, row spacing 12, to roughly keep the popover footprint. Rebuilt, installed and Wingpanel
+reloaded; layout not visually checked.
+## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
+
+PR #271 (production hardening: the valac nested-ternary use-after-free behind the
+quota captions and reset countdowns, Grok Build provider, upstream v0.78.0)
+merged into `dev` at `b772dc8`. The full deploy then ran on this machine.
+
+**Deployed and live:** `install-codexbar.sh --skip-system-deps` (v0.78.0),
+CodexBar restarted, `deploy-codexbar.sh --restart` passed **17/17** tests and
+installed `libcodexbar.so`; Wingpanel reloaded and CodexBar is running. The
+use-after-free fix and the Grok provider are in the live panel.
+
+**Probe fix landed first (`23cd4ea` on `dev`):** `grok-panel` failed on this
+machine while CI passed, because the Grok CLI installer puts `~/.grok/bin` on
+PATH, so `grok_binary()` resolved the real binary instead of the fixture stub and
+the sign-in assertion could not match. `probe/run-probe.sh` now drops PATH
+entries that provide a `grok` executable, making the probe deterministic on any
+host. Verified: both grok scenarios render here; CI (no grok on PATH) is
+unchanged.
+
+**Port check FAILED — one root cause, not several:** the v0.78.0 upstream CLI
+(`CodexBarCLI`) links `libxml2.so.2`, and this base ships libxml2 2.14, whose
+soname is `libxml2.so.16` (`/usr/lib/aarch64-linux-gnu/libxml2.so.16`). The CLI
+cannot load, so every CLI-dependent check fails: "upstream CLI not runnable",
+`--all-accounts`/`--account` lost, "no longer lists provider grok", the pin
+comparison, and codex usage. The desktop app does not link xml2, which is why
+the panel itself is fine, and v0.77.0's CLI had no such dependency. v0.78.0
+(published 2026-10-19T18:29Z) is the latest upstream release; there is no newer
+build to move to.
+
+Not done, needs an owner decision: (a) report the soname break upstream, (b)
+vendor a libxml2.so.2 (or symlink to .so.16 behind `LD_LIBRARY_PATH` — the ABI
+question is unverified), or (c) hold the CLI at v0.77.0 until upstream rebuilds.
+Also still owner-gated: the interactive `grok login` that gives the Grok card
+live credits — and that needs the CLI running first.
+
+### CodexBar CLI libxml2 shim — 2026-10-19 (resolved the same day)
+
+Option (b) was implemented and verified. `codexbar_install_cli_compat` in
+`mseries/lib-codexbar.sh` (called from `codexbar_install_helpers` and after the
+install-time rename) resolves the old soname from
+`~/.local/lib/codexbar-cli/compat/libxml2.so.2` and routes
+`codexbar-upstream` through a wrapper that points the loader there. The ABI
+question is answered empirically: the CLI runs correctly against libxml2 2.14
+for the paths the port check exercises. The shim is a no-op when the system
+provides `libxml2.so.2`, and the wrapper states when to delete it. The real
+binary's name is remembered in `codexbar-upstream.real` so reinstalls stay
+idempotent.
+
+The wrapper replaces the `codexbar-upstream` symlink, so the path is removed
+before the redirect — writing through that symlink truncates the real binary,
+which happened once during testing and was repaired by re-extracting the
+checksum-verified v0.78.0 tarball. No other component was affected (the panel
+module and desktop app do not use this binary).
+
+**Port check now passes end to end:** upstream CLI 0.78.0, `--all-accounts` and
+`--account` present, codex usage runs, `CODEX_HOME` honored, grok provider
+listed, **grok usage reports a credits window**, grok in the panel's provider
+order, and all helper tests. The remaining upstream item is reporting the
+soname break to steipete/CodexBar (owner's call; v0.78.0 is the latest
+release).
+
+## CodexBar production hardening + Grok Build; upstream v0.78.0 — 2026-10-19 (Claude Code)
+
+**Pin:** `install-codexbar.sh` now pins upstream **v0.78.0** (was v0.77.0). Both Linux aarch64
+tarballs downloaded and their published `sha256` verified; the CLI reports `0.78.0` and contains the
+Grok `_x.ai/billing` / CLI-proxy paths. No changes upstream between the tags in
+`Integrations/Linux` (DesktopController, QML settings, snapshot), so `SettingsModel.vala` and the
+panel schema are unchanged. The only CLI behaviour change touching us is opt-in upstream claude-swap
+following, which our config does not enable.
+
+**Defects fixed (latent in the running panel):**
+- Use-after-free from a valac nested-ternary code-generation defect: alternate-account reset
+  countdowns (`Presentation.account_quota`) and every dropdown quota caption (`build_window`) were
+  copied from freed memory. The existing `presentation` Meson test was failing on `dev` because of it.
+  Fixed with explicit owned strings; new Meson test `generated-c-temporaries` scans all generated C and
+  fails on the pattern (confirmed: 11 hits on the old build, 0 now).
+- `install-codexbar-wingpanel.sh` skipped `codexbar_claude_handoff.py` (hard-imported by
+  `codexbar-claude.py`) and `codexbar-opencode-login.py`; `--uninstall` removed one mark of three.
+  All three scripts now source `lib-codexbar.sh` for one helper/mark list; `test-codexbar-deploy.py`
+  fails if any helper imports a module missing from it or `enhance.sh` omits one (mutation-checked).
+- Settings window: provider catalog parsing no longer trips GLib criticals on malformed CLI entries.
+
+**Grok Build integrated** (owner has Grok Build 1.0.62 at `~/.grok`, signed in): see
+[CODEXBAR-PORT.md#grok-build](CODEXBAR-PORT.md#grok-build). Card/bar/mark/order, product-share and
+reset-credit lines, `grok login` and open-in-terminal, seven-day local tokens from `usage.json`, sign-in
+email only. Installer adds `grok` to `providerOrder` when the CLI is installed.
+
+**CI:** new `codexbar-wingpanel` job builds the native module and runs all 17 Meson tests (unit, generated-C
+guard, Switch/ingestion/token/live-preference/Grok Xvfb probes). `probe/ci-build-deps.sh` builds Granite
+7.7 and Wingpanel's `lib/` at the installer's pinned commit only when the distro lacks them.
+
+**Verified here (x86_64 container, not the owner's machine):** 11 Python suites; from-scratch dependency
+bootstrap then 17/17 Meson tests; shellcheck; render probes (light/dark) of the Grok scenarios; the
+sessions helper on a copy of the owner's real Grok session (762,841 tokens, matching `grok usage`).
+
+**Not verified:** a live `codexbar usage --provider grok` against the owner's account (ARM64 CLI could
+not run here; no account access); the CI job on `ubuntu-26.04-arm` (first run is this PR);
+`check-codexbar-port.sh` Grok lines against the live app; native module not loaded in the real panel.
+
+**Owner steps after merge:** `bash mseries/install-codexbar.sh --skip-system-deps` (bump + Grok in provider
+order), `bash mseries/deploy-codexbar.sh` (stages module and mark; loads at next login), then
+`bash mseries/check-codexbar-port.sh`.
+
+## enh1 diagnostic boot reached the desktop; crash triage after reboot — 2026-10-18 (Claude Code)
+
+**Kernel now:** `7.1.12-elementary-aurora20-enh1` via the one-shot
+`elementary-aurora20-enh1-diagnostic` entry (kernel and initrd hashes match staging).
+GRUB consumed `next_entry`, which is now empty, so the **next normal boot is
+`mseries-full-height` on `.20`**. The earlier enh1 hang did not reproduce: initramfs
+log shows every hook ran, no failed units, graphical target at 5.2 s, dock authorized,
+panel 3024x1964 full height, `/dev/udmabuf` + `/dev/dma_heap/system` present (the
+intended config delta), SEP/fprintd and speakers up. Kernel errors match the previous
+`.20` boot apart from deferred dp-phy probes. [Receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-boot.json).
+One boot only: candidate stays unqualified, original hang cause unknown, no
+suspend or repeat-boot test. Promotion is DeepSeek's/owner's call; no boot change made.
+
+**Crash triage across today's boots:**
+- Boot ending 19:53: Gala SEGV at 19:52 (`clutter_sprite_invalidate_cursor`, same
+  stack as #240), then the owner's power-button forced shutdown; the workqueue WARN
+  and DCP endpoint timeouts are in the shutdown path, after the crash.
+- Boot 19:57–22:48: real-session Gala SEGV at 21:43 with the same stack, before the
+  #244 libmutter fix was installed. Ended with a clean reboot.
+- Other cores that boot were our own headless tests (nested Gala, a Wingpanel started
+  from an agent session, test-agenda), not the owner's desktop.
+- Running Gala now maps `/usr/local/lib/mseries/gala/mutter-fix/libmutter-18.so.0`:
+  this is the first real session with the fix. Not yet proven over time.
+- WIP from before the reboot is on `origin/wip/reboot-save-20261018` (`e26c98a`).
+
+Next: watch `coredumpctl list gala` this session; the next reboot returns to `.20`
+unless the owner arms enh1 again.
+
+## Release stages: F5 parity first, support assistants after — 2026-10-18
+
+Owner's order:
+
+1. **Stage 1 (gates v0.0.1):** F5 speech-to-text with the ease of macOS dictation
+   ([#196](https://github.com/techmore/ElementaryOS_MSeries/issues/196)), plus the
+   native elementary OS / Granite app audit
+   ([#242](https://github.com/techmore/ElementaryOS_MSeries/issues/242)). Open
+   gate: physical F5 in ChatGPT still fails (see the v0.0.1 F5 entry below).
+2. **Stage 2:** support assistants on the shared Pantheon MCP broker, starting
+   with troubleshooting ([#203](https://github.com/techmore/ElementaryOS_MSeries/issues/203),
+   draft PR #185, disabled). Speech and Share eyes become clients of that broker.
+
+v0.0.1 is cut (`dev` → `main`, see `mseries/BRANCHING.md`) only when stage 1 passes.
+
+## v0.0.1 English F5 candidate; ChatGPT input correction staged — 2026-10-18
+
+The owner narrowed v0.0.1 to English F5 speech to text on the existing M1 Pro
+32 GB desktop; factory ISO, voice replies and diagnosis remain separate.
+The fresh physical F5 check in ChatGPT FAILED: the key reached the listener,
+but focused-field metadata was unavailable and it refused before microphone
+capture. This is retained app-input failure evidence, not model WER. The earlier
+seven installed routes and completed CPU/MLX comparisons are unchanged.
+
+A reviewed per-user lowercase `chatgpt.desktop` override is now staged through
+`dictation-launch.py --chromium`, enabling renderer accessibility and the IBus
+environment at next full app launch. Seventeen launcher contracts pass, including
+independent GLib quoting/spacing, URL/action preservation, owner-edit refusal and
+private rollback. Desktop resolution selects that override. ChatGPT, listener,
+input bridge and everyday4B were not restarted. No microphone/model was used.
+A later owner retry also failed; read-only process metadata still shows the
+original ChatGPT process without the new flags/environment. The fix has not
+activated. Fully Quit, reopen from Applications, verify new process flags, then
+physical F5 in the chat composer is the remaining acceptance gate. Preserve password/active-field guards.
+The owner permits OS-level dictation integration; it is not a reason to type into
+an unknown field. Native compositor input/broker work remains future development.
+
+RC2 archive `d5c0e9b2…` is built from exact source `13a8b847ef3c754cbe37fe68686463bb2ec9f269`.
+All 25 extracted-package/host checks passed. That exact head passed all seven CI
+jobs in run `39157224321`. The source-only STT payload is now installed: all 16
+runtime hashes and managers match, the transcript-only launcher is active for
+its next invocation, strict CPU/IBus is ready, all seven debug overrides are
+absent, native input preferences and everyday4B PID are preserved. One post-install
+sample had 13,683,703,808 bytes available, maximum 2,489 RPM / 42.331 C. This was
+static/readiness verification without microphone/model inference. It is not
+physical F5 acceptance in ChatGPT. RC1's terminal-error idle refusal was fixed
+without changing its retained receipt or any live status to obtain a pass.
+
+Release worktree: `ElementaryOS_MSeries-f5-v001`, branch `release/f5-v0.0.1`.
+Source-only deterministic Git-blob packaging, strict read-only preflight,
+versioned rollback and a transcript-only UI are prepared. Native/ANE/MLX assets
+stay available on the host but are not bundled or requalified. See
+[release candidate instructions](releases/v0.0.1/README.md) and its sanitized
+[receipts](releases/v0.0.1/receipts/). No v0.0.1 tag/release has been published.
+Advanced diagnostic work is isolated on `feat/quiet-diagnostic-agent`, disabled
+and not qualified; never add it to the STT artifact or use everyday4B for repairs.
+The existing six-hour developer watcher continues; do not duplicate it or rerun
+finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
+post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
+
+## RepoBar checkout names and dashboard groups — 2026-10-18
+
+Details → Checkouts drops the repository-name prefix from worktree folders
+(`ElementaryOS_MSeries-repobar-ui` shows as `repobar-ui`, the plain clone as
+"main checkout"); the full path and branch are in the tooltip. When pins exist,
+the dashboard labels its two groups "Pinned" and "Recently updated". Verified by
+headless renders (real snapshot, light; fixture with a pin, dark) only.
+
 ## Branch model: `main` stable, `dev` integration — 2026-10-18
 
 `main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
 is where feature PRs merge. Release PRs `dev` → `main` promote batches and get a
-`v0.0.N` tag. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
+`v0.0.N` tag. `dev` is the GitHub default branch and is what the owner runs;
+`main` is effectively frozen between releases. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
 `mseries/BRANCHING.md`; AGENTS.md points to it.
 
 ## RepoBar compact contribution graph — 2026-10-18
@@ -1204,6 +1556,17 @@ rendering, performance unverified**. System changes: FEX apt source + key, /usr/
 `/etc/ld.so.conf.d/mseries-libkrun.conf`. Prior art: no official Discord arm64 Linux build exists (support thread open
 for years); ArmCord/Legcord and Vesktop wrap the web app. macOS Discord is Mach-O; only its JS could be reused.
 
+## Screenshots: click a window with Command+Shift+4; fixed persistent thumbnail — 2026-10-18 (Claude Code)
+
+Command is Ctrl here, so Command+Shift+4 is Gala's `area-screenshot`. New `mseries/patches/gala-screenshot-window-pick.patch`
+(on top of screen-corners + panel-offset, applied by `install-gala-screen-corners.sh`): in that selector a plain click
+(no drag) captures the topmost window under the pointer via Gala's own window capture; dragging still selects an
+area. The shelf (`screenshot-shelf/mseries-screenshot-shelf`) now draws every shot in a fixed 280x180 card, bottom-right,
+that stays until the x, a drag-and-drop or the next shot (no 7 s expiry; Markup no longer dismisses it).
+**Verified:** patched Gala compiles and links; installed to the private prefix (takes effect at next login);
+shelf installed and running; card renders at identical size for wide and tall images (headless snapshot).
+**Not verified:** the click-to-capture on the real session (needs re-login), card position and drag-out on the
+real screen (no test window was put on the owner's display). Next: re-login, press Command+Shift+4, click a window.
 ## Battery panel in first boot — 2026-10-18 (Claude Code)
 
 `install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
@@ -5510,6 +5873,25 @@ Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-cod
 
 Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.
 
+## Network panel: compact low rates and Command-hover — 2026-10-18
+
+`network-panel-compact.patch`, applied after saturation by `install-network-throughput.sh`, shows `<1 MB/s` independently for down/up below 1,000,000 bytes/s. The panel retains decimal byte units and its existing 10-second average. Command (Super/Meta) while hovering reveals the existing measured B/s, kB/s or MB/s values; releasing it or leaving restores compact values. A motion controller samples modifiers every 50 ms only while hovered so pressing Command after entering works without keyboard focus. Unmap/dispose removes the hover timer; dispose also removes the rate timer. The less-than label is escaped before Pango markup, preserving saturation highlighting. The image payload already ships every patches/*.patch file.
+
+Verified: all installer patches apply against pinned panel-network `8685ec8e55a45e48da0c12931a353cd440d11664`, full release Meson/Ninja build and link, no missing shared libraries, bash syntax check. An isolated GTK/Xvfb harness checked 0, 999, 1,000, 999,999, 1,000,000 and 2,000,000 bytes/s in compact/exact modes and the rendered literal less-than. Installed with `bash mseries/install-network-throughput.sh`; Wingpanel reloaded and remains running, no network/markup errors in the reload logs. Live Command-hover by eye remains unverified; next check is owner hover/Command/release on the menu bar. This affects the compact panel text; popover graph readings retain their existing precision.
+
+## Battery watts switch and network hover repair — 2026-10-18
+
+Owner reported Command-hover did not work. This desktop uses `ctrl:swap_lwin_lctl`, so physical Command maps to Control, which the original mask missed. A keyboard injection harness confirmed Control support, but Wayland modifier updates also depend on keyboard focus. The final fix avoids this dependency: hovering anywhere over the network icon/readout reveals measured values, with Command optional; leaving/unmapping restores compact `<1 MB/s` values. The motion controller now attaches in capture phase to the whole display. The modifier polling timer was removed. The existing 10-second network sampling interval remains.
+
+Battery menu now includes **Show Watts in Menu Bar**, alongside Show Percentage. `panel-power-watts-toggle.patch` adds a shared per-user preference in `~/.config/mseries/battery-meter.ini`, enabled by default; binding it to the watts revealer visibility keeps it hidden across sensor updates and restores the latest reading when re-enabled. `install-battery-eta.sh` applies the third patch; no system GSettings schemas are changed.
+
+Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harness for whole-display hover, leave and unmap transitions; battery switch binding, immediate hide/show, hidden state across fresh readings, saved-off reload in a second process. Both installers ran on the desktop; power restart passed the repair script's survival check. Final network build/reinstall and panel survival verified. Live hover and switch by eye remain for the owner. Changes committed/pushed on the dedicated network-panel-compact branch because the shared checkout branch has divergent remote history; unrelated working files are preserved.
+
+## Ethernet panel icon: recognizable socket — 2026-10-18
+
+Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
+
+Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
 ## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
 
 The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
@@ -6109,6 +6491,85 @@ actual no-inference transient user unit confirmed these variables are absent in
 the child even when inherited assignments are present. Its sanitized receipt is
 work/f5-debug-env-v1/receipt.json. Deployed verification must inspect the live
 process environment because systemctl Environment still lists unset assignments.
+
+
+## Optional Apple Passwords experiment — 2026-10-18
+
+Added `install-icloud-passwords.sh --experimental`, a per-user opt-in installer
+and three application launchers. Default first-boot behavior stays disabled;
+`enhance.sh` ships the installer/public key only. Pinned upstream client
+916ef17a5a14965f353d556a53ca3eedc1439113 and ARM64 anisette image digest;
+rootless user service binds localhost and persists its identity volume.
+Brave receives a stable Chromium MV3 extension manifest and native-host registration.
+Keyring failure is fatal instead of falling back to a disk master key.
+
+Locally installed and reinstallation checked; helper HTTP/JSON and isolated
+empty-vault native ping pass. Keyring is unlocked and listener is loopback-only.
+92 upstream tests + 11 subtests, three integration contracts, shell syntax and
+shellcheck pass. No Apple account credentials entered or real vault inspected.
+Owner must load the extension once in Brave, then sign in directly via the
+Set Up Apple Passwords launcher. Account recovery, actual sync/autofill, ADP,
+reboot and factory-image behavior remain unverified. See
+[setup, limitations, disable steps and source pins](icloud-passwords/README.md).
+
+
+### Apple Passwords native GTK/Granite onboarding and -80045 follow-up
+
+Owner requested a native elementary GUI after GSA init returned -80045. Added
+GTK4/Granite7 sign-in, private pipe worker, 2FA/device selection, unchecked explicit
+recovery consent, search/reveal, Sync Now and local sign-out. The UI blocks closing
+or cancellation while an irreversible recovery request is in flight. Password
+retention is opt-in; credentials never enter process argv/environment or logs.
+Installed a single native Applications entry, retired the terminal setup/sync entries
+and opened the GUI locally. Default feature opt-in boundary remains unchanged.
+
+Applied the reported endpoint-specific identity workaround from Dadoum/anisette-v3-server#61
+without resetting the client/helper identity. Enforced TLS verification across GSA,
+iCloud and web auth, with fingerprint-pinned Apple PKI roots in an app-scoped CA
+bundle; system trust unchanged. Verified GSA/setup/idmsa TLS using credential-free
+GETs. Added safe GSA transport/non-plist errors.
+
+Validation: ten GUI/IPC/keyring/CA-pin tests, four mocked endpoint/TLS/consent tests,
+129 upstream tests + 11 subtests; the one obsolete Mac-escrow-header assertion is
+superseded by the port endpoint test. Installer repeat, shell syntax and compilation
+pass. First owner attempt never reached passcode recovery. No agent login attempted;
+actual compatibility fix, account recovery, sync/autofill and factory boot remain
+unverified pending owner testing in the native app. Details: icloud-passwords/README.md.
+
+
+### Approval/code waiting fix — 2026-10-18
+
+Owner reports phone approval arrives but Linux fails before code entry. The native
+worker now offers the code dialog before waiting on the trusted-device notification
+HTTP response. Code entry waits on the private input pipe without a user-entry timeout;
+there is only one code dialog and one notification request. A notification read timeout
+continues to normal code validation without resending; TLS, connection and explicit
+HTTP errors remain fatal. Errors now retain a safe stage label. No recovery behavior
+or retry budget changed. This addresses a demonstrated timeout path, not a proven
+root cause of the owner’s current failure.
+
+Three mocked tests cover prompt-before-response, one-request read-timeout handoff,
+and fatal TLS failure. Six native GUI/IPC tests pass. Installed the updated worker
+and notification patch for the next owner-initiated sign-in. Live authentication
+and sync remain unverified; no credentials or codes were entered by the agent.
+
+
+### Native Apple Passwords UX refinement — 2026-10-18
+
+Added persistent mnemonic account/password labels, clearer optional password-storage
+copy, sign-in step guidance, and contextual Verify Code / Use This Device / Unlock
+Keychain actions. Verification codes are visible for proofreading, accept pasted
+spacing, and require exactly six ASCII digits before submission. Waiting for the
+owner pauses the spinner and explicitly says the app is waiting; notification
+progress cannot overwrite that state. Recovery consent remains unchecked by default.
+
+Added sorted password results, empty/no-match guidance, labeled username/password
+details, distinct error styling, and contextual Complete Setup. Sync is hidden
+until keychain setup is complete; sign-in fields disable during an operation.
+Helper startup moved into the background worker so the GTK thread stays responsive.
+Eight GUI/IPC tests and three mocked approval-handoff tests pass. Installed updated
+app/worker bytes locally without restarting an active session; reopen the app for
+new layout code. Authentication/sync success is still unqualified.
 
 ## English F5 shipped: canonical evidence, installed checks — 2026-10-18
 
@@ -6881,3 +7342,187 @@ Incident: the state.rs agent's functional test ran `gsettings set` in a private 
 
 Built from the merged polling-removal + linux-dmabuf branch (SHA-256 `4b459494…b6f65`) and installed with the installer (`--verify` passes). The running Rust session (compositor pid started 18:02 from `69cb0f1`) is untouched; the new binary applies at the next login. Autologin still selects the Rust session; Gala rollback: `sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes`.
 Next login runs the polling-free build with native dmabuf OFF. To trial dmabuf (needs a login, so only with the owner present): `systemctl --user edit pantheon-rust-compositor@wayland.service`, add `[Service]` / `Environment=PANTHEON_ENABLE_DMABUF=1`, log in again, watch the journal for "advertising linux-dmabuf v4 on the native renderer" and for Wingpanel/GTK apps drawing; if apps go blank remove the drop-in. The owner has restored the wallpaper and xkb settings that the earlier test leaked.
+
+## 2026-10-18: Machine Lab (native VM app)
+
+`mseries/machine-lab/` is the elementary-styled VM app (Vala/GTK4/Granite 7); `bash mseries/install-machine-lab.sh`
+installs it to `~/.local` and pins it in the dock. Merged in the Codex spike's Omarchy nightly updater and
+unattended-install launcher; added pause/resume (QMP), import of `mseries-vm` guests, new-vs-installed panels,
+free-space warning. Verified: builds, Broadway renders, pause/resume against a headless QEMU, `--check` of the
+Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; host had ~19 GiB free) and
+suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
+`~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.
+
+## Boot menu cleanup and upstream parity check — 2026-10-19 (Claude Code)
+
+**Boot menu (owner-approved).** Running kernel `7.1.12-elementary-aurora20-enh1` was booted from the manual
+*diagnostic* entry (`initcall_debug`, `ignore_loglevel`, `log_buf_len=8M`, `plymouth.enable=0`); the default was `.20`.
+`/boot/grub/custom.cfg` is now two entries: `elementary-aurora20` (STABLE, default, `vmlinuz-aurora-sep-20261017.20`, notch=1)
+and `elementary-aurora20-enh1` (DEV, `vmlinuz-aurora20-enh1`, clean cmdline; one-shot via `grub-reboot` still works). Stock Arch
+`7.1.13-3-2-ARCH` recovery stays in `grub.cfg`. Removed: nosep, hdmiaudio, full-height, diagnostic entries, the diagnostic initrd,
+9 old `custom.cfg.*`, `grubenv.pre-e4-*`. Backups: `~/boot-backups-20261019/` (local, not in Git). `grub-script-check` passes;
+no reboot was done after the change, so the new menu is unbooted. `/boot` 215 MiB free. Not touched: grubenv, m1n1, modules.
+Note: this boot logged "FAT-fs nvme0n1p4: Volume was not properly unmounted" and a replaced journal (previous shutdown was unclean); consider `fsck.vfat` on `/boot` from a safe state.
+
+**Upstream parity (read-only, 2026-10-19 ~09:30Z).** Aurora `integration/aurora` is ahead of `.20` by #147 (M4 wait state) and #149
+(macaudio selects MAX98357A); no release after `aurora-2026.10.17.20`. Neither looks J314S-relevant; not in `.20-enh1`. Draft/open PR #139
+(Asahi 7.2.10 + aurora + aurora-wip, now "ready for review", qualified on J700/J316s/J413, not J314S) remains the WIP track; stay build-only.
+PR #122 (HDMI-hold follow-ups) is **T6030 (M3 Pro)**, not the J314S/T6000, so it is NOT a dock fix for us; deprioritised. New upstream
+open PRs of note: #146/#148/#151/#152 are M3/G17 work, not J314S. Dock was unplugged this boot (all DRM external connectors disconnected,
+bolt dock `disconnected`), so no dock retrain log could be examined; re-check with the dock attached. Next: attach dock and capture
+DCP/dptx log over 10 min on enh1; test SEP probe on enh1; compare #139 `100-sep`/`200-dcp` topics against `.20-enh1` for J314S gaps.
+
+## 2026-10-19 — Battery menu redesign (not yet installed)
+New `mseries/patches/panel-power-battery-menu.patch`, wired into `install-battery-eta.sh`; details in `mseries/BATTERY-ETA.md`. Builds clean; visual check and live install pending. Next: run the installer, restart the panel, owner reviews the look.
+Installed live 2026-10-19 with `bash mseries/install-battery-eta.sh`; Wingpanel restarted and stayed running. Owner visual review of the new battery menu still pending.
+Follow-up 2026-10-19: rendered the menu headlessly (Xvfb, elementary theme) and fixed wrapped toggle labels, an empty "Display" heading, and the raised power-mode buttons; reinstalled. The harness lacks the panel's power-mode icons, so those were not seen rendered.
+## 2026-10-19: elementary OS ARM64 install test in Machine Lab's VM
+
+Booted the CI ISO `elementaryos-9.0-daily-arm64.20261013230825.iso` (SHA-256 verified) in QEMU/KVM, headless, and drove the
+installer (Erase Disk and Install, no encryption, no proprietary drivers) to completion on a 32 GiB virtual disk: 11.3 GiB
+written, an "elementary OS 9 Early Access" UEFI entry created, the firmware loaded `shimaa64.efi`. **The installed system
+then showed no output at all for 5+ minutes** (no serial text, display "not active", QEMU at 100% CPU). So the live ISO
+boots and the installer works, but the *installed-system boot is not working on QEMU virt*. Not diagnosed: the installed
+kernel is most likely the Fairydust (Apple M-series) kernel, which has no virtio-gpu/console path on QEMU; the
+installer's root partition is LVM so the disk could not be inspected without root device-mapper. Next: boot the installed
+disk with a console on serial (kernel args `console=ttyAMA0 earlycon`) or boot the live ISO with the disk attached and
+read `/boot/grub/grub.cfg` and the initramfs; kernel work belongs to DeepSeek per the coordination rule.
+Machine Lab: ARM64 now listed on every machine, plus a Connect section (display, console, SSH terminal).
+
+## 2026-10-19: why the installed elementary OS is silent on QEMU (diagnosed, not fixed)
+
+Booted the same ISO live with the installed disk attached and read the guest's files (read-only mount, no kernel or
+image changes). The installed system has two kernels: generic `7.0.0-38-generic` (what the live ISO uses, boots fine) and
+`7.1.13-elementary-fairydust-usb4`. GRUB's default entry picks the newest, the Fairydust kernel, with a hidden menu
+(`GRUB_TIMEOUT_STYLE=hidden`, timeout 0) and `quiet splash`. The Fairydust config has:
+
+- `# CONFIG_PCI_HOST_GENERIC is not set`: no driver for QEMU virt's generic PCIe host, so no PCI devices at all
+  (virtio-pci is a module, `CONFIG_VIRTIO_PCI=m`, and cannot find a bus; the root LV on the virtio disk is unreachable).
+- `# CONFIG_SYSFB_SIMPLEFB is not set` and `# CONFIG_FB_EFI is not set`: no EFI framebuffer, so no display either.
+- `CONFIG_DRM_VIRTIO_GPU=m`: not usable without the PCI bus.
+
+The generic 7.0.0-38 kernel has `PCI_HOST_GENERIC=y`, `SYSFB_SIMPLEFB=y`, `VIRTIO_PCI=y`. Root is ext4 on LVM (`data-root`),
+swap is `/dev/mapper/cryptswap` in fstab. Result: it is the Apple-only Fairydust config, not a broken install.
+Options (kernel work belongs to DeepSeek): add `PCI_HOST_GENERIC=y` and `SYSFB_SIMPLEFB=y` (or `FB_EFI`) to the Fairydust
+config so it also boots on QEMU virt, or make the VM install default to the generic kernel (GRUB_DEFAULT set to the
+7.0.0-38 entry). Not tried: either fix, because changing the guest's boot config was outside this task's scope.
+
+### Result of the VM-only fix (2026-10-19)
+
+In the test VM only, from the live ISO: backed up `/etc/default/grub` to `/etc/default/grub.before-machinelab`, set
+`GRUB_DEFAULT` to the generic `7.0.0-38-generic` entry, `GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 console=ttyAMA0,115200"`,
+and ran `update-grub` in a chroot. Booting the installed disk then reached the serial login prompt, the Initial Setup
+wizard (language, keyboard, account), the greeter and the elementary desktop (Welcome app, panel, dock): see
+[`os9-ci-installed-qemu-desktop.png`](../docs/images/os9-ci-installed-qemu-desktop.png). So the CI ISO's installed system
+**boots and works on QEMU/KVM when it runs the generic kernel**; the Fairydust kernel still cannot boot on QEMU virt
+(see above). Test account in the VM: `~/vms/elementary/credentials.txt` (owner-only, VM only). Not verified: the Fairydust
+kernel on QEMU, audio, networking inside the guest, suspend, or any Apple hardware path.
+
+## 2026-10-19: Windows 11 ARM64 installer on this Mac (QEMU/KVM)
+
+Booted the locally built `26100.1_PROFESSIONAL_ARM64_EN-US.ISO` in the `mseries-vm` Windows guest (TPM on, Secure Boot
+firmware, NVMe disk). Findings:
+
+- **Display:** with the default `virtio-gpu-pci` the screen froze on the firmware logo for minutes (looked like a hang; it
+  is a stale framebuffer). New `GPU=ramfb` key (`mseries-vm set windows GPU ramfb`) fixes it: the boot manager prompt
+  ("Press any key to boot from CD or DVD") and Windows Setup now render. The prompt needs a key within a few seconds,
+  about 30 s after start; spamming Return once a second works.
+- **Storage:** Windows Setup then stops at "Install driver to display hardware / A media driver your computer needs is
+  missing": WinPE has no virtio-scsi driver, so it cannot read the installer ISO attached as `scsi-cd`. Tried `usb-storage`
+  (boot manager hangs after reading 3 MiB) and AHCI `ide-cd` (the firmware does not list it as a boot device). Needs the
+  virtio-win drivers: attach `virtio-win.iso` (`create ... --virtio-media`, or `EXTRA_MEDIA`) and load `vioscsi` from
+  Setup's "Browse" dialog. Not done: that ISO is not downloaded yet.
+
+## 2026-10-19: Windows ARM64 install attempt and VirtIO media
+
+Downloaded Fedora's stable `virtio-win-0.1.302` ISO to `~/vms/downloads/virtio-win/virtio-win.iso` (837 MiB). Verification: the official Fedora stable RPM's published MD5 (`66f65c16ab3e8dfe12c2855a0d1ac303`) matched the downloaded RPM; the ISO extracted from that RPM had SHA-256 `303f7ae40dad495d6ae474fdc571df58958a4dbc5c37a522d80f9a203867949d`, matching the downloaded ISO. The ISO contains ARM64 `vioscsi`, `viostor` and `NetKVM` drivers. It is attached as `EXTRA_MEDIA` to `~/vms/windows/vm.conf` and to the isolated `windows-install-test4` guest.
+
+Install remains blocked before Windows Setup. Test4's virtual disk is blank (196 KiB allocated). Its ARM64 Windows ISO contains `EFI/BOOT/BOOTAA64.EFI`, `sources/boot.wim` and `sources/install.wim`, but AAVMF times out starting the installer from both SCSI CD-ROM and USB storage. Repeated with Secure Boot firmware and without it, with 4 GiB and 8 GiB RAM, and with a VGA device alongside ramfb; the same timeout recurred. No Windows files were installed. The test VM was stopped cleanly and retained for further diagnosis. PR #260 is merged to `dev` at `493fa2ba88b3f4ce651e29cfa13d7f4f7410f62f`.
+
+The companion `mseries-vm` change adds `EXTRA_BUS=usb` for presenting the extra driver ISO through USB storage. The USB path was exercised in test4, but the installer boot timeout means driver loading and installation remain unverified. Next: diagnose why this AAVMF build cannot complete the ARM64 Windows boot path, then continue Setup and load the storage driver if prompted.
+
+### Windows installer: storage fixed (2026-10-19, later)
+
+`virtio-win.iso` 0.1.302 (stable, from fedorapeople.org, 877 MB, SHA-256 `303f7ae4…867949d`, kept in
+`~/vms/downloads/virtio-win/`) attached as extra media on USB (`mseries-vm set NAME EXTRA_BUS usb`; new key) is readable by
+Windows PE. In Setup's "Install driver" page, browse to `D:\vioscsi\w11\ARM64`, pick "Red Hat VirtIO SCSI pass-through
+controller" and Install: Setup then reads the installer ISO, and reaches language, setup option, product key
+("I don't have a product key") and the license terms page. Tested in a separate VM `windows-lab` (other agents were
+using `windows` and `windows-install-test*`). Stopped at "Applicable notices and license terms": accepting Microsoft's
+license is the owner's call. The Setup UI is driven with absolute-pointer clicks over QMP; typing into WinPE text
+fields drops characters, so use the Browse tree. Not verified: the install finishing, first boot, or the virtio-win
+guest drivers after install.
+
+### Windows 11 ARM64 installed and first-booted in QEMU/KVM (2026-10-19)
+
+With `GPU=ramfb`, `EXTRA_BUS=usb`, virtio-win `vioscsi` loaded in Setup, and the disk grown to 64 GiB (Setup refuses a
+system drive under 52 GB: `qemu-img resize disk.qcow2 64G`), the `26100.1` Professional ARM64 ISO installed to the
+blank NVMe disk of the test VM `windows-lab` (license accepted with the owner's approval, no product key, so it is
+unactivated; Setup rebooted several times by itself) and **first boot reached the OOBE screen** ("Is this the right
+country or region?"): [`windows11-arm64-qemu-first-boot-oobe.png`](../docs/images/windows11-arm64-qemu-first-boot-oobe.png).
+At each reboot the "Press any key to boot from CD" prompt must be left alone so it boots the disk. Not done: OOBE
+(network or local account), the desktop, virtio-win guest drivers (network, display), activation, suspend, anything on
+real hardware. VM left powered off.
+
+## 2026-10-19: Machine Lab 0.3.0 production pass, and QEMU vmapple on Linux
+
+Machine Lab: `meson test` now covers persistence, mseries-vm discovery, install detection, credentials and the QMP transport
+(control socket per call, display socket persistent: the regression that stalled `mseries-vm`); status polling is off the main
+thread; credentials are masked until revealed; `--version`; AppStream metadata; `mseries/machine-lab/build-deb.sh` builds
+`machine-lab_0.3.0-1~mseries1_arm64.deb` (runs the tests first); a CI job builds, tests, validates metadata and builds the
+package; user guide in `mseries/machine-lab/docs/USER-GUIDE.md`. Not verified: installing the `.deb` system-wide, the display on
+a real Wayland session.
+
+macOS: see `mseries/machine-lab/ROADMAP.md`, "QEMU vmapple on this Linux Mac". The `vmapple` machine can be built on Linux
+with small patches and then stops at the macOS-only `apple-gfx-mmio` device; a real boot needs Apple's firmware and a macOS 12 VM
+image, which were not downloaded.
+
+## Bible tab: production readiness — 2026-10-19 (branch claude/bible-tab-production)
+
+Findings: the patched calendar plugin had no protection against elementary's
+daily `io.elementary.panel.datetime` upgrades (the manual installer replaces
+the file, so an upgrade silently drops agenda/Tasks/Bible). Its 23-group suite
+ran only by hand. The icon-only arrow buttons had no accessible names. The
+greeter is not a concern: get_indicator returns null outside SESSION.
+
+Changes:
+- mseries/debs/build.sh: third pilot package `mseries-wingpanel-datetime` (pin
+  read from panel-factory-pins.json; ships /usr/bin/mseries-calendar-accounts;
+  Recommends EDS, GOA-gtk, Tasks). Per-package `<deb>_files` and
+  `<deb>_recommends` hooks. Recommends appears only when set; package dirs 0755.
+- mseries-debs.yml: datetime build deps (libecal/edataserver/ical/json-glib),
+  check-bundled-data.py, test-agenda.sh on the extracted package; PR paths
+  include the patch, mseries/calendar and the pins.
+- mseries/calendar/check-bundled-data.py: offline patch-vs-source data check
+  (verified to fail on a one-word edit).
+- Patch: accessible LABEL on previous/next (mode-specific).
+Verified locally: all three packages build, control files parse, SHA256SUMS
+check; the datetime package has the expected contents, Depends and diversion.
+Not done: apt publishing (key custody), installing the package on the owner's
+desktop (it would divert a file the manual installer already replaced, so
+switching needs `install-calendar-agenda.sh --uninstall` first), and live-panel
+checks.
+
+### Bible tab production readiness: merged — 2026-10-19 (PR #277 -> dev ca2cc6b)
+
+Running the suite on a clean CI runner found an upstream bug we ship:
+TimeManager.vala tested `"12h" in time_format` on the user's AccountsService
+record without a null check. An account the greeter never stored a TimeFormat
+for (a new or externally created user, a CI runner) raised a string_contains
+critical and never set the clock format. Our patch now falls back to the
+org.gnome.desktop.interface clock-format setting in that case (fb119d7).
+
+CI lessons for the packages job: a private-EDS GTK test also needs
+AccountsService on the system bus, plus elementary's
+io.elementary.pantheon.AccountsService interface. elementary-default-settings
+itself can't install on the Ubuntu runner (it needs flatpak >= 1.17), so the job
+extracts just that XML from the daily .deb.
+
+Verified: packages job green (build, bundled-data check, 27/27 test groups on
+the library extracted from the .deb, metadata, upload); all validation jobs green
+(including the separate Calendar Events/Tasks/Homeboard job); 27/27 locally.
+Owner's desktop not changed: the running panel is still the manual-install
+build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
+Switching to the package means `install-calendar-agenda.sh --uninstall`, then
+installing the .deb. Apt publishing still waits on the signing key (#52).
+

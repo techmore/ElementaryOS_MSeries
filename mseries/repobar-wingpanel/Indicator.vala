@@ -261,6 +261,7 @@ namespace MSeries {
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
                 ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar list.repo-list > row .group-heading { margin-top: 2px; margin-bottom: -4px; } " +
                 ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
                 ".mseries-repobar .contribution-graph { color: @accent_color; } " +
                 ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
@@ -551,8 +552,22 @@ namespace MSeries {
             if (scope == 2) visible.sort_with_data (compare_severity);
             else if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
             int shown = (int) visible.length;
+            // Dashboard with pins: label the two groups so pinned repositories read as a deliberate list.
+            int pinned_shown = 0;
+            if (scope == 0) {
+                for (int i = 0; i < shown; i++) {
+                    if (visible[i].get_string_member_with_default ("repoState", "visible") == "pinned") pinned_shown++;
+                }
+            }
+            bool grouped = pinned_shown > 0 && pinned_shown < shown;
             for (int i = 0; i < shown; i++) {
                 var repo = visible[i];
+                if (grouped && (i == 0 || i == pinned_shown)) {
+                    var heading = new Gtk.Label (i == 0 ? "Pinned" : "Recently updated") { xalign = 0, margin_start = 4 };
+                    heading.add_css_class ("section-title");
+                    heading.add_css_class ("group-heading");
+                    repo_list.append (new Gtk.ListBoxRow () { child = heading, activatable = false, focusable = false });
+                }
                 var row = new Gtk.ListBoxRow () { child = build_card (repo) };
                 row.set_data<string> ("url", repo.get_string_member_with_default ("url", ""));
                 row.update_property (Gtk.AccessibleProperty.LABEL, repo.get_string_member_with_default ("name", ""), -1);
@@ -1171,7 +1186,21 @@ namespace MSeries {
         }
 
         /* One local checkout: folder name and branch, its state, and a terminal button; the row opens the folder. */
-        private static Gtk.Widget checkout_row (Json.Object checkout) {
+        /* Worktrees are usually named "<repo>-<topic>"; show just the topic so the names fit and stay distinct. */
+        private static string checkout_label (string path, string repo_name) {
+            string folder = GLib.Path.get_basename (path);
+            string repo = repo_name.contains ("/") ? repo_name.substring (repo_name.last_index_of ("/") + 1) : repo_name;
+            string lower = folder.casefold ();
+            string prefix = repo.casefold ();
+            if (lower == prefix) return "main checkout";
+            if (lower.has_prefix (prefix) && folder.length > repo.length + 1) {
+                unichar separator = folder.get_char (repo.length);
+                if (separator == '-' || separator == '_' || separator == '.') return folder.substring (repo.length + 1);
+            }
+            return folder;
+        }
+
+        private static Gtk.Widget checkout_row (Json.Object checkout, string repo_name) {
             string path = checkout.get_string_member_with_default ("path", "");
             int dirty = (int) checkout.get_int_member_with_default ("dirtyFileCount", 0);
             int behind = (int) checkout.get_int_member_with_default ("behind", 0);
@@ -1179,7 +1208,11 @@ namespace MSeries {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
             var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             content.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
-            var folder = new Gtk.Label (GLib.Path.get_basename (path)) { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 22 };
+            string label = checkout_label (path, repo_name);
+            var folder = new Gtk.Label (label) {
+                xalign = 0, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 18, width_chars = 12
+            };
+            if (label == "main checkout") folder.add_css_class ("dim-label");
             folder.add_css_class ("caption");
             content.append (folder);
             string branch_name = checkout.get_boolean_member_with_default ("detached", false) ? "detached" :
@@ -1192,7 +1225,9 @@ namespace MSeries {
             if (behind > 0) content.append (status_text ("↓%d".printf (behind), "text-low"));
             if (ahead > 0) content.append (status_text ("↑%d".printf (ahead), "dim-label"));
             if (dirty == 0 && behind == 0 && ahead == 0) content.append (status_text ("clean", "dim-label"));
-            var open = new Gtk.Button () { child = content, hexpand = true, tooltip_text = "Open %s in Files".printf (path) };
+            var open = new Gtk.Button () {
+                child = content, hexpand = true, tooltip_text = "%s\n%s\nOpen in Files".printf (path, branch_name)
+            };
             open.add_css_class ("flat");
             open.add_css_class ("link-row");
             open.clicked.connect (() => open_folder (path, open));
@@ -1346,7 +1381,7 @@ namespace MSeries {
                     if (!chip.get_active ()) return;
                     list.set_visible (true);
                     clear_box (list);
-                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i)));
+                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i), name));
                 });
                 chips.append (chip);
             }

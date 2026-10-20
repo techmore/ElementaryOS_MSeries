@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the M-series Wingpanel plugin .debs from pinned sources.
-# Pilot scope (issue #52): network + quick-settings only.
+# Pilot scope (issue #52): network, quick-settings and the datetime calendar panel.
 #
 #   OUTDIR=out/mseries-debs bash mseries/debs/build.sh
 #
@@ -27,6 +27,9 @@ record "built: $(date -u +%FT%TZ)"
 # build_plugin DEB BASE_PKG GATE_PREFIX PLUGIN_PATH MARKER REPO_URL COMMIT [PATCH...] [--] [EXTRA_SETUP]
 # EXTRA_SETUP, when present, is a function name run inside the source tree
 # after patches (e.g. copying widget sources, running wire scripts).
+# Optional per-package hooks, named after the package with - as _:
+#   <deb>_files ROOT PKGDIR   install extra files into the package tree
+#   <deb>_recommends          print a Recommends: value
 build_plugin() {
   local deb=$1 base=$2 gate=$3 plugin_path=$4 marker=$5 repo_url=$6 commit=$7
   shift 7
@@ -76,13 +79,16 @@ build_plugin() {
   rm -rf "$pkg"
   mkdir -p "$pkg/DEBIAN" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9"
   install -m 0644 "$lib" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9/$(basename "$plugin_path")"
+  local hook=${deb//-/_} recommends=""
+  if declare -F "${hook}_files" >/dev/null; then "${hook}_files" "$ROOT" "$pkg"; fi
+  if declare -F "${hook}_recommends" >/dev/null; then recommends="Recommends: $("${hook}_recommends")"$'\n'; fi
   cat > "$pkg/DEBIAN/control" <<EOF
 Package: $deb
 Version: $gate-0mseries1
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
 Depends: $base (>= $gate), $base (<< ${gate%.*}.$((${gate##*.} + 1)))
-Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
+${recommends}Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
  Replaces the stock plugin via dpkg-divert; version-gated to the $gate.x ABI.
 EOF
   local soname
@@ -95,11 +101,14 @@ if [ "\$1" = install ] || [ "\$1" = upgrade ]; then
     --divert "$soname.mseries-orig" "$soname" >/dev/null
 fi
 EOF
+  # No panel restart here: AGENTS.md keeps the owner's menu bar stable, and an
+  # apt upgrade must not reload Wingpanel uninvited. dpkg replaces the plugin by
+  # rename, so the running panel keeps the old copy until the next login.
   cat > "$pkg/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
 if [ "$1" = configure ]; then
-  pkill -x io.elementary.w 2>/dev/null || true
+  echo "M-series panel plugin updated; it loads at the next login." >&2
 fi
 EOF
   cat > "$pkg/DEBIAN/postrm" <<EOF
@@ -111,11 +120,23 @@ fi
 EOF
   chmod 0755 "$pkg/DEBIAN/preinst" "$pkg/DEBIAN/postinst" "$pkg/DEBIAN/postrm"
   bash -n "$pkg/DEBIAN/preinst"; bash -n "$pkg/DEBIAN/postinst"; bash -n "$pkg/DEBIAN/postrm"
+  # Package directories must not inherit the build user's umask.
+  find "$pkg" -type d -exec chmod 0755 {} +
   dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-0mseries1_arm64.deb" >/dev/null
   record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-0mseries1_arm64.deb")"
 }
 
 # --- per-package extras ----------------------------------------------------
+
+# Calendar panel: Events/Tasks agenda, Bible tab (daily verse, Titus study).
+# The "Calendar Accounts…" item runs this launcher; it opens GNOME Online
+# Accounts, which (with EDS) is what actually syncs Google calendars.
+mseries_wingpanel_datetime_files() { # ROOT PKGDIR
+  install -D -m 0755 "$1/mseries/calendar/accounts" "$2/usr/bin/mseries-calendar-accounts"
+}
+mseries_wingpanel_datetime_recommends() {
+  echo 'evolution-data-server, gnome-online-accounts-gtk, io.elementary.tasks'
+}
 
 network_extra() { # ROOT SRC
   git -C "$2" apply --include=data/Indicator.css \
@@ -146,6 +167,14 @@ build_plugin mseries-quick-settings io.elementary.quick-settings 1.4.0 \
   fb721d4b5640a2a25ae011370c8fe8aaff8d93f4 \
   mseries/patches/quick-settings-brightness.patch \
   -- quick_extra
+
+# Same pin as the factory image (panel-factory-pins.json), so the two cannot drift.
+datetime_commit=$(python3 -c 'import json, sys; print(next(e["commit"] for e in json.load(open(sys.argv[1]))["indicators"] if e["name"] == "datetime"))' "$ROOT/mseries/panel-factory-pins.json")
+build_plugin mseries-wingpanel-datetime io.elementary.panel.datetime 2.4.2 \
+  libdatetime.so 'verse-of-the-day.ini' \
+  https://github.com/elementary/panel-datetime.git \
+  "$datetime_commit" \
+  mseries/patches/datetime-agenda-tabs.patch
 
 (cd "$OUTDIR" && sha256sum -- ./*.deb | sed 's|\./||' > SHA256SUMS)
 echo "built: $(ls "$OUTDIR"/*.deb | wc -l) packages in $OUTDIR"
