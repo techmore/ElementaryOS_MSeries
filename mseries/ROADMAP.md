@@ -3,10 +3,13 @@
 ## Work Mode wallpaper — 2026-10-20
 
 Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
-work-wallpaper picker, weekday scheduling, and start/end times. A per-user
-systemd timer checks once a minute and restores the wallpaper that was active
+work-wallpaper picker with four bundled original choices and custom image support,
+weekday scheduling, and start/end times. A per-user systemd timer checks once a
+minute and restores the wallpaper that was active
 before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
-Flow wallpaper are installed on the J314S desktop. Work Mode remains off, so
+Flow wallpaper is installed on the J314S desktop. This branch adds Blue Ribbons,
+Violet Arc, and Forest Flow as original bundled options; they are not installed
+on the desktop yet. Work Mode remains off, so
 the existing wallpaper is unchanged. The Switchboard constructor-order crash
 is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
 run passed apply/restore checks without changing the live desktop. Visual panel
