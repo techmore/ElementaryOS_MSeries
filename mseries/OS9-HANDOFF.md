@@ -6629,3 +6629,20 @@ build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
 Switching to the package means `install-calendar-agenda.sh --uninstall`, then
 installing the .deb. Apt publishing still waits on the signing key (#52).
 
+### Owner desktop switched to the calendar package — 2026-10-19
+
+With the owner's approval the desktop moved from the manual installer to
+`mseries-wingpanel-datetime_2.4.2-0mseries1` (built from dev d1ab81e with
+`ONLY=mseries-wingpanel-datetime mseries/debs/build.sh`; the postinst does not
+restart Wingpanel). Steps: the package's library passed 27/27 groups first;
+`install-calendar-agenda.sh --uninstall` restored the saved original, whose md5
+32d1b400… matches dpkg's record for the stock 2.4.2+r1073 plugin, and removed
+/usr/local/bin/mseries-calendar-accounts; then `sudo dpkg -i` the package.
+Verified: diversion to libdatetime.so.mseries-orig (stock md5), package
+`install ok installed`, `dpkg -V` clean, installed plugin byte-identical to the
+tested build, /usr/bin/mseries-calendar-accounts present. Wingpanel PID
+unchanged (953205), so the running panel still has the previous build mapped and
+the packaged one (with the TimeFormat fix and accessible arrow names) loads at
+the next login. Rollback: `sudo dpkg -r mseries-wingpanel-datetime` (postrm
+removes the diversion and puts the stock plugin back).
+
