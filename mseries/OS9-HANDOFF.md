@@ -1,3 +1,15 @@
+## Running-marker contrast correction — 2026-10-20
+
+Owner requested noticeably darker taskbar markers after the prior color change.
+The taskbar override now covers `:disabled` (inactive-workspace apps), defeating
+older, more specific styles, and sets marker opacity to 1 instead of inherited
+0.8/0.45. Light-mode gray is 80% black; dark-mode gray retains 35% white.
+Focused blue and all production Vala sources are preserved. Rebuilt from the
+exact source of the installed af6c7eec binary with only these CSS changes.
+Native build, strict schemas and three identity/lifecycle tests passed.
+Installed privately and restarted only pantheon-dock.service; service is active.
+No live screenshot/owner visual confirmation is claimed.
+
 # OS 9 implementation / Claude Code handoff
 
 ## Working iPhone messages and native Messages app — 2026-10-20
