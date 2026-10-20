@@ -20,17 +20,22 @@ been visually inspected. An isolated GSettings/keyfile run verified that a
 manual tick applies the work wallpaper and disabling Work Mode restores both
 original wallpaper URIs and picture options; the live desktop wallpaper was
 not changed during this check. A real scheduled transition is still unverified.
-PR #304 added the panel and scheduler, PR #306 fixed plug startup, and PR #308
-bundled the default wallpaper; all are merged to `dev`.
+PR #304 added the panel and scheduler, PR #306 fixed plug startup, PR #308
+bundled the default wallpaper, and PR #311 renamed/extended the feature to
+Windows Work Mode; all are merged to `dev`. The updated panel, helper and dock
+service were installed on 2026-10-20. Work Mode remains off; verified state is
+the existing normal wallpaper URI, dock icon size `24`, auto-hide `overlapping-window`,
+timer active/enabled, helper status `Off`, and Windows Work Mode dock service
+inactive. Thus the install left the live wallpaper and dock preferences alone.
 
-Follow-up `codex/windows-work-mode-dock` renames the visible panel to Windows
-Work Mode and uses the existing elementary dock as a partial Windows-style
-bottom launcher while active. It snapshots the user's dock icon size and
-auto-hide preference, uses 40-pixel icons with auto-hide off during the mode,
-and only starts/stops a dedicated dock service when the dock was not already
-running. The current pinned apps and running-window behavior stay native. The
-name change and dock integration are built but not installed pending PR review;
-the prior wallpaper-only feature remains installed and off.
+While enabled, Windows Work Mode uses elementary's native dock as a partial
+Windows-style bottom launcher: 40-pixel icons, no auto-hide, existing pinned
+apps and native running-window behavior. It snapshots/restores dock preferences
+and manages a dedicated dock service only when the dock was not already running.
+The panel has not been visually inspected; a real scheduled transition and the
+active dock appearance remain unverified. Start, Search, system tray and widgets
+are outside this partial dock implementation. For image licensing, see the
+wallpaper-source decision in `mseries/ROADMAP.md`.
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 

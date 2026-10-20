@@ -2,7 +2,7 @@
 
 ## Work Mode wallpaper — 2026-10-20
 
-Added a native Switchboard panel under Personal with a Work Mode switch, a
+Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
 work-wallpaper picker, weekday scheduling, and start/end times. A per-user
 systemd timer checks once a minute and restores the wallpaper that was active
 before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
@@ -12,13 +12,14 @@ is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
 run passed apply/restore checks without changing the live desktop. Visual panel
 inspection and a real scheduled transition remain open.
 
-The `codex/windows-work-mode-dock` follow-up renames the panel **Windows Work
-Mode** and adapts the existing elementary bottom dock while the mode is active:
-40-pixel icons, always visible, existing pinned launchers and running-window
-behavior. It snapshots/restores the user's dock settings and manages a dock
-service only if it had to start the dock. This is a partial launcher-dock
-experience; Start, Search, system tray and widgets are not implemented. The
-follow-up is built but not yet installed pending review.
+PR #311 merged the dock integration and visible rename to Windows Work Mode; it
+is installed on the J314S desktop. The mode remains off, preserving the current
+wallpaper and dock preferences. While active it adapts elementary's existing
+dock to 40-pixel icons with auto-hide disabled, keeping the user's pinned apps
+and native running-window behavior; preferences are restored when the mode ends.
+The UI has not been visually inspected, and a real scheduled transition remains
+open. Start, Search, system tray and widgets are outside this partial dock
+implementation.
 
 For additional wallpaper choices, Windows itself supports Store themes and a
 daily Spotlight image ([Microsoft personalization guide](https://support.microsoft.com/en-us/windows/experience/personalization/personalize-your-windows-experience-with-themes),
