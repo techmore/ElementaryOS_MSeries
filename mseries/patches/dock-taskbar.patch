@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..21b7baf 100644
+index d97686d..2286e87 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,259 @@ backgrounditem .close-button {
+@@ -203,3 +203,265 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -98,12 +98,12 @@ index d97686d..21b7baf 100644
 +dock-window.taskbar .taskbar-logo-pane {
 +    min-width: 18px;
 +    min-height: 18px;
-+    background: #003a8c;
++    background: #005f6b;
 +    border-radius: 1px;
 +}
 +
 +dock-window.taskbar.dark .taskbar-logo-pane {
-+    background: #003a8c;
++    background: #005f6b;
 +}
 +
 +dock-window.taskbar .taskbar-row button.taskbar-search {
@@ -261,6 +261,12 @@ index d97686d..21b7baf 100644
 +
 +dock-window.taskbar .taskbar-row button.taskbar-search:hover {
 +    background: rgba(255, 255, 255, 0.9);
++}
++
++/* Deep aqua start glyph; the top-left pane glows from dark (bottom right) to light blue (top left). */
++dock-window.taskbar .taskbar-logo-pane.taskbar-logo-pane-lit,
++dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
++    background: linear-gradient(to top left, #005f6b, #7fd8f0);
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
@@ -1073,10 +1079,10 @@ index 0000000..aee416b
 +}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..1e8f76f
+index 0000000..7e3a8a8
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,508 @@
+@@ -0,0 +1,511 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1151,6 +1157,9 @@ index 0000000..1e8f76f
 +        for (int i = 0; i < 4; i++) {
 +            var pane = new Gtk.Box (HORIZONTAL, 0);
 +            pane.add_css_class ("taskbar-logo-pane");
++            if (i == 0) {
++                pane.add_css_class ("taskbar-logo-pane-lit");
++            }
 +            logo.attach (pane, i % 2, i / 2);
 +        }
 +        var start_button = new Gtk.Button () {
