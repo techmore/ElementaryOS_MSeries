@@ -71,6 +71,9 @@ an exhaustive audit of every dialog or interaction in the repository.
 
 ## Runtime status
 
-Changes are source/build/fixture-qualified on the feature branch. No applications
-were installed, no panel or daemon was restarted, and no wallpaper, account,
+PR #321 merged into `dev` as `9cb1c70` and the three updated apps were installed
+on 2026-10-20 at the owner's request. Installed-file comparisons and private-display
+startup/scroll/theme checks passed; see
+`mseries/receipts/ui-consistency-install-2026-10-20.json`. Reopen the apps to load
+the changes. No live app, panel or daemon was restarted, and no wallpaper, account,
 VM or hardware settings were changed. No CodexBar runtime files were modified.
