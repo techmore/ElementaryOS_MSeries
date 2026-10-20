@@ -13,7 +13,10 @@ dock=72 logical pixels, with declared fallback insets. A live popup measured
 360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
 from the right. No compositor or Wingpanel restart was required.
 
-The native taskbar bell is beside the clock. Primary click opens recent history;
+The native taskbar bell is beside the clock. The bell now uses a 48-pixel
+icon and 2-pixel theme-derived border. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
 secondary click offers Mark all as read and Do Not Disturb. The service retains
 up to 100 memory-only notification records, resets history on service restart,
 and exposes a content-free Changed signal plus bounded user-session snapshots.
@@ -35,11 +38,13 @@ DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
 
 Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
 TaskbarNotifications and AppResolver. The private dock build was installed and
-pantheon-dock.service reloaded once for the owner-requested bell. Saved taskbar
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
 mode, auto-hide setting, icon size and ordered launcher pins compared identical
 before/after. Rollback binary/wrapper and preference receipt are private under
 ~/.local/state/mseries-notifications. Live bell/history opening is verified;
-right-click native menu confirmation is pending owner feedback. Notification,
+the owner confirmed both right-click controls appear. Notification,
 dock and BlueFerry services remain active. Full accessibility qualification,
 physical next-login recovery and factory-image qualification remain open.
 

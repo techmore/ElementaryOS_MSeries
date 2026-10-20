@@ -8,8 +8,28 @@ Gtk.Widget? find_label (Gtk.Widget root, string text) {
     }
     return null;
 }
+// Optional fixture-only export. Captures native widget rendering, not the desktop.
+void capture (Gtk.Widget button, string name) {
+    var directory = Environment.get_variable ("MSERIES_NOTIFICATION_PROBE_EXPORT");
+    if (directory == null) return;
+    for (var child = button.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        if (!(child is Gtk.Popover) || !child.visible) continue;
+        var popup = (Gtk.Popover) child;
+        var paintable = new Gtk.WidgetPaintable (popup);
+        var snapshot = new Gtk.Snapshot ();
+        paintable.snapshot (snapshot, popup.get_width (), popup.get_height ());
+        var node = snapshot.to_node ();
+        assert (node != null);
+        var renderer = popup.get_native ().get_renderer ();
+        var texture = renderer.render_texture (node, null);
+        assert (texture.save_to_png (Path.build_filename (directory, name + ".png")));
+    }
+}
+
 int main () {
     Gtk.init ();
+    Gtk.Settings.get_default ().gtk_application_prefer_dark_theme =
+        Environment.get_variable ("MSERIES_NOTIFICATION_PROBE_DARK") == "1";
     var window = new Gtk.Window () { default_width = 500, default_height = 120 };
     var widget = new Dock.TaskbarNotifications ();
     window.child = widget;
@@ -32,14 +52,15 @@ int main () {
             button.clicked ();
             break;
         case 1:
+            capture (button, "history");
             var reply = find_label (button, "Reply");
             assert (reply != null);
             ((Gtk.Button) reply.get_parent ()).clicked ();
             break;
         case 2:
-            var label = find_label (button, "Fixture");
+            var label = find_label (button, "Open");
             assert (label != null);
-            ((Gtk.Button) label.get_parent ().get_parent ()).clicked ();
+            ((Gtk.Button) label.get_parent ()).clicked ();
             break;
         case 3:
             var controllers = button.observe_controllers ();
@@ -50,6 +71,7 @@ int main () {
             }
             break;
         case 4:
+            capture (button, "menu");
             var mark = (Gtk.Button) find_label (button, "Mark all as read").get_parent ();
             var menu = mark.get_parent ();
             var row = mark.get_next_sibling ();
@@ -66,6 +88,7 @@ int main () {
             var error = find_label (mark.get_parent (), "Could not update notifications");
             assert (error != null && error.visible);
             assert (error.get_parent ().get_parent ().visible);
+            capture (button, "menu-error");
             toggle.activate ();
             break;
         case 6:
@@ -81,6 +104,7 @@ int main () {
             break;
         case 8:
             assert (find_label (button, "No notifications") != null);
+            capture (button, "empty");
             print ("PASS unread, DND failure/confirmation, context error clearing, Open, Reply, local mark-all-read and empty history\n");
             loop.quit (); return Source.REMOVE;
         }

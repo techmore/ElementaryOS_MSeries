@@ -34,9 +34,12 @@ def call(conn, sender, path, iface, method, args, invocation):
     elif method == "ListNotifications":
         assert args.unpack() == (50,)
         rows = [] if state["unread"] == 0 else [dict(
-            id=7, app="Fixture", summary="Long synthetic summary " * 10,
-            body="Synthetic body <b>literal</b> " * 40, received_at=1792500000,
-            read=False, open_available=True, can_reply=True)]
+            id=7, app="Fixture", summary="A new message is ready",
+            body="Open the conversation to read or reply.", received_at=1792500000,
+            read=False, open_available=True, can_reply=True), dict(
+            id=8, app="Long-text fixture", summary="Long synthetic summary " * 10,
+            body="Synthetic body <b>literal</b> " * 40, received_at=1792499700,
+            read=False, open_available=False, can_reply=False)]
         result = GLib.Variant("(s)", (json.dumps(rows),))
     elif method == "MarkAllRead":
         assert {"OpenNotification", "InvokeAction", "SetDoNotDisturb"} <= calls

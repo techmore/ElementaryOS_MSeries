@@ -28,35 +28,46 @@ public class Dock.TaskbarNotifications : Gtk.Box {
     construct {
         orientation = Gtk.Orientation.VERTICAL;
         valign = Gtk.Align.CENTER;
-        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 24 };
+        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 48 };
         count = new Gtk.Label ("") { visible = false };
+        count.add_css_class ("badge");
         var face = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
         face.append (icon);
         face.append (count);
         button = new Gtk.Button () { child = face, valign = Gtk.Align.CENTER };
-        button.add_css_class ("flat");
+        button.add_css_class ("mseries-notification-bell");
+        install_style ();
         append (button);
         history = make_popover ();
         context = make_popover ();
         var body = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-            width_request = 360, margin_top = 12, margin_bottom = 12,
-            margin_start = 12, margin_end = 12
+            width_request = 360, margin_top = 16, margin_bottom = 8,
+            margin_start = 16, margin_end = 16
         };
         var title = new Gtk.Label (_("Notifications")) { xalign = 0 };
-        title.add_css_class ("title-3");
+        title.add_css_class ("h3");
+        var title_attributes = new Pango.AttrList ();
+        title_attributes.insert (Pango.attr_weight_new (Pango.Weight.BOLD));
+        title_attributes.insert (Pango.attr_scale_new (1.2));
+        title.attributes = title_attributes;
         body.append (title);
         status = new Gtk.Label (_("Notifications unavailable")) { wrap = true, xalign = 0 };
+        status.add_css_class ("dim-label");
         body.append (status);
-        entries = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+        body.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+        entries = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         body.append (new Gtk.ScrolledWindow () {
             child = entries, hscrollbar_policy = Gtk.PolicyType.NEVER,
             max_content_height = 400, propagate_natural_height = true
         });
         history.child = body;
-        var menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+        var menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
+            width_request = 280,
             margin_top = 12, margin_bottom = 12, margin_start = 12, margin_end = 12
         };
         mark = new Gtk.Button.with_label (_("Mark all as read"));
+        mark.add_css_class ("flat");
+        ((Gtk.Label) mark.child).xalign = 0;
         mark.tooltip_text = _("Mark local notification history as read");
         mark.clicked.connect (() => { mutate.begin ("MarkAllRead", null); });
         menu.append (mark);
@@ -68,6 +79,7 @@ public class Dock.TaskbarNotifications : Gtk.Box {
             if (!writing && !syncing && known) mutate.begin ("SetDoNotDisturb", new Variant ("(b)", value));
             return true; // The service confirms both the switch position and state.
         });
+        row.add_css_class ("mseries-notification-setting");
         row.append (dnd);
         menu.append (row);
         context_error = new Gtk.Label ("") {
@@ -95,8 +107,35 @@ public class Dock.TaskbarNotifications : Gtk.Box {
     private Gtk.Popover make_popover () {
         var popup = new Gtk.Popover () { position = Gtk.PositionType.TOP, has_arrow = false };
         popup.add_css_class (Granite.STYLE_CLASS_MENU);
+        popup.add_css_class ("mseries-notification-popup");
         popup.set_parent (button);
         return popup;
+    }
+
+    private static bool style_installed;
+
+    private void install_style () {
+        if (style_installed) return;
+        var provider = new Gtk.CssProvider ();
+        provider.load_from_string ("""
+            button.mseries-notification-bell {
+                border: 2px solid alpha(currentColor, 0.35);
+                border-radius: 8px;
+                padding: 4px 8px;
+            }
+            popover.mseries-notification-popup > contents { padding: 4px; }
+            .mseries-notification-popup button.flat {
+                padding: 6px 10px;
+                border-radius: 6px;
+            }
+            .mseries-notification-popup .mseries-notification-setting {
+                padding: 10px;
+                border-top: 1px solid alpha(currentColor, 0.12);
+            }
+        """);
+        Gtk.StyleContext.add_provider_for_display (get_display (), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        style_installed = true;
     }
 
     private async void connect_service () {
@@ -196,28 +235,64 @@ public class Dock.TaskbarNotifications : Gtk.Box {
         string[] fields = { "id", "app", "summary", "body", "received_at", "read", "open_available", "can_reply" };
         foreach (var field in fields) if (!item.has_member (field)) return;
         uint id = (uint) item.get_int_member ("id");
-        var row = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
-        var labels = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-        labels.append (text_label (item.get_string_member ("app")));
-        var summary = text_label (item.get_string_member ("summary"));
-        if (!item.get_boolean_member ("read")) summary.add_css_class ("heading");
-        labels.append (summary);
-        labels.append (text_label (item.get_string_member ("body")));
+        var row = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+            margin_top = 12, margin_bottom = 12
+        };
+        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+        row.append (content);
+        var meta = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        var app = new Gtk.Label (item.get_string_member ("app")) {
+            xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END,
+            max_width_chars = 20
+        };
+        app.add_css_class ("dim-label");
+        meta.append (app);
         var time = new DateTime.from_unix_local (item.get_int_member ("received_at"));
-        labels.append (text_label (time.format ("%x %X")));
+        var timestamp = new Gtk.Label (time.format ("%H:%M")) {
+            tooltip_text = time.format ("%x %X"), valign = Gtk.Align.START
+        };
+        timestamp.add_css_class ("dim-label");
+        meta.append (timestamp);
+        content.append (meta);
+        var summary = text_label (item.get_string_member ("summary"));
+        summary.lines = 2;
+        summary.ellipsize = Pango.EllipsizeMode.END;
+        summary.tooltip_text = item.get_string_member ("summary");
+        if (!item.get_boolean_member ("read")) {
+            var emphasis = new Pango.AttrList ();
+            emphasis.insert (Pango.attr_weight_new (Pango.Weight.SEMIBOLD));
+            summary.attributes = emphasis;
+        }
+        content.append (summary);
+        var body = text_label (item.get_string_member ("body"));
+        body.lines = 3;
+        body.ellipsize = Pango.EllipsizeMode.END;
+        body.tooltip_text = item.get_string_member ("body");
+        content.append (body);
+        var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { halign = Gtk.Align.END };
         if (item.get_boolean_member ("open_available")) {
-            var open = new Gtk.Button () { child = labels };
+            var open = new Gtk.Button.with_label (_("Open"));
+            open.add_css_class ("flat");
             open.update_property (Gtk.AccessibleProperty.LABEL,
                 _("Open notification: %s").printf (item.get_string_member ("summary")), -1);
             open.clicked.connect (() => { mutate.begin ("OpenNotification", new Variant ("(u)", id)); });
-            row.append (open);
-        } else row.append (labels);
+            actions.append (open);
+            // The content remains a default-click target without becoming a
+            // large raised button. Keyboard users have the explicit Open action.
+            var click = new Gtk.GestureClick () { button = Gdk.BUTTON_PRIMARY };
+            click.released.connect (() => {
+                if (!writing) mutate.begin ("OpenNotification", new Variant ("(u)", id));
+            });
+            content.add_controller (click);
+        }
         if (item.get_boolean_member ("can_reply")) {
-            var reply = new Gtk.Button.with_label (_("Reply")) { halign = Gtk.Align.START };
+            var reply = new Gtk.Button.with_label (_("Reply"));
+            reply.add_css_class ("flat");
             reply.tooltip_text = _("Open the conversation to reply");
             reply.clicked.connect (() => { mutate.begin ("InvokeAction", new Variant ("(us)", id, "reply")); });
-            row.append (reply);
+            actions.append (reply);
         }
+        if (actions.get_first_child () != null) row.append (actions);
         entries.append (row);
         entries.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
     }

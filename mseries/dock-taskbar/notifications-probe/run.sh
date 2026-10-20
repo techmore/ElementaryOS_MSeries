@@ -5,6 +5,11 @@
 # python3 with PyGObject, dbus-run-session, xvfb-run and timeout.
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Optional absolute export directory retains synthetic screenshots after cleanup.
+if [[ -n ${MSERIES_NOTIFICATION_PROBE_EXPORT:-} ]]; then
+  mkdir -p "$MSERIES_NOTIFICATION_PROBE_EXPORT"
+  export MSERIES_NOTIFICATION_PROBE_EXPORT=$(cd -- "$MSERIES_NOTIFICATION_PROBE_EXPORT" && pwd)
+fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/home" "$work/runtime" "$work/config" "$work/data" "$work/cache"

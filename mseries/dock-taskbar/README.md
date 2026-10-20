@@ -71,6 +71,10 @@ apply/revert. Reboot configuration checks do not claim a physical reboot test.
 
 ## Notification bell
 
+The bell uses a 48-pixel icon with a 2-pixel theme-derived border. History and
+context menus follow native theme colors and controls, with compact Open/Reply
+actions and bounded previews.
+
 `TaskbarNotifications.vala` is added by the canonical source stack and sits next
 to the clock. It reads the desktop notification service's bounded user-session
 API asynchronously. Click for history/Open/Reply; right-click for local Mark all

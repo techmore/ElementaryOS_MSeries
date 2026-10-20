@@ -1,10 +1,12 @@
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 --- a/src/Taskbar.vala
 +++ b/src/Taskbar.vala
-@@ -212,2 +212,3 @@
+@@ -211,4 +211,5 @@
+         end_box.append (status_box);
          end_box.append (clock_button);
 +        end_box.append (new TaskbarNotifications ());
- 
+
+         center_layout = new Gtk.CenterBox () {
 diff --git a/src/meson.build b/src/meson.build
 --- a/src/meson.build
 +++ b/src/meson.build
