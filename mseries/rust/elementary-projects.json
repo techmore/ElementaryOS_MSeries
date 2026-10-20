@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "description": "Per-repository source, license, pin, Rust target, parity contract, and enhancement record for Elementary projects directly used by M-series image customizations.",
+  "update_policy": {
+    "observation_interval_hours": 6,
+    "observe_default_branch_releases": true,
+    "capture_all_public_branches_and_open_pull_requests": true,
+    "automatic_pin_changes": false,
+    "pin_change_gate": "Review the project diff, confirm its license at the pinned revision, run the project's parity/build gate, and record image/hardware qualification before changing the active pin."
+  },
+  "projects": [
+    {
+      "id": "elementary/os",
+      "url": "https://github.com/elementary/os",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "audit-baseline", "value": "7024fd04646a6a8565bf6805989b59fd72de928c", "record": "mseries/UPSTREAM-PINS.md", "meaning": "OS 9 source-audit comparison point, not a claim that this is the current upstream head."},
+      "local_consumers": ["mkosi.images/base/", "mkosi.images/liveiso/", "mkosi.images/sysupdate/", "mkosi.images/apple-silicon/", "Justfile", "assemble-iso.sh"],
+      "rust_target": "A Rust project for every executable image-build, installer, and update component, with generated declarative mkosi inputs where the upstream interface requires them; full build-contract parity is required.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["profile/package selection", "reproducible image assembly", "live installer and sysupdate layout", "failure/rollback behavior", "arm64 and x86-64 build outputs"],
+      "intentional_enhancements": ["M-series Apple Silicon image and sysupdate profile, tracked separately from elementary's baseline behavior."],
+      "qualification": "The source audit baseline is pinned; the full Rust build-system replacement and image parity are not complete."
+    },
+    {
+      "id": "elementary/gala",
+      "url": "https://github.com/elementary/gala",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit", "value": "f0791434ac40a50f2aec64700a47b3bb04145752", "consumers": ["mseries/install-gala-osk-fix.sh", "mseries/install-gala-screen-corners.sh", "mseries/install-gala-drawers.sh"]},
+      "local_consumers": ["mseries/patches/gala-disabled-osk-input-purpose.patch", "mseries/patches/gala-screen-corners.patch", "mseries/patches/gala-panel-offset.patch", "mseries/patches/dock-drawers.patch", "mseries/gala-drawers/"],
+      "rust_target": "A separate Rust compositor/window-manager project preserving Gala's compositor, plugin, and desktop-session contracts.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["Wayland session lifecycle", "window placement/focus/workspaces", "panel and dock surfaces", "OSK and input purpose", "screen-edge behavior", "extension/plugin compatibility"],
+      "intentional_enhancements": ["M-series screen-corner behavior", "M-series dock drawers"],
+      "qualification": "Native patches and their source pin are tracked; no Rust compositor or desktop parity claim exists."
+    },
+    {
+      "id": "elementary/wingpanel",
+      "url": "https://github.com/elementary/wingpanel",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit", "value": "6b8ae0453b1fd6dc07bd246642998011f04b2125", "consumers": ["mseries/install-wingpanel-clock-position.sh", "mseries/install-wingpanel-codexbar-left.sh"]},
+      "local_consumers": ["mseries/patches/wingpanel-clockright-order.patch", "mseries/patches/wingpanel-codexbar-left.patch", "mseries/clockright/", "mseries/codexbar-wingpanel/"],
+      "rust_target": "A separate Rust panel host and indicator-extension system that preserves the current Wingpanel protocols and desktop integration.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["panel layout and lifecycle", "indicator loading and ordering", "accessibility/input behavior", "session restart behavior"],
+      "intentional_enhancements": ["M-series clock placement control", "CodexBar panel indicator"],
+      "qualification": "The Rust host and extension ABI are not implemented or qualified."
+    },
+    {
+      "id": "elementary/dock",
+      "url": "https://github.com/elementary/dock",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-tag", "value": "8.3.3", "consumers": ["mseries/install-dock-drawers.sh"], "note": "The installer fetches the tag; record and verify its resolved commit before advancing it."},
+      "local_consumers": ["mseries/patches/dock-drawers.patch", "mseries/install-dock-drawers.sh"],
+      "rust_target": "A separate Rust dock/window-switcher project preserving the Pantheon launcher and dock contracts.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["launch and switch behavior", "workspace/monitor handling", "autohide and panel placement", "application indicators", "accessibility and drag/drop"],
+      "intentional_enhancements": ["M-series dock drawers"],
+      "qualification": "The upstream tag and local patch are tracked; Rust behavior and parity remain unimplemented."
+    },
+    {
+      "id": "elementary/files",
+      "url": "https://github.com/elementary/files",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit-prefix", "value": "f966e0108", "consumers": ["mseries/install-files-portal-fix.sh"]},
+      "local_consumers": ["mseries/patches/files-portal-startup-deadlock.patch", "mseries/install-files-portal-fix.sh"],
+      "rust_target": "A separate Rust file manager project preserving Files' file, portal, mount, and desktop integration contracts.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["file operations and error handling", "mount/network locations", "portal startup and selection", "desktop integration and accessibility"],
+      "intentional_enhancements": [],
+      "qualification": "The native portal fix is tracked; Rust application parity remains unimplemented."
+    },
+    {
+      "id": "elementary/quick-settings",
+      "url": "https://github.com/elementary/quick-settings",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit", "value": "fb721d4b5640a2a25ae011370c8fe8aaff8d93f4", "consumers": ["mkosi.images/apple-silicon/build-quick-settings", "mseries/install-quick-settings-brightness.sh"]},
+      "local_consumers": ["mseries/patches/quick-settings-brightness.patch", "mseries/quick-settings/"],
+      "rust_target": "A Rust Quick Settings host and extension API that preserves system controls and allows independent Rust widgets.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["menu state and actions", "brightness controls", "charge-limit controls", "keyboard lighting controls", "plugin lifecycle and accessibility"],
+      "intentional_enhancements": ["M-series charge-limit, display-brightness, and keyboard-brightness widgets"],
+      "qualification": "The local widget patch is tracked; no Rust host/widget parity claim exists."
+    },
+    {
+      "id": "elementary/panel-network",
+      "url": "https://github.com/elementary/panel-network",
+      "default_branch": "main",
+      "license": {"spdx": "LGPL-2.1", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit", "value": "8685ec8e55a45e48da0c12931a353cd440d11664", "consumers": ["mkosi.images/apple-silicon/build-network-indicator", "mseries/install-network-throughput.sh", "mseries/panel-factory-pins.json"]},
+      "local_consumers": ["mseries/netspeed/panel-network.patch", "mseries/patches/network-null-devices.patch", "mseries/patches/network-panel-speed.patch", "mseries/patches/network-throughput.patch", "mseries/patches/network-saturation.patch", "mseries/netspeed/netusage/"],
+      "rust_target": "A Rust panel network indicator plus separate Rust usage service preserving NetworkManager, Wingpanel, SQLite, and DNS-event contracts.",
+      "rust_status": "daemon-candidate-only; full-indicator-port-not-started",
+      "parity_contract": ["network/VPN state and null-device handling", "throughput counters", "panel settings and rendering", "usage persistence and DNS parsing"],
+      "intentional_enhancements": ["Live upload/download rates", "network saturation summary", "opt-in menu-bar speed", "Apps/Hosts/DNS usage views"],
+      "qualification": "The Rust usage daemon has fixture coverage; indicator replacement and live desktop parity remain open."
+    },
+    {
+      "id": "elementary/panel-power",
+      "url": "https://github.com/elementary/panel-power",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0", "evidence": "GitHub repository license declaration; retain and verify the license file at the selected source revision."},
+      "pin": {"kind": "git-commit", "value": "e05723d8cba82b596a5efc259b4e0d15ad9a2bc4", "consumers": ["mseries/install-battery-eta.sh"]},
+      "local_consumers": ["mseries/patches/panel-power-charge-eta.patch", "mseries/patches/panel-power-watts.patch", "mseries/install-battery-eta.sh"],
+      "rust_target": "A separate Rust panel-power indicator preserving UPower state, settings, and Wingpanel plugin behavior.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["battery/AC state", "charge-limit actions", "remaining-time display", "settings and accessibility"],
+      "intentional_enhancements": ["Battery-time estimate", "charging-watts readout"],
+      "qualification": "The upstream pin and local patches are recorded; Rust indicator parity remains unimplemented."
+    },
+    {
+      "id": "elementary/wingpanel-indicator-sound",
+      "url": "https://github.com/elementary/wingpanel-indicator-sound",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0-or-later", "evidence": "Installed package copyright metadata and retained upstream license file."},
+      "pin": {"kind": "git-commit", "value": "8b7991c9156ac8127d27559506baea8e6fb72e5b", "consumers": ["mseries/install-sound-indicator-fix.sh", "mseries/panel-factory-pins.json"]},
+      "local_consumers": ["mseries/patches/sound-icon-initialization.patch", "mseries/install-sound-indicator-fix.sh"],
+      "rust_target": "A separate Rust sound indicator preserving PulseAudio/PipeWire, player-control, and Wingpanel behavior.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["output/device selection", "volume/mute controls", "player metadata and transport", "menu and accessibility behavior"],
+      "intentional_enhancements": [],
+      "qualification": "The source and plugin digest are pinned; the initialization patch is a bug fix, not a parity exemption."
+    },
+    {
+      "id": "elementary/panel-keyboard",
+      "url": "https://github.com/elementary/panel-keyboard",
+      "default_branch": "main",
+      "license": {"spdx": "GPL-3.0-or-later", "evidence": "Installed package copyright metadata and retained upstream license file."},
+      "pin": {"kind": "git-commit", "value": "2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76", "consumers": ["mseries/install-keyboard-indicator-fix.sh", "mseries/panel-factory-pins.json"]},
+      "local_consumers": ["mseries/patches/keyboard-popover-active.patch", "mseries/install-keyboard-indicator-fix.sh"],
+      "rust_target": "A separate Rust keyboard-layout indicator preserving layout selection, Wingpanel, and accessibility behavior.",
+      "rust_status": "not-started-full-project",
+      "parity_contract": ["layout listing and selection", "active layout state", "popover rendering", "keyboard input and accessibility"],
+      "intentional_enhancements": [],
+      "qualification": "The source and plugin digest are pinned; the selected-state initialization patch is a bug fix, not an enhancement."
+    }
+  ]
+}

@@ -2542,6 +2542,30 @@ Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
 Sound Indicator, and Keyboard Indicator repositories. The branch/PR discovery
 watch also captures those ten repositories' branch and open PR heads. These are
 source observations only; they do not move build pins.
-The inventory covers 756 paths (674 maintained locally and 82 elementary
-upstream inputs), 230 path groups, and 206 project records. License and exact
-pin consolidation for all these projects remains open.
+The inventory covers 758 paths (676 maintained locally and 82 elementary
+upstream inputs), 230 path groups, and 206 project records. A machine-readable
+ledger now records source pins, license evidence, Rust targets, parity
+contracts, and intentional enhancements independently for the ten core
+Elementary repositories. Extending that contract to all remaining upstream and
+local project records remains open; all ten full-project Elementary Rust
+replacements are still unstarted.
+
+## 2026-10-20 — Elementary per-project Rust target register
+
+Added `mseries/rust/elementary-projects.json` for elementary/os, Gala,
+Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
+Sound Indicator, and Keyboard Indicator. Each record links its current source
+pin and consumers, license evidence, Rust replacement target, behavioral parity
+contract, and intentional M-series enhancements. The registry test checks that
+all ten sources appear in both upstream watchers and that pin values remain in
+their listed consumers. The daily Rust candidate workflow runs this check.
+
+Expanded `mseries/rust/README.md` to make full executable-stack replacement the
+long-term target while keeping declarative assets/configuration in their native
+formats and requiring explicit ownership for any native executable exception.
+The existing Rust candidates remain partial components; no full desktop or OS
+parity is claimed. Inventory now includes 758 scoped files (676 local, 82
+Elementary-owned upstream), 230 directory groups, and 206 project IDs. Next:
+expand the semantic project ledger beyond the ten core Elementary repositories
+and begin parity conversion one independently built project at a time. Changes
+remain local on `rust`; publication has not been authorized.

@@ -33,9 +33,14 @@ customization as a separate source item: `elementary/os`, `gala`, `wingpanel`,
 default-branch pushes/releases, and branch watch captures branch heads and open
 pull-request heads into a retained artifact. Neither watcher moves source pins.
 The exact source revisions consumed by each local installer/build recipe remain the
-admission pins and are deliberately not advanced by the watcher. For each
-revision change, update the per-project pin here, preserve its license and
-patch list, and run that project's parity/build checks before image review.
+admission pins and are deliberately not advanced by the watcher. The current
+revision, license evidence, Rust replacement target, parity contract, and
+separately scoped enhancements for these ten projects are recorded in
+[`rust/elementary-projects.json`](rust/elementary-projects.json). That ledger
+points to the installer/build consumers that carry each active pin; its CI test
+checks that the recorded pin still appears in those consumers. For each
+revision change, update the pin, preserve license and patch provenance, and run
+the project's parity/build checks before image review.
 
 Current source pin locations include `install-gala-*.sh` and
 `install-gala-drawers.sh` for Gala; `install-wingpanel-*.sh` for Wingpanel;
@@ -43,8 +48,9 @@ Current source pin locations include `install-gala-*.sh` and
 `install-battery-eta.sh` for panel-power; `build-network-indicator` and
 `install-network-throughput.sh` for panel-network; `build-quick-settings` and
 `install-quick-settings-brightness.sh` for quick-settings; and the dedicated
-sound/keyboard indicator installers. Consolidating those current commits and
-license evidence into a generated per-project ledger is still open.
+sound/keyboard indicator installers. The ten-project ledger is now established;
+extending the same source/pin/license/parity contract to every other upstream
+dependency and every local project remains open.
 
 ## Wingpanel network speed readout
 

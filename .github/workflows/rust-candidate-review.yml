@@ -45,6 +45,8 @@ jobs:
         run: python3 mseries/rust/inventory.py --check
       - name: Test inventory classification
         run: python3 mseries/rust/test_inventory.py
+      - name: Validate Elementary project register
+        run: python3 mseries/rust/test_elementary_projects.py
       - name: Validate Rust candidates
         shell: bash
         run: |

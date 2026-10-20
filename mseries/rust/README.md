@@ -1,22 +1,24 @@
 # Rust migration lane
 
-This branch is the tracked lane for migrating M-series-owned operating-system
-customizations to Rust while following elementary OS and hardware-support
-upstreams on a short cadence. Every upstream project and each independently
-shipped local component gets its own record and parity decision. The migration
-does not replace the Linux kernel, boot chain, elementary OS, Pantheon, or other
-large upstream projects wholesale.
+This branch is the tracked lane for rebuilding the executable parts of the
+elementary OS image and its M-series customizations in Rust. Every independently
+built or shipped upstream project gets its own source record and Rust target;
+every local customization gets its own migration record. Upstream source stays
+as the behavioral baseline until its Rust replacement passes parity and image
+qualification. The first registry covers the ten core Elementary repositories;
+it is not the complete project inventory.
 
 ## Goals
 
 - Keep upstream changes visible daily and produce a reviewed candidate at least
   weekly; never turn a source update directly into a device update.
-- Give each upstream source project its own pin, license/provenance, local
-  patch list, update owner, and compatibility status.
-- Give every M-series-owned executable customization its own migration record,
-  Rust implementation, install boundary, and rollback path. An item may remain
-  temporarily on its old language only while its conversion or a required
-  upstream interface is unresolved, with that blocker recorded explicitly.
+- Give every upstream and local project its own source pin, license/provenance,
+  patch list, update owner, Rust target, compatibility status, and qualification
+  record.
+- Replace executable image, desktop, installer, and customization projects
+  with independent Rust implementations. An item may remain temporarily on its
+  old language only while conversion or an interface is unresolved, with that
+  blocker recorded explicitly.
 - Require observable behavioral parity before cutover. Record intentional
   enhancements separately so parity and new behavior are independently
   reviewable.
@@ -25,41 +27,43 @@ large upstream projects wholesale.
 
 ## What “Rust branch” means
 
-Rust is the target language for the full executable implementation maintained
-by this project: services, helpers, desktop customizations, installers,
-orchestration, and policy code. Each local item moves separately so the old
-behavior can be compared and rolled back. Required declarative inputs and
-upstream patches may have to remain in their native formats; record each such
-exception and its interface reason instead of treating it as silently
-converted.
+Rust is the long-term implementation target for the complete OS product layer:
+image assembly and update tools, elementary desktop applications and services,
+M-series customization projects, and their installers. Each upstream project
+is tracked independently, migrated as its own Rust project, and compared against
+its pinned upstream behavior before the replacement becomes the default. Kernel,
+bootloader, firmware, and hardware drivers are also separate project items; a
+native-language exception must name its technical boundary, owner, and review
+date. Declarative configuration, artwork, translations, schemas, and protocol
+data stay in their appropriate formats and are not falsely counted as code
+ports. Intentional new behavior is tracked separately from parity work.
 
-This does not fork every upstream dependency into Rust. Upstream projects retain
-their own languages, repositories, licenses, release cycles, and test
-contracts. This branch records and follows each project separately; it does not
-vendor a monolithic copy of elementary OS or claim to rewrite Linux, m1n1,
-systemd, Gala, Wingpanel, GTK, or drivers locally. For each maintained Vala or C
-customization, assess whether a supported Rust ABI/API exists; retain native
-patches only where that boundary requires it, and track the exception.
+The migration is staged, so a pin may continue to supply the comparison build
+while a Rust replacement is incomplete. A Rust adapter around an upstream binary
+does not count as converting that project. Keep each replacement in its own
+crate/package and preserve the current CLI, D-Bus, file, plugin, installer, or
+systemd contract until an explicit interface change is reviewed. Record source
+and license provenance for every copied or adapted implementation.
 
-Keep each converted local component in its own crate/package behind the same
-CLI, D-Bus, file, or systemd contract as the current component.
-This lets upstream pins move independently and lets each port be compared with
-the old implementation. A shared Cargo workspace may be added later if the
-chosen crates have compatible release and dependency needs; it is not a reason
-to couple unrelated components.
+Keep each replacement project in its own crate/package behind the current
+CLI, D-Bus, file, plugin, or systemd contract. This lets upstream pins move
+independently and each Rust port be compared with its own reference behavior. A
+shared Cargo workspace may be added later if the crates have compatible release
+and dependency needs; it is not a reason to couple unrelated projects.
 
 ## Project register
 
-The register is intentionally per project. Complete it from the repository's
-tracked build inputs, `mseries/UPSTREAM-PINS.md`, and the upstream-source audit
-before broad conversions begin. “Initial scope” is not a claim that every file
-has been inventoried.
+`elementary-projects.json` is the machine-readable source, pin, license,
+replacement target, parity contract, and separately scoped enhancement ledger
+for the ten core Elementary repositories. `source-inventory.json` covers the
+current repository paths and creates path-based item IDs, but semantic ownership
+review and complete project records are still needed before conversion.
 
 `source-inventory.json` is generated by `inventory.py` and gives every file in
 its declared build/customization scope a path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-756 files (674 local and 82 elementary-owned upstream inputs) currently form
+758 files (676 local and 82 elementary-owned upstream inputs) currently form
 230 directory groups and 206 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -67,7 +71,7 @@ Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
 current scope contains 254 implementation files (241 local), 41 upstream
-patches, and 252 configuration/data files. Semantic project boundaries and
+patches, and 253 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
 Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
@@ -83,25 +87,25 @@ audit.
 
 | Project/item | Current boundary | Rust decision | Parity and update record |
 |---|---|---|---|
-| `elementary/os` | Image build, package set, mkosi and sysupdate | Keep upstream source; track and port local integration only | Pin and image-build contract in `UPSTREAM-PINS.md`; daily change detection, weekly candidate review |
-| `AsahiLinux/linux` (Fairydust) | Experimental Apple Silicon kernel and local dock/display patches | Keep the upstream kernel language; maintain this branch, package and patch set separately | Per-patch source and hardware gates in `mseries/fairydust/` |
-| `omacom/linux-aurora` | Released Apple Silicon kernel candidate and optional enhancements | Keep upstream kernel language; preserve recipe/config/source and Debian boundary | `mseries/aurora/release.json` and `mseries/aurora/enhancements/`; separate package and hardware qualification |
-| `omacom/m1n1` | Aurora's matched boot-stage source | Keep upstream source and pin independently from the kernel | Source/package checks and shared `boot.bin` compatibility review; no boot claim without device evidence |
-| Asahi U-Boot | Bootloader package/source | Keep upstream source and packaging under its own pin | Preserve recovery entry and matched-input provenance; source checks do not count as boot qualification |
+| `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
+| `AsahiLinux/linux` (Fairydust) | Experimental Apple Silicon kernel and local dock/display patches | Track as its own Rust kernel replacement, including Rust-for-Linux interfaces and each hardware patch | Per-patch source and hardware gates in `mseries/fairydust/`; parity must include boot, devices and recovery |
+| `omacom/linux-aurora` | Released Apple Silicon kernel candidate and optional enhancements | Track an independent Rust kernel replacement and preserve matched recipe/config/package inputs | `mseries/aurora/release.json` and `mseries/aurora/enhancements/`; separate package and hardware qualification |
+| `omacom/m1n1` | Aurora's matched boot-stage source | Create a separate Rust boot-stage project preserving matched inputs and boot.bin interface | Source/package checks and shared `boot.bin` compatibility review; no boot claim without device evidence |
+| Asahi U-Boot | Bootloader package/source | Create a separate Rust bootloader project with recovery parity and matched source provenance | Preserve recovery entry and matched-input provenance; source checks do not count as boot qualification |
 | Ubuntu Asahi PPA | Signed package/source distribution for experimental boot inputs | Track the PPA signing key, release metadata, package versions, and hashes independently from source repositories | `UPSTREAM-PINS.md`; signature verification is not boot qualification |
 | Asahi firmware and device-tree artifacts | Boot and board enablement inputs | Keep each source/artifact under a separate pin and license record | Preserve matched-input provenance; source checks do not count as boot qualification |
-| `elementary/panel-network` | Patched network indicator and network-usage integration | Keep upstream panel plugin in its native language; separately evaluate M-series usage daemon | Pinned version/patch admission in `UPSTREAM-PINS.md`; consumer parity and package gate |
-| `elementary/quick-settings` | Factory quick-settings plugin and charge/screen/keyboard widgets | Keep upstream source at its native boundary; migrate M-series-owned widgets and glue to Rust where its plugin interface permits | Pinned source/hash and each local widget's UI behavior and D-Bus/system interface |
-| `elementary/wingpanel` | Panel host and indicator extension interface | Keep upstream host native; convert local indicators only when a supported Rust extension interface exists | Six-hour upstream watch; pin interface and test local indicator behavior per project |
-| `elementary/dock` | Dock and local drawers customization | Keep upstream dock native; assess Rust only for separately maintained local extensions | Six-hour upstream watch; compare drawer/window behavior and install rollback |
-| `elementary/files` | Files app and local portal fix | Keep upstream app native; convert only separately maintained local customization | Six-hour upstream watch; compare portal behavior and app integration |
-| `elementary/panel-power` | Wingpanel power indicator used by battery ETA integration | Keep upstream indicator native; retain local policy as an independent Rust component | Six-hour upstream watch; compare power state/ETA display and indicator ABI |
-| M-series quick-settings widgets | Charge, display-brightness, and keyboard-brightness Vala modules patched into Quick Settings | Convert local widgets individually to Rust only where the plugin ABI permits; retain upstream plugin source | `mseries/quick-settings/` and `mseries/patches/`; compare D-Bus, controls, and rendered UI |
-| `elementary/wingpanel-indicator-sound` | Factory sound-indicator plugin | Keep upstream plugin language and local patch separate | Source revision, license, patch and consumer hash in `UPSTREAM-PINS.md` |
-| `elementary/panel-keyboard` | Factory keyboard-indicator plugin | Keep upstream plugin language and local patch separate | Source revision, license, patch and consumer hash in `UPSTREAM-PINS.md` |
-| `elementary/gala` | Pantheon compositor and maintained upstream patches | Keep upstream compositor in its native language | Pin, clean patch application, build and compositor behavior are separate gates |
-| M-series Gala drawers plugin | Local Vala plugin and settings schema | Evaluate as an independent local component; no Rust rewrite without a stable plugin API | Compare hotkeys, show/hide, placement, monitor handling and launch behavior |
-| `JoseExposito/touchegg` | Optional gesture daemon source | Keep upstream implementation unless a separately scoped replacement is justified | Pinned source archive, license, packaging and gesture qualification in `UPSTREAM-PINS.md` |
+| `elementary/panel-network` | Patched network indicator and network-usage integration | Replace indicator and usage daemon with separately tested Rust projects | `elementary-projects.json`; network/VPN, rendering, persistence and DNS parity |
+| `elementary/quick-settings` | Factory quick-settings plugin and charge/screen/keyboard widgets | Replace host and widgets with separately tested Rust projects | Pinned source/hash and menu, controls, plugin lifecycle, accessibility parity |
+| `elementary/wingpanel` | Panel host and indicator extension interface | Replace host and indicators with a Rust panel/extension project | Six-hour upstream watch; test layout, loading, and session behavior |
+| `elementary/dock` | Dock and local drawers customization | Replace dock/window-switcher with a Rust project; track drawers as a separate enhancement | Six-hour upstream watch; compare launcher, window/workspace behavior and rollback |
+| `elementary/files` | Files app and local portal fix | Replace file manager with a Rust project; track portal fix as a parity item | Six-hour upstream watch; compare file, mount, portal and desktop behavior |
+| `elementary/panel-power` | Wingpanel power indicator used by battery ETA integration | Replace indicator with a Rust project; separately track ETA/watts additions | Six-hour upstream watch; compare power state, display and indicator behavior |
+| M-series quick-settings widgets | Charge, display-brightness, and keyboard-brightness Vala modules patched into Quick Settings | Port each widget to Rust and migrate the host/extension boundary as a separately tracked project | `mseries/quick-settings/` and `mseries/patches/`; compare D-Bus, controls, and rendered UI |
+| `elementary/wingpanel-indicator-sound` | Factory sound-indicator plugin | Replace plugin with a Rust indicator preserving media/audio controls | Source revision, license, patch and consumer hash in `elementary-projects.json` |
+| `elementary/panel-keyboard` | Factory keyboard-indicator plugin | Replace plugin with a Rust indicator preserving layout selection and accessibility | Source revision, license, patch and consumer hash in `elementary-projects.json` |
+| `elementary/gala` | Pantheon compositor and maintained upstream patches | Replace compositor/window manager with an independently qualified Rust project | Pin, clean patch comparison, build and compositor behavior are separate gates |
+| M-series Gala drawers plugin | Local Vala plugin and settings schema | Rust replacement is a separate item alongside the compositor; drawers are an enhancement | Compare hotkeys, show/hide, placement, monitor handling and launch behavior |
+| `JoseExposito/touchegg` | Optional gesture daemon source | If retained in the OS product, replace it with a separately tested Rust gesture daemon | Pinned source archive, license, packaging and gesture qualification in `UPSTREAM-PINS.md` |
 | `omacom/libva-v4l2_request` | Optional VA-API bridge for Apple video decode | Keep upstream implementation and its kernel/firmware contract | Pinned source and package checks in `UPSTREAM-PINS.md`; enabled codecs are not hardware qualification |
 | `omacom/omarchy-mac-pkgs` | Behavioral reference for Apple hardware support | Do not fork wholesale; translate only justified behavior for Ubuntu/Pantheon | `mseries/PORT-MAP.md`; retain source attribution and license |
 | `omacom/omarchy-mac` | Historical source for the original scaffold | Keep as historical provenance; maintained package changes follow `omarchy-mac-pkgs` | Pin is retained in `UPSTREAM-PINS.md`; do not confuse it with the current package source |
@@ -241,7 +245,7 @@ individually.
   candidate links against the host GIO development library. The Python service
   remains installed until D-Bus runtime parity and image admission pass. A
   private-bus fake-Mutter fixture is wired into arm64 CI; its result is pending.
-- The full file inventory currently contains 756 items (674 M-series-maintained
+- The full file inventory currently contains 758 items (676 M-series-maintained
   and 82 elementary-owned upstream inputs), 230 directory groups, and 206
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

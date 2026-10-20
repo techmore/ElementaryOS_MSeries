@@ -240,11 +240,19 @@ See [OMARCHY-M-ROADMAP.md](OMARCHY-M-ROADMAP.md) and the pinned discovery roster
 in [upstreams/omarchy-m.json](upstreams/omarchy-m.json). Integration and the Rust
 migration remain ongoing; announcement targets are not hardware test results.
 
+The Rust branch's long-term scope now explicitly includes independent Rust
+replacements for the executable Elementary OS product stack as well as M-series
+customizations. The first machine-readable register covers the ten core
+Elementary repositories in `mseries/rust/elementary-projects.json`; it records
+source pins, license evidence, parity contracts, replacement status, and
+intentional enhancements separately. All ten full-project replacements remain
+unstarted. See the Rust lane plan in `mseries/rust/README.md`.
+
 ### Rust migration status — 2026-10-20
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-756 file records (674 M-series-maintained paths and 82 elementary-owned upstream
+758 file records (676 M-series-maintained paths and 82 elementary-owned upstream
 inputs) grouped into 230 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
@@ -267,7 +275,7 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 756 paths, 230 directory groups, and 206 project IDs.
+file inventory now covers 758 paths, 230 directory groups, and 206 project IDs.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
 The six-hour watch now records each of the ten core Elementary repositories

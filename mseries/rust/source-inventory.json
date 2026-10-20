@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 756,
+  "item_count": 758,
   "component_count": 230,
   "project_count": 206,
   "components": [
@@ -2504,14 +2504,16 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 3,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/rust/README.md",
+        "mseries/rust/elementary-projects.json",
         "mseries/rust/inventory.py",
+        "mseries/rust/test_elementary_projects.py",
         "mseries/rust/test_inventory.py"
       ]
     },
@@ -5351,14 +5353,16 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 3,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/rust/README.md",
+        "mseries/rust/elementary-projects.json",
         "mseries/rust/inventory.py",
+        "mseries/rust/test_elementary_projects.py",
         "mseries/rust/test_inventory.py"
       ]
     },
@@ -12641,6 +12645,16 @@
       "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
+      "id": "mseries/rust/elementary-projects.json",
+      "path": "mseries/rust/elementary-projects.json",
+      "component_id": "mseries/rust/migration-lane",
+      "project_id": "mseries/rust/migration-lane",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
       "id": "mseries/rust/inventory.py",
       "path": "mseries/rust/inventory.py",
       "component_id": "mseries/rust/migration-lane",
@@ -12889,6 +12903,16 @@
       "language": "python",
       "role": "verification",
       "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/test_elementary_projects.py",
+      "path": "mseries/rust/test_elementary_projects.py",
+      "component_id": "mseries/rust/migration-lane",
+      "project_id": "mseries/rust/migration-lane",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
     },
     {
       "id": "mseries/rust/test_inventory.py",
