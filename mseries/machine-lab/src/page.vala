@@ -296,7 +296,7 @@ public class MachinePage : Gtk.Box {
         var emu_title = new Gtk.Label ("Emulated: much slower than your ARM64 machines");
         emu_title.xalign = 0;
         emu_title.add_css_class ("title-4");
-        var emu_text = new Gtk.Label ("An x86-64 machine runs in software (no hardware acceleration), roughly 10 to 50 times slower than an ARM64 guest. Installs and boots take a long time. Give it few CPUs, be patient, and prefer ARM64 when you can.");
+        var emu_text = new Gtk.Label ("An x86-64 machine runs in software (no hardware acceleration), so it is far slower than an ARM64 guest. Installs and boots take a long time (a small Alpine ISO reached its login prompt in under a minute; a full desktop will take much longer). Give it few CPUs, be patient, and prefer ARM64 when you can.");
         emu_text.xalign = 0;
         emu_text.wrap = true;
         emu_banner.append (emu_title);
