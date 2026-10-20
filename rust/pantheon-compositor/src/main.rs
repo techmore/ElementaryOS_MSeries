@@ -1,6 +1,7 @@
 #![allow(irrefutable_let_patterns)]
 
 mod cursor;
+mod cursor_theme;
 mod display_config;
 mod gala_compat;
 mod gesture_animation;

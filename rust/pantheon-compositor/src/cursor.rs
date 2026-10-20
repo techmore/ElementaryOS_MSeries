@@ -11,7 +11,7 @@ use smithay::{
             },
         },
     },
-    input::pointer::{CursorImageAttributes, CursorImageStatus},
+    input::pointer::{CursorIcon, CursorImageAttributes, CursorImageStatus},
     render_elements,
     utils::{IsAlive, Logical, Point, Rectangle, Scale, Size, Transform},
     wayland::compositor::with_states,
@@ -28,6 +28,7 @@ render_elements! {
     Animated=smithay::backend::renderer::element::utils::RelocateRenderElement<smithay::backend::renderer::element::utils::RescaleRenderElement<WaylandSurfaceRenderElement<R>>>,
 }
 
+/// Built-in pointer used only when the configured cursor theme cannot be read.
 pub fn default_cursor_buffer() -> MemoryRenderBuffer {
     const WIDTH: usize = 16;
     const HEIGHT: usize = 20;
@@ -105,13 +106,20 @@ where
             )
         }
         CursorImageStatus::Surface(_) | CursorImageStatus::Named(_) => {
-            let location = (pointer_location - output_geometry.loc.to_f64())
+            let icon = match &state.cursor_status {
+                CursorImageStatus::Named(icon) => *icon,
+                _ => CursorIcon::Default,
+            };
+            let cursor = state
+                .cursor_theme
+                .image(icon, output.current_scale().fractional_scale());
+            let location = (pointer_location - output_geometry.loc.to_f64() - cursor.hotspot)
                 .to_physical(scale)
                 .to_i32_round();
             MemoryRenderBufferRenderElement::from_buffer(
                 renderer,
                 location,
-                &state.default_cursor,
+                &cursor.buffer,
                 None,
                 None,
                 None,

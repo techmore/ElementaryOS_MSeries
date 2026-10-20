@@ -44,6 +44,7 @@ wayland-client = "0.31.11"
 wayland-server = "0.31.14"
 zbus = "=5.19.0"
 gio = "0.22"
+xcursor = "0.3"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 
 [dependencies.smithay]
