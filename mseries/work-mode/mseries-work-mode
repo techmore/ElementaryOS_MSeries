@@ -168,9 +168,19 @@ def activate_dock(state):
             )
 
     if schema.has_key("icon-size"):
-        settings.set_int("icon-size", 40)
+        settings.set_int("icon-size", size_system_dock("work", 40))
     if schema.has_key("autohide-mode"):
         settings.set_string("autohide-mode", "never")
+
+
+def size_system_dock(mode, fallback):
+    """Dock token from the M-Series size system (#332) when it is adopted."""
+    tool = which("mseries-ui-scale") or str(Path.home() / ".local/bin/mseries-ui-scale")
+    try:
+        result = subprocess.run([tool, "--dock-size", mode], capture_output=True, text=True, timeout=5, check=False)
+        return int(result.stdout) if result.returncode == 0 else fallback
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return fallback
 
 
 def restore_dock(state):

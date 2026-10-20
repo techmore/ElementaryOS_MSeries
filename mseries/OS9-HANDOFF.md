@@ -8083,3 +8083,14 @@ No bootloader, kernel, running audio stack, hardware configuration, Wingpanel pr
   `cargo test --features native-drm cursor_theme` passes against the installed elementary
   theme; clippy clean for the touched files. Takes effect at next login of the Rust
   session (running compositor untouched). Visual check by the owner still pending.
+
+## 2026-10-20: UI size system, phase 1 (#332)
+
+- New `mseries/ui-scale/`: `size-system.json` defines the ladder (Compact 0.85 → Largest 1.5), the dock tokens for native, work and work-taskbar, and the font policy. Also added the `mseries-ui-scale` CLI and `--watch` user service, plus `SIZE-SYSTEM.md` with the rules for app authors.
+- Quick Settings `TextScale.vala` replaces upstream's free 0.05-step slider. The slider and buttons now land only on ladder steps, rapid presses coalesce, and the tooltip and accessible value name the step. Both build paths install it.
+- Work Mode asks `mseries-ui-scale --dock-size work` for its dock size and falls back to 40 when the size system isn't adopted.
+- Tests: 14 planner unit tests, and a widget probe on Xvfb with in-memory GSettings that covers off-ladder 0.851, every step, rapid presses, snapping and external values. Both run in a new CI job, `ui-scale`.
+- Deployed on the J314S: `install-ui-scale.sh` (watcher active, size system **not adopted**, desktop unchanged) and `install-quick-settings-brightness.sh` (plugin installed; **not loaded** until Wingpanel reloads or the next login).
+- Not deployed: the Work Mode script change. The live `~/.local/bin/mseries-work-mode` is from unmerged #329, and overwriting it would roll that back. Land the hook through #329 or after it merges.
+- Unverified: a visual check of the new control, and dock follow-through on real hardware.
+- Next: phases 2–4 in #332: other dock writers, Wingpanel scale from #312, app type-ramp migration, Qt/Electron.

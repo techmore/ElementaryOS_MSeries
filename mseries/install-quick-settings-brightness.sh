@@ -29,6 +29,8 @@ install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Wi
 # Card layout, shared slider row and the Volume slider.
 git -C "$work/source" apply "$repo/mseries/patches/quick-settings-layout.patch"
 install -m644 "$repo/mseries/quick-settings/Controls.vala" "$work/source/src/Widgets/Controls.vala"
+# Text size steps along the size-system ladder (mseries/ui-scale/size-system.json).
+install -m644 "$repo/mseries/quick-settings/TextScale.vala" "$work/source/src/Widgets/TextScale.vala"
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
 install -m644 "$repo/mseries/quick-settings/AirDropPanel.vala" "$work/source/src/Widgets/AirDropPanel.vala"
