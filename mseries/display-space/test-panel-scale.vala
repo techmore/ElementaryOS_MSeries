@@ -17,8 +17,8 @@ int main (string[] args) {
         int child_min, child_nat;
         bar.child.measure (orientation, -1, out child_min, out child_nat, null, null);
         bar.measure (orientation, -1, out minimum, out natural, out baseline_min, out baseline_nat);
-        assert (minimum == (int) Math.ceil (child_min * 1.15f));
-        assert (natural == (int) Math.ceil (child_nat * 1.15f));
+        assert (minimum == (int) Math.ceil (child_min * 1.30f));
+        assert (natural == (int) Math.ceil (child_nat * 1.30f));
     }
     var window = new Gtk.Window () { child = bar, decorated = false };
     window.present ();
@@ -27,10 +27,10 @@ int main (string[] args) {
         Graphene.Point source = Graphene.Point ().init (100, 10);
         Graphene.Point mapped;
         assert (bar.child.compute_point (bar, source, out mapped));
-        assert (Math.fabs (mapped.x - 115) < 0.01);
-        assert (Math.fabs (mapped.y - 11.5) < 0.01);
-        assert (bar.child.get_width () <= bar.get_width () / 1.15f + 1);
-        stdout.printf ("PASS: panel measurement and allocation scale all contents by 1.15\n");
+        assert (Math.fabs (mapped.x - 130) < 0.01);
+        assert (Math.fabs (mapped.y - 13.0) < 0.01);
+        assert (bar.child.get_width () <= bar.get_width () / 1.30f + 1);
+        stdout.printf ("PASS: panel measurement and allocation scale all contents by 1.30\n");
         loop.quit ();
         return GLib.Source.REMOVE;
     });

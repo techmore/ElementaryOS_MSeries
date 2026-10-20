@@ -6,7 +6,7 @@ index e939324..1ddce99 100644
      public ListModel indicator_entries { private get; construct; }
  
      private Gtk.FlowBox flow_box;
-+    private const float CONTENT_SCALE = 1.15f;
++    private const float CONTENT_SCALE = 1.30f;
  
      public IndicatorBar (ListModel indicator_entries) {
          Object (indicator_entries: indicator_entries);

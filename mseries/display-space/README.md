@@ -2,7 +2,7 @@
 
 ## Larger top bar — 2026-10-20
 
-All top-bar indicator groups now render at 115% scale: Applications, clock,
+All top-bar indicator groups now render at 130% scale: Applications, clock,
 CodexBar, RepoBar and system status controls, including explicit font/icon sizes
 and spacing. The native GTK measurement and allocation both account for the
 scale, so pointer targets follow the visible controls. Notch clearance and
@@ -11,8 +11,10 @@ This is implemented in `patches/wingpanel-content-scale.patch`, applied by both
 Wingpanel installers after the startup layout patch. Dropdown windows retain
 their own sizing. CodexBar hover information stays off.
 
-Installed and loaded on the owner’s Wayland desktop. The production scale test
-(`bash mseries/display-space/test-panel-scale.sh`) checks 1.15 measurement and
+Installed and loaded through `pantheon-wingpanel.service` on the owner’s Rust
+Wayland desktop, retaining its configured GL renderer. Reload with
+`systemctl --user restart pantheon-wingpanel.service`. The production scale test
+(`bash mseries/display-space/test-panel-scale.sh`) checks 1.30 measurement and
 coordinate transforms under Xvfb; `test-panel-startup.sh` also passes with the
 scale patch, including 20 clock reparent transitions. Physical appearance still
 needs owner feedback. Adjust `CONTENT_SCALE` in the patch to tune the size.
