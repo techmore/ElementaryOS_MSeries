@@ -1,5 +1,42 @@
 # OS 9 implementation / Claude Code handoff
 
+## Work Mode wallpaper settings panel — 2026-10-20
+
+Added `mseries/work-mode/` with a native Switchboard panel, GSettings schema,
+wallpaper scheduler, one-minute user timer, and `mseries/install-work-mode.sh`.
+The panel offers a manual switch, work-wallpaper selection, weekday-only option,
+and start/end times. The scheduler saves the pre-work wallpaper on activation
+and restores it after the work window. The initial install exposed and fixed a
+Switchboard plug startup crash: the plug was touching an instance field before
+its GObject base constructor. The plug is now installed at
+`/usr/lib/aarch64-linux-gnu/switchboard-3/personal/`, the schema is compiled
+system-wide, and `mseries-work-mode.timer` is enabled and active. GSettings
+reports Work Mode disabled, preserving the existing desktop wallpaper, and the
+work wallpaper points to `/usr/share/backgrounds/mseries/work-mode-blue-flow.png`.
+The bundled Windows 11-inspired Blue Flow image is installed. The timer is
+active/enabled, and helper status reports Off. A clean System Settings launch
+after the constructor-order fix exited without another crash; the panel has not
+been visually inspected. An isolated GSettings/keyfile run verified that a
+manual tick applies the work wallpaper and disabling Work Mode restores both
+original wallpaper URIs and picture options; the live desktop wallpaper was
+not changed during this check. A real scheduled transition is still unverified.
+PR #304 added the panel and scheduler, PR #306 fixed plug startup, PR #308
+bundled the default wallpaper, and PR #311 renamed/extended the feature to
+Windows Work Mode; all are merged to `dev`. The updated panel, helper and dock
+service were installed on 2026-10-20. Work Mode remains off; verified state is
+the existing normal wallpaper URI, dock icon size `24`, auto-hide `overlapping-window`,
+timer active/enabled, helper status `Off`, and Windows Work Mode dock service
+inactive. Thus the install left the live wallpaper and dock preferences alone.
+
+While enabled, Windows Work Mode uses elementary's native dock as a partial
+Windows-style bottom launcher: 40-pixel icons, no auto-hide, existing pinned
+apps and native running-window behavior. It snapshots/restores dock preferences
+and manages a dedicated dock service only when the dock was not already running.
+The panel has not been visually inspected; a real scheduled transition and the
+active dock appearance remain unverified. Start, Search, system tray and widgets
+are outside this partial dock implementation. For image licensing, see the
+wallpaper-source decision in `mseries/ROADMAP.md`.
+
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
 Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg
@@ -7732,3 +7769,50 @@ removes the diversion and puts the stock plugin back).
 - Added a compact-width render assertion to the headless probe. All 11 light-theme indicator fixtures passed at a 280 px target; captured content canvas was 268 px wide. Long account labels ellipsize and the bottom actions remain visible.
 - `bash mseries/deploy-codexbar.sh --restart`: all 17 Meson test groups passed and installed the module. The script's default restart did not select Wayland in this session; relaunched Wingpanel with `GDK_BACKEND=wayland`. Live verification: Wingpanel PID 146186 maps `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`; CodexBar background daemon PID 2088 is running.
 - Source is on `fix/codexbar-quickswitch-width`, based on `dev`; PR #315 opened against dev; merge awaits CI.
+### Calendar panel / Bible tab: production ready — 2026-10-20 (PR #299 -> dev d4bc8f9)
+
+Live: the owner's Wingpanel (started 2026-10-19 21:46, after the package
+install) maps the packaged libdatetime.so (same inode as the file) and its
+journal has no criticals, warnings or errors.
+
+Upgrade protection is now proven in CI: mseries/debs/test-divert.sh (CI-only)
+installs each pilot package, force-reinstalls the stock package, checks that ours
+survived and the stock copy landed in the diverted path, then removes it and
+checks the stock plugin, no diversion and no leftover files. It passes for the
+datetime, network and quick-settings packages.
+
+The proof found two packaging bugs, both fixed:
+- mseries-quick-settings no longer built after the card layout (SliderRow in
+  Controls.vala). New mseries/quick-settings/prepare-source.sh is shared by the
+  factory image and the package builder.
+- Depends bounds rejected elementary daily bases that use ~ (1.4.0~r556 < 1.4.0)
+  and admitted next-minor dailies (1.4.1~ < 1.4.1). Now (>= X~, << next~).
+  Packaging revision 0mseries2.
+
+Owner desktop upgraded (approved) to mseries-wingpanel-datetime 2.4.2-0mseries2
+from d4bc8f9 after 27/27 groups: dpkg -i over 0mseries1, diversion kept, stock
+original md5 unchanged, dpkg -V clean, installed == tested build, Wingpanel PID
+unchanged (loads at next login). Only remaining item: apt publishing, which
+waits on the owner's signing-key decision (#52).
+
+
+### Daily upstream audit — 2026-10-19
+- First daily report: mseries/upstream-audits/daily/2026-10-19.md (read-only; nothing built or restarted).
+- Aurora integration/aurora published unified 7.2.10 (44d5afc79d; DCP/CIO/PMP changes); no tagged release, our 7.1.12 aurora.20 pin stands.
+- elementary/os main + kmscon default (#917, a6b2376ae8); CodexBar v0.78.0 matches pin; omarchy-mac-pkgs head 1e4c6e2b08.
+- Not verified: lore, asahilinux.org, blog, Mesa/PipeWire versions; audit-upstream.py import failed.
+- Next: owner decision on a read-only 7.2.10 diff against aurora/enhancements/.
+
+## Honeykrisp v3 candidate vs the 7faf04c065 pin — 2026-10-19
+
+Branch `claude/honeykrisp-v3-bump`. Built `joshuaswarren/mesa-1` `honeykrisp-omarchy-v3` (`f144c7949b`) beside the running runtime and compared the omarchy-mlx C++ tests and Mesa cooperative-matrix cases against the 7faf04c065 pin. The candidate segfaults the compiler (`pick_regs` in `agx_ra`) on 16x16x16 f16 cooperative matrices at workgroup sizes other than 32; the pin passes. **Pin unchanged; candidate not promoted.** Bisected to `ff013781c00` (skip the compute register-pressure scheduler); `AGX_SCHED_COMPUTE=1` avoids the crash. No decode A/B was run because the Qwen3.5 MLX weights are absent. The Mesa issue draft is retained but not posted. Details: `mseries/local-ai/receipts/2026-10-19-honeykrisp-v3-candidate.md`. Next: owner decision on publishing the issue and fetching weights for a repeated decode A/B.
+
+## Session reconciliation — 2026-10-20
+
+Merged to `dev`: #301 calendar production notes (`4580f19`), #302 codeload-429 validation fix (`8ffac18`), #303 first-boot ISO README (`4868ce3`), #290 daily upstream audit (`dc70503`), #305 Rust lint cleanup (`ea702e2`), and #307 Honeykrisp crash evidence (`dd82f79`). PRs #301–303, #290, and #307 passed their applicable CI; reusable-build/comment jobs were skipped by workflow rules on #307. #305's repository workflows were skipped; its reviewed commit records successful Rust 1.93.1 fmt, Clippy, test, and release-build commands.
+
+Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passwords` have no unique commits; native-udev and generic agent commits are already ancestors of `dev`. Battery-dropdown, Rust Granite bindings, and Flatpak shelf branches are patch-equivalent to landed code. AirPlay PR #65 is closed and superseded by current `dev`. Keep `revert-270-from-main` out of `dev`: its revert belongs to `main`, and the feature was restored by #285.
+
+Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
+
+No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.

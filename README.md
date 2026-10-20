@@ -130,8 +130,40 @@ Experimental and unfinished. Current state, blockers and the next task: [`mserie
 | Running Aurora `.20` kernel | Boots on the J314S M1 Pro; the owner confirms a working dock display at 1080p/60. Sustained VRR, dock stability and suspend/resume remain open. See the [hardware receipt](mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md). |
 | Earlier Fairydust USB4 kernel | Historical boot and peripheral results are retained in [CUTOVER.md](mseries/fairydust/usb4/CUTOVER.md); its older dock-video limitations do not describe the newer Aurora result. |
 | Power and performance parity with macOS | **Not established.** Matched workload, battery and sustained-performance comparisons remain open. |
-| Factory ISO | builds in CI, **unverified on hardware** |
+| Factory ISO | builds in CI and locally (about 17 min on the M1 Pro), boots to the installer in a VM, **unverified on Apple hardware** |
 | Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
+
+### What works on an M-series Mac today
+
+Observed on the owner's 14-inch M1 Pro (J314S) running the transformed desktop on Aurora `.20`, as of
+October 20, 2026. "Works" means used daily; "partial" means it works with a documented limit; "open" means
+not working or not yet qualified. Other Mac models have no results of their own.
+
+| Hardware / feature | State | Notes |
+|---|---|---|
+| Boot menu, kernel, Pantheon desktop | works | Asahi Alarm stays as the rescue entry; Aurora `.20` is the running kernel ([kernel flow](mseries/KERNEL-FLOW.md)) |
+| Internal keyboard and trackpad | works | Apple HID loaded early in the initramfs so the trackpad is up at the greeter |
+| Built-in display, brightness keys, notch layout | works | 120 Hz panel; full-height notch-aware Wingpanel profile ([display space](mseries/display-space/README.md)) |
+| ProMotion / VRR | partial | brief kernel activation seen (3 of 25 samples); sustained variable refresh unverified ([receipt](mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)) |
+| GPU acceleration (Asahi/AGX, Honeykrisp Vulkan) | works | no Metal-parity or benchmark claim |
+| Hardware video decode (Apple Video Decoder, VA-API) | partial | 720p/1080p/4K passed on the earlier stock kernel; not yet requalified on Aurora ([video decode](mseries/video-decode/README.md)) |
+| Wi-Fi | works | firmware provisioned at install; `brcmfmac` reload after resume ([firmware](mseries/FIRMWARE-WIFI.md)) |
+| Bluetooth | partial | radio and paired devices from Quick Settings, resume recovery unit ([hardware](mseries/hardware/)); BlueZ 5.85, so Tether's SMS/OTP bearer (needs 5.86) is out; the owner's device check is still open |
+| Speakers | works | `speakersafetyd` protection on; the Asahi DSP chain passed its output check (`install-audio-stack.sh --with-dsp`) |
+| Built-in microphone | works | used by F5 dictation ([acceptance](mseries/dictation/F5-ENGLISH-ACCEPTANCE.md)) |
+| Headphone jack, dock audio | open | no headphone result recorded; dock TV audio unresolved with display audio off in the running kernel ([dock TV audio](mseries/audio/DOCK-TV-AUDIO.md)) |
+| Ambient keyboard backlight | works | AOP illuminance sensor plus UPower ([keyboard backlight](mseries/keyboard-backlight/README.md)) |
+| Battery charge limit (80 %) and battery CPU ceiling | works | `sudo mseries-power status`; Quick Settings switch |
+| USB4 / Thunderbolt dock (WD22TB4): hub, Ethernet | works | Realtek firmware and a persistent adapter-bound profile |
+| External display through the dock's HDMI | works | 1920x1080 at 60 Hz confirmed by the owner; long idle, replug and DPMS cycles still open (#200) |
+| USB-C DisplayPort alt mode (monitor straight on a port) | open | needs the experimental kernel path ([dock notes](mseries/USB-C-DOCK-DP-ALT-MODE.md)) |
+| Suspend / resume | partial | an undocked cycle passed on the earlier Fairydust kernel; on Aurora `.20` and with a dock attached it is open; docked-lid mode locks instead of suspending |
+| Camera (ISP) | open | not qualified on this stack |
+| Touch ID | open | fingerprint matching lives in the Secure Enclave and has no Linux path; probing the sensor froze the machine once (#70) |
+| Full-disk encryption, unlock screen | partial | implemented in the installer; not yet run on a freshly wiped Mac |
+| Power / performance parity with macOS | open | no matched measurements yet ([power roadmap](mseries/POWER-ROADMAP.md)) |
+
+The full post-install checklist, with the exact commands, is [`mseries/POST-BOOT-CHECKS.md`](mseries/POST-BOOT-CHECKS.md).
 
 ## Fixes, tests and remaining work
 
@@ -161,6 +193,15 @@ qualification; a successful build does not establish a successful hardware boot.
 
 Details: [desktop space](mseries/display-space/README.md),
 [window snapping](mseries/window-snapping/README.md).
+
+### Work Mode wallpaper
+
+The `mseries/install-work-mode.sh` installer adds a native Work Mode panel under
+System Settings → Personal. It provides an on/off switch, a separate Blue Flow
+work wallpaper (and image picker), and optional weekday start/end times. A per-user systemd timer checks
+the schedule every minute; when work hours end, the wallpaper saved before Work
+Mode began is restored. This is implemented in source and has not yet been
+installed or visually qualified on the owner’s desktop.
 
 ### OS bar, menus and indicators
 
@@ -367,7 +408,57 @@ git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries && sudo ./E
 Only after the dry run is reviewed: `--apply`, reboot, pick **elementary OS (M-series)** in the boot menu. Design and safety contract: [`mseries/TRANSFORM-DESIGN.md`](mseries/TRANSFORM-DESIGN.md).
 
 **More:** [documentation index](mseries/DOCS.md), project overview [`mseries/README.md`](mseries/README.md), kernel and boot flow [`mseries/KERNEL-FLOW.md`](mseries/KERNEL-FLOW.md), bug backlog [`mseries/BUG-FIX-ROADMAP.md`](mseries/BUG-FIX-ROADMAP.md), Apple hardware reference [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs).
-The factory ISO builds in CI but is unverified on hardware. The rest of this page is the upstream elementary OS build documentation.
+
+---
+
+## Building the ISO yourself
+
+The factory image is an arm64 elementary OS 9 live ISO with the Apple Silicon layer
+(`mkosi.images/apple-silicon/`) built in. It builds in CI (`OS 9 M-series experimental build`,
+manual dispatch) and on an M-series Mac that already runs Linux; the recipe below is what the local
+build on the J314S used ([`mseries/LOCAL-BUILD.md`](mseries/LOCAL-BUILD.md)). The ISO is **not yet
+verified to boot on Apple hardware**; it has reached the graphical installer in a VM.
+
+You need: an arm64 Linux host (the build is native, not cross), `sudo`, and **60 GiB free** on the
+filesystem that holds the checkout (a conservative guard; the ISO is about 6.6 GiB and the build keeps
+unpacked roots, caches and container layers beside it). The recorded build ran on 32 GB of RAM; a
+smaller host is untested.
+
+```bash
+sudo apt install just podman zstd rsync         # the only host packages; mkosi runs in a container
+git clone https://github.com/techmore/ElementaryOS_MSeries && cd ElementaryOS_MSeries
+python3 mseries/local-build-preflight.py        # exit 0: arch, tools and the 60 GiB guard pass
+just genkey                                     # once per checkout: image signing keys (mkosi.key/.crt)
+just do-daily                                   # the build: about 17 min on an M1 Pro, 26 min in CI
+ls -l mkosi.output/elementaryos-*.iso           # the result
+sha256sum mkosi.output/elementaryos-*.iso       # record this with the source commit
+```
+
+What `just do-daily` does: pulls `ghcr.io/elementary/mkosi:tanit`, runs `mkosi` in a **privileged
+podman container with host `/dev`** (loop devices are needed to assemble the image), builds the
+`liveiso` and `sysupdate` images for the daily PPA stream, then runs `assemble-iso.sh`. It starts by
+removing `mkosi.output/`. Keep the running kernel, bootloader and audio stack out of it: the build
+installs nothing on the host.
+
+- **Run it detached, with records:** `bash mseries/local-build-worker.sh` from a committed checkout
+  runs the same steps and writes `local-build-records/status.json`, `build.log` and
+  `INSTALLER-SHA256SUMS` (phase, elapsed time, exit code, ISO checksum) so a build survives the
+  terminal and can be read by [`docs/local-build-status.html`](docs/local-build-status.html).
+- **Check the wiring:** `python3 mseries/test-image-wiring.py` confirms the Apple layer is referenced
+  by both the live ISO and the sysupdate image (CI also runs it against `just mkosi summary`).
+- **Boot it in a VM** (no Apple drivers, but the installer and desktop can be exercised):
+  `./mseries/vms/mseries-vm create elementary --iso mkosi.output/elementaryos-*.iso && ./mseries/vms/mseries-vm start elementary`
+  ([VM notes](mseries/vms/README.md), [first VM smoke test](mseries/VM-SMOKE-TEST.md)).
+- **Other streams:** `just do-stable` (stable PPA) and `just do-proposed`. `just clean` removes the
+  caches (`mkosi.cache/`, `mkosi.tools/`, `~/.cache/mkosi`).
+- **Before opening a pull request:** `bash mseries/validate.sh` (or `just check`) runs the same
+  syntax, lint and unit checks as CI's `Validate M-series wiring` in about half a minute; no image build.
+
+What a successful build proves: the configuration parses, every package installs, the Apple overlay
+lands in the live installer. What it does not prove: that the ISO boots on a Mac. Hardware
+acceptance is tracked in #201 and [`mseries/FIRST-ISO-BUILD.md`](mseries/FIRST-ISO-BUILD.md).
+
+The rest of this page is the upstream elementary OS build documentation.
 
 <div align="center">
   <a href="https://elementary.io" align="center">

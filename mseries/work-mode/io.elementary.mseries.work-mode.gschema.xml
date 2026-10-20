@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.elementary.mseries.work-mode" path="/io/elementary/mseries/work-mode/">
+    <key name="enabled" type="b">
+      <default>false</default>
+      <summary>Enable Windows Work Mode</summary>
+      <description>Use the selected work wallpaper and Windows-inspired dock while active.</description>
+    </key>
+    <key name="scheduled" type="b">
+      <default>false</default>
+      <summary>Schedule Windows Work Mode</summary>
+      <description>Switch the work wallpaper and dock automatically during configured work hours.</description>
+    </key>
+    <key name="weekdays-only" type="b">
+      <default>true</default>
+      <summary>Weekdays only</summary>
+      <description>Apply the work wallpaper Monday through Friday.</description>
+    </key>
+    <key name="start-time" type="s">
+      <default>'09:00'</default>
+      <summary>Work start time</summary>
+      <description>Local time at which the work wallpaper becomes active.</description>
+    </key>
+    <key name="end-time" type="s">
+      <default>'17:00'</default>
+      <summary>Work end time</summary>
+      <description>Local time at which the normal wallpaper is restored.</description>
+    </key>
+    <key name="work-wallpaper" type="s">
+      <default>'/usr/share/backgrounds/mseries/work-mode-blue-flow.png'</default>
+      <summary>Work wallpaper image</summary>
+      <description>Image file used while Windows Work Mode is active. Starts with the supplied Blue Flow wallpaper.</description>
+    </key>
+  </schema>
+</schemalist>

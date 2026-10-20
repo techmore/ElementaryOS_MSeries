@@ -1,0 +1,6 @@
+[Unit]
+Description=Apply scheduled Windows Work Mode settings
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/mseries-work-mode --tick

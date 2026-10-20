@@ -1,5 +1,36 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Work Mode wallpaper — 2026-10-20
+
+Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
+work-wallpaper picker, weekday scheduling, and start/end times. A per-user
+systemd timer checks once a minute and restores the wallpaper that was active
+before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
+Flow wallpaper are installed on the J314S desktop. Work Mode remains off, so
+the existing wallpaper is unchanged. The Switchboard constructor-order crash
+is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
+run passed apply/restore checks without changing the live desktop. Visual panel
+inspection and a real scheduled transition remain open.
+
+PR #311 merged the dock integration and visible rename to Windows Work Mode; it
+is installed on the J314S desktop. The mode remains off, preserving the current
+wallpaper and dock preferences. While active it adapts elementary's existing
+dock to 40-pixel icons with auto-hide disabled, keeping the user's pinned apps
+and native running-window behavior; preferences are restored when the mode ends.
+The UI has not been visually inspected, and a real scheduled transition remains
+open. Start, Search, system tray and widgets are outside this partial dock
+implementation.
+
+For additional wallpaper choices, Windows itself supports Store themes and a
+daily Spotlight image ([Microsoft personalization guide](https://support.microsoft.com/en-us/windows/experience/personalization/personalize-your-windows-experience-with-themes),
+[background guide](https://support.microsoft.com/en-us/windows/experience/personalization/change-the-desktop-background-in-windows)). Microsoft’s
+copyright guidance says redistribution needs an express license or permission
+([reuse guidance](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions)).
+Do not scrape or bundle Spotlight or Windows theme files into this repo. The
+panel already accepts a user-local image; any bundled set should use original
+artwork or assets with explicit redistribution rights and per-file license
+notes.
+
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
 The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
@@ -1263,8 +1294,10 @@ Tasks, Bible tab with daily verse and Titus study) is now a third pilot package,
 the stock plugin so daily upgrades can't overwrite it, and ships the accounts
 launcher. CI builds it, checks the bundled data and runs the private-EDS suite
 against the packaged library. The arrow buttons got accessible names.
-Remaining: apt publishing (signing key, #52) and moving the owner's desktop from
-the manual installer to the package.
+The owner's desktop now runs the package (0mseries2). CI proves for all three
+pilot packages that a stock upgrade can't overwrite ours and that removal
+restores the stock plugin (2026-10-20). Remaining: apt publishing (signing key,
+#52).
 
 
 ## README status overview — 2026-10-18
@@ -2271,3 +2304,8 @@ performed during this cleanup review. The diagnostic boot selection is untouched
 ## CodexBar QuickSwitch width — 2026-10-20
 - Compact popover layout landed in the `dev`-based feature branch (PR #315): 240 px minimum width, bounded dynamic labels, status and action dock on separate rows.
 - Verified 11/11 headless render fixtures at a 280 px target (268 px captured content), 17/17 Meson test groups, and the live Wingpanel mapping the installed module. See `OS9-HANDOFF.md` for the deployment detail.
+- Audit (2026-10-19): AUDIT-DEEPER Aurora unified 7.2.10 (DCP/CIO/PMP vs carried patches) and elementary kmscon default (#917) at the next elementary sync. See mseries/upstream-audits/daily/2026-10-19.md.
+
+## Session reconciliation — 2026-10-20
+
+Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.
