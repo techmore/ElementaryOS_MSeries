@@ -2358,3 +2358,8 @@ startup, portable identity/storage configuration and re-read external hashes.
 A completion receipt means files collected and transferred, not a qualified
 Linux macOS boot. Next owner action: run it in native macOS with AC power and
 an external exFAT drive; bring the verified private bundle back to Linux.
+
+No-external-drive path: collector accepts an existing internal exFAT shared
+partition. Creating one remains a separate capacity/backup/resize decision on
+macOS; the collector performs no partition operations. Merely leaving the bundle
+in macOS Downloads is not accessible from this Linux installation.

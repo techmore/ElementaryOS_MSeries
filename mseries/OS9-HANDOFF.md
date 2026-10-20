@@ -7913,3 +7913,12 @@ collection receipt requires re-reading all external hashes. Mock failure-gate
 tests cover invalid export, restore/config/native startup failures, corrupt
 external copy and completed-stage resume; bash syntax and shellcheck pass.
 macOS execution, actual restore and Linux guest boot remain unverified.
+
+Storage correction: existing internal exFAT destinations are now accepted by
+the collector, with the same filesystem/free-space/hash gates. No partition is
+created or resized. The ordinary macOS APFS data volume remains inaccessible
+from Linux (prior KeyManager failure; hardware/SEP encryption unsupported by
+apfs-fuse). Live Linux free space is now about 11 GiB. A proposed 120 GiB shared
+exFAT partition would require a separately approved and capacity-checked macOS
+APFS shrink; no partition mutation was attempted. A folder or APFS volume in the
+existing encrypted container does not solve cross-OS access.
