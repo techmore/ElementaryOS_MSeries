@@ -1,5 +1,30 @@
 # OS 9 implementation / Claude Code handoff
 
+## Microsoft Teams web desktop integration — 2026-10-20
+
+No prior Teams native port was found in the repository or remote branches. Per
+owner direction, `codex/teams-native` adds the actual Microsoft Teams web client
+as a per-user application shortcut, with an isolated Chrome/Edge mode and an
+explicit `--use-brave-session` mode. The latter reuses the selected regular Brave
+profile through Brave itself; no cookies, password databases or tokens are copied.
+Installed on this J314S using Brave 155.1.97.59, profile `Default`. Chrome
+155.0.8059.84 arm64 was also installed from Google's official package as the
+Microsoft-listed browser fallback. Its package selected Chrome as default;
+Brave was restored (`xdg-settings get default-web-browser` reports
+`brave-browser.desktop`). No panel restart or audio-stack changes.
+
+Verification: ten offline launcher/integration tests pass, including real Gio
+Desktop Exec parsing with special paths, deep-link validation, private isolated
+profiles, preserving sessions across reinstall/uninstall, and sharing the Brave
+profile without copying it. Shell syntax, ShellCheck and desktop-file validation
+pass. Local `--check` confirms Brave session mode; launch was dispatched to the
+browser. A separate temporary in-app browser reached Microsoft's sign-in page.
+Owner confirmed that the Brave workflow worked and signed them in. Dock
+grouping, message delivery, notifications, camera/microphone, screen sharing
+and meeting join remain unverified. This is a web integration, not a native Teams reimplementation or
+factory-image qualification. See `mseries/teams-web/README.md` for commands,
+support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
+
 ## UI fixes installed after PR #321 — 2026-10-20
 
 PR #321 merged into `dev` as `9cb1c70`; all ten CI checks passed. Updated the
