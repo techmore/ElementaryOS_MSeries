@@ -52,6 +52,26 @@ namespace RunningTest {
         var ambiguous = Dock.AppResolver.get_default ().resolve ("flatpak");
         assert_true (ambiguous.get_boolean ("X-MSeries-Transient"));
     }
+    void ambiguous_aliases () {
+        check_resolve ("CaseAlias", "CaseAlias.desktop");
+        check_resolve ("casealias.desktop", "casealias.desktop");
+        check_resolve ("class-one", "class-one.desktop");
+        foreach (var raw in new string[] {"SharedApplication", "sharedapplication", "CASEALIAS"}) {
+            var info = Dock.AppResolver.get_default ().resolve (raw);
+            assert_nonnull (info);
+            assert_true (info.get_boolean ("X-MSeries-Transient"));
+            assert_cmpstr (info.get_commandline (), CompareOperator.EQ, "/usr/bin/false");
+        }
+    }
+    void activation_identity () {
+        var windows = new GenericArray<Dock.Window> ();
+        assert_null (Dock.AppResolver.shared_window_id (windows));
+        windows.add (new Dock.Window ("Chatgpt"));
+        windows.add (new Dock.Window ("Chatgpt"));
+        assert_cmpstr (Dock.AppResolver.shared_window_id (windows), CompareOperator.EQ, "Chatgpt");
+        windows.add (new Dock.Window ("chatgpt.desktop"));
+        assert_null (Dock.AppResolver.shared_window_id (windows));
+    }
     void sync () {
         var loop = new MainLoop ();
         Dock.AppSystem.get_default ().sync_windows.begin (() => loop.quit ());
@@ -94,6 +114,8 @@ namespace RunningTest {
         Test.add_func ("/dock/desktop-and-browser-identities", resolution);
         Test.add_func ("/dock/unknown-and-ambiguous-identities", unknown);
         Test.add_func ("/dock/running-open-close-and-grouping", running_lifecycle);
+        Test.add_func ("/dock/ambiguous-classes-and-case-sensitive-ids", ambiguous_aliases);
+        Test.add_func ("/dock/activation-uses-complete-raw-identity", activation_identity);
         return Test.run ();
     }
 }

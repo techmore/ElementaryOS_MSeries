@@ -1,5 +1,36 @@
 # OS 9 implementation / Claude Code handoff
 
+## Tracking draft reconciled with canonical taskbar preparation — 2026-10-20
+
+Draft #339 now uses #341's canonical `mseries/dock-taskbar/prepare-source.sh`
+for both its production-method test and its explicit build-only mode. The latter
+hashes Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala and all copied shared
+CodexBar Vala sources before applying the experimental tracking patch, verifies
+all remain byte-identical, performs the complete build/schema and GTK hover/focus
+checks, then exits before installation. Default installation remains unchanged.
+Three tracking regressions, eight wrapper tests, the full canonical native build
+and the real GTK hover/focus/leave/pin probe pass against dev `689ffdf6`.
+No live files, settings or services were changed. The deployed #341 taskbar and
+icons remain under the recovery coordinator's ownership; #339 remains draft and
+undeployed pending its review/visual/input/deployment gates.
+
+## Draft app tracking preserves complete taskbar source — 2026-10-20
+
+The app-ID/running-pill fix is now source-only and includes an explicit
+`--build-running-apps-only` qualification mode. It applies after the complete
+Windows taskbar patch, requires Taskbar.vala and the taskbar-mode schema,
+verifies Taskbar.vala remains byte-identical, builds and exits before install.
+Default installation is unchanged. Three native resolver/AppSystem tests and
+eight wrapper regressions pass; the complete taskbar+tracking native build passes.
+The earlier incompatible deployment was rolled back; the restored live Windows
+taskbar binary/schema and official Teams/Outlook icons/pins are preserved.
+The additional recovery-source build preserves Taskbar.vala, StartMenu.vala and
+TaskbarCodexBar.vala byte-for-byte and builds successfully; its hashes are retained
+in `mseries/dock-tests/receipts/taskbar-source-preservation-2026-10-20.json`.
+No live deployment is part of this draft. Owner recovery confirmation and
+isolated combined-taskbar UI/focus/typing validation remain gates. See
+`mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
+
 ## iPhone Messages pins: private Apple path identified — 2026-10-20
 
 Owner requested real iPhone conversation-pin import/sync. Source investigation
@@ -8833,6 +8864,24 @@ any install. Tests use fake HOME/backend and cannot restart the desktop. See
 the earlier complete Windows taskbar/CodexBar local deployment stays in place.
 Do not deploy an app-tracking-only dock build lacking this full stack.
 
+## PR #339 isolated review — 2026-10-20
+
+Reviewed the draft against the canonical complete taskbar and fixed ambiguous
+window/launcher resolution, partial-group activation, transient Uninstall actions
+and taskbar CSS overriding the gray marker geometry/color. Five native and eight
+wrapper regressions, complete canonical build/schema/preservation and hover
+checks pass. A private combined-taskbar Xvfb/D-Bus run passes snapping, restore,
+clearance, startup/repeated focus and typing; the reviewed screenshot retains
+fixture fallback-icon/visual-acceptance limits. Details and source hashes:
+`mseries/dock-tests/receipts/review-339-2026-10-20/review.json`.
+
+No live deployment or Wingpanel restart. The patch remains opt-in build-only;
+default installation is unchanged. #339 remains draft until owner recovery
+confirmation, complete representative visual/input qualification and separately
+authorized coordinated deployment gates are met. The current no-deploy request
+precludes completing the deployment gate. Next: recovery-owner confirmation and
+remaining acceptance work; do not infer permission from passing CI.
+
 ## Teams/Outlook running markers and larger CodexBar popup — 2026-10-20
 
 App tracking is now applied after the full canonical taskbar stack, with SHA-256
@@ -8849,6 +8898,47 @@ inspection pass locally. Live read-only matching resolves both open Brave apps.
 Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
 See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
 
+### PR #339 review reconciled with concurrent #342
+
+#342 landed during review and supersedes the original draft. Rebased the remaining
+identity/activation/transient-menu fixes onto dev `0b4fcf4`, retaining #342's
+startup/focus marker-state behavior and gray-open/blue-focused styling. The earlier
+all-gray CSS experiment was not carried forward. Removed duplicate patch
+application from the compatibility build-only mode, since canonical preparation
+now applies tracking. Current full build/schema, five native tests, eight wrapper
+tests, actual marker/hover GTK probes and private combined-taskbar focus/typing
+checks pass. Updated receipt/screenshot under review-339-2026-10-20.
+No desktop deployment or Wingpanel restart; #339 remains draft because recovery
+confirmation, complete representative acceptance and coordinated deployment gates
+remain unmet. Respect the explicit no-deploy instruction.
+
+### PR #339 closed by the recovery coordinator during review
+
+The coordinator closed #339 at 12:05:17 as superseded by merged #342 and reported
+its coordinated deployment complete. That closure stopped CI for subsequent
+pushes; the old PR was not reopened. Retained the additional alias/activation/menu
+hardening and isolated-input regression on `codex/taskbar-tracking-review-followup`
+for a new draft follow-up. The original tracking integration is already in dev;
+this task did not deploy or restart anything. The follow-up still lacks complete
+representative native visual/input acceptance, and its live qualification cannot
+be performed under the current no-deploy instruction.
+
+## PR #343 visual/input qualification completed without deployment — 2026-10-20
+
+Actual production GTK launchers pass real pointer/keyboard qualification on a
+private Xvfb display in both light and dark modes. Mixed raw IDs focus the right
+UID; uniform browser IDs request the complete group; transient activation/menu
+restrictions, secondary-click/Escape and typing after actions pass. Screenshots
+with complete original fixture icons were visually inspected. The clean canonical
+full taskbar build passes and now runs this repeatable qualification in CI.
+Receipt: `mseries/dock-tests/receipts/qualification-343-2026-10-20/qualification.json`.
+
+This fulfills source-merge visual/input acceptance under the owner's no-deploy
+instruction. No installed files or desktop services were changed, and Wingpanel
+was not restarted. Native hardware/Wayland deployment acceptance and browser
+authentication/media remain distinct, unclaimed follow-ups. Next: merge only
+after updated-head CI passes; no deployment is authorized by this source merge.
+
 ## Darker running-app markers — 2026-10-20
 
 Owner requested darker gray running dots/pills. The complete taskbar now uses
@@ -8858,3 +8948,5 @@ Full canonical native build/schema, actual Launcher startup/focus/close/reopen
 and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
 All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
+
+PR #343 qualification was rerun after reconciling dev `4cf7a90`, retaining desktop notifications, persistence fixes and darker marker colors. Full canonical build, both-theme real pointer/menu/Escape/typing and native regression checks passed; refreshed screenshots were visually inspected. No deployment or Wingpanel restart.
