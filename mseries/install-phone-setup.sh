@@ -16,6 +16,8 @@ install -m755 "$here/phone-setup/phone_status.py" "$root/phone_status.py"
 install -m755 "$here/phone-setup/phone-setup.py" "$root/phone-setup.py"
 install -m755 "$here/phone-setup/messages.py" "$root/messages.py"
 install -m644 "$here/phone-setup/messages_model.py" "$root/messages_model.py"
+install -m644 "$here/phone-setup/messages_style.py" "$root/messages_style.py"
+install -m644 "$here/phone-setup/messages_widgets.py" "$root/messages_widgets.py"
 install -m644 "$here/phone-setup/message_pins.py" "$root/message_pins.py"
 icons=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps
 install -d "$icons"

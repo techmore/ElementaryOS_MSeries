@@ -1,5 +1,36 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native Messages experience pass — 2026-10-20
+
+Owner asked for a significantly better Messages UI/UX and code base that feels
+native and Apple-like while riding on BlueFerry. Branch `claude/messages-native-ux`
+from `origin/dev`; presentation only, no change to sending, routing or storage.
+
+- Split the 1000-line window into `messages.py` (controller), `messages_model.py`
+  (pure logic), `messages_widgets.py` and `messages_style.py`. Installer copies
+  all four; verified in a throwaway HOME and the installed copy launches.
+- Conversation list, bubbles with runs and time headings, group sender names,
+  optimistic dimmed send with echo reconciliation, rounded composer with an
+  inside send button, jump-to-latest, empty states, offline banner with
+  **Retry Connection** (reuses `connection.reconnect_existing`), New Message
+  sheet with recents, shortcuts, mark-read once per newest message.
+- Links now use BlueFerry's hardened `linkify_message`; text is otherwise
+  escaped. The README previously said plain text, now corrected.
+- Found and fixed while testing: `theme_selected_*` is unreadable in dark mode in
+  this stylesheet (1.8:1), so bubbles use `accent_bg_color`/`accent_fg_color`;
+  an avatar that inherited expand made every row misalign; Granite's welcome
+  placeholder forced a 553 px minimum window height; a per-frame tick callback
+  was replaced with a surface resize hook.
+- Verification: `test_messages.py` 27 pass, `test_messages_gui.py` 43 run, 42 pass and one
+  screenshot test skips without its env var, no GTK warnings. Eleven deliberate
+  breakages of the code each made a test fail. Light, dark and 480 px
+  screenshots reviewed.
+- Not verified: live phone, real contact photos, suspend/resume. The owner's open
+  Messages window was not restarted; relaunch `mseries-messages` after
+  `bash mseries/install-phone-setup.sh`.
+- Next: in-app group participant confirmation (still routed to Advanced
+  BlueFerry), a keyboard-shortcuts overlay, and Enter-to-send as an opt-in.
+
 ## Native favorites and visible Messages launcher — 2026-10-20
 
 Owner requests: four favorite contact icons per row in the contacts sidebar,
