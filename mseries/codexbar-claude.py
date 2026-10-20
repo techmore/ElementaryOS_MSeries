@@ -94,6 +94,14 @@ def account_row(row: dict[str, Any], now: dt.datetime) -> dict[str, Any] | None:
     usage = row.get("usage") if isinstance(row.get("usage"), dict) else {}
     windows = [w for w in (window("primary", "5 hour", 300, usage.get("fiveHour"), now),
                            window("secondary", "7 day", 10080, usage.get("sevenDay"), now)) if w]
+    # Model-scoped weekly caps (Fable today) ride along as extra windows. They are marked "scoped" so the panel
+    # draws them but never lets one cap decide which account has the most headroom for other models.
+    for item in usage.get("scoped") if isinstance(usage.get("scoped"), list) else []:
+        name = item.get("name") if isinstance(item, dict) else None
+        scoped = window("scoped", name.strip()[:16], 0, item, now) if isinstance(name, str) and name.strip() else None
+        if scoped:
+            scoped["scoped"] = True
+            windows.append(scoped)
     return {"number": number, "email": email, "active": bool(row.get("active")), "windows": windows,
             "status": row.get("usageStatus") if isinstance(row.get("usageStatus"), str) else ""}
 

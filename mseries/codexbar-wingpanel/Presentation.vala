@@ -171,6 +171,8 @@ namespace MSeries {
             double lowest = 101;
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
+                // A model-scoped cap (Fable) limits that model only; it never lowers the account's headroom.
+                if (JsonBoundary.flag (window, "scoped", false)) continue;
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
                 var remaining = node.get_double ();
