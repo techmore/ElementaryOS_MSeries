@@ -1060,10 +1060,10 @@ index 0000000..aee416b
 +}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..709156e
+index 0000000..1e8f76f
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,476 @@
+@@ -0,0 +1,508 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1091,6 +1091,7 @@ index 0000000..709156e
 +    private uint clock_timeout_id = 0;
 +    private DBusProxy? upower = null;
 +    private StartMenu start_menu;
++    private static string? last_settings_uri = null;
 +    private Gtk.Button weather_button;
 +    private Gtk.Image weather_image;
 +    private Gtk.Label weather_temp;
@@ -1242,7 +1243,7 @@ index 0000000..709156e
 +        clock_button.add_css_class ("taskbar-clock");
 +        clock_button.clicked.connect (() => {
 +            if (Environment.find_program_in_path ("io.elementary.calendar") != null) {
-+                spawn ({ "io.elementary.calendar" });
++                toggle_app.begin ("io.elementary.calendar", { "io.elementary.calendar" });
 +            }
 +        });
 +
@@ -1372,6 +1373,30 @@ index 0000000..709156e
 +        }
 +    }
 +
++    // Windows-style toggle: a click opens the app; clicking again while it runs closes it
++    // through its GApplication "quit" action.
++    private static async void toggle_app (string app_id, string[] argv) {
++        try {
++            var bus = yield Bus.get (SESSION);
++            var owned = yield bus.call (
++                "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
++                "NameHasOwner", new Variant ("(s)", app_id), new VariantType ("(b)"), NONE, -1
++            );
++            if (owned.get_child_value (0).get_boolean ()) {
++                yield bus.call (
++                    app_id, "/" + app_id.replace (".", "/"), "org.freedesktop.Application",
++                    "ActivateAction",
++                    new Variant ("(sava{sv})", "quit", new VariantBuilder (new VariantType ("av")), new VariantBuilder (new VariantType ("a{sv}"))),
++                    null, NONE, -1
++                );
++                return;
++            }
++        } catch (Error e) {
++            debug ("Taskbar toggle for %s: %s", app_id, e.message);
++        }
++        spawn (argv);
++    }
++
 +    private static void open_launcher () {
 +        // Slingshot is a Wingpanel indicator; Wingpanel's command line toggles it.
 +        spawn ({ "io.elementary.wingpanel", "--toggle-indicator=app-launcher" });
@@ -1429,7 +1454,14 @@ index 0000000..709156e
 +        };
 +        button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
 +        button.clicked.connect (() => {
-+            spawn ({ "io.elementary.settings", uri });
++            // Same icon again closes Settings; a different icon switches its page.
++            if (last_settings_uri == uri) {
++                last_settings_uri = null;
++                toggle_app.begin ("io.elementary.settings", { "io.elementary.settings", uri });
++            } else {
++                last_settings_uri = uri;
++                spawn ({ "io.elementary.settings", uri });
++            }
 +        });
 +        return button;
 +    }
