@@ -23,8 +23,12 @@ nice -n 19 ninja -C build-mlx -j3 >>"$BISECT_DIR/bisect-build.log" 2>&1 || {
 out=$(env VK_DRIVER_FILES="$BISECT_DIR/bisect-icd.json" AGX_SIMDMAT=1 MESA_SHADER_CACHE_DISABLE=true \
   timeout 120 "$BISECT_DIR/cmshape2" 16 16 16 f16 f16 f16 f16 row randint 7 16 2>&1)
 rc=$?
-printf '%s rc=%s %s\n' "$commit" "$rc" "$(printf '%s\n' "$out" | grep -o '"result":"[A-Z]*"')" \
-  >>"$BISECT_DIR/bisect.trace"
+result=$(printf '%s\n' "$out" | grep -o '"result":"[A-Z]*"' || true)
+if [ -n "$result" ]; then
+  printf '%s rc=%s %s\n' "$commit" "$rc" "$result" >>"$BISECT_DIR/bisect.trace"
+else
+  printf '%s rc=%s\n' "$commit" "$rc" >>"$BISECT_DIR/bisect.trace"
+fi
 [ "$rc" -eq 139 ] && exit 1
 printf '%s\n' "$out" | grep -q '"result":"PASS"' && exit 0
 exit 125
