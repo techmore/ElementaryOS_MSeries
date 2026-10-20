@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..ef98d0d 100644
+index d97686d..21b7baf 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -203,3 +203,259 @@ backgrounditem .close-button {
@@ -10,7 +10,7 @@ index d97686d..ef98d0d 100644
 +/* M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
 + * bar flush to the bottom edge. Everything below is scoped to .taskbar. */
 +dock-window.taskbar dock {
-+    background: rgba(158, 163, 169, 0.97);
++    background: rgba(163, 168, 174, 0.97);
 +    box-shadow: none;
 +    border-radius: 0;
 +    opacity: 1;
@@ -19,7 +19,7 @@ index d97686d..ef98d0d 100644
 +
 +dock-window.taskbar.dark dock {
 +    /* Windows 11 silver in both styles. */
-+    background: rgba(158, 163, 169, 0.97);
++    background: rgba(163, 168, 174, 0.97);
 +    box-shadow: none;
 +}
 +
@@ -28,7 +28,7 @@ index d97686d..ef98d0d 100644
 +}
 +
 +dock-window.taskbar.dark.reduce-transparency dock {
-+    background: rgb(158, 163, 169);
++    background: rgb(163, 168, 174);
 +}
 +
 +dock-window.taskbar launcher,
@@ -98,12 +98,12 @@ index d97686d..ef98d0d 100644
 +dock-window.taskbar .taskbar-logo-pane {
 +    min-width: 18px;
 +    min-height: 18px;
-+    background: #065eba;
++    background: #003a8c;
 +    border-radius: 1px;
 +}
 +
 +dock-window.taskbar.dark .taskbar-logo-pane {
-+    background: #32a8e5;
++    background: #003a8c;
 +}
 +
 +dock-window.taskbar .taskbar-row button.taskbar-search {
