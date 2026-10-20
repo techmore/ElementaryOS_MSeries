@@ -187,12 +187,14 @@ def tick():
                     background.set_string(key, image.as_uri())
             if background_schema.has_key("picture-options"):
                 background.set_string("picture-options", "zoom")
+            activate_icon_theme(mode, state)
             activate_dock(state)
             # Idempotent; repeated each tick so a restarted compositor hides the bar again.
             set_top_panel_mode(1)
             state["applied"] = True
         elif state.get("applied"):
             restore_background(background, state)
+            restore_icon_theme(state)
             restore_dock(state)
             set_top_panel_mode(0)
             state.update({"original": None, "applied": False})
@@ -213,12 +215,49 @@ def restore():
     with state_lock():
         state = load_state()
         restore_background(background, state)
+        restore_icon_theme(state)
         restore_dock(state)
         set_top_panel_mode(0)
         state.update({"original": None, "applied": False})
         Gio.Settings.sync()
         save_state(state)
     return 0
+
+
+def icon_theme_installed(name):
+    """True when an icon theme directory with an index.theme exists on the icon search path."""
+    if not name or "/" in name or name in (".", ".."):
+        return False
+    roots = [Path(GLib.get_user_data_dir()) / "icons", Path.home() / ".icons"]
+    roots += [Path(directory) / "icons" for directory in GLib.get_system_data_dirs()]
+    return any((root / name / "index.theme").is_file() for root in roots)
+
+
+def activate_icon_theme(mode, state):
+    """Apply the work icon theme, snapshotting the user's theme the first time."""
+    interface = Gio.Settings.new("org.gnome.desktop.interface")
+    icons = state.get("icons")
+    applied = isinstance(icons, dict) and icons.get("applied")
+    wanted = mode.get_string("icon-theme").strip()
+    if not icon_theme_installed(wanted):
+        # Key cleared or theme uninstalled while active: put the user's theme back.
+        if applied:
+            restore_icon_theme(state)
+        return
+    if not applied:
+        state["icons"] = {"applied": True, "original": interface.get_string("icon-theme")}
+    if interface.get_string("icon-theme") != wanted:
+        interface.set_string("icon-theme", wanted)
+
+
+def restore_icon_theme(state):
+    icons = state.get("icons")
+    if not isinstance(icons, dict) or not icons.get("applied"):
+        return
+    original = icons.get("original")
+    if isinstance(original, str) and original:
+        Gio.Settings.new("org.gnome.desktop.interface").set_string("icon-theme", original)
+    state["icons"] = {"applied": False}
 
 
 def systemctl(*args):
@@ -354,7 +393,7 @@ def main():
     parser.add_argument("--tick", action="store_true", help="apply the current rules once")
     parser.add_argument("--status", action="store_true", help="show the current status")
     parser.add_argument("--public-ip", action="store_true", help="check and print the current public IP address")
-    parser.add_argument("--restore", action="store_true", help="restore the wallpaper and dock snapshot")
+    parser.add_argument("--restore", action="store_true", help="restore the wallpaper, icon theme and dock snapshot")
     args = parser.parse_args()
     if args.status:
         print(status_text(Gio.Settings.new(SCHEMA)))

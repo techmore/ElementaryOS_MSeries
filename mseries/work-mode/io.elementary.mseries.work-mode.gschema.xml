@@ -46,5 +46,10 @@
       <summary>Work wallpaper image</summary>
       <description>Image file used while Windows Work Mode is active. Starts with the supplied Azure Bloom wallpaper.</description>
     </key>
+    <key name="icon-theme" type="s">
+      <default>''</default>
+      <summary>Work icon theme</summary>
+      <description>Icon theme used while Windows Work Mode is active, such as 'Win11-dark' from mseries/install-work-mode-icons.sh. Empty keeps the current icon theme. Ignored when the theme is not installed.</description>
+    </key>
   </schema>
 </schemalist>

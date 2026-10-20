@@ -69,3 +69,26 @@ Start for Lock, Log Out, Restart, Shut Down and System Settings. The top bar is 
 is active, and windows cannot be placed behind the taskbar.
 
 `icons/windows-work-mode-folder.svg` is an original Windows 11-style folder icon (CC0).
+
+## Windows 11-style app icons
+
+While active, Windows Work Mode can also switch the icon theme. Microsoft's own app icons are not
+bundled. Instead, `mseries/install-work-mode-icons.sh` fetches the community
+[Win11 icon theme](https://github.com/yeyushengfan258/Win11-icon-theme) by yeyushengfan258 (GPL-3.0,
+credits Ubuntu's Yaru) at pinned commit `a5b460a407da143b32f19a503d7fcebb3edf2371`. Its app icons
+imitate Microsoft's Windows 11 designs; this repository redistributes none of them. The script copies
+only the icon folders (it never runs upstream's scripts) into `~/.local/share/icons/Win11` and
+`Win11-dark`, which inherit `elementary` and then `hicolor`, so apps the theme does not draw keep
+their usual icons. Each theme keeps upstream's `COPYING` and `AUTHORS`, plus `MSERIES-SOURCE` with the
+source URL, commit and license. It also links `io.elementary.settings` and `io.elementary.photos` to the
+theme's Settings and Photos icons.
+
+```sh
+bash mseries/install-work-mode-icons.sh                                # per user, no sudo
+gsettings set io.elementary.mseries.work-mode icon-theme Win11-dark    # or Win11; '' = unchanged
+bash mseries/install-work-mode-icons.sh --uninstall
+```
+
+The current `org.gnome.desktop.interface icon-theme` is snapshotted when the mode applies the theme
+and restored when the mode ends or on `--restore`. If the named theme is not installed, the icon theme
+is left alone.

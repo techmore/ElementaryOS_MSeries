@@ -55,11 +55,13 @@ class WorkModeTest(unittest.TestCase):
             "GSETTINGS_SCHEMA_DIR": str(schemas),
             "XDG_CONFIG_HOME": str(self.root / "config"),
             "XDG_STATE_HOME": str(self.root / "state"),
+            "XDG_DATA_HOME": str(self.root / "data"),
             "MSERIES_WORK_MODE_NO_SERVICES": "1",
         }
         self.gset(SCHEMA, "work-wallpaper", str(self.wallpaper))
         self.gset(SCHEMA, "public-ip-service", f"http://127.0.0.1:{self.server.server_port}/")
         self.gset("org.gnome.desktop.background", "picture-uri", "file:///original.png")
+        self.gset("org.gnome.desktop.interface", "icon-theme", "elementary")
         FakeIpService.address = "203.0.113.7"
         FakeIpService.hits = 0
 
@@ -89,6 +91,46 @@ class WorkModeTest(unittest.TestCase):
         self.gset(SCHEMA, "enabled", False)
         self.helper("--tick")
         self.assertEqual(self.gget("org.gnome.desktop.background", "picture-uri"), "'file:///original.png'")
+
+    def install_icon_theme(self, name):
+        theme = self.root / "data" / "icons" / name
+        theme.mkdir(parents=True)
+        (theme / "index.theme").write_text(f"[Icon Theme]\nName={name}\nInherits=hicolor\n", encoding="utf-8")
+
+    def test_icon_theme_applied_and_restored(self):
+        self.install_icon_theme("TestWin11")
+        self.gset(SCHEMA, "icon-theme", "TestWin11")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'TestWin11'")
+        self.helper("--tick")  # a second tick must keep the first snapshot
+        self.gset(SCHEMA, "enabled", False)
+        self.helper("--tick")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'elementary'")
+
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'TestWin11'")
+        self.helper("--restore")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'elementary'")
+
+    def test_missing_icon_theme_changes_nothing(self):
+        self.gset(SCHEMA, "icon-theme", "NotInstalledTheme")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertTrue(self.wallpaper_applied())
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'elementary'")
+        self.gset(SCHEMA, "enabled", False)
+        self.helper("--tick")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'elementary'")
+
+    def test_default_icon_theme_key_changes_nothing(self):
+        self.gset("org.gnome.desktop.interface", "icon-theme", "Adwaita")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.gset(SCHEMA, "enabled", False)
+        self.helper("--tick")
+        self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'Adwaita'")
 
     def test_network_rule_matches_cidr(self):
         self.gset(SCHEMA, "enabled", True)
