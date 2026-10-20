@@ -51,6 +51,35 @@ No live deployment is part of this draft. Owner recovery confirmation and
 isolated combined-taskbar UI/focus/typing validation remain gates. See
 `mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
 
+## Desktop message notification popups — 2026-10-20
+
+Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
+The user-local service is enabled/active as `mseries-desktop-notifications.service`,
+using GTK3/Xwayland override-redirect popups for placement without a compositor
+or Wingpanel restart. It implements the freedesktop notification interface,
+shows up to three bottom-right cards, preserves focus, and dispatches supplied
+Open/Reply actions. It retains no history; no notification center, inline reply,
+images, sound, or native Wayland placement is claimed. Existing DND is respected;
+per-app elementary notification preferences and full accessibility qualification
+remain open. The installer stages by default; `--activate` enables/restarts only
+this service. BlueFerry uses the existing separate version-matched backend overlay
+at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
+as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
+(https://github.com/erikwb/blueferry); this repository does not redistribute its
+full source. Rebase the backend overlay after package upgrades.
+
+Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
+Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
+replacement, expiry, close and DND were checked using synthetic content only.
+Retained screenshots are fixtures. Live synthetic notification geometry was
+360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
+and bottom. The service remains active/enabled and BlueFerry remains active.
+BlueFerry notification tests (92) and combined overlay tests (201) passed; its
+Reply action opens the existing conversation through opaque-handle activation.
+No real phone messages were sent or deliberately marked read by these checks.
+Actual phone-notification click-to-app focus and next-login startup remain
+unverified. This is transformed-desktop work, not factory-image qualification.
+
 ## Working iPhone messages and native Messages app — 2026-10-20
 
 The controlled 5.87 trial now has **real send and receive evidence**. Root-owned
@@ -2939,6 +2968,16 @@ BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
 bearer methods. Experimental advertisement/OBEX overrides were reverted after
 failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
 full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
+
 ## Windows taskbar + CodexBar persistence — 2026-10-20
 
 The canonical dock installer now applies the complete Windows taskbar stack and
@@ -2984,3 +3023,13 @@ retention, existing hover/focus/leave/pin probe, shell checks and light/dark fix
 inspection pass locally. Live read-only matching resolves both open Brave apps.
 Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
 See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
+
+## Darker running-app markers — 2026-10-20
+
+Owner requested darker gray running dots/pills. The complete taskbar now uses
+65% black in light mode and 35% white in dark mode (previously 45% / 55%).
+Focused blue markers, geometry, Start menu, CodexBar and app icons are unchanged.
+Full canonical native build/schema, actual Launcher startup/focus/close/reopen
+and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
+All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
+only in these two marker colors.

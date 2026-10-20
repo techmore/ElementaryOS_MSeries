@@ -52,3 +52,19 @@ This repository change is validated without another live dock deployment.
 Live Wayland hover/placement acceptance remains distinct from fixture results.
 
 Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).
+
+## Reboot and update persistence
+
+The session unit starts `pantheon-rust-dock`, which selects the user wrapper and
+private executable under `~/.local/lib/mseries/dock`. The taskbar mode and pins
+are persistent GSettings values. Work Mode's enabled login service/timer reapplies
+its saved configuration; no temporary shell process is required. Official icons
+and launcher metadata live under `~/.local/share` and survive normal package
+updates. Repo installers preserve cached official assets on network failure.
+
+The factory payload includes the same taskbar helpers, shared CodexBar sources,
+tests and Teams/Outlook installers. The older desktop-space floating-dock profile
+recognizes the private taskbar schema and preserves the owner's taskbar size,
+visibility and pins during reapplication. Isolated tests build the actual payload
+in a temporary root and exercise both taskbar preservation and floating-profile
+apply/revert. Reboot configuration checks do not claim a physical reboot test.

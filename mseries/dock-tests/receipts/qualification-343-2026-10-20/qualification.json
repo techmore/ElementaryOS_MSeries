@@ -108,5 +108,7 @@
     "Authenticated browser application/media behavior",
     "Any deployment, installation or desktop-service reload"
   ],
-  "source_merge_gate": "passed locally; updated-head GitHub CI still required"
+  "source_merge_gate": "passed locally; updated-head GitHub CI still required",
+  "reconciled_base": "4cf7a90",
+  "reconciled_verification": "Full clean canonical build and both-theme real input rerun passed after merging dev, including darker running markers; screenshots refreshed and visually inspected."
 }
