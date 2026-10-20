@@ -268,14 +268,14 @@ index 0522be3..4b9c91a 100644
  
          fade = new Adw.TimedAnimation (
 diff --git a/src/DBus/ShellKeyGrabber.vala b/src/DBus/ShellKeyGrabber.vala
-index 7c2ebc2..72bbf89 100644
+index 7c2ebc2..3666f32 100644
 --- a/src/DBus/ShellKeyGrabber.vala
 +++ b/src/DBus/ShellKeyGrabber.vala
 @@ -101,10 +101,23 @@ public interface ShellKeyGrabber : GLib.Object {
              }
          }
  
-+        // M-series taskbar: Super+Space opens the Start menu with typing in Search.
++        // M-series taskbar: Super+Space (Cmd+Space) opens Search, like Spotlight.
 +        try {
 +            start_menu_action_id = instance.grab_accelerator ("<Super>space", ActionMode.NORMAL, Meta.KeyBindingFlags.NONE);
 +        } catch (Error e) {
@@ -289,7 +289,7 @@ index 7c2ebc2..72bbf89 100644
 +
      private static void on_accelerator_activated (uint action, GLib.HashTable<string, GLib.Variant> parameters_dict) {
 +        if (start_menu_action_id != 0 && action == start_menu_action_id) {
-+            Dock.TaskbarRow.instance?.toggle_start_menu ();
++            Dock.TaskbarRow.instance?.toggle_search ();
 +            return;
 +        }
          if (!(action in saved_action_ids)) {
@@ -648,10 +648,10 @@ index 652c549..8b95f4b 100644
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
 diff --git a/src/StartMenu.vala b/src/StartMenu.vala
 new file mode 100644
-index 0000000..69bfe88
+index 0000000..aee416b
 --- /dev/null
 +++ b/src/StartMenu.vala
-@@ -0,0 +1,341 @@
+@@ -0,0 +1,358 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -674,6 +674,13 @@ index 0000000..69bfe88
 +    private Gtk.Grid recommended_grid;
 +    private Gtk.Button all_apps_button;
 +    private Gtk.Popover power_menu;
++    private bool search_mode = false;
++
++    /** Windows 11's taskbar Search: the same panel, search-only, all apps listed until you type. */
++    public void popup_search () {
++        search_mode = true;
++        popup ();
++    }
 +
 +    construct {
 +        has_arrow = false;
@@ -806,11 +813,17 @@ index 0000000..69bfe88
 +        // Like Windows 11: typing anywhere in the open menu goes into Search.
 +        search_entry.set_key_capture_widget (content);
 +
++        closed.connect (() => search_mode = false);
 +        show.connect (() => {
 +            search_entry.text = "";
-+            stack.visible_child_name = "home";
 +            all_apps_button.label = _("All apps ›");
 +            populate ();
++            if (search_mode) {
++                fill_list (results_list, visible_apps ());
++                stack.visible_child_name = "results";
++            } else {
++                stack.visible_child_name = "home";
++            }
 +        });
 +        // Focus only sticks once the popup surface is mapped.
 +        map.connect (() => {
@@ -948,7 +961,11 @@ index 0000000..69bfe88
 +    private void update_search () {
 +        var query = search_entry.text.strip ().down ();
 +        if (query == "") {
-+            stack.visible_child_name = "home";
++            if (search_mode) {
++                fill_list (results_list, visible_apps ());
++            } else {
++                stack.visible_child_name = "home";
++            }
 +            return;
 +        }
 +        var matches = new List<AppInfo> ();
@@ -995,10 +1012,10 @@ index 0000000..69bfe88
 +}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..b040774
+index 0000000..07a2042
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,462 @@
+@@ -0,0 +1,470 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1045,6 +1062,14 @@ index 0000000..b040774
 +            start_menu.popdown ();
 +        } else {
 +            start_menu.popup ();
++        }
++    }
++
++    public void toggle_search () {
++        if (start_menu.visible) {
++            start_menu.popdown ();
++        } else {
++            start_menu.popup_search ();
 +        }
 +    }
 +
@@ -1100,7 +1125,7 @@ index 0000000..b040774
 +        };
 +        search_button.add_css_class ("taskbar-search");
 +        search_button.update_property (Gtk.AccessibleProperty.LABEL, _("Search"), -1);
-+        search_button.clicked.connect (() => start_menu.popup ());
++        search_button.clicked.connect (() => start_menu.popup_search ());
 +
 +        center_box = new Gtk.Box (HORIZONTAL, 4) {
 +            valign = FILL
