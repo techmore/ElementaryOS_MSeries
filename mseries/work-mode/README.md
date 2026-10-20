@@ -59,3 +59,13 @@ bash mseries/install-work-mode.sh --uninstall
 
 The GSettings values and original state snapshot are retained on uninstall. The
 bottom dock uses elementary's existing dock package and pinned launchers.
+
+## Taskbar
+
+With the M-Series dock build (`mseries/patches/dock-taskbar.patch`), Windows Work Mode turns the dock
+into a full-width taskbar: weather at the left, a Start button and Search box beside the centred apps,
+and status icons plus the clock at the right. Start opens a Windows 11-style Start menu. Right-click
+Start for Lock, Log Out, Restart, Shut Down and System Settings. The top bar is hidden while the mode
+is active, and windows cannot be placed behind the taskbar.
+
+`icons/windows-work-mode-folder.svg` is an original Windows 11-style folder icon (CC0).

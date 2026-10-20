@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..b61d2bf 100644
+index d97686d..978811b 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,187 @@ backgrounditem .close-button {
+@@ -203,3 +203,212 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -189,6 +189,31 @@ index d97686d..b61d2bf 100644
 +    border-radius: 0 0 8px 8px;
 +    background: rgba(0, 0, 0, 0.04);
 +    box-shadow: inset 0 1px 0 0 rgba(0, 0, 0, 0.06);
++}
++
++/* Windows 11 running indicator: a short grey pill, longer and accent blue when focused. */
++dock-window.taskbar .running-indicator {
++    -gtk-icon-source: none;
++    -gtk-icon-size: 0;
++    min-width: 18px;
++    min-height: 4px;
++    margin-top: 2px;
++    border-radius: 2px;
++    background: #0078d4;
++    transition: min-width 150ms ease-out, background 150ms ease-out;
++}
++
++dock-window.taskbar .running-indicator:disabled {
++    min-width: 7px;
++    background: rgba(0, 0, 0, 0.45);
++}
++
++dock-window.taskbar.dark .running-indicator {
++    background: #4cc2ff;
++}
++
++dock-window.taskbar.dark .running-indicator:disabled {
++    background: rgba(255, 255, 255, 0.55);
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644

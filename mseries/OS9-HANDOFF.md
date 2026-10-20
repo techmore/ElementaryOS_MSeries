@@ -34,6 +34,13 @@ Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work
   Settings (via org.gnome.SessionManager, so elementary's confirm dialog appears). The installed helper was
   stale (no top-bar call); reinstalled it, and `TopPanelMode` now reads 1 (hidden). The Start left-click path
   (Slingshot via Wingpanel while the bar is hidden) still needs owner confirmation.
+- Start/Search now open a dock-owned Windows 11-style Start menu (`StartMenu.vala`: search, pinned dock
+  launchers + All apps, recent files as Recommended, user + power). Search pill doubled. Windows 11 running
+  indicator in taskbar mode (grey pill, longer blue when focused). Files uses an original yellow folder
+  (`mseries/work-mode/icons/windows-work-mode-folder.svg`, CC0) through a per-user override at
+  `~/.local/share/applications/io.elementary.files.desktop` (Icon=windows-work-mode-folder); delete that file
+  to revert. The owner's `io.elementary.dock launchers` list held six duplicated ids (shown as doubled apps);
+  deduplicated in place, order kept, still clean after a dock restart. Cause of the duplication unknown.
 - Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
   bottom-right icon whose dropdown opens after a 0.5 s hover.
 - Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
