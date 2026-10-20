@@ -15,6 +15,11 @@
   <provides><binary>machine-lab</binary></provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.8.0" date="2026-10-19">
+      <description>
+        <p>Start from a ready-made disk image instead of installing, and save disks as images.</p>
+      </description>
+    </release>
     <release version="0.7.0" date="2026-10-19">
       <description>
         <p>Disk snapshots: save and restore a machine before risky changes.</p>

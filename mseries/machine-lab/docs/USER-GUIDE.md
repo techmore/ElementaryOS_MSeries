@@ -45,6 +45,21 @@ SPICE agent (`spice-vdagent`; the elementary OS image already has it). What work
 Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
 QEMU's clipboard channel yet (issue #264).
 
+## Ready-made images (skip the installer)
+
+Every Mac here is Apple Silicon, so an ARM64 disk set up on one works on the others. On a new machine, **Or start from a
+ready-made image → Use an Image…** loads a bootable disk instead of running an installer. It accepts `.qcow2`, `.img`, `.raw`,
+`.vmdk`, `.vdi`, compressed `.xz`, `.zst` or `.gz` disks, and a UTM `.zip` bundle (the biggest disk inside is used, so the Omarchy
+UTM zip works). The image is converted into the machine's own `disk.qcow2`, so the original is never modified.
+
+To make an image, shut a machine down and choose **⋮ → Save Disk as Image…**: it writes a compressed qcow2 you can reuse or hand
+to another Mac. Notes:
+- The image must boot on its own with UEFI (a bootloader on its EFI partition). Firmware settings are not carried over.
+- It keeps the accounts, passwords and SSH host keys of the machine it came from. Change the password on first boot, and do not
+  share an image that contains anything private.
+- Safety checks: only qcow2, raw, vmdk and vdi are accepted; an image that points at another file on its original computer is
+  refused (it could otherwise expose files from this Mac to the guest); and Machine Lab checks free space first.
+
 ## Snapshots (restore points)
 
 Open a machine's Settings tab and use **Snapshots** to save a restore point of its disk before an upgrade or an experiment.

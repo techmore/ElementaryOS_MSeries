@@ -38,7 +38,7 @@ Priority: optional
 Architecture: $arch
 Installed-Size: $installed_kb
 Depends: libgtk-4-1 (>= 4.12), libgranite-7-7 | libgranite7, libjson-glib-1.0-0, qemu-system-arm, qemu-utils, qemu-efi-aarch64, python3
-Recommends: swtpm, genisoimage, openssl, incus, qemu-system-x86, ovmf
+Recommends: swtpm, genisoimage, openssl, incus, qemu-system-x86, ovmf, xz-utils, zstd, unzip
 Maintainer: elementaryos-mseries local build
 Homepage: https://github.com/techmore/ElementaryOS_MSeries
 Description: Native elementary OS virtual machine app (ARM64)
