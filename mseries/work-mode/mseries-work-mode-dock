@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Launch the installed elementary dock for Windows Work Mode."""
+
+import os
+import shutil
+import sys
+from pathlib import Path
+
+
+home_dock = Path.home() / ".local/bin/io.elementary.dock"
+dock = str(home_dock) if home_dock.is_file() and os.access(home_dock, os.X_OK) else shutil.which("io.elementary.dock")
+if not dock:
+    print("Windows Work Mode: io.elementary.dock is not installed.", file=sys.stderr)
+    raise SystemExit(127)
+os.execv(dock, [dock])

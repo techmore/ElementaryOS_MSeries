@@ -1,6 +1,26 @@
 # OS 9 implementation / Claude Code handoff
 
 
+## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
+
+Owner asked to restore a dock for minimized apps. State found: the fixed
+compositor `0.1.0+git83b3f14` is installed, but the live session (started
+07:38) still runs the older binary (hash mismatch; no `FocusRoutingVersion`),
+so the dock trial and `mseries-restore-windows` both correctly refuse to run.
+The `user-disabled` marker and approval policy are unchanged. The pending
+login trial marker and one-time autostart are still in place.
+
+PR #314 CI failed `test_user_disabled_blocks_patched_and_stock_fallback`
+because GitHub runners export `XDG_CONFIG_HOME`. The wrapper then looked
+outside the test's private home and missed the marker. The test now sets
+`XDG_CONFIG_HOME` inside that home. `test-launcher.py` passes locally with a
+foreign `XDG_CONFIG_HOME`. Merged `origin/dev` into the branch; the
+handoff/roadmap conflicts were additive, so both sides were kept.
+Next: owner logs out and back in normally, then clicks Start in the trial
+window. A permanent enable still goes through `mseries-dock-change`
+approval.
+
+
 ## Approved safe re-login and 60-second dock trial — 2026-10-20
 
 Owner explicitly requested normal logout/login, native snapping/focus checks,
@@ -95,6 +115,46 @@ session was checked without requesting focus.
 Next login must load the staged compositor before any dock re-enable. Keep the
 disable marker until that runtime is confirmed and the owner wants a live trial.
 
+## Native UI consistency review — 2026-10-20
+
+Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
+now keeps primary actions in the header and puts secondary destinations in a
+named menu; filters and bulk actions wrap, long names ellipsize with tooltips,
+and changed controls have accessible labels. Apple Passwords scrolls its login
+form and sizes stack pages independently. Orchard and Battery follow Granite's
+color preference at startup and on notifications.
+
+Verification: Orchard compiled and passed all four component tests; its UI
+fixture renders at 720 × 640 with a long name in both themes, while the original
+header's 761-pixel minimum fails the narrow-window check. All nine Passwords GUI
+tests passed, including a short window with enlarged text; the original login
+allocates 574 pixels for a 420-pixel request. Battery passed 26 tests including
+startup/live color preference checks. Six light/dark screenshots were inspected.
+`git diff --check` passed. See `mseries/UI-CONSISTENCY-REVIEW.md` for the review,
+commands, limits and follow-ups. These changes are not installed; the running
+desktop is unchanged. Next: review the PR, then qualify the installed apps;
+follow up on remaining dialogs, Battery refresh state and theme/contrast gaps.
+
+## UI specialist skill — 2026-10-20
+
+Branch `codex/mseries-ui-specialist` adds the repository-owned
+`.agents/skills/elementaryos-mseries-ui-specialist/` and an `AGENTS.md` entry
+for automatic use during UI work, with implicit invocation explicitly enabled
+in `agents/openai.yaml`. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
+indicators, the Switchboard/libadwaita Work Mode plug, and two retained
+Troubleshooter screenshots at `ed0d31a`. The skill records Apple's design
+standards as the owner's quality reference and explicitly links the original
+`swiftui-specialist` at upstream revision
+`6f9ff8d5ad6000491cb0f483a776b7062e41cd97`; no upstream Apple content is vendored.
+
+Verification: skill-creator `quick_validate.py` passed; relative reference links
+and fully qualified repository source paths checked; pinned upstream entry
+point retrieved successfully; `git diff --check` passed. This is guidance only:
+no application UI, runtime packages, panel or wallpaper changed. Other screen
+families were source-inspected, not newly rendered or hardware-qualified.
+Next: apply the skill to the next scoped UI change and refine conventions from
+that review; the source map is an inspection baseline, not a frozen design.
+
 ## Work Mode wallpaper settings panel — 2026-10-20
 
 Added `mseries/work-mode/` with a native Switchboard panel, GSettings schema,
@@ -106,17 +166,45 @@ Switchboard plug startup crash: the plug was touching an instance field before
 its GObject base constructor. The plug is now installed at
 `/usr/lib/aarch64-linux-gnu/switchboard-3/personal/`, the schema is compiled
 system-wide, and `mseries-work-mode.timer` is enabled and active. GSettings
-reports Work Mode disabled and no work wallpaper selected, so the existing
-desktop wallpaper was left alone. A separate Windows 11-inspired Blue Flow
-work wallpaper now ships with the panel and is the default for new installs;
-this asset/default is on `codex/work-mode-wallpaper-default` and has not yet
-been installed locally. After moving the base `Object` construction
-ahead of instance-field initialization, rebuilt and reinstalled the module.
-Reopening System Settings exited cleanly; the only new output was GTK sizing and
-software-renderer warnings, with no second crash. The exact panel contents have
-not been visually inspected. Next: inspect the Work Mode panel, select a work
-image, and verify live schedule transitions. The fix is on
-`codex/work-mode-load-fix` (merged as PR #306).
+reports Work Mode disabled, preserving the existing desktop wallpaper, and the
+work wallpaper points to `/usr/share/backgrounds/mseries/work-mode-blue-flow.png`.
+The bundled Windows 11-inspired Blue Flow image is installed. The timer is
+active/enabled, and helper status reports Off. A clean System Settings launch
+after the constructor-order fix exited without another crash; the panel has not
+been visually inspected. An isolated GSettings/keyfile run verified that a
+manual tick applies the work wallpaper and disabling Work Mode restores both
+original wallpaper URIs and picture options; the live desktop wallpaper was
+not changed during this check. A real scheduled transition is still unverified.
+PR #304 added the panel and scheduler, PR #306 fixed plug startup, PR #308
+bundled the default wallpaper, and PR #311 renamed/extended the feature to
+Windows Work Mode; all are merged to `dev`. The updated panel, helper and dock
+service were installed on 2026-10-20. Work Mode remains off; verified state is
+the existing normal wallpaper URI, dock icon size `24`, auto-hide `overlapping-window`,
+timer active/enabled, helper status `Off`, and Windows Work Mode dock service
+inactive. Thus the install left the live wallpaper and dock preferences alone.
+
+While enabled, Windows Work Mode uses elementary's native dock as a partial
+Windows-style bottom launcher: 40-pixel icons, no auto-hide, existing pinned
+apps and native running-window behavior. It snapshots/restores dock preferences
+and manages a dedicated dock service only when the dock was not already running.
+The panel has not been visually inspected; a real scheduled transition and the
+active dock appearance remain unverified. Start, Search, system tray and widgets
+are outside this partial dock implementation. For image licensing, see the
+wallpaper-source decision in `mseries/ROADMAP.md`.
+
+### Wallpaper options follow-up — 2026-10-20
+
+PR #317 (`afde2f3`) merged the three original generated wallpapers (Blue Ribbons,
+Violet Arc, Forest Flow) alongside Blue Flow. The Switchboard panel exposes all
+four bundled options and custom file selection. Meson installs the image set and
+the uninstaller removes it. The set was installed on the J314S desktop on
+2026-10-20. Post-install verification: Work Mode `false`, default wallpaper URI
+unchanged, dock icon size `24`, auto-hide `overlapping-window`, schedule timer
+active, Work Mode dock service inactive, and all four images present under
+`/usr/share/backgrounds/mseries`. The Switchboard panel and active dock have not
+been visually inspected, and the schedule transition remains unverified. The
+Windows Spotlight/theme source decision remains: do not bundle Microsoft images
+without redistribution permission.
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
@@ -7844,6 +7932,12 @@ removes the diversion and puts the stock plugin back).
 - Gotcha: `mseries/install-machine-lab.sh` builds from the checkout it runs in; run it from a current `dev` checkout.
 - Next: import the Omarchy UTM zip into a throwaway machine and boot it; host-to-guest clipboard (#263); file copy (#264).
 
+### CodexBar QuickSwitch width fix — 2026-10-20
+
+- Reduced the Wingpanel popover minimum width to 240 px, capped dynamic plan/email/quota labels, and moved status text above the action dock so those horizontal widths no longer add together.
+- Added a compact-width render assertion to the headless probe. All 11 light-theme indicator fixtures passed at a 280 px target; captured content canvas was 268 px wide. Long account labels ellipsize and the bottom actions remain visible.
+- `bash mseries/deploy-codexbar.sh --restart`: all 17 Meson test groups passed and installed the module. The script's default restart did not select Wayland in this session; relaunched Wingpanel with `GDK_BACKEND=wayland`. Live verification: Wingpanel PID 146186 maps `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`; CodexBar background daemon PID 2088 is running.
+- Source is on `fix/codexbar-quickswitch-width`, based on `dev`; PR #315 merged to dev as 48f1d1e after all CI checks passed.
 ### Calendar panel / Bible tab: production ready — 2026-10-20 (PR #299 -> dev d4bc8f9)
 
 Live: the owner's Wingpanel (started 2026-10-19 21:46, after the package
@@ -7881,3 +7975,13 @@ waits on the owner's signing-key decision (#52).
 ## Honeykrisp v3 candidate vs the 7faf04c065 pin — 2026-10-19
 
 Branch `claude/honeykrisp-v3-bump`. Built `joshuaswarren/mesa-1` `honeykrisp-omarchy-v3` (`f144c7949b`) beside the running runtime and compared the omarchy-mlx C++ tests and Mesa cooperative-matrix cases against the 7faf04c065 pin. The candidate segfaults the compiler (`pick_regs` in `agx_ra`) on 16x16x16 f16 cooperative matrices at workgroup sizes other than 32; the pin passes. **Pin unchanged; candidate not promoted.** Bisected to `ff013781c00` (skip the compute register-pressure scheduler); `AGX_SCHED_COMPUTE=1` avoids the crash. No decode A/B was run because the Qwen3.5 MLX weights are absent. The Mesa issue draft is retained but not posted. Details: `mseries/local-ai/receipts/2026-10-19-honeykrisp-v3-candidate.md`. Next: owner decision on publishing the issue and fetching weights for a repeated decode A/B.
+
+## Session reconciliation — 2026-10-20
+
+Merged to `dev`: #301 calendar production notes (`4580f19`), #302 codeload-429 validation fix (`8ffac18`), #303 first-boot ISO README (`4868ce3`), #290 daily upstream audit (`dc70503`), #305 Rust lint cleanup (`ea702e2`), and #307 Honeykrisp crash evidence (`dd82f79`). PRs #301–303, #290, and #307 passed their applicable CI; reusable-build/comment jobs were skipped by workflow rules on #307. #305's repository workflows were skipped; its reviewed commit records successful Rust 1.93.1 fmt, Clippy, test, and release-build commands.
+
+Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passwords` have no unique commits; native-udev and generic agent commits are already ancestors of `dev`. Battery-dropdown, Rust Granite bindings, and Flatpak shelf branches are patch-equivalent to landed code. AirPlay PR #65 is closed and superseded by current `dev`. Keep `revert-270-from-main` out of `dev`: its revert belongs to `main`, and the feature was restored by #285.
+
+Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
+
+No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.

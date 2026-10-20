@@ -14,17 +14,78 @@
   DisplayConfig `PowerSaveMode`, not because display enumeration failed.
   Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
 
+## Native UI consistency review — 2026-10-20
+
+Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
+now keeps primary actions in the header and puts secondary destinations in a
+named menu; filters and bulk actions wrap, long names ellipsize with tooltips,
+and changed controls have accessible labels. Apple Passwords scrolls its login
+form and sizes stack pages independently. Orchard and Battery follow Granite's
+color preference at startup and on notifications.
+
+Verification: Orchard compiled and passed all four component tests; its UI
+fixture renders at 720 × 640 with a long name in both themes, while the original
+header's 761-pixel minimum fails the narrow-window check. All nine Passwords GUI
+tests passed, including a short window with enlarged text; the original login
+allocates 574 pixels for a 420-pixel request. Battery passed 26 tests including
+startup/live color preference checks. Six light/dark screenshots were inspected.
+`git diff --check` passed. See `mseries/UI-CONSISTENCY-REVIEW.md` for the review,
+commands, limits and follow-ups. These changes are not installed; the running
+desktop is unchanged. Next: review the PR, then qualify the installed apps;
+follow up on remaining dialogs, Battery refresh state and theme/contrast gaps.
+
+## UI consistency skill — 2026-10-20
+
+Branch `codex/mseries-ui-specialist` adds the repository-owned
+`.agents/skills/elementaryos-mseries-ui-specialist/` and an `AGENTS.md` entry
+for automatic use during UI work, with implicit invocation explicitly enabled
+in `agents/openai.yaml`. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
+indicators, the Switchboard/libadwaita Work Mode plug, and two retained
+Troubleshooter screenshots at `ed0d31a`. The skill records Apple's design
+standards as the owner's quality reference and explicitly links the original
+`swiftui-specialist` at upstream revision
+`6f9ff8d5ad6000491cb0f483a776b7062e41cd97`; no upstream Apple content is vendored.
+
+Verification: skill-creator `quick_validate.py` passed; relative reference links
+and fully qualified repository source paths checked; pinned upstream entry
+point retrieved successfully; `git diff --check` passed. This is guidance only:
+no application UI, runtime packages, panel or wallpaper changed. Other screen
+families were source-inspected, not newly rendered or hardware-qualified.
+Next: apply the skill to the next scoped UI change and refine conventions from
+that review; the source map is an inspection baseline, not a frozen design.
+
 ## Work Mode wallpaper — 2026-10-20
 
-Added a native Switchboard panel under Personal with a Work Mode switch, a
-work-wallpaper picker, weekday scheduling, and start/end times. A per-user
-systemd timer checks once a minute and restores the wallpaper that was active
-before Work Mode began. The panel and timer are installed on the J314S desktop;
-a Windows 11-inspired Blue Flow wallpaper is now bundled and selected by default
-in source, pending installation.
-The first launch found a Switchboard constructor-order crash, now fixed and
-reinstalled; System Settings exits cleanly on relaunch. Visually inspect the
-panel, then select an image and verify actual wallpaper transitions.
+Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
+work-wallpaper picker with four bundled original choices and custom image support,
+weekday scheduling, and start/end times. A per-user systemd timer checks once a
+minute and restores the wallpaper that was active
+before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
+Flow wallpaper, Blue Ribbons, Violet Arc, and Forest Flow are installed on the
+J314S desktop. The three newer choices are original bundled artwork. Work Mode remains off, so
+the existing wallpaper is unchanged. The Switchboard constructor-order crash
+is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
+run passed apply/restore checks without changing the live desktop. Visual panel
+inspection and a real scheduled transition remain open.
+
+PR #311 merged the dock integration and visible rename to Windows Work Mode; it
+is installed on the J314S desktop. The mode remains off, preserving the current
+wallpaper and dock preferences. While active it adapts elementary's existing
+dock to 40-pixel icons with auto-hide disabled, keeping the user's pinned apps
+and native running-window behavior; preferences are restored when the mode ends.
+The UI has not been visually inspected, and a real scheduled transition remains
+open. Start, Search, system tray and widgets are outside this partial dock
+implementation.
+
+For additional wallpaper choices, Windows itself supports Store themes and a
+daily Spotlight image ([Microsoft personalization guide](https://support.microsoft.com/en-us/windows/experience/personalization/personalize-your-windows-experience-with-themes),
+[background guide](https://support.microsoft.com/en-us/windows/experience/personalization/change-the-desktop-background-in-windows)). Microsoft’s
+copyright guidance says redistribution needs an express license or permission
+([reuse guidance](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions)).
+Do not scrape or bundle Spotlight or Windows theme files into this repo. The
+panel already accepts a user-local image; any bundled set should use original
+artwork or assets with explicit redistribution rights and per-file license
+notes.
 
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
@@ -2296,4 +2357,11 @@ No radio activation, panel reload or reboot was
 performed during this cleanup review. The diagnostic boot selection is untouched.
 
 
+## CodexBar QuickSwitch width — 2026-10-20
+- Compact popover layout merged to `dev` via PR #315: 240 px minimum width, bounded dynamic labels, status and action dock on separate rows.
+- Verified 11/11 headless render fixtures at a 280 px target (268 px captured content), 17/17 Meson test groups, and the live Wingpanel mapping the installed module. See `OS9-HANDOFF.md` for the deployment detail.
 - Audit (2026-10-19): AUDIT-DEEPER Aurora unified 7.2.10 (DCP/CIO/PMP vs carried patches) and elementary kmscon default (#917) at the next elementary sync. See mseries/upstream-audits/daily/2026-10-19.md.
+
+## Session reconciliation — 2026-10-20
+
+Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.

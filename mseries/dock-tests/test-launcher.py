@@ -46,7 +46,9 @@ sys.exit(int(os.environ.get('CHILD_MODE', '0')))
         generation = '\n'.join(f'{key}={shlex.quote(str(value))}' for key, value in variables.items())
         subprocess.run(['bash', '-c', generation + '\n' + launcher[0]], check=True)
         subprocess.run(['sh', '-n', self.wrapper], check=True)
-        self.env = os.environ | {'HOME': str(self.home), 'PATH': str(tools) + ':' + os.environ['PATH']}
+        # CI runners export XDG_CONFIG_HOME; keep the opt-out marker inside the private home.
+        self.env = os.environ | {'HOME': str(self.home), 'XDG_CONFIG_HOME': str(self.home / '.config'),
+                                 'PATH': str(tools) + ':' + os.environ['PATH']}
 
     @staticmethod
     def write_executable(path, content):
