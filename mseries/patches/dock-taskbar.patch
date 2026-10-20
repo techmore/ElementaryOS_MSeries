@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..da12d74 100644
+index d97686d..99cf11d 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -203,3 +203,128 @@ backgrounditem .close-button {
@@ -86,11 +86,11 @@ index d97686d..da12d74 100644
 +}
 +
 +dock-window.taskbar .taskbar-status image {
-+    -gtk-icon-size: 16px;
++    -gtk-icon-size: 32px;
 +}
 +
 +dock-window.taskbar .taskbar-clock label {
-+    font-size: 0.8em;
++    font-size: 1.6em;
 +    font-feature-settings: "tnum";
 +}
 +
@@ -123,12 +123,12 @@ index d97686d..da12d74 100644
 +}
 +
 +dock-window.taskbar .taskbar-weather-temp {
-+    font-size: 1.02em;
++    font-size: 1.3em;
 +    font-weight: 600;
 +}
 +
 +dock-window.taskbar .taskbar-weather-desc {
-+    font-size: 0.9em;
++    font-size: 1.1em;
 +    opacity: 0.75;
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
@@ -516,7 +516,7 @@ index 652c549..d639ac2 100644
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..8ddb29f
+index 0000000..2acbc7f
 --- /dev/null
 +++ b/src/Taskbar.vala
 @@ -0,0 +1,361 @@
@@ -604,7 +604,7 @@ index 0000000..8ddb29f
 +        center_box.append (search_button);
 +
 +        weather_image = new Gtk.Image.from_icon_name ("weather-few-clouds-symbolic") {
-+            pixel_size = 38
++            pixel_size = 48
 +        };
 +        weather_temp = new Gtk.Label ("—") { xalign = 0 };
 +        weather_temp.add_css_class ("taskbar-weather-temp");
