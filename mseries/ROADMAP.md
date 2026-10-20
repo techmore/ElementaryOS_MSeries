@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Native Messages experience landed — 2026-10-20
+
+PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
+resolution and unread dots (the two entries below). Messages now has a native,
+Apple-like conversation experience on the same BlueFerry backend: colour-coded
+avatars, grouped bubbles with time headings, optimistic sending that never
+doubles a message, link and media previews, an offline banner with Retry
+Connection, a New Message sheet with recents, keyboard shortcuts, and a code
+split into controller / model / widgets / style modules. Installed and running
+on the owner's desktop. Tests: 30 model, 5 media, 47 GTK; CI green. Open:
+in-app group participant confirmation, shortcuts overlay, opt-in Enter-to-send,
+live media-link check. Details: `OS9-HANDOFF.md` (same date) and
+`phone-setup/README.md`.
+
 ## Messages media links — 2026-10-20
 
 Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.

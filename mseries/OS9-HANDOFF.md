@@ -1,49 +1,60 @@
 # OS 9 implementation / Claude Code handoff
 
-## Native Messages experience pass — 2026-10-20
+## Native Messages experience landed on dev — 2026-10-20
 
-Owner asked for a significantly better Messages UI/UX and code base that feels
-native and Apple-like while riding on BlueFerry. Branch `claude/messages-native-ux`
-from `origin/dev`; presentation only, no change to sending, routing or storage.
+PR #353 merged into `dev` as `0bb46b7d` after all checks passed. It carries the
+native Messages redesign and the whole of PR #352 (`codex/messages-readability`),
+which was closed as superseded. Both branches were deleted from the remote after
+confirming `origin/dev` contained their tips. The owner's desktop runs the
+merged build (installed with `mseries/install-phone-setup.sh`, old window
+closed first; Messages is single-instance, so a relaunch without closing only
+raises the old window).
 
-- Split the 1000-line window into `messages.py` (controller), `messages_model.py`
-  (pure logic), `messages_widgets.py` and `messages_style.py`. Installer copies
-  all four; verified in a throwaway HOME and the installed copy launches.
-- Conversation list, bubbles with runs and time headings, group sender names,
-  optimistic dimmed send with echo reconciliation, rounded composer with an
-  inside send button, jump-to-latest, empty states, offline banner with
-  **Retry Connection** (reuses `connection.reconnect_existing`), New Message
-  sheet with recents, shortcuts, mark-read once per newest message.
-- Links now use BlueFerry's hardened `linkify_message`; text is otherwise
-  escaped. The README previously said plain text, now corrected.
-- Found and fixed while testing: `theme_selected_*` is unreadable in dark mode in
-  this stylesheet (1.8:1), so bubbles use `accent_bg_color`/`accent_fg_color`;
-  an avatar that inherited expand made every row misalign; Granite's welcome
-  placeholder forced a 553 px minimum window height; a per-frame tick callback
-  was replaced with a surface resize hook.
-- Verification: `test_messages.py` 27 pass, `test_messages_gui.py` 43 run, 42 pass and one
-  screenshot test skips without its env var, no GTK warnings. Eleven deliberate
-  breakages of the code each made a test fail. Light, dark and 480 px
-  screenshots reviewed.
-- Not verified: live phone, real contact photos, suspend/resume. The owner's open
-  Messages window was not restarted; relaunch `mseries-messages` after
-  `bash mseries/install-phone-setup.sh`.
-- Merged `codex/messages-readability` (PR #352) into this branch so nothing is
-  lost: phonebook name resolution, media-link preview cards and the unread dot
-  left of the avatar with 1.4em names now live in the new structure. Their two
-  GTK tests pass unchanged. After this lands, PR #352 is redundant.
-- Verification after the merge: 30 model, 5 media and 47 GTK tests pass, no GTK
-  warnings; light, dark and narrow renders with cached photo/GIF cards reviewed.
-- Installed on the owner's desktop and relaunched; the previous window (from the
-  readability branch) was closed first. Not verified against live media links.
-- CI (GTK 4.22.4, same as this machine) ran without the elementary stylesheet
-  and lacked `accent_bg_color`/`accent_fg_color`. The app now probes the theme
-  and defines both from `theme_selected_*` when missing, so the bubbles and
-  the colour-resolution test behave the same on every theme. Granite forces
-  the elementary stylesheet locally, so that path is proven by unit tests of
-  the probe and alias and by CI, not by a local render.
-- Next: in-app group participant confirmation (still routed to Advanced
-  BlueFerry), a keyboard-shortcuts overlay, and Enter-to-send as an opt-in.
+What landed, all presentation; sending, routing, history and group safety stay
+in BlueFerry:
+
+- Code split: `messages.py` (controller, worker thread, BlueFerry calls,
+  dialogs, media cards), `messages_model.py` (GTK-free logic: message runs,
+  time labels, previews, send outbox, avatar tones, phonebook name resolution),
+  `messages_widgets.py` (builders), `messages_style.py` (scoped CSS),
+  `message_media.py` (bounded public-HTTPS previews). Installer ships all five.
+- Conversation list: colour-coded initials with 4.5:1 white text, group glyph,
+  1.4em names (bold while unread), short time, two-line "You:" previews,
+  accent-coloured unread dot left of the avatar in list and favourites, cached
+  phonebook names for bare numbers (never guessed for groups or ambiguous
+  contacts), No Conversations / No Results empty states.
+- Conversation: avatar header, bubble runs with one tail, centred time headings
+  after 30 minutes or a new day, group sender names, hover time, links through
+  BlueFerry's `linkify_message` with all other text escaped, image/GIF/YouTube
+  preview cards (sent links auto-load, incoming offer Load Preview).
+- Sending: optimistic dimmed bubble reconciled against BlueFerry history (never
+  doubled), failure removes it and keeps the draft, New Messages jump button,
+  rounded composer with the send button inside and a spinner while pending.
+  Ctrl+Enter sends, Enter adds a line (unchanged, deliberately).
+- Connection: footer dot plus words, offline/pending banner with Retry
+  Connection via `connection.reconnect_existing` (never re-pairs), mark-read
+  once per newest message, New Message sheet with recents and Enter/Down/Escape,
+  shortcuts Ctrl+N/F/R, F5, Alt+Left, single-pane layout under 760 px driven by
+  a surface resize hook instead of a per-frame tick.
+- Fixed on the way: `theme_selected_*` unreadable in dark mode (1.8:1), so
+  bubbles use `accent_bg/fg_color`, defined from `theme_selected_*` when a theme
+  lacks them (CI's default GTK theme did; same GTK 4.22.4 as this machine);
+  avatars inheriting expand misaligned rows; Granite placeholder forced a 553 px
+  minimum height; duplicate mark-read on open; README wrongly said plain text.
+
+Verification: 30 model, 5 media and 47 GTK tests pass locally with no GTK
+warnings (one screenshot test skips without its env var); CI green on the
+final push. Twelve deliberate breakages each failed a test. Light, dark and
+480 px renders reviewed, including cached photo/GIF cards. Not verified: live
+media links against the phone, real contact photos after the restructure,
+suspend/resume, and the missing-accent CSS path rendered locally (Granite
+forces the elementary stylesheet here; CI covers it).
+
+Next: in-app group participant confirmation (still routed to Advanced
+BlueFerry), a keyboard-shortcuts overlay, Enter-to-send as an opt-in, a live
+media-link check. User guide: `phone-setup/README.md`, section *Native
+conversation experience*.
+
 ## Native media-link rendering — 2026-10-20
 
 Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.
