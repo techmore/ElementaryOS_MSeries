@@ -95,7 +95,8 @@ int main (string[] args) {
     if (Environment.get_variable ("CB_HIDE_PANEL") == null) root.append (bar);
     root.append (popover_body);
     var window = new Gtk.Window () { child = root, decorated = false };
-    window.present ();
+    bool compact_probe = Environment.get_variable ("CB_ASSERT_COMPACT") != null;
+    if (!compact_probe) window.present ();
 
     var loop = new MainLoop ();
     Timeout.add (delay, () => {
@@ -218,8 +219,16 @@ int main (string[] args) {
         }
         // No window manager under Xvfb, so size the window to the content ourselves.
         int min, nat;
-        root.measure (Gtk.Orientation.VERTICAL, 360, out min, out nat, null, null);
-        window.set_default_size (360, nat);
+        int target_width = compact_probe ? 280 : 360;
+        root.measure (Gtk.Orientation.VERTICAL, target_width, out min, out nat, null, null);
+        if (compact_probe) {
+            // Size the first realization after fixture data has populated the UI.
+            window.set_default_size (target_width, nat);
+            window.present ();
+        } else {
+            // Preserve the original timing for panel token-layout probes.
+            window.set_default_size (target_width, nat);
+        }
         Timeout.add (800, () => {
             if (Environment.get_variable ("CB_SCROLL") == "end") {
                 var scroll = find_scroll (root);
@@ -263,6 +272,13 @@ Gtk.Widget? first_card (Gtk.Widget root) {
 }
 
 void capture (Gtk.Widget root, Gtk.Window window, string path, MainLoop loop) {
+    if (Environment.get_variable ("CB_ASSERT_COMPACT") != null) {
+        int min_width, natural_width;
+        root.measure (Gtk.Orientation.HORIZONTAL, -1, out min_width, out natural_width, null, null);
+        assert (natural_width <= 280);
+        assert (root.get_width () <= 300);
+    }
+
     {
         var paintable = new Gtk.WidgetPaintable (root);
         var snapshot = new Gtk.Snapshot ();

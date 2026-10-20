@@ -90,7 +90,9 @@ namespace MSeries {
                 margin_bottom = 5,
                 margin_start = 6,
                 margin_end = 6,
-                width_request = 300
+                // Keep the quick-switch popover compact. GTK treats width_request as a minimum;
+                // the child rows below also ellipsize/wrap their dynamic labels to fit.
+                width_request = 240
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
@@ -144,18 +146,23 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
-            var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            // Keep the status and icon dock on separate rows so their widths don't add together.
+            var bar = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
             bar.add_css_class ("mseries-bar");
-            bar.append (chip_label);
-            bar.append (subtitle_label);
-            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
+            var status = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            status.append (chip_label);
+            status.append (subtitle_label);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
+                homogeneous = true,
+                halign = Gtk.Align.END
+            };
             actions.add_css_class ("mseries-dock");
             actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
             actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
             actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
             actions.append (make_dock_button ("Settings", "preferences-system-symbolic", "--settings"));
             actions.append (refresh_button);
+            bar.append (status);
             bar.append (actions);
             menu.append (bar);
 
@@ -1968,7 +1975,7 @@ namespace MSeries {
         private Gtk.Widget build_plan_badge (string email, string plan) {
             var text = Presentation.plan_label (plan);
             var badge = new Gtk.Label (text.length > 0 ? text : "Plan unavailable") {
-                valign = Gtk.Align.CENTER, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 18
+                valign = Gtk.Align.CENTER, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 10
             };
             badge.add_css_class ("plan");
             if (text.length == 0) badge.add_css_class ("dim-label");
@@ -1984,7 +1991,7 @@ namespace MSeries {
             icon.add_css_class ("dim-label");
             identity.append (icon);
             var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
-                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 30
+                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 16
             };
             label.add_css_class ("caption");
             label.add_css_class ("dim-label");
@@ -2037,7 +2044,7 @@ namespace MSeries {
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
                 xalign = 1, valign = Gtk.Align.CENTER, justify = Gtk.Justification.RIGHT,
-                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 34
+                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 18
             };  // two windows fit on the row; a third wraps instead of widening the popover
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
