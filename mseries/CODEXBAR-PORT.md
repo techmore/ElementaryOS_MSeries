@@ -432,3 +432,18 @@ concatenation before copying it. This printed garbage alternate-account countdow
 captions until 2026-10-19. `probe/check-generated-c.py` (Meson test `generated-c-temporaries`) fails the
 build when that borrowed-then-freed shape appears in any generated C. Write such strings with an explicit
 `string` declaration and `if`/`else`.
+
+### Claude account and plan display (2026-10-20)
+
+The account-aware helper takes precedence over an upstream Claude snapshot entry.
+`active`/`activeEmail` retain the CLI login; `panelActive`/`displayEmail`/`displayPlan`
+select the native app login when its config identifies an account, otherwise the CLI.
+An unknown app login must not borrow another account's quota. When the logins differ,
+the card names the CLI login separately. The panel summary, quota card, hints and
+alternate-account rows use the same selection.
+
+Plan labels come from Anthropic's OAuth profile endpoint (five-second timeout,
+six-hour private per-account cache, failure backoff), then local profile metadata,
+then credential subscription metadata. Responses must match the requested account
+UUID. Saved tokens are read only, never refreshed; the cache stores only plan labels.
+This handles Pro-to-Max upgrades whose issued token still says Pro.

@@ -1,5 +1,5 @@
 [Unit]
-Description=Check the Work Mode schedule
+Description=Check the Windows Work Mode schedule
 
 [Timer]
 OnStartupSec=30

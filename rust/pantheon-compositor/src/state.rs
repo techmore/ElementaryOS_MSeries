@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
-    backend::renderer::element::memory::MemoryRenderBuffer,
     desktop::{PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
@@ -40,7 +39,6 @@ use smithay::{
     },
 };
 
-use crate::cursor::default_cursor_buffer;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -148,7 +146,7 @@ pub struct PantheonCompositor {
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
     pub cursor_status: CursorImageStatus,
-    pub default_cursor: MemoryRenderBuffer,
+    pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
     pub(crate) wallpaper_selection: Option<crate::wallpaper::WallpaperSelection>,
 
@@ -274,6 +272,14 @@ impl PantheonCompositor {
             },
         )?;
         event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(&["org.gnome.desktop.interface"]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_cursor_theme();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
             crate::wakeups::watch_settings(&["org.gnome.desktop.background"]),
             |event, _, state| {
                 if matches!(event, channel::Event::Msg(())) {
@@ -392,7 +398,9 @@ impl PantheonCompositor {
             initially_positioned: HashSet::new(),
             popups,
             cursor_status: CursorImageStatus::default_named(),
-            default_cursor: default_cursor_buffer(),
+            cursor_theme: crate::cursor_theme::CursorTheme::load(
+                crate::cursor_theme::configured_selection(),
+            ),
             wallpaper,
             wallpaper_selection,
             seat,
@@ -440,6 +448,15 @@ impl PantheonCompositor {
         self.keyboard_config = config;
     }
 
+    /// Reload the compositor cursor when the interface cursor theme or size changed.
+    fn refresh_cursor_theme(&mut self) {
+        let selection = crate::cursor_theme::configured_selection();
+        if &selection != self.cursor_theme.selection() {
+            self.cursor_theme = crate::cursor_theme::CursorTheme::load(selection);
+            self.request_native_redraw();
+        }
+    }
+
     /// Reload the wallpaper when the configured URI or crop mode changed.
     fn refresh_wallpaper(&mut self) {
         match crate::wallpaper::configured_selection() {
@@ -476,24 +493,32 @@ impl PantheonCompositor {
                     .is_none_or(|toplevel| !self.is_panel_surface(toplevel.wl_surface()))
             })
             .map(|(window, workspace_index, _)| {
-                let app_id = if let Some(toplevel) = window.toplevel() {
+                let (app_id, title) = if let Some(toplevel) = window.toplevel() {
                     smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                         states
                             .data_map
                             .get::<smithay::wayland::shell::xdg::XdgToplevelSurfaceData>()
                             .and_then(|attributes| attributes.lock().ok())
-                            .and_then(|attributes| attributes.app_id.clone())
+                            .map(|attributes| {
+                                (
+                                    attributes.app_id.clone().unwrap_or_default(),
+                                    attributes.title.clone().unwrap_or_default(),
+                                )
+                            })
                             .unwrap_or_default()
                     })
                 } else if let Some(surface) = window.x11_surface() {
                     let class = surface.class();
-                    if class.is_empty() {
-                        surface.title()
-                    } else {
-                        class
-                    }
+                    (
+                        if class.is_empty() {
+                            surface.title()
+                        } else {
+                            class
+                        },
+                        surface.title(),
+                    )
                 } else {
-                    String::new()
+                    (String::new(), String::new())
                 };
                 let has_focus = window
                     .toplevel()
@@ -504,6 +529,7 @@ impl PantheonCompositor {
                 GalaWindow {
                     uid: window.id() as u64,
                     app_id,
+                    title,
                     has_focus,
                     workspace_index: workspace_index as i32,
                     time_appeared_on_workspace: window.id() as i64,
@@ -587,7 +613,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn focused_window(&self) -> Option<Window> {
+    pub(crate) fn focused_window(&self) -> Option<Window> {
         if let Some(surface) = self
             .seat
             .get_keyboard()
@@ -739,15 +765,7 @@ impl PantheonCompositor {
         }
         self.space.raise_element(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-        if let Some(toplevel) = window.toplevel() {
-            if !self.session_locked
-                && let Some(keyboard) = self.seat.get_keyboard()
-            {
-                keyboard.set_focus(self, Some(toplevel.wl_surface().clone()), serial);
-            }
-        } else if let Some(surface) = window.x11_surface().cloned() {
-            self.set_x11_keyboard_focus(Some(surface), serial);
-        }
+        self.focus_window_keyboard(&window, serial);
         self.refresh_panel_visibility();
         self.request_native_redraw();
         Ok(())
@@ -1773,6 +1791,9 @@ impl XdgActivationHandler for PantheonCompositor {
         while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
             root = parent;
         }
+        if self.is_panel_surface(&root) {
+            return;
+        }
         let managed = self
             .workspace_manager
             .windows()
@@ -1800,20 +1821,13 @@ impl XdgActivationHandler for PantheonCompositor {
             }
         }
         self.space.raise_element(&window, true);
-        if let Some(surface) = window
-            .toplevel()
-            .map(|toplevel| toplevel.wl_surface().clone())
-        {
-            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-            if let Some(keyboard) = self.seat.get_keyboard() {
-                keyboard.set_focus(self, Some(surface), serial);
+        let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+        self.focus_window_keyboard(&window, serial);
+        self.space.elements().for_each(|window| {
+            if let Some(toplevel) = window.toplevel() {
+                toplevel.send_pending_configure();
             }
-            self.space.elements().for_each(|window| {
-                if let Some(toplevel) = window.toplevel() {
-                    toplevel.send_pending_configure();
-                }
-            });
-        }
+        });
         self.refresh_panel_visibility();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();

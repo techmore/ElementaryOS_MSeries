@@ -5,6 +5,7 @@ set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 src="$repo/mseries/work-mode"
 bin="$HOME/.local/bin/mseries-work-mode"
+launch_dock="$HOME/.local/bin/mseries-work-mode-dock"
 unit_dir="$HOME/.config/systemd/user"
 schema=io.elementary.mseries.work-mode.gschema.xml
 plugsdir=$(pkg-config --variable=plugsdir switchboard-3)
@@ -13,8 +14,11 @@ schema_dir="$(pkg-config --variable=datadir glib-2.0)/glib-2.0/schemas"
 
 if [[ ${1:-} == --uninstall ]]; then
   systemctl --user disable --now mseries-work-mode.timer 2>/dev/null || true
-  rm -f "$bin" "$unit_dir/mseries-work-mode.service" "$unit_dir/mseries-work-mode.timer"
-  sudo rm -f "$plug" "$schema_dir/$schema" "$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries/work-mode-blue-flow.png"
+  if [[ -x $bin ]]; then "$bin" --restore || true; fi
+  systemctl --user stop mseries-work-mode-dock.service 2>/dev/null || true
+  rm -f "$bin" "$launch_dock" "$unit_dir/mseries-work-mode.service" "$unit_dir/mseries-work-mode.timer" "$unit_dir/mseries-work-mode-dock.service"
+  background_dir="$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries"
+  sudo rm -f "$plug" "$schema_dir/$schema" "$background_dir/work-mode-blue-flow.png" "$background_dir/work-mode-blue-ribbons.png" "$background_dir/work-mode-violet-arc.png" "$background_dir/work-mode-forest-flow.png"
   sudo rmdir "$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries" 2>/dev/null || true
   sudo glib-compile-schemas "$schema_dir"
   systemctl --user daemon-reload
@@ -35,8 +39,10 @@ pkg-config --exists switchboard-3 gtk4 libadwaita-1 granite-7 gee-0.8 || {
 }
 
 install -Dm0755 "$src/mseries-work-mode" "$bin"
+install -Dm0755 "$src/mseries-work-mode-dock" "$launch_dock"
 install -Dm0644 "$src/mseries-work-mode.service" "$HOME/.config/systemd/user/mseries-work-mode.service"
 install -Dm0644 "$src/mseries-work-mode.timer" "$HOME/.config/systemd/user/mseries-work-mode.timer"
+install -Dm0644 "$src/mseries-work-mode-dock.service" "$HOME/.config/systemd/user/mseries-work-mode-dock.service"
 build=$(mktemp -d)
 trap 'rm -rf "$build"' EXIT
 meson setup "$build" "$src" --prefix=/usr
@@ -46,6 +52,6 @@ sudo glib-compile-schemas "$schema_dir"
 systemctl --user daemon-reload
 systemctl --user enable --now mseries-work-mode.timer
 
-echo 'Installed Work Mode in System Settings → Personal → Work Mode.'
-echo 'Choose a work wallpaper, turn Work Mode on, and optionally set work hours.'
+echo 'Installed Windows Work Mode in System Settings → Personal → Windows Work Mode.'
+echo 'Choose a work wallpaper, turn Windows Work Mode on, and optionally set work hours.'
 echo 'Revert: bash mseries/install-work-mode.sh --uninstall'

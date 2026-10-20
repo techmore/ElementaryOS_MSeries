@@ -90,7 +90,9 @@ namespace MSeries {
                 margin_bottom = 5,
                 margin_start = 6,
                 margin_end = 6,
-                width_request = 300
+                // Keep the quick-switch popover compact. GTK treats width_request as a minimum;
+                // the child rows below also ellipsize/wrap their dynamic labels to fit.
+                width_request = 240
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
@@ -144,18 +146,23 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
-            var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            // Keep the status and icon dock on separate rows so their widths don't add together.
+            var bar = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
             bar.add_css_class ("mseries-bar");
-            bar.append (chip_label);
-            bar.append (subtitle_label);
-            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
+            var status = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            status.append (chip_label);
+            status.append (subtitle_label);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
+                homogeneous = true,
+                halign = Gtk.Align.END
+            };
             actions.add_css_class ("mseries-dock");
             actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
             actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
             actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
             actions.append (make_dock_button ("Settings", "preferences-system-symbolic", "--settings"));
             actions.append (refresh_button);
+            bar.append (status);
             bar.append (actions);
             menu.append (bar);
 
@@ -797,9 +804,9 @@ namespace MSeries {
             head.append (dot);
             head.append (build_provider_mark ("claude", "Claude"));
             head.append (build_hint_badges ("claude", true));
-            var email = JsonBoundary.text (claude_data, "activeEmail", "");
+            var email = JsonBoundary.text (claude_data, "displayEmail", JsonBoundary.text (claude_data, "activeEmail", ""));
             var accounts = JsonBoundary.array (claude_data, "accounts");
-            head.append (build_identity (email, JsonBoundary.text (claude_data, "activePlan", "")));
+            head.append (build_identity (email, JsonBoundary.text (claude_data, "displayPlan", JsonBoundary.text (claude_data, "activePlan", ""))));
             head.append (build_add_account_button ("Sign in to Claude Code, then save that login with claude-swap",
                 () => add_claude_account ()));
             card.append (head);
@@ -807,8 +814,8 @@ namespace MSeries {
             // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? JsonBoundary.object_member (claude_data, "desktop") : null;
             if (desktop != null && JsonBoundary.flag (desktop, "differs", false)) {
-                var there = JsonBoundary.text (desktop, "email", "");
-                var note = subtle_label ("Claude app: %s".printf (
+                var there = JsonBoundary.text (claude_data, "activeEmail", "");
+                var note = subtle_label ("Claude Code CLI: %s".printf (
                     there.length > 0 ? there : "another account"));
                 note.set_tooltip_text (JsonBoundary.text (claude_data, "desktopNote", ""));
                 card.append (note);
@@ -821,7 +828,7 @@ namespace MSeries {
                 for (uint i = 0; i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
                     var windows = JsonBoundary.array (account, "windows");
-                    if (JsonBoundary.flag (account, "active", false) && windows != null) {
+                    if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false)) && windows != null) {
                         dot.remove_css_class ("dot-off");
                         dot.add_css_class ("dot-ok");
                         for (uint w = 0; w < windows.get_length (); w++) {
@@ -840,7 +847,7 @@ namespace MSeries {
             var listed = accounts != null ? accounts.get_length () : 0;
             for (uint i = 0; i < listed; i++) {
                 var account = accounts.get_object_element (i);
-                if (JsonBoundary.flag (account, "active", false) &&
+                if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false)) &&
                     (desktop == null || !JsonBoundary.flag (desktop, "installed", false) ||
                      JsonBoundary.flag (account, "desktopActive", false))) {
                     continue;
@@ -1219,7 +1226,7 @@ namespace MSeries {
         }
 
         private static string hint_id (string provider, Json.Object account) {
-            if (JsonBoundary.flag (account, "active", false)) return provider + ":active";
+            if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) return provider + ":active";
             var key = JsonBoundary.text (account, "id", "");
             if (key.length == 0 && account.has_member ("number")) key = JsonBoundary.integer (account, "number").to_string ();
             if (key.length == 0) key = JsonBoundary.text (account, "email", "unknown");
@@ -1253,7 +1260,7 @@ namespace MSeries {
                 var max_age = (provider == "codex" ? 600 : 240) * GLib.TimeSpan.SECOND;
                 for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
-                    if (JsonBoundary.flag (account, "active", false) && provider in supplied) continue;
+                    if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false)) && provider in supplied) continue;
                     hint_candidate (hint_candidates, hint_id (provider, account), JsonBoundary.text (account, "email", ""),
                         account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null,
                         fetched == 0 || GLib.get_monotonic_time () - fetched > max_age || account.has_member ("error"));
@@ -1398,6 +1405,7 @@ namespace MSeries {
             for (uint i = 0; i < entries.get_length (); i++) {
                 var entry = entries.get_object_element (i);
                 var provider = (JsonBoundary.text (entry, "provider", "")).down ();
+                if (provider == "claude" && claude_data != null) continue;
                 has_claude = has_claude || provider == "claude";
                 var windows = JsonBoundary.array (entry, "windows");
                 var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
@@ -1444,13 +1452,13 @@ namespace MSeries {
                 tooltip.append ((tooltip.len > 0 ? "\n\n" : "") + section.str);
             }
 
-            // Claude quota comes from our claude-swap helper when upstream's snapshot has no Claude entry.
+            // The account-aware helper takes precedence over upstream's CLI-only Claude entry.
             if (!has_claude && claude_data != null) {
                 var accounts = JsonBoundary.array (claude_data, "accounts");
                 for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
                     var windows = JsonBoundary.array (account, "windows");
-                    if (!JsonBoundary.flag (account, "active", false) || windows == null
+                    if (!JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false)) || windows == null
                         || windows.get_length () == 0) continue;
                     var section = new StringBuilder ("Claude");
                     string value_text;
@@ -1518,7 +1526,7 @@ namespace MSeries {
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (JsonBoundary.flag (account, "active")) return JsonBoundary.array (account, "windows");
+                if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active"))) return JsonBoundary.array (account, "windows");
             }
             return null;
         }
@@ -1676,7 +1684,7 @@ namespace MSeries {
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (JsonBoundary.flag (account, "active", false)) continue;
+                if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
                 if (markup.len > 0) markup.append ("  ");
                 var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), JsonBoundary.integer (account, "number", i + 1),
@@ -1704,7 +1712,7 @@ namespace MSeries {
             var text = new StringBuilder ();
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (JsonBoundary.flag (account, "active", false)) continue;
+                if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
                 var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 if (text.len > 0) text.append ("  ");
                 text.append ("%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
@@ -1718,7 +1726,7 @@ namespace MSeries {
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (JsonBoundary.flag (account, "active", false)) continue;
+                if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
                 text.append ("\n%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
                     JsonBoundary.text (account, "email", "Saved account")));
                 var windows = JsonBoundary.array (account, "windows");
@@ -1743,17 +1751,14 @@ namespace MSeries {
             account_quota_labels = {};
             account_quota_windows = {};
             clear (quota_box);
-            var has_claude = false;
-            for (uint i = 0; i < entries.get_length (); i++) {
-                has_claude = has_claude || JsonBoundary.text (entries.get_object_element (i), "provider", "").down () == "claude";
-            }
             // Match the panel order, including Claude's locally supplied accounts card.
             for (int rank = 0; rank <= LAST_PROVIDER_RANK; rank++) {
-                if (rank == provider_rank ("claude") && !has_claude && claude_data != null) {
+                if (rank == provider_rank ("claude") && claude_data != null) {
                     quota_box.append (build_claude_card (now_unix));
                 }
                 for (uint i = 0; i < entries.get_length (); i++) {
                     var entry = entries.get_object_element (i);
+                    if (JsonBoundary.text (entry, "provider", "").down () == "claude" && claude_data != null) continue;
                     if (provider_rank (JsonBoundary.text (entry, "provider", "").down ()) == rank) {
                         quota_box.append (build_provider_card (entry, now_unix));
                     }
@@ -1979,7 +1984,7 @@ namespace MSeries {
         private Gtk.Widget build_plan_badge (string email, string plan) {
             var text = Presentation.plan_label (plan);
             var badge = new Gtk.Label (text.length > 0 ? text : "Plan unavailable") {
-                valign = Gtk.Align.CENTER, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 18
+                valign = Gtk.Align.CENTER, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 10
             };
             badge.add_css_class ("plan");
             if (text.length == 0) badge.add_css_class ("dim-label");
@@ -1995,7 +2000,7 @@ namespace MSeries {
             icon.add_css_class ("dim-label");
             identity.append (icon);
             var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
-                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 30
+                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 16
             };
             label.add_css_class ("caption");
             label.add_css_class ("dim-label");
@@ -2048,7 +2053,7 @@ namespace MSeries {
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
                 xalign = 1, valign = Gtk.Align.CENTER, justify = Gtk.Justification.RIGHT,
-                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 34
+                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 18
             };  // two windows fit on the row; a third wraps instead of widening the popover
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
