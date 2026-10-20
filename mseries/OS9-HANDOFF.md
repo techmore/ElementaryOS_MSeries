@@ -17,6 +17,176 @@ logger, panel, account, VM or wallpaper was restarted/changed. Reopen Orchard fo
 Incus, Battery and Apple Passwords (Experimental) to load the fixes. Live user
 interaction and hardware theme switching remain to be tried. File hashes and
 backup location: `mseries/receipts/ui-consistency-install-2026-10-20.json`.
+## Permanent Pantheon dock and floating-window clearance — 2026-10-20
+
+Owner visually confirmed the native Pantheon dock, then explicitly requested
+permanent enablement and windows moving out of its way. Executed
+`mseries/dock-policy/enable-permanent.sh`: removed bounded-trial hooks and
+pending autostart, stopped trial timers, removed disabled marker, selected
+48-pixel icons and auto-hide `never`, and started the regular session dock.
+Live verification: service active, `RuntimeMaxUSec=infinity`, no trial stop
+hook; Rust session already wants the dock at subsequent logins. Recorded the
+new owner authorization in the policy copies and live config.
+
+Rust compositor now fits ordinary floating Wayland and XWayland windows into
+the work area when panels change, moving them first and shrinking only if
+needed. Existing maximized/tiled handling remains; fullscreen and X11
+override-redirect surfaces keep their special behavior. It neither raises
+windows nor changes keyboard focus. Hidden-dock expansion does not restore
+previous floating positions/sizes. Clients may enforce minimum sizes.
+
+Verification: all 18 native-feature compositor unit tests pass, including
+three new move/shrink/offset geometry cases; release build succeeds. Private
+Xvfb/D-Bus integration passes bottom-edge X11 clearance, native/X11 snapping,
+minimize/restore, focus preservation on initial/repeated dock activation, and
+typing. Python controller tests (5) and shell syntax pass. Installed package `0.1.0+gitdbc7b14` using `sudo dpkg -i`;
+service daemon-reload completed without restarting the dock or compositor.
+The new binary is staged for next login; native hardware window movement remains
+pending that login. The live dock remains the patched Vala/GTK Pantheon dock
+hosted by Rust; no Rust dock rewrite is claimed.
+
+Next: load the staged compositor at a normal login and visually verify
+window clearance with both monitors.
+
+
+## Dock test stopped before launch — 2026-10-20
+
+Post-reboot owner reported no dock. Retained report at
+`~/Documents/Codex/2026-10-20/yo/outputs/dock-trial.json` records left snap
+width 960 versus monitor width 2419, then preflight failure; the dock unit
+never started. Live D-Bus now exposes `FocusRoutingVersion=1`. Added explicit
+`--dock-only` mode, retaining compositor identity, Start, focus/typing checks,
+independent timer, RuntimeMaxSec and exact opt-out restoration. Preserve the
+first terminal report rather than overwriting it on a later Stop click.
+
+Validated with Python compilation (warnings treated as errors) and all five
+controller safety tests. Installed the updated controller and requested the
+owner's saved GUI approval for a 60-second dock-only trial; result goes to
+`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. The dock-only attempt ran 09:47:11–09:47:14: typing passed, then a focus
+departure stopped it. Owner saw no dock. Journal confirms a first panel buffer.
+Live preferences are overlapping-window auto-hide and 24-pixel icons. Added
+`--visible` for temporarily disabling auto-hide with 48-pixel icons, restoring
+preferences on normal finish/close. Presented the required approval for this
+visibility test; result pending in `visible-20261020.json`. Rust workspace has
+no dock crate: the current dock is the patched Vala/GTK dock hosted by the Rust
+compositor; a full Rust dock port is still outstanding. Next: inspect this receipt and dock journal; investigate
+the separate snap geometry discrepancy.
+
+
+
+## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
+
+Owner asked to restore a dock for minimized apps. State found: the fixed
+compositor `0.1.0+git83b3f14` is installed, but the live session (started
+07:38) still runs the older binary (hash mismatch; no `FocusRoutingVersion`),
+so the dock trial and `mseries-restore-windows` both correctly refuse to run.
+The `user-disabled` marker and approval policy are unchanged. The pending
+login trial marker and one-time autostart are still in place.
+
+PR #314 CI failed `test_user_disabled_blocks_patched_and_stock_fallback`
+because GitHub runners export `XDG_CONFIG_HOME`. The wrapper then looked
+outside the test's private home and missed the marker. The test now sets
+`XDG_CONFIG_HOME` inside that home. `test-launcher.py` passes locally with a
+foreign `XDG_CONFIG_HOME`. Merged `origin/dev` into the branch; the
+handoff/roadmap conflicts were additive, so both sides were kept.
+Next: owner logs out and back in normally, then clicks Start in the trial
+window. A permanent enable still goes through `mseries-dock-change`
+approval.
+
+
+## Approved safe re-login and 60-second dock trial — 2026-10-20
+
+Owner explicitly requested normal logout/login, native snapping/focus checks,
+and a one-minute dock trial with automatic disable. Added
+[`dock-trial/`](dock-trial/README.md): a GTK test window, fail-closed compositor
+identity/capability check, an independent user timer and native dock
+`RuntimeMaxSec=60s`, `Restart=no`, 3-second stop timeout and control-group cleanup.
+The disabled marker is preserved exactly and restored by ExecStopPost as well
+as the timer. The dock is not started until the fixed compositor is loaded and
+the owner clicks Start. A focus departure, GUI close, failed text delivery or
+Stop button ends it early. No user text is logged.
+
+Installed the controller and one-time Pantheon autostart locally; after login it
+opens the test window and removes its autostart entry. The next login still
+selects pantheon-rust-wayland. Five controller regression tests pass. Exercised
+the actual independent stop timer at five seconds with the dock disabled; user
+journal records a successful stop service at 08:09:38 EDT. Restored both limits
+to 60 seconds. The original disable-marker hash is unchanged. Old running
+compositor was correctly rejected by the readiness gate. Native post-login
+result remains pending, and will be written to this chat's outputs/dock-trial.json.
+The normal session-manager logout flow is used, without force; any unsaved-work
+or inhibitor prompts remain for the owner. No boot or kernel changes.
+
+
+## Window snapping, recovery and dock focus audit — 2026-10-20
+
+Branch `codex/window-snapping-recovery`, from origin/dev `734326b`.
+Owner requested snapping first, kernel takeaways, then a deep dock focus audit
+before re-enabling. The dock remains disabled; no forced logout or compositor,
+Wingpanel, audio, kernel or bootloader restart/change.
+
+- XWayland snapping now uses the common focused-window lookup and configures
+  X11 halves/quarters, drag previews, work-area reflow, monitor movement and
+  overview restoration. Left/right edge dragging selects halves; corners retain
+  quarter precedence. Physical dragging and mixed-display movement remain open.
+- Panels no longer receive ordinary first-buffer app placement/focus. Bottom
+  dock protocol focus and panel xdg activation are excluded; top-panel focus
+  remains, with a lock check. Popup grabs also reject locked sessions.
+- A new runtime regression caught a separate concrete typing failure: native
+  Wayland restore after X11 focus left `x11_keyboard_focus` set. Desktop-interface
+  focus and activation now use the shared helper; panel/popups clear X11 routing.
+- `mseries/window-recovery/` adds the explicitly launched recovery chooser,
+  `--list` and `--focus UID`. It restores minimized windows without a dock or
+  periodic focus/keyboard grabs. The private command and desktop launcher are
+  installed now; package payload includes both. New compositor metadata adds
+  window titles to distinguish multiple windows of an app. The recovery tool
+  refuses mutation on an older compositor lacking `FocusRoutingVersion`;
+  the fresh-login boundary also applies to recovery, not just snapping.
+- Rebuilt and installed the private patched dock using the existing repeat-
+  activation/startup patch, without launching it on the live desktop. The
+  installer-generated wrapper now retains the user-disable guard ahead of every
+  fallback. The native Rust package uses a new launcher that selects the private
+  wrapper before distro fallback, preserving the marker.
+- Verification: 15 native-feature unit tests, clippy with warnings denied;
+  dock native startup/activation stubs; eight wrapper regression tests. Private
+  Xvfb + D-Bus runtime smoke checks X11 left/right 640x800 geometry on 1280x800,
+  minimize/restore through the new recovery command, dock first-buffer and
+  repeated-activation focus preservation, actual text after dock activation,
+  native Wayland half snapping and actual typing after mixed-client restore.
+  Earlier isolated dock runs emitted intermittent GLib catalog/list-store
+  warnings; final expanded run passed, broader catalog/menu stability is open.
+- Detailed evidence and remaining boundaries:
+  [focus audit](pantheon-rust-compositor/FOCUS-AUDIT-2026-10-20.md),
+  [recovery usage/regression](window-recovery/README.md).
+
+Kernel findings: current non-diagnostic `.20-enh1` boot's live GNU build ID
+matches the staged image (`21ee66cf…dfdaa7`); image and original initramfs hashes
+match the October 18 staging record. PMP firmware is ready; eDP and dock DP-1
+are connected. DisplayConfig reports 3024x1964@120 at 1.25 and external
+1920x1080@60 at 1. Current automatic capture failed because DisplayConfig
+`PowerSaveMode` is absent in Rust, while `GetCurrentState` works. Do not count
+this as a kernel hardware failure or manufacture the missing capture. Two prior
+candidate captures passed scoped boot/PMP/idle counters, GPU shader/readback and
+1 MiB fsync/readback; their 29.66 W and 11.40 W medians were uncontrolled desktop
+workloads, not a kernel A/B win. Sleep/resume, recovery, sustained VRR and energy
+qualification remain open. Boot journal also reports an unclean FAT boot volume
+and journal plus a dock Ethernet firmware-patch load warning; no mounted-volume
+repair or kernel/firmware policy change was attempted.
+
+Deployment receipt: built implementation commit `83b3f14`, installed package
+`0.1.0+git83b3f14` with `dpkg -i`, then only ran user-manager daemon-reload.
+`dpkg -V` is clean. The old compositor PID 1935 remains alive on its prior
+executable; the dock remains inactive and the disable marker SHA256 remains
+`b8847b2f0ada5f957ae232c86c9a2435bb04e5463b46dfbe36a93b9d64649ff2`.
+A reconstructed previous-package rollback is retained in the private chat work
+folder. The new package SHA256 is
+`c814251254a62ec4fe565a2259ed4da6a4fc17a65d38bf9dbcbde8503f787eed`.
+[PR #314](https://github.com/techmore/ElementaryOS_MSeries/pull/314) targets dev.
+The private recovery command was updated too; its refusal on the old live
+session was checked without requesting focus.
+
+Next login must load the staged compositor before any dock re-enable. Keep the
+disable marker until that runtime is confirmed and the owner wants a live trial.
 
 ## Native UI consistency review — 2026-10-20
 
@@ -7888,3 +8058,80 @@ Branch/worktree dispositions: `wip/reboot-save-20261018` and `codex/icloud-passw
 Parked without merging: `wip/shelf-native-drop-20261018` still needs visual/live drag verification; `wip/video-playback-20261018` is an older helper/benchmark session with the decode path already qualified; `claude/power-optimization` still needs its A/B measurements. The dirty `claude/appearance-mode-clarity` worktree and its untracked indicator files remain untouched. Draft PRs #248/#272 remain intentional blank templates; #185 remains gated on the stage-1 F5 qualification. No branches or worktrees were deleted. Root-only untracked drafts (`.claude/`, `static/`, `work/`, the printer troubleshooting note, and the upstream audit prompt) were preserved.
 
 No bootloader, kernel, running audio stack, hardware configuration, Wingpanel process, or installed CodexBar files were changed. Honeykrisp evidence only: the 7faf04c065 Mesa pin remains unchanged, no Mesa issue was posted, and no model weights were fetched.
+
+
+## Claude account/quota identity fix — 2026-10-20
+
+- Upstream remains pinned to v0.78.0. The app and CLI were signed into different
+  accounts; the old summary selected the CLI quota. The helper now exposes a separate
+  panel selection for the app while preserving CLI switching identity. Unknown app
+  identities show unavailable quota rather than another login's numbers. Custom
+  account data takes precedence over upstream's CLI-only Claude snapshot entry.
+- Live profile verification confirmed a Max 20× subscription whose issued OAuth
+  credential still reported Pro. Read-only profile lookup, identity validation,
+  six-hour private plan cache and backoff now correct that label; no tokens are
+  refreshed or included in helper output/cache.
+- Verified: 43 Claude helper tests; all 17 Meson groups; full
+  `bash mseries/check-codexbar-port.sh` pass including live snapshot schema;
+  split app/CLI fixture rendered in light/dark and inspected. Tests cover upgraded
+  plan, cache reuse, rejected wrong-account profile and unknown desktop login.
+- Merged PR #328 (`codex/codexbar-claude-active-account` → `dev`) as `25011bc` after all CI passed.
+  `bash mseries/deploy-codexbar.sh` passed all 17 groups and installed successfully;
+  Wingpanel PID 2136 and daemon PID 2129 stayed running. The installed helper was
+  rechecked against live account metadata. Native module loads at next login.
+  Live panel visual acceptance and interactive account switching are unverified.
+  Next: verify the app account/header and matching quota after next login.
+- Owner confirmed the Claude app is signed in as the work (cybersecuritypilot) account.
+  The previously running Wingpanel (started 09:43) predated the 09:49 module install, so
+  it still showed the CLI login. Ran `bash mseries/deploy-codexbar.sh --restart` from
+  merged `25011bc`: 17/17 Meson groups OK; Wingpanel PID 64704 (Wayland env) maps the
+  new `libcodexbar.so`; daemon PID 2129 kept running. Live helper output: panel account
+  sean.dolbec@… Pro (Anthropic profile confirms `claude_pro`), 5 h 73% / 7 d 25% left;
+  CLI account sdolbec1@… Max 20× (profile `default_claude_max_20x`), 5 h 0% left
+  (matches Anthropic's usage API: 100% used). Visual inspection of the panel was not
+  done (no screenshots of the owner's desktop); interactive switching remains unverified.
+- 2026-10-20 Rust compositor desktop cursor: owner reported the pointer looked damaged
+  over the desktop but fine in apps. Cause: with no client cursor surface (desktop,
+  borders) `pantheon-compositor` drew a hand-built 16×20 1x placeholder arrow, upscaled
+  on the scale-2 eDP panel. Added `src/cursor_theme.rs`: reads `cursor-theme`/`cursor-size`
+  from `org.gnome.desktop.interface` (XCURSOR_* then elementary/24 fallbacks), decodes the
+  XCursor image at ceil(output scale) with the correct hotspot, honours named cursors, and
+  reloads when the interface settings change; the old arrow stays only as a last resort.
+  `cargo test --features native-drm cursor_theme` passes against the installed elementary
+  theme; clippy clean for the touched files. Takes effect at next login of the Rust
+  session (running compositor untouched). Visual check by the owner still pending.
+
+## 2026-10-20: UI size system, phase 1 (#332)
+
+- New `mseries/ui-scale/`: `size-system.json` defines the ladder (Compact 0.85 → Largest 1.5), the dock tokens for native, work and work-taskbar, and the font policy. Also added the `mseries-ui-scale` CLI and `--watch` user service, plus `SIZE-SYSTEM.md` with the rules for app authors.
+- Quick Settings `TextScale.vala` replaces upstream's free 0.05-step slider. The slider and buttons now land only on ladder steps, rapid presses coalesce, and the tooltip and accessible value name the step. Both build paths install it.
+- Work Mode asks `mseries-ui-scale --dock-size work` for its dock size and falls back to 40 when the size system isn't adopted.
+- Tests: 14 planner unit tests, and a widget probe on Xvfb with in-memory GSettings that covers off-ladder 0.851, every step, rapid presses, snapping and external values. Both run in a new CI job, `ui-scale`.
+- Deployed on the J314S: `install-ui-scale.sh` (watcher active, size system **not adopted**, desktop unchanged) and `install-quick-settings-brightness.sh` (plugin installed; **not loaded** until Wingpanel reloads or the next login).
+- Not deployed: the Work Mode script change. The live `~/.local/bin/mseries-work-mode` is from unmerged #329, and overwriting it would roll that back. Land the hook through #329 or after it merges.
+- Unverified: a visual check of the new control, and dock follow-through on real hardware.
+- Next: phases 2–4 in #332: other dock writers, Wingpanel scale from #312, app type-ramp migration, Qt/Electron.
+
+## Repository housekeeping — 2026-10-20
+
+- Fetched with `git fetch origin --prune`; fast-forwarded the owner's `dev`
+  checkout from `9cb1c70` to `8ed3a76` (21 commits).
+- Two untracked documents blocked the update. Verified their bytes against
+  `origin/dev`, retained copies in
+  `/home/sdolbec/.local/state/mseries-housekeeping/2026-10-20/`, and let the
+  tracked versions replace them: the printer troubleshooting note and daily
+  upstream audit prompt. Root `.claude/`, `static`, and `work/` remain intact.
+- Ran `git worktree prune --dry-run --verbose`, then `git worktree prune
+  --verbose`: removed only three registrations whose directories no longer
+  exist (`combined-wt`, `cursor-wt`, `mseries-dock-trial-independent`).
+  No existing checkout or local branch was removed.
+- Audited all 43 remaining worktrees. Besides the root's untracked directories,
+  local changes exist in panel-ui-polish, ui-consistency-review,
+  background-locations, ElementaryOS_MSeries-appearance, and
+  ElementaryOS_MSeries-rust; all preserved.
+- Verification: `git diff --check` and
+  `git fsck --connectivity-only --no-dangling` passed. Housekeeping changes are
+  documentation only; no build or hardware qualification is claimed.
+- Next: review the open feature PRs individually with their applicable CI and
+  qualification requirements; preserve intentional draft handoffs and gated
+  work. No running desktop services or installed software were changed.

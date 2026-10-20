@@ -50,6 +50,8 @@ namespace MSeries {
         public static string plan_label (string plan) {
             var value = plan.strip ();
             if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "max20x") return "Max 20×";
+            if (value.down () == "max5x") return "Max 5×";
             if (value.down () == "prolite") return "Pro Lite";
             if (value.down () == "go") return "Go";
             return value.substring (0, 1).up () + value.substring (1);

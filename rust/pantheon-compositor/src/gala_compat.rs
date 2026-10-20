@@ -15,6 +15,7 @@ const DESKTOP_PATH: &str = "/org/pantheon/gala/DesktopInterface";
 pub(crate) struct GalaWindow {
     pub uid: u64,
     pub app_id: String,
+    pub title: String,
     pub has_focus: bool,
     pub workspace_index: i32,
     pub time_appeared_on_workspace: i64,
@@ -134,6 +135,13 @@ impl DesktopIntegrationServer {
         1
     }
 
+    // Explicit capability for the recovery tool: older sessions can leave
+    // XWayland routing active after focusing a native Wayland window.
+    #[zbus(property)]
+    fn focus_routing_version(&self) -> u32 {
+        1
+    }
+
     fn get_running_applications(&self) -> zbus::fdo::Result<Vec<RunningApplication>> {
         let snapshot = self
             .0
@@ -159,6 +167,7 @@ impl DesktopIntegrationServer {
             .map(|window| {
                 let mut properties = HashMap::new();
                 properties.insert("app-id".into(), string_value(&window.app_id)?);
+                properties.insert("title".into(), string_value(&window.title)?);
                 properties.insert("has-focus".into(), OwnedValue::from(window.has_focus));
                 properties.insert(
                     "workspace-index".into(),
