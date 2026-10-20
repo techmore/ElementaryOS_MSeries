@@ -5,7 +5,9 @@
 Added a native Switchboard panel under Personal with a Work Mode switch, a
 work-wallpaper picker, weekday scheduling, and start/end times. A per-user
 systemd timer checks once a minute and restores the wallpaper that was active
-before Work Mode began. The panel and timer are installed on the J314S desktop.
+before Work Mode began. The panel and timer are installed on the J314S desktop;
+a Windows 11-inspired Blue Flow wallpaper is now bundled and selected by default
+in source, pending installation.
 The first launch found a Switchboard constructor-order crash, now fixed and
 reinstalled; System Settings exits cleanly on relaunch. Visually inspect the
 panel, then select an image and verify actual wallpaper transitions.

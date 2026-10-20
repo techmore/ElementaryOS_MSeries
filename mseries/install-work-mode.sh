@@ -14,7 +14,8 @@ schema_dir="$(pkg-config --variable=datadir glib-2.0)/glib-2.0/schemas"
 if [[ ${1:-} == --uninstall ]]; then
   systemctl --user disable --now mseries-work-mode.timer 2>/dev/null || true
   rm -f "$bin" "$unit_dir/mseries-work-mode.service" "$unit_dir/mseries-work-mode.timer"
-  sudo rm -f "$plug" "$schema_dir/$schema"
+  sudo rm -f "$plug" "$schema_dir/$schema" "$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries/work-mode-blue-flow.png"
+  sudo rmdir "$(pkg-config --variable=datadir glib-2.0)/backgrounds/mseries" 2>/dev/null || true
   sudo glib-compile-schemas "$schema_dir"
   systemctl --user daemon-reload
   echo 'Removed Work Mode from System Settings. Your saved wallpaper and schedule settings were retained.'
