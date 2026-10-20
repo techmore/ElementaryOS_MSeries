@@ -13,7 +13,7 @@ SCHEMA = 'io.elementary.mseries.apple-message-pins'
 
 
 def validate_snapshot(value):
-    if not isinstance(value, dict) or value.get('schema') != SCHEMA or value.get('version') != 1 or value.get('source') != 'macos-imcore':
+    if not isinstance(value, dict) or value.get('schema') != SCHEMA or value.get('version') != 1 or value.get('source') not in ('macos-imcore', 'macos-pin-cache'):
         raise ValueError('This is not a supported Apple Messages pin export.')
     try:
         stamp = datetime.fromisoformat(value['captured_at'].replace('Z', '+00:00'))
@@ -33,7 +33,16 @@ def validate_snapshot(value):
         pins.append({'apple_identifier': identifier})
     # Do not persist arbitrary extra metadata from an imported document. Keep
     # opaque identifiers so unresolved groups can be explicitly matched later.
-    return dict(schema=SCHEMA, version=1, source='macos-imcore', captured_at=stamp.isoformat(), pins=pins)
+    result = dict(schema=SCHEMA, version=1, source=value['source'], captured_at=stamp.isoformat(), pins=pins)
+    if value.get('source_modified_at'):
+        try:
+            modified = datetime.fromisoformat(value['source_modified_at'].replace('Z', '+00:00'))
+            if modified.tzinfo is None or modified.timestamp() > stamp.timestamp() + 300:
+                raise ValueError()
+        except (ValueError, AttributeError, TypeError):
+            raise ValueError('The Apple pin modification time is invalid.') from None
+        result['source_modified_at'] = modified.isoformat()
+    return result
 
 
 def read_snapshot(path):

@@ -23,31 +23,46 @@ function objectValue(object, name, required) {
 function plain(value) {
     return value ? ObjC.deepUnwrap(value) : null;
 }
+function readConfiguration(configuration, source) {
+    var config = plain(configuration);
+    if (!config || !Array.isArray(config.pP) || (config.pV !== 1 && config.pV !== 2))
+        fail('Apple has not supplied a supported pin configuration');
+    var stamp = configuration.objectForKey('pT');
+    if (!stamp || !stamp.isKindOfClass($.NSDate))
+        fail('Apple pin configuration is missing its modification time');
+    var modified = Number(stamp.timeIntervalSince1970);
+    if (!isFinite(modified) || modified * 1000 > Date.now() + 300000)
+        fail('Apple pin configuration has an invalid modification time');
+    var snapshot = makeSnapshot(config.pP, config.pZ || {});
+    snapshot.source = source;
+    snapshot.source_modified_at = new Date(modified * 1000).toISOString();
+    snapshot.configuration_version = config.pV;
+    return snapshot;
+}
 function readController(controller) {
-    var fetchType = signature(controller, 'fetchPinnedConversationIdentifiersFromLocalStore');
-    if (fetchType === 'v') {
-        // This selector returns void in known headers. Never interpret its
-        // return register as an object, as some public examples do.
-        controller.fetchPinnedConversationIdentifiersFromLocalStore;
-    } else if (fetchType && fetchType[0] !== '@') {
-        fail('Unsupported pin-store refresh signature');
+    // Read the local configuration directly. Do not call extra refresh,
+    // synchronization or migration helpers: those can have write side effects.
+    // A process-support flag does not itself prove this getter is inaccessible.
+    var configuration = objectValue(controller, '_locallyStoredPinConfiguration', true);
+    if (!configuration) fail('No local IMCore pin configuration was returned');
+    return readConfiguration(configuration, 'macos-imcore');
+}
+function readPinCache(path, diagnostics) {
+    var error = Ref();
+    var data = $.NSData.dataWithContentsOfFileOptionsError(path, 0, error);
+    if (!data) {
+        var code = error[0] ? Number(error[0].code) : 0;
+        diagnostics.cache = (code === 257 || code === 13 || code === 1) ? 'access-denied' : code === 260 || code === 2 ? 'not-found' : 'read-error';
+        return null;
     }
-    var config = plain(objectValue(controller, '_locallyStoredPinConfiguration', false));
-    var identifiers = config && Array.isArray(config.pP) ? config.pP : null;
-    if (identifiers === null) {
-        var array = objectValue(controller, 'pinnedConversationIdentifiers', false);
-        if (array) identifiers = plain(array);
-        if (!Array.isArray(identifiers)) {
-            var ordered = objectValue(controller, 'pinnedConversationIdentifierSet', false);
-            identifiers = ordered ? plain(objectValue(ordered, 'array', false)) : null;
-        }
-        // A default empty collection before initialization does not prove that
-        // the owner's signed-in Messages pin store was read successfully.
-        if (!identifiers || !controller.hasCompletedInitialization)
-            fail('Messages has not supplied an initialized pin configuration. Open Messages and let it sync, then retry.');
-    }
-    var metadata = plain(objectValue(controller, 'chatMetadata', false)) || {};
-    return makeSnapshot(identifiers, metadata);
+    if (Number(data.length) > 262144) fail('Apple pin cache is unexpectedly large');
+    var plist = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError(data, 0, null, error);
+    if (!plist || !plist.isKindOfClass($.NSDictionary)) fail('Apple pin cache is not a property list dictionary');
+    var configuration = plist.objectForKey('pD');
+    if (!configuration) {diagnostics.cache = 'not-initialized';return null;}
+    var snapshot = readConfiguration(configuration, 'macos-pin-cache');
+    diagnostics.cache = 'readable';
+    return snapshot;
 }
 function makeSnapshot(identifiers, metadata) {
     if (!Array.isArray(identifiers) || identifiers.length > 32) fail('Unexpected pin list');
@@ -70,7 +85,7 @@ function makeSnapshot(identifiers, metadata) {
 function selfTest() {
     ObjC.registerSubclass({name: 'MSeriesPinReaderFixture', methods: {
         fetchPinnedConversationIdentifiersFromLocalStore: {types: ['void', []], implementation: function() {}},
-        _locallyStoredPinConfiguration: {types: ['id', []], implementation: function() {return $({pP: ['+15550100123', 'group-fixture']});}},
+        _locallyStoredPinConfiguration: {types: ['id', []], implementation: function() {return $({pV: 2, pT: $.NSDate.date, pP: ['+15550100123', 'group-fixture']});}},
         chatMetadata: {types: ['id', []], implementation: function() {return $({});}}
     }});
     var fixture = $.MSeriesPinReaderFixture.alloc.init;
@@ -88,6 +103,30 @@ function selfTest() {
     rejected = false;
     try {readController($.MSeriesUninitializedPinFixture.alloc.init);} catch (_) {rejected = true;}
     if (!rejected) fail('Uninitialized empty configuration was accepted');
+    // Exercise the actual Foundation binary-plist reader against a private
+    // temporary fixture, never the runner's or owner's Messages preferences.
+    var path = ObjC.unwrap($.NSTemporaryDirectory()) + 'mseries-pin-fixture-' + ObjC.unwrap($.NSUUID.UUID.UUIDString) + '.plist';
+    var error = Ref();
+    try {
+        var plist = $({pD: {pV: 2, pT: $.NSDate.date, pP: ['+15550100123', 'group-fixture']}});
+        var data = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(plist, $.NSPropertyListBinaryFormat_v1_0, 0, error);
+        if (!data || !data.writeToFileAtomically(path, true)) fail('Could not create the private cache fixture');
+        var diagnostic = {};
+        var cached = readPinCache(path, diagnostic);
+        if (!cached || cached.source !== 'macos-pin-cache' || cached.pins[1].apple_identifier !== 'group-fixture' || diagnostic.cache !== 'readable') fail('Binary cache read test failed');
+        if (ObjC.unwrap($.NSUserName()) !== 'root') {
+            if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 0}), path, error)) fail('Could not prepare denied-read fixture');
+            try {
+                var denied = {};
+                if (readPinCache(path, denied) !== null || denied.cache !== 'access-denied') fail('Permission denial classification failed');
+            } finally {$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error);}
+        }
+        var empty = $({pD: {pV: 2, pT: $.NSDate.date, pP: []}});
+        var emptyData = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(empty, $.NSPropertyListBinaryFormat_v1_0, 0, error);
+        if (!emptyData.writeToFileAtomically(path, true) || readPinCache(path, {}).pins.length !== 0) fail('Initialized empty cache test failed');
+        var missing = {};
+        if (readPinCache(path + '.missing', missing) !== null || missing.cache !== 'not-found') fail('Missing cache classification failed');
+    } finally {$.NSFileManager.defaultManager.removeItemAtPathError(path, error);}
     return 'Pin reader fixture tests passed; no Apple account accessed.';
 }
 function run(args) {
@@ -96,7 +135,9 @@ function run(args) {
     if (!probe && (args.length !== 2 || args[0] !== '--output'))
         fail('Usage: Export-Message-Pins.js --output /absolute/private/file.json | --probe');
     var diagnostics = {};
+    var snapshot = null;
     try {
+      try {
         var bundle = $.NSBundle.bundleWithPath('/System/Library/PrivateFrameworks/IMCore.framework');
         if (!bundle || !bundle.load) fail('IMCore could not be loaded');
         var cls = $.NSClassFromString('IMPinnedConversationsController');
@@ -107,8 +148,21 @@ function run(args) {
         diagnostics.local_configuration_return_type = signature(controller, '_locallyStoredPinConfiguration');
         if (signature(cls, 'processSupportsPinnedConversations'))
             diagnostics.process_supported = Boolean(cls.processSupportsPinnedConversations);
-        var snapshot = readController(controller);
-        if (probe) return JSON.stringify({status: 'ready', count: snapshot.pins.length, content_printed: false});
+        if (signature(cls, 'currentPinConfigurationVersion'))
+            diagnostics.configuration_version = Number(cls.currentPinConfigurationVersion);
+        try {snapshot = readController(controller);}
+        catch (_) {diagnostics.framework_configuration = 'unavailable';}
+      } catch (_) {diagnostics.framework = 'unavailable';}
+        if (!snapshot) {
+            var path = ObjC.unwrap($.NSHomeDirectory()) + '/Library/Preferences/com.apple.messages.pinning.plist';
+            snapshot = readPinCache(path, diagnostics);
+        }
+        if (!snapshot) {
+            if (diagnostics.cache === 'access-denied')
+                fail('macOS denied access to the pin cache. Grant the launching Terminal app Full Disk Access in System Settings, reopen Terminal, and retry. No export was created.');
+            fail('No initialized Apple pin cache is available. Open Messages and confirm its pins match the iPhone before exporting. This no-account probe cannot verify a signed-in export.');
+        }
+        if (probe) return JSON.stringify({status: 'ready', source: snapshot.source, count: snapshot.pins.length, diagnostics: diagnostics, content_printed: false});
         var path = args[1];
         if (path[0] !== '/') fail('Choose an absolute output path');
         var error = Ref();
@@ -119,8 +173,6 @@ function run(args) {
             fail('Could not secure the private export permissions');
         return 'Exported ' + snapshot.pins.length + ' ordered Messages pins. This is a snapshot; no phone settings changed.';
     } catch (error) {
-        if (diagnostics.process_supported === false)
-            error = new Error('No readable pin configuration. IMCore reports this helper process as unsupported; account initialization and permissions are not established. A successful export has not been verified.');
         if (probe) return JSON.stringify({status: 'unavailable', reason: String(error.message || error), diagnostics: diagnostics, content_printed: false});
         throw error;
     }

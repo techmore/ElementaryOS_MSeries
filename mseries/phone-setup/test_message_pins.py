@@ -70,5 +70,13 @@ class PinTests(unittest.TestCase):
         state['choices'][0] = None
         self.assertEqual(effective_choices(threads(), state), [None, 'missing-group'])
 
+    def test_cache_source_preserves_provenance_and_apple_modification_time(self):
+        value = snapshot();value.update(source='macos-pin-cache', source_modified_at='2026-10-19T16:00:00Z')
+        parsed = validate_snapshot(value)
+        self.assertEqual(parsed['source'], 'macos-pin-cache')
+        self.assertEqual(parsed['source_modified_at'], '2026-10-19T16:00:00+00:00')
+        value['source_modified_at'] = '2099-01-01T00:00:00Z'
+        with self.assertRaises(ValueError): validate_snapshot(value)
+
 
 if __name__ == '__main__': unittest.main()
