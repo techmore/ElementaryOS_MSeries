@@ -9,7 +9,7 @@ work=Path(scratch.name)
 env=os.environ.copy()
 for k in ['WAYLAND_DISPLAY','WAYLAND_SOCKET','DISPLAY','SESSION_MANAGER']:
     env.pop(k,None)
-env.update(XDG_RUNTIME_DIR=tempfile.mkdtemp(prefix='runtime-',dir=work),XDG_CONFIG_HOME=tempfile.mkdtemp(prefix='config-',dir=work),GSETTINGS_BACKEND='memory',WINIT_UNIX_BACKEND='x11',PANTHEON_WAYLAND_DISPLAY='snap-smoke',LIBGL_ALWAYS_SOFTWARE='1',GSK_RENDERER='gl',RUST_LOG='info',GTK_A11Y='none',GTK_USE_PORTAL='0')
+env.update(XDG_RUNTIME_DIR=tempfile.mkdtemp(prefix='runtime-',dir=work),XDG_CONFIG_HOME=tempfile.mkdtemp(prefix='config-',dir=work),GSETTINGS_BACKEND='keyfile',WINIT_UNIX_BACKEND='x11',PANTHEON_WAYLAND_DISPLAY='snap-smoke',LIBGL_ALWAYS_SOFTWARE='1',GSK_RENDERER='gl',RUST_LOG='info',GTK_A11Y='none',GTK_USE_PORTAL='0')
 os.chmod(env['XDG_RUNTIME_DIR'],0o700)
 procs=[]
 def launch(args, e=env, name='process'):
@@ -37,7 +37,7 @@ def action(n):
 try:
     xv=sp.Popen(['Xvfb','-displayfd','1','-screen','0','1280x900x24','-nolisten','tcp'],stdout=sp.PIPE,stderr=(work/'xvfb.log').open('w'),text=True);procs.append(xv)
     env['DISPLAY']=':'+xv.stdout.readline().strip()
-    launch([str(root/'rust/target/debug/pantheon-compositor')],name='compositor')
+    launch([os.environ.get('MSERIES_SMOKE_COMPOSITOR', str(root/'rust/target/debug/pantheon-compositor'))],name='compositor')
     waitfor(lambda:'XWayland is ready' in (work/'compositor.log').read_text())
     log=(work/'compositor.log').read_text()
     inner=re.search(r'display_number[=\x1b\[0-9m ]+(\d+)',re.sub(r'\x1b\[[0-9;]*m','',log)).group(1)
@@ -82,8 +82,15 @@ loop.run()
     dock_binary=os.environ.get('MSERIES_SMOKE_DOCK','/usr/bin/io.elementary.dock')
     if 'MSERIES_SMOKE_DOCK' in os.environ:
         dockenv['GSETTINGS_SCHEMA_DIR']=str(Path(dock_binary).parent.parent/'share/glib-2.0/schemas')
+    # Float the X11 app across the bottom edge before exposing the dock.
+    cmd(['xdotool', 'key', '--clearmodifiers', 'ctrl+super+Down'])
+    cmd(['xdotool', 'windowsize', wid, '400', '300'], xenv)
+    cmd(['xdotool', 'windowmove', wid, '100', '750'], xenv)
+    waitfor(lambda: int(geom()['Y']) == 750)
+    cmd(['gsettings', 'set', 'io.elementary.dock', 'autohide-mode', 'never'], dockenv)
     dock=launch([dock_binary],dockenv,'dock')
     waitfor(lambda:'first Pantheon panel buffer committed' in (work/'compositor.log').read_text())
+    cleared = waitfor(lambda: (g if int(g['Y']) < 750 and int(g['Y']) + int(g['HEIGHT']) <= 900 else None) if (g := geom()) else None)
     assert focused(uid),'dock startup stole focus'
     launch([dock_binary],dockenv,'dock-repeat')
     time.sleep(.5)
@@ -103,7 +110,7 @@ loop.run()
     waitfor(lambda:focused(native_uid))
     cmd(['xdotool','type','--clearmodifiers','native-typing-works'])
     waitfor(lambda:(work/'native-typed').exists() and (work/'native-typed').read_text()=='native-typing-works')
-    print(json.dumps({'native_snap_and_restore':True,'x11_left':left,'x11_right':right,'minimize_restore':True,'typing_after_dock_activation':True,'dock_first_buffer_preserves_focus':True,'dock_repeat_preserves_focus':True},indent=2))
+    print(json.dumps({'dock_cleared_x11_geometry':cleared,'native_snap_and_restore':True,'x11_left':left,'x11_right':right,'minimize_restore':True,'typing_after_dock_activation':True,'dock_first_buffer_preserves_focus':True,'dock_repeat_preserves_focus':True},indent=2))
 except Exception:
     for name in ['compositor','entry','dock','native-entry']:
         log=work/(name+'.log')

@@ -330,3 +330,14 @@ kernel has not exposed. Keep compositor modeset/hotplug qualification separate.
 No change here qualifies an M-series session or hardware. Gala remains the
 production session and rollback until the scoped experience passes on-device
 acceptance.
+
+### Visible dock work area (October 20)
+
+Visible Pantheon panels reserve monitor work area. Maximized and tiled apps
+reflow as before; floating Wayland and XWayland apps now move clear and shrink
+only when necessary, without focus changes. Fullscreen remains fullscreen.
+The owner approved permanent 48-pixel, no-auto-hide dock operation; the
+repeatable setup is `mseries/dock-policy/enable-permanent.sh`. The dock client
+is still Vala/GTK; the compositor integration is Rust. All 18 unit tests and
+the isolated native/X11/focus/typing and bottom-clearance smoke pass. Native
+hardware clearance awaits loading the staged compositor at next login.
