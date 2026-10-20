@@ -118,6 +118,25 @@ pub(crate) fn panel_reserves_work_area(
     !(anchor == Some(ANCHOR_TOP) && mode != TopPanelMode::Normal)
 }
 
+/// How far a window rectangle must move up (and the height it must shrink to)
+/// so it never extends below `work`'s bottom edge — the top of a bottom panel.
+/// Returns `None` when the window already clears it.
+pub(crate) fn clear_of_bottom_panel(
+    rect: Rectangle<i32, Logical>,
+    work: Rectangle<i32, Logical>,
+) -> Option<(i32, Option<i32>)> {
+    let work_bottom = work.loc.y + work.size.h;
+    let rect_bottom = rect.loc.y + rect.size.h;
+    if rect_bottom <= work_bottom {
+        return None;
+    }
+    if rect.size.h > work.size.h {
+        // Too tall to fit: pin to the top of the work area and shrink.
+        return Some((work.loc.y, Some(work.size.h)));
+    }
+    Some((rect.loc.y - (rect_bottom - work_bottom), None))
+}
+
 #[derive(Clone)]
 pub struct PanelSurfaceData {
     pub surface: WlSurface,
@@ -804,6 +823,68 @@ impl PantheonCompositor {
         self.space.map_element(window.clone(), target.loc, false);
     }
 
+    /// Hard stop: a regular window may never sit behind a bottom panel (the
+    /// Windows Work Mode taskbar or dock). Moves it up, or shrinks it when it
+    /// is taller than the work area. Panels and fullscreen windows are exempt.
+    pub(crate) fn keep_clear_of_bottom_panels(&mut self, window: &Window) {
+        if let Some(toplevel) = window.toplevel() {
+            let id = toplevel.wl_surface().id();
+            if self.panels.contains_key(&id)
+                || self.managed_windows.get(&id).is_some_and(|managed| managed.fullscreen)
+            {
+                return;
+            }
+        }
+        let Some(location) = self.space.element_location(window) else {
+            return;
+        };
+        let Some(rect) = self.space.element_geometry(window) else {
+            return;
+        };
+        let Some(output) = self
+            .space
+            .outputs_for_element(window)
+            .first()
+            .cloned()
+            .or_else(|| self.primary_output())
+        else {
+            return;
+        };
+        let Some(output_geometry) = self.space.output_geometry(&output) else {
+            return;
+        };
+        let work = self.work_area_for_output(output_geometry);
+        if work.loc.y + work.size.h >= output_geometry.loc.y + output_geometry.size.h {
+            return; // No bottom panel reserves space on this output.
+        }
+        let Some((new_y, new_height)) = clear_of_bottom_panel(rect, work) else {
+            return;
+        };
+        if let Some(height) = new_height {
+            if let Some(toplevel) = window.toplevel() {
+                toplevel.with_pending_state(|state| {
+                    state.size = Some(Size::from((rect.size.w, height)));
+                });
+                toplevel.send_pending_configure();
+            } else if let Some(x11) = window.x11_surface() {
+                let target = Rectangle::new(Point::from((rect.loc.x, new_y)), Size::from((rect.size.w, height)));
+                if let Err(error) = x11.configure(Some(target)) {
+                    tracing::warn!(?error, "could not shrink X11 window above the taskbar");
+                }
+            }
+        }
+        // element_location is the element origin; geometry may be offset from it.
+        let shifted = Point::from((location.x, location.y + (new_y - rect.loc.y)));
+        self.space.map_element(window.clone(), shifted, false);
+    }
+
+    pub(crate) fn keep_all_clear_of_bottom_panels(&mut self) {
+        let windows: Vec<Window> = self.space.elements().cloned().collect();
+        for window in windows {
+            self.keep_clear_of_bottom_panels(&window);
+        }
+    }
+
     pub(crate) fn reconfigure_managed_windows(&mut self) {
         let mut managed = Vec::new();
         for window in self.space.elements() {
@@ -820,6 +901,7 @@ impl PantheonCompositor {
             self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
         self.reconfigure_tiled_windows();
+        self.keep_all_clear_of_bottom_panels();
     }
 }
 
@@ -829,12 +911,38 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
     } else {
         state.update_tiling_after_commit(surface);
         state.refresh_panel_visibility();
+        if let Some(window) = state.find_window_for_surface(surface) {
+            state.keep_clear_of_bottom_panels(&window);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn rect(x: i32, y: i32, w: i32, h: i32) -> Rectangle<i32, Logical> {
+        Rectangle::new(Point::from((x, y)), Size::from((w, h)))
+    }
+
+    #[test]
+    fn window_above_the_taskbar_is_left_alone() {
+        assert_eq!(clear_of_bottom_panel(rect(0, 100, 800, 600), rect(0, 0, 1920, 1008)), None);
+        assert_eq!(clear_of_bottom_panel(rect(0, 408, 800, 600), rect(0, 0, 1920, 1008)), None);
+    }
+
+    #[test]
+    fn window_behind_the_taskbar_moves_up() {
+        assert_eq!(clear_of_bottom_panel(rect(0, 500, 800, 600), rect(0, 0, 1920, 1008)), Some((408, None)));
+    }
+
+    #[test]
+    fn window_taller_than_the_work_area_is_pinned_and_shrunk() {
+        assert_eq!(
+            clear_of_bottom_panel(rect(0, 50, 800, 1200), rect(0, 32, 1920, 976)),
+            Some((32, Some(976)))
+        );
+    }
 
     #[test]
     fn mode_values_round_trip() {
