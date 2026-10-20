@@ -1,5 +1,27 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native Apple pin import candidate; IMCore process gate remains — 2026-10-20
+
+Draft PR #349 (`codex/messages-apple-pins`): original built-in macOS JXA/Foundation
+exporter plus GTK native ordered import/review. Preserves Apple order, exact
+individual matches, explicit group selections across re-import, unresolved pins,
+selection and drafts. Shows snapshot source/time; never claims live sync. Own
+libsecret item binds private mappings/order to configured phone, without changing
+BlueFerry stars. Tests: 11 pin models, 8 message models, 13 isolated GTK checks,
+one real temporary-home/private-bus Secret Service round trip; light/dark/narrow
+fixtures reviewed. Native installer passes and is staged on disk; running app
+PID 263569 was deliberately preserved, so this window gets import at next launch.
+MAP/PBAP remained true with 727 contacts. No text sent or owner pins read.
+
+Actual macOS ARM jobs passed JXA return-signature/ordered/empty/error fixtures.
+The real no-account probe found IMCore and both selectors (fetch `v`, local getter
+`@`) but **process_supported=false** and no initialized pin configuration. This
+is an open access/role issue, not a successful export. Next: qualify read-only
+private-framework access for the helper process; do not tell the owner a reboot
+will definitely export pins. No SIP/signing changes are made by this candidate.
+Small kit can target a mounted NAS and fetches no VM data. Source/probe details:
+`phone-setup/PIN-SYNC-RESEARCH.md`; commands: `phone-setup/macos-visit/README.md`.
+
 ## iPhone Messages pins: private Apple path identified — 2026-10-20
 
 Owner requested real iPhone conversation-pin import/sync. Source investigation

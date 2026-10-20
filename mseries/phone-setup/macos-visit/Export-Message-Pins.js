@@ -1,5 +1,5 @@
 /* Original MSeries read-only IMCore adapter. Run with macOS osascript -l JavaScript.
- * No Apple Events, signing overrides, SIP changes or third-party code required.
+ * Makes no Apple Events calls, signing overrides or SIP changes.
  * Private interfaces are probed at runtime; unavailable is never an empty list.
  */
 ObjC.import('Foundation');

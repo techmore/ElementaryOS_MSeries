@@ -2,6 +2,13 @@
 
 ## Import the iPhone's Messages pins — requested 2026-10-20
 
+Candidate PR #349 adds the ordered native import/review and encrypted mapping
+store, staged for next Messages launch. The original IMCore reader passes macOS
+runtime fixtures; its real runner probe reports the standalone process unsupported
+and no initialized pin configuration. Resolve that access gate before promising
+an owner export or another successful macOS trip. The source and validation record
+below now distinguishes implemented importer mechanics from unqualified pin access.
+
 Open feature: native Pin/Unpin, a qualified ordered Mac snapshot import, then
 direct Linux synchronization of Apple's pin-settings store. Research found
 private IMCore/KVS interfaces and public Mac examples; no supported public

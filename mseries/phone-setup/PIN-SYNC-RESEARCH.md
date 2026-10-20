@@ -10,6 +10,31 @@ found. Public projects expose private Apple interfaces on macOS or jailbroken
 iOS. Our current BlueFerry connection does not import or export iPhone pins.
 No phone pin data was read or changed during this investigation.
 
+## Implementation candidate and actual remaining gate
+
+The owner selected the private macOS framework path. `macos-visit/Export-Message-Pins.js`
+now implements an original JXA/Foundation reader with runtime return-signature
+checks; the known void fetch selector is never interpreted as an object. Native
+Messages has an ordered import/review interface, explicit group matching,
+re-import identity retention, snapshot provenance and app-owned phone-scoped
+keyring persistence. This is an initial snapshot implementation, not live sync.
+
+Linux qualification: 11 matching/import model tests, 8 existing message model
+tests, 13 private GTK interaction/render checks and a real isolated Secret
+Service round trip passed. Light/dark/narrow fixture screenshots were inspected.
+The installer staged the update while leaving the running Messages PID and
+working MAP session unchanged; the current window loads it at next launch.
+
+macOS qualification: actual ARM macOS runner jobs passed bridge/ordered/empty
+configuration fixtures and the real no-account probe. The real probe confirms
+the fetch return type is `v` and local configuration accessor is `@`, but reports
+**`process_supported=false`** and no initialized configuration. This exposes a
+process-role/access gate in addition to the lack of a signed-in owner account;
+opening Messages alone must not be presented as a guaranteed fix. A successful
+owner-account export with SIP retained is still unproven. Keep the feature PR
+in draft until this gate is understood and owner-data qualification is planned.
+No real pins, account secrets or Apple implementation code enter Git.
+
 ## Apple documentation and public implementations
 
 | Source | Evidence and limit |

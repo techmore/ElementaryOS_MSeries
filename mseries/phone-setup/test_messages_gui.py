@@ -163,13 +163,13 @@ class MessagesUI(unittest.TestCase):
             Gtk.Settings.get_default().props.gtk_application_prefer_dark_theme = dark
             self.app.window.set_default_size(1080, 720)
             settle(.4)
-            ImageGrab.grab(xdisplay=os.environ['DISPLAY']).save(out/('messages-dark.png' if dark else 'messages-light.png'))
+            ImageGrab.grab(bbox=(0, 0, self.app.window.get_width(), self.app.window.get_height()), xdisplay=os.environ['DISPLAY']).save(out/('messages-dark.png' if dark else 'messages-light.png'))
             dialog = self.app.show_pin_review(self.pin_snapshot());settle(.3)
-            ImageGrab.grab(xdisplay=os.environ['DISPLAY']).save(out/('pin-import-dark.png' if dark else 'pin-import-light.png'))
+            ImageGrab.grab(bbox=(0, 0, dialog.get_width(), dialog.get_height()), xdisplay=os.environ['DISPLAY']).save(out/('pin-import-dark.png' if dark else 'pin-import-light.png'))
             dialog.close();settle(.1)
         self.app.window.set_default_size(480, 680)
         settle(.4)
-        ImageGrab.grab(xdisplay=os.environ['DISPLAY']).save(out/'messages-narrow.png')
+        ImageGrab.grab(bbox=(0, 0, self.app.window.get_width(), self.app.window.get_height()), xdisplay=os.environ['DISPLAY']).save(out/'messages-narrow.png')
 
 
 if __name__ == '__main__':
