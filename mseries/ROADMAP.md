@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Import the iPhone's Messages pins — requested 2026-10-20
+
+Open feature: native Pin/Unpin, a qualified ordered Mac snapshot import, then
+direct Linux synchronization of Apple's pin-settings store. Research found
+private IMCore/KVS interfaces and public Mac examples; no supported public
+Linux API or implemented BlueFerry/RustPush phone-pin sync was found. Local
+BlueFerry stars are separate preferences. Preserve exact order, distinguish
+snapshot/stale/unavailable from live sync, and resolve groups using verified
+identity rather than names. No Mac export or phone pin access is qualified yet.
+See [source review and implementation gates](phone-setup/PIN-SYNC-RESEARCH.md).
+
 ## Desktop message notification popups — 2026-10-20
 
 Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.

@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## iPhone Messages pins: private Apple path identified — 2026-10-20
+
+Owner requested real iPhone conversation-pin import/sync. Source investigation
+found IMCore's private IMPinnedConversationsController and its dedicated
+NSUbiquitousKeyValueStore synchronization path. BlueBubbles/webMessages have
+macOS implementations; this is not an exposed BlueFerry Bluetooth function.
+Current RustPush chat/history models contain no implemented pin reader. A
+webMessages exporter has a return-type discrepancy against available runtime
+headers, so it is reference evidence rather than a qualified drop-in solution.
+
+Retained source pins, Apple documentation, findings and acceptance criteria:
+`phone-setup/PIN-SYNC-RESEARCH.md`. Next: native local Pin/Unpin, followed by a
+read-only SIP-retained Mac export probe; only integrate into the one-visit kit
+after that probe works. Continuous Linux phone-pin sync needs a dedicated
+ubiquitous-settings adapter; no verified implementation or timeframe yet.
+Nothing was deployed or changed on the phone during this investigation. The
+working text session remains intact. Verification-code assistance is separate
+unfinished work and remains uninstalled.
+
 ## Desktop message notification popups — 2026-10-20
 
 Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
