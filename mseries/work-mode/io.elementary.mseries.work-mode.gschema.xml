@@ -27,9 +27,9 @@
       <description>Local time at which the normal wallpaper is restored.</description>
     </key>
     <key name="work-wallpaper" type="s">
-      <default>''</default>
+      <default>'/usr/share/backgrounds/mseries/work-mode-blue-flow.png'</default>
       <summary>Work wallpaper image</summary>
-      <description>Image file used while Work Mode is active.</description>
+      <description>Image file used while Work Mode is active. Starts with the supplied Blue Flow wallpaper.</description>
     </key>
   </schema>
 </schemalist>

@@ -12,13 +12,16 @@ its GObject base constructor. The plug is now installed at
 `/usr/lib/aarch64-linux-gnu/switchboard-3/personal/`, the schema is compiled
 system-wide, and `mseries-work-mode.timer` is enabled and active. GSettings
 reports Work Mode disabled and no work wallpaper selected, so the existing
-desktop wallpaper was left alone. After moving the base `Object` construction
+desktop wallpaper was left alone. A separate Windows 11-inspired Blue Flow
+work wallpaper now ships with the panel and is the default for new installs;
+this asset/default is on `codex/work-mode-wallpaper-default` and has not yet
+been installed locally. After moving the base `Object` construction
 ahead of instance-field initialization, rebuilt and reinstalled the module.
 Reopening System Settings exited cleanly; the only new output was GTK sizing and
 software-renderer warnings, with no second crash. The exact panel contents have
 not been visually inspected. Next: inspect the Work Mode panel, select a work
 image, and verify live schedule transitions. The fix is on
-`codex/work-mode-load-fix`.
+`codex/work-mode-load-fix` (merged as PR #306).
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 

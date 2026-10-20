@@ -2,8 +2,10 @@
 
 Work Mode is an elementary OS System Settings panel for switching between the
 usual wallpaper and a separate work wallpaper. Open **System Settings →
-Personal → Work Mode** to select the work image, turn the mode on, and optionally
-enable a weekday schedule with local start and end times.
+Personal → Work Mode** to turn on the supplied Blue Flow work wallpaper, choose
+another image, or enable a weekday schedule with local start and end times. The
+usual desktop wallpaper remains unchanged until Work Mode is enabled; it is
+restored when Work Mode turns off or the work window ends.
 
 The user systemd timer checks once per minute. It stores the current wallpaper
 when it first applies the work image and restores that image when Work Mode is
