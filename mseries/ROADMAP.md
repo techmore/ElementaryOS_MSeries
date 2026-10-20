@@ -141,6 +141,16 @@ Firefox/GTK. The new binary is not installed; that needs a package build and a
 compositor restart, which ends the owner's session. Next: finger-following
 (1:1) workspace and overview animations, and a pinch-out action (show
 desktop) once the compositor has that action.
+## Repository housekeeping — 2026-10-20
+
+Updated the owner checkout by 21 commits to `8ed3a76`, backed up two
+byte-identical untracked documents now tracked by dev, and pruned three
+registrations for missing worktree directories. All 43 existing worktrees,
+local branches, and unrelated drafts remain. Git connectivity and whitespace
+checks pass. Five other worktrees have local changes and remain untouched.
+See OS9-HANDOFF.md for commands and backup location. Next: review open
+feature PRs under their own CI and qualification gates.
+
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
 Owner visually confirmed the native Pantheon dock, then explicitly requested
