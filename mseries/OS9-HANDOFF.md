@@ -8073,3 +8073,13 @@ No bootloader, kernel, running audio stack, hardware configuration, Wingpanel pr
   CLI account sdolbec1@… Max 20× (profile `default_claude_max_20x`), 5 h 0% left
   (matches Anthropic's usage API: 100% used). Visual inspection of the panel was not
   done (no screenshots of the owner's desktop); interactive switching remains unverified.
+- 2026-10-20 Rust compositor desktop cursor: owner reported the pointer looked damaged
+  over the desktop but fine in apps. Cause: with no client cursor surface (desktop,
+  borders) `pantheon-compositor` drew a hand-built 16×20 1x placeholder arrow, upscaled
+  on the scale-2 eDP panel. Added `src/cursor_theme.rs`: reads `cursor-theme`/`cursor-size`
+  from `org.gnome.desktop.interface` (XCURSOR_* then elementary/24 fallbacks), decodes the
+  XCursor image at ceil(output scale) with the correct hotspot, honours named cursors, and
+  reloads when the interface settings change; the old arrow stays only as a last resort.
+  `cargo test --features native-drm cursor_theme` passes against the installed elementary
+  theme; clippy clean for the touched files. Takes effect at next login of the Rust
+  session (running compositor untouched). Visual check by the owner still pending.
