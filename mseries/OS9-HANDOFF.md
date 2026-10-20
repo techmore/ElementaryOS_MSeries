@@ -32,10 +32,16 @@ from `origin/dev`; presentation only, no change to sending, routing or storage.
   lost: phonebook name resolution, media-link preview cards and the unread dot
   left of the avatar with 1.4em names now live in the new structure. Their two
   GTK tests pass unchanged. After this lands, PR #352 is redundant.
-- Verification after the merge: 30 model, 5 media and 45 GTK tests pass, no GTK
+- Verification after the merge: 30 model, 5 media and 47 GTK tests pass, no GTK
   warnings; light, dark and narrow renders with cached photo/GIF cards reviewed.
 - Installed on the owner's desktop and relaunched; the previous window (from the
   readability branch) was closed first. Not verified against live media links.
+- CI (GTK 4.22.4, same as this machine) ran without the elementary stylesheet
+  and lacked `accent_bg_color`/`accent_fg_color`. The app now probes the theme
+  and defines both from `theme_selected_*` when missing, so the bubbles and
+  the colour-resolution test behave the same on every theme. Granite forces
+  the elementary stylesheet locally, so that path is proven by unit tests of
+  the probe and alias and by CI, not by a local render.
 - Next: in-app group participant confirmation (still routed to Advanced
   BlueFerry), a keyboard-shortcuts overlay, and Enter-to-send as an opt-in.
 ## Native media-link rendering — 2026-10-20
