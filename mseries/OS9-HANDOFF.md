@@ -7536,3 +7536,7 @@ Next: find what keeps the native main loop redrawing (per-frame client commits v
 ## Redraw-reason counters — 2026-10-20
 
 `redraw_stats.rs`: atomic counters for surface commits (per client process, top 4 by name/pid), `request_native_redraw` calls, DRM vblanks, frames queued and frames empty, logged every 30 s at INFO as `redraw stats /30s: ...` (silent when idle). Nested Xvfb smoke with Wingpanel showed the line (43 commits, 87 redraw requests); 2 unit tests; fmt/clippy (both feature sets) clean. Not yet running in the owner's session: it applies after rebuild, package install and next login. Use it to explain the native main thread's ~17% CPU: if `vblanks` ~120/30s*... and `frames_queued` track a client's commits, that client drives the loop; if `redraw_requests` >> commits, a compositor-side request loop exists.
+
+## Package 0.1.0+gitc995a60 installed — 2026-10-20
+
+Built from the branch tip (SHA-256 `1aeea7ce…3725e`) and installed; `--verify` passes. The running compositor (pid 1983, older build) was not restarted. The redraw-stats log line appears after the next login: `journalctl --user -u pantheon-rust-compositor@wayland.service | grep 'redraw stats'`. dmabuf remains off.
