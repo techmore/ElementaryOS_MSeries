@@ -5,7 +5,6 @@ namespace MSeriesWorkMode {
         private GLib.Settings settings;
 
         public Plug () {
-            settings = new GLib.Settings ("io.elementary.mseries.work-mode");
             var supported = new Gee.TreeMap<string, string?> (null, null);
             supported.set ("personal/work-mode", "Work Mode");
             Object (
@@ -16,6 +15,7 @@ namespace MSeriesWorkMode {
                 icon: "preferences-desktop-wallpaper",
                 supported_settings: supported
             );
+            settings = new GLib.Settings ("io.elementary.mseries.work-mode");
         }
 
         public override Gtk.Widget get_widget () {

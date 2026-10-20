@@ -6,12 +6,19 @@ Added `mseries/work-mode/` with a native Switchboard panel, GSettings schema,
 wallpaper scheduler, one-minute user timer, and `mseries/install-work-mode.sh`.
 The panel offers a manual switch, work-wallpaper selection, weekday-only option,
 and start/end times. The scheduler saves the pre-work wallpaper on activation
-and restores it after the work window. Changes are on
-`codex/work-mode-scheduler` from `origin/dev`. The Switchboard module compiles
-with the local elementary dependencies; GSettings schema, shell syntax, and
-whitespace checks pass. No install or visual acceptance has been performed.
-Next: install on the elementary OS 9 host and review the actual System Settings
-panel and schedule transitions.
+and restores it after the work window. The initial install exposed and fixed a
+Switchboard plug startup crash: the plug was touching an instance field before
+its GObject base constructor. The plug is now installed at
+`/usr/lib/aarch64-linux-gnu/switchboard-3/personal/`, the schema is compiled
+system-wide, and `mseries-work-mode.timer` is enabled and active. GSettings
+reports Work Mode disabled and no work wallpaper selected, so the existing
+desktop wallpaper was left alone. After moving the base `Object` construction
+ahead of instance-field initialization, rebuilt and reinstalled the module.
+Reopening System Settings exited cleanly; the only new output was GTK sizing and
+software-renderer warnings, with no second crash. The exact panel contents have
+not been visually inspected. Next: inspect the Work Mode panel, select a work
+image, and verify live schedule transitions. The fix is on
+`codex/work-mode-load-fix`.
 
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 

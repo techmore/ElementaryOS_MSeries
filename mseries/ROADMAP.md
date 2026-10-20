@@ -5,8 +5,10 @@
 Added a native Switchboard panel under Personal with a Work Mode switch, a
 work-wallpaper picker, weekday scheduling, and start/end times. A per-user
 systemd timer checks once a minute and restores the wallpaper that was active
-before Work Mode began. Implementation and installer are on
-`codex/work-mode-scheduler`; build, install and visual acceptance are pending.
+before Work Mode began. The panel and timer are installed on the J314S desktop.
+The first launch found a Switchboard constructor-order crash, now fixed and
+reinstalled; System Settings exits cleanly on relaunch. Visually inspect the
+panel, then select an image and verify actual wallpaper transitions.
 
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
