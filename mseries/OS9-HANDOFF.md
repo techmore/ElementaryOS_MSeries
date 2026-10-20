@@ -7937,3 +7937,15 @@ CONNECT variants and hands-free connection all failed. Raw capture files stay
 mode-0600 outside Git. Native retry live result remains access-denied with the
 bond retained; 18 scoped checks pass. No successful message session or delivery.
 No re-pair, reboot, kernel, partition or Wingpanel change was made.
+
+Upstream messaging audit: `phone-setup/UPSTREAM-REVIEW.md` pins current BlueFerry
+60fd7ef1 and Tether 9088422a, compares the live stack against protocol/pairing
+guides, and records BlueZ 5.85 compatibility limitations (upstream latest 5.87;
+Ubuntu candidate remains 5.85). 152 installed backend/GTK Python modules match
+upstream; Qt files are intentionally not installed. Forced compact/global
+discovery and OBEX server filters did not solve access and are removed. The
+BR/EDR advertising flag was intentional BlueZ behavior, not a proven bug. HFP
+SLC completed but MAP remained denied. Original discovery restored after stopping
+the advertisement to avoid EBUSY; packaged BlueFerry/obex commands and WirePlumber
+are active. No new re-pair or message send occurred. Next meaningful trial is
+a matched isolated BlueZ 5.87 build with verified bearer API, not more setup UI.

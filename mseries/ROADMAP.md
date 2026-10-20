@@ -2369,3 +2369,9 @@ Connect iPhone gains bounded Retry Connection without unpairing and stable
 blocked/service/disconnected states. MAP transport and CONNECT probes all still
 receive iPhone Forbidden. Text delivery remains the blocker, not solved by UI
 checks or contact sync. No further VM/partition work is part of this retry.
+
+Upstream protocol audit retained in `phone-setup/UPSTREAM-REVIEW.md`: installed
+BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
+bearer methods. Experimental advertisement/OBEX overrides were reverted after
+failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
+full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
