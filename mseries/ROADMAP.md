@@ -24,6 +24,15 @@ grouping, message delivery, notifications, camera/microphone, screen sharing
 and meeting join remain unverified. This is a web integration, not a native Teams reimplementation or
 factory-image qualification. See `mseries/teams-web/README.md` for commands,
 support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
+## Repository housekeeping — 2026-10-20
+
+Updated the owner checkout by 21 commits to `8ed3a76`, backed up two
+byte-identical untracked documents now tracked by dev, and pruned three
+registrations for missing worktree directories. All 43 existing worktrees,
+local branches, and unrelated drafts remain. Git connectivity and whitespace
+checks pass. Five other worktrees have local changes and remain untouched.
+See OS9-HANDOFF.md for commands and backup location. Next: review open
+feature PRs under their own CI and qualification gates.
 
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
