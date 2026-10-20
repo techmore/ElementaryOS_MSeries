@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..51480fa 100644
+index d97686d..654cb55 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,212 @@ backgrounditem .close-button {
+@@ -203,3 +203,241 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -215,6 +215,35 @@ index d97686d..51480fa 100644
 +dock-window.taskbar.dark .running-indicator:disabled {
 +    background: rgba(255, 255, 255, 0.55);
 +}
++
++/* Windows 11 dark Start/Search panel, following the dark style preference. */
++dock-window.taskbar.dark popover.start-menu > contents {
++    background: rgba(32, 32, 32, 0.97);
++    color: rgba(255, 255, 255, 0.92);
++    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
++}
++
++dock-window.taskbar.dark popover.start-menu .start-search {
++    background: rgba(255, 255, 255, 0.06);
++    color: rgba(255, 255, 255, 0.92);
++    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -1px 0 0 #4cc2ff;
++}
++
++dock-window.taskbar.dark popover.start-menu .start-pill {
++    background: rgba(255, 255, 255, 0.06);
++    color: rgba(255, 255, 255, 0.92);
++    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
++}
++
++dock-window.taskbar.dark popover.start-menu .start-tile:hover,
++dock-window.taskbar.dark popover.start-menu .start-list row:hover {
++    background: rgba(255, 255, 255, 0.06);
++}
++
++dock-window.taskbar.dark popover.start-menu .start-footer {
++    background: rgba(0, 0, 0, 0.2);
++    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
++}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
 --- a/data/dock.gschema.xml
@@ -350,7 +379,7 @@ index 0377885..40f991f 100644
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 652c549..8b95f4b 100644
+index 652c549..e77549e 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -38,6 +38,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -573,7 +602,7 @@ index 652c549..8b95f4b 100644
  #if WORKSPACE_SWITCHER
                  panel.request_visible_in_multitasking_view ();
  #endif
-@@ -214,12 +351,28 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -214,12 +351,32 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      private static Wl.RegistryListener registry_listener;
      private void init_panel () {
@@ -596,14 +625,18 @@ index 652c549..8b95f4b 100644
 +                // The flush taskbar has no floating shadow. Shadow insets derived from a
 +                // surface that grew (e.g. while the Start menu lays out) produced a negative
 +                // window-geometry height, a fatal xdg_surface invalid_size error in smithay.
-+                size.set_shadow_width (0, 0, 0, 0);
++                // Frame exactly the bar (full monitor width, bottom TaskbarRow.HEIGHT px) so the
++                // compositor sets it flush; clamp so the geometry is always at least 1x1.
++                var side = int.max (0, (surface.width - int.min (taskbar_width, surface.width)) / 2);
++                var top = int.max (0, surface.height - int.min (TaskbarRow.HEIGHT, surface.height));
++                size.set_shadow_width (side, side, top, 0);
 +                return;
 +            }
 +            var item_manager_width = get_content_width ();
              var shadow_size = (surface.width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size - 1;
              size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
-@@ -229,8 +382,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -229,8 +386,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              apply_panel_offset ();
              // manually set input region since container's shadow are is the content of the window
              // and it still gets window events
@@ -616,7 +649,7 @@ index 652c549..8b95f4b 100644
              var top_margin = TOP_MARGIN + shadow_size;
  
              if (drawers_panel != null && drawers_panel.get_visible ()) {
-@@ -261,11 +417,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -261,11 +421,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              if (widget_border_radius != null) {
                  border_radius = widget_border_radius;
              }
@@ -633,7 +666,7 @@ index 652c549..8b95f4b 100644
              } else {
                  update_panel_x11 ();
              }
-@@ -298,10 +458,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -298,10 +462,10 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
              var prop = xdisplay.intern_atom ("_MUTTER_HINTS", false);
  
