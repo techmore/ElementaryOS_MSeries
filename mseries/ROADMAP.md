@@ -1,5 +1,56 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Working iPhone messages and native Messages app — 2026-10-20
+
+The controlled 5.87 trial now has **real send and receive evidence**. Root-owned
+BlueZ 5.87 bluetoothd/obexd/client run from a scoped prefix; bearer methods were
+verified on the actual daemon. The fresh upstream Connect-first pairing exposed
+Hands-Free and produced Classic + LE keys. After the owner enabled the newly
+visible Show Message Notifications switch, MAP/MNS opened. One authorized self
+text was sent and received, followed by an authorized contact test and two real
+incoming replies. Contacts retained; optional ANCS remains unavailable. No
+message contents, phone numbers or keys enter Git. The combination worked; the
+trial does not isolate a single causal change.
+
+Fixed the live candidate's version-detection mismatch by matching bluetoothctl
+to the daemon in scoped service/launcher PATHs. BlueFerry otherwise read distro
+CLI 5.85 and selected compatibility despite 5.87 running. Persistent drop-ins
+are installed without restarting the working message session. Reproducible
+installer/rollback: `mseries/install-messaging-bluez.sh`. Distro binaries,
+kernel/bootloader and Wingpanel remain untouched. The pairing flow removed only
+BlueFerry's phone-audio restriction; normal Hands-Free is now offered.
+
+New `mseries-messages` / Messages desktop entry: GTK 4 + Granite 7, conversation
+sidebar/search, plain-text bubbles, explicit contact/address selection,
+contact-photo avatars with initials fallback, larger sidebar names,
+multiline composer/Ctrl+Enter, per-conversation drafts while open, pending and
+retry states, responsive navigation, theme following and original app icon.
+Backend transport, encrypted history and group routing stay upstream. Setup
+hands off to this native client; advanced group setup remains in BlueFerry.
+
+Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect
+and logind resume,
+on manual refresh and after five minutes between successful reads, using wall
+time so suspend counts. Snapshot merges preserve known group routes and dedupe
+MAP handles. Inbox-only snapshots stay in memory; no plaintext archive is added.
+A live query returned 11 entries. Complete iCloud history and sent-history import
+are not supported; controlled sleep/missed-message recovery and reboot remain
+unverified. Source details: `phone-setup/UPSTREAM-REVIEW.md`, user behavior and
+rollback: `phone-setup/README.md`.
+
+Contact-photo caching was explicitly requested and enabled; a real PBAP sync
+returned 727 contacts and 34 photos while MAP stayed connected.
+
+Verification: 26 setup/protocol/reconnect/model tests and 9 private-display GTK
+checks; light/dark/narrow synthetic screenshots reviewed. Draft routing across
+conversation switches, duplicate-send prevention, failed-send retry retention,
+group identity tokens, malicious addresses, search, offline state and narrow
+navigation covered. Live native app started, MAP stayed connected, and recent
+inbox rendering loaded without startup errors. Final send through the redesigned
+composer and assistive-technology traversal remain hardware/UI follow-ups.
+Localization strings are extractable; translated catalogs are not shipped.
+
+
 ## Transparent Outlook icon; dock deployment recovered — 2026-10-20
 
 Outlook now fetches the transparent, checksum-pinned Office SVG directly from
@@ -2794,6 +2845,49 @@ performed during this cleanup review. The diagnostic boot selection is untouched
 
 Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.
 
+### Experimental iPhone onboarding and macOS guest preparation (2026-10-20)
+
+`codex/messaging-macos-lab`: native Connect iPhone wizard, optional BlueFerry
+integration and personal Bubbles build prepared. iPhone 14 Pro/iOS 27.0.1 MAP
+permissions remain blocked; do not advertise working messaging yet. Machine Lab
+has read-only VMApple readiness checks and current pinned Linux/KVM research;
+M1 Pro boot, iMessage activation and dock-triggered full state save/restore are
+not qualified. See `phone-setup/README.md` and
+`machine-lab/experiments/vmapple/README.md`.
+
+## One-visit Mac activation kit — 2026-10-20
+
+Experimental messaging branch now includes a public downloadable Mac checklist
+and pinned helper downloader at `phone-setup/macos-visit/`. Messaging requires
+the genuine native hardware export and private transfer back to Linux. Optional
+Machine Lab guest collection is documented for the same visit, with storage and
+compatibility limits explicit. Shell checks pass; macOS execution and Bubbles
+activation still require the owner. No claim that future VM work will never need
+another macOS visit.
+
+Single collector now includes the Machine Lab guest instead of leaving it as a
+manual optional path: pinned downloads, genuine hardware export, native guest
+startup, portable identity/storage configuration and re-read external hashes.
+A completion receipt means files collected and transferred, not a qualified
+Linux macOS boot. Next owner action: run it in native macOS with AC power and
+an external exFAT drive; bring the verified private bundle back to Linux.
+
+No-external-drive path: collector accepts an existing internal exFAT shared
+partition. Creating one remains a separate capacity/backup/resize decision on
+macOS; the collector performs no partition operations. Merely leaving the bundle
+in macOS Downloads is not accessible from this Linux installation.
+
+Native messaging redo: prior failed audio workaround rolled back; installed
+Connect iPhone gains bounded Retry Connection without unpairing and stable
+blocked/service/disconnected states. MAP transport and CONNECT probes all still
+receive iPhone Forbidden. Text delivery remains the blocker, not solved by UI
+checks or contact sync. No further VM/partition work is part of this retry.
+
+Upstream protocol audit retained in `phone-setup/UPSTREAM-REVIEW.md`: installed
+BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
+bearer methods. Experimental advertisement/OBEX overrides were reverted after
+failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
+full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
 ## Windows taskbar + CodexBar persistence — 2026-10-20
 
 The canonical dock installer now applies the complete Windows taskbar stack and
