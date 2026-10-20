@@ -2888,6 +2888,16 @@ BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
 bearer methods. Experimental advertisement/OBEX overrides were reverted after
 failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
 full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
+
 ## Windows taskbar + CodexBar persistence — 2026-10-20
 
 The canonical dock installer now applies the complete Windows taskbar stack and
@@ -2934,12 +2944,12 @@ inspection pass locally. Live read-only matching resolves both open Brave apps.
 Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
 See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
 
-## Taskbar reboot/update persistence audit — 2026-10-20
+## Darker running-app markers — 2026-10-20
 
-Verified installed session dependency, private wrapper/executable path, persistent
-taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
-user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
-two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
-using the private schema; factory payload now carries the complete taskbar/shared
-CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
-regression tests exercise the real payload and profile apply/revert paths.
+Owner requested darker gray running dots/pills. The complete taskbar now uses
+65% black in light mode and 35% white in dark mode (previously 45% / 55%).
+Focused blue markers, geometry, Start menu, CodexBar and app icons are unchanged.
+Full canonical native build/schema, actual Launcher startup/focus/close/reopen
+and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
+All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
+only in these two marker colors.
