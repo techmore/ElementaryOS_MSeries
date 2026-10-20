@@ -78,12 +78,14 @@ jobs:
           python3 mseries/dock-tests/test-launcher.py
 
   desktop-space:
-    name: Native notch GTK allocation (arm64)
+    name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK test dependencies
-        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev xvfb xauth build-essential
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential
+      - name: Test top-bar 115 percent measurement and allocation
+        run: bash mseries/display-space/test-panel-scale.sh
       - name: Test production notch geometry and crowded panel allocation
         run: bash mseries/display-space/test-notch-layout.sh
       - name: Verify exact-kernel boot profile and rollback
