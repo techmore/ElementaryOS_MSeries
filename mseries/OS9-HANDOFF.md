@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## apt: man-db trigger off — 2026-10-19 (Claude)
+
+Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg
+triggers are (man-db ran 55 times in `/var/log/apt/term.log`). Installing `cowsay` took 2.63 s with man-db
+auto-update on and 1.73 s off. The `tuning` module now removes `/var/lib/man-db/auto-update` and, on a live root,
+sets debconf `man-db/auto-update false`; `man-db.timer` still refreshes the index daily. Applied on this machine.
+`mseries/test-apt-tuning.sh` covers it. Still unmeasured: a large upgrade. Remaining slow triggers: libc-bin,
+gnome-menus, desktop-file-utils, icon caches.
+
 ## Faster apt defaults — 2026-10-19 (Claude)
 
 Branch `claude/apt-speed`. The `tuning` module in `mseries/enhance.sh` now also writes
