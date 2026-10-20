@@ -39,6 +39,14 @@ The macOS (experimental) page in the app runs real commands and records the outp
 4. `qemu-system-x86_64`: not installed (and it could only emulate, never use KVM, on an ARM host).
 5. Emulating an Intel Mac in software: not attempted (Apple recovery image, OpenCore, tens of times slower).
 
+## macOS: where the firmware can come from (2026-10-20)
+
+Probed read-only (details in `experiments/vmapple/README.md`): this Mac's macOS container is encrypted by the Secure Enclave and
+unreadable from Linux; its Recovery volume mounts but has no `AVPBooter`. So a real macOS boot needs the three Apple files made on
+a Mac running macOS (`macosvm`). `experiments/vmapple/run-vmapple.sh` boots them on the patched QEMU as soon as they exist in
+`~/vms/macos`, and the macOS page now has an AVPBooter probe. Verdict: macOS-on-Linux-KVM is blocked on inputs, not on this
+machine model; not claimed as working.
+
 ## macOS: QEMU `vmapple` on this Linux Mac (2026-10-19)
 
 Built QEMU master (11.1.50) in `~/src/qemu-vmapple` with two local patches and ran its `vmapple` machine under KVM:
