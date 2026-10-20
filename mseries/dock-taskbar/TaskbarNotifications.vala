@@ -127,7 +127,7 @@ public class Dock.TaskbarNotifications : Gtk.Box {
                 padding: 4px 8px;
             }
             button.mseries-notification-bell label.badge {
-                background-color: @theme_bg_color;
+                background-color: transparent;
                 background-image: none;
                 color: inherit;
                 border: none;

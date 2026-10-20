@@ -72,7 +72,7 @@ apply/revert. Reboot configuration checks do not claim a physical reboot test.
 ## Notification bell
 
 The bell uses a 30-pixel icon without an outer border. The unread count sits inside the bell
-with a soft native background and no bright accent. History and
+as plain inherited text without a badge background or accent. History and
 context menus follow native theme colors and controls, with compact Open/Reply
 actions and bounded previews.
 
