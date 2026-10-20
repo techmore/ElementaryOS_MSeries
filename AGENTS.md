@@ -57,8 +57,11 @@
 
 ## UI consistency guidance
 
-For ElementaryOS_MSeries screens, settings and indicators, use the project
-[UI specialist skill](.agents/skills/elementaryos-mseries-ui-specialist/SKILL.md).
+Automatically use the project
+[UI specialist skill](.agents/skills/elementaryos-mseries-ui-specialist/SKILL.md)
+when building, editing or reviewing ElementaryOS_MSeries screens, settings,
+indicators and UI interaction states, even when the user does not name the skill.
+Read its entry point and the references relevant to the changed surface.
 It maps the existing GTK/Granite, Wingpanel and Switchboard surfaces and records
 Apple's SwiftUI specialist skill and Human Interface Guidelines as reference
 guidance. The owner values Apple's design standards; express that quality

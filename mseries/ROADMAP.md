@@ -4,7 +4,8 @@
 
 Branch `codex/mseries-ui-specialist` adds the repository-owned
 `.agents/skills/elementaryos-mseries-ui-specialist/` and an `AGENTS.md` entry
-for UI work. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
+for automatic use during UI work, with implicit invocation explicitly enabled
+in `agents/openai.yaml`. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
 indicators, the Switchboard/libadwaita Work Mode plug, and two retained
 Troubleshooter screenshots at `ed0d31a`. The skill records Apple's design
 standards as the owner's quality reference and explicitly links the original
