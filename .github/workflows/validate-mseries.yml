@@ -128,7 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK test dependencies
-        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
       - name: Test top-bar 130 percent measurement and allocation
         run: bash mseries/display-space/test-panel-scale.sh
       - name: Test production notch geometry and crowded panel allocation

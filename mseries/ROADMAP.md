@@ -2888,6 +2888,16 @@ BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
 bearer methods. Experimental advertisement/OBEX overrides were reverted after
 failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
 full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
+
 ## Windows taskbar + CodexBar persistence — 2026-10-20
 
 The canonical dock installer now applies the complete Windows taskbar stack and

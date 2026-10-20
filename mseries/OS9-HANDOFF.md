@@ -8755,6 +8755,16 @@ after recovery confirmation, qualify the merged compositor and remaining
 Teams/Outlook interactions. No Wingpanel, compositor,
 kernel, bootloader or audio-stack restart was performed.
 
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
+
 ## Windows taskbar + CodexBar persistence — 2026-10-20
 
 The canonical dock installer now applies the complete Windows taskbar stack and
