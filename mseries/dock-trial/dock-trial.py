@@ -121,7 +121,7 @@ def arm(seconds):
         raise
 
 
-def gui(seconds, after_login):
+def gui(seconds, after_login, dock_only=False):
     if after_login:
         pending = STATE / 'pending-login-trial'
         if not pending.exists():
@@ -148,7 +148,8 @@ def gui(seconds, after_login):
             super().__init__(application_id='org.techmore.DockSafetyTrial')
             self.record = {'status': 'ready', 'duration_seconds': seconds,
                            'started_at': time.strftime('%Y-%m-%dT%H:%M:%S%z'),
-                           'focus_losses': 0, 'snapping': {}, 'typing': False}
+                           'focus_losses': 0, 'snapping': {}, 'typing': False,
+                           'snapping_check': 'skipped-dock-only' if dock_only else 'required'}
             self.running = False
             self.step = 0
             self.started = None
@@ -162,14 +163,16 @@ def gui(seconds, after_login):
             self.window.set_default_size(720, 400)
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14,
                           margin_top=24, margin_bottom=24, margin_start=24, margin_end=24)
-            self.label = Gtk.Label(label='The updated compositor is loaded.\n'
-                'Start checks snapping, then runs the dock for at most ' + str(seconds) + ' seconds.\n'
+            self.label = Gtk.Label(label='The updated compositor is loaded.\n' +
+                ('Start runs the dock for at most ' if dock_only else
+                 'Start checks snapping, then runs the dock for at most ') + str(seconds) + ' seconds.\n'
                 'Please leave this test window focused while it runs.\n'
                 'The dock stops automatically if focus moves away.', wrap=True)
             box.append(self.label)
             self.entry = Gtk.Entry(placeholder_text='The test writes a short phrase here; you can also type here.')
             box.append(self.entry)
-            self.start_button = Gtk.Button(label='Start snapping check and bounded dock trial')
+            self.start_button = Gtk.Button(label='Start bounded dock trial' if dock_only else
+                                           'Start snapping check and bounded dock trial')
             self.start_button.connect('clicked', self.begin)
             box.append(self.start_button)
             emergency = Gtk.Button(label='Stop dock now')
@@ -204,7 +207,7 @@ def gui(seconds, after_login):
             self.start_button.set_sensitive(False)
             self.entry.grab_focus()
             self.label.set_label('Checking left/right snapping. Keep this window focused. The dock is still disabled.')
-            GLib.timeout_add(600, self.preflight)
+            GLib.timeout_add(600, self.start_dock if dock_only else self.preflight)
 
         def preflight(self):
             try:
@@ -226,20 +229,29 @@ def gui(seconds, after_login):
                     else:
                         self.entry.set_text('')
                         self.entry.grab_focus()
-                        arm(seconds)
-                        self.running = True
-                        self.dock_started = time.monotonic()
-                        self.record['status'] = 'dock-trial-running'
-                        GLib.timeout_add(200, self.watch)
-                        GLib.timeout_add(900, self.check_typing)
-                        self.save()
-                        return False
+                        return self.start_dock()
                 self.step += 1
                 return True
             except Exception as error:
                 self.record['error'] = str(error)
                 self.finish('stopped-preflight')
                 return False
+
+        def start_dock(self):
+            try:
+                if not self.own_focus():
+                    raise RuntimeError('Test window was not focused')
+                arm(seconds)
+                self.running = True
+                self.dock_started = time.monotonic()
+                self.record['status'] = 'dock-trial-running'
+                GLib.timeout_add(200, self.watch)
+                GLib.timeout_add(900, self.check_typing)
+                self.save()
+            except Exception as error:
+                self.record['error'] = str(error)
+                self.finish('stopped-dock-start')
+            return False
 
         def check_typing(self):
             try:
@@ -284,6 +296,8 @@ def gui(seconds, after_login):
         def finish(self, reason):
             self.running = False
             stop()
+            if self.record['status'].startswith('stopped-') or self.record['status'] == 'completed-bounded-trial':
+                return
             self.record['status'] = reason
             self.record['dock_inactive'] = systemctl('is-active', UNIT, check=False).stdout.strip() != 'active'
             self.record['disabled_marker_restored'] = MARKER.exists()
@@ -308,6 +322,8 @@ def main():
     parser.add_argument('--stop', action='store_true')
     parser.add_argument('--configure', action='store_true')
     parser.add_argument('--after-login', action='store_true')
+    parser.add_argument('--dock-only', action='store_true',
+                        help='Test dock focus and typing independently of snapping')
     args = parser.parse_args()
     if args.report:
         OUTPUT = args.report
@@ -319,7 +335,7 @@ def main():
     elif args.configure:
         configure(args.seconds)
     else:
-        gui(args.seconds, args.after_login)
+        gui(args.seconds, args.after_login, args.dock_only)
 
 
 if __name__ == '__main__':

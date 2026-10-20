@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock test stopped before launch — 2026-10-20
+
+Post-reboot owner reported no dock. Retained report at
+`~/Documents/Codex/2026-10-20/yo/outputs/dock-trial.json` records left snap
+width 960 versus monitor width 2419, then preflight failure; the dock unit
+never started. Live D-Bus now exposes `FocusRoutingVersion=1`. Added explicit
+`--dock-only` mode, retaining compositor identity, Start, focus/typing checks,
+independent timer, RuntimeMaxSec and exact opt-out restoration. Preserve the
+first terminal report rather than overwriting it on a later Stop click.
+
+Validated with Python compilation (warnings treated as errors) and all five
+controller safety tests. Installed the updated controller and requested the
+owner's saved GUI approval for a 60-second dock-only trial; result goes to
+`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. Live visibility and
+focus result pending. Next: inspect this receipt and dock journal; investigate
+the separate snap geometry discrepancy.
+
+
 
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
 
