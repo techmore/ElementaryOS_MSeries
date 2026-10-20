@@ -53,6 +53,14 @@ isolated combined-taskbar UI/focus/typing validation remain gates. See
 
 ## Import the iPhone's Messages pins — requested 2026-10-20
 
+The cache fallback now has a concrete public Mac reference (Beeper) and passes
+actual Foundation read/export/failure fixtures on ARM macOS 15/26 and Intel
+macOS 26. No-account probes identify an absent cache; process-role rejection is
+no longer a blanket read blocker. All CI images report SIP disabled, so owner
+account/FDA/SIP-enabled access and NAS transfer remain unverified. Updated small
+kit performs no security changes and retains source modification time. The
+earlier process-gate interpretation below is superseded by this result.
+
 Candidate PR #349 adds the ordered native import/review and encrypted mapping
 store, staged for next Messages launch. The original IMCore reader passes macOS
 runtime fixtures; its real runner probe reports the standalone process unsupported

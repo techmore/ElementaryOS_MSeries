@@ -329,7 +329,8 @@ class Messages(Gtk.Application):
             return
         # BlueFerry validates encoded size and image dimensions before returning
         # photos. Keep decoded textures in this process only, never in a new file.
-        wanted = {t['recipients'][0] for t in list(self.threads.values())[:40]
+        visible = [self.threads[key] for key in ordered_keys(self.threads, self.pin_state)[:40]]
+        wanted = {t['recipients'][0] for t in visible
                   if not t.get('is_group') and t.get('recipients') and t['recipients'][0] not in self.photo_cache}
         if not wanted:
             return
@@ -351,6 +352,7 @@ class Messages(Gtk.Application):
                     content.remove(old)
                     content.insert_child_after(photo, None)
                     self.avatars[key] = (content, photo)
+            self.load_photos()
         self.task(load, loaded)
 
     def populate(self):
@@ -435,6 +437,7 @@ class Messages(Gtk.Application):
             self.pin_store, self.pin_state = result
             self.update_pin_note()
             self.populate()
+            self.load_photos()
         self.task(load, loaded)
 
     def update_pin_note(self):
@@ -551,6 +554,7 @@ class Messages(Gtk.Application):
                 if self.fixture or self.pin_profile == profile:
                     self.pin_state = result
                     self.update_pin_note();self.populate()
+                    self.load_photos()
                 if state['alive']:
                     dialog.close()
             self.task(persist, saved)

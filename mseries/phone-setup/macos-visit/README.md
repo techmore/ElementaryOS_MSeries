@@ -2,29 +2,34 @@
 
 ## Apple Messages pin export candidate
 
-The small `Export-Message-Pins.command` / `.js` pair reads the private IMCore
-pin controller. It is independent of the large VM collector: the JSON can go
+The small `Export-Message-Pins.command` / `.js` pair reads Apple's pin configuration
+through the private IMCore getter or its canonical local preferences cache. It is independent of the large VM collector: the JSON can go
 to a mounted private NAS folder, and no guest image or external drive is needed
 for pins. No Homebrew/Xcode tools, Apple Account password collection, signing
 overrides or SIP changes are performed.
 
-**Access qualification is still open.** Our macOS 26 ARM runner passes the
-Objective-C bridge and ordered/empty/error fixture checks, but its real probe
-reports `process_supported=false` and no initialized pin configuration. This
-does not prove the helper can read a signed-in owner's pins with SIP enabled.
-Do not schedule a macOS trip on the assumption that export already works.
+**Actual owner export remains unverified.** The reader passes binary-plist,
+ordered/empty, missing/denied, private JSON write/readback and permissions checks
+on ARM macOS 15/26 and Intel macOS 26. The no-account runners have no pin cache;
+the standalone process-role flag is diagnostic, not an automatic read failure.
+Their images have SIP disabled, so these checks do not establish SIP-enabled
+owner access. The helper makes no SIP changes. A real access-denied result gives
+the standard Terminal Full Disk Access instruction; no privacy setting is changed
+automatically. Messages must be signed in to your Apple Account and have the
+same visible pins as your phone. That check happens entirely on the Mac.
 
 For a coordinated diagnostic on an already available Mac, the pinned small kit
 can be downloaded without fetching Machine Lab files:
 
 ```sh
-curl --fail --location 'https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/646d33b0d225b558649841d9e994a9e065f89c27/mseries/phone-setup/macos-visit/Download-Message-Pins.command' -o "$HOME/Downloads/Download-Message-Pins.command"
-/bin/bash "$HOME/Downloads/Download-Message-Pins.command" 646d33b0d225b558649841d9e994a9e065f89c27
+curl --fail --location 'https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/4d878a07d4f70aa5ee0641af4a1179763aecb0e4/mseries/phone-setup/macos-visit/Download-Message-Pins.command' -o "$HOME/Downloads/Download-Message-Pins.command"
+/bin/bash "$HOME/Downloads/Download-Message-Pins.command" 4d878a07d4f70aa5ee0641af4a1179763aecb0e4
 ```
 
 It opens Messages and waits for you to confirm the visible pins match the phone.
 The read either creates a private `apple-message-pins.json` plus checksum, or
-fails with an access diagnosis. Existing exports are backed up before retrying.
+fails with an access diagnosis. Only a verified export/checksum creates
+`MSeries-Message-Pins-COMPLETE.txt`. Existing exports are backed up before retrying.
 Pass an existing mounted NAS folder as the second argument to the download
 script to write there. Keep the JSON/checksum private and accessible from Linux;
 an export left only on encrypted macOS APFS is not transferred. On Linux use

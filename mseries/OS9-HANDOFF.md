@@ -1,5 +1,31 @@
 # OS 9 implementation / Claude Code handoff
 
+## Apple pin cache read/export passes on ARM and Intel macOS — 2026-10-20
+
+PR #349 now reads IMCore's local getter and falls back to Apple's canonical
+pinning preferences cache (`pD`/`pP`). Beeper's MIT Mac implementation supplied
+the factual domain/key reference; its alternate-case workaround is not copied.
+The standalone role flag gates initialization and was previously overinterpreted
+as a definitive read blocker. Current no-account probes identify missing cache
+(Cocoa 260) separately; real denied reads retain their own status. Fixed JXA's
+truthy nil wrappers and replaced inappropriate NSError Ref pointers with Apple's
+documented bridged nil handling, after permission fixtures exposed a crash.
+
+Tested implementation `4d878a07d4f70aa5ee0641af4a1179763aecb0e4`, Actions
+39462452180: ARM macOS 15/26 and Intel macOS 26 all pass binary-plist reads,
+ordered/empty/denied/missing cases, private JSON round trip and mode 0600. All
+runner images report SIP disabled; no signed-in owner, owner FDA, SIP-enabled
+or actual NAS transfer pass is implied. Helper changes no SIP/signing/privacy
+settings. Source/limits: `phone-setup/PIN-SYNC-RESEARCH.md`; updated small-kit
+command/transfer checklist: `phone-setup/macos-visit/README.md`. Completion
+receipt now requires export/checksum success and is cleared on each new attempt.
+No real pins or external texts were read/sent. Native importer accepts the cache
+source and retains Apple's modification time; model tests increased to 12. Pinned contacts now have photo-fetch priority even
+when their conversation falls outside the 40 most recent threads; a mock-backed
+regression covers this, bringing private GTK checks to 14.
+Current owner export/import and automatic phone-pin sync remain qualification
+work. Prior process-gate entries below are historical and superseded here.
+
 ## Native Apple pin import candidate; IMCore process gate remains — 2026-10-20
 
 Draft PR #349 (`codex/messages-apple-pins`): original built-in macOS JXA/Foundation

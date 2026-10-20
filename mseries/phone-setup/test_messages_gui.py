@@ -105,6 +105,25 @@ class MessagesUI(unittest.TestCase):
         self.assertLessEqual(avatar.get_width(), 50)
         self.assertLessEqual(avatar.get_height(), 50)
 
+    def test_old_pinned_contact_photo_has_priority_over_newer_hidden_threads(self):
+        from unittest.mock import patch
+        app = self.app
+        app.threads = {str(i): dict(key=str(i), name='Fixture contact', recipients=['+1555010%04d' % i], messages=[], last_ts='%04d' % i) for i in range(41)}
+        app.pin_state['choices'] = ['0']
+        app.status['contact_photos'] = True
+        app.task = lambda work, completed: completed(work(), None)
+        with patch('messages.BackendClient') as backend:
+            backend.return_value.contact_photo.return_value = b''
+            app.fixture = False
+            try:
+                app.load_photos()
+            finally:
+                app.fixture = True
+            requested = [call.args[0] for call in backend.return_value.contact_photo.call_args_list]
+        self.assertEqual(len(requested), 40)
+        self.assertIn('+15550100000', requested)
+        self.assertNotIn('+15550100001', requested)
+
     def pin_snapshot(self):
         from message_pins import SCHEMA
         return dict(schema=SCHEMA, version=1, source='macos-imcore', captured_at='2026-10-20T16:00:00Z',
@@ -113,7 +132,9 @@ class MessagesUI(unittest.TestCase):
     def test_import_pin_order_keeps_draft_selection_and_group_choice(self):
         app = self.app
         app.editor.get_buffer().set_text('Keep while importing pins')
-        dialog = app.show_pin_review(self.pin_snapshot());settle()
+        snapshot = self.pin_snapshot()
+        snapshot.update(source='macos-pin-cache', source_modified_at='2026-10-19T16:00:00Z')
+        dialog = app.show_pin_review(snapshot);settle()
         dropdowns, apply, error = dialog.pin_controls
         self.assertEqual(dropdowns[0].get_selected(), 0, 'opaque group must not be guessed')
         self.assertEqual(dropdowns[1].get_selected(), 2, 'Alex is an exact individual match')
@@ -124,6 +145,8 @@ class MessagesUI(unittest.TestCase):
         self.assertEqual(app.model.selected, 'demo')
         self.assertEqual(app.model.drafts['demo'], 'Keep while importing pins')
         self.assertIn('Pins from Mac', app.pin_note.get_text())
+        self.assertEqual(app.pin_state['snapshot']['source'], 'macos-pin-cache')
+        self.assertIn('Apple pin settings last changed', app.pin_note.get_tooltip_text())
         self.assertIsNotNone(app.rows['demo2'].get_header())
 
     def test_duplicate_pin_match_keeps_existing_pins(self):
