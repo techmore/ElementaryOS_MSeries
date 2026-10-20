@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.0 (2026-10-19)
+- x86-64 (amd64) machines under software emulation (QEMU TCG, q35, OVMF), clearly labelled "emulated" with a warning banner; per-architecture setup checks; presets for Ubuntu, Debian and a blank machine. Not boot-tested yet: qemu-system-x86 is not installed on the test Mac.
+
 ## 0.4.0 (2026-10-19)
 - Clipboard sharing over QEMU's D-Bus display (Settings, off by default): guest-to-host text verified with the elementary OS guest; host-to-guest not working yet.
 - Machines started with it use `-display dbus,p2p=on` and a `qemu-vdagent` channel (`MACHINE_CLIPBOARD`, vm.conf `CLIPBOARD=on`).

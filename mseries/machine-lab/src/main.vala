@@ -15,15 +15,19 @@ struct Preset {
     public int color;
     public string url;
     public string recipe;
+    public string arch;
 }
 
 const Preset[] presets = {
-    { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org", "omarchy" },
-    { "elementary OS", "Pantheon desktop, daily ARM64 build", 4, 4, 32, 0, "https://elementary.io", "elementary" },
-    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm", "" },
-    { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/", "" },
-    { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download", "" },
-    { "Blank Machine", "Bring any ARM64 .iso", 2, 4, 16, 1, "", "" }
+    { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org", "omarchy", "aarch64" },
+    { "elementary OS", "Pantheon desktop, daily ARM64 build", 4, 4, 32, 0, "https://elementary.io", "elementary", "aarch64" },
+    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm", "", "aarch64" },
+    { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/", "", "aarch64" },
+    { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download", "", "aarch64" },
+    { "Blank Machine", "Bring any ARM64 .iso", 2, 4, 16, 1, "", "", "aarch64" },
+    { "Ubuntu (x86-64)", "Emulated: much slower than ARM64", 2, 4, 24, 4, "https://ubuntu.com/download/desktop", "", "x86_64" },
+    { "Debian (x86-64)", "Emulated: much slower than ARM64", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/", "", "x86_64" },
+    { "Blank x86-64", "Emulated: bring any amd64 .iso", 2, 4, 16, 3, "", "", "x86_64" }
 };
 
 public class MachineRow : Gtk.ListBoxRow {
@@ -82,7 +86,7 @@ public class MachineRow : Gtk.ListBoxRow {
     public void update () {
         name_label.label = machine.name;
         string state = machine.running ? (machine.paused ? "Paused" : "Running") : machine.is_fresh () ? "Not installed" : "Stopped";
-        sub_label.label = "ARM64 · %s · %d CPU · %d GiB".printf (state, machine.cpus, machine.mem_gib);
+        sub_label.label = "%s · %s · %d CPU · %d GiB".printf (machine.emulated ? "x86-64 emulated" : "ARM64", state, machine.cpus, machine.mem_gib);
         for (int i = 0; i < 8; i++) {
             icon.remove_css_class ("ml-c-%d".printf (i));
         }
@@ -309,7 +313,7 @@ public class MachineLab : Gtk.Application {
             var n = new Gtk.Label (p.name);
             n.xalign = 0;
             n.add_css_class ("ml-machine-name");
-            var d = new Gtk.Label ("%s · ARM64 · %d CPU · %d GiB".printf (p.blurb, p.cpus, p.mem));
+            var d = new Gtk.Label ("%s · %s · %d CPU · %d GiB".printf (p.blurb, p.arch == "x86_64" ? "x86-64" : "ARM64", p.cpus, p.mem));
             d.xalign = 0;
             d.add_css_class ("ml-machine-sub");
             tb.append (n);
@@ -384,7 +388,7 @@ public class MachineLab : Gtk.Application {
             var bl = new Gtk.Label (p.blurb);
             bl.xalign = 0;
             bl.add_css_class ("ml-spec-label");
-            var sp = new Gtk.Label ("ARM64 · %d CPU · %d GiB RAM · %d GiB disk".printf (p.cpus, p.mem, p.disk));
+            var sp = new Gtk.Label ("%s · %d CPU · %d GiB RAM · %d GiB disk".printf (p.arch == "x86_64" ? "x86-64 · emulated, slower" : "ARM64", p.cpus, p.mem, p.disk));
             sp.xalign = 0;
             sp.add_css_class ("ml-fineprint");
             tb.append (n);
@@ -521,6 +525,7 @@ public class MachineLab : Gtk.Application {
         m.mem_gib = preset.mem;
         m.disk_gib = preset.disk;
         m.color = preset.color;
+        m.arch = preset.arch;
         m.url = preset.url == "" ? null : preset.url;
         m.recipe = preset.recipe == "" ? null : preset.recipe;
         if (preset.recipe == "elementary") {

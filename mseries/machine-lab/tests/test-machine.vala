@@ -24,6 +24,7 @@ void test_store_round_trip () {
     m.installer = "/tmp/x.iso";
     m.recipe = "omarchy";
     m.clipboard = true;
+    m.arch = "x86_64";
     list.add (m);
     var managed = new Machine ();      // managed guests are rediscovered, never saved
     managed.id = "vm-omarchy";
@@ -43,6 +44,9 @@ void test_store_round_trip () {
     assert_cmpstr (back[0].installer, CompareOperator.EQ, "/tmp/x.iso");
     assert_cmpstr (back[0].recipe, CompareOperator.EQ, "omarchy");
     assert_true (back[0].clipboard);
+    assert_cmpstr (back[0].arch, CompareOperator.EQ, "x86_64");
+    assert_true (back[0].emulated);
+    assert_cmpstr (back[0].arch_label, CompareOperator.EQ, "x86-64");
 }
 
 void test_discovery () {
@@ -89,6 +93,16 @@ void test_installed_needs_real_data () {
 
 void test_free_space () {
     assert_true (Readiness.free_gib () >= 0);
+}
+
+void test_readiness_is_per_arch () {
+    // The emulated x86-64 check never asks for KVM, and each architecture names its own emulator.
+    foreach (var line in Readiness.problems ("x86_64")) {
+        assert_false (line.contains ("/dev/kvm"));
+    }
+    foreach (var line in Readiness.problems ("aarch64")) {
+        assert_false (line.contains ("qemu-system-x86"));
+    }
 }
 
 void test_mask_is_page_level () {
@@ -154,6 +168,7 @@ int main (string[] args) {
     Test.add_func ("/discovery/mseries-vm", test_discovery);
     Test.add_func ("/machine/installed-needs-real-data", test_installed_needs_real_data);
     Test.add_func ("/readiness/free-space", test_free_space);
+    Test.add_func ("/readiness/per-arch", test_readiness_is_per_arch);
     Test.add_func ("/machine/credentials", test_mask_is_page_level);
     Test.add_func ("/qmp/transport", test_qmp_transport);
     return Test.run ();

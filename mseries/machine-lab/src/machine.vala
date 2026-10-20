@@ -12,6 +12,7 @@ public class Machine : Object {
     public int color { get; set; default = 0; }
     public string? url { get; set; default = null; }       // where to get an installer
     public string? installer { get; set; default = null; }
+    public string arch { get; set; default = "aarch64"; }       // "aarch64" (KVM, fast) or "x86_64" (emulated, slow)
     public bool clipboard { get; set; default = false; }     // share the clipboard (needs spice-vdagent in the guest)
     public string? recipe { get; set; default = null; }      // "omarchy": download and install unattended
 
@@ -32,6 +33,8 @@ public class Machine : Object {
     public signal void installer_detached ();
 
     public bool managed { get { return kind == "managed"; } }
+    public bool emulated { get { return arch == "x86_64"; } }
+    public string arch_label { get { return emulated ? "x86-64" : "ARM64"; } }
     public bool running { get { return managed ? managed_running : proc != null; } }
 
     public string dir {
@@ -426,6 +429,7 @@ public class Machine : Object {
             l.setenv ("MACHINE_NAME", name, true);
             l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
             l.setenv ("MACHINE_CLIPBOARD", clipboard ? "on" : "off", true);
+            l.setenv ("MACHINE_ARCH", arch, true);
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
                 if (updater == null) {
@@ -674,6 +678,9 @@ public class MachineStore : Object {
                 if (kf.has_key (id, "url")) {
                     m.url = kf.get_string (id, "url");
                 }
+                if (kf.has_key (id, "arch")) {
+                    m.arch = kf.get_string (id, "arch");
+                }
                 if (kf.has_key (id, "clipboard")) {
                     m.clipboard = kf.get_boolean (id, "clipboard");
                 }
@@ -771,6 +778,7 @@ public class MachineStore : Object {
             if (m.url != null) {
                 kf.set_string (m.id, "url", m.url);
             }
+            kf.set_string (m.id, "arch", m.arch);
             kf.set_boolean (m.id, "clipboard", m.clipboard);
             if (m.recipe != null) {
                 kf.set_string (m.id, "recipe", m.recipe);
@@ -790,8 +798,27 @@ public class MachineStore : Object {
 
 /* Checks the host has what the launcher needs. */
 public class Readiness : Object {
-    public static string[] problems () {
+    public static string[] problems (string arch = "aarch64") {
         string[] found = {};
+        if (arch == "x86_64") {
+            // x86-64 guests are emulated in software: no KVM, but they need their own QEMU and firmware.
+            if (Environment.find_program_in_path ("qemu-system-x86_64") == null) {
+                found += "The x86-64 emulator is missing. Install qemu-system-x86.";
+            }
+            if (Environment.find_program_in_path ("qemu-img") == null) {
+                found += "qemu-img is missing. Install qemu-utils.";
+            }
+            bool fw = false;
+            foreach (var f in new string[] { "/usr/share/OVMF/OVMF_CODE_4M.fd", "/usr/share/OVMF/OVMF_CODE.fd", "/usr/share/qemu/edk2-x86_64-code.fd" }) {
+                if (FileUtils.test (f, FileTest.EXISTS)) {
+                    fw = true;
+                }
+            }
+            if (!fw) {
+                found += "x86-64 UEFI firmware is missing. Install ovmf.";
+            }
+            return found;
+        }
         if (Environment.find_program_in_path ("qemu-system-aarch64") == null) {
             found += "QEMU is missing. Install qemu-system-arm.";
         }

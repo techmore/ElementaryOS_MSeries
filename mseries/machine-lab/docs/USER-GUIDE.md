@@ -1,7 +1,8 @@
 # Machine Lab user guide
 
-Machine Lab runs other ARM64 operating systems on this Mac with QEMU and KVM. Everything here is ARM64 (aarch64):
-x86-64 / amd64 images do not run.
+Machine Lab runs other operating systems on this Mac with QEMU. ARM64 (aarch64) machines run under KVM at near-native
+speed. x86-64 / amd64 machines are supported too, but only by **software emulation**: no hardware acceleration, so they are
+roughly 10 to 50 times slower. Every x86-64 machine is labelled "emulated" and shows a warning.
 
 ## Install
 
@@ -43,6 +44,12 @@ machines are stopped).
 SPICE agent (`spice-vdagent`; the elementary OS image already has it). What works today: copy in the guest, paste on the Mac. Copy on the
 Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
 QEMU's clipboard channel yet (issue #264).
+
+## x86-64 (emulated) machines
+
+Pick one of the "(x86-64)" presets or "Blank x86-64". They need `qemu-system-x86` and `ovmf` (the Overview setup check says so) and
+no KVM. Expect long installs and boots: give them 2 CPUs, and use an ARM64 machine whenever the guest has an ARM64 build. Use an
+amd64 installer ISO. Clipboard sharing and the Display tab work the same way; Windows on x86-64 is not set up here.
 
 ## Installing a system
 

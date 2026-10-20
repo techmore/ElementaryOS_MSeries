@@ -15,6 +15,11 @@
   <provides><binary>machine-lab</binary></provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.5.0" date="2026-10-19">
+      <description>
+        <p>x86-64 machines under software emulation, clearly labelled as slower.</p>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-10-19">
       <description>
         <p>Clipboard sharing with guests over the QEMU D-Bus display (text, guest to host verified).</p>
