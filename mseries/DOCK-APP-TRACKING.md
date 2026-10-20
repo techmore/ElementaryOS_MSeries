@@ -83,3 +83,33 @@ The recovery coordinator closed #339 as superseded at 12:05:17 and reported the
 in dev. This review's extra hardening is retained in a separate draft follow-up,
 not an attempted merge/redeployment of #339. The follow-up's representative native
 acceptance remains unqualified; no deployment or Wingpanel restart was performed.
+
+## PR #343 source-merge qualification — 2026-10-20
+
+Completed the remaining visual/input checks without deploying: the new
+`dock-tests/test-launcher-qualification.vala` links the actual production App,
+Launcher, Window and resolver classes. Its Python runner uses private Xvfb,
+HOME/settings, a recording compositor, read-only AppCenter and portal stubs,
+and real XTEST pointer/keyboard events. It tests the changed controls in light
+and dark themes, with complete original fixture artwork and actual Brave-style
+Teams/Outlook identity patterns. No browser account or live window is operated.
+
+Real clicks verify mixed-ID focus fallback, complete homogeneous-ID group
+activation and transient-window focus. Actual secondary-click menus retain
+installed-launcher pinning and omit invalid transient management actions; Escape
+dismissal and subsequent typing pass. Pointer hover preserves keyboard focus.
+Both screenshots were inspected: open gray/focused blue/multiwindow markers and
+closed-pin absence match the canonical design, with complete icons.
+
+The canonical clean taskbar build now compiles/runs this qualification alongside
+the existing actual marker-state, hover and resolver checks, so CI repeats it.
+Reproduction: `MSERIES_QUALIFICATION_OUT=/absolute/output bash
+mseries/dock-taskbar/test-build.sh`. Evidence: `dock-tests/receipts/qualification-343-2026-10-20/`.
+
+This completes the source-merge visual/input gate requested by the owner. Earlier
+receipt references to live qualification remain historical deployment boundaries,
+not a claim that this run tested native M-series hardware. Physical Wayland
+placement/performance and authenticated browser behavior remain separate
+post-deployment acceptance. The explicit no-deploy/no-Wingpanel-restart instruction
+was honored; source merge does not install these changes. Merge still requires
+all updated-head GitHub checks to pass.

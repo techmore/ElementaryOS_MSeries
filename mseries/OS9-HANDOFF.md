@@ -8864,3 +8864,19 @@ for a new draft follow-up. The original tracking integration is already in dev;
 this task did not deploy or restart anything. The follow-up still lacks complete
 representative native visual/input acceptance, and its live qualification cannot
 be performed under the current no-deploy instruction.
+
+## PR #343 visual/input qualification completed without deployment — 2026-10-20
+
+Actual production GTK launchers pass real pointer/keyboard qualification on a
+private Xvfb display in both light and dark modes. Mixed raw IDs focus the right
+UID; uniform browser IDs request the complete group; transient activation/menu
+restrictions, secondary-click/Escape and typing after actions pass. Screenshots
+with complete original fixture icons were visually inspected. The clean canonical
+full taskbar build passes and now runs this repeatable qualification in CI.
+Receipt: `mseries/dock-tests/receipts/qualification-343-2026-10-20/qualification.json`.
+
+This fulfills source-merge visual/input acceptance under the owner's no-deploy
+instruction. No installed files or desktop services were changed, and Wingpanel
+was not restarted. Native hardware/Wayland deployment acceptance and browser
+authentication/media remain distinct, unclaimed follow-ups. Next: merge only
+after updated-head CI passes; no deployment is authorized by this source merge.

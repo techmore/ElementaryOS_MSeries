@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## PR #343 source-merge qualification passed — 2026-10-20
+
+Production GTK launcher controls pass light/dark visual inspection and real
+private-display click/hover/menu/Escape/typing checks. Mixed and uniform window
+identities dispatch the expected compositor actions; transient menus are correct.
+The canonical clean build now runs these checks in CI. Receipts/screenshots:
+`mseries/dock-tests/receipts/qualification-343-2026-10-20/`. No desktop deployment
+or Wingpanel restart. Next: updated-head CI and source merge; hardware deployment
+acceptance remains separate and requires its own authorization.
+
 ## PR #339 superseded; review hardening retained — 2026-10-20
 
 Reconciled with concurrent #342; its startup/focus markers and focused-blue

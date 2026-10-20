@@ -169,7 +169,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
           libgtk-4-dev libjson-glib-dev libgee-0.8-dev libgranite-7-dev sassc gettext
           libadwaita-1-dev libx11-dev libwayland-dev libwayland-bin
-          python3 xvfb xauth dbus-x11 librsvg2-common
+          python3 python3-gi xvfb xauth dbus-x11 librsvg2-common xdotool ffmpeg
       - name: Provide Granite 7.7 and the pinned Wingpanel indicator API when the distro lacks them
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/prefix" >> "$GITHUB_ENV"
       - name: Build the module; run unit tests, generated-C guard, Switch/ingestion/token/Grok probes
