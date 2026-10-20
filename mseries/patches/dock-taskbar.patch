@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..94e302b 100644
+index d97686d..6ab7e24 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -203,3 +203,246 @@ backgrounditem .close-button {
+@@ -203,3 +203,259 @@ backgrounditem .close-button {
      font-size: 0.7em;
      opacity: 0.65;
  }
@@ -10,7 +10,7 @@ index d97686d..94e302b 100644
 +/* M-series taskbar mode (io.elementary.dock taskbar-mode): a Windows 11-style
 + * bar flush to the bottom edge. Everything below is scoped to .taskbar. */
 +dock-window.taskbar dock {
-+    background: rgba(206, 210, 215, 0.97);
++    background: rgba(190, 195, 201, 0.97);
 +    box-shadow: none;
 +    border-radius: 0;
 +    opacity: 1;
@@ -19,7 +19,7 @@ index d97686d..94e302b 100644
 +
 +dock-window.taskbar.dark dock {
 +    /* Windows 11 silver in both styles. */
-+    background: rgba(206, 210, 215, 0.97);
++    background: rgba(190, 195, 201, 0.97);
 +    box-shadow: none;
 +}
 +
@@ -28,7 +28,7 @@ index d97686d..94e302b 100644
 +}
 +
 +dock-window.taskbar.dark.reduce-transparency dock {
-+    background: rgb(206, 210, 215);
++    background: rgb(190, 195, 201);
 +}
 +
 +dock-window.taskbar launcher,
@@ -248,6 +248,19 @@ index d97686d..94e302b 100644
 +
 +dock-window.taskbar .taskbar-weather image.weather-sun {
 +    color: #f9a825;
++}
++
++/* Search pill: a visible rounded border, like Windows 11's taskbar search. */
++dock-window.taskbar .taskbar-row button.taskbar-search,
++dock-window.taskbar.dark .taskbar-row button.taskbar-search {
++    border: 1px solid rgba(0, 0, 0, 0.22);
++    border-radius: 999px;
++    background: rgba(255, 255, 255, 0.75);
++    box-shadow: none;
++}
++
++dock-window.taskbar .taskbar-row button.taskbar-search:hover {
++    background: rgba(255, 255, 255, 0.9);
 +}
 diff --git a/data/dock.gschema.xml b/data/dock.gschema.xml
 index d81d4b8..27abd02 100644
