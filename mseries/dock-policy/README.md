@@ -16,3 +16,13 @@ cancels it. Apply runs the command once. Copying these files does not enable
 or disable anything. Installing the marker disables the dock; removing it is
 a dock change and goes through the helper. The bounded trial lives in
 [`../dock-trial/`](../dock-trial/README.md) (on PR #314 until it merges).
+
+## Permanent enablement approved October 20
+
+The owner visually confirmed the dock and explicitly requested permanent
+enablement. `enable-permanent.sh` removes the bounded-trial hooks and pending
+login trial, disables auto-hide, selects 48-pixel icons and starts the normal
+Pantheon dock service. The Rust session already wants this service at login.
+Run it only after an explicit owner request; it supersedes the earlier opt-out.
+The dock remains the patched Vala/GTK dock hosted by the Rust compositor; a
+Rust dock rewrite is separate work.
