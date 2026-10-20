@@ -1,16 +1,20 @@
-# Work Mode
+# Windows Work Mode
 
-Work Mode is an elementary OS System Settings panel for switching between the
-usual wallpaper and a separate work wallpaper. Open **System Settings →
-Personal → Work Mode** to turn on the supplied Blue Flow work wallpaper, choose
-another image, or enable a weekday schedule with local start and end times. The
-usual desktop wallpaper remains unchanged until Work Mode is enabled; it is
-restored when Work Mode turns off or the work window ends.
+Windows Work Mode is an elementary OS System Settings panel for a Windows-inspired
+work setup. Open **System Settings → Personal → Windows Work Mode** to turn on the
+supplied Blue Flow wallpaper, choose another image, or enable a weekday schedule
+with local start and end times. While active, it also shows the existing elementary
+bottom dock with a 40-pixel icon size and no auto-hide. Your pinned apps and native
+running-window behavior stay in the dock. This is a launcher dock preview, not a
+complete Windows taskbar: it does not add Start, search, system tray or widgets.
+The usual wallpaper and dock preferences are snapshotted and restored when Windows
+Work Mode turns off or the work window ends.
 
 The user systemd timer checks once per minute. It stores the current wallpaper
-when it first applies the work image and restores that image when Work Mode is
-turned off or the scheduled work window ends. GSettings stores the controls;
-the original wallpaper snapshot is stored under `~/.local/state/mseries/`.
+and dock preferences before the mode first applies them. If the elementary dock
+was not already running, a dedicated user service starts it and stops it again
+when the mode ends. GSettings stores the controls; original desktop state is
+stored under `~/.local/state/mseries/`.
 
 Install from this checkout with:
 
@@ -24,6 +28,5 @@ Remove the panel and timer with:
 bash mseries/install-work-mode.sh --uninstall
 ```
 
-The GSettings values and original wallpaper snapshot are retained on uninstall.
-The native plugin build and visual behavior still need acceptance on the target
-elementary OS 9 desktop.
+The GSettings values and original state snapshot are retained on uninstall. The
+bottom dock uses elementary's existing dock package and pinned launchers.

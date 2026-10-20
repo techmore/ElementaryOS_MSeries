@@ -1,4 +1,4 @@
-/* M-series Work Mode preferences for elementary OS System Settings. */
+/* Windows-inspired Work Mode preferences for elementary OS System Settings. */
 namespace MSeriesWorkMode {
     public class Plug : Switchboard.Plug {
         private Gtk.Widget? content;
@@ -6,12 +6,12 @@ namespace MSeriesWorkMode {
 
         public Plug () {
             var supported = new Gee.TreeMap<string, string?> (null, null);
-            supported.set ("personal/work-mode", "Work Mode");
+            supported.set ("personal/work-mode", "Windows Work Mode");
             Object (
                 category: Category.PERSONAL,
                 code_name: "io.elementary.settings.work-mode",
-                display_name: "Work Mode",
-                description: "Set a work wallpaper and schedule work hours",
+                display_name: "Windows Work Mode",
+                description: "Use a Windows-inspired work wallpaper and bottom dock",
                 icon: "preferences-desktop-wallpaper",
                 supported_settings: supported
             );
@@ -22,13 +22,13 @@ namespace MSeriesWorkMode {
             if (content == null) {
                 var page = new Adw.PreferencesPage ();
                 var mode_group = new Adw.PreferencesGroup () {
-                    title = "Work Mode",
-                    description = "Use a dedicated wallpaper while you work."
+                    title = "Windows Work Mode",
+                    description = "Use a Windows-inspired wallpaper and app dock while you work."
                 };
                 page.add (mode_group);
 
                 var enabled = new Adw.SwitchRow () {
-                    title = "Work Mode"
+                    title = "Windows Work Mode"
                 };
                 settings.bind ("enabled", enabled, "active", GLib.SettingsBindFlags.DEFAULT);
                 mode_group.add (enabled);
@@ -47,12 +47,12 @@ namespace MSeriesWorkMode {
 
                 var schedule_group = new Adw.PreferencesGroup () {
                     title = "Schedule",
-                    description = "Automatically switch wallpapers during your work hours."
+                    description = "Automatically activate the work wallpaper and dock during your work hours."
                 };
                 page.add (schedule_group);
 
                 var scheduled = new Adw.SwitchRow () {
-                    title = "Schedule Work Mode"
+                    title = "Schedule Windows Work Mode"
                 };
                 settings.bind ("scheduled", scheduled, "active", GLib.SettingsBindFlags.DEFAULT);
                 schedule_group.add (scheduled);
@@ -80,7 +80,8 @@ namespace MSeriesWorkMode {
                 };
                 page.add (status_group);
                 var status = new Adw.ActionRow () {
-                    title = "Schedule checked every minute"
+                    title = "Windows-style bottom dock",
+                    subtitle = "Uses your existing pinned apps and running windows."
                 };
                 status_group.add (status);
 
@@ -89,7 +90,7 @@ namespace MSeriesWorkMode {
                     try {
                         GLib.Process.spawn_command_line_async ("mseries-work-mode --tick");
                     } catch (GLib.Error error) {
-                        warning ("Could not apply Work Mode immediately: %s", error.message);
+                        warning ("Could not apply Windows Work Mode immediately: %s", error.message);
                     }
                 });
                 content = page;
@@ -140,9 +141,9 @@ namespace MSeriesWorkMode {
                 (GLib.CompareDataFunc<string>) strcmp,
                 (Gee.EqualDataFunc<string>) str_equal
             );
-            results.set ("Work Mode", "Work Mode");
-            results.set ("Work Mode → Schedule Work Mode", "Work Mode");
-            results.set ("Work Mode → Work wallpaper", "Work Mode");
+            results.set ("Windows Work Mode", "Windows Work Mode");
+            results.set ("Windows Work Mode → Schedule", "Windows Work Mode");
+            results.set ("Windows Work Mode → Work wallpaper", "Windows Work Mode");
             return results;
         }
     }
