@@ -27,10 +27,14 @@ fi
 
 install -D -m 0755 "$BIN" "$PACKAGE_ROOT/usr/bin/pantheon-compositor"
 cp -a "$ROOT/mseries/pantheon-rust-compositor/session/usr/." "$PACKAGE_ROOT/usr/"
+install -D -m 0755 "$ROOT/mseries/window-recovery/restore-windows.py" "$PACKAGE_ROOT/usr/bin/mseries-restore-windows"
+install -D -m 0644 "$ROOT/mseries/window-recovery/mseries-restore-windows.desktop" "$PACKAGE_ROOT/usr/share/applications/mseries-restore-windows.desktop"
 find "$PACKAGE_ROOT" -type d -exec chmod 0755 {} +
 find "$PACKAGE_ROOT" -type f -exec chmod 0644 {} +
 chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-compositor"
 chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-rust-session"
+chmod 0755 "$PACKAGE_ROOT/usr/bin/pantheon-rust-dock"
+chmod 0755 "$PACKAGE_ROOT/usr/bin/mseries-restore-windows"
 
 cat > "$OUTDIR/debian/control" <<'EOF'
 Source: pantheon-rust-compositor
@@ -60,7 +64,7 @@ Package: pantheon-rust-compositor
 Version: $VERSION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland
+Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland, python3-gi, zenity
 Description: experimental Rust compositor for the Pantheon M-series session
  An opt-in Smithay Wayland compositor and a separate experimental GNOME session.
 EOF
