@@ -17,6 +17,7 @@ mod protocols;
 mod shell_compat;
 mod state;
 mod tiling;
+mod touchpad;
 mod wakeups;
 mod wallpaper;
 mod winit;

@@ -21,6 +21,7 @@ use smithay::{
     },
     backend::{
         egl::{EGLContext, EGLDevice, EGLDisplay, context::ContextPriority},
+        input::InputEvent,
         libinput::{LibinputInputBackend, LibinputSessionInterface},
         renderer::{
             gles::GlesRenderer,
@@ -1410,6 +1411,17 @@ impl NativeBackend {
         event_loop
             .handle()
             .insert_source(libinput_backend, |event, _, state| {
+                match &event {
+                    InputEvent::DeviceAdded { device } => {
+                        let mut device = device.clone();
+                        crate::touchpad::apply(&state.peripheral_settings, &mut device);
+                        state.input_devices.push(device);
+                    }
+                    InputEvent::DeviceRemoved { device } => {
+                        state.input_devices.retain(|known| known != device);
+                    }
+                    _ => {}
+                }
                 state.process_input_event(event);
                 #[cfg(feature = "native-drm")]
                 state.request_native_redraw();
