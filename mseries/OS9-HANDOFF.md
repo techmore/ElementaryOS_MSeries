@@ -1,3 +1,13 @@
+## Owner-tuned charcoal running markers — 2026-10-20
+
+The owner's desktop prefers dark mode, while the taskbar is intentionally silver
+in both modes. The previous dark-theme white rule caused the requested black
+markers to remain pale. Corrected both theme selectors to black, then the owner
+requested lighter markers: final running-marker color is solid #444444 in both
+modes, with opacity 1. Focused blue remains unchanged. Native resource rebuild
+and diff check passed; privately installed and pantheon-dock.service restarted
+and active. Earlier light-only tuning receipts are superseded by this result.
+
 ## Solid black taskbar markers — 2026-10-20
 
 Owner requested another darkening pass. Light-mode running markers now use
