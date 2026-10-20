@@ -123,6 +123,17 @@ public class Dock.TaskbarNotifications : Gtk.Box {
                 border-radius: 8px;
                 padding: 4px 8px;
             }
+            button.mseries-notification-bell label.badge {
+                background-color: alpha(currentColor, 0.10);
+                background-image: none;
+                color: inherit;
+                border: 1px solid alpha(currentColor, 0.14);
+                border-radius: 999px;
+                box-shadow: none;
+                text-shadow: none;
+                padding: 2px 6px;
+                font-weight: 500;
+            }
             popover.mseries-notification-popup > contents { padding: 4px; }
             .mseries-notification-popup button.flat {
                 padding: 6px 10px;

@@ -14,7 +14,8 @@ dock=72 logical pixels, with declared fallback insets. A live popup measured
 from the right. No compositor or Wingpanel restart was required.
 
 The native taskbar bell is beside the clock. The bell now uses a 38-pixel
-icon and 2-pixel theme-derived border. History uses native typography, app/time
+icon and 2-pixel theme-derived border. The unread badge uses a soft neutral tint
+and subtle outline instead of a bright accent. History uses native typography, app/time
 metadata, bounded previews and compact Open/Reply actions; context controls use
 flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
 secondary click offers Mark all as read and Do Not Disturb. The service retains
