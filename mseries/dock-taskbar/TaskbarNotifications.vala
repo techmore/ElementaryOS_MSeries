@@ -137,7 +137,7 @@ public class Dock.TaskbarNotifications : Gtk.Box {
                 padding: 0 1px;
                 min-width: 0;
                 min-height: 0;
-                font-size: 12px;
+                font-size: 14px;
                 font-weight: 600;
             }
             popover.mseries-notification-popup > contents { padding: 4px; }
