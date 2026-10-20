@@ -7765,3 +7765,10 @@ original md5 unchanged, dpkg -V clean, installed == tested build, Wingpanel PID
 unchanged (loads at next login). Only remaining item: apt publishing, which
 waits on the owner's signing-key decision (#52).
 
+
+### Daily upstream audit — 2026-10-19
+- First daily report: mseries/upstream-audits/daily/2026-10-19.md (read-only; nothing built or restarted).
+- Aurora integration/aurora published unified 7.2.10 (44d5afc79d; DCP/CIO/PMP changes); no tagged release, our 7.1.12 aurora.20 pin stands.
+- elementary/os main + kmscon default (#917, a6b2376ae8); CodexBar v0.78.0 matches pin; omarchy-mac-pkgs head 1e4c6e2b08.
+- Not verified: lore, asahilinux.org, blog, Mesa/PipeWire versions; audit-upstream.py import failed.
+- Next: owner decision on a read-only 7.2.10 diff against aurora/enhancements/.
