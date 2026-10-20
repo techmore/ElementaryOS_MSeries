@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.0 (2026-10-19)
+- Ready-made images: load a bootable disk (qcow2, raw, vmdk, vdi, compressed xz/zst/gz, or a UTM zip) instead of installing, and save any machine's disk as a compressed image. Images are format-checked and refused if they reference other files on the host. Tested with real `qemu-img` and `xz`.
+
 ## 0.7.0 (2026-10-19)
 - Snapshots: save, restore and delete disk restore points per machine from the Settings tab (qcow2 internal snapshots through `qemu-img`; machine must be off). Tested against real `qemu-img`.
 - Emulated x86-64 machines no longer say they need `/dev/kvm`.
