@@ -146,10 +146,8 @@ network_extra() { # ROOT SRC
   python3 "$1/mseries/netspeed/wire-network-usage.py" "$2"
 }
 
-quick_extra() { # ROOT SRC
-  install -m 0644 "$1/mseries/quick-settings/ScreenBrightness.vala" "$2/src/Widgets/"
-  install -m 0644 "$1/mseries/quick-settings/KeyboardBrightness.vala" "$2/src/Widgets/"
-  install -m 0644 "$1/mseries/quick-settings/ChargeLimit.vala" "$2/src/Widgets/"
+quick_extra() { # ROOT SRC: the same patches and widgets as the factory image
+  bash "$1/mseries/quick-settings/prepare-source.sh" "$1" "$2"
 }
 
 build_plugin mseries-wingpanel-network io.elementary.panel.network 8.0.1 \
@@ -165,7 +163,6 @@ build_plugin mseries-quick-settings io.elementary.quick-settings 1.4.0 \
   src/libquick-settings.so 'KeyboardBrightness' \
   https://github.com/elementary/quick-settings.git \
   fb721d4b5640a2a25ae011370c8fe8aaff8d93f4 \
-  mseries/patches/quick-settings-brightness.patch \
   -- quick_extra
 
 # Same pin as the factory image (panel-factory-pins.json), so the two cannot drift.
