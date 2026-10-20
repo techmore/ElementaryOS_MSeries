@@ -77,3 +77,40 @@ build and source provenance; isolated combined-taskbar UI/focus/typing checks;
 then separately authorize a coordinated live deployment owned by the recovery
 coordinator. Keep this PR draft
 until those gates are met. Do not let the icon PR's automatic merge apply here.
+
+## Review follow-up — 2026-10-20
+
+Fixed nondeterministic StartupWMClass and case-folded ID collisions; exact
+case-sensitive desktop IDs still win. Unknown/ambiguous aliases get transient
+items. Mixed raw identities grouped under one launcher cannot use the compositor's
+single exact-ID overview, so clicking focuses one window rather than showing an
+incomplete group; per-window menu actions remain available. Transient items also
+hide the inapplicable Uninstall action.
+
+The full taskbar CSS overrode the original gray-pill patch with blue 18×4 markers.
+Removed that competing block in the opt-in tracking patch, retaining neutral
+10×3/14×3 pills. The fixed-silver taskbar gets a darker neutral marker for visible
+contrast; its shared Vala sources are unchanged.
+
+Five production native regressions and eight wrapper checks pass. The canonical
+full build/schema and hover/focus/pin/leave probe pass. A private nested combined
+taskbar test passes X11/Wayland snapping, restore, dock clearance, startup/repeated
+activation focus and keyboard typing. Reproduce with a candidate staged only
+under a private fixture prefix:
+
+```sh
+MSERIES_SMOKE_TASKBAR=1 MSERIES_SMOKE_DOCK=/private/fixture/bin/io.elementary.dock \
+MSERIES_SMOKE_COMPOSITOR=/private/build/pantheon-compositor \
+  dbus-run-session -- python3 mseries/window-recovery/test-nested.py
+```
+
+The optional taskbar path creates a fake HOME/backend and private settings.
+`MSERIES_SMOKE_CAPTURE=/absolute/path.png` retains a fixture screenshot. Review
+receipt and screenshot: `dock-tests/receipts/review-339-2026-10-20/`. The screenshot
+shows the complete bar and neutral pills, but fixture fallback icons and the lack
+of complete real-app/light-dark/physical-input acceptance remain explicit limits.
+
+**Still draft; not merge-qualified.** Owner recovery confirmation and separately
+authorized coordinated live deployment remain gates. The current instruction
+prohibits deployment and Wingpanel restarts, so neither was performed and the
+gates were not waived. CI success alone cannot promote this draft.

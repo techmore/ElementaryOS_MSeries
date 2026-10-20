@@ -34,6 +34,8 @@ fixtures={
  'chatgpt': ('chatgpt','Chatgpt'),
  'org.techmore.mseries.TeamsWeb': ('brave','brave-teams.microsoft.com__v2_-Default'),
  'org.techmore.mseries.OutlookWeb': ('brave','brave-outlook.office.com__mail_-Default'),
+ 'class-one': ('class-one-exec','SharedApplication'), 'class-two': ('class-two-exec','SharedApplication'),
+ 'CaseAlias': ('case-upper-exec',''), 'casealias': ('case-lower-exec',''),
  'odd-name': ('legacy-exec',''), 'flat-one': ('flatpak',''), 'flat-two': ('flatpak',''),
 }
 for name,(exe,wmclass) in fixtures.items():

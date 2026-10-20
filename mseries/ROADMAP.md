@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## PR #339 reviewed; qualification gates remain — 2026-10-20
+
+Fixed ambiguous app matching, mixed-identity activation and overridden gray pills.
+Five native tests, eight wrapper checks, complete taskbar build/preservation and
+private focus/typing checks pass. Source-only review receipt and screenshot are
+retained under `mseries/dock-tests/receipts/review-339-2026-10-20/`. No deployment
+or Wingpanel restart. Next: owner recovery confirmation, representative visual/
+input acceptance and separately authorized deployment; keep #339 draft meanwhile.
+
 ## Tracking draft reconciled with canonical taskbar preparation — 2026-10-20
 
 Draft #339 now uses #341's canonical `mseries/dock-taskbar/prepare-source.sh`

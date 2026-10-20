@@ -8648,3 +8648,21 @@ any install. Tests use fake HOME/backend and cannot restart the desktop. See
 `mseries/dock-taskbar/README.md`. Persistence work does not install/restart the dock;
 the earlier complete Windows taskbar/CodexBar local deployment stays in place.
 Do not deploy an app-tracking-only dock build lacking this full stack.
+
+## PR #339 isolated review — 2026-10-20
+
+Reviewed the draft against the canonical complete taskbar and fixed ambiguous
+window/launcher resolution, partial-group activation, transient Uninstall actions
+and taskbar CSS overriding the gray marker geometry/color. Five native and eight
+wrapper regressions, complete canonical build/schema/preservation and hover
+checks pass. A private combined-taskbar Xvfb/D-Bus run passes snapping, restore,
+clearance, startup/repeated focus and typing; the reviewed screenshot retains
+fixture fallback-icon/visual-acceptance limits. Details and source hashes:
+`mseries/dock-tests/receipts/review-339-2026-10-20/review.json`.
+
+No live deployment or Wingpanel restart. The patch remains opt-in build-only;
+default installation is unchanged. #339 remains draft until owner recovery
+confirmation, complete representative visual/input qualification and separately
+authorized coordinated deployment gates are met. The current no-deploy request
+precludes completing the deployment gate. Next: recovery-owner confirmation and
+remaining acceptance work; do not infer permission from passing CI.

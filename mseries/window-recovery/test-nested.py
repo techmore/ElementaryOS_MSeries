@@ -11,6 +11,14 @@ for k in ['WAYLAND_DISPLAY','WAYLAND_SOCKET','DISPLAY','SESSION_MANAGER']:
     env.pop(k,None)
 env.update(XDG_RUNTIME_DIR=tempfile.mkdtemp(prefix='runtime-',dir=work),XDG_CONFIG_HOME=tempfile.mkdtemp(prefix='config-',dir=work),GSETTINGS_BACKEND='keyfile',WINIT_UNIX_BACKEND='x11',PANTHEON_WAYLAND_DISPLAY='snap-smoke',LIBGL_ALWAYS_SOFTWARE='1',GSK_RENDERER='gl',RUST_LOG='info',GTK_A11Y='none',GTK_USE_PORTAL='0')
 os.chmod(env['XDG_RUNTIME_DIR'],0o700)
+if os.environ.get('MSERIES_SMOKE_TASKBAR') == '1':
+    assert 'MSERIES_SMOKE_DOCK' in os.environ, 'taskbar probe requires an explicit candidate binary'
+    env.update(HOME=str(work/'home'), XDG_DATA_HOME=str(work/'data'), XDG_CACHE_HOME=str(work/'cache'))
+    tools=work/'home/.local/bin'; tools.mkdir(parents=True)
+    helper=tools/'codexbar-linux'
+    helper.write_text('#!/bin/sh\nprintf \'{"entries":[]}\'\n')
+    helper.chmod(0o755)
+
 procs=[]
 def launch(args, e=env, name='process'):
     out=(work/(name+'.log')).open('w')
@@ -88,6 +96,8 @@ loop.run()
     cmd(['xdotool', 'windowmove', wid, '100', '750'], xenv)
     waitfor(lambda: int(geom()['Y']) == 750)
     cmd(['gsettings', 'set', 'io.elementary.dock', 'autohide-mode', 'never'], dockenv)
+    if os.environ.get('MSERIES_SMOKE_TASKBAR') == '1':
+        cmd(['gsettings','set','io.elementary.dock','taskbar-mode','true'],dockenv)
     dock=launch([dock_binary],dockenv,'dock')
     waitfor(lambda:'first Pantheon panel buffer committed' in (work/'compositor.log').read_text())
     cleared = waitfor(lambda: (g if int(g['Y']) < 750 and int(g['Y']) + int(g['HEIGHT']) <= 900 else None) if (g := geom()) else None)
@@ -110,6 +120,9 @@ loop.run()
     waitfor(lambda:focused(native_uid))
     cmd(['xdotool','type','--clearmodifiers','native-typing-works'])
     waitfor(lambda:(work/'native-typed').exists() and (work/'native-typed').read_text()=='native-typing-works')
+    output=os.environ.get('MSERIES_SMOKE_CAPTURE')
+    if output:
+        cmd(['ffmpeg','-nostdin','-loglevel','error','-f','x11grab','-video_size','1280x900','-i',env['DISPLAY'],'-frames:v','1','-update','1','-y',output])
     print(json.dumps({'dock_cleared_x11_geometry':cleared,'native_snap_and_restore':True,'x11_left':left,'x11_right':right,'minimize_restore':True,'typing_after_dock_activation':True,'dock_first_buffer_preserves_focus':True,'dock_repeat_preserves_focus':True},indent=2))
 except Exception:
     for name in ['compositor','entry','dock','native-entry']:
