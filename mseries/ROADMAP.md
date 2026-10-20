@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Work Mode integration reconciled — 2026-10-20
+
+#329 now preserves current gesture/cursor and floating-window clearance behavior
+alongside taskbar modes, and selects the size-system token appropriate to the dock.
+Nine Work Mode tests, 41 compositor tests, strict Clippy, native dock/settings builds
+and private window/focus/typing checks pass. #337's status-note conflicts are
+reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
+See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
+remaining native taskbar/network and Teams/Outlook qualification checks.
+
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
 Owner requested the official Teams dock icon and that the dock Mail button open
@@ -428,6 +438,13 @@ no application UI, runtime packages, panel or wallpaper changed. Other screen
 families were source-inspected, not newly rendered or hardware-qualified.
 Next: apply the skill to the next scoped UI change and refine conventions from
 that review; the source map is an inspection baseline, not a frozen design.
+
+## Windows Work Mode work-network trigger — 2026-10-20
+
+Windows Work Mode can now be limited to work networks identified by public IP or CIDR,
+combined with the weekday schedule. Lookup is cached per uplink and only made when the
+other rules pass. Remaining: visual panel review, a real scheduled/network transition,
+and the active dock appearance.
 
 ## Work Mode wallpaper — 2026-10-20
 

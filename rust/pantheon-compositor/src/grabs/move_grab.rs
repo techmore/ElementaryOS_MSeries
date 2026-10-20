@@ -37,6 +37,8 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         let new_location = self.initial_window_location.to_f64() + delta;
         data.space
             .map_element(self.window.clone(), new_location.to_i32_round(), true);
+        // Hard stop at the top of the taskbar.
+        data.keep_clear_of_bottom_panels(&self.window);
         data.update_corner_snap_preview(&self.window, event.location);
     }
 

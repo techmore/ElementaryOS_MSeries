@@ -100,6 +100,16 @@ jobs:
           meson compile -C "$RUNNER_TEMP/orchard-native"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
 
+  work-mode:
+    name: Windows Work Mode schedule and work-network rules (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GSettings test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
+      - name: Test with keyfile GSettings, a local IP service and no user services
+        run: python3 -B mseries/work-mode/test_work_mode.py
+
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
     runs-on: ubuntu-26.04-arm
