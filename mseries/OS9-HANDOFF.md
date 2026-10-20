@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## Faster apt defaults — 2026-10-19 (Claude)
+
+Branch `claude/apt-speed`. The `tuning` module in `mseries/enhance.sh` now also writes
+`/etc/apt/apt.conf.d/90-mseries-speed`: no `Translation-*` downloads, no pdiffs, 3 retries, and a 120 s dpkg
+lock wait. `--force-unsafe-io` was left out on purpose (power loss could corrupt the dpkg database).
+Verified: `bash mseries/test-apt-tuning.sh` (installs into a scratch root, checks `apt-config dump`),
+`test-apt-batch.sh`, `test-image-wiring.py`, `test-codexbar-deploy.py`, `test-elementary-mac-setup.sh` all pass.
+Not measured on hardware: real `apt update` timing, and the config is not yet installed on the running system
+(it lands with the next `enhance.sh` run or image build). Optional next: `nala` for parallel downloads.
+
 ## Rust compositor: grid overview for PerformAction(1) and upward swipe — 2026-10-19
 
 Branch `codex/rust-gala-stack-integration`, worktree
