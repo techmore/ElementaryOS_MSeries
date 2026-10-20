@@ -1,5 +1,302 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: grid overview for PerformAction(1) and upward swipe — 2026-10-19
+
+Branch `codex/rust-gala-stack-integration`, worktree
+`/home/sdolbec/ElementaryOS_MSeries-wt/rust-gala-stack-integration`.
+
+- `PerformAction(1)` no longer errors. It toggles a new grid overview
+  ("expose") mode in `rust/pantheon-compositor/src/overview.rs`: each output's
+  active-workspace application windows (panels and minimized windows excluded)
+  are rearranged into a centered grid inside that output's work area with
+  24-logical-pixel margins and 12-pixel gaps, sized `ceil(sqrt(n))` columns.
+- The mode is the explicit supported replacement for Gala's scaled
+  multitasking view, per `mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`.
+  Entering saves each window's prior location, size and managed state (plain,
+  tiled, maximized, fullscreen) and restores all of it on exit. Clicking a
+  window focuses it and closes the mode; Escape closes it; a window closed
+  while the overview is open is skipped during restore.
+- Gestures: `SwipeOutcome::ToggleOverview` added to
+  `rust/pantheon-compositor/src/gestures.rs`; a non-cancelled
+  three-or-more-finger upward swipe past the 90-logical-pixel threshold with
+  vertical dominance toggles the overview. `input.rs` intercepts Escape while
+  the overview is open, routes pointer presses through
+  `handle_overview_click`, and `state.rs` maps the Gala action and the swipe
+  outcome to `toggle_overview`. `tiling.rs` exposes `apply_tile`/`tile_rect`
+  crate-wide so the overview can restore tiled windows through the normal
+  tiling path.
+- Verification (this host, no session taken over): `cargo check --workspace
+  --all-targets`, `cargo check -p pantheon-compositor --bins --features
+  native-drm`, `cargo test -p pantheon-compositor` (7 tests: 4 gesture, 3 grid
+  layout) and `cargo clippy -p pantheon-compositor --all-targets` all pass.
+- New private nested smoke (Xvfb + dbus-run-session, fake
+  `XDG_RUNTIME_DIR`, `PANTHEON_WAYLAND_DISPLAY=pantheon-overview-smoke`, two
+  GTK Wayland `zenity` windows): `gdbus call … org.pantheon.gala.PerformAction
+  1` twice both returned `()`, and the compositor logged `opened the grid
+  overview windows=2` then `closed the grid overview`. The overview visuals
+  and the restored geometry were not screenshot-inspected.
+
+Not done / next task: rendered scaled thumbnails/animations and drag
+reorganization in the overview; XWayland and mixed Wayland/XWayland windows in
+the overview smoke; physical M-series trackpad qualification (the nested Winit
+backend emits no gesture events); pinch gestures; user-configurable bindings.
+No package was built, nothing was installed, and Gala remains the active
+session.
+
+## Rust compositor: repaired build, clippy cleanups, touchpad workspace swipes — 2026-10-19
+
+Branch `codex/rust-gala-stack-integration`, worktree
+`/home/sdolbec/ElementaryOS_MSeries-wt/rust-gala-stack-integration`.
+
+- The worktree carried an unfinished `GalaSignal` variant rename: the enum had
+  been renamed (`RunningApplications`, `Windows`, `ActiveWorkspace`) in only
+  part of `rust/pantheon-compositor/src/gala_compat.rs`, so `cargo check` failed
+  with five `E0599` errors. The remaining `WindowsChanged`/`ActiveWorkspaceChanged`
+  uses now match the renamed enum; D-Bus signal names are unchanged.
+- Finished the pending clippy cleanups: `checked_div` for the keyboard repeat
+  interval and `as_chunks_mut::<4>()` in the wallpaper BGRA swap. `cargo clippy
+  -p pantheon-compositor --all-targets` now reports no warnings.
+- Added `rust/pantheon-compositor/src/gestures.rs`: a small, backend-independent
+  swipe state machine for native libinput gesture events. Non-cancelled
+  three-or-more-finger swipes that pass a 90-logical-pixel threshold with
+  horizontal dominance select the adjacent workspace (content-following
+  direction: swipe left selects the next workspace); switching stops at the
+  first and last workspace instead of wrapping or creating one. Gestures are
+  dropped while the session is locked or a pointer grab is active. Pinch and
+  vertical swipes are intentionally unrecognized until an overview action
+  exists.
+- Wired the state machine into `process_input_event` and
+  `PantheonCompositor::apply_swipe_outcome`/`switch_workspace_relative`;
+  workspace switching reuses the existing `switch_workspace` path, so panel
+  visibility, Gala-compat signals, fractional-scale preferences and redraws
+  behave like other workspace changes.
+
+Verification (this host, no session taken over):
+
+- `CARGO_TARGET_DIR=/tmp/opencode/pantheon-target cargo check --workspace --all-targets`
+  passes.
+- `cargo check -p pantheon-compositor --bins --features native-drm` passes.
+- `cargo test -p pantheon-compositor` runs the three new gesture unit tests;
+  all pass. `cargo clippy -p pantheon-compositor --all-targets` is clean.
+
+Not done / next task: physical trackpad qualification on the M1 Pro native
+session (the Winit nested backend does not emit gesture events), vertical
+swipe and pinch routing once action 1/overview exists, and user-configurable
+gesture bindings. No package was built, nothing was installed, and Gala
+remains the active session. The uncommitted refactor was completed in place;
+no commit or push was made from this batch.
+
+## Rust compositor on the existing stack: installer, metrics reducer, public performance page — 2026-10-19
+
+Batch on branch `codex/rust-gala-stack-integration` (from
+`codex/rust-mutter-pantheon` @ `c1d92f1`). No package was built, nothing was
+installed or selected, and the live session was not touched: LightDM autologin
+is still `pantheon-wayland` and Gala is active.
+
+- **`mseries/install-pantheon-rust-compositor.sh`** deploys the experimental
+  compositor beside Gala. Dry run is the default; `--status` and `--verify` are
+  read-only; `--install`, `--select`, `--restore-gala` and `--uninstall` need
+  root and `--yes`. The installer refuses to act if the Gala package,
+  `/usr/bin/gala` or the `pantheon-wayland` session entry is missing, never
+  starts or enables a unit (only `systemctl --user daemon-reload` after dpkg),
+  and `--select` only rewrites the LightDM autologin drop-in after saving a
+  backup. It records installed-vs-loaded state: package version, `dpkg -V`,
+  payload paths, whether the user manager knows the units, and whether the
+  compositor service is active.
+- **`mseries/pantheon-rust-compositor/summarize-metrics.py`** (+ unit test)
+  reduces the `collect-session-metrics.sh` CSVs to per-process mean, median,
+  min and max, excluding and counting `NA` samples. It interprets nothing.
+- **`docs/rust-compositor-performance.html`** publishes the measured evidence
+  (idle CPU, memory, the Rust interactive sample, startup milestones, open
+  gates, method and rollback), linked from `docs/build-status.html` and
+  `docs/index.html`. The page states the statistic for every number and keeps
+  the "no performance win is established" framing.
+- CI (`validate-mseries.yml`) now syntax-checks the component scripts,
+  compiles and runs the summarizer test, and shellchecks the installer.
+
+Verified locally: `bash -n` and `shellcheck -S warning` on the installer, four
+unit tests pass, the summarizer reproduces the retained captures, and
+`--dry-run`/`--status` ran read-only on the M1 Pro. Live state found:
+`pantheon-rust-compositor 0.1.0+git7a0ac92` installed with a clean `dpkg -V`,
+all payload files present, units known to the user manager, compositor service
+not active, autologin `pantheon-wayland`. The branch HEAD is `c1d92f1`, so the
+installed package predates this batch; upgrading is an `--install` away but was
+not performed.
+
+Documentation correction carried into the new page: the in-branch migration
+dashboard's headline compositor CPU figures (Gala 11.10 %, Rust 11.12 %) are
+**means** of the six-sample captures, although `EXPERIENCE-REQUIREMENTS.md`
+calls 11.12/11.10 medians; the true medians are 11.20 % and 11.32 %. Both
+statistics are now published side by side. The retained Gala idle CSV also has
+no Wingpanel row, so total-session CPU remains unpaired against the Rust
+sample; the later corrected Gala capture (median 15.6 % Gala, 0.7 % Wingpanel)
+came from a different session and is not a match.
+
+Next gates are unchanged: matched idle/interactive captures with whole process
+trees, frame pacing and input latency, a battery-discharge or external-meter
+power run, and native lock/recovery qualification — before the Rust session is
+selected for anything beyond isolated logins.
+
+## Build the current Rust Pantheon stack-integration package — 2026-10-19
+
+Built the arm64 `native-drm` release package from this branch (`ad6741d`) at
+`/home/sdolbec/Documents/Codex/2026-10-18/g/work/artifacts/pantheon-stack-integration-release/pantheon-rust-compositor_0.1.0+gitad6741d_arm64.deb`
+(SHA-256 `86892d12fc8769e7fd00e4970f9d723d1a9f666a981bc6b7319a0c52fdcef88d`).
+Package metadata, payload paths, executable modes and shared-library links were
+inspected: the compositor binary, the `pantheon-rust-session` wrapper, the
+`pantheon-rust-compositor@.service` template, the Wingpanel and Dock units, the
+GNOME session-target drop-in, the GNOME session file and the LightDM entry are
+all present, both binaries are mode 0755, and `ldd` resolves every library. The
+package supersedes the installed `0.1.0+git7a0ac92` but was **not installed**:
+upgrading the live package was not part of this batch, the running session is
+untouched, and Gala remains active. When an isolated qualification login is
+scheduled, upgrade with
+`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes --deb <package>`,
+then `--verify`, and keep Gala as the rollback.
+
+## First native Rust compositor login and scanout — 2026-10-19
+
+Installed the ARM64 opt-in session package
+`pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb` on the M1 Pro, along
+with its missing `gnome-session` and `gtklock` dependencies. Gala's existing
+LightDM session entry remains intact. For one isolated native qualification,
+LightDM autologin was temporarily pointed at `pantheon-rust-wayland` and a
+five-minute systemd rollback timer was armed to remove the override and restart
+LightDM back into the original Gala session.
+
+The experimental GNOME session reached `READY=1`, opened `/dev/dri/card1` and
+Apple `/dev/dri/card2`, started XWayland and the installed Pantheon settings
+services, and launched the user's existing desktop apps. Kernel DRM state at
+`/sys/kernel/debug/dri/2/state` confirms plane 0 on `crtc-0` is scanning out
+framebuffer 87, allocated by `pantheon-compositor`, in AR30 at 3024x1964. The
+owner reports the desktop appears to work and is usable, with slower-feeling
+startup. The top menu/Wingpanel and bottom dock are both missing; neither
+process is running, and the experimental session's `RequiredComponents` list
+does not include either shell client. This proves first native login and
+visible internal-panel scanout, but not full Pantheon readiness, external
+display use, input coverage, lock/logout/recovery, performance improvement or
+crash-rate improvement. Gala remains the rollback path.
+
+The installed desktop shell contract is `/etc/xdg/io.elementary.desktop.wm.shell`:
+desktop mode names `io.elementary.wingpanel` and `io.elementary.dock`, with
+`wait-for-n-panels=1`. The experimental session launched neither client, and
+its required-components list contains neither. The Rust session needs an
+equivalent managed shell-launch path plus a desktop background before it can
+replace Gala for normal Pantheon use.
+
+The five-minute rollback fired at 10:00:55 EDT. LightDM removed the temporary
+override and auto-logged into the original `pantheon-wayland` session; current
+logind state identifies that session, with Gala and Wingpanel running and the
+Rust compositor stopped. The owner reports the wallpaper/background is present
+again in Gala, while the Rust session had no colored background. This completes
+the bounded native-login trial and verifies the automatic return path. The
+experimental session still needs its wallpaper/background, Wingpanel and
+Dock startup integration investigated and wired in before another full Pantheon
+login attempt.
+
+Also passed an isolated XWayland smoke before native login: an X11 Zenity
+window mapped under Xvfb, accepted keyboard input, and appeared in the live
+window-list D-Bus query. Clipboard/PRIMARY transfers and broader X11 workflows
+remain open. The quality gates now explicitly call for matched Gala/Rust
+startup, resource, latency, power and crash/recovery measurements before
+claiming the migration is faster, lighter or more reliable. See
+[`pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+
+## Mutter-minimal viable Rust compositor: KMS framebuffer preflight — 2026-10-19
+
+Ran the existing release-mode `pantheon-drm-probe` on the M1 Pro with
+`native-drm`. It found EGL rendering on Asahi `/dev/dri/card1` and
+`/dev/dri/renderD128`; Apple `/dev/dri/card2` owns the connected internal
+`eDP-1` at 3024×1964@120 Hz and currently reports the external connectors as
+disconnected. The probe allocated scanout-capable DMA-BUFs on Asahi at the
+preferred panel size and imported AB30, AR30, AB24 and AR24 into Apple GBM using
+the implicit modifier. Apple KMS rejected AB30 with `EINVAL`, but accepted
+AR30, AB24 and AR24 as `ADDFB2` framebuffers; each was immediately removed
+without plane attachment. Native output format selection now omits AB30 and
+prefers the three formats that passed. A read-only query also found AR30,
+AB24 and AR24 in each of the three Apple plane format lists; none reported a
+current CRTC or framebuffer assignment to this non-master client. The probe
+did not acquire DRM master, attach a framebuffer to a plane, modeset, or change
+output state. Gala stayed active. This qualifies buffer import, framebuffer
+registration and advertised plane formats, not plane routing, visible scanout
+or an interactive native session. The next display gate requires an isolated
+session to attempt its first real modeset, with a tested return path.
+
+The release probe rebuilt successfully in 0.85 seconds locally, and the
+native compositor release binary built successfully. The ARM64 package built
+from this source is
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb`
+(SHA-256 `f34220be364417e92c4dab2aa8b9c3c29b5b1cfc9427c710318b42634684634a`).
+Its package metadata, payload paths and dependencies were inspected; it was
+not installed. Branch: `codex/rust-mutter-pantheon`.
+
+## Mutter-minimal viable Rust compositor progress — 2026-10-18
+
+On branch `codex/rust-mutter-pantheon`, recent changes reconfigure already
+maximized windows when a committed Pantheon panel change alters its exclusive
+work area; unchanged panel repaints do not trigger redundant xdg configure
+events. Work-area state now tracks each active output, maximized/fullscreen
+windows and popup constraints use their current output, and removing a panel
+reflows managed windows. Multi-output panel placement remains unqualified.
+New toplevels center and cascade in the focused window's work area, falling
+back to the pointer output and then the primary output. This placement path
+builds but remains runtime-unqualified. The primary connector now follows
+saved monitor profiles and `ApplyMonitorsConfig`; hotplug preserves it while
+connected, otherwise preferring eDP and then the first available output.
+Added `pantheon-shell-probe`, which binds shell/panel v2 and sends
+`get_panel`, anchor, size, hide-mode, and offset requests. Local `cargo check`
+and `cargo build --bins` pass. The 12-second Xvfb nested run completed the probe
+over Wayland using Mesa llvmpipe. Then installed Wingpanel 8.0.4 ran against the
+nested socket under isolated D-Bus/Xvfb and forced Wayland. Its client trace
+shows `get_panel`, `set_anchor(top)`, `set_hide_mode(never)`, and attached SHM
+buffers. It also reported missing `org.gnome.Mutter.DisplayConfig` and GNOME
+Shell keybinding/sound services. Added a read-only D-Bus
+`org.gnome.Mutter.DisplayConfig.GetCurrentState` response built from the nested
+output and logical layout, plus `MonitorsChanged` on nested-output resize. Local
+`cargo check` and build pass; `gdbus call` returned one 1280×800@60 mode and
+logical layout mode 1. A second isolated Wingpanel launch no longer reports the
+missing DisplayConfig service and attaches SHM buffers. Added the
+`org.gnome.Shell` accelerator API used by Wingpanel and its sound indicator;
+`Super+N` on the nested window produced `AcceleratorActivated` for Wingpanel's
+registered action, and media-key registrations completed without a D-Bus
+failure. `ShowOSD`, lock-screen modes and physical media-key activation remain
+unimplemented/unqualified. Implemented relative pointer motion, pointer focus
+updates, and dispatch through active window move/resize grabs. Added xdg popup
+keyboard/pointer grabs rooted at managed toplevels, including nested serial
+validation; local `cargo check --bins` and `cargo build --bins` pass. Popup
+behavior is not yet runtime-qualified. Added native `Super+Left/Right` half
+snapping and `Super+Alt+U/I/J/K` plus configured Super+keypad quarter aliases.
+Targets use each focused window's output work area and reflow with panel/output
+changes; compositor move/resize and maximize requests clear the managed tile.
+`Super+Shift+Left/Right` now moves a window to an adjacent output, preserving
+its relative work-area offset or tile position. The snapping and monitor-move
+code compile but have not been runtime-qualified. Shortcuts load from the
+existing Mutter, Pantheon and GNOME GSettings schemas at session startup, with
+built-in defaults if a schema is unavailable. Drag-to-corner preview, live
+binding reload, multi-output behavior, and client minimum-size handling remain
+to be runtime-qualified. Implemented drag previews in the 40-logical-pixel
+output corners, Escape cancellation, fixed-size exclusion, and snap-on-release.
+Applying
+monitor modes, Dock behavior and
+M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
+on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
+are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Added
+an opt-in `native-drm` Cargo feature to stage Smithay's DRM/GBM,
+libinput/udev/libseat, EGL and multi-GPU dependencies. Installed `libseat-dev`
+0.9.2-2 on the host; both `cargo check --features native-drm --bins` and
+`cargo build --features native-drm --bins` pass. The default Winit binary also
+builds. Added and ran `pantheon-drm-probe`, which only enumerates EGL devices.
+It identifies Asahi `/dev/dri/card1` plus `/dev/dri/renderD128` for rendering;
+read-only KMS queries there return `Operation not supported`. DRM card2 owns the
+connected `eDP-1` (3024×1964@120 Hz) and `DP-2` (up to 3840×2160@30 Hz); its
+`HDMI-A-1` connector is disconnected. Card2 has no EGL device, so native startup
+must bridge the renderer and display controller. The probe uses read-only file
+descriptors, does not acquire DRM master, and does not force-probe connectors or
+change modes. The opt-in native path now wires this split-device topology, but
+it has not been launched in a real session. The WD22TB4 HDMI G3
+DCP/kernel issue remains separate. Scope and limits:
+`mseries/pantheon-rust-compositor/`.
+
 ## Homeboard Tasks sync: production hardening — 2026-10-19
 
 Branch `claude/homeboard-production` (from `dev`).
@@ -1101,6 +1398,10 @@ secondary rows 6.75 pt. Removed provider-specific font overrides; popover text i
 Verified native light/dark render probes with all three providers, including alternate accounts;
 the routine deploy also builds and runs all 12 native targets. Upstream stays v0.77.0.
 Installed/staged without restarting Wingpanel; native appearance loads at next login or an explicit reload.
+
+## Smaller CodexBar text and remove redundant Claude save action — 2026-10-19
+
+Owner reported the Wingpanel text still looked too large and the Claude app-login save action took up room. Reduced panel text sizes one step (base 8.5→7.5 pt, primary values 7.5→7 pt, reset labels 7→6.5 pt, secondary rows 6.75→6 pt). Removed the conditional “Save Claude app login” button; the helper already captures the app login when it lists accounts. Existing Claude account display and switch actions remain. The module is built and installed without restarting Wingpanel; the new appearance is pending the next session load and needs the owner's visual check.
 
 ## Compact two-row OpenCode panel — 2026-10-18
 
@@ -6309,6 +6610,554 @@ Calendar GUI/reminders, indefinite soak, power/battery and factory boot remain
 separate work. Six-hour developer tracking remains the existing workflow; the
 old completion heartbeat is already PAUSED. No duplicate automation was created.
 
+## Mutter-minimal viable Rust for elementaryOS M-series — 2026-10-18
+
+Started branch `codex/rust-mutter-pantheon`. The working title is
+`Mutter-Minimal-Viable-Rust_elementaryos-mseries`. **Scope clarified by the
+owner:** identify the features needed for the M-series/Pantheon experience and
+implement those; do not port Mutter or target full feature parity. Requirements
+and decision gates are documented in
+`mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`.
+
+Gala 8.6.2 directly uses Mutter `Meta` objects and Clutter/Cogl/Mtk APIs and is
+started as the Wayland display server by its session unit. The source audit
+found 79 Vala files using `Meta.*` across 24,534 lines, which demonstrates that
+replacing Gala underneath with a small shim is not a drop-in. This is migration
+context, not a list of features to port. The initial scope derives from our
+documented notch-aware panel, dock work-area behavior, display profiles and
+hotplug, snapping, input, and session reliability.
+
+Public source check found no first-party Rust Mutter/Gala replacement to reuse:
+elementary's public [Gala repository](https://github.com/elementary/gala) remains
+the libmutter-based Vala implementation. Independent Smithay projects are useful
+references, but they do not provide Pantheon session compatibility.
+
+Added `rust/pantheon-compositor`, an opt-in nested prototype based on Smithay's
+smallvil at pinned revision `023b78b1c5a05ca512767cacc07efca55fae8be4`. Its
+workspace manifest and lockfile are wired; it uses Smithay's Winit backend,
+needs an existing X11/Wayland session, and can launch a requested Wayland client
+on its nested display. It does not open DRM/KMS or alter the session. `cargo
+check -p pantheon-compositor` passes on the development host; runtime/client
+behavior and M-series hardware remain unqualified. The prototype is a
+development harness, not a finished session. Conditional needs such as
+Xwayland, IBus, accessibility, screencasting and multi-GPU are not automatic
+port targets; each needs a demonstrated workflow. Mutter upstream is a feature
+reference: its CTM Night Light change is relevant only if the M-series driver
+exposes CTM, which the current handoff says it did not.
+
+Implemented the first Pantheon shell integration slice in the prototype:
+vendored elementary's desktop-shell protocol XML with the repository's v2
+`set_offset` extension, advertised it from Smithay, and handled panel creation,
+anchor, size, hide-mode, focus and offset requests. Panel windows are placed on
+the nested output; xdg maximize configures the work area after exclusive panel
+reservation, while fullscreen uses the full output. Panel clicks do not take
+keyboard focus unless the panel explicitly requests it. `cargo check
+-p pantheon-compositor` passes after the change. Autohide/overlap tracking,
+blur, reflow of already maximized windows, display/session startup and other
+Pantheon shell behaviors remain incomplete. Wingpanel and Dock have not yet
+been run against the Rust compositor. The nested event loop stayed up for an
+8-second Xvfb smoke run on the local build host; no Wayland client connected,
+and this is not M-series hardware qualification.
+
+No compositor has been installed and no desktop configuration has changed. No
+active desktop, kernel, bootloader, or audio-stack changes were made. The
+WD22TB4 HDMI G3 link-training blocker remains on the DCP/kernel path; it must be
+tracked separately from Rust compositor output and hotplug qualification.
+Next: connect a Wayland protocol probe, then qualify the Pantheon protocol
+against Wingpanel and Dock and add overlap-based autohide. Do not switch the
+login session at this stage.
+
+### Native M-series topology requirement — 2026-10-18
+
+Reconciled the read-only DRM inventory with the compositor requirements. This
+M1 Pro cannot use a single GPU for both rendering and scanout: Asahi card1 has
+the EGL render node but no KMS resources; Apple display card2 owns connected
+eDP/DP outputs but has no EGL device. Cross-device rendered-buffer import plus
+scanout allocation on card2 is therefore a first-session requirement for this
+machine. This changes the earlier conditional treatment of multi-GPU support;
+it does not change the separate DCP/kernel diagnosis for dock HDMI G3. Native
+session startup remains unwired and no modesetting has been attempted. Next:
+build the optional native path around Smithay's multi-GPU renderer and validate
+it without taking over the active desktop.
+
+The compositor state constructor now accepts the seat name supplied by the
+backend; nested startup continues to advertise `winit`. Both default and
+`native-drm` `cargo check --bins` pass after this seam change. This prepares the
+Wayland seat identity for a libseat-backed session but does not initialize or
+control a native session yet.
+
+### Multi-output DisplayConfig state — 2026-10-18
+
+The compatibility `org.gnome.Mutter.DisplayConfig.GetCurrentState` response now
+tracks outputs by connector, reports their current modes, scales, logical x/y
+positions, and primary flags, and removes disconnected outputs. Each output
+change advances the state serial and emits `MonitorsChanged`. The D-Bus
+interface remains read-only: it does not apply monitor configuration. Nested
+startup continues to publish one `winit` output. Default and `native-drm`
+`cargo check --bins` pass; multi-output D-Bus runtime behavior remains
+unverified. This prepares the native connector lifecycle to report hotplug
+state without claiming mode-setting support.
+
+### Native renderer initialization slice — 2026-10-18
+
+Added feature-gated `native.rs` with a libseat-scoped hardware renderer
+initializer: it tries the session's primary GPU first, opens each candidate via
+libseat, rejects software EGL, discovers its render node, and registers the GBM
+device with Smithay `GpuManager`. This establishes the rendering side needed
+for the measured Asahi-render/Apple-KMS split. It retains the renderer's GBM
+device and can create a rendering/scanout GBM allocator for the Apple KMS
+framebuffer exporter to import. It is not yet called by the executable and
+does not initialize a KMS output, cross-device framebuffer exporter, input
+backend, or native event loop. No libseat session was opened at runtime.
+Default and `native-drm` cargo checks pass, and the feature-enabled binaries
+build locally; next pair this allocator with the Apple KMS device and output
+manager.
+
+### Native KMS output initialization — 2026-10-18
+
+Added a feature-gated `NativeKmsOutput` builder. It scans libseat DRM nodes
+other than the renderer device, finds a connected connector with a compatible
+CRTC, prefers the built-in eDP connector, chooses its preferred mode, and
+constructs Smithay's GBM output manager using Asahi render buffers and an Apple
+KMS framebuffer exporter. It publishes the output and updates the multi-output
+DisplayConfig state. At this implementation milestone no libseat session was
+opened and no output was initialized at runtime. `DrmDevice::new`
+is configured to disable connectors while preparing for compositor takeover,
+so this must only be called in the future native session after libseat has
+paused the existing display server. The output object now renders the current
+Space into its DRM swapchain, queues damaged frames, and exposes the matching
+vblank submission completion. At this implementation milestone frame
+scheduling, vblank event wiring, hotplug, pause/resume and native input remained
+unconnected. No libseat session was opened at runtime. Default and `native-drm`
+checks/builds passed locally.
+
+### Explicit native backend startup and event loop — 2026-10-18
+
+The executable now selects `nested` by default or accepts `--backend native`
+when built with `native-drm`. Native startup creates a libseat session, names
+the Wayland seat from that session, initializes the hardware renderer and all
+connected outputs with compatible CRTCs on the first usable KMS device, assigns
+libinput to the active seat, and registers input, session pause/resume, DRM
+vblank and redraw-channel sources with calloop. It prioritizes eDP, places
+additional outputs to its right, and shares one DRM manager/notifier across
+their scanout surfaces. DisplayConfig starts empty and only advertises outputs
+published by the selected backend, avoiding a phantom Winit monitor in native
+mode.
+Surface commits and input request redraws; vblank completes the matching
+queued frame and sends frame callbacks. The nested path remains independent and
+never creates a libseat session. Local `cargo check --bins`,
+`cargo check --bins --features native-drm`, and matching `cargo build --bins`
+commands pass for the multi-output update, including both local feature-enabled
+and default builds. Formatting was applied only to the changed Rust sources;
+`cargo fmt --check` still reports pre-existing formatting differences elsewhere
+in the crate. Native mode was not launched:
+on this host it would take over the active display, so DRM initialization,
+scanout, physical input, pause/resume and the complete Pantheon session remain
+runtime-unverified. Connector enumeration and CRTC/output wiring only have
+compile evidence; the two-output M1 Pro topology has not been modeset. Hotplug,
+user-configured arrangement, monitor mode application, rollback, and connector
+removal lifecycle are still needed for the scoped M-series experience. Next:
+qualify native output initialization in a separate session or other safe
+hardware setup, then add dynamic connector lifecycle handling.
+
+### Software pointer rendering — 2026-10-18
+
+The compositor now retains Smithay's pointer image status and requests native
+redraws when clients change the cursor. It renders client cursor surfaces above
+the window space in both Winit and native DRM output paths. Named cursor
+requests use a small built-in arrow bitmap; cursor theme loading, named shape
+mapping, animation and hardware cursor planes are not implemented. Winit's
+host pointer is hidden to avoid drawing a second cursor. Default and
+`native-drm` configurations compile; this feature has not been visually
+qualified with a Wayland client or on DRM hardware. Next: build both modes and
+qualify cursor position/hotspot behavior in nested mode, then native mode when
+an isolated session is available.
+
+### Absolute pointer mapping — 2026-10-18
+
+Absolute pointer events previously mapped normalized coordinates against only
+the first output in Smithay `Space`. They now map against the union of logical
+output geometries, matching relative-pointer desktop bounds and allowing
+coordinates to reach secondary outputs. `rustfmt --edition 2024` on the changed
+file, `cargo check --bins`, and `cargo check --features native-drm --bins` pass
+on the M1 Pro build host. This is compile evidence only; no absolute-input
+device or multi-output runtime check was run. The pinned Smithay input and
+multi-GPU paths remain unqualified; opt-in native startup is now implemented,
+but has not been launched on the active desktop.
+
+### Initial toplevel placement and focus — 2026-10-18
+
+New toplevels are centered on the first available output when their first
+non-empty buffer commits. Later windows are offset in a bounded cascade, the
+new window is activated and receives keyboard focus, and toplevel destruction
+clears placement/window-mode tracking and unmaps it from `Space`. When the
+destroyed toplevel had keyboard focus, focus moves to the topmost remaining
+non-panel window (or clears if none remains); destroying a background window
+does not steal focus. Default and `native-drm` feature `cargo check --bins`
+both pass locally. Runtime window launch/focus/close behavior remains
+unverified. The opt-in native DRM startup path is now implemented but has not
+been launched on this active desktop; isolated session qualification and
+physical connector lifecycle qualification remain open.
+
+### systemd readiness notification — 2026-10-18
+
+Added opt-in `--notify-systemd` support. After the Wayland listener and chosen
+backend are initialized, it sends `READY=1` and a status string to the
+`NOTIFY_SOCKET`, supporting both filesystem and Linux abstract Unix sockets.
+For native startup, this point follows renderer and connected-output
+initialization. Missing notification socket or send errors fail startup when
+the flag is supplied. Updated the compositor README and roadmap. The active
+session, installed service units and login chooser were not changed. Default
+and `native-drm` `cargo build -p pantheon-compositor --bins` both pass locally;
+no runtime notification or native display check was performed. Read-only
+inspection confirmed the installed `gnome-session@<session>.target` drop-in
+and systemd-hidden component pattern. Added a distinct
+`pantheon-rust-wayland` login entry, `.session`, compositor desktop component,
+notify service, target and session-target drop-in under
+`mseries/pantheon-rust-compositor/session/`. The service binds `wayland-0`,
+imports it into the user manager after compositor readiness, and clears it on
+stop. `PANTHEON_WAYLAND_DISPLAY` now lets the compositor bind a requested
+socket name; nested startup still allocates automatically. Staged
+`systemd-analyze --user verify` passes with one unrelated warning from the
+host's `spice-vdagent.service`. The desktop-file validator flags `DesktopNames`
+on the new entry, as it does on the installed Pantheon entry; that key is
+retained to match the local session convention. The payload is not installed;
+Gala and the active login chooser remain untouched. Next: qualify the native
+path only in a separate login environment. No native runtime qualification is
+claimed.
+
+### Native DRM connector reconciliation — 2026-10-18
+
+Added a two-second calloop timer to the native path. It polls connected DRM
+connectors while the logind/libseat session is active, initializes new outputs
+with unclaimed compatible CRTCs, and removes disconnected outputs. Removal
+disables the Wayland `wl_output` global before deleting it two seconds later;
+the DRM output handle is dropped so Smithay releases its CRTC compositor.
+Output positions and read-only DisplayConfig snapshots are reflowed, output
+metadata is updated, panels are repositioned, maximized/fullscreen windows are
+reconfigured, and windows outside the remaining logical outputs are moved back
+onto the primary output. Polling pauses during session deactivation. The
+relative-pointer path now ignores motion while no output is mapped, avoiding
+an empty-bounds panic during full disconnect and allowing later recovery. The
+`native-drm` binary builds locally; the default build also passes. No hardware
+hotplug or native session was run, so connector detection, scanout transitions,
+and recovery on the M1 Pro remain unqualified. User-selected layouts and mode
+changes are still not implemented. Next: validate this lifecycle in a separate
+native session, then add mode/layout application and rollback based on the
+actual display workflow.
+
+### Wayland session lock protocol — 2026-10-18
+
+Implemented Smithay's pinned `ext-session-lock-v1` protocol for both nested
+Winit and native DRM. A lock request immediately suppresses application
+surfaces, clears keyboard focus and active pointer/keyboard grabs, and disables
+shell accelerators while locked. Each mapped output renders its lock surface on
+black, or black alone until the locker provides a surface; lock success is sent
+only after every active output presents a cleared frame. Pointer and keyboard
+input are confined to the lock client, and unlock restores the previous live
+keyboard focus. Output removal/addition updates pending lock confirmation.
+`cargo check` and `cargo build` pass with and without `native-drm`. No session
+locker was run against the nested backend and native mode was not launched, so
+protocol behavior, input confinement, visual blanking, unlock, locker/PAM
+integration and hardware presentation remain unqualified. The compositor does
+not supply an authentication UI or policy; a Pantheon locker must implement
+the session-lock protocol and authenticate the user. Next: validate a real
+locker in a nested session, then qualify login/lock/unlock in an isolated
+native session before considering this a swap-in capability.
+
+### Pantheon screensaver action bridge — 2026-10-18
+
+Read-only inspection of the running Gala session confirmed that Gala owns
+`org.gnome.ScreenSaver` and exports `Lock`, `GetActive`, `SetActive`,
+`GetActiveTime` and `ActiveChanged`. Added that D-Bus interface to the Rust
+session service. `Lock` and `SetActive(true)` launch `gtklock` by default (or
+the executable named by `PANTHEON_LOCK_COMMAND`) with the compositor's own
+`WAYLAND_DISPLAY`; the active state and signal follow successful protocol lock
+confirmation and authenticated unlock. `SetActive(false)` cannot unlock the
+session; only the session-lock client can send `unlock_and_destroy`. Default
+and `native-drm` checks/builds pass. The host does not have `gtklock` installed,
+and no D-Bus or locker runtime call was made. The experimental session payload
+must depend on a locker package; Gtklock is available in the distro package
+index and upstream documents its use of `ext-session-lock-v1`, but its UI/PAM
+behavior on this Pantheon session remains unqualified. Next: stage the package
+in an isolated nested session, verify D-Bus activation and authentication,
+then exercise lock/unlock without touching Gala's live session.
+
+### Advertise kernel-reported display modes — 2026-10-18
+
+`org.gnome.Mutter.DisplayConfig.GetCurrentState` no longer fabricates a single
+mode for each native connector. It now lists every mode returned by that
+connector's DRM resources, marks the active and preferred modes, and computes
+refresh rates from DRM timing data. The nested Winit backend continues to
+advertise only its actual current window size. Default and `native-drm` checks
+pass. This improves the settings UI's inventory only: `ApplyMonitorsConfig`
+is not implemented, mode changes and layout application remain unavailable,
+and no live display configuration was changed. Next: validate connector mode
+IDs against Pantheon Settings, then implement verified apply/rollback on the
+native KMS outputs.
+
+### Apply monitor configuration on the compositor thread — 2026-10-19
+
+Implemented `ApplyMonitorsConfig` on the DisplayConfig compatibility service.
+Requests validate the state serial, require each connected output exactly once,
+check mode IDs and scale/transform values, and reject unsupported mirroring,
+output disabling and per-monitor properties. Verify-only requests do not alter
+state. Temporary and persistent requests update output positions, scales,
+transforms and mode state; the nested Winit backend rejects mode changes.
+Native mode changes use Smithay's shared DRM output manager with rendered
+contents supplied for every CRTC, and roll back modes already switched if a
+later request fails. Persistent requests are written atomically to
+`$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or the user's
+`~/.config`) and native startup restores saved mode/layout values. The
+`MonitorsChanged` update is batched for a complete apply operation.
+The compositor now advertises `wp_fractional_scale_v1` and `wp_viewporter`;
+new window surfaces receive the preferred scale of their first mapped output,
+and output scale preferences refresh during rendering and after configuration
+changes. Cross-output movement and fractional rendering still require a nested
+client check.
+
+The compositor also now serves Smithay's `xdg-activation-v1`. Client tokens
+must carry a recent serial from this compositor's seat; tokens expire after a
+minute if unused and are consumed on activation. Recent activation requests
+raise/focus an already mapped target window, except while the session is
+locked. The new app-launch path has only been compile-checked, not exercised by
+a client.
+
+Local verification: `cargo check -p pantheon-compositor --bin
+pantheon-compositor` and the same command with `--features native-drm` both
+pass; touched Rust files pass `rustfmt --check`; `git diff --check` passes.
+No native session, mode switch, or live output reconfiguration was attempted,
+so DRM behavior and settings-client round trips remain runtime-unqualified.
+Next: validate the D-Bus request against Pantheon Settings in an isolated
+nested session, then qualify mode rollback and persistent startup on hardware
+without replacing the active compositor until a recovery path is ready.
+
+### Retain and restore minimized windows — 2026-10-19
+
+Implemented Smithay's `XdgShellHandler::minimize_request`: requests outside a
+locked session remove non-panel windows from the visible `Space` while retaining
+their `Window` and previous position. If the minimized window held keyboard
+focus, focus moves to the next visible application window. A later valid
+`xdg-activation-v1` request restores a retained window to its former location,
+raises it and focuses it; destroying a minimized toplevel drops the retained
+entry. Default and `native-drm` compositor builds pass. This code has not been
+exercised with an app client; task-switcher discovery and runtime restoration
+remain unverified.
+
+### Preserve output layout during native hotplug — 2026-10-19
+
+Native connector reconciliation now captures existing logical output
+positions before removing disconnected outputs. Connected outputs retain those
+positions; newly discovered outputs are added to the right of the current
+layout, with their logical width accounting for scale. Connector snapshots
+retain the matching x/y positions and scale. This avoids resetting a user's
+multi-monitor arrangement whenever a connector changes. Local default
+`cargo check`/`cargo build` and the `native-drm` build pass. A repository-wide
+`cargo fmt --check` still reports unrelated formatting differences in
+`mseries-power` and `grabs/resize_grab.rs`; the touched native compositor
+source was formatted directly. No display session was launched and hotplug
+behavior remains unqualified on hardware.
+
+### Render the Shell `ShowOSD` compatibility call — 2026-10-19
+
+The `org.gnome.Shell.ShowOSD(a{sv})` method now retains the current icon,
+level, optional maximum level, connector and legacy monitor index. Both render
+paths draw a brief volume or brightness card with an icon and level meter on
+the selected connector, falling back to the primary output. The native backend
+receives redraw requests when the OSD appears and expires. This provides
+feedback for the existing Shell accelerator clients without relying on Gala.
+It does not draw caller-supplied text labels or reproduce Pantheon's complete
+OSD styling; physical key activation and visual runtime behavior still need
+qualification. Local default `cargo check`/`cargo build` and the
+`native-drm` build pass. No tests or display session were run.
+
+### Apply the configured XKB keymap and repeat settings — 2026-10-19
+
+The compositor now initializes its XKB model, current XKB source, XKB options,
+and keyboard repeat settings from `org.gnome.desktop.input-sources` and
+`org.gnome.desktop.peripherals.keyboard`. A one-second poll applies live
+changes to the keymap and Wayland repeat info. Current host settings are model
+`pc105+inet`, US layout, `ctrl:swap_lwin_lctl`, repeat enabled, 500 ms delay,
+and 30 ms interval; this preserves the desktop's Command/Ctrl mapping. The
+configured `mozc-jp` IBus source is installed but not selected, and no IBus
+bridge was added. Default and native DRM builds pass. No live key injection or
+layout change was run, so physical mapping and reload remain runtime-unverified.
+
+### Bound experimental-session crash recovery — 2026-10-19
+
+The staged `pantheon-rust-compositor@.service` now uses `Restart=on-failure`
+with a two-second delay and a three-start/60-second limit. A hung startup has a
+90-second readiness timeout. After the limit, the existing
+`OnFailure=gnome-session-shutdown.target` path stops the experimental session;
+normal session stops are not restarted. `systemd-analyze verify` parsed both
+staged units and reported only expected unresolved install-time dependencies
+(`gnome-session-initialized.target`) and the not-yet-installed
+`/usr/bin/pantheon-compositor` path. The service remains uninstalled; no live
+crash, restart, login, or rollback was exercised.
+
+### Build an installable arm64 package without selecting the session — 2026-10-19
+
+Added `mseries/pantheon-rust-compositor/build-deb.sh`. On the local arm64 host
+it built the optimized `native-drm` executable and an arm64 Debian package
+containing the opt-in session files. `dpkg-shlibdeps` derived shared-library
+dependencies; the package also requires `gnome-session`, `gtklock`, `libegl1`
+and `libgles2`. `dpkg-deb --info` and `--contents` confirm the package metadata,
+binary and session units. The package was rebuilt from commit `2c8422f` after
+implementing Dock hide modes. Current artifact:
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+git2c8422f_arm64.deb`
+(SHA-256 `613415f318dcc7c3421d7eb3823b7e2f35525a1f75201f31677646f71e3f6ce8`).
+The package was not installed and the experimental session was not selected.
+
+### Honor Pantheon Dock hide modes — 2026-10-19
+
+The active `io.elementary.dock` setting is `autohide-mode='overlapping-window'`.
+The compositor now evaluates Pantheon panel hide modes 0–4 against managed
+maximize state, focused-window overlap, and any application-window overlap.
+Hidden panels move outside their output; pointer movement within 2 logical
+pixels of that output's panel edge reveals them. A visible panel reserves its
+work area, and hiding releases it and reconfigures maximized/tiled windows.
+This is an immediate transition without Gala's animation. Default and
+`native-drm` `cargo check` pass, and touched files were formatted. No automated
+tests or Dock runtime session were run; overlap timing, edge reveal and work
+area behavior still need an isolated Wingpanel/Dock session before hardware
+qualification. The active Gala session remains untouched.
+
+### Preflight Asahi-to-Apple DMA-BUF import without modesetting — 2026-10-19
+
+Extended `pantheon-drm-probe` to allocate 64×64 GBM buffers with render and
+scanout usage on `/dev/dri/renderD128`, export each as a DMA-BUF, and import
+into the connected Apple KMS device's GBM implementation with scanout usage.
+The current M1 Pro succeeded for implicit-modifier formats AB30, AR30, AB24
+and AR24. This confirms DMA-BUF allocation/export/import for these formats; it
+does not prove DRM framebuffer creation or physical scanout. The probe opens
+the devices but does not acquire DRM master, create framebuffers, or modeset.
+The next hardware gate remains a controlled native compositor start in an
+isolated session.
+
+### Rust Pantheon branch readiness decision — 2026-10-19
+
+The branch is useful for nested development and has a locally built ARM64
+native candidate, but it is **not yet an experimental Pantheon swap-in**. No
+isolated native login or real Wayland app/IBus/panel/dock/lock workflow has been
+qualified. Gala remains selected. The next gate is nested runtime qualification
+with GTK/Qt plus the existing shell clients, then native login only with a
+separate tested recovery path. See
+`mseries/pantheon-rust-compositor/README.md` for the readiness criteria.
+
+### Add native monitor disable/re-enable — 2026-10-19
+
+`ApplyMonitorsConfig` now accepts an active logical-monitor list that omits
+connected connectors. Disabled monitors remain in `GetCurrentState`'s monitor
+inventory but have no logical placement. Native DRM drops their Smithay output
+and recreates it when re-enabled. Monitor profiles now store enabled state;
+existing seven-field profiles load as enabled, and native startup honors saved
+disabled connectors. Disabling a monitor moves windows whose centers would be
+off-screen onto the primary output. The first implementation required overlap
+between old and new output sets; the follow-up below stages disjoint sets while
+retaining one live output.
+Mirroring and nested Winit monitor-set changes remain unsupported.
+
+Default and `native-drm` `cargo check` pass, and the compositor source is
+formatted. No test or display session was run. Live disable/re-enable,
+disconnect/reconnect, modeset failure recovery, Wingpanel Settings behavior,
+and native output-set changes remain unqualified. The existing Gala session was
+not changed. The native ARM64 release build from `4458354` is packaged at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-release/pantheon-rust-compositor_0.1.0+git4458354_arm64.deb`
+(SHA-256 `c2371d1b8810de75e137a61f05f7b6ecacb8e066ebc001239a6a3dee3191638f`).
+Package metadata and contents were inspected. It was not installed.
+
+### Stage disjoint native output-set changes with a live anchor — 2026-10-19
+
+Removed the old/new set overlap requirement. The native backend retains
+existing outputs while it initializes requested connectors, then removes old
+outputs after output initialization succeeds. When
+initialization or modesetting fails, the compositor attempts to restore the
+previous enabled set, modes, layout, work areas and window placement, and
+reconciles `GetCurrentState` if rollback itself fails. This supports disjoint
+transitions when the DRM device has enough compatible CRTCs. At that point,
+single-CRTC reassignment was not yet supported; the follow-up below adds it via
+the pinned Smithay surface connector/mode API.
+
+Default and `native-drm` `cargo check` pass. No tests or display session were
+run; failure injection, page-flip timing, disjoint transitions on hardware and
+rollback remain runtime-unqualified. Build a new candidate from this commit
+before any monitor qualification; the `4458354` package predates this change.
+The ARM64 package built from `6ec3113` is at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-stage-release/pantheon-rust-compositor_0.1.0+git6ec3113_arm64.deb`
+(SHA-256 `457a2847d8588cc108f44b726909a42eeb2b804bb38e71fa74034de537f11a88`).
+Its package metadata and contents were inspected; it was not installed.
+
+### Reassign a single DRM CRTC to a new connector — 2026-10-19
+
+The pinned Smithay API supports double-buffered connector changes on a DRM
+surface. `NativeKmsDevice` now uses that surface's connector and mode update to
+route an existing CRTC to a newly requested connector, preserving the scanout
+pipeline when no spare CRTC is available. The new Wayland output replaces the
+old connector's global after the mode commit. If connector activation fails,
+the old connector and mode are restored; the outer ApplyMonitorsConfig rollback
+restores the previous output set, modes, layout and work areas. Targets that
+cannot use the existing CRTC still require another compatible CRTC and return
+an error without intentionally dropping all active outputs.
+
+Both default and `native-drm` `cargo check` pass. Smithay source inspection
+confirms the connector set is double-buffered and `use_mode` submits the pending
+mode with the composited frame; this is source/API evidence, not runtime proof.
+No monitor switch, page-flip check or failure injection has been run on the
+M-series device. The ARM64 package at `6ec3113` predates this change and must
+not be used to qualify it. The ARM64 release candidate built from `c91ec2d` is
+at `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-crtc-reassign-release/pantheon-rust-compositor_0.1.0+gitc91ec2d_arm64.deb`
+(SHA-256 `46baf4fc264cb23b8e784bc57a2b23d7f34b5a8f0930391a34f9d341f327303c`).
+Its package metadata and contents were inspected; it was not installed.
+
+### Build current Rust Pantheon workspace release candidate — 2026-10-19
+
+Built the current `619ca5c` ARM64 `native-drm` release package locally at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git619ca5c_arm64.deb`
+(SHA-256 `aee4c9af0d12c1a2bddbfd45dcd5a79e71afe8c8adc28d9ff46e7cf204d0ea13`).
+Package contents, Debian dependency metadata and `ldd` links were inspected;
+the package was not installed. The release binary started under private D-Bus
+and Xvfb, initialized Winit and XWayland, and launched a Zenity Wayland window.
+`GetNWorkspaces` returned 2, and `GetWindows` returned the focused Zenity
+window on workspace 0. This proves a useful nested release-build path and
+means development qualification can proceed now. It does not prove the UI was
+visually inspected, the Pantheon shell works end to end, or native scanout,
+input, locking and recovery. Gala remains the selected session. Next: qualify
+GTK/Qt apps, IBus commit behavior, and the installed shell clients in the
+isolated nested session; do not install this package as the active session.
+
+### Qualify release candidate with installed Wingpanel — 2026-10-19
+
+Ran `/usr/bin/io.elementary.wingpanel` in a separate D-Bus/Xvfb session against
+the release binary from `619ca5c`, with Wayland forced and a private GSettings
+fixture populated from the host's input sources and keyboard settings. The
+Wingpanel client trace shows shell v2 `get_panel`, top anchor, `never` hide
+mode, and shared-memory pool allocation. A Mutter DisplayConfig
+`GetCurrentState` call returned serial 2 and the nested Winit output at
+1280×800@60. No panel keyboard assertion occurred. The user-owned Wingpanel
+process remained untouched; no Dock binary was run. The package remains
+uninstalled. This qualifies protocol connection and panel buffer submission,
+not visual inspection or direct keyboard interaction. The follow-on input
+qualification is recorded below.
+
+### Qualify nested keyboard and IBus/Mozc commit — 2026-10-19
+
+Used the current `619ca5c` release binary under private D-Bus/Xvfb, with
+private HOME, cache, GSettings and Mozc config. XTest events sent only to the
+Xvfb Winit window reached a focused GTK Wayland Zenity entry, which returned
+the exact typed text. With a private Mozc `ibus_config.textproto` selecting
+`mozc-jp`, US layout and `active_on_launch: True`, romaji `konnichiha` plus
+Space/Return committed exactly `こんにちは` into the GTK field. The
+compositor's `FocusWindow` D-Bus action moved the mapped field from unfocused to
+focused before entry; the active XKB/IBus source state on the host was not
+changed. Mozc documents `active_on_launch` as false by default (see
+https://github.com/google/mozc/blob/master/docs/configurations.md#activate-mozc-on-launch).
+This qualifies nested keyboard delivery and IBus input-method-v2/text-input-v3
+commit behavior for that client and setting. F5 dictation, host source
+switching, physical keyboard input, candidate-window visual behavior and
+native session behavior remain open. All temporary compositor, Xvfb, Zenity,
+IBus and Mozc processes were cleaned up; the host IBus engine remains
+`xkb:us::eng`. Next: qualify more GTK/Qt clients and the F5 app workflow, then
+the Dock only through the approved local GUI policy.
 ## Calendar + tab: Verse of the Day — 2026-10-18
 
 Added a third **+** tab (icon `list-add-symbolic`, title "Verse of the Day") to
@@ -6445,6 +7294,54 @@ about two minutes. Changed: greeter default session set back to `pantheon-waylan
 `~/.dmrc`); new `mseries/install-portal-relogin-fix.sh` installed for the owner (portal needs
 `WAYLAND_DISPLAY`; unverified until the next crash). Mutter frames not yet symbolized (debuginfod timed
 out); stock-Gala A/B is the owner's call. Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
+
+The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
+surface when a popup closes (symbolized with Ubuntu dbgsym). Upstream fix `c18af474` is not in Ubuntu 50.1-0ubuntu2.4.
+New `mseries/install-gala-mutter-fix.sh` rebuilds Ubuntu's exact mutter with that one patch and installs only
+`libmutter-18.so.0` beside the patched Gala; the launcher uses it only while the system mutter version matches.
+Installed on the owner's machine; `mseries/test-gala-mutter-fix.sh` passes headless. The crash was not reproduced; the
+next Pantheon session is the real test. After an Ubuntu mutter update, re-run the installer (the launcher logs and skips
+a stale build). Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## Rust bindings to Pantheon libraries — 2026-10-18 (Claude)
+
+Strategy: keep Gala, Wingpanel, Dock and Granite upstream Vala; write new code in Rust against them via GIR;
+rewrite only with evidence (the compositor, on Codex's `codex/rust-mutter-pantheon`). New `rust/granite-smoke`
+uses crates.io `granite-rs 3.3.0` with system Granite 7.8.1 and GTK 4.22: PASS under Xvfb. Needed workaround:
+gtk4 feature `v4_20` (granite-rs does not enable `v4_10`, so `gtk::Accessible` is missing). New
+`mseries/patches/wingpanel-export-gir.patch` makes Wingpanel export `Wingpanel-9.gir` + typelib; built and loaded in
+a sandbox, not installed. All upstream pins and update steps: `mseries/RUST-UPSTREAM-MAINTENANCE.md`. Next:
+an opt-in Rust login session entry once the compositor has DRM/KMS, input and lock screen.
+
+## Rust session shell clients: renderer fix — 2026-10-19
+
+Native Rust-session Wingpanel looped on Vulkan `SURFACE_LOST` (compositor has no `linux-dmabuf`), spinning CPU and holding 2.3 GB; Dock was skipped only by the owner's opt-out marker. Reproduced in a private nested Xvfb run; `GSK_RENDERER=gl` removed it. Added to both shell units plus `mseries/pantheon-rust-compositor/test-session-units.sh` (passes). Not verified: native panel visibility, Dock render. Next: implement `linux-dmabuf` in the compositor, then a native login with the new package (needs owner OK).
+
+## Repo housekeeping — 2026-10-19
+
+Owner-approved cleanup: deleted 58 remote branches fully merged into origin/main (all 2026-10-18 feature/docs/fix branches), removed 15 clean merged worktrees (none busy) and pruned 2 missing /tmp worktree entries. Kept: main, dev, every unmerged or squash-merged-unknown branch, all unmerged/detached worktrees. Local branches were not deleted. Recovery: merged branch tips remain reachable from main.
+
+## Rust session select bug — 2026-10-19 18:00
+
+First trial of `0.1.0+git69cb0f1` did not reach the Rust compositor. `install-pantheon-rust-compositor.sh --select` overwrote the whole LightDM drop-in with a single `autologin-session=` line (no `[Seat:*]` header, user/timeout dropped); LightDM logged "Key file does not start with a group" and fell back to the default Ubuntu session. This probably also explains the earlier "fell back to Ubuntu" attempt with `8c784dc`. Fixed: `write_autologin` now edits only that key, keeps the existing groups/keys and keeps the first backup; checked against temp files. Drop-in restored from backup, rollback timer cancelled, Gala is the autologin session. The native Rust trial is still pending a second logout.
+
+## Native Rust session trial 2 — 2026-10-19 18:02
+
+`0.1.0+git69cb0f1` + fixed installer: LightDM started `pantheon-rust-wayland`; compositor reached scanout on eDP-1 (3024x1964), Wingpanel started 1 s later and committed its first panel buffer at +2.7 s. Wingpanel steady state about 5.5% CPU and 400 MB (previous run: 2.3 GB, CPU spin), no Vulkan errors from Wingpanel. Dock skipped by the owner's opt-out marker (unchanged). Owner judged it good enough to keep running on. Rollback timer cancelled at the owner's request; autologin still selects the Rust session, `--restore-gala --yes` returns to Gala. Seen: one initial DRM "Page flip commit failed", repeated xdg "surface missing from known popups", `VK_ERROR_SURFACE_LOST_KHR` from other GTK4 apps (onboarding, python3), so `linux-dmabuf` is still the real fix. Not yet checked: Dock, lock, suspend, external display.
+
+## Compositor polling removal — 2026-10-19
+
+Three subagent branches merged into `codex/rust-gala-stack-integration`: `cde0ab0` (state.rs timers; wallpaper/keyboard now GSettings-signal driven; token sweep armed on demand), `a83d420` (D-Bus service threads block on their channels instead of 100 ms polls), `e149735` (native: udev hotplug monitor instead of the 2 s connector poll, 30 s safety poll). fmt, clippy (also with native-drm) and 18 tests pass.
+Measured nested under Xvfb as summed context switches/s across the compositor's threads: before 113/s (debug build, median of 3, D-Bus threads about 10/s each); merged release build 2-4/s (3 runs). Debug vs release is not a matched A/B, so the ratio is indicative only. CPU and battery effect is NOT measured (no power reading).
+Unverified: wallpaper/keyboard reload via GSettings signals; D-Bus calls against a real window; udev events from the Apple DCP on dock HDMI replug (needs an approved native trial); shutdown path of the changed loops.
+Incident: the state.rs agent's functional test ran `gsettings set` in a private D-Bus session, but dconf wrote the owner's real database. `org.gnome.desktop.background picture-uri` became `file:///usr/share/backgrounds/none.png` and `org.gnome.desktop.input-sources xkb-options` became `['ctrl:nocaps']`. Originals: the schema default wallpaper and `['ctrl:swap_lwin_lctl']` (from the compositor's startup log). Reverting was blocked; the owner must run `gsettings reset org.gnome.desktop.background picture-uri` and `gsettings set org.gnome.desktop.input-sources xkb-options "['ctrl:swap_lwin_lctl']"`. Tests must use `GSETTINGS_BACKEND=memory` or a temp `DCONF_PROFILE`, never gsettings set on the live bus.
+
+## Package 0.1.0+git78259f0 installed — 2026-10-19
+
+Built from the merged polling-removal + linux-dmabuf branch (SHA-256 `4b459494…b6f65`) and installed with the installer (`--verify` passes). The running Rust session (compositor pid started 18:02 from `69cb0f1`) is untouched; the new binary applies at the next login. Autologin still selects the Rust session; Gala rollback: `sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes`.
+Next login runs the polling-free build with native dmabuf OFF. To trial dmabuf (needs a login, so only with the owner present): `systemctl --user edit pantheon-rust-compositor@wayland.service`, add `[Service]` / `Environment=PANTHEON_ENABLE_DMABUF=1`, log in again, watch the journal for "advertising linux-dmabuf v4 on the native renderer" and for Wingpanel/GTK apps drawing; if apps go blank remove the drop-in. The owner has restored the wallpaper and xkb settings that the earlier test leaked.
 
 ## 2026-10-18: Machine Lab (native VM app)
 

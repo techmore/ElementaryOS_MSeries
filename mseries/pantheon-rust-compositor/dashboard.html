@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Pantheon Rust compositor — migration dashboard</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f5f8;
+      --panel: #fff;
+      --ink: #1d2433;
+      --muted: #677184;
+      --line: #dce2ea;
+      --blue: #3689e6;
+      --teal: #28bca3;
+      --amber: #e5a50a;
+      --red: #e74c3c;
+      --green-bg: #e5f7f1;
+      --amber-bg: #fff5d8;
+      --red-bg: #ffebe9;
+      --shadow: 0 12px 32px #24344d12;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171b22; --panel: #222832; --ink: #ecf0f5;
+        --muted: #a8b2c2; --line: #384150; --green-bg: #183b34;
+        --amber-bg: #403514; --red-bg: #452723; --shadow: 0 12px 32px #0005;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, sans-serif; }
+    main { width: min(1180px, calc(100% - 32px)); margin: 32px auto 64px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: clamp(1.75rem, 4vw, 2.65rem); line-height: 1.12; }
+    h2 { margin-bottom: 12px; font-size: 1.25rem; }
+    h3 { margin-bottom: 6px; font-size: 1rem; }
+    a { color: var(--blue); }
+    .lede, .muted, small { color: var(--muted); }
+    .lede { max-width: 780px; font-size: 1.03rem; }
+    .eyebrow { color: var(--blue); font-weight: 750; letter-spacing: .09em; text-transform: uppercase; font-size: .76rem; }
+    .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+    .updated { color: var(--muted); font-size: .85rem; }
+    .cards, .grid { display: grid; gap: 16px; }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 24px 0; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 20px; }
+    .system-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+    .system-head p { margin: 4px 0 0; color: var(--muted); }
+    .tag, .status { display: inline-flex; border-radius: 999px; padding: 3px 9px; font-size: .76rem; font-weight: 700; white-space: nowrap; }
+    .tag { color: var(--blue); background: color-mix(in srgb, var(--blue) 13%, transparent); }
+    .status.done { color: #087a59; background: var(--green-bg); }
+    .status.partial { color: #8a6100; background: var(--amber-bg); }
+    .status.open { color: #a43a2e; background: var(--red-bg); }
+    @media (prefers-color-scheme: dark) {
+      .status.done { color: #70d8b4; } .status.partial { color: #f0cb66; } .status.open { color: #ff9d91; }
+    }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }
+    .metric { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    .metric strong { display: block; font-size: 1.5rem; line-height: 1.2; }
+    .metric span { color: var(--muted); font-size: .82rem; }
+    .metric.caveat strong { font-size: 1.05rem; }
+    .bars { display: grid; gap: 14px; margin: 12px 0 2px; }
+    .bar-row { display: grid; grid-template-columns: minmax(115px, 1fr) 3fr 72px; gap: 12px; align-items: center; }
+    .bar-label { font-size: .88rem; }
+    .track { height: 13px; border-radius: 99px; background: var(--line); overflow: hidden; }
+    .fill { height: 100%; border-radius: inherit; background: var(--blue); min-width: 2px; }
+    .fill.rust { background: var(--teal); }
+    .bar-value { font-variant-numeric: tabular-nums; text-align: right; font-weight: 700; font-size: .88rem; }
+    .callout { border-left: 4px solid var(--amber); padding: 12px 14px; margin-top: 14px; background: var(--amber-bg); border-radius: 0 10px 10px 0; }
+    .callout p:last-child { margin-bottom: 0; }
+    .stage-table { width: 100%; border-collapse: collapse; }
+    .stage-table th, .stage-table td { text-align: left; vertical-align: top; padding: 11px 9px; border-bottom: 1px solid var(--line); }
+    .stage-table th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+    .stage-table td:first-child { font-weight: 650; width: 22%; }
+    .stage-table td:nth-child(2), .stage-table td:nth-child(3) { width: 15%; }
+    .stage-table td:last-child { color: var(--muted); }
+    .table-wrap { overflow-x: auto; }
+    .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 18px 0 8px; }
+    .step { position: relative; padding: 0 12px 0 0; }
+    .step:not(:last-child)::after { content: ""; position: absolute; top: 11px; left: 22px; right: 4px; height: 2px; background: var(--line); }
+    .dot { position: relative; z-index: 1; display: block; width: 24px; height: 24px; margin-bottom: 10px; border-radius: 50%; background: var(--teal); border: 5px solid color-mix(in srgb, var(--teal) 22%, var(--panel)); }
+    .step.pending .dot { background: var(--amber); border-color: color-mix(in srgb, var(--amber) 20%, var(--panel)); }
+    .step strong { display: block; font-size: .87rem; }
+    .step span { color: var(--muted); font-size: .78rem; }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: var(--blue); font-weight: 650; }
+    footer { margin-top: 22px; color: var(--muted); font-size: .84rem; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 20px, 620px); margin-top: 20px; }
+      .cards, .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stage-table { min-width: 760px; }
+      .bar-row { grid-template-columns: 100px 1fr 64px; gap: 8px; }
+      .timeline { grid-template-columns: repeat(2, 1fr); row-gap: 18px; }
+      .topline { align-items: start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="topline"><span class="eyebrow">M-series Pantheon compositor migration</span><span class="updated">Evidence updated 19 Oct 2026 · branch <code>codex/rust-mutter-pantheon</code></span></div>
+    <h1>Gala/Mutter and Rust/Smithay</h1>
+    <p class="lede">A stage-by-stage view of the existing elementary desktop and the experimental Rust replacement. This is an experience-focused compositor, not a feature-for-feature Mutter port. The latest Rust run recorded a 2.11-second wallpaper-to-Wingpanel-buffer interval at 2× scale, then rolled back to Gala. Gala's current login showed a roughly two-minute panel delay associated with late portal activation; that relationship still needs a controlled check. Gala is active, with 1.25× staged for the next Rust login.</p>
+  </header>
+
+  <section class="cards" aria-label="Compared compositor stacks">
+    <article class="card">
+      <div class="system-head"><div><h2>Native Pantheon</h2><p>Gala + libmutter · default desktop</p></div><span class="tag">Baseline</span></div>
+      <p>Established Wayland session, shell integration, input stack and app compatibility. On this M1 Pro, Linux DRM/KMS exposes the built-in panel; external dock HDMI remains a DCP/kernel display-path issue.</p>
+      <small>Current LightDM autologin restored to <code>pantheon-wayland</code>.</small>
+    </article>
+    <article class="card">
+      <div class="system-head"><div><h2>Rust Pantheon</h2><p>Smithay compositor · opt-in session</p></div><span class="status partial">Experimental</span></div>
+      <p>Native scanout, wallpaper, Wingpanel service, IBus daemon and portal startup now work in qualification. The saved Dock opt-out is respected. Several user-facing protocols and runtime gates remain open.</p>
+      <small>Latest instrumented ARM64 build: <code>0.1.0+git7a0ac92</code> · 2× run and rollback completed; 1.25× is staged for the next Rust login.</small>
+    </article>
+  </section>
+
+  <section aria-labelledby="speed-heading">
+    <h2 id="speed-heading">Speed and resource snapshots</h2>
+    <div class="metrics">
+      <div class="metric"><strong>20.8 s</strong><span>OS boot to default target</span></div>
+      <div class="metric"><strong>10.5 s</strong><span>OS boot to graphical target</span></div>
+      <div class="metric"><strong>0.46 s</strong><span>Rust compositor service start → ready</span></div>
+      <div class="metric"><strong>2.25 s</strong><span>Rust session start → first Wingpanel buffer (2×)</span></div>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <h3>Compositor CPU · idle snapshots</h3>
+        <p class="muted">30 seconds, internal display. Percent of one CPU core.</p>
+        <div class="bars" role="img" aria-label="Idle compositor CPU: Gala 11.10 percent; Rust 11.12 percent">
+          <div class="bar-row"><span class="bar-label">Gala</span><div class="track"><div class="fill" style="width:55.5%"></div></div><span class="bar-value">11.10%</span></div>
+          <div class="bar-row"><span class="bar-label">Rust</span><div class="track"><div class="fill rust" style="width:55.6%"></div></div><span class="bar-value">11.12%</span></div>
+        </div>
+        <div class="callout"><p><strong>No performance win is established.</strong> The corrected 30-second Gala quiet-desktop sample included Wingpanel (median 15.6% of one core for Gala; 0.7% for Wingpanel). The 45-second Rust post-login sample at 2× measured 5.4% for the compositor and 0.5% for Wingpanel. These workloads were not matched and the figures must not be read as a Rust win. The one-minute Rust thread profile is saved for hotspot work. Earlier source inspection found continuous redraw after native DRM vblank as a lead to profile, with client frame-callback semantics checked before changing scheduling.</p></div>
+      </article>
+      <article class="card">
+        <h3>Compositor memory · idle snapshots</h3>
+        <p class="muted">Resident memory in KiB; panels are shown separately below.</p>
+        <div class="bars" role="img" aria-label="Idle compositor memory: Gala 178720 KiB; Rust 173531 KiB">
+          <div class="bar-row"><span class="bar-label">Gala</span><div class="track"><div class="fill" style="width:59.6%"></div></div><span class="bar-value">174.5 MiB</span></div>
+          <div class="bar-row"><span class="bar-label">Rust</span><div class="track"><div class="fill rust" style="width:57.8%"></div></div><span class="bar-value">169.5 MiB</span></div>
+        </div>
+        <div class="callout"><p>Rust was about 5 MiB lower in this snapshot. That small gap is not enough to claim a meaningful memory improvement.</p></div>
+      </article>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <h3>Rust shell process overhead · idle snapshot</h3>
+        <div class="bars" role="img" aria-label="Rust Wingpanel: 1.19 percent CPU and 472560 KiB resident memory">
+          <div class="bar-row"><span class="bar-label">Wingpanel CPU</span><div class="track"><div class="fill rust" style="width:5.95%"></div></div><span class="bar-value">1.19%</span></div>
+          <div class="bar-row"><span class="bar-label">Wingpanel RAM</span><div class="track"><div class="fill rust" style="width:78.8%"></div></div><span class="bar-value">461.5 MiB</span></div>
+        </div>
+        <p class="muted">The Gala sample did not separately capture its Wingpanel process, so total-session memory and CPU cannot be compared yet.</p>
+      </article>
+      <article class="card">
+        <h3>Recent Rust interactive sample</h3>
+        <p>Compositor: <strong>4.70% CPU</strong>, <strong>179,589 KiB RSS</strong>. Wingpanel: <strong>0.37% CPU</strong>, <strong>431,200 KiB RSS</strong>.</p>
+        <p class="muted">30 seconds while the desktop was in active use. There is no matching Gala interactive sample; do not compare it with Gala idle numbers.</p>
+      </article>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <h3>Power</h3>
+        <p><strong>Not measured yet.</strong> The Rust sample was on mains with battery at 80%, “Not charging,” and 0 mW battery flow.</p>
+        <p class="muted">Battery flow while plugged in does not reveal total system draw. A matched battery-discharge run or external power meter is needed.</p>
+      </article>
+      <article class="card">
+        <h3>Startup milestones</h3>
+        <div class="timeline" aria-label="Rust startup milestones">
+          <div class="step"><span class="dot"></span><strong>Wallpaper loaded</strong><span>~0.11 s after session start</span></div>
+          <div class="step"><span class="dot"></span><strong>Compositor ready</strong><span>~0.46 s after service start</span></div>
+          <div class="step"><span class="dot"></span><strong>Portal ready</strong><span>~0.8 s after compositor readiness</span></div>
+          <div class="step"><span class="dot"></span><strong>Wingpanel buffer</strong><span>~2.22 s after start; ~2.11 s after wallpaper</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px" aria-labelledby="stages-heading">
+    <h2 id="stages-heading">Migration stage comparison</h2>
+    <div class="table-wrap">
+      <table class="stage-table">
+        <thead><tr><th>Stage / experience</th><th>Gala / Mutter</th><th>Rust / Smithay</th><th>Evidence and next gate</th></tr></thead>
+        <tbody>
+          <tr><td>Nested compositor</td><td><span class="status done">Established</span></td><td><span class="status done">Passed</span></td><td>Rust runs a nested Wayland backend; GTK windows and Pantheon panels rendered in private Xvfb.</td></tr>
+          <tr><td>Native M1 panel</td><td><span class="status done">Daily path</span></td><td><span class="status done">Passed twice</span></td><td>Rust scanout at 3024×1964 via Asahi render GPU and Apple DRM/KMS. Initial page-flip attempt logged one transient <code>Device or resource busy</code>.</td></tr>
+          <tr><td>Display scale / density</td><td><span class="status partial">Compare baseline</span></td><td><span class="status open">2× profile staged</span></td><td>The native 3024×1964 panel looks too zoomed out to the owner. A Rust-only 2× logical scale profile is staged for the next login; visual layout and panel behavior still need qualification.</td></tr>
+          <tr><td>Wallpaper / background</td><td><span class="status done">Established</span></td><td><span class="status partial">Native loaded</span></td><td>Configured wallpaper rendered and loaded in Rust native session; nested live-setting reload also passed.</td></tr>
+          <tr><td>Wingpanel</td><td><span class="status done">Daily path</span></td><td><span class="status partial">~2.1 s after wallpaper</span></td><td>Wallpaper loaded ~0.11 s after session start; Wingpanel service started ~0.51 s; its surface request arrived ~1.61 s and first buffer ~2.22 s. The systemd unit is ordered immediately after compositor readiness, so the remaining ~1.10 s before a surface request is after process launch; the cause is not yet attributed. Another ~0.61 s passed from request to buffer.</td></tr>
+          <tr><td>Dock</td><td><span class="status done">Daily path</span></td><td><span class="status partial">Opted out</span></td><td>Rust session correctly skips Dock because <code>~/.config/mseries/dock/user-disabled</code> exists. Dock render/hide/reveal passed only in nested session.</td></tr>
+          <tr><td>Portals / session env</td><td><span class="status done">Established</span></td><td><span class="status partial">Activation fixed</span></td><td>Rust publishes <code>WAYLAND_DISPLAY</code> after ready; portal providers now start without the former 120-second timeout. GNOME backend still lacks Mutter's private <code>ServiceChannel</code>.</td></tr>
+          <tr><td>Input methods</td><td><span class="status done">Daily workflow</span></td><td><span class="status partial">Nested only</span></td><td>IBus/Mozc text commit passed in nested GTK; IBus daemon starts natively, but native text commit and source switching are unqualified.</td></tr>
+          <tr><td>Mac-style trackpad swipes</td><td><span class="status done">High owner priority</span></td><td><span class="status open">Not implemented</span></td><td>Add multi-finger workspace navigation and the configured overview gesture with direction, cancellation and edge handling; qualify on the built-in M-series trackpad.</td></tr>
+          <tr><td>Window snapping</td><td><span class="status done">Half and quarter shortcuts</span></td><td><span class="status partial">Nested paths; runtime open</span></td><td>Owner requested richer layouts beyond quarters. Extend toward configurable halves, thirds, grid/edge zones and drag preview; preserve work-area and multi-display behavior.</td></tr>
+          <tr><td>Window actions / XWayland</td><td><span class="status done">Established</span></td><td><span class="status partial">Partial</span></td><td>Nested XWayland keyboard smoke and basic Gala actions passed; overview, clipboard/PRIMARY, and native app behavior remain open.</td></tr>
+          <tr><td>Consistent window corners</td><td><span class="status partial">Baseline to check</span></td><td><span class="status open">Owner-reported issue</span></td><td>Window corner appearance varies in the Rust session and is unwanted. Source review found no xdg-decoration manager or compositor-managed frame/rounding layer; the cause is still unconfirmed. Capture app/window-state examples and inspect client decoration/alpha before choosing a fix.</td></tr>
+          <tr><td>External monitors / dock HDMI</td><td><span class="status partial">Kernel-bound</span></td><td><span class="status open">Not qualified</span></td><td>External hotplug remains open. The G3 black screen is DCP/kernel display firmware; a compositor replacement cannot fix missing DRM output.</td></tr>
+          <tr><td>Lock, accessibility, sharing, recovery</td><td><span class="status done">Established</span></td><td><span class="status open">Open</span></td><td>Native end-to-end qualification is still needed before Rust could replace Gala.</td></tr>
+          <tr><td>Performance and power</td><td><span class="status done">Reference</span></td><td><span class="status open">Unproven</span></td><td>No matched interactive/Gala benchmark, whole-system power result, GPU/latency measurement or crash-free soak yet.</td></tr>
+          <tr><td>Gala panel startup</td><td><span class="status partial">Current baseline issue</span></td><td><span class="status open">About 2 minutes on rollback login</span></td><td>Gala and Wingpanel processes started at login, but the portal service was skipped because the user manager lacked <code>WAYLAND_DISPLAY</code>; portal requests hit 120-second timeouts and portal backends started at +2 minutes. This is a strong delay lead, not yet a proven cause.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px" aria-labelledby="gala-port-heading">
+    <h2 id="gala-port-heading">Could Gala run on the Rust stack?</h2>
+    <p>Gala is itself a Wayland compositor built around libmutter, Clutter and Mutter’s <code>Meta</code> APIs. The local Gala 8.6.2 audit found 79 Vala files using <code>Meta.*</code> across 24,534 lines of core source. Reusing Gala as a shell inside Smithay would require separating and porting much of that compositor-specific code.</p>
+    <p>That is a much larger rewrite than implementing the Pantheon behaviors we need, and it would not change the DCP/kernel HDMI limit. Keep Gala as the daily baseline; port a behavior only when it appears in the M-series acceptance list, then require matched performance, visual quality and reliability wins before considering a swap.</p>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <h2>What would count as “better”</h2>
+    <p>The Rust branch should only be called a performance improvement after the same M-series machine, display mode, workload, session age, and panel/dock composition are compared against Gala. Track login-to-first-usable time, CPU, total session RSS, GPU activity, latency, battery discharge or measured input power, and crashes/recovery.</p>
+    <details><summary>Data sources and limitations</summary>
+      <ul>
+        <li><code>metrics/gala-idle-20261019.csv</code> and <code>metrics/rust-idle-qualification-20261019.csv</code>: short internal-panel idle samples; different session ages and incomplete process parity.</li>
+        <li><code>metrics/rust-interactive-20261019.csv</code>: 30-second interactive Rust sample; machine on mains, so its battery-flow reading is not device power use.</li>
+        <li><code>collect-session-startup.sh</code>: boot chain and service/journal milestones. In build <code>0.1.0+git7a0ac92</code>, wallpaper loaded at +0.11 s and the first Wingpanel buffer committed at +2.22 s relative to the Rust session manager start. The owner noticed this ~2.1 s wallpaper-to-panel gap as slow, despite reporting good overall opening time. Journal milestones are not direct measures of visual perception or first interaction.</li>
+        <li><code>collect-session-thread-profile.sh</code>: captures per-thread CPU and resident memory with <code>pidstat</code>. An exploratory Gala profile is recorded below; a Rust thread profile still needs a future Rust login.</li>
+        <li>Exploratory Gala thread sample at 12:33 UTC: Gala 26.26% of one core, Wingpanel 0.50%, and Gala's main thread 24.29%. Foreground activity was not controlled, so this is not comparable to the idle CSVs or a Rust result. Raw capture is in the local work artifacts.</li>
+        <li>The owner reported inconsistent window corners; exact affected apps and states are not yet recorded.</li>
+      </ul>
+    </details>
+  </section>
+
+  <footer>Generated from repository evidence on 2026-10-19. “Native” refers to the existing Gala/libmutter Pantheon session; “Rust” refers to the experimental Smithay compositor branch. <a href="ARCHITECTURE-AND-STATUS.md">Full architecture and status</a> · <a href="EXPERIENCE-REQUIREMENTS.md">Experience requirements and gates</a>.</footer>
+</main>
+</body>
+</html>
