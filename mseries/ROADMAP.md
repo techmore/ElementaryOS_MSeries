@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Work Mode wallpaper — 2026-10-20
+
+Added a native Switchboard panel under Personal with a Work Mode switch, a
+work-wallpaper picker, weekday scheduling, and start/end times. A per-user
+systemd timer checks once a minute and restores the wallpaper that was active
+before Work Mode began. Implementation and installer are on
+`codex/work-mode-scheduler`; build, install and visual acceptance are pending.
+
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
 The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
