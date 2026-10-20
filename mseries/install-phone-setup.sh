@@ -2,11 +2,12 @@
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 command -v blueferry >/dev/null || { echo 'Install BlueFerry backend and GTK client first.' >&2; exit 1; }
-python3 -c 'import gi, dbus; gi.require_version("Gtk", "4.0"); gi.require_version("Granite", "7.0"); gi.require_version("GdkPixbuf", "2.0"); gi.require_version("Secret", "1")'
+python3 -c 'import gi, dbus, PIL; gi.require_version("Gtk", "4.0"); gi.require_version("Granite", "7.0"); gi.require_version("GdkPixbuf", "2.0"); gi.require_version("Secret", "1")'
 python3 "$here/phone-setup/test_setup.py"
 python3 "$here/phone-setup/test_protocol.py"
 python3 "$here/phone-setup/test_connection.py"
 python3 "$here/phone-setup/test_messages.py"
+python3 "$here/phone-setup/test_message_media.py"
 python3 "$here/phone-setup/test_message_pins.py"
 root=${XDG_DATA_HOME:-$HOME/.local/share}/mseries/phone-setup
 install -d "$root" "$HOME/.local/bin" "${XDG_DATA_HOME:-$HOME/.local/share}/applications"
@@ -16,6 +17,9 @@ install -m755 "$here/phone-setup/phone_status.py" "$root/phone_status.py"
 install -m755 "$here/phone-setup/phone-setup.py" "$root/phone-setup.py"
 install -m755 "$here/phone-setup/messages.py" "$root/messages.py"
 install -m644 "$here/phone-setup/messages_model.py" "$root/messages_model.py"
+install -m644 "$here/phone-setup/messages_style.py" "$root/messages_style.py"
+install -m644 "$here/phone-setup/messages_widgets.py" "$root/messages_widgets.py"
+install -m644 "$here/phone-setup/message_media.py" "$root/message_media.py"
 install -m644 "$here/phone-setup/message_pins.py" "$root/message_pins.py"
 icons=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps
 install -d "$icons"
