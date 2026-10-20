@@ -15,7 +15,7 @@ from the right. No compositor or Wingpanel restart was required.
 
 The native taskbar bell is beside the clock. The bell now uses a 30-pixel
 icon without an outer border. The unread count sits inside the bell
-as plain inherited text without a badge background or accent. History uses native typography, app/time
+as larger 12-pixel plain text without a badge background or accent. History uses native typography, app/time
 metadata, bounded previews and compact Open/Reply actions; context controls use
 flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
 secondary click offers Mark all as read and Do Not Disturb. The service retains
