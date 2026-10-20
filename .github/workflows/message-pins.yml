@@ -44,11 +44,14 @@ jobs:
           osascript -l JavaScript mseries/phone-setup/macos-visit/Export-Message-Pins.js --self-test
       - name: Probe private interface without an Apple account
         run: |
+          csrutil status
           osascript -l JavaScript mseries/phone-setup/macos-visit/Export-Message-Pins.js --probe > "$RUNNER_TEMP/pin-reader-probe.json"
           python3 - "$RUNNER_TEMP/pin-reader-probe.json" <<'PY'
           import json, sys
           result = json.load(open(sys.argv[1]))
           assert result['status'] in ('ready', 'unavailable')
           assert result['content_printed'] is False
+          if result['status'] == 'unavailable':
+              assert result['diagnostics'].get('cache') in ('not-found', 'not-initialized', 'access-denied'), result
           print(result)
           PY

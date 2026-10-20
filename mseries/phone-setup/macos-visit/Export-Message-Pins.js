@@ -6,10 +6,13 @@ ObjC.import('Foundation');
 
 function fail(reason) { throw new Error(reason); }
 function selector(name) { return $.NSSelectorFromString(name); }
+// Objective-C nil is a truthy JXA wrapper. Use the bridge's pointer check,
+// otherwise a denied/missing NSData can be passed to the plist parser as nil.
+function hasObject(value) { return !!value && !value.isNil(); }
 function signature(object, name) {
-    if (!object || !object.respondsToSelector(selector(name))) return null;
+    if (!hasObject(object) || !object.respondsToSelector(selector(name))) return null;
     var sig = object.methodSignatureForSelector(selector(name));
-    if (!sig || Number(sig.numberOfArguments) !== 2) return null;
+    if (!hasObject(sig) || Number(sig.numberOfArguments) !== 2) return null;
     return ObjC.unwrap($.NSString.stringWithUTF8String(sig.methodReturnType));
 }
 function objectValue(object, name, required) {
@@ -21,14 +24,14 @@ function objectValue(object, name, required) {
     return object.performSelector(selector(name));
 }
 function plain(value) {
-    return value ? ObjC.deepUnwrap(value) : null;
+    return hasObject(value) ? ObjC.deepUnwrap(value) : null;
 }
 function readConfiguration(configuration, source) {
     var config = plain(configuration);
     if (!config || !Array.isArray(config.pP) || (config.pV !== 1 && config.pV !== 2))
         fail('Apple has not supplied a supported pin configuration');
     var stamp = configuration.objectForKey('pT');
-    if (!stamp || !stamp.isKindOfClass($.NSDate))
+    if (!hasObject(stamp) || !stamp.isKindOfClass($.NSDate))
         fail('Apple pin configuration is missing its modification time');
     var modified = Number(stamp.timeIntervalSince1970);
     if (!isFinite(modified) || modified * 1000 > Date.now() + 300000)
@@ -44,22 +47,22 @@ function readController(controller) {
     // synchronization or migration helpers: those can have write side effects.
     // A process-support flag does not itself prove this getter is inaccessible.
     var configuration = objectValue(controller, '_locallyStoredPinConfiguration', true);
-    if (!configuration) fail('No local IMCore pin configuration was returned');
+    if (!hasObject(configuration)) fail('No local IMCore pin configuration was returned');
     return readConfiguration(configuration, 'macos-imcore');
 }
 function readPinCache(path, diagnostics) {
     var error = Ref();
     var data = $.NSData.dataWithContentsOfFileOptionsError(path, 0, error);
-    if (!data) {
-        var code = error[0] ? Number(error[0].code) : 0;
+    if (!hasObject(data)) {
+        var code = hasObject(error[0]) ? Number(error[0].code) : 0;
         diagnostics.cache = (code === 257 || code === 13 || code === 1) ? 'access-denied' : code === 260 || code === 2 ? 'not-found' : 'read-error';
         return null;
     }
     if (Number(data.length) > 262144) fail('Apple pin cache is unexpectedly large');
     var plist = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError(data, 0, null, error);
-    if (!plist || !plist.isKindOfClass($.NSDictionary)) fail('Apple pin cache is not a property list dictionary');
+    if (!hasObject(plist) || !plist.isKindOfClass($.NSDictionary)) fail('Apple pin cache is not a property list dictionary');
     var configuration = plist.objectForKey('pD');
-    if (!configuration) {diagnostics.cache = 'not-initialized';return null;}
+    if (!hasObject(configuration)) {diagnostics.cache = 'not-initialized';return null;}
     var snapshot = readConfiguration(configuration, 'macos-pin-cache');
     diagnostics.cache = 'readable';
     return snapshot;
@@ -110,7 +113,7 @@ function selfTest() {
     try {
         var plist = $({pD: {pV: 2, pT: $.NSDate.date, pP: ['+15550100123', 'group-fixture']}});
         var data = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(plist, $.NSPropertyListBinaryFormat_v1_0, 0, error);
-        if (!data || !data.writeToFileAtomically(path, true)) fail('Could not create the private cache fixture');
+        if (!hasObject(data) || !data.writeToFileAtomically(path, true)) fail('Could not create the private cache fixture');
         var diagnostic = {};
         var cached = readPinCache(path, diagnostic);
         if (!cached || cached.source !== 'macos-pin-cache' || cached.pins[1].apple_identifier !== 'group-fixture' || diagnostic.cache !== 'readable') fail('Binary cache read test failed');
@@ -139,11 +142,11 @@ function run(args) {
     try {
       try {
         var bundle = $.NSBundle.bundleWithPath('/System/Library/PrivateFrameworks/IMCore.framework');
-        if (!bundle || !bundle.load) fail('IMCore could not be loaded');
+        if (!hasObject(bundle) || !bundle.load) fail('IMCore could not be loaded');
         var cls = $.NSClassFromString('IMPinnedConversationsController');
-        if (!cls) fail('Messages pin controller is unavailable on this macOS version');
+        if (!hasObject(cls)) fail('Messages pin controller is unavailable on this macOS version');
         var controller = objectValue(cls, 'sharedInstance', true);
-        if (!controller) fail('Messages did not provide a pin controller');
+        if (!hasObject(controller)) fail('Messages did not provide a pin controller');
         diagnostics.fetch_return_type = signature(controller, 'fetchPinnedConversationIdentifiersFromLocalStore');
         diagnostics.local_configuration_return_type = signature(controller, '_locallyStoredPinConfiguration');
         if (signature(cls, 'processSupportsPinnedConversations'))
