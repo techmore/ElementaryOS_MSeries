@@ -8002,7 +8002,9 @@ No bootloader, kernel, running audio stack, hardware configuration, Wingpanel pr
   `bash mseries/check-codexbar-port.sh` pass including live snapshot schema;
   split app/CLI fixture rendered in light/dark and inspected. Tests cover upgraded
   plan, cache reuse, rejected wrong-account profile and unknown desktop login.
-- Deploy with `bash mseries/deploy-codexbar.sh` after push, preserving Wingpanel and
-  daemon. Helpers take effect on next invocation; native module loads at next login.
+- Pushed as PR #328 (`codex/codexbar-claude-active-account` → `dev`), CI pending.
+  `bash mseries/deploy-codexbar.sh` passed all 17 groups and installed successfully;
+  Wingpanel PID 2136 and daemon PID 2129 stayed running. The installed helper was
+  rechecked against live account metadata. Native module loads at next login.
   Live panel visual acceptance and interactive account switching are unverified.
   Next: verify the app account/header and matching quota after next login.
