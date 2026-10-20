@@ -88,12 +88,33 @@ def collect(get, sources, raw_heads=None):
     return observations, errors
 
 
+def merge_registered_sources(sources, projects):
+    """Use the Elementary Rust project register as the source roster."""
+    registered = []
+    for project in projects:
+        url = project.get('url', '')
+        prefix = 'https://github.com/'
+        if not url.startswith(prefix):
+            raise ValueError(f"Unsupported Elementary project URL: {url!r}")
+        repo = url.removeprefix(prefix).strip('/')
+        branch = project.get('default_branch')
+        if len(repo.split('/')) != 2 or not branch:
+            raise ValueError(f"Incomplete Elementary source record: {project.get('id')}")
+        registered.append({'repo': repo, 'base': branch,
+                           'open_prs': True, 'discover_branches': True})
+    repo_names = {source['repo'] for source in registered}
+    return [source for source in sources if source['repo'] not in repo_names] + registered
+
+
 if __name__ == '__main__':
     import importlib.util
     here = Path(__file__).resolve().parent
     spec = importlib.util.spec_from_file_location('people_watch', here / 'people-watch.py')
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     raw_heads = {}
-    observations, errors = collect(module.get, json.loads((here / 'branch-watch.json').read_text())['sources'], raw_heads)
+    elementary = json.loads((here.parent / 'rust/elementary-projects.json').read_text())['projects']
+    sources = merge_registered_sources(
+        json.loads((here / 'branch-watch.json').read_text())['sources'], elementary)
+    observations, errors = collect(module.get, sources, raw_heads)
     print(json.dumps({'observations': observations, 'branch_heads': raw_heads, 'errors': errors}, indent=2))
     raise SystemExit(bool(errors))

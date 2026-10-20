@@ -215,9 +215,13 @@ device evidence and state when the latter is still missing.
   route, explicit owner approval for boot/kernel/audio changes, and a recorded
   rollback. A CI build is not a successful boot or hardware result.
 
-Use the existing `mseries/UPSTREAM-PINS.md`, upstream watch tools, CI, and
-`mseries/VM-SMOKE-TEST.md`; this lane defines policy and is not itself an
-upstream-update automation.
+The six-hour upstream watch consumes `elementary-projects.json` as the
+authoritative Elementary roster, compares each default branch against its
+recorded pin, and captures branch and pull-request heads. Changes appear in the
+existing review dashboard and retained workflow artifact; the watcher never
+changes a pin. Weekly admission remains a separate review of license, patches,
+build/parity evidence, and image qualification. Use `mseries/UPSTREAM-PINS.md`,
+CI, and `mseries/VM-SMOKE-TEST.md` for those gates.
 
 ## Initial migration candidates
 

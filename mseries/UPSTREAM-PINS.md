@@ -29,9 +29,11 @@ the OS 9 source audit; recheck the upstream branch before the next port.
 The upstream watch roster tracks each Elementary repository used by an M-series
 customization as a separate source item: `elementary/os`, `gala`, `wingpanel`,
 `dock`, `files`, `quick-settings`, `panel-network`, `panel-power`,
-`wingpanel-indicator-sound`, and `panel-keyboard`. The six-hour watcher detects
-default-branch pushes/releases, and branch watch captures branch heads and open
-pull-request heads into a retained artifact. Neither watcher moves source pins.
+`wingpanel-indicator-sound`, and `panel-keyboard`. The six-hour watcher reads
+this project roster from [`rust/elementary-projects.json`](rust/elementary-projects.json),
+compares default-branch heads to the recorded pins, and captures branch heads
+and open pull-request heads into a retained artifact. Changes surface in the
+review dashboard. The watcher never moves source pins.
 The exact source revisions consumed by each local installer/build recipe remain the
 admission pins and are deliberately not advanced by the watcher. The current
 revision, license evidence, Rust replacement target, parity contract, and
