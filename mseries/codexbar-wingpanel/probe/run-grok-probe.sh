@@ -6,3 +6,4 @@ out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 CB_ASSERT_GROK=1 bash "$here/run-probe.sh" "$1" "$out" light grok
 CB_ASSERT_GROK_SIGNIN=1 bash "$here/run-probe.sh" "$1" "$out" dark grok-signin
+CB_ASSERT_GROK_FREE=1 bash "$here/run-probe.sh" "$1" "$out" light grok-free

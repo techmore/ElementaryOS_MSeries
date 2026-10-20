@@ -10,6 +10,8 @@ Tracked as GitHub issues in `techmore/ElementaryOS_MSeries`. Status as of 2026-1
 | Object copy/paste, drag-and-drop, file transfer | [#264](https://github.com/techmore/ElementaryOS_MSeries/issues/264) | blocked upstream: QEMU's D-Bus clipboard only carries text; needs a file-transfer channel or shared folder |
 | Windows: virtio-win drivers, unattended install | [#265](https://github.com/techmore/ElementaryOS_MSeries/issues/265) | manual procedure documented; network driver investigated |
 | Display: resize to window, cursor, audio, faster stream, WebRTC | [#266](https://github.com/techmore/ElementaryOS_MSeries/issues/266) | not started |
+| Ready-made images (import/export) | this PR | logic tested with real qemu-img; file chooser flow not exercised headless; no hosted image catalog yet |
+| Snapshots (restore points) | this PR | take/restore/delete verified in the UI and with real qemu-img; offline only, no memory state |
 | Incus containers and VMs panel | this PR | listing, lifecycle, terminal, log and create verified; no Display tab for Incus VMs yet |
 | x86-64 emulated machines | this PR | built and labelled; boot not tested (needs qemu-system-x86 + ovmf on the host) |
 | macOS (experimental) | [#267](https://github.com/techmore/ElementaryOS_MSeries/issues/267) | attempt page done and shows how it fails; emulation route not attempted |
@@ -36,6 +38,14 @@ The macOS (experimental) page in the app runs real commands and records the outp
 3. `qemu-system-aarch64 -machine virt,accel=kvm -cpu Haswell`: `unable to find CPU model 'Haswell'`.
 4. `qemu-system-x86_64`: not installed (and it could only emulate, never use KVM, on an ARM host).
 5. Emulating an Intel Mac in software: not attempted (Apple recovery image, OpenCore, tens of times slower).
+
+## macOS: where the firmware can come from (2026-10-20)
+
+Probed read-only (details in `experiments/vmapple/README.md`): this Mac's macOS container is encrypted by the Secure Enclave and
+unreadable from Linux; its Recovery volume mounts but has no `AVPBooter`. So a real macOS boot needs the three Apple files made on
+a Mac running macOS (`macosvm`). `experiments/vmapple/run-vmapple.sh` boots them on the patched QEMU as soon as they exist in
+`~/vms/macos`, and the macOS page now has an AVPBooter probe. Verdict: macOS-on-Linux-KVM is blocked on inputs, not on this
+machine model; not claimed as working.
 
 ## macOS: QEMU `vmapple` on this Linux Mac (2026-10-19)
 

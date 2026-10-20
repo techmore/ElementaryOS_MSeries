@@ -1,5 +1,5 @@
 project('machine-lab', 'vala',
-  version: '0.6.0',
+  version: '0.8.0',
   meson_version: '>= 1.0.0',
   default_options: ['warning_level=2']
 )
@@ -23,7 +23,7 @@ config = configure_file(
 )
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', config,
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', 'src/snapshots.vala', 'src/images.vala', config,
   resources,
   dependencies: [gtk, granite, json],
   install: true
@@ -45,7 +45,7 @@ install_data('launcher/prepare-latest-omarchy.py',
   rename: 'machine-lab-prepare-omarchy')
 
 test_exe = executable('test-machine',
-  'tests/test-machine.vala', 'src/machine.vala', 'src/incus-model.vala',
+  'tests/test-machine.vala', 'src/machine.vala', 'src/incus-model.vala', 'src/snapshots.vala', 'src/images.vala',
   dependencies: [gtk, dependency('gio-unix-2.0'), json],
   install: false
 )

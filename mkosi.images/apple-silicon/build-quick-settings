@@ -23,19 +23,9 @@ git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/quick-settings.git
 git -C "$source_dir" fetch -q --depth=1 origin "$source_commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
-git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-brightness.patch"
-install -m 0644 "$SRCDIR/mseries/quick-settings/ScreenBrightness.vala" "$source_dir/src/Widgets/ScreenBrightness.vala"
-install -m 0644 "$SRCDIR/mseries/quick-settings/KeyboardBrightness.vala" "$source_dir/src/Widgets/KeyboardBrightness.vala"
-install -m 0644 "$SRCDIR/mseries/quick-settings/ChargeLimit.vala" "$source_dir/src/Widgets/ChargeLimit.vala"
-git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-audio-output.patch"
-install -m 0644 "$SRCDIR/mseries/quick-settings/AudioOutputModel.vala" "$source_dir/src/Widgets/AudioOutputModel.vala"
-install -m 0644 "$SRCDIR/mseries/quick-settings/AudioOutput.vala" "$source_dir/src/Widgets/AudioOutput.vala"
-install -m 0644 "$SRCDIR/mseries/quick-settings/AirPlayOutputs.vala" "$source_dir/src/Widgets/AirPlayOutputs.vala"
+bash "$SRCDIR/mseries/quick-settings/prepare-source.sh" "$SRCDIR" "$source_dir"
 # Factory sysupdate ships immutable /usr; /usr/local is a separate mutable tree.
 sed -i "s|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g" "$source_dir/src/Widgets/ChargeLimit.vala"
-
-git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-bluetooth.patch"
-install -m 0644 "$SRCDIR/mseries/quick-settings/Bluetooth.vala" "$source_dir/src/Widgets/Bluetooth.vala"
 meson setup "$build_dir" "$source_dir" \
     --prefix=/usr \
     --libdir=lib/aarch64-linux-gnu \

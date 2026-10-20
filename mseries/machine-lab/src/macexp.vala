@@ -120,6 +120,8 @@ public class MacExperiment : Gtk.Box {
                 argv = { "ls", "/System/Library/Frameworks/Virtualization.framework" }, pass_when = "fail" },
             Step () { title = "A QEMU machine type for Apple virtual hardware", detail = "Ask QEMU for an Apple VM machine.",
                 argv = { "qemu-system-aarch64", "-machine", "apple-silicon-vm", "-display", "none", "-S" }, pass_when = "fail" },
+            Step () { title = "Apple's AVPBooter firmware", detail = "The boot ROM Apple's virtual Mac platform needs (QEMU's vmapple machine).",
+                argv = { "sh", "-c", "f=\"$HOME/vms/macos/AVPBooter.vmapple2.bin\"; if [ -r \"$f\" ]; then echo \"found $f\"; else echo 'AVPBooter.vmapple2.bin: not found. It ships inside macOS and cannot be redistributed; this Mac own macOS volumes are hardware-encrypted, and its Recovery image does not contain it.'; exit 1; fi" }, pass_when = "fail" },
             Step () { title = "An x86-64 CPU under hardware acceleration", detail = "Intel macOS needs an x86 CPU; ask KVM for one.",
                 argv = { "qemu-system-aarch64", "-machine", "virt,accel=kvm", "-cpu", "Haswell", "-display", "none", "-S" }, pass_when = "fail" },
             Step () { title = "An x86-64 emulator installed", detail = "Software emulation is the only x86 route on an ARM Mac.",

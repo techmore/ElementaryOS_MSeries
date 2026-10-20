@@ -162,109 +162,31 @@ jobs:
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
 
-      - name: Signal accent palette completeness
-        run: python3 mseries/test-signal-accent.py
-      - name: Shell syntax check (M-series scripts)
-        run: |
-          set -e
-          bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
-          bash -n mkosi.images/apple-silicon/mkosi.finalize
-          bash -n mkosi.images/apple-silicon/build-network-indicator
-          bash -n mkosi.images/apple-silicon/build-local-ai
-          for f in mseries/local-ai/*.sh; do bash -n "$f"; done
-          python3 -m py_compile mseries/local-ai/*.py
-          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
-          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
-          bash -n transform/elementary-grow.sh
-          bash -n bin/elementary-mac-setup
-          for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          for f in mseries/share-cost/*.sh; do bash -n "$f"; done
-          python3 -m py_compile mseries/share-cost/summarize-share-cost.py
-          python3 mseries/share-cost/test-summarize-share-cost.py
-          python3 -m py_compile mseries/share-cost/compare-share-cost.py
-          python3 mseries/share-cost/test-compare-share-cost.py
-          for f in mseries/pantheon-rust-compositor/*.sh; do bash -n "$f"; done
-          python3 -m py_compile mseries/pantheon-rust-compositor/summarize-metrics.py
-          python3 mseries/pantheon-rust-compositor/test-summarize-metrics.py
-          python3 mseries/pantheon-rust-compositor/summarize-metrics.py mseries/pantheon-rust-compositor/metrics/*.csv > /dev/null
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
-          bash -n mseries/vms/mseries-vm
-          bash mseries/vms/test-mseries-vm.sh
-          bash mseries/test-quieter-sound-theme.sh
-          bash mseries/test-elementary-mac-setup.sh
-          bash mseries/test-installer-flow.sh
-          bash -n assemble-iso.sh
-          bash -n mseries/local-build-worker.sh
-          bash -n mseries/fairydust/debian/build.sh
-          bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
-          bash -n mseries/aurora-sep/install-aurora-sep.sh
-          bash -n mseries/aurora-sep/install-touchid-gui.sh
-          python3 -m py_compile mseries/fairydust/debian/assemble-m1n1-bootbin.py
-          python3 mseries/fairydust/debian/test-assemble-m1n1-bootbin.py
-          python3 -m py_compile mseries/fairydust/debian/verify-m1n1-esp.py
-          python3 mseries/fairydust/debian/test-verify-m1n1-esp.py
-          python3 -m py_compile mseries/fairydust/debian/monitor.py mseries/check-kernel-config.py
-          bash -n mseries/iso-label.sh
-          bash -n mseries/test-iso-label.sh
-          bash mseries/test-iso-label.sh
-          bash mseries/test-greeter-obex-fix.sh
-          bash -n mseries/install-signal.sh
-          bash -n mseries/install-codexbar.sh
-          bash -n mseries/deploy-codexbar.sh
-          bash -n mseries/lib-codexbar.sh
-          bash -n mseries/install-codexbar-wingpanel.sh
-          python3 mseries/test-codexbar-deploy.py
-          bash -n mseries/check-codexbar-port.sh
-          python3 mseries/test-codexbar-cache.py
-          python3 mseries/test-codexbar-sessions.py
-          python3 mseries/test-codexbar-performance.py
-          python3 mseries/test-codexbar-accounts.py
-          python3 mseries/test-codexbar-claude.py
-          python3 mseries/test-codexbar-claude-history.py
-          python3 mseries/test-codexbar-claude-handoff.py
-          python3 mseries/test-codexbar-wrapper.py
-          python3 mseries/test-codexbar-opencode-local.py
-          python3 mseries/test-codexbar-opencode-login.py
-          python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
-          python3 -m py_compile mseries/display-space/*.py
-          bash -n mseries/display-space/test-notch-layout.sh
-          python3 -m py_compile mseries/apply-desktop-settings.py
-          python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
-          python3 mseries/test-wifi-resume.py
-          bash -n mseries/power/mseries-power mseries/power/vrr-check.sh mseries/power/macos-baseline/make_test_videos.sh
-          python3 -m py_compile mseries/power/macos-baseline/*.py
-          python3 mseries/test-power-cap.py
-          python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
-          python3 mseries/test-power-install.py
-          bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
-          python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
-          for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
-          python3 mseries/fairydust/usb4/tools/test-staging-tools.py
-          python3 mseries/aurora-sep/test_touchid_core.py
-          python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
-          python3 mseries/local-ai/test_people_watch.py
-          python3 mseries/test-image-wiring.py
-          python3 mseries/video-decode/test-brave-factory.py
-          python3 mseries/video-decode/test-youtube-launch.py
-          shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
-          shellcheck -S warning mseries/calendar/ci-test-agenda.sh mseries/install-homeboard-sync.sh
-          shellcheck -S warning mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh
-          python3 mseries/boot/test-prepare-uki-kernels.py
-          python3 mseries/test-kernel-config.py
-          python3 mseries/test-local-build-preflight.py
-          node mseries/test-build-status.mjs
-          node mseries/test-local-build-status.mjs
-          python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
-          python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
-          python3 -m unittest discover -s mseries/audio -p 'test_*.py'
-          python3 -m unittest discover -s mseries/airplay -p 'test_*.py'
-          python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
-          python3 -m unittest discover -s mseries/dictation -p 'test_*.py'
+      # The check list lives in mseries/validate.sh so the same command works on a
+      # developer machine (`just check`); add new checks there, not here.
+      - name: Syntax, shellcheck and unit checks (bash mseries/validate.sh)
+        run: bash mseries/validate.sh
 
+      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290 after
+      # two one-second retries). Keep the pinned tarball in the Actions cache and,
+      # on a miss, retry for up to ~3 minutes before giving up.
+      - name: Restore the pinned Fairydust source tarball
+        id: fairydust-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/fairydust.tar.gz
+          key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
+      - name: Download the pinned Fairydust source tarball
+        if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 6 --retry-delay 30 --retry-all-errors \
+            --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
+            -o "$RUNNER_TEMP/fairydust.tar.gz"
       - name: Validate experimental dock patches offline
         run: |
           set -euo pipefail
-          curl -fL --retry 2 https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 -o "$RUNNER_TEMP/fairydust.tar.gz"
           python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation"
 
       - name: mkosi config parse check (all images)

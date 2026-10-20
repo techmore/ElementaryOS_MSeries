@@ -414,6 +414,16 @@ installed (PATH, `~/.grok/bin`, `~/.local/bin`). Browser-cookie import is macOS-
 - **Probes.** `probe/run-grok-probe.sh BUILD_DIR` renders the `grok` and `grok-signin` fixtures, asserts order,
   layout, details and the email, and clicks **Sign in…** against a fake terminal to confirm `grok login` is launched.
 
+## Model-scoped caps (Fable)
+
+`cswap list` reports model-scoped weekly caps under `usage.scoped` (today: "Fable only"). `codexbar-claude.py`
+adds each as an extra account window labelled with the model name, `minutes: 0`, `scoped: true`. The active
+account's card draws it as its own bar and saved accounts show it on their row. `Presentation.account_headroom`
+skips scoped windows, so a Fable-only cap never marks an account as exhausted for Sonnet or Opus work and does
+not change "best account" hints. Absent when the plan has no scoped cap.
+
+Planned: [CODEXBAR-BURN-DOWN.md](CODEXBAR-BURN-DOWN.md) (opt-in suggestions for spare quota before it resets).
+
 ## Generated-C guard
 
 valac 0.56 frees the owned inner value of a nested conditional that mixes a literal with a call or

@@ -61,6 +61,8 @@ grok_ok["details"] = [
 grok_signed_out = entry("grok", [], error="Usage unavailable. Check this provider’s CodexBar login/configuration.",
                         plan="", age_min=0)
 grok_signed_out["updatedAt"] = ""
+# Signed in on a plan with no credits pool: a clean fetch, no windows, no error.
+grok_free = entry("grok", [], plan="Free")
 
 scenarios = {
     "healthy": snap([codex_ok, claude_ok]),
@@ -76,6 +78,7 @@ scenarios = {
     "empty": snap([]),
     "grok": snap([codex_ok, claude_ok, grok_ok]),
     "grok-signin": snap([codex_ok, grok_signed_out]),
+    "grok-free": snap([codex_ok, grok_free]),
 }
 busy = snap([]); busy["busy"] = True
 scenarios["busy"] = busy

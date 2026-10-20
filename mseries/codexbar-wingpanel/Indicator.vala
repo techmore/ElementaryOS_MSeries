@@ -1859,6 +1859,11 @@ namespace MSeries {
                             JsonBoundary.integer (period, "tokens", 0))));
                     }
                     card.append (subtle_label ("Sign in to OpenCode or connect a Go API key to load account quota."));
+                } else if (provider == "grok" && error.length == 0) {
+                    // A clean fetch with no window is a signed-in plan without a credits pool (Free), not a sign-out.
+                    string who = email.length > 0 ? " as " + email : "";
+                    string tier = plan.strip ().length > 0 ? " on the " + plan.strip () + " plan" : "";
+                    card.append (subtle_label ("Signed in" + who + tier + ". Grok reports no credits window for this plan. Local activity is under Sessions."));
                 } else if (provider == "grok") {
                     card.append (subtle_label ("No Grok credits reported. If you are signed out, run grok login. Local activity is under Sessions."));
                 } else {
@@ -1867,7 +1872,7 @@ namespace MSeries {
                         : error.length > 0 ? error : "No usage reported yet."));
                 }
                 // Grok signs in with its own CLI; without a terminal launcher, Settings remains the fallback.
-                var grok_login = provider == "grok" && terminal_app_for ("grok", { "login" }) != null;
+                var grok_login = provider == "grok" && error.length > 0 && terminal_app_for ("grok", { "login" }) != null;
                 var settings = new Gtk.Button.with_label (provider == "opencodego" || grok_login ? "Sign in…" : "Open Settings…") {
                     halign = Gtk.Align.START
                 };

@@ -2,6 +2,7 @@
 """Tests for the claude-swap bridge. cswap is faked; no real Claude login is touched."""
 
 from contextlib import closing
+import copy
 import datetime as dt
 import importlib.util
 import os
@@ -83,6 +84,18 @@ class ClaudeTest(unittest.TestCase):
                          [("5 hour", 10.0, "Resets in 1h 30m"), ("7 day", 60.0, "Resets in 3d 0h")])
         self.assertEqual(data["accounts"][1]["windows"], [])
         self.assertNotIn("token", str(data))
+
+    def test_model_scoped_weekly_cap_is_an_extra_marked_window(self):
+        listing = copy.deepcopy(LIST)
+        listing["accounts"][0]["usage"]["scoped"] = [
+            {"name": "Fable", "pct": 45.0, "resetsAt": "2026-10-21T12:00:00Z"},
+            {"name": "", "pct": 10.0}, {"pct": 5.0}, "junk", {"name": "Bad", "pct": "x"}]
+        with mock.patch.object(MODULE, "run", return_value=listing):
+            data = MODULE.listing("cswap", NOW)
+        windows = data["accounts"][0]["windows"]
+        self.assertEqual([w["label"] for w in windows], ["5 hour", "7 day", "Fable"])
+        self.assertEqual((windows[2]["remaining"], windows[2]["minutes"], windows[2]["scoped"]), (55.0, 0, True))
+        self.assertNotIn("scoped", windows[0])
 
     def test_saved_plan_metadata_is_account_specific_and_contains_no_tokens(self):
         for number, email, plan in ((1, "work@example.com", "max"), (2, "me@example.com", "pro")):

@@ -25,6 +25,11 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label arch_note;
     private Gtk.Box emu_banner;
     private Gtk.Label ssh_cmd;
+    private SnapshotsCard? snapshots = null;
+    private Gtk.Box image_card;
+    private Gtk.Button image_button;
+    private Gtk.Button save_image_item;
+    private bool image_busy = false;
     private Gtk.Image hero_icon;
     private Gtk.Label hero_sub;
     private Gtk.Box setup_card;
@@ -110,7 +115,13 @@ public class MachinePage : Gtk.Box {
         var remove = new Gtk.Button.with_label ("Remove Machine…");
         remove.add_css_class ("flat");
         remove.clicked.connect (() => { pop.popdown (); remove_requested (); });
-        pop.child = remove;
+        save_image_item = new Gtk.Button.with_label ("Save Disk as Image…");
+        save_image_item.add_css_class ("flat");
+        save_image_item.clicked.connect (() => { pop.popdown (); save_image.begin (); });
+        var menu_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        menu_box.append (save_image_item);
+        menu_box.append (remove);
+        pop.child = menu_box;
         more.popover = pop;
         header.pack_end (more);
         var handle = new Gtk.WindowHandle ();
@@ -295,7 +306,7 @@ public class MachinePage : Gtk.Box {
         var emu_title = new Gtk.Label ("Emulated: much slower than your ARM64 machines");
         emu_title.xalign = 0;
         emu_title.add_css_class ("title-4");
-        var emu_text = new Gtk.Label ("An x86-64 machine runs in software (no hardware acceleration), roughly 10 to 50 times slower than an ARM64 guest. Installs and boots take a long time. Give it few CPUs, be patient, and prefer ARM64 when you can.");
+        var emu_text = new Gtk.Label ("An x86-64 machine runs in software (no hardware acceleration), so it is far slower than an ARM64 guest. Installs and boots take a long time (a small Alpine ISO reached its login prompt in under a minute; a full desktop will take much longer). Give it few CPUs, be patient, and prefer ARM64 when you can.");
         emu_text.xalign = 0;
         emu_text.wrap = true;
         emu_banner.append (emu_title);
@@ -332,6 +343,34 @@ public class MachinePage : Gtk.Box {
         setup_card.append (step_row (3, "Start the installer",
             "Install inside the window. Shut the guest down when it finishes and Machine Lab boots the new disk from then on.", null, out step3_detail, true));
         clamp.append (setup_card);
+
+        // The shortcut: skip the installer by loading a disk someone already set up.
+        image_card = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
+        image_card.add_css_class ("ml-card");
+        image_card.margin_top = 2;
+        var image_text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        image_text.hexpand = true;
+        image_text.margin_top = 14;
+        image_text.margin_bottom = 14;
+        image_text.margin_start = 16;
+        var image_title = new Gtk.Label ("Or start from a ready-made image");
+        image_title.xalign = 0;
+        image_title.add_css_class ("heading");
+        var image_sub = new Gtk.Label (machine.emulated
+            ? "Load a bootable x86-64 disk (.qcow2, .img, .raw, .xz, .zst, .zip) and skip the installer."
+            : "Load a bootable ARM64 disk (.qcow2, .img, .raw, .xz, .zst, or a UTM .zip) and skip the installer.");
+        image_sub.xalign = 0;
+        image_sub.wrap = true;
+        image_sub.add_css_class ("dim-label");
+        image_text.append (image_title);
+        image_text.append (image_sub);
+        image_card.append (image_text);
+        image_button = new Gtk.Button.with_label ("Use an Image…");
+        image_button.valign = Gtk.Align.CENTER;
+        image_button.margin_end = 16;
+        image_button.clicked.connect (() => load_image.begin ());
+        image_card.append (image_button);
+        clamp.append (image_card);
 
         strip = new Gtk.Label ("");
         strip.wrap = true;
@@ -562,7 +601,7 @@ public class MachinePage : Gtk.Box {
         actions.append (start_button);
         clamp.append (actions);
 
-        var fine = new Gtk.Label ("Needs QEMU, UEFI firmware and access to /dev/kvm. With an installer attached the machine boots it; remove it with the eject button once the system is installed.");
+        var fine = new Gtk.Label ((machine.emulated ? "Needs QEMU and UEFI firmware (no /dev/kvm needed: x86-64 is emulated). " : "Needs QEMU, UEFI firmware and access to /dev/kvm. ") + "With an installer attached the machine boots it; remove it with the eject button once the system is installed.");
         fine.wrap = true;
         fine.xalign = 0;
         fine.add_css_class ("ml-fineprint");
@@ -800,7 +839,10 @@ public class MachinePage : Gtk.Box {
             machine.ssh_port = (int) port_spin.get_value ();
             changed (); refresh ();
         });
-        settings_form.append (form_row ("SSH port on this Mac", null, port_spin, true));
+        settings_form.append (form_row ("SSH port on this Mac", null, port_spin));
+        snapshots = new SnapshotsCard (machine);
+        snapshots.toast.connect ((m) => toast (m));
+        settings_form.append (snapshots);
 
         foreach (var s in new Gtk.Scale[] { cpu_scale, mem_scale, disk_scale }) {
             s.draw_value = false;
@@ -855,6 +897,10 @@ public class MachinePage : Gtk.Box {
     // ---- State ------------------------------------------------------------
 
     public void refresh () {
+        if (snapshots != null) {
+            snapshots.visible = !machine.managed;
+            snapshots.update ();
+        }
         bool running = machine.running;
         bool managed = machine.managed;
         bool fresh = machine.is_fresh ();
@@ -866,6 +912,10 @@ public class MachinePage : Gtk.Box {
         ssh_cmd.label = "ssh -p %d localhost".printf (machine.ssh_port);
 
         setup_card.visible = fresh && !managed;
+        image_card.visible = fresh && !managed;
+        image_button.sensitive = !image_busy;
+        save_image_item.visible = !managed && !running && machine.has_disk () && machine.installed ();
+        save_image_item.sensitive = !image_busy;
         connect_card.visible = running || !fresh;
         connect_card.sensitive = running;
         ssh_row.visible = !managed;
@@ -1031,6 +1081,66 @@ public class MachinePage : Gtk.Box {
         if (path == null) return;
         machine.installer = path;
         changed ();
+        refresh ();
+    }
+
+    private async void load_image () {
+        if (image_busy) {
+            return;
+        }
+        var chooser = new Gtk.FileDialog ();
+        chooser.title = "Choose a disk image";
+        chooser.accept_label = "Use Image";
+        var filter = new Gtk.FileFilter ();
+        filter.name = "Disk images";
+        foreach (var e in new string[] { "qcow2", "img", "raw", "vmdk", "vdi", "xz", "zst", "gz", "zip" }) {
+            filter.add_suffix (e);
+        }
+        var filters = new GLib.ListStore (typeof (Gtk.FileFilter));
+        filters.append (filter);
+        chooser.filters = filters;
+        File file;
+        try {
+            file = yield chooser.open ((Gtk.Window) get_root (), null);
+        } catch (GLib.Error error) {
+            return;   // cancelled
+        }
+        image_busy = true;
+        image_button.label = "Loading…";
+        refresh ();
+        toast ("Loading the image. A large one can take a few minutes.");
+        string message;
+        bool ok = yield DiskImages.import_image (file.get_path (), machine.dir, out message);
+        image_busy = false;
+        image_button.label = "Use an Image…";
+        toast (message);
+        if (ok) {
+            changed ();
+        }
+        refresh ();
+    }
+
+    private async void save_image () {
+        if (image_busy) {
+            return;
+        }
+        var chooser = new Gtk.FileDialog ();
+        chooser.title = "Save disk as image";
+        chooser.accept_label = "Save";
+        chooser.initial_name = machine.name.replace (" ", "-").down () + ".qcow2";
+        File file;
+        try {
+            file = yield chooser.save ((Gtk.Window) get_root (), null);
+        } catch (GLib.Error error) {
+            return;
+        }
+        image_busy = true;
+        refresh ();
+        toast ("Saving the disk image. A large one can take a few minutes.");
+        string message;
+        yield DiskImages.export_image (machine.dir, file.get_path (), out message);
+        image_busy = false;
+        toast (message);
         refresh ();
     }
 

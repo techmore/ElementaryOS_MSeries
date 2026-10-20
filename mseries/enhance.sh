@@ -8,7 +8,9 @@
 #
 # Modules (all on by default; each is idempotent and independent):
 #   tuning    zram swap (zstd, half of RAM), zswap off, ModemManager off, AppCenter
-#             background daemon not autostarted for new users
+#             background daemon not autostarted for new users, faster apt defaults
+#             (no Translation downloads, no pdiffs, retries, lock wait,
+#             no per-install man-db index rebuild)
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
 #   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
@@ -100,6 +102,23 @@ EOF
 # ElementaryOS_MSeries: zram already compresses swap
 w /sys/module/zswap/parameters/enabled - - - - 0
 EOF
+  put 0644 /etc/apt/apt.conf.d/90-mseries-speed <<'EOF2'
+// ElementaryOS_MSeries: faster apt on a fast link.
+// No Translation-* index downloads (the desktop is not localised from apt metadata).
+Acquire::Languages "none";
+// Fetch whole indices; applying pdiffs is slower than downloading them on broadband.
+Acquire::PDiffs "false";
+// Retry flaky mirror connections instead of failing the whole update.
+Acquire::Retries "3";
+// Wait for a concurrent apt/PackageKit run instead of aborting.
+DPkg::Lock::Timeout "120";
+EOF2
+  # man-db's trigger rebuilds the man index on nearly every apt run (55 times in one
+  # session's log); the daily man-db.timer still keeps the index current.
+  rm -f "$R/var/lib/man-db/auto-update"
+  if [[ $R == "" ]] && command -v debconf-set-selections >/dev/null; then
+    echo 'man-db man-db/auto-update boolean false' | debconf-set-selections || true
+  fi
   # This Mac has no modem.
   systemctl --root="${ROOT}" disable ModemManager.service >/dev/null 2>&1 || true
   # AppCenter's background daemon (~680 MB resident) is not started for new
@@ -110,7 +129,7 @@ Type=Application
 Name=AppCenter (background updates disabled)
 Hidden=true
 EOF
-  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users"
+  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users, faster apt defaults"
 }
 
 mod_power() {
@@ -342,7 +361,7 @@ mod_payload() {
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala \
+           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala quick-settings/Controls.vala \
            gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"

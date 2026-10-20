@@ -1263,8 +1263,10 @@ Tasks, Bible tab with daily verse and Titus study) is now a third pilot package,
 the stock plugin so daily upgrades can't overwrite it, and ships the accounts
 launcher. CI builds it, checks the bundled data and runs the private-EDS suite
 against the packaged library. The arrow buttons got accessible names.
-Remaining: apt publishing (signing key, #52) and moving the owner's desktop from
-the manual installer to the package.
+The owner's desktop now runs the package (0mseries2). CI proves for all three
+pilot packages that a stock upgrade can't overwrite ours and that removal
+restores the stock plugin (2026-10-20). Remaining: apt publishing (signing key,
+#52).
 
 
 ## README status overview — 2026-10-18

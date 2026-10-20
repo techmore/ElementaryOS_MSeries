@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## apt: man-db trigger off — 2026-10-19 (Claude)
+
+Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg
+triggers are (man-db ran 55 times in `/var/log/apt/term.log`). Installing `cowsay` took 2.63 s with man-db
+auto-update on and 1.73 s off. The `tuning` module now removes `/var/lib/man-db/auto-update` and, on a live root,
+sets debconf `man-db/auto-update false`; `man-db.timer` still refreshes the index daily. Applied on this machine.
+`mseries/test-apt-tuning.sh` covers it. Still unmeasured: a large upgrade. Remaining slow triggers: libc-bin,
+gnome-menus, desktop-file-utils, icon caches.
+
+## Faster apt defaults — 2026-10-19 (Claude)
+
+Branch `claude/apt-speed`. The `tuning` module in `mseries/enhance.sh` now also writes
+`/etc/apt/apt.conf.d/90-mseries-speed`: no `Translation-*` downloads, no pdiffs, 3 retries, and a 120 s dpkg
+lock wait. `--force-unsafe-io` was left out on purpose (power loss could corrupt the dpkg database).
+Verified: `bash mseries/test-apt-tuning.sh` (installs into a scratch root, checks `apt-config dump`),
+`test-apt-batch.sh`, `test-image-wiring.py`, `test-codexbar-deploy.py`, `test-elementary-mac-setup.sh` all pass.
+Not measured on hardware: real `apt update` timing, and the config is not yet installed on the running system
+(it lands with the next `enhance.sh` run or image build). Optional next: `nala` for parallel downloads.
+
 ## Rust compositor: grid overview for PerformAction(1) and upward swipe — 2026-10-19
 
 Branch `codex/rust-gala-stack-integration`, worktree
@@ -7653,7 +7672,8 @@ installing the .deb. Apt publishing still waits on the signing key (#52).
 ## Machine Lab x86 emulation boot check (2026-10-19)
 - Installed `qemu-system-x86` and `ovmf` (owner-approved). Booted Alpine virt 3.24.2 x86_64 (sha256 verified) under TCG: q35, `-cpu max`, OVMF, serial console. Reached the Alpine login prompt (kernel 6.18.52-0-virt). Tested with a direct QEMU command, not through Machine Lab's own x86 launch path.
 - Follow-up: `launcher/run-vm.sh` with `MACHINE_ARCH=x86_64` (Machine Lab's own x86 path, q35 + OVMF, virtio-vga) booted the same ISO to the login prompt within 45 s; a QMP `screendump` over `qmp-view.sock` showed the console. Throwaway VM removed.
-- Not yet verified: launching x86 from the GUI window, the Display tab on x86, timing versus ARM64 KVM.
+- GUI check (headless Broadway, isolated XDG dirs): an x86 machine entry showed the emulation banner, Start Installer launched QEMU, and the Display tab showed the Alpine login. Found and fixed: the install via `install-machine-lab.sh` from a stale checkout had left an old launcher in `~/.local/bin`; always run it from a current `dev` checkout. Overview footer no longer asks emulated machines for /dev/kvm.
+- Not yet verified: timing versus ARM64 KVM; keyboard input on x86 in a real Wayland window.
 ## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
 
 The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
@@ -7673,6 +7693,64 @@ gtk4 feature `v4_20` (granite-rs does not enable `v4_10`, so `gtk::Accessible` i
 `mseries/patches/wingpanel-export-gir.patch` makes Wingpanel export `Wingpanel-9.gir` + typelib; built and loaded in
 a sandbox, not installed. All upstream pins and update steps: `mseries/RUST-UPSTREAM-MAINTENANCE.md`. Next:
 an opt-in Rust login session entry once the compositor has DRM/KMS, input and lock screen.
+
+
+## Quick Settings redesign: cards, volume slider, collapsible Sound Output — 2026-10-19 (Claude)
+
+- **What:** the top-right menu rows now sit in rounded cards (Controls: Volume, Screen Brightness, Keyboard Brightness; Connections: Bluetooth, Sound Output; Sharing: screen share + AirDrop; Battery: charge limit). A card hides itself when everything in it is unavailable. New `quick-settings/Controls.vala` holds the theme-token stylesheet, `Card`, the shared `SliderRow` (icon, slider, tabular percentage, coalesced writes) and a new **Volume** slider on the default PipeWire sink via `wpctl` (icon click mutes, moving the slider unmutes, follows external changes while the menu is open). Screen and keyboard brightness were moved onto `SliderRow` with unchanged hardware logic. Sound Output is one line (current output) until opened, then collapses again after a pick or when the menu reopens; this matters with many AirPlay receivers.
+- **Wiring:** new `patches/quick-settings-layout.patch` (applies after the bluetooth patch) reorders `PopoverWidget`; it leaves a `// mseries:sharing` marker that `install-quick-settings-brightness.sh` replaces with the Sharing card. Added to the installer, `mkosi.images/apple-silicon/build-quick-settings` and `enhance.sh`'s payload list. `debs/build.sh` is not updated (it also lacks the audio and Bluetooth patches).
+- **Verified:** full plugin compiles against pinned upstream `fb721d4` both with and without the share/AirDrop sed; `test-bluetooth.sh`, `test_audio_output_model.sh` and the AirPlay render pass; light and dark headless renders under Xvfb with the elementary stylesheet look correct.
+- **Not verified:** the live Wingpanel popover (not installed, not reloaded, per the stable-menu-bar rule), the Volume slider writing to real audio, and the Sharing card (screen-share/AirDrop) rendered. Install with `bash mseries/install-quick-settings-brightness.sh`, then reload Wingpanel or log in.
+
+### Owner desktop switched to the calendar package — 2026-10-19
+
+With the owner's approval the desktop moved from the manual installer to
+`mseries-wingpanel-datetime_2.4.2-0mseries1` (built from dev d1ab81e with
+`ONLY=mseries-wingpanel-datetime mseries/debs/build.sh`; the postinst does not
+restart Wingpanel). Steps: the package's library passed 27/27 groups first;
+`install-calendar-agenda.sh --uninstall` restored the saved original, whose md5
+32d1b400… matches dpkg's record for the stock 2.4.2+r1073 plugin, and removed
+/usr/local/bin/mseries-calendar-accounts; then `sudo dpkg -i` the package.
+Verified: diversion to libdatetime.so.mseries-orig (stock md5), package
+`install ok installed`, `dpkg -V` clean, installed plugin byte-identical to the
+tested build, /usr/bin/mseries-calendar-accounts present. Wingpanel PID
+unchanged (953205), so the running panel still has the previous build mapped and
+the packaged one (with the TimeFormat fix and accessible arrow names) loads at
+the next login. Rollback: `sudo dpkg -r mseries-wingpanel-datetime` (postrm
+removes the diversion and puts the stock plugin back).
+
+## Machine Lab 0.6.0 to 0.8.0 (2026-10-19)
+- 0.6.0 Incus panel, 0.7.0 disk snapshots (Settings tab, qemu-img), 0.8.0 ready-made images (import qcow2/raw/vmdk/vdi, xz/zst/gz, UTM zip; save disk as compressed qcow2; backing-file refusal, format allow-list, free-space check). All merged to `dev` (PRs 287, 294, 296) with CI green; installed from a current `dev` checkout.
+- Verified: unit tests against real qemu-img/xz; Incus, snapshot take and list, and the new-machine image card in headless Broadway. Not verified: the image file-chooser flow end to end, importing the real 3.9 GB Omarchy UTM zip, booting an imported image, Incus VM Display tab.
+- Removed the unmeasured "10 to 50 times slower" x86 claim (my timing run hung; no ARM64 vs x86 numbers yet).
+- Gotcha: `mseries/install-machine-lab.sh` builds from the checkout it runs in; run it from a current `dev` checkout.
+- Next: import the Omarchy UTM zip into a throwaway machine and boot it; host-to-guest clipboard (#263); file copy (#264).
+
+### Calendar panel / Bible tab: production ready — 2026-10-20 (PR #299 -> dev d4bc8f9)
+
+Live: the owner's Wingpanel (started 2026-10-19 21:46, after the package
+install) maps the packaged libdatetime.so (same inode as the file) and its
+journal has no criticals, warnings or errors.
+
+Upgrade protection is now proven in CI: mseries/debs/test-divert.sh (CI-only)
+installs each pilot package, force-reinstalls the stock package, checks that ours
+survived and the stock copy landed in the diverted path, then removes it and
+checks the stock plugin, no diversion and no leftover files. It passes for the
+datetime, network and quick-settings packages.
+
+The proof found two packaging bugs, both fixed:
+- mseries-quick-settings no longer built after the card layout (SliderRow in
+  Controls.vala). New mseries/quick-settings/prepare-source.sh is shared by the
+  factory image and the package builder.
+- Depends bounds rejected elementary daily bases that use ~ (1.4.0~r556 < 1.4.0)
+  and admitted next-minor dailies (1.4.1~ < 1.4.1). Now (>= X~, << next~).
+  Packaging revision 0mseries2.
+
+Owner desktop upgraded (approved) to mseries-wingpanel-datetime 2.4.2-0mseries2
+from d4bc8f9 after 27/27 groups: dpkg -i over 0mseries1, diversion kept, stock
+original md5 unchanged, dpkg -V clean, installed == tested build, Wingpanel PID
+unchanged (loads at next login). Only remaining item: apt publishing, which
+waits on the owner's signing-key decision (#52).
 
 
 ### Daily upstream audit — 2026-10-19
