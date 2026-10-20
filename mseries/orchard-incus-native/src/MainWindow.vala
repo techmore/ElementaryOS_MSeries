@@ -30,24 +30,29 @@ public class MainWindow : Gtk.ApplicationWindow {
         var add = new Gtk.Button.from_icon_name ("list-add-symbolic") { tooltip_text = "New instance" };
         add.clicked.connect (() => { open_new_instance (); });
         header.pack_start (add);
-        var settings = new Gtk.Button.from_icon_name ("preferences-system-symbolic") { tooltip_text = "Preferences" };
-        settings.clicked.connect (() => open_preferences ());
-        header.pack_end (settings);
-        var resources = new Gtk.Button.from_icon_name ("view-grid-symbolic") { tooltip_text = "Images, networks, DNS, storage and other resources" };
-        resources.clicked.connect (() => { new ResourceBrowser (this, client).present (); });
-        header.pack_end (resources);
-        var stats = new Gtk.Button.from_icon_name ("utilities-system-monitor-symbolic") { tooltip_text = "Resource dashboard" };
-        stats.clicked.connect (() => open_dashboard ());
-        header.pack_end (stats);
-        var ai = new Gtk.Button.from_icon_name ("system-search-symbolic") { tooltip_text = "Local AI models" };
-        ai.clicked.connect (() => { new ModelsWindow (this).present (); }); header.pack_end (ai);
-        var sandbox = new Gtk.Button.from_icon_name ("security-medium-symbolic") { tooltip_text = "Model sandboxes" }; sandbox.clicked.connect (() => new SandboxesWindow (this, client).present ()); header.pack_end (sandbox);
-        var system = new Gtk.Button.from_icon_name ("computer-symbolic") { tooltip_text = "Incus system and daemon logs" };
-        system.clicked.connect (() => new SystemWindow (this, client).present ()); header.pack_end (system);
-        var mounts = new Gtk.Button.from_icon_name ("drive-harddisk-symbolic") { tooltip_text = "Instance mounts" };
-        mounts.clicked.connect (() => new MountsWindow (this, client).present ()); header.pack_end (mounts);
-        var logs = new Gtk.Button.from_icon_name ("text-x-generic-symbolic") { tooltip_text = "Multiple instance log panes" };
-        logs.clicked.connect (() => new LogViewer (this, client).present ()); header.pack_end (logs);
+        refresh.update_property (Gtk.AccessibleProperty.LABEL, "Refresh", -1);
+        add.update_property (Gtk.AccessibleProperty.LABEL, "New instance", -1);
+
+        // Keep primary actions visible; secondary destinations remain named and keyboard-accessible.
+        var destinations = new Menu ();
+        string[] action_ids = { "resources", "dashboard", "models", "sandboxes", "system", "mounts", "logs", "preferences" };
+        string[] action_labels = { "Resources…", "Resource Dashboard", "Local AI Models…", "Model Sandboxes…", "Incus System…", "Instance Mounts…", "Instance Logs…", "Preferences…" };
+        for (int i = 0; i < action_ids.length; i++) {
+            var id = action_ids[i];
+            var action = new SimpleAction (id, null);
+            action.activate.connect (() => {
+                if (id == "resources") new ResourceBrowser (this, client).present ();
+                else dispatch_command (id, "");
+            });
+            add_action (action);
+            destinations.append (action_labels[i], "win." + id);
+        }
+        var more = new Gtk.MenuButton () {
+            icon_name = "open-menu-symbolic", menu_model = destinations,
+            tooltip_text = "More actions"
+        };
+        more.update_property (Gtk.AccessibleProperty.LABEL, "More actions", -1);
+        header.pack_end (more);
         set_titlebar (header);
 
         var list = new Gtk.ListView (new Gtk.NoSelection (store), make_factory ());
@@ -58,7 +63,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         status_label.add_css_class ("h4");
 
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-        var filters = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { margin_start = 12, margin_end = 12, margin_top = 8, margin_bottom = 8 };
+        var filters = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { margin_start = 12, margin_end = 12, margin_top = 8, margin_bottom = 8 };
         search = new Gtk.SearchEntry () { hexpand = true, placeholder_text = "Search names, images or status…" };
         kind_filter = new Gtk.DropDown.from_strings ({ "All instances", "Containers", "Virtual machines" });
         sort_order = new Gtk.DropDown.from_strings ({ "Name A–Z", "Name Z–A", "Memory usage", "Status" });
@@ -67,7 +72,20 @@ public class MainWindow : Gtk.ApplicationWindow {
         group_label = new Gtk.Entry () { placeholder_text = "Group by label, e.g. user.team", text = preferences.read ("group", "") };
         group_label.activate.connect (() => { try { preferences.write ("group", group_label.text); } catch (Error e) { } reload.begin (); });
         sort_order.notify["selected"].connect (() => { try { preferences.write ("sort", sort_order.selected.to_string ()); } catch (Error e) { } reload.begin (); });
-        filters.append (search); filters.append (kind_filter); filters.append (sort_order); filters.append (group_label);
+        search.update_property (Gtk.AccessibleProperty.LABEL, "Search instances", -1);
+        kind_filter.update_property (Gtk.AccessibleProperty.LABEL, "Instance type", -1);
+        sort_order.update_property (Gtk.AccessibleProperty.LABEL, "Sort order", -1);
+        group_label.update_property (Gtk.AccessibleProperty.LABEL, "Group by label", -1);
+        var filter_controls = new Gtk.FlowBox () {
+            selection_mode = Gtk.SelectionMode.NONE, homogeneous = false,
+            min_children_per_line = 1, max_children_per_line = 3,
+            column_spacing = 8, row_spacing = 8
+        };
+        filter_controls.insert (kind_filter, -1);
+        filter_controls.insert (sort_order, -1);
+        filter_controls.insert (group_label, -1);
+        filters.append (search);
+        filters.append (filter_controls);
         search.search_changed.connect (() => { reload.begin (); });
         kind_filter.notify["selected"].connect (() => { reload.begin (); });
         var keys = new Gtk.EventControllerKey ();
@@ -82,19 +100,24 @@ public class MainWindow : Gtk.ApplicationWindow {
         });
         ((Gtk.Widget) this).add_controller (keys);
         box.append (filters);
-        var bulk_bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { margin_start = 12, margin_end = 12, margin_bottom = 8 };
-        selection_status = new Gtk.Label ("0 selected") { xalign = 0, hexpand = true }; bulk_bar.append (selection_status);
+        var bulk_bar = new Gtk.FlowBox () {
+            selection_mode = Gtk.SelectionMode.NONE, homogeneous = false,
+            min_children_per_line = 1, max_children_per_line = 6,
+            column_spacing = 8, row_spacing = 8,
+            margin_start = 12, margin_end = 12, margin_bottom = 8
+        };
+        selection_status = new Gtk.Label ("0 selected") { xalign = 0, hexpand = true }; bulk_bar.insert (selection_status, -1);
         var select_all = new Gtk.Button.with_label ("Select visible"); select_all.clicked.connect (() => {
             for (uint i = 0; i < store.get_n_items (); i++) selected_names.add (((Instance) store.get_item (i)).name);
             selection_status.label = "%u selected".printf (selected_names.length); reload.begin ();
-        }); bulk_bar.append (select_all);
+        }); bulk_bar.insert (select_all, -1);
         string[] verbs = { "start", "stop", "delete" };
         foreach (var verb in verbs) {
-            var button = new Gtk.Button.with_label (verb + " selected");
+            var button = new Gtk.Button.with_label (verb.substring (0, 1).up () + verb.substring (1) + " selected");
             var action = verb;
-            button.clicked.connect (() => confirm_bulk (action)); bulk_bar.append (button);
+            button.clicked.connect (() => confirm_bulk (action)); bulk_bar.insert (button, -1);
         }
-        var clear = new Gtk.Button.with_label ("Clear selection"); clear.clicked.connect (() => { selected_names.remove_all (); selection_status.label = "0 selected"; reload.begin (); }); bulk_bar.append (clear);
+        var clear = new Gtk.Button.with_label ("Clear selection"); clear.clicked.connect (() => { selected_names.remove_all (); selection_status.label = "0 selected"; reload.begin (); }); bulk_bar.insert (clear, -1);
         box.append (bulk_bar);
         box.append (scroller);
         box.append (status_label);
@@ -121,18 +144,22 @@ public class MainWindow : Gtk.ApplicationWindow {
             var item = (Gtk.ListItem) obj;
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) { margin_top = 6, margin_bottom = 6, margin_start = 12, margin_end = 12 };
             var dot = new Gtk.Image.from_icon_name ("media-record-symbolic");
-            var name = new Gtk.Label ("") { xalign = 0, hexpand = true, name = "name" };
+            var name = new Gtk.Label ("") { xalign = 0, hexpand = true, name = "name", ellipsize = Pango.EllipsizeMode.END, width_chars = 8, max_width_chars = 24 };
             name.add_css_class ("h3");
-            var meta = new Gtk.Label ("") { xalign = 1, name = "meta" };
+            var meta = new Gtk.Label ("") { xalign = 1, name = "meta", wrap = true, max_width_chars = 24 };
             meta.add_css_class ("dim-label");
             var toggle = new Gtk.Button () { valign = Gtk.Align.CENTER, name = "toggle" };
             var shell = new Gtk.Button.with_label ("Shell") { valign = Gtk.Align.CENTER, name = "shell" };
             var snap = new Gtk.Button.from_icon_name ("camera-photo-symbolic") { valign = Gtk.Align.CENTER, tooltip_text = "Snapshots…", name = "snap" };
             var del = new Gtk.Button.from_icon_name ("edit-delete-symbolic") { valign = Gtk.Align.CENTER, tooltip_text = "Delete", name = "del" };
             del.add_css_class ("destructive-action");
+            snap.update_property (Gtk.AccessibleProperty.LABEL, "Snapshots", -1);
+            del.update_property (Gtk.AccessibleProperty.LABEL, "Delete instance", -1);
             row.append (dot); row.append (name); row.append (meta);
             row.append (toggle); row.append (shell); row.append (snap); row.append (del);
-            row.append (new Gtk.Button.from_icon_name ("document-properties-symbolic") { tooltip_text = "Inspect, configure and read logs" });
+            var inspect = new Gtk.Button.from_icon_name ("document-properties-symbolic") { tooltip_text = "Inspect, configure and read logs" };
+            inspect.update_property (Gtk.AccessibleProperty.LABEL, "Instance details", -1);
+            row.append (inspect);
             row.append (new Gtk.CheckButton () { tooltip_text = "Select for bulk actions" });
             item.child = row;
         });
@@ -146,6 +173,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             Gtk.Widget w = dot.get_next_sibling ();
             var group = group_label.text.strip ();
             ((Gtk.Label) w).label = group == "" ? inst.name : (inst.labels.lookup (group) ?? "Unlabelled") + " · " + inst.name;
+            w.tooltip_text = ((Gtk.Label) w).label;
             w = w.get_next_sibling ();
             var mem = inst.running ? " · %s".printf (format_size ((uint64) inst.memory_bytes)) : "";
             ((Gtk.Label) w).label = "%s · %s%s%s".printf (
@@ -170,6 +198,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             ids.e = info.clicked.connect (() => { new InstanceDetails (this, client, n).present (); });
             var selected = (Gtk.CheckButton) info.get_next_sibling ();
             selected.active = selected_names.contains (n); selected.tooltip_text = "Select " + n;
+            selected.update_property (Gtk.AccessibleProperty.LABEL, "Select " + n, -1);
             ids.f = selected.toggled.connect (() => {
                 if (selected.active) selected_names.add (n); else selected_names.remove (n);
                 selection_status.label = "%u selected".printf (selected_names.length);
