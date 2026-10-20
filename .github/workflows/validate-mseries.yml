@@ -84,6 +84,10 @@ jobs:
           cargo test --manifest-path mseries/rust/launcher-keys/Cargo.toml --locked
           cargo clippy --manifest-path mseries/rust/launcher-keys/Cargo.toml --locked --all-targets -- -D warnings
           cargo build --release --manifest-path mseries/rust/launcher-keys/Cargo.toml --locked
+          cargo fmt --check --manifest-path mseries/rust/homeboard-launcher/Cargo.toml
+          cargo test --manifest-path mseries/rust/homeboard-launcher/Cargo.toml --locked
+          cargo clippy --manifest-path mseries/rust/homeboard-launcher/Cargo.toml --locked --all-targets -- -D warnings
+          cargo build --release --manifest-path mseries/rust/homeboard-launcher/Cargo.toml --locked
           bash mseries/test-greeter-obex-fix.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh

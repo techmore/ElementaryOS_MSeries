@@ -14,8 +14,8 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 782,
-  "component_count": 236,
+  "item_count": 786,
+  "component_count": 237,
   "project_count": 204,
   "components": [
     {
@@ -2536,6 +2536,21 @@
       ]
     },
     {
+      "id": "mseries/rust/homeboard-launcher",
+      "ownership": "mseries-maintained",
+      "item_count": 4,
+      "rust_status_counts": {
+        "candidate-implemented-unverified": 1,
+        "recorded-non-code-input": 3
+      },
+      "items": [
+        "mseries/rust/homeboard-launcher/Cargo.lock",
+        "mseries/rust/homeboard-launcher/Cargo.toml",
+        "mseries/rust/homeboard-launcher/README.md",
+        "mseries/rust/homeboard-launcher/src/main.rs"
+      ]
+    },
+    {
       "id": "mseries/rust/iso-assembly",
       "ownership": "mseries-maintained",
       "item_count": 4,
@@ -4993,17 +5008,23 @@
     {
       "id": "mseries/install-homeboard-launcher",
       "ownership": "mseries-maintained",
-      "item_count": 1,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 1
+        "candidate-implemented-unverified": 1,
+        "not-assessed": 1,
+        "recorded-non-code-input": 3
       },
       "items": [
-        "mseries/install-homeboard-launcher.sh"
+        "mseries/install-homeboard-launcher.sh",
+        "mseries/rust/homeboard-launcher/Cargo.lock",
+        "mseries/rust/homeboard-launcher/Cargo.toml",
+        "mseries/rust/homeboard-launcher/README.md",
+        "mseries/rust/homeboard-launcher/src/main.rs"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
-      "migration_status": "not-started",
-      "parity_contract_status": "not-defined",
-      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "migration_status": "candidate-implemented-unverified",
+      "parity_contract_status": "implementation-present-unverified",
+      "parity_contract": "Implementation exists, but feature-level parity has not been verified.",
       "enhancement_review_status": "not-reviewed",
       "intentional_enhancements": []
     },
@@ -14105,6 +14126,46 @@
       "language": "data",
       "role": "configuration-or-data",
       "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/homeboard-launcher/Cargo.lock",
+      "path": "mseries/rust/homeboard-launcher/Cargo.lock",
+      "component_id": "mseries/rust/homeboard-launcher",
+      "project_id": "mseries/install-homeboard-launcher",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/homeboard-launcher/Cargo.toml",
+      "path": "mseries/rust/homeboard-launcher/Cargo.toml",
+      "component_id": "mseries/rust/homeboard-launcher",
+      "project_id": "mseries/install-homeboard-launcher",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/homeboard-launcher/README.md",
+      "path": "mseries/rust/homeboard-launcher/README.md",
+      "component_id": "mseries/rust/homeboard-launcher",
+      "project_id": "mseries/install-homeboard-launcher",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/homeboard-launcher/src/main.rs",
+      "path": "mseries/rust/homeboard-launcher/src/main.rs",
+      "component_id": "mseries/rust/homeboard-launcher",
+      "project_id": "mseries/install-homeboard-launcher",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
     },
     {
       "id": "mseries/rust/inventory.py",
