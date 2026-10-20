@@ -54,6 +54,11 @@ jobs:
             libecal2.0-dev libedataserver1.2-dev libical-dev libjson-glib-dev \
             io.elementary.panel.network io.elementary.quick-settings io.elementary.panel.datetime
 
+      - name: Style checks for the packaging scripts (bash mseries/validate.sh --only debs)
+        run: |
+          sudo apt-get install -y --no-install-recommends shellcheck
+          bash mseries/validate.sh --only debs
+
       - name: Build pilot plugin packages
         run: |
           chmod +x mseries/debs/build.sh
