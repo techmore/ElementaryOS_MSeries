@@ -1,15 +1,40 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Transparent Outlook icon; dock deployment recovered — 2026-10-20
+
+Outlook now fetches the transparent, checksum-pinned Office SVG directly from
+Microsoft's CDN. The old white-backed touch icon was removed locally. GTK
+resolves the SVG and its corner alpha is verified zero. Teams/Outlook icons,
+launcher entries and dock pins are retained; both launchers advertise their
+observed Brave StartupWMClass. Fourteen offline web-launcher tests pass.
+
+A live app-tracking experiment incorrectly rebuilt the dock without the owner's
+existing Windows Taskbar.vala customization, replacing the intended bottom bar.
+The recovery chat restored the retained pre-change binary, SHA256
+`960642d81bd83c4ec06be02c6a37ffa6967a874ddd42e4011827bc696002541f`.
+This chat verified that hash, active dock service and private `taskbar-mode=true`.
+All further dock deployments/restarts are stopped pending owner recovery
+confirmation. Icons/launchers remain installed; native tracking/pill changes
+were rolled back with the incompatible executable. The experimental source and
+tests are retained separately in this task's scratch directory, not wired into
+the installer. Any future tracking fix must preserve the complete customized
+taskbar source and be isolated-tested first. No compositor or Wingpanel restart
+was performed. The safe icon/launcher PR excludes the native dock experiment.
+
 ## Work Mode and Teams/Outlook deployment — 2026-10-20
+
+Historical 11:39 deployment snapshot. The later #338 recovery entry above
+supersedes the dock binary and launcher/icon status; its owner-recovery hold
+remains in force. This receipt does not authorize another dock deployment.
 
 Merged dev `8d85efe` is installed: Work Mode helper/settings, native dock, Teams
 and Outlook shortcuts, and compositor package. Wingpanel and the running
 compositor are unchanged; the compositor loads at next login. A concurrent dock
 service restart was observed; its current binary matches the installed build.
 Existing settings/pins/wallpaper and Brave session selection are preserved.
-See OS9-HANDOFF.md and the deployment receipt for checks and backups. Next:
-normal login, native taskbar/window-clearance checks, Teams media/notifications
-and authenticated Outlook mailbox verification.
+See OS9-HANDOFF.md and the deployment receipt for checks and backups. Respect
+the #338 recovery hold before further dock deployment or restart; native
+taskbar/window-clearance and Teams/Outlook qualification remain open.
 
 ## Work Mode integration reconciled — 2026-10-20
 

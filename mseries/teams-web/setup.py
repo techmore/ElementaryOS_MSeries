@@ -110,7 +110,8 @@ def install(browser=None, use_brave_session=False):
     entry = desktop_entry(launcher)
     if use_brave_session:
         # Existing Brave owns the window identity; do not promise a separate class.
-        entry = entry.replace('StartupWMClass=' + APP_ID + '\n', '')
+        entry = entry.replace('StartupWMClass=' + APP_ID + '\n',
+                              'StartupWMClass=brave-teams.microsoft.com__v2_-' + config['profile_directory'] + '\n')
         entry = entry.replace('dedicated Chrome or Edge window', 'window using your Brave sign-in')
     atomic_write(desktop, entry)
     atomic_write(root / 'config.json', json.dumps(config, indent=2) + '\n', 0o600)
