@@ -58,10 +58,10 @@ step "scan MAC randomisation"
 if grep -rhs 'wifi.scan-rand-mac-address' /etc/NetworkManager/conf.d /usr/lib/NetworkManager/conf.d /etc/NetworkManager/NetworkManager.conf | grep -q '=no'; then
   echo "already off"
 elif (( report_only )); then
-  echo "on (default); a fix would write /etc/NetworkManager/conf.d/90-mseries-wifi-scan.conf"
+  echo "on (default); a fix would write /etc/NetworkManager/conf.d/90-mseries-wifi.conf"
 else
   install -d /etc/NetworkManager/conf.d
-  printf '[device]\nwifi.scan-rand-mac-address=no\n' > /etc/NetworkManager/conf.d/90-mseries-wifi-scan.conf
+  printf '[device]\nwifi.scan-rand-mac-address=no\n\n[connection]\nwifi.cloned-mac-address=preserve\n' > /etc/NetworkManager/conf.d/90-mseries-wifi.conf
   systemctl reload NetworkManager 2>/dev/null || systemctl restart NetworkManager
   echo "turned off"
 fi

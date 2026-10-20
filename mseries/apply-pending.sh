@@ -53,6 +53,8 @@ backup_then_install() {  # backup_then_install MODE SRC DEST
 step_wifi() {
   backup_then_install 755 "$repo/mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix" /usr/sbin/mseries-wifi-resume-fix
   backup_then_install 755 "$repo/mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-doctor" /usr/sbin/mseries-wifi-doctor
+  backup_then_install 644 "$repo/mkosi.images/apple-silicon/mkosi.extra/etc/NetworkManager/conf.d/90-mseries-wifi.conf" /etc/NetworkManager/conf.d/90-mseries-wifi.conf
+  run sudo systemctl reload NetworkManager
   if ! lsmod | awk '$1 == "brcmfmac" {found = 1} END {exit !found}'; then
     echo "  brcmfmac is not loaded: loading it (this is what brings Wi-Fi back)"
     run sudo modprobe brcmfmac

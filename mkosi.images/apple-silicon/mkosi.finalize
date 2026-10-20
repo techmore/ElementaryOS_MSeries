@@ -66,6 +66,7 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/etc/xdg/autostart" \
     ! -path "$BUILDROOT/etc/xdg/autostart/mseries-brightness.desktop" \
     ! -path "$BUILDROOT/etc/modprobe.d*" \
+    ! -path "$BUILDROOT/etc/NetworkManager*" \
     ! -path "$BUILDROOT/etc/initramfs-tools*" \
     ! -path "$BUILDROOT/etc/systemd*" \
     -delete
