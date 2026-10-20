@@ -1,9 +1,12 @@
 """Offline launcher contracts; never contact Teams or use the owner's profile."""
 import json
+import importlib.util
 import os
 from pathlib import Path
 import subprocess
 import tempfile
+import struct
+import official_icon
 import time
 import unittest
 from unittest.mock import patch
@@ -31,10 +34,33 @@ class Links(unittest.TestCase):
                 teams.teams_url(url)
 
 
+class Icon(unittest.TestCase):
+    def test_changed_official_asset_is_rejected(self):
+        from unittest.mock import MagicMock
+        response = MagicMock()
+        response.url = official_icon.URL
+        response.read.return_value = b'changed upstream bytes'
+        response.__enter__.return_value = response
+        with patch('official_icon.urlopen', return_value=response):
+            with self.assertRaisesRegex(ValueError, 'upstream icon changed'):
+                official_icon.download()
+
+    def test_ico_extracts_original_png_bytes_and_rejects_bad_bounds(self):
+        png = official_icon.PNG + b'unchanged-fixture-artwork'
+        raw = struct.pack('<HHH', 0, 1, 1) + struct.pack('<BBBBHHII', 0, 0, 0, 0, 1, 32, len(png), 22) + png
+        self.assertEqual(official_icon.extract_png(raw), png)
+        for invalid in (b'', raw[:10], raw[:-1], b'not an icon'):
+            with self.assertRaises(ValueError):
+                official_icon.extract_png(invalid)
+
+
 class Install(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='teams-web-')
         self.addCleanup(self.temp.cleanup)
+        self.icon_download = patch('official_icon.download', side_effect=OSError('Offline test'))
+        self.icon_download.start()
+        self.addCleanup(self.icon_download.stop)
         self.home = Path(self.temp.name)
         self.config = self.home / 'config space % " $ ` slash\\'
         self.data = self.home / 'data space % " $ ` slash\\'
@@ -51,6 +77,54 @@ class Install(unittest.TestCase):
         self.environ = patch.dict(os.environ, self.env, clear=True)
         self.environ.start()
         self.addCleanup(self.environ.stop)
+
+    def test_outlook_replaces_only_the_mail_pin_and_retains_backup(self):
+        spec = importlib.util.spec_from_file_location('outlook', Path(__file__).parent.parent / 'install-outlook-web.py')
+        outlook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(outlook)
+        class Settings:
+            values = ['files.desktop', 'io.elementary.mail.desktop', 'browser.desktop']
+            def get_strv(self, key):
+                return self.values[:]
+            def set_strv(self, key, values):
+                self.values = values
+                return True
+        settings = Settings()
+        with patch('shutil.which', return_value=str(self.browser)), patch.object(outlook, 'refresh_desktop'):
+            desktop = outlook.install(settings)
+            outlook.install(settings)
+        self.assertEqual(settings.values, ['files.desktop', outlook.APP_ID + '.desktop', 'browser.desktop'])
+        backup = json.loads((self.config / 'mseries/outlook-web/dock-before.json').read_text())
+        self.assertEqual(backup['launchers'][1], 'io.elementary.mail.desktop')
+        self.assertIn('--app=https://outlook.office.com/mail/', desktop.read_text())
+        self.assertNotIn('MimeType=', desktop.read_text())
+        subprocess.run(['desktop-file-validate', str(desktop)], check=True)
+        from gi.repository import Gio
+        app = Gio.DesktopAppInfo.new_from_filename(str(desktop))
+        self.assertTrue(app.launch_uris([], None))
+        capture = self.home / 'args.json'
+        deadline = time.monotonic() + 5
+        while not capture.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertIn('--app=https://outlook.office.com/mail/', json.loads(capture.read_text()))
+        setup.pin_launcher(settings)
+        setup.pin_launcher(settings)
+        self.assertEqual(settings.values.count(teams.APP_ID + '.desktop'), 1)
+        self.assertEqual(settings.values[0], 'files.desktop')
+
+    def test_official_icon_replaces_fallback_and_survives_offline_upgrade(self):
+        raw_png = official_icon.PNG + b'fixture'
+        with patch('official_icon.download', return_value=raw_png):
+            setup.install(str(self.browser))
+        icon = self.data / 'icons/hicolor/256x256/apps' / (teams.APP_ID + '.png')
+        generic = self.data / 'icons/hicolor/scalable/apps' / (teams.APP_ID + '.svg')
+        self.assertEqual(icon.read_bytes(), raw_png)
+        self.assertFalse(generic.exists())
+        setup.install(str(self.browser))
+        self.assertEqual(icon.read_bytes(), raw_png)
+        self.assertFalse(generic.exists())
+        setup.uninstall()
+        self.assertFalse(icon.exists())
 
     def test_real_launch_and_upgrade_keep_session_private(self):
         launcher, desktop = setup.install(str(self.browser))
