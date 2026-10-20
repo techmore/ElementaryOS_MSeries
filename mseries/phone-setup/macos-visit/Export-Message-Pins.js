@@ -51,10 +51,14 @@ function readController(controller) {
     return readConfiguration(configuration, 'macos-imcore');
 }
 function readPinCache(path, diagnostics) {
-    var error = Ref();
+    // NSError** uses a bridged nil object, as documented by Apple's JXA
+    // examples. Ref() is for explicit C pointers and can crash on this path.
+    var error = $();
     var data = $.NSData.dataWithContentsOfFileOptionsError(path, 0, error);
     if (!hasObject(data)) {
-        var code = hasObject(error[0]) ? Number(error[0].code) : 0;
+        var code = hasObject(error) ? Number(error.code) : 0;
+        diagnostics.cache_error_code = code;
+        diagnostics.cache_error_domain = hasObject(error) ? ObjC.unwrap(error.domain) : 'unknown';
         diagnostics.cache = (code === 257 || code === 13 || code === 1) ? 'access-denied' : code === 260 || code === 2 ? 'not-found' : 'read-error';
         return null;
     }
@@ -111,7 +115,7 @@ function selfTest() {
     // Exercise the actual Foundation binary-plist reader against a private
     // temporary fixture, never the runner's or owner's Messages preferences.
     var path = ObjC.unwrap($.NSTemporaryDirectory()) + 'mseries-pin-fixture-' + ObjC.unwrap($.NSUUID.UUID.UUIDString) + '.plist';
-    var error = Ref();
+    var error = $();
     try {
         var plist = $({pD: {pV: 2, pT: $.NSDate.date, pP: ['+15550100123', 'group-fixture']}});
         var data = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(plist, $.NSPropertyListBinaryFormat_v1_0, 0, error);
@@ -173,7 +177,7 @@ function run(args) {
         if (probe) return JSON.stringify({status: 'ready', source: snapshot.source, count: snapshot.pins.length, diagnostics: diagnostics, content_printed: false});
         var path = args[1];
         if (path[0] !== '/') fail('Choose an absolute output path');
-        var error = Ref();
+        var error = $();
         var text = $(JSON.stringify(snapshot, null, 2) + '\n');
         if (!text.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error))
             fail('Could not save the private export');
