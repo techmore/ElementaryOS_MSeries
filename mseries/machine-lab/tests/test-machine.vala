@@ -155,6 +155,66 @@ void test_qmp_transport () {
     view.force_exit ();
 }
 
+const string INCUS_FIXTURE = """[{"architecture":"aarch64","config":{"image.description":"Alpine edge arm64","limits.cpu":"2","limits.memory":"1GiB"},"created_at":"2026-10-15T18:15:56Z","name":"orchard-test","status":"Running","type":"container","state":{"pid":4242,"memory":{"usage":6864896,"total":32401488000},"disk":{"root":{"usage":3145728}},"network":{"eth0":{"addresses":[{"family":"inet","address":"10.169.229.233","netmask":"24","scope":"global"},{"family":"inet6","address":"fd42::1","netmask":"64","scope":"global"}]},"lo":{"addresses":[{"family":"inet","address":"127.0.0.1","netmask":"8","scope":"local"}]}}},"snapshots":[{"name":"s1"},{"name":"s2"}]},{"architecture":"aarch64","config":{"image.description":"Ubuntu noble arm64"},"created_at":"2026-10-16T01:00:00Z","name":"vm-one","status":"Stopped","type":"virtual-machine","state":null,"snapshots":null}]""";
+
+void test_incus_parse () {
+    GenericArray<IncusInstance> list = null;
+    try {
+        list = IncusClient.parse_list (INCUS_FIXTURE);
+    } catch (Error e) {
+        error ("parse: %s", e.message);
+    }
+    assert_cmpint (list.length, CompareOperator.EQ, 2);
+    var c = list[0];
+    assert_cmpstr (c.name, CompareOperator.EQ, "orchard-test");
+    assert_false (c.is_vm);
+    assert_true (c.running);
+    assert_cmpstr (c.kind_label, CompareOperator.EQ, "Container");
+    assert_cmpstr (c.arch, CompareOperator.EQ, "aarch64");
+    assert_cmpstr (c.image, CompareOperator.EQ, "Alpine edge arm64");
+    assert_cmpstr (c.first_ip, CompareOperator.EQ, "10.169.229.233");   // loopback and IPv6 are skipped
+    assert_cmpint (c.ipv4.length, CompareOperator.EQ, 1);
+    assert_cmpint ((int) c.memory_usage, CompareOperator.EQ, 6864896);
+    assert_cmpint ((int) c.disk_usage, CompareOperator.EQ, 3145728);
+    assert_cmpstr (c.limit_cpu, CompareOperator.EQ, "2");
+    assert_cmpstr (c.limit_memory, CompareOperator.EQ, "1GiB");
+    assert_cmpint (c.snapshots, CompareOperator.EQ, 2);
+    assert_cmpint ((int) c.pid, CompareOperator.EQ, 4242);
+    var v = list[1];
+    assert_true (v.is_vm);
+    assert_false (v.running);                 // null state and null snapshots must not crash
+    assert_cmpstr (v.first_ip, CompareOperator.EQ, "");
+    assert_cmpint (v.snapshots, CompareOperator.EQ, 0);
+}
+
+void test_incus_empty_and_bad_json () {
+    try {
+        assert_cmpint (IncusClient.parse_list ("[]").length, CompareOperator.EQ, 0);
+        assert_cmpint (IncusClient.parse_list ("{}").length, CompareOperator.EQ, 0);
+    } catch (Error e) {
+        error ("%s", e.message);
+    }
+    bool threw = false;
+    try {
+        IncusClient.parse_list ("not json");
+    } catch (Error e) {
+        threw = true;
+    }
+    assert_true (threw);
+}
+
+void test_incus_names () {
+    assert_true (IncusClient.valid_name ("lab-1"));
+    assert_true (IncusClient.valid_name ("a"));
+    assert_false (IncusClient.valid_name (""));
+    assert_false (IncusClient.valid_name ("1lab"));          // must start with a letter
+    assert_false (IncusClient.valid_name ("Lab"));           // lower case only
+    assert_false (IncusClient.valid_name ("lab_1"));
+    assert_false (IncusClient.valid_name ("lab-"));
+    assert_false (IncusClient.valid_name ("lab; rm -rf"));
+    assert_false (IncusClient.valid_name ("x".replace ("x", string.nfill (64, 'a'))));
+}
+
 int main (string[] args) {
     Test.init (ref args);
     try {
@@ -171,5 +231,8 @@ int main (string[] args) {
     Test.add_func ("/readiness/per-arch", test_readiness_is_per_arch);
     Test.add_func ("/machine/credentials", test_mask_is_page_level);
     Test.add_func ("/qmp/transport", test_qmp_transport);
+    Test.add_func ("/incus/parse", test_incus_parse);
+    Test.add_func ("/incus/empty-and-bad-json", test_incus_empty_and_bad_json);
+    Test.add_func ("/incus/names", test_incus_names);
     return Test.run ();
 }

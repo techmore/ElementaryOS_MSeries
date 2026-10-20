@@ -95,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev python3 appstream desktop-file-utils xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth
       - name: Build and run the logic tests (persistence, discovery, QMP transport)
         run: |
           meson setup build-ml mseries/machine-lab

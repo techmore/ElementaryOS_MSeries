@@ -1,11 +1,12 @@
 project('machine-lab', 'vala',
-  version: '0.5.0',
+  version: '0.6.0',
   meson_version: '>= 1.0.0',
   default_options: ['warning_level=2']
 )
 
 gtk = dependency('gtk4', version: '>= 4.12')
 granite = dependency('granite-7', version: '>= 7.0')
+json = dependency('json-glib-1.0')
 
 gnome = import('gnome')
 resources = gnome.compile_resources('machine-lab-resources',
@@ -22,9 +23,9 @@ config = configure_file(
 )
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', config,
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', config,
   resources,
-  dependencies: [gtk, granite],
+  dependencies: [gtk, granite, json],
   install: true
 )
 
@@ -44,8 +45,8 @@ install_data('launcher/prepare-latest-omarchy.py',
   rename: 'machine-lab-prepare-omarchy')
 
 test_exe = executable('test-machine',
-  'tests/test-machine.vala', 'src/machine.vala',
-  dependencies: [gtk, dependency('gio-unix-2.0')],
+  'tests/test-machine.vala', 'src/machine.vala', 'src/incus-model.vala',
+  dependencies: [gtk, dependency('gio-unix-2.0'), json],
   install: false
 )
 test('machine logic', test_exe,
