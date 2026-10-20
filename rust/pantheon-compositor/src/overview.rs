@@ -184,9 +184,8 @@ impl PantheonCompositor {
                     .x11_surface()
                     .and_then(|surface| self.x11_managed_windows.remove(&surface.window_id()))
             });
-        let tiled = window
-            .toplevel()
-            .and_then(|surface| self.tiled_windows.remove(&surface.wl_surface().id()));
+        let tiled =
+            Self::tile_surface(window).and_then(|surface| self.tiled_windows.remove(&surface.id()));
 
         if let Some(toplevel) = window.toplevel() {
             toplevel.with_pending_state(|state| {
@@ -270,7 +269,16 @@ impl PantheonCompositor {
                         .map_element(window.clone(), entry.location, false);
                 }
             } else if let Some(surface) = window.x11_surface().cloned() {
-                if let Some(managed) = entry.managed {
+                if let Some(tiled) = &entry.tiled {
+                    let rect = self
+                        .space
+                        .output_geometry(&tiled.output)
+                        .map(|geometry| {
+                            tile_rect(self.work_area_for_output(geometry), tiled.position)
+                        })
+                        .unwrap_or(tiled.rect);
+                    self.apply_window_tile(window, tiled.output.clone(), tiled.position, rect);
+                } else if let Some(managed) = entry.managed {
                     self.x11_managed_windows
                         .insert(surface.window_id(), managed);
                     self.configure_x11_window_mode(&surface, managed.maximized, managed.fullscreen);

@@ -37,12 +37,37 @@ namespace MSeriesWorkMode {
                     title = "Work wallpaper",
                     subtitle = wallpaper_name ()
                 };
-                var choose = new Gtk.Button.with_label ("Choose…") {
+                var wallpaper_options = new Gtk.StringList (null);
+                wallpaper_options.append ("Blue Flow");
+                wallpaper_options.append ("Blue Ribbons");
+                wallpaper_options.append ("Violet Arc");
+                wallpaper_options.append ("Forest Flow");
+                var wallpaper_dropdown = new Gtk.DropDown (wallpaper_options, null) {
                     valign = Gtk.Align.CENTER
                 };
-                choose.clicked.connect (() => choose_wallpaper (wallpaper));
-                wallpaper.add_suffix (choose);
-                wallpaper.activatable_widget = choose;
+                wallpaper_dropdown.selected = wallpaper_option_index ();
+                wallpaper_dropdown.notify["selected"].connect (() => {
+                    switch (wallpaper_dropdown.selected) {
+                    case 0:
+                        set_bundled_wallpaper ("work-mode-blue-flow.png", wallpaper);
+                        break;
+                    case 1:
+                        set_bundled_wallpaper ("work-mode-blue-ribbons.png", wallpaper);
+                        break;
+                    case 2:
+                        set_bundled_wallpaper ("work-mode-violet-arc.png", wallpaper);
+                        break;
+                    case 3:
+                        set_bundled_wallpaper ("work-mode-forest-flow.png", wallpaper);
+                        break;
+                    }
+                });
+                wallpaper.add_suffix (wallpaper_dropdown);
+                var browse = new Gtk.Button.with_label ("Browse…") {
+                    valign = Gtk.Align.CENTER
+                };
+                browse.clicked.connect (() => choose_wallpaper (wallpaper));
+                wallpaper.add_suffix (browse);
                 mode_group.add (wallpaper);
 
                 var schedule_group = new Adw.PreferencesGroup () {
@@ -100,7 +125,33 @@ namespace MSeriesWorkMode {
 
         private string wallpaper_name () {
             var path = settings.get_string ("work-wallpaper");
-            return path == "" ? "No image selected" : GLib.Path.get_basename (path);
+            if (path == "") {
+                return "No image selected";
+            }
+            switch (GLib.Path.get_basename (path)) {
+            case "work-mode-blue-flow.png": return "Blue Flow";
+            case "work-mode-blue-ribbons.png": return "Blue Ribbons";
+            case "work-mode-violet-arc.png": return "Violet Arc";
+            case "work-mode-forest-flow.png": return "Forest Flow";
+            default: return GLib.Path.get_basename (path);
+            }
+        }
+
+        private uint wallpaper_option_index () {
+            var basename = GLib.Path.get_basename (settings.get_string ("work-wallpaper"));
+            switch (basename) {
+            case "work-mode-blue-flow.png": return 0;
+            case "work-mode-blue-ribbons.png": return 1;
+            case "work-mode-violet-arc.png": return 2;
+            case "work-mode-forest-flow.png": return 3;
+            default: return Gtk.INVALID_LIST_POSITION;
+            }
+        }
+
+        private void set_bundled_wallpaper (string filename, Adw.ActionRow row) {
+            var path = GLib.Path.build_filename ("/usr/share", "backgrounds", "mseries", filename);
+            settings.set_string ("work-wallpaper", path);
+            row.subtitle = wallpaper_name ();
         }
 
         private void choose_wallpaper (Adw.ActionRow row) {

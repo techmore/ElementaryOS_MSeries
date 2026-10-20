@@ -54,3 +54,15 @@
 - Do not change the owner's bootloader, kernel, or running audio stack as
   part of image work. Preserve unrelated local changes and untracked drafts.
 - Maintain the Omarchy Mac package boundary described in `mseries/PORT-MAP.md`.
+
+## UI consistency guidance
+
+Automatically use the project
+[UI specialist skill](.agents/skills/elementaryos-mseries-ui-specialist/SKILL.md)
+when building, editing or reviewing ElementaryOS_MSeries screens, settings,
+indicators and UI interaction states, even when the user does not name the skill.
+Read its entry point and the references relevant to the changed surface.
+It maps the existing GTK/Granite, Wingpanel and Switchboard surfaces and records
+Apple's SwiftUI specialist skill and Human Interface Guidelines as reference
+guidance. The owner values Apple's design standards; express that quality
+through native elementary OS conventions and the target screen's actual toolkit.

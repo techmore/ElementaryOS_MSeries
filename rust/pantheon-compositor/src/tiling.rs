@@ -150,20 +150,13 @@ impl PantheonCompositor {
     }
 
     fn tile_focused_window(&mut self, position: TilePosition) {
-        let Some(focused) = self
-            .seat
-            .get_keyboard()
-            .and_then(|keyboard| keyboard.current_focus())
-        else {
+        let Some(window) = self.focused_window() else {
             return;
         };
-        let Some(window) = self.find_window_for_surface(&focused) else {
-            return;
-        };
-        let Some(surface) = window.toplevel().cloned() else {
-            return;
-        };
-        if self.is_panel_surface(surface.wl_surface()) {
+        if window
+            .toplevel()
+            .is_some_and(|surface| self.is_panel_surface(surface.wl_surface()))
+        {
             return;
         }
         let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
@@ -173,8 +166,7 @@ impl PantheonCompositor {
             return;
         };
         let rect = tile_rect(self.work_area_for_output(output_geometry), position);
-        self.managed_windows.remove(&surface.wl_surface().id());
-        self.apply_tile(&surface, &window, output, position, rect);
+        self.apply_window_tile(&window, output, position, rect);
     }
 
     pub(crate) fn update_corner_snap_preview(
@@ -185,24 +177,34 @@ impl PantheonCompositor {
         if self.corner_snap_cancelled {
             return;
         }
-        let Some(surface) = window.toplevel() else {
+        let (min_size, max_size) = if let Some(surface) = window.toplevel() {
+            if self.is_panel_surface(surface.wl_surface())
+                || self
+                    .managed_windows
+                    .get(&surface.wl_surface().id())
+                    .is_some_and(|managed| managed.fullscreen)
+            {
+                self.corner_snap_preview = None;
+                return;
+            }
+            compositor::with_states(surface.wl_surface(), |states| {
+                let mut cached = states.cached_state.get::<SurfaceCachedState>();
+                let current = cached.current();
+                (current.min_size, current.max_size)
+            })
+        } else if let Some(surface) = window.x11_surface() {
+            if surface.is_override_redirect() || surface.is_fullscreen() {
+                self.corner_snap_preview = None;
+                return;
+            }
+            (
+                surface.min_size().unwrap_or_default(),
+                surface.max_size().unwrap_or_default(),
+            )
+        } else {
             self.corner_snap_preview = None;
             return;
         };
-        if self.is_panel_surface(surface.wl_surface())
-            || self
-                .managed_windows
-                .get(&surface.wl_surface().id())
-                .is_some_and(|managed| managed.fullscreen)
-        {
-            self.corner_snap_preview = None;
-            return;
-        }
-        let (min_size, max_size) = compositor::with_states(surface.wl_surface(), |states| {
-            let mut cached = states.cached_state.get::<SurfaceCachedState>();
-            let current = cached.current();
-            (current.min_size, current.max_size)
-        });
         let fixed_width = min_size.w > 0 && max_size.w == min_size.w;
         let fixed_height = min_size.h > 0 && max_size.h == min_size.h;
         if fixed_width && fixed_height {
@@ -215,17 +217,7 @@ impl PantheonCompositor {
             if !geometry.to_f64().contains(pointer) {
                 return None;
             }
-            let near_left = pointer.x < (geometry.loc.x + 40) as f64;
-            let near_right = pointer.x >= (geometry.loc.x + geometry.size.w - 40) as f64;
-            let near_top = pointer.y < (geometry.loc.y + 40) as f64;
-            let near_bottom = pointer.y >= (geometry.loc.y + geometry.size.h - 40) as f64;
-            let position = match (near_left, near_right, near_top, near_bottom) {
-                (true, _, true, _) => TilePosition::TopLeft,
-                (_, true, true, _) => TilePosition::TopRight,
-                (true, _, _, true) => TilePosition::BottomLeft,
-                (_, true, _, true) => TilePosition::BottomRight,
-                _ => return None,
-            };
+            let position = snap_position(geometry, pointer)?;
             let rect = tile_rect(self.work_area_for_output(geometry), position);
             Some(CornerSnapPreview {
                 output: output.clone(),
@@ -253,31 +245,68 @@ impl PantheonCompositor {
     }
 
     pub(crate) fn commit_move_snap(&mut self, window: &Window, preview: CornerSnapPreview) {
-        let Some(surface) = window.toplevel().cloned() else {
-            return;
-        };
-        self.managed_windows.remove(&surface.wl_surface().id());
-        self.apply_tile(
-            &surface,
-            window,
-            preview.output,
-            preview.position,
-            preview.rect,
-        );
+        self.apply_window_tile(window, preview.output, preview.position, preview.rect);
+    }
+
+    pub(crate) fn tile_surface(
+        window: &Window,
+    ) -> Option<smithay::reexports::wayland_server::protocol::wl_surface::WlSurface> {
+        window
+            .toplevel()
+            .map(|surface| surface.wl_surface().clone())
+            .or_else(|| {
+                window
+                    .x11_surface()
+                    .and_then(|surface| surface.wl_surface())
+            })
+    }
+
+    pub(crate) fn apply_window_tile(
+        &mut self,
+        window: &Window,
+        output: smithay::output::Output,
+        position: TilePosition,
+        rect: Rectangle<i32, Logical>,
+    ) {
+        if let Some(surface) = window.toplevel() {
+            self.managed_windows.remove(&surface.wl_surface().id());
+            self.apply_tile(surface, window, output, position, rect);
+        } else if let Some(surface) = window.x11_surface() {
+            if surface.is_override_redirect() {
+                return;
+            }
+            let Some(wl_surface) = surface.wl_surface() else {
+                return;
+            };
+            let result = surface
+                .set_maximized(false)
+                .and_then(|_| surface.set_fullscreen(false));
+            if let Err(error) = result {
+                tracing::warn!(?error, "could not tile X11 window");
+                return;
+            }
+            if let Err(error) = surface.configure(Some(rect)) {
+                tracing::warn!(?error, "could not configure X11 tile");
+                return;
+            }
+            self.x11_managed_windows.remove(&surface.window_id());
+            self.space.map_element(window.clone(), rect.loc, false);
+            self.tiled_windows.insert(
+                wl_surface.id(),
+                TiledWindow {
+                    position,
+                    output,
+                    rect,
+                    committed_size: window.geometry().size,
+                },
+            );
+            #[cfg(feature = "native-drm")]
+            self.request_native_redraw();
+        }
     }
 
     fn move_focused_window_to_output(&mut self, direction: i32) {
-        let Some(focused) = self
-            .seat
-            .get_keyboard()
-            .and_then(|keyboard| keyboard.current_focus())
-        else {
-            return;
-        };
-        let Some(window) = self.find_window_for_surface(&focused) else {
-            return;
-        };
-        let Some(surface) = window.toplevel().cloned() else {
+        let Some(window) = self.focused_window() else {
             return;
         };
         let Some(current_output) = self.space.outputs_for_element(&window).first().cloned() else {
@@ -305,13 +334,12 @@ impl PantheonCompositor {
         }
         let (target_output, target_geometry) = outputs.swap_remove(target_index as usize);
         let target_work_area = self.work_area_for_output(target_geometry);
-        if let Some(position) = self
-            .tiled_windows
-            .get(&surface.wl_surface().id())
+        if let Some(position) = Self::tile_surface(&window)
+            .and_then(|surface| self.tiled_windows.get(&surface.id()))
             .map(|placement| placement.position)
         {
             let rect = tile_rect(target_work_area, position);
-            self.apply_tile(&surface, &window, target_output, position, rect);
+            self.apply_window_tile(&window, target_output, position, rect);
         } else if let Some(current_geometry) = self.space.element_geometry(&window) {
             let current_output_geometry = self.space.output_geometry(&current_output).unwrap();
             let current_work_area = self.work_area_for_output(current_output_geometry);
@@ -327,6 +355,13 @@ impl PantheonCompositor {
                 (target_work_area.loc.y + offset.y).clamp(target_work_area.loc.y, max_y),
             )
                 .into();
+            if let Some(surface) = window.x11_surface()
+                && let Err(error) =
+                    surface.configure(Some(Rectangle::new(location, current_geometry.size)))
+            {
+                tracing::warn!(?error, "could not move X11 window to output");
+                return;
+            }
             self.space.map_element(window, location, false);
             #[cfg(feature = "native-drm")]
             self.request_native_redraw();
@@ -364,10 +399,10 @@ impl PantheonCompositor {
     pub(crate) fn reconfigure_tiled_windows(&mut self) {
         let mut tiled = Vec::new();
         for window in self.space.elements() {
-            let Some(surface) = window.toplevel().cloned() else {
+            let Some(surface) = Self::tile_surface(window) else {
                 continue;
             };
-            let Some(placement) = self.tiled_windows.get(&surface.wl_surface().id()) else {
+            let Some(placement) = self.tiled_windows.get(&surface.id()) else {
                 continue;
             };
             tiled.push((surface, (*window).clone(), placement.clone()));
@@ -375,20 +410,14 @@ impl PantheonCompositor {
 
         for (surface, window, placement) in tiled {
             let Some(output_geometry) = self.space.output_geometry(&placement.output) else {
-                self.tiled_windows.remove(&surface.wl_surface().id());
+                self.tiled_windows.remove(&surface.id());
                 continue;
             };
             let rect = tile_rect(
                 self.work_area_for_output(output_geometry),
                 placement.position,
             );
-            self.apply_tile(
-                &surface,
-                &window,
-                placement.output,
-                placement.position,
-                rect,
-            );
+            self.apply_window_tile(&window, placement.output, placement.position, rect);
         }
     }
 
@@ -451,4 +480,50 @@ pub(crate) fn tile_rect(
             .into(),
         Size::from((width.max(min_width), height.max(min_height))),
     )
+}
+
+// Output edges select halves; the corner zones take precedence for quarters.
+fn snap_position(
+    area: Rectangle<i32, Logical>,
+    pointer: Point<f64, Logical>,
+) -> Option<TilePosition> {
+    if !area.to_f64().contains(pointer) {
+        return None;
+    }
+    let left = pointer.x < (area.loc.x + 40) as f64;
+    let right = pointer.x >= (area.loc.x + area.size.w - 40) as f64;
+    let top = pointer.y < (area.loc.y + 40) as f64;
+    let bottom = pointer.y >= (area.loc.y + area.size.h - 40) as f64;
+    match (left, right, top, bottom) {
+        (true, _, true, _) => Some(TilePosition::TopLeft),
+        (_, true, true, _) => Some(TilePosition::TopRight),
+        (true, _, _, true) => Some(TilePosition::BottomLeft),
+        (_, true, _, true) => Some(TilePosition::BottomRight),
+        (true, _, _, _) => Some(TilePosition::Left),
+        (_, true, _, _) => Some(TilePosition::Right),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn edge_zones_respect_offset_output_and_corner_precedence() {
+        let area = Rectangle::new((-1920, 30).into(), (1920, 1080).into());
+        for (point, expected) in [
+            ((-1920.0, 500.0), Some(TilePosition::Left)),
+            ((-1.0, 500.0), Some(TilePosition::Right)),
+            ((-1920.0, 30.0), Some(TilePosition::TopLeft)),
+            ((-1.0, 30.0), Some(TilePosition::TopRight)),
+            ((-1920.0, 1109.0), Some(TilePosition::BottomLeft)),
+            ((-1.0, 1109.0), Some(TilePosition::BottomRight)),
+            ((-960.0, 500.0), None),
+            ((0.0, 500.0), None),
+            ((-1921.0, 500.0), None),
+        ] {
+            assert_eq!(snap_position(area, point.into()), expected);
+        }
+    }
 }

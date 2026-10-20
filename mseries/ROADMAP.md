@@ -11,14 +11,144 @@ cancelled checks do not count as passing. Release/recovery and operator
 acceptance stay explicit GitHub gates. The feature uses the existing gh login.
 Local native compilation and offline GTK/EDS integration are validated; live
 menu activation waits for the next login. See mseries/calendar/README.md.
+## Repository housekeeping — 2026-10-20
+
+Updated the owner checkout by 21 commits to `8ed3a76`, backed up two
+byte-identical untracked documents now tracked by dev, and pruned three
+registrations for missing worktree directories. All 43 existing worktrees,
+local branches, and unrelated drafts remain. Git connectivity and whitespace
+checks pass. Five other worktrees have local changes and remain untouched.
+See OS9-HANDOFF.md for commands and backup location. Next: review open
+feature PRs under their own CI and qualification gates.
+
+## Permanent Pantheon dock and floating-window clearance — 2026-10-20
+
+Owner visually confirmed the native Pantheon dock, then explicitly requested
+permanent enablement and windows moving out of its way. Executed
+`mseries/dock-policy/enable-permanent.sh`: removed bounded-trial hooks and
+pending autostart, stopped trial timers, removed disabled marker, selected
+48-pixel icons and auto-hide `never`, and started the regular session dock.
+Live verification: service active, `RuntimeMaxUSec=infinity`, no trial stop
+hook; Rust session already wants the dock at subsequent logins. Recorded the
+new owner authorization in the policy copies and live config.
+
+Rust compositor now fits ordinary floating Wayland and XWayland windows into
+the work area when panels change, moving them first and shrinking only if
+needed. Existing maximized/tiled handling remains; fullscreen and X11
+override-redirect surfaces keep their special behavior. It neither raises
+windows nor changes keyboard focus. Hidden-dock expansion does not restore
+previous floating positions/sizes. Clients may enforce minimum sizes.
+
+Verification: all 18 native-feature compositor unit tests pass, including
+three new move/shrink/offset geometry cases; release build succeeds. Private
+Xvfb/D-Bus integration passes bottom-edge X11 clearance, native/X11 snapping,
+minimize/restore, focus preservation on initial/repeated dock activation, and
+typing. Python controller tests (5) and shell syntax pass. Installed package `0.1.0+gitdbc7b14` using `sudo dpkg -i`;
+service daemon-reload completed without restarting the dock or compositor.
+The new binary is staged for next login; native hardware window movement remains
+pending that login. The live dock remains the patched Vala/GTK Pantheon dock
+hosted by Rust; no Rust dock rewrite is claimed.
+
+Next: load the staged compositor at a normal login and visually verify
+window clearance with both monitors.
+
+
+## Dock test stopped before launch — 2026-10-20
+
+Post-reboot owner reported no dock. Retained report at
+`~/Documents/Codex/2026-10-20/yo/outputs/dock-trial.json` records left snap
+width 960 versus monitor width 2419, then preflight failure; the dock unit
+never started. Live D-Bus now exposes `FocusRoutingVersion=1`. Added explicit
+`--dock-only` mode, retaining compositor identity, Start, focus/typing checks,
+independent timer, RuntimeMaxSec and exact opt-out restoration. Preserve the
+first terminal report rather than overwriting it on a later Stop click.
+
+Validated with Python compilation (warnings treated as errors) and all five
+controller safety tests. Installed the updated controller and requested the
+owner's saved GUI approval for a 60-second dock-only trial; result goes to
+`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. The dock-only attempt ran 09:47:11–09:47:14: typing passed, then a focus
+departure stopped it. Owner saw no dock. Journal confirms a first panel buffer.
+Live preferences are overlapping-window auto-hide and 24-pixel icons. Added
+`--visible` for temporarily disabling auto-hide with 48-pixel icons, restoring
+preferences on normal finish/close. Presented the required approval for this
+visibility test; result pending in `visible-20261020.json`. Rust workspace has
+no dock crate: the current dock is the patched Vala/GTK dock hosted by the Rust
+compositor; a full Rust dock port is still outstanding. Next: inspect this receipt and dock journal; investigate
+the separate snap geometry discrepancy.
+
+
+
+## Claude account and usage display — 2026-10-20
+
+CodexBar now selects the Claude app account for the main quota when its login differs
+from the CLI, and names the CLI login separately. Current profile metadata corrects
+stale Pro labels after Max upgrades. Verified with live account metadata, 43 helper
+tests, 17 panel test groups and the custom-port check; split-login fixtures render in
+both themes. Routine deployment stages the native module for next login; live visual
+acceptance remains pending.
+
+## October 20 desktop focus and snapping
+
+- Implemented XWayland tiling/monitor movement, left/right drag snap zones, panel
+  first-buffer/activation focus protections, and an explicit window-recovery
+  chooser. See [focus audit](pantheon-rust-compositor/FOCUS-AUDIT-2026-10-20.md).
+- Keep the live dock opt-out while the older compositor runs; qualify the new
+  native login before considering dock activation. Physical edge dragging,
+  mixed-display snapping and all context-menu paths remain owner acceptance.
+- `.20-enh1` is booted with PMP ready and two connected displays. Earlier scoped
+  GPU/fsync captures passed; the current capture failed because Rust lacks
+  DisplayConfig `PowerSaveMode`, not because display enumeration failed.
+  Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
+
+## Native UI consistency review — 2026-10-20
+
+Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
+now keeps primary actions in the header and puts secondary destinations in a
+named menu; filters and bulk actions wrap, long names ellipsize with tooltips,
+and changed controls have accessible labels. Apple Passwords scrolls its login
+form and sizes stack pages independently. Orchard and Battery follow Granite's
+color preference at startup and on notifications.
+
+Verification: Orchard compiled and passed all four component tests; its UI
+fixture renders at 720 × 640 with a long name in both themes, while the original
+header's 761-pixel minimum fails the narrow-window check. All nine Passwords GUI
+tests passed, including a short window with enlarged text; the original login
+allocates 574 pixels for a 420-pixel request. Battery passed 26 tests including
+startup/live color preference checks. Six light/dark screenshots were inspected.
+`git diff --check` passed. See `mseries/UI-CONSISTENCY-REVIEW.md` for the review,
+commands, limits and follow-ups. These changes are not installed; the running
+desktop is unchanged. Next: review the PR, then qualify the installed apps;
+follow up on remaining dialogs, Battery refresh state and theme/contrast gaps.
+
+## UI consistency skill — 2026-10-20
+
+Branch `codex/mseries-ui-specialist` adds the repository-owned
+`.agents/skills/elementaryos-mseries-ui-specialist/` and an `AGENTS.md` entry
+for automatic use during UI work, with implicit invocation explicitly enabled
+in `agents/openai.yaml`. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
+indicators, the Switchboard/libadwaita Work Mode plug, and two retained
+Troubleshooter screenshots at `ed0d31a`. The skill records Apple's design
+standards as the owner's quality reference and explicitly links the original
+`swiftui-specialist` at upstream revision
+`6f9ff8d5ad6000491cb0f483a776b7062e41cd97`; no upstream Apple content is vendored.
+
+Verification: skill-creator `quick_validate.py` passed; relative reference links
+and fully qualified repository source paths checked; pinned upstream entry
+point retrieved successfully; `git diff --check` passed. This is guidance only:
+no application UI, runtime packages, panel or wallpaper changed. Other screen
+families were source-inspected, not newly rendered or hardware-qualified.
+Next: apply the skill to the next scoped UI change and refine conventions from
+that review; the source map is an inspection baseline, not a frozen design.
 
 ## Work Mode wallpaper — 2026-10-20
 
 Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
-work-wallpaper picker, weekday scheduling, and start/end times. A per-user
-systemd timer checks once a minute and restores the wallpaper that was active
+work-wallpaper picker with four bundled original choices and custom image support,
+weekday scheduling, and start/end times. A per-user systemd timer checks once a
+minute and restores the wallpaper that was active
 before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
-Flow wallpaper are installed on the J314S desktop. Work Mode remains off, so
+Flow wallpaper, Blue Ribbons, Violet Arc, and Forest Flow are installed on the
+J314S desktop. The three newer choices are original bundled artwork. Work Mode remains off, so
 the existing wallpaper is unchanged. The Switchboard constructor-order crash
 is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
 run passed apply/restore checks without changing the live desktop. Visual panel

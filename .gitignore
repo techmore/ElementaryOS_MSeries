@@ -29,3 +29,8 @@ mkosi.packages/
 
 # Rust build output
 rust/target/
+
+# Local scratch: build copies, external symlinks and agent worktrees
+/work/
+/static
+/.claude/
