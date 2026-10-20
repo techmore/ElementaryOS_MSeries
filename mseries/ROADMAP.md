@@ -244,8 +244,8 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-747 file records (665 M-series-maintained paths and 82 elementary-owned upstream
-inputs) grouped into 228 first-pass, path-derived components. Semantic project
+753 file records (671 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 230 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
@@ -267,9 +267,12 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 747 paths, 229 directory groups, and 206 project IDs.
+file inventory now covers 753 paths, 230 directory groups, and 206 project IDs.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
+The brightness bridge now has a native-GIO Rust candidate with five policy
+tests and a successful host link, but it is not installed pending D-Bus runtime
+parity and arm64 image admission.
 
 ## Implemented; runtime validation pending
 

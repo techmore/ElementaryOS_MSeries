@@ -1,0 +1,14 @@
+[package]
+name = "mseries-brightness-bridge"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust implementation of GNOME brightness D-Bus compatibility for Pantheon"
+license = "GPL-3.0-or-later"
+build = "build.rs"
+
+[[bin]]
+name = "mseries-brightness-bridge-rs"
+path = "src/main.rs"
+
+[dependencies]

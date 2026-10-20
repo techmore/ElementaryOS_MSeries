@@ -2498,11 +2498,16 @@ pause, deadband, and step sizing; format, Clippy, and release-build checks pass.
 The fake UPower/logind Python/Rust parity fixture passes too. It remains
 uninstalled pending live system integration and Apple Silicon image admission.
 The daily Rust candidate workflow now builds and parity-checks this crate too.
-Inventory: 747 scoped files (665 local, 82 elementary-owned inputs) across
-229 path groups and 206 project IDs. Project IDs now join the power, Wi-Fi,
-netusage, panel-provenance, and keyboard-lighting Rust candidates to their
-reference implementations and related installer/tests. The project table also
-records the Asahi package source, M-series quick-settings widgets, and the
+The Rust brightness-bridge candidate now exports the existing GNOME contract
+through native GIO. Five policy tests, Clippy, and a release build pass on this
+host; the service remains uninstalled pending D-Bus runtime parity and arm64
+image admission.
+
+Inventory: 753 scoped files (671 local, 82 elementary-owned inputs) across
+230 path groups and 206 project IDs. Project IDs now join the power, Wi-Fi,
+netusage, panel-provenance, keyboard-lighting, and brightness-bridge Rust
+candidates to their reference implementations and related installer/tests. The
+project table also records the Asahi package source, M-series quick-settings widgets, and the
 optimization reference as distinct update items, and group local mkosi overlay
 files with the Apple Silicon image integration. Semantic boundary review remains
 open for the remaining groups.

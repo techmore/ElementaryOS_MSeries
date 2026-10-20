@@ -59,15 +59,16 @@ has been inventoried.
 its declared build/customization scope a path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-747 files (665 local and 82 elementary-owned upstream inputs) currently form
-229 directory groups and 206 project records. Explicit overrides join Rust
+753 files (671 local and 82 elementary-owned upstream inputs) currently form
+230 directory groups and 206 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. Remaining project boundaries and Rust
 decisions still need review against source licenses, interfaces, and conversion
 contracts. Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
 files are marked `candidate-parity-verified-not-installed`; network-usage
-candidate files are `candidate-functional-tests-passing-not-installed`.
+and brightness-bridge candidate files are
+`candidate-functional-tests-passing-not-installed`.
 Documentation and binary inputs are recorded as non-code inputs; other local
 items remain `not-assessed`. CI checks that the generated inventory matches
 the scoped files. Project records do not replace upstream revision/license
@@ -106,8 +107,8 @@ pins or complete the semantic ownership audit.
 | M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
 | Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Eight unit tests plus 16 same-fixture Python/Rust socket and DNS cases pass; daemon restart and device-session qualification remain open; see `netusage/README.md` |
 | Ambient keyboard lighting | User service, AOP ALS sensor, UPower and logind session gates | Rust candidate in its own crate; current Python helper remains installed | Six Rust core tests and fake UPower/logind Python/Rust parity pass; live system and image admission remain open; see `keyboard-backlight/` |
+| Pantheon brightness compatibility | GNOME Shell Brightness D-Bus name, Mutter backlight property, GSettings policy, and BrightnessChanged signal | Rust GIO candidate added; Python bridge remains installed | Five Rust policy tests and native GIO link/build pass; D-Bus runtime parity and image admission remain open; see `brightness-bridge/README.md` |
 | Factory panel provenance tools | Package-version, ABI-path and plugin-digest gate used during image assembly | Rust `verify` and `record` now run in the image build and stage under the existing verifier path; Python remains as parity/rollback baseline | Rust unit checks and Python/Rust command parity fixtures pass; full arm64 image admission remains open; see `panel-provenance/README.md` |
-| Brightness bridge | D-Bus integration/service | Candidate for an independent Rust implementation | Compare D-Bus names, methods, errors and display behavior before cutover |
 | Image/install orchestration | `bin/`, `transform/`, mkosi hooks and installer scripts | Rust migration target for each M-series-owned executable; keep upstream mkosi/system tools as dependencies | Preserve resume, status, abort, rollback and failure semantics before each cutover |
 
 ### Separately monitored discovery projects
@@ -224,8 +225,12 @@ individually.
   six unit tests for sensor selection, rounding, manual override pause, and
   deadband. Its fake UPower/logind Python/Rust integration fixture passes. It is
   not installed; live system and image admission remain open.
-- The full file inventory currently contains 747 items (665 M-series-maintained
-  and 82 elementary-owned upstream inputs), 229 directory groups, and 206
+- The Pantheon brightness bridge has a Rust candidate that exports the existing
+  GNOME D-Bus contract using native GIO FFI. Five policy tests pass and the
+  candidate links against the host GIO development library. The Python service
+  remains installed until D-Bus runtime parity and image admission pass.
+- The full file inventory currently contains 753 items (671 M-series-maintained
+  and 82 elementary-owned upstream inputs), 230 directory groups, and 206
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity
   plan.

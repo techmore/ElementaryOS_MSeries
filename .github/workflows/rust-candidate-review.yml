@@ -39,15 +39,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
-      - name: Install Rust and SQLite tools
-        run: sudo apt-get update && sudo apt-get install -y cargo rustc rustfmt sqlite3
+      - name: Install Rust, SQLite, and GIO development tools
+        run: sudo apt-get update && sudo apt-get install -y cargo rustc rustfmt sqlite3 libglib2.0-dev pkg-config
       - name: Check the full scoped inventory
         run: python3 mseries/rust/inventory.py --check
       - name: Validate Rust candidates
         shell: bash
         run: |
           set -euo pipefail
-          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight; do
+          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge; do
             manifest="mseries/rust/$crate/Cargo.toml"
             cargo fmt --check --manifest-path "$manifest"
             cargo test --manifest-path "$manifest" --locked

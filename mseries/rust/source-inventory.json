@@ -13,8 +13,8 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 747,
-  "component_count": 229,
+  "item_count": 753,
+  "component_count": 230,
   "project_count": 206,
   "components": [
     {
@@ -2460,6 +2460,22 @@
       ]
     },
     {
+      "id": "mseries/rust/brightness-bridge",
+      "ownership": "mseries-maintained",
+      "item_count": 6,
+      "rust_status_counts": {
+        "candidate-functional-tests-passing-not-installed": 6
+      },
+      "items": [
+        "mseries/rust/brightness-bridge/.gitignore",
+        "mseries/rust/brightness-bridge/Cargo.lock",
+        "mseries/rust/brightness-bridge/Cargo.toml",
+        "mseries/rust/brightness-bridge/README.md",
+        "mseries/rust/brightness-bridge/build.rs",
+        "mseries/rust/brightness-bridge/src/main.rs"
+      ]
+    },
+    {
       "id": "mseries/rust/keyboard-backlight",
       "ownership": "mseries-maintained",
       "item_count": 5,
@@ -3456,14 +3472,21 @@
     {
       "id": "mseries/brightness",
       "ownership": "mseries-maintained",
-      "item_count": 3,
+      "item_count": 9,
       "rust_status_counts": {
+        "candidate-functional-tests-passing-not-installed": 6,
         "not-assessed": 3
       },
       "items": [
         "mseries/brightness/shell-bridge.py",
         "mseries/brightness/test_bridge.py",
-        "mseries/install-brightness-bridge.sh"
+        "mseries/install-brightness-bridge.sh",
+        "mseries/rust/brightness-bridge/.gitignore",
+        "mseries/rust/brightness-bridge/Cargo.lock",
+        "mseries/rust/brightness-bridge/Cargo.toml",
+        "mseries/rust/brightness-bridge/README.md",
+        "mseries/rust/brightness-bridge/build.rs",
+        "mseries/rust/brightness-bridge/src/main.rs"
       ]
     },
     {
@@ -12507,6 +12530,66 @@
       "language": "markdown",
       "role": "documentation-or-record",
       "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/.gitignore",
+      "path": "mseries/rust/brightness-bridge/.gitignore",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "binary-or-data",
+      "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/Cargo.lock",
+      "path": "mseries/rust/brightness-bridge/Cargo.lock",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/Cargo.toml",
+      "path": "mseries/rust/brightness-bridge/Cargo.toml",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/README.md",
+      "path": "mseries/rust/brightness-bridge/README.md",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/build.rs",
+      "path": "mseries/rust/brightness-bridge/build.rs",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/brightness-bridge/src/main.rs",
+      "path": "mseries/rust/brightness-bridge/src/main.rs",
+      "component_id": "mseries/rust/brightness-bridge",
+      "project_id": "mseries/brightness",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
       "id": "mseries/rust/inventory.py",

@@ -27,12 +27,17 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/panel-provenance/",
     "mseries/rust/keyboard-backlight/",
 )
+RUST_FUNCTIONAL_PREFIXES = (
+    "mseries/rust/netusage/",
+    "mseries/rust/brightness-bridge/",
+)
 PROJECT_PREFIX_OVERRIDES = {
     "mseries/rust/mseries-power/": "mseries/power",
     "mseries/rust/wifi-resume/": "mseries/wifi-resume",
     "mseries/rust/netusage/": "mseries/netspeed/netusage",
     "mseries/rust/panel-provenance/": "mseries/panel",
     "mseries/rust/keyboard-backlight/": "mseries/keyboard-backlight",
+    "mseries/rust/brightness-bridge/": "mseries/brightness",
 }
 PROJECT_PATH_OVERRIDES = {
     "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf": "mseries/apple-silicon-image",
@@ -167,7 +172,7 @@ def render() -> str:
             "role": item_role,
             "rust_status": (
                 "candidate-functional-tests-passing-not-installed"
-                if text.startswith("mseries/rust/netusage/")
+                if text.startswith(RUST_FUNCTIONAL_PREFIXES)
                 else "candidate-parity-verified-not-installed"
                 if text.startswith(RUST_CANDIDATE_PREFIXES)
                 else "retain-upstream"
