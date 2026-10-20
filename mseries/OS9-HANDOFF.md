@@ -37,6 +37,17 @@ active dock appearance remain unverified. Start, Search, system tray and widgets
 are outside this partial dock implementation. For image licensing, see the
 wallpaper-source decision in `mseries/ROADMAP.md`.
 
+### Wallpaper options follow-up — 2026-10-20
+
+Branch `codex/windows-work-mode-wallpaper-options` adds three original generated
+wallpapers (Blue Ribbons, Violet Arc, Forest Flow) alongside Blue Flow. The
+Switchboard panel now exposes all four bundled options plus custom file selection.
+Meson installs the image set and the uninstaller removes it. This branch is not
+yet merged or installed on the J314S desktop; Work Mode remains off and desktop
+state has not been touched. The Windows Spotlight/theme source decision remains:
+do not bundle Microsoft images without redistribution permission. Build and UI
+validation, then PR/merge/install are still pending.
+
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
 Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg
