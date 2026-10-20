@@ -1,5 +1,23 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Four-across contact favorites and Applications launcher — 2026-10-20
+
+Favorites now use a four-column photo/initials grid above ordinary conversations,
+with a themed horizontal separator. Search reflows tiles; selection preserves
+drafts. 15 private GTK tests pass; light/dark/narrow fixtures reviewed. Installed
+for next Messages launch. Applications entry is visible and missing icon fixed
+by the scoped hicolor index/cache. No panel/dock restart.
+
+## Verification-code offers — 2026-10-20
+
+Installed/enabled helper adds near-pointer code cards, an available shortcut and explicit
+AT-SPI field insertion. Native keyboard-to-field and private Brave copy-only
+paths are covered by synthetic fixtures; direct Chromium fill needs an extension.
+Offers are memory-only, expire in five minutes and respect SMS domain binding.
+Installer/uninstaller preserves unrelated shortcuts and existing Messages/phone
+services. Owner-field/compositor placement/focus qualification remains open.
+See [implementation and limits](phone-setup/VERIFICATION-CODES.md).
+
 ## PR #343 source-merge qualification passed — 2026-10-20
 
 Production GTK launcher controls pass light/dark visual inspection and real
@@ -61,12 +79,10 @@ account/FDA/SIP-enabled access and NAS transfer remain unverified. Updated small
 kit performs no security changes and retains source modification time. The
 earlier process-gate interpretation below is superseded by this result.
 
-Candidate PR #349 adds the ordered native import/review and encrypted mapping
-store, staged for next Messages launch. The original IMCore reader passes macOS
-runtime fixtures; its real runner probe reports the standalone process unsupported
-and no initialized pin configuration. Resolve that access gate before promising
-an owner export or another successful macOS trip. The source and validation record
-below now distinguishes implemented importer mechanics from unqualified pin access.
+PR #349 merged as `6b1d520c675a227394b5a5a88298083f71e81657` after all checks
+passed. Ordered native import/review and encrypted mapping storage are staged
+for next Messages launch. Owner account export, SIP-enabled access and actual
+transfer/import remain unqualified; no successful owner macOS trip is promised.
 
 Open feature: native Pin/Unpin, a qualified ordered Mac snapshot import, then
 direct Linux synchronization of Apple's pin-settings store. Research found

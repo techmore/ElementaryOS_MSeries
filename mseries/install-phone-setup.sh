@@ -20,11 +20,20 @@ install -m644 "$here/phone-setup/message_pins.py" "$root/message_pins.py"
 icons=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps
 install -d "$icons"
 install -m644 "$here/phone-setup/io.elementary.mseries.Messages.svg" "$icons/io.elementary.mseries.Messages.svg"
+icon_theme=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor
+if [[ ! -f "$icon_theme/index.theme" ]]; then
+    install -m644 /usr/share/icons/hicolor/index.theme "$icon_theme/index.theme"
+fi
+gtk4-update-icon-cache -f "$icon_theme" >/dev/null 2>&1 || true
 # Pairing capability checks must use the client matching our scoped BlueZ service.
 for pair in 'mseries-phone-setup:phone-setup.py' 'mseries-messages:messages.py'; do
     launcher=${pair%%:*}
     entry=${pair#*:}
-    rm -f "$HOME/.local/bin/$launcher"
+    python3 - "$HOME/.local/bin/$launcher" <<'PY'
+from pathlib import Path
+import sys
+Path(sys.argv[1]).unlink(missing_ok=True)
+PY
     cat > "$HOME/.local/bin/$launcher" <<LAUNCHER
 #!/bin/sh
 if [ -f /etc/systemd/system/bluetooth.service.d/91-mseries-bluez-587.conf ]; then
@@ -55,6 +64,7 @@ Exec="$HOME/.local/bin/mseries-messages"
 Icon=io.elementary.mseries.Messages
 Categories=Network;Chat;
 Keywords=iPhone;iMessage;SMS;BlueFerry;
+TryExec=$HOME/.local/bin/mseries-messages
 StartupNotify=true
 Terminal=false
 DESKTOP
