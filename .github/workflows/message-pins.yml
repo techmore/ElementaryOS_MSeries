@@ -3,9 +3,35 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - mseries/phone-setup/macos-visit/Export-Message-Pins.*
+      - mseries/phone-setup/**
+      - mseries/install-phone-setup.sh
       - .github/workflows/message-pins.yml
 jobs:
+  linux-import:
+    name: Native pin import and private keyring (Linux)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: erikwb/blueferry
+          ref: 60fd7ef1abbd25947981f0cf27a521d82784a75f
+          path: .pin-test-blueferry
+      - name: Install native fixture dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-dbus python3-pil gir1.2-gtk-4.0 libgranite-7-dev gir1.2-secret-1 gnome-keyring dbus-x11 xvfb xauth
+      - name: Check matching, drafts, failed writes and isolated Secret Service
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.pin-test-blueferry/src
+          GDK_BACKEND: x11
+          GSK_RENDERER: cairo
+          GTK_A11Y: none
+          GIO_USE_VFS: local
+        run: |
+          python3 mseries/phone-setup/test_message_pins.py
+          python3 mseries/phone-setup/test_messages.py
+          bash mseries/phone-setup/test-pin-keyring.sh
+          dbus-run-session --config-file=mseries/phone-setup/test-bus.conf -- xvfb-run -a python3 mseries/phone-setup/test_messages_gui.py
   macos-reader:
     name: Read-only IMCore adapter (macOS)
     runs-on: macos-26

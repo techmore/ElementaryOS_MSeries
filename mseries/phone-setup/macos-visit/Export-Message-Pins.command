@@ -13,6 +13,9 @@ fi
 printf '%s\n' 'Open Messages on this Mac and wait until its pinned conversations match your iPhone.'
 printf '%s\n' 'This helper reads those pins through IMCore. It does not send messages or change pins.'
 printf '%s\n' 'Keep this small private export on storage accessible from Linux, including your NAS if mounted.'
+open -a Messages
+read -r -p 'When the Mac’s pins match your iPhone, press Return to export: ' _
 /usr/bin/osascript -l JavaScript "$here/Export-Message-Pins.js" --output "$target"
+(cd "$destination" && shasum -a 256 apple-message-pins.json > APPLE-PINS-SHA256SUMS)
 printf 'Saved private pin snapshot: %s\n' "$target"
 printf '%s\n' 'On Linux: Messages → menu → Import iPhone Pins. Check the conversation matches before importing.'

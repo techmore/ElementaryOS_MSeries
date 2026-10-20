@@ -51,7 +51,7 @@ function readController(controller) {
 }
 function makeSnapshot(identifiers, metadata) {
     if (!Array.isArray(identifiers) || identifiers.length > 32) fail('Unexpected pin list');
-    var seen = {};
+    var seen = Object.create(null);
     var pins = identifiers.map(function(identifier) {
         if (typeof identifier !== 'string' || !identifier.length || identifier.length > 2048 || /[\x00-\x1f\x7f]/.test(identifier) || seen[identifier])
             fail('Invalid or duplicate pin identifier');
@@ -81,6 +81,13 @@ function selfTest() {
     var rejected = false;
     try {makeSnapshot(['same', 'same'], {});} catch (_) {rejected = true;}
     if (!rejected) fail('Duplicate rejection failed');
+    ObjC.registerSubclass({name: 'MSeriesUninitializedPinFixture', methods: {
+        pinnedConversationIdentifiers: {types: ['id', []], implementation: function() {return $([]);}},
+        hasCompletedInitialization: {types: ['bool', []], implementation: function() {return false;}}
+    }});
+    rejected = false;
+    try {readController($.MSeriesUninitializedPinFixture.alloc.init);} catch (_) {rejected = true;}
+    if (!rejected) fail('Uninitialized empty configuration was accepted');
     return 'Pin reader fixture tests passed; no Apple account accessed.';
 }
 function run(args) {
@@ -88,6 +95,7 @@ function run(args) {
     var probe = args.length === 1 && args[0] === '--probe';
     if (!probe && (args.length !== 2 || args[0] !== '--output'))
         fail('Usage: Export-Message-Pins.js --output /absolute/private/file.json | --probe');
+    var diagnostics = {};
     try {
         var bundle = $.NSBundle.bundleWithPath('/System/Library/PrivateFrameworks/IMCore.framework');
         if (!bundle || !bundle.load) fail('IMCore could not be loaded');
@@ -95,6 +103,10 @@ function run(args) {
         if (!cls) fail('Messages pin controller is unavailable on this macOS version');
         var controller = objectValue(cls, 'sharedInstance', true);
         if (!controller) fail('Messages did not provide a pin controller');
+        diagnostics.fetch_return_type = signature(controller, 'fetchPinnedConversationIdentifiersFromLocalStore');
+        diagnostics.local_configuration_return_type = signature(controller, '_locallyStoredPinConfiguration');
+        if (signature(cls, 'processSupportsPinnedConversations'))
+            diagnostics.process_supported = Boolean(cls.processSupportsPinnedConversations);
         var snapshot = readController(controller);
         if (probe) return JSON.stringify({status: 'ready', count: snapshot.pins.length, content_printed: false});
         var path = args[1];
@@ -103,10 +115,11 @@ function run(args) {
         var text = $(JSON.stringify(snapshot, null, 2) + '\n');
         if (!text.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error))
             fail('Could not save the private export');
-        $.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error);
+        if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error))
+            fail('Could not secure the private export permissions');
         return 'Exported ' + snapshot.pins.length + ' ordered Messages pins. This is a snapshot; no phone settings changed.';
     } catch (error) {
-        if (probe) return JSON.stringify({status: 'unavailable', reason: String(error.message || error), content_printed: false});
+        if (probe) return JSON.stringify({status: 'unavailable', reason: String(error.message || error), diagnostics: diagnostics, content_printed: false});
         throw error;
     }
 }
