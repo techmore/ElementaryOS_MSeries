@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index d97686d..978811b 100644
+index d97686d..51480fa 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -203,3 +203,212 @@ backgrounditem .close-button {
@@ -194,7 +194,7 @@ index d97686d..978811b 100644
 +/* Windows 11 running indicator: a short grey pill, longer and accent blue when focused. */
 +dock-window.taskbar .running-indicator {
 +    -gtk-icon-source: none;
-+    -gtk-icon-size: 0;
++    -gtk-icon-size: 1px;
 +    min-width: 18px;
 +    min-height: 4px;
 +    margin-top: 2px;
@@ -232,6 +232,22 @@ index d81d4b8..27abd02 100644
    </schema>
    <schema path="/io/elementary/dock/keybindings/" id="io.elementary.dock.keybindings">
      <key type="as" name="launch-dock-1">
+diff --git a/src/Application.vala b/src/Application.vala
+index 5a3d1d2..d8d811c 100644
+--- a/src/Application.vala
++++ b/src/Application.vala
+@@ -13,6 +13,11 @@ public class Dock.Application : Gtk.Application {
+ 
+         Granite.init ();
+         ShellKeyGrabber.init ();
++
++        // M-series taskbar mode: Start menu toggle (Super+Space and `gapplication action`).
++        var start_menu_action = new SimpleAction ("start-menu", null);
++        start_menu_action.activate.connect (() => TaskbarRow.instance?.toggle_start_menu ());
++        add_action (start_menu_action);
+         GalaDBus.init.begin ();
+     }
+ 
 diff --git a/src/BaseItem.vala b/src/BaseItem.vala
 index 0522be3..4b9c91a 100644
 --- a/src/BaseItem.vala
@@ -251,6 +267,34 @@ index 0522be3..4b9c91a 100644
          });
  
          fade = new Adw.TimedAnimation (
+diff --git a/src/DBus/ShellKeyGrabber.vala b/src/DBus/ShellKeyGrabber.vala
+index 7c2ebc2..72bbf89 100644
+--- a/src/DBus/ShellKeyGrabber.vala
++++ b/src/DBus/ShellKeyGrabber.vala
+@@ -101,10 +101,23 @@ public interface ShellKeyGrabber : GLib.Object {
+             }
+         }
+ 
++        // M-series taskbar: Super+Space opens the Start menu with typing in Search.
++        try {
++            start_menu_action_id = instance.grab_accelerator ("<Super>space", ActionMode.NORMAL, Meta.KeyBindingFlags.NONE);
++        } catch (Error e) {
++            warning ("Couldn't grab the Start menu shortcut: %s", e.message);
++        }
++
+         instance.accelerator_activated.connect (on_accelerator_activated);
+     }
+ 
++    private static uint start_menu_action_id = 0;
++
+     private static void on_accelerator_activated (uint action, GLib.HashTable<string, GLib.Variant> parameters_dict) {
++        if (start_menu_action_id != 0 && action == start_menu_action_id) {
++            Dock.TaskbarRow.instance?.toggle_start_menu ();
++            return;
++        }
+         if (!(action in saved_action_ids)) {
+             return;
+         }
 diff --git a/src/ItemGroup.vala b/src/ItemGroup.vala
 index cc51fe5..2a7b0a0 100644
 --- a/src/ItemGroup.vala
@@ -600,10 +644,10 @@ index 652c549..d639ac2 100644
              xdisplay.change_property (window, prop, X.XA_STRING, 8, 0, (uchar[]) value, value.length);
 diff --git a/src/StartMenu.vala b/src/StartMenu.vala
 new file mode 100644
-index 0000000..91a1392
+index 0000000..69bfe88
 --- /dev/null
 +++ b/src/StartMenu.vala
-@@ -0,0 +1,333 @@
+@@ -0,0 +1,341 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -755,13 +799,21 @@ index 0000000..91a1392
 +        content.append (body);
 +        content.append (footer);
 +        child = content;
++        // Like Windows 11: typing anywhere in the open menu goes into Search.
++        search_entry.set_key_capture_widget (content);
 +
 +        show.connect (() => {
 +            search_entry.text = "";
 +            stack.visible_child_name = "home";
 +            all_apps_button.label = _("All apps ›");
 +            populate ();
-+            search_entry.grab_focus ();
++        });
++        // Focus only sticks once the popup surface is mapped.
++        map.connect (() => {
++            Idle.add (() => {
++                search_entry.grab_focus ();
++                return Source.REMOVE;
++            });
 +        });
 +    }
 +
@@ -939,10 +991,10 @@ index 0000000..91a1392
 +}
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
 new file mode 100644
-index 0000000..b5cf8aa
+index 0000000..b040774
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,447 @@
+@@ -0,0 +1,462 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -981,7 +1033,19 @@ index 0000000..b5cf8aa
 +        set_css_name ("taskbar-row");
 +    }
 +
++    /** The live taskbar, for the start-menu action and the Super+Space grab. */
++    public static unowned TaskbarRow? instance = null;
++
++    public void toggle_start_menu () {
++        if (start_menu.visible) {
++            start_menu.popdown ();
++        } else {
++            start_menu.popup ();
++        }
++    }
++
 +    construct {
++        instance = this;
 +        add_css_class ("taskbar-row");
 +        hexpand = true;
 +
@@ -1147,6 +1211,9 @@ index 0000000..b5cf8aa
 +    }
 +
 +    ~TaskbarRow () {
++        if (instance == this) {
++            instance = null;
++        }
 +        start_menu.unparent ();
 +        if (weather_timeout_id != 0) {
 +            Source.remove (weather_timeout_id);
