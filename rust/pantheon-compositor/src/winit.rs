@@ -11,10 +11,7 @@ use smithay::{
 };
 
 use crate::PantheonCompositor;
-use crate::cursor::{
-    CursorRenderElement, render_cursor_elements, render_lock_surface_elements,
-    render_wallpaper_element,
-};
+use crate::cursor::{render_desktop_elements, render_lock_surface_elements};
 use crate::display_config::{
     OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
 };
@@ -160,40 +157,8 @@ pub fn init_winit(
                                 )
                                 .unwrap();
                         } else {
-                            let cursor_elements = render_cursor_elements(renderer, state, &output);
-                            let space_elements = smithay::desktop::space::space_render_elements(
-                                renderer,
-                                [&state.space],
-                                &output,
-                                output.current_scale().fractional_scale() as f32,
-                            )
-                            .unwrap();
-                            let mut elements: Vec<CursorRenderElement<GlesRenderer>> =
-                                cursor_elements;
-                            elements.extend(space_elements.into_iter().map(
-                                |element| {
-                                    match element {
-                                smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                                    CursorRenderElement::from(surface)
-                                }
-                                smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                                    CursorRenderElement::from(element)
-                                }
-                                smithay::desktop::space::SpaceRenderElements::_GenericCatcher(
-                                    _,
-                                ) => {
-                                    unreachable!(
-                                        "SpaceRenderElements generic catcher is never constructed"
-                                    )
-                                }
-                            }
-                                },
-                            ));
-                            if let Some(wallpaper) =
-                                render_wallpaper_element(renderer, state, &output)
-                            {
-                                elements.push(wallpaper);
-                            }
+                            let elements =
+                                render_desktop_elements(renderer, state, &output).unwrap();
                             damage_tracker
                                 .render_output(
                                     renderer,
@@ -211,7 +176,7 @@ pub fn init_winit(
                         state.confirm_lock_output_frame(&output.name());
                     }
 
-                    state.space.elements().for_each(|window| {
+                    state.gesture_frame_windows().iter().for_each(|window| {
                         window.send_frame(
                             &output,
                             state.start_time.elapsed(),

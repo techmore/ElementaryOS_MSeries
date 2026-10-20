@@ -24,6 +24,18 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  teams-web:
+    name: Teams desktop launcher contracts
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install desktop integration test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
+      - name: Test without browsers, accounts or network
+        run: |
+          bash -n mseries/install-teams.sh
+          python3 -B -m unittest discover -s mseries/teams-web -p 'test_*.py' -v
+
   speech-release:
     name: English F5 release contracts (arm64)
     runs-on: ubuntu-26.04-arm
@@ -41,6 +53,17 @@ jobs:
           python3 -B mseries/dictation/speech-only-panel-smoke.py
           python3 -B mseries/dictation/speech-only-panel-smoke.py --default-review
 
+  ui-scale:
+    name: Size system ladder and Quick Settings text size (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native GTK and private D-Bus test dependencies
+        run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas dbus-x11 xvfb xauth
+      - name: Planner unit tests
+        run: python3 -m unittest discover -s mseries/ui-scale -p 'test_*.py' -v
+      - name: Drive the text-size widget on a private display
+        run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm
@@ -50,6 +73,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Exercise BlueZ controls without touching hardware
         run: bash mseries/quick-settings/tests/test-bluetooth.sh
+      - name: Validate shared sliders and battery summary in both themes
+        run: |
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme light
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme dark
 
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
@@ -57,13 +84,31 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK and Granite test dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
         run: |
           python3 -m py_compile mseries/orchard-incus/orchard_incus/*.py mseries/orchard-incus/tools/*.py
           xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
             PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
             python3 -m unittest discover -s mseries/orchard-incus/tests
+
+      - name: Prepare native indicator API
+        run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
+      - name: Build and test native Orchard windows and dropdown
+        run: |
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          meson compile -C "$RUNNER_TEMP/orchard-native"
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
+
+  work-mode:
+    name: Windows Work Mode schedule and work-network rules (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GSettings test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
+      - name: Test with keyfile GSettings, a local IP service and no user services
+        run: python3 -B mseries/work-mode/test_work_mode.py
 
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
@@ -78,12 +123,14 @@ jobs:
           python3 mseries/dock-tests/test-launcher.py
 
   desktop-space:
-    name: Native notch GTK allocation (arm64)
+    name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK test dependencies
-        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev xvfb xauth build-essential
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
+      - name: Test top-bar 130 percent measurement and allocation
+        run: bash mseries/display-space/test-panel-scale.sh
       - name: Test production notch geometry and crowded panel allocation
         run: bash mseries/display-space/test-notch-layout.sh
       - name: Verify exact-kernel boot profile and rollback
@@ -120,6 +167,7 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
           libgtk-4-dev libjson-glib-dev libgee-0.8-dev libgranite-7-dev sassc gettext
+          libadwaita-1-dev libx11-dev libwayland-dev libwayland-bin
           python3 xvfb xauth dbus-x11 librsvg2-common
       - name: Provide Granite 7.7 and the pinned Wingpanel indicator API when the distro lacks them
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/prefix" >> "$GITHUB_ENV"
@@ -128,6 +176,7 @@ jobs:
           meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          bash mseries/dock-taskbar/test-build.sh
 
   calendar-agenda:
     name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)

@@ -23,5 +23,10 @@ shared_module(
 install_data('io.elementary.mseries.work-mode.gschema.xml',
     install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas'))
 
-install_data('work-mode-blue-flow.png',
+install_data(
+    'work-mode-azure-bloom.png',
+    'work-mode-blue-flow.png',
+    'work-mode-blue-ribbons.png',
+    'work-mode-violet-arc.png',
+    'work-mode-forest-flow.png',
     install_dir: join_paths(get_option('datadir'), 'backgrounds', 'mseries'))

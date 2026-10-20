@@ -1,0 +1,70 @@
+# Windows taskbar and CodexBar
+
+`install-dock-drawers.sh` uses `prepare-source.sh` as its canonical source path.
+It applies the pinned upstream dock, drawers, startup, **Windows taskbar**, then
+CodexBar/Start-menu integration and app-tracking patches. It copies the CodexBar indicator sources
+from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
+`TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
+
+CodexBar sits left of Wi-Fi with a divider and 12 logical pixels on each side.
+Popup text is another 25% larger (1.5625em total), with a 400-pixel minimum body width and a
+480-pixel scroll viewport so the larger rows remain usable.
+Hover waits 250 ms and opens the existing native menu without a keyboard grab.
+Leaving gives 450 ms to cross into the popup; clicking pins/toggles the menu.
+The updated native Start menu and its scoped Windows 11 stylesheet are bundled
+with the taskbar, rather than depending on an untracked user CSS override.
+
+Build without changing the desktop:
+
+```sh
+bash mseries/install-dock-drawers.sh --build-only
+# CI/review path, without requiring an installed distro dock:
+bash mseries/dock-taskbar/test-build.sh
+```
+
+The clean-build check links the complete application and verifies the Windows
+TaskbarRow, StartMenu and TaskbarCodexBar types. The GTK probe uses a fake HOME,
+backend and in-memory settings; it checks hover, focus retention, leave, converting
+hover to a pinned menu and click dismissal. CI runs the same build/probe path.
+No test installs a binary or restarts a live desktop service.
+
+Future dock patches must use this full stack. App tracking changes belong after
+it and must preserve `Taskbar.vala`, `TaskbarCodexBar.vala` and the Start menu.
+Do not rebuild from drawers/startup patches alone. Never overwrite the live binary
+from an unrelated feature build. Keep desktop deployment ownership serialized.
+An installation is a separate owner-authorized action; routine source updates
+and tests do not reload the dock.
+
+The dock installer does not rewrite app icons, desktop entries, or launcher pins.
+Teams uses the checksum-pinned official icon from `install-teams.sh`; Outlook uses
+the transparent official SVG from `install-outlook-web.py`. Both preserve an
+existing official asset when offline. Microsoft artwork is fetched locally and
+is not redistributed in this repository.
+
+## Deployment evidence
+
+The owner-requested local integration was loaded on 2026-10-20. Its initial source
+baseline's machine-code section matched the restored Windows taskbar binary.
+Full build, schema, isolated interaction and layout probes passed; Teams/Outlook
+entries and ordered pins were checked unchanged. Repository persistence adds the
+scoped Start CSS to the resource bundle (the same CSS was previously user-local).
+This repository change is validated without another live dock deployment.
+Live Wayland hover/placement acceptance remains distinct from fixture results.
+
+Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).
+
+## Reboot and update persistence
+
+The session unit starts `pantheon-rust-dock`, which selects the user wrapper and
+private executable under `~/.local/lib/mseries/dock`. The taskbar mode and pins
+are persistent GSettings values. Work Mode's enabled login service/timer reapplies
+its saved configuration; no temporary shell process is required. Official icons
+and launcher metadata live under `~/.local/share` and survive normal package
+updates. Repo installers preserve cached official assets on network failure.
+
+The factory payload includes the same taskbar helpers, shared CodexBar sources,
+tests and Teams/Outlook installers. The older desktop-space floating-dock profile
+recognizes the private taskbar schema and preserves the owner's taskbar size,
+visibility and pins during reapplication. Isolated tests build the actual payload
+in a temporary root and exercise both taskbar preservation and floating-profile
+apply/revert. Reboot configuration checks do not claim a physical reboot test.

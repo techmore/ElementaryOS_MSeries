@@ -1,5 +1,16 @@
 # Mutter-minimal viable Rust for elementaryOS M-series
 
+## October 20 window recovery and focus audit
+
+The window-snapping update supports XWayland halves/quarters and left/right
+edge drag zones as well as native Wayland. A separate explicitly launched
+[window recovery chooser](../window-recovery/README.md) restores minimized apps
+without the dock. The [focus audit](FOCUS-AUDIT-2026-10-20.md) records panel first-
+buffer focus, repeated dock activation, native launcher bypass and opt-out fixes.
+The private dock has been rebuilt; the live dock remains disabled. Compositor
+updates take effect at a fresh login, with no forced logout or panel restart.
+
+
 Working title: **Mutter-Minimal-Viable-Rust_elementaryos-mseries**. The goal is
 a focused Rust compositor for the Pantheon experience on our M-series machines.
 Mutter is the proven reference; porting Mutter itself or reproducing all of its
@@ -319,3 +330,14 @@ kernel has not exposed. Keep compositor modeset/hotplug qualification separate.
 No change here qualifies an M-series session or hardware. Gala remains the
 production session and rollback until the scoped experience passes on-device
 acceptance.
+
+### Visible dock work area (October 20)
+
+Visible Pantheon panels reserve monitor work area. Maximized and tiled apps
+reflow as before; floating Wayland and XWayland apps now move clear and shrink
+only when necessary, without focus changes. Fullscreen remains fullscreen.
+The owner approved permanent 48-pixel, no-auto-hide dock operation; the
+repeatable setup is `mseries/dock-policy/enable-permanent.sh`. The dock client
+is still Vala/GTK; the compositor integration is Rust. All 18 unit tests and
+the isolated native/X11/focus/typing and bottom-clearance smoke pass. Native
+hardware clearance awaits loading the staged compositor at next login.

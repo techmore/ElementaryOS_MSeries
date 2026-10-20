@@ -78,7 +78,93 @@ pub(crate) fn grid_rects(
         .collect()
 }
 
+/// Preserve the client's aspect ratio and never enlarge a thumbnail.
+fn fit_overview_rect(
+    cell: Rectangle<i32, Logical>,
+    size: Size<i32, Logical>,
+) -> Rectangle<i32, Logical> {
+    let scale = (cell.size.w as f64 / size.w.max(1) as f64)
+        .min(cell.size.h as f64 / size.h.max(1) as f64)
+        .min(1.0);
+    let width = (size.w as f64 * scale).round().max(1.0) as i32;
+    let height = (size.h as f64 * scale).round().max(1.0) as i32;
+    Rectangle::new(
+        (
+            cell.loc.x + (cell.size.w - width) / 2,
+            cell.loc.y + (cell.size.h - height) / 2,
+        )
+            .into(),
+        (width, height).into(),
+    )
+}
+
 impl PantheonCompositor {
+    /// Snapshot render rectangles without configuring clients during a swipe.
+    pub(crate) fn overview_preview_windows(&self) -> Vec<crate::gesture_animation::PreviewWindow> {
+        use crate::gesture_animation::PreviewWindow;
+        if let Some(overview) = &self.overview {
+            return overview
+                .windows
+                .iter()
+                .filter_map(|entry| {
+                    let location = self.space.element_location(&entry.window)?;
+                    Some(PreviewWindow {
+                        window: entry.window.clone(),
+                        from: Rectangle::new(location, entry.window.geometry().size),
+                        to: Rectangle::new(entry.location, entry.size),
+                    })
+                })
+                .collect();
+        }
+        let mut groups: Vec<(smithay::output::Output, Vec<Window>)> = Vec::new();
+        for window in self.space.elements() {
+            if self.workspace_manager.workspace_for(window.id())
+                != Some(self.workspace_manager.active())
+                || window
+                    .toplevel()
+                    .is_some_and(|top| self.is_panel_surface(top.wl_surface()))
+            {
+                continue;
+            }
+            let Some(output) = self
+                .space
+                .outputs_for_element(window)
+                .first()
+                .cloned()
+                .or_else(|| self.primary_output())
+            else {
+                continue;
+            };
+            if let Some((_, windows)) = groups.iter_mut().find(|(known, _)| known == &output) {
+                windows.push(window.clone());
+            } else {
+                groups.push((output, vec![window.clone()]));
+            }
+        }
+        groups
+            .into_iter()
+            .flat_map(|(output, windows)| {
+                let rects = self
+                    .space
+                    .output_geometry(&output)
+                    .map(|area| grid_rects(self.work_area_for_output(area), windows.len()))
+                    .unwrap_or_default();
+                windows
+                    .into_iter()
+                    .zip(rects)
+                    .filter_map(|(window, to)| {
+                        let from = Rectangle::new(
+                            self.space.element_location(&window)?,
+                            window.geometry().size,
+                        );
+                        let to = fit_overview_rect(to, from.size);
+                        Some(PreviewWindow { window, from, to })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect()
+    }
+
     pub(crate) fn overview_active(&self) -> bool {
         self.overview.is_some()
     }
@@ -86,6 +172,7 @@ impl PantheonCompositor {
     /// Toggle the grid overview. Used by the Gala `PerformAction(1)` bridge and
     /// by a three-finger upward swipe.
     pub(crate) fn toggle_overview(&mut self) -> Result<(), String> {
+        self.discard_gesture_animation();
         if self.overview_active() {
             self.exit_overview(None)
         } else {
@@ -149,7 +236,11 @@ impl PantheonCompositor {
             };
             let work_area = self.work_area_for_output(output_geometry);
             for (window, rect) in windows.iter().zip(grid_rects(work_area, windows.len())) {
-                self.place_overview_window(window, rect, &mut saved);
+                self.place_overview_window(
+                    window,
+                    fit_overview_rect(rect, window.geometry().size),
+                    &mut saved,
+                );
             }
         }
         if saved.is_empty() {
@@ -184,9 +275,8 @@ impl PantheonCompositor {
                     .x11_surface()
                     .and_then(|surface| self.x11_managed_windows.remove(&surface.window_id()))
             });
-        let tiled = window
-            .toplevel()
-            .and_then(|surface| self.tiled_windows.remove(&surface.wl_surface().id()));
+        let tiled =
+            Self::tile_surface(window).and_then(|surface| self.tiled_windows.remove(&surface.id()));
 
         if let Some(toplevel) = window.toplevel() {
             toplevel.with_pending_state(|state| {
@@ -229,6 +319,7 @@ impl PantheonCompositor {
     /// the window that was selected with the pointer; otherwise the last saved
     /// window is focused.
     pub(crate) fn exit_overview(&mut self, focus: Option<usize>) -> Result<(), String> {
+        self.discard_gesture_animation();
         let Some(state) = self.overview.take() else {
             return Err("the overview is not open".into());
         };
@@ -270,7 +361,16 @@ impl PantheonCompositor {
                         .map_element(window.clone(), entry.location, false);
                 }
             } else if let Some(surface) = window.x11_surface().cloned() {
-                if let Some(managed) = entry.managed {
+                if let Some(tiled) = &entry.tiled {
+                    let rect = self
+                        .space
+                        .output_geometry(&tiled.output)
+                        .map(|geometry| {
+                            tile_rect(self.work_area_for_output(geometry), tiled.position)
+                        })
+                        .unwrap_or(tiled.rect);
+                    self.apply_window_tile(window, tiled.output.clone(), tiled.position, rect);
+                } else if let Some(managed) = entry.managed {
                     self.x11_managed_windows
                         .insert(surface.window_id(), managed);
                     self.configure_x11_window_mode(&surface, managed.maximized, managed.fullscreen);
@@ -338,6 +438,15 @@ mod tests {
 
     fn area() -> Rectangle<i32, Logical> {
         Rectangle::new((0, 0).into(), (1000, 600).into())
+    }
+
+    #[test]
+    fn thumbnails_keep_aspect_and_do_not_grow() {
+        let cell = Rectangle::new((100, 200).into(), (600, 400).into());
+        let fitted = fit_overview_rect(cell, (1200, 600).into());
+        assert_eq!(fitted, Rectangle::new((100, 250).into(), (600, 300).into()));
+        let small = fit_overview_rect(cell, (200, 100).into());
+        assert_eq!(small, Rectangle::new((300, 350).into(), (200, 100).into()));
     }
 
     #[test]

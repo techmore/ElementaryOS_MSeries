@@ -1,0 +1,76 @@
+{
+  "deployed_at": "2026-10-20T11:39:53.971650-04:00",
+  "source": "8d85efed49f7fbbdc4d1f07d920d8bf3cbe7043f",
+  "backup": "/home/sdolbec/.local/state/mseries/deployments/20261020-113734-work-mode-teams/backup",
+  "files": [
+    {
+      "path": "/usr/bin/pantheon-compositor",
+      "sha256": "4f8caf3437eca8c829381d18df19ecd516cddc0e788795d046c39f5894ce2c55"
+    },
+    {
+      "path": "/home/sdolbec/.local/lib/mseries/dock/bin/io.elementary.dock",
+      "sha256": "d4c1abf8049f395f4bf6f20c12e181067ecba08c7f3de08c605941b812da0bbd"
+    },
+    {
+      "path": "/home/sdolbec/.local/bin/mseries-work-mode",
+      "sha256": "18d95d27e621ceeb2941fdebb4c045d706e457bf1662190b471e03e8b052ca3a"
+    },
+    {
+      "path": "/home/sdolbec/.local/bin/mseries-work-mode-dock",
+      "sha256": "3e9b8e9f781bfdd9fbf7e53b2e4c11f4fac21f36bd23d6fab46f474ae35d6e21"
+    },
+    {
+      "path": "/usr/lib/aarch64-linux-gnu/switchboard-3/personal/libmseries-work-mode.so",
+      "sha256": "28b573e9808d03d8a93c8f98d03d233ac8b83f58b21999f234756cf6a5bcf088"
+    },
+    {
+      "path": "/home/sdolbec/.local/share/mseries/teams-web/mseries-teams",
+      "sha256": "705e554a235032b77497811f8d4d5c67f72367a8c641392921f3815da30446e6"
+    },
+    {
+      "path": "/home/sdolbec/.local/share/applications/org.techmore.mseries.TeamsWeb.desktop",
+      "sha256": "855919e844fc25f66a93522172cb3c3aa31fe9b4ce32fa9604fffc2ec9414ba6"
+    },
+    {
+      "path": "/home/sdolbec/.local/share/applications/org.techmore.mseries.OutlookWeb.desktop",
+      "sha256": "1d42d668aec8b7a59965639c1d23e7929ba3e88341806b5284addba90a7a6f37"
+    }
+  ],
+  "settings_unchanged": {
+    "io.elementary.mseries.work-mode": true,
+    "io.elementary.dock": true,
+    "org.gnome.desktop.background": true,
+    "org.gnome.desktop.interface": true
+  },
+  "processes_unchanged": [
+    1983,
+    2152,
+    2140
+  ],
+  "dock_observation": {
+    "prior_pid": 129974,
+    "service_main_pid": 142346,
+    "restart_observed_at": "2026-10-20T11:38:34-04:00",
+    "restart_requested_by_this_deployment": false,
+    "loaded": [
+      {
+        "pid": 142356,
+        "matches_installed": true
+      }
+    ]
+  },
+  "compositor_package": "pantheon-rust-compositor\t0.1.0+git8d85efe",
+  "verification": [
+    "Installed Work Mode and Teams helper bytes match merged source",
+    "Both desktop entries pass desktop-file-validate",
+    "Teams diagnostics retain existing Brave Default session",
+    "GTK resolves Teams official PNG and Outlook Mail icon",
+    "No missing Work Mode plug libraries; compositor dpkg verification clean"
+  ],
+  "runtime": "Work Mode helper/timer and Teams/Outlook launchers current; compositor loads at next login; Wingpanel and CodexBar unchanged. Dock restarted during deployment without a restart command from this task; loaded binary checked separately.",
+  "unverified": [
+    "Native hardware taskbar/window clearance with merged compositor after next login",
+    "Authenticated Outlook mailbox operation",
+    "Teams media/notifications"
+  ]
+}

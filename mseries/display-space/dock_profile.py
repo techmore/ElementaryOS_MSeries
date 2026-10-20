@@ -11,7 +11,15 @@ parser.add_argument('--revert', action='store_true')
 args = parser.parse_args()
 state = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'mseries-desktop-space'
 backup = state / 'dock-settings.json'
-settings = Gio.Settings.new('io.elementary.dock')
+# The user dock extends the distro schema; use the same private schema as its launcher.
+source = Gio.SettingsSchemaSource.get_default()
+private = Path.home() / '.local/lib/mseries/dock/share/glib-2.0/schemas'
+if (private / 'gschemas.compiled').exists():
+    source = Gio.SettingsSchemaSource.new_from_directory(str(private), source, False)
+schema = source.lookup('io.elementary.dock', True)
+if schema is None:
+    raise SystemExit('Dock settings schema is unavailable; nothing changed.')
+settings = Gio.Settings.new_full(schema, None, None)
 if args.revert:
     if backup.exists():
         for key, value in json.loads(backup.read_text()).items():
@@ -27,6 +35,10 @@ else:
         saved = {key: value.print_(True) if (value := settings.get_user_value(key)) is not None else None
                  for key in ('icon-size', 'autohide-mode')}
         backup.write_text(json.dumps(saved, indent=2) + '\n')
+    if schema.has_key('taskbar-mode') and settings.get_boolean('taskbar-mode'):
+        # An update of the old floating-dock profile must not undo the owner's taskbar.
+        print('Windows taskbar: existing size, visibility and pinned apps preserved.')
+        raise SystemExit(0)
     settings.set_int('icon-size', 40)
     settings.set_string('autohide-mode', 'overlapping-window')
     Gio.Settings.sync()

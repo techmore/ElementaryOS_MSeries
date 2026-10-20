@@ -61,6 +61,8 @@ namespace MSeries {
                 bool valid = true;
                 switch (key) {
                     case "accountEmail":
+                    case "displayEmail":
+                    case "displayPlan":
                     case "activeEmail":
                     case "activePlan":
                     case "desktopNote":
@@ -100,6 +102,7 @@ namespace MSeries {
                     case "today":
                         valid = value.get_value_type () == typeof (int64) || value.get_value_type () == typeof (double);
                         break;
+                    case "panelActive":
                     case "active":
                     case "busy":
                     case "desktopActive":

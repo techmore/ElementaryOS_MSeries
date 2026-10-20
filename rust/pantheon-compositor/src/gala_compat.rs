@@ -1,6 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, Mutex, mpsc},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU32, Ordering},
+        mpsc,
+    },
     thread,
     time::Duration,
 };
@@ -10,11 +14,14 @@ use zbus::{blocking::Connection, interface, object_server::SignalEmitter, zvaria
 const BUS_NAME: &str = "org.pantheon.gala";
 const ROOT_PATH: &str = "/org/pantheon/gala";
 const DESKTOP_PATH: &str = "/org/pantheon/gala/DesktopInterface";
+/// M-Series panel control, served on the same bus name as the Gala shim.
+const PANELS_PATH: &str = "/org/techmore/mseries/Panels";
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct GalaWindow {
     pub uid: u64,
     pub app_id: String,
+    pub title: String,
     pub has_focus: bool,
     pub workspace_index: i32,
     pub time_appeared_on_workspace: i64,
@@ -35,6 +42,9 @@ pub(crate) enum GalaAction {
     MoveWindowToWorkspace(u64, i32),
     ActivateWorkspace(i32),
     ReorderWorkspace(i32, i32),
+    /// 0 = normal, 1 = hidden (shown only while one of its menus is open),
+    /// 2 = autohide (also revealed at the top screen edge).
+    SetTopPanelMode(u32),
 }
 
 pub(crate) struct GalaActionRequest {
@@ -122,6 +132,25 @@ impl GalaRootServer {
     }
 }
 
+/// Runtime-only top-bar control for Windows Work Mode. The mode lives in
+/// compositor memory, so a new session (or a compositor restart) always
+/// starts with the top bar shown, even if the caller never restores it.
+struct PanelControlServer(mpsc::Sender<GalaActionRequest>, Arc<AtomicU32>);
+
+#[interface(name = "org.techmore.mseries.Panels")]
+impl PanelControlServer {
+    fn set_top_panel_mode(&self, mode: u32) -> zbus::fdo::Result<()> {
+        dispatch_action(&self.0, GalaAction::SetTopPanelMode(mode))?;
+        self.1.store(mode, Ordering::SeqCst);
+        Ok(())
+    }
+
+    #[zbus(property)]
+    fn top_panel_mode(&self) -> u32 {
+        self.1.load(Ordering::SeqCst)
+    }
+}
+
 struct DesktopIntegrationServer(Arc<Mutex<DesktopSnapshot>>, mpsc::Sender<GalaActionRequest>);
 
 type WindowProperties = (u64, HashMap<String, OwnedValue>);
@@ -131,6 +160,13 @@ type RunningApplication = (String, HashMap<String, OwnedValue>);
 impl DesktopIntegrationServer {
     #[zbus(property)]
     fn version(&self) -> u32 {
+        1
+    }
+
+    // Explicit capability for the recovery tool: older sessions can leave
+    // XWayland routing active after focusing a native Wayland window.
+    #[zbus(property)]
+    fn focus_routing_version(&self) -> u32 {
         1
     }
 
@@ -159,6 +195,7 @@ impl DesktopIntegrationServer {
             .map(|window| {
                 let mut properties = HashMap::new();
                 properties.insert("app-id".into(), string_value(&window.app_id)?);
+                properties.insert("title".into(), string_value(&window.title)?);
                 properties.insert("has-focus".into(), OwnedValue::from(window.has_focus));
                 properties.insert(
                     "workspace-index".into(),
@@ -268,6 +305,12 @@ fn serve_gala_compat(
     {
         tracing::warn!(%error, "cannot register the Pantheon Gala action interface");
         return;
+    }
+    if let Err(error) = connection.object_server().at(
+        PANELS_PATH,
+        PanelControlServer(actions.clone(), Arc::new(AtomicU32::new(0))),
+    ) {
+        tracing::warn!(%error, "cannot register the M-Series panel control interface");
     }
     if let Err(error) = connection
         .object_server()
