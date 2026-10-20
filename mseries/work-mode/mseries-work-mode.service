@@ -1,0 +1,6 @@
+[Unit]
+Description=Apply the scheduled Work Mode wallpaper
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/mseries-work-mode --tick

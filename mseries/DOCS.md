@@ -11,6 +11,7 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [BACKUP-AND-REINSTALL.md](BACKUP-AND-REINSTALL.md) | Backing up before a reinstall |
 | [POST-BOOT-CHECKS.md](POST-BOOT-CHECKS.md) | Checklist after the first boot (trackpad, Wi-Fi, keys, display, video) |
 | [DESKTOP-SETUP.md](DESKTOP-SETUP.md) | Desktop tweaks, shortcuts, optional extras |
+| [Work Mode panel](work-mode/README.md) | Native System Settings toggle, work wallpaper, and weekday schedule |
 | [FIRMWARE-WIFI.md](FIRMWARE-WIFI.md) | Wi-Fi firmware provisioning |
 | [USB-C-DOCK-DP-ALT-MODE.md](USB-C-DOCK-DP-ALT-MODE.md) | External displays through a dock |
 

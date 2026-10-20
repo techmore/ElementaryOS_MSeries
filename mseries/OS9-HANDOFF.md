@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## Work Mode wallpaper settings panel — 2026-10-20
+
+Added `mseries/work-mode/` with a native Switchboard panel, GSettings schema,
+wallpaper scheduler, one-minute user timer, and `mseries/install-work-mode.sh`.
+The panel offers a manual switch, work-wallpaper selection, weekday-only option,
+and start/end times. The scheduler saves the pre-work wallpaper on activation
+and restores it after the work window. Changes are on
+`codex/work-mode-scheduler` from `origin/dev`. The Switchboard module compiles
+with the local elementary dependencies; GSettings schema, shell syntax, and
+whitespace checks pass. No install or visual acceptance has been performed.
+Next: install on the elementary OS 9 host and review the actual System Settings
+panel and schedule transitions.
+
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
 Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg

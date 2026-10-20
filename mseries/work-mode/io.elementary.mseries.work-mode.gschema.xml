@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.elementary.mseries.work-mode" path="/io/elementary/mseries/work-mode/">
+    <key name="enabled" type="b">
+      <default>false</default>
+      <summary>Enable Work Mode</summary>
+      <description>Use the selected work wallpaper while Work Mode is active.</description>
+    </key>
+    <key name="scheduled" type="b">
+      <default>false</default>
+      <summary>Schedule Work Mode</summary>
+      <description>Switch wallpapers automatically during configured work hours.</description>
+    </key>
+    <key name="weekdays-only" type="b">
+      <default>true</default>
+      <summary>Weekdays only</summary>
+      <description>Apply the work wallpaper Monday through Friday.</description>
+    </key>
+    <key name="start-time" type="s">
+      <default>'09:00'</default>
+      <summary>Work start time</summary>
+      <description>Local time at which the work wallpaper becomes active.</description>
+    </key>
+    <key name="end-time" type="s">
+      <default>'17:00'</default>
+      <summary>Work end time</summary>
+      <description>Local time at which the normal wallpaper is restored.</description>
+    </key>
+    <key name="work-wallpaper" type="s">
+      <default>''</default>
+      <summary>Work wallpaper image</summary>
+      <description>Image file used while Work Mode is active.</description>
+    </key>
+  </schema>
+</schemalist>

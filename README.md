@@ -162,6 +162,15 @@ qualification; a successful build does not establish a successful hardware boot.
 Details: [desktop space](mseries/display-space/README.md),
 [window snapping](mseries/window-snapping/README.md).
 
+### Work Mode wallpaper
+
+The `mseries/install-work-mode.sh` installer adds a native Work Mode panel under
+System Settings → Personal. It provides an on/off switch, a separate work
+wallpaper, and optional weekday start/end times. A per-user systemd timer checks
+the schedule every minute; when work hours end, the wallpaper saved before Work
+Mode began is restored. This is implemented in source and has not yet been
+installed or visually qualified on the owner’s desktop.
+
 ### OS bar, menus and indicators
 
 - **Fixed / implemented:** The native Wingpanel profile protects the camera gap
