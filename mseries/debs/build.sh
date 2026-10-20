@@ -12,6 +12,10 @@
 # plus the firstboot-only extras from mseries/install-network-throughput.sh.
 set -euo pipefail
 
+# Packaging revision: bump when the packaging itself changes (scripts,
+# control fields) so apt and dpkg see an upgrade, not a same-version reinstall.
+REVISION=0mseries2
+
 OUTDIR=${OUTDIR:?set OUTDIR to the output directory}
 HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=${REPO_ROOT:-$(cd -- "$HERE/../.." && pwd)}
@@ -82,12 +86,15 @@ build_plugin() {
   local hook=${deb//-/_} recommends=""
   if declare -F "${hook}_files" >/dev/null; then "${hook}_files" "$ROOT" "$pkg"; fi
   if declare -F "${hook}_recommends" >/dev/null; then recommends="Recommends: $("${hook}_recommends")"$'\n'; fi
+  # The ~ on both bounds matters: elementary daily versions such as
+  # 1.4.0~r556 sort below 1.4.0, and 1.4.1~r600 below 1.4.1. Without it the
+  # package would reject its own base and accept the next minor's ABI.
   cat > "$pkg/DEBIAN/control" <<EOF
 Package: $deb
-Version: $gate-0mseries1
+Version: $gate-$REVISION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $base (>= $gate), $base (<< ${gate%.*}.$((${gate##*.} + 1)))
+Depends: $base (>= $gate~), $base (<< ${gate%.*}.$((${gate##*.} + 1))~)
 ${recommends}Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
  Replaces the stock plugin via dpkg-divert; version-gated to the $gate.x ABI.
 EOF
@@ -122,8 +129,8 @@ EOF
   bash -n "$pkg/DEBIAN/preinst"; bash -n "$pkg/DEBIAN/postinst"; bash -n "$pkg/DEBIAN/postrm"
   # Package directories must not inherit the build user's umask.
   find "$pkg" -type d -exec chmod 0755 {} +
-  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-0mseries1_arm64.deb" >/dev/null
-  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-0mseries1_arm64.deb")"
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-${REVISION}_arm64.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-${REVISION}_arm64.deb")"
 }
 
 # --- per-package extras ----------------------------------------------------

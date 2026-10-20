@@ -202,10 +202,10 @@ qualify a factory image or a Google account connection.
 ### Package (`mseries-wingpanel-datetime`)
 
 `mseries/debs/build.sh` also builds the panel as
-`mseries-wingpanel-datetime_2.4.2-0mseries1_arm64.deb`. It uses the factory
+`mseries-wingpanel-datetime_2.4.2-0mseries2_arm64.deb`. It uses the factory
 pin, applies the same patch and ships the plugin plus
 `/usr/bin/mseries-calendar-accounts`. It depends on
-`io.elementary.panel.datetime (>= 2.4.2, << 2.4.3)` and recommends
+`io.elementary.panel.datetime (>= 2.4.2~, << 2.4.3~)` (the `~` admits elementary's daily versions of 2.4.2 and rejects 2.4.3 dailies) and recommends
 `evolution-data-server`, `gnome-online-accounts-gtk` and `io.elementary.tasks`.
 Its preinst uses `dpkg-divert` to move the stock plugin aside, so an upgrade
 of the stock package can't overwrite ours. The manual installer above has no
