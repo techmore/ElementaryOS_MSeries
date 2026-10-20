@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0 (2026-10-19)
+- Incus panel: containers and virtual machines managed by Incus appear in the sidebar with state, address, memory, image and snapshots; start, stop, restart, pause, delete, open a terminal, read the console log, and create new instances from a dialog. Uses the `incus` CLI (JSON); verified against a real Incus 6.0.5 daemon with a throwaway container.
+- The content stack no longer widens the window for a hidden wide page.
+
 ## 0.5.0 (2026-10-19)
 - x86-64 (amd64) machines under software emulation (QEMU TCG, q35, OVMF), clearly labelled "emulated" with a warning banner; per-architecture setup checks; presets for Ubuntu, Debian and a blank machine. Not boot-tested yet: qemu-system-x86 is not installed on the test Mac.
 
