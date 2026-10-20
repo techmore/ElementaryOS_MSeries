@@ -1,5 +1,44 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native favorites and visible Messages launcher — 2026-10-20
+
+Owner requests: four favorite contact icons per row in the contacts sidebar,
+with a horizontal divider before ordinary conversations. Implemented ordered
+GTK grid with photos/initials, names/tooltips, selected state and search reflow;
+thread switching keeps drafts. 15 private Messages GUI tests pass, including
+four-column wrapping, divider visibility, favorite routing and draft retention.
+Light/dark/narrow fixtures reviewed. Native installer passed and staged sources;
+Messages PID 263569 remained running, so grid loads at next launch.
+
+Fixed missing launcher icon: user hicolor theme lacked index.theme/cache.
+Installer preserves an existing index or installs the standard hicolor index,
+updates the scoped cache, and adds TryExec. GIO reports Messages visible;
+GTK resolves our SVG, and launching the desktop entry brings up the existing
+window. No panel/dock restart. Verification Codes is installed/enabled/active;
+shortcut Shift+Super+V. 17 isolated code checks pass including real Return-to-field
+and Brave explicit clipboard copy/no DOM change/no form submit. Live code
+insertion/pointer placement remains unqualified. No real texts sent.
+
+## Apple pins merged; verification-code helper qualification — 2026-10-20
+
+PR #349 merged as `6b1d520c675a227394b5a5a88298083f71e81657`; final head
+`2621ffe` passed every applicable check. Last macOS ARM runner initially failed
+allocation (capacity annotations, no code run), then passed on retry. ARM macOS
+15/26 and Intel 26 fixtures all pass. SIP-enabled owner export/import is still
+open; use the small kit in `phone-setup/macos-visit/README.md`. Installed importer
+loads next Messages launch; the owner's current window/drafts remain protected.
+
+Verification-code helper candidate uses GTK/Granite near-pointer cards, parsed
+shortcut collision checks and AT-SPI field editing. Fixed GTK rejecting
+Component.GrabFocus despite accepting EditableText.SetTextContents. Private
+Brave testing exposed the absent EditableText bridge; browser mode explicitly
+copies/closes instead of promising insertion. Chromium source confirms that
+interface gap. No global runtime key injection, automatic clipboard copy or form
+submission. Optional browser tests use their own profile/debug endpoint and
+synthetic contents only, never the owner's browser. Source/limits and exact
+checks: `phone-setup/VERIFICATION-CODES.md`. Owner-field/pointer/compositor and
+session restart qualification remains open. No real text sent for these tests.
+
 ## Apple pin cache read/export passes on ARM and Intel macOS — 2026-10-20
 
 PR #349 now reads IMCore's local getter and falls back to Apple's canonical
