@@ -7526,3 +7526,9 @@ build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
 Switching to the package means `install-calendar-agenda.sh --uninstall`, then
 installing the .deb. Apt publishing still waits on the signing key (#52).
 
+
+## Rust session daily-use evidence — 2026-10-20 14:15
+
+Observed (read-only) after the owner reported testing: the machine rebooted several times overnight; the current boot has run the `pantheon-rust-wayland` session since 10:58 (3 h 16 min), compositor `NRestarts=0`, no compositor core dumps (dumps in that window are Brave, Settings and Signal test binaries). Installed package `0.1.0+git8d85efe` contains `78259f0` (polling removal + optional linux-dmabuf); `PANTHEON_ENABLE_DMABUF` is NOT set, so native dmabuf is still untested and clients still use wl_shm.
+Costs seen at 14:15: compositor 280 MB RSS but ~17% of one core on its main thread while the desktop was otherwise quiet (about 550 context switches/s there), so a continuous redraw loop is still present natively even though the nested idle test was 2-4/s; Wingpanel RSS 1.0 GB at 3 h (earlier 285 MB at 30 s), about 3% CPU. Owner experience reports are not recorded here beyond "we tested it".
+Next: find what keeps the native main loop redrawing (per-frame client commits vs our redraw requests; add a debug counter for redraw reasons), then the Wingpanel memory growth, then the dmabuf trial. Both are measurement-first; no power reading exists, so no battery claim.
