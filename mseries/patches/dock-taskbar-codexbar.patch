@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index 2286e87..7f684ad 100644
+index 2286e87..2fd9409 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -465,3 +465,154 @@ dock-window.taskbar .taskbar-logo-pane.taskbar-logo-pane-lit,
+@@ -465,3 +465,156 @@ dock-window.taskbar .taskbar-logo-pane.taskbar-logo-pane-lit,
  dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
      background: linear-gradient(to top left, #005f6b, #7fd8f0);
  }
@@ -157,6 +157,8 @@ index 2286e87..7f684ad 100644
 +dock-window.taskbar.dark popover.start-menu .start-recent { color: #ffffff; }
 +dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #bcbcbc; }
 +dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
++
++.taskbar-codexbar-popup { font-size: 1.25em; }
 diff --git a/meson.build b/meson.build
 index b3a8c61..c5266f3 100644
 --- a/meson.build

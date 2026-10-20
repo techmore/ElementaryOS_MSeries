@@ -1,5 +1,5 @@
 int main () {
- Gtk.init (); Granite.init ();
+ Gtk.init ();
  var window = new Gtk.Window () { default_width = 500, default_height = 120 };
  var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
  var entry = new Gtk.Entry ();

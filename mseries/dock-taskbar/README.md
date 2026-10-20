@@ -7,6 +7,8 @@ from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 `TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
 
 CodexBar sits left of Wi-Fi with a divider and 12 logical pixels on each side.
+Popup text is 25% larger, with a 320-pixel minimum body width and a
+420-pixel scroll viewport so the larger rows remain usable.
 Hover waits 250 ms and opens the existing native menu without a keyboard grab.
 Leaving gives 450 ms to cross into the popup; clicking pins/toggles the menu.
 The updated native Start menu and its scoped Windows 11 stylesheet are bundled

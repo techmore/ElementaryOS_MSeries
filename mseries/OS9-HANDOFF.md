@@ -7,6 +7,8 @@ CodexBar integration through `mseries/dock-taskbar/prepare-source.sh`. Source gu
 reject a missing TaskbarRow, StartMenu, schema or CodexBar item. The taskbar button
 sits left of Wi-Fi with a separate divider/gap; hover opens the shared native quota
 menu without a keyboard grab, click pins it, leave closes after a crossing grace.
+Owner requested larger popup text: 25% larger, 320-pixel body and 420-pixel
+scroll viewport; the change is scoped to the taskbar popup.
 The newer native Start menu and scoped Windows 11 CSS are included in the patch.
 Teams' official icon and Outlook's transparent official SVG/launcher metadata are
 retained. No icon asset is redistributed; existing local pins are unchanged.

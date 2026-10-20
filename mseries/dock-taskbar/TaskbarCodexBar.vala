@@ -25,6 +25,7 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         };
         popup.set_offset (0, -1);
         popup.add_css_class (Granite.STYLE_CLASS_MENU);
+        popup.add_css_class ("taskbar-codexbar-popup");
         popup.set_parent (button);
         var motion = new Gtk.EventControllerMotion ();
         motion.enter.connect (() => {
@@ -71,6 +72,8 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         if (indicator == null) {
             indicator = new MSeries.CodexBarIndicator ();
             popup.child = indicator.get_widget ();
+            popup.child.width_request = 320;
+            expand_scroll_area (popup.child);
         }
         if (popup.visible && popup.autohide != interactive) popup.popdown ();
         pinned = interactive;
@@ -79,6 +82,14 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         popup.autohide = interactive;
         indicator.opened ();
         popup.popup ();
+    }
+    private void expand_scroll_area (Gtk.Widget widget) {
+        if (widget is Gtk.ScrolledWindow) {
+            ((Gtk.ScrolledWindow) widget).max_content_height = 420;
+        }
+        for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            expand_scroll_area (child);
+        }
     }
     private void cancel_open () {
         if (open_timer != 0) { Source.remove (open_timer); open_timer = 0; }
