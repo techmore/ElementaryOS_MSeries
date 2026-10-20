@@ -86,6 +86,7 @@ function makeSnapshot(identifiers, metadata) {
             pins: pins, metadata: metadata};
 }
 function selfTest() {
+    console.log('Pin fixture: Objective-C adapter');
     ObjC.registerSubclass({name: 'MSeriesPinReaderFixture', methods: {
         fetchPinnedConversationIdentifiersFromLocalStore: {types: ['void', []], implementation: function() {}},
         _locallyStoredPinConfiguration: {types: ['id', []], implementation: function() {return $({pV: 2, pT: $.NSDate.date, pP: ['+15550100123', 'group-fixture']});}},
@@ -106,6 +107,7 @@ function selfTest() {
     rejected = false;
     try {readController($.MSeriesUninitializedPinFixture.alloc.init);} catch (_) {rejected = true;}
     if (!rejected) fail('Uninitialized empty configuration was accepted');
+    console.log('Pin fixture: binary cache');
     // Exercise the actual Foundation binary-plist reader against a private
     // temporary fixture, never the runner's or owner's Messages preferences.
     var path = ObjC.unwrap($.NSTemporaryDirectory()) + 'mseries-pin-fixture-' + ObjC.unwrap($.NSUUID.UUID.UUIDString) + '.plist';
@@ -117,6 +119,7 @@ function selfTest() {
         var diagnostic = {};
         var cached = readPinCache(path, diagnostic);
         if (!cached || cached.source !== 'macos-pin-cache' || cached.pins[1].apple_identifier !== 'group-fixture' || diagnostic.cache !== 'readable') fail('Binary cache read test failed');
+        console.log('Pin fixture: denied cache');
         if (ObjC.unwrap($.NSUserName()) !== 'root') {
             if (!$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 0}), path, error)) fail('Could not prepare denied-read fixture');
             try {
@@ -124,9 +127,11 @@ function selfTest() {
                 if (readPinCache(path, denied) !== null || denied.cache !== 'access-denied') fail('Permission denial classification failed');
             } finally {$.NSFileManager.defaultManager.setAttributesOfItemAtPathError($({NSFilePosixPermissions: 384}), path, error);}
         }
+        console.log('Pin fixture: empty cache');
         var empty = $({pD: {pV: 2, pT: $.NSDate.date, pP: []}});
         var emptyData = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(empty, $.NSPropertyListBinaryFormat_v1_0, 0, error);
         if (!emptyData.writeToFileAtomically(path, true) || readPinCache(path, {}).pins.length !== 0) fail('Initialized empty cache test failed');
+        console.log('Pin fixture: missing cache');
         var missing = {};
         if (readPinCache(path + '.missing', missing) !== null || missing.cache !== 'not-found') fail('Missing cache classification failed');
     } finally {$.NSFileManager.defaultManager.removeItemAtPathError(path, error);}
