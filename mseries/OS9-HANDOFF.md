@@ -1,6 +1,30 @@
 # OS 9 implementation / Claude Code handoff
 
 
+## Approved safe re-login and 60-second dock trial — 2026-10-20
+
+Owner explicitly requested normal logout/login, native snapping/focus checks,
+and a one-minute dock trial with automatic disable. Added
+[`dock-trial/`](dock-trial/README.md): a GTK test window, fail-closed compositor
+identity/capability check, an independent user timer and native dock
+`RuntimeMaxSec=60s`, `Restart=no`, 3-second stop timeout and control-group cleanup.
+The disabled marker is preserved exactly and restored by ExecStopPost as well
+as the timer. The dock is not started until the fixed compositor is loaded and
+the owner clicks Start. A focus departure, GUI close, failed text delivery or
+Stop button ends it early. No user text is logged.
+
+Installed the controller and one-time Pantheon autostart locally; after login it
+opens the test window and removes its autostart entry. The next login still
+selects pantheon-rust-wayland. Five controller regression tests pass. Exercised
+the actual independent stop timer at five seconds with the dock disabled; user
+journal records a successful stop service at 08:09:38 EDT. Restored both limits
+to 60 seconds. The original disable-marker hash is unchanged. Old running
+compositor was correctly rejected by the readiness gate. Native post-login
+result remains pending, and will be written to this chat's outputs/dock-trial.json.
+The normal session-manager logout flow is used, without force; any unsaved-work
+or inhibitor prompts remain for the owner. No boot or kernel changes.
+
+
 ## Window snapping, recovery and dock focus audit — 2026-10-20
 
 Branch `codex/window-snapping-recovery`, from origin/dev `734326b`.
