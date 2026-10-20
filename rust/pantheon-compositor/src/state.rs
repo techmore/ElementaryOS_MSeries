@@ -3,7 +3,7 @@ use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use smithay::{
     backend::renderer::element::memory::MemoryRenderBuffer,
-    desktop::{PopupManager, Space, Window, WindowSurfaceType},
+    desktop::{PopupGrab, PopupManager, Space, Window, WindowSurfaceType},
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
         calloop::{
@@ -150,6 +150,9 @@ pub struct PantheonCompositor {
     >,
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
+    /// The seat's current popup grab and its root surface. Smithay keeps one grab
+    /// stack per seat, so a grab from another root must end this one first.
+    pub active_popup_grab: Option<(WlSurface, PopupGrab<PantheonCompositor>)>,
     pub cursor_status: CursorImageStatus,
     pub default_cursor: MemoryRenderBuffer,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
@@ -395,6 +398,7 @@ impl PantheonCompositor {
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
+            active_popup_grab: None,
             cursor_status: CursorImageStatus::default_named(),
             default_cursor: default_cursor_buffer(),
             wallpaper,

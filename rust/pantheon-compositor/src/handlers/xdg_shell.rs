@@ -259,9 +259,31 @@ impl XdgShellHandler for PantheonCompositor {
             return;
         };
 
-        let Ok(mut grab) = self.popups.grab_popup(root, kind, &seat, serial) else {
+        // A popup from another window (or a client that died mid-grab) may still
+        // hold the seat's grab. Smithay answers a grab on top of it with a fatal
+        // NotTheTopmostPopup error, which disconnected the dock's Start menu.
+        if let Some((old_root, mut old)) = self.active_popup_grab.take() {
+            if !old.has_ended() && old_root != root {
+                old.ungrab(PopupUngrabStrategy::All);
+                if let Some(pointer) = seat.get_pointer() {
+                    if pointer.is_grabbed() && !pointer.has_grab(serial) {
+                        pointer.unset_grab(self, serial, smithay::backend::input::InputTime::now());
+                    }
+                }
+                if let Some(keyboard) = seat.get_keyboard() {
+                    if keyboard.is_grabbed() && !keyboard.has_grab(serial) {
+                        keyboard.unset_grab(self);
+                    }
+                }
+            } else if !old.has_ended() {
+                self.active_popup_grab = Some((old_root, old));
+            }
+        }
+
+        let Ok(mut grab) = self.popups.grab_popup(root.clone(), kind, &seat, serial) else {
             return;
         };
+        self.active_popup_grab = Some((root, grab.clone()));
 
         if let Some(keyboard) = seat.get_keyboard() {
             if keyboard.is_grabbed()
