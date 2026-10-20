@@ -1,0 +1,6 @@
+interface:
+  display_name: "M-Series UI Specialist"
+  short_description: "Consistent native UI for elementary OS M-Series"
+
+policy:
+  allow_implicit_invocation: true
