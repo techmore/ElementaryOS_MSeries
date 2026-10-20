@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Work Mode and Teams/Outlook deployment — 2026-10-20
+
+Merged dev `8d85efe` is installed: Work Mode helper/settings, native dock, Teams
+and Outlook shortcuts, and compositor package. Wingpanel and the running
+compositor are unchanged; the compositor loads at next login. A concurrent dock
+service restart was observed; its current binary matches the installed build.
+Existing settings/pins/wallpaper and Brave session selection are preserved.
+See OS9-HANDOFF.md and the deployment receipt for checks and backups. Next:
+normal login, native taskbar/window-clearance checks, Teams media/notifications
+and authenticated Outlook mailbox verification.
+
 ## Work Mode integration reconciled — 2026-10-20
 
 #329 now preserves current gesture/cursor and floating-window clearance behavior

@@ -8534,3 +8534,38 @@ live qualification limits remain: real schedule/network transitions, taskbar
 interaction across hardware displays, Teams media and Outlook mailbox access.
 Next: merge only after the updated heads pass GitHub checks; then qualify those
 remaining live interactions separately.
+
+## Merged Work Mode and Teams/Outlook deployed — 2026-10-20
+
+Owner requested deployment without restarting Wingpanel. Installed from merged
+dev `8d85efe`: `install-work-mode.sh`, `install-dock-drawers.sh`,
+`install-teams.sh --pin`, and `python3 mseries/install-outlook-web.py`. Built and
+installed `pantheon-rust-compositor 0.1.0+git8d85efe` with Rust 1.98.1 using
+`mseries/pantheon-rust-compositor/build-deb.sh`, then `sudo dpkg -i` and
+`systemctl --user daemon-reload`. dpkg's git-derived version string compared as
+a downgrade from git188a7ca; installed content is the newer merged source.
+
+Verified: Work Mode and Teams helper byte comparisons; Work Mode timer active
+and helper reports Active; both desktop entries validate; Teams retains Brave
+Default session; GTK resolves the official Teams PNG and elementary Mail icon;
+Work Mode plugin has no missing libraries; compositor `dpkg -V` is clean.
+Work Mode settings, dock pins/preferences, wallpaper and interface/icon settings
+are byte-identical to the before snapshot. The pinned Win11 themes and retained
+license/source records already match the merged installer. Default mailto handler
+remains elementary Mail. No browser was launched or authentication data copied.
+
+Wingpanel PID 2152, CodexBar daemon PID 2140 and compositor PID 1983 retain their
+10:58:14 start times. The merged compositor is staged for next login; reopen
+System Settings to load the new plug. The dock service restarted at 11:38:34
+while deployment was in progress, without a restart command from this task;
+the journal records a service stop/start, not a proven cause. Current dock child
+PID 142356 byte-matches the installed merged binary. Do not claim the dock PID
+was preserved. Hardware window clearance with the merged compositor remains
+unverified until next login. Teams media/notifications and authenticated Outlook
+mailbox operation remain unverified.
+
+Receipt: `mseries/receipts/work-mode-teams-deploy-2026-10-20.json`. Private backups
+and build/install logs: `~/.local/state/mseries/deployments/20261020-113734-work-mode-teams/`.
+Next: normal login to load the merged compositor, then verify taskbar/window
+clearance and the Teams/Outlook interaction checks. No Wingpanel, compositor,
+kernel, bootloader or audio-stack restart was performed.
