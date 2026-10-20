@@ -199,6 +199,53 @@ def rust_status(text: str, local: bool, item_role: str) -> str:
     return "not-assessed"
 
 
+def migration_metadata(project: str, ownership: str, records: list[dict[str, str]]) -> dict[str, object]:
+    """Give every path-derived project an explicit, conservative Rust disposition."""
+    implementation = [record for record in records if record["role"] == "implementation"]
+    verification = [record for record in records if record["role"] == "verification"]
+    if project == "upstream/elementary/os":
+        return {
+            "rust_target": "Replace executable OS build, installer, and update components with independent Rust projects; keep declarative image inputs in their native formats.",
+            "migration_status": "tracked-in-elementary-project-register",
+            "parity_contract_status": "defined-in-elementary-project-register",
+            "parity_contract": ["Profile and package selection", "reproducible image assembly", "installer and update layout", "failure and rollback behavior", "arm64 and x86-64 outputs"],
+            "enhancement_review_status": "defined-in-elementary-project-register",
+            "intentional_enhancements": ["M-series Apple Silicon image and sysupdate profile, tracked separately from elementary baseline behavior."],
+        }
+    if not implementation:
+        verification_only = bool(verification)
+        return {
+            "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats." if verification_only else "Non-code project; preserve its declarative, documentation, or asset format.",
+            "migration_status": "verification-only" if verification_only else "non-code-only",
+            "parity_contract_status": "not-applicable",
+            "parity_contract": "not-applicable",
+            "enhancement_review_status": "not-applicable",
+            "intentional_enhancements": [],
+        }
+
+    statuses = {record["rust_status"] for record in implementation}
+    if "candidate-parity-verified-in-use" in statuses:
+        migration = "rust-in-use-parity-verified"
+        parity = "candidate-parity-evidence-present"
+    elif "candidate-functional-tests-passing-not-installed" in statuses:
+        migration = "candidate-functional-tests-passing-not-installed"
+        parity = "functional-checks-only"
+    elif "candidate-parity-verified-not-installed" in statuses:
+        migration = "candidate-parity-verified-not-installed"
+        parity = "candidate-parity-evidence-present"
+    else:
+        migration = "not-started"
+        parity = "not-defined"
+    return {
+        "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+        "migration_status": migration,
+        "parity_contract_status": parity,
+        "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed." if parity == "not-defined" else "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+        "enhancement_review_status": "not-reviewed",
+        "intentional_enhancements": [],
+    }
+
+
 def render() -> str:
     items = []
     paths = source_paths()
@@ -255,6 +302,7 @@ def render() -> str:
         owners = {record["ownership"] for record in records}
         if len(owners) != 1:
             raise ValueError(f"project {project} mixes ownership classes: {sorted(owners)}")
+        migration = migration_metadata(project, records[0]["ownership"], records)
         projects.append({
             "id": project,
             "ownership": records[0]["ownership"],
@@ -264,9 +312,10 @@ def render() -> str:
                 for status in sorted({record["rust_status"] for record in records})
             },
             "items": [record["id"] for record in records],
+            **migration,
         })
     document = {
-        "schema": 2,
+        "schema": 3,
         "generated_by": "mseries/rust/inventory.py",
         "scope": list(DIRECTORIES) + list(ROOT_FILES),
         "item_count": len(items),

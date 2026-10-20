@@ -13,6 +13,20 @@ SPEC.loader.exec_module(INVENTORY)
 
 
 class InventoryRoles(unittest.TestCase):
+    def test_every_project_has_a_separate_migration_and_parity_record(self):
+        document = json.loads(INVENTORY.render())
+        projects = document["projects"]
+        self.assertEqual(len(projects), document["project_count"])
+        for project in projects:
+            with self.subTest(project=project["id"]):
+                self.assertTrue(project["items"])
+                self.assertTrue(project["rust_target"])
+                self.assertTrue(project["migration_status"])
+                self.assertTrue(project["parity_contract_status"])
+                self.assertTrue(project["parity_contract"])
+                self.assertTrue(project["enhancement_review_status"])
+                self.assertIsInstance(project["intentional_enhancements"], list)
+
     def test_rust_iso_label_is_joined_to_its_reference_and_in_use(self):
         document = json.loads(INVENTORY.render())
         project = next(item for item in document["projects"] if item["id"] == "mseries/iso-label")

@@ -246,7 +246,12 @@ customizations. The first machine-readable register covers the ten core
 Elementary repositories in `mseries/rust/elementary-projects.json`; it records
 source pins, license evidence, parity contracts, replacement status, and
 intentional enhancements separately. All ten full-project replacements remain
-unstarted. See the Rust lane plan in `mseries/rust/README.md`.
+unstarted. The generated inventory also gives every one of its 206 local and
+upstream path-derived project records an explicit Rust target or non-code
+disposition, migration status, parity-contract status, and enhancement-review
+status. These records expose work still awaiting semantic and feature-level
+review; they do not claim that review is complete. See the Rust lane plan in
+`mseries/rust/README.md`.
 
 ### Rust migration status — 2026-10-20
 

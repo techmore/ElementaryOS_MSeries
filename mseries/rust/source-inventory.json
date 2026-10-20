@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "generated_by": "mseries/rust/inventory.py",
   "scope": [
     "bin",
@@ -3166,7 +3166,13 @@
         "repos/common-files/etc/apt/preferences.d/deprioritize-gnome",
         "repos/common-files/etc/apt/preferences.d/prioritize-patches",
         "repos/common-files/etc/apt/preferences.d/restrict-proprietary"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "apt-repository/daily",
@@ -3178,7 +3184,13 @@
       "items": [
         "repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources",
         "repos/daily/etc/apt/sources.list.d/elementary-os-patches.sources"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "apt-repository/stable",
@@ -3190,7 +3202,13 @@
       "items": [
         "repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources",
         "repos/stable/etc/apt/sources.list.d/elementary-os-stable.sources"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/Justfile",
@@ -3201,7 +3219,13 @@
       },
       "items": [
         "Justfile"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/assemble-iso",
@@ -3212,7 +3236,13 @@
       },
       "items": [
         "assemble-iso.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/mkosi",
@@ -3223,7 +3253,13 @@
       },
       "items": [
         "mkosi.conf"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/profile/arch.arm64",
@@ -3234,7 +3270,13 @@
       },
       "items": [
         "mkosi.conf.d/arch.arm64.conf"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/profile/arch.x86-64",
@@ -3245,7 +3287,13 @@
       },
       "items": [
         "mkosi.conf.d/arch.x86-64.conf"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/profile/ppa.daily",
@@ -3256,7 +3304,13 @@
       },
       "items": [
         "mkosi.conf.d/ppa.daily.conf"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-build/profile/ppa.stable",
@@ -3267,7 +3321,13 @@
       },
       "items": [
         "mkosi.conf.d/ppa.stable.conf"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "image-transform/elementary-grow.sh",
@@ -3278,7 +3338,13 @@
       },
       "items": [
         "transform/elementary-grow.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "installer/elementary-mac-setup",
@@ -3289,7 +3355,13 @@
       },
       "items": [
         "bin/elementary-mac-setup"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/apple-silicon-image",
@@ -3319,7 +3391,13 @@
         "mkosi.images/apple-silicon/mkosi.postinst.chroot",
         "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
         "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/apply-desktop-settings",
@@ -3330,7 +3408,13 @@
       },
       "items": [
         "mseries/apply-desktop-settings.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/apply-pending",
@@ -3341,7 +3425,13 @@
       },
       "items": [
         "mseries/apply-pending.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/atomic-app",
@@ -3352,7 +3442,13 @@
       },
       "items": [
         "mseries/atomic-app.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/atomic-app-deployment",
@@ -3363,7 +3459,13 @@
       },
       "items": [
         "mseries/ATOMIC-APP-DEPLOYMENT.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/audio",
@@ -3378,7 +3480,13 @@
         "mseries/audio/asahi-headset-mic.conf",
         "mseries/audio/audio-watchdog.py",
         "mseries/audio/test_audio_watchdog.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/aurora",
@@ -3397,7 +3505,13 @@
         "mseries/aurora/release.py",
         "mseries/aurora/stage-boot.py",
         "mseries/aurora/test_port.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/aurora-sep",
@@ -3417,7 +3531,13 @@
         "mseries/aurora-sep/test_touchid_core.py",
         "mseries/aurora-sep/test_touchid_gui_probe.py",
         "mseries/aurora-sep/touchid_core.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/aurora-touchid",
@@ -3430,7 +3550,13 @@
       "items": [
         "mseries/aurora-touchid/mseries-touchid-settings",
         "mseries/aurora-touchid/mseries-touchid-settings.desktop"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/aurora-touchid-state",
@@ -3441,7 +3567,13 @@
       },
       "items": [
         "mseries/aurora-touchid-state.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/aurora/branch-audits",
@@ -3452,7 +3584,13 @@
       },
       "items": [
         "mseries/aurora/branch-audits/2026-10-17.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/backup",
@@ -3463,7 +3601,13 @@
       },
       "items": [
         "mseries/backup/mseries-backup.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/backup-and-reinstall",
@@ -3474,7 +3618,13 @@
       },
       "items": [
         "mseries/BACKUP-AND-REINSTALL.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/battery-eta",
@@ -3485,7 +3635,13 @@
       },
       "items": [
         "mseries/BATTERY-ETA.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/benchmarks",
@@ -3499,7 +3655,13 @@
         "mseries/benchmarks/README.md",
         "mseries/benchmarks/render.py",
         "mseries/benchmarks/run.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/benchmarks/results",
@@ -3510,7 +3672,13 @@
       },
       "items": [
         "mseries/benchmarks/results/2026-10-13-apple-macbook-pro-14-inch-m1-pro-2021.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/boot",
@@ -3526,7 +3694,13 @@
         "mseries/boot/initramfs-splash.snippet",
         "mseries/boot/mkinitcpio-snippet",
         "mseries/boot/zz_mseries_boot.conf"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/brave-widevine",
@@ -3537,7 +3711,13 @@
       },
       "items": [
         "mseries/BRAVE-WIDEVINE.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/brightness",
@@ -3560,7 +3740,13 @@
         "mseries/rust/brightness-bridge/src/main.rs",
         "mseries/rust/brightness-bridge/test-dbus-runtime.py",
         "mseries/rust/brightness-bridge/tests/mock-mutter.c"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-functional-tests-passing-not-installed",
+      "parity_contract_status": "functional-checks-only",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/bug-fix-roadmap",
@@ -3571,7 +3757,13 @@
       },
       "items": [
         "mseries/BUG-FIX-ROADMAP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/build-38396499561-review",
@@ -3582,7 +3774,13 @@
       },
       "items": [
         "mseries/BUILD-38396499561-REVIEW.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/build-error-review-2026-10-13",
@@ -3593,7 +3791,13 @@
       },
       "items": [
         "mseries/BUILD-ERROR-REVIEW-2026-10-13.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/build-notes",
@@ -3604,7 +3808,13 @@
       },
       "items": [
         "mseries/BUILD-NOTES.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/check-display-paths",
@@ -3615,7 +3825,13 @@
       },
       "items": [
         "mseries/check-display-paths.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/check-drawers",
@@ -3626,7 +3842,13 @@
       },
       "items": [
         "mseries/check-drawers.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/check-kernel-config",
@@ -3637,7 +3859,13 @@
       },
       "items": [
         "mseries/check-kernel-config.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/check-video-decode",
@@ -3648,7 +3876,13 @@
       },
       "items": [
         "mseries/check-video-decode.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/clockright",
@@ -3661,7 +3895,13 @@
       "items": [
         "mseries/clockright/Indicator.vala",
         "mseries/clockright/meson.build"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-opencode-local",
@@ -3672,7 +3912,13 @@
       },
       "items": [
         "mseries/codexbar-opencode-local.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-opencode-wrapper",
@@ -3683,7 +3929,13 @@
       },
       "items": [
         "mseries/codexbar-opencode-wrapper.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-sessions",
@@ -3694,7 +3946,13 @@
       },
       "items": [
         "mseries/codexbar-sessions.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-wingpanel",
@@ -3713,7 +3971,13 @@
         "mseries/codexbar-wingpanel/test-presentation.vala",
         "mseries/codexbar-wingpanel/test-quota-eta.vala",
         "mseries/codexbar-wingpanel/test-refresh-policy.vala"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-wingpanel/icons",
@@ -3724,7 +3988,13 @@
       },
       "items": [
         "mseries/codexbar-wingpanel/icons/openai.svg"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/codexbar-wingpanel/probe",
@@ -3740,7 +4010,13 @@
         "mseries/codexbar-wingpanel/probe/make-fixtures.py",
         "mseries/codexbar-wingpanel/probe/render-probe.vala",
         "mseries/codexbar-wingpanel/probe/run-probe.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/customizations",
@@ -3760,7 +4036,13 @@
         "mseries/customizations/panel-power-battery-eta.diff",
         "mseries/customizations/panel-power.PINNED_SHA",
         "mseries/customizations/wingpanel-PanelWindow.vala.installed"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/dark-mode",
@@ -3774,7 +4056,13 @@
         "mseries/dark-mode/mseries-dark-mode",
         "mseries/dark-mode/mseries-dark-mode.service",
         "mseries/dark-mode/mseries-dark-mode.timer"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/desktop-setup",
@@ -3785,7 +4073,13 @@
       },
       "items": [
         "mseries/DESKTOP-SETUP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/disable-notch-for-pantheon",
@@ -3796,7 +4090,13 @@
       },
       "items": [
         "mseries/disable-notch-for-pantheon.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/display-profiles",
@@ -3811,7 +4111,13 @@
         "mseries/display-profiles/mseries-display-profiles",
         "mseries/display-profiles/mseries-display-profiles.desktop",
         "mseries/display-profiles/test_display_profiles.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/display-settings",
@@ -3826,7 +4132,13 @@
         "mseries/display-settings/mseries-display-settings",
         "mseries/display-settings/mseries-display-settings.desktop",
         "mseries/display-settings/test_display_diag.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/docked-lid",
@@ -3837,7 +4149,13 @@
       },
       "items": [
         "mseries/docked-lid/mseries-docked-lid"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/docs",
@@ -3848,7 +4166,13 @@
       },
       "items": [
         "mseries/DOCS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/edge-and-rust-plan",
@@ -3859,7 +4183,13 @@
       },
       "items": [
         "mseries/EDGE-AND-RUST-PLAN.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/efficiency-goals",
@@ -3870,7 +4200,13 @@
       },
       "items": [
         "mseries/EFFICIENCY-GOALS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/enhance",
@@ -3881,7 +4217,13 @@
       },
       "items": [
         "mseries/enhance.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/enhance-firstboot",
@@ -3892,7 +4234,13 @@
       },
       "items": [
         "mseries/enhance-firstboot.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/export-factory-defaults",
@@ -3903,7 +4251,13 @@
       },
       "items": [
         "mseries/export-factory-defaults.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/fairydust",
@@ -3919,7 +4273,13 @@
         "mseries/fairydust/build-and-install.sh",
         "mseries/fairydust/enable-elementary-fairydust.sh",
         "mseries/fairydust/verify.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/fairydust/debian",
@@ -3946,7 +4306,13 @@
         "mseries/fairydust/debian/test-verify-m1n1-esp.py",
         "mseries/fairydust/debian/verify-m1n1-esp.py",
         "mseries/fairydust/debian/vm-kernel-smoke-test.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/fairydust/host",
@@ -3958,7 +4324,13 @@
       "items": [
         "mseries/fairydust/host/fairydust-build.sh",
         "mseries/fairydust/host/fairydust-driver.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/fairydust/usb4",
@@ -4084,7 +4456,13 @@
         "mseries/fairydust/usb4/tools/verify-final-stage.py",
         "mseries/fairydust/usb4/trace-dcp-raw.py",
         "mseries/fairydust/usb4/trace-dpin.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/firmware-wifi",
@@ -4095,7 +4473,13 @@
       },
       "items": [
         "mseries/FIRMWARE-WIFI.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/first-iso-build",
@@ -4106,7 +4490,13 @@
       },
       "items": [
         "mseries/FIRST-ISO-BUILD.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/gala-daemon-fix",
@@ -4117,7 +4507,13 @@
       },
       "items": [
         "mseries/gala-daemon-fix/build.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/gala-drawers",
@@ -4137,7 +4533,13 @@
         "mseries/gala-drawers/mseries-drawers-settings",
         "mseries/gala-drawers/mseries-drawers-settings.desktop",
         "mseries/gala-drawers/org.pantheon.gala.plugins.drawers.gschema.xml"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/hardware",
@@ -4157,7 +4559,13 @@
         "mseries/hardware/test-bluetooth.sh",
         "mseries/hardware/test_esp_image.py",
         "mseries/hardware/test_install.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/iconidentify-repository-review",
@@ -4168,7 +4576,13 @@
       },
       "items": [
         "mseries/ICONIDENTIFY-REPOSITORY-REVIEW.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-audio-stack",
@@ -4179,7 +4593,13 @@
       },
       "items": [
         "mseries/install-audio-stack.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-battery-eta",
@@ -4190,7 +4610,13 @@
       },
       "items": [
         "mseries/install-battery-eta.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-boot-isolation",
@@ -4201,7 +4627,13 @@
       },
       "items": [
         "mseries/install-boot-isolation.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-brave",
@@ -4212,7 +4644,13 @@
       },
       "items": [
         "mseries/install-brave.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-brave-widevine",
@@ -4223,7 +4661,13 @@
       },
       "items": [
         "mseries/install-brave-widevine.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-clockright-wingpanel",
@@ -4234,7 +4678,13 @@
       },
       "items": [
         "mseries/install-clockright-wingpanel.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-codexbar",
@@ -4245,7 +4695,13 @@
       },
       "items": [
         "mseries/install-codexbar.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-codexbar-wingpanel",
@@ -4256,7 +4712,13 @@
       },
       "items": [
         "mseries/install-codexbar-wingpanel.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-dark-mode",
@@ -4267,7 +4729,13 @@
       },
       "items": [
         "mseries/install-dark-mode.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-display-profiles",
@@ -4278,7 +4746,13 @@
       },
       "items": [
         "mseries/install-display-profiles.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-dock-drawers",
@@ -4289,7 +4763,13 @@
       },
       "items": [
         "mseries/install-dock-drawers.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-docked-lid",
@@ -4300,7 +4780,13 @@
       },
       "items": [
         "mseries/install-docked-lid.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-electron-wayland",
@@ -4311,7 +4797,13 @@
       },
       "items": [
         "mseries/install-electron-wayland.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-elementary-boot-splash",
@@ -4322,7 +4814,13 @@
       },
       "items": [
         "mseries/install-elementary-boot-splash.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-files-portal-fix",
@@ -4333,7 +4831,13 @@
       },
       "items": [
         "mseries/install-files-portal-fix.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-gala-drawers",
@@ -4344,7 +4848,13 @@
       },
       "items": [
         "mseries/install-gala-drawers.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-gala-osk-fix",
@@ -4355,7 +4865,13 @@
       },
       "items": [
         "mseries/install-gala-osk-fix.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-gala-screen-corners",
@@ -4366,7 +4882,13 @@
       },
       "items": [
         "mseries/install-gala-screen-corners.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-greeter-obex-fix",
@@ -4377,7 +4899,13 @@
       },
       "items": [
         "mseries/install-greeter-obex-fix.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-hardware-support",
@@ -4388,7 +4916,13 @@
       },
       "items": [
         "mseries/install-hardware-support.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-homeboard-launcher",
@@ -4399,7 +4933,13 @@
       },
       "items": [
         "mseries/install-homeboard-launcher.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-initramfs-crossbar",
@@ -4410,7 +4950,13 @@
       },
       "items": [
         "mseries/install-initramfs-crossbar.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-log-fixes",
@@ -4421,7 +4967,13 @@
       },
       "items": [
         "mseries/install-log-fixes.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-native-firefox",
@@ -4432,7 +4984,13 @@
       },
       "items": [
         "mseries/install-native-firefox.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-network-throughput",
@@ -4443,7 +5001,13 @@
       },
       "items": [
         "mseries/install-network-throughput.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-opencode-desktop",
@@ -4454,7 +5018,13 @@
       },
       "items": [
         "mseries/install-opencode-desktop.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-pipewire-lv2",
@@ -4465,7 +5035,13 @@
       },
       "items": [
         "mseries/install-pipewire-lv2.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-quick-settings-brightness",
@@ -4476,7 +5052,13 @@
       },
       "items": [
         "mseries/install-quick-settings-brightness.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-screenshot-shelf",
@@ -4487,7 +5069,13 @@
       },
       "items": [
         "mseries/install-screenshot-shelf.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-signal",
@@ -4498,7 +5086,13 @@
       },
       "items": [
         "mseries/install-signal.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-signal-integration",
@@ -4509,7 +5103,13 @@
       },
       "items": [
         "mseries/install-signal-integration.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-signal-wingpanel",
@@ -4520,7 +5120,13 @@
       },
       "items": [
         "mseries/install-signal-wingpanel.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-system-tuning",
@@ -4531,7 +5137,13 @@
       },
       "items": [
         "mseries/install-system-tuning.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-tether",
@@ -4542,7 +5154,13 @@
       },
       "items": [
         "mseries/install-tether.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-theme-tweaks",
@@ -4553,7 +5171,13 @@
       },
       "items": [
         "mseries/install-theme-tweaks.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-touchegg",
@@ -4564,7 +5188,13 @@
       },
       "items": [
         "mseries/install-touchegg.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-touchid-settings",
@@ -4575,7 +5205,13 @@
       },
       "items": [
         "mseries/install-touchid-settings.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-troubleshooter-wingpanel",
@@ -4586,7 +5222,13 @@
       },
       "items": [
         "mseries/install-troubleshooter-wingpanel.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-unlock-screen",
@@ -4597,7 +5239,13 @@
       },
       "items": [
         "mseries/install-unlock-screen.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-video-decode",
@@ -4608,7 +5256,13 @@
       },
       "items": [
         "mseries/install-video-decode.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-wingpanel-clock-position",
@@ -4619,7 +5273,13 @@
       },
       "items": [
         "mseries/install-wingpanel-clock-position.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/install-wingpanel-codexbar-left",
@@ -4630,7 +5290,13 @@
       },
       "items": [
         "mseries/install-wingpanel-codexbar-left.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/iso-label",
@@ -4650,7 +5316,13 @@
         "mseries/rust/iso-label/src/main.rs",
         "mseries/rust/iso-label/test-parity.py",
         "mseries/test-iso-label.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "rust-in-use-parity-verified",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/joshua-repository-inventory",
@@ -4661,7 +5333,13 @@
       },
       "items": [
         "mseries/JOSHUA-REPOSITORY-INVENTORY.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/joshua-repository-review",
@@ -4672,7 +5350,13 @@
       },
       "items": [
         "mseries/JOSHUA-REPOSITORY-REVIEW.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/kernel-flow",
@@ -4683,7 +5367,13 @@
       },
       "items": [
         "mseries/KERNEL-FLOW.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/kernel-report",
@@ -4694,7 +5384,13 @@
       },
       "items": [
         "mseries/KERNEL-REPORT.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/kernel-source",
@@ -4705,7 +5401,13 @@
       },
       "items": [
         "mseries/KERNEL-SOURCE.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/keyboard-backlight",
@@ -4726,7 +5428,13 @@
         "mseries/rust/keyboard-backlight/Cargo.toml",
         "mseries/rust/keyboard-backlight/src/main.rs",
         "mseries/rust/keyboard-backlight/test-parity.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-parity-verified-not-installed",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/kvm-vms",
@@ -4737,7 +5445,13 @@
       },
       "items": [
         "mseries/KVM-VMS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/lib-apt",
@@ -4748,7 +5462,13 @@
       },
       "items": [
         "mseries/lib-apt.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/lib-backup",
@@ -4759,7 +5479,13 @@
       },
       "items": [
         "mseries/lib-backup.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/lid-trace",
@@ -4772,7 +5498,13 @@
       "items": [
         "mseries/lid-trace/mseries-lid-trace",
         "mseries/lid-trace/mseries-lid-trace.service"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-ai",
@@ -4833,7 +5565,13 @@
         "mseries/local-ai/upstream-watch.py",
         "mseries/local-ai/verify-checks.json",
         "mseries/local-ai/verify.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-ai/fixtures",
@@ -4846,7 +5584,13 @@
         "mseries/local-ai/fixtures/coding/AGENTS.md",
         "mseries/local-ai/fixtures/coding/check_unique.py",
         "mseries/local-ai/fixtures/coding/unique.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-ai/receipts",
@@ -4922,7 +5666,13 @@
         "mseries/local-ai/receipts/task-integration-2026-10-16/manifest.json",
         "mseries/local-ai/receipts/task-integration-2026-10-16/newelle-tool-discovery.json",
         "mseries/local-ai/receipts/task-integration-2026-10-16/workflows.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-build",
@@ -4933,7 +5683,13 @@
       },
       "items": [
         "mseries/LOCAL-BUILD.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-build-preflight",
@@ -4944,7 +5700,13 @@
       },
       "items": [
         "mseries/local-build-preflight.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/local-build-worker",
@@ -4955,7 +5717,13 @@
       },
       "items": [
         "mseries/local-build-worker.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/mac-installer-plan",
@@ -4966,7 +5734,13 @@
       },
       "items": [
         "mseries/MAC-INSTALLER-PLAN.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/macos-vm",
@@ -4977,7 +5751,13 @@
       },
       "items": [
         "mseries/MACOS-VM.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/mseries-launcher",
@@ -4988,7 +5768,13 @@
       },
       "items": [
         "mseries/mseries-launcher.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/mseries-launcher-keys",
@@ -4999,7 +5785,13 @@
       },
       "items": [
         "mseries/mseries-launcher-keys.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/netspeed",
@@ -5015,7 +5807,13 @@
         "mseries/netspeed/README.md",
         "mseries/netspeed/panel-network.patch",
         "mseries/netspeed/wire-network-usage.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/netspeed/docs",
@@ -5029,7 +5827,13 @@
         "mseries/netspeed/docs/screenshots/troubleshooter-empty.png",
         "mseries/netspeed/docs/screenshots/troubleshooter-report-light.png",
         "mseries/netspeed/docs/screenshots/troubleshooter-report.png"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/netspeed/netusage",
@@ -5053,7 +5857,13 @@
         "mseries/rust/netusage/netusage-rs.service",
         "mseries/rust/netusage/src/main.rs",
         "mseries/rust/netusage/test-parity.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-functional-tests-passing-not-installed",
+      "parity_contract_status": "functional-checks-only",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/netspeed/troubleshooter",
@@ -5069,7 +5879,13 @@
         "mseries/netspeed/troubleshooter/mseries-troubleshooter-ui",
         "mseries/netspeed/troubleshooter/org.techmore.MSeries.Troubleshooter.desktop",
         "mseries/netspeed/troubleshooter/org.techmore.MSeries.Troubleshooter.svg"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/omacom-improvements",
@@ -5080,7 +5896,13 @@
       },
       "items": [
         "mseries/OMACOM-IMPROVEMENTS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/omarchy-audit-2026-10",
@@ -5091,7 +5913,13 @@
       },
       "items": [
         "mseries/OMARCHY-AUDIT-2026-10.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/omarchy-m-roadmap",
@@ -5102,7 +5930,13 @@
       },
       "items": [
         "mseries/OMARCHY-M-ROADMAP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/opencode-build-report",
@@ -5113,7 +5947,13 @@
       },
       "items": [
         "mseries/OPENCODE-BUILD-REPORT.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/opencode-desktop",
@@ -5124,7 +5964,13 @@
       },
       "items": [
         "mseries/opencode-desktop/build-opencode-desktop.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/optimization",
@@ -5135,7 +5981,13 @@
       },
       "items": [
         "mseries/OPTIMIZATION.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/os9-handoff",
@@ -5146,7 +5998,13 @@
       },
       "items": [
         "mseries/OS9-HANDOFF.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/packages",
@@ -5157,7 +6015,13 @@
       },
       "items": [
         "mseries/packages.arm64"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/panel",
@@ -5180,7 +6044,13 @@
         "mseries/rust/panel-provenance/README.md",
         "mseries/rust/panel-provenance/src/main.rs",
         "mseries/rust/panel-provenance/test-parity.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-parity-verified-not-installed",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/patches",
@@ -5206,7 +6076,13 @@
         "mseries/patches/sound-icon-initialization.patch",
         "mseries/patches/wingpanel-clockright-order.patch",
         "mseries/patches/wingpanel-codexbar-left.patch"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/port-map",
@@ -5217,7 +6093,13 @@
       },
       "items": [
         "mseries/PORT-MAP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/post-boot-checks",
@@ -5228,7 +6110,13 @@
       },
       "items": [
         "mseries/POST-BOOT-CHECKS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/post-install",
@@ -5239,7 +6127,13 @@
       },
       "items": [
         "mseries/post-install.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/power",
@@ -5273,7 +6167,13 @@
         "mseries/rust/mseries-power/tests/parity.rs",
         "mseries/test-power-cap.py",
         "mseries/test-power-install.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-parity-verified-not-installed",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/power-opportunities-2026-10-16",
@@ -5284,7 +6184,13 @@
       },
       "items": [
         "mseries/POWER-OPPORTUNITIES-2026-10-16.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/power-roadmap",
@@ -5295,7 +6201,13 @@
       },
       "items": [
         "mseries/POWER-ROADMAP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/power/macos-baseline",
@@ -5318,7 +6230,13 @@
         "mseries/power/macos-baseline/results/macos-2026-10-17-1220/inventory/summary.json",
         "mseries/power/macos-baseline/results/macos-2026-10-17-1220/summary.json",
         "mseries/power/macos-baseline/test_baseline.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/power/patches",
@@ -5330,7 +6248,13 @@
       "items": [
         "mseries/power/patches/0001-appledrm-adaptive-sync.patch",
         "mseries/power/patches/0002-apple-dpin-tunnel-clock-and-hpd-wait.patch"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/procedures",
@@ -5341,7 +6265,13 @@
       },
       "items": [
         "mseries/procedures/ROOT-EXPANSION.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/quick-settings",
@@ -5354,7 +6284,13 @@
         "mseries/quick-settings/ChargeLimit.vala",
         "mseries/quick-settings/KeyboardBrightness.vala",
         "mseries/quick-settings/ScreenBrightness.vala"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/readme",
@@ -5365,7 +6301,13 @@
       },
       "items": [
         "mseries/README.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/reboot-queue",
@@ -5376,7 +6318,13 @@
       },
       "items": [
         "mseries/REBOOT-QUEUE.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/reinstall-runbook",
@@ -5387,7 +6335,13 @@
       },
       "items": [
         "mseries/REINSTALL-RUNBOOK.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/repo-hygiene",
@@ -5398,7 +6352,13 @@
       },
       "items": [
         "mseries/REPO-HYGIENE.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/roadmap",
@@ -5409,7 +6369,13 @@
       },
       "items": [
         "mseries/ROADMAP.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/rust/migration-lane",
@@ -5425,7 +6391,13 @@
         "mseries/rust/inventory.py",
         "mseries/rust/test_elementary_projects.py",
         "mseries/rust/test_inventory.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/screenshot-shelf",
@@ -5441,7 +6413,13 @@
         "mseries/screenshot-shelf/mseries-markup.desktop",
         "mseries/screenshot-shelf/mseries-screenshot-shelf",
         "mseries/screenshot-shelf/mseries-screenshot-shelf.desktop"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/signal-wingpanel",
@@ -5454,7 +6432,13 @@
       "items": [
         "mseries/signal-wingpanel/Indicator.vala",
         "mseries/signal-wingpanel/meson.build"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/signal-wingpanel/resources",
@@ -5465,7 +6449,13 @@
       },
       "items": [
         "mseries/signal-wingpanel/resources/org.signal.Signal.png"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/stage-factory-enhancements",
@@ -5476,7 +6466,13 @@
       },
       "items": [
         "mseries/stage-factory-enhancements.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/storage-plan",
@@ -5487,7 +6483,13 @@
       },
       "items": [
         "mseries/STORAGE-PLAN.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-apt-batch",
@@ -5498,7 +6500,13 @@
       },
       "items": [
         "mseries/test-apt-batch.sh"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-atomic-app",
@@ -5509,7 +6517,13 @@
       },
       "items": [
         "mseries/test-atomic-app.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-build-status",
@@ -5520,7 +6534,13 @@
       },
       "items": [
         "mseries/test-build-status.mjs"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-codexbar-opencode-local",
@@ -5531,7 +6551,13 @@
       },
       "items": [
         "mseries/test-codexbar-opencode-local.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-codexbar-sessions",
@@ -5542,7 +6568,13 @@
       },
       "items": [
         "mseries/test-codexbar-sessions.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-codexbar-wrapper",
@@ -5553,7 +6585,13 @@
       },
       "items": [
         "mseries/test-codexbar-wrapper.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-elementary-mac-setup",
@@ -5564,7 +6602,13 @@
       },
       "items": [
         "mseries/test-elementary-mac-setup.sh"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-greeter-obex-fix",
@@ -5575,7 +6619,13 @@
       },
       "items": [
         "mseries/test-greeter-obex-fix.sh"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-image-wiring",
@@ -5586,7 +6636,13 @@
       },
       "items": [
         "mseries/test-image-wiring.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-installer-flow",
@@ -5597,7 +6653,13 @@
       },
       "items": [
         "mseries/test-installer-flow.sh"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-kernel-config",
@@ -5608,7 +6670,13 @@
       },
       "items": [
         "mseries/test-kernel-config.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-local-build-preflight",
@@ -5619,7 +6687,13 @@
       },
       "items": [
         "mseries/test-local-build-preflight.py"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/test-local-build-status",
@@ -5630,7 +6704,13 @@
       },
       "items": [
         "mseries/test-local-build-status.mjs"
-      ]
+      ],
+      "rust_target": "Verification-only project; keep fixtures and checks in their effective test formats.",
+      "migration_status": "verification-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/tether",
@@ -5643,7 +6723,13 @@
       "items": [
         "mseries/tether/README.md",
         "mseries/tether/brave-extension.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/tether-continuity",
@@ -5654,7 +6740,13 @@
       },
       "items": [
         "mseries/TETHER-CONTINUITY.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/theme",
@@ -5667,7 +6759,13 @@
         "mseries/theme/ghostty.config",
         "mseries/theme/gtk-3.0.css",
         "mseries/theme/gtk-4.0.css"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/torrential-native",
@@ -5684,7 +6782,13 @@
         "mseries/torrential-native/com.github.davidmhewitt.torrential.desktop",
         "mseries/torrential-native/com.github.davidmhewitt.torrential.metainfo.xml",
         "mseries/torrential-native/com.github.davidmhewitt.torrential.svg"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/torrential-port",
@@ -5695,7 +6799,13 @@
       },
       "items": [
         "mseries/TORRENTIAL-PORT.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/transform-design",
@@ -5706,7 +6816,13 @@
       },
       "items": [
         "mseries/TRANSFORM-DESIGN.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/troubleshooter-wingpanel",
@@ -5720,7 +6836,13 @@
         "mseries/troubleshooter-wingpanel/Indicator.vala",
         "mseries/troubleshooter-wingpanel/meson.build",
         "mseries/troubleshooter-wingpanel/mseries-robot-symbolic.svg"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/upstream",
@@ -5731,7 +6853,13 @@
       },
       "items": [
         "mseries/upstream/wingpanel-on-realize-crash.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/upstream-audits",
@@ -5743,7 +6871,13 @@
       "items": [
         "mseries/upstream-audits/imported-sources.json",
         "mseries/upstream-audits/omacom-2026-10-17.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/upstream-pins",
@@ -5754,7 +6888,13 @@
       },
       "items": [
         "mseries/UPSTREAM-PINS.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/upstreams",
@@ -5765,7 +6905,13 @@
       },
       "items": [
         "mseries/upstreams/omarchy-m.json"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/usb-c-dock-dp-alt-mode",
@@ -5776,7 +6922,13 @@
       },
       "items": [
         "mseries/USB-C-DOCK-DP-ALT-MODE.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/user-enhance",
@@ -5787,7 +6939,13 @@
       },
       "items": [
         "mseries/user-enhance.sh"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/video-decode",
@@ -5800,7 +6958,13 @@
       "items": [
         "mseries/video-decode/90-mseries-avd.conf",
         "mseries/video-decode/verify-package-ownership"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "not-started",
+      "parity_contract_status": "not-defined",
+      "parity_contract": "Feature-level behavior and interface baselines must be recorded before full parity can be claimed.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/vm-smoke-test",
@@ -5811,7 +6975,13 @@
       },
       "items": [
         "mseries/VM-SMOKE-TEST.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/watchlist",
@@ -5822,7 +6992,13 @@
       },
       "items": [
         "mseries/WATCHLIST.md"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "mseries/wifi-resume",
@@ -5841,7 +7017,13 @@
         "mseries/rust/wifi-resume/src/main.rs",
         "mseries/rust/wifi-resume/tests/parity.rs",
         "mseries/test-wifi-resume.py"
-      ]
+      ],
+      "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
+      "migration_status": "candidate-parity-verified-not-installed",
+      "parity_contract_status": "candidate-parity-evidence-present",
+      "parity_contract": "Candidate checks exist; audit all feature-level behavior and interfaces before claiming full parity.",
+      "enhancement_review_status": "not-reviewed",
+      "intentional_enhancements": []
     },
     {
       "id": "upstream/elementary/os",
@@ -5934,6 +7116,20 @@
         "mkosi.images/sysupdate/mkosi.repart/20-usr-verify-sig-bside.conf",
         "mkosi.images/sysupdate/mkosi.repart/21-usr-verity-bside.conf",
         "mkosi.images/sysupdate/mkosi.repart/22-usr-bside.conf"
+      ],
+      "rust_target": "Replace executable OS build, installer, and update components with independent Rust projects; keep declarative image inputs in their native formats.",
+      "migration_status": "tracked-in-elementary-project-register",
+      "parity_contract_status": "defined-in-elementary-project-register",
+      "parity_contract": [
+        "Profile and package selection",
+        "reproducible image assembly",
+        "installer and update layout",
+        "failure and rollback behavior",
+        "arm64 and x86-64 outputs"
+      ],
+      "enhancement_review_status": "defined-in-elementary-project-register",
+      "intentional_enhancements": [
+        "M-series Apple Silicon image and sysupdate profile, tracked separately from elementary baseline behavior."
       ]
     },
     {
@@ -5945,7 +7141,13 @@
       },
       "items": [
         ".github/workflows/aurora-kernel.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/build-release",
@@ -5956,7 +7158,13 @@
       },
       "items": [
         ".github/workflows/build-release.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/daily-9.0",
@@ -5967,7 +7175,13 @@
       },
       "items": [
         ".github/workflows/daily-9.0.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/proposed-9.0",
@@ -5978,7 +7192,13 @@
       },
       "items": [
         ".github/workflows/proposed-9.0.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/rust-candidate-review",
@@ -5989,7 +7209,13 @@
       },
       "items": [
         ".github/workflows/rust-candidate-review.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/stable-9.0",
@@ -6000,7 +7226,13 @@
       },
       "items": [
         ".github/workflows/stable-9.0.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/upstream-watch",
@@ -6011,7 +7243,13 @@
       },
       "items": [
         ".github/workflows/upstream-watch.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     },
     {
       "id": "workflow/validate-mseries",
@@ -6022,7 +7260,13 @@
       },
       "items": [
         ".github/workflows/validate-mseries.yml"
-      ]
+      ],
+      "rust_target": "Non-code project; preserve its declarative, documentation, or asset format.",
+      "migration_status": "non-code-only",
+      "parity_contract_status": "not-applicable",
+      "parity_contract": "not-applicable",
+      "enhancement_review_status": "not-applicable",
+      "intentional_enhancements": []
     }
   ],
   "items": [

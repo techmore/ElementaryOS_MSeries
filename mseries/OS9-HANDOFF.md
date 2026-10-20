@@ -2586,3 +2586,9 @@ legacy reference, and fixtures as one migration project: 764 items (682 local,
 82 Elementary-owned upstream), 232 path groups, and 206 project IDs. The Rust
 helper is in use in the ISO build path; this does not qualify the complete image
 or convert the rest of the assembly pipeline. Changes remain local on `rust`.
+
+Extended the generated inventory schema so all 206 project records now have a
+Rust target or non-code disposition, migration status, parity-contract status,
+and separate enhancement-review status. Candidate evidence is not represented
+as full project parity; projects without feature-level contracts remain marked
+for semantic review.

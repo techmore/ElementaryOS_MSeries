@@ -75,6 +75,11 @@ current scope contains 256 implementation files (243 local), 41 upstream
 patches, and 255 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
+Each of the 206 generated project records now states its Rust target or
+non-code disposition, migration status, parity-contract status, and whether
+intentional enhancements have been reviewed. These path-derived records make
+the entire work list explicit; code projects still marked `not-started` need
+semantic ownership review and a feature-level parity contract before porting.
 Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
 files are marked `candidate-parity-verified-not-installed`; network-usage
 and brightness-bridge candidate files are
