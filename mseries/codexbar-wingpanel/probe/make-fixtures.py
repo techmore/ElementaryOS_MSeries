@@ -130,3 +130,15 @@ for provider, value in hint_accounts.items():
 
 write_fixture(here / "opencode-compact.json", scenarios["connected"], indent=1)
 write_fixture(here / "accounts-opencode-single.json", {"accounts": [accounts["opencode"]["accounts"][0]]})
+
+# Different CLI/app logins: app quota must win even when the CLI account is exhausted.
+write_fixture(here / "claude-split.json", scenarios["connected"], indent=1)
+split = copy.deepcopy(accounts["claude"])
+split.update(activeEmail="work@claude.example", activePlan="max20x",
+             displayEmail="me@claude.example", displayPlan="pro")
+split["desktop"]["differs"] = True
+for row in split["accounts"]:
+    row["active"] = row["number"] == 2
+    row["panelActive"] = row["number"] == 1
+split["accounts"][1]["plan"] = "max20x"
+write_fixture(here / "accounts-claude-split.json", split)

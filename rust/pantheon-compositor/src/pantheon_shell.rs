@@ -736,6 +736,52 @@ impl PantheonCompositor {
             self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
         self.reconfigure_tiled_windows();
+        self.constrain_floating_windows();
+    }
+
+    /// Reserve visible panel space for ordinary apps without raising or focusing them.
+    fn constrain_floating_windows(&mut self) {
+        let windows: Vec<_> = self.space.elements().cloned().collect();
+        for window in windows {
+            if let Some(surface) = Self::tile_surface(&window) {
+                if self.is_panel_surface(&surface)
+                    || self.tiled_windows.contains_key(&surface.id())
+                    || self.managed_windows.contains_key(&surface.id())
+                {
+                    continue;
+                }
+            }
+            if let Some(surface) = window.x11_surface() {
+                if surface.is_override_redirect() || surface.is_fullscreen() {
+                    continue;
+                }
+            }
+            let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
+                continue;
+            };
+            let Some(output_geometry) = self.space.output_geometry(&output) else {
+                continue;
+            };
+            let Some(location) = self.space.element_location(&window) else {
+                continue;
+            };
+            let current = Rectangle::new(location, window.geometry().size);
+            let area = self.work_area_for_output(output_geometry);
+            let target = fit_window_to_work_area(current, area);
+            if target == current {
+                continue;
+            }
+            if let Some(surface) = window.toplevel() {
+                surface.with_pending_state(|state| state.size = Some(target.size));
+                surface.send_pending_configure();
+            } else if let Some(surface) = window.x11_surface() {
+                if let Err(error) = surface.configure(Some(target)) {
+                    tracing::warn!(?error, "could not fit X11 window above dock");
+                    continue;
+                }
+            }
+            self.space.map_element(window, target.loc, false);
+        }
     }
 }
 
@@ -745,5 +791,54 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
     } else {
         state.update_tiling_after_commit(surface);
         state.refresh_panel_visibility();
+    }
+}
+
+/// Move first; shrink only when the window cannot fit inside the usable area.
+fn fit_window_to_work_area(
+    rect: Rectangle<i32, Logical>,
+    area: Rectangle<i32, Logical>,
+) -> Rectangle<i32, Logical> {
+    let size = Size::from((
+        rect.size.w.min(area.size.w).max(1),
+        rect.size.h.min(area.size.h).max(1),
+    ));
+    let x = rect.loc.x.clamp(
+        area.loc.x,
+        (area.loc.x + area.size.w - size.w).max(area.loc.x),
+    );
+    let y = rect.loc.y.clamp(
+        area.loc.y,
+        (area.loc.y + area.size.h - size.h).max(area.loc.y),
+    );
+    Rectangle::new((x, y).into(), size)
+}
+
+#[cfg(test)]
+mod work_area_tests {
+    use super::*;
+
+    #[test]
+    fn moves_overlapping_window_without_resizing() {
+        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((100, 800).into(), (640, 400).into());
+        assert_eq!(
+            fit_window_to_work_area(rect, area),
+            Rectangle::new((100, 592).into(), (640, 400).into())
+        );
+    }
+
+    #[test]
+    fn shrinks_oversized_window_on_offset_monitor() {
+        let area = Rectangle::new((-1920, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((-2000, 0).into(), (2200, 1080).into());
+        assert_eq!(fit_window_to_work_area(rect, area), area);
+    }
+
+    #[test]
+    fn leaves_clear_window_in_place() {
+        let area = Rectangle::new((0, 32).into(), (1920, 960).into());
+        let rect = Rectangle::new((100, 100).into(), (640, 400).into());
+        assert_eq!(fit_window_to_work_area(rect, area), rect);
     }
 }
