@@ -7949,3 +7949,11 @@ SLC completed but MAP remained denied. Original discovery restored after stoppin
 the advertisement to avoid EBUSY; packaged BlueFerry/obex commands and WirePlumber
 are active. No new re-pair or message send occurred. Next meaningful trial is
 a matched isolated BlueZ 5.87 build with verified bearer API, not more setup UI.
+
+Staged BlueZ 5.87 candidate from release commit 65d11ede: native ARM64 bluetoothd
+and obexd built in this chat's work/bluez-5.87, with 34 GObex and 134 SDP unit
+tests passing. No make install or new dependencies; live stack remains 5.85.
+Service-only configure options/limitations recorded in the upstream review.
+Current kernel is 7.1.12-2-20261017.20-sep-ARCH; unchanged by this work. The
+experimental bearer API and real iPhone delivery still need a controlled live
+trial; do not infer permission success from these software checks.
