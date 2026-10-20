@@ -12,6 +12,24 @@ is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
 run passed apply/restore checks without changing the live desktop. Visual panel
 inspection and a real scheduled transition remain open.
 
+The `codex/windows-work-mode-dock` follow-up renames the panel **Windows Work
+Mode** and adapts the existing elementary bottom dock while the mode is active:
+40-pixel icons, always visible, existing pinned launchers and running-window
+behavior. It snapshots/restores the user's dock settings and manages a dock
+service only if it had to start the dock. This is a partial launcher-dock
+experience; Start, Search, system tray and widgets are not implemented. The
+follow-up is built but not yet installed pending review.
+
+For additional wallpaper choices, Windows itself supports Store themes and a
+daily Spotlight image ([Microsoft personalization guide](https://support.microsoft.com/en-us/windows/experience/personalization/personalize-your-windows-experience-with-themes),
+[background guide](https://support.microsoft.com/en-us/windows/experience/personalization/change-the-desktop-background-in-windows)). Microsoft’s
+copyright guidance says redistribution needs an express license or permission
+([reuse guidance](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions)).
+Do not scrape or bundle Spotlight or Windows theme files into this repo. The
+panel already accepts a user-local image; any bundled set should use original
+artwork or assets with explicit redistribution rights and per-file license
+notes.
+
 ## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
 The `619ca5c` workspace slice is committed and pushed. A current ARM64 release

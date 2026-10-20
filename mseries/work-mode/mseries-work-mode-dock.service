@@ -1,0 +1,9 @@
+[Unit]
+Description=Windows Work Mode bottom dock
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/mseries-work-mode-dock
+Restart=on-failure
+RestartSec=2

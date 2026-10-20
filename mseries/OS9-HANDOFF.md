@@ -23,6 +23,15 @@ not changed during this check. A real scheduled transition is still unverified.
 PR #304 added the panel and scheduler, PR #306 fixed plug startup, and PR #308
 bundled the default wallpaper; all are merged to `dev`.
 
+Follow-up `codex/windows-work-mode-dock` renames the visible panel to Windows
+Work Mode and uses the existing elementary dock as a partial Windows-style
+bottom launcher while active. It snapshots the user's dock icon size and
+auto-hide preference, uses 40-pixel icons with auto-hide off during the mode,
+and only starts/stops a dedicated dock service when the dock was not already
+running. The current pinned apps and running-window behavior stay native. The
+name change and dock integration are built but not installed pending PR review;
+the prior wallpaper-only feature remains installed and off.
+
 ## apt: man-db trigger off — 2026-10-19 (Claude)
 
 Branch `claude/apt-mandb`. Measured on the J314S: `apt update` is ~4 s cold, so it is not the slow part; dpkg
