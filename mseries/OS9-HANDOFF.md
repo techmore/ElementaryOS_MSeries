@@ -7901,3 +7901,15 @@ cross-OS transfer (USB or password-encrypted private-cloud archive), optional
 Ventura guest provisioning and the before-reboot gate. No private export, Apple
 binary or VM identity is committed. bash syntax and shellcheck pass; native Mac
 execution and Apple activation remain unverified.
+
+One-script follow-up: `phone-setup/macos-visit/Collect-Everything.command` now
+combines official hardware-helper download/export, pinned macosvm 0.2-3 (GitHub
+release SHA-256 verified), Ventura IPSW, native firmware provenance, restore,
+owner-confirmed native guest startup/shutdown and checksummed external exFAT
+transfer. Requires 100 GiB on both macOS staging and external destination.
+No Homebrew, drive formatting, reboot or account login is automated. Incomplete
+restores are preserved; completed restore/startup markers enable resume. Final
+collection receipt requires re-reading all external hashes. Mock failure-gate
+tests cover invalid export, restore/config/native startup failures, corrupt
+external copy and completed-stage resume; bash syntax and shellcheck pass.
+macOS execution, actual restore and Linux guest boot remain unverified.

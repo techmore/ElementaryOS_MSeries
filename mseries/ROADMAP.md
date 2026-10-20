@@ -2351,3 +2351,10 @@ Machine Lab guest collection is documented for the same visit, with storage and
 compatibility limits explicit. Shell checks pass; macOS execution and Bubbles
 activation still require the owner. No claim that future VM work will never need
 another macOS visit.
+
+Single collector now includes the Machine Lab guest instead of leaving it as a
+manual optional path: pinned downloads, genuine hardware export, native guest
+startup, portable identity/storage configuration and re-read external hashes.
+A completion receipt means files collected and transferred, not a qualified
+Linux macOS boot. Next owner action: run it in native macOS with AC power and
+an external exFAT drive; bring the verified private bundle back to Linux.
