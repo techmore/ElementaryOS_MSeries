@@ -244,7 +244,7 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-755 file records (673 M-series-maintained paths and 82 elementary-owned upstream
+756 file records (674 M-series-maintained paths and 82 elementary-owned upstream
 inputs) grouped into 230 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
@@ -267,9 +267,11 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 755 paths, 230 directory groups, and 206 project IDs.
+file inventory now covers 756 paths, 230 directory groups, and 206 project IDs.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
+The six-hour watch now records each of the ten core Elementary repositories
+independently and captures their branch/PR heads without changing source pins.
 The brightness bridge now has a native-GIO Rust candidate with five policy
 tests and a successful host link. A private-bus fake-Mutter integration
 harness covers the exported service and runs in arm64 CI. This macOS sandbox

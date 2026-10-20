@@ -58,9 +58,15 @@ LANGUAGES = {
     ".c": "c", ".cc": "cpp", ".cpp": "cpp", ".h": "c-header",
     ".js": "javascript", ".mjs": "javascript", ".py": "python",
     ".rs": "rust", ".sh": "shell", ".vala": "vala", ".meson": "meson",
+    ".bash": "shell", ".zsh": "shell", ".go": "go", ".rb": "ruby",
+    ".pl": "perl", ".lua": "lua", ".hpp": "cpp-header",
     ".md": "markdown", ".yml": "yaml", ".yaml": "yaml",
     ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
     ".gif": "image", ".svg": "svg", ".gpg": "binary", ".pgp": "binary",
+}
+CODE_SUFFIXES = {
+    ".c", ".cc", ".cpp", ".h", ".hpp", ".js", ".mjs", ".py", ".rs",
+    ".sh", ".bash", ".zsh", ".vala", ".go", ".rb", ".pl", ".lua",
 }
 
 
@@ -69,17 +75,51 @@ def role(path: Path) -> str:
     suffix = path.suffix.lower()
     if path.suffix in {".patch", ".diff"}:
         return "upstream-patch"
-    if name.startswith(("test_", "test-")) or "/tests/" in path.as_posix():
+    if name.startswith(("test_", "test-")) or {"tests", "fixtures"}.intersection(path.parts):
         return "verification"
     if suffix in {".md", ".log"}:
         return "documentation-or-record"
     if suffix in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".gpg", ".pgp"}:
         return "asset-or-binary-input"
-    if suffix in {".conf", ".desktop", ".json", ".lock", ".policy", ".rules", ".service", ".timer", ".toml", ".xml", ".yml", ".yaml", ".preset", ".feature", ".transfer", ".sources"}:
+    if suffix in {".conf", ".desktop", ".json", ".lock", ".policy", ".rules", ".service", ".timer", ".toml", ".xml", ".yml", ".yaml", ".preset", ".feature", ".transfer", ".sources", ".ini", ".css", ".txt", ".list", ".csv", ".tsv"}:
         return "configuration-or-data"
-    if path.is_file() and path.stat().st_mode & 0o111:
+    if suffix in CODE_SUFFIXES:
         return "implementation"
-    return "implementation"
+    if name in {"justfile", "makefile", "gnu makefile"}:
+        return "implementation"
+    try:
+        with path.open("rb") as stream:
+            prefix = stream.read(128)
+    except OSError:
+        prefix = b""
+    if prefix.startswith(b"#!"):
+        return "implementation"
+    if b"\0" in prefix:
+        return "asset-or-binary-input"
+    return "configuration-or-data"
+
+
+def language(path: Path) -> str:
+    """Infer a useful language label without treating unknown text as code."""
+    suffix = path.suffix.lower()
+    if suffix in LANGUAGES:
+        return LANGUAGES[suffix]
+    if path.name.lower() in {"justfile", "makefile", "gnu makefile"}:
+        return "build-recipe"
+    try:
+        with path.open("rb") as stream:
+            prefix = stream.read(128)
+    except OSError:
+        prefix = b""
+    if prefix.startswith(b"#!"):
+        line = prefix.splitlines()[0].decode("utf-8", "replace").lower()
+        for interpreter, label in (("python", "python"), ("bash", "shell"), ("zsh", "shell"), ("/sh", "shell"), ("node", "javascript"), ("ruby", "ruby"), ("perl", "perl")):
+            if interpreter in line:
+                return label
+        return "script"
+    if b"\0" in prefix:
+        return "binary"
+    return "data"
 
 
 def source_paths() -> list[Path]:
@@ -168,7 +208,7 @@ def render() -> str:
             "component_id": component_id(path),
             "project_id": project_id(path, ownership),
             "ownership": ownership,
-            "language": LANGUAGES.get(path.suffix.lower(), "binary-or-data" if not path.suffix else "data"),
+            "language": language(path),
             "role": item_role,
             "rust_status": (
                 "candidate-functional-tests-passing-not-installed"
@@ -178,7 +218,7 @@ def render() -> str:
                 else "retain-upstream"
                 if not local
                 else "recorded-non-code-input"
-                if item_role in {"documentation-or-record", "asset-or-binary-input"}
+                if item_role in {"documentation-or-record", "asset-or-binary-input", "configuration-or-data"}
                 else "not-assessed" if local else "retain-upstream"
             ),
         })

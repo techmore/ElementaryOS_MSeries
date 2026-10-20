@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 755,
+  "item_count": 756,
   "component_count": 230,
   "project_count": 206,
   "components": [
@@ -22,8 +22,7 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 2
+        "recorded-non-code-input": 5
       },
       "items": [
         "repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg",
@@ -38,7 +37,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources",
@@ -50,7 +49,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources",
@@ -169,7 +168,7 @@
       "ownership": "elementary-os-upstream",
       "item_count": 17,
       "rust_status_counts": {
-        "not-assessed": 1,
+        "recorded-non-code-input": 1,
         "retain-upstream": 16
       },
       "items": [
@@ -210,7 +209,7 @@
       "ownership": "elementary-os-upstream",
       "item_count": 27,
       "rust_status_counts": {
-        "not-assessed": 1,
+        "recorded-non-code-input": 1,
         "retain-upstream": 26
       },
       "items": [
@@ -259,7 +258,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf"
@@ -270,7 +269,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/arch.arm64.conf"
@@ -281,7 +280,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/arch.x86-64.conf"
@@ -292,7 +291,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/ppa.daily.conf"
@@ -303,7 +302,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/ppa.stable.conf"
@@ -336,7 +335,8 @@
       "ownership": "mseries-maintained",
       "item_count": 17,
       "rust_status_counts": {
-        "not-assessed": 17
+        "not-assessed": 11,
+        "recorded-non-code-input": 6
       },
       "items": [
         "mkosi.images/apple-silicon/build-desktop-indicators",
@@ -407,7 +407,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 2,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/audio/asahi-audio-no-suspend.conf",
@@ -421,8 +422,8 @@
       "ownership": "mseries-maintained",
       "item_count": 8,
       "rust_status_counts": {
-        "not-assessed": 6,
-        "recorded-non-code-input": 2
+        "not-assessed": 5,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/aurora/README.md",
@@ -440,8 +441,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 8,
-        "recorded-non-code-input": 1
+        "not-assessed": 7,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/aurora-sep/README.md",
@@ -460,7 +461,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/aurora-touchid/mseries-touchid-settings",
@@ -483,7 +485,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/aurora/branch-audits/2026-10-17.json"
@@ -541,7 +543,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/benchmarks/results/2026-10-13-apple-macbook-pro-14-inch-m1-pro-2021.json"
@@ -552,7 +554,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 5
+        "not-assessed": 1,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/boot/initramfs-console.snippet",
@@ -678,7 +681,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/clockright/Indicator.vala",
@@ -723,7 +727,8 @@
       "ownership": "mseries-maintained",
       "item_count": 8,
       "rust_status_counts": {
-        "not-assessed": 8
+        "not-assessed": 7,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/codexbar-wingpanel/Indicator.vala",
@@ -752,7 +757,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 5
+        "not-assessed": 4,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/codexbar-wingpanel/probe/.gitignore",
@@ -767,8 +773,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 8,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 6
       },
       "items": [
         "mseries/customizations/README.md",
@@ -787,7 +793,8 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 3
+        "not-assessed": 1,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/dark-mode/mseries-dark-mode",
@@ -822,8 +829,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 1
+        "not-assessed": 2,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/display-profiles/README.md",
@@ -837,7 +844,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 3,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/display-settings/display_diag.py",
@@ -928,8 +936,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/fairydust/PKGBUILD",
@@ -983,8 +991,8 @@
       "ownership": "mseries-maintained",
       "item_count": 115,
       "rust_status_counts": {
-        "not-assessed": 72,
-        "recorded-non-code-input": 43
+        "not-assessed": 57,
+        "recorded-non-code-input": 58
       },
       "items": [
         "mseries/fairydust/usb4/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch",
@@ -1142,8 +1150,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 7,
-        "recorded-non-code-input": 2
+        "not-assessed": 2,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/gala-drawers/HANDOFF.md",
@@ -1162,7 +1170,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 9
+        "not-assessed": 6,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/hardware/90-mseries-keyboard.hwdb",
@@ -1731,7 +1740,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/JOSHUA-REPOSITORY-INVENTORY.json"
@@ -1833,7 +1842,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/lid-trace/mseries-lid-trace",
@@ -1845,8 +1855,8 @@
       "ownership": "mseries-maintained",
       "item_count": 50,
       "rust_status_counts": {
-        "not-assessed": 47,
-        "recorded-non-code-input": 3
+        "not-assessed": 42,
+        "recorded-non-code-input": 8
       },
       "items": [
         "mseries/local-ai/ANE-PREFLIGHT.md",
@@ -1906,8 +1916,7 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 3
       },
       "items": [
         "mseries/local-ai/fixtures/coding/AGENTS.md",
@@ -1920,8 +1929,7 @@
       "ownership": "mseries-maintained",
       "item_count": 66,
       "rust_status_counts": {
-        "not-assessed": 56,
-        "recorded-non-code-input": 10
+        "recorded-non-code-input": 66
       },
       "items": [
         "mseries/local-ai/receipts/2026-10-12-troubleshooter.md",
@@ -2074,8 +2082,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 2
+        "not-assessed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/netspeed/CHANGELOG.md",
@@ -2104,7 +2112,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 2,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/netspeed/netusage/49-mseries-netusage.rules",
@@ -2118,8 +2127,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/netspeed/troubleshooter/mseries-crash-watch",
@@ -2211,7 +2220,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/packages.arm64"
@@ -2234,7 +2243,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/panel-factory-pins.json"
@@ -2304,8 +2313,8 @@
       "ownership": "mseries-maintained",
       "item_count": 13,
       "rust_status_counts": {
-        "not-assessed": 9,
-        "recorded-non-code-input": 4
+        "not-assessed": 6,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/power/DPIN-DOCK-HDMI-DIAGNOSIS.md",
@@ -2350,8 +2359,8 @@
       "ownership": "mseries-maintained",
       "item_count": 12,
       "rust_status_counts": {
-        "not-assessed": 9,
-        "recorded-non-code-input": 3
+        "not-assessed": 5,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/power/macos-baseline/.gitignore",
@@ -2495,14 +2504,15 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 2,
+      "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 1,
+        "not-assessed": 2,
         "recorded-non-code-input": 1
       },
       "items": [
         "mseries/rust/README.md",
-        "mseries/rust/inventory.py"
+        "mseries/rust/inventory.py",
+        "mseries/rust/test_inventory.py"
       ]
     },
     {
@@ -2575,8 +2585,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/screenshot-shelf/README.md",
@@ -2591,7 +2601,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/signal-wingpanel/Indicator.vala",
@@ -2847,7 +2858,7 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 3
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/theme/ghostty.config",
@@ -2860,8 +2871,8 @@
       "ownership": "mseries-maintained",
       "item_count": 6,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/torrential-native/README.md",
@@ -2899,8 +2910,8 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 1,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/troubleshooter-wingpanel/Indicator.vala",
@@ -2924,7 +2935,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/upstream-audits/imported-sources.json",
@@ -2947,7 +2958,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/upstreams/omarchy-m.json"
@@ -2980,7 +2991,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/video-decode/90-mseries-avd.conf",
@@ -3014,7 +3026,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/aurora-kernel.yml"
@@ -3025,7 +3037,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/build-release.yml"
@@ -3036,7 +3048,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/daily-9.0.yml"
@@ -3047,7 +3059,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/proposed-9.0.yml"
@@ -3058,7 +3070,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/rust-candidate-review.yml"
@@ -3069,7 +3081,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/stable-9.0.yml"
@@ -3080,7 +3092,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/upstream-watch.yml"
@@ -3091,7 +3103,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/validate-mseries.yml"
@@ -3104,8 +3116,7 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 2
+        "recorded-non-code-input": 5
       },
       "items": [
         "repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg",
@@ -3120,7 +3131,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources",
@@ -3132,7 +3143,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources",
@@ -3155,7 +3166,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf"
@@ -3166,7 +3177,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/arch.arm64.conf"
@@ -3177,7 +3188,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/arch.x86-64.conf"
@@ -3188,7 +3199,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/ppa.daily.conf"
@@ -3199,7 +3210,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mkosi.conf.d/ppa.stable.conf"
@@ -3232,7 +3243,8 @@
       "ownership": "mseries-maintained",
       "item_count": 19,
       "rust_status_counts": {
-        "not-assessed": 19
+        "not-assessed": 11,
+        "recorded-non-code-input": 8
       },
       "items": [
         "mkosi.images/apple-silicon/build-desktop-indicators",
@@ -3305,7 +3317,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 2,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/audio/asahi-audio-no-suspend.conf",
@@ -3319,8 +3332,8 @@
       "ownership": "mseries-maintained",
       "item_count": 8,
       "rust_status_counts": {
-        "not-assessed": 6,
-        "recorded-non-code-input": 2
+        "not-assessed": 5,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/aurora/README.md",
@@ -3338,8 +3351,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 8,
-        "recorded-non-code-input": 1
+        "not-assessed": 7,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/aurora-sep/README.md",
@@ -3358,7 +3371,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/aurora-touchid/mseries-touchid-settings",
@@ -3381,7 +3395,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/aurora/branch-audits/2026-10-17.json"
@@ -3439,7 +3453,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/benchmarks/results/2026-10-13-apple-macbook-pro-14-inch-m1-pro-2021.json"
@@ -3450,7 +3464,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 5
+        "not-assessed": 1,
+        "recorded-non-code-input": 4
       },
       "items": [
         "mseries/boot/initramfs-console.snippet",
@@ -3586,7 +3601,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/clockright/Indicator.vala",
@@ -3631,7 +3647,8 @@
       "ownership": "mseries-maintained",
       "item_count": 8,
       "rust_status_counts": {
-        "not-assessed": 8
+        "not-assessed": 7,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/codexbar-wingpanel/Indicator.vala",
@@ -3660,7 +3677,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 5
+        "not-assessed": 4,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/codexbar-wingpanel/probe/.gitignore",
@@ -3675,8 +3693,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 8,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 6
       },
       "items": [
         "mseries/customizations/README.md",
@@ -3695,7 +3713,8 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 3
+        "not-assessed": 1,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/dark-mode/mseries-dark-mode",
@@ -3730,8 +3749,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 1
+        "not-assessed": 2,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/display-profiles/README.md",
@@ -3745,7 +3764,8 @@
       "ownership": "mseries-maintained",
       "item_count": 4,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 3,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/display-settings/display_diag.py",
@@ -3836,8 +3856,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/fairydust/PKGBUILD",
@@ -3891,8 +3911,8 @@
       "ownership": "mseries-maintained",
       "item_count": 115,
       "rust_status_counts": {
-        "not-assessed": 72,
-        "recorded-non-code-input": 43
+        "not-assessed": 57,
+        "recorded-non-code-input": 58
       },
       "items": [
         "mseries/fairydust/usb4/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch",
@@ -4050,8 +4070,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 7,
-        "recorded-non-code-input": 2
+        "not-assessed": 2,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/gala-drawers/HANDOFF.md",
@@ -4070,7 +4090,8 @@
       "ownership": "mseries-maintained",
       "item_count": 9,
       "rust_status_counts": {
-        "not-assessed": 9
+        "not-assessed": 6,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/hardware/90-mseries-keyboard.hwdb",
@@ -4573,7 +4594,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/JOSHUA-REPOSITORY-INVENTORY.json"
@@ -4682,7 +4703,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/lid-trace/mseries-lid-trace",
@@ -4694,8 +4716,8 @@
       "ownership": "mseries-maintained",
       "item_count": 50,
       "rust_status_counts": {
-        "not-assessed": 47,
-        "recorded-non-code-input": 3
+        "not-assessed": 42,
+        "recorded-non-code-input": 8
       },
       "items": [
         "mseries/local-ai/ANE-PREFLIGHT.md",
@@ -4755,8 +4777,7 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 3
       },
       "items": [
         "mseries/local-ai/fixtures/coding/AGENTS.md",
@@ -4769,8 +4790,7 @@
       "ownership": "mseries-maintained",
       "item_count": 66,
       "rust_status_counts": {
-        "not-assessed": 56,
-        "recorded-non-code-input": 10
+        "recorded-non-code-input": 66
       },
       "items": [
         "mseries/local-ai/receipts/2026-10-12-troubleshooter.md",
@@ -4923,8 +4943,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 3,
-        "recorded-non-code-input": 2
+        "not-assessed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/netspeed/CHANGELOG.md",
@@ -4954,7 +4974,8 @@
       "item_count": 12,
       "rust_status_counts": {
         "candidate-functional-tests-passing-not-installed": 7,
-        "not-assessed": 5
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/install-netusage-policy.sh",
@@ -4976,8 +4997,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 3,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/netspeed/troubleshooter/mseries-crash-watch",
@@ -5069,7 +5090,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/packages.arm64"
@@ -5081,7 +5102,8 @@
       "item_count": 11,
       "rust_status_counts": {
         "candidate-parity-verified-not-installed": 6,
-        "not-assessed": 5
+        "not-assessed": 4,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/install-keyboard-indicator-fix.sh",
@@ -5162,8 +5184,8 @@
       "item_count": 22,
       "rust_status_counts": {
         "candidate-parity-verified-not-installed": 6,
-        "not-assessed": 12,
-        "recorded-non-code-input": 4
+        "not-assessed": 9,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/install-power.sh",
@@ -5217,8 +5239,8 @@
       "ownership": "mseries-maintained",
       "item_count": 12,
       "rust_status_counts": {
-        "not-assessed": 9,
-        "recorded-non-code-input": 3
+        "not-assessed": 5,
+        "recorded-non-code-input": 7
       },
       "items": [
         "mseries/power/macos-baseline/.gitignore",
@@ -5329,14 +5351,15 @@
     {
       "id": "mseries/rust/migration-lane",
       "ownership": "mseries-maintained",
-      "item_count": 2,
+      "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 1,
+        "not-assessed": 2,
         "recorded-non-code-input": 1
       },
       "items": [
         "mseries/rust/README.md",
-        "mseries/rust/inventory.py"
+        "mseries/rust/inventory.py",
+        "mseries/rust/test_inventory.py"
       ]
     },
     {
@@ -5344,8 +5367,8 @@
       "ownership": "mseries-maintained",
       "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 1
+        "not-assessed": 2,
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/screenshot-shelf/README.md",
@@ -5360,7 +5383,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/signal-wingpanel/Indicator.vala",
@@ -5583,7 +5607,7 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 3
+        "recorded-non-code-input": 3
       },
       "items": [
         "mseries/theme/ghostty.config",
@@ -5596,8 +5620,8 @@
       "ownership": "mseries-maintained",
       "item_count": 6,
       "rust_status_counts": {
-        "not-assessed": 4,
-        "recorded-non-code-input": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/torrential-native/README.md",
@@ -5635,8 +5659,8 @@
       "ownership": "mseries-maintained",
       "item_count": 3,
       "rust_status_counts": {
-        "not-assessed": 2,
-        "recorded-non-code-input": 1
+        "not-assessed": 1,
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/troubleshooter-wingpanel/Indicator.vala",
@@ -5660,7 +5684,7 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "recorded-non-code-input": 2
       },
       "items": [
         "mseries/upstream-audits/imported-sources.json",
@@ -5683,7 +5707,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/upstreams/omarchy-m.json"
@@ -5716,7 +5740,8 @@
       "ownership": "mseries-maintained",
       "item_count": 2,
       "rust_status_counts": {
-        "not-assessed": 2
+        "not-assessed": 1,
+        "recorded-non-code-input": 1
       },
       "items": [
         "mseries/video-decode/90-mseries-avd.conf",
@@ -5860,7 +5885,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/aurora-kernel.yml"
@@ -5871,7 +5896,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/build-release.yml"
@@ -5882,7 +5907,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/daily-9.0.yml"
@@ -5893,7 +5918,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/proposed-9.0.yml"
@@ -5904,7 +5929,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/rust-candidate-review.yml"
@@ -5915,7 +5940,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/stable-9.0.yml"
@@ -5926,7 +5951,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/upstream-watch.yml"
@@ -5937,7 +5962,7 @@
       "ownership": "mseries-maintained",
       "item_count": 1,
       "rust_status_counts": {
-        "not-assessed": 1
+        "recorded-non-code-input": 1
       },
       "items": [
         ".github/workflows/validate-mseries.yml"
@@ -5953,7 +5978,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/build-release.yml",
@@ -5963,7 +5988,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/daily-9.0.yml",
@@ -5973,7 +5998,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/proposed-9.0.yml",
@@ -5983,7 +6008,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/rust-candidate-review.yml",
@@ -5993,7 +6018,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/stable-9.0.yml",
@@ -6003,7 +6028,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/upstream-watch.yml",
@@ -6013,7 +6038,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": ".github/workflows/validate-mseries.yml",
@@ -6023,7 +6048,7 @@
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "Justfile",
@@ -6031,7 +6056,7 @@
       "component_id": "image-build/Justfile",
       "project_id": "image-build/Justfile",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "build-recipe",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6041,7 +6066,7 @@
       "component_id": "installer/elementary-mac-setup",
       "project_id": "installer/elementary-mac-setup",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6053,7 +6078,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.conf.d/arch.arm64.conf",
@@ -6063,7 +6088,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.conf.d/arch.x86-64.conf",
@@ -6073,7 +6098,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.conf.d/ppa.daily.conf",
@@ -6083,7 +6108,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.conf.d/ppa.stable.conf",
@@ -6093,7 +6118,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/build-desktop-indicators",
@@ -6101,7 +6126,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6111,7 +6136,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6121,7 +6146,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6131,7 +6156,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6141,7 +6166,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6151,7 +6176,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6163,7 +6188,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/etc/initramfs-tools/modules.d/apple-silicon.conf",
@@ -6173,7 +6198,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/etc/modprobe.d/asahi-notch.conf",
@@ -6183,7 +6208,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/etc/xdg/autostart/mseries-brightness.desktop",
@@ -6193,7 +6218,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/mseries-wifi-firmware.service",
@@ -6203,7 +6228,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/omarchy-wifi-resume-fix.service",
@@ -6213,7 +6238,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness",
@@ -6221,7 +6246,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6231,7 +6256,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6241,7 +6266,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6251,7 +6276,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6261,7 +6286,7 @@
       "component_id": "mseries/apple-silicon-image",
       "project_id": "mseries/apple-silicon-image",
       "ownership": "mseries-maintained",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -6461,7 +6486,7 @@
       "component_id": "elementary-os/image/base",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6471,7 +6496,7 @@
       "component_id": "elementary-os/image/base",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6491,7 +6516,7 @@
       "component_id": "elementary-os/image/base",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6521,7 +6546,7 @@
       "component_id": "elementary-os/image/base",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6541,7 +6566,7 @@
       "component_id": "elementary-os/image/base",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6561,7 +6586,7 @@
       "component_id": "elementary-os/image/driver-broadcom",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6591,7 +6616,7 @@
       "component_id": "elementary-os/image/driver-nvidia",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6631,7 +6656,7 @@
       "component_id": "elementary-os/image/ext-virt",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6641,7 +6666,7 @@
       "component_id": "elementary-os/image/liveiso",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6663,7 +6688,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/iso_root/.disk/info",
@@ -6671,8 +6696,8 @@
       "component_id": "elementary-os/image/liveiso",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "retain-upstream"
     },
     {
@@ -6682,7 +6707,7 @@
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
       "language": "data",
-      "role": "implementation",
+      "role": "configuration-or-data",
       "rust_status": "retain-upstream"
     },
     {
@@ -6692,7 +6717,7 @@
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
       "language": "data",
-      "role": "implementation",
+      "role": "configuration-or-data",
       "rust_status": "retain-upstream"
     },
     {
@@ -6701,8 +6726,8 @@
       "component_id": "elementary-os/image/liveiso",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "retain-upstream"
     },
     {
@@ -6731,7 +6756,7 @@
       "component_id": "elementary-os/image/liveiso",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6741,7 +6766,7 @@
       "component_id": "elementary-os/image/liveiso",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6831,7 +6856,7 @@
       "component_id": "elementary-os/image/modules-db",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -6853,7 +6878,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/systemd/import-pubring.pgp",
@@ -7031,7 +7056,7 @@
       "component_id": "elementary-os/image/sysupdate",
       "project_id": "upstream/elementary/os",
       "ownership": "elementary-os-upstream",
-      "language": "data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "retain-upstream"
     },
@@ -7263,7 +7288,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/JOSHUA-REPOSITORY-REVIEW.md",
@@ -7613,7 +7638,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/audio/asahi-headset-mic.conf",
@@ -7623,7 +7648,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/audio/audio-watchdog.py",
@@ -7681,7 +7706,7 @@
       "component_id": "mseries/aurora-sep",
       "project_id": "mseries/aurora-sep",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -7691,7 +7716,7 @@
       "component_id": "mseries/aurora-sep",
       "project_id": "mseries/aurora-sep",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -7703,7 +7728,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/aurora-sep/test_touchid_core.py",
@@ -7751,7 +7776,7 @@
       "component_id": "mseries/aurora-touchid",
       "project_id": "mseries/aurora-touchid",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -7763,7 +7788,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/aurora/README.md",
@@ -7793,7 +7818,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/aurora/grub-entry.py",
@@ -7823,7 +7848,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/aurora/release.py",
@@ -7893,7 +7918,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/benchmarks/run.py",
@@ -7912,8 +7937,8 @@
       "project_id": "mseries/boot",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/boot/initramfs-hardware.snippet",
@@ -7922,8 +7947,8 @@
       "project_id": "mseries/boot",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/boot/initramfs-splash.snippet",
@@ -7932,8 +7957,8 @@
       "project_id": "mseries/boot",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/boot/mkinitcpio-snippet",
@@ -7941,7 +7966,7 @@
       "component_id": "mseries/boot",
       "project_id": "mseries/boot",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -7953,7 +7978,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/brightness/shell-bridge.py",
@@ -8032,8 +8057,8 @@
       "project_id": "mseries/clockright",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/codexbar-opencode-local.py",
@@ -8122,8 +8147,8 @@
       "project_id": "mseries/codexbar-wingpanel",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/codexbar-wingpanel/probe/.gitignore",
@@ -8131,9 +8156,9 @@
       "component_id": "mseries/codexbar-wingpanel/probe",
       "project_id": "mseries/codexbar-wingpanel/probe",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/codexbar-wingpanel/probe/fixtures/live.json",
@@ -8142,7 +8167,7 @@
       "project_id": "mseries/codexbar-wingpanel/probe",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "configuration-or-data",
+      "role": "verification",
       "rust_status": "not-assessed"
     },
     {
@@ -8232,8 +8257,8 @@
       "project_id": "mseries/customizations",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/customizations/gala-WindowManager.vala.installed",
@@ -8242,8 +8267,8 @@
       "project_id": "mseries/customizations",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/customizations/gala-working-tree-vs-f079143.diff",
@@ -8262,8 +8287,8 @@
       "project_id": "mseries/customizations",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/customizations/panel-power-battery-eta.diff",
@@ -8282,8 +8307,8 @@
       "project_id": "mseries/customizations",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/customizations/wingpanel-PanelWindow.vala.installed",
@@ -8292,8 +8317,8 @@
       "project_id": "mseries/customizations",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/dark-mode/mseries-dark-mode",
@@ -8301,7 +8326,7 @@
       "component_id": "mseries/dark-mode",
       "project_id": "mseries/dark-mode",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -8313,7 +8338,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/dark-mode/mseries-dark-mode.timer",
@@ -8323,7 +8348,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/disable-notch-for-pantheon.sh",
@@ -8351,7 +8376,7 @@
       "component_id": "mseries/display-profiles",
       "project_id": "mseries/display-profiles",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -8363,7 +8388,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/display-profiles/test_display_profiles.py",
@@ -8391,7 +8416,7 @@
       "component_id": "mseries/display-settings",
       "project_id": "mseries/display-settings",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -8403,7 +8428,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/display-settings/test_display_diag.py",
@@ -8421,7 +8446,7 @@
       "component_id": "mseries/docked-lid",
       "project_id": "mseries/docked-lid",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -8461,9 +8486,9 @@
       "component_id": "mseries/fairydust",
       "project_id": "mseries/fairydust",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/README.md",
@@ -8852,8 +8877,8 @@
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/DCP-SOURCE-BRIDGE.md",
@@ -8991,9 +9016,9 @@
       "component_id": "mseries/fairydust/usb4",
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/POST-REBOOT-CHECKLIST.md",
@@ -9121,9 +9146,9 @@
       "component_id": "mseries/fairydust/usb4",
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/deploy-dtbs.sh",
@@ -9142,8 +9167,8 @@
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/dpin-offline.config",
@@ -9152,8 +9177,8 @@
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/e4-touchid-delta.dtsi",
@@ -9162,8 +9187,8 @@
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-apple-display-binaries-extracted-locally.md",
@@ -9203,7 +9228,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md",
@@ -9233,7 +9258,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md",
@@ -9263,7 +9288,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-dpout-hpd-selection-bug.md",
@@ -9343,7 +9368,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-linux-baseline.json",
@@ -9353,7 +9378,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-16-neo-live-status.md",
@@ -9413,7 +9438,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/evidence/2026-10-17-e4-armed.md",
@@ -9443,7 +9468,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/inspect-cd321x-io.py",
@@ -9563,7 +9588,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/m1n1-trace-deps.sh",
@@ -9601,9 +9626,9 @@
       "component_id": "mseries/fairydust/usb4",
       "project_id": "mseries/fairydust/usb4",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/fairydust/usb4/set-default-kernel.sh",
@@ -9882,8 +9907,8 @@
       "project_id": "mseries/gala-drawers",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/gala-drawers/meson.build",
@@ -9892,8 +9917,8 @@
       "project_id": "mseries/gala-drawers",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/gala-drawers/meson_options.txt",
@@ -9902,8 +9927,8 @@
       "project_id": "mseries/gala-drawers",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/gala-drawers/mseries-drawers-settings",
@@ -9911,7 +9936,7 @@
       "component_id": "mseries/gala-drawers",
       "project_id": "mseries/gala-drawers",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -9923,7 +9948,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/gala-drawers/org.pantheon.gala.plugins.drawers.gschema.xml",
@@ -9933,7 +9958,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/hardware/90-mseries-keyboard.hwdb",
@@ -9942,8 +9967,8 @@
       "project_id": "mseries/hardware",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/hardware/bluetooth-resume-fix",
@@ -9951,7 +9976,7 @@
       "component_id": "mseries/hardware",
       "project_id": "mseries/hardware",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -9961,7 +9986,7 @@
       "component_id": "mseries/hardware",
       "project_id": "mseries/hardware",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -9973,7 +9998,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/hardware/mseries-hw-apple-silicon",
@@ -9981,7 +10006,7 @@
       "component_id": "mseries/hardware",
       "project_id": "mseries/hardware",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -9993,7 +10018,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/hardware/test-bluetooth.sh",
@@ -10571,7 +10596,7 @@
       "component_id": "mseries/lid-trace",
       "project_id": "mseries/lid-trace",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -10583,7 +10608,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/ANE-PREFLIGHT.md",
@@ -10663,7 +10688,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/branch-watch.py",
@@ -10742,8 +10767,8 @@
       "project_id": "mseries/local-ai/fixtures",
       "ownership": "mseries-maintained",
       "language": "markdown",
-      "role": "documentation-or-record",
-      "rust_status": "recorded-non-code-input"
+      "role": "verification",
+      "rust_status": "not-assessed"
     },
     {
       "id": "mseries/local-ai/fixtures/coding/check_unique.py",
@@ -10752,7 +10777,7 @@
       "project_id": "mseries/local-ai/fixtures",
       "ownership": "mseries-maintained",
       "language": "python",
-      "role": "implementation",
+      "role": "verification",
       "rust_status": "not-assessed"
     },
     {
@@ -10762,7 +10787,7 @@
       "project_id": "mseries/local-ai/fixtures",
       "ownership": "mseries-maintained",
       "language": "python",
-      "role": "implementation",
+      "role": "verification",
       "rust_status": "not-assessed"
     },
     {
@@ -10783,7 +10808,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/install-agent.sh",
@@ -10913,7 +10938,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/people-watch.py",
@@ -10953,7 +10978,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-12-troubleshooter.md",
@@ -11003,7 +11028,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/apps-baseline.json",
@@ -11013,7 +11038,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/bonsai-tools-v3.json",
@@ -11023,7 +11048,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/bonsai9-v2.json",
@@ -11033,7 +11058,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/bonsai9-weight.json",
@@ -11043,7 +11068,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/checksums.json",
@@ -11053,7 +11078,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/coder7-tools-v3.json",
@@ -11063,7 +11088,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/coder7-v2.json",
@@ -11073,7 +11098,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/compact-tools-v3.json",
@@ -11083,7 +11108,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/compact35-crush.json",
@@ -11093,7 +11118,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/compact35-tools-v3.json",
@@ -11103,7 +11128,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/developer-branches.json",
@@ -11113,7 +11138,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/developer-watch-main.json",
@@ -11123,7 +11148,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/developer-watch-verification.json",
@@ -11133,7 +11158,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/eds-adapter-receipt.json",
@@ -11143,7 +11168,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/eds-smoke-final.json",
@@ -11153,7 +11178,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai-tools-v3-attempt0.json",
@@ -11163,7 +11188,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-final-attempt0.json",
@@ -11173,7 +11198,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-interrupted.json",
@@ -11183,7 +11208,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/compact35-tools-v3-attempt0.json",
@@ -11193,7 +11218,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/everyday-tools-v3-attempt1.json",
@@ -11203,7 +11228,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools-v3-attempt0.json",
@@ -11213,7 +11238,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools.json",
@@ -11223,7 +11248,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen35-4-tools.json",
@@ -11233,7 +11258,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-tools.json",
@@ -11243,7 +11268,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-v1.json",
@@ -11253,7 +11278,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4.json",
@@ -11263,7 +11288,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools-v2.json",
@@ -11273,7 +11298,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools.json",
@@ -11283,7 +11308,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/integration-status.json",
@@ -11293,7 +11318,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/liquid-tools-v3.json",
@@ -11303,7 +11328,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/liquid-v2.json",
@@ -11313,7 +11338,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/m1pro-local-ai-investigation.md",
@@ -11333,7 +11358,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-bonsai-512.json",
@@ -11343,7 +11368,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-bonsai-512.log",
@@ -11363,7 +11388,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-coder7-512.log",
@@ -11383,7 +11408,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-compact-512.log",
@@ -11403,7 +11428,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-compact35-512.log",
@@ -11423,7 +11448,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/micro-liquid-512.log",
@@ -11443,7 +11468,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/newelle-final-ui-receipt.json",
@@ -11453,7 +11478,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/newelle-memory-receipt.json",
@@ -11463,7 +11488,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/newelle-persistent-memory.json",
@@ -11473,7 +11498,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/qwen35-4-v2.json",
@@ -11483,7 +11508,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/qwen4-v2.json",
@@ -11493,7 +11518,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/qwen9-v2.json",
@@ -11503,7 +11528,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/reservation-cleanup-receipt.json",
@@ -11513,7 +11538,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/source-pins.json",
@@ -11523,7 +11548,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/triage-4b-quality-failure.json",
@@ -11533,7 +11558,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/triage-4b-revised-prompt-quality-failure.json",
@@ -11543,7 +11568,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/2026-10-16/triage-smoke-receipt.json",
@@ -11553,7 +11578,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/adapter.json",
@@ -11563,7 +11588,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/checksums.json",
@@ -11573,7 +11598,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/exploratory/attempt-e6cb3afc-fd65-4c05-bc81-b05ab4d887f1.json",
@@ -11583,7 +11608,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/manifest.json",
@@ -11593,7 +11618,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/newelle-tool-discovery.json",
@@ -11603,7 +11628,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/receipts/task-integration-2026-10-16/workflows.json",
@@ -11613,7 +11638,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/repair-panel.py",
@@ -11763,7 +11788,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/local-ai/verify.py",
@@ -11831,9 +11856,9 @@
       "component_id": "mseries/netspeed",
       "project_id": "mseries/netspeed",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/netspeed/README.md",
@@ -11893,7 +11918,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/netspeed/netusage/install.sh",
@@ -11923,7 +11948,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/netspeed/panel-network.patch",
@@ -11941,7 +11966,7 @@
       "component_id": "mseries/netspeed/troubleshooter",
       "project_id": "mseries/netspeed/troubleshooter",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -11951,7 +11976,7 @@
       "component_id": "mseries/netspeed/troubleshooter",
       "project_id": "mseries/netspeed/troubleshooter",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -11961,7 +11986,7 @@
       "component_id": "mseries/netspeed/troubleshooter",
       "project_id": "mseries/netspeed/troubleshooter",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -11973,7 +11998,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/netspeed/troubleshooter/org.techmore.MSeries.Troubleshooter.svg",
@@ -12012,8 +12037,8 @@
       "project_id": "mseries/packages",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/panel-factory-pins.json",
@@ -12023,7 +12048,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/panel/record-artifact",
@@ -12031,7 +12056,7 @@
       "component_id": "mseries/panel",
       "project_id": "mseries/panel",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12041,7 +12066,7 @@
       "component_id": "mseries/panel",
       "project_id": "mseries/panel",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12242,8 +12267,8 @@
       "project_id": "mseries/power",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/README.md",
@@ -12271,9 +12296,9 @@
       "component_id": "mseries/power/macos-baseline",
       "project_id": "mseries/power/macos-baseline",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/macos-baseline/PARITY.md",
@@ -12333,7 +12358,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/macos-baseline/parity.py",
@@ -12363,7 +12388,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/macos-baseline/results/macos-2026-10-17-1220/summary.json",
@@ -12373,7 +12398,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/macos-baseline/test_baseline.py",
@@ -12391,7 +12416,7 @@
       "component_id": "mseries/power",
       "project_id": "mseries/power",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12401,7 +12426,7 @@
       "component_id": "mseries/power",
       "project_id": "mseries/power",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12413,7 +12438,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/org.techmore.mseries.power.policy",
@@ -12423,7 +12448,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/power/patches/0001-appledrm-adaptive-sync.patch",
@@ -12541,8 +12566,8 @@
       "component_id": "mseries/rust/brightness-bridge",
       "project_id": "mseries/brightness",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
@@ -12631,8 +12656,8 @@
       "component_id": "mseries/rust/keyboard-backlight",
       "project_id": "mseries/keyboard-backlight",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-parity-verified-not-installed"
     },
     {
@@ -12681,8 +12706,8 @@
       "component_id": "mseries/rust/mseries-power",
       "project_id": "mseries/power",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-parity-verified-not-installed"
     },
     {
@@ -12741,8 +12766,8 @@
       "component_id": "mseries/rust/netusage",
       "project_id": "mseries/netspeed/netusage",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
@@ -12811,8 +12836,8 @@
       "component_id": "mseries/rust/panel-provenance",
       "project_id": "mseries/panel",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-parity-verified-not-installed"
     },
     {
@@ -12866,13 +12891,23 @@
       "rust_status": "candidate-parity-verified-not-installed"
     },
     {
+      "id": "mseries/rust/test_inventory.py",
+      "path": "mseries/rust/test_inventory.py",
+      "component_id": "mseries/rust/migration-lane",
+      "project_id": "mseries/rust/migration-lane",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
       "id": "mseries/rust/wifi-resume/.gitignore",
       "path": "mseries/rust/wifi-resume/.gitignore",
       "component_id": "mseries/rust/wifi-resume",
       "project_id": "mseries/wifi-resume",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "candidate-parity-verified-not-installed"
     },
     {
@@ -12941,7 +12976,7 @@
       "component_id": "mseries/screenshot-shelf",
       "project_id": "mseries/screenshot-shelf",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12953,7 +12988,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/screenshot-shelf/mseries-screenshot-shelf",
@@ -12961,7 +12996,7 @@
       "component_id": "mseries/screenshot-shelf",
       "project_id": "mseries/screenshot-shelf",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "python",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -12973,7 +13008,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/signal-wingpanel/Indicator.vala",
@@ -12992,8 +13027,8 @@
       "project_id": "mseries/signal-wingpanel",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/signal-wingpanel/resources/org.signal.Signal.png",
@@ -13212,8 +13247,8 @@
       "project_id": "mseries/theme",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/theme/gtk-3.0.css",
@@ -13222,8 +13257,8 @@
       "project_id": "mseries/theme",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/theme/gtk-4.0.css",
@@ -13232,8 +13267,8 @@
       "project_id": "mseries/theme",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/torrential-native/README.md",
@@ -13251,9 +13286,9 @@
       "component_id": "mseries/torrential-native",
       "project_id": "mseries/torrential-native",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/torrential-native/build-deb.sh",
@@ -13273,7 +13308,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/torrential-native/com.github.davidmhewitt.torrential.metainfo.xml",
@@ -13283,7 +13318,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/torrential-native/com.github.davidmhewitt.torrential.svg",
@@ -13312,8 +13347,8 @@
       "project_id": "mseries/troubleshooter-wingpanel",
       "ownership": "mseries-maintained",
       "language": "data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/troubleshooter-wingpanel/mseries-robot-symbolic.svg",
@@ -13333,7 +13368,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/upstream-audits/omacom-2026-10-17.json",
@@ -13343,7 +13378,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/upstream/wingpanel-on-realize-crash.md",
@@ -13363,7 +13398,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/user-enhance.sh",
@@ -13383,7 +13418,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "mseries/video-decode/verify-package-ownership",
@@ -13391,7 +13426,7 @@
       "component_id": "mseries/video-decode",
       "project_id": "mseries/video-decode",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
+      "language": "shell",
       "role": "implementation",
       "rust_status": "not-assessed"
     },
@@ -13421,9 +13456,9 @@
       "component_id": "apt-repository/common-files",
       "project_id": "apt-repository/common-files",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/common-files/etc/apt/preferences.d/prioritize-patches",
@@ -13431,9 +13466,9 @@
       "component_id": "apt-repository/common-files",
       "project_id": "apt-repository/common-files",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/common-files/etc/apt/preferences.d/restrict-proprietary",
@@ -13441,9 +13476,9 @@
       "component_id": "apt-repository/common-files",
       "project_id": "apt-repository/common-files",
       "ownership": "mseries-maintained",
-      "language": "binary-or-data",
-      "role": "implementation",
-      "rust_status": "not-assessed"
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources",
@@ -13453,7 +13488,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/daily/etc/apt/sources.list.d/elementary-os-patches.sources",
@@ -13463,7 +13498,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources",
@@ -13473,7 +13508,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "repos/stable/etc/apt/sources.list.d/elementary-os-stable.sources",
@@ -13483,7 +13518,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "recorded-non-code-input"
     },
     {
       "id": "transform/elementary-grow.sh",

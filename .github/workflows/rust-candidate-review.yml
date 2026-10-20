@@ -43,6 +43,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y build-essential cargo rustc rustfmt sqlite3 dbus-daemon libglib2.0-bin libglib2.0-dev pkg-config
       - name: Check the full scoped inventory
         run: python3 mseries/rust/inventory.py --check
+      - name: Test inventory classification
+        run: python3 mseries/rust/test_inventory.py
       - name: Validate Rust candidates
         shell: bash
         run: |

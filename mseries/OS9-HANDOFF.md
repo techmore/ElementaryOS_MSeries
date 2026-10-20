@@ -2526,5 +2526,22 @@ The integration run could not start here: this macOS `dbus-daemon` requires a
 launchd session socket, while the sandbox denies binding a private Unix socket.
 The harness is now part of the arm64 CI candidate job; its run is pending. The
 Rust bridge remains uninstalled pending that result and full arm64 image
-admission. The current inventory is 755 scoped files (673 local and 82
+admission. The current inventory is 756 scoped files (674 local and 82
 elementary-owned upstream inputs), 230 path groups, and 206 project IDs.
+
+## 2026-10-20 — project inventory and Elementary source watch
+
+Corrected source-role classification so unknown non-code files no longer count
+as executable implementations. The inventory now distinguishes implementation
+code, upstream patches, verification fixtures, documentation, binary assets,
+and declarative configuration. Added focused classifier checks to the daily
+Rust candidate workflow.
+
+Added separate six-hour watcher entries for the Elementary OS base, Gala,
+Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
+Sound Indicator, and Keyboard Indicator repositories. The branch/PR discovery
+watch also captures those ten repositories' branch and open PR heads. These are
+source observations only; they do not move build pins.
+The inventory covers 756 paths (674 maintained locally and 82 elementary
+upstream inputs), 230 path groups, and 206 project records. License and exact
+pin consolidation for all these projects remains open.

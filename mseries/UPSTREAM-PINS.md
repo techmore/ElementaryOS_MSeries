@@ -24,6 +24,28 @@ The fetched `elementary/os` `main` reference on 2026-10-13 was
 `7024fd04646a6a8565bf6805989b59fd72de928c`. This is the comparison point for
 the OS 9 source audit; recheck the upstream branch before the next port.
 
+## Elementary desktop project watch records
+
+The upstream watch roster tracks each Elementary repository used by an M-series
+customization as a separate source item: `elementary/os`, `gala`, `wingpanel`,
+`dock`, `files`, `quick-settings`, `panel-network`, `panel-power`,
+`wingpanel-indicator-sound`, and `panel-keyboard`. The six-hour watcher detects
+default-branch pushes/releases, and branch watch captures branch heads and open
+pull-request heads into a retained artifact. Neither watcher moves source pins.
+The exact source revisions consumed by each local installer/build recipe remain the
+admission pins and are deliberately not advanced by the watcher. For each
+revision change, update the per-project pin here, preserve its license and
+patch list, and run that project's parity/build checks before image review.
+
+Current source pin locations include `install-gala-*.sh` and
+`install-gala-drawers.sh` for Gala; `install-wingpanel-*.sh` for Wingpanel;
+`install-dock-drawers.sh` for Dock; `install-files-portal-fix.sh` for Files;
+`install-battery-eta.sh` for panel-power; `build-network-indicator` and
+`install-network-throughput.sh` for panel-network; `build-quick-settings` and
+`install-quick-settings-brightness.sh` for quick-settings; and the dedicated
+sound/keyboard indicator installers. Consolidating those current commits and
+license evidence into a generated per-project ledger is still open.
+
 ## Wingpanel network speed readout
 
 The Apple Silicon image builds `elementary/panel-network` at

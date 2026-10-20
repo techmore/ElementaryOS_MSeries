@@ -59,20 +59,27 @@ has been inventoried.
 its declared build/customization scope a path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-755 files (673 local and 82 elementary-owned upstream inputs) currently form
+756 files (674 local and 82 elementary-owned upstream inputs) currently form
 230 directory groups and 206 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
-Apple Silicon image integration. Remaining project boundaries and Rust
-decisions still need review against source licenses, interfaces, and conversion
-contracts. Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
+Apple Silicon image integration. The inventory classifier distinguishes
+implementation code, upstream patches, tests, documentation, assets, and
+declarative inputs instead of labeling unknown files as executable code. The
+current scope contains 254 implementation files (241 local), 41 upstream
+patches, and 252 configuration/data files. Semantic project boundaries and
+Rust decisions still need review against source licenses, interfaces, and
+conversion contracts.
+Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
 files are marked `candidate-parity-verified-not-installed`; network-usage
 and brightness-bridge candidate files are
 `candidate-functional-tests-passing-not-installed`.
-Documentation and binary inputs are recorded as non-code inputs; other local
-items remain `not-assessed`. CI checks that the generated inventory matches
-the scoped files. Project records do not replace upstream revision/license
-pins or complete the semantic ownership audit.
+Documentation, binary assets, and declarative inputs are recorded as non-code
+inputs; remaining local implementation, verification, and patch items stay
+`not-assessed` until their conversion contracts are reviewed. CI checks that
+the generated inventory matches the scoped files. Project records do not
+replace upstream revision/license pins or complete the semantic ownership
+audit.
 
 | Project/item | Current boundary | Rust decision | Parity and update record |
 |---|---|---|---|
@@ -85,6 +92,10 @@ pins or complete the semantic ownership audit.
 | Asahi firmware and device-tree artifacts | Boot and board enablement inputs | Keep each source/artifact under a separate pin and license record | Preserve matched-input provenance; source checks do not count as boot qualification |
 | `elementary/panel-network` | Patched network indicator and network-usage integration | Keep upstream panel plugin in its native language; separately evaluate M-series usage daemon | Pinned version/patch admission in `UPSTREAM-PINS.md`; consumer parity and package gate |
 | `elementary/quick-settings` | Factory quick-settings plugin and charge/screen/keyboard widgets | Keep upstream source at its native boundary; migrate M-series-owned widgets and glue to Rust where its plugin interface permits | Pinned source/hash and each local widget's UI behavior and D-Bus/system interface |
+| `elementary/wingpanel` | Panel host and indicator extension interface | Keep upstream host native; convert local indicators only when a supported Rust extension interface exists | Six-hour upstream watch; pin interface and test local indicator behavior per project |
+| `elementary/dock` | Dock and local drawers customization | Keep upstream dock native; assess Rust only for separately maintained local extensions | Six-hour upstream watch; compare drawer/window behavior and install rollback |
+| `elementary/files` | Files app and local portal fix | Keep upstream app native; convert only separately maintained local customization | Six-hour upstream watch; compare portal behavior and app integration |
+| `elementary/panel-power` | Wingpanel power indicator used by battery ETA integration | Keep upstream indicator native; retain local policy as an independent Rust component | Six-hour upstream watch; compare power state/ETA display and indicator ABI |
 | M-series quick-settings widgets | Charge, display-brightness, and keyboard-brightness Vala modules patched into Quick Settings | Convert local widgets individually to Rust only where the plugin ABI permits; retain upstream plugin source | `mseries/quick-settings/` and `mseries/patches/`; compare D-Bus, controls, and rendered UI |
 | `elementary/wingpanel-indicator-sound` | Factory sound-indicator plugin | Keep upstream plugin language and local patch separate | Source revision, license, patch and consumer hash in `UPSTREAM-PINS.md` |
 | `elementary/panel-keyboard` | Factory keyboard-indicator plugin | Keep upstream plugin language and local patch separate | Source revision, license, patch and consumer hash in `UPSTREAM-PINS.md` |
@@ -230,7 +241,7 @@ individually.
   candidate links against the host GIO development library. The Python service
   remains installed until D-Bus runtime parity and image admission pass. A
   private-bus fake-Mutter fixture is wired into arm64 CI; its result is pending.
-- The full file inventory currently contains 755 items (673 M-series-maintained
+- The full file inventory currently contains 756 items (674 M-series-maintained
   and 82 elementary-owned upstream inputs), 230 directory groups, and 206
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity
