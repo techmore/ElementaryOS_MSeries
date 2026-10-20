@@ -355,6 +355,56 @@ the separate snap geometry discrepancy.
 
 
 
+## Windows Work Mode work-network trigger — 2026-10-20 (Claude)
+
+Branch `claude/work-mode-network-trigger`. Review and completion of Windows Work Mode:
+- New rule *Only on work networks*: GSettings `network-trigger`, `work-public-ips` (IPs/CIDR),
+  `public-ip-service` (default `https://api.ipify.org`). All enabled rules must pass (schedule AND network).
+  Lookup happens only when the other rules pass; cached 15 min per default-route fingerprint, 30 min grace on
+  failure. `--public-ip` does a fresh lookup; `--status` never queries.
+- Panel: Work Network group (switch, validated IP/CIDR entry with Apply, Check/Add current address),
+  live Current state row, HH:MM-validated time entries with Apply (previously every keystroke was written
+  and ticked), schedule/network rows insensitive while their rule is off.
+- Review fixes: the panel ran `mseries-work-mode --tick` through PATH, which may not include `~/.local/bin`
+  for Switchboard; it now starts `mseries-work-mode.service` (serialized by systemd, debounced). Ticks take a
+  state lock. Wallpaper sets `picture-options` to `zoom` (original restored). A missing dock schema no
+  longer aborts the helper (`Gio.Settings.new` aborts; schema is looked up first).
+- Tests: `mseries/work-mode/test_work_mode.py` (keyfile GSettings, local fake IP service,
+  `MSERIES_WORK_MODE_NO_SERVICES=1`) — 5 pass locally; added to `validate-mseries.yml`.
+- Azure Bloom (original CC0, `work-mode-azure-bloom.svg` → PNG) is the new bundled default. For the owner's
+  demo, Work Mode is ON and uses Microsoft's stock Windows 11 Bloom (`img0.jpg` from the GitHub mirror
+  viridivn/windows11wallpapers), installed locally only at `~/.local/share/backgrounds/windows11-bloom.jpg`
+  and NOT committed (Microsoft copyright; repo policy forbids bundling).
+- Dock `taskbar-mode` (`mseries/patches/dock-taskbar.patch`, applied by install-dock-drawers.sh): full-width
+  72 px silver bar, weather (wttr.in, 30 min) bottom-left, CSS four-pane Start + Search pill (both open
+  Slingshot via Wingpanel) left of centred 48 px launchers, network/sound/battery + clock at right. Fixed a
+  half-width bar (GTK 4 monitor geometry is already logical; it was divided by scale). Installed binary-only
+  into ~/.local/lib/mseries/dock (wrapper untouched; previous binary kept as `io.elementary.dock.pre-taskbar`)
+  and dock reloaded on owner request; owner reviewed it live ("looking good"). `--build-only` passes clean.
+- Top bar: compositor D-Bus `org.techmore.mseries.Panels.SetTopPanelMode` (runtime-only); helper hides it
+  while active. New compositor installed via install-pantheon-rust-compositor.sh; loads at next login.
+- After re-login (compositor `0.1.0+gitf970354` loaded): the owner reports the taskbar/space reservation
+  working. Start is double size; right-click/long-press opens Lock, Log Out…, Restart…, Shut Down…, System
+  Settings (via org.gnome.SessionManager, so elementary's confirm dialog appears). The installed helper was
+  stale (no top-bar call); reinstalled it, and `TopPanelMode` now reads 1 (hidden). The Start left-click path
+  (Slingshot via Wingpanel while the bar is hidden) still needs owner confirmation.
+- Start/Search now open a dock-owned Windows 11-style Start menu (`StartMenu.vala`: search, pinned dock
+  launchers + All apps, recent files as Recommended, user + power). Search pill doubled. Windows 11 running
+  indicator in taskbar mode (grey pill, longer blue when focused). Files uses an original yellow folder
+  (`mseries/work-mode/icons/windows-work-mode-folder.svg`, CC0) through a per-user override at
+  `~/.local/share/applications/io.elementary.files.desktop` (Icon=windows-work-mode-folder); delete that file
+  to revert. The owner's `io.elementary.dock launchers` list held six duplicated ids (shown as doubled apps);
+  deduplicated in place, order kept, still clean after a dock restart. Cause of the duplication unknown.
+- Restart readiness (2026-10-20): root/home are persistent btrfs; LightDM autologins the Rust session.
+  Installed compositor `0.1.0+git432fe4b` (a local build that contains f970354's clamp and Panels
+  interface). Work Mode state, dock taskbar-mode, wallpaper and Win11-dark icon theme persist in dconf
+  and ~/.local. New: `mseries-work-mode.service` is WantedBy gnome-session-initialized.target (after
+  wingpanel/dock, 2 s delay), so the top bar hides at login instead of after the 30 s timer start.
+  The cold-boot path itself is still unobserved.
+- Next (owner request): retire the top bar entirely by moving indicators into the taskbar; CodexBar as a
+  bottom-right icon whose dropdown opens after a 0.5 s hover.
+- Plug builds with meson/valac locally. Not visually inspected; no real scheduled or network transition observed.
+
 ## Dock return status and PR #314 CI fix — 2026-10-20 (Claude)
 
 Owner asked to restore a dock for minimized apps. State found: the fixed
@@ -8480,3 +8530,28 @@ and end-to-end link opening remain unverified until the next login.
   then validate the integrated Work Mode/taskbar behavior.
 - Drafts #323, #272, #248 and #185 retain their intentional experimental/handoff
   gates. No kernel, bootloader, running compositor or audio stack was replaced.
+
+## Work Mode / Teams PR conflict resolution — 2026-10-20
+
+Reconciled #329 against current dev, preserving gesture/themed-cursor support,
+active popup grabs, floating-window work-area fitting and the taskbar's commit/drag
+clearance. XWayland clearance now sends geometry changes for moves as well as
+resizes and exempts fullscreen/override-redirect windows. Work Mode uses the
+adopted `work-taskbar` or `work` size token, with 48/40-pixel fallbacks; a private
+CLI integration regression covers both modes and unavailable size tooling. The
+workflow retains both native Orchard coverage and Work Mode tests.
+
+Local verification: nine private Work Mode tests; 41 all-feature compositor tests;
+Rust 1.98.1 Clippy with all features/targets and warnings denied; native dock
+`--build-only` plus strict schema validation; native Switchboard plug compilation.
+Private Xvfb/D-Bus window smoke passed X11/Wayland snapping, restore, dock clearance,
+focus and typing. Logs: `/tmp/mseries-329-dock-build.log` and
+`/tmp/mseries-329-window-smoke.log`. GTK/Vala deprecation warnings remain.
+
+#337's handoff/roadmap conflict preserves both records; all 14 offline Teams/Outlook
+tests, shell syntax and ShellCheck pass. No owner settings, installed dock, panel,
+compositor, kernel or audio service was changed by this reconciliation. Existing
+live qualification limits remain: real schedule/network transitions, taskbar
+interaction across hardware displays, Teams media and Outlook mailbox access.
+Next: merge only after the updated heads pass GitHub checks; then qualify those
+remaining live interactions separately.

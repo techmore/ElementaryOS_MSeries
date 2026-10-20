@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""Apply Work Mode's scheduled wallpaper for the current Pantheon user."""
+"""Apply Windows Work Mode's schedule and work-network rules for the current Pantheon user."""
 
 import argparse
+import fcntl
+import hashlib
+import ipaddress
+import json
 import os
 import subprocess
 import sys
-from glob import glob
-from shutil import which
+import time
+import urllib.request
+from contextlib import contextmanager
 from datetime import datetime
+from glob import glob
 from pathlib import Path
+from shutil import which
 
 import gi
 
@@ -19,28 +26,51 @@ from gi.repository import Gio, GLib  # noqa: E402
 SCHEMA = "io.elementary.mseries.work-mode"
 DOCK_SCHEMA = "io.elementary.dock"
 DOCK_UNIT = "mseries-work-mode-dock.service"
-STATE = Path(GLib.get_user_state_dir()) / "mseries" / "work-mode.json"
+STATE_DIR = Path(GLib.get_user_state_dir()) / "mseries"
+STATE = STATE_DIR / "work-mode.json"
+PUBLIC_IP_CACHE = STATE_DIR / "work-mode-public-ip.json"
+LOCK = STATE_DIR / "work-mode.lock"
+# Re-check the public address at most this often on an unchanged network.
+PUBLIC_IP_TTL = 15 * 60
+# Keep using the last answer this long when a check fails on an unchanged network.
+PUBLIC_IP_GRACE = 30 * 60
+# Tests set this so a tick never starts or stops the real dock service.
+NO_SERVICES = os.environ.get("MSERIES_WORK_MODE_NO_SERVICES") == "1"
+
+
+@contextmanager
+def state_lock():
+    # The timer, the panel and manual runs may tick at once; serialize them.
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(LOCK, "w", encoding="utf-8") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        yield
+
+
+def read_json(path, default):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def write_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
 
 
 def load_state():
-    try:
-        import json
-        return json.loads(STATE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {"original": None, "applied": False}
+    state = read_json(STATE, None)
+    return state if isinstance(state, dict) else {"original": None, "applied": False}
 
 
 def save_state(state):
-    import json
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    temporary = STATE.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(STATE)
+    write_json(STATE, state)
 
 
-def in_work_window(settings, now=None):
-    if not settings.get_boolean("enabled"):
-        return False
+def in_work_hours(settings, now=None):
     if not settings.get_boolean("scheduled"):
         return True
     now = now or datetime.now().astimezone()
@@ -55,64 +85,227 @@ def in_work_window(settings, now=None):
     return start <= current < end if start <= end else current >= start or current < end
 
 
+def work_networks(settings):
+    networks = []
+    for entry in settings.get_strv("work-public-ips"):
+        try:
+            networks.append(ipaddress.ip_network(entry.strip(), strict=False))
+        except ValueError:
+            continue
+    return networks
+
+
+def route_fingerprint():
+    """Identify the current uplink so a network change triggers a fresh check."""
+    if not which("ip"):
+        return ""
+    routes = []
+    for family in ("-4", "-6"):
+        result = subprocess.run(
+            ["ip", "-j", family, "route", "show", "default"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        try:
+            for route in json.loads(result.stdout or "[]"):
+                routes.append(f"{route.get('dev')}|{route.get('gateway')}|{route.get('prefsrc')}")
+        except ValueError:
+            continue
+    return hashlib.sha256("\n".join(sorted(routes)).encode()).hexdigest()
+
+
+def query_public_ip(service):
+    request = urllib.request.Request(service, headers={"User-Agent": "mseries-work-mode"})
+    with urllib.request.urlopen(request, timeout=5) as response:
+        body = response.read(256).decode("ascii", errors="ignore").strip()
+    return str(ipaddress.ip_address(body))
+
+
+def public_ip(settings, refresh=False, allow_query=True):
+    """Return the public address (or None) from a cache keyed to the current uplink."""
+    cache = read_json(PUBLIC_IP_CACHE, {})
+    if not isinstance(cache, dict):
+        cache = {}
+    fingerprint = route_fingerprint()
+    same_network = bool(cache.get("ip")) and cache.get("fingerprint") == fingerprint
+    try:
+        age = time.time() - float(cache.get("checked") or 0)
+    except (TypeError, ValueError):
+        age = float("inf")
+    if same_network and not refresh and age < PUBLIC_IP_TTL:
+        return cache["ip"]
+    if not allow_query:
+        return cache["ip"] if same_network else None
+    try:
+        address = query_public_ip(settings.get_string("public-ip-service"))
+    except (OSError, ValueError):
+        return cache["ip"] if same_network and age < PUBLIC_IP_GRACE else None
+    write_json(PUBLIC_IP_CACHE, {"fingerprint": fingerprint, "ip": address, "checked": time.time()})
+    return address
+
+
+def evaluate(settings, now=None, allow_query=True):
+    """Return (should_apply, reason, public address or None) for the configured rules."""
+    if not settings.get_boolean("enabled"):
+        return False, "off", None
+    if not Path(settings.get_string("work-wallpaper")).expanduser().is_file():
+        return False, "no-wallpaper", None
+    if not in_work_hours(settings, now):
+        return False, "outside-hours", None
+    if not settings.get_boolean("network-trigger"):
+        return True, "active", None
+    networks = work_networks(settings)
+    if not networks:
+        return False, "no-networks", None
+    # Contact the address service only once every other rule already passes.
+    address = public_ip(settings, allow_query=allow_query)
+    if address is None:
+        return False, "network-unknown", None
+    if not any(ipaddress.ip_address(address) in network for network in networks):
+        return False, "other-network", address
+    return True, "active", address
+
+
 def tick():
     mode = Gio.Settings.new(SCHEMA)
     background = Gio.Settings.new("org.gnome.desktop.background")
     background_schema = background.props.settings_schema
-    state = load_state()
-    image = Path(mode.get_string("work-wallpaper")).expanduser()
-    activate = in_work_window(mode) and image.is_file()
-
-    if activate:
-        if state.get("original") is None:
-            original = {}
-            for key in ("picture-uri", "picture-uri-dark", "picture-options"):
+    activate, _, _ = evaluate(mode)
+    with state_lock():
+        state = load_state()
+        if activate:
+            image = Path(mode.get_string("work-wallpaper")).expanduser().resolve()
+            if state.get("original") is None:
+                original = {}
+                for key in ("picture-uri", "picture-uri-dark", "picture-options"):
+                    if background_schema.has_key(key):
+                        original[key] = background.get_string(key)
+                state["original"] = original
+            for key in ("picture-uri", "picture-uri-dark"):
                 if background_schema.has_key(key):
-                    original[key] = background.get_string(key)
-            state["original"] = original
-        if background_schema.has_key("picture-uri"):
-            background.set_string("picture-uri", image.resolve().as_uri())
-        if background_schema.has_key("picture-uri-dark"):
-            background.set_string("picture-uri-dark", image.resolve().as_uri())
-        activate_dock(state)
-        state["applied"] = True
-    elif state.get("applied"):
-        for key, value in (state.get("original") or {}).items():
-            if background_schema.has_key(key):
-                background.set_string(key, value)
-        restore_dock(state)
-        state.update({"original": None, "applied": False})
-
-    Gio.Settings.sync()
-    save_state(state)
+                    background.set_string(key, image.as_uri())
+            if background_schema.has_key("picture-options"):
+                background.set_string("picture-options", "zoom")
+            activate_icon_theme(mode, state)
+            activate_dock(state)
+            # Idempotent; repeated each tick so a restarted compositor hides the bar again.
+            set_top_panel_mode(1)
+            state["applied"] = True
+        elif state.get("applied"):
+            restore_background(background, state)
+            restore_icon_theme(state)
+            restore_dock(state)
+            set_top_panel_mode(0)
+            state.update({"original": None, "applied": False})
+        Gio.Settings.sync()
+        save_state(state)
     return 0
+
+
+def restore_background(background, state):
+    schema = background.props.settings_schema
+    for key, value in (state.get("original") or {}).items():
+        if schema.has_key(key):
+            background.set_string(key, value)
 
 
 def restore():
     background = Gio.Settings.new("org.gnome.desktop.background")
-    schema = background.props.settings_schema
-    state = load_state()
-    for key, value in (state.get("original") or {}).items():
-        if schema.has_key(key):
-            background.set_string(key, value)
-    restore_dock(state)
-    state.update({"original": None, "applied": False})
-    Gio.Settings.sync()
-    save_state(state)
+    with state_lock():
+        state = load_state()
+        restore_background(background, state)
+        restore_icon_theme(state)
+        restore_dock(state)
+        set_top_panel_mode(0)
+        state.update({"original": None, "applied": False})
+        Gio.Settings.sync()
+        save_state(state)
     return 0
 
 
+def icon_theme_installed(name):
+    """True when an icon theme directory with an index.theme exists on the icon search path."""
+    if not name or "/" in name or name in (".", ".."):
+        return False
+    roots = [Path(GLib.get_user_data_dir()) / "icons", Path.home() / ".icons"]
+    roots += [Path(directory) / "icons" for directory in GLib.get_system_data_dirs()]
+    return any((root / name / "index.theme").is_file() for root in roots)
+
+
+def activate_icon_theme(mode, state):
+    """Apply the work icon theme, snapshotting the user's theme the first time."""
+    interface = Gio.Settings.new("org.gnome.desktop.interface")
+    icons = state.get("icons")
+    applied = isinstance(icons, dict) and icons.get("applied")
+    wanted = mode.get_string("icon-theme").strip()
+    if not icon_theme_installed(wanted):
+        # Key cleared or theme uninstalled while active: put the user's theme back.
+        if applied:
+            restore_icon_theme(state)
+        return
+    if not applied:
+        state["icons"] = {"applied": True, "original": interface.get_string("icon-theme")}
+    if interface.get_string("icon-theme") != wanted:
+        interface.set_string("icon-theme", wanted)
+
+
+def restore_icon_theme(state):
+    icons = state.get("icons")
+    if not isinstance(icons, dict) or not icons.get("applied"):
+        return
+    original = icons.get("original")
+    if isinstance(original, str) and original:
+        Gio.Settings.new("org.gnome.desktop.interface").set_string("icon-theme", original)
+    state["icons"] = {"applied": False}
+
+
+def systemctl(*args):
+    if NO_SERVICES or not which("systemctl"):
+        return 1
+    return subprocess.run(
+        ["systemctl", "--user", *args],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode
+
+
+# The patched dock reads its schema from a private directory (see install-dock-drawers.sh).
+PRIVATE_DOCK_SCHEMAS = Path.home() / ".local/lib/mseries/dock/share/glib-2.0/schemas"
+DOCK_KEYS = ("icon-size", "autohide-mode", "taskbar-mode")
+
+
 def dock_settings():
+    # Gio.Settings.new aborts the process for a missing schema, so look it up first.
+    default = Gio.SettingsSchemaSource.get_default()
+    source = default
+    if (PRIVATE_DOCK_SCHEMAS / "gschemas.compiled").is_file():
+        try:
+            source = Gio.SettingsSchemaSource.new_from_directory(str(PRIVATE_DOCK_SCHEMAS), default, False)
+        except GLib.Error:
+            source = default
+    schema = source.lookup(DOCK_SCHEMA, True) if source is not None else None
+    if schema is None:
+        return None, None
+    return Gio.Settings.new_full(schema, None, None), schema
+
+
+PANELS = ("org.pantheon.gala", "/org/techmore/mseries/Panels", "org.techmore.mseries.Panels")
+
+
+def set_top_panel_mode(mode):
+    """Hide (1) or restore (0) the top bar via the M-Series compositor; runtime-only, so a crash or
+    new login always brings the bar back. Older compositors lack the interface: leave the bar alone."""
+    if NO_SERVICES:
+        return False
     try:
-        settings = Gio.Settings.new(DOCK_SCHEMA)
-        schema = settings.props.settings_schema
-        values = {}
-        for key in ("icon-size", "autohide-mode"):
-            if schema.has_key(key):
-                values[key] = settings.get_value(key).print_(True)
-        return settings, schema, values
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        bus.call_sync(*PANELS, "SetTopPanelMode", GLib.Variant("(u)", (mode,)),
+                      None, Gio.DBusCallFlags.NO_AUTO_START, 2000, None)
+        return True
     except GLib.Error:
-        return None, None, {}
+        return False
 
 
 def dock_running():
@@ -127,50 +320,34 @@ def dock_running():
 
 
 def activate_dock(state):
-    settings, schema, _ = dock_settings()
+    settings, schema = dock_settings()
     if settings is None:
         state.setdefault("dock", {"available": False})
         return
     dock = state.get("dock")
     if not isinstance(dock, dict) or not dock.get("applied"):
-        was_running = dock_running()
         dock = {
             "available": True,
             "applied": True,
             "original": {},
             "started_by_work_mode": False,
         }
-        for key in ("icon-size", "autohide-mode"):
+        for key in DOCK_KEYS:
             if schema.has_key(key):
                 dock["original"][key] = settings.get_value(key).print_(True)
-        if not was_running and which("systemctl"):
-            subprocess.run(
-                ["systemctl", "--user", "start", DOCK_UNIT],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
+        if not dock_running() and systemctl("start", DOCK_UNIT) == 0:
             dock["started_by_work_mode"] = True
         state["dock"] = dock
-    elif dock.get("started_by_work_mode") and which("systemctl"):
-        active = subprocess.run(
-            ["systemctl", "--user", "is-active", "--quiet", DOCK_UNIT],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        ).returncode == 0
-        if not active:
-            subprocess.run(
-                ["systemctl", "--user", "start", DOCK_UNIT],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
+    elif dock.get("started_by_work_mode") and systemctl("is-active", "--quiet", DOCK_UNIT) != 0:
+        systemctl("start", DOCK_UNIT)
 
+    taskbar = schema.has_key("taskbar-mode")
     if schema.has_key("icon-size"):
-        settings.set_int("icon-size", size_system_dock("work", 40))
+        settings.set_int("icon-size", size_system_dock("work-taskbar" if taskbar else "work", 48 if taskbar else 40))
     if schema.has_key("autohide-mode"):
         settings.set_string("autohide-mode", "never")
+    if taskbar:
+        settings.set_boolean("taskbar-mode", True)
 
 
 def size_system_dock(mode, fallback):
@@ -187,43 +364,61 @@ def restore_dock(state):
     dock = state.get("dock")
     if not isinstance(dock, dict) or not dock.get("applied"):
         return
-    settings, schema, _ = dock_settings()
+    settings, schema = dock_settings()
     if settings is not None:
-        for key, value in dock.get("original", {}).items():
+        original = dock.get("original", {})
+        for key, value in original.items():
             if schema.has_key(key):
                 settings.set_value(key, GLib.Variant.parse(None, value, None, None))
-    if dock.get("started_by_work_mode") and which("systemctl"):
-        subprocess.run(
-            ["systemctl", "--user", "stop", DOCK_UNIT],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        # Snapshots taken before the taskbar existed must still leave the floating dock.
+        if schema.has_key("taskbar-mode") and "taskbar-mode" not in original:
+            settings.set_boolean("taskbar-mode", False)
+    if dock.get("started_by_work_mode"):
+        systemctl("stop", DOCK_UNIT)
     state["dock"] = {"available": dock.get("available", False), "applied": False}
+
+
+def status_text(settings):
+    # Status never contacts the address service; it reports the last check.
+    _, reason, address = evaluate(settings, allow_query=False)
+    applied = load_state().get("applied", False)
+    if reason == "off":
+        return "Off"
+    if reason == "no-wallpaper":
+        return "On · choose a work wallpaper"
+    if reason == "active":
+        return "Active · work wallpaper and dock applied" if applied else "Starting · applying the work layout"
+    if reason == "outside-hours":
+        return "Waiting · outside work hours"
+    if reason == "no-networks":
+        return "Waiting · add a work public IP address"
+    if reason == "network-unknown":
+        return "Waiting · checking the public IP address"
+    return f"Waiting · not on a work network (public IP {address})"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tick", action="store_true", help="apply the current schedule once")
-    parser.add_argument("--status", action="store_true", help="show the current schedule status")
-    parser.add_argument("--restore", action="store_true", help="restore the wallpaper and dock snapshot")
+    parser.add_argument("--tick", action="store_true", help="apply the current rules once")
+    parser.add_argument("--status", action="store_true", help="show the current status")
+    parser.add_argument("--public-ip", action="store_true", help="check and print the current public IP address")
+    parser.add_argument("--restore", action="store_true", help="restore the wallpaper, icon theme and dock snapshot")
     args = parser.parse_args()
     if args.status:
-        settings = Gio.Settings.new(SCHEMA)
-        if not settings.get_boolean("enabled"):
-            print("Off")
-        elif not settings.get_string("work-wallpaper"):
-            print("On · choose a work wallpaper in System Settings → Windows Work Mode")
-        elif in_work_window(settings):
-            print("Windows Work Mode · work layout active")
-        else:
-            print("Scheduled · normal desktop active")
+        print(status_text(Gio.Settings.new(SCHEMA)))
+        return 0
+    if args.public_ip:
+        address = public_ip(Gio.Settings.new(SCHEMA), refresh=True)
+        if address is None:
+            print("Could not determine the public IP address.", file=sys.stderr)
+            return 1
+        print(address)
         return 0
     if args.tick:
         return tick()
     if args.restore:
         return restore()
-    parser.error("use --tick, --status or --restore")
+    parser.error("use --tick, --status, --public-ip or --restore")
 
 
 if __name__ == "__main__":
