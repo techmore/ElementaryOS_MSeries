@@ -356,7 +356,8 @@ namespace MSeries {
         private Gtk.Widget build_display () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             var panel = section ("Wingpanel");
-            add_row (panel, row ("Quota style", "Dots hide reset times; hover for percentages and resets", quota_style ()));
+            add_row (panel, row ("Quota style", "Dots hide reset times; enable hover information for details", quota_style ()));
+            add_row (panel, row ("Hover information", "Show usage details when the pointer rests on the menu bar", panel_toggle ("showHoverInfo")));
             add_row (panel, row ("Token counts", "Keep seven-day totals in the dropdown to save bar space", token_location ()));
 
             add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));

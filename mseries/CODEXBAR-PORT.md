@@ -226,10 +226,11 @@ Wingpanel while preserving the running CodexBar daemon.
 ### Wingpanel display preferences
 
 Use the popover gear > **Display > Wingpanel**. Percentage and reset-time switches control quota text in the
-bar and menu. Other-account rows and hints can be hidden in the panel bar separately. Tooltips and progress-bar
-accessible names retain full quota information. Local options live in `~/.config/codexbar/wingpanel.json`, loaded
+bar and menu. Other-account rows and hints can be hidden in the panel bar separately. **Hover information**
+controls tooltips throughout the top-panel bar and defaults to off (`showHoverInfo: false`). Dropdown tooltips
+and accessible names retain full quota information. Local options live in `~/.config/codexbar/wingpanel.json`, loaded
 by `PanelPreferences.vala`, and are never sent to upstream `--configure`. A directory monitor handles atomic file
-replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled;
+replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled except compact quota and hover information;
 malformed files retain the last valid values and the Settings window reports save errors.
 
 Build/run `test-live-preferences` via `probe/run-live-preferences.sh BUILD_DIR` to check live changes against
