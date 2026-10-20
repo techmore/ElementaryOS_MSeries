@@ -59,7 +59,7 @@ has been inventoried.
 its declared build/customization scope a path record and a first-pass
 `component_id`. It now includes documentation, extensionless hooks, presets,
 and packaged data as well as source files. Current grouping is path-derived:
-228 component groups cover 742 file records (660 local and 82 elementary-owned
+229 component groups cover 747 file records (665 local and 82 elementary-owned
 upstream inputs). Those IDs still need review against semantic project
 boundaries, source licenses, interfaces, and conversion contracts. Power and
 Wi-Fi and panel-provenance candidate files are marked `candidate-parity-verified-not-installed`;
@@ -98,7 +98,7 @@ or complete the semantic ownership audit.
 | `mseries-power` | Privileged charge/power command and profile policy | Rust candidate implemented in its own crate; not installed by default | Thirteen differential cases currently pass; full contracts and target-device qualification remain open; see `mseries-power/README.md` |
 | M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
 | Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Eight focused tests, five same-fixture socket-parser cases and eleven resolved-event cases pass; daemon restart and device-session qualification remain open; see `netusage/README.md` |
-| Ambient keyboard lighting | User service, AOP ALS sensor, UPower and logind session gates | Rust candidate in its own crate; current Python helper remains installed | Six Rust core tests pass; live D-Bus parity and image admission remain open; see `keyboard-backlight/` |
+| Ambient keyboard lighting | User service, AOP ALS sensor, UPower and logind session gates | Rust candidate in its own crate; current Python helper remains installed | Six Rust core tests and fake UPower/logind Python/Rust parity pass; live system and image admission remain open; see `keyboard-backlight/` |
 | Factory panel provenance tools | Package-version, ABI-path and plugin-digest gate used during image assembly | Rust `verify` and `record` now run in the image build and stage under the existing verifier path; Python remains as parity/rollback baseline | Rust unit checks and Python/Rust command parity fixtures pass; full arm64 image admission remains open; see `panel-provenance/README.md` |
 | Brightness bridge | D-Bus integration/service | Candidate for an independent Rust implementation | Compare D-Bus names, methods, errors and display behavior before cutover |
 | Keyboard-backlight service | M-series sensor and backlight policy | Candidate for an independent Rust implementation | Compare sensor bounds, manual override, lock/lid and suspend behavior before cutover |
@@ -216,9 +216,9 @@ individually.
   passed on this branch.
 - The keyboard-backlight service has a dependency-free Rust candidate with
   six unit tests for sensor selection, rounding, manual override pause, and
-  deadband. It is not installed; D-Bus/login parity and image admission remain
-  open.
-- The full file inventory currently contains 742 items (660 M-series-maintained
+  deadband. Its fake UPower/logind Python/Rust integration fixture passes. It is
+  not installed; live system and image admission remain open.
+- The full file inventory currently contains 747 items (665 M-series-maintained
   and 82 elementary-owned upstream inputs) grouped into 228 first-pass
   components. Most local code/configuration/patch items still need semantic
   ownership review, a conversion contract, and a parity plan.

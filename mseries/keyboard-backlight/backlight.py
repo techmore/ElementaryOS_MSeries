@@ -76,6 +76,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--step', choices=('up', 'down'))
     parser.add_argument('--once', action='store_true')
+    parser.add_argument('--sensor-root', type=Path, default=Path('/sys/bus/iio/devices'),
+                        help=argparse.SUPPRESS)
     args = parser.parse_args()
     keyboard = Keyboard()
     if args.step:
@@ -88,7 +90,7 @@ def main():
     paused_lux = None
     while True:
         try:
-            lux = illuminance()
+            lux = illuminance(args.sensor_root)
             current = keyboard.call('GetBrightness')
             if last is not None and current != last:
                 paused_lux = lux

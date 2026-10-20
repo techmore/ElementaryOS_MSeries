@@ -15,17 +15,25 @@ const LOGIND_MANAGER: &str = "org.freedesktop.login1.Manager";
 
 #[derive(Debug, PartialEq)]
 enum Cli {
-    Run { once: bool },
+    Run { once: bool, sensor_root: PathBuf },
     Step(i32),
 }
 
 fn parse_args(args: &[String]) -> Result<Cli, String> {
     let mut once = false;
     let mut step = None;
+    let mut sensor_root = PathBuf::from(SENSOR_ROOT);
     let mut index = 0;
     while index < args.len() {
         match args[index].as_str() {
             "--once" => once = true,
+            "--sensor-root" => {
+                index += 1;
+                sensor_root = args
+                    .get(index)
+                    .map(PathBuf::from)
+                    .ok_or_else(|| "argument --sensor-root: expected one argument".to_owned())?;
+            }
             "--step" => {
                 index += 1;
                 step = Some(match args.get(index).map(String::as_str) {
@@ -48,7 +56,7 @@ fn parse_args(args: &[String]) -> Result<Cli, String> {
     if let Some(direction) = step {
         Ok(Cli::Step(direction))
     } else {
-        Ok(Cli::Run { once })
+        Ok(Cli::Run { once, sensor_root })
     }
 }
 
@@ -312,14 +320,14 @@ fn main() -> ExitCode {
             let target = (current + step(maximum, direction)).clamp(0, maximum);
             brightness("SetBrightness", Some(target)).map(|_| String::new())
         })(),
-        Cli::Run { once } => (|| {
+        Cli::Run { once, sensor_root } => (|| {
             let maximum = keyboard_maximum()?;
             if once {
-                run_once(Path::new(SENSOR_ROOT), maximum, &mut AutoState::default())
+                run_once(&sensor_root, maximum, &mut AutoState::default())
             } else {
                 let mut state = AutoState::default();
                 loop {
-                    match run_once(Path::new(SENSOR_ROOT), maximum, &mut state) {
+                    match run_once(&sensor_root, maximum, &mut state) {
                         Ok(message) => {
                             let _ = message;
                         }

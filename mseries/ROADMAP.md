@@ -244,7 +244,7 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-742 file records (660 M-series-maintained paths and 82 elementary-owned upstream
+747 file records (665 M-series-maintained paths and 82 elementary-owned upstream
 inputs) grouped into 228 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
@@ -266,7 +266,8 @@ default branch. See the [2026-10-20 handoff](OS9-HANDOFF.md#2026-10-20--rust-pan
 The keyboard-backlight service has a dependency-free Rust candidate with five
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. It is not installed; live logind/UPower parity and
-image admission remain open. The file inventory now covers 745 paths.
+image admission remain open. The file inventory now covers 747 paths grouped into
+229 first-pass components.
 
 ## Implemented; runtime validation pending
 

@@ -2495,6 +2495,7 @@ The next component, ambient keyboard lighting, now has a dependency-free Rust
 candidate at `mseries/rust/keyboard-backlight/`. Six tests cover ALS sensor
 selection, Python-compatible rounding and curve behavior, manual override
 pause, deadband, and step sizing; format, Clippy, and release-build checks pass.
-It remains uninstalled because the live busctl/loginctl integration has not
-received same-host parity or Apple Silicon image admission. The daily Rust
-candidate workflow now builds this crate too. Inventory: 745 scoped files.
+The fake UPower/logind Python/Rust parity fixture passes too. It remains
+uninstalled pending live system integration and Apple Silicon image admission.
+The daily Rust candidate workflow now builds and parity-checks this crate too.
+Inventory: 747 scoped files across 229 first-pass groups.

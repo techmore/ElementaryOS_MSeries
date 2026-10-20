@@ -58,6 +58,8 @@ jobs:
             mseries/rust/netusage/target/release/mseries-netusage-rs
           python3 mseries/rust/panel-provenance/test-parity.py \
             mseries/rust/panel-provenance/target/release/mseries-panel-provenance-rs
+          python3 mseries/rust/keyboard-backlight/test-parity.py \
+            mseries/rust/keyboard-backlight/target/release/mseries-keyboard-backlight-rs
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-power-cap.py
 

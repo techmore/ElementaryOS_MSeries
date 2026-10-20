@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 746,
+  "item_count": 747,
   "component_count": 229,
   "components": [
     {
@@ -2461,15 +2461,16 @@
     {
       "id": "mseries/rust/keyboard-backlight",
       "ownership": "mseries-maintained",
-      "item_count": 4,
+      "item_count": 5,
       "rust_status_counts": {
-        "not-assessed": 4
+        "not-assessed": 5
       },
       "items": [
         "mseries/rust/keyboard-backlight/.gitignore",
         "mseries/rust/keyboard-backlight/Cargo.lock",
         "mseries/rust/keyboard-backlight/Cargo.toml",
-        "mseries/rust/keyboard-backlight/src/main.rs"
+        "mseries/rust/keyboard-backlight/src/main.rs",
+        "mseries/rust/keyboard-backlight/test-parity.py"
       ]
     },
     {
@@ -9053,6 +9054,15 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/keyboard-backlight/test-parity.py",
+      "path": "mseries/rust/keyboard-backlight/test-parity.py",
+      "component_id": "mseries/rust/keyboard-backlight",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
       "rust_status": "not-assessed"
     },
     {
