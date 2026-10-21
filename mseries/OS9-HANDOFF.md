@@ -17,8 +17,9 @@ The owner approved merging the remaining green PRs and a scan of the current net
 - **Dock progress:** on the real session bus, the loaded Wingpanel indicator emitted `com.canonical.Unity.LauncherEntry`
   `Update` with `progress-visible=true` and rising `progress` during the scan, and the dock source consumes that
   interface. The dock drawing the bar was not observed on screen.
-- **Quicklist `--quick-scan`:** only partly verified. The `--tab` action was verified earlier; for `--quick-scan` the
-  start button was confirmed present and enabled when idle, but the action itself was not run (it would start a scan).
+- **Quicklist `--quick-scan`:** verified later the same day. A second instance (headless, isolated display) with
+  `--quick-scan` started a Quick Scan of 10.20.0.0/24 through the single running service; `--tab` was verified earlier.
+  Note this left a second scan of the approved network running.
 - The NmapUI service now runs under Gunicorn (see the earlier entry).
 
 Still open: production host access, Developer ID signing and notarization, Google Admin tenant consent, physical scanner fleet runs.
