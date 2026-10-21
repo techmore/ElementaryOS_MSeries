@@ -266,8 +266,8 @@ that does not establish the owner's physical memory map. Unrelated reserved
 regions need not have RAM page alignment; this is not a complete firmware
 reservation validator. GPU/DCP source gates remain separate and mandatory.
 
-Factory integration remains unfinished: the ordinary base profile still
-selects linux-image-generic. The standalone M4 package/EFI tests do not
+Factory integration remains unfinished: the default base profile selects
+linux-image-generic, while the opt-in M4 profile selects the research kernel. The standalone M4 package/EFI tests do not
 constitute an enabled M4 factory installer or complete desktop image.
 
 ## Opt-in factory package selection
@@ -285,5 +285,24 @@ For configuration review, run `mkosi --profile=m4-mini --architecture=arm64
 The pinned mkosi 28~devel parser passes default/M4/Fairydust and negative
 architecture/conflict tests using test-mkosi-profile.py --mkosi-source SOURCE.
 This establishes configuration selection only. No complete M4 ISO has built;
-private graphics activation, full desktop and firmware handoff remain open.
+full desktop and firmware handoff remain open; private graphics activation
+is now separately tested below.
 Installer/hardware qualification flags remain false.
+
+## M4-only graphics activation
+
+The opt-in profile includes an extra tree and a chroot post-install hook that
+refreshes the target root's loader cache. Ordinary GLVND applications select
+the private EGL/GLX/GBM libraries; a Vulkan manifest points to the matched
+private driver. User units and LightDM children receive Gravity's nocompress
+workaround. Default builds omit these files and this hook.
+
+Real mkosi parser tests verify selection exactly once. The hook was replayed
+inside the configured minimal ARM64 root, followed by EGL software rendering
+without launcher, LD_LIBRARY_PATH or vendor/DRI overrides: Mesa 26.3.0-devel
+loaded and pixel readback passed. The user environment generator emitted the
+workaround. This does not qualify hardware acceleration, Vulkan conformance,
+a complete elementary session, or a full factory image. The owner's M4 is
+unavailable; physical firmware, HDMI, memory and 10 Gb checks remain open.
+
+[Activation receipt](receipts/2026-10-21-factory-graphics.json).

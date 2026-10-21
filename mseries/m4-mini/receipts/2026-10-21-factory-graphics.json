@@ -1,0 +1,25 @@
+{
+  "scope": "M4-only factory graphics activation; configured minimal ARM64 root, no hardware",
+  "files_sha256": {
+    "mkosi.images/base/mkosi.profiles/m4-mini/activate-graphics.chroot": "2fb639464725ee8e33069d8cd7cabc0102f5648d8b64c8111441b4c9e6c32e38",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.conf": "8d0e7d0cbdabff113999a062a2373f79aabd75380c52bb60863343e1e1340521",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/etc/ld.so.conf.d/00-elementary-m4-gravity.conf": "bfc63ea8aa764c93e9db0381c86e8df8c5cb615bffe4bd6fd46a946d937ddf18",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/lib/environment.d/50-elementary-m4-mesa.conf": "fe36795e6f6ffece5b261e48ecc6a9c5074a2d5c438b38b145e4e727a4a0d7a8",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/lib/systemd/system/lightdm.service.d/50-elementary-m4-mesa.conf": "203ec47884edf4e2b90c0ef707561970165e6b0d209bfe53ef728f9842029757",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/share/vulkan/icd.d/elementary-m4-asahi.aarch64.json": "78875e26f781b90750e2a1a45e75c311ad8880cfc240c028386bcbd95ecdd8e5"
+  },
+  "mkosi_source": "f7e32882d26e2c5f3daba48e1aff5b411e6b4d92",
+  "checks": {
+    "real_mkosi_profile_selection": "PASS; extra tree and hook selected once, absent from default",
+    "hook_in_isolated_root": "PASS; target-root ldconfig only",
+    "unwrapped_egl_software_render": "PASS; llvmpipe LLVM 21.1.8, Mesa 26.3.0-devel, red pixel readback",
+    "environment_generator": "PASS; ASAHI_MESA_DEBUG=nocompress",
+    "cache_priority": "PASS; private EGL_mesa, GLX_mesa and GBM precede distribution copies",
+    "vulkan_manifest": "absolute private library path; not a device/conformance test"
+  },
+  "no_loader_overrides_in_smoke": true,
+  "full_factory_image_built": false,
+  "desktop_session_tested": false,
+  "hardware_validated": false,
+  "owner_hardware_available": false
+}

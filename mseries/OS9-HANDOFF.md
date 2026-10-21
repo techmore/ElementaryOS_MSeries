@@ -1,3 +1,18 @@
+## M4 mini: opt-in factory graphics activation — 2026-10-21
+
+The M4-only extra tree prioritizes matched private Mesa/GBM through the target
+ldconfig cache, publishes its Vulkan manifest, and applies nocompress to user
+units and LightDM children. A chroot post-install hook refreshes the image cache.
+Real mkosi configuration tests select the tree/hook once and omit both from
+default builds. Replaying the hook inside the isolated configured ARM64 root
+passes: ordinary EGL software rendering loads Mesa 26.3 without launcher or
+loader overrides; the user environment generator emits the workaround.
+No physical GPU, Vulkan, login session or full ISO test is claimed. Owner's
+M4 remains unavailable; continue public-source preparation. Next: full factory
+assembly and desktop integration when build capacity permits; actual firmware,
+HDMI and 10 Gb controller/link qualification still require the Mac mini.
+[Receipt](m4-mini/receipts/2026-10-21-factory-graphics.json).
+
 ## M4 mini: opt-in mkosi package profile — 2026-10-21
 
 The m4-mini base profile selects exact kernel r2/Mesa r3/policy r2 packages;

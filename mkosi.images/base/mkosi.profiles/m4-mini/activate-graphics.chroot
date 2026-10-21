@@ -1,0 +1,7 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Runs inside the opt-in target image after ExtraTrees and packages.
+set -eu
+test -f /opt/elementary-m4-gravity1/lib/libEGL_mesa.so.0
+test -f /opt/elementary-m4-gravity1/lib/libgbm.so.1
+/sbin/ldconfig

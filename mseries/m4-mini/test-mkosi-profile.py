@@ -40,6 +40,13 @@ for name in default:
         assert set(default[name]['Packages']) == set(m4[name]['Packages']), name
 assert set(m4['liveiso']['KernelInitrdModules']) == set(default['liveiso']['KernelInitrdModules']) | {
     'nvme_apple', 'pcie_apple', 'hid_apple', 'hid_magicmouse'}
+profile = repo / 'mkosi.images/base/mkosi.profiles/m4-mini'
+extra = str(profile / 'mkosi.extra')
+hook = str(profile / 'activate-graphics.chroot')
+assert sum(item['Source'] == extra for item in m4['base']['ExtraTrees']) == 1
+assert not any(item['Source'] == extra for item in default['base']['ExtraTrees'])
+assert m4['base']['PostInstallationScripts'].count(hook) == 1
+assert hook not in default['base']['PostInstallationScripts']
 wrong = resolve('--architecture=x86-64', '--profile=m4-mini')
 assert wrong.returncode != 0 and 'Architecture=arm64 in [Assert]' in wrong.stderr
 conflict = resolve('--architecture=arm64', '--profile=m4-mini', '--profile=fairydust')
