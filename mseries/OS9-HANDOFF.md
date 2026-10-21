@@ -1,3 +1,17 @@
+## Disk Space app: cards and circle disk usage analyzer — 2026-10-21 (Claude Code)
+
+- **What:** `rust/mseries-diskspace` (GTK 4 + Granite 7, granite-rs), launcher `org.techmore.mseries.DiskSpace`, `mseries/diskspace-app/`
+  (install, test, README), CI `mseries-diskspace-app.yml`. Filesystems on the left, a treemap of cards or a sunburst of the current folder in
+  the middle, a sortable contents list with Copy path / Show in Files / Move to Trash / Delete… on the right. Parallel scanner (rayon) counting
+  allocated blocks, hard links once, one filesystem by default. Details and limits: `mseries/diskspace-app/README.md`.
+- **Verified (no hardware):** `bash mseries/diskspace-app/test.sh`: 18 unit tests (scanner, squarify, sunburst, deletion guards), scan totals equal
+  `du -sx --block-size=1` on three real trees, scanning `/` here in 0.3 s, headless Xvfb render in light and dark that clicks cards and the circle
+  centre, then trashes one folder and permanently deletes another and checks list, totals and disk.
+- **Not verified:** a run in the owner's Pantheon session, big or slow disks, network shares, a screen reader. **Not built:** translations, search
+  or type filters, live scan preview, an apt package. The `/` scan skips `/home` (a separate Btrfs subvolume); the status bar says so.
+  Nothing was installed or restarted on this machine.
+- **Next:** try it from the launcher on the M1, scan `/home` and System, and record anything that looks wrong here.
+
 ## Apple/Logitech peripherals: `mseries-peripherals` — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/hardware/peripherals.py` (installs as `/usr/bin/mseries-peripherals`) with `status`, `pair` and a `watch` user service
