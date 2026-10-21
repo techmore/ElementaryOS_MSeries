@@ -10196,3 +10196,10 @@ promotion of the partial-initialization diagnostic path. Full Asahi source at
 configuration passes with Clang/GNU ld after LLVM=1 failed for missing ld.lld.
 Image/modules/dtbs build started at four jobs; result remains pending. No kernel
 build success or mini runtime support is claimed.
+
+M4 significant upstream discovery: Gravity Linux has a developer alpha with
+reported mini HDMI/DCP and GPU. Added seven component pins and a separate
+gravity-mini DT profile; complete include capture and compiler run pass with
+retained warnings. Asahi/Gravity source histories diverge despite both reporting
+7.1.13; capped GitHub compare is not a complete patch. Full Gravity source download
+started for independent build/packaging work. No local hardware support claim.

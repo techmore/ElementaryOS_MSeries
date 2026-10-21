@@ -49,6 +49,27 @@
         "include/dt-bindings/interrupt-controller/irq.h",
         "include/dt-bindings/pinctrl/apple.h"
       ]
+    },
+    {
+      "name": "gravity-mini",
+      "repository": "GravityLinux/linux",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "files": [
+        "arch/arm64/boot/dts/apple/hwmon-common.dtsi",
+        "arch/arm64/boot/dts/apple/hwmon-fan.dtsi",
+        "arch/arm64/boot/dts/apple/hwmon-mini.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-gpu.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+        "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "include/dt-bindings/gpio/gpio.h",
+        "include/dt-bindings/interrupt-controller/apple-aic.h",
+        "include/dt-bindings/interrupt-controller/irq.h",
+        "include/dt-bindings/phy/phy.h",
+        "include/dt-bindings/pinctrl/apple.h",
+        "include/dt-bindings/spmi/spmi.h"
+      ]
     }
   ],
   "boot_companions": [
@@ -72,5 +93,54 @@
     "matching boot producer handoff",
     "J773g thermal and lifecycle qualification",
     "macOS and Recovery round-trip"
-  ]
+  ],
+  "gravity_stack": {
+    "linux": {
+      "repository": "GravityLinux/linux",
+      "branch": "gravity-m4",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    "mesa": {
+      "repository": "GravityLinux/mesa",
+      "branch": "main",
+      "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    "bootloader": {
+      "repository": "GravityLinux/bootloader",
+      "branch": "main",
+      "commit": "f02d4a52017915febb222539636b5b025a70407a"
+    },
+    "u-boot": {
+      "repository": "GravityLinux/u-boot",
+      "branch": "main",
+      "commit": "a44f46af0aa17e48572e0d46c0d082886ee353c3"
+    },
+    "packages": {
+      "repository": "GravityLinux/packages",
+      "branch": "main",
+      "commit": "711c2a110416d28010ccdd118b83111776bff207"
+    },
+    "installer": {
+      "repository": "GravityLinux/installer",
+      "branch": "main",
+      "commit": "6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    "kiwi-descriptions": {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "branch": "main",
+      "commit": "07bf52cb2866069c072eb03a8f23af9839d0397c"
+    }
+  },
+  "public_support_evidence": {
+    "url": "https://gravitylinux.org/blog/early-alpha-m4-mac-mini/",
+    "level": "developer alpha; project-reported HDMI/DCP and GPU",
+    "limits": [
+      "limited testing",
+      "shutdown/reboot unreliable",
+      "no suspend",
+      "no USB-C display",
+      "no Thunderbolt/USB4"
+    ],
+    "local_hardware_validated": false
+  }
 }

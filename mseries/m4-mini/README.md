@@ -48,3 +48,7 @@ source. `fdtget` confirms `apple,j773g` and the framebuffer's disabled state;
 its memory and framebuffer properties require loader fixups.
 
 See [the mini patch review](MINI-PATCH-REVIEW.md) for the public diagnostic patch disposition and its verified digest.
+
+## Gravity mini candidate
+
+The expanded audit found Gravity Linux’s developer alpha with project-reported mini HDMI/DCP and GPU. See [Gravity integration](GRAVITY-INTEGRATION.md); this supersedes broad no-mini-support conclusions in the initial audit. `build-dtb.py --source gravity-mini` compiles the separately pinned mini profile. Current development heads are distinct from the published alpha bundle.

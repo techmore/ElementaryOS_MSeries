@@ -1,5 +1,8 @@
 # M4 Mac mini upstream readiness audit — 2026-10-21
 
+**Superseding discovery:** Gravity Linux publishes an M4 mini developer alpha with project-reported HDMI/DCP and GPU support. The earlier Asahi/Aurora-only conclusions below are incomplete. See GRAVITY-INTEGRATION.md and research.json for the newly pinned stack; elementary integration and local hardware qualification remain open.
+
+
 Target: owner’s M4 / 16 GB Mac mini; expected J773g / T8132 / Mac16,10. Confirm model and Ethernet variant in macOS before producing board artifacts. No hardware access, boot, build, partition change or installation performed.
 
 ## Finding

@@ -1,5 +1,8 @@
 # Public J773g prior-art review — 2026-10-21
 
+**Superseding discovery:** Gravity Linux publishes an M4 mini developer alpha with project-reported HDMI/DCP and GPU support. The earlier Asahi/Aurora-only conclusions below are incomplete. See GRAVITY-INTEGRATION.md and research.json for the newly pinned stack; elementary integration and local hardware qualification remain open.
+
+
 Source: https://github.com/0xSero/mac-mini-m4-linux/tree/e0d67e3ff9d5595e17ae3833d2afd9fff150e51b
 
 The kernel patch metadata pins base 77cb8f24c2381a8abb7272d7bbdec548d6426a8a

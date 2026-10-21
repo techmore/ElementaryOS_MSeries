@@ -3334,3 +3334,8 @@ acceptance remain open. Existing release pins are unchanged.
 M4 initial DT compilation now passes from the pinned source capture; loader
 fixups and physical boot remain unverified. See m4-mini/receipts for the retained
 AIC unit-address warning and artifact digest.
+
+M4 audit correction: Gravity Linux publishes a developer alpha with reported
+J773g HDMI/DCP and GPU. The earlier Asahi-only unsupported summary was incomplete.
+Its full stack is now pinned in m4-mini/research.json and its board DT compiles;
+see m4-mini/GRAVITY-INTEGRATION.md for elementary integration gaps and alpha limits.

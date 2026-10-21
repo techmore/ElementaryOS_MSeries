@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 
 
-def build(capture, output):
+def build(capture, output, source_name="asahi-mini"):
     receipt = json.loads((capture / 'receipt.json').read_text())
     if (capture / 'INCOMPLETE').exists():
         raise ValueError('incomplete capture')
@@ -16,15 +16,15 @@ def build(capture, output):
     if receipt['profile'] != expected:
         raise ValueError('capture does not match the checked-in source profile')
     entries = {item['path']: item for item in receipt['files']}
-    source = next(s for s in expected['sources'] if s['name'] == 'asahi-mini')
+    source = next(s for s in expected['sources'] if s['name'] == source_name)
     for name in source['files']:
-        path = 'asahi-mini/' + name
+        path = source_name + '/' + name
         if hashlib.sha256((capture / path).read_bytes()).hexdigest() != entries[path]['sha256']:
             raise ValueError('captured source hash mismatch: ' + path)
     if output.exists():
         raise ValueError('output must be new')
     output.mkdir(parents=True)
-    root = capture / 'asahi-mini'
+    root = capture / source_name
     commands = [
         ['cpp', '-nostdinc', '-undef', '-D__DTS__', '-x', 'assembler-with-cpp',
          '-I', str(root / 'include'), str(root / 'arch/arm64/boot/dts/apple/t8132-j773g.dts')],
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--source', choices=['asahi-mini', 'gravity-mini'], default='asahi-mini')
     args = parser.parse_args()
-    build(args.capture, args.output)
+    build(args.capture, args.output, args.source)
     print('Compiled research DTB; consult receipt warnings; do not install as a qualified bundle')
