@@ -75,15 +75,82 @@ index 105ef82..1fc610c 100644
  
          var content = new Gtk.Box (VERTICAL, 0) {
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
-index ced842f..1c3f437 100644
+index ced842f..b0f8e01 100644
 --- a/src/Taskbar.vala
 +++ b/src/Taskbar.vala
-@@ -289,7 +289,7 @@ public class Dock.TaskbarRow : Gtk.Widget {
+@@ -287,9 +287,10 @@ public class Dock.TaskbarRow : Gtk.Widget {
+         return popover;
+     }
  
-     // Log out, restart and shut down go through the session manager, which shows
-     // elementary's own confirmation dialog, so a misclick never ends the session.
+-    // Log out, restart and shut down go through the session manager, which shows
+-    // elementary's own confirmation dialog, so a misclick never ends the session.
 -    private static async void run_session_action (string action) {
++    // Log out, restart and shut down ask first with the dock's own dialog (this session has
++    // no shell end-session dialog, so gnome-session cancels those requests), then end the
++    // session through logind / the session manager without a second prompt.
 +    internal static async void run_session_action (string action) {
          if (action == "lock") {
              spawn ({ "loginctl", "lock-session" });
              return;
+@@ -298,26 +299,50 @@ public class Dock.TaskbarRow : Gtk.Widget {
+             spawn ({ "io.elementary.settings" });
+             return;
+         }
+-        string method;
+-        Variant? parameters = null;
++        string message, verb;
+         switch (action) {
+         case "logout":
+-            method = "Logout";
+-            parameters = new Variant ("(u)", 0);
++            message = _("Log out of this session?");
++            verb = _("Log Out");
+             break;
+         case "reboot":
+-            method = "Reboot";
++            message = _("Restart this computer?");
++            verb = _("Restart");
+             break;
+         default:
+-            method = "Shutdown";
++            message = _("Shut down this computer?");
++            verb = _("Shut Down");
+             break;
+         }
++        var dialog = new Gtk.AlertDialog ("%s", message) {
++            detail = _("Unsaved work in open apps may be lost."),
++            buttons = { _("Cancel"), verb },
++            cancel_button = 0,
++            default_button = 0,
++            modal = true
++        };
+         try {
+-            var bus = yield Bus.get (SESSION);
+-            yield bus.call (
+-                "org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
+-                method, parameters, null, DBusCallFlags.NONE, -1
+-            );
++            if ((yield dialog.choose (null, null)) != 1) {
++                return;
++            }
++        } catch (Error e) {
++            return; // dismissed
++        }
++        try {
++            if (action == "logout") {
++                var bus = yield Bus.get (SESSION);
++                yield bus.call (
++                    "org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
++                    "Logout", new Variant ("(u)", 1), null, DBusCallFlags.NONE, -1
++                );
++            } else {
++                var bus = yield Bus.get (SYSTEM);
++                yield bus.call (
++                    "org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager",
++                    action == "reboot" ? "Reboot" : "PowerOff", new Variant ("(b)", true), null,
++                    DBusCallFlags.ALLOW_INTERACTIVE_AUTHORIZATION, -1
++                );
++            }
+         } catch (Error e) {
+             warning ("Taskbar %s failed: %s", action, e.message);
+         }
