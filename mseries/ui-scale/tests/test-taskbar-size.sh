@@ -17,38 +17,44 @@ def method(signature):
         depth += (added[end] == '{') - (added[end] == '}')
         end += 1
     return added[start:end]
-text = 'class ItemManager : Object {\n private static Settings? settings;\n'
-text += method('private static bool size_system_managed ()') + '\n'
-text += method('public static int get_icon_size ()') + '\n}\n'
+text = method('public class Dock.SizePolicy : Object') + '\n'
+text += 'namespace Dock { class ItemManager : Object {\n private static Settings? settings;\n'
+text += method('public static int get_icon_size ()') + '\n} }\n'
 text += r'''
+void drain () {
+    var loop = new MainLoop ();
+    Timeout.add (100, () => { loop.quit (); return Source.REMOVE; });
+    loop.run ();
+}
 void policy (string contents) {
     try { FileUtils.set_contents (Path.build_filename (Environment.get_user_state_dir (),
         "mseries", "ui-scale-policy.ini"), contents); }
     catch (Error e) { error ("%s", e.message); }
+    drain ();
 }
 int main () {
     DirUtils.create_with_parents (Path.build_filename (Environment.get_user_state_dir (), "mseries"), 0700);
     var settings = new Settings ("io.elementary.dock");
     settings.set_int ("icon-size", 40);
     settings.set_boolean ("taskbar-mode", true);
-    assert (ItemManager.get_icon_size () == 48);
+    assert (Dock.ItemManager.get_icon_size () == 48);
     policy ("[SizeSystem]\nversion=1\nmanaged=true\n");
     foreach (var size in new int[] { 32, 36, 40, 44, 48, 52, 56, 60, 72 }) {
         settings.set_int ("icon-size", size);
         foreach (var taskbar in new bool[] { true, false }) {
             settings.set_boolean ("taskbar-mode", taskbar);
-            assert (ItemManager.get_icon_size () == size);
+            assert (Dock.ItemManager.get_icon_size () == size);
         }
     }
     settings.set_boolean ("taskbar-mode", true);
     policy ("[SizeSystem]\nversion=2\nmanaged=true\n");
-    assert (ItemManager.get_icon_size () == 48);
+    assert (Dock.ItemManager.get_icon_size () == 48);
     policy ("invalid");
-    assert (ItemManager.get_icon_size () == 48);
+    assert (Dock.ItemManager.get_icon_size () == 48);
     policy ("[SizeSystem]\nversion=1\nmanaged=false\n");
-    assert (ItemManager.get_icon_size () == 48);
+    assert (Dock.ItemManager.get_icon_size () == 48);
     settings.set_boolean ("taskbar-mode", false);
-    assert (ItemManager.get_icon_size () == 72);
+    assert (Dock.ItemManager.get_icon_size () == 72);
     stdout.printf ("PASS: compiled dock policy follows managed tokens; missing/invalid/unmanaged taskbar stays48\n");
     return 0;
 }
