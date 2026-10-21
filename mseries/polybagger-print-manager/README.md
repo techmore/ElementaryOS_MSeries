@@ -10,7 +10,7 @@ Label sources: [techmore/thril](https://github.com/techmore/thril) `poly-bagger/
 inline thermal printer, "Printer Settings" and "Stored Labels", pp. 20–22.
 
 ```bash
-mseries/polybagger-print-manager/install.sh                          # app launcher + offline label sync
+mseries/polybagger-print-manager/install.sh                          # launcher, app icon, offline label sync
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py # GUI
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --status
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --send "<file>.zpl" --qty 1000
@@ -35,6 +35,11 @@ The library's files carry no `^PQ`, so a plain send is a quantity of 1: one bag,
 That matches what we saw on 2026-10-21 (three sends, three labels, then a clear label space). The app adds
 `^PQ<n>` to a temporary copy at send time; the library files are never changed. Store files (`^DF`) are
 sent unchanged because they load nothing.
+
+## Icon
+`io.techmore.PolyBaggerPrintManager.svg`: elementary-style icon of the roll bagger (film roll, status screen
+with the green ready dot, a poly bag with a barcode label). `install.sh` installs it to `hicolor` (SVG plus
+PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it from the dock's context menu.
 
 ## The window
 - **Status bar** (top): a dot with **Ready** (green), **Confirm label / Ready, no label** (amber) or

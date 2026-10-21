@@ -952,6 +952,9 @@ def gui():
         def do_startup(self):
             Gtk.Application.do_startup(self)
             Granite.init()
+            # the icon ships next to this file; install.sh also puts it in hicolor for the dock and app grid
+            Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(str(Path(__file__).resolve().parent))
+            Gtk.Window.set_default_icon_name("io.techmore.PolyBaggerPrintManager")
             gs, gtk = Granite.Settings.get_default(), Gtk.Settings.get_default()
             dark = lambda *_: setattr(gtk.props, "gtk_application_prefer_dark_theme",
                                       gs.props.prefers_color_scheme == Granite.SettingsColorScheme.DARK)
