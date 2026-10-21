@@ -5,6 +5,10 @@ import importlib.machinery
 import importlib.util
 import re
 import unittest
+import tempfile
+import configparser
+from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -93,6 +97,64 @@ class Planner(unittest.TestCase):
     def test_font_policy_only_writes_differences(self):
         values = {ui.FONT_KEYS["ui"]: "Inter 9", ui.FONT_KEYS["titlebar"]: "Adwaita Sans Bold 11"}
         self.assertEqual(ui.font_plan(self.system, values), {ui.FONT_KEYS["titlebar"]: "Inter Bold 9"})
+
+
+class NativePolicy(unittest.TestCase):
+    def test_adoption_publishes_before_dock_signal_and_applies_font_policy(self):
+        system = ui.load_system(HERE / "size-system.json")
+        with tempfile.TemporaryDirectory() as temporary, patch.object(ui, "state_dir", return_value=Path(temporary)):
+            class Desktop:
+                def __init__(self):
+                    self.current = {TEXT: 0.85, ICON: 48, ui.FONT_KEYS["titlebar"]: "Old Font 11"}
+                def values(self):
+                    return self.current.copy()
+                def taskbar(self):
+                    return False
+                def write(self, writes):
+                    policy = configparser.ConfigParser()
+                    policy.read(Path(temporary) / "ui-scale-policy.ini")
+                    # Simulates a synchronous GSettings icon-size observer.
+                    assert policy.getboolean("SizeSystem", "managed")
+                    self.current.update(writes)
+            desktop = Desktop()
+            ui.reconcile(system, desktop, managed=True)
+            self.assertEqual(desktop.current[ICON], 40)
+            self.assertEqual(desktop.current[ui.FONT_KEYS["titlebar"]], "Inter Bold 9")
+
+    def test_concurrent_cli_and_watcher_writers_use_owned_temporaries(self):
+        system = ui.load_system(HERE / "size-system.json")
+        with tempfile.TemporaryDirectory() as temporary, patch.object(ui, "state_dir", return_value=Path(temporary)):
+            def write(index):
+                ui.set_managed(bool(index % 2))
+                ui.publish_policy(True)
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                list(executor.map(write, range(100)))
+            self.assertIsInstance(ui.is_managed(), bool)
+            config = configparser.ConfigParser()
+            config.read(Path(temporary) / "ui-scale-policy.ini")
+            self.assertTrue(config.getboolean("SizeSystem", "managed"))
+            self.assertEqual(config.getint("SizeSystem", "version"), 1)
+            self.assertEqual(sorted(path.name for path in Path(temporary).iterdir()),
+                             ["ui-scale-policy.ini", "ui-scale.json"])
+
+    def test_installer_copies_policy_producer_and_token_payload(self):
+        installer = (HERE.parent / "install-ui-scale.sh").read_text()
+        self.assertIn('"$src/mseries-ui-scale" "$bin"', installer)
+        self.assertIn('"$src/size-system.json" "$data/size-system.json"', installer)
+
+    def test_managed_policy_atomic_replacements_and_unmanage(self):
+        with tempfile.TemporaryDirectory() as temporary, patch.object(ui, "state_dir", return_value=Path(temporary)):
+            policy_path = Path(temporary) / "ui-scale-policy.ini"
+            for managed in [True, False, True]:
+                ui.publish_policy(managed)
+                config = configparser.ConfigParser()
+                config.read(policy_path)
+                self.assertEqual(config.getboolean("SizeSystem", "managed"), managed)
+                self.assertEqual(config.getint("SizeSystem", "version"), 1)
+                before = policy_path.stat().st_mtime_ns
+                ui.publish_policy(managed)
+                self.assertEqual(policy_path.stat().st_mtime_ns, before)
+                self.assertFalse(policy_path.with_suffix(".ini.tmp").exists())
 
 
 class QuickSettingsLadder(unittest.TestCase):

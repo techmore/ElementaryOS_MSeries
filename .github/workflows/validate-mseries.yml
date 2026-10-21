@@ -68,6 +68,8 @@ jobs:
         run: bash mseries/ui-scale/check-ui-sizes.sh --strict
       - name: Dock writers keep their shell syntax
         run: sh -n mseries/dock-policy/enable-permanent.sh
+      - name: Compiled dock taskbar policy on isolated settings
+        run: bash mseries/ui-scale/tests/test-taskbar-size.sh
       - name: Drive the text-size widget on a private display
         run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:

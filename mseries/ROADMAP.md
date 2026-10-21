@@ -344,6 +344,23 @@ reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
 See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
 remaining native taskbar/network and Teams/Outlook qualification checks.
 
+### Size-system continuation (#332), 2026-10-21
+
+Managed taskbar sizing now follows the shared dock tokens; app typography and
+strict lint coverage are expanded. Owner-selected RepoBar taskbar24pt remains
+intentional. Isolated builds/tests pass; module load and mixed-monitor acceptance
+remain pending. Wingpanel dynamic sizing is held because a whole-content
+transform can double-apply text scale to upstream absolute/rem fonts. Qt/Electron
+font-only integration also remains open. See `ui-scale/SIZE-SYSTEM.md`.
+CI's absent AccountsService exposed a fixture assumption, now corrected with typed
+private portal/Switcheroo services and a private logical system bus. The complete
+native dock suite and fatal-critical cached-widget regression pass without owner
+system services. The subsequent missing Gala keybindings schema is now supplied
+as an exact pinned, test-only consumed-key fixture. Runtime schema roots exclude
+all host schemas, and the cached-widget preflight asserts its four-schema inventory.
+Build-tool metadata lookup remains unchanged. Current-head hosted confirmation
+remains the merge gate.
+
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
 Owner requested the official Teams dock icon and that the dock Mail button open
