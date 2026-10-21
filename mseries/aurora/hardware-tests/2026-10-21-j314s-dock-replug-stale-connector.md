@@ -132,6 +132,32 @@ schedule and the public IP. Turning it off (System Settings, Windows Work Mode, 
 `gsettings set io.elementary.mseries.work-mode enabled false`) restores the normal wallpaper, icon theme and
 dock on the next one-minute tick. This session did not change the setting.
 
+## First login after deploying the fix (07:40, same boot)
+
+The deployed package (`0.1.0+gitc995a60.dockfix1`) was **not exercised** by that login. LightDM only
+autologins at seat start, never after a logout, so the logout showed the greeter, and the greeter
+requested the session it had remembered for the account (`ubuntu`, GNOME; `~/.dmrc` and AccountsService
+`XSession` both dated from 2026-10-19). `lightdm.log` shows no `pantheon-rust-session` start after the
+logout. Earlier short boots on 2026-10-20 (-3, -2, -1) were deliberate reboots and the Rust session
+started and ran normally on each. Fix applied for this: AccountsService `XSession`/`Session` and
+`~/.dmrc` now name `pantheon-rust-wayland`, so the greeter preselects it. A validation job
+(`dockfix-validate-watch`) waits for the Rust compositor and then writes
+`~/.local/state/mseries/dock-recovery-rust-session-*.txt`.
+
+Under that GNOME (Mutter) session both monitors worked: Mutter published one AOC monitor on DP-1 at
+1920x1080@60 with `link-status Good` and ignored the stale DP-2, which is the outcome the compositor change
+reproduces. The read-only probe saw DP-1 and DP-2 both still `connected` with `link-status Bad` at that time.
+
+## Boot kernel log noise (2026-10-21 boot)
+
+| Message | Count | Cause | Status |
+| --- | --- | --- | --- |
+| `audit: backlog limit exceeded`, `audit_lost`, ~1,500 `apparmor="DENIED" operation="signal"` records | ~1,240 | `systemd-udevd` inside the Incus container `deb-test` retries SIGTERM on hung `udev-worker` processes (its `udevadm trigger` never finishes, so the container sat in "initializing" for 40+ minutes with no IP); AppArmor denies each signal, about one every 2 s, continuously. `rupert-dev` shows 2 at start only. | `systemd-udev-trigger`, `systemd-udevd` and their sockets are **masked inside `deb-test`**. The four stuck processes (host pids 3141, 3241, 3410, 3411) were not killed (the host-side kill was refused), so the loop continues until `deb-test` is restarted (`incus restart deb-test`); after that the masked units stay off. Undo: `incus exec deb-test -- systemctl unmask systemd-udev-trigger.service systemd-udevd.service systemd-udevd-control.socket systemd-udevd-kernel.socket systemd-udevd-varlink.socket`. |
+| `apple-dcp ... copy_edid failed: -ENODEV` | 6 | Normal for DCP connectors with no sink at probe time. | none needed |
+| `apple-dcp ... set_active_lane_count: unexpected lane count:4 phy: 0` | 1 | Upstream appledrm warns when the dock negotiates 4 lanes on PHY 0; the link then trains and works. | upstream, not changed |
+| `Bluetooth: hci0: Opcode 0x2039 failed` | 1 | Controller rejects an optional HCI command at init. | benign |
+| `pci ... bridge window [io ...] failed to assign` | many | arm64 root ports have no I/O space. | benign |
+
 ## Owner directions recorded this session
 
 - Work/home ("Work Mode") must **not** be inferred from which dock or display is attached.
