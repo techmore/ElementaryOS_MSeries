@@ -31,6 +31,66 @@ the next login**; the running compositor was not restarted.
   4. Play a video in Brave: the screen must not blank.
   If the panel does not come back: press a key again, then add the `PANTHEON_DISABLE_POWER_SAVE=1` drop-in and log in again.
 
+## Rust compositor: menus, notification cards and attention (D1, D2, D3, D8) — 2026-10-21 (Claude Code)
+
+Fixes the popup/attention defects from section 1 of
+`mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`. Details:
+`rust/pantheon-compositor/README.md` ("Menus, X11 popups and attention").
+
+- **D1, open menu blocked focus changes.** New `end_popup_grab_unless(root)` /
+  `end_popup_grab_of(root)` (`handlers/xdg_shell.rs`) dismiss the menus and drop the popup
+  keyboard/pointer grabs. Called from `focus_window_keyboard` (activation, D-Bus FocusWindow,
+  overview exit, polkit/modal focus, new windows), X11 focus, top-panel focus, workspace switch,
+  overview entry, lock, and when the menu's own window is minimized, moved to another workspace
+  or destroyed. Focus in a window's menu now counts as focus in that window
+  (`keyboard_focus_is_in`), so minimizing it from its menu focuses the next window.
+- **D8.** Refused grabs (locked, root not mapped, invalid grab) send `popup_done`; refusals after
+  the grab already dismissed through `ungrab`.
+- **D2, notification cards and X11 menus.** Override-redirect and ICCCM no-input windows are
+  mapped and raised with `activate=false` and never get keyboard focus
+  (`xwayland::x11_accepts_focus`, applied in `raise_window`, `focus_window_keyboard`, managed
+  map, `focus_next_window`, workspace switch). Clicking a card keeps the app's keyboard focus
+  and active state and still delivers the click.
+- **Found while testing:** `focus_window_keyboard` set the activated state but never sent the
+  configure, so a window focused over D-Bus (dock, overview, workspace switch) drew itself
+  inactive. It now sends the pending configure.
+- **D3, attention channel.** New `src/attention.rs`. Marked on a refused activation
+  (`Verdict::Ignore`), the 8 s deferred-activation give-up, X11 `_NET_WM_STATE_DEMANDS_ATTENTION`
+  (mirrored back into `_NET_WM_STATE`) and `WM_HINTS` urgency; cleared on keyboard focus
+  (`SeatHandler::focus_changed` and X11 focus) or destroy; windows that have never mapped are not
+  marked. Exported as `demands-attention` in `GetWindows`, and a change emits `WindowsChanged`.
+  Behaviour change: activation tokens are now kept under `strict` too, so the refusal reaches the
+  policy and can be attributed; `strict` still never raises without a trusted serial.
+- **Verified.** `cargo test -p pantheon-compositor` 53 pass (new: 3 attention, 2 Gala export;
+  1 activation test rewritten); `cargo clippy --all-targets -- -D warnings` clean with default and all features
+  (also fixed 4 pre-existing `needless_borrow` errors); `cargo fmt --check` clean. Nested probe
+  `mseries/pantheon-rust-compositor/activation-probe/run.sh`, new `focus-probe.py` scenarios, 7/7
+  pass on this branch. The same scenarios against the installed `/usr/bin/pantheon-compositor`
+  reproduce the bugs: the menu stays open and takes `xyz` while A gets nothing; clicking a card
+  leaves A inactive with no keyboard; no attention key exists.
+- **BadWindow bursts: reduced, not gone.** Counting xwm ChangeProperty BadWindow errors from
+  80 short-lived cards with focus changes during the burst: 124-129 before (3-4 errors on many
+  cards, 14-19 beyond 2 per card), 89-96 after (about 2 per card, 0-3 beyond, the same as with no
+  focus changes at all). The
+  activation-driven writes are gone; the remaining 2 per card come from Smithay's own X11 map
+  path for windows destroyed while mapping and were not attributed further.
+- **Not verified.** The live session: nothing installed and nothing restarted; loads at next login
+  after the compositor package is installed. Real Electron/Chromium/Firefox menus, a real polkit
+  prompt, and the dock showing attention.
+- **After merging dev (snapping #449/#453, metrics #452, dmabuf/watchdog #456).** Snap Assist
+  closes any open menu when it opens (it takes keys and clicks), and its choice goes through
+  `focus_window_keyboard`; group raises already pass `activate=false`. The Gala snapshot cache key
+  now includes an attention generation, so a mark is published at once instead of within 1 s. The
+  two X11 `property_notify` handlers are one. #452's default `smithay::xwayland::xwm=warn` filter
+  hides the INFO-level BadWindow lines, so `run.sh` now starts the nested compositor with
+  `RUST_LOG=info`. Re-verified on the merge: 118 tests, strict clippy (default and all features),
+  fmt, nested probe 7/7, BadWindow about 2 per card, 3 beyond. The earlier CI `build` failure was a
+  Launchpad PPA 503 during package download, not this change.
+- **Follow-ups.** Dock patch: read `demands-attention` from `GetWindows` in the patched dock's
+  window model and drive the app icon's urgent/bounce state (no dock change in this PR). D4-D9
+  remain open (D9 in part: `has-focus` is still false while a window's menu is open). Smithay's
+  remaining per-card ChangeProperty errors need a Smithay-side look if the log noise matters.
+
 ## Compositor: linux-dmabuf on by default (P1) and systemd watchdog — 2026-10-21 (Claude Code)
 
 Owner approved both ("approved please continue"). **Installed nowhere, unqualified until the next login**, which is the trial;

@@ -51,6 +51,9 @@ impl SeatHandler for PantheonCompositor {
         let client = focused.and_then(|s| dh.get_client(s.id()).ok());
         set_data_device_focus(dh, seat, client.clone());
         set_primary_focus(dh, seat, client);
+        if let Some(surface) = focused {
+            self.clear_attention_for_focus(surface);
+        }
     }
 }
 
@@ -177,6 +180,8 @@ impl SessionLockHandler for PantheonCompositor {
         }
 
         self.cancel_active_gesture(smithay::backend::input::InputTime::now());
+        // Dismiss open menus so none stays on screen or keeps keys under the lock.
+        self.end_popup_grab_unless(None);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.seat.get_pointer().unwrap().unset_grab(
             self,
