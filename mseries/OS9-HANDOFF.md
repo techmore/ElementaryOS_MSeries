@@ -1,5 +1,25 @@
 # OS 9 implementation / Claude Code handoff
 
+## PolyBagger T1000 Print Manager — 2026-10-21
+
+`mseries/polybagger-print-manager/` (PR #363): GTK 4 + Granite 7 app and CLI for the T-1000 bagger's inline
+Zebra (TI-1000Z frame). Key machine fact from the TI-1000Z manual pp. 20–22: a ZPL send only **loads** a
+label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label". The app
+sets `^PQ` from "Labels to print" on a temp copy, verifies delivery through CUPS, then asks the operator to
+confirm the bagger screen and one Manual Cycle. Status bar with a ready dot, favorites, recents, offline label
+store (`~/.local/share/polybagger-print-manager`), `install.sh` for the launcher. README lists known issues.
+
+- **Verified (printer JJK245392):** USB detect, CUPS status, delivered jobs; after a printer reboot the owner
+  saw three sends print three labels. `^PQ` insertion unit-checked on recall, straight and store files.
+  GUI checked by headless Xvfb renders (light, dark, confirmation card, fixture favorites/recents).
+- **Not verified:** a quantity above 1 on the machine, a full click-through send in the GUI, `--setup`,
+  the plug/unplug toast. The printer itself has separate intermittent faults (stalls at "waiting for printer",
+  dropped off USB once; reboot cleared it).
+- **Side effect:** testing rewrote `E:CCSBLACK.ZPL` on JJK245392 with the repo's store file.
+- **Next:** run one production batch with Labels to print set, confirm the count matches bag cycles and the
+  label clears at the end; read the printer's Reprint setting on the bagger screen.
+
+
 ## Rust compositor: GTK present() now raises the window — 2026-10-21
 
 Owner asked for `present()` to raise a window. Cause, proven with a probe app and
