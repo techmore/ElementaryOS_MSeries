@@ -383,3 +383,25 @@ The isolated full-desktop installation is still running; closure does not
 constitute successful package configuration or a graphical session. Service
 starts are blocked in the target root, and no running-host packages change.
 [Dependency receipt](receipts/2026-10-21-desktop-resolution.json).
+
+## Configured elementary desktop
+
+The full desktop root now has 1,628 configured packages. The initial install
+failed in the foreign X13s initramfs firmware hook. M4's live profile therefore
+selects `elementary-live` common dependencies directly, without the X13s/X1E
+board packages; ordinary builds retain their metapackage. This failure was in
+the firmware-light test root, not proof that every generic factory root fails.
+
+After removing those board packages, configuration passes.
+`check-desktop-root.py --root ROOT --receipt NEW_JSON` verifies package audit,
+dependencies, Gala/Wingpanel/LightDM libraries, strict schemas and Pantheon
+session files. Both Mesa rendering modes and the full-desktop Casper kernel
+hook replay pass too. Firmware/root-device warnings remain recorded. No
+graphical session or native GPU/HDMI operation was tested.
+
+The live installer package sets LightDM's default to the installer session;
+its user unit launches the graphical installer directly. The command-line
+refusal does not disable that path. Installer admission remains false until
+the live session and Apple partition-preserving workflow are integrated.
+
+[Configured-desktop receipt](receipts/2026-10-21-configured-desktop.json).

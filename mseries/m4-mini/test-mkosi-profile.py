@@ -36,8 +36,13 @@ assert 'linux-image-generic' in default['base']['Packages']
 assert not any('gravity' in item for item in default['base']['Packages'])
 assert set(m4['base']['Packages']) == (set(default['base']['Packages']) - {'linux-image-generic'}) | expected
 for name in default:
-    if name != 'base':
+    if name not in {'base', 'liveiso'}:
         assert set(default[name]['Packages']) == set(m4[name]['Packages']), name
+assert 'elementary-live' in default['liveiso']['Packages']
+live_runtime = {'apparmor-profiles', 'casper', 'cifs-utils', 'discover', 'distinst',
+                'expect', 'gparted', 'io.elementary.installer', 'os-prober', 'wamerican', 'xfsprogs'}
+assert set(m4['liveiso']['Packages']) == (set(default['liveiso']['Packages']) - {'elementary-live'}) | live_runtime
+assert not {'elementary-live', 'ubuntu-x13s-settings-nogrub', 'ubuntu-x1e-settings-nogrub'} & set(m4['liveiso']['Packages'])
 assert set(m4['liveiso']['KernelInitrdModules']) == set(default['liveiso']['KernelInitrdModules']) | {
     'nvme_apple', 'pcie_apple', 'hid_apple', 'hid_magicmouse'}
 assert set(m4['sysupdate']['KernelInitrdModules']) == set(default['sysupdate']['KernelInitrdModules']) | {

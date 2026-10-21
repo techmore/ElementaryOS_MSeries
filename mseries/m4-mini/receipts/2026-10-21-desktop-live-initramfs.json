@@ -1,0 +1,29 @@
+{
+  "kernel_sha256": "db3833e9ae2073c5063d733254561bb4bebaed0ee6091f9aadf32dee16f7803b",
+  "initramfs_sha256": "48cbe54ab4c6e3dc990b9039c18d7eff68cd9c42dec1b9681799c7be31f8fda9",
+  "hook_sha256": "3eb59cc3df0c49b87fde6b5bf8b1729a965a19e5750fa5145a4adbc8eef241b8",
+  "required_contents": [
+    "conf/modules",
+    "scripts/casper",
+    "scripts/casper-premount/20iso_scan",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/hid/hid-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/hid/hid-magicmouse.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/nvme/host/nvme-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/pci/controller/pcie-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/fs/overlayfs/overlay.ko"
+  ],
+  "warnings": [
+    "W: Possible missing firmware /lib/firmware/microchip/mscc_vsc8584_revb_int8051_fb48.bin for built-in driver mscc",
+    "W: Possible missing firmware /lib/firmware/microchip/mscc_vsc8574_revb_int8051_29e8.bin for built-in driver mscc",
+    "W: Possible missing firmware /lib/firmware/asmedia/asm2214a-apple.bin for built-in driver xhci_pci",
+    "W: Possible missing firmware /lib/firmware/r8a779x_usb3_v1.dlmem for built-in driver xhci_rcar_hcd",
+    "W: Possible missing firmware /lib/firmware/r8a779x_usb3_v3.dlmem for built-in driver xhci_rcar_hcd",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra124/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra210/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra186/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra194/xusb.bin for built-in driver xhci_tegra"
+  ],
+  "scope": "real live hook replay and casper initramfs inspection in isolated configured ARM64 root",
+  "full_factory_iso_built": false,
+  "hardware_validated": false
+}

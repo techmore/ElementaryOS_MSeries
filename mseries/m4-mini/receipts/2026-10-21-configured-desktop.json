@@ -1,0 +1,41 @@
+{
+  "scope": "configured desktop packages, linked libraries and schemas; no graphical session launch",
+  "installed_package_count": 1628,
+  "required_versions": {
+    "casper": "26.04.2",
+    "distinst": "0.3.2~1777413141~26.04~a772e15~dev",
+    "elementary-desktop": "1.582+r657~daily~ubuntu9.1",
+    "elementary-m4-gravity-mesa1": "26.3.0~devel+gravity.87ac51d-4",
+    "elementary-m4-gravity-policy": "20261021-2",
+    "elementary-minimal": "1.582+r657~daily~ubuntu9.1",
+    "elementary-standard": "1.582+r657~daily~ubuntu9.1",
+    "gala": "8.6.2+r3205+pkg135~daily~ubuntu9.1",
+    "io.elementary.installer-session": "8.1.3+r2211+pkg54~daily~ubuntu9.1",
+    "io.elementary.wingpanel": "8.0.4+r814+pkg79~daily~ubuntu9.1",
+    "lightdm": "1.32.0-6ubuntu4+elementary2~ubuntu9.1",
+    "linux-image-elementary-m4-gravity1": "7.1.13+elementary.m4.gravity1-2"
+  },
+  "dpkg_audit": "clean",
+  "apt_dependency_check": "passed",
+  "desktop_libraries": {
+    "/usr/bin/gala": "all linked libraries resolved",
+    "/usr/bin/io.elementary.wingpanel": "all linked libraries resolved",
+    "/usr/sbin/lightdm": "all linked libraries resolved"
+  },
+  "schemas": "strict dry run passed",
+  "pantheon_wayland_session": "present",
+  "hardware_validated": false,
+  "graphical_login_tested": false,
+  "factory_image_built": false,
+  "first_install_exit": 100,
+  "first_failure": "ubuntu-x13s-settings initramfs hook failed while copying absent Qualcomm firmware in this root",
+  "fix": "M4 profile explicitly selects elementary-live common runtime dependencies without X13s/X1E board packages; generic profile retains metapackage",
+  "reconfiguration_exit": 0,
+  "graphics_retention": "ordinary and launcher software rendering pass with read-only /usr and empty initial /opt",
+  "casper_live_hook": "full configured desktop replay passes required scripts, overlay and early Apple drivers",
+  "installer_session_review": "LightDM defaults to installer; its systemd user unit launches graphical installer directly. CLI refusal does not disable this route.",
+  "test_sources_sha256": {
+    "mseries/m4-mini/check-desktop-root.py": "5f0cde69b852d129e1bd9ed6e395d97830d433b014d73ef5357a70a628c27817",
+    "mseries/m4-mini/test-mkosi-profile.py": "43ef4ba02477cfeb84e22e4f7b56ef278f7a7e778ae9f0be7e8cc24e2cf4f0ad"
+  }
+}

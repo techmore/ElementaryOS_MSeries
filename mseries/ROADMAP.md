@@ -1,3 +1,28 @@
+## M4 mini: full desktop configured, foreign board hook removed — 2026-10-21
+
+Desktop installation session 10396 terminated with exit 100: the X13s initramfs
+hook pulled by elementary-live tried copying Qualcomm firmware absent from the
+test root. This is not an M4 kernel failure; a generic root with all vendor
+firmware might avoid it, but these are still foreign board settings. The M4
+live profile now selects the metapackage's common runtime dependencies directly
+and omits X13s/X1E packages. Generic builds retain elementary-live through a
+!m4-mini drop-in. Real parser checks pass for the exact M4/default package delta.
+
+Removed the metapackage/foreign board packages in the isolated root; retry
+94540 exits 0. check-desktop-root.py now verifies 1,628 configured packages,
+clean dpkg audit, apt dependency consistency, Gala/Wingpanel/LightDM linked
+libraries, strict schema compilation and Pantheon Wayland session files.
+Mesa ordinary/launcher rendering with read-only /usr and empty /opt still
+passes; full-desktop Casper live-hook replay also passes. All test processes
+are terminal. Missing firmware and synthetic root-device warnings remain;
+no physical boot, graphical login or full factory image success is claimed.
+
+Installer-session package inspection confirms LightDM defaults to installer,
+whose user unit launches the GUI directly. CLI refusal does not gate that
+route. Next: graphical installer/live-session isolation and actual factory
+assembly. Hardware remains unavailable. The package set is configured,
+not a physical support pass. [Receipt](m4-mini/receipts/2026-10-21-configured-desktop.json).
+
 ## M4 mini: full desktop dependency closure — 2026-10-21
 
 Applied the real daily/common APT sources, keys and preferences to the isolated
