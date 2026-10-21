@@ -1,3 +1,14 @@
+## CodexBar dropdown at double text size — 2026-10-21 (Claude Code)
+
+- **What:** owner asked for the CodexBar Wingpanel dropdown to be twice as large. `.mseries-codexbar` now sets `font-size: 2em`
+  (`mseries/codexbar-wingpanel/Indicator.vala`, `install_style`); the popover's fixed metrics scale with it: minimum width 240 → 480,
+  scroll area 150–300 → 300–600 px, quota bars 6 → 12 px, dropdown icons (provider marks, refresh, dock buttons, avatar, add, empty-state)
+  doubled, and the fixed-width percent/reset labels 58/46 → 116/92. The top-bar segments (`.mseries-codexbar-bar`) are unchanged.
+- **Probes:** the heavier first layout raced the probes' fixed timers under a parallel `meson test`. `test-switch` and `test-ingestion`
+  now poll for their first render (5–7 s cap) and `run-legend-probe.sh` captures after 6 s. `meson test`: 18/18, three consecutive runs.
+- **Verified:** render probe PNGs for healthy (light + dark) and shared-accounts at 1×; the popover measures 571×746 and 1117×804 logical px.
+- **Not verified:** on the live panel. Deployed with `deploy-codexbar.sh` (no restart); the module loads at next login or an explicit `--restart`.
+
 ## Compositor snapping phase 0: one placement per window — 2026-10-21 (Claude Code)
 
 Phase 0 of section 2 of `mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`, in `rust/pantheon-compositor`.
