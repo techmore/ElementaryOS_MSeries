@@ -85,3 +85,12 @@ The driver source requires GPU boot-firmware identifier `mBoot-18000.161.10`
 and DCP actual firmware `26.6.2`. GPU firmware regions must be populated by the
 matched loader; the source DT intentionally disables the GPU before that fixup.
 Do not bypass these driver gates or label a DT/module build as runtime support.
+
+## Isolated graphics userspace
+
+`build-mesa.py --archive PINNED_MESA_ARCHIVE --output NEW_DIRECTORY` builds
+the pinned Gravity Mesa with Asahi OpenGL, Asahi Vulkan, llvmpipe, X11 and
+Wayland. It enables upstream tests, runs the upstream AGX compiler, Apple9 launcher/geometry and disassembler tests, and stages under a DESTDIR
+with prefix /opt/elementary-m4-gravity1. It does not replace system Mesa or
+activate a session. Optional --pkg-config-path supports extracted work-local
+development packages. The full first build and compiler tests remain pending.

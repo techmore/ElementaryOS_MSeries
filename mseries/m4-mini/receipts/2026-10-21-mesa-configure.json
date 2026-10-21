@@ -1,0 +1,75 @@
+{
+  "repository": "GravityLinux/mesa",
+  "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "configuration": "Asahi+llvmpipe OpenGL, Asahi Vulkan, X11+Wayland, LLVM enabled, upstream tests enabled",
+  "prefix": "/opt/elementary-m4-gravity1",
+  "status": "Meson setup passed; native compilation in progress; no compiler tests or runtime pass yet",
+  "build_handle": 71394,
+  "work_local_dependencies": [
+    {
+      "file": "libwayland-dev_1.24.0-2_arm64.deb",
+      "sha256": "ed360391b0367823800fbb92ce3f7bda6523538ecf81cd703f35bafc861592ea"
+    },
+    {
+      "file": "libwayland-egl-backend-dev_1.24.0-2_arm64.deb",
+      "sha256": "e1027743e1c330b06918c31cabb0fc5fbf6f26b9275d7b5976099cd421396795"
+    },
+    {
+      "file": "libx11-xcb-dev_2%3a1.8.13-1ubuntu0.1_arm64.deb",
+      "sha256": "896f6133a161955601f696eea242f9968fcbb84e6810c70411bc9ca42b72df95"
+    },
+    {
+      "file": "libxcb-dri2-0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "e9b0edb79be4831da54dbffa53f2aeb4e194615e849918c80b7f6114f416390b"
+    },
+    {
+      "file": "libxcb-dri3-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "be596ad6a581e8bce44077550d467f6b36baaf96ced214f850356c724f4fefb6"
+    },
+    {
+      "file": "libxcb-glx0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "11f76cbdaa865765a09b5395c0824b15bea9c4d8998b26277031c31882540b0a"
+    },
+    {
+      "file": "libxcb-present-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "5db9f11de756afbc413a2bffb899d3ff08fadff63050fa518c21ae24bc82ad7a"
+    },
+    {
+      "file": "libxcb-randr0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "62c22cba899d7dfd9f71ba343911deb5b1442d4f97ce4f96537eb7e6d5b3736c"
+    },
+    {
+      "file": "libxcb-shape0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "bd3d52e3893529d940a9b6f151480f010293cca0f4fe671b97715fe3a5c14e0e"
+    },
+    {
+      "file": "libxcb-shm0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "5ac811e1d55df3e197727c9b951bb14cc89188bf68bfd7f0c35d449317538ac1"
+    },
+    {
+      "file": "libxcb-sync-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "19820bbcd64e075cd9eeff709c845ff535118468c1c597a2a8419efaa892004c"
+    },
+    {
+      "file": "libxcb-xfixes0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "624b455d1e44907db8547da036b9309e4c468eeeee2e6047e58ff38fd6303151"
+    },
+    {
+      "file": "libxdamage-dev_1%3a1.1.7-1_arm64.deb",
+      "sha256": "a1bdf21cd72fd2ea06c1dce56eaa5e854973733cbe8fda9e495c0ac878b8c174"
+    },
+    {
+      "file": "libxrandr-dev_2%3a1.5.4-1build1_arm64.deb",
+      "sha256": "ca547c9dc0574e5090f337ff9dba97d1f10f2949eb816dfceb34a4f02aa959cd"
+    },
+    {
+      "file": "libxshmfence-dev_1.3.3-1build1_arm64.deb",
+      "sha256": "6f868d5d62b3c1625097b63ab2e9bf23fd7c77793c8132269c0e4ddd50ef6fde"
+    },
+    {
+      "file": "libxxf86vm-dev_1%3a1.1.4-2_arm64.deb",
+      "sha256": "475e868c7c4668a27b17091849d170e7a0b62604dfa9d4a1237a667b6a1a795e"
+    }
+  ]
+}

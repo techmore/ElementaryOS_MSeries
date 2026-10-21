@@ -10217,3 +10217,10 @@ passes against the live Gravity build; final Image/module/package validation is
 still pending. Reviewed exact GPU firmware identifier and DCP 26.6.2 checks;
 no bypasses. Both existing native builds remain running at their original
 handles. No kernel/bootloader deployment.
+
+Gravity Mesa: matching source archive downloaded and hashed; native Meson setup
+passes with Asahi OpenGL/Vulkan, llvmpipe, X11/Wayland and upstream tests. Missing
+Wayland/XCB development packages were extracted into work-local storage, leaving
+system Mesa unchanged. Native compile handle 71394 is running; tests and staged
+libraries remain pending. Added isolated build/staging wrapper and dependency
+receipt. Existing kernel builds remain active.
