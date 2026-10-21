@@ -1,3 +1,14 @@
+## M4 mini: downloads complete, base bootstrap live — 2026-10-21
+
+All dependency downloads completed after retrying one PPA HTTP 503. Locally
+extracted mmdebstrap 1.5.7-3 now bootstraps resolute plus elementary patches and
+the three verified local packages in self-mapped user/mount/PID namespaces
+(handle 71562, apt update phase observed). Default subordinate-ID mapping failed
+on private-home traversal; no home permissions changed. Kernel build cache was
+removed only after preserving/checking artifacts, debug ELF, config and symbols;
+verified package and source remain. No base-root success or boot claimed yet.
+[Receipt](m4-mini/receipts/2026-10-21-base-bootstrap-pending.json).
+
 ## M4 mini: base dependency and EFI input preflight — 2026-10-21
 
 Empty-status APT simulation resolves 164 packages for minimal boot userspace

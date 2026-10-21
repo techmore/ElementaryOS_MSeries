@@ -169,8 +169,8 @@
   ],
   "resolved_package_count": 164,
   "simulation_result": "exit 0",
-  "download_handle": 18905,
-  "download_status": "running; some elementary PPA packages retrying",
+  "download_handle": 18588,
+  "download_status": "complete: bounded retry exit 0 after initial exit 100/HTTP 503 for udev",
   "actual_kernel_efi_input": {
     "sections": [
       ".text"
@@ -183,8 +183,10 @@
   "user_namespace_probe": "unshare --user --map-root-user true passed",
   "limitations": [
     "dependency simulation is not configured-root acceptance",
-    "base package download incomplete",
     "no generated initramfs or EFI boot bundle",
     "no M4 boot or hardware qualification"
-  ]
+  ],
+  "bootstrap_status": "mmdebstrap live in self-mapped user/mount/PID namespaces",
+  "bootstrap_handle": 71562,
+  "bootstrap_tool": "mmdebstrap 1.5.7-3 extracted locally; not installed on host"
 }

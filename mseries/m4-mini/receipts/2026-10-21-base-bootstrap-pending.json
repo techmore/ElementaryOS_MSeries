@@ -1,0 +1,12 @@
+{
+  "downloaded_archive_count": 161,
+  "archive_manifest_sha256": "112419f1412f91f2ee14347cec83782e419a71fe8397d42647e7dbbe41c2fa83",
+  "download_result": "exit 0",
+  "original_failure": "HTTP 503 on udev; retry completed using existing cache",
+  "bootstrap_handle": 71562,
+  "bootstrap_status": "running; apt-get update phase observed",
+  "namespace": "current-user mapping; mount and PID namespaces",
+  "first_bootstrap_result": "exit 25: default subordinate mapping cannot traverse private home; no permissions changed",
+  "cache_cleanup": "complete kernel build cache removed after required artifact hashes verified; final debug ELF/config/symbols/payload retained; RAM link object released",
+  "hardware_validated": false
+}
