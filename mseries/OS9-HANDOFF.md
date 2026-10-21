@@ -1,3 +1,17 @@
+## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
+
+Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
+across Codex, Claude, OpenCode and Grok now gets a number and a hue: account 1 in a tinted legend row
+above the cards, the others below. Cards keep only the numbered badge next to the plan; alternate
+accounts become one tinted row (badge, quota, Switch). The bar shows the signed-in account's number
+after each company mark and numbers alternates with the same global, hue-colored numbers. Opt-in via
+`accountLegend` (Settings > Display > Wingpanel > Account legend); details in `CODEXBAR-PORT.md`.
+
+- **Verified.** `meson test` 18/18, including the new `account-legend` probe (named once with the
+  legend on, repeated with it off, bar hue matches) and `presentation` unit tests for numbering and hues.
+  Rendered light/dark with the new `shared-accounts` fixture.
+- **Not verified.** The live panel with the owner's real accounts until Wingpanel loads the new module.
+
 ## Dock & Taskbar page in System Settings — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/dock-switcher/` (Vala Switchboard plug, **Settings → Personal → Dock & Taskbar**) switches the patched dock between the

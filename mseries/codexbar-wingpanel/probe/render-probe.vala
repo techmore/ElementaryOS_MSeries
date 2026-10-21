@@ -36,6 +36,14 @@ Gtk.Label? find_label (Gtk.Widget widget, string text) {
     return null;
 }
 
+int count_labels (Gtk.Widget widget, string text) {
+    var label = widget as Gtk.Label;
+    var count = label != null && label.get_text () == text ? 1 : 0;
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
+        count += count_labels (child, text);
+    return count;
+}
+
 void assert_quota_bar_colors (Gtk.Widget widget) {
     var bar = widget as Gtk.ProgressBar;
     if (bar != null && bar.sensitive) {
@@ -136,6 +144,23 @@ int main (string[] args) {
             assert (text.contains ("7D 64%") && text.contains ("7D 55%"));
             var menu_text = local_label_text (popover_body);
             assert (menu_text.contains ("42.0M tokens") && menu_text.contains ("31.2M tokens") && menu_text.contains ("121M tokens"));
+        }
+        var legend_assert = Environment.get_variable ("CB_ASSERT_LEGEND");
+        if (legend_assert != null) {
+            // shared-accounts: work@example.org is signed in to Codex, Claude and OpenCode.
+            var addresses = count_labels (popover_body, "work@example.org");
+            if (legend_assert == "on") {
+                // Named once, in the legend under the cards; the cards carry its numbered badge.
+                assert (addresses == 1);
+                assert (count_labels (popover_body, "me@example.com") == 1);
+                var number = MSeries.Presentation.legend_number ({ "me@example.com", "me@opencode.example",
+                    "me@grok.example", "work@example.org", "lab@example.edu" }, "work@example.org");
+                assert (count_labels (popover_body, number.to_string ()) >= 3);
+                var alternate = find_label (bar, "5H 5%");
+                assert (alternate != null && alternate.label.contains (MSeries.Presentation.account_hue (number)));
+            } else {
+                assert (addresses >= 2);
+            }
         }
         if (Environment.get_variable ("CB_ASSERT_DOTS") != null) {
             var text = local_label_text (bar);
