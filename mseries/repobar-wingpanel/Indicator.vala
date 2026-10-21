@@ -272,18 +272,18 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-repobar { font-size: 9pt; } " +
-                ".mseries-repobar .caption { font-size: 8pt; } " +
+                ".mseries-repobar { font-size: 1.0em; } " +
+                ".mseries-repobar .caption { font-size: 0.889em; } " +
                 ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar .repo-card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-repobar row:hover .repo-card { background: alpha(currentColor, 0.09); } " +
-                ".mseries-repobar .repo-name { font-weight: 700; font-size: 9.5pt; } " +
-                ".mseries-repobar .repo-owner { font-size: 8pt; opacity: 0.6; } " +
-                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .repo-name { font-weight: 700; font-size: 1.056em; } " +
+                ".mseries-repobar .repo-owner { font-size: 0.889em; opacity: 0.6; } " +
+                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .count.zero { opacity: 0.45; font-weight: 400; } " +
-                ".mseries-repobar .window-name { font-weight: 700; font-size: 7.5pt; opacity: 0.75; } " +
-                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .window-name { font-weight: 700; font-size: 0.833em; opacity: 0.75; } " +
+                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-repobar .chip.bad { background: alpha(@error_color, 0.2); color: @error_color; } " +
                 ".mseries-repobar button.chip { min-height: 0; min-width: 0; } " +
@@ -300,12 +300,12 @@ namespace MSeries {
                 ".mseries-repobar button.compact { padding: 0 4px; min-height: 0; min-width: 0; } " +
                 ".mseries-repobar button.link-row { padding: 1px 4px; min-height: 0; border-radius: 6px; } " +
                 ".mseries-repobar button.link-row label { font-weight: 400; } " +
-                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 8pt; " +
+                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 0.889em; " +
                 "  background: alpha(currentColor, 0.08); } " +
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
-                ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .section-title { font-weight: 700; font-size: 0.889em; opacity: 0.75; } " +
                 ".mseries-repobar list.repo-list > row .group-heading { margin-top: 2px; margin-bottom: -4px; } " +
                 ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
                 ".mseries-repobar .contribution-graph { color: @accent_color; } " +
@@ -315,7 +315,7 @@ namespace MSeries {
                 ".mseries-repobar row:hover button.pin-off, .mseries-repobar row:focus-within button.pin-off { opacity: 0.55; } " +
                 ".mseries-repobar row:hover button.pin-off:hover, .mseries-repobar button.pin-off:focus { opacity: 1; } " +
                 ".mseries-repobar list.repo-list { background: transparent; } " +
-                ".mseries-repobar button.show-all { font-size: 8.5pt; padding: 2px 10px; } " +
+                ".mseries-repobar button.show-all { font-size: 0.944em; padding: 2px 10px; } " +
                 ".mseries-repobar list.repo-list > row { padding: 0; margin-bottom: 8px; border-radius: 8px; background: transparent; } " +
                 ".mseries-repobar list.repo-list > row:last-child { margin-bottom: 0; } " +
                 ".mseries-repobar list.repo-list > row:focus-visible { outline: 2px solid alpha(@accent_color, 0.6); outline-offset: -2px; } " +
@@ -326,9 +326,9 @@ namespace MSeries {
                 ".mseries-repobar .mseries-bar { margin-top: 2px; } " +
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
-                ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 8.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 8pt; font-weight: 700; } " +
+                ".mseries-repobar-bar label { font-size: 0.944em; font-feature-settings: \"tnum\"; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 0.944em; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 0.889em; font-weight: 700; } " +
                 ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +

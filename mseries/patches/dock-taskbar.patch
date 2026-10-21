@@ -384,7 +384,7 @@ index 0377885..40f991f 100644
  #endif
  
          append (app_group);
-@@ -176,6 +178,16 @@
+@@ -176,6 +178,27 @@
      }
  
      public static int get_launcher_size () {
@@ -392,14 +392,25 @@ index 0377885..40f991f 100644
 +        return get_icon_size () + Launcher.PADDING * 2;
 +    }
 +
-+    // M-series taskbar mode uses 48 px icons in a 72 px bar.
-+    public const int TASKBAR_ICON_SIZE = 48;
++    // Adopted size-system taskbar icons follow the same setting as native icons.
++    // Legacy/unmanaged desktops keep their existing 48 px taskbar contract.
++    private static bool size_system_managed () {
++        var policy = new KeyFile ();
++        try {
++            policy.load_from_file (Path.build_filename (Environment.get_user_state_dir (),
++                "mseries", "ui-scale-policy.ini"), KeyFileFlags.NONE);
++            return policy.get_integer ("SizeSystem", "version") == 1 &&
++                policy.get_boolean ("SizeSystem", "managed");
++        } catch (Error e) {
++            return false;
++        }
++    }
 +
 +    public static int get_icon_size () {
 +        if (settings == null) {
 +            settings = new Settings ("io.elementary.dock");
 +        }
-+        return settings.get_boolean ("taskbar-mode") ? TASKBAR_ICON_SIZE : settings.get_int ("icon-size");
++        return settings.get_boolean ("taskbar-mode") && !size_system_managed () ? 48 : settings.get_int ("icon-size");
      }
  }
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala

@@ -17,20 +17,6 @@
     },
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 6.5pt",
-      "count": 2,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/codexbar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 7.5pt",
-      "count": 1,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
       "match": "pixel_size = 12",
       "count": 2,
@@ -86,53 +72,11 @@
       "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
-      "file": "mseries/dock-taskbar/start-menu.css",
-      "rule": "font-abs",
-      "match": "font-size: 12px",
-      "count": 3,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
-    },
-    {
-      "file": "mseries/dock-taskbar/start-menu.css",
-      "rule": "font-abs",
-      "match": "font-size: 13px",
-      "count": 1,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
-    },
-    {
-      "file": "mseries/dock-taskbar/start-menu.css",
-      "rule": "font-abs",
-      "match": "font-size: 14px",
-      "count": 3,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
-    },
-    {
       "file": "mseries/dock-trial/dock-trial.py",
       "rule": "dock-size",
       "match": "DEFAULT_ICON_SIZE = 48",
       "count": 1,
       "reason": "Fallback used only when the size system is absent or unmanaged; equals the default-step token (enforced by mseries/ui-scale/test_dock_consumers.py)."
-    },
-    {
-      "file": "mseries/patches/dock-taskbar-codexbar.patch",
-      "rule": "font-abs",
-      "match": "font-size: 12px",
-      "count": 3,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
-    },
-    {
-      "file": "mseries/patches/dock-taskbar-codexbar.patch",
-      "rule": "font-abs",
-      "match": "font-size: 13px",
-      "count": 1,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
-    },
-    {
-      "file": "mseries/patches/dock-taskbar-codexbar.patch",
-      "rule": "font-abs",
-      "match": "font-size: 14px",
-      "count": 3,
-      "reason": "Windows 11 Start menu styling matched to the owner-requested design (2026-10-20). Phase 3: convert to em relative to the UI font."
     },
     {
       "file": "mseries/patches/dock-taskbar-codexbar.patch",
@@ -147,13 +91,6 @@
       "match": "font-size: 20pt",
       "count": 2,
       "reason": "Owner-chosen RepoBar taskbar readout size (#382; raised to 20pt); intentionally not scaled by the ladder. Do not change without the owner."
-    },
-    {
-      "file": "mseries/patches/dock-taskbar.patch",
-      "rule": "dock-size",
-      "match": "TASKBAR_ICON_SIZE = 48",
-      "count": 1,
-      "reason": "Taskbar icon size compiled into the dock patch (#329). Phase 2 follow-up: have the dock read the work-taskbar token; needs a dock rebuild to verify, so not done here."
     },
     {
       "file": "mseries/patches/dock-taskbar.patch",
@@ -196,48 +133,6 @@
       "match": "pixel_size = 48",
       "count": 1,
       "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
-    },
-    {
-      "file": "mseries/patches/wingpanel-content-scale.patch",
-      "rule": "panel-scale",
-      "match": "CONTENT_SCALE = 1.30f",
-      "count": 1,
-      "reason": "Wingpanel content scale (#312) is still a fixed 1.30. Phase 2 follow-up: derive it from the ladder; changes the live panel, so it needs a panel rebuild and visual check."
-    },
-    {
-      "file": "mseries/repobar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 7.5pt",
-      "count": 3,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/repobar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 8.5pt",
-      "count": 3,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/repobar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 8pt",
-      "count": 5,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/repobar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 9.5pt",
-      "count": 1,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
-    },
-    {
-      "file": "mseries/repobar-wingpanel/Indicator.vala",
-      "rule": "font-abs",
-      "match": "font-size: 9pt",
-      "count": 1,
-      "reason": "Indicator type sizes predate the size system. Phase 3 (#332): replace with Granite ramp classes or em."
     },
     {
       "file": "mseries/repobar-wingpanel/Indicator.vala",
@@ -287,6 +182,69 @@
       "match": "48 if taskbar else 40",
       "count": 1,
       "reason": "Fallback used only when the size system is unmanaged; equals the default-step work/work-taskbar tokens."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=24",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=18",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=28",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=20",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/codexbar-opencode-login.py",
+      "rule": "icon-px",
+      "match": "pixel_size=18",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/codexbar-opencode-login.py",
+      "rule": "icon-px",
+      "match": "pixel_size=40",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard-incus-native/src/Dashboard.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard-incus-native/src/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 16",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/patches/wingpanel-content-scale.patch",
+      "rule": "panel-scale",
+      "match": "CONTENT_SCALE = 1.30f",
+      "count": 1,
+      "reason": "Wingpanel content scale (#312) is still a fixed 1.30. Phase 2 follow-up: derive it from the ladder; changes the live panel, so it needs a panel rebuild and visual check."
     }
   ]
 }

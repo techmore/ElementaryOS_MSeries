@@ -44,9 +44,27 @@ not the 48 px native dock. `mseries/ui-scale/test_dock_consumers.py` runs each s
 stand-in `mseries-ui-scale` (absent, unmanaged, garbage output, and several steps) and compares the
 result with the old literal, so default-scale behaviour is proven identical.
 
-Still open in phase 2: the taskbar's compiled-in 48 px icon size (`TASKBAR_ICON_SIZE` in
-`patches/dock-taskbar.patch`) and the fixed 1.30 Wingpanel content scale
-(`patches/wingpanel-content-scale.patch`). Both need a dock or panel rebuild and a visual check.
+The compiled taskbar now follows `icon-size` while the size system is managed.
+The CLI atomically publishes a private generated adoption marker before emitting
+any dock setting change: `$XDG_STATE_HOME/mseries/ui-scale-policy.ini` (default:
+`~/.local/state/mseries/ui-scale-policy.ini`). The format is `[SizeSystem]` with
+`version=1` and boolean `managed`; missing, malformed, unsupported-version or
+unmanaged markers preserve the legacy 48 px taskbar. Native mode still reads
+`icon-size` regardless of adoption. The JSON remains the only dock-token source.
+`--unmanage` publishes false, leaving current settings untouched; the fallback
+applies on the next normal dock setting/mode refresh. The marker is a generated
+implementation detail, not a user preference. Unique temporary files avoid
+concurrent CLI/watcher writers colliding.
+
+Quick Settings adoption now applies the documented font policy as well as dock
+sizes. Reconciliation publishes adoption before synchronous icon-size consumers
+run; a pending text-change adoption is retained through overlapping mode changes.
+
+Still open in phase 2: Wingpanel's fixed 1.30 content scale. A private experiment
+using a text-dependent transform and inherited-font compensation did not cover
+absolute/rem typography in upstream indicators. Applying that transform could
+scale those fonts twice. The experiment is not shipped; a panel sizing design
+must cover all upstream font classes before acceptance.
 
 ## `check-ui-sizes.sh`
 `mseries/ui-scale/check-ui-sizes.sh` scans the size-bearing sources (dock profile, policy and
@@ -65,13 +83,35 @@ Patches are scanned on their added lines only. Existing sizes are listed in
 reason, so line moves don't matter but a new size, or one more of an old size, fails. Migrating a
 size means deleting it and trimming its entry; `--strict` (used in CI) also fails when an entry
 is larger than what the sources contain, so the list can only shrink. `--list` prints everything the
-scanner finds. The RepoBar taskbar readout (18pt) is allowlisted on purpose: the owner chose it.
-Phase 3 turns the allowlist down to zero font entries. Tests: `test_check_ui_sizes.py`.
+scanner finds. The RepoBar taskbar readout (24pt) is allowlisted on purpose: the owner chose it.
+It remains the sole intentional absolute-font exception. RepoBar/CodexBar,
+legacy Orchard and Start-menu fonts now use relative units. The lint inventory
+also covers Machine Lab, Battery, Screenshot Shelf, native Orchard and OpenCode
+login; their existing relative fonts remain intact. Glyph geometry exceptions
+remain separate from font migration. Tests: `test_check_ui_sizes.py`.
 
 ## Adoption
 Installing changes nothing on the desktop. The size system is adopted the first time the
 text size changes, from Quick Settings or with `mseries-ui-scale --set STEP`. From then on,
 the dock follows the ladder. `mseries-ui-scale --unmanage` stops it.
 
-The rest of phase 2 (taskbar icon size and Wingpanel scale from the ladder), phase 3 (app type-ramp
-migration) and phase 4 (Qt/Electron) are tracked in #332.
+## Validation and remaining acceptance
+
+The native taskbar-policy fixture compiles the exact production methods from the
+patch and checks every dock token plus unmanaged/malformed/version fallbacks on
+isolated settings. The complete prepared dock source builds without installation.
+RepoBar/CodexBar fixture scripts now retain `GDK_SCALE=1|2` through `env -i`, assert
+the actual window scale, and save scale/dimension metadata. Scale2 names have a
+suffix. PNG snapshots use logical widget coordinates; identical PNG dimensions
+do not establish physical multi-monitor acceptance.
+
+The rebuilt taskbar/module must load at next login before owner-session visual
+acceptance. Check internal125%/dock100%, native/floating/taskbar and light/dark.
+Routine CodexBar staging preserves the running panel and daemon; no live process
+restart or monitor/refresh/brightness change is part of these checks.
+
+Wingpanel sizing, physical visual acceptance and Qt/Electron phase4 keep #332 open.
+Do not apply blanket `--force-device-scale-factor` or `QT_SCALE_FACTOR` overrides:
+these can replace/compound compositor monitor scaling. Each app needs a measured
+font-only integration under its actual Wayland/Xwayland backend with isolated
+profiles and preserved user preferences. Unsupported apps retain toolkit defaults.
