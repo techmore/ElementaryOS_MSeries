@@ -186,7 +186,7 @@
     "no generated initramfs or EFI boot bundle",
     "no M4 boot or hardware qualification"
   ],
-  "bootstrap_status": "mmdebstrap live in self-mapped user/mount/PID namespaces",
-  "bootstrap_handle": 71562,
+  "bootstrap_status": "complete; minimal root configured with Mesa revision 3 loader dependency fix",
+  "bootstrap_handle": 54804,
   "bootstrap_tool": "mmdebstrap 1.5.7-3 extracted locally; not installed on host"
 }

@@ -1,0 +1,25 @@
+{
+  "bootstrap_tool": "mmdebstrap 1.5.7-3",
+  "bootstrap_result": "exit 0; packages configured",
+  "namespace": "unshare --user --map-auto --map-root-user --mount --pid --fork",
+  "configured_package_count": 188,
+  "candidate_mesa_revision": 3,
+  "dpkg_audit": "exit 0; no output",
+  "software_smoke": "elementary-m4-gravity-mesa1 26.3.0~devel+gravity.87ac51d-3 ii \nelementary-m4-gravity-policy 20261021-1 ii \nlibegl1:arm64 1.7.0-3 ii \nlibgl1:arm64 1.7.0-3 ii \nlibvulkan1:arm64 1.4.341.0-1 ii \nlinux-image-elementary-m4-gravity1 7.1.13+elementary.m4.gravity1-1 ii \nRenderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested\n",
+  "repository_verification": "APT update passed with explicit elementary PPA signed-by keyring; signatures not bypassed",
+  "root_environment_fixes": [
+    "temporary resolver file replaces bootstrap dangling symlink for isolated test",
+    "explicit elementary-os-os-patches.gpg and signed-by source entry retained",
+    "private read-only proc mounted for chroot test"
+  ],
+  "initial_failures": [
+    "default subordinate-ID user cannot traverse private home",
+    "single-ID map cannot represent package gid 42",
+    "revision 2 missing EGL dispatch runtime dependency"
+  ],
+  "limitations": [
+    "minimal boot userspace, not complete elementary desktop image",
+    "no initramfs or EFI boot bundle generated yet",
+    "no physical M4 boot/GPU/Ethernet/speaker validation"
+  ]
+}

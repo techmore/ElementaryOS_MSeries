@@ -1,0 +1,12 @@
+{
+  "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "package": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-3_arm64.deb",
+  "package_sha256": "5dbdf251c181646efb40e3ceef7e6d856b70c8252432a4e0954cbe381da75c87",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "dependencies": "python3, libegl1, libgl1, libvulkan1, libc6 (>= 2.43), libdisplay-info3 (>= 0.3.0), libdrm2 (>= 2.4.109), libexpat1 (>= 2.0.1), libgbm1 (>= 21.3.0~rc1), libgcc-s1 (>= 3.0), libllvm21 (>= 1:21.1.0), libstdc++6 (>= 13.1), libudev1 (>= 183), libwayland-client0 (>= 1.24.0), libx11-6 (>= 2:1.4.99.1), libx11-xcb1, libxcb-dri3-0 (>= 1.17.0), libxcb-glx0 (>= 1.8), libxcb-present0 (>= 1.17.0), libxcb-randr0 (>= 1.13), libxcb-shm0, libxcb-sync1, libxcb-xfixes0, libxcb1 (>= 1.9.2), libxext6, libxshmfence1, libxxf86vm1 (>= 1:1.1.4), libzstd1 (>= 1.5.5), zlib1g (>= 1:1.1.4)",
+  "status": "private-prefix payload packaged; no installation, activation or M4 GPU qualification",
+  "payload_equivalence": "revision 2 file contents and symlinks byte-identical; control dependency/version update only",
+  "dependency_fix": "requires libegl1, libgl1 and libvulkan1 dispatch loaders; configured-root test exposed missing libEGL.so.1",
+  "configured_root_software_smoke": "passed with no host library bind mounts",
+  "hardware_validated": false
+}

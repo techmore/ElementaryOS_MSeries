@@ -1,3 +1,18 @@
+## M4 mini: configured base root and Mesa dependency fix — 2026-10-21
+
+mmdebstrap completed an isolated resolute/elementary base root with 188 configured
+packages, including all three candidate packages. dpkg --audit passes. Real
+chroot rendering exposed missing libEGL.so.1 in Mesa revision 2; revision 3 now
+requires libegl1/libgl1/libvulkan1, and isolated llvmpipe render/readback passes
+with the root's own libraries. Revision 3 payload contents equal revision 2;
+only control version/dependencies changed. stage-stack now pins revision 3 and
+its combined-root staging passes. Explicit PPA signed-by keyring and temporary
+resolver setup are required for post-bootstrap package operations; no signature
+bypass. Automatic subordinate IDs plus map-root-user cover package ownership
+without changing private home permissions. No host installation or boot.
+[Root receipt](m4-mini/receipts/2026-10-21-configured-base-root.json).
+Next: target initramfs/EFI assembly, full desktop integration, physical M4 tests.
+
 ## M4 mini: downloads complete, base bootstrap live — 2026-10-21
 
 All dependency downloads completed after retrying one PPA HTTP 503. Locally

@@ -181,3 +181,23 @@ isolated llvmpipe render/readback checks pass. Invalid package hashes are
 rejected before output creation. This overlay contains no base OS, initramfs,
 EFI or firmware; base package dependencies and M4 hardware remain unqualified.
 A complete factory image and graphical session activation are still required.
+
+## Configured base userspace validation
+
+A minimal resolute/elementary root was configured using mmdebstrap 1.5.7-3
+in user/mount/PID namespaces with automatic subordinate IDs and map-root-user.
+188 packages are configured; dpkg --audit passes. Revision 3 of the private
+Mesa package now explicitly depends on libegl1, libgl1 and libvulkan1: the
+configured-root render test exposed missing libEGL.so.1 in revision 2. The
+revision 3 test passes with only the root's libraries and private read-only
+proc mount. Its payload files/symlinks match revision 2 byte-for-byte.
+
+For post-bootstrap APT operations, restore a temporary test resolver and
+install the existing elementary PPA public key with an explicit signed-by
+source entry; strict APT update then passes without disabling signatures.
+The initial default subordinate mapping could not traverse private home; a
+single-ID mapping could not represent package group 42. The successful mapping
+is `unshare --user --map-auto --map-root-user --mount --pid --fork`, running
+mmdebstrap in root mode inside that namespace. No home permissions changed.
+This is minimal userspace acceptance, not a complete elementary desktop,
+initramfs, EFI bundle, physical boot or M4 GPU qualification.
