@@ -1,3 +1,33 @@
+## Compositor snapping phase 0: one placement per window — 2026-10-21 (Claude Code)
+
+Phase 0 of section 2 of `mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`, in `rust/pantheon-compositor`.
+
+- **Model (S2).** `src/placement.rs` (new, pure): one `WindowRecord { placement, floating, pending }` per `Window::id()` with
+  `Placement::{Floating, Tiled, Maximized{prior}, Fullscreen{prior}}`. Replaces `tiled_windows`, `managed_windows` and
+  `x11_managed_windows`; maximize remembers a tile and un-maximize returns to it.
+- **Fixed.** S1 pre-snap rect stored; drag-out (after 8 px) restores the floating size with the grabbed title-bar point under the
+  pointer; Super+Down restores. S3 `primary_output_for` (largest geometry overlap, then pointer, then primary) replaces
+  `outputs_for_element().first()` in tiling, maximize, keep-clear, X11, fractional scale, overview and new-window placement
+  (popup constraint left for the D7 work). S4 Wayland placements move only after the client acks the serial (400 ms fallback);
+  keep-clear and floating clamps skip windows that are pending or managed. S5 preview and configure use the client's min/max
+  size; a larger window stays snapped and grows inward from the screen edge. S6 zone recomputed at release. S7 snapped X11
+  windows that resize themselves get their rect again. S8 `Tiled*` states on work-area edges (inner edge stays resizable).
+  S12 `width.max(1)`. Also S13 (keyed by `Window::id()`, no wl_surface needed), S14 (Super+Shift moves a maximized window and
+  its remembered tile), S17 (restored minimized windows re-fit). Tiles keep their output name, so an unplugged monitor's tiles
+  fall back to the current output and return on re-plug (part of S10, not hardware-tested).
+- **Keys.** Super+Up maximize; Super+Down steps back (maximized → prior → floating); Super+Left/Right toggle (same or opposite
+  half restores, quarters slide or grow); quarter chords toggle. New `maximize`/`restore` keys in
+  `org.techmore.mseries.snapping` (built-in defaults apply until the schema is installed).
+- **Found by the nested test.** Updating panel visibility from inside the move grab reads the pointer and deadlocks on
+  Smithay's pointer lock; that work now runs from an idle callback.
+- **Verified.** `cargo fmt --check`; `cargo clippy --release --features native-drm --all-targets -- -D warnings` and the same
+  with `--features gesture-probe`; `cargo test --release -p pantheon-compositor --features native-drm` (99 + 19 tests, 22 new in `placement.rs`).
+  New nested regression `mseries/pantheon-rust-compositor/snap-tests/run-snap.sh` (Xvfb, GTK 4 and GTK 3/XWayland fixtures,
+  real move grab through the probe): 23/23 checks pass; receipts in `snap-tests/receipts/2026-10-21/`.
+- **Not verified.** Native input on the M1 Pro, multiple monitors and hotplug, panels/dock work areas in the nested run, the
+  ack-timeout path, Electron/Chromium clients. Nothing installed or restarted; it loads with the next compositor package and login.
+- **Next.** Phase 1: Snap Assist for halves and a two-member snap group with shared-edge resize (`SnapNode`/`SnapGroup`).
+
 ## Release pipeline: dev and stable apt suites from one workflow — 2026-10-21 (Claude Code)
 
 - **What:** `.github/workflows/mseries-debs.yml` now builds and tests the three plugin debs plus `mseries-update` once per push/PR, and publishes
