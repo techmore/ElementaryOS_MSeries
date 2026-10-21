@@ -24,6 +24,7 @@ mod link_status;
 pub mod native;
 mod overview;
 mod pantheon_shell;
+mod popup_stack;
 mod protocols;
 mod shell_compat;
 mod state;
