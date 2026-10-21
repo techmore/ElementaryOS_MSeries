@@ -70,6 +70,11 @@ translatable (no gettext domain, same as Work Mode); no live "place/lift" cue fr
 `finger-needed`/`finger-present` properties (unknown whether the SEP driver sets them); per-finger delete uses
 fprintd's deprecated `DeleteEnrolledFinger` because the replacement deletes every finger.
 
+## State on the J314S (2026-10-21)
+
+The page reads the driver's `diag/` attributes and says so when `matching` is `blocked` or the sensor is not
+ready; the real reason on this Mac is the xART guard, see [../aurora-sep/XART-GUARD.md](../aurora-sep/XART-GUARD.md).
+
 ## Not verified
 
 Enrolment and matching against the **real** Secure Enclave from this page are not yet run; the
