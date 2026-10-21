@@ -16,6 +16,16 @@
   0 times (1 when on). **Not verified:** a second real GitHub account (only `techmore` is signed in here), the taskbar
   binding on a running desktop, and a live Wingpanel load (routine deploy installs without restarting; the module loads at
   next login). Next: sign a second account in with `gh auth login` and confirm **Read as** switches the dashboard.
+## Touch ID: upstream validation and the xART guard — 2026-10-21
+
+Surveyed omacom/linux-aurora, aurora-silicon/linux, the archived iconidentify/aurora-linux, Asahi and t2linux (read-only). Findings,
+sources and statuses: `mseries/aurora-sep/UPSTREAM-MAP.md`. Main result, `mseries/aurora-sep/XART-GUARD.md`: upstream's xART guard
+(aurora-silicon/linux#361, in our 7.2.10 pin) is documented to block Touch ID on a cold-boot M1-family Mac that was set up with the
+guard off, which is this Mac; upstream's own M1 Pro runs `xart_guard=0`. **Owner decision pending; guard unchanged, nothing written to xART
+by hand.** Corrects an earlier theory that the refused record was Linux's own. A first draft report posted to PR #7 was in the wrong place and
+was deleted at the owner's request; reports belong on omacom/linux-aurora as a per-Mac issue. Nothing is posted; a redrafted report is pending the owner.
+Stale Touch ID claims in `BUG-FIX-ROADMAP.md` and `ROADMAP.md` were updated. Verified: `validate.sh` 76/76, aurora unit tests 72, Touch ID UI tests 14/14,
+PAM helper test. Not verified: matching on this Mac, `.20` behaviour, any change to the guard.
 
 ## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
 
