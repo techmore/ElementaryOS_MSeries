@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=PolyBagger Print Manager
+Comment=Detect the Zebra label printer and verify print jobs
+Exec=python3 %h/Projects/ElementaryOS_MSeries/mseries/polybagger-print-manager/polybagger_print_manager.py
+Icon=printer
+Terminal=false
+Type=Application
+Categories=Utility;

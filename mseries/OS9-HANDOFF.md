@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## PolyBagger T1000 Print Manager added — 2026-10-21
+
+New `mseries/polybagger-print-manager/` (GTK3 + Granite app and CLI, see its README). Detects the Zebra ZTC
+110Xi4 on USB, sends raw ZPL from the thril label library and verifies the job through CUPS; offline copy of
+the labels in `~/.local/share/polybagger-print-manager/labels`.
+
+- **Verified (printer JJK245392 attached):** USB detect, CUPS status, store file and recall file jobs reported
+  completed, operator confirmed the CCS label printed, GUI screenshot rendered, offline sync of 17 labels.
+- **Not verified:** `--setup` (needs admin), hot-plug toast, the second-send "prints without limit" cause. An `^HH`
+  config job was left "waiting for printer" in CUPS and needs the printer checked.
+- **Side effect to know:** testing sent `CCSBLACK_store_flash.zpl`, which overwrote `E:CCSBLACK.ZPL` on this printer.
+- **Next:** read printer config/directory (`^HH`, `^WD`) to explain the print-quantity behaviour; install a raw queue.
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
