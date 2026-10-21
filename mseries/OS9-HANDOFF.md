@@ -1,3 +1,34 @@
+## M4 mini: actual factory base build passed — 2026-10-21
+
+Factory session 27312 terminated: mkosi exit 0. Its 6.6G base_20261021 output
+contains 1,650 configured packages. The actual artifact passes clean dpkg/apt,
+Gala/Wingpanel/LightDM linked libraries, strict schema/session-file checks,
+pinned Image/config/J773g DTB hashes, 1,598 modules and four dependency dry runs.
+Ordinary and launcher Mesa software rendering pass with read-only /usr and
+initially empty /opt. This is a factory base directory, not a bootable live or
+sysupdate image. No graphical session or physical M4 boot has passed.
+
+Added explicit factory-base versus research-live verifier modes and ephemeral
+/dev setup for mkosi's empty device directory. The refreshed execution runner
+now has NoNewPrivs=1: newuidmap fails with Operation not permitted. Read-only
+checks explicitly using --id-map=single pass on the actual base and manual root;
+full package/build ownership still needs automatic subordinate-ID mapping. No
+new full build was started under the weaker map. No live build handles remain.
+
+Full pinned Gravity installer archive captured (6420623); all earlier captured
+files match and 26 upstream fixture/mock tests pass. Its ZIP per-partition raw
+image/EFI-tree contract supports adapter preparation but not an elementary
+installation today. Proper DPS/verity/root partition export and metadata remain
+necessary. No native disk/Recovery validation was run.
+
+Attempted cleanup stopped safely at the namespace recheck. The old manual root
+remains intact; selected boot/package evidence is verified in work/
+m4-manual-root-preserved. Actual base is work/m4-factory-output/base_20261021.
+Next: live/sysupdate assembly once full-ID mapping is available; continue public
+installer partition-contract work meanwhile. Owner M4 remains unavailable.
+[Base receipt](m4-mini/receipts/2026-10-21-factory-base.json),
+[installer tests](m4-mini/receipts/2026-10-21-installer-offline.json).
+
 ## M4 mini: research desktop session without graphical installer — 2026-10-21
 
 Moved installer-session into the !m4-mini live drop-in and omitted the graphical

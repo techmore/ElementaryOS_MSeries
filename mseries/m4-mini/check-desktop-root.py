@@ -9,6 +9,9 @@ import subprocess
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--root', type=Path, required=True)
 parser.add_argument('--receipt', type=Path, required=True)
+parser.add_argument('--kind', choices=['research-live', 'factory-base'], default='research-live')
+parser.add_argument('--id-map', choices=['auto', 'single'], default='auto',
+                    help='single checks existing roots without subordinate-ID helper privileges')
 args = parser.parse_args()
 root = args.root.resolve()
 if root == Path('/') or args.receipt.exists():
@@ -17,8 +20,10 @@ if root == Path('/') or args.receipt.exists():
 
 def inside(*command):
     return subprocess.check_output([
-        'unshare', '--user', '--map-auto', '--map-root-user', '--mount', '--pid', '--fork',
-        '/bin/sh', '-c', 'mount --bind /dev/null "$1/dev/null" && '
+        'unshare', '--user', *(['--map-auto'] if args.id_map == 'auto' else []),
+        '--map-root-user', '--mount', '--pid', '--fork',
+        '/bin/sh', '-c', 'mount -t tmpfs -o size=1M,nosuid tmpfs "$1/dev" && '
+        'touch "$1/dev/null" && mount --bind /dev/null "$1/dev/null" && '
         'mount -t proc -o ro,nosuid,nodev,noexec proc "$1/proc" && '
         'shift && exec chroot "$@"', 'm4-desktop-check', str(root), str(root),
         '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C', *command],
@@ -33,9 +38,11 @@ rows = inside('dpkg-query', '-W', '-f=${Package}\t${Version}\t${db:Status-Status
 packages = {name: version for name, version, status in (row.split('\t') for row in rows)
             if status == 'installed'}
 required = {'elementary-desktop', 'elementary-minimal', 'elementary-standard',
-            'casper', 'distinst', 'gala', 'lightdm',
+            'gala', 'lightdm',
             'io.elementary.wingpanel', 'linux-image-elementary-m4-gravity1',
             'elementary-m4-gravity-mesa1', 'elementary-m4-gravity-policy'}
+if args.kind == 'research-live':
+    required |= {'casper', 'distinst'}
 if not required <= packages.keys():
     raise ValueError('required desktop packages missing: ' + str(required - packages.keys()))
 foreign = {'elementary-live', 'io.elementary.installer', 'io.elementary.installer-session',
@@ -47,7 +54,8 @@ for path in ['usr/bin/io.elementary.installer', 'usr/share/wayland-sessions/inst
     if (root / path).exists() or (root / path).is_symlink():
         raise ValueError('graphical installer entry remains: ' + path)
 lightdm = inside('lightdm', '--show-config')
-for setting in ['user-session=pantheon-wayland', 'autologin-session=pantheon-wayland']:
+for setting in (['user-session=pantheon-wayland', 'autologin-session=pantheon-wayland']
+                if args.kind == 'research-live' else []):
     if setting not in lightdm:
         raise ValueError('missing effective LightDM setting: ' + setting)
 if 'user-session=installer' in lightdm:
@@ -63,10 +71,12 @@ session = root / 'usr/share/wayland-sessions/pantheon-wayland.desktop'
 if not session.is_file() or not (root / 'usr/share/gnome-session/sessions/pantheon-wayland.session').is_file():
     raise ValueError('Pantheon Wayland session missing')
 args.receipt.write_text(json.dumps({
-    'scope': 'configured desktop packages, linked libraries and schemas; no graphical session launch',
+    'namespace_id_map': args.id_map,
+    'scope': args.kind + ': configured packages, linked libraries and schemas; no graphical session launch',
     'installed_package_count': len(packages), 'required_versions': {p: packages[p] for p in sorted(required)},
     'dpkg_audit': 'clean', 'apt_dependency_check': 'passed', 'desktop_libraries': libraries,
-    'schemas': 'strict dry run passed', 'lightdm_session': 'Pantheon Wayland for login and autologin',
+    'schemas': 'strict dry run passed', 'lightdm_session': ('Pantheon Wayland for login and autologin' if args.kind == 'research-live'
+                                                         else 'installer session not selected; live autologin not asserted'),
     'graphical_installer_packages': 'absent', 'pantheon_wayland_session': 'present',
     'hardware_validated': False, 'graphical_login_tested': False, 'factory_image_built': False,
 }, indent=2) + '\n')

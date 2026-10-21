@@ -1,0 +1,54 @@
+{
+  "scope": "factory-base: configured packages, linked libraries and schemas; no graphical session launch",
+  "installed_package_count": 1650,
+  "required_versions": {
+    "elementary-desktop": "1.582+r657~daily~ubuntu9.1",
+    "elementary-m4-gravity-mesa1": "26.3.0~devel+gravity.87ac51d-4",
+    "elementary-m4-gravity-policy": "20261021-2",
+    "elementary-minimal": "1.582+r657~daily~ubuntu9.1",
+    "elementary-standard": "1.582+r657~daily~ubuntu9.1",
+    "gala": "8.6.2+r3205+pkg135~daily~ubuntu9.1",
+    "io.elementary.wingpanel": "8.0.4+r814+pkg79~daily~ubuntu9.1",
+    "lightdm": "1.32.0-6ubuntu4+elementary2~ubuntu9.1",
+    "linux-image-elementary-m4-gravity1": "7.1.13+elementary.m4.gravity1-2"
+  },
+  "dpkg_audit": "clean",
+  "apt_dependency_check": "passed",
+  "desktop_libraries": {
+    "/usr/bin/gala": "all linked libraries resolved",
+    "/usr/bin/io.elementary.wingpanel": "all linked libraries resolved",
+    "/usr/sbin/lightdm": "all linked libraries resolved"
+  },
+  "schemas": "strict dry run passed",
+  "lightdm_session": "installer session not selected; live autologin not asserted",
+  "graphical_installer_packages": "absent",
+  "pantheon_wayland_session": "present",
+  "hardware_validated": false,
+  "graphical_login_tested": false,
+  "factory_image_built": false,
+  "mkosi_exit": 0,
+  "mkosi_source": "f7e32882d26e2c5f3daba48e1aff5b411e6b4d92",
+  "profile": "daily+m4-mini",
+  "selected_images": [
+    "base",
+    "main"
+  ],
+  "reported_output_size": "6.6G",
+  "command_sha256": "fd1ff4d940d6344ab8439b7e195c2b48504b71ac366d312ecbfc6f617517f23b",
+  "build_log_sha256": "4cd435a6466e172c50f5f030e784b909ae59d356485288c9308c1f98395bebbc",
+  "kernel_image_sha256": "db3833e9ae2073c5063d733254561bb4bebaed0ee6091f9aadf32dee16f7803b",
+  "kernel_config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "j773g_dtb_sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+  "module_count": 1598,
+  "module_dependency_checks": [
+    "asahi_m4",
+    "appledrm",
+    "atlantic",
+    "tg3"
+  ],
+  "graphics_retention": "PASS: actual factory base, ordinary and launcher software rendering with /usr read-only and initially empty /opt",
+  "factory_base_built": true,
+  "complete_factory_image_built": false,
+  "single_user_namespace_recheck": "passed package/library/schema checks and actual-base Mesa retention/rendering after environment disabled newuidmap",
+  "current_build_environment": "NoNewPrivs=1 blocks subordinate-ID helper; single mapping is inspection-only, not a full-build ownership substitute"
+}

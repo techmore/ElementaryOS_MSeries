@@ -1,0 +1,25 @@
+{
+  "repository": "GravityLinux/installer",
+  "commit": "6420623289fe7544cb8589b658355e57f0290fcc",
+  "archive_sha256": "7fe8e31fce11990485195ea01f7a530c84ec71060fac9ddeb9d6ea67c2539c47",
+  "license_sha256": "811207d92b81da5b5e97cdfa52542769d8783325da5b422262ccecfa2d23c5a9",
+  "previous_capture_verified_files": [
+    "README.md",
+    "gravity_firmware/wifi.py",
+    "src/main.py",
+    "src/system.py",
+    "src/stub.py",
+    "src/m1n1.py",
+    "src/util.py"
+  ],
+  "tests": "26 upstream offline fixture/mock tests pass",
+  "log_sha256": "c7d19a7ecf54a8a195e85b70159f9dcc05071aadb7d6d4426bc4ce554c95d3c6",
+  "scope": "firmware extraction fixtures, IPSW gates, mocked partition selection, recovery decoding failure paths, restore layout; not native disk/Recovery validation",
+  "adapter_findings": [
+    "OSInstaller accepts ZIP members as per-partition raw images and EFI directory trees",
+    "Raw member sizes must be 4 KiB aligned and fit destination partitions",
+    "Disk partition additions follow the existing stub; firmware and installer data can be copied to the new ESP",
+    "A complete elementary DPS/verity partition export and matching metadata are still required; no installer admission changed"
+  ],
+  "hardware_validated": false
+}

@@ -9,7 +9,7 @@ Current elementary preparation: the opt-in M4 profile selects the matched
 kernel, Mesa revision 4 and temporary policy. A 1,626-package research desktop
 root passes package, library, schema, software-rendering and Casper initramfs
 checks. LightDM selects Pantheon Wayland; unqualified graphical installer
-packages are omitted. The actual factory base build is in progress. No complete
+packages are omitted. The actual factory base build has passed; live/sysupdate assembly remains open. No complete
 factory image, graphical login, native M4 operation or dual boot has passed.
 
 The audit inspected source, branch history, packaging provenance and selected
@@ -431,6 +431,33 @@ session file and user service are absent. Mesa software rendering with persisten
 login or native GPU/HDMI operation was tested. A fresh empty-status APT closure of the actual profile public package names
 also excludes the installer/session and foreign board packages, including
 transitive recommendations. Private M4 packages are validated separately.
-The actual factory base build is running; complete image assembly remains open.
+The actual factory base build has passed; complete live/sysupdate assembly remains open.
 
 [Research-session receipt](receipts/2026-10-21-research-session.json).
+
+## Actual factory base artifact
+
+The native mkosi base-only build exited successfully and produced a 6.6G
+directory with 1,650 configured packages. Package/dependency, desktop-library,
+schema/session-file checks pass on that actual output. Image/config/J773g DTB
+hashes, 1,598 module files and GPU/display/NIC module dependency checks match
+the validated package. Both Mesa rendering modes pass with read-only `/usr`
+and initially empty `/opt`. A base directory is not a bootable live/sysupdate
+image or evidence of graphical login, native GPU/HDMI or dual boot.
+
+`check-desktop-root.py --kind=factory-base --root ROOT --receipt NEW_JSON`
+checks the base's own contract without requiring live-only Casper/autologin.
+The default mode still checks the research live session. Both inspection
+runners support explicit `--id-map=single` when subordinate-ID helpers are
+blocked. The refreshed runner has `NoNewPrivs=1`; full-ID mapping is currently
+unavailable. Single mapping is not used to claim full image-build ownership.
+
+The complete pinned Gravity installer archive matches the earlier selected
+source captures. All 26 upstream fixture/mock tests pass. Its raw partition
+images must fit destinations and have 4 KiB-aligned sizes; EFI trees and
+firmware/installer-data can be copied to the new ESP. An elementary DPS/verity
+partition export, writable root, release metadata and native acceptance are
+still required. No macOS disk write or Recovery check was performed.
+
+[Factory base receipt](receipts/2026-10-21-factory-base.json),
+[installer offline receipt](receipts/2026-10-21-installer-offline.json).
