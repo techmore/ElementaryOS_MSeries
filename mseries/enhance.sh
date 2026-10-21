@@ -376,7 +376,7 @@ mod_payload() {
   # Keep factory/update payloads on the same complete taskbar path as a repo checkout.
   # Preserve executable bits for helpers invoked directly by another installer.
   local tree
-  for tree in dock-taskbar dock-tests codexbar-wingpanel teams-web; do
+  for tree in dock-taskbar dock-tests codexbar-wingpanel repobar-wingpanel teams-web; do
     while IFS= read -r -d '' f; do
       copy "$(stat -c %a "$f")" "$f" "$prefix/mseries/${f#"$here"/}"
     done < <(find "$here/$tree" -type d \( -name __pycache__ -o -name build \) -prune -o -type f ! -name '*.pyc' -print0)

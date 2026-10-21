@@ -14,7 +14,7 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         button.add_css_class ("taskbar-codexbar-button");
         button.update_property (Gtk.AccessibleProperty.LABEL, "CodexBar", -1);
         var image = new Gtk.Image.from_icon_name ("codexbar");
-        image.pixel_size = 24;
+        image.pixel_size = 28;
         button.child = image;
         append (button);
         valign = Gtk.Align.CENTER;
