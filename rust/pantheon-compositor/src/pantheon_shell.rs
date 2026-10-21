@@ -311,6 +311,45 @@ impl
 }
 
 impl PantheonCompositor {
+    /// Raise `window` like `Space::raise_element`, then put every Pantheon panel back on top.
+    ///
+    /// Panels share the window stack with ordinary toplevels, and a panel's popups
+    /// (tooltips, indicator menus) render as part of the panel. A window raised above the
+    /// panel therefore covers those popups: with a tiled window filling the work area right
+    /// under the top bar, hovering an indicator showed no tooltip at all. Clicking the bar
+    /// hid the defect because the click itself re-raised the panel.
+    pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
+        self.space.raise_element(window, activate);
+        self.restack_panels();
+    }
+
+    /// Move every panel above all other windows, preserving the panels' relative order.
+    /// Returns whether the stack changed, so callers can skip a redraw otherwise.
+    pub(crate) fn restack_panels(&mut self) -> bool {
+        let mut panels = Vec::new();
+        let mut above_a_window = false;
+        for window in self.space.elements() {
+            let is_panel = window
+                .toplevel()
+                .is_some_and(|top| self.is_panel_surface(top.wl_surface()));
+            if is_panel {
+                panels.push(window.clone());
+            } else if !panels.is_empty() {
+                // A non-panel window sits above at least one panel.
+                above_a_window = true;
+            }
+        }
+        if !above_a_window {
+            return false;
+        }
+        for panel in &panels {
+            self.space.raise_element(panel, false);
+        }
+        true
+    }
+}
+
+impl PantheonCompositor {
     pub fn add_panel(&mut self, surface: WlSurface) {
         self.panels.insert(surface.id(), PanelState::default());
         tracing::info!(surface = ?surface.id(), "Pantheon panel surface requested");

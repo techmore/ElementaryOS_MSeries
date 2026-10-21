@@ -279,9 +279,9 @@ impl PantheonCompositor {
                             .toplevel()
                             .is_some_and(|top| self.is_panel_surface(top.wl_surface()));
                         if panel_surface {
-                            self.space.raise_element(&window, false);
+                            self.raise_window(&window, false);
                         } else {
-                            self.space.raise_element(&window, true);
+                            self.raise_window(&window, true);
                             self.focus_window_keyboard(&window, serial);
                         }
                         self.space.elements().for_each(|window| {

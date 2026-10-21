@@ -100,7 +100,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // The Gala-compat snapshot is republished after every dispatch, which
     // is when any state it mirrors can have changed (no polling timer).
-    event_loop.run(None, &mut state, |state| state.publish_gala_snapshot())?;
+    event_loop.run(None, &mut state, |state| {
+        // Windows mapped with `activate` land on top of the stack; keep the panels and
+        // their popups above them before the next frame is rendered.
+        if state.restack_panels() {
+            state.request_native_redraw();
+        }
+        state.publish_gala_snapshot()
+    })?;
     if let Some(error) = state.fatal_error.take() {
         return Err(io::Error::other(error).into());
     }
