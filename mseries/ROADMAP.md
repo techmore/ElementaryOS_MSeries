@@ -2778,7 +2778,7 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
     license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 10. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
-Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
+Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (initial upstream support and experimental J713 work exist; J773g dual boot remains unqualified: no supported installer, no qualified mini GPU
 driver, M3 only now nearing a first release).
 
 ## Second computers available for the m1n1 hypervisor trace
@@ -3323,3 +3323,10 @@ compatibility path before any service upgrade or hardware acceptance claim.
 Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
+
+## M4 Mac mini preparation — 2026-10-21
+
+See `m4-mini/README.md` and its pinned public source profile. Initial J773g DT
+support exists; experimental J713 GPU/NVMe work does not qualify mini HDMI or
+standalone boot. Source capture is available; board port, builds and hardware
+acceptance remain open. Existing release pins are unchanged.

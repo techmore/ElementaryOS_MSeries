@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "target": {
+    "model": "Mac16,10",
+    "board": "j773g",
+    "soc": "t8132",
+    "memory_gib": 16,
+    "identity_confirmed": false
+  },
+  "status": "research-only",
+  "installer_supported": false,
+  "hardware_validated": false,
+  "sources": [
+    {
+      "name": "basic",
+      "repository": "aurora-silicon/linux",
+      "commit": "98a8f830df94a7dcaf7de37bfa915240afa2dda8",
+      "proposal": "https://github.com/aurora-silicon/linux/pull/366",
+      "files": [
+        "arch/arm64/boot/dts/apple/t8132-j713.dts",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "arch/arm64/configs/j713-basic.config",
+        "Documentation/soc/apple/t8132-pmp-thermal.rst"
+      ]
+    },
+    {
+      "name": "graphics",
+      "repository": "aurora-silicon/linux",
+      "commit": "49c5d9994fec1b94cdce004bfa19c950c06b119e",
+      "proposal": "https://github.com/aurora-silicon/linux/pull/367",
+      "files": [
+        "Documentation/gpu/apple-dcp-m4.rst",
+        "Documentation/gpu/asahi-m4-bringup.rst",
+        "arch/arm64/boot/dts/apple/t8132-j713-display.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-j713-gpu.dtsi",
+        "arch/arm64/configs/j713-graphics.config"
+      ]
+    },
+    {
+      "name": "asahi-mini",
+      "repository": "AsahiLinux/linux",
+      "commit": "94fb23346d522edf53722357c426a3e58030beea",
+      "files": [
+        "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+        "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi"
+      ]
+    }
+  ],
+  "boot_companions": [
+    {
+      "repository": "aurora-silicon/m1n1",
+      "commit": "cda8314d2121c0279e4ca811bc6c6293a663e5d0",
+      "proposal": "https://github.com/aurora-silicon/m1n1/pull/35",
+      "status": "open proposal; J713 evidence only"
+    },
+    {
+      "repository": "aurora-silicon/u-boot",
+      "commit": "cc47d3b7c86deb4094dc186d26799602272e37fb",
+      "proposal": "https://github.com/aurora-silicon/u-boot/pull/7",
+      "status": "open proposal; J713 evidence only"
+    }
+  ],
+  "blockers": [
+    "J773g native HDMI/DCP qualification",
+    "J773g standalone NVMe durability and boot",
+    "J773g DMA/PMGR board mappings",
+    "matching boot producer handoff",
+    "J773g thermal and lifecycle qualification",
+    "macOS and Recovery round-trip"
+  ]
+}

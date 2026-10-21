@@ -10173,3 +10173,13 @@ unchanged. Current upstream has 51 commits beyond our recorded backend; a separa
 backend qualification is still needed before its sender detection/LE/media fixes
 can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
 features; those need native Incus design, not blind Swift feature parity claims.
+
+## M4 Mac mini research lane — 2026-10-21
+
+Added `m4-mini/research.json`, public-source capture tooling and the upstream
+readiness audit. Target is owner-reported M4/16 GB; J773g identity still needs
+confirmation. Captured exact J713 candidate and boot companion heads separately
+from the installed J314S release. No boot artifacts, installer enablement or
+live deployment. Source receipts do not establish hardware support. Next:
+review candidate board admission/display protocols and produce a J773g port
+only where public board evidence supports it.
