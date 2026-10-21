@@ -69,6 +69,8 @@ struct Handler {
     channel_out: Arc<Mutex<Option<mpsc::UnboundedSender<HostEvent>>>>,
     mode: watch::Receiver<bool>,
     runtime: Arc<dyn webrtc::runtime::Runtime>,
+    force_key: Arc<AtomicBool>,
+    connected: Arc<AtomicBool>,
 }
 
 #[async_trait::async_trait]
@@ -85,6 +87,15 @@ impl PeerConnectionEventHandler for Handler {
             RTCPeerConnectionState::Closed => LinkState::Closed,
             _ => LinkState::Connecting,
         };
+        match s {
+            LinkState::Connected => {
+                // Frames sent before DTLS is up are lost, so the stream starts here.
+                self.force_key.store(true, Ordering::SeqCst);
+                self.connected.store(true, Ordering::SeqCst);
+            }
+            LinkState::Connecting => {}
+            _ => self.connected.store(false, Ordering::SeqCst),
+        }
         (self.callbacks.on_state)(s);
     }
 
@@ -97,6 +108,9 @@ impl PeerConnectionEventHandler for Handler {
         let (tx, mut rx) = mpsc::unbounded_channel::<HostEvent>();
         *self.channel_out.lock().unwrap() = Some(tx);
         let on_input = self.callbacks.on_input.clone();
+        let on_state = self.callbacks.on_state.clone();
+        let force_key = self.force_key.clone();
+        let mut last_key = Instant::now() - Duration::from_secs(1);
         let mut mode = self.mode.clone();
         self.runtime.spawn(Box::pin(async move {
             let mut open = false;
@@ -110,13 +124,24 @@ impl PeerConnectionEventHandler for Handler {
                         }
                         Some(DataChannelEvent::OnMessage(msg)) => match InputEvent::parse(&msg.data) {
                             Ok(InputEvent::Ping { t }) => send_event(&dc, &HostEvent::Pong { t }).await,
+                            Ok(InputEvent::Keyframe) => {
+                                if last_key.elapsed() >= Duration::from_millis(500) {
+                                    last_key = Instant::now();
+                                    force_key.store(true, Ordering::SeqCst);
+                                }
+                            }
                             Ok(ev) => on_input(ev),
                             Err(e) => {
                                 tracing::debug!("bad input: {e}");
                                 send_event(&dc, &HostEvent::Rejected { reason: "invalid".into() }).await;
                             }
                         },
-                        Some(DataChannelEvent::OnClose) | None => break,
+                        Some(DataChannelEvent::OnClose) | None => {
+                            // The viewer closes its channel when it leaves; waiting
+                            // for ICE to time out would leave a ghost session.
+                            on_state(LinkState::Disconnected);
+                            break;
+                        }
                         _ => {}
                     },
                     out = rx.recv().fuse() => match out {
@@ -153,6 +178,7 @@ pub struct HostPeer {
     gather_rx: watch::Receiver<bool>,
     stop: Arc<AtomicBool>,
     force_key: Arc<AtomicBool>,
+    connected: Arc<AtomicBool>,
     gather_timeout: Duration,
 }
 
@@ -184,12 +210,16 @@ impl HostPeer {
         let (gather_tx, gather_rx) = watch::channel(false);
         let (mode_tx, mode_rx) = watch::channel(control_initial);
         let channel_out = Arc::new(Mutex::new(None));
+        let force_key = Arc::new(AtomicBool::new(true));
+        let connected = Arc::new(AtomicBool::new(false));
         let handler = Arc::new(Handler {
             gather_done: gather_tx,
             callbacks,
             channel_out: channel_out.clone(),
             mode: mode_rx,
             runtime: runtime.clone(),
+            force_key: force_key.clone(),
+            connected: connected.clone(),
         });
 
         let pc = PeerConnectionBuilder::new()
@@ -244,7 +274,8 @@ impl HostPeer {
             mode_tx,
             gather_rx,
             stop: Arc::new(AtomicBool::new(false)),
-            force_key: Arc::new(AtomicBool::new(true)),
+            force_key,
+            connected,
             gather_timeout: Duration::from_millis(cfg.gather_timeout_ms),
         };
         let sdp = peer.gathered_local_sdp().await?;
@@ -302,6 +333,7 @@ impl HostPeer {
         let (tx, mut rx) = mpsc::channel::<(bytes::Bytes, Duration)>(2);
         let stop = self.stop.clone();
         let force_key = self.force_key.clone();
+        let connected = self.connected.clone();
         let frame_interval = Duration::from_secs_f64(1.0 / params.fps.max(1) as f64);
         let key_every = (params.fps.max(1) * params.keyframe_interval_s.max(1)) as u64;
 
@@ -325,6 +357,11 @@ impl HostPeer {
                             break;
                         }
                     };
+                    if !connected.load(Ordering::Relaxed) {
+                        // Nobody to send to yet: keep draining the source, skip encode.
+                        n += 1;
+                        continue;
+                    }
                     if force_key.swap(false, Ordering::SeqCst) || (n > 0 && n % key_every == 0) {
                         enc.force_keyframe();
                     }

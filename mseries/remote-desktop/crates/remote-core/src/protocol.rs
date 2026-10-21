@@ -203,6 +203,9 @@ pub enum InputEvent {
     Text { text: String },
     /// Latency probe; answered with [`HostEvent::Pong`] even in view-only mode.
     Ping { t: u64 },
+    /// The viewer's video stalled (lost packets); ask for an immediate IDR.
+    /// Handled by the media layer and allowed in view-only mode.
+    Keyframe,
 }
 
 /// Host -> viewer over the `input` data channel.
@@ -249,7 +252,7 @@ impl InputEvent {
                     Err(ProtocolError::Invalid("position"))
                 }
             }
-            InputEvent::Button { .. } | InputEvent::Click { .. } | InputEvent::Ping { .. } => Ok(()),
+            InputEvent::Button { .. } | InputEvent::Click { .. } | InputEvent::Ping { .. } | InputEvent::Keyframe => Ok(()),
             InputEvent::Key { key, modifiers } => {
                 let mut seen = std::collections::HashSet::new();
                 if key.is_empty()

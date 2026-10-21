@@ -196,6 +196,9 @@
           if (r.type === 'inbound-rtp' && r.kind === 'video') {
             const fps = Math.max(0, (r.framesDecoded || 0) - state.lastFrames);
             state.lastFrames = r.framesDecoded || 0;
+            // Frozen video on a live connection: ask the host for a fresh keyframe.
+            state.stalled = fps === 0 ? (state.stalled || 0) + 1 : 0;
+            if (state.stalled >= 2) { sendInput({ kind: 'keyframe' }, true); state.stalled = 0; }
             $('stats').textContent = `${fps} fps${state.rtt != null ? ` · ${state.rtt} ms` : ''}`;
           }
         });

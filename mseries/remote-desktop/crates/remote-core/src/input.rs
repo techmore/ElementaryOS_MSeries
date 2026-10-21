@@ -74,7 +74,7 @@ impl InputGate {
     /// `control` is the consent machine's current answer, evaluated per event so
     /// a mid-session downgrade takes effect on the very next event.
     pub fn handle(&mut self, event: &InputEvent, control: bool, now: Millis) -> Outcome {
-        if matches!(event, InputEvent::Ping { .. }) {
+        if matches!(event, InputEvent::Ping { .. } | InputEvent::Keyframe) {
             return Outcome::Applied;
         }
         if !control {
