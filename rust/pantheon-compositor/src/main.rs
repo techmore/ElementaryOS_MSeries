@@ -8,6 +8,8 @@ mod display_config;
 mod display_trace;
 #[cfg(feature = "native-drm")]
 mod edid;
+#[cfg(feature = "native-drm")]
+mod flip_retry;
 mod gala_compat;
 mod gesture_animation;
 #[cfg(feature = "gesture-probe")]
