@@ -70,6 +70,20 @@ What upstream has not published is the enrol-only measurement below.
 The `.20` kernel (`7.1.12-2-20261017.20`) was built the day before the guard merged. Its matching behaviour
 has not been tested, and earlier Touch ID probes on `.19`/`.20` hung the machine (`AURORA-SECOND-BOOT.md`).
 
+## Guard-off trial entry (added 2026-10-21, owner-approved, not booted)
+
+A separate GRUB entry, **TRIAL: Aurora 7.2 wip2, xART guard off** (`elementary-aurora72-wip2-xartguard-off-trial`), boots the same wip2
+kernel and initramfs with `apple_sep.xart_guard=0` added to its kernel line. The existing wip2 entry stays guard-on, the persistent
+default is still `.20`, nothing is armed, and `next_entry` is empty. It is scoped to one entry on purpose: a global
+`options apple_sep xart_guard=0` in `/etc/modprobe.d/` would be an unknown parameter on the `.20` kernels (their `apple-sep.ko` predates
+`xart_guard`) and stop the module loading there. Only `custom.cfg` changed; backup in
+`/var/lib/mseries-kernel-tests/staging/20261021T192355Z-wip2-xartguard-off-entry`.
+
+To use it, pick the entry at GRUB. Expect `diag/matching` to read `usable` and `xart_guard` `0`. Then enrol once, `fprintd-verify`, and
+wire sudo only, with the password as the fallback; later boot macOS and check Touch ID. An identity from the earlier refused enrolment
+already sits in the enclave; whether re-enrolling that finger reports a duplicate is untested. To remove the entry, restore `custom.cfg`
+from the backup or delete the entry's block.
+
 ## A correction
 
 Earlier notes and a draft report from 2026-10-21 suggested the refused kind-4 record was one Linux itself

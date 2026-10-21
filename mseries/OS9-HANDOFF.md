@@ -14,6 +14,12 @@
   compositor restart was performed; nothing was installed on this machine.
 - **Next (owner):** hosting (recommend GitHub Pages), signing-key custody (recommend offline key plus signing subkey in the secret), which components ship first
   (recommend the three plugin debs), then publish `dev`/`stable` suites.
+## Touch ID: guard-off trial entry added — 2026-10-21
+
+Owner approved a separate GRUB entry **TRIAL: Aurora 7.2 wip2, xART guard off** (wip2 kernel + `apple_sep.xart_guard=0`), added beside the
+guard-on entries with backups; only `custom.cfg` changed, default `.20`, `next_entry` empty, not booted. Details, use and removal in
+`mseries/aurora-sep/XART-GUARD.md`. A global modprobe option was avoided because the `.20` kernels lack the parameter. After booting it:
+confirm `matching: usable`, enrol once, verify, sudo only, then check macOS Touch ID.
 
 ## GitHub Pages development documentation — 2026-10-21
 
