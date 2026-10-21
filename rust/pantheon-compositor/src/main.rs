@@ -23,6 +23,7 @@ mod link_status;
 pub mod native;
 mod overview;
 mod pantheon_shell;
+mod popup_stack;
 mod protocols;
 mod redraw_stats;
 mod shell_compat;

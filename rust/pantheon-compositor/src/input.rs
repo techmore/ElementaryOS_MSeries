@@ -270,11 +270,7 @@ impl PantheonCompositor {
                     && ButtonState::Pressed == button_state
                     && !pointer.is_grabbed()
                 {
-                    if let Some((window, _loc)) = self
-                        .space
-                        .element_under(pointer.current_location())
-                        .map(|(w, l)| (w.clone(), l))
-                    {
+                    if let Some(window) = self.window_under(pointer.current_location()) {
                         let panel_surface = window
                             .toplevel()
                             .is_some_and(|top| self.is_panel_surface(top.wl_surface()));

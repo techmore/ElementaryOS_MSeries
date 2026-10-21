@@ -1789,6 +1789,11 @@ impl PantheonCompositor {
             }
             return None;
         }
+        // Popups draw above every toplevel (see `popup_stack`), so they are hit
+        // first, across all windows, before the space's own top-down search.
+        if let Some((_, surface, location)) = crate::popup_stack::popup_under(&self.space, pos) {
+            return Some((surface, location.to_f64()));
+        }
         self.space
             .element_under(pos)
             .and_then(|(window, location)| {
@@ -1796,6 +1801,18 @@ impl PantheonCompositor {
                     .surface_under(pos - location.to_f64(), WindowSurfaceType::ALL)
                     .map(|(s, p)| (s, (p + location).to_f64()))
             })
+    }
+
+    /// The window that owns the surface under `pos`: the owner of a popup drawn
+    /// above its neighbours, else the top-most window whose input region contains
+    /// `pos`. Pair of `surface_under` for click-to-raise and focus.
+    pub fn window_under(&self, pos: Point<f64, Logical>) -> Option<Window> {
+        if let Some((window, _, _)) = crate::popup_stack::popup_under(&self.space, pos) {
+            return Some(window);
+        }
+        self.space
+            .element_under(pos)
+            .map(|(window, _)| window.clone())
     }
 
     pub fn track_output_for_lock(&mut self, output: &smithay::output::Output) {
