@@ -3189,3 +3189,10 @@ only in these two marker colors.
 - 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
 
 - 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
+
+### 2026-10-21 upstream pass: native Messages
+
+Prepared sender-ID read-only snapshot compatibility and accurate direct-sender
+reply guidance; see `phone-setup/UPSTREAM-REVIEW.md` and newest OS9 handoff.
+Next: qualify the current BlueFerry backend separately on the BlueZ 5.85
+compatibility path before any service upgrade or hardware acceptance claim.

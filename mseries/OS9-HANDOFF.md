@@ -9754,3 +9754,20 @@ configurator no longer creates a Hermes profile or desktop launcher. The unused
 `mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
 venv, config, state, and any previously generated desktop launcher in a user's
 home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.
+
+## Native Messages upstream read-only sender compatibility — 2026-10-21
+
+Reviewed BlueFerry `60fd7ef1...69122b3b` metadata changes. Native Messages now
+keeps an inbox-only sender read-only when optional `sender_alphanumeric` metadata
+is present, including duplicate-handle refreshes; contact-name resolution preserves
+that sender identity. Direct blocked senders now get accurate reply-unavailable
+guidance instead of group-confirmation instructions. Model checks: 69 tests pass;
+targeted isolated GTK restriction/draft test passes. See
+`phone-setup/UPSTREAM-REVIEW.md`. The full isolated GTK regression receipt is
+retained in the morning-task output directory.
+
+Source only: backend pin, Bluetooth state, desktop session and real messages
+unchanged. Current upstream has 51 commits beyond our recorded backend; a separate
+backend qualification is still needed before its sender detection/LE/media fixes
+can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
+features; those need native Incus design, not blind Swift feature parity claims.
