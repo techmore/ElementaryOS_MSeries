@@ -1131,6 +1131,15 @@ Next: review diagnostics before any separately authorized hardware trial; failed
 candidate remains unqualified. The login-time capture cannot diagnose pre-login
 hangs and QEMU without the required console driver was inconclusive.
 
+## Native Share Eyes freshness follow-up — 2026-10-21
+
+Source guard and synthetic regressions reject future/zero/missing launcher
+heartbeats; 15-second freshness, clearing and recovery remain verified. Native
+app/probe builds and private light/dark off-state renders pass. Not installed or
+loaded. [Upstream/compatibility receipt](SHARE-EYES-FRESHNESS-2026-10-21.md) records
+unchanged Torrential upstream and successful Signal module build; real tray,
+sharing/device and next-load acceptance remain open.
+
 ## Screen-share real dock qualification — 2026-10-18
 
 PR #225 was exercised with its real share server and GTK app on a private Gala
@@ -3208,11 +3217,8 @@ reply guidance; see `phone-setup/UPSTREAM-REVIEW.md` and newest OS9 handoff.
 Next: qualify the current BlueFerry backend separately on the BlueZ 5.85
 compatibility path before any service upgrade or hardware acceptance claim.
 
-## Native Share Eyes freshness follow-up — 2026-10-21
+### 2026-10-21 Machine Lab CI fixture reliability
 
-Source guard and synthetic regressions reject future/zero/missing launcher
-heartbeats; 15-second freshness, clearing and recovery remain verified. Native
-app/probe builds and private light/dark off-state renders pass. Not installed or
-loaded. [Upstream/compatibility receipt](SHARE-EYES-FRESHNESS-2026-10-21.md) records
-unchanged Torrential upstream and successful Signal module build; real tray,
-sharing/device and next-load acceptance remain open.
+Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
+only owned synthetic peers. No application behavior or VM acceptance change.
+See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.

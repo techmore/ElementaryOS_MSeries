@@ -9110,6 +9110,17 @@ Incident: the state.rs agent's functional test ran `gsettings set` in a private 
 Built from the merged polling-removal + linux-dmabuf branch (SHA-256 `4b459494…b6f65`) and installed with the installer (`--verify` passes). The running Rust session (compositor pid started 18:02 from `69cb0f1`) is untouched; the new binary applies at the next login. Autologin still selects the Rust session; Gala rollback: `sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes`.
 Next login runs the polling-free build with native dmabuf OFF. To trial dmabuf (needs a login, so only with the owner present): `systemctl --user edit pantheon-rust-compositor@wayland.service`, add `[Service]` / `Environment=PANTHEON_ENABLE_DMABUF=1`, log in again, watch the journal for "advertising linux-dmabuf v4 on the native renderer" and for Wingpanel/GTK apps drawing; if apps go blank remove the drop-in. The owner has restored the wallpaper and xkb settings that the earlier test leaked.
 
+## 2026-10-21: Machine Lab fake-QMP teardown regression
+
+CI completed all 14 machine-logic TAP cases but timed out waiting for output EOF.
+A captured-pipe reproduction confirmed one failure in 100 QMP-only iterations:
+the test parent had exited 0 while both owned fake Python peers remained alive.
+The fixture now waits/reaps each killed peer and retains diagnostic output on
+private pipes. A new bounded regression checks 20 process exits and output EOF;
+the existing 60-second logic timeout is unchanged. After the fix, 100 equivalent
+iterations had no failures. No real VM, clipboard service, or application runtime
+was changed. See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
+
 ## 2026-10-18: Machine Lab (native VM app)
 
 `mseries/machine-lab/` is the elementary-styled VM app (Vala/GTK4/Granite 7); `bash mseries/install-machine-lab.sh`
