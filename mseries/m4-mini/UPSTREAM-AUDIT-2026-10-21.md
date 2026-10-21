@@ -168,3 +168,14 @@ hashes. The kernel packager requires the same source contract. The incremental
 retry passed modpost and linked vmlinux; final module generation remains running.
 The retained .hyp.data non-allocatable-section warning is not suppressed. No
 firmware gates or driver functionality were removed to obtain this result.
+
+## Completed kernel artifact validation
+
+The corrected Image/modules/DTBs build and separate Debian payload now pass.
+The Image encodes ARM64/16 KiB, DTB identifies J773g, and all 1598 modules are
+present. Checked GPU/display/NIC modules have matching vermagic and AArch64
+ELF headers. Extracted-package Image hash and modprobe dry-run dependency
+resolution pass. Package contents are confined to the distinct module release
+and documentation, with no maintainer scripts or boot writes. Atlantic's
+AQC113C alias is present; no owner controller/link test has run. See the build
+and package receipts. These are build/package results, not boot acceptance.

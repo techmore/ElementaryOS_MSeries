@@ -1,3 +1,18 @@
+## M4 mini: full kernel build and package pass — 2026-10-21
+
+The corrected Gravity 4fc326f build finished exit 0 for Image/modules/DTBs.
+ARM64 Image header/16 KiB pages, J773g DT compatibility, all 1598 modules,
+AArch64 headers and GPU/display/NIC vermagic pass. Atlantic advertises
+AQC113C 1d6a:14c0; the owner's actual PCI identity/link is still untested.
+The separate kernel Debian payload built successfully: Image hash matches,
+all 1598 modules are present, modprobe dry-run resolves asahi_m4/appledrm/
+atlantic/tg3, and no maintainer scripts or boot files are included.
+Receipts: [build](m4-mini/receipts/2026-10-21-gravity-kernel-build.json),
+[package](m4-mini/receipts/2026-10-21-gravity-kernel-package.json).
+No installation, initramfs/EFI bundle, physical boot or macOS/Recovery test.
+Next: coherent target-image integration and hardware acceptance. Preserve the
+.hyp.data warning and exact packaging exports; full wrapper replay not run.
+
 ## M4 mini: required Gravity packaging exports — 2026-10-21
 
 The first complete object build stopped at modpost: appledrm required four

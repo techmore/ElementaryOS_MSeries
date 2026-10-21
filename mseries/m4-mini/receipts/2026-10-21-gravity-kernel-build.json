@@ -1,0 +1,39 @@
+{
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "kernel_release": "7.1.13-elementary-m4-gravity1",
+  "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "packaging_patches": {
+    "0003-arm64-export-can-set-direct-map.patch": "e27f3a475ab6c822e77578e9cd333b3f3dbf0fa4a74ad2d52a23bc332a4d2509",
+    "0004-arm64-export-set-direct-map-invalid.patch": "7507a14aa8c8578c2cf4d53c80278a68024d42220545edbcb38479caa458ea55",
+    "0005-arm64-export-set-direct-map-default.patch": "e2f0b1dcf6ff9dc2c1e6824f4853836dfd0bad313a081af467cbfe73a512b8af",
+    "0006-arm64-export-dcache-clean-inval-poc.patch": "0e377ac3c0ad3b994d5dcb858d862d37e8ed1b298d07e6efb7b6c8bde6b3ce0a"
+  },
+  "artifacts": {
+    "arch/arm64/boot/Image": "db3833e9ae2073c5063d733254561bb4bebaed0ee6091f9aadf32dee16f7803b",
+    "arch/arm64/boot/dts/apple/t8132-j773g.dtb": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+    "drivers/gpu/drm/asahi/asahi_m4.ko": "82eed5980e52b19854ba2d0bb17f8f7307722ca9b69be2fc0e0f340e6f8cebbf",
+    "drivers/gpu/drm/apple/appledrm.ko": "6c8c4c3189db4a39c1cdec53794ac48aa03221db2961faca5ad6477f1c9b3e66",
+    "drivers/net/ethernet/aquantia/atlantic/atlantic.ko": "ecb349ab0b00cb97bcc4600d1b555d907ac962bf7480bac563625cbdd4dd00d4",
+    "drivers/net/ethernet/broadcom/tg3.ko": "894191a69bff83cc79dd2b335bfee5a41e2d99d1fdcae89f8c5205b10893baf2"
+  },
+  "module_count": 1598,
+  "dtb_compatible": "apple,j773g apple,t8132 apple,arm-platform",
+  "image_header": "ARM64 magic and 16 KiB page flag verified",
+  "atlantic_aqc113c_alias": [
+    "pci:v00001D6Ad000014C0sv*sd*bc*sc*i*"
+  ],
+  "build_result": "exit 0: Image modules dtbs",
+  "warnings": [
+    "modpost .hyp.data unexpected non-allocatable section retained"
+  ],
+  "hardware_validated": false,
+  "wrapper_full_replay": false,
+  "status": "equivalent build steps completed incrementally after exact packaging export correction; no boot or runtime acceptance",
+  "module_elf_headers": {
+    "drivers/gpu/drm/asahi/asahi_m4.ko": "ELF64 little-endian AArch64",
+    "drivers/gpu/drm/apple/appledrm.ko": "ELF64 little-endian AArch64",
+    "drivers/net/ethernet/aquantia/atlantic/atlantic.ko": "ELF64 little-endian AArch64",
+    "drivers/net/ethernet/broadcom/tg3.ko": "ELF64 little-endian AArch64"
+  }
+}

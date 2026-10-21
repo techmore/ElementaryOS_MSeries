@@ -1,0 +1,2 @@
+# Preserve upstream unified-diff context whitespace byte for byte.
+*.patch -whitespace

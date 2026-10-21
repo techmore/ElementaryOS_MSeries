@@ -27,8 +27,8 @@ material. Their admission strings, firmware contracts and display routing must
 not replace Gravity's matched mini profile.
 
 DTBs, raw bootloader stages, U-Boot and Mesa have built locally. Selected AGX
-and software-rendering tests pass; the full kernel Image/modules build remains
-live. No M4 boot, 10 Gb link, hardware GPU, 16 GB memory-map or macOS/Recovery
+and software-rendering tests pass; the full kernel Image/modules/DTBs build now passes after the required
+Gravity ARM64 export patches. No M4 boot, 10 Gb link, hardware GPU, 16 GB memory-map or macOS/Recovery
 acceptance has run here. Those results remain required for owner qualification.
 
 Source capture verifies immutable revisions and hashes. Its receipt records the
@@ -71,7 +71,7 @@ python3 mseries/m4-mini/build-kernel.py --archive /path/to/linux-4fc326f.tar.gz 
 
 The resolved config must retain 16 KiB pages, Rust, appledrm and asahi_m4.
 The script emits a success receipt only after Image, modules and DTBs build.
-The first native full-build run remains pending; the wrapper itself has not yet
+The corresponding native full-build steps now pass; the wrapper itself has not yet
 completed an end-to-end run. Kernel and Mesa Asahi UAPI headers match byte for
 byte at the pinned Gravity heads; see the receipt for the precise scope.
 
@@ -83,8 +83,8 @@ After a successful full build, `package-kernel.py --source SOURCE --build BUILD
 archive alongside it. It checks the source archive, resolved config, module
 release, required Image/DTB/GPU artifacts, module inventory and display/GPU
 vermagic. No maintainer scripts or boot files are packaged. It does not install
-anything. Actual end-to-end packaging remains pending the full kernel build;
-the current incomplete build was correctly rejected for its missing Image.
+anything. End-to-end packaging now passes after the full build completed. The earlier
+incomplete build was correctly rejected for its missing Image.
 
 The driver source requires GPU boot-firmware identifier `mBoot-18000.161.10`
 and DCP actual firmware `26.6.2`. GPU firmware regions must be populated by the
@@ -159,3 +159,14 @@ hashes. The kernel packager requires the same source contract. The incremental
 retry passed modpost and linked vmlinux; final module generation remains running.
 The retained .hyp.data non-allocatable-section warning is not suppressed. No
 firmware gates or driver functionality were removed to obtain this result.
+
+## Completed kernel artifact validation
+
+The corrected Image/modules/DTBs build and separate Debian payload now pass.
+The Image encodes ARM64/16 KiB, DTB identifies J773g, and all 1598 modules are
+present. Checked GPU/display/NIC modules have matching vermagic and AArch64
+ELF headers. Extracted-package Image hash and modprobe dry-run dependency
+resolution pass. Package contents are confined to the distinct module release
+and documentation, with no maintainer scripts or boot writes. Atlantic's
+AQC113C alias is present; no owner controller/link test has run. See the build
+and package receipts. These are build/package results, not boot acceptance.

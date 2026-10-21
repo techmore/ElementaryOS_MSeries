@@ -11,7 +11,8 @@
     "arch/arm64/mm/flush.c": "50519818d672bd618e69627213403d021d10130ad9611d5e12199574e3f25d8e"
   },
   "build_handle": 61177,
-  "status": "incremental Image/modules/DTB build running after patch correction",
+  "status": "completed exit 0 after exact packaging export patches; see gravity-kernel-build receipt",
   "warning": "modpost .hyp.data unexpected non-allocatable section warning retained; runtime not qualified",
-  "hardware_validated": false
+  "hardware_validated": false,
+  "build_result": 0
 }
