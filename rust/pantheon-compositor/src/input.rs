@@ -112,6 +112,10 @@ impl PantheonCompositor {
                 let serial = SERIAL_COUNTER.next_serial();
                 let time = Event::time(&event);
                 let key_state = event.state();
+                if key_state == smithay::backend::input::KeyState::Pressed {
+                    // Lets xdg-activation hold back a raise while the user is typing.
+                    self.last_key_press = Some(std::time::Instant::now());
+                }
                 let x11_focus = self.x11_keyboard_focus.clone();
                 let seat = self.seat.clone();
 
