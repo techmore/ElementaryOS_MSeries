@@ -157,6 +157,13 @@ KNOWN_ISSUES = [
 ]
 
 
+def expectation_kind(path):
+    try:
+        return expectation(path)[0]
+    except OSError:
+        return "label"
+
+
 def kind_of(path):
     try:
         d = Path(path).read_text(errors="replace")
@@ -420,12 +427,15 @@ window.pbpm .pbpm-dot.ready { background: #68b723; }
 window.pbpm .pbpm-dot.check { background: #f9c440; }
 window.pbpm .pbpm-dot.stop { background: #c6262e; }
 window.pbpm label.pbpm-overall { font-size: 17px; font-weight: 700; }
+window.pbpm label.pbpm-result { font-size: 22px; font-weight: 700; }
+window.pbpm label.pbpm-today-total { font-size: 15px; font-weight: 600; }
+window.pbpm button.pbpm-preset { padding: 6px 14px; }
 window.pbpm .pbpm-sidebar-head { padding: 12px 14px 4px 14px; }
 """
 
 STEPS = [("usb", "Printer connected (USB)"), ("queue", "Print queue set up"), ("ready", "Printer taking jobs"),
-         ("file", "Label file valid"), ("sent", "Delivered to printer"),
-         ("loaded", "Bagger shows the label loaded"), ("cycle", "One label per Manual Cycle")]
+         ("file", "Label file valid"), ("sent", "Delivered to printer"), ("loaded", "Bagger shows the label loaded")]
+PRESETS = (1, 100, 500, 1000)
 ICON = {"ok": "emblem-default", "bad": "dialog-error", "warn": "dialog-warning", "todo": "content-loading-symbolic"}
 
 
@@ -502,44 +512,64 @@ def gui():
             tb.append(self.title); tb.append(self.sub)
             banner.append(self.big); banner.append(tb); right.append(banner)
 
-            pc = card()
-            self.pname = lbl("Select a label", "pbpm-row-title")
-            self.kind_lbl = lbl("", "pbpm-sub")
-            self.preview = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN, height_request=280)
-            self.preview_cap = lbl("", "pbpm-sub", wrap=True)
-            for w in (self.pname, self.kind_lbl, self.preview, self.preview_cap): pc.append(w)
-            right.append(pc)
-
-            # bagger confirmation (shown after a delivered job)
-            self.ask_card = card()
-            self.ask_head = Granite.HeaderLabel(label="On the bagger")
-            self.ask_text = lbl("", wrap=True)
-            self.ask_buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END)
-            for w in (self.ask_head, self.ask_text, self.ask_buttons): self.ask_card.append(w)
-            self.ask = Gtk.Revealer(child=self.ask_card, reveal_child=False)
-            right.append(self.ask)
-
-            actions = Gtk.Box(spacing=10)
+            # fixes appear here only when something needs one
+            fixes = Gtk.Box(spacing=10)
             self.cancel_btn = Gtk.Button(label="Cancel Stuck Jobs"); self.cancel_btn.add_css_class("destructive-action")
             self.cancel_btn.connect("clicked", self.on_cancel_jobs)
             self.setup_btn = Gtk.Button(label="Set Up Print Queue…"); self.setup_btn.connect("clicked", self.on_setup)
             self.resume_btn = Gtk.Button(label="Resume Queue…"); self.resume_btn.add_css_class("suggested-action")
             self.resume_btn.set_tooltip_text("Resume the paused queue and stop it pausing after a printer power cycle (admin password)")
             self.resume_btn.connect("clicked", self.on_resume)
-            self.test_btn = Gtk.Button(label="Send Test Label"); self.test_btn.connect("clicked", self.on_test)
-            self.send_btn = Gtk.Button(label="Send to Printer"); self.send_btn.add_css_class("suggested-action")
-            self.send_btn.add_css_class("pbpm-send"); self.send_btn.connect("clicked", self.on_send)
-            qbox = Gtk.Box(spacing=8, valign=Gtk.Align.CENTER)
+            for w in (self.resume_btn, self.cancel_btn, self.setup_btn): fixes.append(w)
+            right.append(fixes)
+
+            # the job: which label, how many, print
+            jc = card()
+            self.pname = lbl("Select a label", "pbpm-row-title")
+            self.kind_lbl = lbl("", "pbpm-sub", wrap=True)
+            self.preview = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN, height_request=170)
+            self.preview_cap = lbl("", "pbpm-sub", wrap=True)
+            for w in (self.pname, self.kind_lbl, self.preview, self.preview_cap): jc.append(w)
+            row = Gtk.Box(spacing=8, margin_top=6)
+            self.qty_lbl = lbl("How many")
             self.qty = Gtk.SpinButton.new_with_range(1, 10000, 1); self.qty.set_value(load_settings().get("qty", 1))
             self.qty.set_tooltip_text("Labels to print: one per bag cycle, sent as ^PQ (the label Quantity)")
             self.qty.update_property([Gtk.AccessibleProperty.LABEL], ["Labels to print"])
-            self.qty.connect("value-changed", lambda w: save_settings(qty=w.get_value_as_int()))
-            qbox.append(lbl("Labels to print")); qbox.append(self.qty)
-            spacer = Gtk.Box(hexpand=True)
-            for w in (self.cancel_btn, self.resume_btn, self.setup_btn, spacer, qbox, self.test_btn, self.send_btn): actions.append(w)
-            right.append(actions)
+            self.qty.connect("value-changed", lambda w: (save_settings(qty=w.get_value_as_int()), self.update_send_label()))
+            row.append(self.qty_lbl); row.append(self.qty)
+            self.presets = []
+            for n in PRESETS:
+                b = Gtk.Button(label=str(n), tooltip_text=f"Print {n}"); b.add_css_class("pbpm-preset")
+                b.connect("clicked", lambda _b, n=n: self.qty.set_value(n)); row.append(b); self.presets.append(b)
+            row.append(Gtk.Box(hexpand=True))
+            self.send_btn = Gtk.Button(label="Print"); self.send_btn.add_css_class("suggested-action")
+            self.send_btn.add_css_class("pbpm-send"); self.send_btn.connect("clicked", self.on_send)
+            self.send_btn.set_tooltip_text("Send to the printer (Ctrl+P)")
+            row.append(self.send_btn); jc.append(row)
+            right.append(jc)
 
-            sc = card(); sc.append(Granite.HeaderLabel(label="Checks"))
+            # result of the last job, with the one check that matters
+            self.ask_card = card()
+            rh = Gtk.Box(spacing=14)
+            self.res_icon = Gtk.Image(pixel_size=40, valign=Gtk.Align.START)
+            rt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
+            self.res_title = lbl("", "pbpm-result", wrap=True); self.ask_text = lbl("", wrap=True)
+            rt.append(self.res_title); rt.append(self.ask_text); rh.append(self.res_icon); rh.append(rt)
+            self.ask_buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END)
+            self.ask_card.append(rh); self.ask_card.append(self.ask_buttons)
+            self.ask = Gtk.Revealer(child=self.ask_card, reveal_child=False)
+            right.append(self.ask)
+
+            # today: what went to the printer
+            tc = card()
+            th = Gtk.Box(spacing=8); th.append(Granite.HeaderLabel(label="Today", hexpand=True))
+            self.today_total = lbl("", "pbpm-today-total"); th.append(self.today_total); tc.append(th)
+            self.today = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE); self.today.add_css_class("pbpm-today")
+            self.today.set_placeholder(lbl("No jobs yet today.", "pbpm-sub", xalign=0.5))
+            tc.append(self.today); right.append(tc)
+
+            # details, collapsed: checks, test label, log
+            details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin_top=8)
             grid = Gtk.Grid(row_spacing=10, column_spacing=12); self.rows = {}
             for i, (k, text) in enumerate(STEPS):
                 img = Gtk.Image(icon_name=ICON["todo"], pixel_size=20); sp = Gtk.Spinner()
@@ -547,14 +577,22 @@ def gui():
                 det = lbl("", "pbpm-sub", xalign=1.0); det.set_hexpand(True); det.set_ellipsize(3)
                 grid.attach(st, 0, i, 1, 1); grid.attach(lbl(text), 1, i, 1, 1); grid.attach(det, 2, i, 1, 1)
                 self.rows[k] = (img, sp, st, det)
-            sc.append(grid); right.append(sc)
-
+            details.append(grid)
+            self.test_btn = Gtk.Button(label="Send Test Label", halign=Gtk.Align.START); self.test_btn.connect("clicked", self.on_test)
+            details.append(self.test_btn)
             self.log = Gtk.TextView(editable=False, monospace=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
-            right.append(Gtk.Expander(label="Activity log", child=Gtk.ScrolledWindow(child=self.log, min_content_height=120)))
+            details.append(Gtk.ScrolledWindow(child=self.log, min_content_height=120))
+            right.append(Gtk.Expander(label="Details: checks, test label, activity log", child=details))
+
+            ctrl = Gtk.ShortcutController(); ctrl.set_scope(Gtk.ShortcutScope.GLOBAL)
+            ctrl.add_shortcut(Gtk.Shortcut(trigger=Gtk.ShortcutTrigger.parse_string("<Control>p"),
+                                           action=Gtk.CallbackAction.new(lambda *_: (self.send_btn.get_sensitive() and self.on_send(None), True)[1])))
+            self.add_controller(ctrl)
 
             self.library = list(label_files())
             self.rebuild_sidebar()
             self.apply_status(status(), first=True)
+            self.load_today(); self.update_send_label()
             GLib.timeout_add_seconds(1, self.poll)
             GLib.timeout_add_seconds(5, self.poll_queue)
             self.maybe_snapshot()
@@ -718,6 +756,7 @@ def gui():
             if not p: return
             self.pname.set_text(p.stem.replace("_", " "))
             self.kind_lbl.set_text(expectation(p)[1])
+            self.update_send_label()
             try:
                 img, cap = label_preview(p)
             except Exception as e:  # a preview must never block printing
@@ -732,6 +771,37 @@ def gui():
             self.preview_cap.set_text(cap)
 
         # -- status
+        def update_send_label(self):
+            p = self.current_file()
+            kind = expectation(p)[0] if p else "label"
+            n = self.qty.get_value_as_int()
+            store = kind == "store"
+            for w in [self.qty, self.qty_lbl] + self.presets: w.set_sensitive(not store)
+            self.send_btn.set_label("Save to Printer Flash" if store else f"Print {n:,} Label{'s' if n != 1 else ''}")
+
+        def load_today(self):
+            child = self.today.get_first_child()
+            while child: nxt = child.get_next_sibling(); self.today.remove(child); child = nxt
+            day = time.strftime("%Y-%m-%d"); jobs = []
+            try:
+                for line in LOG_PATH.read_text().splitlines():
+                    e = json.loads(line)
+                    if e.get("time", "").startswith(day) and "stage" in e: jobs.append(e)
+            except (OSError, ValueError):
+                pass
+            ok = [j for j in jobs if j.get("ok")]
+            labels = sum(int(j.get("quantity") or 1) for j in ok if expectation_kind(j.get("file", "")) != "store")
+            self.today_total.set_text(f"{len(ok)} sent · {labels:,} labels" + (f" · {len(jobs) - len(ok)} failed" if len(jobs) > len(ok) else ""))
+            for j in reversed(jobs[-10:]):
+                r = Gtk.Box(spacing=12, margin_top=6, margin_bottom=6)
+                r.append(Gtk.Image(icon_name=ICON["ok" if j.get("ok") else "bad"], pixel_size=18))
+                r.append(lbl(j["time"][11:16], "pbpm-sub"))
+                name = Path(j.get("file", "")).stem.replace("_", " ")
+                if Path(j.get("file", "")).name.startswith("tmp"): name = "Test label"  # mkstemp test labels
+                nl = lbl(name); nl.set_hexpand(True); r.append(nl)
+                r.append(lbl(f"× {int(j.get('quantity') or 1):,}" if j.get("ok") else j.get("stage", "failed"), "pbpm-sub"))
+                self.today.append(r)
+
         def poll(self):
             if bool(usb_zebras()) != self.was_plugged and not self.busy: self.refresh()
             return True
@@ -858,7 +928,7 @@ def gui():
             self.start_send(p)
 
         def start_send(self, path, temp=False):
-            for k in ("file", "sent", "loaded", "cycle"): self.mark(k, "todo")
+            for k in ("file", "sent", "loaded"): self.mark(k, "todo")
             ok, warns = check_zpl(path)
             if not ok: self.mark("file", "bad", warns[0]); return
             if not temp: self.recent[str(path)] = time.time()
@@ -888,67 +958,58 @@ def gui():
                       f"{'Delivered' if res['ok'] else 'Not delivered'} · {path.name if not temp else 'test label'} · {time.strftime('%H:%M')}")
             if res["ok"] and not temp: self.remember_recent(path)
             if res["ok"] and kind != "store": self.set_label_state("sent", file=str(path), qty=res.get("quantity", 1))
+            name = "Test label" if temp else path.stem.replace("_", " ")
             if res["ok"]:
                 self.mark("sent", "ok", f"{res['job']} · {res['seconds']} s")
                 self.big.set_from_icon_name("printer")
                 if kind == "store":
-                    self.title.set_text("Saved to printer flash")
-                    self.sub.set_text("Nothing loads on the bagger from a store file. Send the recall file next.")
+                    self.show_result("ok", f"Saved {name} to printer flash",
+                                     "Nothing loads on the bagger from a store file. Print the recall file next.", [])
                 else:
-                    self.title.set_text("Label delivered, confirm on the bagger")
-                    self.sub.set_text(f"The printer has the label for {res['quantity']} bag(s). One prints per bag cycle, "
-                                      "then the label clears.")
-                    self.ask_step(1, hint)
+                    self.title.set_text("Printer has the label"); self.sub.set_text("It prints one per bag cycle.")
+                    self.show_result("ok", f"Sent {name} × {res['quantity']:,}",
+                                     hint + " Does it?", [("Still No Label", "no"), ("Yes, Label Is In", "yes")])
             else:
                 self.mark("sent", "bad", res["stage"])
                 self.big.set_from_icon_name("printer-error")
-                self.title.set_text("Label not delivered"); self.sub.set_text(res["detail"])
+                self.title.set_text("Label not delivered"); self.sub.set_text("See the result below.")
+                self.show_result("bad", f"{name} did not reach the printer", res["detail"], [("Try Again", "retry")])
+            self.load_today()
             if temp: os.unlink(path)
             self.refresh()
             return False
 
-        # -- operator confirmation on the bagger
-        def ask_step(self, step, hint=""):
+        # -- result card: what happened, and the one check on the bagger
+        def show_result(self, state, title, text, opts):
+            self.res_icon.set_from_icon_name(ICON[state]); self.res_title.set_text(title); self.ask_text.set_text(text)
             child = self.ask_buttons.get_first_child()
             while child: nxt = child.get_next_sibling(); self.ask_buttons.remove(child); child = nxt
-            if step == 1:
-                self.ask_head.set_label("Step 1 of 2 · Bagger Printer Settings screen")
-                self.ask_text.set_label(hint + " Does it?")
-                opts = [("Still No Label", "no"), ("Shows the Label", "yes")]
-            else:
-                self.ask_head.set_label("Step 2 of 2 · Manual Cycle")
-                self.ask_text.set_label("Press Manual Cycle once on the bagger. How many labels printed on that bag?")
-                opts = [("None", "0"), ("More Than One", "2+"), ("Exactly One", "1")]
-            for text, val in opts:
-                b = Gtk.Button(label=text)
-                if val in ("yes", "1"): b.add_css_class("suggested-action")
-                b.connect("clicked", lambda _b, v=val: self.on_answer(step, v))
+            for label, val in opts:
+                b = Gtk.Button(label=label)
+                if val in ("yes", "retry"): b.add_css_class("suggested-action")
+                b.connect("clicked", lambda _b, v=val: self.on_answer(v))
                 self.ask_buttons.append(b)
+            self.ask_buttons.set_visible(bool(opts))
             self.ask.set_reveal_child(True)
 
-        def on_answer(self, step, val):
+        def on_answer(self, val):
+            if val == "retry":
+                self.on_send(None); return
             entry = {"job": self.last.get("job"), "file": self.last.get("file")}
-            if step == 1:
-                loaded = val == "yes"
-                log_result({**entry, "bagger_loaded": loaded})
-                if loaded: self.set_label_state("in", file=entry["file"], qty=self.last.get("quantity", 1))
-                else: self.set_label_state("none")
-                self.mark("loaded", "ok" if loaded else "bad", "operator confirmed" if loaded else "still No Label")
-                if loaded: self.ask_step(2); return
-                self.title.set_text("Bagger did not load the label")
-                self.sub.set_text("Check the printer is ON and in Run mode, then send again. If it repeats, power-cycle the printer.")
+            loaded = val == "yes"
+            log_result({**entry, "bagger_loaded": loaded})
+            name = Path(entry["file"] or "").stem.replace("_", " ")
+            qty = self.last.get("quantity", 1)
+            if loaded:
+                self.set_label_state("in", file=entry["file"], qty=qty)
+                self.mark("loaded", "ok", "operator confirmed")
+                self.show_result("ok", f"Ready: {name} × {qty:,} on the bagger",
+                                 "Run the bagger. One label prints per bag; the label clears when the count is used up.", [])
             else:
-                log_result({**entry, "labels_per_cycle": val})
-                self.mark("cycle", "ok" if val == "1" else "bad", {"1": "one label", "0": "none printed", "2+": "more than one"}[val])
-                if val == "1":
-                    self.title.set_text("Verified: one label per cycle"); self.sub.set_text("Ready for production.")
-                elif val == "0":
-                    self.title.set_text("Nothing printed on the cycle")
-                    self.sub.set_text("Check ribbon, media and the print head on the bagger screen (No Ribbon / Error).")
-                else:
-                    self.title.set_text("Printed more than once")
-                    self.sub.set_text("Turn Reprint OFF on the bagger's Printer Settings screen, then Clear Labels and send once.")
-            self.ask.set_reveal_child(False)
+                self.set_label_state("none"); self.mark("loaded", "bad", "still No Label")
+                self.show_result("bad", "The bagger did not load the label",
+                                 "Check the printer is ON and in Run mode on the bagger's Printer Settings screen, then try again. "
+                                 "If it repeats, power-cycle the printer.", [("Try Again", "retry")])
 
         # -- dev aid: PBPM_SHOT=/path.png renders the window to a PNG, then quits
         def maybe_snapshot(self):
@@ -956,7 +1017,8 @@ def gui():
             if not shot: return
             if os.environ.get("PBPM_SHOT_H"): self.set_default_size(1180, int(os.environ["PBPM_SHOT_H"]))
             if os.environ.get("PBPM_SHOT_ASK"):
-                self.ask_step(1, expectation(self.current_file())[1])
+                self.show_result("ok", "Sent CCSBLACK recall flash × 1,000", expectation(self.current_file())[1] + " Does it?",
+                                 [("Still No Label", "no"), ("Yes, Label Is In", "yes")])
             def snap():
                 w, h = self.get_width(), self.get_height()
                 paint = Gtk.WidgetPaintable.new(self)
