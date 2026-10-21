@@ -156,6 +156,24 @@ Under that GNOME (Mutter) session both monitors worked: Mutter published one AOC
 1920x1080@60 with `link-status Good` and ignored the stale DP-2, which is the outcome the compositor change
 reproduces. The read-only probe saw DP-1 and DP-2 both still `connected` with `link-status Bad` at that time.
 
+## Validation on hardware (2026-10-21 08:07, cold boot into the Rust session)
+
+After a reboot (kernel `7.1.12-2-20261017.20-sep-ARCH`; the bootloader was not touched by this work) autologin
+started `pantheon-rust-wayland`, running the deployed package `0.1.0+gitc995a60.dockfix1`.
+`validate-dock-recovery.sh` (run by a one-shot user service inside the session) reported **RESULT: PASS**:
+
+- the running compositor binary matches `/usr/bin/pantheon-compositor` (`9245bb2f8226d731`);
+- published monitors: `eDP-1` and `DP-1|AOC|24E2QA|RJLRCHA019923|1920x1080@60` (the old build published `Apple:DP-n:Unknown`);
+- one external monitor, no phantom; `eDP-1` and `DP-1` both `link-status Good`;
+- journal: `mapped newly connected DRM output name=DP-1`, then `link-status was Bad; reset to Good to retrain the link output=DP-1`
+  at 39.657 s, followed by a second DCP `set_digital_out_mode ... finished` and `valid_mode:1`;
+- two `Page flip commit failed ... EBUSY` errors in total (one at startup, one right after the reset), neither repeated;
+  redraw cadence normal (1,961 vblanks and 1,963 frames queued per 30 s).
+
+Not exercised by this boot: the stale-duplicate suppression, because this cold boot had no stale DP-2 (DP-2 was
+`disconnected`). It needs a dock replug while logged in, as in the original incident. Not verified by this agent: that the
+AOC visibly shows the desktop, and day-to-day responsiveness of the Rust session. Both need a person looking at the screen.
+
 ## Boot kernel log noise (2026-10-21 boot)
 
 | Message | Count | Cause | Status |

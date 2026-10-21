@@ -40,6 +40,12 @@ package only loads at login; a one-shot timer runs
 `~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
 Merging PR #357 into `dev` does not by itself deploy anything.
 
+**Validated on hardware (2026-10-21 08:07).** Cold boot into the Rust session with the deployed package:
+`validate-dock-recovery.sh` reports PASS (running binary matches the installed one, AOC published once with its EDID
+identity, link-status Good, `link-status was Bad; reset to Good` logged and followed by a clean second DCP modeset). Still
+open: the stale-duplicate path needs a dock replug while logged in; whether the AOC shows the desktop and how the session
+feels needs a person at the screen. See the evidence file above.
+
 **Why the Rust session did not start (2026-10-21).** Not a compositor failure: after a logout the elementary
 greeter starts the session stored in `io.elementary.greeter last-session-type` (lightdm user's dconf), which
 was `ubuntu`; `.dmrc`/AccountsService are ignored and LightDM never autologins after a logout. Pick
