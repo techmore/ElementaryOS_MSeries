@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y valac meson ninja-build libgtk-4-dev libgranite-7-dev libjson-glib-dev libwingpanel-dev xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y valac meson ninja-build libgtk-4-dev libgranite-7-dev libjson-glib-dev xvfb xauth
       - name: Build, unit-test and render
         run: |
           meson setup build mseries/remote-desktop/native

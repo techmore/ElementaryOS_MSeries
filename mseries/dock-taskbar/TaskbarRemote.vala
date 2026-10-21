@@ -18,7 +18,7 @@ public class Dock.TaskbarRemote : Gtk.Box {
         button.update_property (Gtk.AccessibleProperty.LABEL, _("Remote Desktop"), -1);
         indicator = new MSeries.Remote.Indicator ();
         var readout = indicator.get_display_widget ();
-        if (readout is Gtk.Image) ((Gtk.Image) readout).pixel_size = 24;
+        if (readout is Gtk.Image) ((Gtk.Image) readout).pixel_size = ((Gtk.Image) readout).pixel_size * 3 / 2;
         button.child = readout;
         append (button);
         // Nothing to show until sharing is on; never reserve taskbar space.
