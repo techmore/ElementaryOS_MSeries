@@ -24,20 +24,6 @@ from huggingface_hub import snapshot_download
 snapshot_download('mlx-community/Qwen3.5-9B-MLX-4bit',revision='938d8919941c6e7efd3c7150eff7fe9d12afa631',max_workers=2)
 PY
 python3 "$here/prepare-compact35.py"
-base="$HOME/.local/share/mseries-assistants/hermes"
-pin=848fc0ad8be766b9dc10fe42bd80b5fc2d45d95c
-if [[ ! -d $base/source/.git ]]; then
-  mkdir -p "$base/source"
-  git -C "$base/source" init
-  git -C "$base/source" remote add origin https://github.com/NousResearch/hermes-agent.git
-  git -C "$base/source" fetch --depth 1 origin "$pin"
-  git -C "$base/source" checkout --detach FETCH_HEAD
-fi
-[[ $(git -C "$base/source" rev-parse HEAD) == "$pin" ]] || { echo 'Unexpected Hermes source revision; retained unchanged.' >&2; exit 1; }
-[[ -z $(git -C "$base/source" status --porcelain --untracked-files=no) ]] || { echo 'Hermes source has tracked changes.' >&2; exit 1; }
-python3 -m venv "$base/venv"
-"$base/venv/bin/pip" install -r "$here/hermes-requirements.lock"
-"$base/venv/bin/pip" install --no-deps -e "$base/source[mcp]"
 python3 "$here/install-crush.py"
 python3 "$here/prepare-coder.py" --python "$runtime" --runtime-only
 python3 "$here/configure-assistants.py" --adopt-compact-defaults

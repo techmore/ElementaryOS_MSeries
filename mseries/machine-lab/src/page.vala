@@ -26,6 +26,7 @@ public class MachinePage : Gtk.Box {
     private Gtk.Box emu_banner;
     private Gtk.Label ssh_cmd;
     private SnapshotsCard? snapshots = null;
+    private WindowsDriversCard? win_drivers = null;
     private Gtk.Box image_card;
     private Gtk.Button image_button;
     private Gtk.Button save_image_item;
@@ -229,18 +230,51 @@ public class MachinePage : Gtk.Box {
                 return Source.REMOVE;
             }
             tries++;
-            var b = new ClipboardBridge (machine);
+            var cs = ClipboardSettings.get_default ();
+            var b = new ClipboardBridge (new GdkHostClipboard ());
+            b.host_to_guest = cs.host_to_guest;
+            b.guest_to_host = cs.guest_to_host;
             b.status.connect ((m) => toast (m));
+            b.ended.connect (() => {
+                if (bridge == b) {
+                    bridge = null;
+                }
+            });
             bridge_starting = true;
-            b.start.begin ((obj, res) => {
+            ClipboardLink.connect_machine.begin (b, machine, (obj, res) => {
                 bridge_starting = false;
-                if (b.start.end (res)) {
+                if (ClipboardLink.connect_machine.end (res)) {
                     bridge = b;
                     toast ("Clipboard shared with %s".printf (machine.name));
                 }
             });
             return Source.CONTINUE;
         });
+    }
+
+    private delegate void DirectionToggled (bool on);
+
+    private Gtk.Widget clipboard_direction_row (string title, string note, bool active, owned DirectionToggled toggled) {
+        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        row.add_css_class ("ml-form-row");
+        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        text.hexpand = true;
+        var t = new Gtk.Label (title);
+        t.xalign = 0;
+        t.add_css_class ("ml-spec-value");
+        var n = new Gtk.Label (note);
+        n.xalign = 0;
+        n.wrap = true;
+        n.add_css_class ("ml-spec-label");
+        text.append (t);
+        text.append (n);
+        row.append (text);
+        var sw = new Gtk.Switch ();
+        sw.valign = Gtk.Align.CENTER;
+        sw.active = active;
+        sw.notify["active"].connect (() => toggled (sw.active));
+        row.append (sw);
+        return row;
     }
 
     public void toggle_fullscreen () {
@@ -752,7 +786,7 @@ public class MachinePage : Gtk.Box {
         var clip_title = new Gtk.Label ("Share clipboard");
         clip_title.xalign = 0;
         clip_title.add_css_class ("ml-spec-value");
-        clip_note = new Gtk.Label ("Copy and paste text and images between this Mac and the machine. The guest needs the SPICE agent (spice-vdagent); this applies the next time the machine starts.");
+        clip_note = new Gtk.Label ("Copy and paste text between this Mac and the machine, both ways. The guest needs the SPICE agent (spice-vdagent); this applies the next time the machine starts.");
         clip_note.xalign = 0;
         clip_note.wrap = true;
         clip_note.add_css_class ("ml-spec-label");
@@ -769,7 +803,29 @@ public class MachinePage : Gtk.Box {
         });
         clip_row.append (clip_switch);
         clip_card.append (clip_row);
+
+        // Direction switches: app-wide, live (no restart), on by default once sharing is on.
+        var clip_settings = ClipboardSettings.get_default ();
+        clip_card.append (clipboard_direction_row ("Paste from this computer into the machine",
+            "Text you copy here can be pasted in the machine. Turn off to keep this computer's clipboard private from the guest.",
+            clip_settings.host_to_guest, (on) => {
+                clip_settings.host_to_guest = on;
+                clip_settings.save ();
+                if (bridge != null) bridge.host_to_guest = on;
+            }));
+        clip_card.append (clipboard_direction_row ("Copy from the machine to this computer",
+            "Text copied in the machine replaces the clipboard here. Text over %s is not transferred in either direction.".printf (format_size (CLIP_DEFAULT_MAX_BYTES)),
+            clip_settings.guest_to_host, (on) => {
+                clip_settings.guest_to_host = on;
+                clip_settings.save ();
+                if (bridge != null) bridge.guest_to_host = on;
+            }));
         clamp.append (clip_card);
+
+        // Windows guests: virtio-win drivers and an unattended-install answer file.
+        win_drivers = new WindowsDriversCard (machine);
+        win_drivers.toast.connect ((m) => toast (m));
+        clamp.append (win_drivers);
 
         int cores = (int) get_num_processors ();
         int host_gib = host_memory_gib ();
@@ -900,6 +956,9 @@ public class MachinePage : Gtk.Box {
         if (snapshots != null) {
             snapshots.visible = !machine.managed;
             snapshots.update ();
+        }
+        if (win_drivers != null) {
+            win_drivers.update ();
         }
         bool running = machine.running;
         bool managed = machine.managed;

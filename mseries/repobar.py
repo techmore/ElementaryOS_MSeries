@@ -77,6 +77,7 @@ DEFAULT_SETTINGS = {
     "localRoot": "",
     "localDepth": 4,
     "notifyCi": True,
+    "notifyWorkflows": True,
     "mergeWindowMinutes": 60,
     "showContributions": True,
     "contributionStyle": "dots",
@@ -239,6 +240,44 @@ def _repository_details(ids: list[str], since: dict[str, str]) -> list[dict]:
     return [node for node in (payload.get("data") or {}).get("nodes") or [] if node]
 
 
+ACTIVE_RUN_STATES = {"queued", "in_progress", "waiting", "requested", "pending"}
+
+
+def _workflow_runs(repos: list[dict], now: int) -> dict:
+    """Running and just-finished GitHub Actions runs (every branch and pull request) in recently active repositories."""
+    cutoff = datetime.fromtimestamp(now - 7 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
+    working = [repo["name"] for repo in repos
+               if repo["repoState"] != "hidden" and not repo["archived"] and not repo["fork"]
+               and repo["updatedAt"] >= cutoff][:30]
+
+    def runs_for(name: str) -> list[dict]:
+        try:
+            payload = json.loads(_run_gh([f"repos/{name}/actions/runs?per_page=15"]).stdout)
+        except (RuntimeError, json.JSONDecodeError):
+            return []  # Actions disabled, no access, or a transient error: that repository just has no runs.
+        found = []
+        for run in payload.get("workflow_runs") or []:
+            found.append({
+                "id": run.get("id"), "repo": name, "name": run.get("name") or run.get("display_title") or "workflow",
+                "branch": run.get("head_branch") or "", "event": run.get("event") or "",
+                "status": run.get("status") or "", "conclusion": run.get("conclusion") or "",
+                "url": run.get("html_url") or "", "createdAt": run.get("created_at") or "",
+                "updatedAt": run.get("updated_at") or "",
+            })
+        return found
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        runs = [run for batch in pool.map(runs_for, working) for run in batch]
+    # A run "in progress" for over six hours is stuck or abandoned, not work in flight.
+    stale_cutoff = datetime.fromtimestamp(now - 6 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
+    running = [run for run in runs if run["status"] in ACTIVE_RUN_STATES and run["createdAt"] >= stale_cutoff]
+    recent_cutoff = datetime.fromtimestamp(now - 2 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
+    finished = [run for run in runs if run["status"] == "completed" and run["updatedAt"] >= recent_cutoff]
+    running.sort(key=lambda run: run["createdAt"], reverse=True)
+    finished.sort(key=lambda run: run["updatedAt"], reverse=True)
+    return {"checkedRepos": len(working), "running": running[:50], "finished": finished[:50]}
+
+
 def fetch_snapshot() -> dict:
     now = int(time.time())
     since = {
@@ -339,7 +378,11 @@ def fetch_snapshot() -> dict:
         rate_error = ""
     except RuntimeError as exc:
         rate_limit, rate_fetched_at, rate_error = {}, 0, str(exc)
-    return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
+    try:
+        actions = _workflow_runs(normalized, now)
+    except RuntimeError:
+        actions = None
+    return {"schemaVersion": 1, "account": login, "actions": actions, "host": _hostname(), "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
             "settings": settings, "stale": False, "forYou": for_you,
             "contributions": contributions, "repos": normalized}
@@ -761,11 +804,11 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived", "notify-ci", "show-contributions"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci", "notify-workflows", "show-contributions"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
         member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
-                  "show-contributions": "showContributions"}[normalized]
+                  "notify-workflows": "notifyWorkflows", "show-contributions": "showContributions"}[normalized]
         settings[member] = value.lower() == "true"
     elif normalized == "merge-window":
         minutes = int(value.lower().removesuffix("m"))
@@ -797,7 +840,8 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "menu-sort": "menuSort", "show-forks": "showForks",
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
                                                         "local-root": "localRoot", "local-depth": "localDepth",
-                                                        "notify-ci": "notifyCi", "show-contributions": "showContributions",
+                                                        "notify-ci": "notifyCi", "notify-workflows": "notifyWorkflows",
+                                                        "show-contributions": "showContributions",
                                                         "contribution-style": "contributionStyle",
                                                         "merge-window": "mergeWindowMinutes"}.get(normalized, normalized))}
 

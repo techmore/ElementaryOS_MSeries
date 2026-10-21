@@ -1,5 +1,5 @@
 project('machine-lab', 'vala',
-  version: '0.8.0',
+  version: '0.10.0',
   meson_version: '>= 1.0.0',
   default_options: ['warning_level=2']
 )
@@ -23,7 +23,7 @@ config = configure_file(
 )
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', 'src/snapshots.vala', 'src/images.vala', config,
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipsync.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', 'src/snapshots.vala', 'src/images.vala', 'src/unattend.vala', 'src/virtiowin.vala', 'src/windows-ui.vala', config,
   resources,
   dependencies: [gtk, granite, json],
   install: true
@@ -45,7 +45,7 @@ install_data('launcher/prepare-latest-omarchy.py',
   rename: 'machine-lab-prepare-omarchy')
 
 test_exe = executable('test-machine',
-  'tests/test-machine.vala', 'src/machine.vala', 'src/incus-model.vala', 'src/snapshots.vala', 'src/images.vala',
+  'tests/test-machine.vala', 'src/machine.vala', 'src/incus-model.vala', 'src/snapshots.vala', 'src/images.vala', 'src/unattend.vala', 'src/virtiowin.vala',
   dependencies: [gtk, dependency('gio-unix-2.0'), json],
   install: false
 )
@@ -53,6 +53,20 @@ test('machine logic', test_exe,
   env: {'FAKE_QMP': meson.current_source_dir() / 'tests/fake-qmp.py'},
   timeout: 60
 )
+
+unattend_test_exe = executable('test-unattend',
+  'tests/test-unattend.vala', 'src/machine.vala', 'src/unattend.vala', 'src/virtiowin.vala',
+  dependencies: [gtk, dependency('gio-unix-2.0'), json],
+  install: false
+)
+test('windows answer file and virtio-win policy', unattend_test_exe, timeout: 120)
+
+clipboard_test_exe = executable('test-clipboard',
+  'tests/test-clipboard.vala', 'src/clipsync.vala',
+  dependencies: [dependency('gio-2.0'), dependency('gio-unix-2.0')],
+  install: false
+)
+test('clipboard sync against a fake QEMU peer', clipboard_test_exe, timeout: 120)
 
 install_data('launcher/macos-check.py',
   install_dir: get_option('bindir'),

@@ -37,7 +37,7 @@ pub fn stamp() -> Option<u128> {
         tracing::warn!(target: "pantheon_display_lifecycle", monotonic_us = elapsed.as_micros() as u64,
             record_limit = RECORD_LIMIT, "display trace budget exhausted; diagnostics suppressed until next minute");
     }
-    (budget.1 <= RECORD_LIMIT).then(|| elapsed.as_micros())
+    (budget.1 <= RECORD_LIMIT).then_some(elapsed.as_micros())
 }
 
 /// Every operation gets its own generation. Output markers retain the

@@ -1,3 +1,68 @@
+## Touch ID page in System Settings — 2026-10-21
+
+New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
+Switchboard plug), modelled on macOS *Touch ID & Password*: fingerprint list, Add Fingerprint sheet with a print that
+fills per touch, Remove with confirmation, and switches for Terminal Commands (`sudo`) and System Authorization (polkit).
+Login/lock screen is shown disabled (lock-screen PAM service still unidentified).
+
+- Installed on this machine (plug, `/usr/local/sbin/mseries-aurora-touchid-apply-pam`, polkit action); loads next time
+  Settings opens. Opening the page wakes the sensor. The old per-user stand-alone launcher was removed.
+- `mseries-aurora-touchid-apply-pam` now takes `--only sudo|polkit-1` and `--remove`.
+- Verified: PAM helper test (scratch dir), 12 UI checks against a fake fprintd on a private bus and virtual display
+  (states, `sudo` switch writes only `sudo`, sheet stops enrolment and releases the sensor on close), light/dark
+  screenshots, and the real `io.elementary.settings` loading the installed plug against the fake.
+- **Not verified:** enrolment and matching against the real Secure Enclave from this page; PAM changes on `/etc/pam.d`;
+  the `pkexec` prompt wording. Next: supervised first enrolment (fprintd only, xART protections on, password fallback),
+  then identify the lock screen's PAM service.
+
+## Daedalus portal and NmapUI on this desktop — 2026-10-21
+
+Work done from this repo's session for the owner's "daedalus production ready" and
+"native elementary NmapUI" requests. Daedalus and TM-NmapUI are separate repositories;
+this entry records what landed and what is installed here.
+
+**Daedalus ([techmore/tm-daedalus](https://github.com/techmore/tm-daedalus), merged to `main`)**
+- #1 main CI fixed: server copy of `nmap-pdf-olive-legacy.xsl` re-synced with the scanner bundle, and the
+  loopback test harness now allows the scanner's fixed `--host-timeout 120s`.
+- #2/#6 elementary look (Blueberry, Inter, light/dark): generated `elementary-overrides.css` plus hand-written
+  `elementary.css`; headless screenshots of login and all ten views, desktop/dark/390 px mobile.
+- #3/#5 full-repo review (`docs/CODE-REVIEW-20261019.md`): atomic scanner enrollment claim, bridge target and
+  approved-range checks, bounded CIS upload, SQLite WAL + busy timeout, cross-site write guard.
+- Full suite 1605 passed, 1 skipped at #5. Other open Daedalus PRs (#7-#18) belong to other sessions.
+- Not done: production host access, Developer ID signing/notarization, real Google Admin tenant consent and
+  physical scanner fleet runs are still open; this is not a production-ready claim.
+
+**TM-NmapUI ([techmore/TM-NmapUI](https://github.com/techmore/TM-NmapUI), merged to `main`)**
+- #246 elementary theme layer for the web UI; #247 Wingpanel indicator (state, progress, network card, Devices list),
+  summary helper, native GTK4/WebKitGTK window, dock quicklist actions, dock progress/badge via LauncherEntry,
+  `/api/runtime/live-hosts`, and a fix so the host list survives per-job event pruning (200-event cap).
+- CI on `main` was already red before these (stale committed Tailwind CSS, `#dashboard` hash vs smoke-test URL wait); both fixed in #246.
+- PR #249 moves the elementary shell to [TM-NmapUI-elementary](https://github.com/techmore/TM-NmapUI-elementary)
+  (Vala app, Gunicorn user service) and removes the shells from #247; it was DIRTY at last look.
+
+**Installed here (checked 2026-10-21 after a reboot)**
+- `nmapui.service` (user, 127.0.0.1:9000) and `daedalus-dev.service` (127.0.0.1:8000, demo login) active. On
+  2026-10-21 the NmapUI unit was switched from the Werkzeug dev server (`NMAPUI_ALLOW_UNSAFE_WERKZEUG=true`) to
+  `python -m gunicorn --workers 1 --threads 100 nmapui.wsgi:application`, the same invocation as the Ubuntu
+  installer; page load and Socket.IO websocket upgrade checked headlessly. The unit lives in
+  `~/.config/systemd/user/nmapui.service` (not in a repo; #249/TM-NmapUI-elementary ships its own).
+- The dock source (`~/dock-drawers-src/src/DBus/Unity.vala`) implements `com.canonical.Unity.LauncherEntry`, so the
+  indicator's progress/badge signal should be consumed; the dock drawing it was not observed.
+- `libnmapui.so` mapped in Wingpanel; `~/.local/bin/nmapui-summary` and `nmapui-elementary` present; dock pin present.
+- nmap 7.98, arp-scan, xsltproc, traceroute, nodejs/npm, Chromium for PDFs installed with apt/playwright.
+- Quick Scan on 192.168.222.0/24 ran to completion headlessly; the indicator listed 31 devices. Service scans took
+  about a minute per host and some hosts hit the 120 s limit. The machine has since moved to 10.20.0.0/24, so that
+  scan describes the earlier network.
+
+**Verified vs not**
+- Verified: unit tests, CI, headless renders (probe and Xvfb), the LauncherEntry D-Bus signal being emitted,
+  the dock quicklist `--tab` action in a second instance, services and indicator after reboot.
+- Not verified: the dock actually drawing progress/badge, `--quick-scan` from the quicklist, long-run service stability,
+  scans on the current network.
+- Note: restarting `nmapui.service` while a scan runs interrupts it (the job becomes `interrupted`).
+
+Next: reconcile with TM-NmapUI-elementary (#249) and replace the dev-server unit; resolve the unmerged Daedalus PRs.
+
 ## Maintenance handoff for the next chat — 2026-10-21
 
 Read [maintenance/README.md](maintenance/README.md) and its saved prompt snapshot.
@@ -9719,3 +9784,25 @@ All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
 
 PR #343 qualification was rerun after reconciling dev `4cf7a90`, retaining desktop notifications, persistence fixes and darker marker colors. Full canonical build, both-theme real pointer/menu/Escape/typing and native regression checks passed; refreshed screenshots were visually inspected. No deployment or Wingpanel restart.
+
+## Power display-context capability fix — 2026-10-21
+
+The prior power-task samples remain uncontrolled observations (17.303 W and
+41.203 W medians from unlike 30-second windows); they establish no optimization
+or regression. `display_status.py` now preserves valid modes/layout if optional
+Mutter `PowerSaveMode` is missing, while marking full context unavailable and
+DPMS unknown. The one-shot trial now waits for modes without treating the
+partial context as complete or claiming unchanged controls. Nine focused tests
+pass. No live settings, services, display, audio, kernel, or boot state changed.
+See `mseries/power/POWER-TOOLS-2026-10-21.md`. Next: same-head CI, then a
+future authorized trial can verify partial capture while full qualification
+continues to require all controls.
+
+## Hermes setup retired — 2026-10-21
+
+Owner confirmed the Hermes assistant is no longer used. The maintained installer
+no longer fetches Hermes or installs its dependency lock, and the assistant
+configurator no longer creates a Hermes profile or desktop launcher. The unused
+`mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
+venv, config, state, and any previously generated desktop launcher in a user's
+home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.

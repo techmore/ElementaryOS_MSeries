@@ -40,10 +40,14 @@ Starting a machine opens its Display tab: the guest's screen at about 30 fps wit
 Other shortcuts: Ctrl+N new machine, F5 or Ctrl+R re-check disk space and requirements, Ctrl+Q quit (running
 machines are stopped).
 
-**Clipboard (text).** Settings, "Share clipboard" (off by default). It applies the next time the machine starts, and the guest needs the
-SPICE agent (`spice-vdagent`; the elementary OS image already has it). What works today: copy in the guest, paste on the Mac. Copy on the
-Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
-QEMU's clipboard channel yet (issue #264).
+**Clipboard (text, both ways).** Settings, "Share clipboard" (off by default). It applies the next time the machine starts, and the guest needs
+the SPICE agent (`spice-vdagent`; the elementary OS image already has it). With it on, text you copy in the machine can be pasted here and
+the other way round. Two switches under it, "Paste from this computer into the machine" and "Copy from the machine to this computer", turn
+a direction off or on immediately, for all machines (stored in `~/.config/machine-lab/settings.ini`). Text over 1 MiB is not transferred.
+Notes: after the guest agent (re)connects, for example when you log in, the text currently on your clipboard is offered to the guest again;
+the guest sees it only when something there pastes. Images, files and drag-and-drop are not supported by QEMU's clipboard channel (issue #264).
+Host to guest was verified against QEMU's and spice-vdagent's source and a fake-QEMU test suite; it has not yet been confirmed on a live guest
+(see `experiments/clipboard/README.md`).
 
 ## Ready-made images (skip the installer)
 
@@ -95,8 +99,43 @@ amd64 installer ISO. Clipboard sharing and the Display tab work the same way; Wi
    an ARM64 `.iso`, then **Start Installer**.
 2. Install in the Display tab. When the guest shuts down after a real install, Machine Lab detaches the installer and
    boots the disk from then on.
-3. **Windows 11 ARM64** needs extra steps (virtio-win drivers, a 64 GB disk, `GPU=ramfb`): see
+3. **Windows 11 ARM64** needs virtio-win drivers, a 64 GB disk and `GPU=ramfb`. Machine Lab does the driver part for you:
+   see "Windows: virtio-win drivers and an unattended install" below. The remaining manual details are in
    `mseries/OS9-HANDOFF.md`, "Windows 11 ARM64 installed and first-booted".
+
+## Windows: virtio-win drivers and an unattended install
+
+Windows Setup does not ship drivers for QEMU's virtual hardware: without the virtio-win drivers it cannot read the installer
+disc ("A media driver your computer needs is missing"), and OOBE says "No network drivers found". For a Windows guest created with
+`mseries-vm create windows` (it shows up in YOUR MACHINES / NEW), Settings has a **Windows drivers (virtio-win)** card:
+
+1. **Download virtio-win** (about 837 MiB). Nothing is downloaded until you press the button. Machine Lab fetches the pinned
+   release 0.1.302 from fedorapeople.org over HTTPS only, writes it to a `.partial` file, and keeps it only if its SHA-256 is
+   `303f7ae40dad…7949d` (and its size matches). A mismatch deletes the file and shows the expected and actual checksums; an
+   interrupted transfer says so and resumes when you press the button again. The file lives in
+   `~/.local/share/machine-lab/cache/virtio-win/`. An ISO you already have at `~/vms/downloads/virtio-win/virtio-win.iso` is used if
+   it matches the same checksum, so nothing is downloaded twice.
+2. Optionally fill in **Unattended install**:
+   - *Local account name and password*: creates that administrator and skips the Microsoft-account page. Leave both empty to choose
+     in Setup. The password is written in plain text to the answer-file disc (mode 0600, only you can read it) until you remove it.
+   - *Let setup finish without a network or Microsoft account*: also sets `BypassNRO`. Best effort; recent Windows 11 builds may
+     still show the network page, where **Next** continues (the driver is installed even if that page says it is not).
+   - *Erase and partition the machine's disk without asking*: **off by default.** With it off Setup still asks which disk to use and
+     nothing is erased. With it on, Setup wipes the machine's own virtual disk (GPT: 100 MB EFI, 16 MB MSR, NTFS) and installs
+     onto it; you are asked to confirm.
+3. **Attach Drivers and Answer File.** Machine Lab builds a small disc containing `autounattend.xml` (`genisoimage` is needed),
+   then adds it and the verified driver disc to the machine's `EXTRA_MEDIA`, and sets `EXTRA_BUS=usb` (Windows PE reads USB natively)
+   and `GPU=ramfb` (the Setup screen renders). Existing `EXTRA_MEDIA` entries are kept. Only a machine that is **not installed and not
+   running** is changed; an installed Windows machine is never touched.
+4. Start the installer. Setup loads `viostor`, `vioscsi`, `NetKVM` and `vioinput` from the driver disc by itself (the answer file's
+   `windowsPE` DriverPaths) and finds the answer file on its own. You still accept Microsoft's licence terms and pick the edition
+   and a product key option yourself. During specialize the full set (display `viogpudo`, balloon, serial, RNG, pvpanic) is staged in
+   the new system too.
+5. After the install, press **Remove Answer File**: it detaches the disc and deletes it (and the password with it).
+
+What it does not do: install the QEMU guest agent or SPICE tools (they are an `.msi`/`.exe` on the driver disc, not drivers), accept
+the licence, activate Windows, or touch Windows guests that were not created by `mseries-vm`. Windows 11 amd64 (x86-64) answer files
+are generated the same way (`amd64` driver folders) but Machine Lab has no Windows x86-64 preset yet.
 
 ## Troubleshooting
 
@@ -106,7 +145,8 @@ amd64 installer ISO. Clipboard sharing and the Display tab work the same way; Wi
 | Low disk space warning | machine disks grow as the guest writes; free space or shrink the disk in Settings, then press F5 |
 | Display stays black | the guest may use a kernel without a graphics driver for QEMU's virtual GPU; see the Console tab. elementary OS images default to the Apple-only Fairydust kernel, which does not boot on QEMU (see the handoff) |
 | `mseries-vm` commands hang | they should not: the Display uses its own `qmp-view.sock`. Guests started before that socket existed hold the control socket while the Display tab is open; restart them |
-| Keys dropped in the Windows installer | type slowly or use the Browse tree; WinPE loses fast input |
+| Keys dropped in the Windows installer | type slowly or use the Browse tree; WinPE loses fast input. The answer file avoids this for the drivers |
+| virtio-win download failed or "Checksum mismatch" | the bad file was deleted; check the connection and press Download again. Nothing is attached until the checksum matches |
 
 ## macOS
 

@@ -27,7 +27,9 @@ pub struct ResetState {
 
 impl ResetState {
     /// Current bounded attempt count, exposed for lifecycle diagnostics only.
-    pub fn attempts(&self) -> u32 { self.attempts }
+    pub fn attempts(&self) -> u32 {
+        self.attempts
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

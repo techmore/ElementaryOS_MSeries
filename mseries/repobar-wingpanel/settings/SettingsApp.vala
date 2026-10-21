@@ -259,6 +259,15 @@ namespace MSeries {
                 });
             });
             add_row (notifications, row ("CI status changes", "When a default branch starts failing or passes again", sw));
+            var runs = new Gtk.Switch () { active = settings.get_boolean_member_with_default ("notifyWorkflows", true) };
+            bool reverting_runs = false;
+            runs.notify["active"].connect (() => {
+                if (reverting_runs) return;
+                apply.begin ("notify-workflows", runs.active ? "true" : "false", (obj, res) => {
+                    if (!apply.end (res)) { reverting_runs = true; runs.active = !runs.active; reverting_runs = false; }
+                });
+            });
+            add_row (notifications, row ("Workflow runs", "When a GitHub Actions run finishes on any branch or pull request", runs));
             return notifications;
         }
 
