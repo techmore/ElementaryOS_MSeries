@@ -41,6 +41,8 @@ pkg-config --exists switchboard-3 gtk4 libadwaita-1 granite-7 gee-0.8 || {
 
 install -Dm0755 "$src/mseries-work-mode" "$bin"
 install -Dm0755 "$src/mseries-work-mode-dock" "$launch_dock"
+install -Dm0755 "$src/mseries-desktop-mode" "$HOME/.local/bin/mseries-desktop-mode"
+install -Dm0644 "$src/io.github.techmore.DesktopMode.desktop" "$HOME/.local/share/applications/io.github.techmore.DesktopMode.desktop"
 install -Dm0644 "$src/mseries-work-mode.service" "$HOME/.config/systemd/user/mseries-work-mode.service"
 install -Dm0644 "$src/mseries-work-mode.timer" "$HOME/.config/systemd/user/mseries-work-mode.timer"
 install -Dm0644 "$src/mseries-work-mode-dock.service" "$HOME/.config/systemd/user/mseries-work-mode-dock.service"

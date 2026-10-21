@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Desktop Mode
+GenericName=Switch between elementary and Windows 11 mode
+Comment=Switch the desktop between native elementary OS and Windows Work Mode
+Exec=mseries-desktop-mode toggle
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;
+Actions=Windows;Elementary;
+
+[Desktop Action Windows]
+Name=Windows 11 Mode
+Exec=mseries-desktop-mode windows
+
+[Desktop Action Elementary]
+Name=elementary Mode
+Exec=mseries-desktop-mode elementary
