@@ -1,5 +1,52 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: popups of unfocused windows clipped by a higher neighbour — 2026-10-21
+
+Follow-up to the layered stacking fix below (PR #361), which left this gap out on purpose:
+smithay's `Window::render_elements` draws a window's xdg popups (menus, tooltips, popovers)
+together with its toplevel, so `space_render_elements` drew every popup at its window's
+own place in the stack. A menu of a window lower in the stack was clipped by a snapped
+neighbour, a keep-above surface or a panel until that window was clicked. Gala draws all
+popups above all windows.
+
+- **Fix** (`claude/popups-above-toplevels` from `origin/dev`, PR #364 to `dev`, not merged):
+  new `rust/pantheon-compositor/src/popup_stack.rs`, used by `render_desktop_elements` in
+  `cursor.rs`, the scene path shared by the native DRM and nested winit backends.
+  - `stacked_render_elements` replaces `space_render_elements`: pass 1 renders every popup
+    of every mapped window (top-most window first, newest popup first, smithay's own
+    order), pass 2 renders every toplevel's surface tree only, so no popup is drawn twice.
+    XWayland windows have no xdg popups and still render through `Window::render_elements`.
+    Panels (`RenderZindex::Top`) and override-redirect windows (`RenderZindex::Overlay`)
+    keep their z-indexes; popups draw above all of them. The gesture preview path
+    (workspace switch, overview) is unchanged and keeps popups with their window.
+  - Input follows the draw order: `surface_under` hit-tests popups across all windows
+    first (`popup_under`), so a tooltip or popover drawn above a neighbour gets the
+    pointer instead of the neighbour; click-to-raise and keyboard focus use
+    `window_under`, which returns the popup's owning window. Grabbed popups (menus)
+    still route through `PopupPointerGrab`; the button handler already skips raising
+    while the pointer is grabbed.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -- -D warnings` and `cargo test -p pantheon-compositor --features
+  native-drm` (41 tests) pass locally. No GitHub workflow runs the Rust checks; the PR's
+  path-filtered workflows skipped.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2.popups1` = the installed
+  `panelstack2` lineage (`local/panel-stack-on-dockfix`: `dev` + dock replug fix + redraw
+  counters + PR #361) + this commit (cherry-picked as `fe617dc2`), built in
+  `~/Projects/mseries-panel-stack-deploy` with the shared target dir and installed with
+  `install-pantheon-rust-compositor.sh --install --yes --deb` (dpkg succeeded; the installer's
+  trailing `sudo systemctl --user daemon-reload` fails without a user bus under sudo, so it was
+  run as the user afterwards). The running session (compositor pid 1961, started 08:13) still executes the `dockfix2`
+  binary, so neither PR #361's `panelstack2` nor this `popups1` build has been seen on
+  screen yet; both load at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2`.
+- **Unverified** (needs the next login): with a window snapped beside another, open a
+  menu or hover a tooltip in the unfocused one and confirm it draws over the neighbour;
+  hover that tooltip and confirm the neighbour gets no pointer enter; click a menu item
+  (grabbed popup) and a non-grabbed popover of an unfocused window and confirm the owner,
+  not the neighbour, is raised; open a Wingpanel indicator menu over a snapped window;
+  check that no popup is drawn twice (no ghost at the window's old stack position) and
+  that damage tracking still repaints correctly when a menu closes.
+
 ## Messages sending, group confirmation and native dialogs — 2026-10-21
 
 Owner reported that Messages did not seem to send. Investigation (read-only
