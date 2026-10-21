@@ -7,7 +7,9 @@ accepts a Hermes launcher, creates a Hermes profile, or writes a Hermes desktop
 entry. The unused `mseries/local-ai/hermes-requirements.lock` was deleted.
 Newelle and Crush setup is unchanged. This source change does not delete an
 existing user's Hermes checkout, virtual environment, configuration, state, or
-previously generated desktop launcher.
+previously generated desktop launcher by this PR run. On the next configuration,
+the setup removes only the exact stock generated launcher and preserves a
+customized entry.
 
 The removed lock pinned Pillow 12.3.0. Pillow's maintainers identify that
 version as affected by GHSA-8g5g-8vmr-9782 / CVE-2026-112403 and list 13.0.0 as
@@ -24,11 +26,11 @@ that conflict without changing Browser Harness.
 
 - `bash -n mseries/local-ai/install-assistants.sh`
 - `python3 -m py_compile mseries/local-ai/configure-assistants.py`
-- `python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'` — 72 passed
+- `python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'` — 73 passed
 - `git diff --check`
 - Follow-up CI found factory payload scripts rejected an empty `local-ai/*.lock` glob after the last lock was removed. `mseries/enhance.sh` now skips unmatched optional file patterns; the installer setup, image-wiring, and display-space regressions all pass locally (6 + 6 + 15 tests).
 
-This receipt records source-level retirement only. No user-home environment or launcher was
-modified, and no deployment or hardware qualification was performed.
+This receipt records source-level retirement only. No user-home environment or launcher was modified during this PR run. No deployment
+or hardware qualification was performed.
 
 Sources: [Pillow maintainer advisory](https://github.com/python-pillow/Pillow/security/advisories/GHSA-8g5g-8vmr-9782), [GitHub Advisory Database](https://github.com/advisories/GHSA-8g5g-8vmr-9782), [Browser Harness 0.1.13](https://pypi.org/project/browser-harness/0.1.13/).

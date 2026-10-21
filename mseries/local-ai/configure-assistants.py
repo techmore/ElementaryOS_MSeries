@@ -50,6 +50,17 @@ def app_helpers():
     for name, title in [('mseries-assistant-browser', 'Assistant Browser'), ('mseries-mail-drafts', 'Assistant Mail Drafts')]:
         put(HOME / '.local/share/applications' / (name + '.desktop'),
             f'[Desktop Entry]\nType=Application\nName={title}\nExec="{HOME}/.local/bin/{name}"\nIcon=applications-internet\nTerminal=false\nCategories=Network;\n', 0o644)
+    old_hermes_launcher = HOME / '.local/share/applications/mseries-hermes-assistant.desktop'
+    expected_hermes_launcher = (
+        f'[Desktop Entry]\nType=Application\nName=Hermes Assistant (Experimental)\n'
+        f'Exec="{HOME}/.local/bin/mseries-assistant" hermes\n'
+        'Icon=utilities-system-monitor\nTerminal=true\nCategories=Utility;\n'
+    )
+    try:
+        if old_hermes_launcher.read_text() == expected_hermes_launcher:
+            old_hermes_launcher.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def main():
