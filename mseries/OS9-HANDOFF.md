@@ -1,3 +1,24 @@
+## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
+
+Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of deterministic failures) is separate.
+- **Timing:** `elementary-mac-enhance` and `post-install.sh` write one JSON line per module/stage (start, end, wall, CPU)
+  and end with a table sorted slowest first, a `timing:` summary line and `timing-summary.json`
+  (`elementary-mac-enhance --timing` shows the last run). Helpers: `mseries/lib-timing.sh`, `mseries/modrun.py summarize`.
+- **Parallel runner (opt-in, default still serial):** `--parallel[=N]` or `MSERIES_PARALLEL=1` (`MSERIES_JOBS=N`);
+  `MSERIES_SERIAL=1` forces serial. The graph and the reason for every lock are in `mseries/enhance-modules.json`:
+  apt/dpkg holders (brave, gestures, firefox, desktop-user-deps) share one lock and the five Wingpanel-plugin modules
+  share another; video, files, osk and netusage-policy are free. Falls back to serial when python3 or the scheduler
+  files are missing, when one worker is configured, or when the combined requirements install failed.
+- **ccache:** `mseries/lib-build.sh` wraps the C/C++ compiler (meson `CC`/`CXX`, cmake launchers) when ccache is
+  installed; `MSERIES_CCACHE=0` disables. No hard dependency.
+- **Tests (hermetic, fake modules):** `test-modrun.py`, `test-enhance-firstboot.sh` (now in `validate.sh`),
+  `test-post-install-timing.sh`, `test-build-ccache.sh`.
+- **Numbers:** `mseries/benchmarks/installer-speed.py` gives 2.49x (6.50 s to 2.61 s scaled) on fake sleep-only modules.
+  That is **synthetic**. Real-install before/after on the Mac is **not measured**.
+- **Next:** time a real first boot serial vs `--parallel` on the M1 Pro; decide from real timings whether the
+  Wingpanel-plugin lock can be split into build (parallel) and install (serial); download tarballs ahead of the build
+  (issue item 3); `ninja -j` tuning under parallel mode.
+
 ## Daedalus portal and NmapUI on this desktop — 2026-10-21
 
 Work done from this repo's session for the owner's "daedalus production ready" and

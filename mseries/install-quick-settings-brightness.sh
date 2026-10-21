@@ -40,6 +40,7 @@ grep -q AirDropPanel "$work/source/src/PopoverWidget.vala" && grep -q SharePanel
   || { echo 'could not wire the share section into Quick Settings' >&2; exit 1; }
 install -m644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$work/mseries-share-eyes-symbolic.svg"
 install -m644 "$repo/mseries/quick-settings/airdrop.svg" "$work/mseries-airdrop-symbolic.svg"
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then

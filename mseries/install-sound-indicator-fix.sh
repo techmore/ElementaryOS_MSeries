@@ -16,6 +16,7 @@ git -C "$work/source" remote add origin https://github.com/elementary/wingpanel-
 git -C "$work/source" fetch -q --depth=1 origin 8b7991c9156ac8127d27559506baea8e6fb72e5b
 git -C "$work/source" checkout -q --detach FETCH_HEAD
 git -C "$work/source" apply "$repo/mseries/patches/sound-icon-initialization.patch"
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/libsound.so" | grep -q 'not found'; then
