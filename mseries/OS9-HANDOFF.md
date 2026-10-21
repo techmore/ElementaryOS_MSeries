@@ -1,5 +1,32 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: panel tooltips hidden behind tiled windows — 2026-10-21
+
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed
+no tooltip. In `rust/pantheon-compositor` the Pantheon panel is an ordinary element of
+the smithay `Space`, and a panel's popups (tooltips, indicator menus) render as part of
+the panel. Every window raise (`Space::raise_element`, `map_element(.., true)`) put that
+window above the panel, and a tiled window fills the work area right under the bar, so it
+covered the popup. Clicking the bar hid the defect because the click re-raised the panel.
+
+- **Fix** (`claude/panel-popups-above-windows`, PR to `dev`): `raise_window()` in
+  `pantheon_shell.rs` raises a window and then re-raises every panel; all seven raise
+  sites use it. `restack_panels()` also runs after each event-loop dispatch in `main.rs`,
+  so windows mapped with `activate` (new, restored from minimize/workspace, X11) cannot
+  land above a panel either; it requests a redraw only when the stack actually changed.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -D warnings` and `cargo test` (41 tests) pass.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack1` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + this
+  commit, built in `~/Projects/mseries-panel-stack-deploy` (branch
+  `local/panel-stack-on-dockfix`) and installed with
+  `install-pantheon-rust-compositor.sh --install`. The running session still executes the
+  previous binary; the fix loads at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
+- **Unverified.** Hover over CodexBar beside a snapped window after the next login. Side
+  effect to watch: X11 override-redirect popups (menus of XWayland apps) that overlap the
+  bar's strip now draw beneath the bar, as under Gala.
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
