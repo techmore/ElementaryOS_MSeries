@@ -1,12 +1,12 @@
 {
-  "source_head": "c8236333daa9cc4b4f745cf71ee6cc8abb59b7a3",
+  "source_head": "cb5e4b059a3a3acafcaae60ee900daf203185339",
   "source_files_sha256": {
     "mseries/local-ai/troubleshooter-ui.py": "4153f1ba0c1c9a86c7819bc703dfcdcb376da2063df90109d6feef102bdfdc23",
     "mseries/airplay/mseries-airplay-outputs": "fa901daf53974d4859db15e7fe21d1eb3663159f5104012fe947563131a65dff",
     "mseries/display-settings/mseries-display-settings": "e452244832abd7e20a9e3b7a3971eab015b1566e070cd1ede84b014e9703d882",
-    "mseries/display-settings/test_canvas.py": "3a5a1f4e0395d102585a81135bbda902d7a0113bc08caaeb1545d5eef5e54af3",
+    "mseries/display-settings/test_canvas.py": "d882f007a465217498d047ccb3723ac8163bea1102309aa0b37cc7b10cc6a424",
     "mseries/display-settings/test-canvas.sh": "6afd97cc51f5b8303b87d53670f6655f237b1ae027d1e5b8fc236b38cbc73378",
-    "mseries/ui-audit/run-private-checks.sh": "cc075644bc316827f84180d4188f199c7e5172bf09d3142a5c544a6b887b2f10",
+    "mseries/ui-audit/run-private-checks.sh": "fdb871577b2d9d4d6459966d51f57dda2413010d2edb3db2c143449cd6f80198",
     "mseries/local-ai/tests/check-troubleshooter-ui.py": "e0bb3bb262222628d88c0d69c2115ed21adc74a563045c71fd67486a304e54bb",
     "mseries/airplay/tests/check-airplay-ui.py": "59b8248f0d49d4c01d3a172c58294cc85f5cf1a6daaf986e75e6a99263a045e5"
   },
@@ -40,7 +40,7 @@
     },
     {
       "path": "dark-scale1/troubleshooter-ready.png",
-      "sha256": "050afb302d1e3a9f30bd3b993978060cf616fd0a1b3c527965662ccfb7f14135",
+      "sha256": "c0080c1117df321ec1058d91ea69e66a827ce7370a7c8107312a4fbdd08e387e",
       "pixels": [
         680,
         560
@@ -56,7 +56,7 @@
     },
     {
       "path": "dark-scale2/troubleshooter-error.png",
-      "sha256": "6d15f5f22d1f986f0a686d54892097a104247792f8a68a4a948fe71eff1e3ef2",
+      "sha256": "42278b02caf81c5ed7fa0b8a543e702851f60f626c0cc3dc92cf609e89f5248d",
       "pixels": [
         1360,
         1120
@@ -72,7 +72,7 @@
     },
     {
       "path": "light-scale1/airplay-ready.png",
-      "sha256": "f6d697f9b05d405ff99d88f1f7b0df2f3f3a555a12b976827c936da1edf7d4c6",
+      "sha256": "32e649ec9724330f42c5364e0db2bec740ae47926a95eab44c5c3f036ea03fbd",
       "pixels": [
         360,
         274
@@ -80,7 +80,7 @@
     },
     {
       "path": "light-scale1/troubleshooter-error.png",
-      "sha256": "55791955cac5f532c1d4f03e3a6dedf62d2770f4ddca4b9a86abf50495d329a4",
+      "sha256": "0ca53f3e1c3ebd65dd63388d0fb6136dacbd377c9ad510754e3aa3e4fd7432e1",
       "pixels": [
         680,
         560
@@ -88,7 +88,7 @@
     },
     {
       "path": "light-scale1/troubleshooter-ready.png",
-      "sha256": "9a2545665c1ac1770ec09ef1c0ba0b03bfa9edaee6dd5aee53149e060a83250b",
+      "sha256": "2e0e8767703b572d53cdde5ad83f8fe4a18e6e603f8002ab3a7098ac93fa8cd4",
       "pixels": [
         680,
         560
@@ -104,7 +104,7 @@
     },
     {
       "path": "light-scale2/troubleshooter-error.png",
-      "sha256": "24bc267b9929f45ef0a22cd4c1f6c5978e9117d7e7842f0261c39db832faae2e",
+      "sha256": "4307c197ba4662fd961840240395ba189756041f0ba39d23a6cc41ba45f73ad2",
       "pixels": [
         1360,
         1120
@@ -112,7 +112,7 @@
     },
     {
       "path": "light-scale2/troubleshooter-ready.png",
-      "sha256": "2eba596169b2ea9525629ddc627237caad8f168a989098c02d38c8fe08fa9ca0",
+      "sha256": "6d7867b67e6ccb58923aa9a10a717e26239a898f166b99cfd62cc942df46bf6d",
       "pixels": [
         1360,
         1120
