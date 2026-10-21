@@ -386,7 +386,7 @@ impl PantheonCompositor {
         }
 
         if let Some(window) = selected {
-            self.space.raise_element(&window, true);
+            self.raise_window(&window, true);
             self.focus_window_keyboard(&window, SERIAL_COUNTER.next_serial());
         }
         self.refresh_panel_visibility();

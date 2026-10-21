@@ -1,5 +1,59 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## All three wip2 dock ports pass scoped picture — 2026-10-21
+
+Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
+one-cycle polling≈4.5s partner→active desktop each, with label/boundary corrections
+and 0.5 s resolution disclosed. Not a speed ranking or pixel latency benchmark.
+New read-only timing tool and 5 tests; existing 71 Aurora tests pass after dev
+conflict resolution. Next dev merge, exact lifecycle tracing and actual `.20`
+recovery; boot default unchanged, no stable promotion/power claim.
+[Timing follow-up](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
+
+Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
+shared payload verified; one-shot consumed, `.20` remains normal default.
+Five-minute boot/PMP/idle and M1 Pro GLES shader/readback plus 1 MiB fsync pass.
+Owner confirms internal display/input and front-left dock picture (slow to
+appear); hinge-side left port picture fails, right untested. External 1080p/60
+observed. Next matched physical-port evidence and real `.20` recovery; no
+suspend, stable or energy-improvement acceptance.
+[Report](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+## Deferred reboot: mismatch triage and test readiness — 2026-10-21
+
+24 mechanically-neither patches triaged: 19 source contracts retained,
+five deeper/partial reviews open. Full 64-fix semantics and hardware acceptance
+remain unqualified. Exact private post-boot collector/smoke commands are ready;
+compiler/EGL/GLES/GI dependencies exist. No hardware tests or installed changes.
+The one-shot remains armed for the owner's later attended reboot.
+[Audit](aurora/unified72/static-contract-review-2026-10-21.json),
+[manual sequence](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot).
+
+## Aurora 7.2 one-shot armed — 2026-10-21
+
+Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
+`elementary-aurora72-wip2-trial` is armed; `.20` remains persistent default,
+old/shared payload bytes are unchanged, no reboot yet. Next is owner/Claude
+attended reboot, basic unlock/display/input and manual qualification, then
+actual `.20` recovery. Hardware/suspend/power acceptance remains open.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json).
+This supersedes the unarmed staging status below.
+
+## Aurora 7.2 staged for an attended trial — 2026-10-21
+
+Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,
+legacy-DTB/unlock checks and bounded DART/DCP/radio host controls. Owner approved
+unarmed staging: separate package/Image/initramfs and non-default GRUB entry are
+installed, all 2,042 regular package files verified. `.20` stays default;
+`next_entry` empty, old fallback assets/shared `boot.bin` unchanged; no reboot.
+71 repository unit tests pass. [Receipt and boundaries](aurora/unified72/boot-preflight-2026-10-21.json).
+Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unlock
+acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
+qualification remain open; no measured power win.
+[First-boot plan](aurora/unified72/BOOT-TRIAL.md).
+
 ## Native Messages experience landed — 2026-10-20
 
 PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
@@ -1167,7 +1221,7 @@ reopened Claude as524238; CLI and desktop identity hints matched the requested
 target. Owner independently confirmed the correct main-UI account.
 
 The operation exported/imported34 local Code conversations, with zero unavailable.
-All34 destination records, transcripts and workspace directories exist; session,
+All 34 destination records, transcripts and workspace directories exist; session,
 CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
 Claude's own post-start logs loaded13 active records from the exact target index
 (nine imported plus four existing) and25 deferred archived records. Initial
@@ -3118,3 +3172,13 @@ Full canonical native build/schema, actual Launcher startup/focus/close/reopen
 and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
 All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
+
+- 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
+
+- 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
+
+- 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.

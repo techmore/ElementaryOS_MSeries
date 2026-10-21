@@ -51,6 +51,9 @@ QUERY = """query($cursor: String, $since1h: GitTimestamp!, $since24h: GitTimesta
           } }
         }
         latestRelease { name tagName publishedAt url }
+        mergedPullRequests: pullRequests(states: MERGED, first: 3, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes { title number url mergedAt }
+        }
       }
       pageInfo { hasNextPage endCursor }
     }
@@ -74,6 +77,7 @@ DEFAULT_SETTINGS = {
     "localRoot": "",
     "localDepth": 4,
     "notifyCi": True,
+    "mergeWindowMinutes": 60,
     "showContributions": True,
     "contributionStyle": "dots",
     "repoStates": {},
@@ -286,6 +290,8 @@ def fetch_snapshot() -> dict:
         latest_pull = (pull_conn.get("nodes") or [{}])[0]
         latest_commit = ((target.get("history") or {}).get("nodes") or [{}])[0]
         release = repo.get("latestRelease") or {}
+        merges = [item for item in (repo.get("mergedPullRequests") or {}).get("nodes") or [] if item and item.get("mergedAt")]
+        last_merge = max(merges, key=lambda item: item["mergedAt"], default=None)
         recent = [
             {"kind": "issue", **latest_issue} if latest_issue.get("updatedAt") else None,
             {"kind": "pull", **latest_pull} if latest_pull.get("updatedAt") else None,
@@ -311,6 +317,8 @@ def fetch_snapshot() -> dict:
             "branch": branch.get("name", ""),
             "commitCounts": commit_counts,
             "ci": rollup.get("state", "UNKNOWN").upper(),
+            "lastMerge": ({key: last_merge.get(key) for key in ("title", "number", "url", "mergedAt")}
+                          if last_merge else None),
             "release": release.get("tagName", ""),
             "releaseName": release.get("name") or release.get("tagName", ""),
             "releaseUrl": release.get("url", ""),
@@ -759,6 +767,11 @@ def _settings_set(key: str, value: str) -> dict:
         member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
                   "show-contributions": "showContributions"}[normalized]
         settings[member] = value.lower() == "true"
+    elif normalized == "merge-window":
+        minutes = int(value.lower().removesuffix("m"))
+        if not 5 <= minutes <= 1440:
+            raise RuntimeError("merge-window must be between 5 and 1440 minutes")
+        settings["mergeWindowMinutes"] = minutes
     elif normalized == "contribution-style":
         if value not in {"squares", "dots", "fine"}:
             raise RuntimeError("contribution-style must be squares, dots, or fine")
@@ -785,7 +798,8 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
                                                         "local-root": "localRoot", "local-depth": "localDepth",
                                                         "notify-ci": "notifyCi", "show-contributions": "showContributions",
-                                                        "contribution-style": "contributionStyle"}.get(normalized, normalized))}
+                                                        "contribution-style": "contributionStyle",
+                                                        "merge-window": "mergeWindowMinutes"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:

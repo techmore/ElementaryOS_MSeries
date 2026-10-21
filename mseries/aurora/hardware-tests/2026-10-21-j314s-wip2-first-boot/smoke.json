@@ -1,0 +1,313 @@
+{
+  "schema": 1,
+  "kind": "hardware-test",
+  "captured_at": "2026-10-21T13:47:31.110005+00:00",
+  "identity": {
+    "kernel_release": "7.2.10-elementary-aurora72-wip2",
+    "board": "apple,j314s",
+    "soc": "apple,t6000",
+    "boot_payload_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+    "kernel_image_sha256": "894c420112c94a07bf70f38d1fad95dfd63fb1085550675d3e0e5f2af4123954",
+    "live_kernel_build_id": "e33ad2aa657320824a246a3b04814accdb31df1e",
+    "kernel_image_matches_live_build_id": true,
+    "modules": {
+      "kernel/drivers/gpu/drm/apple/appledrm.ko": "6f18e6041d6dcf5ddcd5e4f849c36edd954e385a17c1a6ce2f25d720a7db09a3",
+      "kernel/drivers/soc/apple/apple-sep.ko": "f80f3cb07b961caaf15a463c5bf8341b81baba3bc4bbccc3805bc8828c870365",
+      "dtbs/t6000-j314s.dtb": "2ca125477252e4753e8168567af99dda592bce6dea94235677d212846f49ae4c"
+    },
+    "runtime_parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "feature_cmdline": [
+      "appledrm.show_notch=1"
+    ]
+  },
+  "identity_sha256": "f35ab09fa4ccf4fd20856c84ed4bb3826ad1fc4728a5e0981678362beb957459",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "status": "hardware-tested-scoped; incomplete qualification",
+  "controls_unchanged": true,
+  "context_before": {
+    "active_displays": {
+      "available": false,
+      "reason": "Error"
+    },
+    "backlights": {
+      "apple-panel-bl": {
+        "brightness": "500",
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "power_supplies": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Charging",
+        "online": null,
+        "capacity": "46",
+        "energy_now": "28226400"
+      }
+    },
+    "drm_connectors": {
+      "card2-DP-2": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-HDMI-A-1": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-3": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-eDP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy2": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy0": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "mem_sleep": "[s2idle]"
+  },
+  "context_after": {
+    "active_displays": {
+      "available": false,
+      "reason": "Error"
+    },
+    "backlights": {
+      "apple-panel-bl": {
+        "brightness": "500",
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "power_supplies": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Charging",
+        "online": null,
+        "capacity": "46",
+        "energy_now": "28226400"
+      }
+    },
+    "drm_connectors": {
+      "card2-DP-2": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-HDMI-A-1": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-3": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-eDP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy2": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy0": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "mem_sleep": "[s2idle]"
+  },
+  "checks": {
+    "gpu_readback_smoke": {
+      "result": "pass",
+      "scope": "surfaceless GLES shader draw and 16-pixel RGBA readback; not GPU soak or compositor acceptance",
+      "renderer": "Apple M1 Pro (G13S C0)",
+      "version": "OpenGL ES 3.2 Mesa 26.0.8-1ubuntu0.3",
+      "verified_pixels": "16"
+    },
+    "storage_fsync_smoke": {
+      "result": "pass",
+      "scope": "1 MiB temporary file fsync and SHA256 readback on work filesystem; not destructive media, suspend, or recovery testing",
+      "bytes": 1048576,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    }
+  },
+  "source_receipt": {
+    "file": "hardware.json",
+    "sha256": "b051c84f046c87b63553f2b254dbe8b3b1fd81dd98ad75c8dfab53afa6ef7db9"
+  },
+  "power_improvement_claim": false
+}

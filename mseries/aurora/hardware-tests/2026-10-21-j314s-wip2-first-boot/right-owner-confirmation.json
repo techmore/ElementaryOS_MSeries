@@ -1,0 +1,11 @@
+{
+  "recorded_at": "2026-10-21T13:57:54.661306+00:00",
+  "physical_port": "right",
+  "owner_confirmation": "Dock picture and input work",
+  "typec_partners": {
+    "port3-partner": "/sys/devices/platform/soc/39b040000.i2c/i2c-0/0-003b/typec/port3/port3-partner"
+  },
+  "dock_sysfs_paths": {
+    "0-1": "/sys/devices/platform/soc/f01ac0000.cio/f01f00000.nhi/domain0/0-0/0-1"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-21",
+  "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "previous_source": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+  "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
+  "upstream_status": "merged",
+  "archive_verification": {
+    "sha256": "10cc0be484644e98bf13ef181ddd268e50d4e4da0993e97d8e6b61cb6037e31a",
+    "bytes": 270217427,
+    "method": "Entire codeload gzip streamed through SHA256; tar root independently read from gzip stream without full extraction.",
+    "archive_root": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c"
+  },
+  "files": [
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/queue/mod.rs",
+      "sha256": "4487dce9dd6062ee80ffcaf0f5cf1d52cf3d247a31f1449247911b09455afcf2"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/util.rs",
+      "sha256": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sep.rs",
+      "sha256": "d5e207e37b98105b0c287a815b9fe63d521d968687d1c2239a01bfab8c029cc1"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sbio.rs",
+      "sha256": "545d74363f9eb81135d8672eb2e19f7b15349c2415350da69067a5bb2b8fc2c7"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/rust/Makefile",
+      "sha256": "524384d1130cb0c6422b9237907d81967573c411116f96fbb7a8926ac7bd4083"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/Makefile",
+      "sha256": "341195c3615673a7c43656a0a779bbd720553a1d05881e90909ff216ae23fee3"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/COPYING",
+      "sha256": "fb5a425bd3b3cd6071a3a9aff9909a859e7c1158d54d32e07658398cd67eb6a0"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/pm.rs",
+      "sha256": "bd0358ee7db06ed59d2867b760270b2c441305ffa667d295b3de0b2f38f08b72"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/arch/arm64/mm/context.c",
+      "sha256": "29d16b5a18c611a2325f1d74d590478aa6ea8a7548570ca5d3d29d5945743d9c"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/arch/arm64/include/asm/mmu.h",
+      "sha256": "5c587d44cc5f6fa52aa754805d1db7ba57c336e47fcf8a8f80a6c8053d7ea6de"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/arch/arm64/include/asm/mmu_context.h",
+      "sha256": "a2c38c7ddbffb325e27e60d34f38df0877968e1bc2c524e5cf4237d7d28ecff1"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/arch/arm64/kernel/process.c",
+      "sha256": "d7c8231005296ae780a89dc2ced5439317faa36cacbe84825b405b64c928ad09"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/fs/exec.c",
+      "sha256": "72dcf0f816519dd94935846c2756d9b9cfaa500ac3d9b6a6a84ee81bcb890ef6"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/kernel/events/core.c",
+      "sha256": "5d415fc3c5a05060577b88a7612cc1c7401b5ecdf94039bbae6d9b92b9a7a5f7"
+    }
+  ],
+  "selected_review": {
+    "gpu_command_admission": "Render and compute use read_supported with supported-size constants; production util validates unsupported fields/tails.",
+    "sep_loader": "OF table is local with explicit no-autoload policy; no MODULE_OF_TABLE export in inspected file.",
+    "sep_suspend": "sleep_prepare capture-drain timeout logs and returns unit, continuing suspend instead of vetoing with EBUSY.",
+    "bindgen": "Stock --no-layout-tests default plus BINDGEN_LAYOUT_TESTS opt-in already present; local wip1 patch retired from active series.",
+    "sep_suspend_consumer": "pm.rs holds capture/entropy with unit-returning SleepHolds callbacks and a unit-returning notifier; sbio.rs timeout is not propagated as a suspend veto. Source review only.",
+    "user4k_boot_opt_in": "context.c initializes arm64_user4k_on false and parses early user4k=. mmu.h, mmu_context.h and process.c consult user4k_enabled for request and exec geometry. Source checks show boot opt-in retained; no KUnit/QEMU/native 4K runtime test performed.",
+    "privileged_exec_page_preference": "fs/exec.c uses PER_CLEAR_ON_SETID or secureexec to restage privileged exec page size before the point of no return and clear exec/default preferences afterward. Inspected source; privilege-transition fixtures not run.",
+    "perf_aux_speculation_bound": "kernel/events/core.c retains array_index_nospec(pagenum, rb->aux_nr_pages) before indexing AUX pages in map_range. Source review only; no generated-code or speculation test."
+  },
+  "host_tests": {
+    "rustc": "1.93.1",
+    "gpu_reader": {
+      "passed": 5,
+      "failed": 0,
+      "boundary": "Unmodified util.rs tests, Result/EINVAL-only kernel type shim; not whole GPU driver execution.",
+      "production_sha256": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6",
+      "test_count_review": "The two tests absent from the new upstream module cover read_up_to stride consumption and zero extension. Comparing .20 and new read_up_to shows only a local copy_size-to-size identifier/formatting change; their omission is still not equivalent coverage."
+    },
+    "pmp_bootargs": {
+      "passed": 9,
+      "failed": 0
+    },
+    "pmp_reply_correlation": {
+      "passed": 3,
+      "failed": 0
+    },
+    "pmp_boundary": "Unmodified tools/asahi wrappers and matching production module source at pinned commit.",
+    "files_sha256": {
+      "drivers/gpu/drm/asahi/util.rs": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6",
+      "drivers/soc/apple/pmp_bootargs.rs": "2619b9043e6eaee99ac978211af493972db7e3077d3e216075e45e33572a0d0c",
+      "drivers/soc/apple/pmp_power.rs": "16a71405a2927c99c3e797495b02dc5df551544149ff378af9c9e12e07404b2e",
+      "tools/asahi/pmp-bootargs-tests.rs": "9785679096b4df850e79842bf5e5d21392860fe3133c1d2b95bb346fc3bae301",
+      "tools/asahi/pmp-power-tests.rs": "c787c46aa118118b9f2616541d26ed826faf5e010729bb9323a40ae9aa7b96b1"
+    }
+  },
+  "licensing": "COPYING: GPL-2.0 WITH Linux-syscall-note; retain full source LICENSES and individual file licensing/attribution in generated artifacts. No upstream contribution authorship claimed.",
+  "native_build": {
+    "result": "pass",
+    "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051",
+    "tested_repository_commit": "b21399953faa576b17f3121087742fb597c872a5",
+    "artifact_id": 12344789576,
+    "artifact_zip_sha256": "f0be95387d5275fcc89d7902ae3b66a01ae28d39f9ac9ba635524ae8507edee2",
+    "receipt": "native-build-2026-10-21.json",
+    "audit": "CI config/Image/modules/DTBs/package/inspection/upload succeeded. Independent local ZIP digest and all SHA256SUMS passed; full archived prepared-source tree reconstructed and matched. Package control/payload boundaries and J314S DTB inspected. No installation or boot."
+  },
+  "qualification": {
+    "full_64_fix_semantic_parity": false,
+    "j314s_boot": false,
+    "suspend_recovery": false,
+    "energy_improvement": false
+  },
+  "remaining_gates": [
+    "Full review parity against .20 beyond selected source paths.",
+    "GPU UAPI compatibility with actual intended Mesa and clients.",
+    "Shared boot.bin DTBs: 7.1 fallback needs compatible 5-cell DART backport; an entry alone does not prove fallback boot.",
+    "Upstream reports M1-family Touch ID first-attempt reliability regression and an M1 Pro early hang; local J314S acceptance required.",
+    "Exact boot payload, initramfs/root unlock, image/modules/DTBs, storage/display/radio/suspend and recovery qualification before any stable promotion."
+  ],
+  "repository_tests": {
+    "command": "python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -q",
+    "passed": 63,
+    "failed": 0
+  },
+  "patch_applicability": {
+    "receipt": "review-patch-applicability-2026-10-21.json",
+    "counts": {
+      "patches": 64,
+      "forward_applies": 0,
+      "reverse_applies": 40,
+      "neither_applies": 24,
+      "source_files": 101,
+      "missing_at_new_source": 4
+    },
+    "meaning": "40 independent reverse checks pass; 24 neither direction. None forward-applies cleanly. These are mechanical checks, not 40 semantically qualified fixes or evidence that the other 24 are absent. Full review parity remains open."
+  },
+  "uapi_header_comparison": {
+    "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+    "baseline": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+    "path": "include/uapi/drm/asahi_drm.h",
+    "old_sha256": "2698ae2b447945202ed45bcdb93ea34db3782e191473da045e63a5524550b4ef",
+    "new_sha256": "0bed9d45468035f76d5d9d58330664a2685c9c9378e93f1a72f48f9f881a7ccc",
+    "declarations_equal_after_comment_whitespace_removal": true,
+    "observed_mesa_packages": {
+      "libegl-mesa0": "26.0.8-1ubuntu0.3",
+      "libgl1-mesa-dri": "26.0.8-1ubuntu0.3",
+      "mesa-vulkan-drivers": "26.0.8-1ubuntu0.3"
+    },
+    "limits": "Read-only header comparison and installed package metadata. Header changes are two documentation comments, including an M3/T6030 capability restriction. This does not establish command-handler behavior, actual client/runtime compatibility or hardware acceptance."
+  },
+  "tested_build_inputs": {
+    "repository_commit": "b21399953faa576b17f3121087742fb597c872a5",
+    "sha256": {
+      "mseries/aurora/candidate.py": "99ec56366026178d046d1853b7dadb1f30ba9ce81aac8fb821c4a456265a1782",
+      "mseries/aurora/release.py": "5cda57378d7ef61ab2d66e8ed3d85d5238cdbc297d176a50209edb23bfc0f598",
+      "mseries/aurora/release.json": "9a4649738b724d01bfdfc4c27b074d702a9164bd0a6be762f465d34207c0b71f",
+      "mseries/aurora/unified72/series.json": "1abdc9dd15f4977c6a5828b2f6a38d474c5cf7d620b155ee15b3fc9ab28c844c",
+      ".github/workflows/aurora-enhancements.yml": "d3e79f8375122fdcbe82594dbcc7c9e3ce696a6d606c412d8306bcee4cee0644"
+    },
+    "boundary": "Subsequent audit/test/documentation edits do not change these builder, manifest or workflow inputs. Artifact-embedded documentation remains the snapshot at the tested commit."
+  },
+  "config_resolution_warning": {
+    "message": "seed .config:1221: symbol value 'm' invalid for NETFILTER_NETLINK",
+    "resolved": {
+      "NETFILTER_NETLINK": "y",
+      "NF_TABLES": "m",
+      "NFT_COMPAT": "m"
+    },
+    "result": "olddefconfig resolved the new-source config and the native build passed; not a warning-free build claim."
+  }
+}
