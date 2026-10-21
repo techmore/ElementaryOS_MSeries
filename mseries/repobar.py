@@ -142,10 +142,16 @@ def _account(settings: dict | None = None) -> str:
     return account
 
 
+def _stored_auth_env() -> dict:
+    """Account selection uses stored CLI credentials, never an inherited token override."""
+    return {key: value for key, value in os.environ.items()
+            if key not in {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"}}
+
+
 def _gh_accounts() -> list[dict]:
     """Every account the GitHub CLI is signed in to, parsed from `gh auth status` (the CLI has no JSON for it)."""
     try:
-        result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10, check=False)
+        result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
     except FileNotFoundError as exc:
         raise RuntimeError("GitHub CLI (gh) is not installed") from exc
     except subprocess.TimeoutExpired as exc:
@@ -160,6 +166,17 @@ def _gh_accounts() -> list[dict]:
     return accounts
 
 
+@functools.lru_cache(maxsize=1)
+def _identity() -> tuple[str, str]:
+    """Freeze one resolved identity for this short-lived helper, including its worker threads."""
+    settings = load_settings()
+    host, chosen = _hostname(settings), _account(settings)
+    for item in _gh_accounts():
+        if item["host"] == host and (item["login"].lower() == chosen.lower() if chosen else item["active"]):
+            return host, item["login"].lower()
+    raise RuntimeError(f"{chosen or 'The active account'} is not signed in to {host} — run `gh auth login --hostname {host}`")
+
+
 @functools.lru_cache(maxsize=8)
 def _token_env(host: str, account: str) -> tuple[tuple[str, str], ...]:
     """Environment that makes one `gh` call run as `account`, without switching the CLI's global active account
@@ -168,7 +185,7 @@ def _token_env(host: str, account: str) -> tuple[tuple[str, str], ...]:
     if not account:
         return ()
     result = subprocess.run(["gh", "auth", "token", "--hostname", host, "--user", account],
-                            capture_output=True, text=True, timeout=10, check=False)
+                            capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
     token = result.stdout.strip()
     if result.returncode or not token:
         raise RuntimeError(f"{account} is not signed in to {host} — run `gh auth login --hostname {host}`")
@@ -177,12 +194,12 @@ def _token_env(host: str, account: str) -> tuple[tuple[str, str], ...]:
 
 
 def _gh_env() -> dict:
-    host = _hostname()
-    return {**os.environ, "GH_HOST": host, **dict(_token_env(host, _account()))}
+    host, account = _identity()
+    return {**_stored_auth_env(), "GH_HOST": host, **dict(_token_env(host, account))}
 
 
 def _run_gh(arguments: list[str], *, timeout: int = 45) -> subprocess.CompletedProcess:
-    host = _hostname()
+    host, _ = _identity()
     command = ["gh", "api", "--hostname", host, *arguments]
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False, env=_gh_env())
@@ -199,7 +216,8 @@ def _run_gh(arguments: list[str], *, timeout: int = 45) -> subprocess.CompletedP
 
 
 def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object, int]:
-    key = hashlib.sha256(("\0".join([_hostname(), _account(), endpoint, *fields])).encode()).hexdigest()
+    host, account = _identity()
+    key = hashlib.sha256(("\0".join(["identity-v2", host, account, endpoint, *fields])).encode()).hexdigest()
     cache_file = CACHE_DIR / "api" / f"{key}.json"
     if not force:
         try:
@@ -335,7 +353,10 @@ def fetch_snapshot() -> dict:
         "since24h": datetime.fromtimestamp(now - 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
         "since30d": datetime.fromtimestamp(now - 30 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
     }
+    host, account = _identity()
     login, ids = _repository_ids()
+    if login.lower() != account:
+        raise RuntimeError("GitHub returned a different account; refusing to cache its data")
     batches = [ids[start:start + DETAIL_BATCH] for start in range(0, len(ids), DETAIL_BATCH)]
     # Detail batches and the independent extras run side by side; each is one `gh` process.
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -432,7 +453,7 @@ def fetch_snapshot() -> dict:
         actions = _workflow_runs(normalized, now)
     except RuntimeError:
         actions = None
-    return {"schemaVersion": 1, "account": login, "actions": actions, "host": _hostname(), "fetchedAt": now,
+    return {"schemaVersion": 1, "account": login, "actions": actions, "host": host, "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
             "settings": settings, "stale": False, "forYou": for_you,
             "contributions": contributions, "repos": normalized}
@@ -535,13 +556,12 @@ def read_cache() -> dict | None:
             payload = json.load(stream)
         if payload.get("schemaVersion") != 1 or not isinstance(payload.get("repos"), list):
             return None
-        settings = load_settings()
-        account = _account(settings)
-        if payload.get("host") != _hostname(settings) or (account and str(payload.get("account", "")).lower() != account.lower()):
+        host, account = _identity()
+        if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
             return None
         payload["stale"] = True
         return apply_settings(payload)
-    except (OSError, json.JSONDecodeError, TypeError):
+    except (OSError, json.JSONDecodeError, TypeError, RuntimeError):
         return None
 
 
