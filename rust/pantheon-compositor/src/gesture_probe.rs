@@ -2,6 +2,7 @@
 //! Absent from normal builds; the socket must be inside the private runtime dir.
 use crate::PantheonCompositor;
 use crate::placement::Direction;
+use crate::snap_assist::AssistKey;
 use crate::tiling::ModeRequest;
 use smithay::{
     backend::input::{ButtonState, InputTime},
@@ -94,6 +95,53 @@ pub(crate) fn install(
                         }
                     }
                     ["release"] => probe_button(state, ButtonState::Released),
+                    // Focus the nth application window, in creation order.
+                    ["focus", index] => {
+                        if let Ok(index) = index.parse::<usize>() {
+                            let mut windows = state
+                                .space
+                                .elements()
+                                .filter(|window| {
+                                    window.toplevel().is_none_or(|toplevel| {
+                                        !state.is_panel_surface(toplevel.wl_surface())
+                                    })
+                                })
+                                .cloned()
+                                .collect::<Vec<_>>();
+                            windows.sort_by_key(|window| window.id());
+                            if let Some(window) = windows.get(index) {
+                                state.raise_window(window, true);
+                                state.focus_window_keyboard(window, SERIAL_COUNTER.next_serial());
+                            }
+                        }
+                    }
+                    ["assist", action] => {
+                        let action = match *action {
+                            "next" => Some(AssistKey::Next),
+                            "prev" => Some(AssistKey::Previous),
+                            "choose" => Some(AssistKey::Choose),
+                            "dismiss" => Some(AssistKey::Dismiss),
+                            _ => None,
+                        };
+                        if let Some(action) = action {
+                            state.snap_assist_action(action);
+                        }
+                    }
+                    ["assist-click", x, y] => {
+                        if let (Ok(x), Ok(y)) = (x.parse::<f64>(), y.parse::<f64>()) {
+                            let consumed = state.handle_snap_assist_click((x, y).into());
+                            tracing::info!(consumed, "snap probe assist click");
+                        }
+                    }
+                    ["assist-status"] => {
+                        tracing::info!("snap probe assist {}", state.assist_summary());
+                    }
+                    // Press on the focused window's inner edge, as its border would.
+                    ["split-press", x, y] => {
+                        if let (Ok(x), Ok(y)) = (x.parse::<f64>(), y.parse::<f64>()) {
+                            probe_split_press(state, (x, y).into());
+                        }
+                    }
                     ["placement"] => {
                         if let Some(window) = state.focused_window() {
                             let area = state
@@ -172,4 +220,26 @@ fn probe_press(state: &mut PantheonCompositor, location: Point<f64, Logical>) {
         location,
     };
     state.start_move_grab(&pointer, start_data, window, SERIAL_COUNTER.next_serial());
+}
+
+fn probe_split_press(state: &mut PantheonCompositor, location: Point<f64, Logical>) {
+    probe_motion(state, location);
+    probe_button(state, ButtonState::Pressed);
+    let (Some(pointer), Some(window)) = (state.seat.get_pointer(), state.focused_window()) else {
+        return;
+    };
+    let start_data = GrabStartData {
+        focus: None,
+        button: BTN_LEFT,
+        location,
+    };
+    let edges = state.inner_edge_of(&window);
+    let started = state.try_start_split_resize(
+        &pointer,
+        start_data,
+        &window,
+        edges,
+        SERIAL_COUNTER.next_serial(),
+    );
+    tracing::info!(started, "snap probe split press");
 }

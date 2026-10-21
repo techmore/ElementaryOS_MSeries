@@ -278,6 +278,7 @@ impl PantheonCompositor {
     }
 
     fn keyboard_snap(&mut self, outcome: impl FnOnce(&Placement) -> KeyOutcome) {
+        self.dismiss_snap_assist();
         let Some(window) = self.focused_window() else {
             return;
         };
@@ -287,7 +288,7 @@ impl PantheonCompositor {
         match outcome(&self.placement_of(&window)) {
             KeyOutcome::Tile(position) => {
                 if let Some(output) = self.primary_output_for(&window) {
-                    self.tile_window(&window, &output, position, None);
+                    self.tile_window(&window, &output, position, None, true);
                 }
             }
             KeyOutcome::Maximize => self.set_window_mode(&window, ModeRequest::Maximize),
@@ -328,6 +329,9 @@ impl PantheonCompositor {
         if self.grabbed_window == Some(key) {
             self.grabbed_window = None;
         }
+        self.snap_assist_forget(key);
+        // A closed member leaves its sibling tiled on a plain half.
+        self.prune_snap_groups();
     }
 
     pub(crate) fn pointer_output(&self) -> Option<Output> {
@@ -360,7 +364,7 @@ impl PantheonCompositor {
             // Reading the pointer inside a pointer grab would deadlock on
             // its lock; a dragged window always has geometry anyway.
             .or_else(|| {
-                (!self.move_grab_active)
+                (!self.move_grab_active && !self.split_grab_active)
                     .then(|| self.pointer_output())
                     .flatten()
             })
@@ -380,7 +384,7 @@ impl PantheonCompositor {
             .map(|geometry| self.work_area_for_output(geometry))
     }
 
-    fn size_hints(window: &Window) -> (Size<i32, Logical>, Size<i32, Logical>) {
+    pub(crate) fn size_hints(window: &Window) -> (Size<i32, Logical>, Size<i32, Logical>) {
         if let Some(surface) = window.toplevel() {
             compositor::with_states(surface.wl_surface(), |states| {
                 let mut cached = states.cached_state.get::<SurfaceCachedState>();
@@ -412,7 +416,10 @@ impl PantheonCompositor {
                     .or_else(|| self.output_named(&tile.output))
                     .or_else(|| self.primary_output_for(window))?;
                 let area = self.work_area_of(&output)?;
-                let zone = placement::tile_rect(area, tile.position);
+                // A snap group member gets its share of the group's split.
+                let zone = self
+                    .group_zone(window.id(), &output.name(), area)
+                    .unwrap_or_else(|| placement::tile_rect(area, tile.position));
                 let (min, max) = Self::size_hints(window);
                 let size = placement::hinted_size(zone.size, min, max, area.size);
                 Some(Target {
@@ -604,6 +611,7 @@ impl PantheonCompositor {
         output: &Output,
         position: TilePosition,
         restore: Option<Rect>,
+        offer_assist: bool,
     ) {
         if !self.is_placeable(window) {
             return;
@@ -619,6 +627,8 @@ impl PantheonCompositor {
             current,
         );
         self.apply_placement(window);
+        // Join the window on the other half, or offer Snap Assist.
+        self.after_user_tile(window, offer_assist);
         self.refresh_panel_visibility();
     }
 
@@ -626,6 +636,7 @@ impl PantheonCompositor {
     pub(crate) fn float_window(&mut self, window: &Window) {
         self.placements.entry(window.id()).or_default().float();
         self.apply_placement(window);
+        self.prune_snap_groups();
         self.refresh_panel_visibility();
     }
 
@@ -651,7 +662,9 @@ impl PantheonCompositor {
         }
         // Reconfigure even when nothing changed: the client asked and expects
         // the current state back.
+        self.dismiss_snap_assist();
         self.apply_placement(window);
+        self.prune_snap_groups();
         self.refresh_panel_visibility();
     }
 
@@ -692,6 +705,7 @@ impl PantheonCompositor {
         {
             tracing::warn!(?error, "could not clear X11 window state for resize");
         }
+        self.prune_snap_groups();
         self.refresh_panel_visibility();
     }
 
@@ -712,6 +726,7 @@ impl PantheonCompositor {
         if placement.is_fullscreen() {
             return;
         }
+        self.dismiss_snap_assist();
         let key = window.id();
         if let Some(record) = self.placements.get_mut(&key) {
             // The grab owns the location from now on.
@@ -764,6 +779,8 @@ impl PantheonCompositor {
             );
         }
         self.place_window(window, location);
+        // Its sibling goes back to a plain half.
+        self.prune_snap_groups();
         // Runs inside the pointer grab: panel visibility reads the pointer.
         self.loop_handle
             .insert_idle(|state| state.refresh_panel_visibility());
@@ -781,7 +798,7 @@ impl PantheonCompositor {
         restore: Option<Rect>,
     ) {
         if let Some(snap) = snap {
-            self.tile_window(window, &snap.output, snap.position, restore);
+            self.tile_window(window, &snap.output, snap.position, restore, true);
         } else if !detached && !self.placement_of(window).is_floating() {
             self.apply_placement(window);
         }
@@ -911,6 +928,7 @@ impl PantheonCompositor {
             // S14: maximized and fullscreen windows take the new output's size.
             _ => self.apply_placement_on(&window, Some(&target_output)),
         }
+        self.prune_snap_groups();
     }
 
     /// Re-apply every managed placement, for example after the work area changed.
@@ -960,13 +978,14 @@ impl PantheonCompositor {
             })
             .unwrap_or_default();
         format!(
-            "placement={} x={} y={} w={} h={} pending={} states={}",
+            "placement={} x={} y={} w={} h={} pending={} group={} states={}",
             record.map_or("floating".into(), |record| record.placement.label()),
             geometry.loc.x,
             geometry.loc.y,
             geometry.size.w,
             geometry.size.h,
             record.is_some_and(|record| record.pending.is_some()),
+            self.group_summary(window),
             if toplevel_states.is_empty() {
                 "-"
             } else {

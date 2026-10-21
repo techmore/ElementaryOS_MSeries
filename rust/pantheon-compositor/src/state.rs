@@ -152,6 +152,13 @@ pub struct PantheonCompositor {
     pub(crate) placements: HashMap<crate::placement::WindowKey, crate::placement::WindowRecord>,
     /// The window a move grab is dragging; its placement does not follow commits.
     pub(crate) grabbed_window: Option<crate::placement::WindowKey>,
+    /// Two-member snap groups (phase 1) and the next free id.
+    pub(crate) snap_groups: HashMap<crate::snap_group::SnapGroupId, crate::snap_group::SnapGroup>,
+    pub(crate) next_snap_group: crate::snap_group::SnapGroupId,
+    /// Open Snap Assist, if any.
+    pub(crate) snap_assist: Option<crate::snap_assist::SnapAssist>,
+    /// A shared-edge resize grab is running (the pointer is locked).
+    pub(crate) split_grab_active: bool,
     pub x11_minimized_windows: HashMap<u32, (Window, Point<i32, Logical>)>,
     pub tiling_bindings: TilingBindings,
     pub corner_snap_preview: Option<CornerSnapPreview>,
@@ -488,6 +495,10 @@ impl PantheonCompositor {
             last_work_areas: HashMap::new(),
             placements: HashMap::new(),
             grabbed_window: None,
+            snap_groups: HashMap::new(),
+            next_snap_group: 1,
+            snap_assist: None,
+            split_grab_active: false,
             x11_minimized_windows: HashMap::new(),
             tiling_bindings: TilingBindings::load(),
             corner_snap_preview: None,
@@ -1088,6 +1099,7 @@ impl PantheonCompositor {
         if self.session_locked {
             return Err("cannot switch workspaces while the session is locked".into());
         }
+        self.dismiss_snap_assist();
         let Ok(index) = usize::try_from(index) else {
             return Err("workspace index must be non-negative".into());
         };
@@ -1242,7 +1254,10 @@ impl PantheonCompositor {
                 self.focus_next_window();
             }
         }
+        self.dismiss_snap_assist();
         self.workspace_manager.assign_window(id, target);
+        // A member moved to another workspace leaves its group.
+        self.prune_snap_groups();
         if target == self.workspace_manager.active() && !self.is_workspace_window_minimized(&window)
         {
             if let Some(location) = self.workspace_manager.location(id) {

@@ -142,6 +142,11 @@ impl PantheonCompositor {
                             return FilterResult::Intercept(());
                         }
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.handle_snap_assist_key(keysym.modified_sym(), modifiers)
+                        {
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && state.move_grab_active
                             && keysym.modified_sym()
                                 == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
@@ -211,6 +216,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.snap_assist_hover(new_location);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -246,6 +252,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.snap_assist_hover(pos);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -260,6 +267,14 @@ impl PantheonCompositor {
                 let button_state = event.state();
                 if button_state == ButtonState::Pressed {
                     self.cancel_active_gesture(event.time());
+                }
+
+                if !self.session_locked
+                    && ButtonState::Pressed == button_state
+                    && self.handle_snap_assist_click(pointer.current_location())
+                {
+                    pointer.frame(self);
+                    return;
                 }
 
                 if !self.session_locked

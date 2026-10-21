@@ -103,6 +103,16 @@ impl XdgShellHandler for PantheonCompositor {
                 })
                 .unwrap()
                 .clone();
+            // The shared edge of a snap group resizes both members.
+            if self.try_start_split_resize(
+                &pointer,
+                start_data.clone(),
+                &window,
+                edges.into(),
+                serial,
+            ) {
+                return;
+            }
             self.float_in_place(&window);
             let initial_window_location = self.space.element_location(&window).unwrap();
             let initial_window_size = window.geometry().size;

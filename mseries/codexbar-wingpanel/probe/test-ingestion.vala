@@ -16,8 +16,12 @@ int main (string[] args) {
     string[] inputs = {"{\"entries\":[null]}", "{\"entries\":[{\"windows\":[3]}]}",
         "{\"entries\":{}}", "{\"busy\":\"yes\"}", "[]", "null", "not json"};
     int step = -1;
+    int waited = 0;
     Timeout.add (350, () => {
         try {
+            // The first snapshot lands once the fake backend answers and the popover (double text
+            // size) finishes its first layout; wait for it instead of asserting on a fixed timer.
+            if (step == -1 && !labels (bar).contains ("%") && (waited += 350) < 7000) return Source.CONTINUE;
             if (step == -1) assert (labels (bar).contains ("%"));
             else if (step < inputs.length) assert (labels (menu).contains ("Couldn't read usage"));
             else {

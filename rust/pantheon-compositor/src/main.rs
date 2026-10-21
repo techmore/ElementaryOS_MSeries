@@ -36,6 +36,8 @@ mod popup_stack;
 mod prewarm;
 mod protocols;
 mod shell_compat;
+mod snap_assist;
+mod snap_group;
 mod state;
 mod tiling;
 mod touchpad;

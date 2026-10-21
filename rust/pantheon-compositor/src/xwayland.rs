@@ -482,7 +482,6 @@ impl PantheonCompositor {
         let Some(location) = self.space.element_location(&window) else {
             return;
         };
-        self.float_in_place(&window);
         let edges = match edge {
             ResizeEdge::Top => PantheonResizeEdge::TOP,
             ResizeEdge::Bottom => PantheonResizeEdge::BOTTOM,
@@ -493,6 +492,17 @@ impl PantheonCompositor {
             ResizeEdge::TopRight => PantheonResizeEdge::TOP_RIGHT,
             ResizeEdge::BottomRight => PantheonResizeEdge::BOTTOM_RIGHT,
         };
+        // The shared edge of a snap group resizes both members.
+        if self.try_start_split_resize(
+            &pointer,
+            start_data.clone(),
+            &window,
+            edges,
+            smithay::utils::SERIAL_COUNTER.next_serial(),
+        ) {
+            return;
+        }
+        self.float_in_place(&window);
         let rect = Rectangle::new(location, window.geometry().size);
         let grab = ResizeSurfaceGrab::start(start_data, window, edges, rect);
         pointer.set_grab(

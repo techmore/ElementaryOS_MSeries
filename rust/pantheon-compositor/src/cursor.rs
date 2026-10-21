@@ -409,6 +409,96 @@ where
     )
 }
 
+/// Snap Assist: live, scaled thumbnails of the other windows in the empty
+/// half, on plates over a dimmed backdrop, the selection on an accent plate.
+/// Clients are not resized. Front to back: thumbnails, plates, backdrop.
+fn render_snap_assist_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    use crate::snap_assist::{BACKDROP_ALPHA, PLATE_ALPHA};
+    use smithay::backend::renderer::element::{
+        AsRenderElements,
+        utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
+    };
+    let Some(assist) = state.snap_assist.as_ref() else {
+        return Vec::new();
+    };
+    if assist.output.name() != output.name() || state.session_locked {
+        return Vec::new();
+    }
+    let Some(area) = state.space.output_geometry(output) else {
+        return Vec::new();
+    };
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    let physical = |point: Point<i32, Logical>| (point - area.loc).to_physical_precise_round(scale);
+    let mut elements = Vec::new();
+    for (window, thumb) in assist.thumbnails() {
+        let from = Rectangle::new(
+            state.space.element_location(&window).unwrap_or_default(),
+            window.geometry().size,
+        );
+        let origin = (from.loc - window.geometry().loc - area.loc).to_physical_precise_round(scale);
+        let anchor = physical(from.loc);
+        let offset = (thumb.loc - from.loc).to_physical_precise_round(scale);
+        let resize = Scale::from((
+            thumb.size.w.max(1) as f64 / from.size.w.max(1) as f64,
+            thumb.size.h.max(1) as f64 / from.size.h.max(1) as f64,
+        ));
+        let surfaces: Vec<WaylandSurfaceRenderElement<R>> =
+            window.render_elements(renderer, origin, scale, 1.0);
+        elements.extend(surfaces.into_iter().map(|surface| {
+            CursorRenderElement::Animated(RelocateRenderElement::from_element(
+                RescaleRenderElement::from_element(surface, anchor, resize),
+                offset,
+                Relocate::Relative,
+            ))
+        }));
+    }
+    if let Some(bars) = assist.ring_bars() {
+        for (buffer, bar) in assist.ring.iter().zip(bars) {
+            elements.push(
+                SolidColorRenderElement::from_buffer(
+                    buffer,
+                    physical(bar.loc),
+                    scale,
+                    1.0,
+                    Kind::Unspecified,
+                )
+                .into(),
+            );
+        }
+    }
+    for (plate_rect, plate) in assist.plate_rects.iter().zip(&assist.plates) {
+        elements.push(
+            SolidColorRenderElement::from_buffer(
+                plate,
+                physical(plate_rect.loc),
+                scale,
+                PLATE_ALPHA,
+                Kind::Unspecified,
+            )
+            .into(),
+        );
+    }
+    elements.push(
+        SolidColorRenderElement::from_buffer(
+            &assist.backdrop,
+            physical(assist.zone.loc),
+            scale,
+            BACKDROP_ALPHA,
+            Kind::Unspecified,
+        )
+        .into(),
+    );
+    elements
+}
+
 /// Shared scene assembly for nested and native outputs. Preview transforms
 /// never remap windows, so keyboard/pointer focus and workspace order stay put.
 pub fn render_desktop_elements<R>(
@@ -426,6 +516,7 @@ where
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
     let mut elements = render_cursor_elements(renderer, state, output);
+    elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
         state.space.output_geometry(output),
