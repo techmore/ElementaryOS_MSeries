@@ -148,8 +148,9 @@ def _stored_auth_env() -> dict:
             if key not in {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"}}
 
 
-def _gh_accounts() -> list[dict]:
-    """Every account the GitHub CLI is signed in to, parsed from `gh auth status` (the CLI has no JSON for it)."""
+def _gh_status() -> tuple[list[dict], list[dict]]:
+    """`gh auth status` (the CLI has no JSON for it): the accounts it verified, and the ones it could not
+    (expired token, or no network)."""
     try:
         result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
     except FileNotFoundError as exc:
@@ -157,13 +158,26 @@ def _gh_accounts() -> list[dict]:
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("GitHub CLI did not respond before the timeout") from exc
     accounts: list[dict] = []
+    unverified: list[dict] = []
+    current: dict | None = None
     for line in (result.stdout + result.stderr).splitlines():
-        match = re.search(r"Logged in to (\S+) account (\S+)", line)
-        if match and "Failed" not in line:
-            accounts.append({"host": match.group(1).lower(), "login": match.group(2), "active": False})
-        elif accounts and re.search(r"Active account:\s*true", line):
-            accounts[-1]["active"] = True
-    return accounts
+        ok = re.search(r"Logged in to (\S+) account (\S+)", line)
+        failed = re.search(r"Failed to log in to (\S+) account (\S+)", line)
+        if ok:
+            current = {"host": ok.group(1).lower(), "login": ok.group(2), "active": False}
+            accounts.append(current)
+        elif failed:
+            # Its "Active account" line belongs to it, not to the verified account listed before it.
+            current = {"host": failed.group(1).lower(), "login": failed.group(2), "active": False}
+            unverified.append(current)
+        elif current is not None and re.search(r"Active account:\s*true", line):
+            current["active"] = True
+    return accounts, unverified
+
+
+def _gh_accounts() -> list[dict]:
+    """Every account the GitHub CLI is signed in to and could verify."""
+    return _gh_status()[0]
 
 
 @functools.lru_cache(maxsize=1)
@@ -556,9 +570,26 @@ def read_cache() -> dict | None:
             payload = json.load(stream)
         if payload.get("schemaVersion") != 1 or not isinstance(payload.get("repos"), list):
             return None
-        host, account = _identity()
-        if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
-            return None
+        try:
+            host, account = _identity()
+        except RuntimeError as exc:
+            # `gh auth status` reports every account as failed when the network is down. Keep showing the last
+            # snapshot (marked stale, with the reason) when it belongs to the configured host and account.
+            settings = load_settings()
+            host, chosen = _hostname(settings), _account(settings).lower()
+            _, unverified = _gh_status()
+            stored = str(payload.get("account", "")).lower()
+            # Only a stored-but-unverifiable login (expired token or no network) may show old data; a signed-out
+            # CLI must not.
+            if payload.get("host") != host or not any(
+                    item["host"] == host and item["login"].lower() == (chosen or stored) for item in unverified):
+                return None
+            if chosen and stored != chosen:
+                return None
+            payload["error"] = "GitHub could not verify the saved login (offline or expired token); showing the last snapshot"
+        else:
+            if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
+                return None
         payload["stale"] = True
         return apply_settings(payload)
     except (OSError, json.JSONDecodeError, TypeError, RuntimeError):
@@ -576,7 +607,7 @@ def get_snapshot(force: bool = False, max_age: int = CACHE_TTL_SECONDS) -> dict:
         return apply_settings(fetch_and_cache())
     except (RuntimeError, OSError) as exc:
         if cached:
-            cached["error"] = str(exc)
+            cached["error"] = cached.get("error") or str(exc)
             cached["stale"] = True
             return cached
         raise
@@ -797,9 +828,9 @@ def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "
 def _repo_details(name: str, endpoint: str, limit: int = 20, force: bool = False) -> object:
     name = _safe_repo_name(name)
     if endpoint == "issues":
-        route = f"repos/{name}/issues?state=open&per_page={max(1, min(100, limit))}"
-        items, _ = _api_json(route, force=force)
-        return [item for item in items if "pull_request" not in item]
+        # The issues endpoint mixes pull requests in, so take a full page and apply the limit after filtering.
+        items, _ = _api_json(f"repos/{name}/issues?state=open&per_page=100", force=force)
+        return [item for item in items if "pull_request" not in item][:max(1, min(100, limit))]
     if endpoint == "pulls":
         return _api_json(f"repos/{name}/pulls?state=open&per_page={max(1, min(100, limit))}", force=force)[0]
     if endpoint == "ci":
