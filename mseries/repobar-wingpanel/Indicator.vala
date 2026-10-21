@@ -16,6 +16,7 @@ namespace MSeries {
         private Gtk.Label panel_prs;
         private Gtk.Label panel_issues;
         private Gtk.Label panel_alert;
+        private Gtk.Label panel_running;
         private Gtk.Box menu;
         private Gtk.ListBox repo_list;
         private Gtk.Overlay list_overlay;
@@ -82,6 +83,10 @@ namespace MSeries {
             panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, visible = false };
             panel_alert.add_css_class ("seg-alert");
             panel.append (panel_alert);
+            panel_running = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
+            panel_running.add_css_class ("seg-alert");
+            panel_running.add_css_class ("alert-pending");
+            panel.append (panel_running);
             panel.set_tooltip_text ("RepoBar · loading GitHub status… · Middle-click to refresh");
             var click = new Gtk.GestureClick () { button = 2 };
             click.released.connect (() => refresh ());
@@ -642,24 +647,25 @@ namespace MSeries {
             panel_issues.set_text (issues.to_string ());
             int64 merge_age = last_merge != null ? (GLib.get_real_time () - last_merge.to_unix () * 1000000) / 1000000 : -1;
             bool merged_recently = merge_age >= 0 && merge_age <= merge_window_minutes * 60;
+            // Failing and running show side by side: a failing repo must not hide workflows in progress.
             panel_alert.remove_css_class ("alert-bad");
-            panel_alert.remove_css_class ("alert-pending");
             panel_alert.remove_css_class ("alert-good");
             string status = "";
             if (failing > 0) {
-                panel_alert.set_text ("●");
+                panel_alert.set_text ("● %d".printf (failing));
                 panel_alert.add_css_class ("alert-bad");
                 status = " · CI failing on %d".printf (failing);
-            } else if (pending > 0) {
-                panel_alert.set_text ("● %d".printf (pending));
-                panel_alert.add_css_class ("alert-pending");
-                status = " · %d workflow run%s in progress".printf (pending, pending == 1 ? "" : "s");
             } else if (merged_recently) {
                 panel_alert.set_text ("●");
                 panel_alert.add_css_class ("alert-good");
             }
-            panel_alert.set_visible (failing > 0 || pending > 0 || merged_recently);
-            if (running_summary.length > 0 && failing == 0) status += "\n" + running_summary;
+            panel_alert.set_visible (failing > 0 || merged_recently);
+            if (pending > 0) {
+                panel_running.set_text ("● %d".printf (pending));
+                status += " · %d workflow run%s in progress".printf (pending, pending == 1 ? "" : "s");
+            }
+            panel_running.set_visible (pending > 0);
+            if (running_summary.length > 0) status += "\n" + running_summary;
             if (merged_recently) status += " · merged %s %d min ago".printf (last_merge_repo, (int) (merge_age / 60));
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
