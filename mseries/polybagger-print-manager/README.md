@@ -37,8 +37,8 @@ That matches what we saw on 2026-10-21 (three sends, three labels, then a clear 
 sent unchanged because they load nothing.
 
 ## Icon
-`io.techmore.PolyBaggerPrintManager.svg`: elementary-style icon of the roll bagger (film roll, status screen
-with the green ready dot, a poly bag with a barcode label). `install.sh` installs it to `hicolor` (SVG plus
+`io.techmore.PolyBaggerPrintManager.svg`: elementary-style tan industrial label printer (media window, green
+ready light, a barcode label feeding out). `install.sh` installs it to `hicolor` (SVG plus
 PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it from the dock's context menu.
 
 ## The window
