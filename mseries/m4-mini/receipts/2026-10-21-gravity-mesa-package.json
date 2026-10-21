@@ -1,0 +1,29 @@
+{
+  "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "package": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-1_arm64.deb",
+  "package_sha256": "14c1a10663b0bcab614eeca4507b470387ec8d2df24308dd05f56364b929f389",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "dependencies": "libc6 (>= 2.43), libdisplay-info3 (>= 0.3.0), libdrm2 (>= 2.4.109), libexpat1 (>= 2.0.1), libgbm1 (>= 21.3.0~rc1), libgcc-s1 (>= 3.0), libllvm21 (>= 1:21.1.0), libstdc++6 (>= 13.1), libudev1 (>= 183), libwayland-client0 (>= 1.24.0), libx11-6 (>= 2:1.4.99.1), libx11-xcb1, libxcb-dri3-0 (>= 1.17.0), libxcb-glx0 (>= 1.8), libxcb-present0 (>= 1.17.0), libxcb-randr0 (>= 1.13), libxcb-shm0, libxcb-sync1, libxcb-xfixes0, libxcb1 (>= 1.9.2), libxext6, libxshmfence1, libxxf86vm1 (>= 1:1.1.4), libzstd1 (>= 1.5.5), zlib1g (>= 1:1.1.4)",
+  "status": "private-prefix payload packaged; no installation, activation or M4 GPU qualification",
+  "payload_members": 98,
+  "payload_scope": [
+    "opt/elementary-m4-gravity1",
+    "usr/share/doc/elementary-m4-gravity-mesa1"
+  ],
+  "maintainer_scripts": false,
+  "extracted_package_software_render": "passed: llvmpipe EGL clear/red pixel readback",
+  "negative_checks": [
+    "missing library manifest rejected before output creation",
+    "staged library hash mismatch rejected before output creation"
+  ],
+  "dependency_scanner_warnings": [
+    "usrmerge libc diversion",
+    "staged binaries not installed globally",
+    "LLVM version marker warning; libllvm21 dependency retained"
+  ],
+  "limitations": [
+    "built against host libc6 >= 2.43; rebuild against target image ABI before distribution",
+    "no M4 GPU runtime or Vulkan conformance test",
+    "build wrapper full replay pending"
+  ]
+}

@@ -1,3 +1,15 @@
+## M4 mini: isolated Mesa package — 2026-10-21
+
+Gravity Mesa 87ac51d now has a source/hash/validation-gated private-prefix Debian
+packager. Package assembly, scope inspection (98 members, no maintainer scripts),
+and extracted-package llvmpipe EGL render/readback passed; missing-manifest and
+modified-library inputs were rejected. Receipt:
+[m4-mini/receipts/2026-10-21-gravity-mesa-package.json](m4-mini/receipts/2026-10-21-gravity-mesa-package.json).
+The payload depends on the current host ABI, including libc6 >= 2.43; target-image
+rebuild remains required. No system graphics or boot state changed. Full Gravity
+kernel build remains live; M4 GPU, 10 Gb Ethernet and owner dual boot remain
+unqualified. Next: finish Image/modules/DTB and validate matched kernel packaging.
+
 ## Typing stutter: interactive CPU weights for the session — 2026-10-21 (Claude Code)
 
 - **Cause found:** the stutter coincides with CPU saturation by nice-0 batch work. On a fresh boot with a `llama-bench -t 8` run, parallel

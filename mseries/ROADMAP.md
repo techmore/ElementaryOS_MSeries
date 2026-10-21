@@ -1,3 +1,15 @@
+## M4 mini: isolated Mesa package — 2026-10-21
+
+Gravity Mesa 87ac51d now has a source/hash/validation-gated private-prefix Debian
+packager. Package assembly, scope inspection (98 members, no maintainer scripts),
+and extracted-package llvmpipe EGL render/readback passed; missing-manifest and
+modified-library inputs were rejected. Receipt:
+[m4-mini/receipts/2026-10-21-gravity-mesa-package.json](m4-mini/receipts/2026-10-21-gravity-mesa-package.json).
+The payload depends on the current host ABI, including libc6 >= 2.43; target-image
+rebuild remains required. No system graphics or boot state changed. Full Gravity
+kernel build remains live; M4 GPU, 10 Gb Ethernet and owner dual boot remain
+unqualified. Next: finish Image/modules/DTB and validate matched kernel packaging.
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.

@@ -61,9 +61,16 @@ def main():
                      MESA_SHADER_CACHE_DIR=str(root / 'shader-cache'))
     with (root / 'software-smoke.log').open('wb') as log:
         subprocess.run([str(smoke)], env=smoke_env, stdout=log, stderr=subprocess.STDOUT, check=True)
+    test_results = [json.loads(line) for line in (build / 'meson-logs/testlog.json').read_text().splitlines() if line.strip()]
+    if len(test_results) != 5 or any(test['result'] != 'OK' for test in test_results):
+        raise ValueError('all five selected AGX test groups must pass')
+    libraries = ['lib/libvulkan_asahi.so', 'lib/libgallium-26.3.0-devel.so',
+                 'lib/libEGL_mesa.so.0.0.0', 'lib/libGLX_mesa.so.0.0.0']
+    artifacts = {name: hashlib.sha256((prefix / name).read_bytes()).hexdigest() for name in libraries}
     (root / 'receipt.json').write_text(json.dumps({
         'repository': 'GravityLinux/mesa', 'commit': COMMIT, 'archive_sha256': SHA256,
-        'options': OPTIONS, 'commands': commands,
+        'options': OPTIONS, 'commands': commands, 'build': 'passed',
+        'tests': {'meson_groups': len(test_results), 'failed_groups': 0}, 'artifacts': artifacts,
         'status': 'built, AGX tests and isolated software rendering passed, staged only; no M4 GPU runtime qualification',
     }, indent=2) + '\n')
 

@@ -111,3 +111,14 @@ Gravity U-Boot at gravity-alpha-20260925/a2f6913 also builds with native
 includes u-boot-nodtb.bin, the boot-chain payload; the generated generic control
 DTB must not replace the matched J773g loader handoff by assumption. No EFI boot
 or runtime calibration test has run locally.
+
+`package-mesa.py --stage STAGE --source SOURCE --archive PINNED_ARCHIVE
+--validation BUILD_RECEIPT --output NEW_DIRECTORY` verifies the five-group
+validation receipt, all four graphics library hashes and corresponding source
+archive before building an arm64 Debian payload. Packaging passed; the 98 payload
+members are confined to the private prefix and documentation, with no maintainer
+scripts. An extracted-package llvmpipe EGL render/readback test passed. Missing
+manifest and mismatched library hashes were rejected before output creation.
+This package requires the build host ABI (including libc6 >= 2.43), so rebuild
+against the intended image ABI before distribution. Dependency scanner warnings
+are retained in the receipt; no M4 hardware or Vulkan qualification is implied.

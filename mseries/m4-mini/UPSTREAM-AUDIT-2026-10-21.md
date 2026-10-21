@@ -116,3 +116,14 @@ J773g BCM4388 provisioning, signature checks and firmware fixtures, with explici
 AQtion/tg3 build gates. Hardware boot, 10 Gb traffic, thermal behavior, HDMI,
 shutdown/reboot and macOS/Recovery round trips are still required before calling
 this setup ready for dual boot.
+
+`package-mesa.py --stage STAGE --source SOURCE --archive PINNED_ARCHIVE
+--validation BUILD_RECEIPT --output NEW_DIRECTORY` verifies the five-group
+validation receipt, all four graphics library hashes and corresponding source
+archive before building an arm64 Debian payload. Packaging passed; the 98 payload
+members are confined to the private prefix and documentation, with no maintainer
+scripts. An extracted-package llvmpipe EGL render/readback test passed. Missing
+manifest and mismatched library hashes were rejected before output creation.
+This package requires the build host ABI (including libc6 >= 2.43), so rebuild
+against the intended image ABI before distribution. Dependency scanner warnings
+are retained in the receipt; no M4 hardware or Vulkan qualification is implied.
