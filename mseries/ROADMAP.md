@@ -1,3 +1,13 @@
+## M4 mini: opt-in mkosi package profile — 2026-10-21
+
+The m4-mini base profile selects exact kernel r2/Mesa r3/policy r2 packages;
+ordinary generic-kernel selection is now in a !m4-mini drop-in. Liveiso adds
+Apple NVMe/PCIe/keyboard/Magic Mouse modules. Real mkosi 28~devel config tests
+pass: defaults match pre-change package sets, Fairydust is unchanged, wrong
+architecture and mixed M4/Fairydust fail explicit assertions. No image build or
+M4 installer admission claimed. Graphics activation remains separate work.
+[Receipt](m4-mini/receipts/2026-10-21-mkosi-profile.json).
+
 ## M4 mini: offline final-memory handoff check — 2026-10-21
 
 check-memory-handoff.py validates J773g final-DT declared RAM bounds and the

@@ -1,0 +1,30 @@
+{
+  "mkosi_repository": "systemd/mkosi",
+  "mkosi_commit": "f7e32882d26e2c5f3daba48e1aff5b411e6b4d92",
+  "mkosi_version": "28~devel",
+  "source_archive_sha256": "ed3ed857f768fb85139517eec4ea673f25d1a597e87ab7a59420c4c0accce3b5",
+  "config_files": {
+    "mkosi.images/base/mkosi.conf.d/core.conf": "8f88dce7c7524620d9b70f1b5221f7968e196566a9c9fa7863afda1283f5eb6a",
+    "mkosi.images/base/mkosi.conf.d/generic-kernel.conf": "a39e4942c986fa8a2f70fb6d0ff201f2f241dc965c5b29eab2d0dcf1924cd2f7",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.conf": "cd66ab0fa1e85998ee46fa44e98518ac7721290b98fbb94d93561b764f50725d",
+    "mkosi.images/liveiso/mkosi.profiles/m4-mini/mkosi.conf": "fcedffa5d524f40446803307ce4a205fd0d16c49e98dc03e22a525a7aefb0b02"
+  },
+  "checks": [
+    "all default image package sets equal pre-change snapshot",
+    "arm64 M4 base replaces only generic kernel selection with three pinned packages",
+    "liveiso retains normal modules and adds four Apple modules",
+    "non-base package sets unchanged",
+    "Fairydust retains generic kernel and excludes M4 packages",
+    "x86-64 rejected by Architecture assertion",
+    "M4 plus Fairydust rejected by Profiles assertion"
+  ],
+  "validation_scope": "real mkosi configuration parsing only; no complete factory image build",
+  "remaining": [
+    "M4-specific graphics activation in factory root",
+    "complete factory image build",
+    "bootloader and firmware handoff",
+    "native M4 qualification"
+  ],
+  "installer_admitted": false,
+  "hardware_validated": false
+}

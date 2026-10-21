@@ -285,3 +285,21 @@ reservation validator. GPU/DCP source gates remain separate and mandatory.
 Factory integration remains unfinished: the ordinary base profile still
 selects linux-image-generic. The standalone M4 package/EFI tests do not
 constitute an enabled M4 factory installer or complete desktop image.
+
+## Opt-in factory package selection
+
+The new `m4-mini` mkosi profile selects exact kernel revision 2, Mesa revision 3
+and policy revision 2 packages in the base image, and adds Apple NVMe/PCIe/
+keyboard/Magic Mouse modules to the live ISO initrd settings. It asserts arm64
+and rejects combination with the incompatible Fairydust stack. Normal builds
+retain their generic kernel and package sets. Supply the three verified local
+Debian packages in a directory passed to `--package-directory`; mkosi converts
+that directory into a local package repository.
+
+For configuration review, run `mkosi --profile=m4-mini --architecture=arm64
+--package-directory=/path/to/candidate-debs --image-version=20261021 summary`.
+The pinned mkosi 28~devel parser passes default/M4/Fairydust and negative
+architecture/conflict tests using test-mkosi-profile.py --mkosi-source SOURCE.
+This establishes configuration selection only. No complete M4 ISO has built;
+private graphics activation, full desktop and firmware handoff remain open.
+Installer/hardware qualification flags remain false.
