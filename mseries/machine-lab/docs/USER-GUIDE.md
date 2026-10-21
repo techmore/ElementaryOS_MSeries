@@ -40,10 +40,14 @@ Starting a machine opens its Display tab: the guest's screen at about 30 fps wit
 Other shortcuts: Ctrl+N new machine, F5 or Ctrl+R re-check disk space and requirements, Ctrl+Q quit (running
 machines are stopped).
 
-**Clipboard (text).** Settings, "Share clipboard" (off by default). It applies the next time the machine starts, and the guest needs the
-SPICE agent (`spice-vdagent`; the elementary OS image already has it). What works today: copy in the guest, paste on the Mac. Copy on the
-Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
-QEMU's clipboard channel yet (issue #264).
+**Clipboard (text, both ways).** Settings, "Share clipboard" (off by default). It applies the next time the machine starts, and the guest needs
+the SPICE agent (`spice-vdagent`; the elementary OS image already has it). With it on, text you copy in the machine can be pasted here and
+the other way round. Two switches under it, "Paste from this computer into the machine" and "Copy from the machine to this computer", turn
+a direction off or on immediately, for all machines (stored in `~/.config/machine-lab/settings.ini`). Text over 1 MiB is not transferred.
+Notes: after the guest agent (re)connects, for example when you log in, the text currently on your clipboard is offered to the guest again;
+the guest sees it only when something there pastes. Images, files and drag-and-drop are not supported by QEMU's clipboard channel (issue #264).
+Host to guest was verified against QEMU's and spice-vdagent's source and a fake-QEMU test suite; it has not yet been confirmed on a live guest
+(see `experiments/clipboard/README.md`).
 
 ## Ready-made images (skip the installer)
 
