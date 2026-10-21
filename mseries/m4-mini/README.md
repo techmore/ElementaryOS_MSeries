@@ -69,3 +69,19 @@ The script emits a success receipt only after Image, modules and DTBs build.
 The first native full-build run remains pending; the wrapper itself has not yet
 completed an end-to-end run. Kernel and Mesa Asahi UAPI headers match byte for
 byte at the pinned Gravity heads; see the receipt for the precise scope.
+
+## Debian payload packaging
+
+After a successful full build, `package-kernel.py --source SOURCE --build BUILD
+--archive PINNED_ARCHIVE --output NEW_DIRECTORY` produces a distinct
+`linux-image-elementary-m4-gravity1` payload and copies its corresponding source
+archive alongside it. It checks the source archive, resolved config, module
+release, required Image/DTB/GPU artifacts, module inventory and display/GPU
+vermagic. No maintainer scripts or boot files are packaged. It does not install
+anything. Actual end-to-end packaging remains pending the full kernel build;
+the current incomplete build was correctly rejected for its missing Image.
+
+The driver source requires GPU boot-firmware identifier `mBoot-18000.161.10`
+and DCP actual firmware `26.6.2`. GPU firmware regions must be populated by the
+matched loader; the source DT intentionally disables the GPU before that fixup.
+Do not bypass these driver gates or label a DT/module build as runtime support.

@@ -50,3 +50,13 @@ The full build applies Gravity config overlays after Asahi config. In particular
 CONFIG_DRM_ASAHI_M4=m is required; the unmodified Asahi fragment leaves it off.
 The build wrapper checks this resolved setting rather than treating any successful
 Image build as an M4 graphics build. Its first full end-to-end run is pending.
+
+## Reviewed firmware contract
+
+At the pinned kernel, g16.rs validates `mBoot-18000.161.10`, the private VM
+region, and five aligned non-overlapping loader-reserved regions before GPU
+startup. dcp.c checks actual firmware `26.6.2`. The board's native HDMI
+configuration uses the enabled primary `dcp` node with HDMI-A connector and
+DPTX PHY 4; older dcpext0-only experiments must not substitute for this profile.
+These source-level checks make a coherent loader/firmware bundle necessary.
+They have not been exercised on the owner's mini.

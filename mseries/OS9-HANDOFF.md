@@ -10211,3 +10211,9 @@ match byte-for-byte (receipt retained). Packaging pins an older kernel; current
 head includes the J773g SID8 select-IRQ correction 64 -> 65 plus shared Air
 changes. Native Gravity build session 82290 and Asahi session 29830 remain
 running; no Image/modules success claimed.
+
+Added separate Debian research-payload packaging. Incomplete-build rejection
+passes against the live Gravity build; final Image/module/package validation is
+still pending. Reviewed exact GPU firmware identifier and DCP 26.6.2 checks;
+no bypasses. Both existing native builds remain running at their original
+handles. No kernel/bootloader deployment.
