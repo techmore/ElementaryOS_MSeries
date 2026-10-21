@@ -11,6 +11,47 @@
   or type filters, live scan preview, an apt package. The `/` scan skips `/home` (a separate Btrfs subvolume); the status bar says so.
   Nothing was installed or restarted on this machine.
 - **Next:** try it from the launcher on the M1, scan `/home` and System, and record anything that looks wrong here.
+## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
+
+Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
+across Codex, Claude, OpenCode and Grok now gets a number and a hue: account 1 in a tinted legend row
+above the cards, the others below. Cards keep only the numbered badge next to the plan; alternate
+accounts become one tinted row (badge, quota, Switch). The bar shows the signed-in account's number
+after each company mark and numbers alternates with the same global, hue-colored numbers. Opt-in via
+`accountLegend` (Settings > Display > Wingpanel > Account legend); details in `CODEXBAR-PORT.md`.
+
+- **Verified.** `meson test` 18/18, including the new `account-legend` probe (named once with the
+  legend on, repeated with it off, bar hue matches) and `presentation` unit tests for numbering and hues.
+  Rendered light/dark with the new `shared-accounts` fixture.
+- **Not verified.** The live panel with the owner's real accounts until Wingpanel loads the new module.
+
+## Dock & Taskbar page in System Settings — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/dock-switcher/` (Vala Switchboard plug, **Settings → Personal → Dock & Taskbar**) switches the patched dock between the
+  Windows 11 taskbar and the elementary dock by writing `io.elementary.dock` `taskbar-mode` (the dock reads it live), plus the dock's
+  Hide automatically setting. Read-back confirmation, Undo toast, follows external changes, honest stock-dock / opted-out / not-installed
+  states. Installer: `bash mseries/install-dock-switcher.sh` (plug only; restarts nothing). Details: `mseries/dock-switcher/README.md`.
+- **Verified:** build, 7 unit tests, plug loaded and constructed through `get_plug`, screenshots (light/dark/disabled/1.5x text, headless).
+- **Not verified:** inside a live System Settings window, a real switch against the running dock, screen-reader use.
+- **Not installed:** the plug is merged but not installed on the owner's machine until `install-dock-switcher.sh` is run.
+
+## Typing stutter: interactive CPU weights for the session — 2026-10-21 (Claude Code)
+
+- **Cause found:** the stutter coincides with CPU saturation by nice-0 batch work. On a fresh boot with a `llama-bench -t 8` run, parallel
+  Rails test workers in rootless podman and a `db:schema:load` running, load average reached 29-58 on 10 cores and CPU pressure
+  (`/proc/pressure/cpu` `some`) reached 60-80%. Per-thread run-queue wait (`/proc/<pid>/task/*/schedstat`) showed a Claude Desktop
+  renderer waiting 54-93% of each interval and the compositor 15%. Memory, swap and I/O were not under pressure.
+- **Change:** `CPUWeight=500` on `session.slice` (compositor, panel), `CPUWeight=400` on `pantheon-dock.service` (apps launched from the
+  dock) and `CPUWeight=20` on the user manager's `user.slice` (rootless podman containers). Shipped in the session package; checked by
+  `mseries/pantheon-rust-compositor/test-session-units.sh`.
+- **Verified:** static unit checks pass. Applying the same weights at runtime with `systemctl --user set-property --runtime` and
+  alternating twice against the defaults on the same PIDs gave renderer+compositor run-queue wait of 30% -> 18% and 16% -> 13% under load.
+  That is directionally better but noisy; one load profile, not a controlled benchmark.
+- **Not verified:** the installed package (nothing installed; weights take effect at next login after the package is installed), subjective
+  typing feel, and the benchmark/test workloads launched from Claude Desktop itself: they share `app.slice` with other apps, so slice
+  weights do not separate them. Start such runs with `nice -n 19` or `systemd-run --user -p CPUWeight=20`.
+- **Next:** install the package, repeat the load test, and consider asking Aurora for `CONFIG_SCHED_CLASS_EXT` (see
+  `PERFORMANCE-PORT-CANDIDATES-2026-10-18.md`).
 
 ## Apple/Logitech peripherals: `mseries-peripherals` — 2026-10-21 (Claude Code)
 
@@ -830,6 +871,37 @@ fail a test (the eighth was not a real defect). Not verified: an actual Japanese
 input method, only its observable effect (composed text arriving instead of a newline).
 
 Next: live check of media links; compositor `present()` raise is its own PR (#362).
+
+## Resumed kernel review: merged 7.2 source — 2026-10-21
+
+Owner returned. Focused immutable inspection of merged upstream #139
+`644133b7799f` confirms the older GPU command-tail, SEP autoload and SEP
+capture-drain gaps are addressed in the selected source paths. Five original
+GPU-reader host tests pass with the existing Result/EINVAL-only fixture boundary;
+stock-bindgen opt-in policy is already carried. Full 64-fix parity/config/ARM64
+build and J314S recovery/hardware acceptance remain open. Shared-DTB fallback
+compatibility and upstream M1-family Touch ID regressions need explicit review.
+Only about 4.9 GB local free space: use artifact-only ARM64 CI for a full build.
+Exact intended kernel change is still awaiting owner clarification; no build pin
+or host state changed. [Review receipt](maintenance/2026-10-21/kernel-resume-review.json).
+
+
+## Maintenance trials and kernel application handoff — 2026-10-21
+
+Saved eight paused on-demand maintenance tasks, then manually trialed/audited
+kernel and power in order and refined their prompts. Scheduler/model execution
+was not tested; task 03 has not run. Current observation is `.20-enh1` with the
+Rust compositor; no kernel, boot, display, audio or service changes were made.
+Aurora discovery found 59 branches/23 open PRs. #139 is merged while our 7.2
+snapshot is older; #163 cannot be blindly backported across .20's EBUSY/ENOSPC
+contract. Uncontrolled power medians 17.303 W and 41.203 W prove no saving.
+
+Owner is returning later and wants a kernel change applied next. Exact candidate
+is unspecified: resume with that selection and a pinned isolated source/build
+change, preserving hardware/rollback gates. Full findings, portable receipts,
+refined prompts and the display-capture tooling issue are in
+[the October 21 checkpoint](maintenance/2026-10-21/README.md).
+
 
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
