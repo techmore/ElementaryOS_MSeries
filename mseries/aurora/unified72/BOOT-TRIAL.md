@@ -1,6 +1,20 @@
-# J314S wip2: one-shot armed experimental trial
+# J314S wip2: first boot recorded, qualification incomplete
 
-## Current one-shot state, October 21, 2026
+## Actual first-boot state, October 21, 2026
+
+Wip2 booted and matched its audited Image/live build ID. Scoped five-minute
+boot/PMP/idle, M1 Pro shader/readback and 1 MiB fsync passed. Owner confirms internal
+screen/input and front-left dock picture; hinge-side left port fails. External
+1080p/60 observed. [Retained report and receipts](../hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+Reuse completed checks for this boot; do not repeat them as new evidence.
+
+One-shot consumed (`next_entry` empty), persistent default `.20`, fallback files
+unchanged. No automatic re-arm. Matched per-port acceptance and actual return-to-
+`.20` recovery remain next, before suspend/power work. The earlier instructions
+below describe preparation/arming history and how to collect a distinct future
+boot; they are not instructions to re-run this completed capture.
+
+## Earlier one-shot state, October 21, 2026
 
 Owner authorized arming after repeat CI passed. Both matrix jobs in run
 39601423970 passed; all staged/fallback hashes, package verification, GRUB syntax

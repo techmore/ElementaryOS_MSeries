@@ -2,13 +2,19 @@
 
 ## Current host state — October 21, 2026
 
-Both repeat native CI matrix jobs passed [run 39601423970](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970)
-at `ed08d50`. Owner-authorized **one-shot is armed** for
-`elementary-aurora72-wip2-trial`. `.20` remains persistent default; old boot files
-and shared `boot.bin` are unchanged. Running kernel remains `.20-enh1`; no reboot
-or 7.2 hardware acceptance is claimed. See [arming receipt](one-shot-armed-2026-10-21.json),
-[attended boot plan](BOOT-TRIAL.md) and [preflight receipt](boot-preflight-2026-10-21.json).
-Do not automatically re-arm after this trial.
+**Wip2 has booted.** Exact live Image identity/package/modules and unchanged
+legacy shared payload verified. Scoped boot/PMP/idle, real M1 Pro GPU
+shader/readback and 1 MiB fsync pass. Owner confirms internal display/input and
+front-left dock picture, slow to appear; hinge-side left picture fails and right
+port is untested. External 1080p/60 is observed. No all-port/stable/suspend/power
+qualification. One-shot is consumed; `.20` remains persistent default.
+[First-boot report](../hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md),
+[summary](first-boot-2026-10-21.json). Next: matched port acceptance and actual
+`.20` recovery. Do not re-arm automatically.
+
+Both repeat CI matrix jobs passed run 39601423970; installed package remains the
+independently audited original successful native-build artifact. Historical
+[arming receipt](one-shot-armed-2026-10-21.json) precedes this actual boot.
 
 ## Merged source refresh — October 21, 2026
 
@@ -70,7 +76,8 @@ resolves it to `y`, with `NF_TABLES=m` and `NFT_COMPAT=m` retained. This is not 
 warning-free build claim. Subsequent review/test/documentation changes preserve
 the recorded builder/manifest/workflow hashes; artifact-embedded documentation
 remains the snapshot at the tested commit. Earlier wip1 receipts are separate.
-No local 7.2 boot, power saving or hardware acceptance is claimed.
+That build checkpoint preceded the scoped first boot recorded above; no power
+saving or complete hardware acceptance is claimed.
 
 ## Static contract follow-up — October 21, 2026
 
@@ -112,7 +119,7 @@ fail on pin/config/identity errors; none installs a package.
 
 ## Hardware and compatibility gates
 
-This is an **experimental, one-shot-armed trial**, not hardware-qualified. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
+This is an **experimental, booted trial with incomplete qualification**. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
 records the old `582e9ef3` snapshot; retain it as history. The new focused review
 supersedes only its three inspected GPU/SEP gap descriptions, not all 64 semantic
 review requirements. Check the intended Mesa/kernel UAPI and actual client

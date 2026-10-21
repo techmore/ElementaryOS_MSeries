@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "kind": "postboot-installed-and-selected-dt-verification",
+  "release": "7.2.10-elementary-aurora72-wip2",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "early_module_hashes_verified": 91,
+  "package_verified": true,
+  "fallback_files_unchanged": true,
+  "shared_boot_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+  "next_entry": "",
+  "persistent_default": "elementary-aurora20",
+  "runtime_darts": {
+    "soc/iommu@28c30c000": {
+      "compatible": [
+        "apple,t6000-dart",
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@285810000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@38b304000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@582008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@39b008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@285820000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@289304000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@38b30c000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@583008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@28930c000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@3860f4000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@293808000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@3952c0000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@b02f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@39b004000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@1302f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@b02f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@702f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@1302f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@3860fc000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@584008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@28e300000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@702f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@285800000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@28c304000": {
+      "compatible": [
+        "apple,t6000-dart",
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@287010000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@f02f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@581008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@3860e8000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/iommu@f02f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/usb4-pcie-tunnel-0/iommu@721008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/usb4-pcie-tunnel-2/iommu@f21008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/cio@f01ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/cio@701ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/usb4-pcie-tunnel-1/iommu@b21008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/cio@b01ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "iommu_cells": 1
+    },
+    "soc/usb4-pcie-tunnel-3/iommu@1321008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "iommu_cells": 1
+    }
+  },
+  "observed_firmware_compat": {
+    "soc/dcp@28cc00000": [
+      13,
+      5,
+      0
+    ],
+    "soc/dcp@38bc00000": [
+      13,
+      5,
+      0
+    ],
+    "soc/gpu@406400000": [
+      13,
+      5,
+      0
+    ],
+    "soc/dcp@289c00000": [
+      13,
+      5,
+      0
+    ]
+  },
+  "packaged_new_dtb_selected": false,
+  "limits": "Runtime one-cell bindings and unchanged shared boot payload observed; full DT/hardware/recovery qualification not established."
+}

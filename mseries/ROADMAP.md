@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
+
+Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
+shared payload verified; one-shot consumed, `.20` remains normal default.
+Five-minute boot/PMP/idle and M1 Pro GLES shader/readback plus 1 MiB fsync pass.
+Owner confirms internal display/input and front-left dock picture (slow to
+appear); hinge-side left port picture fails, right untested. External 1080p/60
+observed. Next matched physical-port evidence and real `.20` recovery; no
+suspend, stable or energy-improvement acceptance.
+[Report](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
 ## Deferred reboot: mismatch triage and test readiness — 2026-10-21
 
 24 mechanically-neither patches triaged: 19 source contracts retained,

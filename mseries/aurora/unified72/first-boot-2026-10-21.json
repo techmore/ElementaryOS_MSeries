@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "scoped boot/internal display/input/GPU/fsync and front-left dock picture pass; rear-left picture fails; incomplete qualification",
+  "release": "7.2.10-elementary-aurora72-wip2",
+  "one_shot_consumed": true,
+  "next_entry": "",
+  "persistent_default": "elementary-aurora20",
+  "stable_promoted": false,
+  "report": "../hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md",
+  "summary": "../hardware-tests/2026-10-21-j314s-wip2-first-boot/summary.json",
+  "recovery_boot_qualified": false
+}
