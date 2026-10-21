@@ -1,3 +1,45 @@
+## Running markers: small lighter adjustment — 2026-10-20
+
+Owner requested a touch lighter: final marker color is #606060 in both modes,
+replacing #555555. Focused blue is unchanged. Native resource rebuild and diff
+check passed; privately installed and taskbar service reloaded and active.
+
+## Running-marker final lighter adjustment — 2026-10-20
+
+Owner requested a little lighter again: running markers now use #555555 in
+both modes, replacing #444444. Focused blue is unchanged. Native resource
+rebuild and diff check passed; private binary installed and taskbar service
+restarted and active.
+
+## Owner-tuned charcoal running markers — 2026-10-20
+
+The owner's desktop prefers dark mode, while the taskbar is intentionally silver
+in both modes. The previous dark-theme white rule caused the requested black
+markers to remain pale. Corrected both theme selectors to black, then the owner
+requested lighter markers: final running-marker color is solid #444444 in both
+modes, with opacity 1. Focused blue remains unchanged. Native resource rebuild
+and diff check passed; privately installed and pantheon-dock.service restarted
+and active. Earlier light-only tuning receipts are superseded by this result.
+
+## Solid black taskbar markers — 2026-10-20
+
+Owner requested another darkening pass. Light-mode running markers now use
+solid black instead of 80% black; opacity remains 1. Native resource rebuild
+and diff check passed. Installed privately and restarted pantheon-dock.service,
+which is active. Focused blue and dark-theme markers retain their colors.
+
+## Running-marker contrast correction — 2026-10-20
+
+Owner requested noticeably darker taskbar markers after the prior color change.
+The taskbar override now covers `:disabled` (inactive-workspace apps), defeating
+older, more specific styles, and sets marker opacity to 1 instead of inherited
+0.8/0.45. Light-mode gray is 80% black; dark-mode gray retains 35% white.
+Focused blue and all production Vala sources are preserved. Rebuilt from the
+exact source of the installed af6c7eec binary with only these CSS changes.
+Native build, strict schemas and three identity/lifecycle tests passed.
+Installed privately and restarted only pantheon-dock.service; service is active.
+No live screenshot/owner visual confirmation is claimed.
+
 # OS 9 implementation / Claude Code handoff
 
 ## Messages: honest full text, attachment chips — 2026-10-21

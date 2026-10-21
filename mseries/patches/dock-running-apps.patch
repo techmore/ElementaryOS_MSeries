@@ -32,10 +32,10 @@ index 8efd72d..0abec9f 100644
  .taskbar-codexbar-popup { font-size: 1.5625em; }
 +
 +/* Match Windows taskbar state: gray for open apps; blue only for focus. */
-+dock-window.taskbar .running-indicator {
-+    min-width: 8px; min-height: 3px; background: rgba(0, 0, 0, 0.65);
++dock-window.taskbar .running-indicator, dock-window.taskbar .running-indicator:disabled {
++    min-width: 8px; min-height: 3px; opacity: 1; background: #606060;
 +}
-+dock-window.taskbar.dark .running-indicator { background: rgba(255, 255, 255, 0.35); }
++dock-window.taskbar.dark .running-indicator, dock-window.taskbar.dark .running-indicator:disabled { background: #606060; }
 +dock-window.taskbar .multiple-windows .running-indicator { min-width: 12px; }
 +dock-window.taskbar launcher.focused .running-indicator { min-width: 18px; background: #0078d4; }
 +dock-window.taskbar.dark launcher.focused .running-indicator { background: #4cc2ff; }
