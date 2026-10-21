@@ -54,6 +54,11 @@ test('machine logic', test_exe,
   timeout: 60
 )
 
+test('QMP fixture reaping and output EOF', find_program('python3'),
+  args: [files('tests/test-qmp-teardown.py'), test_exe, files('tests/fake-qmp.py')],
+  timeout: 30
+)
+
 unattend_test_exe = executable('test-unattend',
   'tests/test-unattend.vala', 'src/machine.vala', 'src/unattend.vala', 'src/virtiowin.vala',
   dependencies: [gtk, dependency('gio-unix-2.0'), json],
