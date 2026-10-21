@@ -1,0 +1,24 @@
+{
+  "repository": "maralcbr/omarchy-pkgs",
+  "commit": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+  "runtime_repository": "maralcbr/omarchy-mx-mac",
+  "runtime_commit": "72f1906722fd042a54f1e1973610f62dd019531f",
+  "lanes": {
+    "stable": {
+      "AQTION": "m",
+      "TIGON3": "m",
+      "config_sha256": "4228006ad9c5fcc2237b91b3fd1f70934d23e6d8bdb012faf5a763e042a6edee"
+    },
+    "rc": {
+      "AQTION": "m",
+      "TIGON3": "m",
+      "config_sha256": "4228006ad9c5fcc2237b91b3fd1f70934d23e6d8bdb012faf5a763e042a6edee"
+    },
+    "edge": {
+      "AQTION": "m",
+      "TIGON3": "m",
+      "config_sha256": "4228006ad9c5fcc2237b91b3fd1f70934d23e6d8bdb012faf5a763e042a6edee"
+    }
+  },
+  "scope": "Driver configuration present; runtime installer admits M1/M2 and excludes M4. No M4 10 Gb hardware pass found."
+}

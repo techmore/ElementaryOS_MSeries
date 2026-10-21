@@ -1,0 +1,50 @@
+{
+  "source": {
+    "name": "gravity-mini",
+    "repository": "GravityLinux/linux",
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "files": [
+      "arch/arm64/boot/dts/apple/hwmon-common.dtsi",
+      "arch/arm64/boot/dts/apple/hwmon-fan.dtsi",
+      "arch/arm64/boot/dts/apple/hwmon-mini.dtsi",
+      "arch/arm64/boot/dts/apple/t8132-gpu.dtsi",
+      "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "include/dt-bindings/gpio/gpio.h",
+      "include/dt-bindings/interrupt-controller/apple-aic.h",
+      "include/dt-bindings/interrupt-controller/irq.h",
+      "include/dt-bindings/phy/phy.h",
+      "include/dt-bindings/pinctrl/apple.h",
+      "include/dt-bindings/spmi/spmi.h"
+    ]
+  },
+  "commands": [
+    [
+      "cpp",
+      "-nostdinc",
+      "-undef",
+      "-D__DTS__",
+      "-x",
+      "assembler-with-cpp",
+      "-I",
+      "work/m4-prepared-v3/gravity-mini/include",
+      "work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    ],
+    [
+      "dtc",
+      "-I",
+      "dts",
+      "-O",
+      "dtb",
+      "-o",
+      "work/m4-gravity-dtb-v3/t8132-j773g.dtb",
+      "work/m4-gravity-dtb-v3/j773g.dts"
+    ]
+  ],
+  "capture_receipt_sha256": "545e4f08f8e30fedaed976b18fe1612ac43fff5614dc64ec23d51cb403772927",
+  "dtb_sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+  "warnings": "work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:478.30-498.5: Warning (simple_bus_reg): /soc/audio-controller: missing or empty reg/ranges property\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts:64.11-66.3\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:616.30-628.5: Warning (simple_bus_reg): /soc/display-subsystem: missing or empty reg/ranges property\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:649.39-669.5: Warning (simple_bus_reg): /soc/interrupt-controller@381180000: simple-bus unit address format error, expected \"381000000\"\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:506.22-550.5: Warning (avoid_unnecessary_addr_size): /soc/dcp@30ae00000: unnecessary #address-cells/#size-cells without \"ranges\", \"dma-ranges\" or child \"reg\" property\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts:108.6-120.3\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:552.26-582.5: Warning (avoid_unnecessary_addr_size): /soc/dcp@286e00000: unnecessary #address-cells/#size-cells without \"ranges\", \"dma-ranges\" or child \"reg\" property\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:584.26-614.5: Warning (avoid_unnecessary_addr_size): /soc/dcp@48ae00000: unnecessary #address-cells/#size-cells without \"ranges\", \"dma-ranges\" or child \"reg\" property\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi:13.10-28.4: Warning (alias_paths): /aliases: aliases property name must include only lowercase and '-'\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-gpu.dtsi:5.10-7.4\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts:27.10-30.4\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi:13.10-28.4: Warning (alias_paths): /aliases: aliases property name must include only lowercase and '-'\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-gpu.dtsi:5.10-7.4\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts:27.10-30.4\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi:13.10-28.4: Warning (alias_paths): /aliases: aliases property name must include only lowercase and '-'\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-gpu.dtsi:5.10-7.4\n  also defined at work/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts:27.10-30.4\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:486.10-497.6: Warning (graph_child_address): /soc/audio-controller/ports: graph node has single child node 'port@0', #address-cells/#size-cells are not necessary\nwork/m4-prepared-v3/gravity-mini/arch/arm64/boot/dts/apple/t8132.dtsi:538.10-549.6: Warning (graph_child_address): /soc/dcp@30ae00000/ports: graph node has single child node 'port@0', #address-cells/#size-cells are not necessary\n",
+  "status": "DT compilation only; kernel, loader handoff and J773g hardware unqualified"
+}

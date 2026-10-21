@@ -10217,3 +10217,100 @@ unchanged. Current upstream has 51 commits beyond our recorded backend; a separa
 backend qualification is still needed before its sender detection/LE/media fixes
 can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
 features; those need native Incus design, not blind Swift feature parity claims.
+
+## M4 Mac mini research lane — 2026-10-21
+
+Added `m4-mini/research.json`, public-source capture tooling and the upstream
+readiness audit. Target is owner-reported M4/16 GB; J773g identity still needs
+confirmation. Captured exact J713 candidate and boot companion heads separately
+from the installed J314S release. No boot artifacts, installer enablement or
+live deployment. Source receipts do not establish hardware support. Next:
+review candidate board admission/display protocols and produce a J773g port
+only where public board evidence supports it.
+
+M4 research follow-up: added verified-capture DT compilation, fetched all 16
+selected sources including binding headers, and compiled the exact Asahi J773g
+DT at 94fb23346d522edf53722357c426a3e58030beea. Retained compiler warning and
+SHA-256 receipt under m4-mini/receipts. fdtget confirms J773g compatibility and
+disabled pre-loader framebuffer. No full kernel build or hardware validation.
+
+Public mini patch review now records verified legacy patch provenance and rejects
+promotion of the partial-initialization diagnostic path. Full Asahi source at
+94fb233 (7.1.13) downloaded with retained SHA-256; arm64 defconfig + asahi.config
+configuration passes with Clang/GNU ld after LLVM=1 failed for missing ld.lld.
+Image/modules/dtbs build started at four jobs; result remains pending. No kernel
+build success or mini runtime support is claimed.
+
+M4 significant upstream discovery: Gravity Linux has a developer alpha with
+reported mini HDMI/DCP and GPU. Added seven component pins and a separate
+gravity-mini DT profile; complete include capture and compiler run pass with
+retained warnings. Asahi/Gravity source histories diverge despite both reporting
+7.1.13; capped GitHub compare is not a complete patch. Full Gravity source download
+started for independent build/packaging work. No local hardware support claim.
+
+Gravity follow-up: retained packaging config overlays and added a full-source
+build wrapper with an explicit M4 GPU config gate. Current resolved config
+passes; deleting DRM_ASAHI_M4 fails as expected. Kernel/Mesa Asahi UAPI headers
+match byte-for-byte (receipt retained). Packaging pins an older kernel; current
+head includes the J773g SID8 select-IRQ correction 64 -> 65 plus shared Air
+changes. Native Gravity build session 82290 and Asahi session 29830 remain
+running; no Image/modules success claimed.
+
+Added separate Debian research-payload packaging. Incomplete-build rejection
+passes against the live Gravity build; final Image/module/package validation is
+still pending. Reviewed exact GPU firmware identifier and DCP 26.6.2 checks;
+no bypasses. Both existing native builds remain running at their original
+handles. No kernel/bootloader deployment.
+
+Gravity Mesa: matching source archive downloaded and hashed; native Meson setup
+passes with Asahi OpenGL/Vulkan, llvmpipe, X11/Wayland and upstream tests. Missing
+Wayland/XCB development packages were extracted into work-local storage, leaving
+system Mesa unchanged. Native compile handle 71394 is running; tests and staged
+libraries remain pending. Added isolated build/staging wrapper and dependency
+receipt. Existing kernel builds remain active.
+
+Gravity bootloader stage 2 and chainloading stage 1 both compile at f02d4a5;
+new wrapper verified end-to-end against clean source with pinned artwork.
+Retained both output hashes in m4-mini/receipts. Optional packaging logo omitted
+using the upstream raw target; no binary deployment or Apple OS authorization.
+Mesa compilation stopped on incomplete work-local XCB headers; filling the
+missing development-package closure before resuming the same build tree.
+
+M4 concrete root-layer fix: transform now copies BCM4388 host firmware variants;
+first-boot provisioning recognizes PCI 4434 only on J773g and requires Sakhalin
+4388c0 firmware plus signature. Gravity installer mapping is recorded; no blobs
+imported. Five synthetic tests pass (complete handoff, missing signature, other
+board, both legacy families, transform detection) and are wired into hardware CI.
+Corrected U-Boot selection to gravity-alpha-20260925/a2f6913; default main is
+upstream and lacks the M4 patch stack. Its native apple_m1 build is running.
+
+Owner confirms 16 GB / 1 TB / 10 Gb Ethernet / macOS 27 / HDMI. Recorded target
+and unknowns in research profile. Added elementary-specific AQTION+TIGON3 module
+overlay and config gates; current kernel build predates that overlay, so it
+cannot yet be packaged as the updated target. Must reconfigure/rebuild afterward.
+Gravity U-Boot apple_m1 build at a2f6913 passes; retained artifact/config hashes.
+Bootloader stages and U-Boot have compiled, but hardware handoff remains untested.
+Five firmware regressions and M4 Python syntax checks pass.
+
+Expanded Gravity audit now traces its complete upstream/source chain: 70 commits
+over declared Asahi base; full canonical endpoint inventory vs current Asahi
+finds 139 changed files, independent of GitHub compare caps. Production AFK
+fragment boundary tests pass normally and under ASan/UBSan. Published installer
+selection logic accepts a synthetic macOS 27 host and selects 26.6.2; Apple CDN
+HEAD is 200, not signing or hardware evidence. Omarchy MX three kernel lanes
+enable AQTION/tg3, but current installer still excludes M4. Retained receipts.
+Gravity build was deliberately stopped for required NIC config, all its compiler
+processes verified gone, then reconfigured and resumed (81046, three jobs).
+Current config gate passes; package gates now require both NIC artifacts too.
+Mesa 78210 remains compiling; no Image/modules/Mesa runtime success claimed.
+
+Gravity Mesa full native build passed, five upstream groups pass: 366 AGX
+compiler tests, 10 Apple9 launcher, five geometry and two disassembler groups.
+Private DESTDIR install and isolated llvmpipe EGL context/red pixel readback
+pass. No hardware GPU or Vulkan device/conformance acceptance. Hashes and
+scopes retained in gravity-mesa-build receipt. Wrapper now includes software
+smoke but has not been replayed end-to-end.
+Secondary Asahi baseline build was stopped at low shared disk space; verified
+its whole owned process subtree exited, retained config/source/logs and removed
+only regenerable object cache. Full baseline build is explicitly uncompleted.
+Primary Gravity kernel handle 81046 remains running with required NIC config.

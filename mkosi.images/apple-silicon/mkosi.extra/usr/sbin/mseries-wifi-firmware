@@ -20,7 +20,11 @@ if [[ -f $compatible ]] && ! grep -Faiq 'apple,' "$compatible"; then exit 0; fi
 chip=""
 pci=$(lspci -nn 2>/dev/null || true)   # not piped: grep -q under pipefail can SIGPIPE lspci
 if grep -q "14e4:4425" <<<"$pci"; then chip="4378b1";
-elif grep -q "14e4:4433" <<<"$pci"; then chip="4387c2"; fi
+elif grep -q "14e4:4433" <<<"$pci"; then chip="4387c2";
+elif grep -q "14e4:4434" <<<"$pci" && grep -Faiq 'apple,j773g' "$compatible"; then
+  # Gravity's J773g recovery mapping: BCM4388 C2 uses the c0 driver basename.
+  chip="4388c0"
+fi
 [[ -n $chip ]] || { log "no Apple Silicon Broadcom Wi-Fi found; nothing to do"; exit 0; }
 
 base="brcmfmac${chip}-pcie"
@@ -34,6 +38,7 @@ have_blob() { # $1 = extension without dot
   return 1
 }
 required=(bin clm_blob txcap_blob)
+[[ $chip != "4388c0" ]] || required+=(sig)
 missing=()
 for ext in "${required[@]}"; do
   have_blob "$ext" || missing+=("$base.$ext / $base.apple,<board>.$ext")

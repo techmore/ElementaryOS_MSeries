@@ -1,0 +1,284 @@
+{
+  "schema": 1,
+  "target": {
+    "model": "Mac16,10",
+    "board": "j773g",
+    "soc": "t8132",
+    "memory_gib": 16,
+    "identity_confirmed": false,
+    "ssd_capacity_tb": 1,
+    "ssd_free_space_gib": null,
+    "ethernet_gbps": 10,
+    "macos_version": "27",
+    "display_connector": "HDMI",
+    "configuration_source": "owner confirmation in chat; machine identity and firmware not yet captured"
+  },
+  "status": "research-only",
+  "installer_supported": false,
+  "hardware_validated": false,
+  "sources": [
+    {
+      "name": "basic",
+      "repository": "aurora-silicon/linux",
+      "commit": "98a8f830df94a7dcaf7de37bfa915240afa2dda8",
+      "proposal": "https://github.com/aurora-silicon/linux/pull/366",
+      "files": [
+        "arch/arm64/boot/dts/apple/t8132-j713.dts",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "arch/arm64/configs/j713-basic.config",
+        "Documentation/soc/apple/t8132-pmp-thermal.rst"
+      ]
+    },
+    {
+      "name": "graphics",
+      "repository": "aurora-silicon/linux",
+      "commit": "49c5d9994fec1b94cdce004bfa19c950c06b119e",
+      "proposal": "https://github.com/aurora-silicon/linux/pull/367",
+      "files": [
+        "Documentation/gpu/apple-dcp-m4.rst",
+        "Documentation/gpu/asahi-m4-bringup.rst",
+        "arch/arm64/boot/dts/apple/t8132-j713-display.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-j713-gpu.dtsi",
+        "arch/arm64/configs/j713-graphics.config"
+      ]
+    },
+    {
+      "name": "asahi-mini",
+      "repository": "AsahiLinux/linux",
+      "commit": "94fb23346d522edf53722357c426a3e58030beea",
+      "files": [
+        "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+        "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+        "include/dt-bindings/interrupt-controller/apple-aic.h",
+        "include/dt-bindings/interrupt-controller/irq.h",
+        "include/dt-bindings/pinctrl/apple.h"
+      ]
+    },
+    {
+      "name": "gravity-mini",
+      "repository": "GravityLinux/linux",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "files": [
+        "arch/arm64/boot/dts/apple/hwmon-common.dtsi",
+        "arch/arm64/boot/dts/apple/hwmon-fan.dtsi",
+        "arch/arm64/boot/dts/apple/hwmon-mini.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-gpu.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+        "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+        "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+        "arch/arm64/boot/dts/apple/t8132.dtsi",
+        "include/dt-bindings/gpio/gpio.h",
+        "include/dt-bindings/interrupt-controller/apple-aic.h",
+        "include/dt-bindings/interrupt-controller/irq.h",
+        "include/dt-bindings/phy/phy.h",
+        "include/dt-bindings/pinctrl/apple.h",
+        "include/dt-bindings/spmi/spmi.h"
+      ]
+    },
+    {
+      "name": "gravity-uapi-kernel",
+      "repository": "GravityLinux/linux",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "files": [
+        "include/uapi/drm/asahi_drm.h"
+      ]
+    },
+    {
+      "name": "gravity-uapi-mesa",
+      "repository": "GravityLinux/mesa",
+      "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "files": [
+        "include/drm-uapi/asahi_drm.h"
+      ]
+    }
+  ],
+  "boot_companions": [
+    {
+      "repository": "aurora-silicon/m1n1",
+      "commit": "cda8314d2121c0279e4ca811bc6c6293a663e5d0",
+      "proposal": "https://github.com/aurora-silicon/m1n1/pull/35",
+      "status": "open proposal; J713 evidence only"
+    },
+    {
+      "repository": "aurora-silicon/u-boot",
+      "commit": "cc47d3b7c86deb4094dc186d26799602272e37fb",
+      "proposal": "https://github.com/aurora-silicon/u-boot/pull/7",
+      "status": "open proposal; J713 evidence only"
+    }
+  ],
+  "blockers": [
+    "J773g native HDMI/DCP qualification",
+    "J773g standalone NVMe durability and boot",
+    "J773g DMA/PMGR board mappings",
+    "matching boot producer handoff",
+    "J773g thermal and lifecycle qualification",
+    "macOS and Recovery round-trip",
+    "10 Gb Ethernet controller identity, driver and PCIe/DART qualification",
+    "macOS 27 host with exact supported Linux boot-stub firmware"
+  ],
+  "gravity_stack": {
+    "linux": {
+      "repository": "GravityLinux/linux",
+      "branch": "gravity-m4",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    "mesa": {
+      "repository": "GravityLinux/mesa",
+      "branch": "main",
+      "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    "bootloader": {
+      "repository": "GravityLinux/bootloader",
+      "branch": "main",
+      "commit": "f02d4a52017915febb222539636b5b025a70407a"
+    },
+    "u-boot": {
+      "repository": "GravityLinux/u-boot",
+      "branch": "gravity-alpha-20260925",
+      "commit": "a2f6913694ff26908c16948af3f8372429782263",
+      "selection_reason": "Gravity packaging records this M4 patch tip; default main lacks the downstream stack",
+      "discovered_default_head": "a44f46af0aa17e48572e0d46c0d082886ee353c3"
+    },
+    "packages": {
+      "repository": "GravityLinux/packages",
+      "branch": "main",
+      "commit": "711c2a110416d28010ccdd118b83111776bff207"
+    },
+    "installer": {
+      "repository": "GravityLinux/installer",
+      "branch": "main",
+      "commit": "6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    "kiwi-descriptions": {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "branch": "main",
+      "commit": "07bf52cb2866069c072eb03a8f23af9839d0397c"
+    }
+  },
+  "public_support_evidence": {
+    "url": "https://gravitylinux.org/blog/early-alpha-m4-mac-mini/",
+    "level": "developer alpha; project-reported HDMI/DCP and GPU",
+    "limits": [
+      "limited testing",
+      "shutdown/reboot unreliable",
+      "no suspend",
+      "no USB-C display",
+      "no Thunderbolt/USB4"
+    ],
+    "local_hardware_validated": false
+  },
+  "gravity_packaging_sources": {
+    "kernel": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/linux.git",
+      "ref": "dea38a96aa86679d5e24da16b799030fe07ad2f6",
+      "archive": "gravity-m4.patch",
+      "base_ref": "3988dac1664c05fa7c8310fcad8eee10428b5f43",
+      "root": "linux-7.1.13",
+      "base_srpm": {
+        "url": "https://download.copr.fedorainfracloud.org/results/@asahi/kernel/srpm-builds/10979408/kernel-7.1.13-403.asahi.fc44.src.rpm",
+        "sha256": "b21403621e44d6390c089126afb2c8ee41a9926b4bd7a840b544b39ffd15be9a"
+      }
+    },
+    "mesa": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/mesa.git",
+      "ref": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "archive": "mesa-26.3.0-devel.tar.xz",
+      "root": "mesa-26.3.0-devel",
+      "note": "Published M4 compiler and driver updates, including automatic Apple9 rendering selection and ordinary varying export for legacy clip vertex."
+    },
+    "uboot-tools": {
+      "kind": "spec",
+      "note": "Asahi/Fedora source plus nine checked-in Gravity patches through a2f6913694ff26908c16948af3f8372429782263; see UPSTREAM.md."
+    },
+    "rust-speakersafetyd": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/speakersafetyd.git",
+      "ref": null,
+      "archive": "speakersafetyd-2.0.1.tar.gz",
+      "root": "speakersafetyd-2.0.1",
+      "note": "Confirm the downstream fork URL, pin its commit, align Version with Cargo.toml, review Fedora patches/dependencies and validate the M4 safety profiles. No release tag is required."
+    },
+    "gravity-bootloader": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/bootloader.git",
+      "ref": "f64760b501214c749788f89620c078d8b39b0453",
+      "archive": "gravity-bootloader-1.6.1.tar.gz",
+      "omit_submodules": [
+        "artwork"
+      ],
+      "root": "gravity-bootloader-1.6.1",
+      "note": "Preserve DCP firmware-version and firmware-compat as 26.6.2; pair with the kernel's exact actual-version check. Publish pinned source commits before building."
+    },
+    "gravity-scripts": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/scripts.git",
+      "ref": "12418e50125a72749a75917db578db55ea42704c",
+      "archive": "gravity-scripts-20260915.tar.gz",
+      "root": "gravity-scripts-20260915",
+      "note": "Publish this locally pinned scripts commit to the Gravity repository."
+    },
+    "gravity-installer": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/installer.git",
+      "ref": "34c9ded9e2e4efd9add6bb984d5c50656ea324da",
+      "archive": "gravity-installer-0.9.1.tar.gz",
+      "omit_submodules": [
+        "artwork",
+        "bootloader"
+      ],
+      "root": "gravity-installer-0.9.1",
+      "note": "Qualified recovery extraction plus per-radio J773g Wi-Fi and Bluetooth factory calibration."
+    },
+    "gravity-platform-metapackage": {
+      "kind": "spec"
+    },
+    "gravity-repos": {
+      "kind": "spec"
+    },
+    "gravity-remix-scripts": {
+      "kind": "local",
+      "archive": "gravity-remix-scripts-20260915.tar.gz",
+      "root": "gravity-remix-scripts-20260915"
+    },
+    "gravity-release": {
+      "kind": "spec"
+    },
+    "gravity-appstream-metadata": {
+      "kind": "spec"
+    },
+    "gravity-logos": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/artwork.git",
+      "ref": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "archive": "gravity-logos-20260915.tar.gz",
+      "root": "gravity-logos-20260915",
+      "note": "CC-BY-4.0 artwork, MIT generator, separate trademark policy. Publish this locally pinned revision."
+    }
+  },
+  "gravity_packaging_comparison": {
+    "ahead_by": 13,
+    "behind_by": 0,
+    "files": [
+      "Documentation/devicetree/bindings/iommu/apple,dart.yaml",
+      "arch/arm64/boot/dts/apple/t8132-j624.dts",
+      "arch/arm64/boot/dts/apple/t8132-j715.dts",
+      "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "drivers/gpu/drm/apple/Kconfig",
+      "drivers/gpu/drm/apple/dcp-internal.h",
+      "drivers/gpu/drm/apple/dcp.c",
+      "drivers/gpu/drm/apple/dcp_backlight.c",
+      "drivers/gpu/drm/apple/iomfb_template.c",
+      "drivers/gpu/drm/apple/iomfb_template.h",
+      "drivers/gpu/drm/apple/iomfb_v26_6.c",
+      "drivers/hid/dockchannel-hid/dockchannel-hid.c",
+      "drivers/iommu/apple-dart.c"
+    ],
+    "status": "ahead",
+    "total_commits": 13
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": "secondary baseline build intentionally stopped to preserve shared filesystem capacity for the M4 candidate",
+  "source_repository": "AsahiLinux/linux",
+  "source_commit": "94fb23346d522edf53722357c426a3e58030beea",
+  "source_archive_sha256": "71b025a296c673da5344811517b878f7cf781e15b0d56a28fcfad0c247c1990f",
+  "kernel_version": "7.1.13",
+  "configuration": "arm64 defconfig + asahi.config",
+  "config_sha256": "1371203161f0f835896bfb181b375915d9b236259fcde6265fdbbfcee4ae90dc",
+  "compiler": "Ubuntu clang 21.1.8",
+  "linker": "GNU ld",
+  "parallel_jobs": 4,
+  "initial_attempt": "LLVM=1 configuration failed: ld.lld unavailable; retried with CC=clang LD=ld HOSTCC=clang successfully",
+  "hardware_validation": false,
+  "note": "Full Asahi build not completed. Source archives, resolved config and compiler logs retained; regenerable baseline object cache removed after all owned compiler processes exited.",
+  "first_build_result": "failed at prepare: matching Rust core sources absent",
+  "retry": "matching rust-src 1.99.0 fetched into work directory; retry uses explicit RUST_LIB_SRC"
+}

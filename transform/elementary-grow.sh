@@ -113,6 +113,7 @@ detect_chip() {
   pci=$(lspci -nn 2>/dev/null || true)
   if grep -q "14e4:4425" <<<"$pci"; then echo "4378b1";
   elif grep -q "14e4:4433" <<<"$pci"; then echo "4387c2";
+  elif grep -q "14e4:4434" <<<"$pci"; then echo "4388"; # copy both B0/C0 host variants
   else echo ""; fi
 }
 

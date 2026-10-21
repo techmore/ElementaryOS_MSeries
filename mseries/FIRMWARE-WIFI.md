@@ -24,6 +24,12 @@ when there is nothing to copy from.
 - BCM4387 (PCI `14e4:4433`, M1 Pro/Max and later): `brcmfmac4387c2-pcie.*`
   in the same pattern.
 
+- BCM4388 on J773g (PCI `14e4:4434`): `brcmfmac4388c0-pcie.*`,
+  with `bin`, `clm_blob`, `txcap_blob`, `txt` and `sig` files. This basename
+  comes from Gravity's J773g Sakhalin recovery mapping, not a generic mapping
+  for every BCM4388 revision. The first-boot helper requires J773g identity.
+  The transform copies the 4388 family so available B0/C0 files are retained.
+
 Destination: `/lib/firmware/brcm/`.
 
 ## Board suffixes (verified 2026-10-12 on j314s/M1 Pro)
@@ -79,3 +85,14 @@ shown as a wrong password), turn off scan MAC randomisation, rescan, and with an
 and rejoin and check for a captive portal. `--report` changes nothing. The report is copied to
 `/boot/efi/wifi-report.txt` so it can be read from macOS. On an installed system, `bash mseries/apply-pending.sh --only wifi`
 installs the command.
+
+## M4 mini provenance and limits
+
+Mapping source: GravityLinux/installer at
+6420623289fe7544cb8589b658355e57f0290fcc, gravity_firmware/wifi.py.
+The matched U-Boot additionally consumes per-radio calibration from the ESP
+under vendorfw/u-boot/brcm. Copying common firmware into the root does not
+replace that machine-specific handoff or prove radio operation. No real firmware
+was added to this repository. Five synthetic provisioning regressions run with
+`python3 mseries/m4-mini/test_firmware.py`, including legacy behavior, missing
+signature reporting and rejection of the mini revision on another board.

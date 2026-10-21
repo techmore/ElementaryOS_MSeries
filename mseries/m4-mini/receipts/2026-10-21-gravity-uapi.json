@@ -1,0 +1,8 @@
+{
+  "kernel_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "mesa_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "header": "asahi_drm.h",
+  "sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+  "byte_identical": true,
+  "scope": "Header equality only; not runtime, firmware or complete ABI qualification"
+}
