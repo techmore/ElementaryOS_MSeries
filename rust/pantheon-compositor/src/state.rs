@@ -125,6 +125,8 @@ pub struct PantheonCompositor {
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    /// Surfaces that asked `io_elementary_pantheon_extended_behavior_v1.set_keep_above`.
+    pub keep_above: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     /// Runtime-only top-panel suppression (Windows Work Mode). Lives only in
     /// compositor memory, so every new session starts with the top bar shown.
     pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
@@ -427,6 +429,7 @@ impl PantheonCompositor {
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
+            keep_above: HashSet::new(),
             top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),

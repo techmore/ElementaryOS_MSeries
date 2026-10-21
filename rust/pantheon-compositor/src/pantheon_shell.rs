@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use smithay::{
-    desktop::{PopupManager, Window},
+    desktop::{
+        PopupManager, Window,
+        space::{RenderZindex, SpaceElement},
+    },
     reexports::wayland_server::{
         Client, DataInit, Dispatch, DisplayHandle, GlobalDispatch, New, Resource,
         backend::GlobalId, protocol::wl_surface::WlSurface,
@@ -281,14 +284,29 @@ impl Dispatch<protocol::io_elementary_pantheon_extended_behavior_v1::IoElementar
     for PantheonCompositor
 {
     fn request(
-        _state: &mut Self,
+        state: &mut Self,
         _client: &Client,
         _resource: &protocol::io_elementary_pantheon_extended_behavior_v1::IoElementaryPantheonExtendedBehaviorV1,
-        _request: protocol::io_elementary_pantheon_extended_behavior_v1::Request,
-        _data: &ShellSurfaceData,
+        request: protocol::io_elementary_pantheon_extended_behavior_v1::Request,
+        data: &ShellSurfaceData,
         _dhandle: &DisplayHandle,
         _data_init: &mut DataInit<'_, Self>,
     ) {
+        use protocol::io_elementary_pantheon_extended_behavior_v1::Request;
+        // Centering, modality, focus and monitor labels are not implemented; such
+        // surfaces are placed and focused like any other window.
+        if let Request::SetKeepAbove = request {
+            state.set_keep_above(&data.surface);
+        }
+    }
+
+    fn destroyed(
+        state: &mut Self,
+        _client: smithay::reexports::wayland_server::backend::ClientId,
+        _resource: &protocol::io_elementary_pantheon_extended_behavior_v1::IoElementaryPantheonExtendedBehaviorV1,
+        data: &ShellSurfaceData,
+    ) {
+        state.clear_keep_above(&data.surface);
     }
 }
 
@@ -310,42 +328,105 @@ impl
     }
 }
 
+/// Stacking layers, as smithay z-indexes. Ordinary windows sit at `RenderZindex::Shell`
+/// and XWayland override-redirect windows (menus, the notification cards) at
+/// `RenderZindex::Overlay`; smithay's `Space` keeps its stack sorted by this value, so a
+/// raise never crosses a layer boundary. Pantheon panels (Wingpanel, the dock) use
+/// `RenderZindex::Top`, and surfaces that asked the shell to be kept above sit between.
+const KEEP_ABOVE_ZINDEX: u8 = RenderZindex::Shell as u8 + 5;
+const PANEL_ZINDEX: u8 = RenderZindex::Top as u8;
+
 impl PantheonCompositor {
-    /// Raise `window` like `Space::raise_element`, then put every Pantheon panel back on top.
-    ///
-    /// Panels share the window stack with ordinary toplevels, and a panel's popups
-    /// (tooltips, indicator menus) render as part of the panel. A window raised above the
-    /// panel therefore covers those popups: with a tiled window filling the work area right
-    /// under the top bar, hovering an indicator showed no tooltip at all. Clicking the bar
-    /// hid the defect because the click itself re-raised the panel.
+    /// Raise `window` like `Space::raise_element`, then raise its transient children
+    /// (dialogs, alerts, utility windows) above it in their existing order, as Gala does.
+    /// Without this a click on a snapped window buried its own modal dialog, since the
+    /// tiled window covers the whole work area under it.
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
         self.space.raise_element(window, activate);
-        self.restack_panels();
+        let children = self
+            .space
+            .elements()
+            .filter(|candidate| {
+                *candidate != window && self.is_transient_descendant(candidate, window)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        for child in &children {
+            self.space.raise_element(child, false);
+        }
     }
 
-    /// Move every panel above all other windows, preserving the panels' relative order.
-    /// Returns whether the stack changed, so callers can skip a redraw otherwise.
-    pub(crate) fn restack_panels(&mut self) -> bool {
-        let mut panels = Vec::new();
-        let mut above_a_window = false;
-        for window in self.space.elements() {
-            let is_panel = window
-                .toplevel()
-                .is_some_and(|top| self.is_panel_surface(top.wl_surface()));
-            if is_panel {
-                panels.push(window.clone());
-            } else if !panels.is_empty() {
-                // A non-panel window sits above at least one panel.
-                above_a_window = true;
+    /// The window `window` declared as its parent (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`).
+    fn transient_parent(&self, window: &Window) -> Option<Window> {
+        if let Some(toplevel) = window.toplevel() {
+            let parent = toplevel.parent()?;
+            return self
+                .space
+                .elements()
+                .find(|candidate| {
+                    candidate
+                        .toplevel()
+                        .is_some_and(|top| *top.wl_surface() == parent)
+                })
+                .cloned();
+        }
+        let parent_id = window.x11_surface()?.is_transient_for()?;
+        self.space
+            .elements()
+            .find(|candidate| {
+                candidate
+                    .x11_surface()
+                    .is_some_and(|surface| surface.window_id() == parent_id)
+            })
+            .cloned()
+    }
+
+    fn is_transient_descendant(&self, window: &Window, ancestor: &Window) -> bool {
+        let mut current = self.transient_parent(window);
+        // Parent chains are short; the bound only guards against a client cycle.
+        for _ in 0..16 {
+            match current {
+                Some(parent) if &parent == ancestor => return true,
+                Some(parent) => current = self.transient_parent(&parent),
+                None => return false,
             }
         }
-        if !above_a_window {
-            return false;
+        false
+    }
+
+    /// `io_elementary_pantheon_extended_behavior_v1.set_keep_above`: keep the surface's
+    /// window above ordinary windows on every workspace (but below the panels).
+    pub(crate) fn set_keep_above(&mut self, surface: &WlSurface) {
+        self.keep_above.insert(surface.id());
+        if let Some(window) = self.find_window_for_surface(surface) {
+            self.apply_keep_above(&window);
         }
-        for panel in &panels {
-            self.space.raise_element(panel, false);
+    }
+
+    pub(crate) fn clear_keep_above(&mut self, surface: &WlSurface) {
+        if !self.keep_above.remove(&surface.id()) {
+            return;
         }
-        true
+        if let Some(window) = self.find_window_for_surface(surface) {
+            window.override_z_index(RenderZindex::Shell as u8);
+            // Re-insert so the space's stack order follows the new z-index.
+            self.space.raise_element(&window, false);
+            self.request_native_redraw();
+        }
+    }
+
+    /// Apply a pending keep-above request to a window that has just been mapped, or to
+    /// one that was already mapped when the request arrived.
+    pub(crate) fn apply_keep_above(&mut self, window: &Window) {
+        let wants_keep_above = window
+            .toplevel()
+            .is_some_and(|top| self.keep_above.contains(&top.wl_surface().id()));
+        if !wants_keep_above || window.z_index() == KEEP_ABOVE_ZINDEX {
+            return;
+        }
+        window.override_z_index(KEEP_ABOVE_ZINDEX);
+        self.space.raise_element(window, false);
+        self.request_native_redraw();
     }
 }
 
@@ -549,6 +630,7 @@ impl PantheonCompositor {
                 _ => return,
             }
         }
+        window.override_z_index(PANEL_ZINDEX);
         self.space.map_element(window.clone(), location, false);
         self.space.raise_element(&window, false);
     }
