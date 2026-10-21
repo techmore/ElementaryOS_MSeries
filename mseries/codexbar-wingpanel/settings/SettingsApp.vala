@@ -358,6 +358,7 @@ namespace MSeries {
             var panel = section ("Wingpanel");
             add_row (panel, row ("Quota style", "Dots hide reset times; enable hover information for details", quota_style ()));
             add_row (panel, row ("Hover information", "Show usage details when the pointer rests on the menu bar", panel_toggle ("showHoverInfo")));
+            add_row (panel, row ("Account legend", "Name each email once at the top and bottom of the dropdown; cards and the bar show its numbered color", panel_toggle ("accountLegend")));
             add_row (panel, row ("Token counts", "Keep seven-day totals in the dropdown to save bar space", token_location ()));
 
             add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));

@@ -142,6 +142,12 @@ test('generated-c-temporaries', python,
   depends: [libcodexbar, codexbar_settings], timeout: 30)
 
 if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  test('account-legend', find_program('bash'),
+    args: [join_paths(meson.current_source_dir(), 'probe/run-legend-probe.sh'), meson.current_build_dir()],
+    depends: render_probe, timeout: 30)
+endif
+
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
   test('grok-panel', find_program('bash'),
     args: [join_paths(meson.current_source_dir(), 'probe/run-grok-probe.sh'), meson.current_build_dir()],
     depends: render_probe, timeout: 30)
