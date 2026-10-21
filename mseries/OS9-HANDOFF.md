@@ -79,25 +79,28 @@ because the click re-raised the panel.
   higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
   popups above all windows.
 
-## PolyBagger T1000 Print Manager — 2026-10-21
+## PolyBagger T1000 Print Manager — 2026-10-21 (end of day, before reboot)
 
-`mseries/polybagger-print-manager/` (PR #363): GTK 4 + Granite 7 app and CLI for the T-1000 bagger's inline
-Zebra (TI-1000Z frame). Key machine fact from the TI-1000Z manual pp. 20–22: a ZPL send only **loads** a
-label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label". The app
-sets `^PQ` from "Labels to print" on a temp copy, verifies delivery through CUPS, then asks the operator to
-confirm the bagger screen and one Manual Cycle. Status bar with a ready dot, favorites, recents, offline label
-store (`~/.local/share/polybagger-print-manager`), `install.sh` for the launcher. README lists known issues.
+`mseries/polybagger-print-manager/` (PRs #363, #366, #368, all merged to `dev`): GTK 4 + Granite 7 app and CLI for
+the T-1000 bagger's inline Zebra (ZTC 110Xi4, TI-1000Z frame, USB, serial JJK245392). A ZPL send only **loads** a
+label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label" (TI-1000Z
+manual pp. 20–22). Main view: print card (How many with 1/100/500/1000 presets, "Print N Labels", Ctrl+P), result
+card with the one bagger check, Today list with totals, status bar with a ready dot, favorites/recents, offline
+label store. Tan industrial label-printer icon. Launcher installed from this checkout with `install.sh`.
 
-- **Verified (printer JJK245392):** USB detect, CUPS status, delivered jobs; after a printer reboot the owner
-  saw three sends print three labels. `^PQ` insertion unit-checked on recall, straight and store files.
-  GUI checked by headless Xvfb renders (light, dark, confirmation card, fixture favorites/recents).
-- **Not verified:** a quantity above 1 on the machine, a full click-through send in the GUI, `--setup`,
-  the plug/unplug toast. The printer itself has separate intermittent faults (stalls at "waiting for printer",
-  dropped off USB once; reboot cleared it).
-- **Side effect:** testing rewrote `E:CCSBLACK.ZPL` on JJK245392 with the repo's store file.
-- **Next:** run one production batch with Labels to print set, confirm the count matches bag cycles and the
-  label clears at the end; read the printer's Reprint setting on the bagger screen.
-
+- **Working (owner):** single sends print one label each; after loading with a count the owner reported it
+  "kinda working". The CCS label was loaded with `--qty 1000` at 09:2x (job 20, StoredLabel expected).
+- **Queue fix:** a printer power cycle mid-job paused CUPS and disabled Send. Queue
+  `ZTC-110Xi4-203dpi-ZPL` now has `printer-error-policy=retry-job`; the app shows **Resume Queue…** if it pauses.
+- **Taskbar:** new apps show the wrong icon (it showed Messages) until the Windows-mode taskbar restarts; it was
+  restarted through `mseries-dock-change` with owner approval and now shows the tan icon. Pin from the taskbar's
+  own right-click menu; outside edits to `launchers` do not stick.
+- **Network:** the Xi4 is not on 10.20.0.0/24. The Zebra at 10.20.0.61 is a different printer (ZT410,
+  18J191104090). Use the bagger's Printer Settings **Print Network** to see whether the Xi4 has a print server.
+- **After the reboot, check:** app opens from Applications/taskbar with the tan icon; status dot green; queue still
+  `retry-job` (`lpoptions -p ZTC-110Xi4-203dpi-ZPL | grep -o printer-error-policy=[^ ]*`); the bagger's loaded label
+  is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
+- **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
 
 ## Rust compositor: GTK present() now raises the window — 2026-10-21
 
