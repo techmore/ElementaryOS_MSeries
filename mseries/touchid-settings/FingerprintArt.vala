@@ -51,6 +51,16 @@ namespace MSeriesTouchId {
             }
         }
 
+        /* Varies the ridge pattern, so each finger's print looks like its own. */
+        private int _seed = 0;
+        public int seed {
+            get { return _seed; }
+            set {
+                _seed = value;
+                queue_draw ();
+            }
+        }
+
         private ArtState _state = ArtState.IDLE;
         public ArtState state {
             get { return _state; }
@@ -240,8 +250,9 @@ namespace MSeriesTouchId {
                 cr.set_source_rgba (red, green, blue, alpha);
 
                 /* Each ridge is an arc whose gap wanders: a print, not a target. */
-                double gap = 0.55 + 0.05 * (i % 4);
-                double start = GLib.Math.PI * (0.62 + 0.11 * i) + (i % 2 == 0 ? 0.0 : 0.9);
+                int k = i + _seed;
+                double gap = 0.55 + 0.05 * (k % 4);
+                double start = GLib.Math.PI * (0.62 + 0.11 * i) + (k % 2 == 0 ? 0.0 : 0.9) + 0.37 * _seed;
                 cr.new_path ();
                 cr.arc (cx, cy, r, start, start + 2 * GLib.Math.PI - gap);
                 cr.stroke ();
