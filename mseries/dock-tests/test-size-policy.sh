@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source_dir=${1:?source directory}
 build_dir=${2:?build directory}
 work=$(mktemp -d)
@@ -26,4 +27,5 @@ env HOME="$work/home" XDG_DATA_HOME="$work/home/.local/share" \
   XDG_STATE_HOME="$work/home/.local/state" \
   GSETTINGS_SCHEMA_DIR="$source_dir/data" GSETTINGS_BACKEND=memory GDK_BACKEND=x11 \
   XDG_RUNTIME_DIR="$work/runtime" GTK_A11Y=none GIO_USE_VFS=local G_DEBUG=fatal-criticals \
-  GSK_RENDERER=cairo dbus-run-session --config-file="$work/bus.conf" -- xvfb-run -a "$build_dir/src/test-size-policy"
+  GSK_RENDERER=cairo dbus-run-session --config-file="$work/bus.conf" -- \
+    python3 "$here/test-size-policy.py" "$build_dir/src/test-size-policy"

@@ -27,9 +27,9 @@ async function refresh() {
   byId('refresh').disabled = true;
   try {
     const results = await Promise.all([
-      read('/actions/workflows/daily-9.0.yml/runs?branch=main&per_page=1'),
-      read('/actions/workflows/validate-mseries.yml/runs?branch=main&per_page=1'),
-      read('/actions/workflows/382174750/runs?branch=main&per_page=1')
+      read('/actions/workflows/daily-9.0.yml/runs?branch=dev&per_page=1'),
+      read('/actions/workflows/validate-mseries.yml/runs?branch=dev&per_page=1'),
+      read('/actions/workflows/382174750/runs?branch=dev&per_page=1')
     ]);
     const [build, validation, pages] = results.map(result => result.workflow_runs[0]);
     renderRun('build', build); renderRun('validation', validation); renderRun('pages', pages);

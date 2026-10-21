@@ -106,7 +106,11 @@ isolated settings. The complete prepared native dock fixture also creates actual
 Launcher/ItemGroup/ItemManager widgets, keeps `icon-size=40` unchanged, then checks
 adoption, unmanage, malformed and deleted policy transitions update cached icons,
 group geometry and separator height. Its service activation is disabled and runtime,
-D-Bus, settings and display are private. The complete prepared source builds without
+D-Bus, settings and display are private. A separate private portal process supplies
+precise `Read`/`ReadOne` variant layering and typed appearance settings. Read-only
+Switcheroo properties use the private logical system bus; no AccountsService is
+registered, so accidental Granite fallback still fails under fatal criticals.
+The outer full-suite and nested launcher buses disable service activation too. The complete prepared source builds without
 installation. Constructing the real manager with fatal criticals also exposed an
 upstream pre-construction callback capture in `BackgroundItem`; its map callback
 is now static with identical icon ownership and results.
