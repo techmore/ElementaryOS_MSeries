@@ -52,6 +52,7 @@ for patch in panel-power-charge-eta.patch panel-power-watts.patch panel-power-wa
   git -C "$source_dir" apply "$repo/mseries/patches/$patch"
 done
 
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release
 ninja -C "$build_dir" >/dev/null
 DESTDIR="$stage_dir" meson install -C "$build_dir" >/dev/null

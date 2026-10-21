@@ -180,6 +180,8 @@ check syntax 'iso-label.sh, vms/mseries-vm' \
   'bash -n mseries/iso-label.sh mseries/test-iso-label.sh mseries/vms/mseries-vm'
 check syntax 'codexbar scripts' \
   'bash -n mseries/install-signal.sh mseries/install-codexbar.sh mseries/deploy-codexbar.sh mseries/lib-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh'
+check syntax 'modrun.py, installer-speed.py, post-install.sh' \
+  'python3 -m py_compile mseries/modrun.py mseries/benchmarks/installer-speed.py; bash -n mseries/post-install.sh'
 check syntax 'display-space/*.py, test-notch-layout.sh, apply-desktop-settings.py' \
   'python3 -m py_compile mseries/display-space/*.py mseries/apply-desktop-settings.py; bash -n mseries/display-space/test-notch-layout.sh'
 check syntax 'power scripts' \
@@ -187,7 +189,7 @@ check syntax 'power scripts' \
 
 # -- shellcheck: the scripts that run as root on a user's Mac -----------------
 check shellcheck 'installer, enhancements, boot and VM scripts' \
-  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh'
+  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/lib-build.sh mseries/lib-timing.sh mseries/test-enhance-firstboot.sh mseries/test-build-ccache.sh mseries/test-post-install-timing.sh'
 check shellcheck 'video-decode, widevine' \
   'shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh'
 check shellcheck 'calendar, homeboard' \
@@ -199,6 +201,10 @@ check shellcheck 'codexbar' \
 check installer 'test-elementary-mac-setup.sh' 'bash mseries/test-elementary-mac-setup.sh'
 check installer 'test-installer-flow.sh' 'bash mseries/test-installer-flow.sh'
 check installer 'test-iso-label.sh' 'bash mseries/test-iso-label.sh'
+check installer 'test-enhance-firstboot.sh' 'bash mseries/test-enhance-firstboot.sh'
+check installer 'test-post-install-timing.sh' 'bash mseries/test-post-install-timing.sh'
+check installer 'test-build-ccache.sh' 'bash mseries/test-build-ccache.sh'
+check installer 'test-modrun.py' 'python3 mseries/test-modrun.py'
 check installer 'test-greeter-obex-fix.sh' 'bash mseries/test-greeter-obex-fix.sh'
 check installer 'test-quieter-sound-theme.sh' 'bash mseries/test-quieter-sound-theme.sh'
 check installer 'vms/test-mseries-vm.sh' 'bash mseries/vms/test-mseries-vm.sh'
