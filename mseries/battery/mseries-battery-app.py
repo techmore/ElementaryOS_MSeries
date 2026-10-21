@@ -118,9 +118,9 @@ def level_colour(pct):
 class BatteryGauge(Gtk.DrawingArea):
     """A battery outline whose fill drops with the charge and shifts colour softly as it gets low."""
 
-    def __init__(self, pct, charging, width=40, height=64):
+    def __init__(self, pct, charging, width=40, height=64, number=True):
         super().__init__(content_width=width, content_height=height, valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
-        self.pct, self.charging = max(0.0, min(100.0, pct or 0)), charging
+        self.pct, self.charging, self.number = max(0.0, min(100.0, pct or 0)), charging, number
         self.set_draw_func(self.draw)
 
     @staticmethod
@@ -162,8 +162,11 @@ class BatteryGauge(Gtk.DrawingArea):
             cr.rectangle(inner_x, top, inner_w, fill_h)
             cr.fill()
             cr.restore()
+        text_y = body_y + body_h / 2
+        if self.number:
+            text_y = body_y + body_h * (0.68 if self.charging else 0.5)
         if self.charging:
-            cx, cy, s = width / 2, body_y + body_h / 2, width * 0.17
+            cx, cy, s = width / 2, body_y + body_h * (0.32 if self.number else 0.5), width * (0.12 if self.number else 0.17)
             cr.move_to(cx + s * 0.35, cy - s * 1.9)
             for dx, dy in ((-s * 0.95, s * 1.15), (s * 0.55, s * 0.0), (-s * 0.35, s * 1.9), (s * 0.95, -s * 1.15), (-s * 0.55, 0.0)):
                 cr.rel_line_to(dx, dy)
@@ -173,6 +176,26 @@ class BatteryGauge(Gtk.DrawingArea):
             cr.set_source_rgba(0, 0, 0, 0.35)
             cr.set_line_width(1)
             cr.stroke()
+        if self.number:
+            text = "%d" % round(self.pct)
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+            size = inner_w * (0.62 if len(text) < 3 else 0.46)
+            cr.set_font_size(size)
+            extents = cr.text_extents(text)
+            fill_top = inner_y + inner_h - fill_h
+            top, bottom = text_y - extents.height / 2, text_y + extents.height / 2
+            cr.move_to(width / 2 - extents.x_bearing - extents.width / 2, text_y - extents.y_bearing - extents.height / 2)
+            cr.text_path(text)
+            if fill_top > bottom:  # digits sit on the empty part of the battery
+                cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.9)
+                cr.fill()
+            else:
+                if fill_top > top:  # fill edge cuts through the digits: halo keeps them legible on both sides
+                    cr.set_source_rgba(1, 1, 1, 0.6)
+                    cr.set_line_width(2.2)
+                    cr.stroke_preserve()
+                cr.set_source_rgba(0.08, 0.1, 0.12, 0.9)
+                cr.fill()
 
 
 def boxed_list():
@@ -807,7 +830,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
             line.set_margin_start(14)
             line.set_margin_end(14)
             low = (dev["level"] or "").lower() in ("low", "critical")
-            line.append(BatteryGauge(dev["pct"] if dev["pct"] is not None else (15 if low else 80), False, 14, 24))
+            line.append(BatteryGauge(dev["pct"] if dev["pct"] is not None else (15 if low else 80), False, 24, 38, number=dev["pct"] is not None))
             text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
             text.append(label(dev["name"], "row-title"))
             text.append(label("%s since %s" % (dev["level"] or dev["status"] or "—", time.strftime("%a %d %b, %H:%M", time.localtime(dev["since"]))), "dim"))
