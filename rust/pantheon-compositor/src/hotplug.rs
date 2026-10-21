@@ -10,7 +10,14 @@
 use std::time::{Duration, Instant};
 
 /// Delay between the first uevent and the reconcile, coalescing event bursts.
-pub const EVENT_DEBOUNCE: Duration = Duration::from_millis(250);
+///
+/// Measured on the J314S with a WD22TB4 dock (journal, eight plug cycles):
+/// the Apple DCP driver emits its connector uevents in a burst about 9 ms
+/// apart and the connector already carries its modes when the first arrives,
+/// so waiting longer only delays the output (it was 250 ms, half of the
+/// compositor's share of the dock-to-picture time). The follow-up reconcile
+/// below still catches anything that settles later.
+pub const EVENT_DEBOUNCE: Duration = Duration::from_millis(40);
 /// One extra reconcile after an event-driven one, for late-settling connectors.
 pub const EVENT_RECHECK: Duration = Duration::from_secs(1);
 /// Safety poll while the udev monitor is active.
@@ -48,6 +55,11 @@ pub struct HotplugScheduler {
 pub struct Tick {
     /// Run `refresh_connectors` now.
     pub reconcile: bool,
+    /// Observed due conditions, for diagnostics only.
+    pub event_due: bool,
+    pub followup_due: bool,
+    pub removal_due: bool,
+    pub safety_due: bool,
     /// Next instant an event-driven timer must wake (none: let it drop).
     pub next_event_deadline: Option<Instant>,
     /// Next instant the safety poll must wake.
@@ -90,6 +102,7 @@ impl HotplugScheduler {
     /// Wayland global removal, which only `refresh_connectors` performs.
     pub fn tick(&mut self, now: Instant, removal_deadline: Option<Instant>) -> Tick {
         let event_due = self.due.is_some_and(|due| due <= now);
+        let followup_due = event_due && self.followup_queued;
         let removal_due = removal_deadline.is_some_and(|d| d <= now);
         let safety_due = now >= self.last_reconcile + self.safety_interval;
         let reconcile = event_due || removal_due || safety_due;
@@ -107,6 +120,10 @@ impl HotplugScheduler {
         }
         Tick {
             reconcile,
+            event_due,
+            followup_due,
+            removal_due,
+            safety_due,
             next_event_deadline: [self.due, removal_deadline].into_iter().flatten().min(),
             next_safety: self.last_reconcile + self.safety_interval,
         }
@@ -153,15 +170,15 @@ mod tests {
         let mut s = HotplugScheduler::new(t0, true);
         assert_eq!(s.on_event(t0), Some(t0 + EVENT_DEBOUNCE));
         // A burst is coalesced into the already armed deadline.
-        assert_eq!(s.on_event(t0 + ms(100)), None);
-        assert!(!s.tick(t0 + ms(200), None).reconcile);
-        let first = s.tick(t0 + ms(250), None);
+        assert_eq!(s.on_event(t0 + ms(9)), None);
+        assert!(!s.tick(t0 + EVENT_DEBOUNCE - ms(1), None).reconcile);
+        let first = s.tick(t0 + EVENT_DEBOUNCE, None);
         assert!(first.reconcile);
         assert_eq!(
             first.next_event_deadline,
-            Some(t0 + ms(250) + EVENT_RECHECK)
+            Some(t0 + EVENT_DEBOUNCE + EVENT_RECHECK)
         );
-        let second = s.tick(t0 + ms(1250), None);
+        let second = s.tick(t0 + EVENT_DEBOUNCE + EVENT_RECHECK, None);
         assert!(second.reconcile);
         assert_eq!(second.next_event_deadline, None);
         assert!(!s.tick(t0 + ms(5000), None).reconcile);
@@ -172,8 +189,8 @@ mod tests {
         let t0 = Instant::now();
         let mut s = HotplugScheduler::new(t0, true);
         s.on_event(t0);
-        s.tick(t0 + ms(250), None); // follow-up due at +1250
-        let now = t0 + ms(300);
+        s.tick(t0 + EVENT_DEBOUNCE, None); // follow-up due one recheck later
+        let now = t0 + EVENT_DEBOUNCE + ms(50);
         assert_eq!(s.on_event(now), Some(now + EVENT_DEBOUNCE));
         // The new event restarts the reconcile + single follow-up cycle.
         assert!(s.tick(now + EVENT_DEBOUNCE, None).reconcile);

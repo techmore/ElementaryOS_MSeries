@@ -1,4 +1,808 @@
+## Software Updates app: Rust + Granite 7 front end for mseries-update — 2026-10-21 (Claude Code)
+
+- **What:** `rust/mseries-updates` (window), `rust/mseries-update-core` (status model, closed command set, root helper), polkit action
+  `org.techmore.mseries.update` (admin password, no terminal), launcher `org.techmore.mseries.Updates`. Reads `mseries-update status --json`
+  and offers Check, Install at Next Restart, Roll Back… and the channel (Advanced); no update logic in the UI. Details: `mseries/updates-app/README.md`.
+- **Verified (no hardware):** `bash mseries/updates-app/test.sh` and the new CI workflow `mseries-updates-app.yml`: unit tests (model, allowlist, exit codes),
+  helper refuses everything off the allowlist, the real `mseries-update.py status --json` parsed by the Rust side, headless render under Xvfb of every state
+  (light and dark, narrow window) with each button sending exactly one command and failures/cancel/busy handled, staged install, polkit policy checked
+  with `pkaction` in CI. Also run in a clean Ubuntu 26.04 container.
+- **Not verified:** a real password prompt in the Pantheon session, `pkexec` through to the real updater, an update actually staging/applying, any
+  run on the M1, a screen reader. **Not built:** Switchboard pane or Wingpanel entry, translations, a package in the apt suites, update notifications.
+  Nothing was installed or restarted on this machine.
+
+## Touch ID sheet: place-finger prompt and prints instead of hands — 2026-10-21
+
+Owner feedback after the first real enrolment: people click Add with a pointer, so the sheet cannot assume a finger is already on the sensor, and
+fingerprints read better than the hand diagram. The sheet now says "Getting the sensor ready…" then **"Place your finger on the sensor now"**
+(ripple invite, 15 s nudge) and follows fprintd's `finger-present`/`finger-needed` live when the driver reports them, with the timed cue as the
+fallback; the hero shows three prints (own ridge pattern per finger, empty slots dim) and the hand widget is removed. UI tests 18/18 against the
+fake fprintd (which can now report finger events). **Not verified:** whether the Secure Enclave driver reports `finger-present`/`finger-needed`
+(unknown until a real enrolment is watched with `busctl monitor`), and on the real sensor.
+## Compositor: snapped windows no longer cover newer windows — 2026-10-21
+
+Owner reported that windows cannot register over a snapped window and the Touch ID sheet could not be used or dragged. Cause and fix in
+`mseries/pantheon-rust-compositor/STACKING-FIX-2026-10-21.md`: re-applying tiles and work-area limits used `Space::map_element`, which lifts
+an already-mapped window to the top; they now use `relocate_element` via `place_window`. Four regression tests, 48/48 pass. **Not deployed, not
+verified on the live desktop**: needs `mseries/install-pantheon-rust-compositor.sh` and a session restart, which the owner must approve.
+
+## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
+  `mseries/debs/build.sh`) plus systemd units. `stage` downloads and hashes the update set and keeps a rollback copy of every
+  installed version it replaces; `mseries-update-boot.service` applies it as one dpkg run before `display-manager.service`, with a
+  write-ahead journal, version/`dpkg --verify`/`ldd`/`health.d` checks and automatic restore. `mseries-update-confirm.service` marks the set
+  known-good after Wingpanel is up; two restarts without that roll it back. Channels `stable`/`dev` are apt suites. Opt-in: the package enables and
+  configures nothing. Design, owner decisions and the full not-verified list: `mseries/UPDATER-DESIGN.md`.
+- **Verified (no hardware):** 53 tests in `mseries/update/` (`bash mseries/validate.sh --only updater`): fake repository fault injection, and the
+  real apt-get/dpkg against a local `file:` repo and scratch root, including a failing `postinst` and a SIGKILL of updater and dpkg mid-install
+  with recovery at the next boot. The updater .deb builds through `build.sh`; CI installs it and checks every unit stays disabled.
+- **Not verified:** a run on the M1 under systemd/LightDM as root, a signed HTTPS repository (none exists; `MSERIES_APT_KEY` is still unset),
+  the `_apt` sandbox, battery/metered probes on the real supplies, any panel UI, the Rust compositor package. No Wingpanel, dock or
+  compositor restart was performed; nothing was installed on this machine.
+- **Next (owner):** hosting (recommend GitHub Pages), signing-key custody (recommend offline key plus signing subkey in the secret), which components ship first
+  (recommend the three plugin debs), then publish `dev`/`stable` suites.
+## Touch ID: guard-off trial entries added (wip2 and wip3) — 2026-10-21
+
+Owner approved separate GRUB entries **TRIAL: Aurora 7.2 wip2, xART guard off** and **TRIAL: Aurora 7.2 wip3, xART guard off** (same kernels + `apple_sep.xart_guard=0`), added beside the
+guard-on entries with backups; only `custom.cfg` changed, default `.20`, `next_entry` empty, not booted. Details, use and removal in
+`mseries/aurora-sep/XART-GUARD.md`. A global modprobe option was avoided because the `.20` kernels lack the parameter. After booting it:
+confirm `matching: usable`, enrol once, verify, sudo only, then check macOS Touch ID.
+
+## GitHub Pages development documentation — 2026-10-21
+
+Owner selected `dev/docs` as the GitHub Pages source, replacing frozen `main/docs`. The website refresh reconciles wip2 boot/all-port dock evidence, Touch ID xART guard blocking, working Messages, screenshot retention and optional Apple Passwords. Historical benchmark dates and outstanding hardware/recovery gates remain explicit. The removed October 13 installer is no longer advertised as available. Source links and live build/validation/Pages queries follow `dev`. Publish only after website checks; verify the exact deployed revision and live bytes. No OS release or host deployment is part of this change.
+## wip3 staged unarmed — 2026-10-21
+
+Owner-approved unarmed staging of `7.2.11-elementary-aurora72-wip3` (upstream #158 + #157, build-only PR #413, native CI build audited).
+Installed beside wip2/`.20`: package, `/boot/vmlinuz-aurora72-wip3`, `/boot/initrd.img-7.2.11-elementary-aurora72-wip3`, GRUB entry
+`elementary-aurora72-wip3-trial`. **Not armed, not booted**, persistent default still `.20`, `boot.bin` unchanged, only `custom.cfg`
+changed among protected files (receipt `mseries/aurora/unified72/boot-preflight-wip3-2026-10-21/staging.json`, procedure and rollback in
+`BOOT-TRIAL.md`). Does not change Touch ID. Next: owner chooses when to boot it; record the highest dock gate reached afterward.
+
+## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
+
+- **Multi-account:** `settings.json` gains `account` (empty follows the GitHub CLI's active account, as before) and
+  `showInPanel`. `mseries-repobar auth accounts` lists every `gh` sign-in (parsed from `gh auth status`; gh 2.46 has no
+  JSON), `auth use LOGIN[@HOST]` / `settings set account` picks one and refuses accounts gh is not signed in to.
+  A chosen account runs through its own token (`gh auth token --user`, passed only to that request's `gh` child; never
+  stored or printed) rather than `gh auth switch`, so git and other tools keep their own active account. Snapshot and
+  API caches are now per host and account (a snapshot from another account is ignored). RepoBar Settings → Account has
+  a **Read as** picker and **Add Account…**; the list refreshes when the window regains focus.
+- **Launch at login:** RepoBar loads with Wingpanel/the taskbar, so the preference is **Settings → Panel → Show RepoBar in
+  the panel** (`settings set show-in-panel`). Off hides the module (also in the taskbar via a `visible` binding) and stops
+  helper calls, timers and notifications; on resumes it live. A `RepoBar Settings` `.desktop` launcher is installed by
+  `install-repobar-wingpanel.sh` and `deploy-repobar.sh` so Settings stays reachable while hidden.
+- **Verified:** `python3 -B -m unittest mseries/test_repobar_accounts.py` (10 tests, fake `gh`); module, settings app and
+  probe build with meson; headless settings render shows the picker; with `showInPanel` false the probe's helper is called
+  0 times (1 when on). **Not verified:** a second real GitHub account (only `techmore` is signed in here), the taskbar
+  binding on a running desktop, and a live Wingpanel load (routine deploy installs without restarting; the module loads at
+  next login). Next: sign a second account in with `gh auth login` and confirm **Read as** switches the dashboard.
+## RepoBar resolved-account cache fix — 2026-10-21
+
+Follow-up to #414: follow-CLI mode resolves and pins the active stored CLI account
+for each helper process, including worker requests. Snapshot and endpoint caches
+require the resolved host/login; inherited token overrides cannot select another
+identity. Unknown/signed-out accounts fail closed; validated same-account stale
+snapshots remain available. The indicator no longer reads raw disk snapshots,
+discards responses spanning settings changes and clears account-derived state on
+terminal helper errors. No live panel restart or deployment.
+
+Checks: 18 fake-CLI regressions; native indicator/module/settings build; two private
+D-Bus/Xvfb account probes (late old-account response and prior account + helper
+failure); light/dark healthy/offline renders; strict size lint. CI now exercises
+the native probes. Actual second-account login remains owner acceptance. #414 was
+merged independently before this follow-up was published; this patch is separate.
+
+
+## Touch ID: upstream validation and the xART guard — 2026-10-21
+
+Surveyed omacom/linux-aurora, aurora-silicon/linux, the archived iconidentify/aurora-linux, Asahi and t2linux (read-only). Findings,
+sources and statuses: `mseries/aurora-sep/UPSTREAM-MAP.md`. Main result, `mseries/aurora-sep/XART-GUARD.md`: upstream's xART guard
+(aurora-silicon/linux#361, in our 7.2.10 pin) is documented to block Touch ID on a cold-boot M1-family Mac that was set up with the
+guard off, which is this Mac; upstream's own M1 Pro runs `xart_guard=0`. **Owner decision pending; guard unchanged, nothing written to xART
+by hand.** Corrects an earlier theory that the refused record was Linux's own. A first draft report posted to PR #7 was in the wrong place and
+was deleted at the owner's request; reports belong on omacom/linux-aurora as a per-Mac issue. Nothing is posted; a redrafted report is pending the owner.
+Stale Touch ID claims in `BUG-FIX-ROADMAP.md` and `ROADMAP.md` were updated. Verified: `validate.sh` 76/76, aurora unit tests 72, Touch ID UI tests 14/14,
+PAM helper test. Not verified: matching on this Mac, `.20` behaviour, any change to the guard.
+## Kernel wip3 candidate prepared (build-only) — 2026-10-21
+
+Owner asked to coordinate the next kernel part (USB4/HDMI display work). Chosen scope: upstream #158 (Asahi 7.2.11 base)
+plus #157 (external-display colour); #154 (shared Thunderbolt DP bandwidth, may cap a single-monitor dock at HBR2 x4) was not
+included. `mseries/aurora/unified72/series.json` revision 4 pins `7.2.11-elementary-aurora72-wip3` with #157 as a local patch
+and a new review receipt. Verified: patch dry-run on #158 head and current integration, full-tree `candidate.py prepare` and
+`check`, 72 aurora unit tests. CI runs the native build for this PR. Native CI build passed and its artifact was audited (`native-build-wip3-2026-10-21.json`). **Not done:** boot payload
+(the trial prep script was adapted but nothing is prepared, staged or armed), 64-fix parity at 7.2.11, any hardware test. wip2 stays installed; one-shot to wip2 was armed separately.
+
+## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
+
+Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of deterministic failures) is separate.
+- **Timing:** `elementary-mac-enhance` and `post-install.sh` write one JSON line per module/stage (start, end, wall, CPU)
+  and end with a table sorted slowest first, a `timing:` summary line and `timing-summary.json`
+  (`elementary-mac-enhance --timing` shows the last run). Helpers: `mseries/lib-timing.sh`, `mseries/modrun.py summarize`.
+- **Parallel runner (opt-in, default still serial):** `--parallel[=N]` or `MSERIES_PARALLEL=1` (`MSERIES_JOBS=N`);
+  `MSERIES_SERIAL=1` forces serial. The graph and the reason for every lock are in `mseries/enhance-modules.json`:
+  apt/dpkg holders (brave, gestures, firefox, desktop-user-deps) share one lock and the five Wingpanel-plugin modules
+  share another; video, files, osk and netusage-policy are free. Falls back to serial when python3 or the scheduler
+  files are missing, when one worker is configured, or when the combined requirements install failed.
+- **ccache:** `mseries/lib-build.sh` wraps the C/C++ compiler (meson `CC`/`CXX`, cmake launchers) when ccache is
+  installed; `MSERIES_CCACHE=0` disables. No hard dependency.
+- **Tests (hermetic, fake modules):** `test-modrun.py`, `test-enhance-firstboot.sh` (now in `validate.sh`),
+  `test-post-install-timing.sh`, `test-build-ccache.sh`.
+- **Numbers:** `mseries/benchmarks/installer-speed.py` gives 2.49x (6.50 s to 2.61 s scaled) on fake sleep-only modules.
+  That is **synthetic**. Real-install before/after on the Mac is **not measured**.
+- **Next:** time a real first boot serial vs `--parallel` on the M1 Pro; decide from real timings whether the
+  Wingpanel-plugin lock can be split into build (parallel) and install (serial); download tarballs ahead of the build
+  (issue item 3); `ninja -j` tuning under parallel mode.
+
+## Daedalus and NmapUI: owner-approved merges and live checks — 2026-10-21
+
+The owner approved merging the remaining green PRs and a scan of the current network.
+
+- **Merged (tm-daedalus):** #21 (link-local ranges no longer valid scan targets or scopes; CIS key last-use and
+  optional expiry; Nikto finding withdrawn as a misreading, correction in the review doc), #10 (demo login,
+  production secrets, request bodies, heartbeat, icon fetch), #8, #18 (deployment blueprint and gates), and #7
+  (ruff lint in CI; ruff then found three new issues in merged code, fixed). Merging #10 and #21 broke one
+  heartbeat test on `main` (a link-local detected network); #7's merge commit updated that expectation and `main` is green again.
+  Still open: #9 (UI account menu on phones, favicon, marketing accessibility), not selected.
+- **Merged (TM-NmapUI):** #248 (npm advisories) and #250 (scan errors, keyboard and screen-reader access). #250
+  conflicted with `main`'s new pause/resume; main's real buttons were kept and the old "inert controls" test now asserts
+  disabled-at-idle with `data-pause-state`. #249 (move the native app to TM-NmapUI-elementary) is another agent's and still open.
+- **Scan on the current network:** Quick Scan of 10.20.0.0/24 ran to completion headlessly through the web UI;
+  the indicator showed progress and listed 15 devices afterwards. (Target field had held the old 192.168.222.0/24; it was
+  set to the approved network before starting.)
+- **Dock progress:** on the real session bus, the loaded Wingpanel indicator emitted `com.canonical.Unity.LauncherEntry`
+  `Update` with `progress-visible=true` and rising `progress` during the scan, and the dock source consumes that
+  interface. The dock drawing the bar was not observed on screen.
+- **Quicklist `--quick-scan`:** verified later the same day. A second instance (headless, isolated display) with
+  `--quick-scan` started a Quick Scan of 10.20.0.0/24 through the single running service; `--tab` was verified earlier.
+  Note this left a second scan of the approved network running.
+- The NmapUI service now runs under Gunicorn (see the earlier entry).
+
+Still open: production host access, Developer ID signing and notarization, Google Admin tenant consent, physical scanner fleet runs.
+
+## Pantheon shell upstream pass and Quick Settings preparation — 2026-10-21
+
+Reviewed eleven customized shell components against current upstream default
+branches; exact pins, heads, changes and dispositions are retained in
+`mseries/upstream-audits/pantheon-shell-2026-10-21.{md,json}`. No wholesale
+Gala/Wingpanel/Dock update: these overlap our session/focus/taskbar changes.
+Quick Settings/network/keyboard/applications-menu are upstream-current; power,
+Bluetooth and sound only have Swedish translation deltas. Files has an upstream
+theme-initialization change overlapping our startup workaround; qualify before
+replacement.
+
+Quick Settings desktop preparation now calls the same core helper as the factory
+and package builds, retaining desktop Share Eyes/AirDrop extras. Original versus
+shared prepared source trees are byte-identical; core and extras native builds,
+three routing regressions, private fake-BlueZ probe, syntax and warning-level
+ShellCheck pass. No pin bump, live installation or service restart. Next: review
+Dock Launcher binding lifecycle with complete custom-source preservation.
+
+## Touch ID page in System Settings — 2026-10-21
+
+New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
+Switchboard plug), modelled on macOS *Touch ID & Password*: fingerprint list, Add Fingerprint sheet with a print that
+fills per touch, Remove with confirmation, and switches for Terminal Commands (`sudo`) and System Authorization (polkit).
+Login/lock screen is shown disabled (lock-screen PAM service still unidentified).
+
+- Installed on this machine (plug, `/usr/local/sbin/mseries-aurora-touchid-apply-pam`, polkit action); loads next time
+  Settings opens. Opening the page wakes the sensor. The old per-user stand-alone launcher was removed.
+- `mseries-aurora-touchid-apply-pam` now takes `--only sudo|polkit-1` and `--remove`.
+- Verified: PAM helper test (scratch dir), 12 UI checks against a fake fprintd on a private bus and virtual display
+  (states, `sudo` switch writes only `sudo`, sheet stops enrolment and releases the sensor on close), light/dark
+  screenshots, and the real `io.elementary.settings` loading the installed plug against the fake.
+- **Not verified:** enrolment and matching against the real Secure Enclave from this page; PAM changes on `/etc/pam.d`;
+  the `pkexec` prompt wording. Next: supervised first enrolment (fprintd only, xART protections on, password fallback),
+  then identify the lock screen's PAM service.
+
+## Daedalus portal and NmapUI on this desktop — 2026-10-21
+
+Work done from this repo's session for the owner's "daedalus production ready" and
+"native elementary NmapUI" requests. Daedalus and TM-NmapUI are separate repositories;
+this entry records what landed and what is installed here.
+
+**Daedalus ([techmore/tm-daedalus](https://github.com/techmore/tm-daedalus), merged to `main`)**
+- #1 main CI fixed: server copy of `nmap-pdf-olive-legacy.xsl` re-synced with the scanner bundle, and the
+  loopback test harness now allows the scanner's fixed `--host-timeout 120s`.
+- #2/#6 elementary look (Blueberry, Inter, light/dark): generated `elementary-overrides.css` plus hand-written
+  `elementary.css`; headless screenshots of login and all ten views, desktop/dark/390 px mobile.
+- #3/#5 full-repo review (`docs/CODE-REVIEW-20261019.md`): atomic scanner enrollment claim, bridge target and
+  approved-range checks, bounded CIS upload, SQLite WAL + busy timeout, cross-site write guard.
+- Full suite 1605 passed, 1 skipped at #5. Other open Daedalus PRs (#7-#18) belong to other sessions.
+- Not done: production host access, Developer ID signing/notarization, real Google Admin tenant consent and
+  physical scanner fleet runs are still open; this is not a production-ready claim.
+
+**TM-NmapUI ([techmore/TM-NmapUI](https://github.com/techmore/TM-NmapUI), merged to `main`)**
+- #246 elementary theme layer for the web UI; #247 Wingpanel indicator (state, progress, network card, Devices list),
+  summary helper, native GTK4/WebKitGTK window, dock quicklist actions, dock progress/badge via LauncherEntry,
+  `/api/runtime/live-hosts`, and a fix so the host list survives per-job event pruning (200-event cap).
+- CI on `main` was already red before these (stale committed Tailwind CSS, `#dashboard` hash vs smoke-test URL wait); both fixed in #246.
+- PR #249 moves the elementary shell to [TM-NmapUI-elementary](https://github.com/techmore/TM-NmapUI-elementary)
+  (Vala app, Gunicorn user service) and removes the shells from #247; it was DIRTY at last look.
+
+**Installed here (checked 2026-10-21 after a reboot)**
+- `nmapui.service` (user, 127.0.0.1:9000) and `daedalus-dev.service` (127.0.0.1:8000, demo login) active. On
+  2026-10-21 the NmapUI unit was switched from the Werkzeug dev server (`NMAPUI_ALLOW_UNSAFE_WERKZEUG=true`) to
+  `python -m gunicorn --workers 1 --threads 100 nmapui.wsgi:application`, the same invocation as the Ubuntu
+  installer; page load and Socket.IO websocket upgrade checked headlessly. The unit lives in
+  `~/.config/systemd/user/nmapui.service` (not in a repo; #249/TM-NmapUI-elementary ships its own).
+- The dock source (`~/dock-drawers-src/src/DBus/Unity.vala`) implements `com.canonical.Unity.LauncherEntry`, so the
+  indicator's progress/badge signal should be consumed; the dock drawing it was not observed.
+- `libnmapui.so` mapped in Wingpanel; `~/.local/bin/nmapui-summary` and `nmapui-elementary` present; dock pin present.
+- nmap 7.98, arp-scan, xsltproc, traceroute, nodejs/npm, Chromium for PDFs installed with apt/playwright.
+- Quick Scan on 192.168.222.0/24 ran to completion headlessly; the indicator listed 31 devices. Service scans took
+  about a minute per host and some hosts hit the 120 s limit. The machine has since moved to 10.20.0.0/24, so that
+  scan describes the earlier network.
+
+**Verified vs not**
+- Verified: unit tests, CI, headless renders (probe and Xvfb), the LauncherEntry D-Bus signal being emitted,
+  the dock quicklist `--tab` action in a second instance, services and indicator after reboot.
+- Not verified: the dock actually drawing progress/badge, `--quick-scan` from the quicklist, long-run service stability,
+  scans on the current network.
+- Note: restarting `nmapui.service` while a scan runs interrupts it (the job becomes `interrupted`).
+
+Next: reconcile with TM-NmapUI-elementary (#249) and replace the dev-server unit; resolve the unmerged Daedalus PRs.
+
+## Maintenance handoff for the next chat — 2026-10-21
+
+Read [maintenance/README.md](maintenance/README.md) and its saved prompt snapshot.
+All 16 local task presets remain PAUSED/on-demand; run and audit one at a time.
+No next maintenance task was launched. Task 01/02 were manually audited/refined;
+remaining queues need their first real run/result audit. Rupert remains separate.
+
+**Merged to dev:** kernel candidate and all-port evidence #359 (`30018f19`),
+dock recovery #357 (`fed52f4c`), popup stacking/input #364 (`a057b04d`). Handoff
+conflicts were resolved by retaining both histories. Later historical statements
+that these PRs are unmerged or rear-left never works are superseded here.
+
+**Kernel actually running:** `7.2.10-elementary-aurora72-wip2`, current boot
+`38b8049d-918a-4901-9441-17673d8a5d50`; one-shot consumed, `next_entry=` empty,
+persistent default remains `.20`. All three dock ports now have owner picture
+confirmation; front-left/right have explicit input confirmation. Initial rear
+blanking recovered. Pilot partner-to-active times: right 4.486 s, rear-left
+4.509 s, front-left 4.511 s (retained boundary correction); 0.5 s sampling,
+one move each, no cable-to-pixels or speed ranking. Actual .20 recovery,
+suspend, long-run and controlled power acceptance remain open. Do not auto-rearm.
+
+**Compositor installed, not loaded:**
+`0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace2`.
+Installed SHA256 `15ae6c8f936f63047ca2e06551fd310ede697e3cb226cdceb47c1b855ee213b3`;
+PID 1918 still executes original SHA256
+`7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e`.
+Preserved the exact dock/panel/popup/password-prompt deployment lineage. Existing
+PR #362 activation code is integrated; no pointer warp was added. New default-off
+bounded lifecycle trace covers scheduler, connector, KMS, link reset, map/unmap,
+EDID query duration and first queue/pageflip. A dedicated user-unit drop-in sets
+`PANTHEON_DISPLAY_TRACE=1` and its logging filter for the next owner-chosen login.
+Only daemon-reload was performed; no compositor/Wingpanel restart or logout.
+
+Successful parsed EDID identities are reused within each startup/reconcile scan,
+removing a redundant query for newly mapped outputs. Missing/malformed EDID still
+retries; no cache crosses a reconciliation. Debounce/link retry policy unchanged.
+Native release/package and locked compilation checks pass; dpkg integrity clean,
+all 13 companion payload files unchanged. No new interaction tests/probes or live
+traces were run, and end-to-end speedup is unmeasured. Exact source/build/package,
+installed/loaded and reconstructed rollback receipts are in
+`pantheon-rust-compositor/receipts/2026-10-21-activation-displaytrace2-*.json`.
+Private packages/logs are retained under the original chat workspace
+`outputs/compositor-activation-candidate`; preserve these for rollback.
+
+**Next:** owner chooses login to load attention/logging changes, then verify
+actual focus/typing, popup routing and dock picture/input. Collect repeated
+matched per-port lifecycle timings. Complete actual default .20 recovery before
+power/suspend qualification. Upstream review found no new local dock kernel
+patch: Aurora already supplies it. A host-only DART range fixture adaptation is
+worth considering; integration/WIP/prior partial PR evidence is in
+`aurora/unified72/UPSTREAM-CANDIDATES.md`. No upstream publication was made.
+
+## Running markers: small lighter adjustment — 2026-10-20
+
+Owner requested a touch lighter: final marker color is #606060 in both modes,
+replacing #555555. Focused blue is unchanged. Native resource rebuild and diff
+check passed; privately installed and taskbar service reloaded and active.
+
+## Running-marker final lighter adjustment — 2026-10-20
+
+Owner requested a little lighter again: running markers now use #555555 in
+both modes, replacing #444444. Focused blue is unchanged. Native resource
+rebuild and diff check passed; private binary installed and taskbar service
+restarted and active.
+
+## Owner-tuned charcoal running markers — 2026-10-20
+
+The owner's desktop prefers dark mode, while the taskbar is intentionally silver
+in both modes. The previous dark-theme white rule caused the requested black
+markers to remain pale. Corrected both theme selectors to black, then the owner
+requested lighter markers: final running-marker color is solid #444444 in both
+modes, with opacity 1. Focused blue remains unchanged. Native resource rebuild
+and diff check passed; privately installed and pantheon-dock.service restarted
+and active. Earlier light-only tuning receipts are superseded by this result.
+
+## Solid black taskbar markers — 2026-10-20
+
+Owner requested another darkening pass. Light-mode running markers now use
+solid black instead of 80% black; opacity remains 1. Native resource rebuild
+and diff check passed. Installed privately and restarted pantheon-dock.service,
+which is active. Focused blue and dark-theme markers retain their colors.
+
+## Running-marker contrast correction — 2026-10-20
+
+Owner requested noticeably darker taskbar markers after the prior color change.
+The taskbar override now covers `:disabled` (inactive-workspace apps), defeating
+older, more specific styles, and sets marker opacity to 1 instead of inherited
+0.8/0.45. Light-mode gray is 80% black; dark-mode gray retains 35% white.
+Focused blue and all production Vala sources are preserved. Rebuilt from the
+exact source of the installed af6c7eec binary with only these CSS changes.
+Native build, strict schemas and three identity/lifecycle tests passed.
+Installed privately and restarted only pantheon-dock.service; service is active.
+No live screenshot/owner visual confirmation is claimed.
+
 # OS 9 implementation / Claude Code handoff
+
+## Rust compositor: popups of unfocused windows clipped by a higher neighbour — 2026-10-21
+
+Follow-up to the layered stacking fix below (PR #361), which left this gap out on purpose:
+smithay's `Window::render_elements` draws a window's xdg popups (menus, tooltips, popovers)
+together with its toplevel, so `space_render_elements` drew every popup at its window's
+own place in the stack. A menu of a window lower in the stack was clipped by a snapped
+neighbour, a keep-above surface or a panel until that window was clicked. Gala draws all
+popups above all windows.
+
+- **Fix** (`claude/popups-above-toplevels` from `origin/dev`, PR #364 to `dev`, not merged):
+  new `rust/pantheon-compositor/src/popup_stack.rs`, used by `render_desktop_elements` in
+  `cursor.rs`, the scene path shared by the native DRM and nested winit backends.
+  - `stacked_render_elements` replaces `space_render_elements`: pass 1 renders every popup
+    of every mapped window (top-most window first, newest popup first, smithay's own
+    order), pass 2 renders every toplevel's surface tree only, so no popup is drawn twice.
+    XWayland windows have no xdg popups and still render through `Window::render_elements`.
+    Panels (`RenderZindex::Top`) and override-redirect windows (`RenderZindex::Overlay`)
+    keep their z-indexes; popups draw above all of them. The gesture preview path
+    (workspace switch, overview) is unchanged and keeps popups with their window.
+  - Input follows the draw order: `surface_under` hit-tests popups across all windows
+    first (`popup_under`), so a tooltip or popover drawn above a neighbour gets the
+    pointer instead of the neighbour; click-to-raise and keyboard focus use
+    `window_under`, which returns the popup's owning window. Grabbed popups (menus)
+    still route through `PopupPointerGrab`; the button handler already skips raising
+    while the pointer is grabbed.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -- -D warnings` and `cargo test -p pantheon-compositor --features
+  native-drm` (41 tests) pass locally. No GitHub workflow runs the Rust checks; the PR's
+  path-filtered workflows skipped.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2.popups1` = the installed
+  `panelstack2` lineage (`local/panel-stack-on-dockfix`: `dev` + dock replug fix + redraw
+  counters + PR #361) + this commit (cherry-picked as `fe617dc2`), built in
+  `~/Projects/mseries-panel-stack-deploy` with the shared target dir and installed with
+  `install-pantheon-rust-compositor.sh --install --yes --deb` (dpkg succeeded; the installer's
+  trailing `sudo systemctl --user daemon-reload` fails without a user bus under sudo, so it was
+  run as the user afterwards). The running session (compositor pid 1961, started 08:13) still executes the `dockfix2`
+  binary, so neither PR #361's `panelstack2` nor this `popups1` build has been seen on
+  screen yet; both load at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2`.
+- **Unverified** (needs the next login): with a window snapped beside another, open a
+  menu or hover a tooltip in the unfocused one and confirm it draws over the neighbour;
+  hover that tooltip and confirm the neighbour gets no pointer enter; click a menu item
+  (grabbed popup) and a non-grabbed popover of an unfocused window and confirm the owner,
+  not the neighbour, is raised; open a Wingpanel indicator menu over a snapped window;
+  check that no popup is drawn twice (no ghost at the window's old stack position) and
+  that damage tracking still repaints correctly when a menu closes.
+
+## Dock HDMI dark after replug: stale connector, link-status, identity — 2026-10-21 (Claude Code)
+
+Branch `claude/dock-replug-display-fix` (from `origin/dev`), committed locally, **not pushed, not
+deployed**. Full evidence and verification:
+[hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md](aurora/hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md).
+
+**Cause.** The AOC 24E2QA on the WD22TB4's HDMI arrives over the Thunderbolt DP tunnel. After the dock
+moved Type-C PHYs at ~40 s the kernel left the old connector (DP-2) reported as connected, so the Rust
+compositor mapped a phantom output between the real screens. Both connectors carried `link-status = Bad`,
+which the compositor never reads, and every monitor was published as `Apple:<connector>:Unknown`, so
+`mseries-display-profiles` matched nothing (`no profile for the displays attached`).
+
+**Done in the branch.** The compositor now reads each connector's EDID and publishes the real identity,
+treats a connector whose EDID duplicates a newer connector's as disconnected, and writes
+`link-status = Good` back (bounded: 3 tries, 5 s apart) to force the modeset the DCP driver asks for.
+`check-display-paths.sh` and `pantheon-drm-probe` report identity, `link-status` and stale duplicates.
+55 compositor tests (14 new), clippy and fmt pass; the probe ran read-only on the live device and picked
+DP-1 as live and DP-2 as stale, as diagnosed.
+
+**Not verified.** The `Good` write and resulting modeset need DRM master, so they need the new
+compositor running in a new session. Deploy with
+`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes --build` (stages the package, never
+restarts the running session), sign out and in, then look for `link-status was Bad; reset to Good` in
+`journalctl --user -u pantheon-rust-compositor@wayland.service`, a single DP output in
+`busctl --user call org.gnome.Mutter.DisplayConfig /org/gnome/Mutter/DisplayConfig org.gnome.Mutter.DisplayConfig GetCurrentState`
+with AOC identity, and the monitor showing the desktop. Owner action: with the AOC attached run
+`mseries-display-profiles save <name>` once so the watcher has a profile for it.
+
+**Deployed locally 2026-10-21.** Installed package `0.1.0+gitc995a60.dockfix1`: the compositor build that was
+already running (`c995a60` on `codex/rust-gala-stack-integration`, which carries the redraw-reason counters
+that `dev` lacks) plus only this fix, built in a local-only worktree. It was not built from `dev`, so none of
+`dev`'s unrelated gesture or taskbar changes were introduced. Rollback: the previous binary is saved at
+`~/.cache/mseries-build/rollback/pantheon-compositor.c995a60`
+(`sudo install -m 0755 <that file> /usr/bin/pantheon-compositor`, then log in again), or
+`sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes` for the Gala session. The
+package only loads at login; a one-shot timer runs
+`mseries/pantheon-rust-compositor/validate-dock-recovery.sh` about 2.5 minutes after the logout and writes
+`~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
+Merging PR #357 into `dev` does not by itself deploy anything.
+
+**Correction to the first local deployment (2026-10-21 08:10).** The first package (`0.1.0+gitc995a60.dockfix1`) was built
+on the older `codex/rust-gala-stack-integration` lineage, which lacks about 17 `dev` commits: the Work Mode top-bar
+receiver (`SetTopPanelMode`), bottom-taskbar window clearance, XWayland and edge snapping fixes, the themed cursor, gesture
+animation, and the session unit that launches the patched dock (`pantheon-rust-dock`). That is why the Rust session
+showed no snapping, the stock dock, a visible top bar, and a plain cursor. Replaced by `0.1.0+gitdev.dockfix2`: `dev` + this
+PR + the redraw-counter commit (`c995a60c`, the only commit the old lineage had that `dev` lacks). Local-only branch
+`local/dockfix-on-dev`, worktree `~/Projects/mseries-dockfix-v2`. Rollbacks in `~/.cache/mseries-build/rollback/`
+(`pantheon-compositor.c995a60`, `pantheon-compositor.dockfix1`). The validator now also checks `TopPanelMode` and that the
+patched dock runs; before the reboot it failed exactly those two checks on the old build. Stutter is not yet analysed:
+re-measure with the redraw counters after the new build is running.
+
+**Validated on hardware (2026-10-21 08:07, first package).** Cold boot into the Rust session with the deployed package:
+`validate-dock-recovery.sh` reports PASS (running binary matches the installed one, AOC published once with its EDID
+identity, link-status Good, `link-status was Bad; reset to Good` logged and followed by a clean second DCP modeset). Still
+open: the stale-duplicate path needs a dock replug while logged in; whether the AOC shows the desktop and how the session
+feels needs a person at the screen. See the evidence file above.
+
+**Why the Rust session did not start (2026-10-21).** Not a compositor failure: after a logout the elementary
+greeter starts the session stored in `io.elementary.greeter last-session-type` (lightdm user's dconf), which
+was `ubuntu`; `.dmrc`/AccountsService are ignored and LightDM never autologins after a logout. Pick
+"Pantheon (Rust compositor, experimental)" with the greeter's session button once; it then persists. A cold
+boot autologins into the Rust session via `50-elementary-mac-autologin.conf` regardless. The new compositor
+has still not been started in a login, so the deployment is not yet validated. The GNOME (`ubuntu`) session
+that was used instead renders on the GPU (`renderD128`, Mesa Asahi) but feels slow; not investigated further.
+
+**Work Mode.** It is on because the manual switch is on (`enabled true`, no schedule, no network rule),
+not because of the dock. The helper reads only the switch, the schedule and the public IP; a test now
+guards that. Owner decision stands: no dock- or display-based home/office inference.
+
+**Still open, owner-raised, not started.** Clean up the dev kernel lane (`.20-enh1`) and port wanted
+upstream features; polling-based performance comparison of the Rust compositor against native Gala.
+`~/Projects/mseries-compositor` is another session's worktree with uncommitted changes; do not reuse it.
+
+## Aurora 7.2 all three dock ports working; pilot timing — 2026-10-21
+
+Owner later confirms **rear-left nearest hinge works**; the earlier blank-screen
+report was transient and is superseded. Front-left closest to owner and right
+also show picture; front/right input explicitly confirmed. All three external
+modes observed at 1080p/60. No agent driver/service/runtime change caused this
+recovery. [Follow-up and pilot timings](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+One cycle per port: partner→dock≈3s, dock→monitor≈1s, monitor→desktop≈0.5s,
+partner→active desktop≈4.5s. Poll resolution 0.5 s plus query delay; not cable-insertion
+or visible-pixel latency, no statistical ranking. Front boundary recovered from
+retained events and regression-fixed; prior mislabelled rear run corrected by
+owner sidecar. Original receipts retained. Five timing state-machine tests and
+71 Aurora repository tests pass after merging current dev into this branch.
+Only merge conflict was both parties' prepended handoff entries; both preserved.
+Kernel builder/manifest/native-workflow bytes still match tested b213999.
+
+Next: merge this experimental kernel/qualification lane into dev after current
+review/checks, keeping `.20` persistent boot default. No stable-kernel promotion,
+automatic re-arm or reboot. Actual `.20` recovery/suspend/power still pending.
+Display lifecycle logging and attention integration are separate deployment
+work, preserving the current dock/panel/popup lineage. Upstream review identifies
+only a host-fixture candidate, not a newly authored dock kernel fix.
+
+## Aurora 7.2 first boot: scoped pass; rear-left dock picture fails — 2026-10-21
+
+Owner rebooted into `7.2.10-elementary-aurora72-wip2`. Live build ID
+`e33ad2aa657320824a246a3b04814accdb31df1e` matches audited Image. One-shot is
+consumed/empty and `.20` stays persistent default. Old fallback/menu/shared
+`boot.bin` hashes unchanged; all 91 early modules and installed package verify.
+Runtime 37 DART providers use one-cell bindings, firmware compat 13.5.0 retained.
+[Report and receipts](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+Scoped checks PASS: boot beyond 5 min, PMP ready/started/manages fabric, idle
+accounting, real M1 Pro GPU shader/16-pixel readback with Mesa 26.0.8 and 1 MiB
+fsync/SHA256. Selected severe-message scan through post-smoke snapshot clear.
+Owner confirms internal display/input. Compositor observes internal 3024x1964
+at 120 Hz and later external DP-1 1920x1080 at 60 Hz. Display firmware/Wi-Fi warnings
+also occurred on prior `.20-enh1`; unequal traces do not prove regression.
+
+**Physical port correction:** left port closest to owner/front, farther from
+hinge, WORKS with delayed picture. Left nearest hinge/rear DOES NOT show the dock
+picture. Earlier button answer saying hinge works is explicitly superseded.
+Right port untested. Both controller paths show retries/connected events and
+routing; logical-controller-to-physical-port mapping is not yet a controlled
+measurement. Do not mark rear USB4 entirely dead or claim all-port dock acceptance.
+
+**Next:** matched per-port evidence and attended return to `.20` for actual
+recovery before suspend/power work. No automatic re-arm or stable promotion.
+PowerSaveMode remains unknown; controls false, startup/hotplug power is not an
+idle or paired saving result. Private raw logs stay in the owner's outputs.
+This supersedes armed/no-reboot statuses below. No agent boot/service/module
+parameter change was made during first-boot testing.
+
+## Deferred reboot: static audit and manual test readiness — 2026-10-21
+
+Owner deferred the reboot and asked to continue. One-shot remains armed for
+wip2; no boot setting, installed package, service or module was changed.
+All 24 mechanically-neither review patches now have a bounded static triage:
+19 described source contracts retained, two subsystem replacements open,
+one documentation case open and two partial lifecycle/policy reviews. The
+moved `mm/userfaultfd.c` was recovered from the audited corresponding-source ZIP;
+its source-check branch survives, and USERFAULTFD is disabled in this config.
+Other matched safeguards include debug commands disabled, AWDL parameter
+read-only, AFK/VFIO dependencies, legacy 13.5 DPTX dispatch and SEP store policy.
+[Source-bound receipt](aurora/unified72/static-contract-review-2026-10-21.json).
+Full 64-fix semantic qualification remains open, including the 40 reverse checks.
+
+Readiness: compiler, EGL/GLES development metadata and Python GI imports exist.
+No new test execution or old-kernel result was presented as wip2 acceptance.
+Added [exact private manual commands](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot):
+copy/hash only root-readable Image/shared boot payload into mode0700 evidence,
+collect current-boot journal and run qualification as desktop user, preserving
+session-bus access. Review health/live identity before a separate shader/fsync
+invocation. PowerSaveMode remains unknown; do not treat equal unavailable
+dictionaries as measured display/power stability. Owner controls later reboot,
+and actual return-to-.20 recovery still precedes suspend/power work.
+
+## Aurora 7.2 one-shot armed after repeat CI pass — 2026-10-21
+
+Owner authorized arming when the repeat run passed, then asked to continue.
+Both native matrix jobs passed [repeat CI 39601423970](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970)
+at `ed08d50`. Rechecked installed package, Image/initramfs, old fallback files,
+shared `boot.bin`, menu syntax and empty prior one-shot; all passed. Ran
+`sudo grub-reboot --boot-directory=/boot elementary-aurora72-wip2-trial` at
+13:23:18 UTC (09:23:18 EDT). Verified **next_entry=elementary-aurora72-wip2-trial**.
+Persistent default stays `.20`; all protected files except the intentional
+GRUB environment update remain unchanged. Running `.20-enh1`; **no reboot**.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json),
+[repeat CI receipt](aurora/unified72/repeat-ci-2026-10-21.json).
+Root-private pre-arm environment/receipt:
+`/var/lib/mseries-kernel-tests/arming/20261021T132318Z-aurora72-wip2`.
+
+**Next:** owner/Claude attended reboot into `7.2.10-elementary-aurora72-wip2`,
+password unlock, internal/dock display/input, current-boot logs and manual
+qualification + shader/fsync checks, then actual `.20` recovery before suspend
+or power tests. GRUB clears the one-shot before kernel loading; subsequent normal
+boots retain `.20` default. If trial hangs, record the last message and select
+STABLE `.20` on recovery. Existing source/hardware limits still apply. Do not
+re-arm automatically after this boot, regenerate GRUB or rewrite `boot.bin`.
+Arming does not establish any new hardware acceptance. This checkpoint
+supersedes the earlier unarmed status below.
+
+## Aurora 7.2 wip2 staged, unarmed — 2026-10-21
+
+Owner explicitly approved the checked unarmed staging proposal. Installed separate
+`linux-image-elementary-aurora72-wip2` (7.2.10 wip2) and the audited Image/initramfs;
+added `elementary-aurora72-wip2-trial` in existing `custom.cfg`. **No reboot or
+one-shot selection:** `next_entry` is empty; persistent default is STABLE `.20`;
+running kernel remains `.20-enh1`. Both old Images/initramfs, generated GRUB,
+GRUB environment and shared `boot.bin` remain byte-identical. Root-private backup:
+`/var/lib/mseries-kernel-tests/staging/20261021T131440Z-aurora72-wip2`.
+
+All 2,042 regular payload files and symlinks compared with the audited package;
+`dpkg -V` and `dpkg --audit` clean, both GRUB syntax checks pass. Host dpkg strips
+`/usr/share/doc/*`; the first attempt detected omitted documentation before any
+boot change. Reinstalled using the package-specific `--path-include` in the
+[lane's staging instructions](aurora/unified72/BOOT-TRIAL.md), restoring licenses,
+resolved config and provenance without changing the global policy.
+
+The original Arch encrypt/userspace/firmware entries remain identical; 91 new
+initramfs modules and dependency closure match the exact CI package. Retain old
+shared 7.1 DTBs: new DART parser passes 50 host controls on the exact J314S legacy
+geometry. That preserves old fallback format, not a demonstrated recovery boot.
+Mesa/UAPI and firmware-source checks plus DART/DCP/radio controls are recorded in
+[preflight evidence](aurora/unified72/boot-preflight-2026-10-21.json). 71 repository
+unit tests pass. Original failed host fixtures and corrected invocations are
+identified, not hidden. Native build artifact is run 39595756051 at `b213999`;
+repeat native run 39601423970 at `ed08d50` was still building when staging finished.
+
+**Next:** coordinate with owner/Claude for an attended one-shot boot, basic
+unlock/display/input and manual qualification, then an actual return to `.20`
+before suspend/power tests. See [first-boot sequence and limits](aurora/unified72/BOOT-TRIAL.md).
+Full 64-fix semantic review and live hardware/Mesa acceptance remain open. Do not
+start the next maintenance task or automatically arm/reboot this experiment.
+
+## Aurora 7.2 merged-source refresh selected — 2026-10-21
+
+Owner selected refreshing the independent 7.2 candidate. The unified72 manifest
+now pins merged #139 `644133b7799f` with streamed archive SHA256 and new distinct
+`7.2.10-elementary-aurora72-wip2` / Debian wip2 identity. The already-upstream
+stock-bindgen patch is removed from the active series and retained as historical
+provenance. Five GPU-reader and 12 PMP host tests pass on the selected source;
+three old GPU/SEP source gaps are addressed, not all 64 semantic review gates.
+Native ARM64 config/Image/modules/DTBs/package inspection and upload passed
+[run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051)
+at `b213999`; the `.20` control passed too. Independent ZIP/checksum/full-source
+digest/package/J314S-DTB audit passed;
+[receipt](aurora/unified72/native-build-2026-10-21.json). Later audit/test/docs
+edits preserve the recorded build input hashes. At this earlier build checkpoint
+there was no host installation. The unarmed staging above supersedes that status. Actual Mesa clients, upstream M1
+Touch ID regressions and J314S boot/suspend/recovery remain gates. See
+[the current lane and receipt](aurora/unified72/README.md). The refreshed
+64-patch comparison is 0 forward / 40 reverse / 24 neither: mechanical checks,
+not full semantic parity. The paused kernel task now resumes active PR/CI and
+requires archive, carried-patch and artifact evidence before success claims.
+
+## Messages: honest full text, attachment chips — 2026-10-21
+
+Audit of "full text / MMS / links" against the live phone (read-only; nothing sent):
+MAP up, 14 threads, 47 messages. Every thread rendered one bubble per message with
+text identical to BlueFerry's body; longest message 456 characters; 9 links rendered
+as links; no empty bubbles. Live messages are whole because BlueFerry fetches the full
+bMessage on the MNS event. The phone's inbox *listing* is capped at 128 characters
+(`Subject`), and one live message was exactly that: a listing-only message that ends
+mid-sentence and looked complete. BlueFerry (system package, 0.8.1) has no D-Bus
+call for a listed message's full body or for attachments, so neither is recoverable
+from the app without a second OBEX client, which the app deliberately is not.
+
+Changes: `message_parts()` in `messages_model.py`; listing-only messages are tagged
+`phone_list` by `merge_inbox` and, at 120+ characters, captioned as shortened;
+empty or U+FFFC bodies render an Attachment chip (and "Attachment" in the sidebar
+preview) instead of an empty bubble. Fixture gained a long message with a link and
+two attachments. Tests: 6 model, 1 GTK; three deliberate model breakages each fail.
+Not verified: a real MMS (none received), full-text recovery for listed messages.
+Open upstream idea: a BlueFerry `GetMessage(handle)` call would let the listing path
+resolve full text.
+
+## Messages: duplicate conversations and a GUI-test guard — 2026-10-21
+
+Owner reported Messages "not showing my texts" and screen flicker. Both traced and fixed
+without opening any window (data checks were GTK-free; GUI tests ran on a hidden display).
+
+- **Texts missing from a conversation.** Read-only against the live daemon: 14 conversations
+  with zero exceptions, but Mike Chuisano appeared twice. BlueFerry's thread holds `+1908…`,
+  the phone's inbox snapshot reports `1908…`, and `merge_inbox` compared the raw strings, so
+  five newer texts (to 20:32) landed in a duplicate phone-only conversation while the real
+  one stopped at 16:57. `merge_inbox` now matches by BlueFerry's `canonical_address` plus the
+  North American 10/11-digit twin, never guesses between two claimants, and still drops senders
+  that are not valid recipients. Real data after the fix: 14 conversations become 13, Mike is
+  one conversation with all 10 texts, no duplicate names, and his sending route is unchanged.
+- **Flicker.** Another session ran `xvfb-run python3 -m unittest test_messages_gui` from the
+  desktop session without `GDK_BACKEND=x11`; with `WAYLAND_DISPLAY` set GTK opened the test
+  windows on the live Wayland desktop (one was visible in the compositor's window list), which
+  also grabbed the keyboard. `gui_safety.py` now refuses real-looking displays and forces X11;
+  the same run now stays on the virtual display. The other GUI tests in this repo are not
+  guarded and should adopt it.
+
+Verification: 53 model and 67 GTK tests pass, no warnings; mutation checks fail the tests (old
+string matching fails 4; each guard mutation fails one). Messages was closed during the incident;
+it is not relaunched or reinstalled by this entry (install with
+`bash mseries/install-phone-setup.sh`, then relaunch when ready).
+
+## Rust compositor: panels, alerts and dialogs hidden behind snapped windows — 2026-10-21
+
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed no
+tooltip, and more generally anything that should float over a snapped window (indicator
+menus, an app's own alert or modal dialog) could end up behind it. In
+`rust/pantheon-compositor` every surface was an ordinary element of the smithay `Space`
+at the same z-index, so any window raise (a click, focus, restore) put that window on top
+of the panel, of its own transient dialogs and of keep-above surfaces. A tiled window
+fills the work area, so it covered them completely. Clicking the bar hid the panel case
+because the click re-raised the panel.
+
+- **Fix** (`claude/panel-popups-above-windows`, PR #361 to `dev`), all in
+  `pantheon_shell.rs`:
+  - Panels (Wingpanel, the dock) get `RenderZindex::Top`; smithay keeps the stack sorted
+    by z-index, so a raise of an ordinary window never crosses them. Their popups render
+    with them. XWayland override-redirect windows (menus, the GTK3 notification cards)
+    already render at `RenderZindex::Overlay`.
+  - `raise_window()` replaces every direct `Space::raise_element` of a window and raises
+    the window's transient descendants (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`) above
+    it in their existing order, as Gala does, so a click on a snapped window no longer
+    buries its own dialog.
+  - `io_elementary_pantheon_extended_behavior_v1.set_keep_above` is honored with a
+    z-index between ordinary windows and the panels (applied on request or at first map,
+    reset when the object is destroyed). `make_centered`, `make_modal`, `focus` and
+    monitor labels are still ignored.
+- **Password prompts** (follow-up commit, owner report that they still sat behind
+  snapped apps): the elementary polkit agent sends `make_modal` / `make_centered` /
+  `set_keep_above`; all three now put it on the keep-above layer, and `make_modal` /
+  `focus` raise and focus it. The GNOME keyring prompter (`gcr-prompter`,
+  `org.gnome.keyring.*Prompter`) sends no hints and has no parent, so it gets the
+  keep-above layer by app ID at first map. Dimming and true centering are not implemented.
+  The same commit runs `cargo fmt` over the `activation.rs` / `state.rs` code merged from
+  `dev`, which failed `fmt --check`.
+- **Installed now:** `0.1.0+gitdev.dockfix2.panelstack3.popups1` (deploy branch
+  `local/panel-stack-on-dockfix` = dockfix2 lineage + PR #361 + PR #364's popup commit +
+  the prompt commit; not the `dev` activation change). Previous binary saved as
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2.popups1`.
+  Loads at next login; 49 tests pass on the PR branch.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -D warnings` and `cargo test` (41 tests) pass.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + the two
+  commits of the PR, built in `~/Projects/mseries-panel-stack-deploy` (branch
+  `local/panel-stack-on-dockfix`) and installed with
+  `install-pantheon-rust-compositor.sh --install`. The running session still executes the
+  previous binary; the fix loads at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
+- **Unverified.** After the next login: hover CodexBar beside a snapped window; open a
+  modal dialog from a snapped app, click the app, confirm the dialog stays on top; send a
+  `notify-send` with two snapped windows. Not covered: popups (tooltips, menus) of an
+  unfocused window still render with that window, so a menu that reaches over a
+  higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
+  popups above all windows.
+
+## PolyBagger T1000 Print Manager — 2026-10-21 (end of day, before reboot)
+
+`mseries/polybagger-print-manager/` (PRs #363, #366, #368, all merged to `dev`): GTK 4 + Granite 7 app and CLI for
+the T-1000 bagger's inline Zebra (ZTC 110Xi4, TI-1000Z frame, USB, serial JJK245392). A ZPL send only **loads** a
+label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label" (TI-1000Z
+manual pp. 20–22). Main view: print card (How many with 1/100/500/1000 presets, "Print N Labels", Ctrl+P), result
+card with the one bagger check, Today list with totals, status bar with a ready dot, favorites/recents, offline
+label store. Tan industrial label-printer icon. Launcher installed from this checkout with `install.sh`.
+
+- **Working (owner):** single sends print one label each; after loading with a count the owner reported it
+  "kinda working". The CCS label was loaded with `--qty 1000` at 09:2x (job 20, StoredLabel expected).
+- **Queue fix:** a printer power cycle mid-job paused CUPS and disabled Send. Queue
+  `ZTC-110Xi4-203dpi-ZPL` now has `printer-error-policy=retry-job`; the app shows **Resume Queue…** if it pauses.
+- **Taskbar:** new apps show the wrong icon (it showed Messages) until the Windows-mode taskbar restarts; it was
+  restarted through `mseries-dock-change` with owner approval and now shows the tan icon. Pin from the taskbar's
+  own right-click menu; outside edits to `launchers` do not stick.
+- **Network:** the Xi4 is not on 10.20.0.0/24. The Zebra at 10.20.0.61 is a different printer (ZT410,
+  18J191104090). Use the bagger's Printer Settings **Print Network** to see whether the Xi4 has a print server.
+- **After the reboot, check:** app opens from Applications/taskbar with the tan icon; status dot green; queue still
+  `retry-job` (IPP Get-Printer-Attributes `printer-error-policy`; `lpoptions` does not show it); the bagger's loaded label
+  is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
+- **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
+
+## Rust compositor: GTK present() now raises the window — 2026-10-21
+
+Owner asked for `present()` to raise a window. Cause, proven with a probe app and
+`WAYLAND_DEBUG`: GTK does everything the protocol asks (get_activation_token,
+set_serial(0), commit, done, activate) but `token_created` refused any token whose
+serial was not newer than the last keyboard enter, so the token was never stored and
+`activate` did nothing. The compositor is Wayland-native (Smithay); XWayland is only
+for X11 clients, so this was policy, not an X-only limitation.
+
+Change: new `src/activation.rs` (policy and typing guard, 8 unit tests) wired into
+`state.rs`; the last key press is stamped in `input.rs`. Default policy `raise`
+honours tokens without a serial but waits until the user stops typing for 1.2 s;
+`PANTHEON_ACTIVATION_POLICY=strict` restores the old behaviour.
+
+Verification: `cargo test -p pantheon-compositor` 42 pass, clippy clean, `cargo check
+--features native-drm` clean. New end-to-end script
+`mseries/pantheon-rust-compositor/activation-probe/run.sh` runs the real binary nested in
+a virtual display on a private bus: old policy never raised the window in 9 s; new policy
+raised it in about 100 ms when idle and only after typing stopped otherwise (about 3.8 s,
+with all 25 keystrokes delivered to the other client). My first typing test was wrong
+(one process owns both windows, so its own keyboard serial is legitimately trusted) and was
+rebuilt around two separate clients before the result counted.
+
+**Not installed and not loaded.** The running compositor is unchanged. To use it: build and
+install the package (`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes
+--build`), then it loads at next login; do not restart the compositor mid-session. Gala remains
+the rollback.
+
+## Messages sending, group confirmation and native dialogs — 2026-10-21
+
+Owner reported that Messages did not seem to send. Investigation (read-only
+against the live backend; the real send call was intercepted, nothing was sent):
+
+- The UI path is sound. Driving the real app with real thread data, clicking Send
+  and Ctrl+Enter both reached `send_to_thread` with the right thread and text.
+- Direct threads are all replyable and MAP was up. The one group thread,
+  "Derek Ubel, Jan Ubel", is `reply_ready` but `group_confirmed` false. The daemon
+  rejects a group send without `confirm_group` plus the roster token
+  (`ConfirmationRequiredError`), and the app showed only a generic "Could not
+  send", so the refusal looked like nothing happening. Sends had completed on
+  2026-10-20 (PushMessage status=complete) and none were attempted this boot.
+
+Changes: native Granite dialog that lists every recipient before a group send
+(Cancel is the default; stale roster sends nothing); daemon failure reasons in
+plain words; context menu (Mark as Read, Copy Number); Keyboard Shortcuts window.
+Screenshots caught two defects tests had missed (participants collapsed to "…",
+and Granite's action lookup drew no keys) and both are now asserted.
+
+Verification: 36 model, 5 media, 56 GTK tests pass (one screenshot test skips),
+no GTK warnings; nine deliberate breakages each failed a test, including Enter
+confirming a group. Not verified: a real group send on the phone, which needs the
+owner to confirm the dialog once. Installed copy not yet relaunched by this entry.
+
+Enter-to-send opt-in landed in the same PR: menu switch **Press Enter to Send** (off by
+default), stored in `~/.config/mseries/messages.json` (0600, booleans only, nothing else
+ever written). Input-method safe by construction: a plain Return is armed for 80 ms and
+only a literal newline insert is swallowed and turned into a send; composed text from an
+input method sends nothing. Verified with a real xdotool Return and Shift+Return as well
+as synthetic events; 41 model and 66 GTK tests pass; seven of eight deliberate breakages
+fail a test (the eighth was not a real defect). Not verified: an actual Japanese/Chinese
+input method, only its observable effect (composed text arriving instead of a newline).
+
+Next: live check of media links; compositor `present()` raise is its own PR (#362).
 
 ## Resumed kernel review: merged 7.2 source — 2026-10-21
 
@@ -891,6 +1695,21 @@ session was checked without requesting focus.
 Next login must load the staged compositor before any dock re-enable. Keep the
 disable marker until that runtime is confirmed and the owner wants a live trial.
 
+### Native UI responsiveness and display labels — 2026-10-21 (#242)
+
+Canonical Troubleshooter verification and AirPlay GUI operations now use bounded
+background workers with pending/error/retry behavior. Verification cancels/reaps
+its owned helper on close; stale UI completions are ignored. Display arrangement
+uses bounded system-font labels, full tooltips/accessibility summaries and visible
+keyboard focus with selection that does not apply a display configuration.
+
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
+canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
+source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
+inventory. This fixes three confirmed blockers; it does not close the full native
+release gate or qualify all keyboard/screen-reader/device/account workflows.
+No live model, audio, display, panel or installed application was changed.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
@@ -1663,6 +2482,18 @@ already told readers to use. CI compiles and runs both share-cost test files.
 The matched pair itself is still pending the owner's live share and real
 viewers. No performance claim has been made.
 
+## Share Eyes heartbeat freshness and native upstream pass — 2026-10-21
+
+Source-only fix: future-dated launcher heartbeats no longer appear running/live;
+positive timestamps must be no later than now and at most 15 seconds old.
+Regression first failed, then passed; zero/missing timestamps, stale boundary,
+cleared state and recovery are covered. Native app/probe builds and private
+360-pixel light/dark off-state renders pass. No installed/live share or panel
+was changed. [Receipt and Torrential/Signal upstream findings](SHARE-EYES-FRESHNESS-2026-10-21.md).
+Torrential upstream remains the pinned rewrite baseline; its open serde_with
+update lacks native CI. Signal module builds with existing GTK pixbuf warnings.
+Next: review/stage through Quick Settings and separately accept the loaded state.
+
 ## Screen-share media path: owner decision — 2026-10-19
 
 Recorded the owner's media-path decision for the share-cost work. Media stays
@@ -1999,6 +2830,18 @@ quota in literal and dot modes. Hover/reset behavior is unchanged.
 Boundary regression covers15%,15.1%,14%,10%,0% and missing values. Routine deploy
 stages the native update for next login; no additional panel reload was requested.
 
+
+### Screenshot retention correction — 2026-10-21 (#227)
+
+The shelf now always retains saved originals: non-cancelled drag completion is no
+longer treated as proof that the target read/attached an image. Cards allow retry;
+Copy/Show remain available. Replacement during an active drag defers cleanup,
+and unique stage directories avoid same-name races. Only transient copies/portal
+exports expire, two minutes after closing a card that offered a drag. Seven private
+D-Bus/Xvfb GTK regressions pass; no live account, panel or desktop state changed.
+See `screenshot-shelf/README.md`. Actual Signal compose-preview/content and display
+boundary acceptance plus native Signal UI work remain open; do not close #227
+from source tests alone.
 
 ## Screenshot shelf drag into Signal (Flatpak) — 2026-10-18 (Claude Code)
 
@@ -2669,6 +3512,13 @@ existing CLI credential selection; desktop account synchronization is not establ
 
 
 ## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
+
+Maintenance update (2026-10-21): the optional muvm installer now binds its three
+existing version tags to exact commits and checks cached origin, HEAD and source
+cleanliness before any privileged package/install action. Modified or unrelated
+caches are preserved and refused; ignored build outputs remain reusable. Eleven
+offline fixtures, syntax and warning-level ShellCheck pass. No VM, package,
+installed binary or desktop state changed. [Source receipt](upstream-audits/security/2026-10-21-muvm-source-provenance.md).
 
 Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
 page size`). `mseries/install-muvm.sh` builds muvm 0.7.0 + libkrun 1.19.6 + libkrunfw 5.6.2 (guest 6.12.109, 4K pages),
@@ -8467,6 +9317,17 @@ Incident: the state.rs agent's functional test ran `gsettings set` in a private 
 Built from the merged polling-removal + linux-dmabuf branch (SHA-256 `4b459494…b6f65`) and installed with the installer (`--verify` passes). The running Rust session (compositor pid started 18:02 from `69cb0f1`) is untouched; the new binary applies at the next login. Autologin still selects the Rust session; Gala rollback: `sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes`.
 Next login runs the polling-free build with native dmabuf OFF. To trial dmabuf (needs a login, so only with the owner present): `systemctl --user edit pantheon-rust-compositor@wayland.service`, add `[Service]` / `Environment=PANTHEON_ENABLE_DMABUF=1`, log in again, watch the journal for "advertising linux-dmabuf v4 on the native renderer" and for Wingpanel/GTK apps drawing; if apps go blank remove the drop-in. The owner has restored the wallpaper and xkb settings that the earlier test leaked.
 
+## 2026-10-21: Machine Lab fake-QMP teardown regression
+
+CI completed all 14 machine-logic TAP cases but timed out waiting for output EOF.
+A captured-pipe reproduction confirmed one failure in 100 QMP-only iterations:
+the test parent had exited 0 while both owned fake Python peers remained alive.
+The fixture now waits/reaps each killed peer and retains diagnostic output on
+private pipes. A new bounded regression checks 20 process exits and output EOF;
+the existing 60-second logic timeout is unchanged. After the fix, 100 equivalent
+iterations had no failures. No real VM, clipboard service, or application runtime
+was changed. See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
+
 ## 2026-10-18: Machine Lab (native VM app)
 
 `mseries/machine-lab/` is the elementary-styled VM app (Vala/GTK4/Granite 7); `bash mseries/install-machine-lab.sh`
@@ -8955,6 +9816,56 @@ and end-to-end link opening remain unverified until the next login.
 - Unverified: a visual check of the new control, and dock follow-through on real hardware.
 - Next: phases 2–4 in #332: other dock writers, Wingpanel scale from #312, app type-ramp migration, Qt/Electron.
 
+### 2026-10-21: taskbar tokens and relative app text (#332)
+
+- Managed taskbar icons now consume the same `icon-size` setting as the dock;
+  unadopted, malformed or unsupported-version policy retains the legacy 48px
+  taskbar. The CLI publishes a versioned private adoption marker before changing
+  icon settings, using unique atomic temporaries for concurrent CLI/watcher writes.
+  Quick Settings adoption also reconciles the existing font policy. A shared native
+  policy monitor refreshes already-created launcher/group/separator caches when
+  adoption changes without a settings change; monitor registration precedes reading.
+  Actual widget transitions are tested with icon-size held40 on a private no-service
+  activation bus/runtime/display. The actual-manager fatal-critical test also
+  exposed an upstream BackgroundItem constructor self-capture; the equivalent
+  static map callback fixes that baseline critical without changing icon mapping.
+- Hosted run39657218371 exposed a test-host assumption: Granite fell back to real
+  AccountsService because the fixture lacked a settings portal. Reproduced the
+  same Settings.vala:114 failure locally on a private bus with no Accounts service.
+  Fixtures now serve typed appearance values in a separate private portal process:
+  historical Read has two variant layers; ReadOne has one; color-scheme is uint32
+  and accent-color is a double triple. Unknown keys fail explicitly. The same
+  private no-activation bus serves as the logical system bus, with read-only
+  Switcheroo false/empty-GPU properties; AccountsService remains absent. Outer
+  marker/hover and nested launcher tests use these isolated services too.
+  Full native build/interaction suite, fatal-critical cached-widget fixture and
+  protocol preflights pass locally; owner system services are excluded.
+- Hosted run39658908386 then exposed a second fixture assumption: the developer's
+  Gala workspace-keybindings schema had hidden a missing input on Ubuntu CI.
+  The private fixture now compiles the prepared production dock/custom schemas plus
+  a test-only consumed-key subset of Gala f0791434ac40a50f2aec64700a47b3bb04145752.
+  Its schema ID/path, string-array type and SuperEnd/Super0 defaults are exact.
+  A preflight asserts the complete four-schema inventory and absence of all host
+  schemas. Marker, launcher and hover runtimes also exclude host schema data roots;
+  build tools retain their normal VAPI metadata paths. The exact missing-schema
+  failure reproduces before the change; actual widget and full native suite pass
+  with private runtime schema roots afterward. Nothing is installed on the host.
+- RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
+  relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
+  Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar
+  **24pt** readout is preserved as the only absolute-font exception.
+- Native dock source build and compiled policy fixture, 35 focused Python tests,
+  Quick Settings fixture, CodexBar 17 suites and two RepoBar account-cache probes
+  pass. Private light/dark fixtures assert actual GDK scale1/2 and save metadata;
+  their logical-coordinate PNGs are not physical mixed-monitor qualification.
+- A proposed dynamic panel transform was rejected before publication: inherited
+  compensation does not cover explicit/rem typography in upstream indicators,
+  which could scale twice. Wingpanel remains at its existing1.30 transform.
+- Remaining: safe panel sizing design, Qt/Electron font-only adoption and physical
+  internal125%/dock100% acceptance. No monitor settings, live panel/dock restart
+  or physical acceptance is included. Routine CodexBar staging preserves the panel
+  and daemon; replaced modules load next login.
+
 ## Repository housekeeping — 2026-10-20
 
 - Fetched with `git fetch origin --prune`; fast-forwarded the owner's `dev`
@@ -9192,3 +10103,42 @@ All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
 
 PR #343 qualification was rerun after reconciling dev `4cf7a90`, retaining desktop notifications, persistence fixes and darker marker colors. Full canonical build, both-theme real pointer/menu/Escape/typing and native regression checks passed; refreshed screenshots were visually inspected. No deployment or Wingpanel restart.
+
+## Power display-context capability fix — 2026-10-21
+
+The prior power-task samples remain uncontrolled observations (17.303 W and
+41.203 W medians from unlike 30-second windows); they establish no optimization
+or regression. `display_status.py` now preserves valid modes/layout if optional
+Mutter `PowerSaveMode` is missing, while marking full context unavailable and
+DPMS unknown. The one-shot trial now waits for modes without treating the
+partial context as complete or claiming unchanged controls. Nine focused tests
+pass. No live settings, services, display, audio, kernel, or boot state changed.
+See `mseries/power/POWER-TOOLS-2026-10-21.md`. Next: same-head CI, then a
+future authorized trial can verify partial capture while full qualification
+continues to require all controls.
+
+## Hermes setup retired — 2026-10-21
+
+Owner confirmed the Hermes assistant is no longer used. The maintained installer
+no longer fetches Hermes or installs its dependency lock, and the assistant
+configurator no longer creates a Hermes profile or desktop launcher. The unused
+`mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
+venv, config, state, and any previously generated desktop launcher in a user's
+home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.
+
+## Native Messages upstream read-only sender compatibility — 2026-10-21
+
+Reviewed BlueFerry `60fd7ef1...69122b3b` metadata changes. Native Messages now
+keeps an inbox-only sender read-only when optional `sender_alphanumeric` metadata
+is present, including duplicate-handle refreshes; contact-name resolution preserves
+that sender identity. Direct blocked senders now get accurate reply-unavailable
+guidance instead of group-confirmation instructions. Model checks: 69 tests pass;
+targeted isolated GTK restriction/draft test passes. See
+`phone-setup/UPSTREAM-REVIEW.md`. The full isolated GTK regression receipt is
+retained in the morning-task output directory.
+
+Source only: backend pin, Bluetooth state, desktop session and real messages
+unchanged. Current upstream has 51 commits beyond our recorded backend; a separate
+backend qualification is still needed before its sender detection/LE/media fixes
+can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
+features; those need native Incus design, not blind Swift feature parity claims.

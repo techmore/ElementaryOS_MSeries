@@ -1,0 +1,40 @@
+{
+  "recorded_utc": "2026-10-21T14:15:31.468388+00:00",
+  "package_version": "0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace2",
+  "package_sha256": "e028e008c2c8d0dc1071635799e046999ba975091c3f24bf6c46cafbc3e212fc",
+  "installed_binary_sha256": "15ae6c8f936f63047ca2e06551fd310ede697e3cb226cdceb47c1b855ee213b3",
+  "running_pid": 1918,
+  "running_binary_sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e",
+  "candidate_loaded": false,
+  "package_integrity": "dpkg -V clean",
+  "same_support_files": 13,
+  "service_restart": false,
+  "wingpanel_restart": false,
+  "kernel_or_boot_change": false,
+  "tracing": "enabled only in dedicated next-login user-unit drop-in",
+  "drop_in": "/home/sdolbec/.config/systemd/user/pantheon-rust-compositor@wayland.service.d/display-trace.conf",
+  "drop_in_sha256": "18bb5f0e853c7382c8f4356914905b9cf48b0b24a954d4ce3af7eb53aba78df0",
+  "rollback": {
+    "file": "pantheon-rust-compositor_0.1.0+gitdev.dockfix2.panelstack3.popups1_arm64.reconstructed.deb",
+    "sha256": "b6dee8d358f10168fe3cc3d8ec5bc69daa8adea06a35033baf402575bb31cf7e",
+    "reconstructed_from_installed_payload_and_metadata": true,
+    "binary_sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e"
+  },
+  "rollback_local_directory": "/home/sdolbec/Documents/Codex/2026-10-21/we-x20/outputs/compositor-activation-candidate/rollback",
+  "source_deployment_base": "a54f6e92435e753b945b7e96fe81c59af3e7856d",
+  "source_deployment_activation_commit": "64e923b6d9988026fc1659a98f95a39b4904f92f",
+  "source_display_commit": "77eb6f8963543e47e9513c1ec546ca2a2351c496",
+  "dev_display_integration_commit": "7d4f02b03cc89717999609658e58b9e94e7221a9",
+  "dev_integration_check": {
+    "command": "cargo check --locked --manifest-path rust/Cargo.toml -p pantheon-compositor --bin pantheon-compositor --features native-drm",
+    "passed": true,
+    "log_sha256": "b61388d33ed7ed9b2515dc128877c4b8477862ba6c725d00b265d3e923c77838"
+  },
+  "acceptance_pending": [
+    "owner-chosen next login",
+    "actual GTK present/focus and typing behavior",
+    "live lifecycle logs and repeated port timings",
+    "actual .20 recovery",
+    "suspend and controlled power trials"
+  ]
+}

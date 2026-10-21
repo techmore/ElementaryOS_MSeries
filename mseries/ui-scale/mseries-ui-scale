@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -189,17 +190,41 @@ def is_managed():
     return bool(read_json(own_state_path(), {}).get("managed"))
 
 
+def atomic_write(path, contents):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # --set and the watcher can publish together. Each writer owns its temporary.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=path.name + ".", delete=False) as output:
+        temporary = Path(output.name)
+        output.write(contents)
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def set_managed(managed):
     path = own_state_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps({"managed": managed}, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    atomic_write(path, json.dumps({"managed": managed}, indent=2) + "\n")
+
+
+def publish_policy(managed):
+    """Publish the optional native taskbar adoption contract without subprocesses."""
+    path = state_dir() / "ui-scale-policy.ini"
+    contents = "[SizeSystem]\nversion=1\nmanaged=" + str(managed).lower() + "\n"
+    if path.is_file() and path.read_text(encoding="utf-8") == contents:
+        return
+    atomic_write(path, contents)
 
 
 def reconcile(system, desktop, managed=None):
     managed = is_managed() if managed is None else managed
     writes = plan(system, desktop.values(), managed, read_json(work_state_path(), {}), desktop.taskbar())
+    if managed:
+        writes.update(font_plan(system, desktop.values()))
+    # Publish before icon-size emits its change signal: native dock consumers
+    # must observe adoption when they read the newly written token.
+    publish_policy(managed)
     desktop.write(writes)
     return writes
 
@@ -251,10 +276,12 @@ def cmd_set(system, desktop, step):
 def cmd_watch(system):
     Gio, GLib = gio()
     desktop = Desktop()
-    pending = {"id": 0}
+    pending = {"id": 0, "adopt": False}
 
-    def run(adopt):
+    def run(adopt=False):
         pending["id"] = 0
+        adopt = adopt or pending["adopt"]
+        pending["adopt"] = False
         if adopt:
             set_managed(True)
         writes = reconcile(system, desktop)
@@ -263,6 +290,7 @@ def cmd_watch(system):
         return GLib.SOURCE_REMOVE
 
     def schedule(adopt=False):
+        pending["adopt"] = pending["adopt"] or adopt
         if pending["id"]:
             GLib.source_remove(pending["id"])
         pending["id"] = GLib.timeout_add(400, run, adopt)
@@ -298,6 +326,7 @@ def main(argv=None):
         return cmd_list(system)
     if args.unmanage:
         set_managed(False)
+        publish_policy(False)
         print("Size system no longer manages dock size; current settings left as they are.")
         return 0
     if args.watch:

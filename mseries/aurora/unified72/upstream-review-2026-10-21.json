@@ -1,0 +1,52 @@
+{
+  "repo": "omacom/linux-aurora",
+  "integration": {
+    "ref": "faed71028380b969ed9c943e3ab41d99ca3b9c1a",
+    "fixture_git_blob": "6fa006381918cca2873a50a9ad029c86a19daa5b",
+    "driver_git_blob": "73af536772fc208b4e9167c6620a9806ddcd9574"
+  },
+  "wip": {
+    "ref": "4ec597a7427da2cf03c899406b7997c875d4a9fb",
+    "fixture_at_reviewed_path": "absent"
+  },
+  "historical_partial_fixture": {
+    "ref": "833de07062944ae15213677cbb6d23149835a5ec",
+    "pr": [
+      {
+        "number": 64,
+        "url": "https://github.com/omacom/linux-aurora/pull/64",
+        "merged_at": "2026-10-11T18:32:21Z"
+      }
+    ]
+  },
+  "retired_personal_repo": {
+    "repo": "iconidentify/aurora-linux",
+    "archived": true,
+    "development_moved_to": "omacom/linux-aurora"
+  },
+  "scope": "Pinned integration and aurora-wip, plus historical fixture branch and bounded PR searches. No upstream message, issue or PR sent.",
+  "schema": 1,
+  "recorded_at": "2026-10-21T14:04:42.047491+00:00",
+  "active_kernel_patches_applied": [],
+  "kernel_upstream_candidate": false,
+  "fixture_candidate": {
+    "path": "tools/asahi/apple-dart-range-tests.py",
+    "current_integration_harness_sha256": "67c7298886807cc4ba0b8d007d0450d11902d31a10c3f2806eabda31ab6c0149",
+    "current_integration_driver_sha256": "5c3cf935b6b70c6185153159df162b4b14cbe4c0e0f4e5a2553a7690ef3651dc",
+    "same_as_previously_exercised_source": true,
+    "patch": "boot-preflight-2026-10-21/dart-range-host-fixture.patch",
+    "check": "git apply --check passed against immutable current integration fixture",
+    "host_controls": 12,
+    "reused_receipt": "boot-preflight-2026-10-21/dart-range-ported.json",
+    "production_source_modified": false,
+    "historical_partial_adaptation": "Prior fixture branch has fw_mirror/three-argument sync, but lacks current u32/fw_handoff and changed drain-on-error expectation. It is an older merged installer branch, not a current equivalent fix."
+  },
+  "port_tool_candidate": "Potential generic userspace diagnostic, currently coupled to this repo qualification receipt and Mutter DisplayConfig. Needs decoupling/packaging before an upstream proposal.",
+  "distribution_specific": [
+    "Debian payload/co-install naming",
+    "Arch-unlock-preserving initramfs preparation",
+    "GRUB fallback/staging receipts",
+    "elementary desktop qualification and collector glue"
+  ],
+  "bounded_duplicate_search": "Scoped PR queries dart/range-tests/flush found no matching current host-fixture proposal. This does not prove absence from all contributor branches."
+}

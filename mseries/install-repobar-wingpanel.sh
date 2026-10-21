@@ -17,7 +17,8 @@ if [[ ${1:-} == --uninstall ]]; then
   if command -v gtk-update-icon-cache >/dev/null; then
     sudo gtk-update-icon-cache -f "$icon_theme_dir" >/dev/null
   fi
-  rm -f "$HOME/.local/bin/mseries-repobar" "$HOME/.local/bin/mseries-repobar-settings" "$HOME/.local/lib/mseries/repobar.py"
+  rm -f "$HOME/.local/bin/mseries-repobar" "$HOME/.local/bin/mseries-repobar-settings" "$HOME/.local/lib/mseries/repobar.py" \
+    "$HOME/.local/share/applications/io.github.techmore.RepoBar.Settings.desktop"
   echo 'Removed the RepoBar Wingpanel indicator and per-user helper. Cached GitHub status remains in ~/.cache/mseries/repobar/snapshot.json.'
   exit 0
 fi
@@ -49,6 +50,20 @@ ninja -C "$build_dir"
 sudo ninja -C "$build_dir" install
 install -m 0755 "$build_dir/mseries-repobar-settings" "$HOME/.local/bin/mseries-repobar-settings"
 sudo gtk-update-icon-cache -f "$icon_theme_dir"
+
+# RepoBar Settings launcher, so the preferences stay reachable while the panel module is hidden.
+install -d -m 0755 "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/io.github.techmore.RepoBar.Settings.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=RepoBar Settings
+Comment=GitHub accounts, dashboard and notifications for RepoBar
+Exec=$HOME/.local/bin/mseries-repobar-settings
+Icon=github-symbolic
+Terminal=false
+Categories=Settings;Development;
+StartupNotify=true
+DESKTOP
 
 echo 'RepoBar is installed in Wingpanel. Authenticate once with `gh auth login`, then reopen the menu.'
 echo 'The indicator only reads GitHub data and keeps a private, 5-minute local cache.'

@@ -1,6 +1,104 @@
+## Development website publishing — 2026-10-21
+
+Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
+
+## On-demand maintenance continuation — 2026-10-21
+
+Queue/prompts and next-chat instructions: [maintenance/README.md](maintenance/README.md).
+All 16 presets stay paused; continue one at a time. Kernel/dock/popup PRs #359,
+#357 and #364 merged to dev. All three dock ports confirmed. Attention fix,
+bounded display lifecycle logging and within-scan EDID read reuse installed for
+next login, not currently loaded; no measured speedup. Actual .20 recovery,
+suspend and controlled power remain open. Read latest handoff before proceeding.
+
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Software Updates app — 2026-10-21
+
+Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.
+Not run on the M1 or against a real repository yet. Next: package it into the `dev`/`stable` suites, a Switchboard pane, translations, an
+update notification. [Details](updates-app/README.md).
+
+## Customer update mechanism (first slice) — 2026-10-21
+
+`mseries-update` stages signed `mseries-*` package updates, applies them before the next login and rolls back
+automatically (failed apply, interrupted power, or no healthy login). Opt-in, nothing restarts Wingpanel or the dock.
+Design, decisions for the owner (repo hosting, signing key custody, first components) and the unverified list:
+[UPDATER-DESIGN.md](UPDATER-DESIGN.md). Not published or run on hardware yet. Next: owner decisions, then the signed `dev`/`stable`
+suites, `run_module` .deb-first (#52), a Switchboard pane reading `status --json`.
+
+## Optional emulation source provenance — 2026-10-21
+
+MuVM/libkrun/libkrunfw version tags now bind to immutable source commits; existing
+caches must match origin/revision and have clean source before privileged work.
+Eleven offline regressions pass; no emulation rebuild or host installation. Next:
+qualify a future owner-authorized rebuild with the recorded source identities.
+[Receipt](upstream-audits/security/2026-10-21-muvm-source-provenance.md).
+
+## Daedalus portal and NmapUI desktop experience — 2026-10-21
+
+Daedalus `main` is CI-green with review fixes and an elementary look; NmapUI has a native window, dock actions and a
+Wingpanel scan-summary indicator running here. Next: move to TM-NmapUI-elementary (replace the Werkzeug dev-server
+unit), verify dock progress live, run a scan on the current network. Production gates (host access, signing, Google
+Admin consent, physical fleet) remain open. [Details](OS9-HANDOFF.md).
+
+## All three wip2 dock ports pass scoped picture — 2026-10-21
+
+Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
+one-cycle polling≈4.5s partner→active desktop each, with label/boundary corrections
+and 0.5 s resolution disclosed. Not a speed ranking or pixel latency benchmark.
+New read-only timing tool and 5 tests; existing 71 Aurora tests pass after dev
+conflict resolution. Next dev merge, exact lifecycle tracing and actual `.20`
+recovery; boot default unchanged, no stable promotion/power claim.
+[Timing follow-up](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
+
+Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
+shared payload verified; one-shot consumed, `.20` remains normal default.
+Five-minute boot/PMP/idle and M1 Pro GLES shader/readback plus 1 MiB fsync pass.
+Owner confirms internal display/input and front-left dock picture (slow to
+appear); hinge-side left port picture fails, right untested. External 1080p/60
+observed. Next matched physical-port evidence and real `.20` recovery; no
+suspend, stable or energy-improvement acceptance.
+[Report](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+## Deferred reboot: mismatch triage and test readiness — 2026-10-21
+
+24 mechanically-neither patches triaged: 19 source contracts retained,
+five deeper/partial reviews open. Full 64-fix semantics and hardware acceptance
+remain unqualified. Exact private post-boot collector/smoke commands are ready;
+compiler/EGL/GLES/GI dependencies exist. No hardware tests or installed changes.
+The one-shot remains armed for the owner's later attended reboot.
+[Audit](aurora/unified72/static-contract-review-2026-10-21.json),
+[manual sequence](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot).
+
+## Aurora 7.2 one-shot armed — 2026-10-21
+
+Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
+`elementary-aurora72-wip2-trial` is armed; `.20` remains persistent default,
+old/shared payload bytes are unchanged, no reboot yet. Next is owner/Claude
+attended reboot, basic unlock/display/input and manual qualification, then
+actual `.20` recovery. Hardware/suspend/power acceptance remains open.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json).
+This supersedes the unarmed staging status below.
+
+## Aurora 7.2 staged for an attended trial — 2026-10-21
+
+Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,
+legacy-DTB/unlock checks and bounded DART/DCP/radio host controls. Owner approved
+unarmed staging: separate package/Image/initramfs and non-default GRUB entry are
+installed, all 2,042 regular package files verified. `.20` stays default;
+`next_entry` empty, old fallback assets/shared `boot.bin` unchanged; no reboot.
+71 repository unit tests pass. [Receipt and boundaries](aurora/unified72/boot-preflight-2026-10-21.json).
+Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unlock
+acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
+qualification remain open; no measured power win.
+[First-boot plan](aurora/unified72/BOOT-TRIAL.md).
+
 ## October 21 maintenance checkpoint: kernel application next
+
+*Superseded:* the Aurora 7.2 wip2 staging, one-shot and first-boot entries above record what happened next.
 
 Kernel and power maintenance prompts were manually trialed, evidence-audited and
 refined; all eight recurring tasks remain paused. No measured optimization or
@@ -273,6 +371,23 @@ and private window/focus/typing checks pass. #337's status-note conflicts are
 reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
 See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
 remaining native taskbar/network and Teams/Outlook qualification checks.
+
+### Size-system continuation (#332), 2026-10-21
+
+Managed taskbar sizing now follows the shared dock tokens; app typography and
+strict lint coverage are expanded. Owner-selected RepoBar taskbar24pt remains
+intentional. Isolated builds/tests pass; module load and mixed-monitor acceptance
+remain pending. Wingpanel dynamic sizing is held because a whole-content
+transform can double-apply text scale to upstream absolute/rem fonts. Qt/Electron
+font-only integration also remains open. See `ui-scale/SIZE-SYSTEM.md`.
+CI's absent AccountsService exposed a fixture assumption, now corrected with typed
+private portal/Switcheroo services and a private logical system bus. The complete
+native dock suite and fatal-critical cached-widget regression pass without owner
+system services. The subsequent missing Gala keybindings schema is now supplied
+as an exact pinned, test-only consumed-key fixture. Runtime schema roots exclude
+all host schemas, and the cached-widget preflight asserts its four-schema inventory.
+Build-tool metadata lookup remains unchanged. Current-head hosted confirmation
+remains the merge gate.
 
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
@@ -663,6 +778,21 @@ acceptance remains pending.
   DisplayConfig `PowerSaveMode`, not because display enumeration failed.
   Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
 
+### Native UI responsiveness and display labels — 2026-10-21 (#242)
+
+Canonical Troubleshooter verification and AirPlay GUI operations now use bounded
+background workers with pending/error/retry behavior. Verification cancels/reaps
+its owned helper on close; stale UI completions are ignored. Display arrangement
+uses bounded system-font labels, full tooltips/accessibility summaries and visible
+keyboard focus with selection that does not apply a display configuration.
+
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
+canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
+source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
+inventory. This fixes three confirmed blockers; it does not close the full native
+release gate or qualify all keyboard/screen-reader/device/account workflows.
+No live model, audio, display, panel or installed application was changed.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
@@ -1022,6 +1152,18 @@ The existing six-hour developer watcher continues; do not duplicate it or rerun
 finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
 post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
 
+### Screenshot retention correction — 2026-10-21 (#227)
+
+The shelf now always retains saved originals: non-cancelled drag completion is no
+longer treated as proof that the target read/attached an image. Cards allow retry;
+Copy/Show remain available. Replacement during an active drag defers cleanup,
+and unique stage directories avoid same-name races. Only transient copies/portal
+exports expire, two minutes after closing a card that offered a drag. Seven private
+D-Bus/Xvfb GTK regressions pass; no live account, panel or desktop state changed.
+See `screenshot-shelf/README.md`. Actual Signal compose-preview/content and display
+boundary acceptance plus native Signal UI work remain open; do not close #227
+from source tests alone.
+
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
@@ -1072,6 +1214,15 @@ No kernel/bootloader/module installation, boot selection change or reboot.
 Next: review diagnostics before any separately authorized hardware trial; failed
 candidate remains unqualified. The login-time capture cannot diagnose pre-login
 hangs and QEMU without the required console driver was inconclusive.
+
+## Native Share Eyes freshness follow-up — 2026-10-21
+
+Source guard and synthetic regressions reject future/zero/missing launcher
+heartbeats; 15-second freshness, clearing and recovery remain verified. Native
+app/probe builds and private light/dark off-state renders pass. Not installed or
+loaded. [Upstream/compatibility receipt](SHARE-EYES-FRESHNESS-2026-10-21.md) records
+unchanged Torrential upstream and successful Signal module build; real tray,
+sharing/device and next-load acceptance remain open.
 
 ## Screen-share real dock qualification — 2026-10-18
 
@@ -1179,7 +1330,7 @@ reopened Claude as524238; CLI and desktop identity hints matched the requested
 target. Owner independently confirmed the correct main-UI account.
 
 The operation exported/imported34 local Code conversations, with zero unavailable.
-All34 destination records, transcripts and workspace directories exist; session,
+All 34 destination records, transcripts and workspace directories exist; session,
 CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
 Claude's own post-start logs loaded13 active records from the exact target index
 (nine imported plus four existing) and25 deferred archived records. Initial
@@ -1496,6 +1647,23 @@ for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal mess
 coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
+
+
+## RepoBar account cache isolation — 2026-10-21
+
+Follow-up to #414: follow-CLI mode resolves and pins the active stored CLI account
+for each helper process, including worker requests. Snapshot and endpoint caches
+require the resolved host/login; inherited token overrides cannot select another
+identity. Unknown/signed-out accounts fail closed; validated same-account stale
+snapshots remain available. The indicator no longer reads raw disk snapshots,
+discards responses spanning settings changes and clears account-derived state on
+terminal helper errors. No live panel restart or deployment.
+
+Checks: 18 fake-CLI regressions; native indicator/module/settings build; two private
+D-Bus/Xvfb account probes (late old-account response and prior account + helper
+failure); light/dark healthy/offline renders; strict size lint. CI now exercises
+the native probes. Actual second-account login remains owner acceptance. #414 was
+merged independently before this follow-up was published; this patch is separate.
 
 ## RepoBar UX pass 2 — 2026-10-18
 
@@ -2590,7 +2758,7 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 0. **Stay within 24 h of upstream, and port privileged code to Rust** (requested 2026-10-14; plan in [`EDGE-AND-RUST-PLAN.md`](EDGE-AND-RUST-PLAN.md)). Watched projects: [`WATCHLIST.md`](WATCHLIST.md).
 0. **Minimum brightness** (requested 2026-10-14). Investigated and implemented 2026-10-16: the hardware floor is 2 nits, Mutter capped controls at 5, keys now walk an even 25-step ladder through logind, and a patched Gala adds four software steps below 2 nits. Owner validation is the next step; the phased plan (BR-01..BR-21), acceptance criteria and test protocol are in `BRIGHTNESS.md`.
 0. **True Tone-like display** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Shift the display's white point toward the room light. Apple's True Tone uses a multi-channel sensor; the M1 Pro ambient light sensor (`iio:device1`, `aop-sensors-als`) exposes only `in_illuminance_input` (lux) on this kernel, so a faithful version is not possible yet. Interim plan: map lux plus time of day to a colour temperature through the colour plugin's night-light path (`night-light-temperature`, currently 4500 K, night light off), with slow easing and an off switch. Must not touch brightness (ambient auto-brightness stays off, see the dimming fix).
-0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. No Linux driver for the Mac Touch ID sensor (Secure Enclave) is known to this project, so treat Touch ID as research, not a plan.
+0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. Aurora's `apple_sep` driver now attaches on this Mac and an enrolment completes in the enclave, but the xART guard blocks matching until the owner decides about `xart_guard=0` (see `aurora-sep/XART-GUARD.md`); the Settings page is installed.
 
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
 2. ~~**Panel toggle for the battery charge limit**~~ Done 2026-10-13: a switch in the gear menu (`quick-settings/ChargeLimit.vala`, polkit action in `power/`). Pending your click-through: check `charge-limit-toggle`.
@@ -3130,3 +3298,28 @@ Full canonical native build/schema, actual Launcher startup/focus/close/reopen
 and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
 All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
+
+- 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
+
+- 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
+
+- 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
+
+- 2026-10-21: audited eleven customized Pantheon shell ports against upstream; retained integration gates for Gala/Wingpanel/Dock/Files and unified desktop Quick Settings source preparation with factory/package builds. Native core/extras builds, source parity, routing tests and private Bluetooth probe passed; no live deployment. See `upstream-audits/pantheon-shell-2026-10-21.md`.
+
+### 2026-10-21 upstream pass: native Messages
+
+Prepared sender-ID read-only snapshot compatibility and accurate direct-sender
+reply guidance; see `phone-setup/UPSTREAM-REVIEW.md` and newest OS9 handoff.
+Next: qualify the current BlueFerry backend separately on the BlueZ 5.85
+compatibility path before any service upgrade or hardware acceptance claim.
+
+### 2026-10-21 Machine Lab CI fixture reliability
+
+Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
+only owned synthetic peers. No application behavior or VM acceptance change.
+See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.

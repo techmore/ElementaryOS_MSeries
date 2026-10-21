@@ -381,7 +381,6 @@ where
         AsRenderElements,
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
-    use smithay::desktop::space::SpaceRenderElements;
     let mut elements = render_cursor_elements(renderer, state, output);
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
@@ -483,15 +482,13 @@ where
             }));
         }
     } else {
-        elements.extend(
-            smithay::desktop::space::space_render_elements(renderer, [&state.space], output, 1.0)?
-                .into_iter()
-                .map(|element| match element {
-                    SpaceRenderElements::Surface(surface) => CursorRenderElement::from(surface),
-                    SpaceRenderElements::Element(element) => CursorRenderElement::from(element),
-                    SpaceRenderElements::_GenericCatcher(_) => unreachable!(),
-                }),
-        );
+        // Not `space_render_elements`: that draws each window's popups at the
+        // window's own place in the stack, so a lower window's menu was clipped
+        // by a higher neighbour. This draws every popup above every toplevel.
+        elements.extend(crate::popup_stack::stacked_render_elements::<
+            R,
+            CursorRenderElement<R>,
+        >(renderer, &state.space, output, 1.0));
     }
     if let Some(wallpaper) = render_wallpaper_element(renderer, state, output) {
         elements.push(wallpaper);

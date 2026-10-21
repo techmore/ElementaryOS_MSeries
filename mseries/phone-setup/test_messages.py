@@ -1,12 +1,50 @@
+import json
+import os
+import stat
+import subprocess
+import sys
+import tempfile
 import unittest
 from datetime import datetime
+import gui_safety
+import messages_settings
 from messages_model import (AVATAR_TONES, ConversationState, Outbox, avatar_tone, conversation_preview,
-                            initials, layout_messages, merge_inbox, parse_timestamp, short_stamp,
-                            contact_index, resolve_contact_names)
+                            initials, layout_messages, merge_inbox, message_parts, parse_timestamp, short_stamp,
+                            contact_index, resolve_contact_names, blocks_group_confirmation, group_roster,
+                            lookup_contact_name, needs_group_confirmation, send_failure_reason, identity_keys, reply_block_reason)
 
 
 def thread(key='alice', **values):
     return dict(key=key, recipients=['+15550100123'], reply_ready=True, messages=[], **values)
+
+
+class MessageContentTests(unittest.TestCase):
+    def test_plain_text_is_shown_whole_and_untouched(self):
+        body = '  two spaces kept\n' + 'x' * 500
+        self.assertEqual(message_parts(dict(body=body)), (body, False, False))
+
+    def test_attachment_only_messages_are_recognised(self):
+        for body in ('', '   ', None, '\ufffc', ' \ufffc\ufffc '):
+            self.assertEqual(message_parts(dict(body=body)), ('', True, False), repr(body))
+
+    def test_an_attachment_mark_inside_text_keeps_the_text(self):
+        self.assertEqual(message_parts(dict(body='Look\ufffc')), ('Look', True, False))
+
+    def test_only_listing_messages_at_the_phone_cap_may_be_shortened(self):
+        long = 'y' * 128
+        self.assertTrue(message_parts(dict(body=long, phone_list=True))[2])
+        self.assertFalse(message_parts(dict(body=long))[2], 'a live message is whole')
+        self.assertFalse(message_parts(dict(body='y' * 40, phone_list=True))[2])
+        self.assertTrue(message_parts(dict(body='cut', body_truncated=True))[2], 'the backend flag is honoured')
+
+    def test_snapshot_messages_are_marked_as_coming_from_the_phone_listing(self):
+        rows = merge_inbox([], [dict(handle='h', sender='+15550100123', body='z' * 128)])
+        message = rows[0]['messages'][0]
+        self.assertTrue(message['phone_list'] and message_parts(message)[2])
+
+    def test_preview_names_an_attachment_instead_of_showing_nothing(self):
+        for body, expected in (('\ufffc', 'Attachment'), ('Photo\ufffc', 'Photo · Attachment'), ('Hi', 'Hi')):
+            self.assertEqual(conversation_preview(dict(messages=[dict(body=body)]))[0], expected)
 
 
 class RoutingTests(unittest.TestCase):
@@ -52,6 +90,32 @@ class RoutingTests(unittest.TestCase):
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_alphanumeric_snapshot_sender_stays_read_only_and_keeps_name(self):
+        raw = dict(handle='bank', sender='3873363749', sender_alphanumeric='Fuse Energy', body='Notice')
+        rows = merge_inbox([], [raw])
+        resolve_contact_names(rows, contact_index([('Unrelated phone owner', ['3873363749'], [])]))
+        self.assertEqual(rows[0]['name'], 'Fuse Energy')
+        self.assertFalse(rows[0]['reply_ready'])
+        state = ConversationState()
+        state.drafts[rows[0]['key']] = 'Do not send'
+        with self.assertRaisesRegex(ValueError, 'cannot receive replies'):
+            state.prepare(rows[0])
+        self.assertFalse(state.pending)
+
+    def test_duplicate_snapshot_still_applies_sender_read_only_metadata(self):
+        existing = thread(name='Digits')
+        existing['recipients'] = ['3873363749']
+        existing['messages'] = [dict(handle='bank', body='Notice')]
+        rows = merge_inbox([existing], [dict(handle='bank', sender='3873363749',
+                                            sender_alphanumeric='Fuse Energy', body='Notice')])
+        self.assertEqual(len(rows[0]['messages']), 1)
+        self.assertFalse(rows[0]['reply_ready'])
+        self.assertTrue(existing['reply_ready'], 'input threads are not mutated')
+
+    def test_blocked_direct_sender_is_not_described_as_a_group(self):
+        self.assertEqual(reply_block_reason(dict(is_group=False)), 'This sender cannot receive replies.')
+        self.assertIn('group', reply_block_reason(dict(is_group=True)))
+
     def test_phonebook_names_use_unique_addresses_without_changing_routes(self):
         index=contact_index([('Alice',['+1 (555) 010-0123'],[]),('Email Person',[],['PERSON@example.com'])])
         rows=[thread(name='15550100123'),dict(key='email',name='person@example.com',recipients=['person@example.com'],messages=[])]
@@ -236,6 +300,266 @@ class OutboxTests(unittest.TestCase):
         box.rekey('new:+1555', 'thread-7')
         self.assertEqual(box.visible('thread-7', []), [entry])
         self.assertEqual(box.visible('new:+1555', []), [])
+
+
+def group(**values):
+    base = dict(key='g', name='Family', is_group=True, reply_ready=True, confirmation_token='roster-v1',
+                group_confirmed=False, recipients=['+15550100126', '+15550100127'], messages=[])
+    base.update(values)
+    return base
+
+
+class GroupReplyTests(unittest.TestCase):
+    def test_only_a_replyable_unconfirmed_group_needs_confirmation(self):
+        self.assertTrue(needs_group_confirmation(group()))
+        self.assertFalse(needs_group_confirmation(group(group_confirmed=True)))
+        self.assertFalse(needs_group_confirmation(group(reply_ready=False)))
+        self.assertFalse(needs_group_confirmation(group(confirmation_token='')))
+        self.assertFalse(needs_group_confirmation(group(is_group=False)))
+
+    def test_incomplete_roster_cannot_be_confirmed_here(self):
+        self.assertTrue(blocks_group_confirmation(group(participants_required=True)))
+        self.assertFalse(blocks_group_confirmation(group()))
+        self.assertFalse(blocks_group_confirmation(group(is_group=False, participants_required=True)))
+
+    def test_roster_shows_names_only_when_the_phonebook_is_unambiguous(self):
+        index = contact_index([('Alex', ['+15550100126'], []), ('Sam', ['+15550100127'], []), ('Other Sam', ['+15550100127'], [])])
+        self.assertEqual(group_roster(group(), index), [('Alex', '+15550100126'), ('', '+15550100127')])
+        self.assertEqual(lookup_contact_name('+15550100126', index), 'Alex')
+        self.assertEqual(lookup_contact_name('not an address', index), '')
+
+    def test_confirmation_is_carried_only_for_groups(self):
+        state = ConversationState()
+        state.drafts['g'] = 'Hi'
+        self.assertFalse(state.prepare(group()).confirm_group, 'default never confirms')
+        state.pending.clear()
+        self.assertTrue(state.prepare(group(), confirm_group=True).confirm_group)
+        state.pending.clear()
+        state.drafts['alice'] = 'Hi'
+        self.assertFalse(state.prepare(thread(), confirm_group=True).confirm_group, 'a direct chat has nothing to confirm')
+
+
+class TapbackAndQuoteTests(unittest.TestCase):
+    def thread(self, *rows):
+        return [dict(body=b, outgoing=o, sender=who, timestamp='2026-10-21T10:%02d:00+00:00' % i) for i, (b, o, who) in enumerate(rows)]
+
+    def test_a_tapback_folds_onto_the_message_it_names(self):
+        from messages_model import fold_reactions
+        out = fold_reactions(self.thread(('Do you have a starlink mini?', False, ''), ('Liked “Do you have a starlink mini?”', True, '')))
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['reactions'], [{'reaction': 'Liked', 'by': 'You'}])
+
+    def test_the_phones_named_and_shortened_forms_fold_too(self):
+        from messages_model import fold_reactions
+        long = 'Racism incoming I want Rupert to be so good at saving money Jason gives the approval to call it'
+        out = fold_reactions(self.thread((long, False, 'Derek'), ('Derek laughed at “%s…”' % long[:60], False, '')))
+        self.assertEqual(out[0]['reactions'], [{'reaction': 'Laughed at', 'by': 'Derek'}])
+
+    def test_a_newer_tapback_replaces_and_a_removal_deletes(self):
+        from messages_model import fold_reactions
+        base = ('Dinner at six', False, 'Jan')
+        out = fold_reactions(self.thread(base, ('Liked “Dinner at six”', False, 'Sam'), ('Loved “Dinner at six”', False, 'Sam'), ('Liked “Dinner at six”', False, 'Jan')))
+        self.assertEqual([(r['by'], r['reaction']) for r in out[0]['reactions']], [('Sam', 'Loved'), ('Jan', 'Liked')])
+        out = fold_reactions(self.thread(base, ('Liked “Dinner at six”', False, 'Sam'), ('Removed a like from “Dinner at six”', False, 'Sam')))
+        self.assertEqual(out[0]['reactions'], [])
+
+    def test_an_unmatched_tapback_stays_a_normal_message(self):
+        from messages_model import fold_reactions
+        rows = self.thread(('Hello', False, ''), ('Liked “Something we never saw”', False, ''))
+        out = fold_reactions(rows)
+        self.assertEqual([m['body'] for m in out], ['Hello', 'Liked “Something we never saw”'])
+        self.assertNotIn('reactions', out[0])
+
+    def test_folding_never_mutates_the_callers_messages(self):
+        from messages_model import fold_reactions
+        rows = self.thread(('Hi', False, ''), ('Liked “Hi”', True, ''))
+        fold_reactions(rows)
+        self.assertNotIn('reactions', rows[0])
+        self.assertEqual(len(rows), 2)
+
+    def test_a_folded_tapback_adds_no_bubble_to_the_layout(self):
+        from messages_model import layout_messages
+        items = layout_messages(self.thread(('Hi', False, ''), ('Liked “Hi”', True, '')))
+        self.assertEqual([i['kind'] for i in items], ['stamp', 'message'])
+
+    def test_quote_snippets_and_reply_bodies(self):
+        from messages_model import quote_snippet, reply_body
+        self.assertEqual(quote_snippet(dict(body='Starlink\nmini ?')), '“Starlink mini ?”')
+        self.assertEqual(quote_snippet(dict(body='Hi', sender='Jan'), is_group=True), 'Jan: “Hi”')
+        self.assertEqual(quote_snippet(dict(body='Hi', sender='Jan', outgoing=True), is_group=True), '“Hi”')
+        self.assertTrue(quote_snippet(dict(body='x' * 300)).endswith('…”'))
+        self.assertLessEqual(len(quote_snippet(dict(body='x' * 300))), 83)
+        self.assertEqual(reply_body('“Hi”', 'Yes'), '↪ “Hi”\nYes')
+        self.assertEqual(reply_body('', 'Yes'), 'Yes')
+
+
+class FailureReasonTests(unittest.TestCase):
+    def test_daemon_wording_becomes_plain_reasons(self):
+        cases = {
+            'thread no longer exists in local history': 'no longer in BlueFerry',
+            'thread has no unambiguous reply destination': 'can’t tell who to reply to',
+            'confirm the displayed participant list before replying to this group': 'participants need confirming',
+            'the group changed; refresh the conversation': 'group changed',
+            'OBEX connect failed: Forbidden': 'isn’t allowing message access',
+            'MAP session not connected': 'isn’t connected',
+            'too many requests, rate limit exceeded': 'too many messages',
+        }
+        for raw, expected in cases.items():
+            self.assertIn(expected, send_failure_reason(raw), raw)
+
+    def test_unknown_errors_are_shown_short_single_line_and_never_empty(self):
+        self.assertEqual(send_failure_reason('Something\nodd   happened'), 'Something odd happened')
+        self.assertEqual(len(send_failure_reason('x' * 500)), 140)
+        self.assertEqual(send_failure_reason(''), 'BlueFerry could not send it')
+        self.assertEqual(send_failure_reason(None), 'BlueFerry could not send it')
+        self.assertNotIn('\x1b', send_failure_reason('red \x1b[31mtext'))
+
+
+class SettingsTests(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.path = os.path.join(self.dir, 'mseries', 'messages.json')
+
+    def test_missing_corrupt_and_wrongly_typed_files_fall_back_to_defaults(self):
+        self.assertEqual(messages_settings.load(self.path), messages_settings.DEFAULTS)
+        os.makedirs(os.path.dirname(self.path))
+        for content in ('not json', '[]', '{"enter_sends": "yes"}', '{"enter_sends": 1}', ''):
+            with open(self.path, 'w') as out:
+                out.write(content)
+            self.assertEqual(messages_settings.load(self.path), {'enter_sends': True}, content)
+
+    def test_round_trip_keeps_only_known_boolean_switches(self):
+        saved = messages_settings.save({'enter_sends': True, 'body': 'secret text', 'recipient': '+15550100123'}, self.path)
+        self.assertEqual(saved, {'enter_sends': True})
+        self.assertEqual(json.load(open(self.path)), {'enter_sends': True}, 'nothing but the switch is written')
+        self.assertEqual(messages_settings.load(self.path), {'enter_sends': True})
+
+    def test_file_and_folder_are_private_and_no_temp_file_is_left(self):
+        messages_settings.save({'enter_sends': True}, self.path)
+        self.assertEqual(stat.S_IMODE(os.stat(self.path).st_mode), 0o600)
+        self.assertEqual(stat.S_IMODE(os.stat(os.path.dirname(self.path)).st_mode), 0o700)
+        self.assertEqual(os.listdir(os.path.dirname(self.path)), ['messages.json'])
+
+    def test_unknown_keys_in_an_existing_file_are_never_loaded(self):
+        os.makedirs(os.path.dirname(self.path))
+        with open(self.path, 'w') as out:
+            json.dump({'enter_sends': True, 'evil': True}, out)
+        self.assertEqual(messages_settings.load(self.path), {'enter_sends': True})
+
+    def test_default_path_honours_xdg_config_home(self):
+        old = os.environ.get('XDG_CONFIG_HOME')
+        os.environ['XDG_CONFIG_HOME'] = self.dir
+        try:
+            self.assertEqual(str(messages_settings.config_path()), os.path.join(self.dir, 'mseries', 'messages.json'))
+        finally:
+            if old is None:
+                del os.environ['XDG_CONFIG_HOME']
+            else:
+                os.environ['XDG_CONFIG_HOME'] = old
+
+
+class SnapshotIdentityTests(unittest.TestCase):
+    """The phone's inbox snapshot spells a number differently than BlueFerry's threads do."""
+
+    def direct(self, key, recipient, **values):
+        return dict(key=key, name='Mike', recipients=[recipient], is_group=False, reply_ready=True, messages=[], last_ts='', **values)
+
+    def snap(self, handle, sender, when, **values):
+        return dict(dict(handle=handle, sender=sender, body=handle, timestamp=when, read=True), **values)
+
+    def test_identity_keys_cover_formatting_and_the_north_american_twin(self):
+        self.assertEqual(identity_keys('+19086420729'), ('phone:19086420729', 'phone:9086420729'))
+        self.assertEqual(identity_keys('19086420729'), ('phone:19086420729', 'phone:9086420729'))
+        self.assertEqual(identity_keys('(908) 642-0729'), ('phone:9086420729', 'phone:19086420729'))
+        self.assertEqual(identity_keys('MChuisano@Me.com'), ('email:mchuisano@me.com',))
+        self.assertEqual(identity_keys('+442071838750'), ('phone:442071838750',), 'no twin outside the NANP lengths')
+        self.assertEqual(identity_keys('Bank Alert'), ())
+        self.assertEqual(identity_keys(''), ())
+
+    def test_snapshot_text_with_no_plus_joins_the_thread_instead_of_duplicating_it(self):
+        # The real case: the thread key is an Apple-ID email, its recipient is "+1…", and the
+        # snapshot reports the same number as "1…" without the plus.
+        thread_ = self.direct('address:email:mike@me.com', '+19086420729')
+        thread_['messages'] = [dict(handle='old', body='old', timestamp='2026-10-20T16:57:26', outgoing=False, read=True)]
+        result = merge_inbox([thread_], [self.snap('new1', '+19086420729', '2026-10-20T20:18:09', sender_phone_norm='19086420729', read=False),
+                                         self.snap('new2', '+19086420729', '2026-10-20T20:32:02', sender_phone_norm='19086420729', read=False)])
+        self.assertEqual(len(result), 1, 'one conversation for one person')
+        self.assertNotIn('inbox_only', result[0])
+        self.assertEqual([m['handle'] for m in result[0]['messages']], ['old', 'new1', 'new2'])
+        self.assertEqual(result[0]['last_ts'], '2026-10-20T20:32:02')
+        self.assertEqual(result[0]['unread_count'], 2)
+        self.assertEqual(result[0]['key'], 'address:email:mike@me.com', 'the backend route is untouched')
+
+    def test_ten_and_eleven_digit_forms_and_spacing_match_each_other(self):
+        for sender in ('9086420729', '19086420729', '+1 908-642-0729', '+19086420729'):
+            for recipient in ('+19086420729', '9086420729', '19086420729'):
+                result = merge_inbox([self.direct('t', recipient)], [self.snap('h', sender, '2026-10-20T10:00:00')])
+                self.assertEqual([len(r['messages']) for r in result], [1], '%s vs %s' % (sender, recipient))
+
+    def test_two_threads_claiming_one_number_are_never_guessed_between(self):
+        a, b = self.direct('a', '+19086420729'), self.direct('b', '9086420729')
+        result = merge_inbox([a, b], [self.snap('h1', '19086420729', '2026-10-20T10:00:00'), self.snap('h2', '+19086420729', '2026-10-20T10:05:00')])
+        by_key = {r['key']: r for r in result}
+        self.assertEqual(len(by_key['a']['messages']) + len(by_key['b']['messages']), 0, 'neither claimant gets the text')
+        extra = [r for r in result if r.get('inbox_only')]
+        self.assertEqual(len(extra), 1, 'both texts land together in one phone-only conversation')
+        self.assertEqual(len(extra[0]['messages']), 2)
+
+    def test_phone_only_texts_from_one_sender_share_a_conversation_whatever_the_spelling(self):
+        result = merge_inbox([], [self.snap('h1', '+17175550100', '2026-10-20T10:00:00'), self.snap('h2', '7175550100', '2026-10-20T10:05:00'),
+                                  self.snap('h3', '17175550100', '2026-10-20T10:06:00')])
+        self.assertEqual([len(r['messages']) for r in result], [3])
+
+    def test_groups_and_unknown_senders_are_still_left_alone(self):
+        group_ = dict(key='g', name='Family', recipients=['+19086420729', '+19086420730'], is_group=True, reply_ready=True, messages=[], last_ts='')
+        result = merge_inbox([group_], [self.snap('h', '19086420729', '2026-10-20T10:00:00'), self.snap('x', 'Bank Alert', '2026-10-20T10:01:00')])
+        by_key = {r['key']: r for r in result}
+        self.assertEqual(by_key['g']['messages'], [], 'a group never absorbs a direct text')
+        self.assertEqual(len(result), 2, 'the group plus one phone-only conversation; the unknown sender is dropped')
+
+    def test_a_sender_that_is_not_a_valid_recipient_is_still_dropped_never_made_a_route(self):
+        # "(908) 642-0729" is not a valid recipient, so it must not become a conversation.
+        result = merge_inbox([self.direct('t', '+19086420729')], [self.snap('h', '(908) 642-0729', '2026-10-20T10:00:00')])
+        self.assertEqual([len(r['messages']) for r in result], [0])
+
+    def test_different_numbers_are_not_merged(self):
+        result = merge_inbox([self.direct('t', '+19086420729')], [self.snap('h', '19086420730', '2026-10-20T10:00:00')])
+        self.assertEqual(sorted(len(r['messages']) for r in result), [0, 1])
+
+
+class GuiSafetyTests(unittest.TestCase):
+    """The GUI tests must never be able to open windows on a real desktop."""
+
+    def test_only_isolated_virtual_displays_are_accepted(self):
+        for display in (':99', ':100', ':102.0', ':90'):
+            self.assertTrue(gui_safety.check({'DISPLAY': display})[0], display)
+        for display in ('', ':0', ':0.0', ':1', ':1.0', ':10', ':89', 'host:99', 'localhost:0', ':abc'):
+            self.assertFalse(gui_safety.check({'DISPLAY': display})[0], repr(display))
+        self.assertFalse(gui_safety.check({})[0], 'no display at all')
+
+    def test_the_refusal_says_what_to_do(self):
+        reason = gui_safety.check({'DISPLAY': ':0'})[1]
+        self.assertIn('xvfb-run', reason)
+        self.assertIn('real desktop', reason)
+
+    def test_forcing_x11_removes_the_live_wayland_session_from_view(self):
+        env = {'DISPLAY': ':99', 'WAYLAND_DISPLAY': 'wayland-0', 'XDG_SESSION_TYPE': 'wayland'}
+        gui_safety.force_x11(env)
+        self.assertEqual(env['GDK_BACKEND'], 'x11')
+        self.assertNotIn('WAYLAND_DISPLAY', env)
+        self.assertEqual(env['DISPLAY'], ':99')
+
+    def test_the_gui_test_module_skips_itself_on_a_real_looking_display(self):
+        # DISPLAY=:5 and a Wayland socket that does not exist: even if the guard were
+        # broken nothing could connect to a real desktop, so this is harmless to run.
+        here = os.path.dirname(os.path.abspath(__file__))
+        runtime = tempfile.mkdtemp()
+        env = {'PATH': os.environ.get('PATH', ''), 'DISPLAY': ':5', 'WAYLAND_DISPLAY': 'no-such-socket', 'XDG_RUNTIME_DIR': runtime}
+        done = subprocess.run([sys.executable, '-W', 'ignore', os.path.join(here, 'test_messages_gui.py')],
+                              env=env, capture_output=True, text=True, timeout=60, cwd=here)
+        self.assertEqual(done.returncode, 0, done.stderr[-400:])
+        self.assertIn('skipped', done.stdout)
+        self.assertIn('real desktop', done.stdout)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,156 @@
+diff --git a/data/Application.css b/data/Application.css
+index 3346bc4..32ce8ef 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -613,6 +613,20 @@ dock-window.taskbar.dark popover.start-menu .start-search {
+ }
+ dock-window.taskbar.dark popover.start-menu .start-search:focus-within { box-shadow: inset 0 -2px #60cdff; }
+ dock-window.taskbar.dark popover.start-menu .start-footer { background: rgba(23,25,32,0.85); }
++/* Restart and Shut Down: solid dark buttons so they read as deliberate actions. */
++popover.start-menu .start-footer button.start-power-action {
++  background: #2b2b2b;
++  color: #ffffff;
++  border-color: rgba(0,0,0,0.35);
++  margin: 0 3px;
++}
++popover.start-menu .start-footer button.start-power-action:hover { background: #111111; }
++dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action {
++  background: #0d0d0d;
++  color: #ffffff;
++  border-color: rgba(255,255,255,0.14);
++}
++dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action:hover { background: #000000; }
+ dock-window.taskbar.dark popover.start-menu .start-recent:hover { background: rgba(255,255,255,0.06); }
+ popover.start-menu .start-recent { color: #1b1b1b; }
+ popover.start-menu .start-recent .dim-label { color: #606060; opacity: 1; }
+diff --git a/src/StartMenu.vala b/src/StartMenu.vala
+index 105ef82..1fc610c 100644
+--- a/src/StartMenu.vala
++++ b/src/StartMenu.vala
+@@ -150,11 +150,34 @@ public class Dock.StartMenu : Gtk.Popover {
+             TaskbarRow.spawn ({ "io.elementary.settings", "settings://accounts" });
+         });
+ 
+-        var power_button = new Gtk.Button.from_icon_name ("system-shutdown-symbolic") {
+-            tooltip_text = _("Power")
++        // Restart and Shut Down are one click away; the session manager still asks to confirm.
++        var restart_button = new Gtk.Button.from_icon_name ("system-reboot-symbolic") {
++            tooltip_text = _("Restart")
++        };
++        restart_button.add_css_class ("flat");
++        restart_button.add_css_class ("start-power-action");
++        restart_button.update_property (Gtk.AccessibleProperty.LABEL, _("Restart"), -1);
++        restart_button.clicked.connect (() => {
++            popdown ();
++            TaskbarRow.run_session_action.begin ("reboot");
++        });
++
++        var shutdown_button = new Gtk.Button.from_icon_name ("system-shutdown-symbolic") {
++            tooltip_text = _("Shut Down")
++        };
++        shutdown_button.add_css_class ("flat");
++        shutdown_button.add_css_class ("start-power-action");
++        shutdown_button.update_property (Gtk.AccessibleProperty.LABEL, _("Shut Down"), -1);
++        shutdown_button.clicked.connect (() => {
++            popdown ();
++            TaskbarRow.run_session_action.begin ("shutdown");
++        });
++
++        var power_button = new Gtk.Button.from_icon_name ("view-more-symbolic") {
++            tooltip_text = _("More power options")
+         };
+         power_button.add_css_class ("flat");
+-        power_button.update_property (Gtk.AccessibleProperty.LABEL, _("Power"), -1);
++        power_button.update_property (Gtk.AccessibleProperty.LABEL, _("More power options"), -1);
+         power_menu = TaskbarRow.build_power_menu (this);
+         power_menu.set_parent (power_button);
+         power_button.clicked.connect (() => power_menu.popup ());
+@@ -163,6 +186,8 @@ public class Dock.StartMenu : Gtk.Popover {
+         footer.add_css_class ("start-footer");
+         footer.append (user_button);
+         footer.append (new Gtk.Box (HORIZONTAL, 0) { hexpand = true });
++        footer.append (restart_button);
++        footer.append (shutdown_button);
+         footer.append (power_button);
+ 
+         var content = new Gtk.Box (VERTICAL, 0) {
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+index ced842f..b0f8e01 100644
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -287,9 +287,10 @@ public class Dock.TaskbarRow : Gtk.Widget {
+         return popover;
+     }
+ 
+-    // Log out, restart and shut down go through the session manager, which shows
+-    // elementary's own confirmation dialog, so a misclick never ends the session.
+-    private static async void run_session_action (string action) {
++    // Log out, restart and shut down ask first with the dock's own dialog (this session has
++    // no shell end-session dialog, so gnome-session cancels those requests), then end the
++    // session through logind / the session manager without a second prompt.
++    internal static async void run_session_action (string action) {
+         if (action == "lock") {
+             spawn ({ "loginctl", "lock-session" });
+             return;
+@@ -298,26 +299,50 @@ public class Dock.TaskbarRow : Gtk.Widget {
+             spawn ({ "io.elementary.settings" });
+             return;
+         }
+-        string method;
+-        Variant? parameters = null;
++        string message, verb;
+         switch (action) {
+         case "logout":
+-            method = "Logout";
+-            parameters = new Variant ("(u)", 0);
++            message = _("Log out of this session?");
++            verb = _("Log Out");
+             break;
+         case "reboot":
+-            method = "Reboot";
++            message = _("Restart this computer?");
++            verb = _("Restart");
+             break;
+         default:
+-            method = "Shutdown";
++            message = _("Shut down this computer?");
++            verb = _("Shut Down");
+             break;
+         }
++        var dialog = new Gtk.AlertDialog ("%s", message) {
++            detail = _("Unsaved work in open apps may be lost."),
++            buttons = { _("Cancel"), verb },
++            cancel_button = 0,
++            default_button = 0,
++            modal = true
++        };
+         try {
+-            var bus = yield Bus.get (SESSION);
+-            yield bus.call (
+-                "org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
+-                method, parameters, null, DBusCallFlags.NONE, -1
+-            );
++            if ((yield dialog.choose (null, null)) != 1) {
++                return;
++            }
++        } catch (Error e) {
++            return; // dismissed
++        }
++        try {
++            if (action == "logout") {
++                var bus = yield Bus.get (SESSION);
++                yield bus.call (
++                    "org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
++                    "Logout", new Variant ("(u)", 1), null, DBusCallFlags.NONE, -1
++                );
++            } else {
++                var bus = yield Bus.get (SYSTEM);
++                yield bus.call (
++                    "org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager",
++                    action == "reboot" ? "Reboot" : "PowerOff", new Variant ("(b)", true), null,
++                    DBusCallFlags.ALLOW_INTERACTIVE_AUTHORIZATION, -1
++                );
++            }
+         } catch (Error e) {
+             warning ("Taskbar %s failed: %s", action, e.message);
+         }

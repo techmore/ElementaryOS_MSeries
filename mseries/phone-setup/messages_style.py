@@ -53,12 +53,15 @@ STYLE = '''
 .ms-notice { padding: 8px 16px; background: alpha(@theme_selected_bg_color,.12); border-bottom: 1px solid alpha(@theme_selected_bg_color,.2); }
 .ms-stamp { font-size: .82em; opacity: .72; margin: 14px 0 6px; }
 .ms-sender { font-size: .82em; opacity: .72; margin: 6px 14px 1px; }
-.ms-bubble { border-radius: 18px; padding: 8px 13px; background: alpha(@theme_fg_color,.10); color: @theme_fg_color; }
+.ms-bubble, .ms-chip { border-radius: 18px; padding: 8px 13px; background: alpha(@theme_fg_color,.10); color: @theme_fg_color; }
 .ms-outgoing { background: alpha(@theme_selected_bg_color,.35); color: @theme_fg_color; background: @accent_bg_color; color: @accent_fg_color; }
 .ms-outgoing link, .ms-outgoing link:visited { color: @accent_fg_color; text-decoration: underline; }
 .ms-incoming.ms-last, .ms-incoming.ms-single { border-bottom-left-radius: 5px; }
 .ms-outgoing.ms-last, .ms-outgoing.ms-single { border-bottom-right-radius: 5px; }
 .ms-sending { opacity: .6; }
+.ms-attachment { font-style: italic; margin-top: 3px; }
+.ms-reactions { font-size: .95em; padding: 1px 8px; margin: -5px 8px 2px; border-radius: 99px; background: @theme_base_color; border: 1px solid alpha(@theme_fg_color,.18); }
+.ms-quote { margin: 6px 16px 0; padding: 4px 6px 4px 10px; border-left: 3px solid @accent_bg_color; background: alpha(@theme_fg_color,.06); border-radius: 6px; font-size: .9em; }
 .ms-caption { font-size: .82em; opacity: .72; margin: 2px 4px 0; }
 .ms-media { border-radius: 14px; padding: 10px; margin-top: 4px; background: alpha(@theme_fg_color,.06); border: 1px solid alpha(@theme_fg_color,.12); }
 .ms-media picture { border-radius: 8px; }

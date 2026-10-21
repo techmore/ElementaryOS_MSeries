@@ -73,6 +73,38 @@ XWayland client's compositor state. The probe does not attach a buffer or xdg
 role, so it validates protocol dispatch rather than panel rendering or
 Wingpanel/Dock integration.
 
+## Window activation (`present()`)
+
+A toolkit raises a window by requesting an `xdg_activation_v1` token, committing
+it with the serial of the last input event the application saw, and then
+activating its surface. An application with no recent input (a launcher, a second
+instance telling the primary to show itself, a notification handler) has no useful
+serial; GTK commits serial 0. The compositor used to drop such tokens, so the
+window stayed where it was.
+
+`src/activation.rs` holds the policy (pure and unit-tested; `state.rs` only wires it):
+
+- A token with a valid recent serial behaves as before: switch to the window's
+  workspace, restore it if minimized, raise it and focus it, at once.
+- Under the default `raise` policy a token without one is kept and the window is
+  raised and focused too, with one guard: if the user pressed a key in the last
+  1.2 s, the raise waits until they pause, so a background window can never take
+  the keyboard mid-word or mid-password. The wait is bounded (8 s, at most 8
+  pending) and nothing is typed into the wrong window.
+- Locked sessions, panel surfaces and tokens older than 10 s are never activated.
+- `PANTHEON_ACTIVATION_POLICY=strict` (in the compositor's environment) restores
+  the old behaviour.
+
+`mseries/pantheon-rust-compositor/activation-probe/run.sh` checks all of this against the
+real compositor with no effect on the live desktop: it runs the binary nested in a
+virtual X display with a private bus and runtime directory, and has one client
+call `present()` while a different client has focus. Expected output:
+
+    idle    strict  never raised
+    idle    raise   focused=A after ~100 ms
+    typing  strict  never raised
+    typing  raise   focused=A only after typing stopped, all keystrokes delivered
+
 ## Current limits
 
 This is an early compositor implementation, not a Mutter port or a Pantheon

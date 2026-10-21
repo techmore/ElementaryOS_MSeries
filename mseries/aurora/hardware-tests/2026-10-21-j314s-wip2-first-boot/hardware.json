@@ -1,0 +1,1198 @@
+{
+  "schema": 1,
+  "kind": "hardware-test",
+  "captured_at": "2026-10-21T13:47:06.501935+00:00",
+  "identity": {
+    "kernel_release": "7.2.10-elementary-aurora72-wip2",
+    "board": "apple,j314s",
+    "soc": "apple,t6000",
+    "boot_payload_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+    "kernel_image_sha256": "894c420112c94a07bf70f38d1fad95dfd63fb1085550675d3e0e5f2af4123954",
+    "live_kernel_build_id": "e33ad2aa657320824a246a3b04814accdb31df1e",
+    "kernel_image_matches_live_build_id": true,
+    "modules": {
+      "kernel/drivers/gpu/drm/apple/appledrm.ko": "6f18e6041d6dcf5ddcd5e4f849c36edd954e385a17c1a6ce2f25d720a7db09a3",
+      "kernel/drivers/soc/apple/apple-sep.ko": "f80f3cb07b961caaf15a463c5bf8341b81baba3bc4bbccc3805bc8828c870365",
+      "dtbs/t6000-j314s.dtb": "2ca125477252e4753e8168567af99dda592bce6dea94235677d212846f49ae4c"
+    },
+    "runtime_parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "feature_cmdline": [
+      "appledrm.show_notch=1"
+    ]
+  },
+  "identity_sha256": "f35ab09fa4ccf4fd20856c84ed4bb3826ad1fc4728a5e0981678362beb957459",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "model": "Apple MacBook Pro (14-inch, M1 Pro, 2021)",
+  "status": "hardware-tested-scoped; incomplete qualification",
+  "context_before": {
+    "active_displays": {
+      "available": false,
+      "reason": "Error"
+    },
+    "backlights": {
+      "apple-panel-bl": {
+        "brightness": "500",
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "power_supplies": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Discharging",
+        "online": null,
+        "capacity": "45",
+        "energy_now": "26584800"
+      }
+    },
+    "drm_connectors": {
+      "card2-DP-2": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-HDMI-A-1": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-3": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-1": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-eDP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2208000"
+      },
+      "policy2": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2208000"
+      },
+      "policy0": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "mem_sleep": "[s2idle]"
+  },
+  "context_after": {
+    "active_displays": {
+      "available": false,
+      "reason": "Error"
+    },
+    "backlights": {
+      "apple-panel-bl": {
+        "brightness": "500",
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "power_supplies": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "status": null,
+        "online": "1",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "status": null,
+        "online": "0",
+        "capacity": null,
+        "energy_now": null
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Charging",
+        "online": null,
+        "capacity": "45",
+        "energy_now": "27781800"
+      }
+    },
+    "drm_connectors": {
+      "card2-DP-2": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-HDMI-A-1": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-3": {
+        "status": "disconnected",
+        "enabled": "disabled",
+        "modes": ""
+      },
+      "card2-DP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+      },
+      "card2-eDP-1": {
+        "status": "connected",
+        "enabled": "enabled",
+        "modes": "3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy2": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy0": {
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "parameters": {
+      "apple_pmgr_misc/parameters/idle_fabric_pstate": "0",
+      "thunderbolt_apple/parameters/resume_recovery": "N",
+      "thunderbolt_apple/parameters/dpin_mode_value": "8",
+      "thunderbolt_apple/parameters/s2idle_teardown": "N",
+      "thunderbolt_apple/parameters/dpin_aux": "N",
+      "thunderbolt_apple/parameters/router_sleep": "N",
+      "thunderbolt_apple/parameters/dp_display": "Y",
+      "appledrm/parameters/dcpext_probe": "N",
+      "appledrm/parameters/typec_follow_crtc": "Y",
+      "appledrm/parameters/j613_25g83_flip_timestamp": "Y",
+      "appledrm/parameters/unstable_edid": "Y",
+      "appledrm/parameters/hdmi_audio": "N",
+      "appledrm/parameters/enable_verbose_logging": "N",
+      "appledrm/parameters/show_notch": "Y",
+      "appledrm/parameters/t6030_show_notch": "N",
+      "appledrm/parameters/j613_25g83_swap_timestamps": "Y",
+      "appledrm/parameters/dcpext_pageflip": "N",
+      "appledrm/parameters/j613_25g83_refresh": "120",
+      "appledrm/parameters/tiled_split": "Y"
+    },
+    "mem_sleep": "[s2idle]"
+  },
+  "controls_unchanged": false,
+  "duration_s": 182.694,
+  "checks": {
+    "boot": {
+      "result": "pass",
+      "scope": "running boot observed >=300 seconds; no recovery/soak claim",
+      "uptime_s": 305.17
+    },
+    "pmp_ready": {
+      "result": "pass",
+      "scope": "firmware ready and PMGR ownership messages",
+      "lines": [
+        "apple-pmgr-misc 28e20c000.power-management: PMP manages fabric and DCS p-states",
+        "apple_pmp 28e700000.pmp: PMP firmware and endpoint ready",
+        "apple_pmp 28e700000.pmp: RTKit: syslog message: io.cpp:41: PMP started"
+      ]
+    },
+    "cpu_idle_accounting": {
+      "result": "pass",
+      "scope": "nonnegative per-CPU idle-counter deltas; no efficiency improvement claim"
+    },
+    "kernel_severe_log": {
+      "result": "pass",
+      "scope": "selected severe messages in supplied current-boot log only",
+      "lines": []
+    },
+    "recovery_boot": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "network": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "suspend_resume": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "thermal": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "input": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "gpu": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "storage": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "energy_ab": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    },
+    "graphics": {
+      "result": "not-run",
+      "scope": "requires dedicated hardware acceptance evidence"
+    }
+  },
+  "idle_deltas": {
+    "cpu0/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 104027444.0,
+      "usage": 330462.0
+    },
+    "cpu0/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 2091311.0,
+      "usage": 1765.0
+    },
+    "cpu1/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 103601261.0,
+      "usage": 332641.0
+    },
+    "cpu1/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 1575195.0,
+      "usage": 996.0
+    },
+    "cpu2/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 20782486.0,
+      "usage": 88538.0
+    },
+    "cpu2/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 154252297.0,
+      "usage": 31452.0
+    },
+    "cpu3/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 22117173.0,
+      "usage": 88895.0
+    },
+    "cpu3/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 152503049.0,
+      "usage": 13997.0
+    },
+    "cpu4/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 16218359.0,
+      "usage": 75328.0
+    },
+    "cpu4/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 160287783.0,
+      "usage": 8999.0
+    },
+    "cpu5/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 19529499.0,
+      "usage": 133121.0
+    },
+    "cpu5/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 156397391.0,
+      "usage": 10186.0
+    },
+    "cpu6/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 21243809.0,
+      "usage": 84954.0
+    },
+    "cpu6/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 153568018.0,
+      "usage": 9385.0
+    },
+    "cpu7/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 17596568.0,
+      "usage": 77315.0
+    },
+    "cpu7/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 159071106.0,
+      "usage": 8484.0
+    },
+    "cpu8/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 23651995.0,
+      "usage": 95294.0
+    },
+    "cpu8/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 152667497.0,
+      "usage": 7296.0
+    },
+    "cpu9/cpuidle/state0": {
+      "name": "WFI",
+      "time_us": 13756754.0,
+      "usage": 64899.0
+    },
+    "cpu9/cpuidle/state1": {
+      "name": "CPU PD",
+      "time_us": 163556878.0,
+      "usage": 7012.0
+    }
+  },
+  "power": {
+    "source": "macsmc_hwmon Total System Power",
+    "samples": [
+      {
+        "elapsed_s": 0.0,
+        "watts": 15.112368
+      },
+      {
+        "elapsed_s": 1.001,
+        "watts": 14.797367
+      },
+      {
+        "elapsed_s": 2.001,
+        "watts": 14.483898
+      },
+      {
+        "elapsed_s": 3.002,
+        "watts": 15.312056
+      },
+      {
+        "elapsed_s": 4.003,
+        "watts": 15.406865
+      },
+      {
+        "elapsed_s": 5.004,
+        "watts": 14.45131
+      },
+      {
+        "elapsed_s": 6.005,
+        "watts": 14.541625
+      },
+      {
+        "elapsed_s": 7.007,
+        "watts": 14.428729
+      },
+      {
+        "elapsed_s": 8.008,
+        "watts": 14.709671
+      },
+      {
+        "elapsed_s": 9.009,
+        "watts": 14.418715
+      },
+      {
+        "elapsed_s": 10.01,
+        "watts": 14.893666
+      },
+      {
+        "elapsed_s": 11.011,
+        "watts": 14.483894
+      },
+      {
+        "elapsed_s": 12.013,
+        "watts": 14.552917
+      },
+      {
+        "elapsed_s": 13.014,
+        "watts": 14.473887
+      },
+      {
+        "elapsed_s": 14.015,
+        "watts": 14.472605
+      },
+      {
+        "elapsed_s": 15.016,
+        "watts": 14.483895
+      },
+      {
+        "elapsed_s": 16.017,
+        "watts": 14.59808
+      },
+      {
+        "elapsed_s": 17.018,
+        "watts": 14.462597
+      },
+      {
+        "elapsed_s": 18.019,
+        "watts": 14.866403
+      },
+      {
+        "elapsed_s": 19.02,
+        "watts": 14.541624
+      },
+      {
+        "elapsed_s": 20.021,
+        "watts": 15.216335
+      },
+      {
+        "elapsed_s": 21.022,
+        "watts": 14.606779
+      },
+      {
+        "elapsed_s": 22.024,
+        "watts": 14.541629
+      },
+      {
+        "elapsed_s": 23.025,
+        "watts": 16.643484
+      },
+      {
+        "elapsed_s": 24.026,
+        "watts": 14.866403
+      },
+      {
+        "elapsed_s": 25.028,
+        "watts": 14.519048
+      },
+      {
+        "elapsed_s": 26.03,
+        "watts": 14.440018
+      },
+      {
+        "elapsed_s": 27.037,
+        "watts": 14.462598
+      },
+      {
+        "elapsed_s": 28.038,
+        "watts": 14.541627
+      },
+      {
+        "elapsed_s": 29.041,
+        "watts": 14.530334
+      },
+      {
+        "elapsed_s": 30.042,
+        "watts": 15.039623
+      },
+      {
+        "elapsed_s": 31.043,
+        "watts": 14.547765
+      },
+      {
+        "elapsed_s": 32.044,
+        "watts": 14.572914
+      },
+      {
+        "elapsed_s": 33.047,
+        "watts": 14.438742
+      },
+      {
+        "elapsed_s": 34.048,
+        "watts": 14.70967
+      },
+      {
+        "elapsed_s": 35.049,
+        "watts": 14.42873
+      },
+      {
+        "elapsed_s": 36.05,
+        "watts": 14.640651
+      },
+      {
+        "elapsed_s": 37.051,
+        "watts": 14.495184
+      },
+      {
+        "elapsed_s": 38.052,
+        "watts": 14.855116
+      },
+      {
+        "elapsed_s": 39.053,
+        "watts": 15.391486
+      },
+      {
+        "elapsed_s": 40.054,
+        "watts": 15.042289
+      },
+      {
+        "elapsed_s": 41.055,
+        "watts": 14.472603
+      },
+      {
+        "elapsed_s": 42.057,
+        "watts": 14.507751
+      },
+      {
+        "elapsed_s": 43.06,
+        "watts": 14.506473
+      },
+      {
+        "elapsed_s": 44.062,
+        "watts": 14.574202
+      },
+      {
+        "elapsed_s": 45.063,
+        "watts": 14.551627
+      },
+      {
+        "elapsed_s": 46.064,
+        "watts": 14.427448
+      },
+      {
+        "elapsed_s": 47.065,
+        "watts": 14.473887
+      },
+      {
+        "elapsed_s": 48.066,
+        "watts": 15.567891
+      },
+      {
+        "elapsed_s": 49.067,
+        "watts": 14.803923
+      },
+      {
+        "elapsed_s": 50.068,
+        "watts": 16.251949
+      },
+      {
+        "elapsed_s": 51.069,
+        "watts": 15.439693
+      },
+      {
+        "elapsed_s": 52.07,
+        "watts": 14.710978
+      },
+      {
+        "elapsed_s": 53.073,
+        "watts": 14.136437
+      },
+      {
+        "elapsed_s": 54.073,
+        "watts": 14.181602
+      },
+      {
+        "elapsed_s": 55.074,
+        "watts": 15.012454
+      },
+      {
+        "elapsed_s": 56.075,
+        "watts": 17.549425
+      },
+      {
+        "elapsed_s": 57.076,
+        "watts": 15.341856
+      },
+      {
+        "elapsed_s": 58.077,
+        "watts": 15.482055
+      },
+      {
+        "elapsed_s": 59.078,
+        "watts": 14.281955
+      },
+      {
+        "elapsed_s": 60.079,
+        "watts": 16.443431
+      },
+      {
+        "elapsed_s": 61.08,
+        "watts": 15.336421
+      },
+      {
+        "elapsed_s": 62.081,
+        "watts": 16.210681
+      },
+      {
+        "elapsed_s": 63.082,
+        "watts": 14.211696
+      },
+      {
+        "elapsed_s": 64.083,
+        "watts": 13.914313
+      },
+      {
+        "elapsed_s": 65.084,
+        "watts": 13.442344
+      },
+      {
+        "elapsed_s": 66.085,
+        "watts": 13.476231
+      },
+      {
+        "elapsed_s": 67.086,
+        "watts": 13.955785
+      },
+      {
+        "elapsed_s": 68.088,
+        "watts": 13.565397
+      },
+      {
+        "elapsed_s": 69.089,
+        "watts": 13.463748
+      },
+      {
+        "elapsed_s": 70.089,
+        "watts": 13.771765
+      },
+      {
+        "elapsed_s": 71.09,
+        "watts": 14.14773
+      },
+      {
+        "elapsed_s": 72.091,
+        "watts": 13.487525
+      },
+      {
+        "elapsed_s": 73.092,
+        "watts": 13.397159
+      },
+      {
+        "elapsed_s": 74.093,
+        "watts": 13.408458
+      },
+      {
+        "elapsed_s": 75.094,
+        "watts": 13.969547
+      },
+      {
+        "elapsed_s": 76.096,
+        "watts": 13.556507
+      },
+      {
+        "elapsed_s": 77.098,
+        "watts": 13.397159
+      },
+      {
+        "elapsed_s": 78.1,
+        "watts": 13.498822
+      },
+      {
+        "elapsed_s": 79.101,
+        "watts": 14.581614
+      },
+      {
+        "elapsed_s": 80.103,
+        "watts": 15.368912
+      },
+      {
+        "elapsed_s": 81.104,
+        "watts": 14.828594
+      },
+      {
+        "elapsed_s": 82.106,
+        "watts": 14.71835
+      },
+      {
+        "elapsed_s": 83.106,
+        "watts": 16.09509
+      },
+      {
+        "elapsed_s": 84.108,
+        "watts": 14.771353
+      },
+      {
+        "elapsed_s": 85.109,
+        "watts": 13.409643
+      },
+      {
+        "elapsed_s": 86.11,
+        "watts": 13.55621
+      },
+      {
+        "elapsed_s": 87.11,
+        "watts": 27.787467
+      },
+      {
+        "elapsed_s": 88.111,
+        "watts": 24.042442
+      },
+      {
+        "elapsed_s": 89.112,
+        "watts": 20.974483
+      },
+      {
+        "elapsed_s": 90.112,
+        "watts": 21.544261
+      },
+      {
+        "elapsed_s": 91.113,
+        "watts": 24.36293
+      },
+      {
+        "elapsed_s": 92.115,
+        "watts": 23.64389
+      },
+      {
+        "elapsed_s": 93.116,
+        "watts": 25.133308
+      },
+      {
+        "elapsed_s": 94.118,
+        "watts": 21.462913
+      },
+      {
+        "elapsed_s": 95.119,
+        "watts": 24.317733
+      },
+      {
+        "elapsed_s": 96.12,
+        "watts": 21.085632
+      },
+      {
+        "elapsed_s": 97.12,
+        "watts": 21.17472
+      },
+      {
+        "elapsed_s": 98.121,
+        "watts": 20.334411
+      },
+      {
+        "elapsed_s": 99.122,
+        "watts": 22.724418
+      },
+      {
+        "elapsed_s": 100.124,
+        "watts": 20.946342
+      },
+      {
+        "elapsed_s": 101.125,
+        "watts": 20.315422
+      },
+      {
+        "elapsed_s": 102.13,
+        "watts": 20.579978
+      },
+      {
+        "elapsed_s": 103.131,
+        "watts": 20.563255
+      },
+      {
+        "elapsed_s": 104.132,
+        "watts": 21.563446
+      },
+      {
+        "elapsed_s": 105.133,
+        "watts": 20.34243
+      },
+      {
+        "elapsed_s": 106.136,
+        "watts": 22.034385
+      },
+      {
+        "elapsed_s": 107.139,
+        "watts": 22.019096
+      },
+      {
+        "elapsed_s": 108.14,
+        "watts": 21.016975
+      },
+      {
+        "elapsed_s": 109.14,
+        "watts": 21.744689
+      },
+      {
+        "elapsed_s": 110.142,
+        "watts": 20.909355
+      },
+      {
+        "elapsed_s": 111.143,
+        "watts": 20.551727
+      },
+      {
+        "elapsed_s": 112.144,
+        "watts": 21.256942
+      },
+      {
+        "elapsed_s": 113.146,
+        "watts": 20.538154
+      },
+      {
+        "elapsed_s": 114.147,
+        "watts": 20.631828
+      },
+      {
+        "elapsed_s": 115.148,
+        "watts": 20.216186
+      },
+      {
+        "elapsed_s": 116.151,
+        "watts": 19.712326
+      },
+      {
+        "elapsed_s": 117.152,
+        "watts": 20.015419
+      },
+      {
+        "elapsed_s": 118.153,
+        "watts": 21.967361
+      },
+      {
+        "elapsed_s": 119.154,
+        "watts": 21.375793
+      },
+      {
+        "elapsed_s": 120.156,
+        "watts": 21.222366
+      },
+      {
+        "elapsed_s": 121.157,
+        "watts": 22.369499
+      },
+      {
+        "elapsed_s": 122.158,
+        "watts": 20.286506
+      },
+      {
+        "elapsed_s": 123.159,
+        "watts": 20.128509
+      },
+      {
+        "elapsed_s": 124.16,
+        "watts": 19.727676
+      },
+      {
+        "elapsed_s": 125.161,
+        "watts": 19.607482
+      },
+      {
+        "elapsed_s": 126.162,
+        "watts": 19.715156
+      },
+      {
+        "elapsed_s": 127.163,
+        "watts": 20.613533
+      },
+      {
+        "elapsed_s": 128.164,
+        "watts": 21.747795
+      },
+      {
+        "elapsed_s": 129.164,
+        "watts": 20.220291
+      },
+      {
+        "elapsed_s": 130.165,
+        "watts": 23.302673
+      },
+      {
+        "elapsed_s": 131.166,
+        "watts": 20.237922
+      },
+      {
+        "elapsed_s": 132.168,
+        "watts": 20.046005
+      },
+      {
+        "elapsed_s": 133.169,
+        "watts": 20.276535
+      },
+      {
+        "elapsed_s": 134.17,
+        "watts": 19.975158
+      },
+      {
+        "elapsed_s": 135.171,
+        "watts": 20.448471
+      },
+      {
+        "elapsed_s": 136.172,
+        "watts": 19.953483
+      },
+      {
+        "elapsed_s": 137.173,
+        "watts": 20.025939
+      },
+      {
+        "elapsed_s": 138.175,
+        "watts": 9.707283
+      },
+      {
+        "elapsed_s": 140.178,
+        "watts": 16.829895
+      },
+      {
+        "elapsed_s": 141.178,
+        "watts": 37.127761
+      },
+      {
+        "elapsed_s": 142.179,
+        "watts": 27.114688
+      },
+      {
+        "elapsed_s": 143.18,
+        "watts": 23.545394
+      },
+      {
+        "elapsed_s": 144.181,
+        "watts": 22.341457
+      },
+      {
+        "elapsed_s": 145.182,
+        "watts": 24.600444
+      },
+      {
+        "elapsed_s": 146.182,
+        "watts": 24.431022
+      },
+      {
+        "elapsed_s": 147.183,
+        "watts": 24.024765
+      },
+      {
+        "elapsed_s": 148.184,
+        "watts": 20.153472
+      },
+      {
+        "elapsed_s": 149.186,
+        "watts": 21.083686
+      },
+      {
+        "elapsed_s": 150.187,
+        "watts": 20.770256
+      },
+      {
+        "elapsed_s": 151.188,
+        "watts": 20.666015
+      },
+      {
+        "elapsed_s": 152.192,
+        "watts": 20.425636
+      },
+      {
+        "elapsed_s": 153.198,
+        "watts": 20.414062
+      },
+      {
+        "elapsed_s": 154.198,
+        "watts": 23.661651
+      },
+      {
+        "elapsed_s": 155.2,
+        "watts": 24.309295
+      },
+      {
+        "elapsed_s": 156.202,
+        "watts": 21.23294
+      },
+      {
+        "elapsed_s": 157.203,
+        "watts": 21.423049
+      },
+      {
+        "elapsed_s": 158.205,
+        "watts": 21.146438
+      },
+      {
+        "elapsed_s": 159.206,
+        "watts": 21.049537
+      },
+      {
+        "elapsed_s": 161.209,
+        "watts": 17.430046
+      },
+      {
+        "elapsed_s": 162.21,
+        "watts": 37.893692
+      },
+      {
+        "elapsed_s": 163.211,
+        "watts": 13.412073
+      },
+      {
+        "elapsed_s": 164.212,
+        "watts": 22.623523
+      },
+      {
+        "elapsed_s": 165.214,
+        "watts": 23.214572
+      },
+      {
+        "elapsed_s": 166.215,
+        "watts": 25.560733
+      },
+      {
+        "elapsed_s": 167.216,
+        "watts": 25.484031
+      },
+      {
+        "elapsed_s": 168.218,
+        "watts": 26.020618
+      },
+      {
+        "elapsed_s": 169.219,
+        "watts": 23.522277
+      },
+      {
+        "elapsed_s": 170.22,
+        "watts": 23.043685
+      },
+      {
+        "elapsed_s": 171.221,
+        "watts": 20.763618
+      },
+      {
+        "elapsed_s": 172.223,
+        "watts": 21.547813
+      },
+      {
+        "elapsed_s": 173.225,
+        "watts": 21.372123
+      },
+      {
+        "elapsed_s": 174.226,
+        "watts": 21.654243
+      },
+      {
+        "elapsed_s": 175.23,
+        "watts": 21.222061
+      },
+      {
+        "elapsed_s": 176.234,
+        "watts": 21.276626
+      },
+      {
+        "elapsed_s": 177.236,
+        "watts": 22.496742
+      },
+      {
+        "elapsed_s": 178.24,
+        "watts": 21.97805
+      },
+      {
+        "elapsed_s": 179.241,
+        "watts": 21.251411
+      },
+      {
+        "elapsed_s": 180.242,
+        "watts": 20.859268
+      },
+      {
+        "elapsed_s": 181.243,
+        "watts": 21.955139
+      },
+      {
+        "elapsed_s": 182.244,
+        "watts": 20.902565
+      },
+      {
+        "elapsed_s": 182.632,
+        "watts": 20.902565
+      }
+    ],
+    "summary": {
+      "n": 182,
+      "median_w": 18.578453500000002,
+      "p10_w": 14.137566300000001,
+      "p90_w": 23.5003166
+    },
+    "interpretation": "observational; active workloads uncontrolled; not an A/B or claimed saving"
+  }
+}

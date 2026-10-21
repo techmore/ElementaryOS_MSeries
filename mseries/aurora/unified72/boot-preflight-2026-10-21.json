@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "status": "owner-approved experimental trial staged and unarmed; no 7.2 hardware boot yet",
+  "upstream_commit": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "audited_build_head": "b21399953faa576b17f3121087742fb597c872a5",
+  "audited_native_build": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051",
+  "release": "7.2.10-elementary-aurora72-wip2",
+  "hardware": "J314S / M1 Pro",
+  "selected_shared_boot_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+  "selected_legacy_j314s_dtb_sha256": "a29ff68864e785f05f5f3e44d5bea8ab3166ac52958ea52023c2fa40740fd306",
+  "packaged_new_dtb_used_for_boot": false,
+  "legacy_dart": {
+    "providers": 37,
+    "explicit_client_specifiers": 36,
+    "host_controls": 50,
+    "source_body_unchanged": true,
+    "hardware_parameter_registers_emulated": false
+  },
+  "initramfs": {
+    "original_unlock_and_nonmodule_entries_identical": true,
+    "early_firmware_prefix_identical": true,
+    "modules_verified_against_pinned_deb": 91,
+    "explicit_transitions": {
+      "kernel/crypto/fcrypt.ko": "Absent from this candidate; not needed by the observed AES-XTS LUKS2 root.",
+      "kernel/crypto/pcbc.ko": "Absent from this candidate; not needed by the observed AES-XTS LUKS2 root.",
+      "kernel/lib/raid6/raid6_pq.ko": "Relocated to kernel/lib/raid/raid6/raid6_pq.ko; retained through the new Btrfs dependency closure."
+    }
+  },
+  "mesa": {
+    "version": "26.0.8-1ubuntu0.3",
+    "compositor_loaded_libraries": [
+      "/usr/lib/aarch64-linux-gnu/libEGL_mesa.so.0.0.0",
+      "/usr/lib/aarch64-linux-gnu/libgallium-26.0.8-1ubuntu0.3.so"
+    ],
+    "asahi_uapi_declarations_unchanged": true,
+    "observed_gpu_internal_external_dcp_firmware_compat": "13.5.0",
+    "merged_gpu_and_dcp_source_accept_observed_firmware": true,
+    "actual_new_kernel_clients_qualified": false
+  },
+  "host_controls": {
+    "dart_firmware": 63,
+    "bluetooth": 46,
+    "dcp_tunnel": "one extracted production-logic executable passed",
+    "dart_range_ported": 12,
+    "dcp_initial_groups": {
+      "pass": 55,
+      "total": 56
+    },
+    "dcp_failed_group": "usb-kconfig relative output path at subprocess cwd",
+    "dcp_corrected_absolute_path_rerun": {
+      "pass": true,
+      "cases": 4
+    },
+    "production_kernel_source_modified": false
+  },
+  "repository_unit_tests": 71,
+  "installation_receipt": "boot-preflight-2026-10-21/staging.json",
+  "limits": [
+    "Full 64-fix semantic parity remains open; mechanical 0/40/24 comparison is not semantic qualification.",
+    "Host fixtures do not emulate firmware timing, DART probing or physical hardware. DCP command17 replay counterexamples remain represented, not disproved.",
+    "Original upstream DART range harness does not compile against the new interface; only host stubs and changed drain-on-error expectations were ported. Patch retained.",
+    "The initial DCP run passed 55/56 groups; the remaining original Kconfig producer passed its four cases when rerun with an absolute output path. These are two invocations.",
+    "Touch ID first-attempt regression and upstream early hang remain risks. Retaining old DTBs is not a boot or recovery pass.",
+    "Live 7.2 unlock, Mesa shader/readback, dock display, storage, radio, thermal, suspend and return-to-.20 recovery remain unverified.",
+    "Automatic session capture expects an unavailable compositor PowerSaveMode property; initial trial requires explicit manual collection, retaining unknown fields."
+  ],
+  "build_inputs_verified_unchanged_from_tested_head": {
+    "mseries/aurora/candidate.py": "99ec56366026178d046d1853b7dadb1f30ba9ce81aac8fb821c4a456265a1782",
+    "mseries/aurora/unified72/series.json": "1abdc9dd15f4977c6a5828b2f6a38d474c5cf7d620b155ee15b3fc9ab28c844c",
+    ".github/workflows/aurora-enhancements.yml": "d3e79f8375122fdcbe82594dbcc7c9e3ce696a6d606c412d8306bcee4cee0644"
+  },
+  "repeat_ci_at_staging_review": {
+    "conclusion": "",
+    "headSha": "ed08d502d294f6fa8c9160852e91f6f2ff5c802e",
+    "status": "in_progress",
+    "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970"
+  }
+}

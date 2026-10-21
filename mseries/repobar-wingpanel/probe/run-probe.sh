@@ -2,6 +2,10 @@
 # Render RepoBar fixtures to PNG headlessly (Xvfb + cairo renderer + fake HOME + fake helper).
 # Usage: run-probe.sh BUILD_DIR OUT_DIR [light|dark] [scenario...]
 set -euo pipefail
+scale=${GDK_SCALE:-1}
+case "$scale" in 1|2) ;; *) echo 'GDK_SCALE must be 1 or 2 for this probe' >&2; exit 2 ;; esac
+scale_suffix=""
+[[ $scale == 1 ]] || scale_suffix="-scale$scale"
 build=$(realpath "$1"); out=$2; scheme=${3:-light}; shift 3 || shift $#
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 mkdir -p "$out"
@@ -29,9 +33,9 @@ for name in "${scenarios[@]}"; do
   # RB_CONTRIB_OPEN=1 renders the contribution graph expanded (it starts collapsed).
   mkdir -p "$home/.config/mseries/repobar"
   printf '[panel]\ncontributionsExpanded=%s\n' "$([ -n "${RB_CONTRIB_OPEN:-}" ] && echo true || echo false)" > "$home/.config/mseries/repobar/panel.ini"
-  env -i PATH="$PATH" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 \
+  env -i PATH="$PATH" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 GDK_SCALE="$scale" \
     XDG_DATA_DIRS="$here/..:/usr/local/share:/usr/share" ${RB_SCOPE:+RB_SCOPE=$RB_SCOPE} ${RB_EXPAND:+RB_EXPAND=1} ${RB_DETAIL:+RB_DETAIL=$RB_DETAIL} ${RB_TOAST:+RB_TOAST=1} \
     RB_FIXTURE="$here/fixtures/$name.json" RB_ICONS="$here/../icons" \
-    xvfb-run -a -s "-screen 0 800x1000x24" "$build/render-probe" "$out/$name${RB_SCOPE:+-$RB_SCOPE}-$scheme.png" "${RB_DELAY:-2500}"
+    xvfb-run -a -s "-screen 0 1600x2000x24" "$build/render-probe" "$out/$name${RB_SCOPE:+-$RB_SCOPE}-$scheme$scale_suffix.png" "${RB_DELAY:-2500}"
   echo "rendered $name ($scheme)"
 done

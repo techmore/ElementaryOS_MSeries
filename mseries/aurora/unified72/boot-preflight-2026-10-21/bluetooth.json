@@ -1,0 +1,320 @@
+{
+  "source_sha256": "07a6fd91f45ffd804aa8e0e8121b142cbb4f43cd33c90b802ba2c167c70bd90a",
+  "core_sha256": "0ba1e8b7635f1cda5799aa13932ab4cee1e6afb7a2906468bcba96dd6ab31ac7",
+  "core_hci_sha256": "9427d8888052e3c3c794871443e56c940623f10023e135d064e50fac74967edb",
+  "core_bodies": {
+    "hci_cmd_timeout": "5ac5c716c026ce73c70adc1519134015f22feed725a325b5e26eb4acb62bf7e9",
+    "hci_cancel_cmd_sync": "bf9b9b75842ecff61d309eea4d78de64ca09a29c5395e3d83dd745c14d1e1815",
+    "hci_suspend_dev": "e944edfa6061f0634095b3a56512d39dee5d3d4dda9f45bf0462177616e06ed7",
+    "hci_resume_dev": "bf45873b16e595a37bd7a9ff6cc458cf09d325edadb499714cba1059c0463f1f"
+  },
+  "actual_hw_struct_sha256": "6785ba0d05624c16144b0ca04d90df37ae16146cd69f6f3a1c2f904869b1de18",
+  "actual_hw_table_sha256": "d39a6bfae0dc77ab22a0432d6aa96f5e57ae3f704f4945a3f67c08e824909942",
+  "table_callback_fixture": "Production variant table compiled unchanged; only calibration/PTB callback names map to controlled send boundaries.",
+  "extracted_bodies": {
+    "bcm4377_setup_retry_allowed": "52911aa634b10402a7f030ac7e86a6d20407986bc98ad257e3e6361b2c9f9b6b",
+    "bcm4377_queue_setup_retry": "981a5dd7ecb97a0ee6d44cc38e38ec29a9f1376444e9dfdcec3b69c7f6bb288e",
+    "bcm4377_setup_retry_work": "3de7fa80bc2944ff545bfd39c8e83f0beb6527d512e4163a6c1484bb67d85b73",
+    "bcm4377_resume_recovery_supported": "f05e71234ce8bfc2c5f5ff47f4fd4f1e3012ab2e3da2d3b30d88a11c66d04a16",
+    "bcm4377_resume_recovery_allowed": "9710f0c72f70d0849c380a7d5998f78635bd7f9e5360bf43d20035c22e799e84",
+    "bcm4377_resume_recovery_invalidate": "9b80bfeb63a4424b26fae29dcc52249ac6a592e017618866d80e786b4007d216",
+    "bcm4377_resume_recovery_sync": "7990801cbebcf9659cead56197c7d701b9f09dfe684a6c23b75ba29e6e0e8641",
+    "bcm4377_resume_recovery_destroy": "234ae0404401437c0806bed5fb380e71d2c047b6ab7d7da32496fa478da0cd7a",
+    "bcm4377_resume_recovery_work": "74118d1147d8620d8898328e8c0fc20365c3c0b19475c457975efaedf162d392",
+    "bcm4377_hci_timeout": "127262d5fad3c45289d7b266111ab9700587d919054d250001620402aacaf1d8",
+    "bcm4377_resume_recovery_stop": "fd5872b0f52060365a3ed57492fd1bb961175932d9884437d77936dab7193e73",
+    "bcm4377_hci_open": "4ebedd25c6673e603d99e0c405c6d2fcfd3c3b2cd3650d41bb856e40dbd85a52",
+    "bcm4377_hci_close": "c72542c5027f09869cf94657cbd81078b55b82d36e7800f1485f88792cbbac15",
+    "bcm4377_hci_setup_once": "9e704bd0261a41c53f35cb805d66e147c69e106f3eeb7ae84f110adea9733dcc",
+    "bcm4377_hci_setup": "6e236c086167ccb9fed54b935ced09be47dfb12460f361552f8da6f8552bd3ee",
+    "bcm4377_hci_post_init": "6199c1a61f9644522664fb7f935896ddd0f3267543432492687e8cd4d4dbc78a",
+    "bcm4377_hci_unregister_dev": "785079bf4ebda91d5f18503bdc747642e79acbc2746dc52d01e04cbf0556051f",
+    "bcm4377_suspend": "fed0442efa7c333fbbc064d583dfecdc4a5e35e49bf5ba1d5f1dbd72d24ed4a2",
+    "bcm4377_resume": "9ba0c194cb3f60ee45392a33f8686637d9b0015bde6327e207e453b786ba592d"
+  },
+  "shared_new_prerequisites_for_old": [],
+  "old_ref": null,
+  "mutation": null,
+  "core_fixture_adapter": "Only HCI_UP test_bit index is translated from fixture mask32 to index5; production conditions/order unchanged.",
+  "source_semantics": "Actual driver callbacks and synchronous close/open helper; core request serialization, PCI/firmware and HCI services are controlled fixtures, not whole-kernel or radio execution.",
+  "translation_sha256": "a0b49ed25d533efcd0b503d833d4b0f810e0bb1e471e5437b7db55993eb04dbc",
+  "controls": [
+    {
+      "case": 0,
+      "exit": 0,
+      "stdout": "case 0 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 1,
+      "exit": 0,
+      "stdout": "case 1 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 2,
+      "exit": 0,
+      "stdout": "case 2 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 3,
+      "exit": 0,
+      "stdout": "case 3 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 4,
+      "exit": 0,
+      "stdout": "case 4 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 5,
+      "exit": 0,
+      "stdout": "case 5 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 6,
+      "exit": 0,
+      "stdout": "case 6 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 7,
+      "exit": 0,
+      "stdout": "case 7 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 8,
+      "exit": 0,
+      "stdout": "case 8 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 9,
+      "exit": 0,
+      "stdout": "case 9 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 10,
+      "exit": 0,
+      "stdout": "case 10 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 11,
+      "exit": 0,
+      "stdout": "case 11 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 12,
+      "exit": 0,
+      "stdout": "case 12 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 13,
+      "exit": 0,
+      "stdout": "case 13 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 14,
+      "exit": 0,
+      "stdout": "case 14 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 15,
+      "exit": 0,
+      "stdout": "case 15 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 16,
+      "exit": 0,
+      "stdout": "case 16 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 17,
+      "exit": 0,
+      "stdout": "case 17 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 18,
+      "exit": 0,
+      "stdout": "case 18 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 19,
+      "exit": 0,
+      "stdout": "case 19 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 20,
+      "exit": 0,
+      "stdout": "case 20 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 21,
+      "exit": 0,
+      "stdout": "case 21 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 22,
+      "exit": 0,
+      "stdout": "case 22 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 23,
+      "exit": 0,
+      "stdout": "case 23 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 24,
+      "exit": 0,
+      "stdout": "case 24 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 25,
+      "exit": 0,
+      "stdout": "case 25 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 26,
+      "exit": 0,
+      "stdout": "case 26 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 27,
+      "exit": 0,
+      "stdout": "case 27 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 28,
+      "exit": 0,
+      "stdout": "case 28 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 29,
+      "exit": 0,
+      "stdout": "case 29 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 30,
+      "exit": 0,
+      "stdout": "case 30 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 31,
+      "exit": 0,
+      "stdout": "case 31 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 32,
+      "exit": 0,
+      "stdout": "case 32 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 33,
+      "exit": 0,
+      "stdout": "case 33 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 34,
+      "exit": 0,
+      "stdout": "case 34 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 35,
+      "exit": 0,
+      "stdout": "case 35 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 36,
+      "exit": 0,
+      "stdout": "case 36 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 37,
+      "exit": 0,
+      "stdout": "case 37 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 38,
+      "exit": 0,
+      "stdout": "case 38 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 39,
+      "exit": 0,
+      "stdout": "case 39 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 40,
+      "exit": 0,
+      "stdout": "case 40 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 41,
+      "exit": 0,
+      "stdout": "case 41 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 42,
+      "exit": 0,
+      "stdout": "case 42 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 43,
+      "exit": 0,
+      "stdout": "case 43 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 44,
+      "exit": 0,
+      "stdout": "case 44 passed\n",
+      "stderr": ""
+    },
+    {
+      "case": 45,
+      "exit": 0,
+      "stdout": "case 45 passed\n",
+      "stderr": ""
+    }
+  ],
+  "expected_exit": 0
+}

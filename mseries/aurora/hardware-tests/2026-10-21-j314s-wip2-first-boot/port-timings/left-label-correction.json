@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-21T13:59:26.922945+00:00",
+  "poll_result": "timing-front-left-01/result.json",
+  "poll_result_sha256": "a3dd8018f2e157bf298bd7ba31a44321cd83743a077ccac06c0e0e1c4b91cb10",
+  "original_requested_label": "front-left",
+  "owner_corrected_actual_port": "rear-left nearest hinge",
+  "source": "Owner clarified current connected port after this run; final partner port1/DP-1 remains present.",
+  "limits": "Retrospective owner label; one cycle, not controlled insertion-to-visible-pixel timing."
+}

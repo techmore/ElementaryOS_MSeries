@@ -180,5 +180,44 @@ build_plugin mseries-wingpanel-datetime io.elementary.panel.datetime 2.4.2 \
   "$datetime_commit" \
   mseries/patches/datetime-agenda-tabs.patch
 
+# The updater itself (mseries/UPDATER-DESIGN.md): pure Python plus systemd units, no base-package gate.
+# Installing it enables and configures nothing; the owner opts in with `mseries-update init`.
+build_updater() {
+  local deb=mseries-update version=0.1.0 pkg=$WORK/mseries-update-pkg
+  if [[ -n ${ONLY:-} && $ONLY != "$deb" ]]; then
+    record "$deb: skipped (ONLY=$ONLY)"
+    return 0
+  fi
+  rm -rf "$pkg"
+  mkdir -p "$pkg/DEBIAN"
+  DESTDIR=$pkg bash "$ROOT/mseries/update/install.sh" >/dev/null
+  install -Dm0644 "$ROOT/mseries/UPDATER-DESIGN.md" "$pkg/usr/share/doc/mseries-update/UPDATER-DESIGN.md"
+  cat > "$pkg/DEBIAN/control" <<EOF
+Package: $deb
+Version: $version-$REVISION
+Architecture: all
+Maintainer: techmore <sdolbec1@gmail.com>
+Depends: python3 (>= 3.10), apt, dpkg, procps
+Description: staged, rollback-safe updates for the M-series desktop packages
+ Downloads and verifies signed updates, applies them before the next login,
+ and restores the previous package set if they fail. Opt-in: nothing runs
+ until configured with mseries-update init.
+EOF
+  cat > "$pkg/DEBIAN/postinst" <<'EOF'
+#!/bin/sh
+set -e
+# Units are installed disabled on purpose; this never restarts anything.
+if [ "$1" = configure ] && [ -d /run/systemd/system ]; then
+  systemctl daemon-reload || true
+fi
+EOF
+  chmod 0755 "$pkg/DEBIAN/postinst"
+  bash -n "$pkg/DEBIAN/postinst"
+  find "$pkg" -type d -exec chmod 0755 {} +
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${version}-${REVISION}_all.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${version}-${REVISION}_all.deb")"
+}
+build_updater
+
 (cd "$OUTDIR" && sha256sum -- ./*.deb | sed 's|\./||' > SHA256SUMS)
 echo "built: $(ls "$OUTDIR"/*.deb | wc -l) packages in $OUTDIR"

@@ -1,0 +1,415 @@
+{
+  "source_sha256": "5c3cf935b6b70c6185153159df162b4b14cbe4c0e0f4e5a2553a7690ef3651dc",
+  "functions": {
+    "apple_dart_fw_handoff_enabled": "1e9f5ac8814dc86311b518390d1ed6d3dc973317a31964b5d1fca0c172fa60cb",
+    "apple_dart_pte_to_paddr": "3cd457a0d5d99e991ba60ce92d08a8a2772cd192fe1fdadfca83688b3c729ad9",
+    "apple_dart_fw_table_ram": "3e1741f105acfaa3ca7330b0b79c833bcd0fa78d9ef0bab2d31faf26366b1998",
+    "apple_dart_fw_table_decode": "933b93eb936fbe1001069c8968326268c4196250ed185939641a3f5e45676674",
+    "apple_dart_fw_slot_owned": "976bf4cd2aeb1b9dfbd2ab88ea8393d6e9ee71b89622d0969a170612b2f71aed",
+    "apple_dart_fw_leaf_decode": "c5581fc68743878c5768327cb5887cb6950564ba48441f4c5fb625c17d5c14fa",
+    "apple_dart_fw_mapping_matches": "80b59f395c55786ed0f1956cd786940168e0194bc51ddcf391366685be064efb",
+    "apple_dart_fw_slot_mirrors": "b3598ac5c3876e4f555cb615d78b33822c891fa6582d78fc128d7b64c703aa0f",
+    "apple_dart_publish_root": "fed1a757d4e6a0c190cc3c9b4db0be08fd26b9395575fed5fa519eb359cd774d",
+    "apple_dart_retire_root": "5ab8fc482225de6e58c1329a79180d1171ebb9f3a9227ed0aeb015deb35c769e",
+    "apple_dart_free_fw_root": "f6460ed2841275e607753e3f3999ad5477539f0726e45d2130f4298f902fa1a6",
+    "apple_dart_snapshot_fw_root": "94a41d52de4d8d9c7980d5b99c1633073dff3f4d96ea60efc78feaa387be921b",
+    "apple_dart_fw_slot_foreign": "b7548648171186b6d2883e08bf3eb7b7da1e1afb47f0abaeb6a8736746d98f37",
+    "apple_dart_domain_uses_fw": "6e6f79d2f4bad138ed9d8bb688912148f8ef54fa586379bb1fabbf68027a72ca",
+    "apple_dart_check_fw_map": "05f4c60009dce8aee7b96c2a817d3e8def792911696db39c3976b411d90bdae0",
+    "apple_dart_inherited_phys": "1bb0073e3c5fe0ee96115d1eb984470970f3436c583661276b684d10e07bd627",
+    "apple_dart_fw_slot_range": "68be2b5d9f692201ae3930f7e628de82e59c87b31129894176939592ab56a59c",
+    "apple_dart_get_fw_resv_regions": "1bf25ec1971d415e37c10585988833a426180413d780e991b14e0d725a003ad4",
+    "apple_dart_fw_invalidate": "3aa631a71d6e1d354940a9b275f2e837378f8d5945d60e53294b126631939464"
+  },
+  "core_function_sha256": "72016472e0ef937bb8806f3ce8e3988f1076bf06b98397c4215272ca02887db2",
+  "fixture_sha256": "5e44b7ec6bf7bb43bb3329928c5551cad446f9190a93b29b2818a4b4db0ebd07",
+  "compile": [
+    "cc",
+    "-std=gnu11",
+    "-Werror",
+    "work/aurora72-boot-prep/dart-fw-controls/production.c",
+    "-o",
+    "work/aurora72-boot-prep/dart-fw-controls/production"
+  ],
+  "controls": [
+    {
+      "case": "legacy-map-match",
+      "exit": 0,
+      "stdout": "PASS legacy-map-match\n",
+      "stderr": ""
+    },
+    {
+      "case": "legacy-map-mismatch",
+      "exit": 0,
+      "stdout": "PASS legacy-map-mismatch\n",
+      "stderr": ""
+    },
+    {
+      "case": "legacy-lookup",
+      "exit": 0,
+      "stdout": "PASS legacy-lookup\n",
+      "stderr": ""
+    },
+    {
+      "case": "legacy-snapshot",
+      "exit": 0,
+      "stdout": "PASS legacy-snapshot\n",
+      "stderr": ""
+    },
+    {
+      "case": "mirror",
+      "exit": 0,
+      "stdout": "PASS mirror\n",
+      "stderr": ""
+    },
+    {
+      "case": "changed-leaf",
+      "exit": 0,
+      "stdout": "PASS changed-leaf\n",
+      "stderr": ""
+    },
+    {
+      "case": "wrong-permission",
+      "exit": 0,
+      "stdout": "PASS wrong-permission\n",
+      "stderr": ""
+    },
+    {
+      "case": "wrong-physical",
+      "exit": 0,
+      "stdout": "PASS wrong-physical\n",
+      "stderr": ""
+    },
+    {
+      "case": "malformed-leaf",
+      "exit": 0,
+      "stdout": "PASS malformed-leaf\n",
+      "stderr": ""
+    },
+    {
+      "case": "vacant",
+      "exit": 0,
+      "stdout": "PASS vacant\n",
+      "stderr": ""
+    },
+    {
+      "case": "changed-owner",
+      "exit": 0,
+      "stdout": "PASS changed-owner\n",
+      "stderr": ""
+    },
+    {
+      "case": "retire",
+      "exit": 0,
+      "stdout": "PASS retire\n",
+      "stderr": ""
+    },
+    {
+      "case": "reserved-ram",
+      "exit": 0,
+      "stdout": "PASS reserved-ram\n",
+      "stderr": ""
+    },
+    {
+      "case": "unreserved",
+      "exit": 0,
+      "stdout": "PASS unreserved\n",
+      "stderr": ""
+    },
+    {
+      "case": "mmio",
+      "exit": 0,
+      "stdout": "PASS mmio\n",
+      "stderr": ""
+    },
+    {
+      "case": "misalignment",
+      "exit": 0,
+      "stdout": "PASS misalignment\n",
+      "stderr": ""
+    },
+    {
+      "case": "address-width",
+      "exit": 0,
+      "stdout": "PASS address-width\n",
+      "stderr": ""
+    },
+    {
+      "case": "root-encoding",
+      "exit": 0,
+      "stdout": "PASS root-encoding\n",
+      "stderr": ""
+    },
+    {
+      "case": "leaf-as-table",
+      "exit": 0,
+      "stdout": "PASS leaf-as-table\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot",
+      "exit": 0,
+      "stdout": "PASS snapshot\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-malformed",
+      "exit": 0,
+      "stdout": "PASS snapshot-malformed\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-unreserved",
+      "exit": 0,
+      "stdout": "PASS snapshot-unreserved\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-root-change",
+      "exit": 0,
+      "stdout": "PASS snapshot-root-change\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-map-failure",
+      "exit": 0,
+      "stdout": "PASS snapshot-map-failure\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-allocation-failure",
+      "exit": 0,
+      "stdout": "PASS snapshot-allocation-failure\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-three",
+      "exit": 0,
+      "stdout": "PASS range-three\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-offset",
+      "exit": 0,
+      "stdout": "PASS range-offset\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-width",
+      "exit": 0,
+      "stdout": "PASS range-width\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-overflow",
+      "exit": 0,
+      "stdout": "PASS range-overflow\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-underflow",
+      "exit": 0,
+      "stdout": "PASS range-underflow\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-four",
+      "exit": 0,
+      "stdout": "PASS range-four\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-four-last",
+      "exit": 0,
+      "stdout": "PASS range-four-last\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-firmware",
+      "exit": 0,
+      "stdout": "PASS map-firmware\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-hole",
+      "exit": 0,
+      "stdout": "PASS map-hole\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-host",
+      "exit": 0,
+      "stdout": "PASS map-host\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-owned",
+      "exit": 0,
+      "stdout": "PASS map-owned\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-unmatched",
+      "exit": 0,
+      "stdout": "PASS map-unmatched\n",
+      "stderr": ""
+    },
+    {
+      "case": "map-attached",
+      "exit": 0,
+      "stdout": "PASS map-attached\n",
+      "stderr": ""
+    },
+    {
+      "case": "lookup-inherited",
+      "exit": 0,
+      "stdout": "PASS lookup-inherited\n",
+      "stderr": ""
+    },
+    {
+      "case": "lookup-changed-leaf",
+      "exit": 0,
+      "stdout": "PASS lookup-changed-leaf\n",
+      "stderr": ""
+    },
+    {
+      "case": "lookup-changed-root",
+      "exit": 0,
+      "stdout": "PASS lookup-changed-root\n",
+      "stderr": ""
+    },
+    {
+      "case": "lookup-unmatched",
+      "exit": 0,
+      "stdout": "PASS lookup-unmatched\n",
+      "stderr": ""
+    },
+    {
+      "case": "reserve-firmware",
+      "exit": 0,
+      "stdout": "PASS reserve-firmware\n",
+      "stderr": ""
+    },
+    {
+      "case": "reserve-teardown",
+      "exit": 0,
+      "stdout": "PASS reserve-teardown\n",
+      "stderr": ""
+    },
+    {
+      "case": "reserve-unmatched",
+      "exit": 0,
+      "stdout": "PASS reserve-unmatched\n",
+      "stderr": ""
+    },
+    {
+      "case": "reserve-owned",
+      "exit": 0,
+      "stdout": "PASS reserve-owned\n",
+      "stderr": ""
+    },
+    {
+      "case": "invalidate-three",
+      "exit": 0,
+      "stdout": "PASS invalidate-three\n",
+      "stderr": ""
+    },
+    {
+      "case": "invalidate-four",
+      "exit": 0,
+      "stdout": "PASS invalidate-four\n",
+      "stderr": ""
+    },
+    {
+      "case": "invalidate-changed-root",
+      "exit": 0,
+      "stdout": "PASS invalidate-changed-root\n",
+      "stderr": ""
+    },
+    {
+      "case": "invalidate-error",
+      "exit": 0,
+      "stdout": "PASS invalidate-error\n",
+      "stderr": ""
+    },
+    {
+      "case": "core-inherited",
+      "exit": 0,
+      "stdout": "PASS core-inherited\n",
+      "stderr": ""
+    },
+    {
+      "case": "core-hole",
+      "exit": 0,
+      "stdout": "PASS core-hole\n",
+      "stderr": ""
+    },
+    {
+      "case": "core-changed-leaf",
+      "exit": 0,
+      "stdout": "PASS core-changed-leaf\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-unmatched",
+      "exit": 0,
+      "stdout": "PASS snapshot-unmatched\n",
+      "stderr": ""
+    },
+    {
+      "case": "snapshot-four",
+      "exit": 0,
+      "stdout": "PASS snapshot-four\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-four-width",
+      "exit": 0,
+      "stdout": "PASS range-four-width\n",
+      "stderr": ""
+    },
+    {
+      "case": "range-three-last",
+      "exit": 0,
+      "stdout": "PASS range-three-last\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-matched",
+      "exit": 0,
+      "stdout": "PASS handoff-matched\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-missing",
+      "exit": 0,
+      "stdout": "PASS handoff-missing\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-duplicate",
+      "exit": 0,
+      "stdout": "PASS handoff-duplicate\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-zero",
+      "exit": 0,
+      "stdout": "PASS handoff-zero\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-unlocked",
+      "exit": 0,
+      "stdout": "PASS handoff-unlocked\n",
+      "stderr": ""
+    },
+    {
+      "case": "handoff-other-soc",
+      "exit": 0,
+      "stdout": "PASS handoff-other-soc\n",
+      "stderr": ""
+    }
+  ],
+  "limits": "Actual production function bodies; RAM allocator, mapped memory and firmware mutations controlled on host; no hardware execution"
+}

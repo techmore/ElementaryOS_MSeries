@@ -1,10 +1,26 @@
-"""Isolated GTK tests. Run with GDK_BACKEND=x11 xvfb-run -a python3 ... ."""
+"""Isolated GTK tests. Run with: xvfb-run -a python3 test_messages_gui.py
+
+These open and close many windows and send key events, so they refuse to run on a
+real desktop: the display must be an isolated virtual one and the X11 backend is
+forced (see gui_safety.py). Nothing here ever appears on the user's screen.
+"""
 import os
+import sys
 import time
 import unittest
 from pathlib import Path
+
+import gui_safety
+SAFE, WHY = gui_safety.check(os.environ)
+if not SAFE:
+    if __name__ == '__main__':
+        print('skipped: ' + WHY)
+        sys.exit(0)
+    raise unittest.SkipTest(WHY)
+gui_safety.force_x11(os.environ)
 from messages import Messages, Gtk, GLib, Gdk
 from messages_widgets import photo_frame
+from unittest.mock import patch
 
 
 def settle(seconds=.25):
@@ -57,6 +73,19 @@ class MessagesUI(unittest.TestCase):
         self.app.quit()
         settle(.05)
 
+    def test_read_only_direct_sender_explains_reply_restriction(self):
+        app = self.app
+        app.threads['demo']['reply_ready'] = False
+        app.threads['demo']['sender_alphanumeric'] = 'Fixture Bank'
+        app.editor.get_buffer().set_text('Draft stays here')
+        app.update_composer()
+        self.assertFalse(app.send.get_sensitive())
+        self.assertEqual(app.send_status.get_label(), 'This sender cannot receive replies.')
+        self.assertEqual(app.model.drafts['demo'], 'Draft stays here')
+        app.editor.get_buffer().set_text('')
+        app.update_composer()
+        self.assertEqual(app.composer.placeholder.get_label(), 'This sender cannot receive replies.')
+
     def test_selection_draft_and_keyboard_focus(self):
         app = self.app
         app.editor.get_buffer().set_text('Unsent draft')
@@ -101,6 +130,109 @@ class MessagesUI(unittest.TestCase):
         self.assertTrue(self.app.media_timers)
         self.app.stop_media_animation()
         self.assertFalse(self.app.media_timers)
+
+    def test_rebuilding_bubbles_never_destroys_the_focused_widget(self):
+        """GTK 4.22 aborts in AT-SPI if focused bubble text is destroyed by a refresh."""
+        app = self.app
+        app.window.present(); settle(.3)
+        bubbles = [w for w in walk(app.messages) if isinstance(w, Gtk.Label) and w.get_selectable()]
+        self.assertTrue(bubbles)
+        bubbles[-1].grab_focus(); settle(.1)
+        self.assertTrue(app.window.get_focus().is_ancestor(app.messages))
+        app.threads[app.model.selected]['messages'].append(dict(body='A new text arrives', outgoing=False, timestamp='Now'))
+        app.show_conversation(); settle(.2)
+        focus = app.window.get_focus()
+        self.assertFalse(focus is not None and focus.is_ancestor(app.messages), 'focus left on a destroyed bubble')
+        self.assertIs(focus, app.editor.get_focus_child() or focus)
+        self.assertTrue(any('A new text arrives' in w.get_label() for w in walk(app.messages) if isinstance(w, Gtk.Label)))
+
+    def test_rebuilding_the_conversation_list_keeps_focus_on_the_selected_row(self):
+        app = self.app
+        app.window.present(); settle(.3)
+        key = app.model.selected
+        app.rows[key].grab_focus(); settle(.1)
+        old_row = app.rows[key]
+        app.threads[key]['messages'].append(dict(body='Newest', outgoing=False, timestamp='Now'))
+        app.threads[key]['last_ts'] = 'Now'
+        app.populate(); settle(.2)
+        self.assertIsNot(app.rows[key], old_row, 'the list was rebuilt')
+        focus = app.window.get_focus()
+        self.assertIsNotNone(focus)
+        self.assertTrue(focus is app.rows[key] or focus.is_ancestor(app.rows[key]))
+
+    def test_direct_replies_say_so_when_iphone_group_info_is_unavailable(self):
+        app = self.app
+        direct = next(k for k, t in app.threads.items() if not t.get('is_group') and t.get('reply_ready'))
+        group = next(k for k, t in app.threads.items() if t.get('is_group') and t.get('reply_ready'))
+        for key, expect in ((direct, True), (group, False)):
+            app.list.select_row(app.rows[key]); settle(.1)
+            app.editor.get_buffer().set_text('Hello'); settle(.1)
+            self.assertNotIn('this person only', app.send_status.get_label(), 'fixture makes no claim about the phone')
+            app.status = dict(app.status, ancs=False)
+            app.update_composer()
+            self.assertEqual('Sends to this person only' in app.send_status.get_label(), expect)
+            self.assertIsNotNone(app.send_status.get_tooltip_text())
+            app.status = dict(app.status, ancs=True)
+            app.update_composer()
+            self.assertNotIn('this person only', app.send_status.get_label())
+            self.assertIsNone(app.send_status.get_tooltip_text())
+
+    def test_tapbacks_show_as_a_chip_on_the_message_not_as_bubbles(self):
+        app = self.app
+        thread = app.threads[app.model.selected]
+        thread['messages'].append(msg('Do you have a starlink mini?', '2026-01-05T09:00:00', False))
+        thread['messages'].append(msg('Liked “Do you have a starlink mini?”', '2026-01-05T09:01:00', True))
+        app.show_conversation(); settle(.2)
+        bodies = [b.get_text() for b in with_class(app.messages, 'ms-bubble')]
+        self.assertIn('Do you have a starlink mini?', bodies)
+        self.assertFalse([b for b in bodies if b.startswith('Liked')])
+        chips = with_class(app.messages, 'ms-reactions')
+        self.assertEqual([c.get_text() for c in chips], ['👍'])
+        self.assertIn('You', chips[0].get_tooltip_text())
+
+    def test_reply_quotes_the_message_and_sends_the_quote_with_the_text(self):
+        from unittest.mock import patch
+        app = self.app
+        key = app.model.selected
+        target = dict(app.threads[key]['messages'][-1])
+        queued = []
+        app.task = lambda work, completed: queued.append((work, completed))
+        app.reply_to_message(target); settle(.2)
+        self.assertTrue(app.composer.quote_revealer.get_reveal_child())
+        self.assertIn('Replying to ', app.composer.quote_label.get_label())
+        app.editor.get_buffer().set_text('Agreed')
+        app.send_message(); settle()
+        work, completed = queued[0]
+        with patch('messages.BackendClient') as backend:
+            backend.return_value.send_to_thread.return_value = 'transfer'
+            app.fixture = False
+            try:
+                work()
+            finally:
+                app.fixture = True
+        body = backend.return_value.send_to_thread.call_args.args[1]
+        self.assertTrue(body.startswith('↪ ') and body.endswith('\nAgreed'), body)
+        self.assertEqual(app.model.drafts.get(key, ''), 'Agreed', 'still pending, so the draft is untouched')
+        app.refresh = lambda *_a: True
+        completed('transfer', None); settle()
+        self.assertFalse(app.composer.quote_revealer.get_reveal_child(), 'a sent reply ends the reply')
+        self.assertNotIn(key, app.replying)
+
+    def test_cancelling_a_reply_sends_plain_text(self):
+        app = self.app
+        key = app.model.selected
+        app.reply_to_message(dict(app.threads[key]['messages'][-1])); settle(.1)
+        app.composer.quote_close.emit('clicked'); settle(.1)
+        self.assertFalse(app.composer.quote_revealer.get_reveal_child())
+        self.assertNotIn(key, app.replying)
+
+    def test_bubbles_offer_reply_and_copy_on_right_click(self):
+        app = self.app
+        bubble = with_class(app.messages, 'ms-bubble')[0]
+        column = bubble.get_parent()
+        gestures = [c for c in column.observe_controllers() if isinstance(c, Gtk.GestureClick)]
+        self.assertTrue(gestures, 'bubble has a secondary-click gesture')
+        self.assertEqual(gestures[0].get_button(), 3)
 
     def test_offline_retains_conversations_and_disables_send(self):
         app = self.app
@@ -265,6 +397,13 @@ class MessagesUI(unittest.TestCase):
 
     # --- Native experience -------------------------------------------------
 
+    def test_runs_on_the_isolated_x11_display_never_a_live_session(self):
+        display = self.app.window.get_display()
+        self.assertIn('X11', type(display).__name__)
+        self.assertEqual(display.get_name(), os.environ['DISPLAY'])
+        self.assertNotIn('WAYLAND_DISPLAY', os.environ)
+        self.assertEqual(os.environ['GDK_BACKEND'], 'x11')
+
     def test_stylesheet_parses_cleanly_on_this_toolkit(self):
         self.assertEqual(self.app.css_errors, [])
 
@@ -354,6 +493,27 @@ class MessagesUI(unittest.TestCase):
         self.assertEqual(bubble.get_text(), body)
         self.assertIn('<a href="https://example.com/a">', bubble.get_label())
         self.assertNotIn('<b>', bubble.get_label(), 'markup in a message must be escaped')
+
+    def test_long_text_with_a_link_renders_whole_and_attachments_get_a_chip(self):
+        app = self.app
+        long = 'word ' * 120 + 'https://example.com/guide'
+        app.threads['demo']['messages'] = [msg(long, '2026-01-05T09:00:00', handle='a'),
+                                           msg('\ufffc', '2026-01-05T09:01:00', handle='b'),
+                                           msg('See this\ufffc', '2026-01-05T09:02:00', True, handle='c'),
+                                           msg('y' * 128, '2026-01-05T09:03:00', handle='d')]
+        app.threads['demo']['messages'][3]['phone_list'] = True
+        app.rendered = None
+        app.show_conversation();settle()
+        bubbles = with_class(app.messages, 'ms-bubble')
+        texts = [b.get_text() for b in bubbles]
+        self.assertEqual(texts[0], long, 'no characters are lost from a long message')
+        self.assertIn('<a href="https://example.com/guide">', bubbles[0].get_label())
+        self.assertEqual(len(with_class(app.messages, 'ms-attachment')), 2, 'one chip per attachment')
+        self.assertNotIn('', texts, 'an attachment-only message is not an empty bubble')
+        self.assertIn('See this', texts)
+        self.assertTrue(any(isinstance(w, Gtk.Label) and 'Shortened' in w.get_text() for w in walk(app.messages)),
+                        'a message cut at the phone cap says so')
+        self.assertEqual(sum(1 for w in walk(app.messages) if isinstance(w, Gtk.Label) and 'Shortened' in w.get_text()), 1)
 
     def test_send_button_and_placeholder_follow_the_draft(self):
         app = self.app
@@ -548,6 +708,268 @@ class MessagesUI(unittest.TestCase):
         self.assertEqual((texture.get_intrinsic_width(), texture.get_intrinsic_height()), (88, 88))
         self.assertIsNone(photo_frame(b'', 44))
         self.assertIsNone(photo_frame(b'\x00' * 64, 44))
+
+
+    # --- Group replies, failures, context menu, shortcuts -------------------
+
+    def send_with(self, key, text, **client_methods):
+        """Type text in a conversation and press Send against a fake client; return that client."""
+        from unittest.mock import MagicMock
+        app = self.app
+        run_inline(app)
+        app.refresh = lambda *_a: True
+        app.list.select_row(app.rows[key]);settle(.2)
+        app.editor.get_buffer().set_text(text)
+        client = MagicMock()
+        for name, value in client_methods.items():
+            setattr(client, name, value)
+        self.client = client
+        app.fixture = False
+        self.addCleanup(setattr, app, 'fixture', True)
+        self._patch = patch('messages.BackendClient', return_value=client)
+        self._patch.start()
+        self.addCleanup(self._patch.stop)
+        return client
+
+    def test_unconfirmed_group_asks_who_will_receive_it_before_sending(self):
+        from messages import Granite
+        app = self.app
+        client = self.send_with('family', 'Dinner is on me')
+        app.send_message();settle(.3)
+        dialog = app.group_dialog
+        self.assertIsInstance(dialog, Granite.MessageDialog)
+        client.send_to_thread.assert_not_called()
+        shown = ' '.join(w.get_label() for w in walk(dialog) if isinstance(w, Gtk.Label))
+        self.assertIn('+15550100126', shown)
+        self.assertIn('+15550100127', shown)
+        # The addresses must actually be readable, not ellipsized to nothing.
+        for address in ('+15550100126', '+15550100127'):
+            label = next(w for w in walk(dialog) if isinstance(w, Gtk.Label) and w.get_label() == address)
+            self.assertGreaterEqual(label.get_width(), 80, address + ' must have room to show')
+            self.assertFalse(label.get_layout().is_ellipsized(), address + ' is ellipsized')
+        self.assertIn('Send to 2 People', shown)
+        self.assertEqual(app.model.drafts['family'], 'Dinner is on me')
+        dialog.emit('response', Gtk.ResponseType.CANCEL);settle(.2)
+        client.send_to_thread.assert_not_called()
+        self.assertIsNone(app.group_dialog)
+        self.assertEqual(app.model.drafts['family'], 'Dinner is on me', 'cancel keeps the draft')
+
+    def test_pressing_enter_in_the_group_dialog_cancels_rather_than_sends(self):
+        app = self.app
+        client = self.send_with('family', 'Careful')
+        app.send_message();settle(.3)
+        default = app.group_dialog.get_default_widget()
+        self.assertIsNotNone(default)
+        self.assertEqual(default.get_label(), 'Cancel', 'the default button must be the safe one')
+        self.assertFalse(default.has_css_class('suggested-action'))
+        app.group_dialog.emit('response', Gtk.ResponseType.CANCEL);settle(.2)
+        client.send_to_thread.assert_not_called()
+
+    def test_confirming_sends_once_with_the_token_and_is_not_asked_again(self):
+        app = self.app
+        client = self.send_with('family', 'First', send_to_thread=lambda *a, **k: 'transfer')
+        client.send_to_thread = __import__('unittest.mock').mock.MagicMock(return_value='transfer')
+        app.send_message();settle(.3)
+        app.group_dialog.emit('response', Gtk.ResponseType.ACCEPT);settle(.4)
+        client.send_to_thread.assert_called_once_with('family', 'First', confirm_group=True, expected_group_token='fixture-roster')
+        self.assertTrue(app.threads['family']['group_confirmed'])
+        self.assertEqual(app.send_status.get_text(), 'Sent through your iPhone')
+        app.editor.get_buffer().set_text('Second')
+        app.send_message();settle(.3)
+        self.assertIsNone(app.group_dialog, 'already confirmed, so no second prompt')
+        self.assertEqual(client.send_to_thread.call_args_list[-1].kwargs['confirm_group'], False)
+
+    def test_group_that_changed_while_the_dialog_was_open_is_not_sent(self):
+        app = self.app
+        client = self.send_with('family', 'Hello')
+        app.send_message();settle(.3)
+        app.threads['family']['confirmation_token'] = 'roster-v2'
+        app.group_dialog.emit('response', Gtk.ResponseType.ACCEPT);settle(.3)
+        client.send_to_thread.assert_not_called()
+        self.assertIn('group changed', app.send_status.get_text())
+        self.assertEqual(app.model.drafts['family'], 'Hello')
+
+    def test_group_with_an_incomplete_roster_points_to_advanced_blueferry(self):
+        app = self.app
+        client = self.send_with('family', 'Hello')
+        app.threads['family']['participants_required'] = True
+        app.send_message();settle(.2)
+        self.assertIsNone(app.group_dialog)
+        client.send_to_thread.assert_not_called()
+        self.assertIn('Advanced BlueFerry', app.send_status.get_text())
+
+    def test_failure_shows_the_daemons_reason_not_a_generic_line(self):
+        app = self.app
+        client = self.send_with('demo', 'Hello')
+        client.send_to_thread.side_effect = Exception('OBEX connect failed: Forbidden')
+        app.send_message();settle(.3)
+        self.assertIn('Could not send', app.send_status.get_text())
+        self.assertIn('isn’t allowing message access', app.send_status.get_text())
+        self.assertEqual(app.model.drafts['demo'], 'Hello')
+
+    def test_conversation_context_menu_offers_mark_read_and_copy(self):
+        app = self.app
+        unread = [text for text, _cb in app.row_actions(app.threads['jordan'])]
+        read = [text for text, _cb in app.row_actions(app.threads['sam'])]
+        self.assertEqual(unread, ['Mark as Read', 'Copy Number or Address'])
+        self.assertEqual(read, ['Copy Number or Address'])
+        self.assertEqual([t for t, _c in app.row_actions(app.threads['family'])], ['Copy Numbers'])
+        row = app.rows['jordan']
+        click = next(c for c in row.observe_controllers() if isinstance(c, Gtk.GestureClick))
+        click.emit('pressed', 1, 12.0, 12.0);settle(.3)
+        popovers = [w for w in walk(row) if isinstance(w, Gtk.Popover)]
+        self.assertEqual(len(popovers), 1)
+        self.assertEqual([b.get_label() for b in walk(popovers[0]) if isinstance(b, Gtk.Button)], unread)
+        popovers[0].popdown();settle(.3)
+
+    def test_copy_action_puts_the_number_on_the_clipboard(self):
+        app = self.app
+        copy = dict(app.row_actions(app.threads['sam']))['Copy Number or Address']
+        copy();settle(.3)
+        done = []
+        app.window.get_display().get_clipboard().read_text_async(None, lambda cb, res: done.append(cb.read_text_finish(res)))
+        end = time.monotonic() + 3
+        while not done and time.monotonic() < end:
+            settle(.1)
+        self.assertEqual(done, ['+15550100128'])
+
+    def test_shortcuts_window_lists_every_shortcut(self):
+        from messages import Granite
+        app = self.app
+        sheet = app.show_shortcuts();settle(.3)
+        accelerators = [w for w in walk(sheet) if isinstance(w, Granite.AccelLabel)]
+        self.assertEqual(len(accelerators), 6)
+        keycaps = [w.get_label() for w in walk(sheet) if isinstance(w, Gtk.Label) and w.get_label() in ('Ctrl', 'Enter', 'Return', 'F5', 'N', 'F', 'R', 'Left', 'Alt')]
+        self.assertGreaterEqual(len(keycaps), 9, 'every row shows its keys: %s' % keycaps)
+        for accelerator in accelerators:
+            self.assertTrue(accelerator.get_first_child() is not None, 'an empty accelerator label draws nothing')
+        text = ' '.join(w.get_label() for w in walk(sheet) if isinstance(w, Gtk.Label))
+        for expected in ('New Message', 'Search Conversations', 'Refresh iPhone Inbox', 'Back to Conversations', 'Send Message', 'New Line'):
+            self.assertIn(expected, text)
+        sheet.close();settle(.2)
+
+
+    # --- Enter to send (opt-in) --------------------------------------------
+
+    def press(self, app, key, modifiers=Gdk.ModifierType(0)):
+        """Deliver a key press to the editor's capture-phase controllers, as GTK would."""
+        for controller in app.editor.observe_controllers():
+            if isinstance(controller, Gtk.EventControllerKey) and controller.get_propagation_phase() == Gtk.PropagationPhase.CAPTURE:
+                controller.emit('key-pressed', key, 0, modifiers)
+
+    def enter_app(self, enabled=True):
+        app = self.app
+        app.settings['enter_sends'] = enabled
+        sent = []
+        app.send_message = lambda *_a: sent.append(app.editor.get_buffer().get_text(*app.editor.get_buffer().get_bounds(), True))
+        app.editor.get_buffer().set_text('Hello there')
+        settle(.2)
+        return app, sent
+
+    def draft(self, app):
+        buffer = app.editor.get_buffer()
+        return buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
+
+    def test_enter_sends_when_the_switch_is_on_and_adds_no_newline(self):
+        app, sent = self.enter_app()
+        self.press(app, Gdk.KEY_Return)
+        app.editor.get_buffer().insert_at_cursor('\n');settle(.2)
+        self.assertEqual(sent, ['Hello there'], 'sent exactly once, without a trailing newline')
+        self.assertEqual(self.draft(app), 'Hello there')
+
+    def test_enter_still_adds_a_line_when_the_switch_is_off(self):
+        app, sent = self.enter_app(enabled=False)
+        self.press(app, Gdk.KEY_Return)
+        app.editor.get_buffer().insert_at_cursor('\n');settle(.2)
+        self.assertEqual(sent, [])
+        self.assertEqual(self.draft(app), 'Hello there\n')
+
+    def test_shift_enter_adds_a_line_instead_of_sending(self):
+        app, sent = self.enter_app()
+        self.press(app, Gdk.KEY_Return, Gdk.ModifierType.SHIFT_MASK)
+        app.editor.get_buffer().insert_at_cursor('\n');settle(.2)
+        self.assertEqual(sent, [])
+        self.assertEqual(self.draft(app), 'Hello there\n')
+
+    def test_enter_that_confirms_an_input_method_composition_never_sends(self):
+        # An input method consumes Return to commit its candidate, so what arrives is
+        # the composed text and not a newline. Sending here would send half a thought.
+        app, sent = self.enter_app()
+        self.press(app, Gdk.KEY_Return)
+        app.editor.get_buffer().insert_at_cursor('あ');settle(.2)
+        self.assertEqual(sent, [])
+        self.assertEqual(self.draft(app), 'Hello thereあ')
+        # And the armed state must not linger and turn a later pasted newline into a send.
+        settle(.3)
+        app.editor.get_buffer().insert_at_cursor('\n');settle(.2)
+        self.assertEqual(sent, [])
+        self.assertTrue(self.draft(app).endswith('\n'))
+
+    def test_a_pasted_newline_without_a_return_press_is_just_text(self):
+        app, sent = self.enter_app()
+        app.editor.get_buffer().insert_at_cursor('\nsecond line');settle(.2)
+        self.assertEqual(sent, [])
+        self.assertEqual(self.draft(app), 'Hello there\nsecond line')
+
+    def test_ctrl_enter_still_sends_in_both_modes(self):
+        for enabled in (True, False):
+            app, sent = self.enter_app(enabled)
+            app.send.set_sensitive(True)
+            app.key_pressed(None, Gdk.KEY_Return, 0, Gdk.ModifierType.CONTROL_MASK)
+            self.assertEqual(len(sent), 1, 'enabled=%s' % enabled)
+
+    def test_enter_on_an_empty_draft_does_nothing_at_all(self):
+        app, sent = self.enter_app()
+        app.editor.get_buffer().set_text('');settle(.2)
+        self.press(app, Gdk.KEY_Return)
+        app.editor.get_buffer().insert_at_cursor('\n');settle(.2)
+        self.assertEqual(self.draft(app), '', 'the swallowed Return leaves no stray blank line')
+        self.assertFalse(app.send.get_sensitive())
+        self.assertEqual(sent, [], 'nothing to send, so nothing is sent')
+
+    def test_menu_switch_persists_privately_and_updates_the_hint(self):
+        import json, stat, tempfile
+        from unittest.mock import patch
+        folder = tempfile.mkdtemp()
+        app = self.app
+        app.fixture = False
+        self.addCleanup(setattr, app, 'fixture', True)
+        with patch.dict(os.environ, {'XDG_CONFIG_HOME': folder}):
+            action = app.lookup_action('enter-sends')
+            self.assertTrue(action.get_state().get_boolean(), 'Enter sends by default')
+            app.editor.get_buffer().set_text('Draft');settle(.3)
+            self.assertIn('Enter to send · Shift+Enter', app.send_status.get_text())
+            self.assertIn('(Enter)', app.send.get_tooltip_text())
+            action.activate(None);settle(.2)
+            self.assertFalse(action.get_state().get_boolean(), 'one activation toggles exactly once')
+            path = os.path.join(folder, 'mseries', 'messages.json')
+            self.assertEqual(json.load(open(path)), {'enter_sends': False})
+            self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+            self.assertIn('Ctrl+Enter to send', app.send_status.get_text())
+            action.activate(None);settle(.2)
+            self.assertEqual(json.load(open(path)), {'enter_sends': True})
+            self.assertIn('Enter to send · Shift+Enter', app.send_status.get_text())
+
+    def test_fixture_never_touches_the_owners_preferences(self):
+        import tempfile
+        from unittest.mock import patch
+        folder = tempfile.mkdtemp()
+        with patch.dict(os.environ, {'XDG_CONFIG_HOME': folder}):
+            self.app.lookup_action('enter-sends').activate(None);settle(.2)
+        self.assertFalse(os.path.exists(os.path.join(folder, 'mseries')))
+
+    @unittest.skipUnless(__import__('shutil').which('xdotool'), 'needs xdotool to send real key events')
+    def test_real_key_events_end_to_end(self):
+        import subprocess
+        app, sent = self.enter_app()
+        app.window.present();settle(.5)
+        subprocess.run(['xdotool', 'search', '--name', 'Messages', 'windowfocus'], capture_output=True)
+        app.editor.grab_focus();settle(.3)
+        subprocess.run(['xdotool', 'key', 'Return'], check=True);settle(.6)
+        self.assertEqual(sent, ['Hello there'], 'a real Return key press sends once with no newline')
+        subprocess.run(['xdotool', 'key', 'shift+Return'], check=True);settle(.5)
+        self.assertEqual(len(sent), 1)
+        self.assertTrue(self.draft(app).endswith('\n'), 'a real Shift+Return adds a line')
 
 
     def test_theme_screenshots(self):

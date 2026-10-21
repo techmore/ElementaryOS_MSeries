@@ -28,6 +28,20 @@ for icon in github-symbolic mseries-repobar-globe-symbolic mseries-repobar-commi
 done
 sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
 
+# RepoBar Settings launcher, so the preferences stay reachable while the panel module is hidden.
+install -d -m 0755 "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/io.github.techmore.RepoBar.Settings.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=RepoBar Settings
+Comment=GitHub accounts, dashboard and notifications for RepoBar
+Exec=$HOME/.local/bin/mseries-repobar-settings
+Icon=github-symbolic
+Terminal=false
+Categories=Settings;Development;
+StartupNotify=true
+DESKTOP
+
 if ! "$restart"; then
   echo 'Installed without restarting Wingpanel. The RepoBar module loads at next login (or an explicit --restart).'
   exit 0

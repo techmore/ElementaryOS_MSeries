@@ -39,6 +39,8 @@ printf '#!/usr/bin/env bash\nexit 0\n' >"$fake/systemctl"
 chmod +x "$fake"/*
 printf 'apple,j314s\0apple,t6000\0' >"$tmp/compatible"
 printf '#!/usr/bin/env bash\necho brave installed\n' >"$tmp/payload/mseries/install-brave.sh"
+# the scheduler and its module graph ship in the payload next to the install scripts
+cp "$here/modrun.py" "$here/lib-timing.sh" "$here/enhance-modules.json" "$tmp/payload/mseries/"
 export PATH=$fake:$PATH FAKE_APT_LOG=$tmp/apt.log
 export ELEMENTARY_MAC_PAYLOAD=$tmp/payload ELEMENTARY_MAC_COMPATIBLE=$tmp/compatible ELEMENTARY_MAC_FAKE_ROOT=1
 
@@ -120,5 +122,133 @@ ok "the service retires: nothing is left to retry" test -f "$state/finished"
 # --- 5. --retry with no module clears every failure -----------------------------------
 run "$state" --retry >/dev/null
 ok "--retry without a module clears all" absent "$state/video.reason"
+
+# --- 6. every run is timed; the default is serial -------------------------------------
+# json_field FILE FIELD [NAME]: a field of the summary document, or of one task's record.
+json_field() {
+  python3 -I - "$@" <<'PY'
+import json, sys
+path, field = sys.argv[1], sys.argv[2]
+if len(sys.argv) > 3:
+    rows = [json.loads(l) for l in open(path) if l.strip()]
+    value = next(r for r in rows if r['name'] == sys.argv[3])[field]
+else:
+    value = json.load(open(path))[field]
+print(value)
+PY
+}
+cpu_of() { python3 -I -c 'import json,sys; r=[json.loads(l) for l in open(sys.argv[1]) if l.strip()]; r=[x for x in r if x["name"]==sys.argv[2]][0]; print(round(r["cpu_user_s"]+r["cpu_sys_s"],2))' "$1" "$2"; }
+at_least() { python3 -I -c 'import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)' "$1" "$2"; }
+
+state=$tmp/s6; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+printf '#!/usr/bin/env bash\necho brave installed\nsleep 0.3\n' >"$tmp/payload/mseries/install-brave.sh"
+video_script 'python3 -c "
+import time
+t = time.process_time()
+while time.process_time() - t < 0.3: pass"'
+run "$state" --run >"$state/stdout"
+ok "the default run is serial" bash -c "! grep -q 'with up to [0-9]* at a time' '$state/enhance.log'"
+ok "a timing log line per module that ran (the 9 without payload count as not applicable)" test "$(grep -c . "$state/timing.jsonl")" -eq 12
+eq ok "$(json_field "$state/timing.jsonl" status brave)" "brave is recorded ok"
+ok "brave's wall time covers its 0.3 s" at_least "$(json_field "$state/timing.jsonl" wall_s brave)" 0.25
+ok "video's CPU time is recorded (busy for 0.3 s)" at_least "$(cpu_of "$state/timing.jsonl" video)" 0.2
+ok "the start precedes the end" at_least "$(json_field "$state/timing.jsonl" end video)" "$(json_field "$state/timing.jsonl" start video)"
+eq serial "$(json_field "$state/timing-summary.json" mode)" "the summary is for a serial run"
+eq 3 "$(json_field "$state/timing-summary.json" ok)" "the JSON summary counts brave, video and desktop-user-deps as ok"
+eq 9 "$(json_field "$state/timing-summary.json" not_applicable)" "and the modules without payload as not applicable"
+ok "the log has the human summary line" grep -qE '^timing: 12 modules ok=3 failed=0 skipped=0 n/a=9 wall=[0-9.]+s cpu=[0-9.]+s mode=serial .*slowest=' "$state/enhance.log"
+ok "the table lists the slowest module first" bash -c "grep -A1 '^module ' '$state/enhance.log' | tail -1 | grep -qE '^(brave|video) '"
+timing=$(run "$state" --timing)
+ok "--timing prints the last run" grep -q '^timing: 12 modules' <<<"$timing"
+run "$state" --run >/dev/null
+ok "a run with nothing left to do keeps the previous timing" test "$(grep -c . "$state/timing.jsonl")" -eq 12
+
+# --- 7. parallel is opt-in, runs independent modules together, and keeps apt holders apart ---
+# brave and video each wait for the other to start: they pass only when they really overlap.
+rendezvous() { # rendezvous MODULE OTHER
+  printf '#!/usr/bin/env bash\ntouch "%s/%s.up"\nfor _ in $(seq 100); do [[ -e "%s/%s.up" ]] && exit 0; sleep 0.05; done\necho "fatal: never ran alongside %s" >&2; exit 1\n' \
+    "$tmp" "$1" "$tmp" "$2" "$2"
+}
+rm -f "$tmp"/*.up
+rendezvous brave video >"$tmp/payload/mseries/install-brave.sh"
+rendezvous video brave >"$tmp/payload/mseries/install-video-decode.sh"
+state=$tmp/s7; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+MSERIES_JOBS=4 run "$state" --run --parallel >"$state/stdout"
+eq done "$(state_of "$state" brave)" "parallel: brave done (it saw video running)"
+eq done "$(state_of "$state" video)" "parallel: video done (it saw brave running)"
+eq 1 "$(installs)" "parallel mode still installs the requirements once"
+eq 1 "$(updates)" "and updates apt once"
+ok "the log says how many ran at once" grep -q 'running [0-9]* modules with up to 4 at a time' "$state/enhance.log"
+eq parallel "$(json_field "$state/timing-summary.json" mode)" "the summary is for a parallel run"
+ok "at least two modules ran at the same time" at_least "$(json_field "$state/timing-summary.json" peak_concurrency)" 2
+ok "each module's log is in the combined log" bash -c "grep -q 'brave: starting' '$state/enhance.log' && grep -q 'video: starting' '$state/enhance.log'"
+ok "combined log is in module order, not finish order" bash -c "[[ \$(grep -n 'brave: done' '$state/enhance.log' | cut -d: -f1) -lt \$(grep -n 'video: done' '$state/enhance.log' | cut -d: -f1) ]]"
+ok "the service retires" test -f "$state/finished"
+ok "per-module scratch logs are removed" absent "$state/logs"
+
+# the same flag through the environment, with apt holders: brave and gestures never overlap
+order=$tmp/order; : >"$order"
+for pair in "brave install-brave.sh" "gestures install-touchegg.sh"; do
+  set -- $pair
+  printf '#!/usr/bin/env bash\necho "%s start" >>"%s"\nsleep 0.3\necho "%s end" >>"%s"\n' "$1" "$order" "$1" "$order" >"$tmp/payload/mseries/$2"
+done
+video_script 'echo video ok'
+state=$tmp/s8; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+MSERIES_PARALLEL=1 MSERIES_JOBS=4 run "$state" --run >/dev/null
+eq done "$(state_of "$state" gestures)" "gestures done in parallel mode"
+ok "apt holders run one after the other" bash -c "[[ \$(tr '\n' ' ' <'$order') == 'brave start brave end gestures start gestures end ' || \$(tr '\n' ' ' <'$order') == 'gestures start gestures end brave start brave end ' ]]"
+
+# --- 9. the serial flag and unsafe situations win over --parallel --------------------
+state=$tmp/s9; mkdir -p "$state"; : >"$FAKE_APT_LOG"; : >"$order"
+MSERIES_SERIAL=1 MSERIES_JOBS=4 run "$state" --run --parallel >/dev/null
+ok "MSERIES_SERIAL=1 is reported" grep -q 'parallel mode requested but not used: MSERIES_SERIAL=1' "$state/enhance.log"
+eq done "$(state_of "$state" gestures)" "serial fallback still completes every module"
+ok "and really ran one at a time" bash -c "grep -q . '$order' && ! grep -q 'with up to [0-9]* at a time' '$state/enhance.log'"
+
+state=$tmp/s10; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+FAKE_APT_MISSING=libva-dev MSERIES_JOBS=4 run "$state" --run --parallel >/dev/null
+ok "a failed combined install forces serial" grep -q 'not used: the combined requirements install did not complete' "$state/enhance.log"
+eq done "$(state_of "$state" brave)" "the fallback path still installs the modules that can be installed"
+
+state=$tmp/s11; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+MSERIES_JOBS=1 run "$state" --run --parallel >/dev/null
+ok "one worker means serial" grep -q 'not used: only one worker' "$state/enhance.log"
+
+# --- 10. a failing module in parallel mode is recorded and does not stop the rest ----------
+state=$tmp/s12; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+video_script 'echo "fatal: repository https://example.invalid/x not found" >&2; exit 128'
+printf '#!/usr/bin/env bash\necho brave installed\n' >"$tmp/payload/mseries/install-brave.sh"
+MSERIES_JOBS=4 run "$state" --run --parallel >/dev/null
+eq done "$(state_of "$state" brave)" "parallel: the other module still completes"
+eq failed:3 "$(state_of "$state" video)" "parallel: a deterministic failure is final"
+eq 'fatal: repository https://example.invalid/x not found' "$(cat "$state/video.reason")" "parallel: the reason is recorded"
+eq failed "$(json_field "$state/timing.jsonl" status video)" "parallel: the timing log marks it failed"
+eq 1 "$(json_field "$state/timing-summary.json" failed)" "parallel: the summary counts one failure"
+ok "parallel: the failure is explained in the combined log" \
+  grep -q 'video: install failed (exit 128) and would fail the same way again; not retried' "$state/enhance.log"
+
+# --- 11. timing never gets in the way, and the helpers work on their own ---------------
+state=$tmp/s13; mkdir -p "$state"; : >"$FAKE_APT_LOG"
+video_script 'echo video ok'
+ELEMENTARY_MAC_TIMING_LIB=/nonexistent run "$state" --run >/dev/null
+eq done "$(state_of "$state" video)" "without the timing library the modules still install"
+ok "and nothing is timed" test ! -s "$state/timing.jsonl"
+
+# shellcheck source=mseries/lib-timing.sh
+source "$here/lib-timing.sh"
+eq 73200 "$(_timing_clock_ms 1m13.200s)" "a bash 'times' value converts to milliseconds"
+eq 1 "$(_timing_clock_ms 0m0.001s)" "a millisecond"
+log=$tmp/lib-timing.jsonl; : >"$log"
+timing_begin; sleep 0.2; timing_end "$log" slowmod ok 0
+timing_begin; timing_end "$log" quickmod failed 1
+ok "timing_end writes one JSON line per call" test "$(grep -c . "$log")" -eq 2
+ok "the sleep shows as wall time" at_least "$(json_field "$log" wall_s slowmod)" 0.15
+eq failed "$(json_field "$log" status quickmod)" "the status is recorded"
+summary=$(MODRUN=/nonexistent timing_summary "$log")
+eq "timing (slowest first): slowmod $(json_field "$log" wall_s slowmod)s quickmod $(json_field "$log" wall_s quickmod)s" "$summary" \
+  "without the scheduler a plain list sorted slowest first is printed"
+summary=$(timing_summary "$log" serial "$tmp/lib-summary.json")
+ok "with it, the table and the summary line" grep -q '^timing: 2 modules ok=1 failed=1 .*mode=serial' <<<"$summary"
+eq 2 "$(json_field "$tmp/lib-summary.json" tasks_total)" "and the JSON document"
 
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }

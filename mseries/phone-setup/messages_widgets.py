@@ -15,7 +15,7 @@ from gi.repository import Gdk, GdkPixbuf, GLib, Gtk, Pango
 from blueferry.message_links import linkify_message
 from blueferry.time_display import format_message_timestamp
 from message_media import media_links
-from messages_model import avatar_tone, conversation_preview, initials, short_stamp
+from messages_model import avatar_tone, conversation_preview, initials, message_parts, reaction_summary, short_stamp
 
 _ = gettext.gettext
 AVATAR_PX = dict(s=34, m=44, l=54)
@@ -219,11 +219,12 @@ def set_markup_safely(widget, body):
         widget.set_text(body)
 
 
-def message_widget(item, media=None):
+def message_widget(item, media=None, on_reply=None):
     """A bubble (with optional sender name, media cards and caption) for one layout item.
 
     `media(url, automatic)` returns a preview card for a link in the body; the
-    caller owns the network and cache side of that.
+    caller owns the network and cache side of that. `on_reply(message)` makes a
+    right-click or long-press offer Reply (and Copy) on the bubble.
     """
     message = item['message']
     outgoing = bool(message.get('outgoing'))
@@ -232,35 +233,101 @@ def message_widget(item, media=None):
     column.set_margin_top(8 if item['position'] in ('single', 'first') else 2)
     if item['show_sender']:
         column.append(label(message.get('sender', ''), 'ms-sender', xalign=0, ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=32))
-    bubble = Gtk.Label(wrap=True, selectable=True, xalign=0, max_width_chars=44,
-                       natural_wrap_mode=Gtk.NaturalWrapMode.NONE)
-    bubble.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-    set_markup_safely(bubble, message.get('body', ''))
-    for css in ('ms-bubble', 'ms-outgoing' if outgoing else 'ms-incoming', 'ms-' + item['position']):
-        bubble.add_css_class(css)
-    if sending:
-        bubble.add_css_class('ms-sending')
+    text, attachment, shortened = message_parts(message)
     when = message.get('display_timestamp') or format_message_timestamp(message.get('timestamp'))
-    if when:
-        bubble.set_tooltip_text(when)
-    column.append(bubble)
+    direction = 'ms-outgoing' if outgoing else 'ms-incoming'
+    if text:
+        bubble = Gtk.Label(wrap=True, selectable=True, xalign=0, max_width_chars=44,
+                           natural_wrap_mode=Gtk.NaturalWrapMode.NONE)
+        bubble.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        set_markup_safely(bubble, text)
+        for css in ('ms-bubble', direction, 'ms-' + item['position']):
+            bubble.add_css_class(css)
+        if sending:
+            bubble.add_css_class('ms-sending')
+        if when:
+            bubble.set_tooltip_text(when)
+        column.append(bubble)
+        if message.get('reactions'):
+            column.append(reaction_chip(message['reactions'], outgoing))
+    if attachment:
+        column.append(attachment_chip(direction, item['position'] if not text else 'single'))
     if media is not None:
-        for url in media_links(message.get('body', '')):
+        for url in media_links(text):
             column.append(media(url, outgoing))
+    if shortened:
+        column.append(label(_('Shortened by your iPhone · open it there for the rest'), 'ms-caption', xalign=1 if outgoing else 0))
     caption = _('Sending…') if sending else item['caption']
     if caption:
         column.append(label(caption, 'ms-caption', xalign=1 if outgoing else 0))
+    if on_reply is not None and not sending and text:
+        attach_bubble_menu(column, text, lambda: on_reply(message))
     return column
+
+
+def reaction_chip(reactions, outgoing):
+    """The Tapbacks on a message, shown as small emoji under its bubble."""
+    symbols, who = reaction_summary(reactions)
+    chip = label(symbols, 'ms-reactions', halign=Gtk.Align.END if outgoing else Gtk.Align.START)
+    chip.set_tooltip_text(who)
+    chip.update_property([Gtk.AccessibleProperty.LABEL], [_('Reactions: %s') % who])
+    return chip
+
+
+def attach_bubble_menu(column, text, reply):
+    """Right-click or long-press a bubble for Reply and Copy.
+
+    Runs in the capture phase so it replaces the selectable label's own menu;
+    Copy is offered here so nothing is lost.
+    """
+    def show(_gesture, *args):
+        popover = Gtk.Popover(has_arrow=False, halign=Gtk.Align.START)
+        popover.set_parent(column)
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        def entry(title, action):
+            button = Gtk.Button(label=title, halign=Gtk.Align.FILL)
+            button.add_css_class('flat')
+            button.get_first_child().set_halign(Gtk.Align.START)
+            button.connect('clicked', lambda _b: (popover.popdown(), action()))
+            menu.append(button)
+        entry(_('Reply'), reply)
+        entry(_('Copy Text'), lambda: column.get_display().get_clipboard().set(text))
+        popover.set_child(menu)
+        popover.connect('closed', lambda p: GLib.idle_add(p.unparent))
+        x, y = args[-2:] if len(args) >= 2 else (0, 0)
+        popover.set_pointing_to(Gdk.Rectangle(x=int(x), y=int(y), width=1, height=1))
+        popover.popup()
+        _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+    click = Gtk.GestureClick(button=3)
+    click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+    click.connect('pressed', show)
+    column.add_controller(click)
+    press = Gtk.GestureLongPress()
+    press.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+    press.connect('pressed', show)
+    column.add_controller(press)
+
+
+def attachment_chip(direction, position):
+    """A bubble standing in for a photo or file the phone's Bluetooth link cannot carry."""
+    chip = Gtk.Box(spacing=8, halign=Gtk.Align.END if direction == 'ms-outgoing' else Gtk.Align.START)
+    for css in ('ms-chip', 'ms-attachment', direction, 'ms-' + position):
+        chip.add_css_class(css)
+    chip.append(Gtk.Image.new_from_icon_name('mail-attachment-symbolic'))
+    chip.append(label(_('Attachment'), xalign=0))
+    chip.set_tooltip_text(_('Your iPhone shares only the text of a message over Bluetooth. Open Messages on the iPhone to see this attachment.'))
+    chip.update_property([Gtk.AccessibleProperty.LABEL], [_('Attachment. Open Messages on your iPhone to see it.')])
+    return chip
 
 
 def stamp_widget(text):
     return label(text, 'ms-stamp', halign=Gtk.Align.CENTER)
 
 
-def render_messages(box, items, media=None):
+def render_messages(box, items, media=None, on_reply=None):
     clear(box)
     for item in items:
-        box.append(stamp_widget(item['text']) if item['kind'] == 'stamp' else message_widget(item, media))
+        box.append(stamp_widget(item['text']) if item['kind'] == 'stamp' else message_widget(item, media, on_reply))
 
 
 # --- Composer, banner, status ---------------------------------------------
@@ -297,13 +364,24 @@ def build_composer():
     send_revealer = Gtk.Revealer(child=send, valign=Gtk.Align.END, transition_type=Gtk.RevealerTransitionType.SLIDE_LEFT)
     field.append(send_revealer)
     row.append(field)
+    quote = Gtk.Box(spacing=8)
+    quote.add_css_class('ms-quote')
+    quote_label = label('', xalign=0, hexpand=True, ellipsize=Pango.EllipsizeMode.END)
+    quote.append(quote_label)
+    quote_close = Gtk.Button(icon_name='window-close-symbolic', valign=Gtk.Align.CENTER, tooltip_text=_('Cancel Reply'))
+    quote_close.add_css_class('flat'); quote_close.add_css_class('circular')
+    quote_close.update_property([Gtk.AccessibleProperty.LABEL], [_('Cancel Reply')])
+    quote.append(quote_close)
+    quote_revealer = Gtk.Revealer(child=quote, transition_type=Gtk.RevealerTransitionType.SLIDE_UP)
+    box.append(quote_revealer)
     box.append(row)
 
     status = label('', 'ms-hint', xalign=0, wrap=True)
     revealer = Gtk.Revealer(child=status, transition_type=Gtk.RevealerTransitionType.SLIDE_UP)
     box.append(revealer)
     return SimpleNamespace(box=box, editor=editor, send=send, send_revealer=send_revealer, face=face, spinner=spinner,
-                           placeholder=placeholder, status=status, revealer=revealer)
+                           placeholder=placeholder, status=status, revealer=revealer,
+                           quote_revealer=quote_revealer, quote_label=quote_label, quote_close=quote_close)
 
 
 def build_notice():

@@ -70,7 +70,7 @@ def after_register(p, res):
     except GLib.Error as e:
         print("register error", e.message, flush=True); return
     print("registered; offering host clipboard to the guest", flush=True)
-    state["serial"] += 1
+    pass  # serial 0: the first grab of a session (spice-vdagentd counts from 0)
     p.call("Grab", GLib.Variant("(uuas)", (0, state["serial"], [MIME])), Gio.DBusCallFlags.NONE, 5000, None, after_grab)
 proxy.call("Register", None, Gio.DBusCallFlags.NONE, 8000, None, after_register)
 GLib.timeout_add_seconds(seconds, loop.quit)

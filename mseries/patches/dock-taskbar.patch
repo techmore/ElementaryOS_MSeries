@@ -305,7 +305,7 @@ diff --git a/src/BaseItem.vala b/src/BaseItem.vala
 index 0522be3..4b9c91a 100644
 --- a/src/BaseItem.vala
 +++ b/src/BaseItem.vala
-@@ -106,9 +106,12 @@ public class Dock.BaseItem : Gtk.Box {
+@@ -106,9 +106,15 @@ public class Dock.BaseItem : Gtk.Box {
  
          bind_property ("tooltip-text", tooltip_label, "label");
  
@@ -316,6 +316,9 @@ index 0522be3..4b9c91a 100644
 +            icon_size = ItemManager.get_icon_size ();
 +        });
 +        dock_settings.changed["taskbar-mode"].connect (() => {
++            icon_size = ItemManager.get_icon_size ();
++        });
++        SizePolicy.get_default ().changed.connect (() => {
 +            icon_size = ItemManager.get_icon_size ();
          });
  
@@ -352,11 +355,12 @@ diff --git a/src/ItemGroup.vala b/src/ItemGroup.vala
 index cc51fe5..2a7b0a0 100644
 --- a/src/ItemGroup.vala
 +++ b/src/ItemGroup.vala
-@@ -41,6 +41,7 @@
+@@ -41,6 +41,8 @@
          current_children.items_changed.connect (queue_relayout);
  
          settings.changed["icon-size"].connect (queue_relayout);
 +        settings.changed["taskbar-mode"].connect (queue_relayout);
++        SizePolicy.get_default ().changed.connect (queue_relayout);
  
          var animation_target = new Adw.PropertyAnimationTarget (this, "width-request");
  
@@ -373,7 +377,7 @@ diff --git a/src/ItemManager.vala b/src/ItemManager.vala
 index 0377885..40f991f 100644
 --- a/src/ItemManager.vala
 +++ b/src/ItemManager.vala
-@@ -36,7 +36,9 @@
+@@ -36,7 +36,10 @@
              valign = START,
              margin_top = Launcher.PADDING,
          };
@@ -381,10 +385,11 @@ index 0377885..40f991f 100644
 +        separator.height_request = get_icon_size ();
 +        settings.changed["icon-size"].connect (() => separator.height_request = get_icon_size ());
 +        settings.changed["taskbar-mode"].connect (() => separator.height_request = get_icon_size ());
++        SizePolicy.get_default ().changed.connect (() => separator.height_request = get_icon_size ());
  #endif
  
          append (app_group);
-@@ -176,6 +178,16 @@
+@@ -176,6 +178,57 @@
      }
  
      public static int get_launcher_size () {
@@ -392,16 +397,57 @@ index 0377885..40f991f 100644
 +        return get_icon_size () + Launcher.PADDING * 2;
 +    }
 +
-+    // M-series taskbar mode uses 48 px icons in a 72 px bar.
-+    public const int TASKBAR_ICON_SIZE = 48;
-+
++    // Adopted size-system taskbar icons follow the same setting as native icons.
++    // Legacy/unmanaged desktops keep their existing 48 px taskbar contract.
 +    public static int get_icon_size () {
 +        if (settings == null) {
 +            settings = new Settings ("io.elementary.dock");
 +        }
-+        return settings.get_boolean ("taskbar-mode") ? TASKBAR_ICON_SIZE : settings.get_int ("icon-size");
++        return settings.get_boolean ("taskbar-mode") && !SizePolicy.get_default ().managed ? 48 : settings.get_int ("icon-size");
      }
  }
++
++// Optional generated size-system marker; watch atomic replacement on the GTK loop.
++public class Dock.SizePolicy : Object {
++    private static GLib.Once<SizePolicy> instance;
++    public static unowned SizePolicy get_default () {
++        return instance.once (() => { return new SizePolicy (); });
++    }
++
++    public bool managed { get; private set; default = false; }
++    public signal void changed ();
++    private FileMonitor? monitor;
++
++    private SizePolicy () {
++        var directory = Path.build_filename (Environment.get_user_state_dir (), "mseries");
++        DirUtils.create_with_parents (directory, 0700);
++        try {
++            monitor = File.new_for_path (directory).monitor_directory (FileMonitorFlags.NONE);
++            monitor.changed.connect (() => reload ());
++        } catch (Error e) {
++            warning ("Cannot monitor taskbar size policy: %s", e.message);
++        }
++        // Read after registering the monitor so concurrent adoption cannot be missed.
++        reload ();
++    }
++
++    private void reload () {
++        bool next = false;
++        var policy = new KeyFile ();
++        try {
++            policy.load_from_file (Path.build_filename (Environment.get_user_state_dir (),
++                "mseries", "ui-scale-policy.ini"), KeyFileFlags.NONE);
++            next = policy.get_integer ("SizeSystem", "version") == 1 &&
++                policy.get_boolean ("SizeSystem", "managed");
++        } catch (Error e) {
++            // Missing/malformed/unmanaged policies retain legacy taskbar behavior.
++        }
++        if (next != managed) {
++            managed = next;
++            changed ();
++        }
++    }
++}
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
 index 652c549..eb79bd9 100644
 --- a/src/MainWindow.vala
@@ -1635,3 +1681,26 @@ index 052d4a5..a77498c 100644
      'DisplayConfig.vala',
      'RenderNodeWalker.vala',
      'AppSystem' / 'App.vala',
+diff --git a/src/AppSystem/Background/BackgroundItem.vala b/src/AppSystem/Background/BackgroundItem.vala
+--- a/src/AppSystem/Background/BackgroundItem.vala
++++ b/src/AppSystem/Background/BackgroundItem.vala
+@@ -15,11 +15,15 @@
+         var background_monitor = new BackgroundMonitor ();
+         Object (
+             monitor: background_monitor,
+-            icons: new Gtk.MapListModel (background_monitor.background_apps, (app) => {
+-                return ((BackgroundApp) app).icon;
+-            }),
++            icons: new Gtk.MapListModel (background_monitor.background_apps, map_background_icon),
+             group: Group.NONE
+         );
++    }
++
++    // A static callback avoids binding a constructor argument to self before
++    // Object(...) has created the instance.
++    private static Object map_background_icon (owned Object app) {
++        return ((BackgroundApp) app).icon;
+     }
+-
++
+     construct {

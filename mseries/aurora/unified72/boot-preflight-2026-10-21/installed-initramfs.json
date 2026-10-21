@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "offline archive audit passed; not a boot qualification",
+  "baseline_sha256": "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa",
+  "candidate_sha256": "ae1ed9d872ccbffe2854ec93c6c3d2bee0631aa7dd0000b7fcb4130b1437688b",
+  "candidate_release": "7.2.10-elementary-aurora72-wip2",
+  "verified_module_count": 91,
+  "early_prefix_unchanged": true,
+  "nonmodule_entries_unchanged": true,
+  "module_bytes_match_candidate_tree": true,
+  "dependency_files_present": true
+}

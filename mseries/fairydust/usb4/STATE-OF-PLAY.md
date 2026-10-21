@@ -1,9 +1,38 @@
 # WD22TB4 dock video — state of play (read first)
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
-> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Current Aurora trial has scoped owner-confirmed **G5 picture on all three USB-C ports**.
+> Initial rear-left delay resolved; long-run and recovery acceptance remain open.
+> Historical Fairydust G3 failures below describe different payloads.
 > Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
+## Latest October 21 follow-up: picture on all 3 USB-C ports
+
+Owner later confirms rear-left/nearest-hinge picture, superseding its initial
+blank screen. Front-left and right also work. Each external mode observed at
+1080p/60; one-cycle polling≈4.5s partner→desktop with corrections disclosed.
+[Current follow-up](../../aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+Scoped G5 picture across three physical ports; long-run/repeated/recovery/suspend
+and full rate/lane qualification remain open. No new Fairydust/kernel patch.
+
+## October 21: Aurora 7.2 wip2 attended boot, physical port split
+
+Owner confirms WD22TB4 dock picture on the left port closest to the owner/front,
+farther from hinge, with slow appearance. **Hinge-side left does not show a
+picture**; right untested. Explicit owner correction supersedes the contradictory
+button answer. Kernel later logs `display routed to Thunderbolt DP tunnel dpin0`;
+compositor observes DP-1 1920x1080/60 plus internal 3024x1964/120. This is scoped
+G5 visual evidence on the reported working port, not independently measured
+link-rate/all-port qualification. Both controller paths have connection/retry
+messages; a controlled physical-to-logical mapping remains open.
+[First-boot report and exact identity](../../aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+Wip2 live build matches audited Image, selected shared legacy boot payload is
+unchanged, GPU/readback and 1 MiB fsync pass, one-shot consumed and `.20` remains
+default. Next matched port evidence and actual `.20` recovery. No new Fairydust
+RE patch or boot-payload change. Prior October 18 Aurora visual results remain valid
+for their separately recorded identities; historical failures below are not the
+current highest picture frontier.
 
 Reviewed 2026-10-17; historical hardware records follow. No new boot was performed by the code audit. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.

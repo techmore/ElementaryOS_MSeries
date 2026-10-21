@@ -1,0 +1,162 @@
+{
+  "conclusion": "success",
+  "headSha": "ed08d502d294f6fa8c9160852e91f6f2ff5c802e",
+  "jobs": [
+    {
+      "completedAt": "2026-10-21T13:22:54Z",
+      "conclusion": "success",
+      "databaseId": 119226610179,
+      "name": "ARM64 candidate build and payload inspection",
+      "startedAt": "2026-10-21T12:40:09Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Install native build tools",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Prepare pinned sources and patches",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Exercise selected production kernel logic",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Build kernel, modules, DTBs and payload-only Debian package",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Inspect package boundaries",
+          "number": 7,
+          "status": "completed"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Preserve resolved configuration on failure",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Preserve package, complete corresponding source and provenance",
+          "number": 9,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v7",
+          "number": 18,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 19,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970/job/119226610179"
+    },
+    {
+      "completedAt": "2026-10-21T13:20:58Z",
+      "conclusion": "success",
+      "databaseId": 119226610396,
+      "name": "ARM64 unified72 build and payload inspection",
+      "startedAt": "2026-10-21T12:40:09Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Install native build tools",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Prepare pinned sources and patches",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Exercise selected production kernel logic",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Build kernel, modules, DTBs and payload-only Debian package",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Inspect package boundaries",
+          "number": 7,
+          "status": "completed"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Preserve resolved configuration on failure",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Preserve package, complete corresponding source and provenance",
+          "number": 9,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v7",
+          "number": 18,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 19,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970/job/119226610396"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970"
+}
