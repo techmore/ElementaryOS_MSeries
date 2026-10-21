@@ -1,3 +1,7 @@
+## Development website publishing — 2026-10-21
+
+Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
+
 ## On-demand maintenance continuation — 2026-10-21
 
 Queue/prompts and next-chat instructions: [maintenance/README.md](maintenance/README.md).

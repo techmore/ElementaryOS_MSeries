@@ -15,6 +15,15 @@ Two long-lived branches:
 3. Merge into `dev` when CI passes and the change is reviewed. Deploy steps that
    AGENTS.md requires (for example `mseries/deploy-codexbar.sh`) still apply.
 
+## GitHub Pages
+
+The public website publishes `dev`'s `/docs` directory. The owner selected this
+source on October 21, 2026 so public documentation follows current development
+without promoting the OS to the frozen stable line. Website changes use normal
+PRs to `dev`; verify the corresponding Pages deployment and live page contents.
+The build monitor also follows `dev`. The separate `gh-pages` apt repository is
+not the website source and is not changed by documentation publishing.
+
 ## Promoting to stable
 
 `main` stays frozen between releases. When `dev` has been running on the owner's
