@@ -24,8 +24,13 @@ this entry records what landed and what is installed here.
   (Vala app, Gunicorn user service) and removes the shells from #247; it was DIRTY at last look.
 
 **Installed here (checked 2026-10-21 after a reboot)**
-- `nmapui.service` (user, 127.0.0.1:9000) and `daedalus-dev.service` (127.0.0.1:8000, demo login) active; the first
-  runs the Werkzeug dev server with `NMAPUI_ALLOW_UNSAFE_WERKZEUG=true`, which #249 calls out and replaces.
+- `nmapui.service` (user, 127.0.0.1:9000) and `daedalus-dev.service` (127.0.0.1:8000, demo login) active. On
+  2026-10-21 the NmapUI unit was switched from the Werkzeug dev server (`NMAPUI_ALLOW_UNSAFE_WERKZEUG=true`) to
+  `python -m gunicorn --workers 1 --threads 100 nmapui.wsgi:application`, the same invocation as the Ubuntu
+  installer; page load and Socket.IO websocket upgrade checked headlessly. The unit lives in
+  `~/.config/systemd/user/nmapui.service` (not in a repo; #249/TM-NmapUI-elementary ships its own).
+- The dock source (`~/dock-drawers-src/src/DBus/Unity.vala`) implements `com.canonical.Unity.LauncherEntry`, so the
+  indicator's progress/badge signal should be consumed; the dock drawing it was not observed.
 - `libnmapui.so` mapped in Wingpanel; `~/.local/bin/nmapui-summary` and `nmapui-elementary` present; dock pin present.
 - nmap 7.98, arp-scan, xsltproc, traceroute, nodejs/npm, Chromium for PDFs installed with apt/playwright.
 - Quick Scan on 192.168.222.0/24 ran to completion headlessly; the indicator listed 31 devices. Service scans took
