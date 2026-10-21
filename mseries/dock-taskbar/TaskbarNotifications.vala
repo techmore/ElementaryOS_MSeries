@@ -24,11 +24,17 @@ public class Dock.TaskbarNotifications : Gtk.Box {
     private bool known;
     private bool quiet;
     private int unread;
+    private Settings dock_settings = new Settings ("io.elementary.dock");
 
     construct {
         orientation = Gtk.Orientation.VERTICAL;
         valign = Gtk.Align.CENTER;
-        icon = new Gtk.Image.from_icon_name ("notification-symbolic") { pixel_size = 30 };
+        icon = new Gtk.Image.from_icon_name ("notification-symbolic");
+        // The bell follows the dock icon size (30 px at the default 48 px) through every text step and mode.
+        apply_icon_size ();
+        dock_settings.changed["icon-size"].connect (apply_icon_size);
+        dock_settings.changed["taskbar-mode"].connect (apply_icon_size);
+        SizePolicy.get_default ().changed.connect (apply_icon_size);
         count = new Gtk.Label ("") {
             visible = false, halign = Gtk.Align.CENTER, valign = Gtk.Align.CENTER,
             margin_top = 2, can_target = false
@@ -137,7 +143,7 @@ public class Dock.TaskbarNotifications : Gtk.Box {
                 padding: 0 1px;
                 min-width: 0;
                 min-height: 0;
-                font-size: 14px;
+                font-size: 1.15em;
                 font-weight: 600;
             }
             popover.mseries-notification-popup > contents { padding: 4px; }
@@ -337,6 +343,10 @@ public class Dock.TaskbarNotifications : Gtk.Box {
             context_error.label = action_error;
             context_error.visible = true;
         }
+    }
+
+    private void apply_icon_size () {
+        icon.pixel_size = (int) Math.round (ItemManager.get_icon_size () * 30 / 48.0);
     }
 
     public override void dispose () {
