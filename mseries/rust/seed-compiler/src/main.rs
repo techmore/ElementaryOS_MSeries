@@ -6,7 +6,7 @@ use std::fs;
 use std::process::ExitCode;
 
 fn usage() {
-    eprintln!("Usage:\n  elementary-seed-compiler inspect-seed <file> <architecture>\n  elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]\n  elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]\n  elementary-seed-compiler expand-source <Packages-file> <architecture> <source ...>\n  elementary-seed-compiler resolve-packages <Packages-file> <architecture> [--follow-recommends] <root-package ...>");
+    eprintln!("Usage:\n  elementary-seed-compiler inspect-seed <file> <architecture>\n  elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]\n  elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]\n  elementary-seed-compiler resolve-seed-packages <STRUCTURE> <collection> <seed> <architecture> <Packages-file> [--follow-recommends] [included-collection=SEED-DIR ...]\n  elementary-seed-compiler expand-source <Packages-file> <architecture> <source ...>\n  elementary-seed-compiler resolve-packages <Packages-file> <architecture> [--follow-recommends] <root-package ...>");
 }
 
 fn run() -> Result<(), String> {
@@ -107,6 +107,78 @@ fn run() -> Result<(), String> {
                     "entry\t{:?}\t{}\trecommended={}",
                     entry.kind, entry.name, entry.recommended
                 );
+            }
+            Ok(())
+        }
+        Some("resolve-seed-packages") if args.len() >= 7 => {
+            let structure_path = &args[2];
+            let local_text =
+                fs::read_to_string(structure_path).map_err(|e| format!("{structure_path}: {e}"))?;
+            let local = Structure::parse(&local_text).map_err(|e| e.to_string())?;
+            let root_dir = std::path::Path::new(structure_path)
+                .parent()
+                .ok_or_else(|| "STRUCTURE path has no parent directory".to_owned())?;
+            let mut available = BTreeMap::new();
+            let mut directories = vec![root_dir.to_path_buf()];
+            let follow_recommends = args[7..].iter().any(|arg| arg == "--follow-recommends");
+            for item in args[7..]
+                .iter()
+                .filter(|arg| arg.as_str() != "--follow-recommends")
+            {
+                let (name, directory) = item.split_once('=').ok_or_else(|| {
+                    format!("invalid included collection `{item}`; expected NAME=SEED-DIR")
+                })?;
+                let directory = std::path::PathBuf::from(directory);
+                let include_path = directory.join("STRUCTURE");
+                let include_text = fs::read_to_string(&include_path)
+                    .map_err(|e| format!("{}: {e}", include_path.display()))?;
+                let included = Structure::parse(&include_text)
+                    .map_err(|e| format!("{}: {e}", include_path.display()))?;
+                available.insert(name.to_owned(), included);
+                directories.push(directory);
+            }
+            let structure = Structure::with_includes(&args[3], &local, &available)?;
+            let mut documents = BTreeMap::new();
+            for seed_name in structure.seeds.keys() {
+                let paths: Vec<_> = directories
+                    .iter()
+                    .map(|directory| directory.join(seed_name))
+                    .filter(|path| path.is_file())
+                    .collect();
+                if paths.len() != 1 {
+                    return Err(format!(
+                        "expected exactly one file for seed `{seed_name}` across supplied collections; found {}",
+                        paths.len()
+                    ));
+                }
+                let path = &paths[0];
+                let text =
+                    fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+                let document =
+                    SeedDocument::parse(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+                documents.insert(seed_name.clone(), document);
+            }
+            let resolved = structure.resolve_seed(&args[4], &args[5], &documents)?;
+            let package_text =
+                fs::read_to_string(&args[6]).map_err(|e| format!("{}: {e}", args[6]))?;
+            let catalog = PackageCatalog::parse_packages(&package_text)
+                .map_err(|e| format!("{}: {e}", args[6]))?;
+            let roots = elementary_seed_compiler::archive::expand_resolved_seed(
+                &resolved, &catalog, &args[5],
+            )?;
+            let closure =
+                catalog.resolve_seed_package_closure(&roots, &args[5], follow_recommends)?;
+            for package in &roots.depends {
+                println!("root\tdepends\t{package}");
+            }
+            for package in &roots.recommends {
+                println!("root\trecommends\t{package}");
+            }
+            for snap in &roots.snaps {
+                println!("snap\t{snap}");
+            }
+            for package in closure.packages {
+                println!("package\t{}\t{}", package.package, package.architecture);
             }
             Ok(())
         }

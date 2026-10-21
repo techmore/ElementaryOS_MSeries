@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate (Ubuntu package; source revision not yet pinned)",
-    "behavior_status": "An independently authored Rust candidate composes explicitly supplied seed collections, resolves inheritance and blacklists, parses Debian binary Packages metadata, expands source names to binaries, and computes basic package dependency closure. Feature-aware end-to-end output, apt/Germinate differential parity, archive precedence/conflict semantics, and Debian output parity remain open.",
+    "behavior_status": "An independently authored Rust candidate composes explicitly supplied seed collections, resolves inheritance and blacklists, parses Debian binary Packages metadata, expands source names to binaries, and computes basic dependency closure through an integrated profile command. Germinate feature flags, apt/Germinate differential parity, archive precedence/conflict semantics, and Debian output parity remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
@@ -119,10 +119,12 @@
         "Debian package-version ordering for parsed versions",
         "source package to target-architecture binary expansion",
         "basic architecture-aware dependency closure over Depends and Pre-Depends, optionally Recommends",
-        "seed entries to package/recommendation/snap root expansion"
+        "seed entries to package/recommendation/snap root expansion",
+        "seed package/source blocklists propagated into direct and transitive archive closure",
+        "integrated profile-to-package CLI with inherited seeds and optional recommendation closure"
       ],
       "not_implemented": [
-        "feature-aware end-to-end package resolution",
+        "Germinate Structure/seed feature-flag semantics and build-dependency output",
         "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
         "complete Germinate provider and alternative selection semantics",
         "snap metadata and revision selection",

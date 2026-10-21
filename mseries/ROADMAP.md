@@ -5,8 +5,10 @@
 The `elementary/package-generator` crate now adds an independent Debian archive
 metadata layer: control stanzas, binary package relations, Debian version
 ordering, source-to-binary expansion, and basic architecture-aware dependency
-closure. All 16 crate tests, strict Clippy, a release build, and inventory
-checks pass. This is not apt or Germinate parity. Feature-aware end-to-end
+closure. The integrated profile CLI now carries seed package/source blocklists
+through direct and transitive dependency resolution. All 18 crate tests, strict
+Clippy, a release build, and inventory checks pass. This is not apt or Germinate
+parity. Feature-aware end-to-end
 resolution, archive precedence/conflicts, snap selection, and Debian
 metapackage outputs remain open; upstream seed content is still not copied
 because its license is unverified. See `mseries/rust/seed-compiler/README.md`

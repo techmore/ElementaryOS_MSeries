@@ -154,8 +154,20 @@ impl Structure {
         architecture: &str,
         documents: &BTreeMap<String, SeedDocument>,
     ) -> Result<Vec<SeedEntry>, String> {
+        Ok(self.resolve_seed(seed, architecture, documents)?.entries)
+    }
+
+    /// Resolve entries and retain blocklists so archive closure cannot reintroduce them.
+    pub fn resolve_seed(
+        &self,
+        seed: &str,
+        architecture: &str,
+        documents: &BTreeMap<String, SeedDocument>,
+    ) -> Result<ResolvedSeed, String> {
         let mut resolved = BTreeMap::<(EntryKind, String), SeedEntry>::new();
         let mut blacklist = BTreeSet::<(EntryKind, String)>::new();
+        let mut blacklisted_packages = BTreeSet::new();
+        let mut blacklisted_sources = BTreeSet::new();
         for inherited in self.inheritance_order(seed)? {
             let document = documents
                 .get(&inherited)
@@ -177,7 +189,13 @@ impl Structure {
                     kind => (kind, entry.name.clone()),
                 };
                 match entry.kind {
-                    EntryKind::BlacklistPackage | EntryKind::BlacklistSourcePackage => {
+                    EntryKind::BlacklistPackage => {
+                        blacklisted_packages.insert(entry.name.clone());
+                        blacklist.insert(key.clone());
+                        resolved.remove(&key);
+                    }
+                    EntryKind::BlacklistSourcePackage => {
+                        blacklisted_sources.insert(entry.name.clone());
                         blacklist.insert(key.clone());
                         resolved.remove(&key);
                     }
@@ -193,7 +211,11 @@ impl Structure {
                 }
             }
         }
-        Ok(resolved.into_values().collect())
+        Ok(ResolvedSeed {
+            entries: resolved.into_values().collect(),
+            blacklisted_packages,
+            blacklisted_sources,
+        })
     }
 
     fn visit(
@@ -236,6 +258,13 @@ pub struct SeedEntry {
     pub name: String,
     pub recommended: bool,
     pub architectures: ArchitectureRule,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ResolvedSeed {
+    pub entries: Vec<SeedEntry>,
+    pub blacklisted_packages: BTreeSet<String>,
+    pub blacklisted_sources: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -490,6 +519,14 @@ mod tests {
                 .recommended
         );
         assert!(!arm64.iter().any(|entry| entry.name == "optional-snap"));
+        let resolved = structure
+            .resolve_seed("desktop", "arm64", &documents)
+            .unwrap();
+        assert_eq!(
+            resolved.blacklisted_packages,
+            BTreeSet::from(["common".into(), "obsolete".into()])
+        );
+        assert!(resolved.blacklisted_sources.is_empty());
         let amd64 = structure
             .resolve_seed_entries("desktop", "amd64", &documents)
             .unwrap();

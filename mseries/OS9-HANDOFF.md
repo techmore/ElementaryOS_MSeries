@@ -22,13 +22,15 @@ before claiming complete project coverage.
 
 The independently authored `mseries/rust/seed-compiler` candidate now also
 parses Debian binary `Packages` records and relationships, expands source names
-to target-architecture binaries, and computes basic Depends/Pre-Depends closure
-with optional Recommends. Its archive tests cover version constraints,
-virtual Provides, and Multi-Arch `:any`; these are local candidate tests, not
-Germinate/apt comparisons. Feature-aware end-to-end generation, archive
-precedence/conflicts, snap resolution, metapackage output, and both-architecture
-differential receipts remain future gates. Seed licenses are still unverified,
-so the Rust crate does not vendor their contents.
+to target-architecture binaries, and provides an integrated profile-to-package
+closure command. Seed package/source blocklists carry through direct and
+transitive dependencies, including alternative selection and virtual providers.
+Its archive tests cover version constraints, virtual Provides, and Multi-Arch
+`:any`; these are local candidate tests, not Germinate/apt comparisons.
+Germinate feature semantics, archive precedence/conflicts, snap resolution,
+metapackage output, and both-architecture differential receipts remain future
+gates. Seed licenses are still unverified, so the Rust crate does not vendor
+their contents.
 
 The launcher-key watcher and Homeboard launcher installer are committed Rust
 candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live
