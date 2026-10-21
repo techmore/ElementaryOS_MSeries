@@ -1,6 +1,13 @@
 ## GitHub Pages development documentation — 2026-10-21
 
 Owner selected `dev/docs` as the GitHub Pages source, replacing frozen `main/docs`. The website refresh reconciles wip2 boot/all-port dock evidence, Touch ID xART guard blocking, working Messages, screenshot retention and optional Apple Passwords. Historical benchmark dates and outstanding hardware/recovery gates remain explicit. The removed October 13 installer is no longer advertised as available. Source links and live build/validation/Pages queries follow `dev`. Publish only after website checks; verify the exact deployed revision and live bytes. No OS release or host deployment is part of this change.
+## wip3 staged unarmed — 2026-10-21
+
+Owner-approved unarmed staging of `7.2.11-elementary-aurora72-wip3` (upstream #158 + #157, build-only PR #413, native CI build audited).
+Installed beside wip2/`.20`: package, `/boot/vmlinuz-aurora72-wip3`, `/boot/initrd.img-7.2.11-elementary-aurora72-wip3`, GRUB entry
+`elementary-aurora72-wip3-trial`. **Not armed, not booted**, persistent default still `.20`, `boot.bin` unchanged, only `custom.cfg`
+changed among protected files (receipt `mseries/aurora/unified72/boot-preflight-wip3-2026-10-21/staging.json`, procedure and rollback in
+`BOOT-TRIAL.md`). Does not change Touch ID. Next: owner chooses when to boot it; record the highest dock gate reached afterward.
 
 ## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
 
