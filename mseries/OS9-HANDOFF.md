@@ -1,3 +1,13 @@
+## Dock & Taskbar page in System Settings — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/dock-switcher/` (Vala Switchboard plug, **Settings → Personal → Dock & Taskbar**) switches the patched dock between the
+  Windows 11 taskbar and the elementary dock by writing `io.elementary.dock` `taskbar-mode` (the dock reads it live), plus the dock's
+  Hide automatically setting. Read-back confirmation, Undo toast, follows external changes, honest stock-dock / opted-out / not-installed
+  states. Installer: `bash mseries/install-dock-switcher.sh` (plug only; restarts nothing). Details: `mseries/dock-switcher/README.md`.
+- **Verified:** build, 7 unit tests, plug loaded and constructed through `get_plug`, screenshots (light/dark/disabled/1.5x text, headless).
+- **Not verified:** inside a live System Settings window, a real switch against the running dock, screen-reader use.
+- **Not installed:** the plug is merged but not installed on the owner's machine until `install-dock-switcher.sh` is run.
+
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
