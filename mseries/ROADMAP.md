@@ -2,6 +2,16 @@
 
 ## Rust OS build pipeline — 2026-10-20
 
+The `elementary/package-generator` crate now adds an independent Debian archive
+metadata layer: control stanzas, binary package relations, Debian version
+ordering, source-to-binary expansion, and basic architecture-aware dependency
+closure. All 16 crate tests, strict Clippy, a release build, and inventory
+checks pass. This is not apt or Germinate parity. Feature-aware end-to-end
+resolution, archive precedence/conflicts, snap selection, and Debian
+metapackage outputs remain open; upstream seed content is still not copied
+because its license is unverified. See `mseries/rust/seed-compiler/README.md`
+for the current contract.
+
 `assemble-iso.sh` now delegates to `mseries/rust/iso-assembly`, which owns
 the ISO staging, APT metadata, release substitutions, and xorriso-container
 invocation. The ISO label formatter is a shared Rust library. Cargo checks pass;
@@ -313,11 +323,12 @@ The keyboard-backlight service has a dependency-free Rust candidate with six
 unit tests for sensor selection, rounding, ambient curve, manual override pause,
 deadband and step sizing. Its fake UPower/logind Python/Rust parity fixture
 passes. It is not installed; live system and image admission remain open. The
-file inventory now covers 795 paths (713 local and 82 Elementary-owned upstream),
+file inventory now covers 796 paths (714 local and 82 Elementary-owned upstream),
 238 directory groups, and 205 project IDs. The source register now also tracks
 metapackages plus the seeds, platform, and Ubuntu Germinate inputs. The Rust
-parser resolves seed profiles but has no archive dependency closure or Debian
-metapackage output parity; seed source licenses remain unverified.
+parser resolves seed profiles and has a basic archive dependency-closure
+candidate, but apt/Germinate and Debian metapackage output parity remain open;
+seed source licenses remain unverified.
 Candidate projects are linked to their reference implementations, installers
 and tests; remaining semantic boundaries are still under review.
 The ISO volume-label helper is now an independent, dependency-free Rust CLI used

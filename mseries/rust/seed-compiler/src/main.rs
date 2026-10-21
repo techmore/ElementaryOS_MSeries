@@ -1,3 +1,4 @@
+use elementary_seed_compiler::archive::PackageCatalog;
 use elementary_seed_compiler::{SeedDocument, Structure};
 use std::collections::BTreeMap;
 use std::env;
@@ -5,7 +6,7 @@ use std::fs;
 use std::process::ExitCode;
 
 fn usage() {
-    eprintln!("Usage:\n  elementary-seed-compiler inspect-seed <file> <architecture>\n  elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]\n  elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]");
+    eprintln!("Usage:\n  elementary-seed-compiler inspect-seed <file> <architecture>\n  elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]\n  elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]\n  elementary-seed-compiler expand-source <Packages-file> <architecture> <source ...>\n  elementary-seed-compiler resolve-packages <Packages-file> <architecture> [--follow-recommends] <root-package ...>");
 }
 
 fn run() -> Result<(), String> {
@@ -106,6 +107,38 @@ fn run() -> Result<(), String> {
                     "entry\t{:?}\t{}\trecommended={}",
                     entry.kind, entry.name, entry.recommended
                 );
+            }
+            Ok(())
+        }
+        Some("expand-source") if args.len() >= 5 => {
+            let text = fs::read_to_string(&args[2]).map_err(|e| format!("{}: {e}", args[2]))?;
+            let catalog = PackageCatalog::parse_packages(&text).map_err(|e| e.to_string())?;
+            let mut binaries = Vec::new();
+            for source in &args[4..] {
+                binaries.extend(catalog.source_binaries(source, &args[3]));
+            }
+            binaries.sort();
+            binaries.dedup();
+            for binary in binaries {
+                println!("binary\t{binary}");
+            }
+            Ok(())
+        }
+        Some("resolve-packages") if args.len() >= 5 => {
+            let text = fs::read_to_string(&args[2]).map_err(|e| format!("{}: {e}", args[2]))?;
+            let catalog = PackageCatalog::parse_packages(&text).map_err(|e| e.to_string())?;
+            let follow_recommends = args[4..].iter().any(|arg| arg == "--follow-recommends");
+            let roots: Vec<String> = args[4..]
+                .iter()
+                .filter(|arg| arg.as_str() != "--follow-recommends")
+                .cloned()
+                .collect();
+            if roots.is_empty() {
+                return Err("resolve-packages requires at least one root package".into());
+            }
+            let closure = catalog.dependency_closure(&roots, &args[3], follow_recommends)?;
+            for package in closure.packages {
+                println!("package\t{}\t{}", package.package, package.architecture);
             }
             Ok(())
         }

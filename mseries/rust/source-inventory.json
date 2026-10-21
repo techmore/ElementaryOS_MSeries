@@ -14,7 +14,7 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 795,
+  "item_count": 796,
   "component_count": 238,
   "project_count": 205,
   "components": [
@@ -2688,9 +2688,9 @@
     {
       "id": "mseries/rust/seed-compiler",
       "ownership": "mseries-maintained",
-      "item_count": 6,
+      "item_count": 7,
       "rust_status_counts": {
-        "candidate-implemented-unverified": 2,
+        "candidate-implemented-unverified": 3,
         "recorded-non-code-input": 4
       },
       "items": [
@@ -2698,6 +2698,7 @@
         "mseries/rust/seed-compiler/Cargo.toml",
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/lib.rs",
         "mseries/rust/seed-compiler/src/main.rs"
       ]
@@ -3310,9 +3311,9 @@
     {
       "id": "elementary/package-generator",
       "ownership": "mseries-maintained",
-      "item_count": 6,
+      "item_count": 7,
       "rust_status_counts": {
-        "candidate-implemented-unverified": 2,
+        "candidate-implemented-unverified": 3,
         "recorded-non-code-input": 4
       },
       "items": [
@@ -3320,6 +3321,7 @@
         "mseries/rust/seed-compiler/Cargo.toml",
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/lib.rs",
         "mseries/rust/seed-compiler/src/main.rs"
       ],
@@ -14672,6 +14674,16 @@
       "language": "markdown",
       "role": "documentation-or-record",
       "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/src/archive.rs",
+      "path": "mseries/rust/seed-compiler/src/archive.rs",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
     },
     {
       "id": "mseries/rust/seed-compiler/src/lib.rs",

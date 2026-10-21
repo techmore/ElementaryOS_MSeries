@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+pub mod archive;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
     pub line: usize,

@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate (Ubuntu package; source revision not yet pinned)",
-    "behavior_status": "An independently authored Rust parser composes explicitly supplied seed collections and resolves seed inheritance, architecture filters, and blacklists; archive dependency closure and Debian output parity have not started.",
+    "behavior_status": "An independently authored Rust candidate composes explicitly supplied seed collections, resolves inheritance and blacklists, parses Debian binary Packages metadata, expands source names to binaries, and computes basic package dependency closure. Feature-aware end-to-end output, apt/Germinate differential parity, archive precedence/conflict semantics, and Debian output parity remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
@@ -113,15 +113,23 @@
         "seed inheritance graph",
         "seed headers and documented entry forms",
         "architecture include/exclude qualifiers",
-        "seed-level package and source blacklist filtering"
+        "seed-level package and source blacklist filtering",
+        "Debian control stanza and binary Packages metadata parsing",
+        "Depends, Pre-Depends, Recommends, version relation, virtual Provides, and Multi-Arch parsing",
+        "Debian package-version ordering for parsed versions",
+        "source package to target-architecture binary expansion",
+        "basic architecture-aware dependency closure over Depends and Pre-Depends, optionally Recommends",
+        "seed entries to package/recommendation/snap root expansion"
       ],
       "not_implemented": [
-        "feature-aware package dependency semantics",
-        "archive Packages parsing and dependency closure",
-        "source-package binary expansion",
-        "metapackage-map and Debian control generation"
+        "feature-aware end-to-end package resolution",
+        "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
+        "complete Germinate provider and alternative selection semantics",
+        "snap metadata and revision selection",
+        "metapackage-map and Debian control generation",
+        "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Unit fixtures pass; no differential comparison against Germinate yet.",
+      "parity_status": "Rust unit fixtures pass; archive closure is a limited candidate, not apt/Germinate-equivalent. No differential comparison against Germinate or apt has run yet.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established."
     }

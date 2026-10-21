@@ -20,6 +20,16 @@ projects have been identified. Next, verify each of the 59 package/repository
 links against source package metadata, then pin the resolved PPA package set
 before claiming complete project coverage.
 
+The independently authored `mseries/rust/seed-compiler` candidate now also
+parses Debian binary `Packages` records and relationships, expands source names
+to target-architecture binaries, and computes basic Depends/Pre-Depends closure
+with optional Recommends. Its archive tests cover version constraints,
+virtual Provides, and Multi-Arch `:any`; these are local candidate tests, not
+Germinate/apt comparisons. Feature-aware end-to-end generation, archive
+precedence/conflicts, snap resolution, metapackage output, and both-architecture
+differential receipts remain future gates. Seed licenses are still unverified,
+so the Rust crate does not vendor their contents.
+
 The launcher-key watcher and Homeboard launcher installer are committed Rust
 candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live
 desktop behavior remains unverified. The GTK launcher and core shell apps are
@@ -2671,12 +2681,14 @@ Their source commits and selected seed-file blob hashes are in
 license at the audited revision, so no seed content was copied into the Rust
 lane. That register separately pins Ubuntu Resolute Germinate 2.49 as the
 behavior reference, with source SHA-256 verification still open. An
-independently authored parser candidate now handles seed structure,
-included collections, inheritance, headers, documented entry types, seed-level
-blacklists, and architecture qualifiers. Its six Rust unit tests pass. Archive
-package closure and Debian output parity are not implemented or compared with
-Germinate. The source register and branch/PR watchers now include both
-repositories. The generated file inventory has 795 paths (713 local, 82
+independently authored parser candidate handles seed structure, included
+collections, inheritance, headers, documented entry types, seed-level
+blacklists, and architecture qualifiers. It now also parses binary package
+metadata and computes basic architecture-aware Depends/Pre-Depends closure,
+with optional Recommends. Sixteen Rust unit tests, strict Clippy, and a release
+build pass. No apt/Germinate differential comparison or Debian output parity
+has run. The source register and branch/PR watchers now include both
+repositories. The generated file inventory has 796 paths (714 local, 82
 Elementary-owned upstream), 238 path groups, and 205 path-derived projects.
 The crate is an unqualified Rust candidate, not a package-generator or image
 parity claim. Changes remain local on `rust`.
