@@ -820,7 +820,7 @@ impl PantheonCompositor {
                 return Err(format!("window {uid} could not be restored"));
             }
         }
-        self.space.raise_element(&window, true);
+        self.raise_window(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.focus_window_keyboard(&window, serial);
         self.refresh_panel_visibility();
@@ -1000,7 +1000,7 @@ impl PantheonCompositor {
             self.space.map_element(window.clone(), *location, false);
         }
         if let Some((window, _)) = target_windows.last() {
-            self.space.raise_element(window, true);
+            self.raise_window(window, true);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             if let Some(toplevel) = window.toplevel() {
                 if let Some(keyboard) = self.seat.get_keyboard() {
@@ -1938,7 +1938,7 @@ impl XdgActivationHandler for PantheonCompositor {
                 return;
             }
         }
-        self.space.raise_element(&window, true);
+        self.raise_window(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.focus_window_keyboard(&window, serial);
         self.space.elements().for_each(|window| {
