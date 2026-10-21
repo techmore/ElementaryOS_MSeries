@@ -71,12 +71,14 @@ int main () {
         assert (found);
     }
     main_window.activate_action ("dashboard", null);
-    main_window.navigate_uri (Environment.get_variable ("ORCHARD_UI_PAGE") == "dashboard" ? "orchard://dashboard" : "orchard://containers");
+    var page = Environment.get_variable ("ORCHARD_UI_PAGE") ?? "containers";
+    main_window.navigate_uri ("orchard://" + (page == "dashboard" || page == "podman" ? page : "containers"));
     var capture_path = Environment.get_variable ("ORCHARD_UI_CAPTURE");
     if (capture_path != null) {
-        // Navigation invalidates the current render node; wait for the next layout/frame.
+        // Navigation invalidates the current render node; wait for the next layout/frame. The Podman
+        // page lists real containers through subprocesses, so it is given time to finish its first poll.
         var render_loop = new MainLoop ();
-        Timeout.add (250, () => { render_loop.quit (); return Source.REMOVE; });
+        Timeout.add (page == "podman" ? 2500 : 250, () => { render_loop.quit (); return Source.REMOVE; });
         render_loop.run ();
         var paintable = new Gtk.WidgetPaintable (main_window);
         var snapshot = new Gtk.Snapshot ();
@@ -85,6 +87,34 @@ int main () {
         assert (node != null);
         var texture = main_window.get_renderer ().render_texture (node, null);
         assert (texture.save_to_png (capture_path));
+    }
+    // The Podman details window is built for the first listed container (the fixture's "web" under
+    // meson test, a real container when ORCHARD_PODMAN is unset) and captured next to the page.
+    if (page == "podman") {
+        var podman = new PodmanClient ();
+        PodmanContainer[] listed = {};
+        var list_loop = new MainLoop ();
+        podman.list_containers.begin ((obj, res) => {
+            try { listed = podman.list_containers.end (res); } catch (Error e) { warning ("%s", e.message); }
+            list_loop.quit ();
+        });
+        list_loop.run ();
+        assert (listed.length > 0);
+        var details = new PodmanDetails (main_window, podman, listed[0]);
+        details.present ();
+        var details_loop = new MainLoop ();
+        Timeout.add (capture_path != null ? 4000 : 500, () => { details_loop.quit (); return Source.REMOVE; });
+        details_loop.run ();
+        if (capture_path != null) {
+            var paintable = new Gtk.WidgetPaintable (details);
+            var snapshot = new Gtk.Snapshot ();
+            paintable.snapshot (snapshot, details.get_width (), details.get_height ());
+            var node = snapshot.to_node ();
+            assert (node != null);
+            var texture = details.get_renderer ().render_texture (node, null);
+            assert (texture.save_to_png (capture_path.replace (".png", "-details.png")));
+        }
+        details.destroy ();
     }
     foreach (var window in windows) window.destroy ();
     main_window.destroy ();

@@ -1,3 +1,24 @@
+## Orchard: Podman container details, live counters, local install — 2026-10-21 (Claude Code)
+
+Follows the Podman page (`mseries/orchard-incus-native`, containers/images/volumes with start/stop/restart/remove).
+
+- **Live counters.** `PodmanClient.list_stats()` runs `podman stats --no-stream --format json`; running rows show
+  CPU %, memory and PID count, written into existing rows on every 5 s poll (no list rebuild, so focus and buttons stay put).
+  Stopped containers show no counters; a stats failure leaves rows blank rather than zero.
+- **Details window.** `PodmanDetails` (new, modelled on `InstanceDetails`): image/ID/state/PID, created/started, command,
+  restart policy, environment count, published ports and networks, mounts (volume/bind, rw/ro), memory/CPU limits, counters
+  refreshed every 3 s with CPU/memory sparklines, and the raw `podman inspect` document under an Inspect tab. Header has
+  Start/Stop/Restart; the page reloads after an action. Row list no longer scrolls horizontally; long image digests wrap.
+  `orchard://podman` opens the page.
+- **Tests.** Fixture `tests/fake-podman.py` now answers `stats` and `inspect`; `podman-smoke` covers stats/inspect parsing,
+  byte/percent parsing and the unknown-container error; `test-ui.py` runs the smoke a second time on the Podman page and
+  builds the details window. `meson test`: 5/5 with the indicator disabled; 6/6 earlier with it enabled.
+- **Installed** on the j314s under `~/.local` (`meson setup build --prefix=$HOME/.local -Dwingpanel=disabled`, `ninja -C build
+  install`): binary, `.desktop`, icons. The Wingpanel indicator's install dir is `/usr/lib` (root) and was not touched; the
+  root-installed indicator from 2026-10-18 has no Podman code and is unaffected. Captures with 11 real rootless containers:
+  `docs/screenshot-podman.png`, `docs/screenshot-podman-details.png` (GTK render of the smoke window; no screenshot tool on
+  this host).
+- **Not verified.** Pause/unpause (client supports it, no button), pods, dark mode review, podman socket API (not used).
 ## Compositor: idle monitor, idle inhibit and screen blanking (P3) — 2026-10-21 (Claude Code)
 
 From the [next-generation investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md) (P3): the screen

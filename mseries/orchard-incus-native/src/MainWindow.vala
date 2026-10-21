@@ -554,6 +554,8 @@ public class MainWindow : Gtk.ApplicationWindow {
             } else if (section == "containers" || section == "machines") {
                 content_stack.visible_child_name = "instances";
                 kind_filter.selected = section == "machines" ? 2 : 1;
+            } else if (section == "podman") {
+                content_stack.visible_child_name = "podman";
             } else if (section == "dashboard" || section == "models" || section == "sandboxes" || section == "systemlogs" || section == "mount" || section == "mounts") {
                 dispatch_command (section == "systemlogs" ? "system" : section == "mount" ? "mounts" : section, target);
             } else if (section == "image" || section == "images" || section == "network" || section == "networks" || section == "dns" || section == "profiles" || section == "projects") {
