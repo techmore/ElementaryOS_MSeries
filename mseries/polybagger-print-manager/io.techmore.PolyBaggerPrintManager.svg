@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PolyBagger Print Manager app icon, elementary OS style: a roll bagger with its status screen,
+     printing a barcode label onto a poly bag. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#d4d4d4"/>
+    </linearGradient>
+    <linearGradient id="roll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8cd5ff"/>
+      <stop offset="0.5" stop-color="#3689e6"/>
+      <stop offset="1" stop-color="#0d52bf"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#485a6c"/>
+      <stop offset="1" stop-color="#273445"/>
+    </linearGradient>
+    <linearGradient id="bag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8f4ff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#bcdcf7" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="hl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.8"/>
+      <stop offset="0.15" stop-color="#fff" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.05"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="64" cy="121" r="46" gradientTransform="matrix(1 0 0 0.12 0 106.5)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="64" cy="121" rx="46" ry="5.5" fill="url(#shadow)"/>
+
+  <!-- film roll on top of the machine -->
+  <rect x="26.5" y="5.5" width="75" height="17" rx="8.5" fill="url(#roll)" stroke="#002e99" stroke-opacity="0.55"/>
+  <ellipse cx="93" cy="14" rx="5" ry="6.5" fill="#abacae" stroke="#555761" stroke-opacity="0.6"/>
+  <ellipse cx="93" cy="14" rx="2" ry="2.6" fill="#555761"/>
+  <path d="M31 9.5 h60" stroke="#fff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- machine body -->
+  <rect x="14.5" y="20.5" width="99" height="58" rx="9" fill="url(#body)" stroke="#000" stroke-opacity="0.32"/>
+  <rect x="15.5" y="21.5" width="97" height="56" rx="8" fill="none" stroke="url(#hl)"/>
+
+  <!-- status screen with the green ready dot -->
+  <rect x="24.5" y="30.5" width="38" height="25" rx="4" fill="url(#screen)" stroke="#000" stroke-opacity="0.4"/>
+  <circle cx="34" cy="43" r="5.5" fill="#68b723" stroke="#206b00" stroke-opacity="0.6"/>
+  <circle cx="32.6" cy="41.4" r="1.8" fill="#fff" fill-opacity="0.55"/>
+  <rect x="43" y="38" width="14" height="3" rx="1.5" fill="#fff" fill-opacity="0.75"/>
+  <rect x="43" y="44.5" width="10" height="3" rx="1.5" fill="#fff" fill-opacity="0.4"/>
+
+  <!-- control buttons -->
+  <circle cx="79" cy="37" r="5" fill="#ed5353" stroke="#a10705" stroke-opacity="0.6"/>
+  <circle cx="96" cy="37" r="5" fill="#9bdb4d" stroke="#3a9104" stroke-opacity="0.6"/>
+  <rect x="72.5" y="47.5" width="30" height="7" rx="3.5" fill="#d4d4d4" stroke="#000" stroke-opacity="0.18"/>
+
+  <!-- printer / sealer slot -->
+  <rect x="22.5" y="64.5" width="83" height="7" rx="3.5" fill="#333" stroke="#000" stroke-opacity="0.5"/>
+  <path d="M27 68 h74" stroke="#f37329" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.9"/>
+
+  <!-- poly bag dropping out, with a printed label -->
+  <path d="M33.5 72.5 h61 l3 41 a4 4 0 0 1 -4 4.5 h-59 a4 4 0 0 1 -4 -4.5 z"
+        fill="url(#bag)" stroke="#0d52bf" stroke-opacity="0.45"/>
+  <path d="M35 77.5 h58" stroke="#0d52bf" stroke-opacity="0.35" stroke-dasharray="2 2"/>
+  <path d="M38 82 l-2 30" stroke="#fff" stroke-opacity="0.8" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="45.5" y="84.5" width="40" height="25" rx="2.5" fill="#fff" stroke="#000" stroke-opacity="0.25"/>
+  <g fill="#1a1a1a">
+    <rect x="50" y="89" width="2" height="12"/><rect x="53.5" y="89" width="1" height="12"/>
+    <rect x="56" y="89" width="2.5" height="12"/><rect x="60" y="89" width="1" height="12"/>
+    <rect x="62.5" y="89" width="2" height="12"/><rect x="66" y="89" width="1" height="12"/>
+    <rect x="68.5" y="89" width="2.5" height="12"/><rect x="72.5" y="89" width="1" height="12"/>
+    <rect x="75" y="89" width="2" height="12"/><rect x="78.5" y="89" width="1" height="12"/>
+    <rect x="80.5" y="89" width="1.5" height="12"/>
+  </g>
+  <rect x="50" y="103" width="31.5" height="2.5" rx="1.25" fill="#1a1a1a" fill-opacity="0.45"/>
+</svg>
