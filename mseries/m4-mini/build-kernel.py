@@ -25,6 +25,7 @@ def config_gate(path):
                   if line.startswith('CONFIG_') and '=' in line)
     for key, value in {'CONFIG_ARM64_16K_PAGES': 'y', 'CONFIG_DRM_ASAHI_M4': 'm',
                        'CONFIG_RUST': 'y', 'CONFIG_DRM_APPLE': 'm',
+                       'CONFIG_AQTION': 'm', 'CONFIG_TIGON3': 'm',
                        'CONFIG_LOCALVERSION': '"-elementary-m4-gravity1"'}.items():
         if values.get(key) != value:
             raise ValueError(f'resolved configuration must have {key}={value}')
@@ -60,7 +61,8 @@ def main():
     run(base + ['defconfig', 'asahi.config'])
     run([str(source / 'scripts/kconfig/merge_config.sh'), '-m', '-O', str(build),
          str(build / '.config'), str(HERE / 'gravity/gravity.config'),
-         str(HERE / 'gravity/gravity-aarch64.config')])
+         str(HERE / 'gravity/gravity-aarch64.config'),
+         str(HERE / 'gravity/elementary-target.config')])
     run([str(source / 'scripts/config'), '--file', str(build / '.config'),
          '--set-str', 'LOCALVERSION', '-elementary-m4-gravity1', '--disable', 'LOCALVERSION_AUTO'])
     run(base + ['olddefconfig'])

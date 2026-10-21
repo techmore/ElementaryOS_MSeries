@@ -1,6 +1,7 @@
 # M4 Mac mini preparation
 
-Research target: Mac16,10 / J773g / T8132, owner-reported 16 GB. Confirm the
+Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
+1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
 machine identity before producing a boot bundle. Native dual boot is not qualified.
 
 `research.json` pins public candidate sources and companion bootloader proposals.
@@ -104,3 +105,9 @@ Both stages compiled successfully; their SHA-256 receipt is retained. The raw
 binary target omits the optional packaging-supplied Gravity logo. No installed
 bootloader, OS authorization, boot configuration or startup selection changed.
 These are development-head artifacts, not copies of the original alpha release.
+
+Gravity U-Boot at gravity-alpha-20260925/a2f6913 also builds with native
+`make O=NEW_BUILD apple_m1_defconfig` then `make O=BUILD -j1`. Retained receipt
+includes u-boot-nodtb.bin, the boot-chain payload; the generated generic control
+DTB must not replace the matched J773g loader handoff by assumption. No EFI boot
+or runtime calibration test has run locally.

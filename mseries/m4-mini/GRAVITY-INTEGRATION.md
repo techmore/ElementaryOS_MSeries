@@ -70,3 +70,18 @@ The selected research pin now uses that branch. Its final change supplies
 J773g Wi-Fi calibration alongside Bluetooth, with reported full Fedora
 EFI boot validation. These source reports are not local hardware tests.
 Default branch discovery is retained as provenance, not used for the build.
+
+## Owner's confirmed configuration
+
+16 GB RAM, 1 TB SSD, 10 Gb Ethernet, macOS 27, HDMI output. SSD free space,
+actual model/board identity, monitor mode and exact boot firmware remain unknown.
+The reviewed mini prior art uses BCM57762 gigabit Ethernet; it cannot qualify
+the optional 10 Gb controller. Initial defconfig leaves both AQTION and TIGON3
+disabled. The elementary target overlay now enables both modules and config
+gates require them. The live full build predates this overlay; reconfigure and
+build these drivers after it finishes before allowing payload packaging.
+
+macOS 27 on the host does not identify firmware used by the separate Linux
+boot stub. The exact GPU/DCP firmware gates still apply. Do not downgrade the
+host or alter its firmware to infer compatibility. The macOS/Recovery round trip
+needs qualification on this specific setup.

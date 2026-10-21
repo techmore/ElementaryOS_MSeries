@@ -5,7 +5,13 @@
     "board": "j773g",
     "soc": "t8132",
     "memory_gib": 16,
-    "identity_confirmed": false
+    "identity_confirmed": false,
+    "ssd_capacity_tb": 1,
+    "ssd_free_space_gib": null,
+    "ethernet_gbps": 10,
+    "macos_version": "27",
+    "display_connector": "HDMI",
+    "configuration_source": "owner confirmation in chat; machine identity and firmware not yet captured"
   },
   "status": "research-only",
   "installer_supported": false,
@@ -108,7 +114,9 @@
     "J773g DMA/PMGR board mappings",
     "matching boot producer handoff",
     "J773g thermal and lifecycle qualification",
-    "macOS and Recovery round-trip"
+    "macOS and Recovery round-trip",
+    "10 Gb Ethernet controller identity, driver and PCIe/DART qualification",
+    "macOS 27 host with exact supported Linux boot-stub firmware"
   ],
   "gravity_stack": {
     "linux": {

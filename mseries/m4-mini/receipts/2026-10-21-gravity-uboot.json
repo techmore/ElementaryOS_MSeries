@@ -1,0 +1,17 @@
+{
+  "repository": "GravityLinux/u-boot",
+  "branch": "gravity-alpha-20260925",
+  "commit": "a2f6913694ff26908c16948af3f8372429782263",
+  "configuration": "apple_m1_defconfig",
+  "commands": [
+    "make O=WORK_BUILD apple_m1_defconfig",
+    "make O=WORK_BUILD -j1"
+  ],
+  "artifacts": {
+    "u-boot-nodtb.bin": "1ffe7269c8af7a485e7c22febbf86f0d2ac538251904d0de3fa732affa5aa639",
+    "u-boot.bin": "1ffe7269c8af7a485e7c22febbf86f0d2ac538251904d0de3fa732affa5aa639",
+    ".config": "e93e0b7cda7efedc1bb76863041a00e08798192ce8723c75377fbce32faea6b7"
+  },
+  "compiler": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "status": "native compilation passed; no firmware handoff or J773g runtime test"
+}

@@ -10239,3 +10239,11 @@ imported. Five synthetic tests pass (complete handoff, missing signature, other
 board, both legacy families, transform detection) and are wired into hardware CI.
 Corrected U-Boot selection to gravity-alpha-20260925/a2f6913; default main is
 upstream and lacks the M4 patch stack. Its native apple_m1 build is running.
+
+Owner confirms 16 GB / 1 TB / 10 Gb Ethernet / macOS 27 / HDMI. Recorded target
+and unknowns in research profile. Added elementary-specific AQTION+TIGON3 module
+overlay and config gates; current kernel build predates that overlay, so it
+cannot yet be packaged as the updated target. Must reconfigure/rebuild afterward.
+Gravity U-Boot apple_m1 build at a2f6913 passes; retained artifact/config hashes.
+Bootloader stages and U-Boot have compiled, but hardware handoff remains untested.
+Five firmware regressions and M4 Python syntax checks pass.
