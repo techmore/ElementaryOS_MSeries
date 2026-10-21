@@ -55,6 +55,7 @@ use crate::{
     },
     display_trace::{self, Operation, OutputTrace},
     edid::{self, Candidate},
+    flip_retry,
     hotplug::{EventKind, HotplugScheduler, event_triggers_reconcile},
     kms_props::{connector_edid, named_property},
     link_status::{self, Action, LINK_STATUS_GOOD, ResetState},
@@ -240,6 +241,10 @@ pub struct NativeKmsDevice {
     /// CRTC each running or finished prewarm programmed.
     prewarm_crtcs: HashMap<connector::Handle, smithay::reexports::drm::control::crtc::Handle>,
     prewarm_sender: Option<channel::Sender<PrewarmDone>>,
+    /// An output's page flip was refused with EBUSY in the last render pass.
+    busy_retry: bool,
+    /// Consecutive render passes that ended with a busy flip.
+    busy_passes: u32,
     pub notifier: Option<DrmDeviceNotifier>,
     pending_global_removals: Vec<(
         smithay::reexports::wayland_server::backend::GlobalId,
@@ -766,6 +771,7 @@ impl NativeKmsDevice {
     ) -> Result<usize, Box<dyn std::error::Error>> {
         state.update_fractional_scale_preferences();
         let mut rendered = 0;
+        let mut busy = false;
         for output in &mut self.outputs {
             if output.frame_pending {
                 continue;
@@ -791,14 +797,42 @@ impl NativeKmsDevice {
                 continue;
             }
             crate::redraw_stats::frame_queued();
-            output.drm_output.queue_frame(())?;
+            match output.drm_output.queue_frame(()) {
+                Ok(()) => {}
+                Err(error) if flip_retry::is_busy(&error) => {
+                    // The previous commit on this CRTC (the link-status retrain
+                    // after mapping) has not finished. The damage tracker has
+                    // already taken this frame, so redraw everything next pass.
+                    output.drm_output.reset_buffers();
+                    busy = true;
+                    tracing::debug!(output = %output.output.name(), "page flip busy; retrying");
+                    continue;
+                }
+                Err(error) => return Err(error.into()),
+            }
             if let Some(trace) = &mut output.trace {
                 trace.queued(&output.output.name());
             }
             output.frame_pending = true;
             rendered += 1;
         }
+        self.busy_retry = busy;
+        if busy {
+            self.busy_passes += 1;
+            if self.busy_passes > flip_retry::MAX_BUSY_PASSES {
+                self.busy_passes = 0;
+                return Err("page flip stayed busy for about a second".into());
+            }
+        } else {
+            self.busy_passes = 0;
+        }
         Ok(rendered)
+    }
+
+    /// Whether the last render pass left an output waiting on a busy CRTC;
+    /// reading it clears the flag.
+    pub fn take_busy_retry(&mut self) -> bool {
+        std::mem::take(&mut self.busy_retry)
     }
 
     pub fn frame_submitted(
@@ -1769,6 +1803,8 @@ impl NativeKmsDevice {
             prewarm: prewarm::Slots::default(),
             prewarm_crtcs: HashMap::new(),
             prewarm_sender: None,
+            busy_retry: false,
+            busy_passes: 0,
             notifier: Some(notifier),
             pending_global_removals: Vec::new(),
         })
@@ -1900,6 +1936,7 @@ impl NativeBackend {
             trace_pending_event: None,
         });
         let mut consecutive_render_failures = 0;
+        let redraw_handle = event_loop.handle();
         event_loop
             .handle()
             .insert_source(redraw_receiver, move |event, _, state| {
@@ -1910,7 +1947,16 @@ impl NativeBackend {
                     return;
                 };
                 match backend.kms.render(&mut backend.renderer, state) {
-                    Ok(_) => consecutive_render_failures = 0,
+                    Ok(_) => {
+                        consecutive_render_failures = 0;
+                        if backend.kms.take_busy_retry() {
+                            let retry = Timer::from_duration(flip_retry::RETRY_DELAY);
+                            let _ = redraw_handle.insert_source(retry, |_, _, state| {
+                                state.request_native_redraw();
+                                TimeoutAction::Drop
+                            });
+                        }
+                    }
                     Err(error) => {
                         consecutive_render_failures += 1;
                         tracing::error!(
