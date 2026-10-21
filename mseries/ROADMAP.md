@@ -1,5 +1,12 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Daedalus portal and NmapUI desktop experience — 2026-10-21
+
+Daedalus `main` is CI-green with review fixes and an elementary look; NmapUI has a native window, dock actions and a
+Wingpanel scan-summary indicator running here. Next: move to TM-NmapUI-elementary (replace the Werkzeug dev-server
+unit), verify dock progress live, run a scan on the current network. Production gates (host access, signing, Google
+Admin consent, physical fleet) remain open. [Details](OS9-HANDOFF.md).
+
 ## All three wip2 dock ports pass scoped picture — 2026-10-21
 
 Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
