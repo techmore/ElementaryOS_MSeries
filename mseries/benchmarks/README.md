@@ -57,6 +57,30 @@ after a kernel or Mesa update and the table gets a new column.
   What our fixes changed is tracked in `mseries/ROADMAP.md` (login stall 119.7 s → 0.82 s).
 - No comparison machines are shown: numbers from other systems would need the same tools, kernel and settings.
 
+## Power scenarios (compositor and desktop A/B trials)
+
+`power_scenarios.py` measures one arm of an A/B trial: whole-system watts at 1 Hz (SMC Total System Power,
+found by label through `mseries/power/sensors.py`) after a warm-up, CPU busy %, the compositor's and
+Xwayland's CPU % and wakeups/s, display/AOP mailbox interrupt rates, and the compositor's redraw-stats
+journal lines. It refuses to run when load average is above 1 or the CPU is more than 5% busy; `--force`
+runs anyway and marks the result unqualified.
+
+```bash
+python3 mseries/benchmarks/power_scenarios.py run --label dmabuf-on --scenarios idle,scroll,video --video ~/Videos/1080p.mp4
+python3 mseries/benchmarks/power_scenarios.py compare mseries/benchmarks/results/power/*.json
+python3 mseries/benchmarks/run.py --only power      # 5-minute idle sample inside the normal suite (opt-in)
+```
+
+- **Scenarios**: `idle` (nothing opened), `scroll` (a throwaway Brave/Chromium profile scrolling a long page
+  every animation frame), `video` (`mpv` full-screen loop of a local file, hardware decode when available).
+  Anything opened is closed afterwards; the compositor, panels and dock are never restarted.
+- **Trials**: change one thing, then alternate arms A, B, A, B, A, B. `compare` only says "comparable" when two
+  labels strictly alternate at least three times each and every run was qualified; it reports the median
+  and p10/p90 of the per-run medians.
+- **Caveats**: fix brightness and refresh rate between arms (both are recorded); run over SSH or from a text
+  console when possible; redraw-stats lines are 30 s windows, so their totals overlap the scenario edges.
+  `mseries/power/audit/sample_power.sh N` is now a thin wrapper around `sensors.py`.
+
 ## Not measured yet
 
 Battery life, video playback, WebGL/JavaScript browser suites (Speedometer), compile times, Wi-Fi throughput.
