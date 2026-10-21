@@ -223,7 +223,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
+        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
 
       # The check list lives in mseries/validate.sh so the same command works on a
       # developer machine (`just check`); add new checks there, not here.

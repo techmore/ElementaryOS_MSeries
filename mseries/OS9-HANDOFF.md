@@ -1,3 +1,20 @@
+## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
+  `mseries/debs/build.sh`) plus systemd units. `stage` downloads and hashes the update set and keeps a rollback copy of every
+  installed version it replaces; `mseries-update-boot.service` applies it as one dpkg run before `display-manager.service`, with a
+  write-ahead journal, version/`dpkg --verify`/`ldd`/`health.d` checks and automatic restore. `mseries-update-confirm.service` marks the set
+  known-good after Wingpanel is up; two restarts without that roll it back. Channels `stable`/`dev` are apt suites. Opt-in: the package enables and
+  configures nothing. Design, owner decisions and the full not-verified list: `mseries/UPDATER-DESIGN.md`.
+- **Verified (no hardware):** 53 tests in `mseries/update/` (`bash mseries/validate.sh --only updater`): fake repository fault injection, and the
+  real apt-get/dpkg against a local `file:` repo and scratch root, including a failing `postinst` and a SIGKILL of updater and dpkg mid-install
+  with recovery at the next boot. The updater .deb builds through `build.sh`; CI installs it and checks every unit stays disabled.
+- **Not verified:** a run on the M1 under systemd/LightDM as root, a signed HTTPS repository (none exists; `MSERIES_APT_KEY` is still unset),
+  the `_apt` sandbox, battery/metered probes on the real supplies, any panel UI, the Rust compositor package. No Wingpanel, dock or
+  compositor restart was performed; nothing was installed on this machine.
+- **Next (owner):** hosting (recommend GitHub Pages), signing-key custody (recommend offline key plus signing subkey in the secret), which components ship first
+  (recommend the three plugin debs), then publish `dev`/`stable` suites.
+
 ## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
 
 - **Multi-account:** `settings.json` gains `account` (empty follows the GitHub CLI's active account, as before) and

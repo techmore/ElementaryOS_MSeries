@@ -1,0 +1,17 @@
+[Unit]
+Description=Apply a staged M-series update before login, or roll back a failed one
+Documentation=https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/UPDATER-DESIGN.md
+# Opt-in: the state file only exists once the owner ran `mseries-update init` or `stage`.
+ConditionPathExists=/var/lib/mseries-update/state.json
+After=local-fs.target systemd-remount-fs.service
+# No desktop session exists yet, so replacing files cannot disturb a running session.
+Before=display-manager.service graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/mseries-update boot
+# A timeout kill is treated exactly like power loss: the next boot restores the previous set.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=graphical.target

@@ -9,6 +9,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Customer update mechanism (first slice) — 2026-10-21
+
+`mseries-update` stages signed `mseries-*` package updates, applies them before the next login and rolls back
+automatically (failed apply, interrupted power, or no healthy login). Opt-in, nothing restarts Wingpanel or the dock.
+Design, decisions for the owner (repo hosting, signing key custody, first components) and the unverified list:
+[UPDATER-DESIGN.md](UPDATER-DESIGN.md). Not published or run on hardware yet. Next: owner decisions, then the signed `dev`/`stable`
+suites, `run_module` .deb-first (#52), a Switchboard pane reading `status --json`.
+
 ## Optional emulation source provenance — 2026-10-21
 
 MuVM/libkrun/libkrunfw version tags now bind to immutable source commits; existing

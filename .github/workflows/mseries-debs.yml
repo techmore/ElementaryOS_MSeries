@@ -18,6 +18,8 @@ on:
   pull_request:
     paths:
       - "mseries/debs/**"
+      - "mseries/update/**"
+      - "mseries/UPDATER-DESIGN.md"
       - ".github/workflows/mseries-debs.yml"
       - "mseries/panel-factory-pins.json"
       - "mseries/patches/datetime-agenda-tabs.patch"
@@ -91,7 +93,10 @@ jobs:
           set -e
           for deb in out/mseries-debs/*.deb; do
             dpkg-deb -f "$deb" Package Version Architecture Depends
-            dpkg-deb -c "$deb" | grep '\.so$'
+            case "$deb" in
+              */mseries-update_*) ;;   # the updater ships no plugin
+              *) dpkg-deb -c "$deb" | grep '\.so$' ;;
+            esac
           done
           cat out/mseries-debs/BUILD-PROVENANCE.txt
           (cd out/mseries-debs && sha256sum --check SHA256SUMS)
@@ -106,6 +111,19 @@ jobs:
             io.elementary.panel.network 'Show speed in menu bar'
           bash mseries/debs/test-divert.sh "$d"/mseries-quick-settings_*.deb \
             io.elementary.quick-settings 'KeyboardBrightness'
+
+      - name: Install the updater package; it must enable and configure nothing
+        run: |
+          set -euo pipefail
+          sudo dpkg -i out/mseries-debs/mseries-update_*.deb
+          for unit in boot confirm auto; do
+            state=$(systemctl is-enabled "mseries-update-$unit.service" 2>&1 || true)
+            [[ $state == disabled ]] || { echo "mseries-update-$unit.service is '$state', expected disabled" >&2; exit 1; }
+          done
+          [[ $(systemctl is-enabled mseries-update-auto.timer 2>&1 || true) == disabled ]]
+          mseries-update status --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["state"]=="idle", r'
+          [[ ! -e /etc/mseries-update && ! -e /var/lib/mseries-update ]]
+          sudo dpkg -r mseries-update
 
       - name: Upload plugin packages
         uses: actions/upload-artifact@v7
