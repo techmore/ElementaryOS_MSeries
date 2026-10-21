@@ -1,5 +1,5 @@
 project('machine-lab', 'vala',
-  version: '0.10.0',
+  version: '0.11.0',
   meson_version: '>= 1.0.0',
   default_options: ['warning_level=2']
 )
@@ -23,7 +23,7 @@ config = configure_file(
 )
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipsync.vala', 'src/clipboard.vala', 'src/incus-model.vala', 'src/incus-ui.vala', 'src/snapshots.vala', 'src/images.vala', 'src/unattend.vala', 'src/virtiowin.vala', 'src/windows-ui.vala', config,
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipsync.vala', 'src/clipboard.vala', 'src/display.vala', 'src/incus-model.vala', 'src/incus-ui.vala', 'src/snapshots.vala', 'src/images.vala', 'src/unattend.vala', 'src/virtiowin.vala', 'src/windows-ui.vala', config,
   resources,
   dependencies: [gtk, granite, json],
   install: true
@@ -67,6 +67,13 @@ clipboard_test_exe = executable('test-clipboard',
   install: false
 )
 test('clipboard sync against a fake QEMU peer', clipboard_test_exe, timeout: 120)
+
+display_test_exe = executable('test-display',
+  'tests/test-display.vala', 'src/display.vala',
+  dependencies: [dependency('gio-2.0'), dependency('gio-unix-2.0')],
+  install: false
+)
+test('display stream and resize against a fake QEMU peer', display_test_exe, timeout: 120)
 
 install_data('launcher/macos-check.py',
   install_dir: get_option('bindir'),

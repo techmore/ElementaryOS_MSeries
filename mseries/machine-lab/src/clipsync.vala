@@ -264,9 +264,11 @@ public class ClipboardBridge : Object {
 
     private HostClipboard host;
     private DBusConnection? bus = null;
+    private bool owns_bus = true;
     private ClipboardPeer? peer = null;
     private uint registration = 0;
     private ulong host_handler = 0;
+    private ulong closed_handler = 0;
     private uint announce_source = 0;
     private bool applying = false;       // we are writing guest data into the host clipboard
     private string? echo_text = null;    // the last text the guest gave us: not to be sent back
@@ -282,13 +284,15 @@ public class ClipboardBridge : Object {
 
     public bool active { get { return bus != null; } }
 
-    /* Take over a connection to QEMU's D-Bus display (made with DELAY_MESSAGE_PROCESSING) and register as the
-     * clipboard peer. */
-    public async bool attach (DBusConnection connection) {
+    /* Register as the clipboard peer on a connection to QEMU's D-Bus display. A connection made with
+     * DELAY_MESSAGE_PROCESSING is started here. With owns_connection (the default) stop() closes it; pass false
+     * when it is shared with the display stream (QEMU serves one control client at a time). */
+    public async bool attach (DBusConnection connection, bool owns_connection = true) {
         if (bus != null) {
             return true;
         }
         bus = connection;
+        owns_bus = owns_connection;
         try {
             registration = bus.register_object ("/org/qemu/Display1/Clipboard", new ClipboardService (this));
             bus.start_message_processing ();
@@ -302,7 +306,7 @@ public class ClipboardBridge : Object {
             return false;
         }
         host_handler = host.changed.connect (on_host_changed);
-        bus.notify["closed"].connect (on_bus_closed);
+        closed_handler = bus.notify["closed"].connect (on_bus_closed);
         // A copy made before the guest agent was up is offered as soon as it is.
         announce_soon ();
         return true;
@@ -321,8 +325,9 @@ public class ClipboardBridge : Object {
             peer.unregister_client.begin ();
         }
         var b = bus;
+        bool owned = owns_bus;
         teardown ();
-        if (b != null && !b.closed) {
+        if (owned && b != null && !b.closed) {
             b.close.begin (null);
         }
     }
@@ -336,6 +341,10 @@ public class ClipboardBridge : Object {
             Source.remove (announce_source);
             announce_source = 0;
         }
+        if (bus != null && closed_handler != 0) {
+            bus.disconnect (closed_handler);
+        }
+        closed_handler = 0;
         if (bus != null && registration != 0) {
             bus.unregister_object (registration);
         }
