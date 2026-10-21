@@ -70,10 +70,12 @@ What upstream has not published is the enrol-only measurement below.
 The `.20` kernel (`7.1.12-2-20261017.20`) was built the day before the guard merged. Its matching behaviour
 has not been tested, and earlier Touch ID probes on `.19`/`.20` hung the machine (`AURORA-SECOND-BOOT.md`).
 
-## Guard-off trial entry (added 2026-10-21, owner-approved, not booted)
+## Guard-off trial entries (added 2026-10-21, owner-approved, not booted)
 
-A separate GRUB entry, **TRIAL: Aurora 7.2 wip2, xART guard off** (`elementary-aurora72-wip2-xartguard-off-trial`), boots the same wip2
-kernel and initramfs with `apple_sep.xart_guard=0` added to its kernel line. The existing wip2 entry stays guard-on, the persistent
+Two separate GRUB entries boot the same kernel and initramfs as their guard-on twins with `apple_sep.xart_guard=0` added to the kernel
+line: **TRIAL: Aurora 7.2 wip2, xART guard off** (`elementary-aurora72-wip2-xartguard-off-trial`) and **TRIAL: Aurora 7.2 wip3, xART guard
+off** (`elementary-aurora72-wip3-xartguard-off-trial`, to test Touch ID and the dock in one boot; backup
+`/var/lib/mseries-kernel-tests/staging/20261021T195041Z-wip3-xartguard-off-entry`). The existing wip2 entry stays guard-on, the persistent
 default is still `.20`, nothing is armed, and `next_entry` is empty. It is scoped to one entry on purpose: a global
 `options apple_sep xart_guard=0` in `/etc/modprobe.d/` would be an unknown parameter on the `.20` kernels (their `apple-sep.ko` predates
 `xart_guard`) and stop the module loading there. Only `custom.cfg` changed; backup in
