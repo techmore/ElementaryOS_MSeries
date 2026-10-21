@@ -4,7 +4,7 @@
 #   run-vm.sh ISO [VM_DIR] [CIDATA_ISO]   boot an installer (ISO "-" = none)
 #   run-vm.sh --disk-only VM_DIR          boot the installed disk
 # Hardware comes from the environment: MACHINE_CPUS, MACHINE_MEM_GIB,
-# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none), MACHINE_CLIPBOARD (on|off), MACHINE_ARCH (aarch64|x86_64). Two QMP sockets in
+# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none), MACHINE_CLIPBOARD (on|off), MACHINE_DBUS (on|off: D-Bus display for the screen stream), MACHINE_ARCH (aarch64|x86_64). Two QMP sockets in
 # VM_DIR: qmp.sock (control: pause, resume, mseries-vm) and qmp-view.sock (the
 # Machine Lab display) so a viewer never blocks control commands.
 # shellcheck disable=SC2054  # commas inside QEMU option strings are intentional
@@ -95,12 +95,18 @@ fi
 rm -f "$VM_DIR/qmp.sock" "$VM_DIR/qmp-view.sock"
 
 DISPLAY_ARGS=(-display gtk,gl=off)
-[ "${MACHINE_DISPLAY:-gtk}" = none ] && DISPLAY_ARGS=(-display none)
+if [ "${MACHINE_DISPLAY:-gtk}" = none ]; then
+    DISPLAY_ARGS=(-display none)
+    # Machine Lab shows the screen itself. QEMU's D-Bus display (MACHINE_DBUS=on, or the clipboard) streams it
+    # and takes the "resize to the window" request; without it Machine Lab polls QMP screendump.
+    if [ "${MACHINE_DBUS:-off}" = on ] || [ "${MACHINE_CLIPBOARD:-off}" = on ]; then
+        DISPLAY_ARGS=(-display dbus,p2p=on)
+    fi
+fi
 CLIPBOARD_ARGS=()
 if [ "${MACHINE_CLIPBOARD:-off}" = on ]; then
     # QEMU's D-Bus display carries the clipboard (and the screen) to Machine Lab; the
     # SPICE agent channel connects it to spice-vdagent inside the guest.
-    [ "${MACHINE_DISPLAY:-gtk}" = none ] && DISPLAY_ARGS=(-display dbus,p2p=on)
     CLIPBOARD_ARGS=(-chardev qemu-vdagent,id=vdagent,clipboard=on,mouse=off
         -device virtio-serial-pci
         -device virtserialport,chardev=vdagent,name=com.redhat.spice.0)
