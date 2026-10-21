@@ -1,0 +1,30 @@
+{
+  "repository": "GravityLinux/mesa",
+  "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "configuration": "Asahi OpenGL/Vulkan, llvmpipe, X11/Wayland, LLVM, upstream tests",
+  "build": "passed",
+  "stage": "private DESTDIR with /opt/elementary-m4-gravity1 prefix; no installation",
+  "tests": {
+    "meson_groups": 5,
+    "failed_groups": 0,
+    "agx_compiler_cases": 366,
+    "apple9_launcher_cases": 10,
+    "apple9_geometry_cases": 5,
+    "disassembler_groups": 2
+  },
+  "software_smoke": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+  "artifacts": {
+    "lib/libvulkan_asahi.so": "0437ca36e5ff7cc4d454a8ad1b7a6bb48ee8fb7e80aa3a769338c0d1b86891a0",
+    "lib/libgallium-26.3.0-devel.so": "a32ad8549334eb11cf94e105179c54c3c0ed27cb9a038d096e216e2abcc9e63a",
+    "lib/libEGL_mesa.so.0.0.0": "822d266fce5b0632b6aa248e04ac6c4083bef419562b0de905a81acd81564c42",
+    "lib/libGLX_mesa.so.0.0.0": "c566532f63fb40f19f0da332855194459630299c51a73ada5af9d263251ec538"
+  },
+  "testlog_sha256": "7526640c5c6f5a1f77148165dff0895d37405df32210b63fb1257fd09108191b",
+  "limits": [
+    "No M4 GPU hardware test",
+    "No Vulkan device/conformance test",
+    "No elementary desktop session acceptance",
+    "Complete wrapper replay not run; corresponding build/test/stage/smoke steps ran directly"
+  ]
+}

@@ -90,8 +90,13 @@ owner's hardware.
 The upstream DCP AFK fragmentation boundary test passed normally and under address
 and undefined-behavior sanitizers. It covers bounds, ordering, truncation,
 sequence wrap and completion, not physical HDMI. Both raw m1n1 stages and selected
-U-Boot compile. Full kernel and Mesa compilation and subsequent runtime tests
-remain pending; consult current receipts rather than inferring success here.
+U-Boot compile. Gravity Mesa compilation, five selected upstream test groups (366 compiler,
+10 launcher and five geometry cases, plus two disassembler groups), and private
+DESTDIR staging now pass. Isolated software OpenGL creation/render/readback also
+passes using llvmpipe. This is userspace loading evidence, not an M4 GPU or
+Vulkan device test. The full M4 kernel build remains running. The secondary
+Asahi comparison build was stopped to conserve shared filesystem capacity,
+retaining its sources/config/logs; it has no successful full-build result.
 
 Omarchy MX's [Stable kernel config](https://github.com/maralcbr/omarchy-pkgs/blob/7e2f6cfec1b3e412ad4fd6ed9611be275a246b30/pkgbuilds/linux-aurora-stable/config#L2702)
 and its RC/Edge equivalents enable AQTION=m and TIGON3=m. The owner's lead is

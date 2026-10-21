@@ -94,7 +94,7 @@ the pinned Gravity Mesa with Asahi OpenGL, Asahi Vulkan, llvmpipe, X11 and
 Wayland. It enables upstream tests, runs the upstream AGX compiler, Apple9 launcher/geometry and disassembler tests, and stages under a DESTDIR
 with prefix /opt/elementary-m4-gravity1. It does not replace system Mesa or
 activate a session. Optional --pkg-config-path supports extracted work-local
-development packages. The full first build and compiler tests remain pending.
+development packages. The direct build, five selected upstream test groups and private-prefix staging now pass. An isolated llvmpipe context/render/readback smoke test passes too. The complete wrapper replay has not run; these results do not qualify the M4 GPU.
 
 ## Matched raw bootloader build
 

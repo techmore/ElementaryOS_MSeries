@@ -10259,3 +10259,14 @@ Gravity build was deliberately stopped for required NIC config, all its compiler
 processes verified gone, then reconfigured and resumed (81046, three jobs).
 Current config gate passes; package gates now require both NIC artifacts too.
 Mesa 78210 remains compiling; no Image/modules/Mesa runtime success claimed.
+
+Gravity Mesa full native build passed, five upstream groups pass: 366 AGX
+compiler tests, 10 Apple9 launcher, five geometry and two disassembler groups.
+Private DESTDIR install and isolated llvmpipe EGL context/red pixel readback
+pass. No hardware GPU or Vulkan device/conformance acceptance. Hashes and
+scopes retained in gravity-mesa-build receipt. Wrapper now includes software
+smoke but has not been replayed end-to-end.
+Secondary Asahi baseline build was stopped at low shared disk space; verified
+its whole owned process subtree exited, retained config/source/logs and removed
+only regenerable object cache. Full baseline build is explicitly uncompleted.
+Primary Gravity kernel handle 81046 remains running with required NIC config.

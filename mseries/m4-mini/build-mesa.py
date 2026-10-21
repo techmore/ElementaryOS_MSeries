@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import tarfile
@@ -48,10 +49,22 @@ def main():
     for index, command in enumerate(commands):
         with (root / f'{index}.log').open('wb') as log:
             subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+    flags = shlex.split(subprocess.check_output(['pkg-config', '--cflags', '--libs', 'egl', 'gl'], env=env, text=True))
+    smoke = root / 'mesa-software'
+    subprocess.run(['cc', '-Wall', '-Wextra', '-Werror',
+                    str(Path(__file__).parent / 'test-mesa-software.c'), '-o', str(smoke)] + flags,
+                   env=env, check=True)
+    prefix = root / 'stage/opt/elementary-m4-gravity1'
+    smoke_env = dict(env, LD_LIBRARY_PATH=str(prefix / 'lib'),
+                     __EGL_VENDOR_LIBRARY_FILENAMES=str(prefix / 'share/glvnd/egl_vendor.d/50_mesa.json'),
+                     LIBGL_DRIVERS_PATH=str(prefix / 'lib/dri'), LIBGL_ALWAYS_SOFTWARE='1',
+                     MESA_SHADER_CACHE_DIR=str(root / 'shader-cache'))
+    with (root / 'software-smoke.log').open('wb') as log:
+        subprocess.run([str(smoke)], env=smoke_env, stdout=log, stderr=subprocess.STDOUT, check=True)
     (root / 'receipt.json').write_text(json.dumps({
         'repository': 'GravityLinux/mesa', 'commit': COMMIT, 'archive_sha256': SHA256,
         'options': OPTIONS, 'commands': commands,
-        'status': 'built, compiler tests passed, staged only; no M4 GPU runtime qualification',
+        'status': 'built, AGX tests and isolated software rendering passed, staged only; no M4 GPU runtime qualification',
     }, indent=2) + '\n')
 
 

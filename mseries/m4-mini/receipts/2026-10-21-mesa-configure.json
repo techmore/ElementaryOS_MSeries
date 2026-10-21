@@ -4,8 +4,8 @@
   "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
   "configuration": "Asahi+llvmpipe OpenGL, Asahi Vulkan, X11+Wayland, LLVM enabled, upstream tests enabled",
   "prefix": "/opt/elementary-m4-gravity1",
-  "status": "Meson setup passed; native compilation resumed after work-local XCB header dependencies were completed; tests pending",
-  "build_handle": 78210,
+  "status": "build and selected upstream tests passed; staged private-prefix userspace and isolated software smoke passed; see gravity-mesa-build receipt",
+  "build_handle": null,
   "work_local_dependencies": [
     {
       "file": "libwayland-dev_1.24.0-2_arm64.deb",
