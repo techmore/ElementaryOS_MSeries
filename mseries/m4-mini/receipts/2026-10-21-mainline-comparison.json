@@ -1,0 +1,32 @@
+{
+  "repository": "torvalds/linux",
+  "commit": "4df4d2a577db2d3d57b888bcfb1206fc74661d16",
+  "files": {
+    "Makefile": {
+      "status": 200,
+      "sha256": "0ccf04f4b50f9e6b6e73e04e6854af2b6d2c3d1f49514f591c13787fdab86f6a"
+    },
+    "arch/arm64/boot/dts/apple/t8132-j773g.dts": {
+      "status": 404
+    },
+    "drivers/gpu/drm/Makefile": {
+      "status": 200,
+      "sha256": "9ee677dfcce6fe4eee23719245dfbff434e5d4c2d4362c25225941505745f213"
+    },
+    "drivers/nvme/host/apple.c": {
+      "status": 200,
+      "sha256": "dea5f7c8a074e0967144041928eef5b1b233a6b4b5502d8c74ecf1b4958d383d"
+    }
+  },
+  "head_commit_date": "2026-10-21T22:08:18Z",
+  "makefile_version": "7.3.0",
+  "scope": "selected exact-file review; not a complete semantic audit of all mainline drivers",
+  "findings": [
+    "J773g DT path returned HTTP 404 at pinned head",
+    "DRM Makefile has no apple/asahi entries",
+    "NVMe Apple match table lacks apple,t8132-nvme-ans2; Gravity includes it"
+  ],
+  "gravity_kernel_head_rechecked": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "gravity_mesa_head_rechecked": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "hardware_validated": false
+}

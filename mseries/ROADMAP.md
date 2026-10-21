@@ -1,3 +1,13 @@
+## M4 mini: mainline comparison and qualification gates — 2026-10-21
+
+Mainline torvalds/linux 4df4d2a (Makefile 7.3.0) was checked at exact paths:
+no J773g DT path, no Apple/Asahi DRM Makefile entries, no T8132 NVMe match.
+Gravity kernel/Mesa heads remain unchanged. This is a selected-file comparison,
+not a full mainline semantic audit. QUALIFICATION.md maps current evidence to
+native hardware/desktop/dual-boot gates. macos-inventory.sh is read-only and
+filters out serial/MAC fields; bash syntax and Linux rejection pass, macOS run
+pending owner access. No installer support flag changed.
+
 ## M4 mini: unsigned EFI assembly verified — 2026-10-21
 
 build-efi.py validates pinned work-local tool/stub hashes, M4 kernel hash and

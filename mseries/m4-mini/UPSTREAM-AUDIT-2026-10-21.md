@@ -256,3 +256,17 @@ owner partition. No boot entry, EFI partition or installed loader changed.
 This unsigned artifact is not an installation image or boot qualification:
 matched firmware/loader handoff, actual root identity, full desktop support
 and M4/macOS/Recovery tests remain outstanding.
+
+## Mainline and owner qualification boundary
+
+Current mainline torvalds/linux 4df4d2a577db2d3d57b888bcfb1206fc74661d16
+reports 7.3.0 in its Makefile. At that exact head the J773g DT path returns
+404, DRM Makefile has no Apple/Asahi entries, and Apple NVMe has no
+apple,t8132-nvme-ans2 match. Gravity contains the latter match. This selected
+source comparison does not claim a full mainline semantic audit. Gravity's
+selected kernel/Mesa heads were rechecked and remain unchanged.
+
+See QUALIFICATION.md for evidence versus outstanding native gates. The new
+macos-inventory.sh collects filtered read-only host facts; macOS execution
+is not yet tested. No source/build result qualifies the owner's 10 Gb variant,
+16 GB loader map, complete desktop or macOS/Recovery round trip.

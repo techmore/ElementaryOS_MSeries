@@ -1,0 +1,10 @@
+{
+  "script": "macos-inventory.sh",
+  "checks": [
+    "bash syntax pass",
+    "non-Darwin host rejected before inventory commands"
+  ],
+  "macos_execution": "not run; owner M4 unavailable to this Linux workspace",
+  "scope": "filtered read-only model, memory, host firmware, Ethernet IDs, display mode and free space; serial/MAC fields not selected",
+  "qualification_effect": "host inventory alone does not qualify separate Linux firmware or boot"
+}
