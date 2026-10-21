@@ -1,9 +1,28 @@
 # Maintenance checkpoint — October 21, 2026
 
-Owner is returning later. **Next priority: identify and apply the intended kernel
+Owner returned and requested continuation. **Next priority: identify and apply the intended kernel
 change in the isolated source/build lane.** The owner called it a “kernel thing”
 but did not identify the exact PR or version. Do not silently choose a candidate
 or treat this checkpoint as a hardware deployment/boot-selection instruction.
+
+## Resume review — October 21
+
+[Immutable source hashes and review receipt](kernel-resume-review.json) now
+record focused inspection of merged #139 at `644133b7799f`. The three shared
+GPU/SEP gaps from our old 7.2 snapshot are addressed in these inspected paths:
+render/compute call `read_supported`; SEP's OF table is not exported for autoload;
+and capture-drain timeout continues suspend. The original merged GPU-reader
+source passes **five host tests**, with a Result/EINVAL-only shim. This differs
+from the older seven-test file; no equivalent whole-suite coverage is inferred.
+Stock-bindgen layout policy is also already present, so do not reapply our old
+local layout patch blindly when refreshing the source pin.
+
+This is focused source evidence, not completion of all 64 review items or an
+ARM64 kernel build. Upstream reports M1-family Touch ID reliability regressions
+and a shared-DTB/5-cell-DART fallback compatibility requirement. Only about
+4.9 GB was free locally; use the existing artifact-only ARM64 CI for full builds.
+The exact intended kernel change was requested from the owner and remains
+unresolved. No source/adoption pin, boot payload or live kernel was changed.
 
 ## Completed today
 
