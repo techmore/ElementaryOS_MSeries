@@ -70,3 +70,12 @@ the same way.
 - Exact blob set per chip (extra `.clm_blob`/`.txcap_blob` revisions).
 - NVRAM `.txt` selection rule on Apple (module/antenna-specific names).
 - Whether `CONFIG_BRCMFMAC_*` in the Asahi kernel needs non-default options.
+
+## When Wi-Fi will not join a network
+
+`sudo mseries-wifi-doctor [SSID]` reports firmware, rfkill, driver and NetworkManager state, then applies
+the safe fixes: reprovision firmware, reload `brcmfmac` (a wedged chip rejects associations with status 16,
+shown as a wrong password), turn off scan MAC randomisation, rescan, and with an SSID drop the saved profile
+and rejoin and check for a captive portal. `--report` changes nothing. The report is copied to
+`/boot/efi/wifi-report.txt` so it can be read from macOS. On an installed system, `bash mseries/apply-pending.sh --only wifi`
+installs the command.

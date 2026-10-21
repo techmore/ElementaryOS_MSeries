@@ -3118,3 +3118,13 @@ Full canonical native build/schema, actual Launcher startup/focus/close/reopen
 and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
 All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
+
+- 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
+
+- 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
+
+- 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
