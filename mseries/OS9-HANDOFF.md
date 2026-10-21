@@ -6,6 +6,12 @@ fingerprints read better than the hand diagram. The sheet now says "Getting the 
 fallback; the hero shows three prints (own ridge pattern per finger, empty slots dim) and the hand widget is removed. UI tests 18/18 against the
 fake fprintd (which can now report finger events). **Not verified:** whether the Secure Enclave driver reports `finger-present`/`finger-needed`
 (unknown until a real enrolment is watched with `busctl monitor`), and on the real sensor.
+## Compositor: snapped windows no longer cover newer windows — 2026-10-21
+
+Owner reported that windows cannot register over a snapped window and the Touch ID sheet could not be used or dragged. Cause and fix in
+`mseries/pantheon-rust-compositor/STACKING-FIX-2026-10-21.md`: re-applying tiles and work-area limits used `Space::map_element`, which lifts
+an already-mapped window to the top; they now use `relocate_element` via `place_window`. Four regression tests, 48/48 pass. **Not deployed, not
+verified on the live desktop**: needs `mseries/install-pantheon-rust-compositor.sh` and a session restart, which the owner must approve.
 
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
