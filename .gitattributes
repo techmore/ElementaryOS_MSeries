@@ -3,4 +3,5 @@
 # Empty context lines in this unified diff contain the required leading space.
 mseries/patches/dock-taskbar-codexbar.patch whitespace=-blank-at-eol
 mseries/patches/dock-taskbar-repobar.patch whitespace=-blank-at-eol
+mseries/patches/dock-taskbar-power-buttons.patch whitespace=-blank-at-eol
 mseries/patches/dock-running-apps.patch whitespace=-blank-at-eol

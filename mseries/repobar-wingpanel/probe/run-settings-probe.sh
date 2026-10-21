@@ -9,7 +9,7 @@ cat > "$home/.local/bin/mseries-repobar" <<'HELPER'
 #!/bin/sh
 case "$1 $2" in
   "settings show") echo '{"host":"github.com","refreshInterval":300,"repoLimit":20,"menuSort":"activity","showForks":false,"showArchived":true,"localRoot":"/home/me/Projects","localDepth":4,"notifyCi":true,"repoStates":{"example/old-tool":"hidden","example/panel-suite":"pinned"}}' ;;
-  "auth status") echo '{"host":"github.com","authenticated":true,"account":"example","message":""}' ;;
+  "auth status") echo '{"host":"github.com","authenticated":true,"account":"example","followsCli":false,"accounts":[{"host":"github.com","login":"example","active":true},{"host":"github.com","login":"example-work","active":false}],"message":""}' ;;
 esac
 HELPER
 chmod +x "$home/.local/bin/mseries-repobar"

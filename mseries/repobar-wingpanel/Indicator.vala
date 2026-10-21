@@ -57,6 +57,9 @@ namespace MSeries {
         private string contribution_style = "dots";
         private bool contributions_expanded = false;
         private string local_root = "";
+        // "Show RepoBar in the panel" (settings.json showInPanel): off hides the module and stops refreshing and notifying.
+        private bool panel_enabled = true;
+        private uint settings_generation = 0;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -106,7 +109,7 @@ namespace MSeries {
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
                 margin_top = 8, margin_bottom = 6, margin_start = 8, margin_end = 8,
-                width_request = 360
+                width_request = 460
             };
             menu.add_css_class ("mseries-repobar");
             install_style (menu.get_display ());
@@ -238,6 +241,29 @@ namespace MSeries {
             watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
             // Draw the last cached snapshot at once; the helper's answer replaces it when it arrives.
+            apply_panel_enabled ();
+        }
+
+        private static bool read_panel_enabled () {
+            try {
+                var parser = new Json.Parser ();
+                parser.load_from_file (GLib.Path.build_filename (Environment.get_user_config_dir (), "mseries", "repobar", "settings.json"));
+                return parser.get_root ().get_object ().get_boolean_member_with_default ("showInPanel", true);
+            } catch (Error e) {
+                return true;
+            }
+        }
+
+        /* Applies the show-in-panel preference: hidden means no GitHub requests, timers or notifications until it is turned back on. */
+        private void apply_panel_enabled () {
+            panel_enabled = read_panel_enabled ();
+            this.visible = panel_enabled;
+            if (!panel_enabled) {
+                if (refresh_source != 0) Source.remove (refresh_source);
+                refresh_source = 0;
+                refresh_interval = 0;
+                return;
+            }
             render_cached ();
             schedule_refresh (300);
             load_snapshot ();
@@ -246,18 +272,18 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-repobar { font-size: 9pt; } " +
-                ".mseries-repobar .caption { font-size: 8pt; } " +
+                ".mseries-repobar { font-size: 1.3em; } " +
+                ".mseries-repobar .caption { font-size: 0.889em; } " +
                 ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar .repo-card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-repobar row:hover .repo-card { background: alpha(currentColor, 0.09); } " +
-                ".mseries-repobar .repo-name { font-weight: 700; font-size: 9.5pt; } " +
-                ".mseries-repobar .repo-owner { font-size: 8pt; opacity: 0.6; } " +
-                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .repo-name { font-weight: 700; font-size: 1.056em; } " +
+                ".mseries-repobar .repo-owner { font-size: 0.889em; opacity: 0.6; } " +
+                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .count.zero { opacity: 0.45; font-weight: 400; } " +
-                ".mseries-repobar .window-name { font-weight: 700; font-size: 7.5pt; opacity: 0.75; } " +
-                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .window-name { font-weight: 700; font-size: 0.833em; opacity: 0.75; } " +
+                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-repobar .chip.bad { background: alpha(@error_color, 0.2); color: @error_color; } " +
                 ".mseries-repobar button.chip { min-height: 0; min-width: 0; } " +
@@ -274,12 +300,12 @@ namespace MSeries {
                 ".mseries-repobar button.compact { padding: 0 4px; min-height: 0; min-width: 0; } " +
                 ".mseries-repobar button.link-row { padding: 1px 4px; min-height: 0; border-radius: 6px; } " +
                 ".mseries-repobar button.link-row label { font-weight: 400; } " +
-                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 8pt; " +
+                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 0.889em; " +
                 "  background: alpha(currentColor, 0.08); } " +
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
-                ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .section-title { font-weight: 700; font-size: 0.889em; opacity: 0.75; } " +
                 ".mseries-repobar list.repo-list > row .group-heading { margin-top: 2px; margin-bottom: -4px; } " +
                 ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
                 ".mseries-repobar .contribution-graph { color: @accent_color; } " +
@@ -289,7 +315,7 @@ namespace MSeries {
                 ".mseries-repobar row:hover button.pin-off, .mseries-repobar row:focus-within button.pin-off { opacity: 0.55; } " +
                 ".mseries-repobar row:hover button.pin-off:hover, .mseries-repobar button.pin-off:focus { opacity: 1; } " +
                 ".mseries-repobar list.repo-list { background: transparent; } " +
-                ".mseries-repobar button.show-all { font-size: 8.5pt; padding: 2px 10px; } " +
+                ".mseries-repobar button.show-all { font-size: 0.944em; padding: 2px 10px; } " +
                 ".mseries-repobar list.repo-list > row { padding: 0; margin-bottom: 8px; border-radius: 8px; background: transparent; } " +
                 ".mseries-repobar list.repo-list > row:last-child { margin-bottom: 0; } " +
                 ".mseries-repobar list.repo-list > row:focus-visible { outline: 2px solid alpha(@accent_color, 0.6); outline-offset: -2px; } " +
@@ -300,9 +326,9 @@ namespace MSeries {
                 ".mseries-repobar .mseries-bar { margin-top: 2px; } " +
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
-                ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 8.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 8pt; font-weight: 700; } " +
+                ".mseries-repobar-bar label { font-size: 1.2em; font-feature-settings: \"tnum\"; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 1.2em; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 1.1em; font-weight: 700; } " +
                 ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
@@ -423,7 +449,8 @@ namespace MSeries {
         }
 
         private async void read_snapshot (bool force) {
-            if (in_flight) return;
+            if (in_flight || !panel_enabled) return;
+            uint generation = settings_generation;
             in_flight = true;
             set_refreshing (true);
             if (force) subtitle_label.set_text ("Refreshing…");
@@ -439,22 +466,31 @@ namespace MSeries {
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
-                last_snapshot_text = output;
-                render_snapshot (parser.get_root ().get_object ());
+                if (generation == settings_generation && panel_enabled) {
+                    last_snapshot_text = output;
+                    render_snapshot (parser.get_root ().get_object ());
+                }
             } catch (Error e) {
+                if (generation != settings_generation || !panel_enabled) {
+                    in_flight = false;
+                    set_refreshing (false);
+                    if (panel_enabled) load_snapshot ();
+                    return;
+                }
+                // Only the helper can authorize an offline snapshot for the current account.
+                clear_snapshot_state ();
                 set_chip ("Offline", true, "retry", e.message + "\nClick to try again");
                 subtitle_label.set_text ("GitHub status unavailable");
                 subtitle_label.set_tooltip_text (e.message);
-                if (last_snapshot_text.length == 0) {
-                    bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
-                    show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
-                        signed_out ? "Connect GitHub" : "GitHub unavailable",
-                        signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
-                        signed_out);
-                }
+                bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
+                show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
+                    signed_out ? "Connect GitHub" : "GitHub unavailable",
+                    signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
+                    signed_out);
             }
             in_flight = false;
             set_refreshing (false);
+            if (generation != settings_generation && panel_enabled) load_snapshot ();
         }
 
         private void set_chip (string text, bool bad, string action = "retry", string tooltip = "") {
@@ -747,10 +783,14 @@ namespace MSeries {
                 settings_monitor.changed.connect ((file, other, event) => {
                     string name = (other ?? file).get_basename ();
                     if (file.get_basename () != "settings.json" && name != "settings.json") return;
+                    settings_generation++;
+                    clear_snapshot_state ();
+                    show_state ("content-loading-symbolic", "Loading repositories…", "", false);
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
-                        load_snapshot ();
+                        if (read_panel_enabled () != panel_enabled) apply_panel_enabled ();
+                        else if (panel_enabled) load_snapshot ();
                         return Source.REMOVE;
                     });
                 });
@@ -1096,16 +1136,15 @@ namespace MSeries {
             return object.has_member (member) && object.get_member (member).get_node_type () == Json.NodeType.OBJECT;
         }
 
+        private void clear_snapshot_state () {
+            last_snapshot_text = "";
+            // Reset summaries, account tooltip, contribution graph and cards together.
+            render_snapshot (new Json.Object ());
+        }
+
         private void render_cached () {
-            if (last_snapshot_text.length == 0) {
-                try {
-                    string contents;
-                    if (!FileUtils.get_contents (Environment.get_home_dir () + "/.cache/mseries/repobar/snapshot.json", out contents)) return;
-                    last_snapshot_text = contents;
-                } catch (Error e) {
-                    return;
-                }
-            }
+            // Disk snapshots must pass the helper's resolved-account validation first.
+            if (last_snapshot_text.length == 0) return;
             try {
                 var parser = new Json.Parser ();
                 parser.load_from_data (last_snapshot_text);

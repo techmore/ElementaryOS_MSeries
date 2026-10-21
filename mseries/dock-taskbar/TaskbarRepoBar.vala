@@ -6,6 +6,11 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
     private uint open_timer = 0;
     private uint close_timer = 0;
     private bool pinned = false;
+    private Gtk.CssProvider scale_style = new Gtk.CssProvider ();
+    private Gtk.Widget readout;
+    private Settings dock_settings = new Settings ("io.elementary.dock");
+    private uint scale_idle = 0;
+    private int applied_icon_size = 0;
 
     construct {
         orientation = Gtk.Orientation.VERTICAL;
@@ -14,9 +19,15 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         button.add_css_class ("taskbar-repobar-button");
         button.update_property (Gtk.AccessibleProperty.LABEL, "RepoBar", -1);
         indicator = new MSeries.RepoBarIndicator ();
-        var readout = indicator.get_display_widget ();
-        enlarge_marks (readout);
+        // RepoBar Settings → "Show RepoBar in the panel" hides the module in the taskbar too.
+        indicator.bind_property ("visible", this, "visible", BindingFlags.SYNC_CREATE);
+        readout = indicator.get_display_widget ();
         button.child = readout;
+        apply_scale ();
+        // Native, work and taskbar modes, and every text step, change the dock's icon size; the readout follows it.
+        dock_settings.changed["icon-size"].connect (queue_scale);
+        dock_settings.changed["taskbar-mode"].connect (queue_scale);
+        SizePolicy.get_default ().changed.connect (queue_scale);
         append (button);
         valign = Gtk.Align.CENTER;
         popup = new Gtk.Popover () {
@@ -83,15 +94,40 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         indicator.opened ();
         popup.popup ();
     }
-    /* The panel readout is sized for Wingpanel; the taskbar is taller, so its marks scale up (CodexBar's is 28 px). */
-    private void enlarge_marks (Gtk.Widget widget) {
+    /* The readout is two stacked rows, so its text is half the icon size in points (48 px icons -> 24pt, 72 px -> 36pt)
+     * and fits the bar at every size-system step. Coalesced so a mode change resizes everything in one frame. */
+    private void queue_scale () {
+        if (scale_idle != 0) return;
+        scale_idle = Idle.add (() => {
+            scale_idle = 0;
+            apply_scale ();
+            return Source.REMOVE;
+        });
+    }
+    private void apply_scale () {
+        var icon_size = ItemManager.get_icon_size ();
+        if (icon_size == applied_icon_size) return;
+        applied_icon_size = icon_size;
+        var points = icon_size / 2;
+        scale_style.load_from_string (".taskbar-repobar-button .seg-value, .taskbar-repobar-button .seg-alert { font-size: %dpt; }".printf (points));
+        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), scale_style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        enlarge_marks (readout, icon_size / 48.0);
+    }
+    /* The panel readout is sized for Wingpanel; the taskbar is taller, so its marks scale up with the icon size
+     * (CodexBar's is 28 px at 48). Each image remembers its original size so repeated changes never compound. */
+    private void enlarge_marks (Gtk.Widget widget, double scale) {
         if (widget is Gtk.Image) {
             var image = (Gtk.Image) widget;
+            var base_size = image.get_data<int> ("repobar-base-size");
+            if (base_size == 0) {
+                base_size = image.pixel_size;
+                image.set_data<int> ("repobar-base-size", base_size);
+            }
             // The GitHub mark (16) matches CodexBar's 28 px icon; the small count marks stay compact so two rows fit.
-            image.pixel_size = image.pixel_size >= 16 ? (int) Math.round (image.pixel_size * 1.75) : (int) Math.round (image.pixel_size * 1.6);
+            image.pixel_size = (int) Math.round (base_size * (base_size >= 16 ? 1.75 : 1.6) * scale);
         }
         for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
-            enlarge_marks (child);
+            enlarge_marks (child, scale);
         }
     }
     private void expand_scroll_area (Gtk.Widget widget) {
@@ -120,6 +156,7 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
     public override void dispose () {
         cancel_open ();
         cancel_close ();
+        if (scale_idle != 0) { Source.remove (scale_idle); scale_idle = 0; }
         if (popup != null && popup.get_parent () != null) popup.unparent ();
         base.dispose ();
     }

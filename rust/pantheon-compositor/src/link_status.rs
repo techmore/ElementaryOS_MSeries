@@ -25,6 +25,13 @@ pub struct ResetState {
     last_attempt: Instant,
 }
 
+impl ResetState {
+    /// Current bounded attempt count, exposed for lifecycle diagnostics only.
+    pub fn attempts(&self) -> u32 {
+        self.attempts
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     /// Nothing to do (link is good, waiting for the retry interval, or gave up).

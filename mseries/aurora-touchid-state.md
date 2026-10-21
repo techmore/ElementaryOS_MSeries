@@ -1,5 +1,7 @@
 # Aurora SEP / Touch ID install — state (2026-10-17)
 
+> **Historical log.** Current state, the xART guard finding and upstream status: [aurora-sep/XART-GUARD.md](aurora-sep/XART-GUARD.md) and [aurora-sep/UPSTREAM-MAP.md](aurora-sep/UPSTREAM-MAP.md) (2026-10-21).
+
 Goal: Touch ID on MacBook Pro 14" M1 Pro (j314s), elementary OS 9 on Asahi, so
 fingerprint unlocks sudo/polkit/login (reduce prompts in agent sessions).
 

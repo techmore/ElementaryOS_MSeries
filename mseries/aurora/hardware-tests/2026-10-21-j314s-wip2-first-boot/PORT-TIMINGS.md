@@ -36,7 +36,9 @@ right/rear, and about 0.5 s apart for front. Same-sample means below the observa
 resolution, not instantaneous disable. Separate detailed kernel/compositor
 lifecycle instrumentation is the next step for optimization. About 3 s precedes
 dock enumeration, so compositor-only changes cannot account for that entire
-interval. Do not shorten debounce/recovery timers based on this pilot.
+interval. Do not shorten debounce/recovery timers based on this pilot; the
+millisecond-resolution [DOCK-LATENCY-BREAKDOWN.md](DOCK-LATENCY-BREAKDOWN.md)
+is the evidence for the 40 ms hotplug debounce.
 
 The read-only poller is `mseries/hardware/dock-port-timing.py`; it requires an
 identity-bound hardware receipt from the running boot and a fresh private output

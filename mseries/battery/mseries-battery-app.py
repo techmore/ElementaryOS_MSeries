@@ -14,6 +14,7 @@ import warnings
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+import cairo  # noqa: E402
 import gi  # noqa: E402
 
 gi.require_version("Gtk", "4.0")
@@ -100,9 +101,100 @@ def level_bar(fraction, *classes):
     return bar
 
 
-def charge_icon(pct, charging):
-    level = int(round((pct or 0) / 10.0)) * 10
-    return "battery-level-%d%s-symbolic" % (level, "-charging" if charging else "")
+# charge level -> soft colour: lime while healthy, easing through amber to a muted strawberry
+LEVEL_STOPS = [(100, (0.45, 0.74, 0.30)), (60, (0.45, 0.74, 0.30)), (35, (0.90, 0.72, 0.24)),
+               (18, (0.93, 0.52, 0.22)), (8, (0.82, 0.30, 0.30)), (0, (0.82, 0.30, 0.30))]
+
+
+def level_colour(pct):
+    pct = max(0.0, min(100.0, pct or 0))
+    for (hi, hi_rgb), (lo, lo_rgb) in zip(LEVEL_STOPS, LEVEL_STOPS[1:]):
+        if pct >= lo:
+            t = 1.0 if hi == lo else (pct - lo) / (hi - lo)
+            return tuple(l + (h - l) * t for l, h in zip(lo_rgb, hi_rgb))
+    return LEVEL_STOPS[-1][1]
+
+
+class BatteryGauge(Gtk.DrawingArea):
+    """A battery outline whose fill drops with the charge and shifts colour softly as it gets low."""
+
+    def __init__(self, pct, charging, width=40, height=64, number=True):
+        super().__init__(content_width=width, content_height=height, valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
+        self.pct, self.charging, self.number = max(0.0, min(100.0, pct or 0)), charging, number
+        self.set_draw_func(self.draw)
+
+    @staticmethod
+    def round_rect(cr, x, y, w, h, r):
+        cr.new_sub_path()
+        cr.arc(x + w - r, y + r, r, -math.pi / 2, 0)
+        cr.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
+        cr.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+        cr.arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+
+    def draw(self, _area, cr, width, height):
+        fg = self.get_color()
+        cap_h, line = height * 0.09, 2.0
+        body_x, body_y, body_w = line / 2, cap_h + line / 2, width - line
+        body_h = height - cap_h - line
+        cr.set_line_width(line)
+        self.round_rect(cr, width * 0.32, 0, width * 0.36, cap_h + 1, 1.5)  # terminal
+        cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.55)
+        cr.fill()
+        self.round_rect(cr, body_x, body_y, body_w, body_h, 6)
+        cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.07)
+        cr.fill_preserve()
+        cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.55)
+        cr.stroke()
+        inset = line + 2.0
+        inner_x, inner_y, inner_w, inner_h = body_x + inset, body_y + inset, body_w - 2 * inset, body_h - 2 * inset
+        fill_h = inner_h * self.pct / 100.0
+        if fill_h >= 1:
+            red, green, blue = level_colour(self.pct)
+            cr.save()
+            self.round_rect(cr, inner_x, inner_y, inner_w, inner_h, 3.5)
+            cr.clip()
+            top = inner_y + inner_h - fill_h
+            gradient = cairo.LinearGradient(0, top, 0, inner_y + inner_h)
+            gradient.add_color_stop_rgba(0, min(1, red + 0.08), min(1, green + 0.08), min(1, blue + 0.08), 0.92)
+            gradient.add_color_stop_rgba(1, red, green, blue, 0.92)
+            cr.set_source(gradient)
+            cr.rectangle(inner_x, top, inner_w, fill_h)
+            cr.fill()
+            cr.restore()
+        text_y = body_y + body_h / 2
+        if self.number:
+            text_y = body_y + body_h * (0.68 if self.charging else 0.5)
+        if self.charging:
+            cx, cy, s = width / 2, body_y + body_h * (0.32 if self.number else 0.5), width * (0.12 if self.number else 0.17)
+            cr.move_to(cx + s * 0.35, cy - s * 1.9)
+            for dx, dy in ((-s * 0.95, s * 1.15), (s * 0.55, s * 0.0), (-s * 0.35, s * 1.9), (s * 0.95, -s * 1.15), (-s * 0.55, 0.0)):
+                cr.rel_line_to(dx, dy)
+            cr.close_path()
+            cr.set_source_rgba(1, 1, 1, 0.92)
+            cr.fill_preserve()
+            cr.set_source_rgba(0, 0, 0, 0.35)
+            cr.set_line_width(1)
+            cr.stroke()
+        if self.number:
+            text = "%d" % round(self.pct)
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+            cr.set_font_size(inner_w * (0.62 if len(text) < 3 else 0.46))
+            extents = cr.text_extents(text)
+            fill_top = inner_y + inner_h - fill_h
+            top, bottom = text_y - extents.height / 2, text_y + extents.height / 2
+            cr.move_to(width / 2 - extents.x_bearing - extents.width / 2, text_y - extents.y_bearing - extents.height / 2)
+            cr.text_path(text)
+            if fill_top > bottom:  # digits sit on the empty part of the battery
+                cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.9)
+                cr.fill()
+            else:
+                if fill_top > top:  # fill edge cuts through the digits: halo keeps them legible on both sides
+                    cr.set_source_rgba(1, 1, 1, 0.6)
+                    cr.set_line_width(2.2)
+                    cr.stroke_preserve()
+                cr.set_source_rgba(0.08, 0.1, 0.12, 0.9)
+                cr.fill()
 
 
 def boxed_list():
@@ -474,7 +566,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
         charging = bool(last and last["status"] == "Charging")
 
         hero = Gtk.Box(spacing=20)
-        hero.append(Gtk.Image(icon_name=charge_icon(pct, charging), pixel_size=64, valign=Gtk.Align.CENTER))
+        hero.append(BatteryGauge(pct, charging))
         middle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True, valign=Gtk.Align.CENTER)
         top = Gtk.Box(spacing=12)
         top.append(label("%.0f%%" % pct, "hero-percent"))
@@ -737,7 +829,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
             line.set_margin_start(14)
             line.set_margin_end(14)
             low = (dev["level"] or "").lower() in ("low", "critical")
-            line.append(Gtk.Image(icon_name="battery-level-20-symbolic" if low else "battery-level-80-symbolic", pixel_size=24))
+            line.append(BatteryGauge(dev["pct"] if dev["pct"] is not None else (15 if low else 80), False, 24, 38, number=dev["pct"] is not None))
             text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
             text.append(label(dev["name"], "row-title"))
             text.append(label("%s since %s" % (dev["level"] or dev["status"] or "—", time.strftime("%a %d %b, %H:%M", time.localtime(dev["since"]))), "dim"))

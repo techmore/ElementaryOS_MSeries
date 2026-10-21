@@ -1,3 +1,23 @@
+# J314S wip3: staged unarmed, not booted (2026-10-21)
+
+**Aurora 7.2.11 wip3** (upstream #158 + #157, see [README](README.md)) is installed beside wip2 and `.20`, **unarmed**.
+Owner approved unarmed staging. Package `linux-image-elementary-aurora72-wip3` `7.2.11+elementary.aurora72.wip3-1` (from the audited
+CI artifact, [build receipt](native-build-wip3-2026-10-21.json)), `/boot/vmlinuz-aurora72-wip3`,
+`/boot/initrd.img-7.2.11-elementary-aurora72-wip3` and the non-default GRUB entry `elementary-aurora72-wip3-trial`
+("TRIAL: Aurora 7.2 wip3"). No one-shot was set and no reboot occurred; `.20` stays the persistent default and the shared
+`boot.bin` is byte-identical. [Staging receipt](boot-preflight-wip3-2026-10-21/staging.json): every protected file's hash before
+and after, only `custom.cfg` changed, `grubenv` `next_entry` empty before and after, `dpkg -V` clean. Root-private byte-exact
+backups: `/var/lib/mseries-kernel-tests/staging/20261021T184851Z-aurora72-wip3`. `/boot` is 80% used (102 MB free).
+
+What it is for: the 7.2.11 base and the external-display colour patch on the dock. **It does not change Touch ID**; neither
+#158 nor #157 touches the SEP driver, so the xART guard behaviour in `../../aurora-sep/XART-GUARD.md` is the same.
+
+To try it, the owner picks **TRIAL: Aurora 7.2 wip3** once at the GRUB menu (five-second timeout), or authorizes a one-shot
+(`grub-reboot elementary-aurora72-wip3-trial`). Do not change the persistent default. Use the password to unlock and log in.
+If it hangs, power off and pick **STABLE: Aurora .20**; wip2 stays selectable too. To remove it: `sudo dpkg -r
+linux-image-elementary-aurora72-wip3`, delete the two `/boot` files, and restore `custom.cfg` from the backup directory above.
+Not established: any boot, dock, power, suspend or recovery result, and 64-fix parity at 7.2.11.
+
 # J314S wip2: first boot recorded, qualification incomplete
 
 ## Latest per-port follow-up

@@ -104,11 +104,12 @@ class Repository(unittest.TestCase):
         self.assertEqual(violations, [])
         self.assertEqual(slack, [], "trim ui-size-allowlist.json to what the sources still contain")
 
-    def test_repobar_taskbar_readout_stays_allowlisted_for_the_owner(self):
-        entries = json.loads((HERE / "ui-size-allowlist.json").read_text())["allowed"]
-        entry = next(e for e in entries if e["file"].endswith("dock-taskbar-repobar.patch") and e["match"] == "font-size: 18pt")
-        self.assertEqual(entry["count"], 2)
-        self.assertIn("Owner", entry["reason"])
+    def test_repobar_taskbar_readout_follows_the_dock_icon_size(self):
+        patch = (HERE.parent / "patches" / "dock-taskbar-repobar.patch").read_text()
+        self.assertNotIn("font-size: 24pt", patch)
+        source = (HERE.parent / "dock-taskbar" / "TaskbarRepoBar.vala").read_text()
+        self.assertIn("ItemManager.get_icon_size ()", source)
+        self.assertIn("SizePolicy.get_default ().changed", source)
 
     def test_dock_fallbacks_equal_default_step_tokens(self):
         system = json.loads((HERE / "size-system.json").read_text())

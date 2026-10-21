@@ -7,6 +7,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import fnmatch
+import functools
 import hashlib
 import json
 import os
@@ -68,6 +69,8 @@ API_TTL_SECONDS = 90
 DEFAULT_SETTINGS = {
     "version": 1,
     "host": "github.com",
+    "account": "",
+    "showInPanel": True,
     "refreshInterval": 300,
     "repoLimit": 20,
     "menuSort": "activity",
@@ -131,11 +134,75 @@ def _hostname(settings: dict | None = None) -> str:
     return host
 
 
+def _account(settings: dict | None = None) -> str:
+    """The signed-in login RepoBar reads as; empty follows the GitHub CLI's active account on the host."""
+    account = str((settings or load_settings()).get("account", "")).strip()
+    if account and not re.fullmatch(r"[A-Za-z0-9_.-]+", account):
+        raise RuntimeError("GitHub account must be a login name")
+    return account
+
+
+def _stored_auth_env() -> dict:
+    """Account selection uses stored CLI credentials, never an inherited token override."""
+    return {key: value for key, value in os.environ.items()
+            if key not in {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"}}
+
+
+def _gh_accounts() -> list[dict]:
+    """Every account the GitHub CLI is signed in to, parsed from `gh auth status` (the CLI has no JSON for it)."""
+    try:
+        result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
+    except FileNotFoundError as exc:
+        raise RuntimeError("GitHub CLI (gh) is not installed") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("GitHub CLI did not respond before the timeout") from exc
+    accounts: list[dict] = []
+    for line in (result.stdout + result.stderr).splitlines():
+        match = re.search(r"Logged in to (\S+) account (\S+)", line)
+        if match and "Failed" not in line:
+            accounts.append({"host": match.group(1).lower(), "login": match.group(2), "active": False})
+        elif accounts and re.search(r"Active account:\s*true", line):
+            accounts[-1]["active"] = True
+    return accounts
+
+
+@functools.lru_cache(maxsize=1)
+def _identity() -> tuple[str, str]:
+    """Freeze one resolved identity for this short-lived helper, including its worker threads."""
+    settings = load_settings()
+    host, chosen = _hostname(settings), _account(settings)
+    for item in _gh_accounts():
+        if item["host"] == host and (item["login"].lower() == chosen.lower() if chosen else item["active"]):
+            return host, item["login"].lower()
+    raise RuntimeError(f"{chosen or 'The active account'} is not signed in to {host} — run `gh auth login --hostname {host}`")
+
+
+@functools.lru_cache(maxsize=8)
+def _token_env(host: str, account: str) -> tuple[tuple[str, str], ...]:
+    """Environment that makes one `gh` call run as `account`, without switching the CLI's global active account
+    (which would change what git and every other tool signs in as). The token is handed to the child process and
+    is never stored or printed."""
+    if not account:
+        return ()
+    result = subprocess.run(["gh", "auth", "token", "--hostname", host, "--user", account],
+                            capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
+    token = result.stdout.strip()
+    if result.returncode or not token:
+        raise RuntimeError(f"{account} is not signed in to {host} — run `gh auth login --hostname {host}`")
+    name = "GH_TOKEN" if host == "github.com" or host.endswith(".ghe.com") else "GH_ENTERPRISE_TOKEN"
+    return ((name, token),)
+
+
+def _gh_env() -> dict:
+    host, account = _identity()
+    return {**_stored_auth_env(), "GH_HOST": host, **dict(_token_env(host, account))}
+
+
 def _run_gh(arguments: list[str], *, timeout: int = 45) -> subprocess.CompletedProcess:
-    host = _hostname()
+    host, _ = _identity()
     command = ["gh", "api", "--hostname", host, *arguments]
     try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False, env=_gh_env())
     except FileNotFoundError as exc:
         raise RuntimeError("GitHub CLI (gh) is not installed") from exc
     except subprocess.TimeoutExpired as exc:
@@ -149,7 +216,8 @@ def _run_gh(arguments: list[str], *, timeout: int = 45) -> subprocess.CompletedP
 
 
 def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object, int]:
-    key = hashlib.sha256(("\0".join([_hostname(), endpoint, *fields])).encode()).hexdigest()
+    host, account = _identity()
+    key = hashlib.sha256(("\0".join(["identity-v2", host, account, endpoint, *fields])).encode()).hexdigest()
     cache_file = CACHE_DIR / "api" / f"{key}.json"
     if not force:
         try:
@@ -285,7 +353,10 @@ def fetch_snapshot() -> dict:
         "since24h": datetime.fromtimestamp(now - 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
         "since30d": datetime.fromtimestamp(now - 30 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
     }
+    host, account = _identity()
     login, ids = _repository_ids()
+    if login.lower() != account:
+        raise RuntimeError("GitHub returned a different account; refusing to cache its data")
     batches = [ids[start:start + DETAIL_BATCH] for start in range(0, len(ids), DETAIL_BATCH)]
     # Detail batches and the independent extras run side by side; each is one `gh` process.
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -382,7 +453,7 @@ def fetch_snapshot() -> dict:
         actions = _workflow_runs(normalized, now)
     except RuntimeError:
         actions = None
-    return {"schemaVersion": 1, "account": login, "actions": actions, "host": _hostname(), "fetchedAt": now,
+    return {"schemaVersion": 1, "account": login, "actions": actions, "host": host, "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
             "settings": settings, "stale": False, "forYou": for_you,
             "contributions": contributions, "repos": normalized}
@@ -485,9 +556,12 @@ def read_cache() -> dict | None:
             payload = json.load(stream)
         if payload.get("schemaVersion") != 1 or not isinstance(payload.get("repos"), list):
             return None
+        host, account = _identity()
+        if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
+            return None
         payload["stale"] = True
         return apply_settings(payload)
-    except (OSError, json.JSONDecodeError, TypeError):
+    except (OSError, json.JSONDecodeError, TypeError, RuntimeError):
         return None
 
 
@@ -641,7 +715,7 @@ def clone_local_repo(name: str, settings: dict) -> dict:
         raise RuntimeError(f"{destination} already exists")
     try:
         result = subprocess.run(["gh", "repo", "clone", name, str(destination)], capture_output=True, text=True,
-                                timeout=600, check=False, env={**os.environ, "GH_HOST": _hostname()})
+                                timeout=600, check=False, env=_gh_env())
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("Clone did not finish within 10 minutes") from exc
     if result.returncode:
@@ -789,6 +863,15 @@ def _settings_set(key: str, value: str) -> dict:
     if normalized == "host":
         settings["host"] = value.strip().removeprefix("https://").removeprefix("http://").strip("/")
         _hostname(settings)
+    elif normalized == "account":
+        login, _, host = value.strip().partition("@")
+        if host:
+            settings["host"] = host.strip().lower()
+        settings["account"] = login
+        _hostname(settings)
+        _account(settings)
+        if login and not any(a["login"].lower() == login.lower() and a["host"] == _hostname(settings) for a in _gh_accounts()):
+            raise RuntimeError(f"{login} is not signed in to {_hostname(settings)} — run `gh auth login --hostname {_hostname(settings)}`")
     elif normalized == "refresh-interval":
         value = value.lower().removesuffix("m")
         seconds = int(value) * (60 if value.isdigit() and len(value) <= 2 else 1)
@@ -804,11 +887,12 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived", "notify-ci", "notify-workflows", "show-contributions"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci", "notify-workflows", "show-contributions", "show-in-panel"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
         member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
-                  "notify-workflows": "notifyWorkflows", "show-contributions": "showContributions"}[normalized]
+                  "notify-workflows": "notifyWorkflows", "show-contributions": "showContributions",
+                  "show-in-panel": "showInPanel"}[normalized]
         settings[member] = value.lower() == "true"
     elif normalized == "merge-window":
         minutes = int(value.lower().removesuffix("m"))
@@ -842,18 +926,24 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "local-root": "localRoot", "local-depth": "localDepth",
                                                         "notify-ci": "notifyCi", "notify-workflows": "notifyWorkflows",
                                                         "show-contributions": "showContributions",
+                                                        "show-in-panel": "showInPanel",
                                                         "contribution-style": "contributionStyle",
                                                         "merge-window": "mergeWindowMinutes"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:
-    host = _hostname()
-    result = subprocess.run(["gh", "auth", "status", "--hostname", host],
-                            capture_output=True, text=True, timeout=10, check=False)
-    output = result.stdout + result.stderr
-    match = re.search(r"Logged in to [^\s]+ account ([^\s(]+)", output)
-    return {"host": host, "authenticated": result.returncode == 0,
-            "account": match.group(1) if match else "", "message": "" if result.returncode == 0 else "Run `gh auth login --hostname " + host + "`."}
+    settings = load_settings()
+    host = _hostname(settings)
+    chosen = _account(settings)
+    accounts = _gh_accounts()
+    here = [a for a in accounts if a["host"] == host]
+    current = next((a for a in here if a["login"].lower() == chosen.lower()), None) if chosen else \
+        next((a for a in here if a["active"]), here[0] if here else None)
+    message = ""
+    if not current:
+        message = (f"{chosen} is not signed in to {host}. " if chosen else "") + "Run `gh auth login --hostname " + host + "`."
+    return {"host": host, "authenticated": current is not None, "account": current["login"] if current else chosen,
+            "followsCli": not chosen, "accounts": accounts, "message": message}
 
 
 def _cache_status() -> dict:
@@ -912,7 +1002,8 @@ def main() -> int:
     settings_cmd.add_argument("key", nargs="?")
     settings_cmd.add_argument("value", nargs="?")
     auth_cmd = commands.add_parser("auth", help="inspect or set up GitHub CLI authentication")
-    auth_cmd.add_argument("action", choices=["status", "login"], default="status", nargs="?")
+    auth_cmd.add_argument("action", choices=["status", "login", "accounts", "use"], default="status", nargs="?")
+    auth_cmd.add_argument("account", nargs="?", help="with `use`: LOGIN or LOGIN@HOST; empty follows the GitHub CLI's active account")
     local_cmd = commands.add_parser("local", help="scan local checkouts or explicitly fast-forward one")
     local_cmd.add_argument("action", choices=["scan", "sync", "clone"], default="scan", nargs="?")
     local_cmd.add_argument("path", nargs="?")
@@ -956,6 +1047,13 @@ def main() -> int:
         elif args.command == "auth":
             if args.action == "login":
                 subprocess.run(["gh", "auth", "login", "--hostname", _hostname()], check=True)
+            elif args.action == "accounts":
+                _emit({"accounts": _gh_accounts(), "host": _hostname(), "account": _account()})
+                return 0
+            elif args.action == "use":
+                if args.account is None:
+                    raise RuntimeError("Use `auth use LOGIN[@HOST]` (or an empty name to follow the GitHub CLI)")
+                _settings_set("account", args.account)
             _emit(_auth_status())
         elif args.command == "local":
             settings = load_settings()

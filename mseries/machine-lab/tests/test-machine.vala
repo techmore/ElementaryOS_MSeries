@@ -113,6 +113,22 @@ void test_mask_is_page_level () {
     assert_cmpstr (m.credentials (), CompareOperator.EQ, "Username: a  ·  Password: b");
 }
 
+void stop_fake_qmp (Subprocess peer) {
+    // force_exit alone can race the test process exiting: the worker may not
+    // deliver the signal before main returns. Reap our peer and retain errors
+    // on private pipes instead of letting it hold Meson's output pipes open.
+    peer.force_exit ();
+    try {
+        string output, diagnostic;
+        peer.communicate_utf8 (null, null, out output, out diagnostic);
+        if (output != "") Test.message ("Fake QMP output: %s", output);
+        if (diagnostic != "") Test.message ("Fake QMP diagnostic: %s", diagnostic);
+        assert_true (peer.get_if_signaled ());
+    } catch (Error e) {
+        error ("reap fake QMP: %s", e.message);
+    }
+}
+
 void test_qmp_transport () {
     var m = new Machine ();
     m.id = "machine-qmp";
@@ -124,8 +140,8 @@ void test_qmp_transport () {
     string[] b = { "python3", "-I", Environment.get_variable ("FAKE_QMP"), Path.build_filename (dir, "qmp-view.sock"), counter_view };
     Subprocess ctl, view;
     try {
-        ctl = new Subprocess.newv (a, SubprocessFlags.NONE);
-        view = new Subprocess.newv (b, SubprocessFlags.NONE);
+        ctl = new Subprocess.newv (a, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+        view = new Subprocess.newv (b, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
     } catch (Error e) {
         error ("%s", e.message);
     }
@@ -151,8 +167,8 @@ void test_qmp_transport () {
     try { FileUtils.get_contents (counter_view, out c); } catch (Error e) { c = ""; }
     assert_cmpstr (c, CompareOperator.EQ, "1");
 
-    ctl.force_exit ();
-    view.force_exit ();
+    stop_fake_qmp (ctl);
+    stop_fake_qmp (view);
 }
 
 const string INCUS_FIXTURE = """[{"architecture":"aarch64","config":{"image.description":"Alpine edge arm64","limits.cpu":"2","limits.memory":"1GiB"},"created_at":"2026-10-15T18:15:56Z","name":"orchard-test","status":"Running","type":"container","state":{"pid":4242,"memory":{"usage":6864896,"total":32401488000},"disk":{"root":{"usage":3145728}},"network":{"eth0":{"addresses":[{"family":"inet","address":"10.169.229.233","netmask":"24","scope":"global"},{"family":"inet6","address":"fd42::1","netmask":"64","scope":"global"}]},"lo":{"addresses":[{"family":"inet","address":"127.0.0.1","netmask":"8","scope":"local"}]}}},"snapshots":[{"name":"s1"},{"name":"s2"}]},{"architecture":"aarch64","config":{"image.description":"Ubuntu noble arm64"},"created_at":"2026-10-16T01:00:00Z","name":"vm-one","status":"Stopped","type":"virtual-machine","state":null,"snapshots":null}]""";

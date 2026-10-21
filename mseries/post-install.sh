@@ -22,6 +22,11 @@ repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 here=$repo/mseries
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/mseries-post-install
 LOG=$STATE/last-run.log
+TIMING=$STATE/timing.jsonl
+SUMMARY_JSON=$STATE/timing-summary.json
+# Per-stage wall and CPU time (#47). Optional: without the library nothing is timed.
+# shellcheck source=mseries/lib-timing.sh
+source "$here/lib-timing.sh" 2>/dev/null || { timing_begin() { :; }; timing_end() { :; }; timing_summary() { :; }; }
 
 # name|kind|default|script|what
 STAGES=(
@@ -133,6 +138,7 @@ fi
 
 mkdir -p "$STATE"
 : >"$LOG"
+: >"$TIMING"
 MSERIES_APT_BATCH_DIR=$(mktemp -d) || exit 1
 export MSERIES_APT_BATCH_DIR
 trap 'rm -rf -- "$MSERIES_APT_BATCH_DIR"' EXIT
@@ -140,17 +146,20 @@ ok=() failed=()
 for s in "${selected[@]}"; do
   n=$(field "$s" 0)
   stage_started=$SECONDS
+  stage_status=failed stage_rc=1
+  timing_begin
   echo "==> $n: $(field "$s" 4)"
   # pipefail makes the pipeline status the installer's own, not tee's
   script=$here/$(field "$s" 3)
   if [[ $script == *.py ]]; then
-    if ( cd "$repo" && python3 "$script" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); else failed+=("$n"); fi
+    if ( cd "$repo" && python3 "$script" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); stage_status=ok stage_rc=0; else failed+=("$n"); fi
   elif ( cd "$repo" && bash "$script" ) 2>&1 | tee -a "$LOG"; then
-    ok+=("$n")
+    ok+=("$n"); stage_status=ok stage_rc=0
   else
     failed+=("$n")
   fi
   echo "$n: elapsed $((SECONDS - stage_started))s" | tee -a "$LOG"
+  timing_end "$TIMING" "$n" "$stage_status" "$stage_rc"
 done
 
 {
@@ -158,6 +167,7 @@ done
   echo "ok:     ${ok[*]:-none}"
   echo "failed: ${failed[*]:-none}"
 } | tee "$STATE/summary"
+timing_summary "$TIMING" serial "$SUMMARY_JSON" | tee -a "$LOG"
 echo "log: $LOG"
 echo "Log out and back in to load Gala/Wingpanel changes."
 (( ${#failed[@]} == 0 ))

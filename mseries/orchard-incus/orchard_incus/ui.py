@@ -41,17 +41,17 @@ entry.error { border-color: @error_color; box-shadow: 0 0 0 1px @error_color; }
 .dot { min-width: 10px; min-height: 10px; border-radius: 5px; background: alpha(@theme_fg_color,.35); }
 .dot.running { background: @success_color; box-shadow: 0 0 6px alpha(@success_color,.8); }
 .dot.frozen { background: @accent_color; }
-.title-big { font-size: 26pt; font-weight: 800; }
+.title-big { font-size: 2.889em; font-weight: 800; }
 .oi-badge { padding: 2px 10px; border-radius: 99px; font-weight: 700; font-size: 85%;
             background: alpha(@theme_fg_color,.12); }
 .oi-badge.running { background: alpha(@success_color,.30); }
 .oi-badge.vm, .oi-badge.frozen { background: alpha(@accent_color,.30); }
 .oi-card { background: alpha(@theme_fg_color,.06); border-radius: 14px; padding: 14px 16px; }
-.stat-val { font-size: 18pt; font-weight: 700; }
+.stat-val { font-size: 2.0em; font-weight: 700; }
 .pill { border-radius: 99px; padding: 6px 16px; }
-.empty-title { font-size: 20pt; font-weight: 700; }
+.empty-title { font-size: 2.222em; font-weight: 700; }
 .status-bar { padding: 6px 14px; }
-.section-title { font-weight: 800; font-size: 12pt; margin-top: 4px; }
+.section-title { font-weight: 800; font-size: 1.333em; margin-top: 4px; }
 .drop-hover { box-shadow: inset 0 0 0 2px @theme_selected_bg_color; border-radius: 12px; }
 .destructive-item { color: @error_color; }
 .destructive-item:hover { background: alpha(@error_color,.15); }

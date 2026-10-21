@@ -1,0 +1,14 @@
+[Unit]
+Description=Confirm an M-series update once the desktop session is healthy
+Documentation=https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/UPDATER-DESIGN.md
+ConditionPathExists=/var/lib/mseries-update/pending-confirm
+After=mseries-update-boot.service display-manager.service
+
+[Service]
+Type=simple
+# Waits up to confirm_timeout_seconds for the panel to be running, then marks the set known-good.
+# Without a healthy login the next restarts count toward the automatic rollback.
+ExecStart=/usr/sbin/mseries-update confirm
+
+[Install]
+WantedBy=graphical.target

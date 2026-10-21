@@ -17,6 +17,11 @@ sys.path.insert(0, str(HERE.parent))
 import qualification as q
 
 
+def display_modes_available(display):
+    """Allow partial display evidence while preserving legacy full-context results."""
+    return bool(display.get('modes_available', display.get('available', False)))
+
+
 def cpu():
     return [int(x) for x in Path('/proc/stat').read_text().splitlines()[0].split()[1:9]]
 
@@ -71,10 +76,16 @@ def capture(config_path):
             while float(Path('/proc/uptime').read_text().split()[0]) < config.get('minimum_uptime_s', 300):
                 time.sleep(5)
             deadline = time.monotonic() + 120
-            while not q.read_active().get('available'):
+            display = q.read_active()
+            # A missing optional PowerSaveMode property must not discard valid
+            # active mode/layout evidence. The collector still records that
+            # the complete display context is unavailable, so controls cannot
+            # be claimed unchanged for qualification.
+            while not display_modes_available(display):
                 if time.monotonic() >= deadline:
                     raise ValueError('active display/refresh context unavailable after login')
                 time.sleep(5)
+                display = q.read_active()
             journal = output / 'kernel-journal.jsonl'
             with journal.open('w') as stream:
                 subprocess.run(['journalctl', '-b', '-k', '-o', 'json', '--no-pager'], stdout=stream, check=True)

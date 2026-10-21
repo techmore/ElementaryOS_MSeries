@@ -6,14 +6,14 @@ After a screenshot, a thumbnail appears bottom-right at a fixed size (280x180 ca
 
 | You do | What happens |
 | --- | --- |
-| Drag it into an app | The screenshot is **used, not kept**: its saved file moves to the **Trash** 2 minutes after an accepted drop (recoverable, never hard-deleted). Works with Flatpak apps such as Signal (see below). |
+| Drag it into an app | Offers a copy. The saved screenshot is **always kept**. Check that the target shows an attachment; drag completion cannot confirm that. |
 | Press **Copy** | The full image goes on the clipboard; paste it anywhere (Ctrl+V). The file is kept. |
-| Hold **Alt** while dragging | The screenshot is used **and a copy is kept**; the thumbnail text changes to "Saving a copy (Alt)". |
+| Retry a drop | The card stays available until its normal timeout. Use **Copy** or **Show** if the target cannot read the offered file. Alt is no longer needed to keep the original. |
 | Click it, or press **Markup** | Opens Swappy (the card stays) (arrows, shapes, text, highlight, blur, crop). The result is saved next to the original as `<name> (markup).png`. |
 | Click the x | The thumbnail goes away and the screenshot stays in `~/Downloads/Screenshots`. |
 | Ignore it | It goes away after 4 seconds. |
 
-A screenshot is only ever moved to the Trash by a drag without Alt, and only after the drop was accepted. A cancelled drag keeps it.
+**Retention policy:** the shelf never deletes or trashes saved screenshots. Remove them explicitly in Files when you no longer need them. Accepted, refused, cancelled and unreadable-target drops all keep the original. A completed drag is not evidence that Signal attached the image.
 
 `mseries-markup FILE` also works from the file manager (Open With, Markup): images open in Swappy, PDFs in Papers (which has its own annotations).
 
@@ -27,7 +27,7 @@ Watcher picks up a new screenshot and shows the thumbnail; an ignored thumbnail 
 
 ## Not yet checked
 
-Dragging into real apps, Alt detection during a drag, and the thumbnail's exact position on screen. If Alt is not detected, use Markup to keep a copy, or just ignore the thumbnail.
+Dragging into an actual Signal compose area on each supported display/session combination and the thumbnail's exact position on screen. The source tests below do not establish real Signal attachment acceptance.
 
 ## Recovery and deployment check (2026-10-18)
 
@@ -48,7 +48,7 @@ Screenshot PNG produced `showing` then `shelf done: expired` four seconds later.
 entries validate. The shutter sound asset exists and event sounds are enabled; audible capture,
 Space highlight and drag-out still need a live check after the new Gala loads.
 
-## Flatpak drop targets (Signal) — fixed 2026-10-18
+## Flatpak drop targets (Signal) — historical portal fix 2026-10-18
 
 Dragging the card into Signal did nothing, and the screenshot was then deleted. Cause: Signal is a Flatpak
 (`org.signal.Signal`) with **no filesystem permission**, so the dropped `file:///run/user/1000/mseries-shelf/...`
@@ -72,3 +72,31 @@ Checked headlessly (Xvfb, 2026-10-18): export readable from inside the running S
 unreadable after cleanup; drag content serializes to `text/uri-list`, `text/plain`, `application/vnd.portal.files`
 and `application/vnd.portal.filetransfer`; Copy puts a texture on the clipboard; original lands in the Trash;
 card renders with the Copy button. **Not yet checked:** a real hand drag into Signal on the desktop.
+
+## Screenshot retention correction (#227) — 2026-10-21
+
+Supersedes the historical automatic Trash policy above. Originals now always stay in
+`~/Downloads/Screenshots`, regardless of drag outcome. A finished drag says
+“Saved · Check attachment”; it does not claim the target consumed the image. The
+card remains available for retry, Copy and Show. Replacing a card during a drag
+waits for drag completion before closing that card. Every card owns a distinct
+staging directory, including when names repeat.
+
+A staged drag copy and its read-only portal export remain available for two minutes
+**after the card closes**, then only that transient copy/export is cleaned up. This
+is a bounded transfer grace period, not an attachment acknowledgement: a target
+that defers reading beyond it must attach the retained original through Show or
+paste the copied image. No timer is attached to the original. Exports are transient;
+process/session exit may revoke access earlier, while the saved screenshot survives.
+
+`bash mseries/screenshot-shelf/test-retention.sh` runs seven GTK regressions on a
+private Xvfb display and a D-Bus daemon with no service activation directories.
+It uses synthetic PNGs, fake portal exports, a private clipboard and isolated
+home/runtime/config/cache/data. It covers retry, accepted/refused retention,
+clipboard fallback, replacement during a drag, same-name staging, portal failure
+and delayed cleanup. No Signal account or real message is used.
+
+Remaining #227 acceptance: actual Signal attachment preview/content (without
+sending), multiple screenshots, copy/paste, and XWayland-to-Wayland behavior on the
+owner's session. The existing official-client accent overlay remains an intermediate
+solution; this change does not implement a fully native Signal UI.

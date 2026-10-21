@@ -60,19 +60,32 @@ implementation; no macOS source or binary is copied into this project.
   branches, tags, and commit activity. Additional commands report API quotas,
   authentication, cache status, and preferences.
 - Uses GitHub CLI authentication and GraphQL/REST requests; the helper never
-  reads, stores, or prints the token. Cache and settings use private
+  stores or prints the token. By default it follows the CLI's active account
+  and reads no token at all. Several accounts and hosts can be signed in:
+  RepoBar Settings → Account → Read as (or `mseries-repobar auth accounts`,
+  `auth use LOGIN[@HOST]`) picks the one RepoBar reads as, without running
+  `gh auth switch`, so git and other tools keep their own active account. For a
+  chosen account the helper asks `gh auth token --user` and hands the result
+  only to that request's `gh` child process environment. Snapshots and API
+  responses are cached per host and account. Cache and settings use private
   permissions (`0700` directories, `0600` files) because they can contain
   private repository names.
 - Optional local scanning skips hidden folders and symlinks and is bounded by
   depth and directory count. `local sync` is explicit: it refuses dirty or
   detached checkouts and only fast-forwards a clean branch after fetching.
+- RepoBar has no separate login item: the module loads with Wingpanel (and the
+  Windows-style taskbar). RepoBar Settings → Panel → Show RepoBar in the panel
+  (`settings set show-in-panel true|false`) is the launch-at-login preference: off
+  hides the module and stops all GitHub requests, timers and notifications, live
+  and at every later login; on brings it back. The installer adds a RepoBar
+  Settings launcher (`io.github.techmore.RepoBar.Settings.desktop`) so the pane stays
+  reachable while the module is hidden.
 - Refresh interval, repository limit, menu sort, host, fork/archive visibility,
   and local scan root/depth are configurable with the CLI.
 
 This port implements the repository dashboard and CLI surfaces, not every
 macOS-only interaction.
-Multi-account UI and a launch-at-login preference pane are not yet represented
-in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
+The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux
 integration.
 

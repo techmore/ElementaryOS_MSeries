@@ -1,17 +1,17 @@
 diff --git a/data/Application.css b/data/Application.css
-index dc88879..ef1b4e3 100644
+index 9d13ef2..5db32a4 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -472,6 +472,7 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
- .taskbar-repobar-button .seg-value { font-size: 18pt; }
- .taskbar-repobar-button .seg-alert { font-size: 18pt; }
- .taskbar-repobar-popup { font-size: 1.5625em; }
+@@ -471,6 +471,7 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
+ .taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
+ /* The readout size follows the dock's icon size (TaskbarRepoBar.vala), so it changes with the mode and text step. */
+ .taskbar-repobar-popup { font-size: 1.4em; }
 +.taskbar-remote-button { padding: 4px; min-width: 28px; min-height: 28px; border-radius: 6px; }
  .taskbar-codexbar-separator { opacity: 0.35; }
  
  /* Windows 11 Start appearance, owner requested 2026-10-20.
 diff --git a/src/Taskbar.vala b/src/Taskbar.vala
-index ced842f..44fe951 100644
+index b0f8e01..208cc7a 100644
 --- a/src/Taskbar.vala
 +++ b/src/Taskbar.vala
 @@ -192,6 +192,8 @@ public class Dock.TaskbarRow : Gtk.Widget {

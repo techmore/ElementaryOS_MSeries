@@ -1,5 +1,6 @@
-/* The machine's screen inside Machine Lab: frames from QEMU (screendump),
- * mouse and keyboard sent back over QMP. */
+/* The machine's screen inside Machine Lab: frames streamed from QEMU's D-Bus display when the machine has it
+ * (DisplayBridge: only the changed rectangles, the guest cursor, resize to this window), else polled with
+ * QMP screendump. Mouse and keyboard go back over QMP. */
 using Gtk;
 
 public class Viewer : Gtk.Box {
@@ -25,6 +26,18 @@ public class Viewer : Gtk.Box {
     private double last_x = -1;
     private double last_y = -1;
     private int64 last_move = 0;
+
+    // D-Bus display stream (see display.vala); polling stays as the fallback.
+    private DisplayBridge? stream = null;
+    private bool stream_starting = false;
+    private bool stream_live = false;       // a streamed frame has arrived, so polling is paused
+    private uint stream_retry = 0;
+    private int stream_tries = 0;
+    private uint paint_source = 0;
+    private int64 last_paint = 0;
+    private uint resize_timer = 0;
+    private ResizePlanner planner = new ResizePlanner ();
+    private Gtk.ToggleButton fit_button;
 
     // evdev scancode (GDK keycode - 8) -> QEMU qcode
     private static HashTable<int, string>? keymap = null;
@@ -106,6 +119,19 @@ public class Viewer : Gtk.Box {
         size_label = new Gtk.Label ("");
         size_label.add_css_class ("ml-fineprint");
         bar.append (size_label);
+        fit_button = new Gtk.ToggleButton ();
+        fit_button.icon_name = "zoom-fit-best-symbolic";
+        fit_button.tooltip_text = "Match the machine's screen size to this window";
+        fit_button.active = DisplaySettings.get_default ().resize_guest;
+        fit_button.toggled.connect (() => {
+            var ds = DisplaySettings.get_default ();
+            if (ds.resize_guest != fit_button.active) {
+                ds.resize_guest = fit_button.active;
+                ds.save ();
+                toast (fit_button.active ? "The machine's screen will follow this window's size" : "The machine keeps its current screen size");
+            }
+        });
+        bar.append (fit_button);
         var fs = new Gtk.Button.from_icon_name ("view-fullscreen-symbolic");
         fs.tooltip_text = "Full screen (F11)";
         fs.clicked.connect (() => go_fullscreen (!fullscreen));
@@ -170,6 +196,15 @@ public class Viewer : Gtk.Box {
         if (timer != 0) {
             Source.remove (timer);
         }
+        if (paint_source != 0) {
+            Source.remove (paint_source);
+        }
+        if (resize_timer != 0) {
+            Source.remove (resize_timer);
+        }
+        if (stream_retry != 0) {
+            Source.remove (stream_retry);
+        }
     }
 
     public void go_fullscreen (bool on) {
@@ -204,22 +239,43 @@ public class Viewer : Gtk.Box {
         });
     }
 
-    /* Only fetch frames while this tab is on screen: ~30 fps while the screen
-     * changes, ~7 fps once it has been still for a moment. */
+    /* Only fetch frames while this tab is on screen. With the D-Bus display QEMU pushes the changed rectangles;
+     * otherwise poll: ~30 fps while the screen changes, ~7 fps once it has been still for a moment. */
     public void set_active (bool on) {
         active = on;
-        if (on && timer == 0) {
-            schedule (0);
-        } else if (!on && timer != 0) {
-            Source.remove (timer);
-            timer = 0;
+        if (on) {
+            if (timer == 0 && !stream_live) {
+                schedule (0);
+            }
+            stream_tries = 0;
+            start_stream ();
+            if (resize_timer == 0) {
+                resize_timer = Timeout.add (150, () => {
+                    check_resize ();
+                    return Source.CONTINUE;
+                });
+            }
+        } else {
+            if (timer != 0) {
+                Source.remove (timer);
+                timer = 0;
+            }
+            if (resize_timer != 0) {
+                Source.remove (resize_timer);
+                resize_timer = 0;
+            }
+            if (stream_retry != 0) {
+                Source.remove (stream_retry);
+                stream_retry = 0;
+            }
+            stop_stream ();
         }
     }
 
     private void schedule (uint ms) {
         timer = Timeout.add (ms, () => {
             timer = 0;
-            if (!active) {
+            if (!active || stream_live) {
                 return Source.REMOVE;
             }
             if (machine.running) {
@@ -230,11 +286,166 @@ public class Viewer : Gtk.Box {
         });
     }
 
+    // ---- D-Bus display stream ----
+
+    private void start_stream () {
+        if (stream != null || stream_starting || !active || !machine.running) {
+            return;
+        }
+        stream_starting = true;
+        machine.qemu_connection.begin ((o, r) => {
+            var conn = machine.qemu_connection.end (r);
+            if (conn == null || !active || !machine.running) {
+                stream_starting = false;
+                retry_stream ();
+                return;
+            }
+            var b = new DisplayBridge ();
+            b.frame_changed.connect (on_stream_frame);
+            b.cursor_changed.connect (on_guest_cursor);
+            b.ended.connect (() => {
+                if (stream == b) {
+                    stop_stream ();
+                    if (active) {
+                        retry_stream ();
+                    }
+                }
+            });
+            b.attach.begin (conn, (o2, r2) => {
+                stream_starting = false;
+                if (!b.attach.end (r2)) {
+                    debug ("display stream unavailable: %s", b.failure);
+                    retry_stream ();
+                } else if (!active || !machine.running) {
+                    b.stop ();
+                } else {
+                    stream = b;
+                    planner.guest_size (0, 0);
+                }
+            });
+        });
+    }
+
+    /* The machine may still be starting (QEMU not listening yet): try a few times, then stay on polling. */
+    private void retry_stream () {
+        if (stream_retry != 0 || !active || !machine.running || stream_tries >= 10) {
+            return;
+        }
+        stream_tries++;
+        stream_retry = Timeout.add_seconds (2, () => {
+            stream_retry = 0;
+            start_stream ();
+            return Source.REMOVE;
+        });
+    }
+
+    private void stop_stream () {
+        if (stream != null) {
+            stream.stop ();
+            stream = null;
+        }
+        stream_live = false;
+        picture.cursor = null;
+        if (paint_source != 0) {
+            Source.remove (paint_source);
+            paint_source = 0;
+        }
+        if (active && machine.running && timer == 0) {
+            schedule (0);   // back to polling
+        }
+    }
+
+    private void on_stream_frame () {
+        if (stream == null) {
+            return;
+        }
+        stream_live = true;   // the polling chain ends at its next tick
+        if (paint_source != 0) {
+            return;
+        }
+        // Several updates can arrive per displayed frame: paint at most about 60 times a second.
+        int64 since = (get_monotonic_time () - last_paint) / 1000;
+        uint delay = since >= 16 ? 0 : (uint) (16 - since);
+        paint_source = Timeout.add (delay, () => {
+            paint_source = 0;
+            paint_stream ();
+            return Source.REMOVE;
+        });
+    }
+
+    private void paint_stream () {
+        if (stream == null || stream.screen.width <= 0 || stream.screen.height <= 0) {
+            return;
+        }
+        last_paint = get_monotonic_time ();
+        var screen = stream.screen;
+        int w = screen.width;
+        int h = screen.height;
+        var bytes = new Bytes.take (screen.snapshot ());
+        picture.paintable = new Gdk.MemoryTexture (w, h, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED, bytes, w * 4);
+        if (w != tex_w || h != tex_h) {
+            size_label.label = "%d × %d".printf (w, h);
+        }
+        tex_w = w;
+        tex_h = h;
+        planner.guest_size (w, h);
+        stack.visible_child_name = "screen";
+    }
+
+    /* The guest draws its own pointer (a hardware cursor never appears in the picture): show its shape as the
+     * pointer over the screen, which also hides the latency of waiting for the guest to draw it. */
+    private void on_guest_cursor (CursorShape shape) {
+        if (shape.is_blank ()) {
+            picture.cursor = new Gdk.Cursor.from_name ("none", null);
+            return;
+        }
+        var tex = new Gdk.MemoryTexture (shape.width, shape.height, Gdk.MemoryFormat.B8G8R8A8,
+            new Bytes (shape.data), shape.width * 4);
+        picture.cursor = new Gdk.Cursor.from_texture (tex, shape.hot_x, shape.hot_y, null);
+    }
+
+    /* Keep the guest's screen the size of this window, once the window stops changing. */
+    private void check_resize () {
+        bool want = DisplaySettings.get_default ().resize_guest;
+        if (fit_button.active != want) {
+            fit_button.active = want;
+        }
+        if (stream == null || !stream.active) {
+            return;
+        }
+        if (!stream.resize_supported) {
+            fit_button.sensitive = false;
+            fit_button.tooltip_text = "This machine's display cannot change size (it has no resizable virtual monitor)";
+            return;
+        }
+        fit_button.sensitive = true;
+        if (!want) {
+            return;
+        }
+        int w = picture.get_width ();
+        int h = picture.get_height ();
+        if (w < 64 || h < 64) {
+            return;   // not laid out yet
+        }
+        int64 now = get_monotonic_time ();
+        planner.request (w, h, now);
+        int tw, th;
+        if (planner.due (now, out tw, out th)) {
+            planner.sent (tw, th, now);
+            stream.resize.begin (tw, th);
+        }
+    }
+
     private void sync_state () {
         stack.visible_child_name = machine.running ? "screen" : "off";
         if (!machine.running) {
             captured = false;
             update_hint ();
+            stop_stream ();
+            planner.reset ();
+        } else if (active) {
+            stream_tries = 0;
+            start_stream ();
         }
     }
 
