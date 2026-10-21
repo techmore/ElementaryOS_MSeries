@@ -1,3 +1,21 @@
+## Pantheon shell upstream pass and Quick Settings preparation — 2026-10-21
+
+Reviewed eleven customized shell components against current upstream default
+branches; exact pins, heads, changes and dispositions are retained in
+`mseries/upstream-audits/pantheon-shell-2026-10-21.{md,json}`. No wholesale
+Gala/Wingpanel/Dock update: these overlap our session/focus/taskbar changes.
+Quick Settings/network/keyboard/applications-menu are upstream-current; power,
+Bluetooth and sound only have Swedish translation deltas. Files has an upstream
+theme-initialization change overlapping our startup workaround; qualify before
+replacement.
+
+Quick Settings desktop preparation now calls the same core helper as the factory
+and package builds, retaining desktop Share Eyes/AirDrop extras. Original versus
+shared prepared source trees are byte-identical; core and extras native builds,
+three routing regressions, private fake-BlueZ probe, syntax and warning-level
+ShellCheck pass. No pin bump, live installation or service restart. Next: review
+Dock Launcher binding lifecycle with complete custom-source preservation.
+
 ## Touch ID page in System Settings — 2026-10-21
 
 New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita

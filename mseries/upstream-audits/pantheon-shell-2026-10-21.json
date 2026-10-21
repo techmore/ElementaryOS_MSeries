@@ -1,0 +1,658 @@
+{
+  "bluetooth": {
+    "repo": "elementary/panel-bluetooth",
+    "pin": "f67e65d09a8ab046f54895a326273dce5c491430",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 1,
+    "head": "6c7858a340a568f3702f96e861e0667bd32cdc48",
+    "compare_url": "https://github.com/elementary/panel-bluetooth/compare/f67e65d09a8ab046f54895a326273dce5c491430...main",
+    "commits": [
+      {
+        "sha": "6c7858a340a568f3702f96e861e0667bd32cdc48",
+        "date": "2026-10-19T08:17:20Z",
+        "subject": "Translated using Weblate (Swedish)"
+      }
+    ],
+    "files": [
+      "po/sv.po"
+    ]
+  },
+  "gala": {
+    "repo": "elementary/gala",
+    "pin": "f0791434ac40a50f2aec64700a47b3bb04145752",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 26,
+    "head": "79fb49f5d34d15c91259d50e0010ff35e3c7ee50",
+    "compare_url": "https://github.com/elementary/gala/compare/f0791434ac40a50f2aec64700a47b3bb04145752...main",
+    "commits": [
+      {
+        "sha": "10e1a770ba544002635c8f8344cd18c6bf014d53",
+        "date": "2026-10-13T09:03:47Z",
+        "subject": "Translated using Weblate (Catalan)"
+      },
+      {
+        "sha": "81feda64116b88930bed4d118b66c9012aa1f21c",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Update README"
+      },
+      {
+        "sha": "f41ff464b1d8a255d59c4cc48ea39979f3319b70",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Main: Guard against launching as X WM"
+      },
+      {
+        "sha": "a39b33c1df514ca4cc0be09817dda557b175f4e6",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Main: Always init pantheon shell"
+      },
+      {
+        "sha": "5e46b217ca369639200c612d5463e2c07cb48458",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "ManagedClient: Drop X11 support"
+      },
+      {
+        "sha": "f75d33908449f20597fa4f925d02bc367b35ca2e",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "DaemonManager: Drop gtk3 daemon args"
+      },
+      {
+        "sha": "66fcb0eee76fa76b33fdcadd61aa1701a769feb8",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "ShellClientsManager: Drop parse mutter hints"
+      },
+      {
+        "sha": "e42093d5969f0174fc04198949a213532d93de44",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "WindowManager: Drop input area management"
+      },
+      {
+        "sha": "1f41fe0468ff4648e8889047e7f6bb4a9e01257d",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "HotCornerManager: Drop unused on_configured signal and cleanup"
+      },
+      {
+        "sha": "7dee98f10ecb092171e2bffada3f984e53927e89",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "PluginManager: Drop input region handling"
+      },
+      {
+        "sha": "26415d997d5b3fa8f68ba8869780b1573a2a2fb5",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "ShellWindow: Drop special handling for X11 clients regarding input regions"
+      },
+      {
+        "sha": "369096f366027c1a5aa52436cc4f0964e90c735e",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "WindowManager: Drop X11 workaround for DND windows"
+      },
+      {
+        "sha": "5693a45b47a4696780378d503a49c158f9506e13",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "WindowManager: Always start x11 services"
+      },
+      {
+        "sha": "759f12f2d41ced5fdc7ae91ab59a6231e9004029",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "ToucheggBackend: Drop wayland compositor check"
+      },
+      {
+        "sha": "c635cd39fa68f5aca18b132f8b1a1bb526087d17",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "DragDropAction: drop X11 support"
+      },
+      {
+        "sha": "094a1e0758e5c61cf6cb60cc37163330284506ec",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Drop special handling for X11 in fullscreen"
+      },
+      {
+        "sha": "3b9713ee921318b9e79be589165d6eed39941759",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "ShellClientsManager: Drop reading launch-on-x"
+      },
+      {
+        "sha": "a7b88671ec4ad95c420c183125e1374b8fa1d7c8",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "shell clients config: Drop launch on x key"
+      },
+      {
+        "sha": "a542f0801c2342053e8b404f62f71f22405c4d7b",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "BlurManager: Drop parsing mutter hints"
+      },
+      {
+        "sha": "7eb927e057a5885d83fac2c0c26f875f9aad0ceb",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Drop X11 systemd target"
+      },
+      {
+        "sha": "89e217eb1b1e17071520fc5d73573e73e6043495",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Drop GTK3 daemon"
+      },
+      {
+        "sha": "7ce484e7780dabb2211bb15858f7b1050a45a12c",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "NotificationStack: Dont use window type for is_notification"
+      },
+      {
+        "sha": "f54c9161cae24b479fa78e108122f7ec4fddaf77",
+        "date": "2026-10-13T20:36:52Z",
+        "subject": "Revert \"Fix crash when destroying notifications\""
+      },
+      {
+        "sha": "2a611e7921a4f9829114763b68c3f35d33add7bc",
+        "date": "2026-10-16T19:03:48Z",
+        "subject": "Translated using Weblate (Ukrainian)"
+      },
+      {
+        "sha": "6ca7e1bf099b8bd43a9d9d286356652e11bbfb05",
+        "date": "2026-10-18T20:04:01Z",
+        "subject": "Translated using Weblate (Swedish)"
+      },
+      {
+        "sha": "79fb49f5d34d15c91259d50e0010ff35e3c7ee50",
+        "date": "2026-10-20T21:04:03Z",
+        "subject": "Translated using Weblate (Spanish)"
+      }
+    ],
+    "files": [
+      "README.md",
+      "daemon-gtk3/BackgroundMenu.vala",
+      "daemon-gtk3/DBus.vala",
+      "daemon-gtk3/Main.vala",
+      "daemon-gtk3/MonitorLabel.vala",
+      "daemon-gtk3/Window.vala",
+      "daemon-gtk3/meson.build",
+      "data/gala.target",
+      "data/gala@x11.service.in",
+      "data/io.elementary.desktop.wm.shell",
+      "data/meson.build",
+      "lib/DragDropAction.vala",
+      "lib/Gestures/Backends/ToucheggBackend.vala",
+      "lib/Utils.vala",
+      "meson.build",
+      "po/POTFILES",
+      "po/ca.po",
+      "po/es.po",
+      "po/sv.po",
+      "po/uk.po",
+      "src/HotCorners/HotCornerManager.vala",
+      "src/InternalUtils.vala",
+      "src/Main.vala",
+      "src/Misc/BlurManager.vala",
+      "src/Misc/DaemonManager.vala",
+      "src/Misc/NotificationStack.vala",
+      "src/Misc/PluginManager.vala",
+      "src/ShellClients/HideTracker.vala",
+      "src/ShellClients/ManagedClient.vala",
+      "src/ShellClients/ShellClientsManager.vala",
+      "src/ShellClients/ShellWindow.vala",
+      "src/WindowManager.vala"
+    ]
+  },
+  "wingpanel": {
+    "repo": "elementary/wingpanel",
+    "pin": "6b8ae0453b1fd6dc07bd246642998011f04b2125",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 3,
+    "head": "e737de88bc02ddc82a9f4d23f574cc3c04098c03",
+    "compare_url": "https://github.com/elementary/wingpanel/compare/6b8ae0453b1fd6dc07bd246642998011f04b2125...main",
+    "commits": [
+      {
+        "sha": "35d163ee8c520f6d2f7c40701e44a461c709c045",
+        "date": "2026-10-13T17:50:34Z",
+        "subject": "Rework focus handling (#740)"
+      },
+      {
+        "sha": "8926c60ac819b12b45cca52ee59b63f7158ee403",
+        "date": "2026-10-13T20:52:35Z",
+        "subject": "Require Mutter 46 (#739)"
+      },
+      {
+        "sha": "e737de88bc02ddc82a9f4d23f574cc3c04098c03",
+        "date": "2026-10-14T06:57:51Z",
+        "subject": "CSS: fix semantic colors (#743)"
+      }
+    ],
+    "files": [
+      "data/styles/Application.css",
+      "src/PanelWindow.vala",
+      "src/Services/PopoverManager.vala",
+      "vapi/Clutter-13-custom.vala",
+      "vapi/Clutter-13.metadata",
+      "vapi/Cogl-13-custom.vala",
+      "vapi/Cogl-13.metadata",
+      "vapi/Meta-13.metadata",
+      "vapi/Mtk-13.metadata",
+      "vapi/libmutter-13.deps",
+      "vapi/libmutter-13.vapi",
+      "vapi/libmutter-14.deps",
+      "vapi/libmutter-14.vapi",
+      "vapi/libmutter.vapi",
+      "vapi/meson.build",
+      "vapi/mutter-clutter-13.deps",
+      "vapi/mutter-clutter-13.vapi",
+      "vapi/mutter-clutter-14.vapi",
+      "vapi/mutter-clutter.vapi",
+      "vapi/mutter-cogl-13.deps",
+      "vapi/mutter-cogl-13.vapi",
+      "vapi/mutter-cogl-pango-13.vapi",
+      "vapi/mutter-cogl-pango-14.vapi",
+      "vapi/mutter-mtk-13.vapi",
+      "vapi/mutter-mtk-14.vapi",
+      "vapi/mutter-mtk-14.vapi",
+      "wingpanel-interface/FocusManager.vala",
+      "wingpanel-interface/meson.build"
+    ]
+  },
+  "dock": {
+    "repo": "elementary/dock",
+    "pin": "8b45a68a122947ad3a6427bf6e159ec2acf04ad0",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 28,
+    "head": "2b70be3e0cb39ff0e421f24bc1a2f733e0614eac",
+    "compare_url": "https://github.com/elementary/dock/compare/8b45a68a122947ad3a6427bf6e159ec2acf04ad0...main",
+    "commits": [
+      {
+        "sha": "0388a198df00c75c77aa608f8d610a6ffca57e16",
+        "date": "2026-06-04T03:56:28Z",
+        "subject": "Translated using Weblate (Marathi)"
+      },
+      {
+        "sha": "3d6a2e4fb4777f660a95afd504d5c98152acc344",
+        "date": "2026-06-19T17:48:38Z",
+        "subject": "BaseItem: Make index a property and notify when it changes"
+      },
+      {
+        "sha": "6f218aa08ed54be536432e22cf766406e20d596b",
+        "date": "2026-06-19T17:48:38Z",
+        "subject": "Launcher: Use index for tooltip"
+      },
+      {
+        "sha": "f70a8c5be69fd7b49d9231327e217487f7a6dcab",
+        "date": "2026-06-19T18:24:36Z",
+        "subject": "Make ItemManager not a singleton (#589)"
+      },
+      {
+        "sha": "f4c4228dc567496717ff75300e8f78047fd73ec3",
+        "date": "2026-06-22T18:02:15Z",
+        "subject": "Bump actions/checkout from 6 to 7 (#591)"
+      },
+      {
+        "sha": "aa8656f73292c24188ff1603c9f763d7733c26b1",
+        "date": "2026-06-29T13:56:55Z",
+        "subject": "Translated using Weblate (Greek)"
+      },
+      {
+        "sha": "02a0f6d554c466f91031f59b3ee27dda152c8e19",
+        "date": "2026-06-29T13:56:55Z",
+        "subject": "Translated using Weblate (Greek)"
+      },
+      {
+        "sha": "fdfdbdd15b35c4f009aa3145e19403396eb6744c",
+        "date": "2026-06-29T13:56:55Z",
+        "subject": "Translated using Weblate (Greek)"
+      },
+      {
+        "sha": "bf4132f58d4e51789daac70d852e13a5a5590e15",
+        "date": "2026-07-25T22:01:44Z",
+        "subject": "Translated using Weblate (Greek)"
+      },
+      {
+        "sha": "edf78282482253e4b8178d7fa7d0fb90dc2d42c4",
+        "date": "2026-07-29T11:44:17Z",
+        "subject": "Avoid duplicate background app entries (#594)"
+      },
+      {
+        "sha": "304b77a03358b6a9b388b6b2c4ed0f3ee4b86c7e",
+        "date": "2026-08-12T18:37:23Z",
+        "subject": "Change the way we deal with icon clipping (#599)"
+      },
+      {
+        "sha": "8b9f861664953a67fc669f8396a21c28b9018a9a",
+        "date": "2026-08-14T09:20:35Z",
+        "subject": "App: use correct GPU name (#600)"
+      },
+      {
+        "sha": "5b5f11c53c853a116a50aeecc760d9b96dd21f4f",
+        "date": "2026-08-16T04:21:12Z",
+        "subject": "Rename IconGroup to WorkspaceIconGroup (#602)"
+      },
+      {
+        "sha": "c729052714f2568bb8da26edc0bb68c7ee2aef8d",
+        "date": "2026-08-16T15:24:00Z",
+        "subject": "Add bottom margin for workspaces boxes (#603)"
+      },
+      {
+        "sha": "fa00b424c8b5af8aac9e9108dde61e759322a021",
+        "date": "2026-08-24T17:09:03Z",
+        "subject": "Fix App memory leak (#608)"
+      },
+      {
+        "sha": "7db0fd51b34efe455729c08b5a00766a09aca2b1",
+        "date": "2026-08-26T18:02:29Z",
+        "subject": "Introduce AnimatableWidget and use Adw.PropertyAnimationTarget"
+      },
+      {
+        "sha": "1f55ec4c5fda41b41f6c92e31e80122608500ce7",
+        "date": "2026-08-26T18:02:29Z",
+        "subject": "Launcher: fix GLib.Binding memory leak"
+      },
+      {
+        "sha": "bbf027e6989be098c98e14e7b4cf92c50e7a4e45",
+        "date": "2026-08-27T11:26:31Z",
+        "subject": "Show windows that are on all workspaces on all workspaces (#610)"
+      },
+      {
+        "sha": "16940666b5d89bc39f718f8eb6ffc44f4772aea2",
+        "date": "2026-08-27T15:37:53Z",
+        "subject": "Fix WorkspaceIconGroup memory leak (#606)"
+      },
+      {
+        "sha": "a03557dcfab6d39013445396a94bee2032513047",
+        "date": "2026-09-07T10:02:08Z",
+        "subject": "Translated using Weblate (Indonesian)"
+      },
+      {
+        "sha": "e945b4b37e440d9d6a57830f2d4d4712099b1dce",
+        "date": "2026-09-07T10:02:11Z",
+        "subject": "Translated using Weblate (Indonesian)"
+      },
+      {
+        "sha": "bda89a6fbbe40752daa54676ef54271e84b7a79f",
+        "date": "2026-09-15T13:03:48Z",
+        "subject": "Translated using Weblate (Cornish)"
+      },
+      {
+        "sha": "181bc03466169472552dc2224a0eab9924aff2c1",
+        "date": "2026-09-15T13:03:49Z",
+        "subject": "Translated using Weblate (Cornish)"
+      },
+      {
+        "sha": "e4cbfb1e31ac0f461876ddfd7338e640edf0f8b5",
+        "date": "2026-09-22T03:07:07Z",
+        "subject": "Actions: Migrate to ubuntu-latest (#616)"
+      },
+      {
+        "sha": "bb172d7a7b01f4da23c5094650aa8f2ab04acf7d",
+        "date": "2026-09-25T03:03:17Z",
+        "subject": "Translated using Weblate (Georgian)"
+      },
+      {
+        "sha": "60a14db2ff189371721462bef7a187f607f3ac85",
+        "date": "2026-10-03T18:03:55Z",
+        "subject": "Translated using Weblate (Cornish)"
+      },
+      {
+        "sha": "6999bc8a2e5fbb291522b620e70026c92ede6a5e",
+        "date": "2026-10-03T18:03:56Z",
+        "subject": "Translated using Weblate (Cornish)"
+      },
+      {
+        "sha": "2b70be3e0cb39ff0e421f24bc1a2f733e0614eac",
+        "date": "2026-10-14T02:03:55Z",
+        "subject": "Translated using Weblate (Chinese (Simplified Han script) (zh_CN))"
+      }
+    ],
+    "files": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/merge.yml",
+      ".github/workflows/release.yml",
+      "data/Application.css",
+      "po/POTFILES",
+      "po/el.po",
+      "po/extra/el.po",
+      "po/extra/id.po",
+      "po/extra/kw.po",
+      "po/extra/mr.po",
+      "po/id.po",
+      "po/ka.po",
+      "po/kw.po",
+      "po/zh_CN.po",
+      "src/AnimatableWidget.vala",
+      "src/AppSystem/App.vala",
+      "src/AppSystem/AppSystem.vala",
+      "src/AppSystem/Background/BackgroundItem.vala",
+      "src/AppSystem/Background/BackgroundMonitor.vala",
+      "src/AppSystem/Launcher.vala",
+      "src/BaseIconGroup.vala",
+      "src/BaseItem.vala",
+      "src/BottomMargin.vala",
+      "src/ContainerItem.vala",
+      "src/DBus/ShellKeyGrabber.vala",
+      "src/ItemGroup.vala",
+      "src/ItemManager.vala",
+      "src/MainWindow.vala",
+      "src/TopMargin.vala",
+      "src/WindowSystem/Window.vala",
+      "src/WorkspaceSystem/WorkspaceIconGroup.vala",
+      "src/WorkspaceSystem/WorkspaceSystem.vala",
+      "src/meson.build"
+    ]
+  },
+  "quick-settings": {
+    "repo": "elementary/quick-settings",
+    "pin": "fb721d4b5640a2a25ae011370c8fe8aaff8d93f4",
+    "default_branch": "main",
+    "status": "identical",
+    "ahead_by": 0,
+    "head": "fb721d4b5640a2a25ae011370c8fe8aaff8d93f4",
+    "compare_url": "https://github.com/elementary/quick-settings/compare/fb721d4b5640a2a25ae011370c8fe8aaff8d93f4...main",
+    "commits": [],
+    "files": []
+  },
+  "power": {
+    "repo": "elementary/panel-power",
+    "pin": "e05723d8cba82b596a5efc259b4e0d15ad9a2bc4",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 1,
+    "head": "8a11cb2fe8f0848d05c60528c85273da4a014d0e",
+    "compare_url": "https://github.com/elementary/panel-power/compare/e05723d8cba82b596a5efc259b4e0d15ad9a2bc4...main",
+    "commits": [
+      {
+        "sha": "8a11cb2fe8f0848d05c60528c85273da4a014d0e",
+        "date": "2026-10-19T08:17:39Z",
+        "subject": "Translated using Weblate (Swedish)"
+      }
+    ],
+    "files": [
+      "po/extra/sv.po"
+    ]
+  },
+  "network": {
+    "repo": "elementary/panel-network",
+    "pin": "8685ec8e55a45e48da0c12931a353cd440d11664",
+    "default_branch": "main",
+    "status": "identical",
+    "ahead_by": 0,
+    "head": "8685ec8e55a45e48da0c12931a353cd440d11664",
+    "compare_url": "https://github.com/elementary/panel-network/compare/8685ec8e55a45e48da0c12931a353cd440d11664...main",
+    "commits": [],
+    "files": []
+  },
+  "keyboard": {
+    "repo": "elementary/panel-keyboard",
+    "pin": "2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76",
+    "default_branch": "main",
+    "status": "identical",
+    "ahead_by": 0,
+    "head": "2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76",
+    "compare_url": "https://github.com/elementary/panel-keyboard/compare/2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76...main",
+    "commits": [],
+    "files": []
+  },
+  "sound": {
+    "repo": "elementary/wingpanel-indicator-sound",
+    "pin": "8b7991c9156ac8127d27559506baea8e6fb72e5b",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 1,
+    "head": "115d1495b754e2692c112fa5b02f9f3b5860a314",
+    "compare_url": "https://github.com/elementary/panel-sound/compare/8b7991c9156ac8127d27559506baea8e6fb72e5b...main",
+    "commits": [
+      {
+        "sha": "115d1495b754e2692c112fa5b02f9f3b5860a314",
+        "date": "2026-10-18T20:03:56Z",
+        "subject": "Translated using Weblate (Swedish)"
+      }
+    ],
+    "files": [
+      "po/extra/sv.po"
+    ]
+  },
+  "applications-menu": {
+    "repo": "elementary/applications-menu",
+    "pin": "06d7170edab4d1f93ebd14173a0e2afea98e9339",
+    "default_branch": "main",
+    "status": "identical",
+    "ahead_by": 0,
+    "head": "06d7170edab4d1f93ebd14173a0e2afea98e9339",
+    "compare_url": "https://github.com/elementary/applications-menu/compare/06d7170edab4d1f93ebd14173a0e2afea98e9339...main",
+    "commits": [],
+    "files": []
+  },
+  "files": {
+    "repo": "elementary/files",
+    "pin": "f966e0108",
+    "default_branch": "main",
+    "status": "ahead",
+    "ahead_by": 20,
+    "head": "8f4915ea6a3eebc5c510b8e29bbdd6f7049ee009",
+    "compare_url": "https://github.com/elementary/files/compare/f966e0108...main",
+    "commits": [
+      {
+        "sha": "153da94b7a5307f10f65df65f432506df1e6e769",
+        "date": "2026-10-10T18:53:25Z",
+        "subject": "Reverse file sort-by-size order (#2850)"
+      },
+      {
+        "sha": "1af94892a81536e032a87247718f46fae841f884",
+        "date": "2026-10-10T21:25:59Z",
+        "subject": "MarlinFileOperations simplify: Lose unused \"debuting_files\" (#2830)"
+      },
+      {
+        "sha": "0de98f002914904fc5379d526506818455bc9c10",
+        "date": "2026-10-10T21:31:20Z",
+        "subject": "Fix trash BookmarkRow memory leak (#2855)"
+      },
+      {
+        "sha": "5096b6921901488298a11d1a98a63a996f37e751",
+        "date": "2026-10-11T17:24:13Z",
+        "subject": "SidebarListInterface: remove select_item (#2856)"
+      },
+      {
+        "sha": "4f4863a98433af85e14590e2b8541e240b24e18b",
+        "date": "2026-10-11T17:51:11Z",
+        "subject": "Fix BreadcrumbElement & BasicBreadcrumbsEntry memory leak (#2852)"
+      },
+      {
+        "sha": "700ae4921bf9749f62a11b81182ca5b76594c0dc",
+        "date": "2026-10-11T18:00:15Z",
+        "subject": "BookmarkList: cleanup (#2854)"
+      },
+      {
+        "sha": "a2695fb1eec3188afeb6443d71e328e6f09f9efc",
+        "date": "2026-10-13T05:12:39Z",
+        "subject": "SidebarListInterface: remove refresh_info (#2858)"
+      },
+      {
+        "sha": "03d59a3116668081c94f72c46945b038f85277cb",
+        "date": "2026-10-13T13:03:47Z",
+        "subject": "Translated using Weblate (Danish)"
+      },
+      {
+        "sha": "d4dc2c2c188a83e2723b90cd464f06943b6e20dd",
+        "date": "2026-10-13T14:27:33Z",
+        "subject": "Move prefers-color-scheme handler to dialog static construct (#2863)"
+      },
+      {
+        "sha": "7142845e764058fcb93ae30a4b8f0f47677ef7ff",
+        "date": "2026-10-14T16:15:25Z",
+        "subject": "SidebarItemInterface: remove 2 methods (#2862)"
+      },
+      {
+        "sha": "88102d941b98a2393d80fa6d4da035ea19ac1773",
+        "date": "2026-10-14T16:39:50Z",
+        "subject": "SidebarListInterface: simplify (#2860)"
+      },
+      {
+        "sha": "defe6e64c6d50a9f7069680ece7ca720c6735409",
+        "date": "2026-10-14T18:21:08Z",
+        "subject": "Miller: Truncate after when column becomes active (#2845)"
+      },
+      {
+        "sha": "75c4d66f768c9c98cf6d77cb0ed755da57d6d7ac",
+        "date": "2026-10-18T07:07:29Z",
+        "subject": "Translated using Weblate (Swedish)"
+      },
+      {
+        "sha": "6ed23e863f658f3dede8bbfe29512123d0292dad",
+        "date": "2026-10-19T07:46:20Z",
+        "subject": "Translated using Weblate (Chinese (Traditional Han script) (zh_TW))"
+      },
+      {
+        "sha": "e858e7fa5db9b634580c81a6dfc0d3742ce4da8f",
+        "date": "2026-10-19T07:46:20Z",
+        "subject": "Translated using Weblate (Chinese (Traditional Han script) (zh_TW))"
+      },
+      {
+        "sha": "ee2a340b9b793593f2c7363f1f177e6f7dd8849e",
+        "date": "2026-10-19T07:46:20Z",
+        "subject": "Translated using Weblate (Swedish)"
+      },
+      {
+        "sha": "5d544f5ac9bf897f22e6a2038e2ca7b34fba93e0",
+        "date": "2026-10-19T07:46:21Z",
+        "subject": "Translated using Weblate (Swedish)"
+      },
+      {
+        "sha": "a7978b207e853ac1b773f1973d097a88cca880c5",
+        "date": "2026-10-19T08:17:37Z",
+        "subject": "Translated using Weblate (Swedish)"
+      },
+      {
+        "sha": "bde2d44e6d5dfcac171c4d1281fc01787dc85791",
+        "date": "2026-10-20T21:03:49Z",
+        "subject": "Translated using Weblate (Spanish)"
+      },
+      {
+        "sha": "8f4915ea6a3eebc5c510b8e29bbdd6f7049ee009",
+        "date": "2026-10-20T21:04:05Z",
+        "subject": "Translated using Weblate (Spanish)"
+      }
+    ],
+    "files": [
+      "filechooser-portal/FileChooserDialog.vala",
+      "filechooser-portal/Main.vala",
+      "libcore/File.vala",
+      "libcore/Interfaces/SidebarInterface.vala",
+      "libcore/Interfaces/SidebarItemInterface.vala",
+      "libcore/Interfaces/SidebarListInterface.vala",
+      "libcore/View/HeaderBar/BasicBreadcrumbsEntry.vala",
+      "libcore/View/HeaderBar/BreadcrumbElement.vala",
+      "libcore/View/Sidebar/BookmarkList.vala",
+      "libcore/marlin-file-operations.c",
+      "plugins/pantheon-files-cloud/plugin.vala",
+      "po/da.po",
+      "po/es.po",
+      "po/extra/es.po",
+      "po/extra/sv.po",
+      "po/extra/zh_TW.po",
+      "po/sv.po",
+      "po/zh_TW.po",
+      "src/View/Miller.vala",
+      "src/View/Sidebar/BookmarkListBox.vala",
+      "src/View/Sidebar/BookmarkRow.vala",
+      "src/View/Sidebar/DeviceListBox.vala",
+      "src/View/Sidebar/NetworkListBox.vala",
+      "src/View/Sidebar/SidebarWindow.vala"
+    ],
+    "resolved_pin": "f966e0108bdb9b192ce23d27330707ef9c89c252"
+  }
+}
