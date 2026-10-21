@@ -18,6 +18,11 @@ implementation; no macOS source or binary is copied into this project.
 - Each repository card includes default-branch commit counts for rolling 1-hour,
   24-hour, and 30-day windows. Counts are returned with the paginated repository
   snapshot and share its five-minute cache.
+- A status dot beside the panel counts shows GitHub Actions at a glance: red while
+  default-branch CI fails, yellow with a count while runs are pending, and green
+  when a pull request merged within the last hour (`mseries-repobar settings set
+  merge-window 5..1440` minutes). Nothing shows when all is quiet; the tooltip names
+  the last merge. Pending counts repositories whose default-branch checks are running.
 - The panel badge is the GitHub mark rendered as a GTK symbolic icon, so it
   follows the current theme's foreground color.
 - The Wingpanel menu shares CodexBar's compact elementary OS styling: 9 pt body

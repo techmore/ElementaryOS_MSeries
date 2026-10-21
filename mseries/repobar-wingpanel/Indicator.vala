@@ -49,6 +49,7 @@ namespace MSeries {
         private string last_render_key = "";
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
+        private int merge_window_minutes = 60;
         private bool show_contributions = true;
         private string contribution_style = "dots";
         private bool contributions_expanded = false;
@@ -61,7 +62,7 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar");
 
-            // Panel item: GitHub mark, open PRs and issues, and a red mark only while default-branch CI fails.
+            // Panel item: GitHub mark, open PRs and issues, and a status dot (red failing, yellow pending, green recent merge).
             panel = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
             panel.add_css_class ("mseries-repobar-bar");
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
@@ -283,7 +284,10 @@ namespace MSeries {
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 7pt; color: @error_color; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 7pt; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
+                ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
+                ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
                 ".mseries-repobar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
                 ".mseries-repobar-bar .stale { opacity: 0.55; } " +
                 ".mseries-repobar-bar .repo-mark { color: @theme_fg_color; }");
@@ -459,6 +463,7 @@ namespace MSeries {
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+                merge_window_minutes = (int) settings.get_int_member_with_default ("mergeWindowMinutes", 60);
                 show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
                 contribution_style = settings.get_string_member_with_default ("contributionStyle", "dots");
                 local_root = settings.get_string_member_with_default ("localRoot", "");
@@ -470,13 +475,26 @@ namespace MSeries {
             int issues = 0;
             int prs = 0;
             int failing = 0;
+            int pending = 0;
             int attention = 0;
+            GLib.DateTime? last_merge = null;
+            string last_merge_repo = "";
             for (uint i = 0; i < repos.get_length (); i++) {
                 var repo = repos.get_object_element (i);
                 if (repo.get_string_member_with_default ("repoState", "visible") == "hidden") continue;
                 issues += (int) repo.get_int_member_with_default ("openIssues", 0);
                 prs += (int) repo.get_int_member_with_default ("openPullRequests", 0);
                 if (ci_failing (repo)) failing++;
+                if (ci_pending (repo)) pending++;
+                var merge = repo.get_member ("lastMerge") != null && repo.get_member ("lastMerge").get_node_type () == Json.NodeType.OBJECT
+                    ? repo.get_object_member ("lastMerge") : null;
+                if (merge != null) {
+                    var merged_at = new GLib.DateTime.from_iso8601 (merge.get_string_member_with_default ("mergedAt", ""), null);
+                    if (merged_at != null && (last_merge == null || merged_at.compare (last_merge) > 0)) {
+                        last_merge = merged_at;
+                        last_merge_repo = repo.get_string_member_with_default ("name", "");
+                    }
+                }
                 if (needs_attention (repo)) attention++;
             }
 
@@ -512,7 +530,7 @@ namespace MSeries {
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
-            update_panel (prs, issues, failing, (int) repos.get_length (), stale || error.length > 0);
+            update_panel (prs, issues, failing, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
 
             // Unchanged data and filters: keep the existing cards so open detail panes survive polling.
             string key = "%s|%d|%d|%s".printf (last_snapshot_text.hash ().to_string (), scope, filter, search_entry.get_text ());
@@ -598,14 +616,35 @@ namespace MSeries {
             }
         }
 
-        private void update_panel (int prs, int issues, int failing, int repo_count, bool stale) {
+        /* Panel dot: red while default-branch CI fails, yellow with a count while runs are pending, green when a pull
+           request merged within the configured window (an hour by default), and hidden when nothing is going on. */
+        private void update_panel (int prs, int issues, int failing, int pending, GLib.DateTime? last_merge,
+                                   string last_merge_repo, int repo_count, bool stale) {
             panel_prs.set_text (prs.to_string ());
             panel_issues.set_text (issues.to_string ());
-            panel_alert.set_visible (failing > 0);
+            int64 merge_age = last_merge != null ? (GLib.get_real_time () - last_merge.to_unix () * 1000000) / 1000000 : -1;
+            bool merged_recently = merge_age >= 0 && merge_age <= merge_window_minutes * 60;
+            panel_alert.remove_css_class ("alert-bad");
+            panel_alert.remove_css_class ("alert-pending");
+            panel_alert.remove_css_class ("alert-good");
+            string status = "";
+            if (failing > 0) {
+                panel_alert.set_text ("●");
+                panel_alert.add_css_class ("alert-bad");
+                status = " · CI failing on %d".printf (failing);
+            } else if (pending > 0) {
+                panel_alert.set_text ("● %d".printf (pending));
+                panel_alert.add_css_class ("alert-pending");
+                status = " · CI running on %d".printf (pending);
+            } else if (merged_recently) {
+                panel_alert.set_text ("●");
+                panel_alert.add_css_class ("alert-good");
+            }
+            panel_alert.set_visible (failing > 0 || pending > 0 || merged_recently);
+            if (merged_recently) status += " · merged %s %d min ago".printf (last_merge_repo, (int) (merge_age / 60));
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
-                account.length > 0 ? " · " + account : "", repo_count, prs, issues,
-                failing > 0 ? " · CI failing on %d".printf (failing) : "", stale ? " · cached" : ""));
+                account.length > 0 ? " · " + account : "", repo_count, prs, issues, status, stale ? " · cached" : ""));
         }
 
         /* Attention: failing CI first, then the most open work (a pull request weighs twice an issue). */
@@ -917,6 +956,11 @@ namespace MSeries {
         private static bool ci_failing (Json.Object repo) {
             string ci = repo.get_string_member_with_default ("ci", "");
             return ci == "FAILURE" || ci == "ERROR";
+        }
+
+        private static bool ci_pending (Json.Object repo) {
+            string ci = repo.get_string_member_with_default ("ci", "");
+            return ci == "PENDING" || ci == "EXPECTED";
         }
 
         private static bool needs_attention (Json.Object repo) {
