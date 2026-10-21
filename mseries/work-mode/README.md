@@ -103,3 +103,5 @@ is left alone.
 ## Desktop mode switch
 
 `mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout.
+
+The Quick Settings popover (installed by `install-quick-settings-brightness.sh`) has a Desktop mode row, and the Windows taskbar Start button's right-click menu has "Switch to elementary mode".

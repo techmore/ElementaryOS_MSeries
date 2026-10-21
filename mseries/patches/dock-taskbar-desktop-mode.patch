@@ -1,0 +1,24 @@
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+index b0f8e01..414cb48 100644
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -267,6 +267,7 @@ public class Dock.TaskbarRow : Gtk.Widget {
+             { "system-log-out-symbolic", _("Log Out…"), "logout" },
+             { "system-reboot-symbolic", _("Restart…"), "reboot" },
+             { "system-shutdown-symbolic", _("Shut Down…"), "shutdown" },
++            { "video-display-symbolic", _("Switch to elementary mode"), "native-mode" },
+             { "preferences-system-symbolic", _("System Settings"), "settings" }
+         };
+         for (int i = 0; i < items.length[0]; i++) {
+@@ -299,6 +300,11 @@ public class Dock.TaskbarRow : Gtk.Widget {
+             spawn ({ "io.elementary.settings" });
+             return;
+         }
++        if (action == "native-mode") {
++            // Leaves Windows Work Mode: restores the saved wallpaper and floating dock, no logout.
++            spawn ({ Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-desktop-mode"), "elementary" });
++            return;
++        }
+         string message, verb;
+         switch (action) {
+         case "logout":

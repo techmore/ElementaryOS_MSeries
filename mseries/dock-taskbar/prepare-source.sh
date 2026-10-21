@@ -4,7 +4,7 @@ set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo=$(cd -- "$here/../.." && pwd)
 source_dir=${1:?usage: prepare-source.sh UPSTREAM_SOURCE}
-for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codexbar dock-taskbar-repobar dock-taskbar-power-buttons; do
+for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codexbar dock-taskbar-repobar dock-taskbar-power-buttons dock-taskbar-desktop-mode; do
   git -C "$source_dir" apply "$repo/mseries/patches/$patch.patch"
 done
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
