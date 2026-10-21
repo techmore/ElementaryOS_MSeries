@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "kind": "native-arm64-build-artifact-audit",
+  "audited_at": "2026-10-21T18:37:11.356251+00:00",
+  "tested_repository_commit": "bdb7271f322daaa62359da98a4ebb345cd1827db",
+  "artifact_id": 12369362585,
+  "artifact_name": "elementary-aurora-enhancements-unified72-39645763520",
+  "artifact_zip_sha256": "7fa6e9d0099cb25b5f88cbbaaf2b5eca75b721025fd9f89c081f348ffd1b41fb",
+  "github_artifact_digest_matched": true,
+  "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39645763520",
+  "artifact_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39645763520/artifacts/12369362585",
+  "checksums_verified": {
+    "build.config": "01bec2b49d984b1f74b7fbd254aed02e97eb0ce47ecc46fd463ce02727796ece",
+    "linux-7.2.11-elementary-aurora72-wip3-source.tar.gz": "e0a93215da798e4be177126bde6e7d6b7a1ef4cc638bb5da4c5c990cb313f091",
+    "linux-image-elementary-aurora72-wip3_7.2.11+elementary.aurora72.wip3-1_arm64.deb": "e41dfb71b31d93d35fa1cbeea818bf333c011d889f6596cfa5fb29debcbc3a0b",
+    "provenance.json": "ecf4037993614a0b0dec7d15e275120c4865eb4d0b19b7fbb7b2a7a16709e328"
+  },
+  "not_done": [
+    "source tree was not reconstructed from the archive and compared; no boot, hardware or 64-fix parity result"
+  ],
+  "package": {
+    "control": "Package: linux-image-elementary-aurora72-wip3\nVersion: 7.2.11+elementary.aurora72.wip3-1\nArchitecture: arm64\nMaintainer: ElementaryOS MSeries contributors <builder@localhost>\nInstalled-Size: 154908\nSection: kernel\nPriority: optional\nDepends: kmod\nDescription: Experimental Aurora enhancement kernel payload\n Distinct modules directory, no boot hooks; requires explicit boot-chain staging.\n",
+    "module_files": 1876,
+    "apple_dtbs": 115,
+    "image_sha256": "3a93bbb424cd138e55d56c9bb1e2b83ec1755eb54ddfdaf2706b85165eeda68a",
+    "j314s_dtb": "dtbs/t6000-j314s.dtb present (shared boot.bin keeps the old legacy DTB; see BOOT-TRIAL.md compatibility boundary)"
+  },
+  "provenance": {
+    "profile": "unified72",
+    "kernel_release": "7.2.11-elementary-aurora72-wip3",
+    "base_pins": {
+      "repository": "omacom/linux-aurora",
+      "release": "aurora-2026.10.17.20",
+      "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+      "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+      "debian_package": "linux-image-elementary-aurora20",
+      "debian_version": "7.1.12+aurora.20261017.20-1",
+      "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+      "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+      "assets": {
+        "kernel": {
+          "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+          "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+        },
+        "recipe": {
+          "name": "linux-aurora-recipe-20261017.20.tar.gz",
+          "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+        },
+        "source": {
+          "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+          "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+        },
+        "m1n1": {
+          "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+          "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+        },
+        "m1n1_source": {
+          "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+          "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+          "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+        },
+        "touchid": {
+          "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+          "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+        },
+        "libfprint": {
+          "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+          "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+        }
+      }
+    },
+    "series_sha256": "f22590938d6f76564be0471fdecee66d4e2cb6e33bd92972d2a35801ea8188ba",
+    "patches": [
+      {
+        "file": "0001-drm-apple-srgb-external-display-colour.patch",
+        "sha256": "9cd617e413c69006349e8ffa914ee0c16d1d7ba246d5afd9e1031aafbbf09573",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/157",
+        "head": "9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0",
+        "profile": "candidate",
+        "note": "drm/apple: sRGB surfaces and an sRGB link colorimetry for external displays (unmerged upstream PR #157, 5 files, +73/-6). Applies to the #158 head with small offsets; must be re-checked if #158 moves."
+      }
+    ],
+    "source_pin": {
+      "repository": "aurora-silicon/linux",
+      "commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "upstream_pr": "https://github.com/omacom/linux-aurora/pull/158",
+      "name": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03.tar.gz",
+      "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "archive_root": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957"
+    },
+    "source_tree_sha256": "2442fa2811eef3a01d2ffa6ad39698723f2ed687aa7809bf6b4b45311f1045ba",
+    "modified_files": {
+      "drivers/gpu/drm/apple/dcp-internal.h": "88939364d6bd11e33a92168ddbd008ec49ee8dc7d360f7019860381261732e45",
+      "drivers/gpu/drm/apple/dcp.c": "86db5666bd0b00c86f0455783be280c353cd04c57fdf368438ebe11e7d1e36b5",
+      "drivers/gpu/drm/apple/iomfb_template.c": "c44bfaa534ad947b98d21f57ee82c42f17c6121b96cad915e39cfb15cd066808",
+      "drivers/gpu/drm/apple/parser.c": "9f75b92750c7b6faa53940918a3817153a8813f79f7546eeb1ced4c729b7b5d3",
+      "drivers/gpu/drm/apple/plane.c": "1150c28a458a469c5cd8effd754b59b6de9784d610426243cace2e7ff7052bff",
+      "localversion.elementary": "b8167de20b24e0356b00ea2836e14df24e51925d99b51e2ee7338b68dc5d279f",
+      "rust-toolchain.toml": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c"
+    },
+    "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+    "status": "ARM64 Image/modules/DTBs built; no hardware boot",
+    "package": "linux-image-elementary-aurora72-wip3_7.2.11+elementary.aurora72.wip3-1_arm64.deb",
+    "package_sha256": "e41dfb71b31d93d35fa1cbeea818bf333c011d889f6596cfa5fb29debcbc3a0b",
+    "source_sha256": "e0a93215da798e4be177126bde6e7d6b7a1ef4cc638bb5da4c5c990cb313f091",
+    "resolved_config_sha256": "01bec2b49d984b1f74b7fbd254aed02e97eb0ce47ecc46fd463ce02727796ece",
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+    "clang": "Ubuntu clang version 22.1.2 (1ubuntu1)",
+    "package_compression": {
+      "format": "zstd",
+      "level": 3,
+      "max_threads": 4
+    }
+  }
+}

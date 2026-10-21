@@ -15,10 +15,10 @@ Checked here: the #157 diff dry-runs cleanly on the five files at #158 head (off
 `integration/aurora`; `candidate.py prepare` applies it to the full source tree without fuzz and the
 config gate passes; `candidate.py check` and its pmp host tests pass; the aurora unit tests (72) pass.
 Receipt: [review-wip3-2026-10-21.json](review-wip3-2026-10-21.json) (archive SHA256 recorded on first
-download). **Not established:** native build, 64-fix parity at 7.2.11 (the old comparison is for 7.2.10),
+download). **Native build:** passed in [CI run 39645763520](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39645763520); the artifact was audited (GitHub digest matched, `SHA256SUMS` verified, package `7.2.11+elementary.aurora72.wip3-1`, 1,876 modules, 115 DTBs, patch files present in `modified_files`) and saved as [native-build-wip3-2026-10-21.json](native-build-wip3-2026-10-21.json); the artifact itself expires in seven days. **Not established:** 64-fix parity at 7.2.11 (the old comparison is for 7.2.10),
 Touch ID/dock/power/recovery on the J314S. #158 is an open proposal and #157 an open PR; re-pin if either
-moves. The boot-staging script `prepare-j314s-trial.py` is still wip2-specific and was not changed, so no
-wip3 boot payload exists. Nothing is installed or armed.
+moves. `prepare-j314s-trial.py` now takes its identity and receipt from `series.json`/the receipt name, but no
+wip3 boot payload has been prepared or staged. Nothing is installed or armed.
 
 ## Current host state — October 21, 2026
 
