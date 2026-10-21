@@ -142,3 +142,18 @@ no maintainer scripts. Staged systemd config resolution and payload hash checks
 pass. It has not been installed or enabled in the factory image. Full current
 Asahi UCM/audio tree inventory finds no J773g/t8132-specific profile paths;
 actual mini card discovery/routing still needs qualification.
+
+## Newer Aurora integration comparison
+
+Aurora integration/aurora was rechecked at 6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87
+on October 21. Its Makefile reads 7.3.0, but its J773g board source still only
+adds firmware-framebuffer HDMI power domains, and its Asahi Kconfig has no
+Gravity DRM_ASAHI_M4 option. This selected-file review does not claim a full
+Aurora hardware-support audit. A newer version number alone does not replace
+the matched Gravity kernel/bootloader/Mesa contract.
+
+Recent Atlantic RX/TX ring cleanup fixes were checked: aq_ring_rx_deinit and
+aq_ring_tx_deinit are byte-identical to Gravity's pinned source. They need no
+duplicate backport. Other aq_ring.c differences include AQC113 PTP timestamp
+handling; these are not evidence of an M4-specific 10 Gb fix or hardware pass.
+See receipts/2026-10-21-aurora-ethernet-comparison.json.

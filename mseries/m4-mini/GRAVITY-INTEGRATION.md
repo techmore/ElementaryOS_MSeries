@@ -110,3 +110,18 @@ sleep and suspend-then-hibernate. The candidate package-policy.py payload now st
 policy with a dependency on the distinct M4 kernel. Package and staged config
 resolution checks pass; no host sleep settings changed. Factory image selection
 and physical runtime qualification remain open.
+
+## Newer Aurora integration comparison
+
+Aurora integration/aurora was rechecked at 6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87
+on October 21. Its Makefile reads 7.3.0, but its J773g board source still only
+adds firmware-framebuffer HDMI power domains, and its Asahi Kconfig has no
+Gravity DRM_ASAHI_M4 option. This selected-file review does not claim a full
+Aurora hardware-support audit. A newer version number alone does not replace
+the matched Gravity kernel/bootloader/Mesa contract.
+
+Recent Atlantic RX/TX ring cleanup fixes were checked: aq_ring_rx_deinit and
+aq_ring_tx_deinit are byte-identical to Gravity's pinned source. They need no
+duplicate backport. Other aq_ring.c differences include AQC113 PTP timestamp
+handling; these are not evidence of an M4-specific 10 Gb fix or hardware pass.
+See receipts/2026-10-21-aurora-ethernet-comparison.json.

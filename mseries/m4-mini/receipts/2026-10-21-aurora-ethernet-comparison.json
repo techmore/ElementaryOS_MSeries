@@ -1,0 +1,25 @@
+{
+  "repository": "aurora-silicon/linux",
+  "branch": "integration/aurora",
+  "commit": "6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87",
+  "version": "7.3.0",
+  "files": {
+    "Makefile": "2eb7b5d5c2ac15a28136607e086f82ebd13f0d3753acc89e463fed49109bc794",
+    "t8132-j773g.dts": "5af837ce0721857b96d4dad34fc6e06fb4f2b0300415b037a958f181b182956e",
+    "aq_ring.c": "e96545741f6007b458a41759463dbc7bc0f56417227415e71084c6d1daf6ac47",
+    "asahi-Kconfig": "e65c112a4202ef897436c7decd024ea929130cf5afed8e66feb114f3573ef476"
+  },
+  "scope": "selected source comparison, not a complete Aurora kernel or runtime audit",
+  "findings": [
+    "J773g board source retains firmware-framebuffer HDMI power domains",
+    "Asahi Kconfig lacks Gravity DRM_ASAHI_M4 option",
+    "selected Atlantic ring cleanup functions match Gravity byte-for-byte; no backport required for these functions",
+    "aq_ring.c also differs in AQC113 PTP timestamp handling; not M4 board validation"
+  ],
+  "matching_cleanup_functions": {
+    "aq_ring_rx_deinit": true,
+    "aq_ring_tx_deinit": true
+  },
+  "gravity_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "hardware_validated": false
+}

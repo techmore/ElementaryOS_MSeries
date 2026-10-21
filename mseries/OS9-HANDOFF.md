@@ -1,3 +1,13 @@
+## M4 mini: Aurora 7.3 source comparison — 2026-10-21
+
+Selected current Aurora 6210b28 files were checked against Gravity 4fc326f.
+Aurora's newer Makefile version does not establish the matched M4 native
+graphics contract. Both recent Atlantic RX/TX ring cleanup functions already
+match Gravity byte-for-byte; no duplicate patch applied. AQC113 PTP differences
+remain separate from M4 10 Gb qualification.
+[Receipt](m4-mini/receipts/2026-10-21-aurora-ethernet-comparison.json).
+The full Gravity kernel build remains live; no hardware state changed.
+
 ## M4 mini documentation consistency — 2026-10-21
 
 README now leads with the selected Gravity stack and actual build/test scope;
