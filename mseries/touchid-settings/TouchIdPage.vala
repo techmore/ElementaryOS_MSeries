@@ -20,8 +20,9 @@ namespace MSeriesTouchId {
         private Gtk.Label hero_status;
         private Gtk.Label hero_hint;
         private Gtk.Button hero_add;
-        private HandDiagram hands;
-        private Gtk.Label hands_caption;
+        private Gtk.Box print_slots;
+        private FingerprintArt[] slot_arts = {};
+        private Gtk.Label prints_caption;
 
         private Adw.PreferencesGroup fingers_group;
         private Gtk.FlowBox grid;
@@ -114,12 +115,18 @@ namespace MSeriesTouchId {
             top.append (texts);
             hero.append (top);
 
-            hands = new HandDiagram ();
-            hero.append (hands);
-            hands_caption = new Gtk.Label (null) { wrap = true, justify = Gtk.Justification.CENTER };
-            hands_caption.add_css_class ("dim-label");
-            hands_caption.add_css_class ("caption");
-            hero.append (hands_caption);
+            /* One print per slot: enrolled fingers show their own print, the rest stay empty. */
+            print_slots = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 16) { halign = Gtk.Align.CENTER };
+            for (int i = 0; i < MAX_FINGERS; i++) {
+                var slot = new FingerprintArt (60, 8, 2.6) { seed = i * 31 };
+                slot_arts += slot;
+                print_slots.append (slot);
+            }
+            hero.append (print_slots);
+            prints_caption = new Gtk.Label (null) { wrap = true, justify = Gtk.Justification.CENTER };
+            prints_caption.add_css_class ("dim-label");
+            prints_caption.add_css_class ("caption");
+            hero.append (prints_caption);
 
             hero_add = new Gtk.Button.with_label ("Add Fingerprint") { halign = Gtk.Align.CENTER };
             hero_add.add_css_class ("pill");
@@ -270,12 +277,10 @@ namespace MSeriesTouchId {
             return diag.get ("touchid") == "not-ready";
         }
 
-        /* The hero, hands and banner: one honest summary of where Touch ID stands. */
+        /* The hero, prints and banner: one honest summary of where Touch ID stands. */
         private void apply_state () {
             int count = enrolled.length;
-            hands.enrolled = enrolled;
-            hands.target = null;
-            hands_caption.set_text (count == 0
+            prints_caption.set_text (count == 0
                 ? "No fingerprints yet. Touch ID on Linux is experimental; your password always works as a fallback."
                 : string.joinv (" · ", labelled (enrolled)));
 
@@ -308,6 +313,7 @@ namespace MSeriesTouchId {
                 hero_hint.set_text (count == 1 ? "1 fingerprint added." : "%d fingerprints added.".printf (count));
             }
 
+            update_slots (count);
             hero_add.visible = count == 0;
             banner.title = banner_text ?? "";
             banner.revealed = banner_text != null && diag.available;
@@ -319,6 +325,26 @@ namespace MSeriesTouchId {
                 names += finger_label (finger);
             }
             return names;
+        }
+
+        /* The row of prints under the hero: lit only when Touch ID can actually be used. */
+        private void update_slots (int count) {
+            for (int i = 0; i < slot_arts.length; i++) {
+                var slot = slot_arts[i];
+                if (i < count) {
+                    slot.seed = finger_seed (enrolled[i]);
+                    slot.lit = hero_art.lit;
+                    slot.opacity = 1.0;
+                    slot.tooltip_text = finger_label (enrolled[i]);
+                    slot.update_property (Gtk.AccessibleProperty.LABEL, "Fingerprint: %s".printf (finger_label (enrolled[i])), -1);
+                } else {
+                    slot.seed = i * 31;
+                    slot.lit = false;
+                    slot.opacity = 0.35;
+                    slot.tooltip_text = "Empty slot";
+                    slot.update_property (Gtk.AccessibleProperty.LABEL, "Empty fingerprint slot", -1);
+                }
+            }
         }
 
         private void rebuild_fingers () {

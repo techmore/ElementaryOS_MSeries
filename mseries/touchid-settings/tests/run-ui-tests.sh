@@ -91,4 +91,11 @@ MSERIES_TOUCHID_DIAG_DIR="$out/diag-blocked" with_fake "--fingers right-index-fi
 check "blocked state rendered" "[[ -s $out/blocked-light.png ]]"
 check "blocked state keeps PAM untouched even if the switch is flipped" "! grep -q fprintd $out/pam/sudo"
 
+# 8. The sheet follows fprintd's finger-needed / finger-present when they are reported.
+fresh_pam
+with_fake "--fingers right-index-finger --stages 14 --interval 600 --finger-events" \
+  shot --light --dialog-screenshot "$out/sheet-live-light.png" --dialog-delay 2400
+check "live finger events sheet rendered" "[[ -s $out/sheet-live-light.png ]]"
+check "live events sheet still released the sensor" "grep -q Release $out/fake.log"
+
 echo; echo "$pass passed, $fail failed"; [[ $fail -eq 0 ]]

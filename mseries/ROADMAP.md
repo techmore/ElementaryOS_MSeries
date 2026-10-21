@@ -13,6 +13,12 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Software Updates app — 2026-10-21
+
+Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.
+Not run on the M1 or against a real repository yet. Next: package it into the `dev`/`stable` suites, a Switchboard pane, translations, an
+update notification. [Details](updates-app/README.md).
+
 ## Customer update mechanism (first slice) — 2026-10-21
 
 `mseries-update` stages signed `mseries-*` package updates, applies them before the next login and rolls back
