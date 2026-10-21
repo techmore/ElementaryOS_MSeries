@@ -4,8 +4,8 @@
   "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
   "configuration": "Asahi+llvmpipe OpenGL, Asahi Vulkan, X11+Wayland, LLVM enabled, upstream tests enabled",
   "prefix": "/opt/elementary-m4-gravity1",
-  "status": "Meson setup passed; first compile stopped on work-local XCB header closure; retry preparation in progress",
-  "build_handle": null,
+  "status": "Meson setup passed; native compilation resumed after work-local XCB header dependencies were completed; tests pending",
+  "build_handle": 78210,
   "work_local_dependencies": [
     {
       "file": "libwayland-dev_1.24.0-2_arm64.deb",
@@ -40,6 +40,10 @@
       "sha256": "62c22cba899d7dfd9f71ba343911deb5b1442d4f97ce4f96537eb7e6d5b3736c"
     },
     {
+      "file": "libxcb-render0-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "46cb15c935266593e7c303621836b8817594a3d30e9f2e580b181cdeb27a1d03"
+    },
+    {
       "file": "libxcb-shape0-dev_1.17.0-2ubuntu1_arm64.deb",
       "sha256": "bd3d52e3893529d940a9b6f151480f010293cca0f4fe671b97715fe3a5c14e0e"
     },
@@ -54,6 +58,10 @@
     {
       "file": "libxcb-xfixes0-dev_1.17.0-2ubuntu1_arm64.deb",
       "sha256": "624b455d1e44907db8547da036b9309e4c468eeeee2e6047e58ff38fd6303151"
+    },
+    {
+      "file": "libxcb1-dev_1.17.0-2ubuntu1_arm64.deb",
+      "sha256": "fc1016a7249a4a67ff1cf5a2a58922349492a9adf8094907d44f7b5a2c352d3a"
     },
     {
       "file": "libxdamage-dev_1%3a1.1.7-1_arm64.deb",

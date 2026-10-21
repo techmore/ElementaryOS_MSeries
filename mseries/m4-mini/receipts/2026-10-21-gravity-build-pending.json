@@ -1,0 +1,11 @@
+{
+  "repository": "GravityLinux/linux",
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "status": "native build running; resolved M4 config gate passes with AQTION=m and TIGON3=m",
+  "build_handle": 81046,
+  "jobs": 3,
+  "prior_build": "intentionally terminated after confirming required owner 10 Gb configuration; no Gravity compiler process remained before reconfiguration",
+  "hardware_validated": false
+}

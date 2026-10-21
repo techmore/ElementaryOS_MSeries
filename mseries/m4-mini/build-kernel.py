@@ -69,7 +69,9 @@ def main():
     config_gate(build / '.config')
     run(base + [f'-j{args.jobs}', 'Image', 'modules', 'dtbs'])
     artifacts = ['arch/arm64/boot/Image', 'drivers/gpu/drm/asahi/asahi_m4.ko',
-                 'arch/arm64/boot/dts/apple/t8132-j773g.dtb']
+                 'arch/arm64/boot/dts/apple/t8132-j773g.dtb',
+                 'drivers/net/ethernet/aquantia/atlantic/atlantic.ko',
+                 'drivers/net/ethernet/broadcom/tg3.ko']
     hashes = {path: digest(build / path) for path in artifacts}
     receipt = {'repository': 'GravityLinux/linux', 'commit': COMMIT,
                'source_archive_sha256': ARCHIVE_SHA256, 'kernel_release': RELEASE,

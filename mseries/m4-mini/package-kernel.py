@@ -25,7 +25,9 @@ def check(build, archive):
     if release != kernel.RELEASE:
         raise ValueError('unexpected module release: ' + release)
     required = ['arch/arm64/boot/Image', 'arch/arm64/boot/dts/apple/t8132-j773g.dtb',
-                'drivers/gpu/drm/asahi/asahi_m4.ko', 'Module.symvers', 'modules.order']
+                'drivers/gpu/drm/asahi/asahi_m4.ko', 'Module.symvers', 'modules.order',
+                'drivers/net/ethernet/aquantia/atlantic/atlantic.ko',
+                'drivers/net/ethernet/broadcom/tg3.ko']
     for path in required:
         if not (build / path).is_file():
             raise ValueError('build incomplete: missing ' + path)
@@ -35,7 +37,9 @@ def check(build, archive):
     for name in modules:
         if Path(name).is_absolute() or '..' in Path(name).parts or not (build / name).is_file():
             raise ValueError('missing or invalid module: ' + name)
-    for name in ['drivers/gpu/drm/asahi/asahi_m4.ko', 'drivers/gpu/drm/apple/appledrm.ko']:
+    for name in ['drivers/gpu/drm/asahi/asahi_m4.ko', 'drivers/gpu/drm/apple/appledrm.ko',
+                 'drivers/net/ethernet/aquantia/atlantic/atlantic.ko',
+                 'drivers/net/ethernet/broadcom/tg3.ko']:
         version = subprocess.check_output(['modinfo', '-F', 'vermagic', str(build / name)], text=True)
         if version.split()[0] != release:
             raise ValueError('module vermagic mismatch: ' + name)

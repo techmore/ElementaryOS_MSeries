@@ -1,0 +1,12 @@
+{
+  "repository": "GravityLinux/installer",
+  "commit": "6420623289fe7544cb8589b658355e57f0290fcc",
+  "test": "production choose_ipsw and split_ver extracted from inspected AST; no installer entry point executed",
+  "input": "synthetic macOS 27.0 / J773g host with nonnumeric mBoot prefix",
+  "result": "26.6.2",
+  "limits": [
+    "selection logic only",
+    "synthetic firmware identifier; not owner inventory",
+    "no image download, Apple signing test, OS authorization or hardware boot"
+  ]
+}

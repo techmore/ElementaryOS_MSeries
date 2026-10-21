@@ -1,0 +1,1820 @@
+{
+  "asahi_commit": "94fb23346d522edf53722357c426a3e58030beea",
+  "gravity_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "asahi_files": 93960,
+  "gravity_files": 93993,
+  "changes": [
+    {
+      "path": "Documentation/devicetree/bindings/cpufreq/apple,cluster-cpufreq.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "3e767ef7c4d8ceb432837fea7b389e3f781adb980069f2daaf854ad22550cf9e",
+        "size": 3422
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "8e91d4a2d22dc992dd02c95b5dc61c44ed7e7fa1a963d1f8a5688b95f0162d29",
+        "size": 3481
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/dma/apple,admac.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1823d84f35a2978b29a43bb0931790c29285716b31f629726909142bd2fa0460",
+        "size": 2543
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "d25c169eb1f300b1e65501af51b0009310d32d28d2bc5280fc4479dbde4d927d",
+        "size": 2673
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/dma/apple,sio.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "d4cfbe293244497e462d0c7c44b9ce34fe07185b6205d120da5e5bdeb550e24c",
+        "size": 3732
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "7c1f73d7e4a63c8939b29e66a4a994154ada0bddc4604ec353830c15888af999",
+        "size": 3760
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/iommu/apple,dart.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "f94e390a0d95dbe7636b3e51e16b651bd5ee68e4699cbba2df1fe5722b258910",
+        "size": 2105
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "4a2fec00b4a56cbdaa8956deb8233d98c7fbf340f4f99e1a9830b3ba86f37138",
+        "size": 3584
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/iommu/apple,sart.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "90b9f74750f4c7e3578daa7b8519bc7455ba9f13a7bbeef79dd1b153bfe7df12",
+        "size": 1561
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "dc05cd162cc1ef2c4599a3d2d305fa29ae8235178a77290342c4c21c8492b5e9",
+        "size": 1594
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/mailbox/apple,mailbox.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "71ef00bcc7e0f55683ecf10eb237ccbc0d19570cf718586b166897654762fa60",
+        "size": 2834
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "766d63ff870c80bb0a099f95c8ae27ea54fe6ae3d50ff430375d2c6dd835ac78",
+        "size": 2874
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/media/apple,avd.yaml",
+      "status": "removed",
+      "asahi": {
+        "type": "file",
+        "sha256": "a20fbc616675820936953f4ddeb2ad2cc639f26cac2d57cba605d0863bbb9afa",
+        "size": 2206
+      },
+      "gravity": null
+    },
+    {
+      "path": "Documentation/devicetree/bindings/mfd/apple,smc.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "ae3cc0047e4732be8315bbb6d320bc734be9e4d9af35c84a792821f98e808eb6",
+        "size": 2978
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3ec744b5dd6d4037d23fc6f92c90be86fffab271b4dd4af40073cfd036400200",
+        "size": 3010
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/nvme/apple,nvme-ans.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "d93422fb44530d3bf4c4709202f956f16438ac4afc399546b8ebfb0f204a93a7",
+        "size": 2814
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "8d79d5935b51b6b9f487964a730c90df67a897e605ead05ef9f3e0d14c4c0e49",
+        "size": 2851
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/pci/apple,pcie.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "8923cd27a990b28a1ac57f97a347aeb33b4ab204fe3a4da994b900b2457dd370",
+        "size": 6379
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3cc70f2fd4b7eacc91003305e8f927c79a087ccd4905b57f9a66f4ba9b4cca2c",
+        "size": 7565
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/pinctrl/apple,pinctrl.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "fdeeb79daebb06ae964b968c08784c75585abcb6410f735657613e59513bb38c",
+        "size": 3461
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "813652f7e23447b2ba6d6c4aff2f5fcf1cd2e9aefa2886c3d1dcd5b8b95ba7cd",
+        "size": 3740
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/sound/apple,j773g-speaker.yaml",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "807f55cf23c310b4c0fd3a735cf588004837f8c60265dd97f6e7df65ac68a240",
+        "size": 928
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/sound/apple,mca.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "0cf86b58340e49f1239ae3705e451e5f13cf99cb59482b780f876ab157d58ad7",
+        "size": 3457
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "ebd584371ab2e2f56031b66f44e64c36aa2bd277693352f0778cacc495de11b1",
+        "size": 4147
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/spmi/apple,spmi.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "3b386bcef218b0c72cbd9c5faf5e3a8cf359cd0e5b6069f413a4908336146367",
+        "size": 1497
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c94aebebf81aff18b5decf9dec12062e5ee64e44b58f6632f430a2453f11961f",
+        "size": 1530
+      }
+    },
+    {
+      "path": "Documentation/devicetree/bindings/usb/apple,dwc3.yaml",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "9ea9891dd1b286317171950d0cb88055259809fd97377ee5c21682385e21d52a",
+        "size": 1616
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "8ceb214712c7cf56978281b52ecb6031f2780e0634bec48bd86fd22a82cc2f53",
+        "size": 1649
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t6030-j514s.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "a6122a494fa08d5afdc9d5b4a1bcae2d37a5087040c773f86a602afd7bf41fe9",
+        "size": 1784
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "5e64f77ab17d3ef031f892aaaddfef3e998cad916287357584cb3ecf9ed97f43",
+        "size": 1784
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t6030-j516s.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "226f58e0762ecece1c05c4ea35516e1d0ffaa4708b4b4da6147d474a8d1a3995",
+        "size": 1784
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "bf8fcaa2110022cdf0bd62ba6daa81ee8df60e042ac511418c42174d7e835bc6",
+        "size": 1784
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8122-j615.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "5f382adeafff55fb6569ace33015daf1e2ae0b662c6e1f9e553d18969e8c93be",
+        "size": 4560
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "d048a2ac8f35cfd9a11db259480517685c670d4958deba4c0ab9d0664c609b56",
+        "size": 3841
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-gpu.dtsi",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "4dfc96eb18516d8387794edd1c0b7aaa91f163fc696a54a7f57ffa2fd0bd4980",
+        "size": 1516
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j604.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "8225617a47a86afebaa7eaa94da8836517caab320999494da425f9c1ecf4fad4",
+        "size": 663
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "02ea14afd4d415ab0b44318ae8f0c793c34b0557d773c746e8d1ecfc78e82488",
+        "size": 2018
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j623.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "54f82a9fcd2fd143671d8144002efbd8b4c53fff3bb7a43a2b81e022fd37085e",
+        "size": 351
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "4f28d445504cf9c23c229b119fe1e923396a50497ce3aee905531992f6e79cb8",
+        "size": 488
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j624.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "807daa2d1b3e5a3ddf2e309d749d06dc7b2baa06d83b3a964fac117d344621a8",
+        "size": 351
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "fd5eb00399634e3db62921b53734209e6a7ebd116e2c4592487f29846d00eb92",
+        "size": 3162
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j713.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1c11e26655cb259e48e73b46b1a3c39e80c9ffe75b7a34e34a1da91712ff6113",
+        "size": 663
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "cdb4f924c73ce4dd7976c9553cc1b5198518c19d79265136c88e8870c63eecdc",
+        "size": 663
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j715.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "ece1b63732fff6beced343fac0dc1449153b82b2be782c1ab2bb484b65aa09db",
+        "size": 663
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "bdc88acc778d7937854d468fd27631e9939cbc88f9c0a67691f31426bc487414",
+        "size": 1456
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "927f0ce98b7fb0e31f4c5d5596c82411233d6bda3396bcb66a8857d75eb099df",
+        "size": 456
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "f6ddc873d7b4493dba0071df0f4e58b8513d30b26dfc4aa240d0b0e6a4dd8540",
+        "size": 4868
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "f74640b52f1c6b55bdbd584c353dddc9c6eaa44c0325c3f72b8e150e49e15272",
+        "size": 962
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "f473fc6ec19acd08637f58560bba8e0a179b180a730259dd102ed9e257895df1",
+        "size": 4835
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "17c4fd5a7ec04af6796803cf900f8bfcc5844935a471aa7e6def17f85f6000f0",
+        "size": 29464
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "785644ad35f8156f41e389b22a76142625d02b37d1d7a85b2e5c949e7bfc141d",
+        "size": 31023
+      }
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "4bcfc07b11c957a5525ddb4606559cd481525365baf9c4f84694d144966bf0bf",
+        "size": 11089
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "9dd2e1a08962dfc7e09551a299412f0058e96cd33f5b049dabb1fb4aff7c7840",
+        "size": 41315
+      }
+    },
+    {
+      "path": "arch/arm64/configs/m4_gpu_defconfig",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "b9d60bba01f15fce37cc39773689317f7a81810af4489a7501ebe313babd391e",
+        "size": 1351
+      }
+    },
+    {
+      "path": "arch/arm64/configs/t8132-audio.config",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "64619a45fcbdf6ddd9552f3b9f050da4423c638e68152cf57b101bb8c5f7db07",
+        "size": 488
+      }
+    },
+    {
+      "path": "arch/arm64/include/asm/cputype.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "8ae8b643c33a115951c90f91e488ab5f3c1f70a32e50abcbf9e99885b994344c",
+        "size": 15216
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "751dc2a650ebdf8437ab473b421493ecfd6cd75547d9eaa54a7d093cf81c0eb6",
+        "size": 15502
+      }
+    },
+    {
+      "path": "arch/arm64/kernel/cpufeature.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "900435e3356a95bf4d7c3286c97a7b19d53192941898cb4e6ed9ad1fe6b8bb15",
+        "size": 145646
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "bed48464d12a55aada988819778b95b639322e5ee1bbda9743f6c61076b1df26",
+        "size": 145742
+      }
+    },
+    {
+      "path": "arch/arm64/kernel/pi/idreg-override.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "749bb2b397543cae21fd1f4446e92b92c5a17f8dabc354618a0154cccc3cd108",
+        "size": 10715
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "304251aede163cab648147a37ec4cb581253ad306a3d3fe8161c025225314061",
+        "size": 10812
+      }
+    },
+    {
+      "path": "arch/arm64/kvm/vgic/vgic-v3.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "e4cc21824218093594d6868ff508f9333ec54bf1c34bb0a27c37e883dfd9d631",
+        "size": 27089
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "99ecff5f7e0304a0ff5bcd106be219b8157d968e198ce127224d808c30d583db",
+        "size": 27183
+      }
+    },
+    {
+      "path": "drivers/bluetooth/hci_bcm4377.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "aa296bd2135138e197df42a7a6cd897440bced40c0a7ff2c3fd69e5178ff5752",
+        "size": 75129
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "1c268476ce30daebcc348ebff7ac5ae954fac46bfbf8272c786141ab28680090",
+        "size": 75287
+      }
+    },
+    {
+      "path": "drivers/dma/apple-admac.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "5f4832f7da99e27cd4a70f104b192547ffe39123fadedc1c078e17bfdb980dee",
+        "size": 25776
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "6bf7adb13777ebcf852743f5b127aad481f1df2632e86df3ad684d70bd9fd206",
+        "size": 27131
+      }
+    },
+    {
+      "path": "drivers/dma/apple-sio.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "7104a42b43aeb0092d689d68290365ec7bdfb0aa18e58e54c82528daace6fe7a",
+        "size": 24028
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "1161b97663d4244369abedde692ba45cfe30cee0e402fc157063bf396c6b0242",
+        "size": 24946
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "ab7bd1064f107d0dc17a8bf41ddf50e3c45ac2f6a5c2a92eae2265589c639b8c",
+        "size": 7755
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "92e1850fe6c76683546dc4b9ffbf48e6ba198ab8ee191e485fb6eb4dfd51c3ca",
+        "size": 7792
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/Kconfig",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "082271cd63af9701a3fcae28dc8b56cb01896e28b2dc8877238f6e6db9fa14e2",
+        "size": 784
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "aec30621081103149876f9059a3f2ca29603d126515fb2155ec28df96eefaf23",
+        "size": 820
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "2a222d361919694d7255d38184768fc453d9a380f4390798daa08a193c9d7bf3",
+        "size": 508
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c6f0881e5d446e76dad063cff1769ab403ca27872e6965dbb918f87a7323b3f6",
+        "size": 536
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/afk-fragment.h",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "6f8795b57fd3fe41082b9273877994674ad3253711b4bd343904aff0f63db8e3",
+        "size": 1322
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/afk.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "f7621b5a3abea4b18fb1c4db7fab59d58711161d903729bdb948b49f33cdbdc2",
+        "size": 31132
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "27efe1ea3b725143cbcaeca85a2c6cd10804f377c649c5ddda94814a81adf8ab",
+        "size": 54066
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/afk.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "0fb2178303a27bcf48f836e091dea11dd1608b5aa8ceb37373581a07b846cf68",
+        "size": 4278
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "b378ebbbcce4c10cd77a4ec085dc950b4663eef90cfe9e3fcd3acb37cc55a4e4",
+        "size": 5250
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/apple_drv.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "6bf749dac5a74a50f1b5d62ce64326d9f291b7218af79123ae3359bf641d2946",
+        "size": 17846
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "9036454685b78fa674803e7827d7bd3a39696569316c243952636d1ddbe1e233",
+        "size": 27403
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/audio.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "8633302049d2b6186eb82697c63092bfe8e0ff350800568dd16d3d7e4f3de5e1",
+        "size": 20078
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "6b9bad353638580345f46f89dcbde6eb1f4e66dedf15b4e49f4f83f150d87e2e",
+        "size": 27083
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/av.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "5165ed857931cd84bf3fb058cdef4675f893202ec31df8b29d2c2f9dff17c122",
+        "size": 10461
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "071eebbf3ad3e3640ea6e58cb8d4b4c3d0a33fe94643dfef55bb8bf9d96fb59b",
+        "size": 13686
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/av.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "977ae8ae3a915c5a3cfbd2cce639b4e0a96ba5d10bb946813931e46c25b59d38",
+        "size": 504
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "5266a1ad8737ed90b0490aa87a31132bbc1a0eccb3b4f82cacc48ee7540408e1",
+        "size": 822
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/connector.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "bbc24737128162405fa06a6a4344b48997bb2aa409cd6f7cef5eade88b479359",
+        "size": 4178
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "33ffd8b0a2ae3656f5632ecf81341db81ea1f237ced06e0795a70a41e7238e8e",
+        "size": 8440
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/dcp-internal.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "db2a475b98f6b774178637eb066d49cd3898054b4ef167c030cf7ecb7b1cbce8",
+        "size": 6523
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c19b80df9d60e2bec09583c0ae4865c8d79604b79d0fe89f31dd57e6aa39fb7c",
+        "size": 7791
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/dcp.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "a9dbcde6d6f16e6b1da494807d579317f20c88088b8c203af8be53f9a2da2fcb",
+        "size": 37325
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "dd6391dca62fb8bcdb8845f5aa7630370da0093f1446b6a011a47f054223779a",
+        "size": 58849
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/dcp.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "fb90336889a7646033b9fcddccc4dcbc2a3c015b89a394f0702acd2b21458ef8",
+        "size": 2749
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "d1fdae4352f3553235342f7a0e7bc1c48638783cb8acbf5ec8c1268f60d13bbc",
+        "size": 3199
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/dcp_backlight.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "36bff5ab1c1a20aeeb3f7b8f46992946ce18a182d639dcffbb4b404c1ed9c661",
+        "size": 7358
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "9d6f9ab7410e6a3dfd123efcb4660297dfc11b4342cd4a8a81441dd7fba1c4f0",
+        "size": 7599
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/dptxep.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1c2fd002b44b9141728107f9cd99c74df4851e58fe0008f78fb0c6362893176a",
+        "size": 16699
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "e444d27e1f753f0d2b92fcea7e02723bf641403c5851b22330e2782638440bf8",
+        "size": 18992
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/epic/dpavservep.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "4befdad91d6ad90035f84c5ed78688c97210a1c8a8f0d8c85ffadab7cc747291",
+        "size": 6065
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "71d96afdbc6d922cf8f8def223d6c1b34f4137d7ac95cef48f5fcb50bbe09abb",
+        "size": 7258
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/ibootep.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "45c35bc2a0ebcef41f0ac81edfa806d3dfe72ed27571d4f8c71fd42217b85d44",
+        "size": 532
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "2a2d025f6a5dc170ec29f23952181150684d80a0365f46d2cd769dbe99a30674",
+        "size": 3258
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "9b0e7d0952f87f9c1b3c6483f00071ecc7480d58e9570382c2323b8dcd0da12e",
+        "size": 14318
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "655332392f6f0f9622ef2151316e13ea872ef44609cd22d6711489a5c3ca0a70",
+        "size": 15094
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1d33f7f98ce8e2e7f4f1f01a354742c7ae878139268e03e515a2f3b756521068",
+        "size": 6872
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "361c17b3e42fedf3fda8352a49ace760f63d55069928350f4eabf197dd2352e2",
+        "size": 7891
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_template.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "616b8a453e78cdb8dc957514e2175b535b9f57e90f7446d30ee9d24a765084d3",
+        "size": 41421
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "f36ac2138600138be5865ef737238029e639337535794cfe1a133ea518428a52",
+        "size": 55421
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_template.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c45bb599efc740fe87b63317ffdddcf297be73ac62f7d3dea495f2eabedfbb88",
+        "size": 3486
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "b44d48640d6e44beedd9fcf3744c1aa398cddbe807ce3dd26f624610edebdcfd",
+        "size": 5528
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_v12_3.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "046bf6d2edfb7f3a4f3c0e926f98e3112b6ae4ed614063ff68a107aff06f4dfd",
+        "size": 4432
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "5fd25c349550886d9cb1be785c46710f544203bdff135151cf008f9b44d6ab20",
+        "size": 4457
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_v13_3.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "108bd3f94f2325d9ea58ed6a5f2c364d7aa80cc633e4c4d428be3d5c8c97ef4d",
+        "size": 4708
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "0873853b0c3e045c996ec73486dfd904a394b78f359b0bc3994ddd890938f15d",
+        "size": 4733
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_v26_6.c",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "8de8ebe1f3d95c9e24f2b7fd7cae0a0e272b904f39c243a56054722ec7ff90dd",
+        "size": 6532
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/iomfb_v26_6.h",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "7557fc62e0993b3f87f256f76bf152421b8d490c7e6fdda8cc4b7ce14934c3a3",
+        "size": 718
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/parser.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c920eccb3c85056a9f3df8737ac976be1d68ba7e3d281c284c6b7347e670e762",
+        "size": 23960
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "70736813dd08ddbe3cb1b3ece41e27386969c0cb1f383cef9f8ec15aa4e49ca8",
+        "size": 24292
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/parser.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "0de2487ffe5af1942d480949a106cfe0c0d5c23136c9216146e4a8b73b36ec07",
+        "size": 4654
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "03f8a296eab4d0e65f813bbc2dd9b767b5a8b88770b3cafbb2735ddda655315a",
+        "size": 4761
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/apple/plane.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "d4b2167f6d6c786f963bf614451cb501eccdc66571c9a9078020ae142eb80185",
+        "size": 14089
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "818b5f1ec83d88692eb94453fd4414782a6824659fb4f2ec683675663e9e943c",
+        "size": 14273
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/Kconfig",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "579340785904db7b4fac708a9c761b035e32d7c8af6d6b5d32175e523a39359d",
+        "size": 1021
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "d266f29834e5dab7504c75473cc40322c6937d0546874f5cddc876d049270e0a",
+        "size": 1539
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "2e0e1fe5948c4db5fc77b541300aafbc99f02b949100e27a74610edc942b0c0a",
+        "size": 71
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "ee49dd106391bae32d98d7847c205dc7fc79c786d16e250370509edbd1bf9d4f",
+        "size": 112
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/asahi_m4.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "83121b03dbdb164c793b4da092a39f7eeeacbddef22bfe2596f6abb0032307c4",
+        "size": 4197
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/float.rs",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "17e707584e128d757f633a1cf45e2a25a7bed7735cf745dcf9a460b39d0303af",
+        "size": 10332
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "e6c2a8f3a574b8f3058f42b0ab2d359af78c67dc68b2bfdcc85bbe683d7edde1",
+        "size": 11049
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "605f15066d3abb5e65da9fe9505e21d4e9e3725a342a7a8cd9fd61e3e1923677",
+        "size": 36625
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_alloc.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "eb87244c06e503d059dec31fd05ae6ff276b2b99692d3515ed6449c9eacf1c3b",
+        "size": 3332
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_compute.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "43c79cf239b75490185a68fac805dedb1e7cbf47d3f5ad490a399f1cc1192687",
+        "size": 10412
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_drm.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "630f320e9759364ec3fef7314d2cee6d39be30e5f8680fdd6a0fc1b2c8b4202e",
+        "size": 69450
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_fw.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "507ef7a73541124ce249b21a1b26dafb245d069407acf5e2b81486c972527b20",
+        "size": 9173
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_notify.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "aa87cbe513f5f658348862696c40b513e44b18881c8ab70988d8e4113102f8bb",
+        "size": 2430
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_platform.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "a051ce1add8bd67fb925637bffa578818b64601f115ee784f123123ef97de3e3",
+        "size": 12359
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_power.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "d83adbed353e99627a237b63ac138b55c03b55cb1c639a5d85a092bfb858ad89",
+        "size": 14029
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_queue.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "167219617c4bae06f1ac8f3be9761b80eba66b8a5176de121601456a7975bcfd",
+        "size": 4005
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_render.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "718b2fd0492bd3cefe24a6daecf93f8b95cbdb93588f3a285902483b2cf600fa",
+        "size": 43993
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_runtime.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "b70b1d6a18124f48cdf24dff9b5df864fe56a21f75b25c06185943ad8864951d",
+        "size": 70765
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_stamp.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "59ce7ae92d9bfb4360c6cfccd1e2d1cf3231cf3f373c75c8802f6362efc441b1",
+        "size": 924
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_tvb.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "d1480c396f5e1c353c225cbce38d76d2f5a69052647370669086ff6779434945",
+        "size": 7745
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/g16_vm.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "042ff8b086f00bf9fee64199fd2414ae844508acfb07a1af9fb18e2bd609f4f6",
+        "size": 32678
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/m4_mem.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "27b49efa2d7f9b16a89f9f9c8c1e16843e36c6e9a2dff463fccaa17927e25f9e",
+        "size": 1700
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/m4_pgtable.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "bed5f5ea1dd022576aabad1f9940fd554b2b1655e445cdf1174397e90c0a3c2a",
+        "size": 30571
+      }
+    },
+    {
+      "path": "drivers/gpu/drm/asahi/m4_util.rs",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "daaea0ea13fadec25ef667d8ad751164983c39186e1aa6aaa9f55323cc697bdb",
+        "size": 2026
+      }
+    },
+    {
+      "path": "drivers/hid/dockchannel-hid/dockchannel-hid.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "15c1186c3bbb87dddb75c1f1053ab3a2c3a2a1128bba6718bd88977f4b7beb2f",
+        "size": 28756
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "591b3fa46d730cd732b87420a7f6c42eb834ac0c1d20f2b9b403d637c3aee6cd",
+        "size": 33696
+      }
+    },
+    {
+      "path": "drivers/hid/hid-magicmouse.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "d57936377d9f936bf7a5167800dbf5d5316043ce054d61f0702dc00c320680b1",
+        "size": 48163
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "1987f9edc7c44b5e0bf1c9837d055663b7cacdc9b346b038a887babf04e7d947",
+        "size": 48211
+      }
+    },
+    {
+      "path": "drivers/iommu/apple-dart.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "f48a05cf9ae17cc1871211cfd7a634f75d3bcdc131c0d7e896a8c8a80451a845",
+        "size": 45609
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c3cae72eacf30c5a0592bda4490a6f6e5e850aca7342b2a93f3a68e0cb37d4c5",
+        "size": 48574
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-av1.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "4b0d73d916073977410be386a6f3080f462adb8d5ee3f7fa49eba3b2e443f301",
+        "size": 48440
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "452d77f1597a3ffc9c0f84784578515af6da5fa748123bb3b618e40196324db0",
+        "size": 43067
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-drv.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "134264a2c7ed8779077ff3ee9e8e733c2cddb5cc1b6e3d4def673e40b87083ca",
+        "size": 20360
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3f382e76603996ba922994499d9a2fbf8c05763650c5dc29732df3bb4e2e5f59",
+        "size": 18037
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-h264.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "d24d8abe01231430cbbcd215df431fb88764231995243a2a098b7e1ec253623f",
+        "size": 24277
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3a6b09f9273bb9b9d775f298331a540fc52123a92a28c15ed7ec2d517a0d931c",
+        "size": 25267
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-hevc.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "a9cc1dd4303ac8c482f1dd8aa6a5de866f0c4e11a9fdf98796fe479e1e260bb9",
+        "size": 41295
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "a68e4a96e718b8bc816ae1342cf5bae797e55970c32ca56053bb52fee335e7ab",
+        "size": 39851
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-hw.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c9b15028adae725cf9a4fcfc1a928cba0d26b894210c34a4dc8d8c21b6b8dc6f",
+        "size": 4635
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "2f3cb7fea45b3b701421a96836c9adaa6d3063e0ee099d3204322b9ec69a30f9",
+        "size": 4642
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-inst.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c271d9f266e685dc3db3d0394dda15a9e84ff426d9f12ce10d9dc726a5625816",
+        "size": 8612
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "2d2ba56451711c171bba4eab67827d040ee9fd3f6de6aebb2bc80331eed74e70",
+        "size": 8453
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-v4l2.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "2d1c3fc727d0427fcc0147c8f6f24367dfeb0851838bc093559a9c0630503c53",
+        "size": 26549
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "460ebdb8d42070f938c57261316eb33475d493a991060ce2d948a52dbf443ba0",
+        "size": 26142
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd-vp9.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "065e2343426559569b44aa39d16a7ff2bd780e65003874093fddc17b9c07e1a4",
+        "size": 33056
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "6157feaf4614895c1f02266be53d26ec3d29b24173df14f2812f59ab9824af9f",
+        "size": 31385
+      }
+    },
+    {
+      "path": "drivers/media/platform/apple/avd/avd.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "283e311bc9108d734b2217e01fdcd950edd6f65a013b8e78a9c4a256a51a2739",
+        "size": 7690
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c5fa683aab24d38dc4c838f6510a4afd611a397e53b256de11a35825c128ffea",
+        "size": 7505
+      }
+    },
+    {
+      "path": "drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "03883869538eb7a02f826079a4e44ee865c85c9a7ae37162e2a59c8a31558d8f",
+        "size": 245466
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "600fefce96871073f0c37470487b5934621abc25a3971373fe85eb1fb1bcf58e",
+        "size": 245150
+      }
+    },
+    {
+      "path": "drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil_types.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "b829feba2107405853d3d0434d5f7a3882e0b2524d8904abef0d8bbf38fabe0d",
+        "size": 49775
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "bd6134f7128eef7d01a87f64a7ee9fad8bcc97f048287e936a5a0c2988293c5b",
+        "size": 49775
+      }
+    },
+    {
+      "path": "drivers/nvme/host/apple.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "95f9a0fe75f62eb1532648f1d47b7c84a77030e5d451bf64b2424f6f605942ab",
+        "size": 47731
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "4919e6d2556e1340191a18014b266ec6404b6541bad6bfeaed4cffe01b81bd76",
+        "size": 48699
+      }
+    },
+    {
+      "path": "drivers/pci/controller/Kconfig",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "b391ff02f6a4cf96fe87a35b8903ff24599ce81653935d0dd803172e697ff614",
+        "size": 11582
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "1022217e299e9481d3f31750b365ae107242cbc4dc3ea29485736f3b1eeb99ea",
+        "size": 11610
+      }
+    },
+    {
+      "path": "drivers/pci/controller/pcie-apple.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "0f0023baa3fce32a593e286c82bae8325da2f68cac4ec34bce6768db25e34bb6",
+        "size": 27120
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "0e093800343e270b981d0cd52fb0b13d52727a865f5e7c9150f0a25a458a59f9",
+        "size": 27775
+      }
+    },
+    {
+      "path": "drivers/pci/pwrctrl/core.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c01db3d99c9e5a792007bcf03369cd2d9fd472368e01aaee443b1e1b1d808876",
+        "size": 10222
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "d474e057715ae4a4d24839fb07cb67e4471edb768cb33104333b4ce48dae9547",
+        "size": 10375
+      }
+    },
+    {
+      "path": "drivers/phy/apple/atc.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "75b9b68c3096a151d31828650887cf7a7caa88c7f0dd5655f4c4727959953939",
+        "size": 85826
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "562502ae4b7cfc44d94db3738851b45a576cf74d14942f7e14dc84f4b57e18a8",
+        "size": 86538
+      }
+    },
+    {
+      "path": "drivers/phy/apple/dptx.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "a80b705c7d0959edb6814af9032c24f1fbacbf48d8de10bf7e230cc062927e60",
+        "size": 25052
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "e54f3311941721ccf91e3ac2cf9919da1ea24b5443b768d83cc700641524dfa6",
+        "size": 29733
+      }
+    },
+    {
+      "path": "drivers/soc/apple/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "434a77b80994fdcfdf48499c61fc6161fa4b66f4a62cc652e58eadda4421e346",
+        "size": 683
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "8c0a907924117092b78ba835c80568dcd1f3928795c2b01454964ee6c82f75f4",
+        "size": 684
+      }
+    },
+    {
+      "path": "drivers/soc/apple/mailbox.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "7f501ab286effea3268cd9bcb2d172b48ee27585fb848b0f192d04ed445a50dc",
+        "size": 12737
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "88748e94ddb069967303187d4152d57ccaf8bbb3dc304af14bffaf6c43221331",
+        "size": 13447
+      }
+    },
+    {
+      "path": "drivers/soc/apple/rtkit-crashlog.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "ae7acbdcc3add8d925264609849eb27224fe88a4aca53d910fb1043b8ec98b26",
+        "size": 6103
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "aadba88c7edda9196f577d5821e6b2655318992ba07be7edb85c6ccdcf0cbd80",
+        "size": 9379
+      }
+    },
+    {
+      "path": "drivers/soc/apple/rtkit-internal.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "795283968d936a1e09bd7540b0a71c00143a6dac61a556cfcd76f3501f9bbfb0",
+        "size": 1372
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3ff75c31d91e1413c92096c4c7820cade8bda77d06bdcf3bb331d944eec5476d",
+        "size": 1497
+      }
+    },
+    {
+      "path": "drivers/soc/apple/rtkit.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "c8683d97c9b8a2690c39a07db805637695c9c869353a1923bd44e92c523949ba",
+        "size": 25565
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "4a3c96085d9157eab786cf5c40df9f96a9c64895d6e70f618eb7cd36cd11bba4",
+        "size": 30653
+      }
+    },
+    {
+      "path": "drivers/tty/serial/Kconfig",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "7f8b627c5e8b6e8b7aee25c7fef900dcc6a07d7a00574af2f575aa680541c09b",
+        "size": 51137
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "6f6aa9ffcb48248852f5588b7cc5eedc5e62c9eed7e7797140b5f60c941e5416",
+        "size": 51378
+      }
+    },
+    {
+      "path": "drivers/tty/serial/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "28915decfff13545385644433675af25387d55cd5b11f4e507aaf49a8b8325bc",
+        "size": 4150
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "ba08d8cb5217781935fc51c168f6cb851849c679a3fe58b7745f8316fd449cb4",
+        "size": 4232
+      }
+    },
+    {
+      "path": "drivers/tty/serial/apple_dockchannel_early_uart.c",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "7d0c4bd5b4bf183bf652d6751409fb38693a781c05b0c0808a2ea5c2a1bd3923",
+        "size": 978
+      }
+    },
+    {
+      "path": "drivers/usb/dwc3/dwc3-apple.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "6d2ff775e11b62d1f343b07fbcfdf4a73b4159ac38ff2c2e1ee7c6df1b4a4420",
+        "size": 17683
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "89ab6597dc3df3b1a7a6578f5ce2a30a4848a574775bdf286ff51265cc1ba341",
+        "size": 18292
+      }
+    },
+    {
+      "path": "drivers/usb/dwc3/ep0.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "4142353e86ba0df9197ee1efc7af495ff347f042ea991fe21fbb13606265c4f5",
+        "size": 29087
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "da375cf7c8801f0d3ac3d3784fc1a68d0a6e5403f01679038b53459167d774b9",
+        "size": 29097
+      }
+    },
+    {
+      "path": "drivers/usb/typec/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "bce857ff3ab7472d2f1451a951a3aff0022c48c8149918efb6f4b9edaee3dd57",
+        "size": 555
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "e9cc38c0ed055b2e35859d59ec84b94623fba8a1f4749b1f4ef20fee947f6ca8",
+        "size": 560
+      }
+    },
+    {
+      "path": "include/linux/pci-pwrctrl.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "6f46014ef3385659b8fcac3bb6759812685d5eaef08890d294740cf234736a3e",
+        "size": 2592
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "3ec657bf548cdd7bc974b5f04aceb1d8a5edc9337674ccfc377fd4b7a75bba13",
+        "size": 2843
+      }
+    },
+    {
+      "path": "include/linux/soc/apple/rtkit.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "617c565202832c15ed8f9e8213c8a77e98c1051151da7ddf7c3e7ec3fa459d61",
+        "size": 6706
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "2324a53fc3bcc222005103b14d8c3f5ebe038ebf11196ef5e1c697472092849b",
+        "size": 7898
+      }
+    },
+    {
+      "path": "include/uapi/drm/asahi_drm.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "69fe416b7294dfec4794217bd11379effd53caff4e86010bb803f1b34bdf5e89",
+        "size": 35836
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+        "size": 36599
+      }
+    },
+    {
+      "path": "rust/helpers/dma-fence.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "ee6bb850f34f226e2ee94dd091cfaacecf2e601120ba9da73949334d667d0f31",
+        "size": 630
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "c10dbf2b4f0d6df325daf00062ae6557edb116a77abbb9ec84cf9cf3725fb7fa",
+        "size": 737
+      }
+    },
+    {
+      "path": "rust/kernel/drm/file.rs",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "603e476c3d8ffe2391d2c23a509b9e6b0e8cf676f63ecf71c5234bac4f3b629b",
+        "size": 3718
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "4141fd1beed6ff9b018eb7597dfa236cc07ef1c324d3cd1a37cef915ca4b580b",
+        "size": 4018
+      }
+    },
+    {
+      "path": "rust/kernel/drm/gem/shmem.rs",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "2d994743721ebbdc222f3f54fceec8ecc9f98405cd7666fbdc18855682b12cb7",
+        "size": 16885
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "8398f37929d53e1baa97ab25ef4d592cd40f70062c1a1c4753f8712aa1c4e31e",
+        "size": 17108
+      }
+    },
+    {
+      "path": "rust/kernel/io/mem.rs",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "6210ac453fd9c47d72a8480ec7bfaba7e9c82368ef5bd7d777d0098d170b97ee",
+        "size": 13438
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "0c1db05d6f0ecde9221cd66232db28828bf2181eee71d0b7ee37adbb5efadf44",
+        "size": 14284
+      }
+    },
+    {
+      "path": "rust/kernel/soc/apple/rtkit.rs",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "923fa4002e7c2c914c4eebae7433c3d4fdd32f5b644dc56ddf541220cbee4900",
+        "size": 9425
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "76d0c42d1aed5ed050fc986a08f408578e555830479de456f103bb03623d43a8",
+        "size": 10080
+      }
+    },
+    {
+      "path": "sound/soc/apple/Kconfig",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "4ed6c4423440b95641256b405b917b5eeaeeb0bf0111ff43281562b4700b114d",
+        "size": 1236
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "322ce938a4c73d9d5ebd5a819132b332bf3de81ba209d6b40b148f727929d345",
+        "size": 2017
+      }
+    },
+    {
+      "path": "sound/soc/apple/Makefile",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1c6a295fbee056d082a9d87d55c1b07f70494e5f65535bd4598fad4da8a3f869",
+        "size": 309
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "98c10dfa9be98f312ae65fc294be9ea44956fe5575133d1848508c48ba0917d8",
+        "size": 362
+      }
+    },
+    {
+      "path": "sound/soc/apple/mca.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "83131be9464a5a488959fa64b644da393c60561c945b56dcdda5f7f494ff7d90",
+        "size": 34791
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "f652b7f6f4aead4294c6456febe108d61e111683743ee38416b139065ee480a9",
+        "size": 39940
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/Makefile",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "ad6add59590fa25b580f86ef574b0a055e7f422a6345edeac422e43ee830c9cf",
+        "size": 146
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/amplifier.c",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "a0a3bf7369caa6a359c1801108b3dc2b76fbc4f8a29ca811d4901eb30d5f2820",
+        "size": 860
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/pcm.c",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "2d0828516ab579f9fa8f147237d27aa3af77fb907af8c44ec9be66c6a6f797bb",
+        "size": 19374
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/playback.h",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "ea1ba9f8cb2168622ed1d94dee72f19420c7ad47008357246f3a61e7c96a2b8b",
+        "size": 306
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/progress.h",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "abc550391527ae127b090777d5a87df2b47f10eaaef094aa7cead4a377f3a4c8",
+        "size": 2338
+      }
+    },
+    {
+      "path": "sound/soc/apple/t8132/thermal.h",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "f34fedc30cb07b3e56ef6e2ea3088250103c800a8990c29e7be6280e22b8860e",
+        "size": 8752
+      }
+    },
+    {
+      "path": "sound/soc/codecs/tas2764.c",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "0dcd89b952f2754f8a49a836ff1a2c3b416f267e99a5a718b4ed06ca5f328b71",
+        "size": 26923
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "b9362e10ff699c9c9361999f5433ddfeeb432178792f50df9e9373d5cf5c1e16",
+        "size": 28786
+      }
+    },
+    {
+      "path": "sound/soc/codecs/tas2764.h",
+      "status": "modified",
+      "asahi": {
+        "type": "file",
+        "sha256": "1f7242b553f5f3413a5705fa69b54aaad4e8495b51151739b42e108922e589db",
+        "size": 4991
+      },
+      "gravity": {
+        "type": "file",
+        "sha256": "2bc8096b6be57b9c83431d2c7bb2cbd5a741ff6d77fd0b97739905a3b7197d14",
+        "size": 5266
+      }
+    },
+    {
+      "path": "tools/testing/selftests/drivers/apple-dcp/Makefile",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "aa9fe36a4b74eea8ccd971000daece734b5e4531a87c4583a7c570bce2af6b0d",
+        "size": 166
+      }
+    },
+    {
+      "path": "tools/testing/selftests/drivers/apple-dcp/afk-fragment.c",
+      "status": "added",
+      "asahi": null,
+      "gravity": {
+        "type": "file",
+        "sha256": "8ee090bba527f8039dbe5e54a00b1d1c7c8724e4dc2ada6c4afc1c48103b8166",
+        "size": 3940
+      }
+    }
+  ],
+  "counts": {
+    "modified": 104,
+    "removed": 1,
+    "added": 34
+  },
+  "scope": "Complete canonical source-archive content inventory; no GitHub comparison cap. Not semantic review of every changed file."
+}

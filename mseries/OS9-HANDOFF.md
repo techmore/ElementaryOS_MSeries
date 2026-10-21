@@ -10247,3 +10247,15 @@ cannot yet be packaged as the updated target. Must reconfigure/rebuild afterward
 Gravity U-Boot apple_m1 build at a2f6913 passes; retained artifact/config hashes.
 Bootloader stages and U-Boot have compiled, but hardware handoff remains untested.
 Five firmware regressions and M4 Python syntax checks pass.
+
+Expanded Gravity audit now traces its complete upstream/source chain: 70 commits
+over declared Asahi base; full canonical endpoint inventory vs current Asahi
+finds 139 changed files, independent of GitHub compare caps. Production AFK
+fragment boundary tests pass normally and under ASan/UBSan. Published installer
+selection logic accepts a synthetic macOS 27 host and selects 26.6.2; Apple CDN
+HEAD is 200, not signing or hardware evidence. Omarchy MX three kernel lanes
+enable AQTION/tg3, but current installer still excludes M4. Retained receipts.
+Gravity build was deliberately stopped for required NIC config, all its compiler
+processes verified gone, then reconfigured and resumed (81046, three jobs).
+Current config gate passes; package gates now require both NIC artifacts too.
+Mesa 78210 remains compiling; no Image/modules/Mesa runtime success claimed.

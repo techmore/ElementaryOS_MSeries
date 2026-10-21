@@ -1,0 +1,8 @@
+{
+  "repository": "GravityLinux/linux",
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "test": "upstream apple-dcp afk-fragment boundary suite",
+  "normal_result": "passed",
+  "address_undefined_sanitizers": "passed",
+  "scope": "AFK fragment bounds, ordering, truncation, sequence wrap and completion; no physical DCP/HDMI test"
+}
