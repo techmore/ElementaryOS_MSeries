@@ -186,6 +186,11 @@ jobs:
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
           bash mseries/dock-taskbar/test-build.sh
+      - name: RepoBar resolved-account cache and private indicator race/error probes
+        run: |
+          meson setup "$RUNNER_TEMP/repobar" mseries/repobar-wingpanel
+          meson compile -C "$RUNNER_TEMP/repobar"
+          bash mseries/repobar-wingpanel/probe/test-account-cache.sh "$RUNNER_TEMP/repobar"
 
   calendar-agenda:
     name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)

@@ -16,6 +16,23 @@
   0 times (1 when on). **Not verified:** a second real GitHub account (only `techmore` is signed in here), the taskbar
   binding on a running desktop, and a live Wingpanel load (routine deploy installs without restarting; the module loads at
   next login). Next: sign a second account in with `gh auth login` and confirm **Read as** switches the dashboard.
+## RepoBar resolved-account cache fix — 2026-10-21
+
+Follow-up to #414: follow-CLI mode resolves and pins the active stored CLI account
+for each helper process, including worker requests. Snapshot and endpoint caches
+require the resolved host/login; inherited token overrides cannot select another
+identity. Unknown/signed-out accounts fail closed; validated same-account stale
+snapshots remain available. The indicator no longer reads raw disk snapshots,
+discards responses spanning settings changes and clears account-derived state on
+terminal helper errors. No live panel restart or deployment.
+
+Checks: 18 fake-CLI regressions; native indicator/module/settings build; two private
+D-Bus/Xvfb account probes (late old-account response and prior account + helper
+failure); light/dark healthy/offline renders; strict size lint. CI now exercises
+the native probes. Actual second-account login remains owner acceptance. #414 was
+merged independently before this follow-up was published; this patch is separate.
+
+
 ## Touch ID: upstream validation and the xART guard — 2026-10-21
 
 Surveyed omacom/linux-aurora, aurora-silicon/linux, the archived iconidentify/aurora-linux, Asahi and t2linux (read-only). Findings,

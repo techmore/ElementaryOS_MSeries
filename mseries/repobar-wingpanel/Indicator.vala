@@ -59,6 +59,7 @@ namespace MSeries {
         private string local_root = "";
         // "Show RepoBar in the panel" (settings.json showInPanel): off hides the module and stops refreshing and notifying.
         private bool panel_enabled = true;
+        private uint settings_generation = 0;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -449,6 +450,7 @@ namespace MSeries {
 
         private async void read_snapshot (bool force) {
             if (in_flight || !panel_enabled) return;
+            uint generation = settings_generation;
             in_flight = true;
             set_refreshing (true);
             if (force) subtitle_label.set_text ("Refreshing…");
@@ -464,22 +466,31 @@ namespace MSeries {
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
-                last_snapshot_text = output;
-                render_snapshot (parser.get_root ().get_object ());
+                if (generation == settings_generation && panel_enabled) {
+                    last_snapshot_text = output;
+                    render_snapshot (parser.get_root ().get_object ());
+                }
             } catch (Error e) {
+                if (generation != settings_generation || !panel_enabled) {
+                    in_flight = false;
+                    set_refreshing (false);
+                    if (panel_enabled) load_snapshot ();
+                    return;
+                }
+                // Only the helper can authorize an offline snapshot for the current account.
+                clear_snapshot_state ();
                 set_chip ("Offline", true, "retry", e.message + "\nClick to try again");
                 subtitle_label.set_text ("GitHub status unavailable");
                 subtitle_label.set_tooltip_text (e.message);
-                if (last_snapshot_text.length == 0) {
-                    bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
-                    show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
-                        signed_out ? "Connect GitHub" : "GitHub unavailable",
-                        signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
-                        signed_out);
-                }
+                bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
+                show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
+                    signed_out ? "Connect GitHub" : "GitHub unavailable",
+                    signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
+                    signed_out);
             }
             in_flight = false;
             set_refreshing (false);
+            if (generation != settings_generation && panel_enabled) load_snapshot ();
         }
 
         private void set_chip (string text, bool bad, string action = "retry", string tooltip = "") {
@@ -772,6 +783,9 @@ namespace MSeries {
                 settings_monitor.changed.connect ((file, other, event) => {
                     string name = (other ?? file).get_basename ();
                     if (file.get_basename () != "settings.json" && name != "settings.json") return;
+                    settings_generation++;
+                    clear_snapshot_state ();
+                    show_state ("content-loading-symbolic", "Loading repositories…", "", false);
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
@@ -1122,16 +1136,15 @@ namespace MSeries {
             return object.has_member (member) && object.get_member (member).get_node_type () == Json.NodeType.OBJECT;
         }
 
+        private void clear_snapshot_state () {
+            last_snapshot_text = "";
+            // Reset summaries, account tooltip, contribution graph and cards together.
+            render_snapshot (new Json.Object ());
+        }
+
         private void render_cached () {
-            if (last_snapshot_text.length == 0) {
-                try {
-                    string contents;
-                    if (!FileUtils.get_contents (Environment.get_home_dir () + "/.cache/mseries/repobar/snapshot.json", out contents)) return;
-                    last_snapshot_text = contents;
-                } catch (Error e) {
-                    return;
-                }
-            }
+            // Disk snapshots must pass the helper's resolved-account validation first.
+            if (last_snapshot_text.length == 0) return;
             try {
                 var parser = new Json.Parser ();
                 parser.load_from_data (last_snapshot_text);
