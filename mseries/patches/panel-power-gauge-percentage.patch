@@ -1,0 +1,62 @@
+diff --git a/src/Widgets/BatteryGauge.vala b/src/Widgets/BatteryGauge.vala
+index 2d98f37..e9e3d24 100644
+--- a/src/Widgets/BatteryGauge.vala
++++ b/src/Widgets/BatteryGauge.vala
+@@ -22,8 +22,8 @@ public class Power.Widgets.BatteryGauge : Gtk.DrawingArea {
+     public bool charging { get; set; default = false; }
+ 
+     construct {
+-        content_width = 14;
+-        content_height = 24;
++        content_width = 22;
++        content_height = 26;
+         valign = Gtk.Align.CENTER;
+         halign = Gtk.Align.CENTER;
+         set_draw_func (draw);
+@@ -97,10 +97,11 @@ public class Power.Widgets.BatteryGauge : Gtk.DrawingArea {
+             cr.restore ();
+         }
+ 
++        double text_y = body_y + body_h * (charging ? 0.68 : 0.5);
+         if (charging) {
+             double cx = width / 2.0;
+-            double cy = body_y + body_h / 2;
+-            double s = width * 0.16;
++            double cy = body_y + body_h * 0.32;
++            double s = width * 0.1;
+             cr.move_to (cx + s * 0.35, cy - s * 1.9);
+             cr.rel_line_to (-s * 0.95, s * 1.15);
+             cr.rel_line_to (s * 0.55, 0);
+@@ -111,8 +112,31 @@ public class Power.Widgets.BatteryGauge : Gtk.DrawingArea {
+             cr.set_source_rgba (1, 1, 1, 0.92);
+             cr.fill_preserve ();
+             cr.set_source_rgba (0, 0, 0, 0.35);
+-            cr.set_line_width (0.7);
++            cr.set_line_width (0.6);
+             cr.stroke ();
+         }
++
++        // The charge as a number on the battery: dark over the fill, foreground over the empty part,
++        // with a light halo where the fill edge cuts through the digits.
++        var text = "%d".printf ((int) Math.round (percentage));
++        cr.select_font_face ("Sans", Cairo.FontSlant.NORMAL, Cairo.FontWeight.BOLD);
++        cr.set_font_size (inner_w * (text.length < 3 ? 0.66 : 0.5));
++        Cairo.TextExtents extents;
++        cr.text_extents (text, out extents);
++        double fill_top = inner_y + inner_h - fill_h;
++        cr.move_to (width / 2.0 - extents.x_bearing - extents.width / 2, text_y - extents.y_bearing - extents.height / 2);
++        cr.text_path (text);
++        if (fill_top > text_y + extents.height / 2) {
++            cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.9);
++            cr.fill ();
++        } else {
++            if (fill_top > text_y - extents.height / 2) {
++                cr.set_source_rgba (1, 1, 1, 0.6);
++                cr.set_line_width (1.6);
++                cr.stroke_preserve ();
++            }
++            cr.set_source_rgba (0.08, 0.1, 0.12, 0.9);
++            cr.fill ();
++        }
+     }
+ }

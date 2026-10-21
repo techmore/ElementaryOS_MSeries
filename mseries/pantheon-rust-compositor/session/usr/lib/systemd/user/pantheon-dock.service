@@ -15,6 +15,9 @@ Environment=GSK_RENDERER=gl
 # before falling back to the distribution binary.
 ExecCondition=/usr/bin/test ! -e %h/.config/mseries/dock/user-disabled
 ExecStart=/usr/bin/pantheon-rust-dock
+# Apps launched from the dock run in this cgroup; favour them over batch jobs
+# when the CPUs are saturated (weight only applies under contention).
+CPUWeight=400
 Restart=on-failure
 RestartSec=2s
 TimeoutStopSec=5s

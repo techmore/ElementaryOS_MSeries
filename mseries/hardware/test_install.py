@@ -15,6 +15,12 @@ class InstallTests(unittest.TestCase):
             unit = d / 'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service'
             self.assertTrue(unit.is_file())
             self.assertTrue((d / 'usr/bin/mseries-power-report').is_file())
+            watcher = d / 'usr/lib/systemd/user/graphical-session.target.wants/mseries-peripherals.service'
+            self.assertEqual(watcher.readlink(), Path('../mseries-peripherals.service'))
+            self.assertEqual((d / 'usr/bin/mseries-peripherals').readlink(),
+                             Path('../libexec/mseries/peripherals'))
+            self.assertIn('ExecStart=/usr/bin/python3 -I /usr/libexec/mseries/peripherals watch',
+                          (d / 'usr/lib/systemd/user/mseries-peripherals.service').read_text())
             self.assertFalse((d / 'etc/udev/hwdb.d/90-mseries-keyboard.hwdb').exists())
             bt = d / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service'
             self.assertFalse(bt.is_symlink())
@@ -29,6 +35,9 @@ class InstallTests(unittest.TestCase):
                           (d / 'usr/lib/systemd/system/mseries-bluetooth-resume-fix.service').read_text())
             subprocess.run(command + ['--uninstall'], check=True, capture_output=True)
             self.assertFalse((d / 'usr/bin/mseries-power-report').is_symlink())
+            self.assertFalse(watcher.is_symlink())
+            self.assertFalse((d / 'usr/bin/mseries-peripherals').is_symlink())
+            self.assertFalse((d / 'usr/libexec/mseries/peripherals').exists())
             self.assertFalse(bt.is_symlink())
             self.assertEqual(unit.readlink(), Path('/dev/null'))
 
