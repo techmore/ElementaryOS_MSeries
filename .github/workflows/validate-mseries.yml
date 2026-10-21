@@ -59,9 +59,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install native GTK and private D-Bus test dependencies
-        run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas dbus-x11 xvfb xauth
-      - name: Planner unit tests
+        run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas libglib2.0-bin dbus-x11 xvfb xauth
+      - name: Planner, dock token and size-lint unit tests
         run: python3 -m unittest discover -s mseries/ui-scale -p 'test_*.py' -v
+      - name: No new hard-coded UI sizes (allowlist is the only exception)
+        run: bash mseries/ui-scale/check-ui-sizes.sh --strict
+      - name: Dock writers keep their shell syntax
+        run: sh -n mseries/dock-policy/enable-permanent.sh
       - name: Drive the text-size widget on a private display
         run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:
@@ -143,7 +147,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth genisoimage curl
       - name: Build and run the logic tests (persistence, discovery, QMP transport)
         run: |
           meson setup build-ml mseries/machine-lab

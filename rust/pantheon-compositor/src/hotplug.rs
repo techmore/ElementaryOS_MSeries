@@ -10,7 +10,14 @@
 use std::time::{Duration, Instant};
 
 /// Delay between the first uevent and the reconcile, coalescing event bursts.
-pub const EVENT_DEBOUNCE: Duration = Duration::from_millis(250);
+///
+/// Measured on the J314S with a WD22TB4 dock (journal, eight plug cycles):
+/// the Apple DCP driver emits its connector uevents in a burst about 9 ms
+/// apart and the connector already carries its modes when the first arrives,
+/// so waiting longer only delays the output (it was 250 ms, half of the
+/// compositor's share of the dock-to-picture time). The follow-up reconcile
+/// below still catches anything that settles later.
+pub const EVENT_DEBOUNCE: Duration = Duration::from_millis(40);
 /// One extra reconcile after an event-driven one, for late-settling connectors.
 pub const EVENT_RECHECK: Duration = Duration::from_secs(1);
 /// Safety poll while the udev monitor is active.
@@ -153,15 +160,15 @@ mod tests {
         let mut s = HotplugScheduler::new(t0, true);
         assert_eq!(s.on_event(t0), Some(t0 + EVENT_DEBOUNCE));
         // A burst is coalesced into the already armed deadline.
-        assert_eq!(s.on_event(t0 + ms(100)), None);
-        assert!(!s.tick(t0 + ms(200), None).reconcile);
-        let first = s.tick(t0 + ms(250), None);
+        assert_eq!(s.on_event(t0 + ms(9)), None);
+        assert!(!s.tick(t0 + EVENT_DEBOUNCE - ms(1), None).reconcile);
+        let first = s.tick(t0 + EVENT_DEBOUNCE, None);
         assert!(first.reconcile);
         assert_eq!(
             first.next_event_deadline,
-            Some(t0 + ms(250) + EVENT_RECHECK)
+            Some(t0 + EVENT_DEBOUNCE + EVENT_RECHECK)
         );
-        let second = s.tick(t0 + ms(1250), None);
+        let second = s.tick(t0 + EVENT_DEBOUNCE + EVENT_RECHECK, None);
         assert!(second.reconcile);
         assert_eq!(second.next_event_deadline, None);
         assert!(!s.tick(t0 + ms(5000), None).reconcile);
@@ -172,8 +179,8 @@ mod tests {
         let t0 = Instant::now();
         let mut s = HotplugScheduler::new(t0, true);
         s.on_event(t0);
-        s.tick(t0 + ms(250), None); // follow-up due at +1250
-        let now = t0 + ms(300);
+        s.tick(t0 + EVENT_DEBOUNCE, None); // follow-up due one recheck later
+        let now = t0 + EVENT_DEBOUNCE + ms(50);
         assert_eq!(s.on_event(now), Some(now + EVENT_DEBOUNCE));
         // The new event restarts the reconcile + single follow-up cycle.
         assert!(s.tick(now + EVENT_DEBOUNCE, None).reconcile);

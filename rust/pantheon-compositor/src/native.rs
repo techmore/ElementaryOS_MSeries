@@ -36,7 +36,7 @@ use smithay::{
     output::{Mode, Output, PhysicalProperties},
     reexports::{
         calloop::{
-            EventLoop, channel,
+            EventLoop, LoopHandle, channel,
             channel::Event as ChannelEvent,
             timer::{TimeoutAction, Timer},
         },
@@ -57,6 +57,7 @@ use crate::{
     hotplug::{EventKind, HotplugScheduler, event_triggers_reconcile},
     kms_props::{connector_edid, named_property},
     link_status::{self, Action, LINK_STATUS_GOOD, ResetState},
+    prewarm::{self, Gate},
 };
 
 /// Grace period before a disabled output global is removed from clients.
@@ -150,6 +151,15 @@ fn remove_stale_duplicates<D: DrmControlDevice>(
     stale
 }
 
+/// The mode an output is first brought up with: preferred, else the first.
+fn preferred_drm_mode(info: &connector::Info) -> Option<smithay::reexports::drm::control::Mode> {
+    info.modes()
+        .iter()
+        .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
+        .copied()
+        .or_else(|| info.modes().first().copied())
+}
+
 fn output_mode_snapshots(
     modes: &[smithay::reexports::drm::control::Mode],
 ) -> Vec<OutputModeSnapshot> {
@@ -200,6 +210,11 @@ pub struct NativeKmsDevice {
     suppressed_duplicates: HashSet<connector::Handle>,
     /// Per-connector memory for answering `link-status = Bad`.
     link_resets: HashMap<connector::Handle, Option<ResetState>>,
+    /// Early modesets on helper threads (`PANTHEON_PREWARM_MODESET=1`).
+    prewarm: prewarm::Slots<connector::Handle, prewarm::Warmed>,
+    /// CRTC each running or finished prewarm programmed.
+    prewarm_crtcs: HashMap<connector::Handle, smithay::reexports::drm::control::crtc::Handle>,
+    prewarm_sender: Option<channel::Sender<PrewarmDone>>,
     pub notifier: Option<DrmDeviceNotifier>,
     pending_global_removals: Vec<(
         smithay::reexports::wayland_server::backend::GlobalId,
@@ -213,6 +228,12 @@ pub struct NativeBackend {
     pub kms: NativeKmsDevice,
     session_paused: bool,
     hotplug: HotplugScheduler,
+}
+
+/// Result of one prewarm helper thread, delivered to the compositor loop.
+pub struct PrewarmDone {
+    connector: connector::Handle,
+    result: Result<prewarm::Warmed, String>,
 }
 
 struct ConnectedOutput {
@@ -735,6 +756,124 @@ impl NativeKmsDevice {
         Ok(Some(output.output.clone()))
     }
 
+    /// Release the placeholder framebuffer left by a finished prewarm. Call
+    /// only after the compositor's own commit replaced it on the plane.
+    fn release_prewarm(&mut self, connector: connector::Handle) {
+        self.prewarm_crtcs.remove(&connector);
+        if let Some(warmed) = self.prewarm.take_warmed(connector) {
+            prewarm::release(self.manager.device(), warmed);
+        }
+    }
+
+    /// Plan an early modeset for a connector the reconcile is about to map:
+    /// same encoder, CRTC and mode choice, plus the CRTC's primary plane.
+    fn plan_prewarm(
+        &self,
+        resources: &smithay::reexports::drm::control::ResourceHandles,
+        info: &connector::Info,
+        claimed: &HashSet<smithay::reexports::drm::control::crtc::Handle>,
+    ) -> Option<prewarm::Plan> {
+        let device = self.manager.device();
+        let encoder = info
+            .current_encoder()
+            .and_then(|handle| device.get_encoder(handle).ok())
+            .or_else(|| {
+                info.encoders()
+                    .iter()
+                    .find_map(|handle| device.get_encoder(*handle).ok())
+            })?;
+        let crtc = resources
+            .filter_crtcs(encoder.possible_crtcs())
+            .into_iter()
+            .find(|crtc| !claimed.contains(crtc) && !self.crtc_reserved_by_other(*crtc, info))?;
+        let mode = preferred_drm_mode(info)?;
+        let (plane, format) = prewarm::primary_plane(device, resources, crtc)?;
+        Some(prewarm::Plan {
+            crtc,
+            plane,
+            mode,
+            format,
+        })
+    }
+
+    fn crtc_reserved_by_other(
+        &self,
+        crtc: smithay::reexports::drm::control::crtc::Handle,
+        info: &connector::Info,
+    ) -> bool {
+        self.prewarm_crtcs
+            .iter()
+            .any(|(connector, reserved)| *connector != info.handle() && *reserved == crtc)
+    }
+
+    fn spawn_prewarm(&mut self, connector: connector::Handle, plan: prewarm::Plan) {
+        let Some(sender) = self.prewarm_sender.clone() else {
+            return;
+        };
+        // A duplicate of the DRM master fd: same file description, so the
+        // helper thread may commit without owning the output manager.
+        let fd = self.manager.device().device_fd().clone();
+        self.prewarm.started(connector, Instant::now());
+        self.prewarm_crtcs.insert(connector, plan.crtc);
+        let spawned = std::thread::Builder::new()
+            .name("drm-prewarm".into())
+            .spawn(move || {
+                let result = prewarm::run(&fd, connector, &plan, true)
+                    .and_then(|warmed| warmed.ok_or_else(|| "no modeset committed".to_owned()));
+                let _ = sender.send(PrewarmDone { connector, result });
+            });
+        if let Err(error) = spawned {
+            tracing::warn!(%error, "could not start the DRM prewarm thread");
+            self.prewarm.finished(connector, Err(()));
+            self.prewarm_crtcs.remove(&connector);
+        }
+    }
+
+    /// Start early modesets for newly connected external connectors. Called
+    /// from the udev event, before the debounce even elapses.
+    pub fn prewarm_new_outputs(&mut self) {
+        if self.prewarm_sender.is_none() {
+            return;
+        }
+        let Ok(resources) = self.manager.device_mut().resource_handles() else {
+            return;
+        };
+        let mut connected = Vec::new();
+        for handle in resources.connectors() {
+            if let Ok(info) = self.manager.device_mut().get_connector(*handle, false)
+                && info.state() == connector::State::Connected
+            {
+                connected.push(info);
+            }
+        }
+        remove_stale_duplicates(self.manager.device_mut(), &mut connected);
+        connected.retain(|info| {
+            !info.modes().is_empty()
+                && info.interface() != connector::Interface::EmbeddedDisplayPort
+                && !self.disabled_connectors.contains(&info.handle())
+                && !self
+                    .outputs
+                    .iter()
+                    .any(|output| output.connector == info.handle())
+        });
+        connected.sort_by_key(|info| info.interface_id());
+        let claimed = self
+            .outputs
+            .iter()
+            .map(|output| output.crtc)
+            .collect::<HashSet<_>>();
+        let now = Instant::now();
+        for info in connected {
+            if self.prewarm.gate(info.handle(), now) != Gate::Plan {
+                continue;
+            }
+            if let Some(plan) = self.plan_prewarm(&resources, &info, &claimed) {
+                tracing::info!(connector = ?info.handle(), "prewarming modeset on a helper thread");
+                self.spawn_prewarm(info.handle(), plan);
+            }
+        }
+    }
+
     /// Answer `link-status = Bad` on mapped connectors by writing `Good` back.
     ///
     /// The DCP driver marks a link Bad when its pipeline lost the mode and
@@ -848,6 +987,14 @@ impl NativeKmsDevice {
             }
         }
         let mut changed = !disconnected.is_empty();
+        for warmed in self
+            .prewarm
+            .retain(|handle| connected_handles.contains(handle))
+        {
+            prewarm::release(self.manager.device(), warmed);
+        }
+        self.prewarm_crtcs
+            .retain(|handle, _| connected_handles.contains(handle));
         if changed {
             for output in self
                 .outputs
@@ -914,6 +1061,24 @@ impl NativeKmsDevice {
                 continue;
             }
 
+            // With the prewarm flag on, the DCP modeset runs on a helper thread
+            // and this connector is mapped on the reconcile its completion
+            // triggers; any failure falls through to the inline path below.
+            if self.prewarm_sender.is_some()
+                && info.interface() != connector::Interface::EmbeddedDisplayPort
+            {
+                match self.prewarm.gate(info.handle(), Instant::now()) {
+                    Gate::Wait => continue,
+                    Gate::Plan => {
+                        if let Some(plan) = self.plan_prewarm(&resources, &info, &claimed_crtcs) {
+                            self.spawn_prewarm(info.handle(), plan);
+                            continue;
+                        }
+                    }
+                    Gate::Ready | Gate::Inline => {}
+                }
+            }
+
             let encoder = info
                 .current_encoder()
                 .and_then(|handle| self.manager.device_mut().get_encoder(handle).ok())
@@ -926,11 +1091,21 @@ impl NativeKmsDevice {
                 tracing::warn!(connector = ?info.handle(), "connected DRM connector has no usable encoder");
                 continue;
             };
-            let Some(crtc) = resources
-                .filter_crtcs(encoder.possible_crtcs())
-                .into_iter()
-                .find(|crtc| !claimed_crtcs.contains(crtc))
-            else {
+            let warmed_crtc = self
+                .prewarm_crtcs
+                .get(&info.handle())
+                .copied()
+                .filter(|crtc| {
+                    !claimed_crtcs.contains(crtc) && self.prewarm.warmed(info.handle()).is_some()
+                });
+            let Some(crtc) = warmed_crtc.or_else(|| {
+                resources
+                    .filter_crtcs(encoder.possible_crtcs())
+                    .into_iter()
+                    .find(|crtc| {
+                        !claimed_crtcs.contains(crtc) && !self.crtc_reserved_by_other(*crtc, &info)
+                    })
+            }) else {
                 tracing::warn!(connector = ?info.handle(), "connected DRM connector has no unclaimed compatible CRTC");
                 continue;
             };
@@ -963,7 +1138,7 @@ impl NativeKmsDevice {
                 NativeMultiRenderer<'_>,
                 CursorRenderElement<NativeMultiRenderer<'_>>,
             >::default();
-            let drm_output = match self.manager.lock().initialize_output(
+            let initialized = self.manager.lock().initialize_output(
                 crtc,
                 drm_mode,
                 &[info.handle()],
@@ -971,13 +1146,16 @@ impl NativeKmsDevice {
                 None,
                 &mut gpu_renderer,
                 &render_elements,
-            ) {
+            );
+            let drm_output = match initialized {
                 Ok(output) => output,
                 Err(error) => {
                     tracing::warn!(%name, ?error, "could not initialize newly connected KMS output");
+                    self.release_prewarm(info.handle());
                     continue;
                 }
             };
+            self.release_prewarm(info.handle());
 
             let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
             self.outputs.push(NativeKmsOutput {
@@ -1435,6 +1613,9 @@ impl NativeKmsDevice {
             disconnected_disabled_connectors: HashSet::new(),
             suppressed_duplicates: stale_at_startup.into_iter().collect(),
             link_resets: HashMap::new(),
+            prewarm: prewarm::Slots::default(),
+            prewarm_crtcs: HashMap::new(),
+            prewarm_sender: None,
             notifier: Some(notifier),
             pending_global_removals: Vec::new(),
         })
@@ -1608,6 +1789,37 @@ impl NativeBackend {
             backend.hotplug = hotplug;
         }
         let loop_handle = event_loop.handle();
+        if prewarm::enabled() {
+            tracing::info!("PANTHEON_PREWARM_MODESET=1: external modesets run on a helper thread");
+            let (sender, receiver) = channel::channel::<PrewarmDone>();
+            if let Some(backend) = state.native_backend.as_mut() {
+                backend.kms.prewarm_sender = Some(sender);
+            }
+            let timer_handle = loop_handle.clone();
+            loop_handle.insert_source(receiver, move |event, _, state| {
+                let ChannelEvent::Msg(done) = event else {
+                    return;
+                };
+                let Some(backend) = state.native_backend.as_mut() else {
+                    return;
+                };
+                let kms = &mut backend.kms;
+                match done.result {
+                    Ok(warmed) => {
+                        tracing::info!(connector = ?done.connector, "prewarmed modeset finished");
+                        if let Some(orphan) = kms.prewarm.finished(done.connector, Ok(warmed)) {
+                            prewarm::release(kms.manager.device(), orphan);
+                        }
+                    }
+                    Err(error) => {
+                        tracing::warn!(connector = ?done.connector, %error, "prewarm failed; mapping inline");
+                        kms.prewarm.finished(done.connector, Err(()));
+                        kms.prewarm_crtcs.remove(&done.connector);
+                    }
+                }
+                arm_reconcile(&timer_handle, state);
+            })?;
+        }
         if let Some(udev_backend) = udev_backend {
             let timer_handle = loop_handle.clone();
             loop_handle.insert_source(udev_backend, move |event, _, state| {
@@ -1622,16 +1834,10 @@ impl NativeBackend {
                 if !event_triggers_reconcile(kind, device, backend.kms.node.dev_id()) {
                     return;
                 }
-                let Some(deadline) = backend.hotplug.on_event(Instant::now()) else {
-                    return;
-                };
-                let armed = timer_handle
-                    .insert_source(Timer::from_deadline(deadline), |_, _, state| {
-                        reconcile_tick(state).0
-                    });
-                if let Err(error) = armed {
-                    tracing::warn!(?error, "failed to arm hotplug reconcile timer");
+                if !backend.session_paused {
+                    backend.kms.prewarm_new_outputs();
                 }
+                arm_reconcile(&timer_handle, state);
             })?;
         }
         loop_handle.insert_source(Timer::from_duration(safety_interval), move |_, _, state| {
@@ -1679,6 +1885,23 @@ fn advertise_dmabuf(state: &mut PantheonCompositor) {
         .dmabuf_state
         .create_global_with_default_feedback::<PantheonCompositor>(&dh, &feedback);
     tracing::info!("advertising linux-dmabuf v4 on the native renderer");
+}
+
+/// Record a hotplug-relevant event and arm the one-shot reconcile timer the
+/// scheduler asks for (none when an armed deadline already covers it).
+fn arm_reconcile(handle: &LoopHandle<'_, PantheonCompositor>, state: &mut PantheonCompositor) {
+    let Some(backend) = state.native_backend.as_mut() else {
+        return;
+    };
+    let Some(deadline) = backend.hotplug.on_event(Instant::now()) else {
+        return;
+    };
+    let armed = handle.insert_source(Timer::from_deadline(deadline), |_, _, state| {
+        reconcile_tick(state).0
+    });
+    if let Err(error) = armed {
+        tracing::warn!(?error, "failed to arm hotplug reconcile timer");
+    }
 }
 
 /// Run one scheduler tick. Returns the timer action for an event-driven

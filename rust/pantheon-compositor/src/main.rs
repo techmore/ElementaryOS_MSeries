@@ -25,6 +25,8 @@ pub mod native;
 mod overview;
 mod pantheon_shell;
 mod popup_stack;
+#[cfg(feature = "native-drm")]
+mod prewarm;
 mod protocols;
 mod shell_compat;
 mod state;

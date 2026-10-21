@@ -376,13 +376,14 @@ mod_payload() {
   # Keep factory/update payloads on the same complete taskbar path as a repo checkout.
   # Preserve executable bits for helpers invoked directly by another installer.
   local tree
-  for tree in dock-taskbar dock-tests codexbar-wingpanel teams-web; do
+  for tree in dock-taskbar dock-tests codexbar-wingpanel repobar-wingpanel teams-web; do
     while IFS= read -r -d '' f; do
       copy "$(stat -c %a "$f")" "$f" "$prefix/mseries/${f#"$here"/}"
     done < <(find "$here/$tree" -type d \( -name __pycache__ -o -name build \) -prune -o -type f ! -name '*.pyc' -print0)
   done
   # User setup works from immutable /usr and keeps models/state in the user's home.
   for f in "$here"/local-ai/*.py "$here"/local-ai/*.sh "$here"/local-ai/*.json "$here"/local-ai/*.patch "$here"/local-ai/*.lock; do
+    [[ -f $f ]] || continue
     copy 0644 "$f" "$prefix/mseries/local-ai/$(basename "$f")"
   done
   put 0644 /usr/share/applications/mseries-assistant-setup.desktop <<'EOF'

@@ -13,7 +13,10 @@ rm -f "$state/mseries/dock-trial/pending-login-trial"
 rm -f "$config/autostart/mseries-dock-trial.desktop"
 rm -f "$config/mseries/dock/user-disabled"
 gsettings set io.elementary.dock autohide-mode never
-gsettings set io.elementary.dock icon-size 48
+# Native dock token from the size system (#332) once adopted; 48 px at the default step.
+icon_size=$("${HOME}/.local/bin/mseries-ui-scale" --dock-size native 2>/dev/null) || icon_size=48
+case $icon_size in ''|*[!0-9]*) icon_size=48 ;; esac
+gsettings set io.elementary.dock icon-size "$icon_size"
 systemctl --user daemon-reload
 systemctl --user reset-failed pantheon-dock.service
 systemctl --user start pantheon-dock.service

@@ -26,6 +26,7 @@ public class MachinePage : Gtk.Box {
     private Gtk.Box emu_banner;
     private Gtk.Label ssh_cmd;
     private SnapshotsCard? snapshots = null;
+    private WindowsDriversCard? win_drivers = null;
     private Gtk.Box image_card;
     private Gtk.Button image_button;
     private Gtk.Button save_image_item;
@@ -771,6 +772,11 @@ public class MachinePage : Gtk.Box {
         clip_card.append (clip_row);
         clamp.append (clip_card);
 
+        // Windows guests: virtio-win drivers and an unattended-install answer file.
+        win_drivers = new WindowsDriversCard (machine);
+        win_drivers.toast.connect ((m) => toast (m));
+        clamp.append (win_drivers);
+
         int cores = (int) get_num_processors ();
         int host_gib = host_memory_gib ();
 
@@ -900,6 +906,9 @@ public class MachinePage : Gtk.Box {
         if (snapshots != null) {
             snapshots.visible = !machine.managed;
             snapshots.update ();
+        }
+        if (win_drivers != null) {
+            win_drivers.update ();
         }
         bool running = machine.running;
         bool managed = machine.managed;

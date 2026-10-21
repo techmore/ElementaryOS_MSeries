@@ -16,6 +16,7 @@ namespace MSeries {
         private Gtk.Label panel_prs;
         private Gtk.Label panel_issues;
         private Gtk.Label panel_alert;
+        private Gtk.Label panel_running;
         private Gtk.Box menu;
         private Gtk.ListBox repo_list;
         private Gtk.Overlay list_overlay;
@@ -49,7 +50,9 @@ namespace MSeries {
         private string last_render_key = "";
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
+        private bool notify_workflows = true;
         private int merge_window_minutes = 60;
+        private string running_summary = "";
         private bool show_contributions = true;
         private string contribution_style = "dots";
         private bool contributions_expanded = false;
@@ -68,18 +71,33 @@ namespace MSeries {
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
             mark.add_css_class ("repo-mark");
             panel.append (mark);
+            // Two stacked columns keep the readout narrow: PR over issue counts, then running workflows over a recent merge.
             // GitHub's own pull request and issue marks label the two counts.
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 2 });
-            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
+            var counts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            counts.add_css_class ("repo-counts");
+            var pull_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            pull_row.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_prs.add_css_class ("seg-value");
-            panel.append (panel_prs);
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 4 });
-            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER };
+            pull_row.append (panel_prs);
+            counts.append (pull_row);
+            var issue_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            issue_row.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_issues.add_css_class ("seg-value");
-            panel.append (panel_issues);
-            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, visible = false };
+            issue_row.append (panel_issues);
+            counts.append (issue_row);
+            panel.append (counts);
+            var alerts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            alerts.add_css_class ("repo-alerts");
+            panel_running = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
+            panel_running.add_css_class ("seg-alert");
+            panel_running.add_css_class ("alert-pending");
+            alerts.append (panel_running);
+            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
             panel_alert.add_css_class ("seg-alert");
-            panel.append (panel_alert);
+            alerts.append (panel_alert);
+            panel.append (alerts);
             panel.set_tooltip_text ("RepoBar · loading GitHub status… · Middle-click to refresh");
             var click = new Gtk.GestureClick () { button = 2 };
             click.released.connect (() => refresh ());
@@ -283,8 +301,8 @@ namespace MSeries {
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 7pt; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 8.5pt; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 8pt; font-weight: 700; } " +
                 ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
@@ -463,6 +481,7 @@ namespace MSeries {
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+                notify_workflows = settings.get_boolean_member_with_default ("notifyWorkflows", true);
                 merge_window_minutes = (int) settings.get_int_member_with_default ("mergeWindowMinutes", 60);
                 show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
                 contribution_style = settings.get_string_member_with_default ("contributionStyle", "dots");
@@ -471,6 +490,7 @@ namespace MSeries {
             if (error.length == 0 && fetched_at > last_notified_fetch) {
                 last_notified_fetch = fetched_at;
                 notify_ci_changes (repos);
+                notify_workflow_runs (snapshot);
             }
             int issues = 0;
             int prs = 0;
@@ -497,6 +517,20 @@ namespace MSeries {
                 }
                 if (needs_attention (repo)) attention++;
             }
+
+            // Pending is real workflow runs (any branch or pull request) when the snapshot carries them.
+            string[] running_lines = {};
+            if (snapshot.has_member ("actions") && snapshot.get_member ("actions").get_node_type () == Json.NodeType.OBJECT) {
+                var running = snapshot.get_object_member ("actions").get_array_member ("running");
+                pending = (int) running.get_length ();
+                for (uint i = 0; i < running.get_length () && i < 6; i++) {
+                    var run = running.get_object_element (i);
+                    string repo_name = run.get_string_member_with_default ("repo", "");
+                    running_lines += "%s · %s (%s)".printf (repo_name.contains ("/") ? repo_name.substring (repo_name.index_of ("/") + 1) : repo_name,
+                        run.get_string_member_with_default ("name", "workflow"), run.get_string_member_with_default ("branch", ""));
+                }
+            }
+            running_summary = string.joinv ("\n", running_lines);
 
             // Bottom bar: account, freshness and API quota; the chip speaks only when something is wrong.
             string freshness;
@@ -530,7 +564,7 @@ namespace MSeries {
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
-            update_panel (prs, issues, failing, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
+            update_panel (prs, issues, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
 
             // Unchanged data and filters: keep the existing cards so open detail panes survive polling.
             string key = "%s|%d|%d|%s".printf (last_snapshot_text.hash ().to_string (), scope, filter, search_entry.get_text ());
@@ -618,29 +652,26 @@ namespace MSeries {
 
         /* Panel dot: red while default-branch CI fails, yellow with a count while runs are pending, green when a pull
            request merged within the configured window (an hour by default), and hidden when nothing is going on. */
-        private void update_panel (int prs, int issues, int failing, int pending, GLib.DateTime? last_merge,
+        private void update_panel (int prs, int issues, int pending, GLib.DateTime? last_merge,
                                    string last_merge_repo, int repo_count, bool stale) {
             panel_prs.set_text (prs.to_string ());
             panel_issues.set_text (issues.to_string ());
             int64 merge_age = last_merge != null ? (GLib.get_real_time () - last_merge.to_unix () * 1000000) / 1000000 : -1;
             bool merged_recently = merge_age >= 0 && merge_age <= merge_window_minutes * 60;
-            panel_alert.remove_css_class ("alert-bad");
-            panel_alert.remove_css_class ("alert-pending");
+            // Yellow counts workflow runs in progress; green marks a recent merge. Failing CI is left to notifications.
             panel_alert.remove_css_class ("alert-good");
             string status = "";
-            if (failing > 0) {
-                panel_alert.set_text ("●");
-                panel_alert.add_css_class ("alert-bad");
-                status = " · CI failing on %d".printf (failing);
-            } else if (pending > 0) {
-                panel_alert.set_text ("● %d".printf (pending));
-                panel_alert.add_css_class ("alert-pending");
-                status = " · CI running on %d".printf (pending);
-            } else if (merged_recently) {
+            if (merged_recently) {
                 panel_alert.set_text ("●");
                 panel_alert.add_css_class ("alert-good");
             }
-            panel_alert.set_visible (failing > 0 || pending > 0 || merged_recently);
+            panel_alert.set_visible (merged_recently);
+            if (pending > 0) {
+                panel_running.set_text ("● %d".printf (pending));
+                status += " · %d workflow run%s in progress".printf (pending, pending == 1 ? "" : "s");
+            }
+            panel_running.set_visible (pending > 0);
+            if (running_summary.length > 0) status += "\n" + running_summary;
             if (merged_recently) status += " · merged %s %d min ago".printf (last_merge_repo, (int) (merge_age / 60));
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
@@ -922,6 +953,71 @@ namespace MSeries {
             if (fixed.length > 0) {
                 send_notification (fixed.length == 1 ? "CI passing again on %s".printf (fixed[0]) : "CI passing again on %d repositories".printf (fixed.length),
                     fixed.length == 1 ? "The default branch's latest checks passed." : string.joinv (", ", fixed), "", "emblem-ok");
+            }
+        }
+
+        /* Desktop notification for each workflow run that finished since the last refresh, on any branch or pull
+           request in recently active repositories. The first snapshot after login only records what was seen. */
+        private void notify_workflow_runs (Json.Object snapshot) {
+            if (!snapshot.has_member ("actions") || snapshot.get_member ("actions").get_node_type () != Json.NodeType.OBJECT) return;
+            string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "run-states.json");
+            var notified = new HashTable<string, bool> (str_hash, str_equal);
+            bool have_previous = false;
+            try {
+                string text;
+                FileUtils.get_contents (path, out text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (text);
+                var saved = parser.get_root ().get_object ().get_array_member ("notified");
+                for (uint i = 0; i < saved.get_length (); i++) notified.insert (saved.get_string_element (i), true);
+                have_previous = true;
+            } catch (Error e) {
+                // First run: record only.
+            }
+            var finished = snapshot.get_object_member ("actions").get_array_member ("finished");
+            string[] passed = {};
+            string[] failed = {};
+            string first_url = "";
+            var ids = new Json.Array ();
+            for (uint i = 0; i < finished.get_length (); i++) {
+                var run = finished.get_object_element (i);
+                string id = run.get_int_member_with_default ("id", 0).to_string ();
+                ids.add_string_element (id);
+                if (!have_previous || notified.contains (id)) continue;
+                string repo_name = run.get_string_member_with_default ("repo", "");
+                string short_name = repo_name.contains ("/") ? repo_name.substring (repo_name.index_of ("/") + 1) : repo_name;
+                string label = "%s · %s (%s)".printf (short_name, run.get_string_member_with_default ("name", "workflow"),
+                    run.get_string_member_with_default ("branch", ""));
+                string conclusion = run.get_string_member_with_default ("conclusion", "");
+                if (conclusion == "success") passed += label;
+                else if (conclusion == "failure" || conclusion == "timed_out" || conclusion == "startup_failure") {
+                    failed += label;
+                    if (first_url.length == 0) first_url = run.get_string_member_with_default ("url", "");
+                }
+            }
+            // Keep a window of recent ids so a run is announced once, even after it leaves the finished list.
+            foreach (var old in notified.get_keys ()) if (ids.get_length () < 200) ids.add_string_element (old);
+            try {
+                DirUtils.create_with_parents (GLib.Path.get_dirname (path), 0700);
+                var generator = new Json.Generator ();
+                var root = new Json.Node (Json.NodeType.OBJECT);
+                var object = new Json.Object ();
+                object.set_array_member ("notified", ids);
+                root.set_object (object);
+                generator.set_root (root);
+                FileUtils.set_contents_full (path, generator.to_data (null), -1, FileSetContentsFlags.CONSISTENT, 0600);
+                FileUtils.chmod (path, 0600);
+            } catch (Error e) {
+                // Without saved ids the next refresh records again instead of notifying.
+            }
+            if (!notify_workflows) return;
+            if (failed.length > 0) {
+                send_notification (failed.length == 1 ? "Workflow failed" : "%d workflows failed".printf (failed.length),
+                    string.joinv ("\n", failed), failed.length == 1 ? first_url : "https://" + host + "/" + account, "dialog-error");
+            }
+            if (passed.length > 0) {
+                send_notification (passed.length == 1 ? "Workflow passed" : "%d workflows passed".printf (passed.length),
+                    string.joinv ("\n", passed), "", "emblem-ok");
             }
         }
 

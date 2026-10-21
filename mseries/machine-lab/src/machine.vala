@@ -15,6 +15,7 @@ public class Machine : Object {
     public string arch { get; set; default = "aarch64"; }       // "aarch64" (KVM, fast) or "x86_64" (emulated, slow)
     public bool clipboard { get; set; default = false; }     // share the clipboard (needs spice-vdagent in the guest)
     public string? recipe { get; set; default = null; }      // "omarchy": download and install unattended
+    public string guest { get; set; default = ""; }          // managed: the GUEST key of vm.conf ("windows", "omarchy", ...)
 
     // Live information, not persisted.
     public bool paused { get; private set; default = false; }
@@ -33,6 +34,7 @@ public class Machine : Object {
     public signal void installer_detached ();
 
     public bool managed { get { return kind == "managed"; } }
+    public bool is_windows { get { return managed && guest == "windows"; } }
     public bool emulated { get { return arch == "x86_64"; } }
     public string arch_label { get { return emulated ? "x86-64" : "ARM64"; } }
     public bool running { get { return managed ? managed_running : proc != null; } }
@@ -71,6 +73,20 @@ public class Machine : Object {
         } catch (Error e) {
             return 0;
         }
+    }
+
+    /* One KEY=VALUE from a managed guest's vm.conf, or null when the file or the key is missing. */
+    public string? conf_value (string key) {
+        try {
+            string text;
+            FileUtils.get_contents (Path.build_filename (dir, "vm.conf"), out text);
+            foreach (var line in text.split ("\n")) {
+                if (line.has_prefix (key + "=")) {
+                    return line.substring (key.length + 1).strip ();
+                }
+            }
+        } catch (Error e) {}
+        return null;
     }
 
     /* Sign-in details the unattended installer saved for the guest. */
@@ -723,6 +739,7 @@ public class MachineStore : Object {
                 m.vm_name = n;
                 m.id = "vm-" + n;
                 string guest = kf.has_key ("c", "GUEST") ? kf.get_string ("c", "GUEST") : n;
+                m.guest = guest;
                 switch (guest) {
                     case "omarchy": m.name = "Omarchy"; m.color = 7; break;
                     case "elementary": m.name = "elementary OS"; m.color = 0; break;

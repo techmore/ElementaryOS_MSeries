@@ -175,7 +175,7 @@ check syntax 'fairydust/debian scripts' \
 check syntax 'fairydust/usb4 scripts' \
   'bash -n mseries/fairydust/usb4/test-dp-tunnel.sh; python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py'
 check syntax 'aurora-sep installers' \
-  'bash -n mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh'
+  'bash -n mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/install-touchid-settings.sh mseries/touchid-settings/tests/run-ui-tests.sh mseries/touchid-settings/tests/test-pam-helper.sh mseries/aurora-sep/mseries-aurora-touchid-apply-pam; python3 -m py_compile mseries/touchid-settings/tests/fake_fprintd.py'
 check syntax 'iso-label.sh, vms/mseries-vm' \
   'bash -n mseries/iso-label.sh mseries/test-iso-label.sh mseries/vms/mseries-vm'
 check syntax 'codexbar scripts' \
@@ -216,6 +216,7 @@ check kernel 'boot/test-prepare-uki-kernels.py' 'python3 mseries/boot/test-prepa
 check kernel 'test-kernel-config.py' 'python3 mseries/test-kernel-config.py'
 check kernel 'aurora unit tests' "python3 -m unittest discover -s mseries/aurora -p 'test_*.py'"
 check kernel 'aurora-sep/test_touchid_core.py' 'python3 mseries/aurora-sep/test_touchid_core.py'
+check kernel 'touchid-settings/tests/test-pam-helper.sh' 'bash mseries/touchid-settings/tests/test-pam-helper.sh'
 
 # -- power ---------------------------------------------------------------------
 check power 'test-power-cap.py' 'python3 mseries/test-power-cap.py'
