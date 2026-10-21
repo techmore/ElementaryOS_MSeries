@@ -50,8 +50,8 @@ namespace MSeriesTouchId {
             };
             hint_label.add_css_class ("dim-label");
             hint_label.set_text (
-                "Touch the sensor with your %s, then lift. Repeat until the print is complete. It takes about %d touches."
-                    .printf (finger_label (finger).down (), sensor.stages));
+                "Place your %s on the sensor, then lift it and place it again. Keep tapping like this, shifting your finger a little each time so its edges are covered."
+                    .printf (finger_label (finger).down ()));
 
             action_button = new Gtk.Button.with_label ("Cancel") { halign = Gtk.Align.CENTER };
             action_button.add_css_class ("pill");
@@ -108,16 +108,16 @@ namespace MSeriesTouchId {
                 case "enroll-stage-passed":
                     stages_passed++;
                     art.progress = (double) stages_passed / sensor.stages;
-                    hint_label.set_text ("Lift your finger, then touch the sensor again.");
+                    hint_label.set_text ("Got it. Lift, then place your finger again.");
                     break;
                 case "enroll-retry-scan":
-                    hint_label.set_text ("That didn't read. Lift your finger and try again.");
+                    hint_label.set_text ("That one didn't read. Lift and tap again, a little firmer.");
                     break;
                 case "enroll-finger-not-centered":
                     hint_label.set_text ("Center your finger on the sensor.");
                     break;
                 case "enroll-remove-and-retry":
-                    hint_label.set_text ("Lift your finger and try again.");
+                    hint_label.set_text ("Lift your finger, then place it again.");
                     break;
                 case "enroll-completed":
                     succeed ();
@@ -131,8 +131,8 @@ namespace MSeriesTouchId {
                 case "enroll-failed":
                 default:
                     if (done) {
-                        fail ("The fingerprint could not be added",
-                              "Nothing was saved. Close this, then start again when you are ready.");
+                        fail ("The fingerprint could not be saved",
+                              "Close this and check Touch ID before trying again. Details are in the kernel log (journalctl -k).");
                     }
                     break;
             }
