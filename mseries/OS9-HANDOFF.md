@@ -42,6 +42,163 @@ No live screenshot/owner visual confirmation is claimed.
 
 # OS 9 implementation / Claude Code handoff
 
+## Aurora 7.2 all three dock ports working; pilot timing — 2026-10-21
+
+Owner later confirms **rear-left nearest hinge works**; the earlier blank-screen
+report was transient and is superseded. Front-left closest to owner and right
+also show picture; front/right input explicitly confirmed. All three external
+modes observed at 1080p/60. No agent driver/service/runtime change caused this
+recovery. [Follow-up and pilot timings](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+One cycle per port: partner→dock≈3s, dock→monitor≈1s, monitor→desktop≈0.5s,
+partner→active desktop≈4.5s. Poll resolution 0.5 s plus query delay; not cable-insertion
+or visible-pixel latency, no statistical ranking. Front boundary recovered from
+retained events and regression-fixed; prior mislabelled rear run corrected by
+owner sidecar. Original receipts retained. Five timing state-machine tests and
+71 Aurora repository tests pass after merging current dev into this branch.
+Only merge conflict was both parties' prepended handoff entries; both preserved.
+Kernel builder/manifest/native-workflow bytes still match tested b213999.
+
+Next: merge this experimental kernel/qualification lane into dev after current
+review/checks, keeping `.20` persistent boot default. No stable-kernel promotion,
+automatic re-arm or reboot. Actual `.20` recovery/suspend/power still pending.
+Display lifecycle logging and attention integration are separate deployment
+work, preserving the current dock/panel/popup lineage. Upstream review identifies
+only a host-fixture candidate, not a newly authored dock kernel fix.
+
+## Aurora 7.2 first boot: scoped pass; rear-left dock picture fails — 2026-10-21
+
+Owner rebooted into `7.2.10-elementary-aurora72-wip2`. Live build ID
+`e33ad2aa657320824a246a3b04814accdb31df1e` matches audited Image. One-shot is
+consumed/empty and `.20` stays persistent default. Old fallback/menu/shared
+`boot.bin` hashes unchanged; all 91 early modules and installed package verify.
+Runtime 37 DART providers use one-cell bindings, firmware compat 13.5.0 retained.
+[Report and receipts](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+Scoped checks PASS: boot beyond 5 min, PMP ready/started/manages fabric, idle
+accounting, real M1 Pro GPU shader/16-pixel readback with Mesa 26.0.8 and 1 MiB
+fsync/SHA256. Selected severe-message scan through post-smoke snapshot clear.
+Owner confirms internal display/input. Compositor observes internal 3024x1964
+at 120 Hz and later external DP-1 1920x1080 at 60 Hz. Display firmware/Wi-Fi warnings
+also occurred on prior `.20-enh1`; unequal traces do not prove regression.
+
+**Physical port correction:** left port closest to owner/front, farther from
+hinge, WORKS with delayed picture. Left nearest hinge/rear DOES NOT show the dock
+picture. Earlier button answer saying hinge works is explicitly superseded.
+Right port untested. Both controller paths show retries/connected events and
+routing; logical-controller-to-physical-port mapping is not yet a controlled
+measurement. Do not mark rear USB4 entirely dead or claim all-port dock acceptance.
+
+**Next:** matched per-port evidence and attended return to `.20` for actual
+recovery before suspend/power work. No automatic re-arm or stable promotion.
+PowerSaveMode remains unknown; controls false, startup/hotplug power is not an
+idle or paired saving result. Private raw logs stay in the owner's outputs.
+This supersedes armed/no-reboot statuses below. No agent boot/service/module
+parameter change was made during first-boot testing.
+
+## Deferred reboot: static audit and manual test readiness — 2026-10-21
+
+Owner deferred the reboot and asked to continue. One-shot remains armed for
+wip2; no boot setting, installed package, service or module was changed.
+All 24 mechanically-neither review patches now have a bounded static triage:
+19 described source contracts retained, two subsystem replacements open,
+one documentation case open and two partial lifecycle/policy reviews. The
+moved `mm/userfaultfd.c` was recovered from the audited corresponding-source ZIP;
+its source-check branch survives, and USERFAULTFD is disabled in this config.
+Other matched safeguards include debug commands disabled, AWDL parameter
+read-only, AFK/VFIO dependencies, legacy 13.5 DPTX dispatch and SEP store policy.
+[Source-bound receipt](aurora/unified72/static-contract-review-2026-10-21.json).
+Full 64-fix semantic qualification remains open, including the 40 reverse checks.
+
+Readiness: compiler, EGL/GLES development metadata and Python GI imports exist.
+No new test execution or old-kernel result was presented as wip2 acceptance.
+Added [exact private manual commands](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot):
+copy/hash only root-readable Image/shared boot payload into mode0700 evidence,
+collect current-boot journal and run qualification as desktop user, preserving
+session-bus access. Review health/live identity before a separate shader/fsync
+invocation. PowerSaveMode remains unknown; do not treat equal unavailable
+dictionaries as measured display/power stability. Owner controls later reboot,
+and actual return-to-.20 recovery still precedes suspend/power work.
+
+## Aurora 7.2 one-shot armed after repeat CI pass — 2026-10-21
+
+Owner authorized arming when the repeat run passed, then asked to continue.
+Both native matrix jobs passed [repeat CI 39601423970](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970)
+at `ed08d50`. Rechecked installed package, Image/initramfs, old fallback files,
+shared `boot.bin`, menu syntax and empty prior one-shot; all passed. Ran
+`sudo grub-reboot --boot-directory=/boot elementary-aurora72-wip2-trial` at
+13:23:18 UTC (09:23:18 EDT). Verified **next_entry=elementary-aurora72-wip2-trial**.
+Persistent default stays `.20`; all protected files except the intentional
+GRUB environment update remain unchanged. Running `.20-enh1`; **no reboot**.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json),
+[repeat CI receipt](aurora/unified72/repeat-ci-2026-10-21.json).
+Root-private pre-arm environment/receipt:
+`/var/lib/mseries-kernel-tests/arming/20261021T132318Z-aurora72-wip2`.
+
+**Next:** owner/Claude attended reboot into `7.2.10-elementary-aurora72-wip2`,
+password unlock, internal/dock display/input, current-boot logs and manual
+qualification + shader/fsync checks, then actual `.20` recovery before suspend
+or power tests. GRUB clears the one-shot before kernel loading; subsequent normal
+boots retain `.20` default. If trial hangs, record the last message and select
+STABLE `.20` on recovery. Existing source/hardware limits still apply. Do not
+re-arm automatically after this boot, regenerate GRUB or rewrite `boot.bin`.
+Arming does not establish any new hardware acceptance. This checkpoint
+supersedes the earlier unarmed status below.
+
+## Aurora 7.2 wip2 staged, unarmed — 2026-10-21
+
+Owner explicitly approved the checked unarmed staging proposal. Installed separate
+`linux-image-elementary-aurora72-wip2` (7.2.10 wip2) and the audited Image/initramfs;
+added `elementary-aurora72-wip2-trial` in existing `custom.cfg`. **No reboot or
+one-shot selection:** `next_entry` is empty; persistent default is STABLE `.20`;
+running kernel remains `.20-enh1`. Both old Images/initramfs, generated GRUB,
+GRUB environment and shared `boot.bin` remain byte-identical. Root-private backup:
+`/var/lib/mseries-kernel-tests/staging/20261021T131440Z-aurora72-wip2`.
+
+All 2,042 regular payload files and symlinks compared with the audited package;
+`dpkg -V` and `dpkg --audit` clean, both GRUB syntax checks pass. Host dpkg strips
+`/usr/share/doc/*`; the first attempt detected omitted documentation before any
+boot change. Reinstalled using the package-specific `--path-include` in the
+[lane's staging instructions](aurora/unified72/BOOT-TRIAL.md), restoring licenses,
+resolved config and provenance without changing the global policy.
+
+The original Arch encrypt/userspace/firmware entries remain identical; 91 new
+initramfs modules and dependency closure match the exact CI package. Retain old
+shared 7.1 DTBs: new DART parser passes 50 host controls on the exact J314S legacy
+geometry. That preserves old fallback format, not a demonstrated recovery boot.
+Mesa/UAPI and firmware-source checks plus DART/DCP/radio controls are recorded in
+[preflight evidence](aurora/unified72/boot-preflight-2026-10-21.json). 71 repository
+unit tests pass. Original failed host fixtures and corrected invocations are
+identified, not hidden. Native build artifact is run 39595756051 at `b213999`;
+repeat native run 39601423970 at `ed08d50` was still building when staging finished.
+
+**Next:** coordinate with owner/Claude for an attended one-shot boot, basic
+unlock/display/input and manual qualification, then an actual return to `.20`
+before suspend/power tests. See [first-boot sequence and limits](aurora/unified72/BOOT-TRIAL.md).
+Full 64-fix semantic review and live hardware/Mesa acceptance remain open. Do not
+start the next maintenance task or automatically arm/reboot this experiment.
+
+## Aurora 7.2 merged-source refresh selected — 2026-10-21
+
+Owner selected refreshing the independent 7.2 candidate. The unified72 manifest
+now pins merged #139 `644133b7799f` with streamed archive SHA256 and new distinct
+`7.2.10-elementary-aurora72-wip2` / Debian wip2 identity. The already-upstream
+stock-bindgen patch is removed from the active series and retained as historical
+provenance. Five GPU-reader and 12 PMP host tests pass on the selected source;
+three old GPU/SEP source gaps are addressed, not all 64 semantic review gates.
+Native ARM64 config/Image/modules/DTBs/package inspection and upload passed
+[run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051)
+at `b213999`; the `.20` control passed too. Independent ZIP/checksum/full-source
+digest/package/J314S-DTB audit passed;
+[receipt](aurora/unified72/native-build-2026-10-21.json). Later audit/test/docs
+edits preserve the recorded build input hashes. At this earlier build checkpoint
+there was no host installation. The unarmed staging above supersedes that status. Actual Mesa clients, upstream M1
+Touch ID regressions and J314S boot/suspend/recovery remain gates. See
+[the current lane and receipt](aurora/unified72/README.md). The refreshed
+64-patch comparison is 0 forward / 40 reverse / 24 neither: mechanical checks,
+not full semantic parity. The paused kernel task now resumes active PR/CI and
+requires archive, carried-patch and artifact evidence before success claims.
+
 ## Messages: honest full text, attachment chips — 2026-10-21
 
 Audit of "full text / MMS / links" against the live phone (read-only; nothing sent):
