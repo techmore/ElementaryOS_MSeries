@@ -10,6 +10,24 @@ Torrential upstream remains the pinned rewrite baseline; its open serde_with
 update lacks native CI. Signal module builds with existing GTK pixbuf warnings.
 Next: review/stage through Quick Settings and separately accept the loaded state.
 
+## Pantheon shell upstream pass and Quick Settings preparation — 2026-10-21
+
+Reviewed eleven customized shell components against current upstream default
+branches; exact pins, heads, changes and dispositions are retained in
+`mseries/upstream-audits/pantheon-shell-2026-10-21.{md,json}`. No wholesale
+Gala/Wingpanel/Dock update: these overlap our session/focus/taskbar changes.
+Quick Settings/network/keyboard/applications-menu are upstream-current; power,
+Bluetooth and sound only have Swedish translation deltas. Files has an upstream
+theme-initialization change overlapping our startup workaround; qualify before
+replacement.
+
+Quick Settings desktop preparation now calls the same core helper as the factory
+and package builds, retaining desktop Share Eyes/AirDrop extras. Original versus
+shared prepared source trees are byte-identical; core and extras native builds,
+three routing regressions, private fake-BlueZ probe, syntax and warning-level
+ShellCheck pass. No pin bump, live installation or service restart. Next: review
+Dock Launcher binding lifecycle with complete custom-source preservation.
+
 ## Touch ID page in System Settings — 2026-10-21
 
 New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
@@ -9766,3 +9784,20 @@ configurator no longer creates a Hermes profile or desktop launcher. The unused
 `mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
 venv, config, state, and any previously generated desktop launcher in a user's
 home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.
+
+## Native Messages upstream read-only sender compatibility — 2026-10-21
+
+Reviewed BlueFerry `60fd7ef1...69122b3b` metadata changes. Native Messages now
+keeps an inbox-only sender read-only when optional `sender_alphanumeric` metadata
+is present, including duplicate-handle refreshes; contact-name resolution preserves
+that sender identity. Direct blocked senders now get accurate reply-unavailable
+guidance instead of group-confirmation instructions. Model checks: 69 tests pass;
+targeted isolated GTK restriction/draft test passes. See
+`phone-setup/UPSTREAM-REVIEW.md`. The full isolated GTK regression receipt is
+retained in the morning-task output directory.
+
+Source only: backend pin, Bluetooth state, desktop session and real messages
+unchanged. Current upstream has 51 commits beyond our recorded backend; a separate
+backend qualification is still needed before its sender detection/LE/media fixes
+can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
+features; those need native Incus design, not blind Swift feature parity claims.
