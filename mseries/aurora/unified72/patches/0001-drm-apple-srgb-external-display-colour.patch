@@ -1,0 +1,172 @@
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+index 5aedd1acb59451..4c439ac9355af2 100644
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -24,6 +24,9 @@
+ #include "dcp-announce.h"
+ #include "dcp-display-metadata.h"
+ #include "dcp-metadata-epoch.h"
++
++/* dcp.c: appledrm.external_srgb module parameter */
++extern bool external_srgb;
+ #include "dcp-180hz.h"
+ #include "iomfb.h"
+ #include "iomfb_h17p.h"
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index e84af350c7e081..0839eafc280b88 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -208,6 +208,11 @@ static bool unstable_edid = true;
+ module_param(unstable_edid, bool, 0644);
+ MODULE_PARM_DESC(unstable_edid, "Enable unstable EDID retrival support");
+ 
++bool external_srgb = true;
++module_param(external_srgb, bool, 0644);
++MODULE_PARM_DESC(external_srgb,
++		 "Tag RGB framebuffers for external displays as sRGB so DCP converts them to the panel's native gamut (default: Y)");
++
+ static void disconnected_hpd_event(struct apple_connector *connector);
+ 
+ bool dcp_is_external_h17p(struct apple_dcp *dcp)
+diff --git a/drivers/gpu/drm/apple/iomfb_template.c b/drivers/gpu/drm/apple/iomfb_template.c
+index ad3f1a5291bae1..b7227ff8136063 100644
+--- a/drivers/gpu/drm/apple/iomfb_template.c
++++ b/drivers/gpu/drm/apple/iomfb_template.c
+@@ -2503,6 +2503,19 @@ void DCP_FW_NAME(iomfb_flush)(struct apple_dcp *dcp, struct drm_crtc *crtc, stru
+ 		    req->surf[l].base.colorspace == DCP_COLORSPACE_BG_SRGB)
+ 			req->surf[l].base.colorspace = DCP_COLORSPACE_NATIVE;
+ 
++		/* RGB planes arrive tagged "native" (plane.c). The desktop
++		 * renders sRGB, and external Apple panels (Studio Display,
++		 * XDR) are wide gamut, so a native tag puts sRGB values
++		 * straight onto P3 primaries and oversaturates everything.
++		 * Tag the surface sRGB instead and let DCP convert to the
++		 * panel gamut in hardware, as macOS does.
++		 */
++		else if (external_srgb &&
++			 dcp->connector_type != DRM_MODE_CONNECTOR_eDP &&
++			 !new_state->fb->format->is_yuv &&
++			 req->surf[l].base.colorspace == DCP_COLORSPACE_NATIVE)
++			req->surf[l].base.colorspace = DCP_COLORSPACE_BG_SRGB;
++
+ #if DCP_FW_VER >= DCP_FW_VERSION(26, 0, 0)
+ 		/* H17P external SDR RGB needs an sRGB source tag. Native
+ 		 * tagging washes out the same pixel values on this profile.
+diff --git a/drivers/gpu/drm/apple/parser.c b/drivers/gpu/drm/apple/parser.c
+index 0de67aa8fe710e..bb8a49378fb005 100644
+--- a/drivers/gpu/drm/apple/parser.c
++++ b/drivers/gpu/drm/apple/parser.c
+@@ -8,6 +8,7 @@
+ #include <linux/math.h>
+ #include <linux/string.h>
+ #include <linux/slab.h>
++#include <linux/module.h>
+ 
+ #if IS_ENABLED(CONFIG_DRM_APPLE_AUDIO)
+ #include <sound/pcm.h> // for sound format masks
+@@ -448,6 +449,36 @@ static int fill_color_mode(struct dcp_color_mode *color,
+ 	return 0;
+ }
+ 
++/*
++ * Colorimetry the SDR RGB link to an external display should prefer. By
++ * firmware score alone DCP picks the widest colorimetry the display offers
++ * (BT.2020 RGB on a Studio Display XDR), which puts the desktop's sRGB pixels
++ * on a BT.2020 link. -1 keeps the firmware score; otherwise a dcp_colorimetry
++ * value: 10 sRGB, 1 BT.709, 14 DCI-P3 D65, 16 default RGB, 9 BT.2020 RGB.
++ * Read when a display's modes are parsed, so a change needs a replug.
++ */
++static int external_colorimetry = DCP_COLORIMETRY_SRGB;
++module_param(external_colorimetry, int, 0644);
++MODULE_PARM_DESC(external_colorimetry,
++		 "Preferred SDR RGB link colorimetry for external displays (-1: firmware score, 10: sRGB, 1: BT.709, 14: DCI-P3 D65, 9: BT.2020 RGB)");
++
++/* Tiers for external_colorimetry; equal tiers fall back to firmware score. */
++static unsigned int external_colorimetry_rank(const struct color_mode *color)
++{
++	if (color->colorimetry == external_colorimetry)
++		return 3;
++
++	switch (color->colorimetry) {
++	case DCP_COLORIMETRY_SRGB:
++	case DCP_COLORIMETRY_BT709:
++		return 2;
++	case DCP_COLORIMETRY_RGB:
++		return 1;
++	default:
++		return 0;
++	}
++}
++
+ /* External SDR scanout must not select a wide-gamut mode by score alone. */
+ static unsigned int external_sdr_rank(const struct color_mode *color)
+ {
+@@ -553,12 +584,15 @@ static int parse_timing_color_restrictions(struct dcp_parse_ctx *handle,
+ }
+ 
+ static int parse_color_modes(struct dcp_parse_ctx *handle,
+-			     struct dcp_display_mode *out, bool external_sdr,
++			     struct dcp_display_mode *out, bool internal,
++			     bool external_sdr,
+ 			     const struct timing_color_restrictions *limits,
+ 			     struct dcp_color_mode *unsafe_rgb8)
+ {
+ 	struct iterator outer_it;
+ 	unsigned int best_sdr_rank = 0, best_unsafe_rank = 0;
++	bool prefer_colorimetry = !internal && !external_sdr &&
++				  external_colorimetry >= 0;
+ 	int ret = 0;
+ 	out->sdr_444.score = -1;
+ 	out->sdr_rgb.score = -1;
+@@ -671,9 +705,17 @@ static int parse_color_modes(struct dcp_parse_ctx *handle,
+ 
+ 		if (cmode.eotf == DCP_EOTF_SDR_GAMMA) {
+ 			if (cmode.pixel_encoding == DCP_COLOR_FORMAT_RGB &&
+-				cmode.depth <= 10)
+-				fill_color_mode(&out->sdr_rgb, &cmode);
+-			else if (cmode.pixel_encoding == DCP_COLOR_FORMAT_YCBCR444 &&
++				cmode.depth <= 10) {
++				unsigned int rank = prefer_colorimetry ?
++					external_colorimetry_rank(&cmode) : 0;
++
++				if (rank >= best_sdr_rank) {
++					if (rank > best_sdr_rank)
++						out->sdr_rgb.score = -1;
++					fill_color_mode(&out->sdr_rgb, &cmode);
++					best_sdr_rank = rank;
++				}
++			} else if (cmode.pixel_encoding == DCP_COLOR_FORMAT_YCBCR444 &&
+ 				cmode.depth <= 10)
+ 				fill_color_mode(&out->sdr_444, &cmode);
+ 			fill_color_mode(&out->sdr, &cmode);
+@@ -772,7 +814,8 @@ static int parse_mode(struct dcp_parse_ctx *handle,
+ 		else if (!strcmp(key, "MaximumVariableRefreshRate"))
+ 			ret = parse_int_bound(it.handle, &max_vrr, 0, U32_MAX);
+ 		else if (!strcmp(key, "ColorModes"))
+-			ret = parse_color_modes(it.handle, out, external_sdr, &limits,
++			ret = parse_color_modes(it.handle, out, internal,
++						external_sdr, &limits,
+ 					handle->automatic_1080p180_rgb8 ?
+ 					&unsafe_rgb8 : NULL);
+ 		else if (!strcmp(key, "ID"))
+diff --git a/drivers/gpu/drm/apple/plane.c b/drivers/gpu/drm/apple/plane.c
+index aa5bbc9551d2ce..f97bef93e9be35 100644
+--- a/drivers/gpu/drm/apple/plane.c
++++ b/drivers/gpu/drm/apple/plane.c
+@@ -228,12 +228,15 @@ static void apple_plane_atomic_update(struct drm_plane *plane,
+ 	struct drm_framebuffer *fb = base->fb;
+ 	const struct drm_format_info *fmt = fb->format;
+ 	/*
+-	 * DCP doesn't support XBGR8 / XRGB8 / XBGR2101010 natively. Blending as
++	 * DCP doesn't support XBGR8 / XRGB8 / XRGB2101010 / XBGR2101010
++	 * natively (XRGB2101010 is scanned out as "l10r", an alpha format,
++	 * so its two padding bits are read as alpha). Blending as
+ 	 * pre-multiplied alpha with a black background can be used as
+ 	 * workaround for the bottommost plane.
+ 	 */
+ 	if (fmt->format == DRM_FORMAT_XRGB8888 ||
+ 	    fmt->format == DRM_FORMAT_XBGR8888 ||
++	    fmt->format == DRM_FORMAT_XRGB2101010 ||
+ 	    fmt->format == DRM_FORMAT_XBGR2101010)
+ 		is_premultiplied = true;
+ 
