@@ -2,16 +2,15 @@ diff --git a/data/Application.css b/data/Application.css
 index 8efd72d..0e7d3a6 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -467,7 +467,11 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
+@@ -467,7 +467,10 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
  }
  
  /* CodexBar forms its own group beside the system status controls. */
 -.taskbar-codexbar-button { padding: 8px; min-width: 24px; min-height: 24px; border-radius: 6px; }
 +.taskbar-codexbar-button { padding: 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
 +.taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
-+.taskbar-repobar-button .seg-value { font-size: 24pt; }
-+.taskbar-repobar-button .seg-alert { font-size: 24pt; }
-+.taskbar-repobar-popup { font-size: 1.5625em; }
++/* The readout size follows the dock's icon size (TaskbarRepoBar.vala), so it changes with the mode and text step. */
++.taskbar-repobar-popup { font-size: 1.4em; }
  .taskbar-codexbar-separator { opacity: 0.35; }
  
  /* Windows 11 Start appearance, owner requested 2026-10-20.

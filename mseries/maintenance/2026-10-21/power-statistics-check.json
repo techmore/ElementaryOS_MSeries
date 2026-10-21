@@ -1,0 +1,176 @@
+{
+  "start": "2026-10-21T07:31:37.359134-04:00",
+  "purpose": "Second uncontrolled observational sample solely to retain raw readings and audit sampler arithmetic; not an A/B comparison",
+  "source_sha256": "e2e16eac68e4c3d97928a6a7c2321b434f2a13777dee78f811aa98ffc1e06673",
+  "sensor_path": "/sys/class/hwmon/hwmon2/power1_input",
+  "result": {
+    "n": 30,
+    "median_w": 41.203,
+    "p10_w": 18.111,
+    "p90_w": 43.246,
+    "mean_w": 33.224,
+    "min_w": 17.48,
+    "max_w": 44.098,
+    "source": "smc-total-system-power",
+    "status": "Discharging",
+    "top_irqs": [
+      {
+        "irq": "36 Level arch_timer",
+        "per_s": 8530
+      },
+      {
+        "irq": "IPI1 call interrupts",
+        "per_s": 3496
+      },
+      {
+        "irq": "IPI0 Rescheduling interrupts",
+        "per_s": 1813
+      },
+      {
+        "irq": "92 Level 38bc08000.mbox-recv",
+        "per_s": 473
+      },
+      {
+        "irq": "58 Level 406408000.mbox-recv",
+        "per_s": 211
+      },
+      {
+        "irq": "101 Level nvme-apple",
+        "per_s": 150
+      }
+    ]
+  },
+  "raw_samples": [
+    {
+      "elapsed_s": 1.0016717570001674,
+      "watts": 17.480482
+    },
+    {
+      "elapsed_s": 2.002288763000024,
+      "watts": 19.107254
+    },
+    {
+      "elapsed_s": 3.0028848530000687,
+      "watts": 20.30371
+    },
+    {
+      "elapsed_s": 4.0035733170000185,
+      "watts": 18.51935
+    },
+    {
+      "elapsed_s": 5.004786533000015,
+      "watts": 18.266309
+    },
+    {
+      "elapsed_s": 6.005364497000073,
+      "watts": 18.020771
+    },
+    {
+      "elapsed_s": 7.008637048000082,
+      "watts": 17.821163
+    },
+    {
+      "elapsed_s": 8.009593971000186,
+      "watts": 18.144996
+    },
+    {
+      "elapsed_s": 9.010236186000157,
+      "watts": 20.474599
+    },
+    {
+      "elapsed_s": 10.012523985000144,
+      "watts": 19.44857
+    },
+    {
+      "elapsed_s": 11.013150242000165,
+      "watts": 18.111146
+    },
+    {
+      "elapsed_s": 12.014800915000023,
+      "watts": 32.978099
+    },
+    {
+      "elapsed_s": 13.015575047000084,
+      "watts": 41.194263
+    },
+    {
+      "elapsed_s": 14.01697217900005,
+      "watts": 41.211151
+    },
+    {
+      "elapsed_s": 15.017523826000115,
+      "watts": 42.224624
+    },
+    {
+      "elapsed_s": 16.01804101000016,
+      "watts": 40.452766
+    },
+    {
+      "elapsed_s": 17.018635611000036,
+      "watts": 42.558395
+    },
+    {
+      "elapsed_s": 18.02135304500007,
+      "watts": 42.260761
+    },
+    {
+      "elapsed_s": 19.02200331300014,
+      "watts": 42.640033
+    },
+    {
+      "elapsed_s": 20.024741164000034,
+      "watts": 42.201515
+    },
+    {
+      "elapsed_s": 21.0253795980002,
+      "watts": 42.359878
+    },
+    {
+      "elapsed_s": 22.026054324000143,
+      "watts": 40.716018
+    },
+    {
+      "elapsed_s": 23.026676800000132,
+      "watts": 41.305213
+    },
+    {
+      "elapsed_s": 24.027167484000074,
+      "watts": 42.002422
+    },
+    {
+      "elapsed_s": 25.027601043000004,
+      "watts": 41.403865
+    },
+    {
+      "elapsed_s": 26.02807143600012,
+      "watts": 41.534454
+    },
+    {
+      "elapsed_s": 27.02852612000015,
+      "watts": 42.553951
+    },
+    {
+      "elapsed_s": 28.028955388000213,
+      "watts": 44.089008
+    },
+    {
+      "elapsed_s": 29.029465738,
+      "watts": 44.098201
+    },
+    {
+      "elapsed_s": 30.02989858900014,
+      "watts": 43.245845
+    }
+  ],
+  "independently_recomputed": {
+    "n": 30,
+    "median_w": 41.203,
+    "p10_w": 18.111,
+    "p90_w": 43.246,
+    "mean_w": 33.224,
+    "min_w": 17.48,
+    "max_w": 44.098
+  },
+  "arithmetic_matches": true,
+  "quantiles": "Sorted index floor(n/10), min(n-1,floor(9n/10)); descriptive percentiles, not confidence intervals"
+}

@@ -109,7 +109,7 @@ namespace MSeries {
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
                 margin_top = 8, margin_bottom = 6, margin_start = 8, margin_end = 8,
-                width_request = 360
+                width_request = 460
             };
             menu.add_css_class ("mseries-repobar");
             install_style (menu.get_display ());
@@ -272,7 +272,7 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-repobar { font-size: 1.0em; } " +
+                ".mseries-repobar { font-size: 1.3em; } " +
                 ".mseries-repobar .caption { font-size: 0.889em; } " +
                 ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar .repo-card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
@@ -326,9 +326,9 @@ namespace MSeries {
                 ".mseries-repobar .mseries-bar { margin-top: 2px; } " +
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
-                ".mseries-repobar-bar label { font-size: 0.944em; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 0.944em; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 0.889em; font-weight: 700; } " +
+                ".mseries-repobar-bar label { font-size: 1.2em; font-feature-settings: \"tnum\"; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 1.2em; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 1.1em; font-weight: 700; } " +
                 ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +

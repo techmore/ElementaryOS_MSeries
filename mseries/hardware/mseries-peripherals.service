@@ -1,0 +1,15 @@
+[Unit]
+Description=Apple and Logitech accessories: pairing offer on plug-in, reconnect, low-battery notice
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecCondition=/usr/bin/mseries-hw-apple-silicon
+ExecStart=/usr/bin/python3 -I /usr/libexec/mseries/peripherals watch
+Restart=on-failure
+RestartSec=30
+Nice=10
+
+[Install]
+WantedBy=graphical-session.target
