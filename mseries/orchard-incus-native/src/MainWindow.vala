@@ -139,6 +139,9 @@ public class MainWindow : Gtk.ApplicationWindow {
         dashboard = new Dashboard ();
         content_stack.add_titled (new Gtk.ScrolledWindow () { child = dashboard }, "dashboard", "Dashboard");
         content_stack.add_titled (box, "instances", "Instances");
+        var podman_page = new PodmanPage ();
+        podman_page.notice.connect ((text) => { toast.title = text; toast.send_notification (); });
+        content_stack.add_titled (podman_page, "podman", "Podman");
         var sidebar = new Gtk.StackSidebar () { stack = content_stack, width_request = 150 };
         sidebar.add_css_class ("navigation-sidebar");
         sidebar.add_css_class ("orchard-sidebar");

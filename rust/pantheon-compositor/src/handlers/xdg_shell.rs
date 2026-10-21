@@ -24,10 +24,7 @@ use smithay::{
     },
 };
 
-use crate::{
-    PantheonCompositor,
-    grabs::{MoveSurfaceGrab, ResizeSurfaceGrab},
-};
+use crate::{PantheonCompositor, grabs::ResizeSurfaceGrab, tiling::ModeRequest};
 
 impl XdgShellHandler for PantheonCompositor {
     fn xdg_shell_state(&mut self) -> &mut XdgShellState {
@@ -39,6 +36,14 @@ impl XdgShellHandler for PantheonCompositor {
         self.space.map_element(window.clone(), (0, 0), false);
         self.workspace_manager
             .add_window(window, Point::from((0, 0)));
+    }
+
+    fn title_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
+    }
+
+    fn app_id_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
     }
 
     fn new_popup(&mut self, surface: PopupSurface, _positioner: PositionerState) {
@@ -67,30 +72,11 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
-            self.clear_tiling_for_surface(wl_surface);
-            self.move_grab_active = true;
-            self.corner_snap_cancelled = false;
-            self.corner_snap_preview = None;
             let pointer = seat.get_pointer().unwrap();
-
-            let window = self
-                .space
-                .elements()
-                .find(|w| {
-                    w.toplevel()
-                        .is_some_and(|top| top.wl_surface() == wl_surface)
-                })
-                .unwrap()
-                .clone();
-            let initial_window_location = self.space.element_location(&window).unwrap();
-
-            let grab = MoveSurfaceGrab {
-                start_data,
-                window,
-                initial_window_location,
+            let Some(window) = self.find_window_for_surface(wl_surface) else {
+                return;
             };
-
-            pointer.set_grab(self, grab, serial, Focus::Clear);
+            self.start_move_grab(&pointer, start_data, window, serial);
         }
     }
 
@@ -106,7 +92,6 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
-            self.clear_tiling_for_surface(wl_surface);
             let pointer = seat.get_pointer().unwrap();
 
             let window = self
@@ -118,6 +103,17 @@ impl XdgShellHandler for PantheonCompositor {
                 })
                 .unwrap()
                 .clone();
+            // The shared edge of a snap group resizes both members.
+            if self.try_start_split_resize(
+                &pointer,
+                start_data.clone(),
+                &window,
+                edges.into(),
+                serial,
+            ) {
+                return;
+            }
+            self.float_in_place(&window);
             let initial_window_location = self.space.element_location(&window).unwrap();
             let initial_window_size = window.geometry().size;
 
@@ -139,11 +135,11 @@ impl XdgShellHandler for PantheonCompositor {
     }
 
     fn maximize_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, true, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Maximize);
     }
 
     fn unmaximize_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, false, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Unmaximize);
     }
 
     fn fullscreen_request(
@@ -151,11 +147,11 @@ impl XdgShellHandler for PantheonCompositor {
         surface: ToplevelSurface,
         _output: Option<smithay::reexports::wayland_server::protocol::wl_output::WlOutput>,
     ) {
-        self.configure_window_mode(surface, false, true);
+        self.request_toplevel_mode(&surface, ModeRequest::Fullscreen);
     }
 
     fn unfullscreen_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, false, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Unfullscreen);
     }
 
     fn minimize_request(&mut self, surface: ToplevelSurface) {
@@ -201,9 +197,9 @@ impl XdgShellHandler for PantheonCompositor {
         let was_focused = self.keyboard_focus_is_in(wl_surface);
         self.end_popup_grab_of(wl_surface);
         self.initially_positioned.remove(&id);
-        self.managed_windows.remove(&id);
-        self.tiled_windows.remove(&id);
-        self.minimized_windows.remove(&id);
+        if let Some((window, _)) = self.minimized_windows.remove(&id) {
+            self.forget_window_placement(window.id());
+        }
 
         let window = self
             .space
@@ -227,6 +223,7 @@ impl XdgShellHandler for PantheonCompositor {
             });
         if let Some(window) = window {
             self.attention.clear(window.id());
+            self.forget_window_placement(window.id());
             self.space.unmap_elem(&window);
             self.workspace_manager.remove_window(window.id());
         }
@@ -490,7 +487,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                     focused
                 })
                 .and_then(|focused| state.find_window_for_surface(&focused))
-                .and_then(|focused| state.space.outputs_for_element(&focused).first().cloned());
+                .and_then(|focused| state.primary_output_for(&focused));
             let pointer_location = state
                 .seat
                 .get_pointer()

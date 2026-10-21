@@ -1,0 +1,85 @@
+INFO pantheon_compositor::xwayland: XWayland is ready display_number=1
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=290 y=175 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=290 y=175 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=290 y=175 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=0 y=0 w=640 h=800 pending=true group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=290 y=175 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=290 y=175 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(tiled-right) x=640 y=0 w=640 h=800 pending=true group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(tiled-right) x=0 y=0 w=1280 h=800 pending=false group=- states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=0 y=0 w=1280 h=800 pending=true group=- states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=640 y=0 w=640 h=800 pending=true group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=290 y=175 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(floating) x=290 y=175 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(floating) x=0 y=0 w=1280 h=800 pending=false group=- states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=0 y=0 w=1280 h=800 pending=true group=- states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=290 y=175 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=290 y=175 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=181 y=162 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=181 y=162 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=1217 y=388 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=true
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=1217 y=388 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=640 y=0 w=640 h=800 pending=true group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=181 y=162 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=240 y=175 w=800 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=240 y=175 w=800 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=480 y=0 w=800 h=800 pending=false group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=480 y=0 w=800 h=800 pending=true group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=240 y=175 w=800 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=240 y=175 w=800 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=800 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=320 y=190 w=640 h=420 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=320 y=190 w=640 h=420 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=420 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=320 y=190 w=640 h=800 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=320 y=190 w=640 h=420 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=398 y=253 w=580 h=390 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=338 y=223 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::snap_assist: snap assist opened candidates=2 position=Right
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=338 y=223 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe assist open=true candidates=2 selected=0 zone=640,0,640,800 cells=688,232,260,336;972,232,260,336
+INFO pantheon_compositor::gesture_probe: snap probe assist open=true candidates=2 selected=1 zone=640,0,640,800 cells=688,232,260,336;972,232,260,336
+INFO pantheon_compositor::gesture_probe: snap probe assist open=true candidates=2 selected=0 zone=640,0,640,800 cells=688,232,260,336;972,232,260,336
+INFO pantheon_compositor::snap_assist: snap assist closed
+INFO pantheon_compositor::gesture_probe: snap probe assist open=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=0 y=0 w=640 h=800 pending=true group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=338 y=223 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::snap_assist: snap assist opened candidates=2 position=Right
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=338 y=223 w=700 h=450 pending=true group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe assist open=true candidates=2 selected=0 zone=640,0,640,800 cells=688,232,260,336;972,232,260,336
+INFO pantheon_compositor::snap_assist: snap assist chose a window window=4
+INFO pantheon_compositor::snap_assist: snap group formed group=1 left=3 right=4
+INFO pantheon_compositor::gesture_probe: snap probe assist click consumed=true
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=368 y=238 w=640 h=420 pending=true group=1:0.500 states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=1:0.500 states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe assist open=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=1:0.500 states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=398 y=253 w=580 h=390 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=1:0.500 states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe split press started=true
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=840 h=800 pending=false group=1:0.656 states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=840 y=0 w=440 h=800 pending=false group=1:0.656 states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(tiled-left) x=0 y=0 w=840 h=800 pending=true group=1:0.656 states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=maximized(tiled-left) x=0 y=0 w=1280 h=800 pending=false group=1:0.656 states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=1280 h=800 pending=true group=1:0.656 states=Maximized area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=840 h=800 pending=false group=1:0.656 states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::snap_assist: snap group dissolved group=1
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=0 y=0 w=840 h=800 pending=true group=- states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=floating x=338 y=223 w=700 h=450 pending=false group=- states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-right x=640 y=0 w=640 h=800 pending=false group=- states=TiledRight+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::snap_assist: snap group formed group=2 left=3 right=4
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=338 y=223 w=700 h=450 pending=true group=2:0.500 states=- area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe placement=tiled-left x=0 y=0 w=640 h=800 pending=false group=2:0.500 states=TiledLeft+TiledTop+TiledBottom area=0,0,1280,800 preview=false
+INFO pantheon_compositor::gesture_probe: snap probe assist open=false
+INFO pantheon_compositor::snap_assist: snap group dissolved group=2

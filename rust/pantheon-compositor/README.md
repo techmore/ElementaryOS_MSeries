@@ -137,6 +137,38 @@ call `present()` while a different client has focus. Expected output:
   refusal can be attributed to its window; `strict` still never raises without
   a trusted serial. The dock does not show the mark yet.
 
+## Monitoring
+
+Every 30 s the compositor logs (target `pantheon_metrics`, nothing when idle):
+
+- `compositor stats`: client `commits` split into `shm_commits`/`dmabuf_commits`,
+  damaged megapixels, frame callbacks requested, `redraw_requests` (before
+  coalescing), `render_passes` (after), `vblanks`, `frames_queued`/`frames_empty`,
+  and the five busiest clients as `name(pid)=commits/shm|dmabuf`. X11 windows
+  are named by their own `_NET_WM_PID`, not as Xwayland or the compositor.
+- `output frame stats` per output: `fps`, `late` (flip more than 1.5 refresh
+  periods after queueing), `skipped_vblanks`, `empty_pct`, and p50/p95/p99 µs of
+  `render_us` (compositor-thread CPU per frame), `queue_flip_us` and
+  `dirty_flip_us` (first commit or input to the kernel's flip timestamp).
+
+```sh
+journalctl --user -u pantheon-rust-compositor@wayland -g 'compositor stats|output frame stats'
+```
+
+Under systemd (`JOURNAL_STREAM` naming stderr) lines carry no ANSI colour or
+second timestamp and start with an sd-daemon `<N>` prefix, so
+`journalctl -p warning` works. Without `RUST_LOG` the filter is
+`info,smithay::xwayland::xwm=warn`. Routine 30 s safety reconciles of the
+opt-in display trace log at DEBUG unless they find a change.
+
+Frame callbacks go only to surfaces whose primary scanout output is the one
+that flipped (so a second monitor no longer doubles every client's rate);
+surfaces shown nowhere (fully occluded, behind the lock screen) get one per
+second. An empty frame (a commit with no visible change) still
+gets its callbacks at the estimated next vblank. Set
+`PANTHEON_FRAME_CALLBACKS=all` on the service to restore the old
+every-window-every-flip behaviour without rebuilding.
+
 ## Current limits
 
 This is an early compositor implementation, not a Mutter port or a Pantheon

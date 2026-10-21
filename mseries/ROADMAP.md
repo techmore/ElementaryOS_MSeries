@@ -1,3 +1,18 @@
+## Compositor snapping phase 1 — 2026-10-21
+
+Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together
+from their shared edge (`src/snap_group.rs`, `src/snap_assist.rs`). Nested regression 34/34; native and multi-monitor acceptance
+open. Next: phase 2 (split-on-drop for a third and fourth app, templates, titles).
+
+## Compositor snapping phase 0 — 2026-10-21
+
+One placement per window (`src/placement.rs`), restore after snap/maximize, Super+Up/Down, toggling Super+Left/Right,
+ack-gated moves, min-size-aware zones, deterministic output choice and `Tiled*` states (S1–S8, S12–S14, S17 of the
+[investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md)). Unit tests plus a nested
+[snap regression](pantheon-rust-compositor/snap-tests/README.md); native, multi-monitor acceptance is open. This also
+addresses the "snap geometry discrepancy" noted on October 20 (wrong-output choice), pending owner confirmation. Next: Snap
+Assist for halves and two-member snap groups (phase 1).
+
 ## Rust compositor next-generation investigation — 2026-10-21
 
 Read-only audit of popups/attention, snapping, performance/battery and monitoring:
@@ -32,6 +47,13 @@ the compositor focuses another window, refused menus get `popup_done`, X11 notif
 never take activation or focus, and windows that are refused activation (or set X11 urgency) are
 exported as `demands-attention` in `GetWindows`. Nested probe 7/7. Loads at next login. Next: dock
 patch to show `demands-attention`, then D4-D6 (activation trust, new-window focus, modals).
+
+## Compositor monitoring and battery (phase 0–1, P2/P7/P8) — 2026-10-21
+
+Frame timing per output (render CPU, queue→flip, dirty→flip, late frames), per-client commits with shm/dmabuf split and correct
+X11 attribution, journal priorities, frame callbacks only for surfaces on the flipped output, and the small CPU fixes. Loads at
+next login; after-numbers still to collect. Next: P1 dmabuf trial login, P3 idle/DPMS, then the D-Bus `Stats` interface and CLI.
+[Handoff](OS9-HANDOFF.md).
 
 ## Release pipeline for the customer updater — 2026-10-21
 

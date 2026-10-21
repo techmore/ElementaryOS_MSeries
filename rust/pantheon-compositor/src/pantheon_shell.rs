@@ -10,15 +10,9 @@ use smithay::{
         backend::GlobalId, protocol::wl_surface::WlSurface,
     },
     utils::{Logical, Point, Rectangle, SERIAL_COUNTER, Size},
-    wayland::shell::xdg::ToplevelSurface,
 };
 
-use smithay::reexports::wayland_protocols::xdg::shell::server::xdg_toplevel;
-
-use crate::{
-    PantheonCompositor, protocols::pantheon_desktop_shell_v1::server as protocol,
-    state::ManagedWindow,
-};
+use crate::{PantheonCompositor, protocols::pantheon_desktop_shell_v1::server as protocol};
 
 pub struct PantheonShellState {
     _global: GlobalId,
@@ -362,6 +356,8 @@ impl PantheonCompositor {
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
         // Override-redirect and no-input X11 windows are raised, never activated.
         let activate = activate && crate::xwayland::window_accepts_focus(window);
+        // Snap groups come forward together, the raised member on top.
+        self.raise_group_siblings(window);
         self.space.raise_element(window, activate);
         let children = self
             .space
@@ -613,8 +609,7 @@ impl PantheonCompositor {
             .as_deref()
             .and_then(|name| self.space.outputs().find(|output| output.name() == name))
             .cloned()
-            .or_else(|| self.space.outputs_for_element(&window).first().cloned())
-            .or_else(|| self.primary_output())
+            .or_else(|| self.primary_output_for(&window))
         else {
             return;
         };
@@ -703,8 +698,7 @@ impl PantheonCompositor {
                 .as_deref()
                 .and_then(|name| self.space.outputs().find(|output| output.name() == name))
                 .cloned()
-                .or_else(|| self.space.outputs_for_element(window).first().cloned())
-                .or_else(|| self.primary_output())
+                .or_else(|| self.primary_output_for(window))
             else {
                 continue;
             };
@@ -782,10 +776,8 @@ impl PantheonCompositor {
                     .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
             });
             let focused_maximized = focused_window.as_ref().is_some_and(|focused| {
-                focused
-                    .toplevel()
-                    .and_then(|top| self.managed_windows.get(&top.wl_surface().id()))
-                    .is_some_and(|managed| managed.maximized || managed.fullscreen)
+                let placement = self.placement_of(focused);
+                placement.is_maximized() || placement.is_fullscreen()
             });
             let focused_overlaps = focused_window.as_ref().is_some_and(|focused| {
                 self.window_overlaps_panel(focused, panel_rect, panel.anchor.unwrap())
@@ -900,88 +892,6 @@ impl PantheonCompositor {
         collision_rect.intersection(geometry).is_some()
     }
 
-    pub fn configure_window_mode(
-        &mut self,
-        surface: ToplevelSurface,
-        maximized: bool,
-        fullscreen: bool,
-    ) {
-        let wl_surface = surface.wl_surface();
-        let Some(window) = self.find_window_for_surface(wl_surface) else {
-            return;
-        };
-
-        let surface_id = wl_surface.id();
-        self.clear_tiling_for_surface(wl_surface);
-        let restore = *self
-            .managed_windows
-            .entry(surface_id.clone())
-            .or_insert_with(|| ManagedWindow {
-                restore_location: self.space.element_location(&window).unwrap_or_default(),
-                restore_size: window.geometry().size,
-                maximized: false,
-                fullscreen: false,
-            });
-
-        if let Some(managed) = self.managed_windows.get_mut(&surface_id) {
-            managed.maximized = maximized;
-            managed.fullscreen = fullscreen;
-        }
-
-        self.apply_window_mode(&surface, &window, restore, maximized, fullscreen);
-        self.refresh_panel_visibility();
-
-        if !maximized && !fullscreen {
-            self.managed_windows.remove(&surface_id);
-        }
-    }
-
-    fn apply_window_mode(
-        &mut self,
-        surface: &ToplevelSurface,
-        window: &Window,
-        restore: ManagedWindow,
-        maximized: bool,
-        fullscreen: bool,
-    ) {
-        let Some(output) = self
-            .space
-            .outputs_for_element(window)
-            .first()
-            .cloned()
-            .or_else(|| self.primary_output())
-        else {
-            return;
-        };
-        let Some(output_geometry) = self.space.output_geometry(&output) else {
-            return;
-        };
-
-        let target = if fullscreen {
-            output_geometry
-        } else if maximized {
-            self.work_area_for_output(output_geometry)
-        } else {
-            Rectangle::new(restore.restore_location, restore.restore_size)
-        };
-
-        surface.with_pending_state(|state| {
-            if maximized {
-                state.states.set(xdg_toplevel::State::Maximized);
-            } else {
-                state.states.unset(xdg_toplevel::State::Maximized);
-            }
-            if fullscreen {
-                state.states.set(xdg_toplevel::State::Fullscreen);
-            } else {
-                state.states.unset(xdg_toplevel::State::Fullscreen);
-            }
-            state.size = Some(target.size);
-        });
-        surface.send_pending_configure();
-        self.place_window(window, target.loc);
-    }
-
     /// Hard stop: a regular window may never sit behind a bottom panel (the
     /// Windows Work Mode taskbar or dock). Moves it up, or shrinks it when it
     /// is taller than the work area. Panels and fullscreen windows are exempt.
@@ -991,16 +901,16 @@ impl PantheonCompositor {
         {
             return;
         }
-        if let Some(toplevel) = window.toplevel() {
-            let id = toplevel.wl_surface().id();
-            if self.panels.contains_key(&id)
-                || self
-                    .managed_windows
-                    .get(&id)
-                    .is_some_and(|managed| managed.fullscreen)
-            {
-                return;
-            }
+        if let Some(toplevel) = window.toplevel()
+            && self.panels.contains_key(&toplevel.wl_surface().id())
+        {
+            return;
+        }
+        // Snapped, maximized and fullscreen windows are laid out inside the
+        // work area already; a window waiting for an ack must not be pushed
+        // by its stale size (S4).
+        if !self.is_free_floating(window) {
+            return;
         }
         let Some(location) = self.space.element_location(window) else {
             return;
@@ -1008,13 +918,7 @@ impl PantheonCompositor {
         let Some(rect) = self.space.element_geometry(window) else {
             return;
         };
-        let Some(output) = self
-            .space
-            .outputs_for_element(window)
-            .first()
-            .cloned()
-            .or_else(|| self.primary_output())
-        else {
+        let Some(output) = self.primary_output_for(window) else {
             return;
         };
         let Some(output_geometry) = self.space.output_geometry(&output) else {
@@ -1057,21 +961,7 @@ impl PantheonCompositor {
     }
 
     pub(crate) fn reconfigure_managed_windows(&mut self) {
-        let mut managed = Vec::new();
-        for window in self.space.elements() {
-            let Some(surface) = window.toplevel().cloned() else {
-                continue;
-            };
-            let Some(state) = self.managed_windows.get(&surface.wl_surface().id()) else {
-                continue;
-            };
-            managed.push((surface, (*window).clone(), *state));
-        }
-
-        for (surface, window, state) in managed {
-            self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
-        }
-        self.reconfigure_tiled_windows();
+        self.reconfigure_placed_windows();
         self.constrain_floating_windows();
         self.keep_all_clear_of_bottom_panels();
     }
@@ -1080,10 +970,10 @@ impl PantheonCompositor {
     fn constrain_floating_windows(&mut self) {
         let windows: Vec<_> = self.space.elements().cloned().collect();
         for window in windows {
-            if let Some(surface) = Self::tile_surface(&window)
-                && (self.is_panel_surface(&surface)
-                    || self.tiled_windows.contains_key(&surface.id())
-                    || self.managed_windows.contains_key(&surface.id()))
+            if window
+                .toplevel()
+                .is_some_and(|toplevel| self.is_panel_surface(toplevel.wl_surface()))
+                || !self.is_free_floating(&window)
             {
                 continue;
             }
@@ -1092,7 +982,7 @@ impl PantheonCompositor {
             {
                 continue;
             }
-            let Some(output) = self.space.outputs_for_element(&window).first().cloned() else {
+            let Some(output) = self.primary_output_for(&window) else {
                 continue;
             };
             let Some(output_geometry) = self.space.output_geometry(&output) else {
@@ -1125,7 +1015,7 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
     if state.is_panel_surface(surface) {
         state.update_panel(surface, |_| {});
     } else {
-        state.update_tiling_after_commit(surface);
+        state.update_placement_after_commit(surface);
         state.refresh_panel_visibility();
         if let Some(window) = state.find_window_for_surface(surface) {
             state.keep_clear_of_bottom_panels(&window);

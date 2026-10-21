@@ -112,7 +112,13 @@ feedback, which Mesa needs to pick the real GPU (`libEGL: failed to get driver
 name for fd -1` and Vulkan `SURFACE_LOST` are the symptoms without it).
 Nested: created when the renderer has a render node and dmabuf formats; the
 Xvfb/llvmpipe test host has neither, so only the graceful skip was exercised
-headless. Native: OFF by default and compile-checked only; enable per service
-with `PANTHEON_ENABLE_DMABUF=1` (systemd drop-in) for a trial, keeping
-`GSK_RENDERER=gl` until it is proven. Failure mode to watch: a client dmabuf
-import failing and the app showing nothing.
+headless. Native: **ON by default since 2026-10-21** (owner-approved; the first
+login with that build is the trial). Turn it off with a drop-in
+(`systemctl --user edit pantheon-rust-compositor@wayland.service`, then
+`[Service]` / `Environment=PANTHEON_DISABLE_DMABUF=1`; `PANTHEON_ENABLE_DMABUF=0`
+works too) and log in again. Shell units keep `GSK_RENDERER=gl`. Each output
+also has a scanout feedback (scanout tranche on the KMS device with its plane
+formats), sent only to surfaces the display controller presents zero-copy;
+nothing is scanned out directly yet, so all clients get the render-node
+feedback. Failure mode to watch: a client dmabuf import failing and the app
+showing nothing.

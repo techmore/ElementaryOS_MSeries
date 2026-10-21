@@ -34,18 +34,28 @@ pub enum Reason {
 #[derive(Debug, Default)]
 pub struct Attention {
     windows: HashSet<WindowKey>,
+    /// Bumped on every change, so the cached Gala snapshot is rebuilt.
+    generation: u64,
 }
 
 impl Attention {
     /// Mark `key`. A window that already has focus never needs attention.
     /// Returns whether the set changed.
     pub fn request(&mut self, key: WindowKey, focused: bool) -> bool {
-        !focused && self.windows.insert(key)
+        let changed = !focused && self.windows.insert(key);
+        self.generation += u64::from(changed);
+        changed
     }
 
     /// Returns whether the set changed.
     pub fn clear(&mut self, key: WindowKey) -> bool {
-        self.windows.remove(&key)
+        let changed = self.windows.remove(&key);
+        self.generation += u64::from(changed);
+        changed
+    }
+
+    pub fn generation(&self) -> u64 {
+        self.generation
     }
 
     pub fn contains(&self, key: WindowKey) -> bool {
@@ -150,5 +160,17 @@ mod tests {
         assert!(attention.clear(1));
         assert!(!attention.contains(1));
         assert!(!attention.clear(1), "clearing twice changes nothing");
+    }
+
+    #[test]
+    fn the_generation_moves_only_on_a_change() {
+        let mut attention = Attention::default();
+        attention.request(1, false);
+        let marked = attention.generation();
+        attention.request(1, false);
+        attention.request(2, true);
+        assert_eq!(attention.generation(), marked, "no change, same generation");
+        attention.clear(1);
+        assert!(attention.generation() > marked);
     }
 }

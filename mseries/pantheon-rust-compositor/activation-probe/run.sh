@@ -32,7 +32,7 @@ scenario() {
   xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session -- bash -c '
     export HOST_DISPLAY=$DISPLAY
     rt=$(mktemp -d); chmod 700 "$rt"; export XDG_RUNTIME_DIR=$rt
-    env -u WAYLAND_DISPLAY PANTHEON_ACTIVATION_POLICY=$POLICY "$BIN" --backend nested >"$LOG" 2>&1 &
+    env -u WAYLAND_DISPLAY RUST_LOG=${RUST_LOG:-info} PANTHEON_ACTIVATION_POLICY=$POLICY "$BIN" --backend nested >"$LOG" 2>&1 &
     comp=$!; export COMP_PID=$comp
     for _ in $(seq 1 60); do sock=$(ls "$rt" | grep "^wayland-[0-9]*$" | head -1 || true); [ -n "$sock" ] && break; sleep 0.25; done
     [ -n "${sock:-}" ] || { echo "compositor socket never appeared"; tail -5 "$LOG"; kill $comp; exit 3; }

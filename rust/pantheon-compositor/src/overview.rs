@@ -15,12 +15,12 @@ use std::collections::HashSet;
 
 use smithay::{
     desktop::Window,
-    reexports::{wayland_protocols::xdg::shell::server::xdg_toplevel, wayland_server::Resource},
+    reexports::wayland_protocols::xdg::shell::server::xdg_toplevel,
     utils::{Logical, Point, Rectangle, SERIAL_COUNTER, Size},
 };
 
-use crate::state::{ManagedWindow, PantheonCompositor, TiledWindow};
-use crate::tiling::tile_rect;
+use crate::placement::WindowRecord;
+use crate::state::PantheonCompositor;
 
 /// Gap between overview cells, in logical pixels.
 const OVERVIEW_GAP: i32 = 12;
@@ -32,8 +32,8 @@ pub(crate) struct OverviewWindow {
     id: usize,
     location: Point<i32, Logical>,
     size: Size<i32, Logical>,
-    managed: Option<ManagedWindow>,
-    tiled: Option<TiledWindow>,
+    /// Placement taken out of the store while the grid owns the window.
+    record: Option<WindowRecord>,
 }
 
 pub(crate) struct OverviewState {
@@ -79,7 +79,7 @@ pub(crate) fn grid_rects(
 }
 
 /// Preserve the client's aspect ratio and never enlarge a thumbnail.
-fn fit_overview_rect(
+pub(crate) fn fit_overview_rect(
     cell: Rectangle<i32, Logical>,
     size: Size<i32, Logical>,
 ) -> Rectangle<i32, Logical> {
@@ -126,13 +126,7 @@ impl PantheonCompositor {
             {
                 continue;
             }
-            let Some(output) = self
-                .space
-                .outputs_for_element(window)
-                .first()
-                .cloned()
-                .or_else(|| self.primary_output())
-            else {
+            let Some(output) = self.primary_output_for(window) else {
                 continue;
             };
             if let Some((_, windows)) = groups.iter_mut().find(|(known, _)| known == &output) {
@@ -186,6 +180,7 @@ impl PantheonCompositor {
         }
         // Menus would float over the grid and keep the keyboard.
         self.end_popup_grab_unless(None);
+        self.dismiss_snap_assist();
         let active = self.workspace_manager.active();
         let minimized = self
             .minimized_windows
@@ -209,13 +204,7 @@ impl PantheonCompositor {
             {
                 continue;
             }
-            let Some(output) = self
-                .space
-                .outputs_for_element(window)
-                .first()
-                .cloned()
-                .or_else(|| self.primary_output())
-            else {
+            let Some(output) = self.primary_output_for(window) else {
                 continue;
             };
             if let Some(group) = groups
@@ -269,21 +258,20 @@ impl PantheonCompositor {
         let id = window.id();
         let location = self.space.element_location(window).unwrap_or_default();
         let size = window.geometry().size;
-        let managed = window
-            .toplevel()
-            .and_then(|surface| self.managed_windows.remove(&surface.wl_surface().id()))
-            .or_else(|| {
-                window
-                    .x11_surface()
-                    .and_then(|surface| self.x11_managed_windows.remove(&surface.window_id()))
-            });
-        let tiled =
-            Self::tile_surface(window).and_then(|surface| self.tiled_windows.remove(&surface.id()));
+        let record = self.placements.remove(&id);
 
         if let Some(toplevel) = window.toplevel() {
             toplevel.with_pending_state(|state| {
-                state.states.unset(xdg_toplevel::State::Maximized);
-                state.states.unset(xdg_toplevel::State::Fullscreen);
+                for managed in [
+                    xdg_toplevel::State::Maximized,
+                    xdg_toplevel::State::Fullscreen,
+                    xdg_toplevel::State::TiledLeft,
+                    xdg_toplevel::State::TiledRight,
+                    xdg_toplevel::State::TiledTop,
+                    xdg_toplevel::State::TiledBottom,
+                ] {
+                    state.states.unset(managed);
+                }
                 state.size = Some(rect.size);
             });
             toplevel.send_pending_configure();
@@ -312,8 +300,7 @@ impl PantheonCompositor {
             id,
             location,
             size,
-            managed,
-            tiled,
+            record,
         });
     }
 
@@ -340,43 +327,26 @@ impl PantheonCompositor {
             if !self.space.elements().any(|candidate| candidate == window) {
                 continue;
             }
-            if let Some(surface) = window.toplevel().cloned() {
-                if let Some(tiled) = &entry.tiled {
-                    let rect = self
-                        .space
-                        .output_geometry(&tiled.output)
-                        .map(|geometry| {
-                            tile_rect(self.work_area_for_output(geometry), tiled.position)
-                        })
-                        .unwrap_or(tiled.rect);
-                    self.apply_tile(&surface, window, tiled.output.clone(), tiled.position, rect);
-                } else if let Some(managed) = entry.managed {
-                    self.managed_windows
-                        .insert(surface.wl_surface().id(), managed);
-                    self.configure_window_mode(surface, managed.maximized, managed.fullscreen);
-                } else {
-                    surface.with_pending_state(|state| {
-                        state.size = Some(entry.size);
-                    });
-                    surface.send_pending_configure();
-                    self.space
-                        .map_element(window.clone(), entry.location, false);
+            if let Some(record) = entry.record.clone() {
+                let managed = !record.placement.is_floating();
+                let mut record = record;
+                record.pending = None;
+                self.placements.insert(entry.id, record);
+                if managed {
+                    // Re-fit the current work area: tiles, maximize and fullscreen.
+                    self.apply_placement(window);
+                    continue;
                 }
-            } else if let Some(surface) = window.x11_surface().cloned() {
-                if let Some(tiled) = &entry.tiled {
-                    let rect = self
-                        .space
-                        .output_geometry(&tiled.output)
-                        .map(|geometry| {
-                            tile_rect(self.work_area_for_output(geometry), tiled.position)
-                        })
-                        .unwrap_or(tiled.rect);
-                    self.apply_window_tile(window, tiled.output.clone(), tiled.position, rect);
-                } else if let Some(managed) = entry.managed {
-                    self.x11_managed_windows
-                        .insert(surface.window_id(), managed);
-                    self.configure_x11_window_mode(&surface, managed.maximized, managed.fullscreen);
-                } else if let Err(error) =
+            }
+            if let Some(surface) = window.toplevel() {
+                surface.with_pending_state(|state| {
+                    state.size = Some(entry.size);
+                });
+                surface.send_pending_configure();
+                self.space
+                    .map_element(window.clone(), entry.location, false);
+            } else if let Some(surface) = window.x11_surface() {
+                if let Err(error) =
                     surface.configure(Some(Rectangle::new(entry.location, entry.size)))
                 {
                     tracing::warn!(?error, "could not restore X11 window after the overview");

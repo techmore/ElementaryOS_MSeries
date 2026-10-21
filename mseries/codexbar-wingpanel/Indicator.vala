@@ -92,9 +92,9 @@ namespace MSeries {
                 margin_bottom = 10,
                 margin_start = 10,
                 margin_end = 10,
-                // Keep the quick-switch popover compact. GTK treats width_request as a minimum;
+                // The popover runs at double text size (see install_style). GTK treats width_request as a minimum;
                 // the child rows below also ellipsize/wrap their dynamic labels to fit.
-                width_request = 240
+                width_request = 480
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
@@ -109,7 +109,7 @@ namespace MSeries {
             chip_label.add_css_class ("chip");
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 36 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
@@ -142,8 +142,8 @@ namespace MSeries {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
-                min_content_height = 150,
-                max_content_height = 300
+                min_content_height = 300,
+                max_content_height = 600
             };
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
@@ -242,7 +242,7 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-codexbar { font-size: 1em; } " +
+                ".mseries-codexbar { font-size: 2em; } " +
                 ".mseries-codexbar .caption { font-size: 0.9em; } " +
                 ".mseries-codexbar .provider-title { font-weight: 700; font-size: 1.05em; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
@@ -252,7 +252,7 @@ namespace MSeries {
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
                 ".mseries-codexbar .plan { padding: 0 7px; border-radius: 99px; font-size: 0.9em; background: alpha(currentColor, 0.1); } " +
-                ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 6px; border-radius: 3px; } " +
+                ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 12px; border-radius: 6px; } " +
                 ".mseries-codexbar progressbar.level-ok progress { background: @success_color; } " +
                 ".mseries-codexbar progressbar.level-low progress { background: @warning_color; } " +
                 ".mseries-codexbar progressbar.level-critical progress { background: @error_color; } " +
@@ -299,7 +299,7 @@ namespace MSeries {
 
         private Gtk.Button make_dock_button (string label, string icon_name, string action) {
             var button = new Gtk.Button () {
-                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 },
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 36 },
                 tooltip_text = label
             };
             button.add_css_class ("flat");
@@ -2088,7 +2088,7 @@ namespace MSeries {
                 text.add_css_class ("provider-title");
                 return text;
             }
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 36 };
             icon.add_css_class ("provider-mark");
             icon.add_css_class ("mark-" + provider);
             icon.set_tooltip_text (title_text);
@@ -2118,7 +2118,7 @@ namespace MSeries {
             }
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
             identity.add_css_class ("account-row");
-            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 24 };
             icon.add_css_class ("dim-label");
             identity.append (icon);
             var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
@@ -2136,7 +2136,7 @@ namespace MSeries {
         /* The "+" sits at the card's top right: no "Accounts" label row, the saved accounts speak for themselves. */
         private Gtk.Widget build_add_account_button (string tooltip, owned ActionFunc on_add) {
             var add = new Gtk.Button () {
-                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 },
+                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 24 },
                 tooltip_text = tooltip, valign = Gtk.Align.CENTER, halign = Gtk.Align.END
             };
             add.add_css_class ("flat");
@@ -2321,13 +2321,13 @@ namespace MSeries {
             progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
 
             var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
-                xalign = 1, width_request = 58
+                xalign = 1, width_request = 116
             };
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
             if (display_preferences.get_bool ("showPercent")) row.append (percent);
-            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
+            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 92 };
             reset_label.add_css_class ("caption");
             reset_label.add_css_class ("dim-label");
             reset_label.add_css_class ("numeric");
@@ -2466,7 +2466,7 @@ namespace MSeries {
             var state = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
                 halign = Gtk.Align.CENTER, margin_top = 14, margin_bottom = 14
             };
-            state.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 32, opacity = 0.6 });
+            state.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 64, opacity = 0.6 });
             var title = new Gtk.Label (headline) { justify = Gtk.Justification.CENTER };
             title.add_css_class ("state-title");
             state.append (title);
