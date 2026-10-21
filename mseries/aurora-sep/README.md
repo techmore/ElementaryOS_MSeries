@@ -1,5 +1,7 @@
 # Aurora SEP kernel lane (Touch ID)
 
+**Current state (2026-10-21):** on the J314S the driver attaches and an enrolment completes in the enclave, but the xART guard blocks saving and matching. Read [XART-GUARD.md](XART-GUARD.md) first, and [UPSTREAM-MAP.md](UPSTREAM-MAP.md) for who maintains what and where to report.
+
 Optional second kernel for M-series Macs that enables Touch ID on Linux. It
 installs the community **Aurora** kernel (`omacom/linux-aurora`) beside the
 stock kernel. It is not the default: one extra GRUB entry, marked for clean
