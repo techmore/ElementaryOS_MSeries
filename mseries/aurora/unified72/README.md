@@ -1,5 +1,14 @@
 # Unified Aurora 7.2.10 build candidate
 
+## Current host state — October 21, 2026
+
+Owner approved and completed **unarmed staging** of wip2: the separate package,
+Image/initramfs and non-default GRUB entry are installed. `.20` remains default,
+`next_entry` is empty, old boot files and shared `boot.bin` are unchanged. Running
+kernel remains `.20-enh1`; no 7.2 boot or hardware qualification is claimed.
+See [staging/attended trial plan](BOOT-TRIAL.md) and
+[preflight receipt](boot-preflight-2026-10-21.json). Never automatically arm this trial.
+
 ## Merged source refresh — October 21, 2026
 
 The owner selected a refresh of this independent Aurora 7.2 candidate. Revision 3
@@ -81,7 +90,7 @@ fail on pin/config/identity errors; none installs a package.
 
 ## Hardware and compatibility gates
 
-This remains **build-only**. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
+This is an **experimental, staged but unarmed trial**, not hardware-qualified. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
 records the old `582e9ef3` snapshot; retain it as history. The new focused review
 supersedes only its three inspected GPU/SEP gap descriptions, not all 64 semantic
 review requirements. Check the intended Mesa/kernel UAPI and actual client
@@ -95,7 +104,9 @@ kernel update.
 
 The installed `boot.bin` shares one DTB set across GRUB entries. Upstream notes
 that older 7.1 fallback kernels need a compatible five-cell DART backport to use
-the newer DTBs. Retaining an old kernel entry alone does not prove recovery.
+the newer DTBs. This trial retains the byte-exact old shared DTB set; the new parser accepts
+its legacy one-cell geometry in the host controls. Retaining an old kernel entry
+alone does not prove recovery.
 Review exact DT/m1n1/U-Boot, initramfs/root-unlock and accessible byte-exact
 rollback together. Display/GPU/storage/radio/input/thermal/suspend and recovery
 acceptance remain separate from compilation and source review.

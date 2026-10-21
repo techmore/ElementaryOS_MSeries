@@ -1,0 +1,11 @@
+{
+  "bodies": {
+    "dcp_fabric_tunnel_clock_blocked": "6a2c81684b1ba1d1e28926af6a2aef4cf67cffe84c1a50330be364e0306c1df8",
+    "dcp_fabric_snapshot_port": "f2e0f72a266958d2db6b5de5772207d5a2ebd1f4ea1eac24b912ed83c1434214",
+    "dcp_typec_tunnel_ctl": "4fbb216f3ff9daeb62a527fa58bdf73a46d14d8ed4905a12deb41d9baaa9343b"
+  },
+  "translation_sha256": "40ebd86a8cf14ab12e6718264b08cb8e2441ad8fd72467c8ca4eefb1b0099f6d",
+  "exit": 0,
+  "stdout": "PASS: DCP snapshot, named/legacy controls, invalid DP IN, stale snapshot\n",
+  "stderr": ""
+}

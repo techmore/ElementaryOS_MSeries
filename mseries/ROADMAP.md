@@ -1,15 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## Aurora 7.2 candidate refresh — 2026-10-21
+## Aurora 7.2 staged for an attended trial — 2026-10-21
 
-Owner selected merged #139 as the next independent build candidate. unified72
-revision 3 pins `644133b7799f`, new wip2 module/package identity and no duplicate
-bindgen patch. Selected GPU-reader/PMP host tests and native ARM64 build/inspection
-pass [run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051),
-with independent complete-source/checksum/package/DTB audit. Next: finish
-semantic parity and actual Mesa/UAPI plus exact boot-chain/fallback/J314S
-acceptance review. No live deployment or power win.
-See [the lane's source review and limits](aurora/unified72/README.md).
+Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,
+legacy-DTB/unlock checks and bounded DART/DCP/radio host controls. Owner approved
+unarmed staging: separate package/Image/initramfs and non-default GRUB entry are
+installed, all 2,042 regular package files verified. `.20` stays default;
+`next_entry` empty, old fallback assets/shared `boot.bin` unchanged; no reboot.
+71 repository unit tests pass. [Receipt and boundaries](aurora/unified72/boot-preflight-2026-10-21.json).
+Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unlock
+acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
+qualification remain open; no measured power win.
+[First-boot plan](aurora/unified72/BOOT-TRIAL.md).
 
 ## Native Messages experience landed — 2026-10-20
 
