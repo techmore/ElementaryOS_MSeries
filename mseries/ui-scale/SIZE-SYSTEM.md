@@ -110,7 +110,12 @@ D-Bus, settings and display are private. A separate private portal process suppl
 precise `Read`/`ReadOne` variant layering and typed appearance settings. Read-only
 Switcheroo properties use the private logical system bus; no AccountsService is
 registered, so accidental Granite fallback still fails under fatal criticals.
-The outer full-suite and nested launcher buses disable service activation too. The complete prepared source builds without
+The outer full-suite and nested launcher buses disable service activation too.
+The cached-widget fixture compiles actual prepared dock/custom schemas plus a
+clearly labelled, pinned Gala consumed-key subset. Its complete four-schema
+inventory and exact workspace-key default are asserted. All native fixture
+runtimes set private `XDG_DATA_DIRS` and `GSETTINGS_SCHEMA_DIR`; no host schema root
+can satisfy a missing dependency. Compiler metadata paths remain unchanged. The complete prepared source builds without
 installation. Constructing the real manager with fatal criticals also exposed an
 upstream pre-construction callback capture in `BackgroundItem`; its map callback
 is now static with identical icon ownership and results.

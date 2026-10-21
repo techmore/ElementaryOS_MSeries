@@ -355,7 +355,11 @@ font-only integration also remains open. See `ui-scale/SIZE-SYSTEM.md`.
 CI's absent AccountsService exposed a fixture assumption, now corrected with typed
 private portal/Switcheroo services and a private logical system bus. The complete
 native dock suite and fatal-critical cached-widget regression pass without owner
-system services; current-head hosted confirmation remains the merge gate.
+system services. The subsequent missing Gala keybindings schema is now supplied
+as an exact pinned, test-only consumed-key fixture. Runtime schema roots exclude
+all host schemas, and the cached-widget preflight asserts its four-schema inventory.
+Build-tool metadata lookup remains unchanged. Current-head hosted confirmation
+remains the merge gate.
 
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 

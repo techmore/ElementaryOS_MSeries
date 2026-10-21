@@ -24,6 +24,8 @@ export DBUS_SYSTEM_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS"
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 commit=8b45a68a122947ad3a6427bf6e159ec2acf04ad0
 work=$(mktemp -d)
+# Build tools retain normal data roots for VAPI metadata. Each native fixture
+# excludes host schema roots in its runtime environment, after compilation.
 portal_pid=
 cleanup() {
   if [[ -n $portal_pid ]]; then
