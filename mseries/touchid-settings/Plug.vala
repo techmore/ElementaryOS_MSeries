@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Touch ID in elementary OS System Settings, under Personal. */
 namespace MSeriesTouchId {
     public class Plug : Switchboard.Plug {
@@ -37,11 +38,11 @@ namespace MSeriesTouchId {
                 (GLib.CompareDataFunc<string>) strcmp,
                 (Gee.EqualDataFunc<string>) str_equal
             );
-            results.set ("Touch ID", "");
-            results.set ("Touch ID → Add Fingerprint", "");
-            results.set ("Touch ID → Fingerprints", "");
-            results.set ("Touch ID → Terminal Commands", "");
-            results.set ("Touch ID → System Authorization", "");
+            results.set ("Touch ID", "fingerprints");
+            results.set ("Touch ID → Add Fingerprint", "fingerprints");
+            results.set ("Touch ID → Fingerprints", "fingerprints");
+            results.set ("Touch ID → Terminal Commands", "use-for");
+            results.set ("Touch ID → System Authorization", "use-for");
             return results;
         }
     }

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* The "Add a Fingerprint" sheet.
  *
  * One enrolment per sheet and no retry button on failure: the Secure Enclave
@@ -49,7 +50,7 @@ namespace MSeriesTouchId {
                 use_markup = false
             };
             hint_label.add_css_class ("dim-label");
-            hint_label.set_text (
+            set_hint (
                 "Place your %s on the sensor, then lift it and place it again. Keep tapping like this, shifting your finger a little each time so its edges are covered."
                     .printf (finger_label (finger).down ()));
 
@@ -78,6 +79,23 @@ namespace MSeriesTouchId {
 
             update_art_description ();
             close_request.connect (on_close_request);
+
+            /* Escape cancels, like the Cancel button. */
+            var keys = new Gtk.EventControllerKey ();
+            keys.key_pressed.connect ((keyval) => {
+                if (keyval == Gdk.Key.Escape) {
+                    action_button.activate ();
+                    return true;
+                }
+                return false;
+            });
+            ((Gtk.Widget) this).add_controller (keys);
+        }
+
+        /* Every instruction change is also announced to screen readers. */
+        private void set_hint (string text) {
+            hint_label.set_text (text);
+            announce (text, Gtk.AccessibleAnnouncementPriority.MEDIUM);
         }
 
         public async void begin_enrol () {
@@ -108,16 +126,25 @@ namespace MSeriesTouchId {
                 case "enroll-stage-passed":
                     stages_passed++;
                     art.progress = (double) stages_passed / sensor.stages;
-                    hint_label.set_text ("Got it. Lift, then place your finger again.");
+                    set_hint ("Got it. Lift, then place your finger again.");
                     break;
                 case "enroll-retry-scan":
-                    hint_label.set_text ("That one didn't read. Lift and tap again, a little firmer.");
+                    set_hint ("That one didn't read. Lift and tap again, a little firmer.");
                     break;
                 case "enroll-finger-not-centered":
-                    hint_label.set_text ("Center your finger on the sensor.");
+                    set_hint ("Center your finger on the sensor.");
+                    break;
+                case "enroll-too-fast":
+                    set_hint ("That was too quick. Rest your finger a moment before lifting.");
+                    break;
+                case "enroll-swipe-too-short":
+                    set_hint ("Place your finger and keep it there a little longer.");
+                    break;
+                case "enroll-duplicate":
+                    fail ("This fingerprint is already added", "Choose a different finger, or remove the existing one first.");
                     break;
                 case "enroll-remove-and-retry":
-                    hint_label.set_text ("Lift your finger, then place it again.");
+                    set_hint ("Lift your finger, then place it again.");
                     break;
                 case "enroll-completed":
                     succeed ();
@@ -145,7 +172,7 @@ namespace MSeriesTouchId {
             art.progress = 1.0;
             art.complete = true;
             title_label.set_text ("Fingerprint Added");
-            hint_label.set_text ("You can use it to approve commands and system prompts. Your password still works.");
+            set_hint ("You can use it to approve commands and system prompts. Your password still works.");
             action_button.set_label ("Done");
             action_button.add_css_class ("suggested-action");
             cleanup.begin ();
@@ -155,7 +182,7 @@ namespace MSeriesTouchId {
         private void fail (string title, string detail) {
             enrolling = false;
             title_label.set_text (title);
-            hint_label.set_text (detail);
+            set_hint (detail);
             action_button.set_label ("Close");
             cleanup.begin ();
         }

@@ -59,6 +59,17 @@ the `sudo` switch writing only `sudo`, the enrol sheet claiming then releasing t
 saves light/dark screenshots. `MSERIES_TOUCHID_TEST=1` is what points the page at the fake;
 it is a test hook, not a user option.
 
+## Audit (2026-10-21)
+
+Checked against fprintd's real `EnrollStatus` names, Switchboard plug conventions and the repo's UI
+checklist (light/dark, narrow window, 1.6x text, keyboard, accessible names). Fixed: the sheet handles
+`enroll-too-fast`, `enroll-swipe-too-short` and `enroll-duplicate`; Escape cancels the sheet; instruction
+changes are announced to screen readers; search results carry real locations; Remove warns against repeated
+remove/re-add cycles; SPDX headers (GPL-3.0-or-later, matching the repo). Known gaps: strings are not yet
+translatable (no gettext domain, same as Work Mode); no live "place/lift" cue from fprintd's
+`finger-needed`/`finger-present` properties (unknown whether the SEP driver sets them); per-finger delete uses
+fprintd's deprecated `DeleteEnrolledFinger` because the replacement deletes every finger.
+
 ## Not verified
 
 Enrolment and matching against the **real** Secure Enclave from this page are not yet run; the

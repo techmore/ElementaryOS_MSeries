@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* fprintd client: D-Bus interfaces plus the few facts the page needs.
  *
  * Everything here is asynchronous so the Settings main loop never blocks on the
