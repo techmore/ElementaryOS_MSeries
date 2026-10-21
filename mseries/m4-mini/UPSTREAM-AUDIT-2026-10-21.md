@@ -190,3 +190,10 @@ isolated llvmpipe render/readback checks pass. Invalid package hashes are
 rejected before output creation. This overlay contains no base OS, initramfs,
 EFI or firmware; base package dependencies and M4 hardware remain unqualified.
 A complete factory image and graphical session activation are still required.
+
+Base-image preflight: an empty-status APT simulation resolves the three local
+packages and minimal boot userspace (164 packages) against resolute plus the
+configured elementary patches. Isolated downloads are pending; this is not
+configured-root acceptance. The actual kernel is a direct ARM64 EFI input
+with zero relocation directory, and the factory UKI preparer leaves it
+unchanged. Six preparer tests pass. Initramfs/EFI generation remains open.

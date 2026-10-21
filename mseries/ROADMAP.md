@@ -1,3 +1,14 @@
+## M4 mini: base dependency and EFI input preflight — 2026-10-21
+
+Empty-status APT simulation resolves 164 packages for minimal boot userspace
+and all three candidate packages on Ubuntu resolute plus elementary patches.
+Downloads run in an isolated cache (handle 18905); PPA requests are retrying,
+so complete download/configured-root acceptance is not claimed. The actual
+M4 Image is ARM64 EFI with .text and zero relocation directory; the factory
+UKI input helper leaves its hash unchanged. Six helper tests pass. Userns
+probe passes, allowing later isolated root configuration. No host install.
+[Receipt](m4-mini/receipts/2026-10-21-base-dependency-preflight.json).
+
 ## M4 mini: combined payload overlay — 2026-10-21
 
 stage-stack.py checks exact kernel/Mesa/policy package hashes before creating
