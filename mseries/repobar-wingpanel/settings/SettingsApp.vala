@@ -8,6 +8,9 @@ namespace MSeries {
         private Gtk.Box hidden_card;
         private Gtk.Label account_label;
         private Gtk.Label account_detail;
+        private Gtk.DropDown account_choice;
+        private bool populating = false;
+        private string[] account_values = { "" };
         private bool loading = true;
 
         public RepoBarSettingsWindow (Gtk.Application application) {
@@ -46,6 +49,7 @@ namespace MSeries {
             outer.append (notice);
             set_child (outer);
             refresh_account.begin ();
+            notify["is-active"].connect (() => { if (is_active) refresh_account.begin (); });
             loading = false;
         }
 
@@ -181,7 +185,8 @@ namespace MSeries {
         // ---- sections --------------------------------------------------------------------
 
         private Gtk.Widget build_account () {
-            var account = section ("Account", "RepoBar uses the GitHub CLI's sign-in. Your token stays with the GitHub CLI.");
+            var account = section ("Account",
+                "RepoBar uses the GitHub CLI's sign-ins and reads as the account chosen here. Choosing one does not change which account git and other tools use. Your token stays with the GitHub CLI.");
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
             line.add_css_class ("rb-row");
             line.append (new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 32 });
@@ -193,7 +198,7 @@ namespace MSeries {
             text.append (account_label);
             text.append (account_detail);
             line.append (text);
-            var sign_in = new Gtk.Button.with_label ("Sign In…") { valign = Gtk.Align.CENTER };
+            var sign_in = new Gtk.Button.with_label ("Add Account…") { valign = Gtk.Align.CENTER, tooltip_text = "Sign another GitHub account in to the GitHub CLI" };
             sign_in.clicked.connect (() => {
                 try {
                     Process.spawn_async (null, { "io.elementary.terminal", "-x", helper, "auth", "login" }, null,
@@ -205,6 +210,15 @@ namespace MSeries {
             });
             line.append (sign_in);
             add_row (account, line);
+            account_choice = new Gtk.DropDown (new Gtk.StringList ({ "Follow GitHub CLI" }), null);
+            account_choice.notify["selected"].connect (() => {
+                if (populating || account_choice.selected >= account_values.length) return;
+                apply.begin ("account", account_values[account_choice.selected], (obj, res) => {
+                    apply.end (res);
+                    refresh_account.begin ();
+                });
+            });
+            add_row (account, row ("Read as", "Dashboard, notifications and clones use this account", account_choice));
             return account;
         }
 
@@ -217,10 +231,31 @@ namespace MSeries {
                 parser.load_from_data (output);
                 var status = parser.get_root ().get_object ();
                 bool authenticated = status.get_boolean_member_with_default ("authenticated", false);
-                account_label.set_text (authenticated ? status.get_string_member_with_default ("account", "Signed in") : "Not signed in");
-                account_detail.set_text (status.get_string_member_with_default ("host", "github.com") +
-                    (authenticated ? " · read-only access" : " · sign in to see your repositories"));
+                bool follows = status.get_boolean_member_with_default ("followsCli", true);
+                string host = status.get_string_member_with_default ("host", "github.com");
+                string login = status.get_string_member_with_default ("account", "");
+                account_label.set_text (authenticated ? login : (login.length > 0 ? login + " is signed out" : "Not signed in"));
+                account_detail.set_text (host + (authenticated ? " · read-only access" : " · sign in to see your repositories"));
+
+                populating = true;
+                string[] labels = { "Follow GitHub CLI" };
+                account_values = { "" };
+                uint selected = 0;
+                if (status.has_member ("accounts")) {
+                    status.get_array_member ("accounts").foreach_element ((array, index, node) => {
+                        var item = node.get_object ();
+                        string item_login = item.get_string_member_with_default ("login", "");
+                        string item_host = item.get_string_member_with_default ("host", "github.com");
+                        labels += item_login + " · " + item_host;
+                        account_values += item_login + "@" + item_host;
+                        if (!follows && item_login == login && item_host == host) selected = account_values.length - 1;
+                    });
+                }
+                account_choice.model = new Gtk.StringList (labels);
+                account_choice.selected = selected;
+                populating = false;
             } catch (Error e) {
+                populating = false;
                 account_label.set_text ("GitHub CLI unavailable");
                 account_detail.set_text ("Install the gh package, then sign in");
             }

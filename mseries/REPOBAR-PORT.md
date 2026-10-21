@@ -60,7 +60,14 @@ implementation; no macOS source or binary is copied into this project.
   branches, tags, and commit activity. Additional commands report API quotas,
   authentication, cache status, and preferences.
 - Uses GitHub CLI authentication and GraphQL/REST requests; the helper never
-  reads, stores, or prints the token. Cache and settings use private
+  stores or prints the token. By default it follows the CLI's active account
+  and reads no token at all. Several accounts and hosts can be signed in:
+  RepoBar Settings → Account → Read as (or `mseries-repobar auth accounts`,
+  `auth use LOGIN[@HOST]`) picks the one RepoBar reads as, without running
+  `gh auth switch`, so git and other tools keep their own active account. For a
+  chosen account the helper asks `gh auth token --user` and hands the result
+  only to that request's `gh` child process environment. Snapshots and API
+  responses are cached per host and account. Cache and settings use private
   permissions (`0700` directories, `0600` files) because they can contain
   private repository names.
 - Optional local scanning skips hidden folders and symlinks and is bounded by
@@ -71,8 +78,7 @@ implementation; no macOS source or binary is copied into this project.
 
 This port implements the repository dashboard and CLI surfaces, not every
 macOS-only interaction.
-Multi-account UI and a launch-at-login preference pane are not yet represented
-in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
+A launch-at-login preference pane is not yet represented in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux
 integration.
 
