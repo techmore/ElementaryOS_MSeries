@@ -148,3 +148,14 @@ Current complete upstream trees of alsa-ucm-conf-asahi (1473329) and
 asahi-audio (ab1b469) contain no J773g/t8132 paths. This is a profile inventory,
 not proof that direct ALSA playback fails. Confirm actual card names and routing
 on the mini before adding a model profile; do not reuse older Mac DSP assets.
+
+## Required ARM64 packaging exports
+
+The first full compile reached modpost and failed because modular appledrm
+references four ARM64 helpers exported by Gravity's packaging layer, not its
+kernel Git tree. The wrapper now applies unchanged packaging patches 0003-0006
+from packages 711c2a1 with zero fuzz and verifies the resulting pageattr.c/flush.c
+hashes. The kernel packager requires the same source contract. The incremental
+retry passed modpost and linked vmlinux; final module generation remains running.
+The retained .hyp.data non-allocatable-section warning is not suppressed. No
+firmware gates or driver functionality were removed to obtain this result.

@@ -1,0 +1,22 @@
+From: Cody Ho <codyho@stanford.edu>
+Subject: [PATCH] arm64: export set_direct_map_default_noflush for Apple DRM bring-up
+
+Temporary Gravity early-alpha packaging workaround: appledrm is modular
+and references this built-in ARM64 helper. Export it to GPL-compatible
+modules without changing its implementation. Drop this patch when the
+pinned downstream kernel carries the corresponding export or refactor.
+
+Signed-off-by: Cody Ho <codyho@stanford.edu>
+Assisted-By: OpenAI Codex (gpt-6-astra, gpt-5.6-sol)
+---
+diff --git a/arch/arm64/mm/pageattr.c b/arch/arm64/mm/pageattr.c
+--- a/arch/arm64/mm/pageattr.c
++++ b/arch/arm64/mm/pageattr.c
+@@ -276,6 +276,7 @@ int set_direct_map_default_noflush(struct page *page)
+ 	return update_range_prot((unsigned long)page_address(page),
+ 				 PAGE_SIZE, set_mask, clear_mask);
+ }
++EXPORT_SYMBOL_GPL(set_direct_map_default_noflush);
+ 
+ static int __set_memory_enc_dec(unsigned long addr,
+ 				int numpages,

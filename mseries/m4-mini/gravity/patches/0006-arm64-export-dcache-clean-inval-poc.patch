@@ -1,0 +1,22 @@
+From: Cody Ho <codyho@stanford.edu>
+Subject: [PATCH] arm64: export dcache_clean_inval_poc for Apple DRM bring-up
+
+Temporary Gravity early-alpha packaging workaround: appledrm is modular
+and references this built-in ARM64 helper. Export it to GPL-compatible
+modules without changing its implementation. Drop this patch when the
+pinned downstream kernel carries the corresponding export or refactor.
+
+Signed-off-by: Cody Ho <codyho@stanford.edu>
+Assisted-By: OpenAI Codex (gpt-6-astra, gpt-5.6-sol)
+---
+diff --git a/arch/arm64/mm/flush.c b/arch/arm64/mm/flush.c
+--- a/arch/arm64/mm/flush.c
++++ b/arch/arm64/mm/flush.c
+@@ -84,6 +84,7 @@ void flush_dcache_page(struct page *page)
+  * Additional functions defined in assembly.
+  */
+ EXPORT_SYMBOL(caches_clean_inval_pou);
++EXPORT_SYMBOL_GPL(dcache_clean_inval_poc);
+ 
+ #ifdef CONFIG_ARCH_HAS_PMEM_API
+ void arch_wb_cache_pmem(void *addr, size_t size)

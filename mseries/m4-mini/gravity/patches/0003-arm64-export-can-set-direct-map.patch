@@ -1,0 +1,22 @@
+From: Cody Ho <codyho@stanford.edu>
+Subject: [PATCH] arm64: export can_set_direct_map for Apple DRM bring-up
+
+Temporary Gravity early-alpha packaging workaround: appledrm is modular
+and references this built-in ARM64 helper. Export it to GPL-compatible
+modules without changing its implementation. Drop this patch when the
+pinned downstream kernel carries the corresponding export or refactor.
+
+Signed-off-by: Cody Ho <codyho@stanford.edu>
+Assisted-By: OpenAI Codex (gpt-6-astra, gpt-5.6-sol)
+---
+diff --git a/arch/arm64/mm/pageattr.c b/arch/arm64/mm/pageattr.c
+--- a/arch/arm64/mm/pageattr.c
++++ b/arch/arm64/mm/pageattr.c
+@@ -101,6 +101,7 @@ bool can_set_direct_map(void)
+ 	return rodata_full || debug_pagealloc_enabled() ||
+ 		arm64_kfence_can_set_direct_map() || is_realm_world();
+ }
++EXPORT_SYMBOL_GPL(can_set_direct_map);
+ 
+ static int update_range_prot(unsigned long start, unsigned long size,
+ 			     pgprot_t set_mask, pgprot_t clear_mask)

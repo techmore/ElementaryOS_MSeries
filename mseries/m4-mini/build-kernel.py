@@ -20,6 +20,23 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def packaging_patches():
+    directory = HERE / 'gravity/patches'
+    manifest = json.loads((directory / 'manifest.json').read_text())
+    for name, expected in manifest.items():
+        path = directory / name
+        if Path(name).name != name or digest(path) != expected:
+            raise ValueError('Gravity packaging patch checksum mismatch: ' + name)
+    return directory, manifest
+
+
+def source_patch_gate(source):
+    expected = json.loads((HERE / 'gravity/patches/resulting-files.json').read_text())
+    for name, value in expected.items():
+        if digest(source / name) != value:
+            raise ValueError('matched ARM64 packaging exports required: ' + name)
+
+
 def config_gate(path):
     values = dict(line.split('=', 1) for line in path.read_text().splitlines()
                   if line.startswith('CONFIG_') and '=' in line)
@@ -51,6 +68,11 @@ def main():
         if any(Path(member.name).parts[0] != 'linux-' + COMMIT for member in archive):
             raise ValueError('unexpected archive root')
         archive.extractall(root, filter='data')
+    patch_directory, patches = packaging_patches()
+    for name in patches:
+        subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source),
+                        '-i', str(patch_directory / name)], check=True)
+    source_patch_gate(source)
     build.mkdir()
     env = dict(os.environ, RUST_LIB_SRC=str(args.rust_library.resolve()))
     base = ['make', '-C', str(source), f'O={build}', 'ARCH=arm64',
@@ -76,6 +98,7 @@ def main():
     receipt = {'repository': 'GravityLinux/linux', 'commit': COMMIT,
                'source_archive_sha256': ARCHIVE_SHA256, 'kernel_release': RELEASE,
                'config_sha256': digest(build / '.config'), 'artifacts': hashes,
+               'packaging_patches': patches,
                'status': 'source build only; no installation or J773g hardware qualification'}
     (root / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
 

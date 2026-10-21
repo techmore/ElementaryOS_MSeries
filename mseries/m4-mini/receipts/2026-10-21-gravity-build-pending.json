@@ -1,11 +1,17 @@
 {
   "repository": "GravityLinux/linux",
   "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
-  "archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
-  "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
-  "status": "native build running; resolved M4 config gate passes with AQTION=m and TIGON3=m",
-  "build_handle": 81046,
-  "jobs": 3,
-  "prior_build": "intentionally terminated after confirming required owner 10 Gb configuration; no Gravity compiler process remained before reconfiguration",
+  "previous_build_handle": 81046,
+  "previous_result": "exit 2: modpost undefined can_set_direct_map, set_direct_map_invalid_noflush, set_direct_map_default_noflush, dcache_clean_inval_poc",
+  "cause": "four matching Gravity packaging export patches were omitted from wrapper",
+  "correction": "exact unchanged packaging patches 0003-0006 applied with fuzz=0; implementations unchanged",
+  "packaging_commit": "711c2a110416d28010ccdd118b83111776bff207",
+  "patched_source_files": {
+    "arch/arm64/mm/pageattr.c": "c8fbba7830d316ca68a577d3eec2ba63e89e1d412e537bee9c41a84de064d890",
+    "arch/arm64/mm/flush.c": "50519818d672bd618e69627213403d021d10130ad9611d5e12199574e3f25d8e"
+  },
+  "build_handle": 61177,
+  "status": "incremental Image/modules/DTB build running after patch correction",
+  "warning": "modpost .hyp.data unexpected non-allocatable section warning retained; runtime not qualified",
   "hardware_validated": false
 }

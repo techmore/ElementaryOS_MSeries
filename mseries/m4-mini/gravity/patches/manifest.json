@@ -1,0 +1,6 @@
+{
+  "0003-arm64-export-can-set-direct-map.patch": "e27f3a475ab6c822e77578e9cd333b3f3dbf0fa4a74ad2d52a23bc332a4d2509",
+  "0004-arm64-export-set-direct-map-invalid.patch": "7507a14aa8c8578c2cf4d53c80278a68024d42220545edbcb38479caa458ea55",
+  "0005-arm64-export-set-direct-map-default.patch": "e2f0b1dcf6ff9dc2c1e6824f4853836dfd0bad313a081af467cbfe73a512b8af",
+  "0006-arm64-export-dcache-clean-inval-poc.patch": "0e377ac3c0ad3b994d5dcb858d862d37e8ed1b298d07e6efb7b6c8bde6b3ce0a"
+}

@@ -1,3 +1,13 @@
+## M4 mini: required Gravity packaging exports — 2026-10-21
+
+The first complete object build stopped at modpost: appledrm required four
+ARM64 exports supplied by Gravity packaging patches 0003-0006. Those exact
+patches are now retained/applied with fuzz=0; wrapper and package source gates
+check the patched file hashes. Incremental retry passed modpost and linked
+vmlinux; final module generation remains live on handle 61177. Original
+81046 exited 2; no retry was started until that terminal result. The .hyp.data
+section warning remains recorded. No installed kernel or boot settings changed.
+
 ## M4 mini: Aurora 7.3 source comparison — 2026-10-21
 
 Selected current Aurora 6210b28 files were checked against Gravity 4fc326f.

@@ -53,6 +53,7 @@ def main():
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    kernel.source_patch_gate(args.source)
     release = check(args.build, args.archive)
     if args.output.exists():
         raise ValueError('output must be a new directory')

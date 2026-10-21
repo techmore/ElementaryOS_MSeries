@@ -125,3 +125,14 @@ aq_ring_tx_deinit are byte-identical to Gravity's pinned source. They need no
 duplicate backport. Other aq_ring.c differences include AQC113 PTP timestamp
 handling; these are not evidence of an M4-specific 10 Gb fix or hardware pass.
 See receipts/2026-10-21-aurora-ethernet-comparison.json.
+
+## Required ARM64 packaging exports
+
+The first full compile reached modpost and failed because modular appledrm
+references four ARM64 helpers exported by Gravity's packaging layer, not its
+kernel Git tree. The wrapper now applies unchanged packaging patches 0003-0006
+from packages 711c2a1 with zero fuzz and verifies the resulting pageattr.c/flush.c
+hashes. The kernel packager requires the same source contract. The incremental
+retry passed modpost and linked vmlinux; final module generation remains running.
+The retained .hyp.data non-allocatable-section warning is not suppressed. No
+firmware gates or driver functionality were removed to obtain this result.
