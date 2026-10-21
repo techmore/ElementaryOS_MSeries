@@ -1,3 +1,7 @@
+## Development website publishing — 2026-10-21
+
+Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
+
 ## On-demand maintenance continuation — 2026-10-21
 
 Queue/prompts and next-chat instructions: [maintenance/README.md](maintenance/README.md).
@@ -347,6 +351,23 @@ and private window/focus/typing checks pass. #337's status-note conflicts are
 reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
 See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
 remaining native taskbar/network and Teams/Outlook qualification checks.
+
+### Size-system continuation (#332), 2026-10-21
+
+Managed taskbar sizing now follows the shared dock tokens; app typography and
+strict lint coverage are expanded. Owner-selected RepoBar taskbar24pt remains
+intentional. Isolated builds/tests pass; module load and mixed-monitor acceptance
+remain pending. Wingpanel dynamic sizing is held because a whole-content
+transform can double-apply text scale to upstream absolute/rem fonts. Qt/Electron
+font-only integration also remains open. See `ui-scale/SIZE-SYSTEM.md`.
+CI's absent AccountsService exposed a fixture assumption, now corrected with typed
+private portal/Switcheroo services and a private logical system bus. The complete
+native dock suite and fatal-critical cached-widget regression pass without owner
+system services. The subsequent missing Gala keybindings schema is now supplied
+as an exact pinned, test-only consumed-key fixture. Runtime schema roots exclude
+all host schemas, and the cached-widget preflight asserts its four-schema inventory.
+Build-tool metadata lookup remains unchanged. Current-head hosted confirmation
+remains the merge gate.
 
 ## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
 
@@ -737,6 +758,21 @@ acceptance remains pending.
   DisplayConfig `PowerSaveMode`, not because display enumeration failed.
   Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
 
+### Native UI responsiveness and display labels — 2026-10-21 (#242)
+
+Canonical Troubleshooter verification and AirPlay GUI operations now use bounded
+background workers with pending/error/retry behavior. Verification cancels/reaps
+its owned helper on close; stale UI completions are ignored. Display arrangement
+uses bounded system-font labels, full tooltips/accessibility summaries and visible
+keyboard focus with selection that does not apply a display configuration.
+
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
+canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
+source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
+inventory. This fixes three confirmed blockers; it does not close the full native
+release gate or qualify all keyboard/screen-reader/device/account workflows.
+No live model, audio, display, panel or installed application was changed.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
@@ -1095,6 +1131,18 @@ and not qualified; never add it to the STT artifact or use everyday4B for repair
 The existing six-hour developer watcher continues; do not duplicate it or rerun
 finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
 post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
+
+### Screenshot retention correction — 2026-10-21 (#227)
+
+The shelf now always retains saved originals: non-cancelled drag completion is no
+longer treated as proof that the target read/attached an image. Cards allow retry;
+Copy/Show remain available. Replacement during an active drag defers cleanup,
+and unique stage directories avoid same-name races. Only transient copies/portal
+exports expire, two minutes after closing a card that offered a drag. Seven private
+D-Bus/Xvfb GTK regressions pass; no live account, panel or desktop state changed.
+See `screenshot-shelf/README.md`. Actual Signal compose-preview/content and display
+boundary acceptance plus native Signal UI work remain open; do not close #227
+from source tests alone.
 
 ## Signal Granite palette completeness — 2026-10-18
 

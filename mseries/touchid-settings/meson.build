@@ -15,7 +15,11 @@ deps = [
 
 page_sources = files(
     'Fprint.vala',
+    'Diagnostics.vala',
+    'Style.vala',
     'FingerprintArt.vala',
+    'HandDiagram.vala',
+    'FingerCard.vala',
     'EnrollDialog.vala',
     'TouchIdPage.vala',
 )

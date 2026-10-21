@@ -79,4 +79,16 @@ with_fake "--fingers right-index-finger --stages 16 --interval 300 --duplicate-a
 check "duplicate sheet rendered" "[[ -s $out/duplicate-light.png ]]"
 check "duplicate ends with Release" "grep -q Release $out/fake.log"
 
+# 7. Driver status: a blocked matching state must render (banner + locked switches), and
+# the sudo switch must not write PAM while matching is blocked.
+mkdir -p "$out/diag-blocked"
+for kv in touchid=ready sensor=online matching=blocked restore=restored xart_guard=1 xart_guard_list=loaded xart_guard_refusals=0; do
+  echo "${kv#*=}" > "$out/diag-blocked/${kv%%=*}"
+done
+fresh_pam
+MSERIES_TOUCHID_DIAG_DIR="$out/diag-blocked" with_fake "--fingers right-index-finger" \
+  shot --light --flip "Terminal Commands" --screenshot "$out/blocked-light.png"
+check "blocked state rendered" "[[ -s $out/blocked-light.png ]]"
+check "blocked state keeps PAM untouched even if the switch is flipped" "! grep -q fprintd $out/pam/sudo"
+
 echo; echo "$pass passed, $fail failed"; [[ $fail -eq 0 ]]

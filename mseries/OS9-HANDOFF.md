@@ -15,6 +15,17 @@
 - **Next (owner):** hosting (recommend GitHub Pages), signing-key custody (recommend offline key plus signing subkey in the secret), which components ship first
   (recommend the three plugin debs), then publish `dev`/`stable` suites.
 
+## GitHub Pages development documentation — 2026-10-21
+
+Owner selected `dev/docs` as the GitHub Pages source, replacing frozen `main/docs`. The website refresh reconciles wip2 boot/all-port dock evidence, Touch ID xART guard blocking, working Messages, screenshot retention and optional Apple Passwords. Historical benchmark dates and outstanding hardware/recovery gates remain explicit. The removed October 13 installer is no longer advertised as available. Source links and live build/validation/Pages queries follow `dev`. Publish only after website checks; verify the exact deployed revision and live bytes. No OS release or host deployment is part of this change.
+## wip3 staged unarmed — 2026-10-21
+
+Owner-approved unarmed staging of `7.2.11-elementary-aurora72-wip3` (upstream #158 + #157, build-only PR #413, native CI build audited).
+Installed beside wip2/`.20`: package, `/boot/vmlinuz-aurora72-wip3`, `/boot/initrd.img-7.2.11-elementary-aurora72-wip3`, GRUB entry
+`elementary-aurora72-wip3-trial`. **Not armed, not booted**, persistent default still `.20`, `boot.bin` unchanged, only `custom.cfg`
+changed among protected files (receipt `mseries/aurora/unified72/boot-preflight-wip3-2026-10-21/staging.json`, procedure and rollback in
+`BOOT-TRIAL.md`). Does not change Touch ID. Next: owner chooses when to boot it; record the highest dock gate reached afterward.
+
 ## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
 
 - **Multi-account:** `settings.json` gains `account` (empty follows the GitHub CLI's active account, as before) and
@@ -60,6 +71,14 @@ by hand.** Corrects an earlier theory that the refused record was Linux's own. A
 was deleted at the owner's request; reports belong on omacom/linux-aurora as a per-Mac issue. Nothing is posted; a redrafted report is pending the owner.
 Stale Touch ID claims in `BUG-FIX-ROADMAP.md` and `ROADMAP.md` were updated. Verified: `validate.sh` 76/76, aurora unit tests 72, Touch ID UI tests 14/14,
 PAM helper test. Not verified: matching on this Mac, `.20` behaviour, any change to the guard.
+## Kernel wip3 candidate prepared (build-only) — 2026-10-21
+
+Owner asked to coordinate the next kernel part (USB4/HDMI display work). Chosen scope: upstream #158 (Asahi 7.2.11 base)
+plus #157 (external-display colour); #154 (shared Thunderbolt DP bandwidth, may cap a single-monitor dock at HBR2 x4) was not
+included. `mseries/aurora/unified72/series.json` revision 4 pins `7.2.11-elementary-aurora72-wip3` with #157 as a local patch
+and a new review receipt. Verified: patch dry-run on #158 head and current integration, full-tree `candidate.py prepare` and
+`check`, 72 aurora unit tests. CI runs the native build for this PR. Native CI build passed and its artifact was audited (`native-build-wip3-2026-10-21.json`). **Not done:** boot payload
+(the trial prep script was adapted but nothing is prepared, staged or armed), 64-fix parity at 7.2.11, any hardware test. wip2 stays installed; one-shot to wip2 was armed separately.
 
 ## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
 
@@ -1611,6 +1630,21 @@ session was checked without requesting focus.
 Next login must load the staged compositor before any dock re-enable. Keep the
 disable marker until that runtime is confirmed and the owner wants a live trial.
 
+### Native UI responsiveness and display labels — 2026-10-21 (#242)
+
+Canonical Troubleshooter verification and AirPlay GUI operations now use bounded
+background workers with pending/error/retry behavior. Verification cancels/reaps
+its owned helper on close; stale UI completions are ignored. Display arrangement
+uses bounded system-font labels, full tooltips/accessibility summaries and visible
+keyboard focus with selection that does not apply a display configuration.
+
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
+canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
+source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
+inventory. This fixes three confirmed blockers; it does not close the full native
+release gate or qualify all keyboard/screen-reader/device/account workflows.
+No live model, audio, display, panel or installed application was changed.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
@@ -2731,6 +2765,18 @@ quota in literal and dot modes. Hover/reset behavior is unchanged.
 Boundary regression covers15%,15.1%,14%,10%,0% and missing values. Routine deploy
 stages the native update for next login; no additional panel reload was requested.
 
+
+### Screenshot retention correction — 2026-10-21 (#227)
+
+The shelf now always retains saved originals: non-cancelled drag completion is no
+longer treated as proof that the target read/attached an image. Cards allow retry;
+Copy/Show remain available. Replacement during an active drag defers cleanup,
+and unique stage directories avoid same-name races. Only transient copies/portal
+exports expire, two minutes after closing a card that offered a drag. Seven private
+D-Bus/Xvfb GTK regressions pass; no live account, panel or desktop state changed.
+See `screenshot-shelf/README.md`. Actual Signal compose-preview/content and display
+boundary acceptance plus native Signal UI work remain open; do not close #227
+from source tests alone.
 
 ## Screenshot shelf drag into Signal (Flatpak) — 2026-10-18 (Claude Code)
 
@@ -9704,6 +9750,56 @@ and end-to-end link opening remain unverified until the next login.
 - Not deployed: the Work Mode script change. The live `~/.local/bin/mseries-work-mode` is from unmerged #329, and overwriting it would roll that back. Land the hook through #329 or after it merges.
 - Unverified: a visual check of the new control, and dock follow-through on real hardware.
 - Next: phases 2–4 in #332: other dock writers, Wingpanel scale from #312, app type-ramp migration, Qt/Electron.
+
+### 2026-10-21: taskbar tokens and relative app text (#332)
+
+- Managed taskbar icons now consume the same `icon-size` setting as the dock;
+  unadopted, malformed or unsupported-version policy retains the legacy 48px
+  taskbar. The CLI publishes a versioned private adoption marker before changing
+  icon settings, using unique atomic temporaries for concurrent CLI/watcher writes.
+  Quick Settings adoption also reconciles the existing font policy. A shared native
+  policy monitor refreshes already-created launcher/group/separator caches when
+  adoption changes without a settings change; monitor registration precedes reading.
+  Actual widget transitions are tested with icon-size held40 on a private no-service
+  activation bus/runtime/display. The actual-manager fatal-critical test also
+  exposed an upstream BackgroundItem constructor self-capture; the equivalent
+  static map callback fixes that baseline critical without changing icon mapping.
+- Hosted run39657218371 exposed a test-host assumption: Granite fell back to real
+  AccountsService because the fixture lacked a settings portal. Reproduced the
+  same Settings.vala:114 failure locally on a private bus with no Accounts service.
+  Fixtures now serve typed appearance values in a separate private portal process:
+  historical Read has two variant layers; ReadOne has one; color-scheme is uint32
+  and accent-color is a double triple. Unknown keys fail explicitly. The same
+  private no-activation bus serves as the logical system bus, with read-only
+  Switcheroo false/empty-GPU properties; AccountsService remains absent. Outer
+  marker/hover and nested launcher tests use these isolated services too.
+  Full native build/interaction suite, fatal-critical cached-widget fixture and
+  protocol preflights pass locally; owner system services are excluded.
+- Hosted run39658908386 then exposed a second fixture assumption: the developer's
+  Gala workspace-keybindings schema had hidden a missing input on Ubuntu CI.
+  The private fixture now compiles the prepared production dock/custom schemas plus
+  a test-only consumed-key subset of Gala f0791434ac40a50f2aec64700a47b3bb04145752.
+  Its schema ID/path, string-array type and SuperEnd/Super0 defaults are exact.
+  A preflight asserts the complete four-schema inventory and absence of all host
+  schemas. Marker, launcher and hover runtimes also exclude host schema data roots;
+  build tools retain their normal VAPI metadata paths. The exact missing-schema
+  failure reproduces before the change; actual widget and full native suite pass
+  with private runtime schema roots afterward. Nothing is installed on the host.
+- RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
+  relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
+  Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar
+  **24pt** readout is preserved as the only absolute-font exception.
+- Native dock source build and compiled policy fixture, 35 focused Python tests,
+  Quick Settings fixture, CodexBar 17 suites and two RepoBar account-cache probes
+  pass. Private light/dark fixtures assert actual GDK scale1/2 and save metadata;
+  their logical-coordinate PNGs are not physical mixed-monitor qualification.
+- A proposed dynamic panel transform was rejected before publication: inherited
+  compensation does not cover explicit/rem typography in upstream indicators,
+  which could scale twice. Wingpanel remains at its existing1.30 transform.
+- Remaining: safe panel sizing design, Qt/Electron font-only adoption and physical
+  internal125%/dock100% acceptance. No monitor settings, live panel/dock restart
+  or physical acceptance is included. Routine CodexBar staging preserves the panel
+  and daemon; replaced modules load next login.
 
 ## Repository housekeeping — 2026-10-20
 

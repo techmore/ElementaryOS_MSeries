@@ -41,6 +41,12 @@ SOURCES = (
     "mseries/codexbar-wingpanel/settings/*.vala",
     "mseries/repobar-wingpanel/*.vala",
     "mseries/repobar-wingpanel/settings/*.vala",
+    "mseries/machine-lab/data/*.css",
+    "mseries/orchard-incus/orchard_incus/ui.py",
+    "mseries/orchard-incus-native/src/*.vala",
+    "mseries/battery/mseries-battery-app.py",
+    "mseries/screenshot-shelf/mseries-screenshot-shelf",
+    "mseries/codexbar-opencode-login.py",
 )
 EXCLUDE = re.compile(r"(^|/)(test[-_][^/]*|probe/.*)$")
 
