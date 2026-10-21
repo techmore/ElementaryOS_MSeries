@@ -107,6 +107,12 @@ pub(crate) fn xkb_config(config: &StartupKeyboardConfig) -> XkbConfig<'_> {
 
 impl PantheonCompositor {
     pub fn process_input_event<I: InputBackend>(&mut self, event: InputEvent<I>) {
+        if !matches!(
+            event,
+            InputEvent::DeviceAdded { .. } | InputEvent::DeviceRemoved { .. }
+        ) {
+            self.note_user_activity();
+        }
         match event {
             InputEvent::Keyboard { event, .. } => {
                 let serial = SERIAL_COUNTER.next_serial();
@@ -305,6 +311,7 @@ impl PantheonCompositor {
                             }
                         });
                     } else {
+                        self.end_popup_grab_unless(None);
                         self.set_x11_keyboard_focus(None, serial);
                         self.space.elements().for_each(|window| {
                             window.set_activated(false);

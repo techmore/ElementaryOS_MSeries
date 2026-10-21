@@ -216,6 +216,7 @@ impl
                     && state.find_window_for_surface(surface).is_some()
                     && let Some(keyboard) = state.seat.get_keyboard()
                 {
+                    state.end_popup_grab_unless(Some(surface));
                     state.set_x11_keyboard_focus(None, SERIAL_COUNTER.next_serial());
                     keyboard.set_focus(
                         state,
@@ -353,6 +354,8 @@ impl PantheonCompositor {
     /// Without this a click on a snapped window buried its own modal dialog, since the
     /// tiled window covers the whole work area under it.
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
+        // Override-redirect and no-input X11 windows are raised, never activated.
+        let activate = activate && crate::xwayland::window_accepts_focus(window);
         // Snap groups come forward together, the raised member on top.
         self.raise_group_siblings(window);
         self.space.raise_element(window, activate);

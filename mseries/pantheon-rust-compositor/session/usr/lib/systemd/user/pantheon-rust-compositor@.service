@@ -18,6 +18,10 @@ StartLimitBurst=3
 Slice=session.slice
 Type=notify
 TimeoutStartSec=90s
+# The compositor pings every 10 s from its event loop (and sets STATUS=); a
+# hung loop for 30 s is killed and restarted by Restart=on-failure. Owner
+# approved 2026-10-21. A restart ends every Wayland client in the session.
+WatchdogSec=30s
 Environment=WAYLAND_DISPLAY=wayland-0
 Environment=PANTHEON_WAYLAND_DISPLAY=wayland-0
 ExecStart=/usr/bin/pantheon-compositor --backend native --notify-systemd

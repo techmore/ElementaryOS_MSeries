@@ -178,6 +178,8 @@ impl PantheonCompositor {
         if self.session_locked {
             return Err("cannot open the overview while the session is locked".into());
         }
+        // Menus would float over the grid and keep the keyboard.
+        self.end_popup_grab_unless(None);
         self.dismiss_snap_assist();
         let active = self.workspace_manager.active();
         let minimized = self
