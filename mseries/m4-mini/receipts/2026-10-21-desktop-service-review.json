@@ -1,0 +1,36 @@
+{
+  "repository": "GravityLinux/packages",
+  "commit": "711c2a110416d28010ccdd118b83111776bff207",
+  "files": {
+    "rust-speakersafetyd/README.md": "0df68ecbfb15797cc7ea60eaecf1bec098735ea27559d4d05a9d215c6a986d1f",
+    "rust-speakersafetyd/rust-speakersafetyd.spec": "a675be83527f3088ce09d37d78bc7b0106f101637662926953c7274b39a5a4a8",
+    "gravity-platform-metapackage/50-gravity-mesa.conf": "0e8eae8cc62174cbe758fdc9c2c707700f1136aefa88812c8b8fcbba1623c61b",
+    "gravity-platform-metapackage/gravity-platform-metapackage.spec": "e3c0807b1f9d8f758c982922874af9d843389bb04f71c5f59294b7f6f8545d76",
+    "gravity-remix-scripts/SLEEP-POLICY.md": "d35689c01264774594c11133001c58a8f6e8ea34966ee492def872e64b9a8f7b"
+  },
+  "findings": {
+    "mesa_session_flag": "ASAHI_MESA_DEBUG=nocompress",
+    "speaker_daemon": "unpinned inaccessible scaffold; current platform spec dropped dependency in favor of kernel J773g protection",
+    "sleep": "all system sleep variants blocked by vendor policy"
+  },
+  "kernel_speaker_review": {
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "file": "sound/soc/apple/t8132/pcm.c",
+    "electrical_parameters": "source explicitly says assumptions awaiting measurement",
+    "physical_safety_validated": false
+  },
+  "launcher_tests": [
+    "extracted-package llvmpipe EGL render/readback passed",
+    "debug flags preserved and nocompress added",
+    "private library paths selected",
+    "relocated Vulkan manifest refers to packaged library",
+    "temporary manifest removed after child exit",
+    "child exit status 37 preserved"
+  ],
+  "vulkan_device_test": false,
+  "upstream_heads_rechecked": {
+    "kernel": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "mesa": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "bootloader": "f02d4a52017915febb222539636b5b025a70407a"
+  }
+}

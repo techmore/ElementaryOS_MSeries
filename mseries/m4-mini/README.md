@@ -122,3 +122,10 @@ manifest and mismatched library hashes were rejected before output creation.
 This package requires the build host ABI (including libc6 >= 2.43), so rebuild
 against the intended image ABI before distribution. Dependency scanner warnings
 are retained in the receipt; no M4 hardware or Vulkan qualification is implied.
+
+The package includes `opt/elementary-m4-gravity1/bin/run-mesa -- COMMAND`.
+It selects only that command's private EGL/DRI/Vulkan libraries and adds Gravity's
+`ASAHI_MESA_DEBUG=nocompress` session requirement. `--software -- COMMAND` forces
+llvmpipe OpenGL for smoke tests; it does not provide a software Vulkan driver.
+An extracted payload works because the launcher relocates its temporary Vulkan
+manifest. No global environment, loader config or current compositor is changed.

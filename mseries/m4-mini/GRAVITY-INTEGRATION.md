@@ -78,10 +78,34 @@ actual model/board identity, monitor mode and exact boot firmware remain unknown
 The reviewed mini prior art uses BCM57762 gigabit Ethernet; it cannot qualify
 the optional 10 Gb controller. Initial defconfig leaves both AQTION and TIGON3
 disabled. The elementary target overlay now enables both modules and config
-gates require them. The live full build predates this overlay; reconfigure and
-build these drivers after it finishes before allowing payload packaging.
+gates require them. The live full build was reconfigured with this overlay; both required
+NIC modules are required artifacts before payload packaging.
 
 macOS 27 on the host does not identify firmware used by the separate Linux
 boot stub. The exact GPU/DCP firmware gates still apply. Do not downgrade the
 host or alter its firmware to infer compatibility. The macOS/Recovery round trip
 needs qualification on this specific setup.
+
+## Desktop userspace requirements reconciled
+
+Gravity packages 711c2a1 installs ASAHI_MESA_DEBUG=nocompress for desktop
+sessions and the login compositor. The private-prefix run-mesa launcher now
+adds that flag, selects the sibling EGL/DRI/Vulkan libraries and runs only the
+requested child process. It does not change the current session or global
+loader configuration. The Vulkan manifest is relocated in a temporary directory
+so an extracted payload can be inspected without installing it. --software
+forces llvmpipe OpenGL; the Asahi Vulkan selection is still hardware-only.
+
+The rust-speakersafetyd README is an older unpinned scaffold; the current
+platform spec deliberately dropped its dependency because J773g speaker
+protection is in sound/soc/apple/t8132/pcm.c. That driver mutes on amplifier
+fault and DMA stall and applies a thermal model; its electrical parameters
+are explicitly assumptions awaiting measurement. Source review does not
+qualify physical speaker safety. Preserve the kernel controls and do not
+enable the proposed unavailable daemon as a substitute. Matching UCM and
+PipeWire routing remain target-image integration requirements.
+
+Gravity also ships vendor sleep policy disabling suspend, hibernate, hybrid
+sleep and suspend-then-hibernate. A target elementary image needs equivalent
+M4-specific policy until runtime support is demonstrated; this research
+payload changes no host sleep settings.

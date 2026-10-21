@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 
 NAME = 'elementary-m4-gravity-mesa1'
-VERSION = '26.3.0~devel+gravity.87ac51d-1'
+VERSION = '26.3.0~devel+gravity.87ac51d-2'
 COMMIT = '87ac51d411f0e58a9433567ec2666f457be89e1d'
 ARCHIVE_SHA = '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e'
 
@@ -51,6 +51,10 @@ def main():
         root = Path(temp)
         payload = root / 'debian' / NAME
         shutil.copytree(prefix, payload / 'opt/elementary-m4-gravity1', symlinks=True)
+        launcher = payload / 'opt/elementary-m4-gravity1/bin/run-mesa'
+        launcher.parent.mkdir(exist_ok=True)
+        shutil.copy2(Path(__file__).with_name('run-mesa.py'), launcher)
+        launcher.chmod(0o755)
         docs = payload / 'usr/share/doc' / NAME
         docs.mkdir(parents=True)
         shutil.copytree(args.source / 'licenses', docs / 'licenses')
@@ -72,7 +76,7 @@ def main():
                                 ['-e' + str(p.resolve()) for p in libraries],
                                 cwd=root, capture_output=True, text=True, check=True)
         (args.output / 'dependencies.log').write_text(result.stdout + result.stderr)
-        dependencies = next(line.split('=', 1)[1] for line in result.stdout.splitlines()
+        dependencies = 'python3, ' + next(line.split('=', 1)[1] for line in result.stdout.splitlines()
                             if line.startswith('shlibs:Depends='))
         (payload / 'DEBIAN').mkdir()
         (payload / 'DEBIAN/control').write_text(control + 'Depends: ' + dependencies + '\n')

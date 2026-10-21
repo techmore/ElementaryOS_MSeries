@@ -1,3 +1,14 @@
+## M4 mini: desktop service reconciliation — 2026-10-21
+
+The private Mesa package now includes a child-process launcher preserving Gravity's
+ASAHI_MESA_DEBUG=nocompress requirement and selecting sibling EGL/DRI/Vulkan
+libraries. Extracted-package llvmpipe render/readback, environment/manifest cleanup
+and exit-status checks pass. Current Gravity platform packaging uses kernel J773g
+speaker protection, not the unavailable unpinned speakersafetyd scaffold. Its
+electrical assumptions remain unmeasured; no physical speaker acceptance claimed.
+[Review receipt](m4-mini/receipts/2026-10-21-desktop-service-review.json).
+M4 sleep policy and matching UCM/PipeWire routing remain target-image work.
+
 ## M4 mini: isolated Mesa package — 2026-10-21
 
 Gravity Mesa 87ac51d now has a source/hash/validation-gated private-prefix Debian

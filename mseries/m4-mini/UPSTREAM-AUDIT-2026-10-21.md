@@ -127,3 +127,11 @@ manifest and mismatched library hashes were rejected before output creation.
 This package requires the build host ABI (including libc6 >= 2.43), so rebuild
 against the intended image ABI before distribution. Dependency scanner warnings
 are retained in the receipt; no M4 hardware or Vulkan qualification is implied.
+
+The isolated Mesa launcher now preserves Gravity's `nocompress` session flag.
+Its extracted-package software rendering and private path/manifest lifecycle
+checks passed. Current platform packaging dropped the proposed speakersafetyd
+dependency in favor of J773g kernel protection; the kernel explicitly describes
+electrical parameters as assumptions awaiting measurement. Physical speaker
+safety remains unqualified. Gravity also blocks system sleep through vendor
+policy; equivalent M4 image policy and matched UCM routing remain open.
