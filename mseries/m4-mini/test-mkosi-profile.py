@@ -40,6 +40,11 @@ for name in default:
         assert set(default[name]['Packages']) == set(m4[name]['Packages']), name
 assert set(m4['liveiso']['KernelInitrdModules']) == set(default['liveiso']['KernelInitrdModules']) | {
     'nvme_apple', 'pcie_apple', 'hid_apple', 'hid_magicmouse'}
+assert set(m4['sysupdate']['KernelInitrdModules']) == set(default['sysupdate']['KernelInitrdModules']) | {
+    'nvme_apple', 'pcie_apple'}
+live_hook = str(repo / 'mkosi.images/liveiso/mkosi.profiles/m4-mini/prepare-live-kernel.chroot')
+assert m4['liveiso']['PostInstallationScripts'].count(live_hook) == 1
+assert live_hook not in default['liveiso']['PostInstallationScripts']
 profile = repo / 'mkosi.images/base/mkosi.profiles/m4-mini'
 extra = str(profile / 'mkosi.extra')
 hook = str(profile / 'activate-graphics.chroot')

@@ -327,7 +327,27 @@ The M4 live profile overrides the disk-erasing `elementary-install` command
 with a refusal because it cannot preserve macOS. The graphical installer
 session is not yet qualified or disabled by this command override. Do not
 use this research image for installation. A partition-preserving Apple adapter
-is still required. `assemble-iso.sh` also expects a `/boot` kernel copy that
-the research package intentionally omits; full ISO integration remains open.
+is still required. The separate M4 live hook described below now supplies the `/boot` kernel
+copy expected by `assemble-iso.sh`; full ISO integration remains open.
 
 [Current Mesa package receipt](receipts/2026-10-21-gravity-mesa-package-r4.json).
+
+## Live-kernel staging and installed storage drivers
+
+The M4 live profile now selects a chroot post-install hook that checks for a
+single module tree, verifies the pinned Image/config hashes, stages the kernel
+in `/boot`, and creates or updates its initramfs. This satisfies the kernel
+path used by `assemble-iso.sh`; the standalone kernel package still has no
+host boot hooks. The M4 sysupdate profile adds Apple NVMe and PCIe drivers to
+the existing installed-image initrd settings. Default builds omit both changes.
+
+`test-live-kernel.py --root ROOT --receipt NEW_JSON` replays the real hook in
+an isolated configured root with Casper installed. The retained run passes
+pinned kernel identity, Casper live scripts, overlayfs and early Apple storage
+and input checks. The initial creation path also passed before adding Casper;
+the final Casper-qualified replay covers the update path. Missing firmware
+warnings remain visible, including the Apple ASMedia image. No full factory
+ISO, installed desktop or physical boot has passed. Gravity kernel/Mesa and
+Asahi kernel heads were rechecked and still match the recorded revisions.
+
+[Live staging receipt](receipts/2026-10-21-live-kernel-staging.json).

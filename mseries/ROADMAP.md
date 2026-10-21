@@ -1,3 +1,22 @@
+## M4 mini: live-kernel staging and installed storage initrd — 2026-10-21
+
+Added an M4-only live post-install hook to satisfy assemble-iso.sh's /boot
+contract without adding boot hooks to the research kernel package. It rejects
+ambiguous module trees, verifies pinned Image/config hashes, copies the kernel
+and creates or updates its initramfs. Added sysupdate M4 profile selecting
+nvme_apple and pcie_apple alongside the existing ARM64 initrd modules.
+
+Real mkosi parser checks pass for profile-only hook/storage selection and
+unchanged defaults. Hook creation passed in the minimal configured root; then
+installed real Casper 26.04.2 with dependencies inside the isolated root and
+replayed the update path. Image hash, Casper scripts, overlayfs and early Apple
+storage/HID modules all pass inspection. Missing firmware warnings remain,
+including asm2214a-apple.bin. No complete ISO, graphical session or physical
+boot is claimed. Rechecked Gravity kernel/Mesa and Asahi kernel heads: unchanged.
+Next: full factory image integration/assembly and graphical installer isolation;
+Apple firmware handoff and partition-preserving dual boot remain unqualified.
+[Receipt](m4-mini/receipts/2026-10-21-live-kernel-staging.json).
+
 ## M4 mini: retain Mesa in installed /usr image — 2026-10-21
 
 Found a real factory defect: sysupdate repart copies /usr only, losing the
