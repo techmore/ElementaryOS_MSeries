@@ -1,3 +1,14 @@
+## Rust compositor next-generation investigation — 2026-10-21
+
+Read-only audit of popups/attention, snapping, performance/battery and monitoring:
+[pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md).
+Top items: popup grabs block compositor focus changes (D1); X11 notification cards steal
+activation (D2); no demands-attention channel to the dock (D3); snapped windows lose their
+floating size and maximize/snap erase each other (S1, S2); linux-dmabuf is off on native so
+Electron/Chromium render in software (P1); every window gets frame callbacks every flip (P2);
+no idle/DPMS (P3); no frame timing or watchdog. Next: metrics first, then D1/D2, then P2/P1/P3,
+then snapping phase 0 and Snap Assist for halves. Nothing implemented or qualified yet.
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
@@ -19,6 +30,13 @@ Frame timing per output (render CPU, queue→flip, dirty→flip, late frames), p
 X11 attribution, journal priorities, frame callbacks only for surfaces on the flipped output, and the small CPU fixes. Loads at
 next login; after-numbers still to collect. Next: P1 dmabuf trial login, P3 idle/DPMS, then the D-Bus `Stats` interface and CLI.
 [Handoff](OS9-HANDOFF.md).
+
+## Release pipeline for the customer updater — 2026-10-21
+
+One workflow builds the plugin debs and `mseries-update` and publishes a signed `dev` suite (merge to `dev`) and `stable` suite (merge to `main`);
+deterministic debs, fails closed without `MSERIES_APT_KEY`. Not published or run in CI yet (PPA outage, no key). Next: owner creates the key
+([runbook](release/KEY-RUNBOOK.md)) and picks how `gh-pages` is served (Pages source is `dev:/docs`), then first publish, `run_module` .deb-first (#52),
+Rust compositor into the suites after its health check. [Details and Nix measurements](RELEASE-PIPELINE.md).
 
 ## Software Updates app — 2026-10-21
 
@@ -253,34 +271,54 @@ snapshot/stale/unavailable from live sync, and resolve groups using verified
 identity rather than names. No Mac export or phone pin access is qualified yet.
 See [source review and implementation gates](phone-setup/PIN-SYNC-RESEARCH.md).
 
-## Desktop message notification popups — 2026-10-20
+## Desktop notifications and taskbar bell — 2026-10-20
 
-Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
-The user-local service is enabled/active as `mseries-desktop-notifications.service`,
-using GTK3/Xwayland override-redirect popups for placement without a compositor
-or Wingpanel restart. It implements the freedesktop notification interface,
-shows up to three bottom-right cards, preserves focus, and dispatches supplied
-Open/Reply actions. It retains no history; no notification center, inline reply,
-images, sound, or native Wayland placement is claimed. Existing DND is respected;
-per-app elementary notification preferences and full accessibility qualification
-remain open. The installer stages by default; `--activate` enables/restarts only
-this service. BlueFerry uses the existing separate version-matched backend overlay
-at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
-as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
-(https://github.com/erikwb/blueferry); this repository does not redistribute its
-full source. Rebase the backend overlay after package upgrades.
+PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
+popups to Apple-style upper-right placement, newest first, with a dock-gray
+360x72 layout, reduced padding, rounded RGBA/X Shape silhouette and one explicit
+Reply button. Known Reply/inline-reply aliases are deduplicated. Notification
+preview text remains plain and is exposed accessibly. Asynchronous, bounded
+metadata probes inspect only known Wingpanel/Dock first frames; existing workarea
+reservations are not subtracted twice. This desktop measured Wingpanel=124 and
+dock=72 logical pixels, with declared fallback insets. A live popup measured
+360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
+from the right. No compositor or Wingpanel restart was required.
 
-Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
-Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
-replacement, expiry, close and DND were checked using synthetic content only.
-Retained screenshots are fixtures. Live synthetic notification geometry was
-360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
-and bottom. The service remains active/enabled and BlueFerry remains active.
-BlueFerry notification tests (92) and combined overlay tests (201) passed; its
-Reply action opens the existing conversation through opaque-handle activation.
-No real phone messages were sent or deliberately marked read by these checks.
-Actual phone-notification click-to-app focus and next-login startup remain
-unverified. This is transformed-desktop work, not factory-image qualification.
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
+secondary click offers Mark all as read and Do Not Disturb. The service retains
+up to 100 memory-only notification records, resets history on service restart,
+and exposes a content-free Changed signal plus bounded user-session snapshots.
+The taskbar requests 50 records and reports unavailable state explicitly.
+Mark all as read changes only local notification history; reason-4 toast cleanup
+does not write iPhone read state. DND uses elementary's saved preference.
+Historical trusted BlueFerry entries reopen via a fixed installed helper and
+validated opaque handle; notification argv is never executed. Other supplied
+valid desktop IDs can open installed applications on explicit click.
+
+A real incoming phone notification's single Reply button was clicked. The GTK
+client received the same opaque handle, displayed the matching reply destination,
+and had compositor focus. A scoped bridge only raises one matching BlueFerry GTK
+window after an explicit action from its backend owner. No message was sent.
+32 isolated backend/model/provenance tests passed, plus private Xvfb/D-Bus popup
+and actual history/MarkAllRead/DND API checks using memory settings. Native bell
+probes cover service absence, history, Open/Reply, local read controls, rejected
+DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
+
+Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
+TaskbarNotifications and AppResolver. The private dock build was installed and
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
+mode, auto-hide setting, icon size and ordered launcher pins compared identical
+before/after. Rollback binary/wrapper and preference receipt are private under
+~/.local/state/mseries-notifications. Live bell/history opening is verified;
+the owner confirmed both right-click controls appear. Notification,
+dock and BlueFerry services remain active. Full accessibility qualification,
+physical next-login recovery and factory-image qualification remain open.
 
 ## Working iPhone messages and native Messages app — 2026-10-20
 
