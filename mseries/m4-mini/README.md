@@ -46,3 +46,5 @@ upstream unit-address warning: AIC node `interrupt-controller@381180000`
 has first register address `0x381000000`. This remains unmodified upstream
 source. `fdtget` confirms `apple,j773g` and the framebuffer's disabled state;
 its memory and framebuffer properties require loader fixups.
+
+See [the mini patch review](MINI-PATCH-REVIEW.md) for the public diagnostic patch disposition and its verified digest.
