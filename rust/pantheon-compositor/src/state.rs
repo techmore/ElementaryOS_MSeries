@@ -17,7 +17,7 @@ use smithay::{
             protocol::wl_surface::WlSurface,
         },
     },
-    utils::{Logical, Point, Size},
+    utils::{Logical, Point},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
         dmabuf::DmabufState,
@@ -148,11 +148,11 @@ pub struct PantheonCompositor {
     /// compositor memory, so every new session starts with the top bar shown.
     pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
-    pub managed_windows:
-        HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
-    pub x11_managed_windows: HashMap<u32, ManagedWindow>,
+    /// Snap, maximize and fullscreen state for every window, by `Window::id()`.
+    pub(crate) placements: HashMap<crate::placement::WindowKey, crate::placement::WindowRecord>,
+    /// The window a move grab is dragging; its placement does not follow commits.
+    pub(crate) grabbed_window: Option<crate::placement::WindowKey>,
     pub x11_minimized_windows: HashMap<u32, (Window, Point<i32, Logical>)>,
-    pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
     pub tiling_bindings: TilingBindings,
     pub corner_snap_preview: Option<CornerSnapPreview>,
     pub corner_snap_cancelled: bool,
@@ -233,32 +233,6 @@ struct GalaSnapshotKey {
 /// Republish at least this often even when nothing seemed to change, in case
 /// a change has no hook (bounded staleness, not a timer: only on dispatch).
 const GALA_SNAPSHOT_MAX_AGE: Duration = Duration::from_secs(1);
-
-#[derive(Clone, Copy)]
-pub struct ManagedWindow {
-    pub restore_location: Point<i32, Logical>,
-    pub restore_size: Size<i32, Logical>,
-    pub maximized: bool,
-    pub fullscreen: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TilePosition {
-    Left,
-    Right,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-#[derive(Clone)]
-pub struct TiledWindow {
-    pub position: TilePosition,
-    pub output: smithay::output::Output,
-    pub rect: smithay::utils::Rectangle<i32, Logical>,
-    pub committed_size: Size<i32, Logical>,
-}
 
 impl PantheonCompositor {
     pub fn new(
@@ -512,10 +486,9 @@ impl PantheonCompositor {
             keep_above: HashSet::new(),
             top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
-            managed_windows: HashMap::new(),
-            x11_managed_windows: HashMap::new(),
+            placements: HashMap::new(),
+            grabbed_window: None,
             x11_minimized_windows: HashMap::new(),
-            tiled_windows: HashMap::new(),
             tiling_bindings: TilingBindings::load(),
             corner_snap_preview: None,
             corner_snap_cancelled: false,
@@ -902,24 +875,21 @@ impl PantheonCompositor {
         let window = self
             .focused_window()
             .ok_or_else(|| "there is no focused application window to maximize".to_string())?;
-        if let Some(toplevel) = window.toplevel().cloned() {
-            if self.is_panel_surface(toplevel.wl_surface()) {
-                return Err("cannot maximize a panel surface".into());
-            }
-            let maximized = self
-                .managed_windows
-                .get(&toplevel.wl_surface().id())
-                .is_some_and(|state| state.maximized);
-            self.configure_window_mode(toplevel, !maximized, false);
-        } else if let Some(surface) = window.x11_surface().cloned() {
-            let maximized = self
-                .x11_managed_windows
-                .get(&surface.window_id())
-                .is_some_and(|state| state.maximized);
-            self.configure_x11_window_mode(&surface, !maximized, false);
-        } else {
+        if window
+            .toplevel()
+            .is_some_and(|toplevel| self.is_panel_surface(toplevel.wl_surface()))
+        {
+            return Err("cannot maximize a panel surface".into());
+        }
+        if window.toplevel().is_none() && window.x11_surface().is_none() {
             return Err("the focused surface is not a managed application window".into());
         }
+        let request = if self.placement_of(&window).is_maximized() {
+            crate::tiling::ModeRequest::Unmaximize
+        } else {
+            crate::tiling::ModeRequest::Maximize
+        };
+        self.set_window_mode(&window, request);
         self.refresh_panel_visibility();
         self.request_native_redraw();
         Ok(())
@@ -1286,6 +1256,14 @@ impl PantheonCompositor {
         Ok(())
     }
 
+    /// S17: a snapped or maximized window restored from minimize re-fits the
+    /// current work area instead of reappearing at a stale rect.
+    fn reapply_restored_placement(&mut self, window: &Window) {
+        if !self.placement_of(window).is_floating() {
+            self.apply_placement(window);
+        }
+    }
+
     fn is_workspace_window_minimized(&self, window: &Window) -> bool {
         self.minimized_windows
             .values()
@@ -1306,6 +1284,7 @@ impl PantheonCompositor {
                 .location(window.id())
                 .unwrap_or(location);
             self.space.map_element(window.clone(), location, true);
+            self.reapply_restored_placement(window);
             return;
         }
         if let Some(surface) = window.x11_surface()
@@ -1318,6 +1297,7 @@ impl PantheonCompositor {
             if surface.set_mapped(true).is_ok() {
                 self.space.map_element(window.clone(), location, true);
                 window.set_activated(true);
+                self.reapply_restored_placement(window);
             }
         }
     }
@@ -1903,7 +1883,7 @@ impl PantheonCompositor {
             return;
         }
         for window in self.space.elements() {
-            let Some(output) = self.space.outputs_for_element(window).first().cloned() else {
+            let Some(output) = self.primary_output_for(window) else {
                 continue;
             };
             let scale = output.current_scale().fractional_scale();
@@ -2073,7 +2053,7 @@ impl FractionalScaleHandler for PantheonCompositor {
         }
         let output = self
             .find_window_for_surface(&root)
-            .and_then(|window| self.space.outputs_for_element(&window).first().cloned())
+            .and_then(|window| self.primary_output_for(&window))
             .or_else(|| self.primary_output());
         if let Some(output) = output {
             smithay::wayland::compositor::with_states(&surface, |states| {

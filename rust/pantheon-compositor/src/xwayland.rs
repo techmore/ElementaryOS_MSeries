@@ -26,10 +26,8 @@ use smithay::{
     },
 };
 
-use crate::grabs::{
-    MoveSurfaceGrab, ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge,
-};
-use crate::{PantheonCompositor, state::ManagedWindow};
+use crate::grabs::{ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge};
+use crate::{PantheonCompositor, tiling::ModeRequest};
 
 pub fn start(
     event_loop: &mut EventLoop<'static, PantheonCompositor>,
@@ -209,6 +207,8 @@ impl XwmHandler for PantheonCompositor {
                 .contains_key(&surface.window_id())
             {
                 self.workspace_manager.remove_window(window.id());
+                // A remap creates a new Window, so this record is unreachable.
+                self.forget_window_placement(window.id());
             }
         }
         if !surface.is_override_redirect()
@@ -223,11 +223,12 @@ impl XwmHandler for PantheonCompositor {
     }
 
     fn destroyed_window(&mut self, _xwm: XwmId, surface: X11Surface) {
-        if let Some(wl_surface) = surface.wl_surface() {
-            self.clear_tiling_for_surface(&wl_surface);
+        if let Some((window, _)) = self.x11_minimized_windows.remove(&surface.window_id()) {
+            self.forget_window_placement(window.id());
         }
-        self.x11_managed_windows.remove(&surface.window_id());
-        self.x11_minimized_windows.remove(&surface.window_id());
+        if let Some(window) = self.find_x11_window(&surface) {
+            self.forget_window_placement(window.id());
+        }
         let id = self
             .workspace_manager
             .windows()
@@ -235,24 +236,25 @@ impl XwmHandler for PantheonCompositor {
             .find(|(window, _, _)| window.x11_surface() == Some(&surface))
             .map(|(window, _, _)| window.id());
         if let Some(id) = id {
+            self.forget_window_placement(id);
             self.workspace_manager.remove_window(id);
         }
     }
 
     fn maximize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
-        self.configure_x11_window_mode(&surface, true, false);
+        self.request_x11_mode(&surface, ModeRequest::Maximize);
     }
 
     fn unmaximize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
-        self.configure_x11_window_mode(&surface, false, false);
+        self.request_x11_mode(&surface, ModeRequest::Unmaximize);
     }
 
     fn fullscreen_request(&mut self, _xwm: XwmId, surface: X11Surface) {
-        self.configure_x11_window_mode(&surface, false, true);
+        self.request_x11_mode(&surface, ModeRequest::Fullscreen);
     }
 
     fn unfullscreen_request(&mut self, _xwm: XwmId, surface: X11Surface) {
-        self.configure_x11_window_mode(&surface, false, false);
+        self.request_x11_mode(&surface, ModeRequest::Unfullscreen);
     }
 
     fn minimize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
@@ -302,6 +304,14 @@ impl XwmHandler for PantheonCompositor {
         height: Option<u32>,
         _reorder: Option<Reorder>,
     ) {
+        // S7: a snapped, maximized or fullscreen X11 window that resizes
+        // itself (Wine, Java, Steam) is told its managed rect again.
+        if let Some(window) = self.find_x11_window(&surface)
+            && !self.placement_of(&window).is_floating()
+        {
+            self.apply_placement(&window);
+            return;
+        }
         let mut geometry = surface.last_configure();
         if let Some(x) = x {
             geometry.loc.x = x;
@@ -435,65 +445,10 @@ impl PantheonCompositor {
             .cloned()
     }
 
-    pub(crate) fn configure_x11_window_mode(
-        &mut self,
-        surface: &X11Surface,
-        maximized: bool,
-        fullscreen: bool,
-    ) {
-        let Some(window) = self.find_x11_window(surface) else {
-            return;
-        };
-        if let Some(wl_surface) = surface.wl_surface() {
-            self.clear_tiling_for_surface(&wl_surface);
+    fn request_x11_mode(&mut self, surface: &X11Surface, request: ModeRequest) {
+        if let Some(window) = self.find_x11_window(surface) {
+            self.set_window_mode(&window, request);
         }
-        let id = surface.window_id();
-        let restore = *self
-            .x11_managed_windows
-            .entry(id)
-            .or_insert_with(|| ManagedWindow {
-                restore_location: self.space.element_location(&window).unwrap_or_default(),
-                restore_size: window.geometry().size,
-                maximized: false,
-                fullscreen: false,
-            });
-        if let Some(managed) = self.x11_managed_windows.get_mut(&id) {
-            managed.maximized = maximized;
-            managed.fullscreen = fullscreen;
-        }
-        let output = self
-            .space
-            .outputs_for_element(&window)
-            .first()
-            .cloned()
-            .or_else(|| self.primary_output());
-        let Some(output_geometry) = output.and_then(|output| self.space.output_geometry(&output))
-        else {
-            return;
-        };
-        let target = if fullscreen {
-            output_geometry
-        } else if maximized {
-            self.work_area_for_output(output_geometry)
-        } else {
-            smithay::utils::Rectangle::new(restore.restore_location, restore.restore_size)
-        };
-        if let Err(error) = surface.set_maximized(maximized) {
-            tracing::warn!(?error, "could not update X11 maximized state");
-        }
-        if let Err(error) = surface.set_fullscreen(fullscreen) {
-            tracing::warn!(?error, "could not update X11 fullscreen state");
-        }
-        if let Err(error) = surface.configure(Some(target)) {
-            tracing::warn!(?error, "could not configure X11 window state");
-        }
-        self.place_window(&window, target.loc);
-        if !maximized && !fullscreen {
-            self.x11_managed_windows.remove(&id);
-        }
-        self.refresh_panel_visibility();
-        #[cfg(feature = "native-drm")]
-        self.request_native_redraw();
     }
 
     fn begin_x11_move(&mut self, surface: &X11Surface) {
@@ -506,25 +461,11 @@ impl PantheonCompositor {
         let Some(window) = self.find_x11_window(surface) else {
             return;
         };
-        let Some(initial_window_location) = self.space.element_location(&window) else {
-            return;
-        };
-        if let Some(wl_surface) = surface.wl_surface() {
-            self.clear_tiling_for_surface(&wl_surface);
-        }
-        self.move_grab_active = true;
-        self.corner_snap_cancelled = false;
-        self.corner_snap_preview = None;
-        let grab = MoveSurfaceGrab {
+        self.start_move_grab(
+            &pointer,
             start_data,
             window,
-            initial_window_location,
-        };
-        pointer.set_grab(
-            self,
-            grab,
             smithay::utils::SERIAL_COUNTER.next_serial(),
-            Focus::Clear,
         );
     }
 
@@ -541,9 +482,7 @@ impl PantheonCompositor {
         let Some(location) = self.space.element_location(&window) else {
             return;
         };
-        if let Some(wl_surface) = surface.wl_surface() {
-            self.clear_tiling_for_surface(&wl_surface);
-        }
+        self.float_in_place(&window);
         let edges = match edge {
             ResizeEdge::Top => PantheonResizeEdge::TOP,
             ResizeEdge::Bottom => PantheonResizeEdge::BOTTOM,

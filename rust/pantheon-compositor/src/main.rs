@@ -30,6 +30,7 @@ mod metrics;
 pub mod native;
 mod overview;
 mod pantheon_shell;
+mod placement;
 mod popup_stack;
 #[cfg(feature = "native-drm")]
 mod prewarm;
