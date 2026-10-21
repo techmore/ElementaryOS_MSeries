@@ -16,21 +16,8 @@ git init -q "$work/source"
 git -C "$work/source" remote add origin https://github.com/elementary/quick-settings.git
 git -C "$work/source" fetch -q --depth=1 origin fb721d4b5640a2a25ae011370c8fe8aaff8d93f4
 git -C "$work/source" checkout -q --detach FETCH_HEAD
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-brightness.patch"
-install -m644 "$repo/mseries/quick-settings/ScreenBrightness.vala" "$work/source/src/Widgets/ScreenBrightness.vala"
-install -m644 "$repo/mseries/quick-settings/KeyboardBrightness.vala" "$work/source/src/Widgets/KeyboardBrightness.vala"
-install -m644 "$repo/mseries/quick-settings/ChargeLimit.vala" "$work/source/src/Widgets/ChargeLimit.vala"
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-audio-output.patch"
-install -m644 "$repo/mseries/quick-settings/AudioOutputModel.vala" "$work/source/src/Widgets/AudioOutputModel.vala"
-install -m644 "$repo/mseries/quick-settings/AudioOutput.vala" "$work/source/src/Widgets/AudioOutput.vala"
-install -m644 "$repo/mseries/quick-settings/AirPlayOutputs.vala" "$work/source/src/Widgets/AirPlayOutputs.vala"
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-bluetooth.patch"
-install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Widgets/Bluetooth.vala"
-# Card layout, shared slider row and the Volume slider.
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-layout.patch"
-install -m644 "$repo/mseries/quick-settings/Controls.vala" "$work/source/src/Widgets/Controls.vala"
-# Text size steps along the size-system ladder (mseries/ui-scale/size-system.json).
-install -m644 "$repo/mseries/quick-settings/TextScale.vala" "$work/source/src/Widgets/TextScale.vala"
+# Keep the core patch/copy stack identical to the factory and package builds.
+bash "$repo/mseries/quick-settings/prepare-source.sh" "$repo" "$work/source"
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
 install -m644 "$repo/mseries/quick-settings/AirDropPanel.vala" "$work/source/src/Widgets/AirDropPanel.vala"

@@ -55,6 +55,11 @@ pub struct HotplugScheduler {
 pub struct Tick {
     /// Run `refresh_connectors` now.
     pub reconcile: bool,
+    /// Observed due conditions, for diagnostics only.
+    pub event_due: bool,
+    pub followup_due: bool,
+    pub removal_due: bool,
+    pub safety_due: bool,
     /// Next instant an event-driven timer must wake (none: let it drop).
     pub next_event_deadline: Option<Instant>,
     /// Next instant the safety poll must wake.
@@ -97,6 +102,7 @@ impl HotplugScheduler {
     /// Wayland global removal, which only `refresh_connectors` performs.
     pub fn tick(&mut self, now: Instant, removal_deadline: Option<Instant>) -> Tick {
         let event_due = self.due.is_some_and(|due| due <= now);
+        let followup_due = event_due && self.followup_queued;
         let removal_due = removal_deadline.is_some_and(|d| d <= now);
         let safety_due = now >= self.last_reconcile + self.safety_interval;
         let reconcile = event_due || removal_due || safety_due;
@@ -114,6 +120,10 @@ impl HotplugScheduler {
         }
         Tick {
             reconcile,
+            event_due,
+            followup_due,
+            removal_due,
+            safety_due,
             next_event_deadline: [self.due, removal_deadline].into_iter().flatten().min(),
             next_safety: self.last_reconcile + self.safety_interval,
         }

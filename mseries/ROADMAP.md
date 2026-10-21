@@ -1,3 +1,12 @@
+## On-demand maintenance continuation — 2026-10-21
+
+Queue/prompts and next-chat instructions: [maintenance/README.md](maintenance/README.md).
+All 16 presets stay paused; continue one at a time. Kernel/dock/popup PRs #359,
+#357 and #364 merged to dev. All three dock ports confirmed. Attention fix,
+bounded display lifecycle logging and within-scan EDID read reuse installed for
+next login, not currently loaded; no measured speedup. Actual .20 recovery,
+suspend and controlled power remain open. Read latest handoff before proceeding.
+
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
 ## Daedalus portal and NmapUI desktop experience — 2026-10-21
@@ -3189,3 +3198,5 @@ only in these two marker colors.
 - 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
 
 - 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
+
+- 2026-10-21: audited eleven customized Pantheon shell ports against upstream; retained integration gates for Gala/Wingpanel/Dock/Files and unified desktop Quick Settings source preparation with factory/package builds. Native core/extras builds, source parity, routing tests and private Bluetooth probe passed; no live deployment. See `upstream-audits/pantheon-shell-2026-10-21.md`.

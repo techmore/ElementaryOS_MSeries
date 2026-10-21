@@ -127,3 +127,7 @@ in `power/LICENSE.omacom`, staged under `/usr/share/doc/mseries-hardware-support
 and [candidate dispositions](OMACOM-IMPROVEMENTS.md) are retained. Full branch
 names and heads are in `upstream-audits/omacom-2026-10-17.json`. No package-manager
 hooks, signing keys or sponsor-only material imported.
+
+## Customized Pantheon shell audit (2026-10-21)
+
+The eleven-component [source comparison and decisions](upstream-audits/pantheon-shell-2026-10-21.md) and [exact upstream heads/commits](upstream-audits/pantheon-shell-2026-10-21.json) refresh shell-port coverage without changing pins. Quick Settings, network, keyboard and applications-menu match upstream default heads. Power, Bluetooth and sound have translation-only movement. Gala/Wingpanel/Dock changes overlap local session/focus/taskbar contracts; Files portal settings initialization overlaps the local activation fix and requires isolated validation. No live binary or factory qualification is inferred.
