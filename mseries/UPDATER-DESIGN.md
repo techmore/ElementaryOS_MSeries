@@ -41,7 +41,7 @@ bundles (Signal, CodexBar, Brave) keep their own installers and `atomic-app.py` 
 | Opt-in | Installing the `mseries-update` package enables nothing and configures no source. The owner runs `mseries-update init --uri ... --keyring ...`, then `systemctl enable mseries-update-boot.service mseries-update-confirm.service`. The daily check timer is separate and `auto_stage` defaults to off, so by default nothing downloads without a command. |
 | CLI | `check`, `stage`, `apply --now`, `rollback`, `confirm`, `status [--json]`, `log`, `channel [stable|dev]`, `init`, `config`. Mutating commands need root. Exit codes: 0 ok, 1 failed, 3 rollback failed, 75 another update running. |
 | Logging | `/var/log/mseries-update.log` (one line per decision, with ids) plus the journal; `state.json` keeps the last 30 outcomes. |
-| UI | **Slice:** `status --json` is the stable contract (schema 1). **Proposed next:** a "Software Updates" pane in Switchboard (or a Wingpanel indicator, consistent with `install-touchid-settings.sh` and RepoBar Settings) that reads that JSON, offers *Check*, *Install at next restart*, *Roll back*, and a channel switch behind an Advanced toggle, and calls the CLI through a polkit action (`org.techmore.mseries.update`) so no sudo prompt is needed in a terminal. The pane contains no update logic of its own. |
+| UI | `status --json` is the stable contract (schema 1). **Implemented (2026-10-21, not run on hardware):** a Rust + Granite 7 "Software Updates" app, [updates-app/README.md](updates-app/README.md), that reads that JSON, offers *Check*, *Install at next restart*, *Roll back* and the channel switch under Advanced, and changes things only through `pkexec` to an allowlisting helper under the polkit action `org.techmore.mseries.update`. It contains no update logic. **Still open:** a Switchboard pane or Wingpanel entry, a package in the suites, translations. |
 | Fleet use | The CLI is non-interactive and `status --json` is machine readable, so any fleet tool can drive it: `ssh host sudo mseries-update stage`, an Ansible play, or an osquery/Fleet query over `status --json`. Prefer agentless tools (SSH loop, Ansible) over agent-based ones such as Salt (a master plus a resident minion on every machine), which is too much moving machinery for a handful of desktops. Only add one when there are enough customer machines to need it. |
 
 ## Files
@@ -106,7 +106,7 @@ mseries/update/test_*.py           fake-repo fault injection, real apt/dpkg in a
 1. Publish: split `mseries-debs.yml` publish into `dev` (on merge) and `stable` (on release) suites with
    version rules above; build `mseries-update` in the same run (done in `build.sh`).
 2. Wire `enhance-firstboot.sh` `run_module` to install the signed debs first (#52) and seed the update source.
-3. Polkit action plus a Switchboard pane or Wingpanel entry reading `status --json`.
+3. Polkit action plus a UI reading `status --json`: **done as a Rust app** (launcher, no Switchboard pane yet); package it into the suites next.
 4. Extend the health check with a compositor/dock probe and add the Rust compositor package.
 5. A fleet runbook (SSH loop or Ansible) once there is more than the owner's machines.
 

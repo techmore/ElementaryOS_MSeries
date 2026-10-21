@@ -243,6 +243,8 @@ check desktop 'airplay unit tests' "python3 -m unittest discover -s mseries/airp
 # when dpkg-dev is missing; CI installs it so the skip never hides a regression there.
 check updater 'unit, fault-injection and real apt/dpkg tests' "python3 -B -m unittest discover -s mseries/update -p 'test_*.py'"
 check updater 'install script (bash -n, shellcheck)' 'bash -n mseries/update/install.sh && shellcheck -S warning mseries/update/install.sh'
+check updates-app 'install and test scripts (bash -n, shellcheck)' 'bash -n mseries/updates-app/install.sh mseries/updates-app/test.sh && shellcheck -S warning mseries/updates-app/install.sh mseries/updates-app/test.sh'
+check updates-app 'polkit policy and launcher parse' 'python3 -c "import xml.etree.ElementTree as ET; ET.parse(\"rust/mseries-updates/data/org.techmore.mseries.update.policy.in\")" && grep -q ^Exec=mseries-updates rust/mseries-updates/data/org.techmore.mseries.Updates.desktop'
 check desktop 'video-decode/test-brave-factory.py' 'python3 mseries/video-decode/test-brave-factory.py'
 check desktop 'video-decode/test-youtube-launch.py' 'python3 mseries/video-decode/test-youtube-launch.py'
 check desktop 'pantheon-rust-compositor metrics' \
