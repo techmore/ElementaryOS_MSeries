@@ -1,5 +1,7 @@
 /* Windows-inspired Work Mode preferences for elementary OS System Settings. */
 namespace MSeriesWorkMode {
+    private delegate void Sync ();
+
     public class Plug : Switchboard.Plug {
         private Gtk.Widget? content;
         private GLib.Settings settings;
@@ -28,6 +30,38 @@ namespace MSeriesWorkMode {
         public override Gtk.Widget get_widget () {
             if (content == null) {
                 var page = new Adw.PreferencesPage ();
+                var switch_group = new Adw.PreferencesGroup () {
+                    title = "Desktop mode",
+                    description = "Switch the whole desktop now. It applies immediately; nothing is closed and you stay logged in."
+                };
+                page.add (switch_group);
+                var mode_row = new Adw.ActionRow () {
+                    title = "Current desktop"
+                };
+                var elementary_button = new Gtk.ToggleButton.with_label ("elementary") { valign = Gtk.Align.CENTER };
+                var windows_button = new Gtk.ToggleButton.with_label ("Windows 11") { valign = Gtk.Align.CENTER, group = elementary_button };
+                var segmented = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { valign = Gtk.Align.CENTER };
+                segmented.add_css_class ("linked");
+                segmented.append (elementary_button);
+                segmented.append (windows_button);
+                mode_row.add_suffix (segmented);
+                switch_group.add (mode_row);
+                // One source of truth: the same `enabled` key the switch below and the launcher use.
+                var syncing = false;
+                Sync sync_mode = () => {
+                    syncing = true;
+                    var on = settings.get_boolean ("enabled");
+                    windows_button.active = on;
+                    elementary_button.active = !on;
+                    mode_row.subtitle = on ? "Windows 11 mode" : "Native elementary mode";
+                    syncing = false;
+                };
+                windows_button.toggled.connect (() => {
+                    if (!syncing) settings.set_boolean ("enabled", windows_button.active);
+                });
+                settings.changed["enabled"].connect (() => sync_mode ());
+                sync_mode ();
+
                 var mode_group = new Adw.PreferencesGroup () {
                     title = "Windows Work Mode",
                     description = "Use a Windows-inspired wallpaper and app dock while you work."
@@ -35,7 +69,7 @@ namespace MSeriesWorkMode {
                 page.add (mode_group);
 
                 var enabled = new Adw.SwitchRow () {
-                    title = "Windows Work Mode"
+                    title = "Use Windows Work Mode"
                 };
                 settings.bind ("enabled", enabled, "active", GLib.SettingsBindFlags.DEFAULT);
                 mode_group.add (enabled);
