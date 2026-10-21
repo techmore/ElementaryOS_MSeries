@@ -1,5 +1,59 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: panels, alerts and dialogs hidden behind snapped windows — 2026-10-21
+
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed no
+tooltip, and more generally anything that should float over a snapped window (indicator
+menus, an app's own alert or modal dialog) could end up behind it. In
+`rust/pantheon-compositor` every surface was an ordinary element of the smithay `Space`
+at the same z-index, so any window raise (a click, focus, restore) put that window on top
+of the panel, of its own transient dialogs and of keep-above surfaces. A tiled window
+fills the work area, so it covered them completely. Clicking the bar hid the panel case
+because the click re-raised the panel.
+
+- **Fix** (`claude/panel-popups-above-windows`, PR #361 to `dev`), all in
+  `pantheon_shell.rs`:
+  - Panels (Wingpanel, the dock) get `RenderZindex::Top`; smithay keeps the stack sorted
+    by z-index, so a raise of an ordinary window never crosses them. Their popups render
+    with them. XWayland override-redirect windows (menus, the GTK3 notification cards)
+    already render at `RenderZindex::Overlay`.
+  - `raise_window()` replaces every direct `Space::raise_element` of a window and raises
+    the window's transient descendants (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`) above
+    it in their existing order, as Gala does, so a click on a snapped window no longer
+    buries its own dialog.
+  - `io_elementary_pantheon_extended_behavior_v1.set_keep_above` is honored with a
+    z-index between ordinary windows and the panels (applied on request or at first map,
+    reset when the object is destroyed). `make_centered`, `make_modal`, `focus` and
+    monitor labels are still ignored.
+- **Password prompts** (follow-up commit, owner report that they still sat behind
+  snapped apps): the elementary polkit agent sends `make_modal` / `make_centered` /
+  `set_keep_above`; all three now put it on the keep-above layer, and `make_modal` /
+  `focus` raise and focus it. The GNOME keyring prompter (`gcr-prompter`,
+  `org.gnome.keyring.*Prompter`) sends no hints and has no parent, so it gets the
+  keep-above layer by app ID at first map. Dimming and true centering are not implemented.
+  The same commit runs `cargo fmt` over the `activation.rs` / `state.rs` code merged from
+  `dev`, which failed `fmt --check`.
+- **Installed now:** `0.1.0+gitdev.dockfix2.panelstack3.popups1` (deploy branch
+  `local/panel-stack-on-dockfix` = dockfix2 lineage + PR #361 + PR #364's popup commit +
+  the prompt commit; not the `dev` activation change). Previous binary saved as
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2.popups1`.
+  Loads at next login; 49 tests pass on the PR branch.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -D warnings` and `cargo test` (41 tests) pass.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + the two
+  commits of the PR, built in `~/Projects/mseries-panel-stack-deploy` (branch
+  `local/panel-stack-on-dockfix`) and installed with
+  `install-pantheon-rust-compositor.sh --install`. The running session still executes the
+  previous binary; the fix loads at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
+- **Unverified.** After the next login: hover CodexBar beside a snapped window; open a
+  modal dialog from a snapped app, click the app, confirm the dialog stays on top; send a
+  `notify-send` with two snapped windows. Not covered: popups (tooltips, menus) of an
+  unfocused window still render with that window, so a menu that reaches over a
+  higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
+  popups above all windows.
+
 ## PolyBagger T1000 Print Manager — 2026-10-21
 
 `mseries/polybagger-print-manager/` (PR #363): GTK 4 + Granite 7 app and CLI for the T-1000 bagger's inline
