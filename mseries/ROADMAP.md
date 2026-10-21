@@ -1,3 +1,12 @@
+## Compositor snapping phase 0 — 2026-10-21
+
+One placement per window (`src/placement.rs`), restore after snap/maximize, Super+Up/Down, toggling Super+Left/Right,
+ack-gated moves, min-size-aware zones, deterministic output choice and `Tiled*` states (S1–S8, S12–S14, S17 of the
+[investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md)). Unit tests plus a nested
+[snap regression](pantheon-rust-compositor/snap-tests/README.md); native, multi-monitor acceptance is open. This also
+addresses the "snap geometry discrepancy" noted on October 20 (wrong-output choice), pending owner confirmation. Next: Snap
+Assist for halves and two-member snap groups (phase 1).
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
