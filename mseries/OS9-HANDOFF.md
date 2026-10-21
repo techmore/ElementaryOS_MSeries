@@ -40,7 +40,18 @@ package only loads at login; a one-shot timer runs
 `~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
 Merging PR #357 into `dev` does not by itself deploy anything.
 
-**Validated on hardware (2026-10-21 08:07).** Cold boot into the Rust session with the deployed package:
+**Correction to the first local deployment (2026-10-21 08:10).** The first package (`0.1.0+gitc995a60.dockfix1`) was built
+on the older `codex/rust-gala-stack-integration` lineage, which lacks about 17 `dev` commits: the Work Mode top-bar
+receiver (`SetTopPanelMode`), bottom-taskbar window clearance, XWayland and edge snapping fixes, the themed cursor, gesture
+animation, and the session unit that launches the patched dock (`pantheon-rust-dock`). That is why the Rust session
+showed no snapping, the stock dock, a visible top bar, and a plain cursor. Replaced by `0.1.0+gitdev.dockfix2`: `dev` + this
+PR + the redraw-counter commit (`c995a60c`, the only commit the old lineage had that `dev` lacks). Local-only branch
+`local/dockfix-on-dev`, worktree `~/Projects/mseries-dockfix-v2`. Rollbacks in `~/.cache/mseries-build/rollback/`
+(`pantheon-compositor.c995a60`, `pantheon-compositor.dockfix1`). The validator now also checks `TopPanelMode` and that the
+patched dock runs; before the reboot it failed exactly those two checks on the old build. Stutter is not yet analysed:
+re-measure with the redraw counters after the new build is running.
+
+**Validated on hardware (2026-10-21 08:07, first package).** Cold boot into the Rust session with the deployed package:
 `validate-dock-recovery.sh` reports PASS (running binary matches the installed one, AOC published once with its EDID
 identity, link-status Good, `link-status was Bad; reset to Good` logged and followed by a clean second DCP modeset). Still
 open: the stale-duplicate path needs a dock replug while logged in; whether the AOC shows the desktop and how the session
