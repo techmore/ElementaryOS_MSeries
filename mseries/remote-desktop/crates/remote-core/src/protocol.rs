@@ -54,6 +54,16 @@ pub enum ClientMsg {
     Bye,
 }
 
+/// STUN/TURN entry the viewer should use (sent only after the owner approves).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IceServerInfo {
+    pub urls: Vec<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub username: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub credential: String,
+}
+
 /// Host -> viewer over the signalling socket.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -69,6 +79,8 @@ pub enum ServerMsg {
         resume_token: String,
         control: bool,
         grace_s: u64,
+        #[serde(default)]
+        ice_servers: Vec<IceServerInfo>,
     },
     Denied {
         reason: String,

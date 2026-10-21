@@ -277,7 +277,7 @@ impl HostPeer {
 
     /// Owner changed the permission mid-session; the viewer UI follows.
     pub fn set_control(&self, control: bool) {
-        let _ = self.mode_tx.send(control);
+        self.mode_tx.send_replace(control);
     }
 
     /// Tell the viewer something over the data channel (`Rejected`, `Ended`).

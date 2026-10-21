@@ -351,6 +351,12 @@ impl ConsentManager {
         }
     }
 
+    /// Revoke every outstanding invite without touching a live session.
+    pub fn cancel_invites(&mut self) {
+        self.invites.clear();
+        self.log("invites_cancelled", None, None, None);
+    }
+
     /// Owner stop / revoke. Idempotent. Also cancels a pending request.
     pub fn end(&mut self, reason: &str) {
         match std::mem::replace(&mut self.state, State::Idle) {
