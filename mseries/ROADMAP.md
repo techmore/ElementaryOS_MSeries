@@ -3330,3 +3330,7 @@ See `m4-mini/README.md` and its pinned public source profile. Initial J773g DT
 support exists; experimental J713 GPU/NVMe work does not qualify mini HDMI or
 standalone boot. Source capture is available; board port, builds and hardware
 acceptance remain open. Existing release pins are unchanged.
+
+M4 initial DT compilation now passes from the pinned source capture; loader
+fixups and physical boot remain unverified. See m4-mini/receipts for the retained
+AIC unit-address warning and artifact digest.

@@ -10183,3 +10183,9 @@ from the installed J314S release. No boot artifacts, installer enablement or
 live deployment. Source receipts do not establish hardware support. Next:
 review candidate board admission/display protocols and produce a J773g port
 only where public board evidence supports it.
+
+M4 research follow-up: added verified-capture DT compilation, fetched all 16
+selected sources including binding headers, and compiled the exact Asahi J773g
+DT at 94fb23346d522edf53722357c426a3e58030beea. Retained compiler warning and
+SHA-256 receipt under m4-mini/receipts. fdtget confirms J773g compatibility and
+disabled pre-loader framebuffer. No full kernel build or hardware validation.

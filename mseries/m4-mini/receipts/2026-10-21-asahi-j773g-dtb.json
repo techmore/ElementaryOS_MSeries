@@ -1,0 +1,43 @@
+{
+  "source": {
+    "name": "asahi-mini",
+    "repository": "AsahiLinux/linux",
+    "commit": "94fb23346d522edf53722357c426a3e58030beea",
+    "files": [
+      "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "include/dt-bindings/interrupt-controller/apple-aic.h",
+      "include/dt-bindings/interrupt-controller/irq.h",
+      "include/dt-bindings/pinctrl/apple.h"
+    ]
+  },
+  "commands": [
+    [
+      "cpp",
+      "-nostdinc",
+      "-undef",
+      "-D__DTS__",
+      "-x",
+      "assembler-with-cpp",
+      "-I",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-prepared-v2/asahi-mini/include",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-prepared-v2/asahi-mini/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    ],
+    [
+      "dtc",
+      "-I",
+      "dts",
+      "-O",
+      "dtb",
+      "-o",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-dtb-v2/t8132-j773g.dtb",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-dtb-v2/j773g.dts"
+    ]
+  ],
+  "capture_receipt_sha256": "58dc40e93978162ab7aec3b494f42b2427c94a74908a8bb928eb8992011f5019",
+  "dtb_sha256": "8b96b53d116f99066f3d6c51e7402cd3984a71953e799830df5ddf9634c9f292",
+  "warnings": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-prepared-v2/asahi-mini/arch/arm64/boot/dts/apple/t8132.dtsi:198.39-218.5: Warning (simple_bus_reg): /soc/interrupt-controller@381180000: simple-bus unit address format error, expected \"381000000\"\n",
+  "status": "DT compilation only; kernel, loader handoff and J773g hardware unqualified"
+}

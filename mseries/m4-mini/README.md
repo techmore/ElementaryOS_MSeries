@@ -32,3 +32,17 @@ J773g HDMI, storage, thermal or macOS/Recovery acceptance gates.
 Source review: the graphics backend documents a firmware-26.6.2 J713 internal-panel profile and explicit board admission. Its DT uses apple,j713-native-piodma and apple,j713-native-scanout. External-display roles remain excluded; changing a compatible string does not establish J773g HDMI support. U-Boot proposal head cc47d3b7c86deb4094dc186d26799602272e37fb differs from the earlier basic-boot revision 6c1d2d148020.
 
 Verification: 13 immutable source files captured; mutable references rejected before output creation; qualification flags remain false; whitespace check passed. No full build or hardware boot.
+
+Compile the captured mini DT and keep compiler diagnostics:
+
+```sh
+python3 mseries/m4-mini/build-dtb.py --capture /path/to/research-directory --output /path/to/new/build-directory
+```
+
+The builder checks capture hashes and the exact checked-in profile before
+running cpp/dtc. The retained build receipt records the immutable source,
+commands, output digest and warnings. The 2026-10-21 build passed with one
+upstream unit-address warning: AIC node `interrupt-controller@381180000`
+has first register address `0x381000000`. This remains unmodified upstream
+source. `fdtget` confirms `apple,j773g` and the framebuffer's disabled state;
+its memory and framebuffer properties require loader fixups.
