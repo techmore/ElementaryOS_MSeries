@@ -72,4 +72,11 @@ check "sheet claimed then enrolled the next free finger" "grep -q 'EnrollStart.*
 check "closing the sheet stops enrolment" "grep -q EnrollStop $out/fake.log"
 check "closing the sheet releases the sensor" "grep -q Release $out/fake.log"
 
+# 6. fprintd's enroll-duplicate ends the sheet cleanly and leaves the sensor released.
+fresh_pam
+with_fake "--fingers right-index-finger --stages 16 --interval 300 --duplicate-at 3" \
+  shot --light --dialog-screenshot "$out/duplicate-light.png"
+check "duplicate sheet rendered" "[[ -s $out/duplicate-light.png ]]"
+check "duplicate ends with Release" "grep -q Release $out/fake.log"
+
 echo; echo "$pass passed, $fail failed"; [[ $fail -eq 0 ]]

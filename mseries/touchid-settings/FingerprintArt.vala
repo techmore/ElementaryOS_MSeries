@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* A fingerprint drawn as concentric ridges that fill with the accent colour as
  * enrolment progresses, the way the macOS Touch ID sheet does. */
 namespace MSeriesTouchId {

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* The Touch ID settings page: fingerprints, then what they unlock.
  *
  * Modelled on macOS "Touch ID & Password" and built from the same pieces as
@@ -270,7 +271,7 @@ namespace MSeriesTouchId {
             }
             var alert = new Adw.AlertDialog (
                 "Remove %s?".printf (finger_label (finger).down ()),
-                "Touch ID will stop recognising it. You can add it again later."
+                "Touch ID will stop recognising it. You can add it again later, but avoid removing and re-adding fingerprints repeatedly."
             );
             alert.add_response ("cancel", "Cancel");
             alert.add_response ("remove", "Remove");

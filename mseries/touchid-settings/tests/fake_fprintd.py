@@ -53,6 +53,10 @@ def tick(conn):
         emit(conn, "enroll-failed", True)
         enroll_timer = 0
         return False
+    if args.duplicate_at and stage == args.duplicate_at:
+        emit(conn, "enroll-duplicate", True)
+        enroll_timer = 0
+        return False
     if stage % 5 == 3:
         emit(conn, "enroll-retry-scan", False)
         return True
@@ -114,6 +118,7 @@ def main():
     p.add_argument("--stages", type=int, default=8)
     p.add_argument("--interval", type=int, default=450)
     p.add_argument("--fail-at", type=int, default=0)
+    p.add_argument("--duplicate-at", type=int, default=0)
     args = p.parse_args()
     fingers.extend(f for f in args.fingers.split(",") if f)
     nodes = Gio.DBusNodeInfo.new_for_xml(XML)

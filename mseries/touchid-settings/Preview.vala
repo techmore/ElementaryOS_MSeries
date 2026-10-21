@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Stand-alone host for the Touch ID page, for development and screenshots.
  * Not installed. With MSERIES_TOUCHID_TEST=1 it talks to a fake fprintd on the
  * session bus; otherwise it shows the real page against the real sensor. */
@@ -31,6 +32,9 @@ namespace MSeriesTouchId {
 
     public class Preview : Adw.Application {
         private string? flip = null;
+        private int win_w = 760;
+        private int win_h = 640;
+        private double text_scale = 1.0;
         private string? shot = null;
         private string? dialog_shot = null;
         private bool dark = false;
@@ -41,6 +45,8 @@ namespace MSeriesTouchId {
                     flags: GLib.ApplicationFlags.NON_UNIQUE | GLib.ApplicationFlags.HANDLES_COMMAND_LINE);
             add_main_option ("screenshot", 0, 0, GLib.OptionArg.FILENAME, "Save the window to FILE", "FILE");
             add_main_option ("dialog-screenshot", 0, 0, GLib.OptionArg.FILENAME, "Open Add Fingerprint and save it to FILE", "FILE");
+            add_main_option ("size", 0, 0, GLib.OptionArg.STRING, "Window size, WIDTHxHEIGHT", "WxH");
+            add_main_option ("text-scale", 0, 0, GLib.OptionArg.DOUBLE, "Scale text like the system text size setting", "N");
             add_main_option ("flip", 0, 0, GLib.OptionArg.STRING, "Turn on the switch with this title after loading", "TITLE");
             add_main_option ("dark", 0, 0, GLib.OptionArg.NONE, "Force the dark style", null);
             add_main_option ("light", 0, 0, GLib.OptionArg.NONE, "Force the light style", null);
@@ -53,6 +59,17 @@ namespace MSeriesTouchId {
             }
             if (options.lookup ("dialog-screenshot", "^ay", out s)) {
                 dialog_shot = s;
+            }
+            if (options.lookup ("size", "s", out s)) {
+                var parts = s.split ("x");
+                if (parts.length == 2) {
+                    win_w = int.parse (parts[0]);
+                    win_h = int.parse (parts[1]);
+                }
+            }
+            double scale;
+            if (options.lookup ("text-scale", "d", out scale)) {
+                text_scale = scale;
             }
             if (options.lookup ("flip", "s", out s)) {
                 flip = s;
@@ -77,11 +94,14 @@ namespace MSeriesTouchId {
                 Adw.StyleManager.get_default ().color_scheme =
                     dark ? Adw.ColorScheme.FORCE_DARK : Adw.ColorScheme.FORCE_LIGHT;
             }
+            if (text_scale != 1.0) {
+                Gtk.Settings.get_default ().gtk_xft_dpi = (int) (96 * 1024 * text_scale);
+            }
             var page = new TouchIdPage ();
             var window = new Gtk.ApplicationWindow (this) {
                 title = "Touch ID",
-                default_width = 760,
-                default_height = 640,
+                default_width = win_w,
+                default_height = win_h,
                 child = page
             };
             window.present ();
