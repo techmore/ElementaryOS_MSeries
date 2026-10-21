@@ -793,6 +793,9 @@ impl NativeKmsDevice {
         state: &PantheonCompositor,
     ) -> Result<usize, Box<dyn std::error::Error>> {
         crate::metrics::render_pass();
+        if state.displays_off {
+            return Ok(0);
+        }
         let dirty_at = state.dirty_since.get();
         let mut skipped_pending = false;
         let mut rendered = 0;
@@ -885,6 +888,30 @@ impl NativeKmsDevice {
             self.busy_passes = 0;
         }
         Ok(rendered)
+    }
+
+    /// Blank every output for power save: disable its CRTC and planes. No
+    /// flip stays pending, so the watchdog sees nothing stuck.
+    pub fn power_off(&mut self) {
+        for output in &mut self.outputs {
+            if let Err(error) = output
+                .drm_output
+                .with_compositor(|compositor| compositor.clear())
+            {
+                tracing::warn!(output = %output.output.name(), ?error, "could not blank output");
+            }
+            output.frame_pending = false;
+            output.needs_estimated_frame = false;
+        }
+    }
+
+    /// Leave power save. The cleared CRTC state differs from the pending one,
+    /// so the next queued frame performs the modeset that turns it back on;
+    /// reset the buffers so that frame is drawn in full.
+    pub fn power_on(&mut self) {
+        for output in &mut self.outputs {
+            output.drm_output.reset_buffers();
+        }
     }
 
     /// Whether the last render pass left an output waiting on a busy CRTC;

@@ -17,13 +17,15 @@ use smithay::{
             protocol::wl_surface::WlSurface,
         },
     },
-    utils::{Logical, Point},
+    utils::{IsAlive, Logical, Point},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
         dmabuf::DmabufState,
         fractional_scale::{
             FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
         },
+        idle_inhibit::IdleInhibitManagerState,
+        idle_notify::IdleNotifierState,
         input_method::InputMethodManagerState,
         output::OutputManagerState,
         selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
@@ -228,6 +230,17 @@ pub struct PantheonCompositor {
     pub(crate) solid_buffers: crate::cursor::SolidBuffers,
     /// Where wallpaper scaling threads deliver their result.
     pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
+
+    /// Idle time for gsd-power and gnome-session (`org.gnome.Mutter.IdleMonitor`).
+    pub(crate) idle_monitor: crate::idle::IdleMonitorHandle,
+    /// ext-idle-notify-v1 for Wayland idle daemons.
+    pub(crate) idle_notifier_state: IdleNotifierState<Self>,
+    /// Keeps the zwp_idle_inhibit_manager_v1 global alive.
+    _idle_inhibit_state: IdleInhibitManagerState,
+    /// Surfaces with a live idle inhibitor (e.g. a playing video).
+    pub(crate) idle_inhibitors: HashSet<WlSurface>,
+    /// The displays are blanked through DisplayConfig `PowerSaveMode`.
+    pub(crate) displays_off: bool,
 }
 
 /// Everything the Gala snapshot depends on that can change between dispatches.
@@ -285,7 +298,18 @@ impl PantheonCompositor {
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let pointer_gestures_state =
             smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(&dh);
-        let (display_config, apply_requests) = DisplayConfigHandle::start();
+        let (display_config, apply_requests, power_save_requests) = DisplayConfigHandle::start();
+        event_loop.handle().insert_source(
+            crate::wakeups::forward("display-power-save", power_save_requests),
+            |event, _, state| {
+                if let channel::Event::Msg(mode) = event {
+                    state.set_power_save_mode(mode);
+                }
+            },
+        )?;
+        let idle_monitor = crate::idle::IdleMonitorHandle::start();
+        let idle_notifier_state = IdleNotifierState::new(&dh, event_loop.handle());
+        let idle_inhibit_state = IdleInhibitManagerState::new::<Self>(&dh);
         event_loop.handle().insert_source(
             crate::wakeups::forward("display-apply", apply_requests),
             |event, _, state| {
@@ -546,7 +570,79 @@ impl PantheonCompositor {
             fractional_scale_fingerprint: Cell::new(None),
             solid_buffers: Default::default(),
             wallpaper_scaled_sender,
+            idle_monitor,
+            idle_notifier_state,
+            _idle_inhibit_state: idle_inhibit_state,
+            idle_inhibitors: HashSet::new(),
+            displays_off: false,
         })
+    }
+
+    /// Any input from the user: reset idle time and wake blanked displays.
+    pub(crate) fn note_user_activity(&mut self) {
+        self.idle_monitor.activity();
+        let seat = self.seat.clone();
+        self.idle_notifier_state.notify_activity(&seat);
+        if self.displays_off {
+            self.set_power_save_mode(crate::display_config::POWER_SAVE_ON);
+        }
+    }
+
+    /// A surface's idle inhibitor appeared or went away.
+    pub(crate) fn refresh_idle_inhibition(&mut self) {
+        self.idle_inhibitors.retain(|surface| surface.alive());
+        let inhibited = !self.idle_inhibitors.is_empty();
+        self.idle_notifier_state.set_is_inhibited(inhibited);
+        self.idle_monitor.set_inhibited(inhibited);
+    }
+
+    /// Apply Mutter's `PowerSaveMode`: 0 turns the displays on, 1–3 turn them
+    /// off (gsd-power uses 3 when the session goes idle). Off stops rendering
+    /// and disables each CRTC; the next frame after on re-enables it.
+    /// `PANTHEON_DISABLE_POWER_SAVE=1` keeps the displays on.
+    pub(crate) fn set_power_save_mode(&mut self, mode: i32) {
+        let Some(off) = crate::display_config::power_save_mode_turns_off(mode) else {
+            return;
+        };
+        if off && power_save_disabled(std::env::var("PANTHEON_DISABLE_POWER_SAVE").ok().as_deref())
+        {
+            tracing::info!(
+                "PANTHEON_DISABLE_POWER_SAVE=1: ignoring a request to blank the displays"
+            );
+            self.display_config
+                .set_power_save_mode(crate::display_config::POWER_SAVE_ON);
+            return;
+        }
+        if off == self.displays_off {
+            return;
+        }
+        if off {
+            self.cancel_active_gesture(smithay::backend::input::InputTime::now());
+            #[cfg(feature = "native-drm")]
+            if let Some(backend) = self.native_backend.as_mut() {
+                backend.kms.power_off();
+            }
+            self.displays_off = true;
+            // Nothing is shown while the displays are off, so a pending
+            // session lock must not wait for a frame that will not come.
+            self.lock_confirmation_outputs.clear();
+            self.finish_lock_confirmation_if_ready();
+            tracing::info!("displays off (power save)");
+        } else {
+            self.displays_off = false;
+            #[cfg(feature = "native-drm")]
+            if let Some(backend) = self.native_backend.as_mut() {
+                backend.kms.power_on();
+            }
+            self.mark_dirty();
+            self.request_native_redraw();
+            tracing::info!("displays on (power save ended)");
+        }
+        self.display_config.set_power_save_mode(if off {
+            crate::display_config::POWER_SAVE_OFF
+        } else {
+            crate::display_config::POWER_SAVE_ON
+        });
     }
 
     pub fn request_native_redraw(&self) {
@@ -2053,7 +2149,7 @@ impl PantheonCompositor {
         self.finish_lock_confirmation_if_ready();
     }
 
-    fn finish_lock_confirmation_if_ready(&mut self) {
+    pub(crate) fn finish_lock_confirmation_if_ready(&mut self) {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
         }
@@ -2404,5 +2500,34 @@ mod stacking_tests {
         space.map_element(Fake(1), (0, 0), false);
         place_in_space(&mut space, &Fake(2), (3, 3).into());
         assert_eq!(order(&space), vec![1, 2]);
+    }
+}
+
+/// `PANTHEON_DISABLE_POWER_SAVE=1` (or `true`/`yes`) keeps the displays on.
+fn power_save_disabled(value: Option<&str>) -> bool {
+    matches!(value.map(str::trim), Some("1" | "true" | "yes"))
+}
+
+#[cfg(test)]
+mod power_save_tests {
+    use super::power_save_disabled;
+    use crate::display_config::power_save_mode_turns_off;
+
+    #[test]
+    fn power_save_modes_map_to_on_and_off() {
+        assert_eq!(power_save_mode_turns_off(0), Some(false));
+        for mode in 1..=3 {
+            assert_eq!(power_save_mode_turns_off(mode), Some(true));
+        }
+        assert_eq!(power_save_mode_turns_off(-1), None);
+        assert_eq!(power_save_mode_turns_off(4), None);
+    }
+
+    #[test]
+    fn power_save_escape_hatch() {
+        assert!(power_save_disabled(Some("1")));
+        assert!(power_save_disabled(Some(" yes ")));
+        assert!(!power_save_disabled(Some("0")));
+        assert!(!power_save_disabled(None));
     }
 }

@@ -107,6 +107,12 @@ pub(crate) fn xkb_config(config: &StartupKeyboardConfig) -> XkbConfig<'_> {
 
 impl PantheonCompositor {
     pub fn process_input_event<I: InputBackend>(&mut self, event: InputEvent<I>) {
+        if !matches!(
+            event,
+            InputEvent::DeviceAdded { .. } | InputEvent::DeviceRemoved { .. }
+        ) {
+            self.note_user_activity();
+        }
         match event {
             InputEvent::Keyboard { event, .. } => {
                 let serial = SERIAL_COUNTER.next_serial();

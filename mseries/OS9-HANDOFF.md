@@ -1,3 +1,36 @@
+## Compositor: idle monitor, idle inhibit and screen blanking (P3) — 2026-10-21 (Claude Code)
+
+From the [next-generation investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md) (P3): the screen
+never blanked because gsd-power had no idle source and no way to turn the panel off. **Installed nowhere, unqualified until
+the next login**; the running compositor was not restarted.
+
+- **`org.gnome.Mutter.IdleMonitor`** (`src/idle.rs`): ObjectManager at `/org/gnome/Mutter/IdleMonitor`, object `.../Core`
+  with `GetIdletime`, `AddIdleWatch`, `AddUserActiveWatch`, `RemoveWatch`, `ResetIdletime`, signal `WatchFired`, the contract
+  libgnome-desktop-4's `GnomeIdleMonitor` (gsd-power 50, gnome-session) uses. The input path does one atomic store per event
+  and messages the D-Bus thread only after ≥1 s without input or while a user-active watch waits; the thread sleeps until the
+  next watch deadline (no polling).
+- **Wayland idle protocols:** `ext-idle-notify-v1` and `zwp_idle_inhibit_v1`. A live inhibitor (e.g. GTK
+  `inhibit(IDLE)`, browsers playing video) holds idle time at 0 for both, as Mutter does.
+- **`PowerSaveMode` on `org.gnome.Mutter.DisplayConfig`** (read/write, `PropertiesChanged` after it is applied): 1–3 stop
+  rendering and clear every CRTC (`DrmCompositor::clear()`, as niri does; no flip stays pending, so the watchdog is quiet);
+  0, or any input, redraws in full and the next frame re-enables the CRTC. A session lock requested while blanked is
+  confirmed at once (no frame would ever arrive). **Off switch:** drop-in `Environment=PANTHEON_DISABLE_POWER_SAVE=1`.
+- **Expected behaviour with the owner's settings:** `idle-delay` 900 s, so gsd-power blanks after 15 min idle; `idle-dim`
+  is off. Screen lock on idle is **not** added: in GNOME the shell locks, and this compositor does not, so blanking does not lock
+  (`lock-enabled` true / `lock-delay` 0 has no effect yet). Owner decision.
+- **Verified:** strict clippy (`native-drm`, all targets), 168 tests (new: watch semantics, cap, inhibition clock, power-save
+  modes, off switch); new nested probe `pantheon-rust-compositor/idle-probe/run.sh` (private Xvfb + D-Bus, real
+  `GnomeDesktop.IdleMonitor`): idle watch fired at 1.51 s for 1.5 s, user-active fired on input, GTK inhibitor held idle at 0
+  and the watch fired after uninhibit, `PowerSaveMode` 3 → 0 on input with both signals. Activation probe 4/4 unchanged.
+  **Not verified on hardware:** the apple-drm/DCP CRTC off/on cycle.
+- **What to check at the next login:**
+  1. `gdbus call --session -d org.gnome.Mutter.IdleMonitor -o /org/gnome/Mutter/IdleMonitor/Core -m org.gnome.Mutter.IdleMonitor.GetIdletime` counts up while idle.
+  2. Temporarily `gsettings set org.gnome.desktop.session idle-delay 60`, leave the Mac for ~70 s: the panel goes dark; a key or
+     trackpad touch brings it back within about a second with windows intact. Restore `idle-delay 900`.
+  3. Same with the external dock display connected.
+  4. Play a video in Brave: the screen must not blank.
+  If the panel does not come back: press a key again, then add the `PANTHEON_DISABLE_POWER_SAVE=1` drop-in and log in again.
+
 ## Rust compositor: menus, notification cards and attention (D1, D2, D3, D8) — 2026-10-21 (Claude Code)
 
 Fixes the popup/attention defects from section 1 of
