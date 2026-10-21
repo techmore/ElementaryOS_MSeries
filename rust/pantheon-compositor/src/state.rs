@@ -40,8 +40,8 @@ use smithay::{
 };
 
 use crate::activation::{
-    accepts_token, defer_step, verdict, ActivationPolicy, DeferStep, Request, Verdict, DEFER_POLL,
-    MAX_DEFERRED,
+    ActivationPolicy, DEFER_POLL, DeferStep, MAX_DEFERRED, Request, Verdict, accepts_token,
+    defer_step, verdict,
 };
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
@@ -793,7 +793,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn window_app_id(&self, window: &Window) -> Option<String> {
+    pub(crate) fn window_app_id(&self, window: &Window) -> Option<String> {
         if let Some(toplevel) = window.toplevel() {
             smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                 states
@@ -1900,7 +1900,10 @@ impl XdgActivationHandler for PantheonCompositor {
         self.arm_activation_sweep();
         // A token without a valid recent input serial is still kept under the
         // `raise` policy; request_activation decides what to do with it.
-        accepts_token(self.activation_policy, self.activation_serial_trusted(&data))
+        accepts_token(
+            self.activation_policy,
+            self.activation_serial_trusted(&data),
+        )
     }
 
     fn request_activation(
@@ -1955,26 +1958,29 @@ impl PantheonCompositor {
         }
         self.deferred_activations += 1;
         let started = std::time::Instant::now();
-        let armed = self.loop_handle.insert_source(
-            Timer::from_duration(DEFER_POLL),
-            move |_, _, state| {
-                let since_key = state.last_key_press.map(|pressed| pressed.elapsed());
-                match defer_step(started.elapsed(), since_key) {
-                    DeferStep::Wait => TimeoutAction::ToDuration(DEFER_POLL),
-                    DeferStep::Go => {
-                        state.deferred_activations = state.deferred_activations.saturating_sub(1);
-                        if !state.session_locked && smithay::reexports::wayland_server::Resource::is_alive(&root) {
-                            state.activate_root_surface(root.clone());
+        let armed =
+            self.loop_handle
+                .insert_source(Timer::from_duration(DEFER_POLL), move |_, _, state| {
+                    let since_key = state.last_key_press.map(|pressed| pressed.elapsed());
+                    match defer_step(started.elapsed(), since_key) {
+                        DeferStep::Wait => TimeoutAction::ToDuration(DEFER_POLL),
+                        DeferStep::Go => {
+                            state.deferred_activations =
+                                state.deferred_activations.saturating_sub(1);
+                            if !state.session_locked
+                                && smithay::reexports::wayland_server::Resource::is_alive(&root)
+                            {
+                                state.activate_root_surface(root.clone());
+                            }
+                            TimeoutAction::Drop
                         }
-                        TimeoutAction::Drop
+                        DeferStep::GiveUp => {
+                            state.deferred_activations =
+                                state.deferred_activations.saturating_sub(1);
+                            TimeoutAction::Drop
+                        }
                     }
-                    DeferStep::GiveUp => {
-                        state.deferred_activations = state.deferred_activations.saturating_sub(1);
-                        TimeoutAction::Drop
-                    }
-                }
-            },
-        );
+                });
         if armed.is_err() {
             self.deferred_activations = self.deferred_activations.saturating_sub(1);
         }

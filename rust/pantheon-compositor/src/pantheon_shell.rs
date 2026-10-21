@@ -293,10 +293,19 @@ impl Dispatch<protocol::io_elementary_pantheon_extended_behavior_v1::IoElementar
         _data_init: &mut DataInit<'_, Self>,
     ) {
         use protocol::io_elementary_pantheon_extended_behavior_v1::Request;
-        // Centering, modality, focus and monitor labels are not implemented; such
-        // surfaces are placed and focused like any other window.
-        if let Request::SetKeepAbove = request {
-            state.set_keep_above(&data.surface);
+        match request {
+            // System-modal and centered surfaces are what the polkit agent and other
+            // password prompts use. Gala keeps them above every window; here they get
+            // the keep-above layer so a snapped app can never cover them, and a modal
+            // one takes keyboard focus like it would under Gala. Dimming and true
+            // centering are not implemented.
+            Request::SetKeepAbove | Request::MakeCentered => state.set_keep_above(&data.surface),
+            Request::MakeModal { .. } => {
+                state.set_keep_above(&data.surface);
+                state.focus_shell_surface(&data.surface);
+            }
+            Request::Focus => state.focus_shell_surface(&data.surface),
+            Request::MakeMonitorLabel { .. } | Request::Destroy => {}
         }
     }
 
@@ -335,6 +344,14 @@ impl
 /// `RenderZindex::Top`, and surfaces that asked the shell to be kept above sit between.
 const KEEP_ABOVE_ZINDEX: u8 = RenderZindex::Shell as u8 + 5;
 const PANEL_ZINDEX: u8 = RenderZindex::Top as u8;
+
+/// System password prompts that have no parent window and send no shell hints. Gala
+/// treats them as system-modal; without this a click on a snapped app buries them.
+const SYSTEM_PROMPT_APP_IDS: &[&str] = &[
+    "gcr-prompter",
+    "org.gnome.keyring.SystemPrompter",
+    "org.gnome.keyring.PrivatePrompter",
+];
 
 impl PantheonCompositor {
     /// Raise `window` like `Space::raise_element`, then raise its transient children
@@ -403,6 +420,19 @@ impl PantheonCompositor {
         }
     }
 
+    /// `focus` / `make_modal`: raise the surface's window and give it keyboard focus.
+    pub(crate) fn focus_shell_surface(&mut self, surface: &WlSurface) {
+        if self.session_locked {
+            return;
+        }
+        let Some(window) = self.find_window_for_surface(surface) else {
+            return;
+        };
+        self.raise_window(&window, true);
+        self.focus_window_keyboard(&window, SERIAL_COUNTER.next_serial());
+        self.request_native_redraw();
+    }
+
     pub(crate) fn clear_keep_above(&mut self, surface: &WlSurface) {
         if !self.keep_above.remove(&surface.id()) {
             return;
@@ -420,7 +450,10 @@ impl PantheonCompositor {
     pub(crate) fn apply_keep_above(&mut self, window: &Window) {
         let wants_keep_above = window
             .toplevel()
-            .is_some_and(|top| self.keep_above.contains(&top.wl_surface().id()));
+            .is_some_and(|top| self.keep_above.contains(&top.wl_surface().id()))
+            || self
+                .window_app_id(window)
+                .is_some_and(|app_id| SYSTEM_PROMPT_APP_IDS.contains(&app_id.as_str()));
         if !wants_keep_above || window.z_index() == KEEP_ABOVE_ZINDEX {
             return;
         }
