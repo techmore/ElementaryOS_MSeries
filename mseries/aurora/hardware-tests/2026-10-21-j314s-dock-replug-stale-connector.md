@@ -1,11 +1,12 @@
 # J314S dock HDMI dark after replug: stale DRM connector, unhandled link-status, unmatched profile — 2026-10-21
 
-Read-only diagnosis by Claude Code on the owner's J314S (MacBook Pro 14-inch, M1 Pro),
+Diagnosis by Claude Code on the owner's J314S (MacBook Pro 14-inch, M1 Pro),
 elementary OS 9 / Ubuntu 26.04.1, kernel `7.1.12-elementary-aurora20-enh1`
 (`linux-image-elementary-aurora-enhancements`), session `pantheon-rust-wayland`
 (`/usr/bin/pantheon-compositor --backend native`, package `pantheon-rust-compositor`
 built 2026-10-20 14:20). Owner report: monitor on the dock's HDMI shows nothing.
-Nothing on the host or in the repository was changed by this session.
+The diagnosis changed nothing on the host. The fix described under "Fix" is source-only: it is
+built and unit tested but **not deployed**, so the running compositor is still the old one.
 Journal times below are seconds after kernel start (boot 11:00:10Z, 07:00 America/New_York).
 
 ## Attached hardware
@@ -80,9 +81,56 @@ busctl --user call org.gnome.Mutter.DisplayConfig /org/gnome/Mutter/DisplayConfi
 tail -20 ~/.cache/mseries-display-profiles.log
 ```
 
-A libdrm-based connector/property dump (encoder, CRTC, `link-status`, EDID blob id) was written
-during this session to the session scratchpad only; it needs to be recreated in
-`mseries/check-display-paths.sh` (see the plan in `mseries/OS9-HANDOFF.md`).
+`bash mseries/check-display-paths.sh` now prints the EDID checksum and `link-status` per connected
+connector and flags identical EDIDs. `pantheon-drm-probe` prints parsed identity as well.
+
+## Fix (branch `claude/dock-replug-display-fix`, not deployed)
+
+| Change | Where | Effect |
+| --- | --- | --- |
+| EDID identity | `rust/pantheon-compositor/src/edid.rs`, `kms_props.rs`, `native.rs` | Every external output now publishes the EDID vendor, model name and serial (`AOC:24E2QA:RJLRCHA019923`) to Wayland `PhysicalProperties` and to `org.gnome.Mutter.DisplayConfig`. The eDP panel keeps the old `Apple`/connector/`Unknown` identity because it exposes no EDID. |
+| Stale duplicate connector | `edid::stale_duplicates`, `NativeKmsDevice::refresh_connectors`, `open_output_device` | Connected connectors with byte-identical EDIDs that carry a unit-unique serial are one monitor. The connector with the newest EDID blob id is kept; the rest are treated as disconnected, so no phantom output is mapped. Monitors with serial 0, `0x01010101` or `0xffffffff` and no serial descriptor are never merged. |
+| Bad link recovery | `link_status.rs`, `NativeKmsDevice::reset_bad_link_status` | On each connector reconcile (udev event plus follow-up plus 30 s poll) a mapped connector whose `link-status` is Bad gets `Good` written back, which the atomic core turns into a full modeset. At most 3 attempts per bad episode, 5 s apart. |
+| Diagnostics | `mseries/check-display-paths.sh`, `pantheon-drm-probe` | Both print per-connector `link-status`; the script flags identical EDIDs as `[STALE]`; the probe prints parsed identity, blob ids and the stale verdict. The script also no longer reports dock video as dead when a DP tunnel is connected. |
+| Work Mode guard | `mseries/work-mode/test_work_mode.py`, `README.md` | A test fails if the helper ever reads display or dock hardware. No behavior change (see below). |
+
+### Verification
+
+- `cargo test` passes 55 tests with `--features native-drm` (14 new in `edid.rs` and `link_status.rs`) and 34 without;
+  `cargo clippy --all-targets` and `cargo fmt --check` are clean; release build succeeds with the native feature.
+- **Live, read-only:** the rebuilt `pantheon-drm-probe` ran against the real KMS device and printed:
+
+```
+DP-1: Connected   EDID blob 94: AOC:24E2QA:RJLRCHA019923 (unique serial: true)   link-status: Bad
+DP-2: Connected   EDID blob 88: AOC:24E2QA:RJLRCHA019923 (unique serial: true)   link-status: Bad
+stale duplicate connectors (same monitor EDID, older blob): DP-2
+```
+
+  This confirms the EDID read, parse, blob-recency choice and property reads on the actual hardware, and
+  that the choice matches the finding (DP-1 live, DP-2 stale).
+- Display-profiles tests (`test_display_profiles.py`, 6) and Work Mode tests (10) pass.
+
+### Not verified
+
+- Writing `link-status = Good` and the resulting modeset on the dock link. It needs DRM master, which only
+  the running compositor holds, so it can only be exercised by deploying the new compositor and starting a
+  new session. Success shows as the log line `link-status was Bad; reset to Good to retrain the link`
+  followed by a normal vblank cadence, and the AOC showing the desktop.
+- Whether the AOC currently shows a picture (nobody looked at the screen during diagnosis).
+- Blob-recency as the live-connector signal assumes the driver publishes a fresh EDID blob on every
+  reconnect. It held in this incident (94 vs 88). If the dock returns to the other controller, the
+  newer blob should flip the choice; that flip has not been observed.
+- Two genuinely identical monitors with byte-identical EDIDs (same serial) would be merged; units of one
+  model normally differ in serial, so this is not expected.
+
+### Work Mode
+
+The desktop being in Work Mode is not caused by the dock. `io.elementary.mseries.work-mode enabled` is
+`true` with `scheduled false` and `network-trigger false`, so the manual switch alone keeps it applied and
+`mseries-work-mode --status` reports "Active". `evaluate()` in the helper reads only the switch, the
+schedule and the public IP. Turning it off (System Settings, Windows Work Mode, or
+`gsettings set io.elementary.mseries.work-mode enabled false`) restores the normal wallpaper, icon theme and
+dock on the next one-minute tick. This session did not change the setting.
 
 ## Owner directions recorded this session
 
