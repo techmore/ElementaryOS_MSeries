@@ -98,7 +98,7 @@ label store. Tan industrial label-printer icon. Launcher installed from this che
 - **Network:** the Xi4 is not on 10.20.0.0/24. The Zebra at 10.20.0.61 is a different printer (ZT410,
   18J191104090). Use the bagger's Printer Settings **Print Network** to see whether the Xi4 has a print server.
 - **After the reboot, check:** app opens from Applications/taskbar with the tan icon; status dot green; queue still
-  `retry-job` (`lpoptions -p ZTC-110Xi4-203dpi-ZPL | grep -o printer-error-policy=[^ ]*`); the bagger's loaded label
+  `retry-job` (IPP Get-Printer-Attributes `printer-error-policy`; `lpoptions` does not show it); the bagger's loaded label
   is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
 - **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
 
