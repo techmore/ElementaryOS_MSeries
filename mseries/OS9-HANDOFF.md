@@ -19,6 +19,23 @@ Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of 
   Wingpanel-plugin lock can be split into build (parallel) and install (serial); download tarballs ahead of the build
   (issue item 3); `ninja -j` tuning under parallel mode.
 
+## Touch ID page in System Settings — 2026-10-21
+
+New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
+Switchboard plug), modelled on macOS *Touch ID & Password*: fingerprint list, Add Fingerprint sheet with a print that
+fills per touch, Remove with confirmation, and switches for Terminal Commands (`sudo`) and System Authorization (polkit).
+Login/lock screen is shown disabled (lock-screen PAM service still unidentified).
+
+- Installed on this machine (plug, `/usr/local/sbin/mseries-aurora-touchid-apply-pam`, polkit action); loads next time
+  Settings opens. Opening the page wakes the sensor. The old per-user stand-alone launcher was removed.
+- `mseries-aurora-touchid-apply-pam` now takes `--only sudo|polkit-1` and `--remove`.
+- Verified: PAM helper test (scratch dir), 12 UI checks against a fake fprintd on a private bus and virtual display
+  (states, `sudo` switch writes only `sudo`, sheet stops enrolment and releases the sensor on close), light/dark
+  screenshots, and the real `io.elementary.settings` loading the installed plug against the fake.
+- **Not verified:** enrolment and matching against the real Secure Enclave from this page; PAM changes on `/etc/pam.d`;
+  the `pkexec` prompt wording. Next: supervised first enrolment (fprintd only, xART protections on, password fallback),
+  then identify the lock screen's PAM service.
+
 ## Daedalus portal and NmapUI on this desktop — 2026-10-21
 
 Work done from this repo's session for the owner's "daedalus production ready" and
@@ -9736,3 +9753,25 @@ All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
 
 PR #343 qualification was rerun after reconciling dev `4cf7a90`, retaining desktop notifications, persistence fixes and darker marker colors. Full canonical build, both-theme real pointer/menu/Escape/typing and native regression checks passed; refreshed screenshots were visually inspected. No deployment or Wingpanel restart.
+
+## Power display-context capability fix — 2026-10-21
+
+The prior power-task samples remain uncontrolled observations (17.303 W and
+41.203 W medians from unlike 30-second windows); they establish no optimization
+or regression. `display_status.py` now preserves valid modes/layout if optional
+Mutter `PowerSaveMode` is missing, while marking full context unavailable and
+DPMS unknown. The one-shot trial now waits for modes without treating the
+partial context as complete or claiming unchanged controls. Nine focused tests
+pass. No live settings, services, display, audio, kernel, or boot state changed.
+See `mseries/power/POWER-TOOLS-2026-10-21.md`. Next: same-head CI, then a
+future authorized trial can verify partial capture while full qualification
+continues to require all controls.
+
+## Hermes setup retired — 2026-10-21
+
+Owner confirmed the Hermes assistant is no longer used. The maintained installer
+no longer fetches Hermes or installs its dependency lock, and the assistant
+configurator no longer creates a Hermes profile or desktop launcher. The unused
+`mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
+venv, config, state, and any previously generated desktop launcher in a user's
+home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.

@@ -65,6 +65,25 @@ class AssistantContracts(unittest.TestCase):
             result = task_smoke.model_case('http://127.0.0.1:8766/v1', 'note-to-task', 1)
         self.assertIsNone(result['passed'])
 
+    def test_hermes_retirement_removes_only_stock_desktop_entry(self):
+        for customized in (False, True):
+            with self.subTest(customized=customized), tempfile.TemporaryDirectory() as root:
+                home = Path(root)
+                applications = home / '.local/share/applications'
+                applications.mkdir(parents=True)
+                entry = applications / 'mseries-hermes-assistant.desktop'
+                stock = (f'[Desktop Entry]\nType=Application\nName=Hermes Assistant (Experimental)\n'
+                         f'Exec="{home}/.local/bin/mseries-assistant" hermes\n'
+                         'Icon=utilities-system-monitor\nTerminal=true\nCategories=Utility;\n')
+                original = stock + ('X-User-Note=keep\n' if customized else '')
+                entry.write_text(original)
+                with patch.object(setup, 'HOME', home), patch.object(setup, 'LIB', home / '.local/libexec/mseries-ai'):
+                    setup.app_helpers()
+                if customized:
+                    self.assertEqual(entry.read_text(), original)
+                else:
+                    self.assertFalse(entry.exists())
+
     def test_tool_refresh_preserves_profiles_and_other_mcp_caches(self):
         with tempfile.TemporaryDirectory() as root:
             home = Path(root); lib = home / '.local/libexec/mseries-ai'; lib.mkdir(parents=True)

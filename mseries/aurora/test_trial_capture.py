@@ -30,6 +30,14 @@ class TrialCaptureTests(unittest.TestCase):
     def read(self, path):
         return 'test-kernel' if str(path).endswith('osrelease') else 'boot-fixture'
 
+    def test_partial_display_modes_allow_capture_but_not_full_context(self):
+        partial = {'available': False, 'modes_available': True,
+                   'layout_available': True, 'power_save_mode_available': False}
+        self.assertTrue(trial.display_modes_available(partial))
+        self.assertFalse(partial['available'])
+        self.assertFalse(trial.display_modes_available({'available': False}))
+        self.assertTrue(trial.display_modes_available({'available': True}))
+
     def test_unlisted_kernel_is_not_tested_or_marked(self):
         with patch.object(trial.q, 'read', return_value='other-kernel'), patch.object(trial.q, 'collect') as collect, contextlib.redirect_stdout(io.StringIO()):
             trial.capture(self.config)

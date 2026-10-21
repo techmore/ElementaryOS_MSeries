@@ -383,6 +383,7 @@ mod_payload() {
   done
   # User setup works from immutable /usr and keeps models/state in the user's home.
   for f in "$here"/local-ai/*.py "$here"/local-ai/*.sh "$here"/local-ai/*.json "$here"/local-ai/*.patch "$here"/local-ai/*.lock; do
+    [[ -f $f ]] || continue
     copy 0644 "$f" "$prefix/mseries/local-ai/$(basename "$f")"
   done
   put 0644 /usr/share/applications/mseries-assistant-setup.desktop <<'EOF'
