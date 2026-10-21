@@ -8,17 +8,26 @@ in `aurora-sep/` for day-to-day use.
 
 | | |
 |---|---|
-| ![Fingerprints and switches](docs/fingers-light.png) | ![Add Fingerprint sheet, dark](docs/enroll-dark.png) |
+| ![Page: hero, hands, finger tiles](docs/page-light.png) | ![Matching blocked on this Mac](docs/page-blocked-light.png) |
+| ![Add Fingerprint in progress](docs/sheet-progress-light.png) | ![Fingerprint added, dark](docs/sheet-done-dark.png) |
 
 ## What it does
 
-- **Fingerprints:** lists what fprintd has for you; **Add Fingerprint** opens a sheet whose
-  print fills in as the enclave accepts each touch (the sensor asks for about 37). Up to
-  three fingers; the next free finger is chosen for you. **Remove** asks first.
+- **Hero:** one glance at where Touch ID stands (Ready, Not set up, Needs attention, or "Can't unlock yet"), a pair of
+  hands with the enrolled fingertips lit, and the single call to action when nothing is enrolled.
+- **Driver status:** reads the Secure Enclave driver's `diag/` attributes. A banner and the hero say plainly when the
+  sensor is not ready or when matching is blocked (the xART guard on this Mac), and a Details section lists every attribute.
+- **Add Fingerprint sheet** (an `Adw.Dialog`): the finger to use pulses on the hands, the print breathes while waiting,
+  a Place / Lift cue cycles, each accepted touch ripples and fills the print, and success turns it into a green seal with a
+  check. Cancel, Escape and closing all stop the enrolment and release the sensor. The fill is an estimate: the sensor
+  reports 37 stages but a real enrolment finished in about eight touches.
+
+- **Fingerprints:** tiles for what fprintd has for you, and a dashed Add tile. Up to three fingers; the next free
+  finger is chosen for you. **Remove** asks first.
 - **Terminal Commands / System Authorization:** add or remove `pam_fprintd` for `sudo`
   and `polkit-1` through `pkexec` + `mseries-aurora-touchid-apply-pam --only <service>`.
-  The switches show what `/etc/pam.d` really contains after the helper runs, and stay
-  locked until a finger is enrolled. The password always remains the fallback.
+  The switches show what `/etc/pam.d` really contains after the helper runs. They cannot be turned on while no finger is
+  enrolled, the sensor is not ready, matching is blocked, or the helper is missing; the handler re-checks this, not only the greyed-out row. The password always remains the fallback.
 - **Login and Lock Screen:** shown but disabled. The lock screen's PAM service is not
   identified yet (see `aurora-touchid-state.md`).
 - **Unavailable states:** no `/dev/sep-bio` (wrong kernel), no fprintd device, or fprintd

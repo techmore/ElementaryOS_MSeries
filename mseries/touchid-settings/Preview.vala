@@ -32,6 +32,7 @@ namespace MSeriesTouchId {
 
     public class Preview : Adw.Application {
         private string? flip = null;
+        private int dialog_delay = 4500;
         private int win_w = 760;
         private int win_h = 640;
         private double text_scale = 1.0;
@@ -45,6 +46,7 @@ namespace MSeriesTouchId {
                     flags: GLib.ApplicationFlags.NON_UNIQUE | GLib.ApplicationFlags.HANDLES_COMMAND_LINE);
             add_main_option ("screenshot", 0, 0, GLib.OptionArg.FILENAME, "Save the window to FILE", "FILE");
             add_main_option ("dialog-screenshot", 0, 0, GLib.OptionArg.FILENAME, "Open Add Fingerprint and save it to FILE", "FILE");
+            add_main_option ("dialog-delay", 0, 0, GLib.OptionArg.INT, "Milliseconds before the sheet is captured", "MS");
             add_main_option ("size", 0, 0, GLib.OptionArg.STRING, "Window size, WIDTHxHEIGHT", "WxH");
             add_main_option ("text-scale", 0, 0, GLib.OptionArg.DOUBLE, "Scale text like the system text size setting", "N");
             add_main_option ("flip", 0, 0, GLib.OptionArg.STRING, "Turn on the switch with this title after loading", "TITLE");
@@ -66,6 +68,10 @@ namespace MSeriesTouchId {
                     win_w = int.parse (parts[0]);
                     win_h = int.parse (parts[1]);
                 }
+            }
+            int delay;
+            if (options.lookup ("dialog-delay", "i", out delay)) {
+                dialog_delay = delay;
             }
             double scale;
             if (options.lookup ("text-scale", "d", out scale)) {
@@ -124,10 +130,12 @@ namespace MSeriesTouchId {
                     page.open_add_for_preview ();
                     return false;
                 });
-                GLib.Timeout.add (4500, () => {
+                GLib.Timeout.add (dialog_delay, () => {
                     var dialog = page.active_dialog;
                     if (dialog != null) {
-                        save_png (dialog, dialog_shot);
+                        /* Capture the dialog's own window when it floats, so the background is included. */
+                        var root = dialog.get_root () as Gtk.Widget;
+                        save_png (root != null && root != window ? root : dialog, dialog_shot);
                         dialog.close ();   /* exercises Cancel: EnrollStop then Release */
                     }
                     GLib.Timeout.add (900, () => {
