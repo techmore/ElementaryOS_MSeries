@@ -45,6 +45,18 @@ Sources: [aurora-silicon/linux#361](https://github.com/aurora-silicon/linux/pull
   asks for the kind-4 rewrite, the guard refuses it, and the enrolment fails closed.
 - Turning the guard back on later does not list records written while it was off.
 
+## What the maintainers already said (omacom PR #139, 2026-10-19)
+
+The review thread of [omacom/linux-aurora#139](https://github.com/omacom/linux-aurora/pull/139), the merge our kernel is built from,
+covers this. RyanTheTide's reply (item 2, "xART guard guidance") says: restore works under `xart_guard=1`; **use** works only for
+records Linux created while the guard was on; **setup** on cold-boot Macs (T8103, T6000/T6001) rewrites a pre-Linux record and needs
+`xart_guard=0`, **and the matches that follow need it too**. On an M1 Pro one verify rewrote two session records and both shared
+roots. A later comment says the reference M1 Pro (J316s) runs this kernel as its daily with `xart_guard=0` and `matching=usable`,
+while a base-M2 on guard level 1 reads `unverified`. The same thread tracks the "M1 Pro Touch ID first-attempt rate" (intermittent
+sensor registration failures) as accepted for the edge branch with an instrumented soak as follow-up. So what we hit is known and
+intended upstream: with the default guard, a cold-boot M1 Pro cannot use Touch ID, and the maintainers' own M1 Pro runs with it off.
+What upstream has not published is the enrol-only measurement below.
+
 ## Options (owner decision)
 
 1. **Leave the guard on.** Nothing about other OSes' records is at risk. Touch ID stays unusable here.

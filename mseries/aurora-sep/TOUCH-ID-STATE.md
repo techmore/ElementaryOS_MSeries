@@ -33,7 +33,6 @@ per boot. Running when checked: `7.2.10-elementary-aurora72-wip2`, no one-shot a
 
 ## Next actions
 
-1. Owner decides on the guard. 2. Redraft the per-Mac report around the new data (guard behaviour on a guarded cold-boot
-M1 Pro; enrolment lacks the sensor retry), owner approves, post to `omacom/linux-aurora`. 3. If the guard is turned off:
+1. Owner decides on the guard. 2. **Do not post the draft report now:** after reading the whole upstream record (PR #139 thread, #361, #42, #23, #56, PR #7) almost all of it is already known. If anything is posted later, it should be a short j314s per-Mac report with a full pass (enrol, verify, reboot, sudo) on firmware 27.0 with the guard off, which upstream does not have. 3. If the guard is turned off:
 reboot, enrol once, verify, then wire PAM for sudo and polkit only, password kept as fallback. 4. `wip3` kernel candidate
 (PR #413) is a display/base test and does not change any of this.
