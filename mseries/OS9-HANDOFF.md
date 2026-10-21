@@ -1,5 +1,58 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock HDMI dark after replug: diagnosis and continuity plan — 2026-10-21 (Claude Code)
+
+Read-only session; nothing deployed, nothing committed. Full evidence:
+[hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md](aurora/hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md).
+
+**What happened.** The AOC 24E2QA on the WD22TB4's HDMI arrives over the Thunderbolt
+DP tunnel. At boot the tunnel used controller `289c00000` (compositor output DP-2).
+At ~40 s the dock dropped and came back on the other Type-C PHY; controller
+`28cc00000` took the sink and the Rust compositor mapped a new output DP-1 with a
+good 1920x1080@60 modeset. The kernel never marked DP-2 disconnected, so the
+compositor now drives a phantom DP-2 at x=2420 plus the real DP-1 at x=4340, both
+with `link-status = Bad`, which the compositor never reads. Every monitor is reported
+to `org.gnome.Mutter.DisplayConfig` as `Apple:<connector>:Unknown`, so
+`mseries-display-profiles` matched nothing (`no profile for the displays attached:
+['Apple:DP-2:Unknown']`) and its hotplug retrain kick never ran. Whether the AOC
+shows DP-1's empty desktop or "no signal" is not verified (no eyes on the screen).
+
+**Owner decisions this session.** Work Mode must not infer work/home from the
+attached dock or display; public IP, a manual toggle and a schedule are the allowed
+signals. The Mac's own HDMI port and USB-C adapters stay out of scope (unchanged).
+
+**Continuity plan (next agent).** Branch from `origin/dev`, PR `--base dev`, do not
+touch the kernel. `~/Projects/mseries-compositor` is another session's worktree with
+uncommitted changes: use a fresh worktree and a private `CARGO_TARGET_DIR`.
+
+1. `rust/pantheon-compositor/src/native.rs`: read each connector's `EDID` blob
+   (drm-rs `get_properties` + `get_property_blob`), parse PNP manufacturer, product
+   code, serial and the name descriptor; use them for `PhysicalProperties` and every
+   `OutputSnapshot` in `open_output_device` and `refresh_connectors`. This restores
+   `vendor:product:serial` matching for the watcher and the diagnostics.
+2. Same file, `refresh_connectors`: read `link-status` on mapped connectors; when
+   `Bad`, set it back to `Good` with `set_property` on the KMS device (the atomic
+   path turns that into a full modeset, which is what the DCP needs to retrain) and
+   log it. Verify afterwards with a libdrm property dump.
+3. Same file: when two connected connectors carry byte-identical EDIDs, keep the
+   most recently connected one and unmap the other, with a clear log line; record
+   the trade-off for two genuinely identical monitors.
+4. `mseries/display-profiles/mseries-display-profiles`: once identity works, add
+   a profile for the AOC (or run the 1080p-then-saved-mode kick for any new external
+   connector without a profile) and keep logging the real identity.
+5. `mseries/work-mode/`: remove any dock/display-based inference; keep public IP,
+   manual toggle and schedule.
+6. `mseries/check-display-paths.sh`: print `link-status` per connector and flag
+   identical EDIDs across connectors as a stale connector.
+7. Build (`cargo build --release`), deploy with the existing compositor deploy
+   script, then verify: one DP output with AOC identity, `link-status Good`,
+   `GetCurrentState` without the phantom, watcher log showing a match. Record the
+   result in this file and in the evidence file above.
+
+Separate tasks the owner raised, not started: a cleanup and feature-port pass on
+the dev kernel lane (`.20-enh1`), and a polling-based performance comparison of the
+Rust compositor against native Gala.
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
