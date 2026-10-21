@@ -750,6 +750,21 @@ acceptance remains pending.
   DisplayConfig `PowerSaveMode`, not because display enumeration failed.
   Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
 
+### Native UI responsiveness and display labels — 2026-10-21 (#242)
+
+Canonical Troubleshooter verification and AirPlay GUI operations now use bounded
+background workers with pending/error/retry behavior. Verification cancels/reaps
+its owned helper on close; stale UI completions are ignored. Display arrangement
+uses bounded system-font labels, full tooltips/accessibility summaries and visible
+keyboard focus with selection that does not apply a display configuration.
+
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
+canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
+source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
+inventory. This fixes three confirmed blockers; it does not close the full native
+release gate or qualify all keyboard/screen-reader/device/account workflows.
+No live model, audio, display, panel or installed application was changed.
+
 ## Native UI consistency review — 2026-10-20
 
 Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
