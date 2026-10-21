@@ -8,6 +8,24 @@
 - **Not verified:** inside a live System Settings window, a real switch against the running dock, screen-reader use.
 - **Not installed:** the plug is merged but not installed on the owner's machine until `install-dock-switcher.sh` is run.
 
+## Typing stutter: interactive CPU weights for the session — 2026-10-21 (Claude Code)
+
+- **Cause found:** the stutter coincides with CPU saturation by nice-0 batch work. On a fresh boot with a `llama-bench -t 8` run, parallel
+  Rails test workers in rootless podman and a `db:schema:load` running, load average reached 29-58 on 10 cores and CPU pressure
+  (`/proc/pressure/cpu` `some`) reached 60-80%. Per-thread run-queue wait (`/proc/<pid>/task/*/schedstat`) showed a Claude Desktop
+  renderer waiting 54-93% of each interval and the compositor 15%. Memory, swap and I/O were not under pressure.
+- **Change:** `CPUWeight=500` on `session.slice` (compositor, panel), `CPUWeight=400` on `pantheon-dock.service` (apps launched from the
+  dock) and `CPUWeight=20` on the user manager's `user.slice` (rootless podman containers). Shipped in the session package; checked by
+  `mseries/pantheon-rust-compositor/test-session-units.sh`.
+- **Verified:** static unit checks pass. Applying the same weights at runtime with `systemctl --user set-property --runtime` and
+  alternating twice against the defaults on the same PIDs gave renderer+compositor run-queue wait of 30% -> 18% and 16% -> 13% under load.
+  That is directionally better but noisy; one load profile, not a controlled benchmark.
+- **Not verified:** the installed package (nothing installed; weights take effect at next login after the package is installed), subjective
+  typing feel, and the benchmark/test workloads launched from Claude Desktop itself: they share `app.slice` with other apps, so slice
+  weights do not separate them. Start such runs with `nice -n 19` or `systemd-run --user -p CPUWeight=20`.
+- **Next:** install the package, repeat the load test, and consider asking Aurora for `CONFIG_SCHED_CLASS_EXT` (see
+  `PERFORMANCE-PORT-CANDIDATES-2026-10-18.md`).
+
 ## Apple/Logitech peripherals: `mseries-peripherals` — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/hardware/peripherals.py` (installs as `/usr/bin/mseries-peripherals`) with `status`, `pair` and a `watch` user service
