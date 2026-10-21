@@ -4,14 +4,13 @@
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
 watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
 
-  Drag it into an app      the shot is used and not kept: the saved file goes to the Trash after the drop.
-  Hold Alt while dragging  the shot is used and a copy is kept (the thumbnail says so).
-  Click Copy               puts the image on the clipboard (paste it anywhere); the file is kept.
+  Drag it into an app      offers a copy; the saved screenshot is always kept.
+  Click Copy               puts the image on the clipboard; the saved file is kept.
   Click it                 opens Markup on the saved file; the file is kept.
-  Ignore it                the thumbnail stays (same size, same corner) for 4 seconds, longer while the pointer is on it; the file is kept.
-  Click the x              dismisses it; the file is kept.
+  Ignore it or click x     dismisses the thumbnail; the saved file is kept.
 
-A screenshot is only ever trashed (never hard-deleted) by a drag without Alt, and only after the drop was accepted.
+A completed drag does not prove that the target could read or attach the image.
+The shelf never deletes or trashes originals. Remove them explicitly in Files.
 
 Flatpak apps (Signal, for one) cannot read files outside their sandbox, so the drag offers the screenshot
 through the document portal: a per-file, read-only export granted to the running Flatpak apps and
@@ -26,6 +25,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import warnings
 
@@ -93,7 +93,7 @@ WATCH = os.path.realpath(os.environ.get("MSERIES_SHELF_WATCH", os.path.expanduse
 STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
-DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is moved to the Trash
+EXPORT_GRACE_SECONDS = 120  # transient drag copy/export lifetime after the card closes; originals never expire
 SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "4"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
@@ -104,8 +104,7 @@ window.shelf { background: transparent; box-shadow: none; }
 .shelf-card { background: #1c1c20; color: #ffffff; border-radius: 14px; padding: 10px;
               border: 1px solid rgba(255,255,255,0.18); }
 .shelf-thumb { border-radius: 8px; background: rgba(255,255,255,0.06); }
-.shelf-hint { color: rgba(255,255,255,0.80); font-size: 12px; }
-.shelf-hint.saving { color: #9ad1a4; font-weight: bold; }
+.shelf-hint { color: rgba(255,255,255,0.80); font-size: 0.9em; }
 .shelf-card button.flat { color: #ffffff; min-height: 22px; min-width: 22px; padding: 0 6px; }
 .shelf-card button.markup { background: rgba(255,255,255,0.14); color: #ffffff; border-radius: 8px; padding: 2px 10px; }
 """
@@ -233,12 +232,12 @@ class Shelf(Gtk.Window):
         self.app, self.path, self.staged = app, path, staged
         self.finished = False
         self.dragging = False
-        self.alt_seen = False
         self.cancelled = False
-        self.refused = False
         self.hover = False
         self.timer = None
         self.export = None
+        self.offered = False
+        self.pending_finish = None
         self.add_css_class("shelf")
         self.set_decorated(False)
         self.set_resizable(False)
@@ -259,7 +258,7 @@ class Shelf(Gtk.Window):
         card.append(picture)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.hint = Gtk.Label(label="Drag to use  ·  Alt keeps", xalign=0, hexpand=True)
+        self.hint = Gtk.Label(label="Drag a copy · Saved", xalign=0, hexpand=True)
         self.hint.set_ellipsize(3)   # Pango.EllipsizeMode.END: never widen the card
         self.hint.add_css_class("shelf-hint")
         copy = Gtk.Button(label="Copy")
@@ -276,6 +275,8 @@ class Shelf(Gtk.Window):
         markup.connect("clicked", lambda *_: self.open_markup())
         close = Gtk.Button(label="✕")
         close.add_css_class("flat")
+        close.set_tooltip_text("Dismiss thumbnail; saved screenshot is kept")
+        close.update_property([Gtk.AccessibleProperty.LABEL], ["Dismiss thumbnail"])
         close.connect("clicked", lambda *_: self.finish("dismissed"))
         row.append(self.hint)
         row.append(copy)
@@ -358,10 +359,6 @@ class Shelf(Gtk.Window):
 
     # ------------------------------------------------------------------ drag
 
-    def alt_held(self):
-        keyboard = self.get_display().get_default_seat().get_keyboard()
-        return bool(keyboard and keyboard.get_modifier_state() & Gdk.ModifierType.ALT_MASK)
-
     def drop_path(self):
         """The path a drop target gets: a portal export only when a Flatpak app is running to read it.
 
@@ -383,8 +380,7 @@ class Shelf(Gtk.Window):
         return self.staged
 
     def on_prepare(self, source, _x, _y):
-        if self.alt_held():
-            self.alt_seen = True
+        self.offered = True
         path = self.drop_path()
         log(f"offering {path} (granted: {', '.join(sorted(self.export.granted)) if self.export else 'none'})")
         return Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list([Gio.File.new_for_path(path)]))
@@ -393,43 +389,25 @@ class Shelf(Gtk.Window):
         self.dragging, self.cancelled = True, False
         if self.texture is not None:
             source.set_icon(self.texture, 0, 0)
-        GLib.timeout_add(50, self.poll_alt)
         log(f"drag begin {os.path.basename(self.path)}")
-
-    def poll_alt(self):
-        if not self.dragging:
-            return False
-        if self.alt_held():
-            self.alt_seen = True
-        self.hint.set_label("Keeping a copy (Alt)" if self.alt_seen else "Drag to use  ·  Alt keeps")
-        (self.hint.add_css_class if self.alt_seen else self.hint.remove_css_class)("saving")
-        return True
 
     def on_drag_cancel(self, _source, _drag, reason):
         self.cancelled = True
         log(f"drag cancelled ({reason.value_nick})")
         # The target refused the drop: put the image on the clipboard so one paste finishes the job.
         self.copy_to_clipboard()
-        self.refused = True
         return False
 
     def on_drag_end(self, _source, _drag, _delete):
         self.dragging = False
-        if self.cancelled:
-            self.restart_timer()
-            self.alt_seen = False
-            self.hint.set_label("Not accepted. Use Show")
-            self.hint.add_css_class("saving")
-            log("RESULT refused: no app took the drop (clipboard copy attempted; Show reveals the file)")
+        if self.pending_finish is not None:
+            self.finish(self.pending_finish)
             return
-        self.hint.set_label("Dropped ✓")
-        log("RESULT accepted: an app took the drop")
-        if self.alt_seen:
-            log(f"used and kept (Alt): {os.path.basename(self.path)}")
-            self.finish("used-kept", delay=DELETE_AFTER, delete_saved=False)
-        else:
-            log(f"used, not kept: {os.path.basename(self.path)} deleted in {DELETE_AFTER}s")
-            self.finish("used", delay=DELETE_AFTER, delete_saved=True)
+        self.restart_timer()
+        # GTK completion only confirms the protocol exchange. The target may still
+        # fail to read the file or attach it, so keep the card available for retry.
+        self.hint.set_label("Not accepted · Saved" if self.cancelled else "Saved · Check attachment")
+        log("drag ended: saved original retained; target attachment unverified")
 
     # ------------------------------------------------------------------ outcomes
 
@@ -469,8 +447,11 @@ class Shelf(Gtk.Window):
         except OSError as error:
             log(f"could not start markup: {error}")
 
-    def finish(self, reason, delay=0, delete_saved=False):
+    def finish(self, reason):
         if self.finished:
+            return
+        if self.dragging:
+            self.pending_finish = reason
             return
         self.finished = True
         if self.timer:
@@ -478,24 +459,25 @@ class Shelf(Gtk.Window):
             self.timer = None
         log(f"shelf done: {reason}")
         # The staged copy is what an app may still be reading after a drop, so it outlives the window.
-        GLib.timeout_add_seconds(max(delay, 1), self.cleanup, delete_saved)
-        self.app.shelf = None
+        GLib.timeout_add_seconds(EXPORT_GRACE_SECONDS if self.offered else 1, self.cleanup)
+        if self.app.shelf is self:
+            self.app.shelf = None
         self.close()
 
-    def cleanup(self, delete_saved):
+    def cleanup(self):
+        # Snapshot fixtures use the input directly; never treat an original as staging.
+        if os.path.realpath(self.staged) == os.path.realpath(self.path):
+            return False
         if self.export:
             self.export.remove()
         try:
             os.remove(self.staged)
         except OSError:
             pass
-        if delete_saved:
-            # Trash, not delete: an accepted drop does not prove the app could read the file.
-            try:
-                Gio.File.new_for_path(self.path).trash(None)
-                log(f"moved used screenshot to the Trash: {os.path.basename(self.path)}")
-            except GLib.Error as error:
-                log(f"kept {os.path.basename(self.path)}: could not trash it ({error.message})")
+        try:
+            os.rmdir(os.path.dirname(self.staged))
+        except OSError:
+            pass
         return False
 
 
@@ -525,8 +507,15 @@ class ShelfApp(Gtk.Application):
 
     def show(self, path):
         try:
-            staged = os.path.join(STAGE, os.path.basename(path))
-            shutil.copy2(path, staged)
+            # Unique ownership prevents a later same-named shot from replacing
+            # the bytes or being deleted by an older card's delayed cleanup.
+            directory = tempfile.mkdtemp(prefix="shot-", dir=STAGE)
+            staged = os.path.join(directory, os.path.basename(path))
+            try:
+                shutil.copy2(path, staged)
+            except OSError:
+                shutil.rmtree(directory)
+                raise
         except OSError as error:
             log(f"could not stage {path}: {error}")
             return False

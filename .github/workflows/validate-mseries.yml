@@ -68,6 +68,8 @@ jobs:
         run: bash mseries/ui-scale/check-ui-sizes.sh --strict
       - name: Dock writers keep their shell syntax
         run: sh -n mseries/dock-policy/enable-permanent.sh
+      - name: Compiled dock taskbar policy on isolated settings
+        run: bash mseries/ui-scale/tests/test-taskbar-size.sh
       - name: Drive the text-size widget on a private display
         run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:
@@ -114,6 +116,9 @@ jobs:
           xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
             PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
             python3 -m unittest discover -s mseries/orchard-incus/tests
+
+      - name: Preserve screenshot originals across drag outcomes
+        run: bash mseries/screenshot-shelf/test-retention.sh
 
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
