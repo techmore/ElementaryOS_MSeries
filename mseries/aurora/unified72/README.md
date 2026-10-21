@@ -72,6 +72,27 @@ the recorded builder/manifest/workflow hashes; artifact-embedded documentation
 remains the snapshot at the tested commit. Earlier wip1 receipts are separate.
 No local 7.2 boot, power saving or hardware acceptance is claimed.
 
+## Static contract follow-up — October 21, 2026
+
+[Manual mismatch triage](static-contract-review-2026-10-21.json) examines all 24
+mechanically-neither cases against immutable source. Nineteen retain the
+described source contract, including the moved `mm/userfaultfd.c` check,
+USB-C debug-command gate, read-only AWDL parameter, AFK/VFIO test dependencies,
+13.5 DPTX reply handling and SEP store/autoload/suspend safeguards. This is
+bounded static inspection; no new hardware tests or patch adoption occurred.
+
+Five cases remain open or partial: io_uring accounting replacement, MGLRU
+reclaim replacement, document relocation/removal, complete Type-C relink
+concurrency/lifecycle and full T8140 QSPI policy equivalence. The 40 reverse
+applicability results remain mechanical evidence; full 64-fix semantic parity
+is still open. No newly established J314S trial blocker was identified within
+this bounded inspection. Boot/Mesa/dock/recovery acceptance remains pending.
+
+The [manual post-boot sequence](BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot)
+now includes exact private snapshot/hash/current-boot collection commands and
+separate reviewed smoke invocation. It preserves the normal desktop session
+bus and unknown display/power fields. It refuses the old running release.
+
 ## Reproduce in an isolated builder
 
 ```sh

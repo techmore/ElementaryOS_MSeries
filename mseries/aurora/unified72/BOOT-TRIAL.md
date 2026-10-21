@@ -127,3 +127,69 @@ matches this staged hash, and remove only the new wip2 Image/initramfs after
 confirming their hashes. Do not restore or overwrite the shared payload, old
 kernel files or generated GRUB as part of routine unstage. Do not remove the
 wip2 modules while running wip2. Record any rollback separately.
+
+## Manual collection after the attended wip2 boot
+
+Run from the normal logged-in desktop terminal after confirming picture/input.
+Allow at least five minutes uptime for the collector's scoped boot check. Stop
+and inspect any panic/oops/lockup or unusable display before the smoke test.
+These commands refuse the wrong running release. They do not arm, reboot,
+suspend, reconfigure a connector or load a module.
+
+The boot files are root-readable. Copy only the Image and shared `boot.bin`
+into a fresh mode0700 evidence directory, verify their pinned hashes, and run
+collectors as the desktop user. This preserves the session bus for display
+queries. Do not copy or publish an unlock initramfs. Raw journal files stay
+private. The example uses this trial's retained checkout; use its exact audited
+copy after reboot rather than an unrelated branch.
+
+```sh
+(
+  set -eu
+  test "$(uname -r)" = '7.2.10-elementary-aurora72-wip2'
+  MSeriesRepo=/home/sdolbec/Documents/Codex/2026-10-21/we-x20/work/mseries-handoff
+  trial_dir=$(mktemp -d /home/sdolbec/Documents/Codex/2026-10-21/we-x20/outputs/aurora72-boot.XXXXXX)
+  chmod 700 "$trial_dir"
+  sudo -v
+  sudo cat /boot/vmlinuz-aurora72-wip2 > "$trial_dir/Image"
+  sudo cat /boot/m1n1/boot.bin > "$trial_dir/boot.bin"
+  cd "$trial_dir"
+  sha256sum --check <<'HASHES'
+894c420112c94a07bf70f38d1fad95dfd63fb1085550675d3e0e5f2af4123954  Image
+9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f  boot.bin
+HASHES
+  sudo journalctl -b -k -o json --no-pager > kernel-journal.jsonl
+  python3 "$MSeriesRepo/mseries/aurora/qualification.py" collect \
+    --output hardware.json --kernel-image Image --boot-image boot.bin \
+    --kernel-log kernel-journal.jsonl --duration 30 --interval 1
+  printf 'Private evidence directory: %s\n' "$trial_dir"
+)
+```
+
+Review `hardware.json` first. Require the live build ID match, current-boot log
+identity and no failed health checks. Confirm the actual running module hashes,
+selected legacy DART cells/firmware and visual acceptance separately. Missing
+`PowerSaveMode` still makes display context unavailable: keep it unknown and
+`controls_unchanged=false`; a successful command is not complete acceptance.
+
+Only after that review, set `trial_dir` to the directory printed above and run
+from the same normal desktop session:
+
+```sh
+MSeriesRepo=/home/sdolbec/Documents/Codex/2026-10-21/we-x20/work/mseries-handoff
+python3 "$MSeriesRepo/mseries/hardware/kernel-smoke.py" \
+  --receipt "$trial_dir/hardware.json" --work "$trial_dir" \
+  --output "$trial_dir/smoke.json" --kernel-image "$trial_dir/Image" \
+  --boot-image "$trial_dir/boot.bin"
+```
+
+The smoke receipt checks current boot identity and installed module hashes.
+Its packaged new DTB hash is an on-disk asset; it does not replace the selected
+legacy boot-DTB evidence. Even if its before/after unknown display dictionaries
+compare equal, that is not measured display/power stability. No smoke result
+substitutes for actual dock picture/input or the later attended `.20` recovery.
+
+Pre-reboot readiness checked October21: `cc`, EGL1.5/GLES3.2 development metadata
+and Python GI imports are available. No GPU or filesystem smoke was run on the
+old kernel as part of this readiness check. Do not run this sequence until wip2
+is actually running.

@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Deferred reboot: mismatch triage and test readiness — 2026-10-21
+
+24 mechanically-neither patches triaged: 19 source contracts retained,
+five deeper/partial reviews open. Full 64-fix semantics and hardware acceptance
+remain unqualified. Exact private post-boot collector/smoke commands are ready;
+compiler/EGL/GLES/GI dependencies exist. No hardware tests or installed changes.
+The one-shot remains armed for the owner's later attended reboot.
+[Audit](aurora/unified72/static-contract-review-2026-10-21.json),
+[manual sequence](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot).
+
 ## Aurora 7.2 one-shot armed — 2026-10-21
 
 Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
