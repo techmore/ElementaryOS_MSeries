@@ -19,6 +19,7 @@ mod grabs;
 mod handlers;
 #[cfg(feature = "native-drm")]
 mod hotplug;
+mod idle;
 mod input;
 #[cfg(feature = "native-drm")]
 mod kms_props;

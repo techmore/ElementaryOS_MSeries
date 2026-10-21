@@ -182,6 +182,13 @@ Design:
   Battery app gets a "screen updates" column; the high-drain alert names the redrawing app
   (roadmap G4). No new indicator.
 
+## Progress (2026-10-21)
+
+Landed in `dev`: snapping phase 0 (#449) and Snap Assist with two-member groups (#453); frame metrics, targeted frame
+callbacks and P7/P8 (#452); dmabuf on by default and the systemd watchdog (#456); power scenario harness (#448); idle
+monitor, idle inhibit and screen blanking (P3, this branch). Popup/attention D1/D2/D3/D8 is PR #450. All of it is
+unqualified on hardware until the next login; checklists are in `mseries/OS9-HANDOFF.md`.
+
 ## Recommended order
 
 1. **Measure first:** metrics phase 0–1 (journal fixes, correct attribution, frame timing).
