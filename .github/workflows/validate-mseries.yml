@@ -100,6 +100,9 @@ jobs:
             PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
             python3 -m unittest discover -s mseries/orchard-incus/tests
 
+      - name: Preserve screenshot originals across drag outcomes
+        run: bash mseries/screenshot-shelf/test-retention.sh
+
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
       - name: Build and test native Orchard windows and dropdown
