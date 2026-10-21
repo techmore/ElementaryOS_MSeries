@@ -2320,6 +2320,18 @@ already told readers to use. CI compiles and runs both share-cost test files.
 The matched pair itself is still pending the owner's live share and real
 viewers. No performance claim has been made.
 
+## Share Eyes heartbeat freshness and native upstream pass — 2026-10-21
+
+Source-only fix: future-dated launcher heartbeats no longer appear running/live;
+positive timestamps must be no later than now and at most 15 seconds old.
+Regression first failed, then passed; zero/missing timestamps, stale boundary,
+cleared state and recovery are covered. Native app/probe builds and private
+360-pixel light/dark off-state renders pass. No installed/live share or panel
+was changed. [Receipt and Torrential/Signal upstream findings](SHARE-EYES-FRESHNESS-2026-10-21.md).
+Torrential upstream remains the pinned rewrite baseline; its open serde_with
+update lacks native CI. Signal module builds with existing GTK pixbuf warnings.
+Next: review/stage through Quick Settings and separately accept the loaded state.
+
 ## Screen-share media path: owner decision — 2026-10-19
 
 Recorded the owner's media-path decision for the share-cost work. Media stays
