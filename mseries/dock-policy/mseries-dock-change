@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+"""Require one explicit, expiring GUI approval for one exact dock change."""
+import os
+import shlex
+import subprocess
+import sys
+
+
+def main():
+    if len(sys.argv) < 4 or sys.argv[2] != "--":
+        print("Usage: mseries-dock-change 'Exact proposed dock change' -- command [args...]", file=sys.stderr)
+        return 2
+    description = sys.argv[1].strip()
+    command = sys.argv[3:]
+    if not description or not command or not command[0]:
+        print("A concrete change description and command are required; nothing changed.", file=sys.stderr)
+        return 2
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        print("No GUI session available. Dock change cancelled; nothing changed.", file=sys.stderr)
+        return 1
+    message = (
+        "The dock was disabled because it floated, stole attention, and prevented typing.\n\n"
+        "Proposed change:\n" + description + "\n\n"
+        "Exact command:\n" + shlex.join(command) + "\n\n"
+        "Apply approves this command once. Cancel is the default.\n"
+        "Closing this dialog or waiting 90 seconds cancels without running the command."
+    )
+    try:
+        approval = subprocess.run(
+            ["/usr/bin/zenity", "--question", "--title=Approve dock change",
+             "--text=" + message, "--ok-label=Apply", "--cancel-label=Cancel",
+             "--default-cancel", "--no-markup", "--timeout=90", "--width=680"],
+            stdin=subprocess.DEVNULL, timeout=90, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        print("Dock change cancelled: GUI approval unavailable or expired. " + str(error), file=sys.stderr)
+        return 1
+    if approval.returncode != 0:
+        print("Dock change cancelled; nothing changed.", file=sys.stderr)
+        return 1
+    try:
+        os.execvp(command[0], command)
+    except OSError as error:
+        print("Approved command could not start: " + str(error), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,5 +1,1308 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## All three wip2 dock ports pass scoped picture — 2026-10-21
+
+Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
+one-cycle polling≈4.5s partner→active desktop each, with label/boundary corrections
+and 0.5 s resolution disclosed. Not a speed ranking or pixel latency benchmark.
+New read-only timing tool and 5 tests; existing 71 Aurora tests pass after dev
+conflict resolution. Next dev merge, exact lifecycle tracing and actual `.20`
+recovery; boot default unchanged, no stable promotion/power claim.
+[Timing follow-up](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
+
+Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
+shared payload verified; one-shot consumed, `.20` remains normal default.
+Five-minute boot/PMP/idle and M1 Pro GLES shader/readback plus 1 MiB fsync pass.
+Owner confirms internal display/input and front-left dock picture (slow to
+appear); hinge-side left port picture fails, right untested. External 1080p/60
+observed. Next matched physical-port evidence and real `.20` recovery; no
+suspend, stable or energy-improvement acceptance.
+[Report](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+## Deferred reboot: mismatch triage and test readiness — 2026-10-21
+
+24 mechanically-neither patches triaged: 19 source contracts retained,
+five deeper/partial reviews open. Full 64-fix semantics and hardware acceptance
+remain unqualified. Exact private post-boot collector/smoke commands are ready;
+compiler/EGL/GLES/GI dependencies exist. No hardware tests or installed changes.
+The one-shot remains armed for the owner's later attended reboot.
+[Audit](aurora/unified72/static-contract-review-2026-10-21.json),
+[manual sequence](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot).
+
+## Aurora 7.2 one-shot armed — 2026-10-21
+
+Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
+`elementary-aurora72-wip2-trial` is armed; `.20` remains persistent default,
+old/shared payload bytes are unchanged, no reboot yet. Next is owner/Claude
+attended reboot, basic unlock/display/input and manual qualification, then
+actual `.20` recovery. Hardware/suspend/power acceptance remains open.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json).
+This supersedes the unarmed staging status below.
+
+## Aurora 7.2 staged for an attended trial — 2026-10-21
+
+Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,
+legacy-DTB/unlock checks and bounded DART/DCP/radio host controls. Owner approved
+unarmed staging: separate package/Image/initramfs and non-default GRUB entry are
+installed, all 2,042 regular package files verified. `.20` stays default;
+`next_entry` empty, old fallback assets/shared `boot.bin` unchanged; no reboot.
+71 repository unit tests pass. [Receipt and boundaries](aurora/unified72/boot-preflight-2026-10-21.json).
+Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unlock
+acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
+qualification remain open; no measured power win.
+[First-boot plan](aurora/unified72/BOOT-TRIAL.md).
+
+## Native Messages experience landed — 2026-10-20
+
+PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
+resolution and unread dots (the two entries below). Messages now has a native,
+Apple-like conversation experience on the same BlueFerry backend: colour-coded
+avatars, grouped bubbles with time headings, optimistic sending that never
+doubles a message, link and media previews, an offline banner with Retry
+Connection, a New Message sheet with recents, keyboard shortcuts, and a code
+split into controller / model / widgets / style modules. Installed and running
+on the owner's desktop. Tests: 30 model, 5 media, 47 GTK; CI green. Open:
+in-app group participant confirmation, shortcuts overlay, opt-in Enter-to-send,
+live media-link check. Details: `OS9-HANDOFF.md` (same date) and
+`phone-setup/README.md`.
+
+## Messages media links — 2026-10-20
+
+Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.
+Uses a separate two-worker pool, RAM-only capped cache and decoded-frame bounds;
+private-network targets, credentials and nonstandard ports are rejected. Sent
+links auto-load, incoming links require Load Preview unless already cached.
+Real test links sent to self were received fully in backend threads; MAP subject
+summaries truncated longer bodies to 128 characters, so summary equality alone
+was an inadequate receipt. Actual GTK rendering passed for YouTube 480×360
+thumbnail, photo 500×477 and GIF 400×400/44 frames, including frame advancement,
+light/dark/narrow review. Playback opens YouTube externally; MAP image/GIF
+attachment payloads remain unavailable. Tests: 11 message models, five media
+models, 17 private GTK checks. README includes the requested frontend integration
+prompt; this is the existing GTK/Granite-over-BlueFerry architecture.
+
+## Messages readability and unread indicators — 2026-10-20
+
+Enlarged sidebar names to 1.4em and favorite names to 1.1em semibold. Added
+blue unread dots immediately left of avatars in list and favorites, preserving
+their position when photos load. Cached phonebook is now paged fully and used
+for exact unique name resolution, with upstream-style NANP alternate matching;
+groups, ambiguous contacts and international suffixes are never guessed.
+Snapshot-only messages contribute explicit unread state. 11 model and 16 private
+GTK checks pass. Phonebook refreshed (727 address entries). Three user-authorized
+YouTube/photo/GIF text links were sent to self and verified as full incoming
+backend messages. MAP summaries truncate long subjects at 128 characters; native
+image/video/GIF rendering remains unfinished, and attachment payloads remain
+unavailable through this MAP path. Pin snapshot is still not imported.
+
+## Four-across contact favorites and Applications launcher — 2026-10-20
+
+Favorites now use a four-column photo/initials grid above ordinary conversations,
+with a themed horizontal separator. Search reflows tiles; selection preserves
+drafts. 15 private GTK tests pass; light/dark/narrow fixtures reviewed. Installed
+for next Messages launch. Applications entry is visible and missing icon fixed
+by the scoped hicolor index/cache. No panel/dock restart.
+
+## Verification-code offers — 2026-10-20
+
+Installed/enabled helper adds near-pointer code cards, an available shortcut and explicit
+AT-SPI field insertion. Native keyboard-to-field and private Brave copy-only
+paths are covered by synthetic fixtures; direct Chromium fill needs an extension.
+Offers are memory-only, expire in five minutes and respect SMS domain binding.
+Installer/uninstaller preserves unrelated shortcuts and existing Messages/phone
+services. Owner-field/compositor placement/focus qualification remains open.
+See [implementation and limits](phone-setup/VERIFICATION-CODES.md).
+
+## PR #343 source-merge qualification passed — 2026-10-20
+
+Production GTK launcher controls pass light/dark visual inspection and real
+private-display click/hover/menu/Escape/typing checks. Mixed and uniform window
+identities dispatch the expected compositor actions; transient menus are correct.
+The canonical clean build now runs these checks in CI. Receipts/screenshots:
+`mseries/dock-tests/receipts/qualification-343-2026-10-20/`. No desktop deployment
+or Wingpanel restart. Next: updated-head CI and source merge; hardware deployment
+acceptance remains separate and requires its own authorization.
+
+## PR #339 superseded; review hardening retained — 2026-10-20
+
+Reconciled with concurrent #342; its startup/focus markers and focused-blue
+style are preserved. Fixed ambiguous app matching, mixed-identity activation and
+invalid transient app-management actions.
+Five native tests, eight wrapper checks, complete taskbar build/preservation and
+private focus/typing checks pass. Source-only review receipt and screenshot are
+retained under `mseries/dock-tests/receipts/review-339-2026-10-20/`. No deployment
+or Wingpanel restart. Next: owner recovery confirmation, representative visual/
+input acceptance and separately authorized deployment for the hardening follow-up.
+The coordinator closed #339 as superseded by #342 during this review; do not reopen
+the obsolete PR. The original tracking integration has already landed.
+
+## Tracking draft reconciled with canonical taskbar preparation — 2026-10-20
+
+Draft #339 now uses #341's canonical `mseries/dock-taskbar/prepare-source.sh`
+for both its production-method test and its explicit build-only mode. The latter
+hashes Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala and all copied shared
+CodexBar Vala sources before applying the experimental tracking patch, verifies
+all remain byte-identical, performs the complete build/schema and GTK hover/focus
+checks, then exits before installation. Default installation remains unchanged.
+Three tracking regressions, eight wrapper tests, the full canonical native build
+and the real GTK hover/focus/leave/pin probe pass against dev `689ffdf6`.
+No live files, settings or services were changed. The deployed #341 taskbar and
+icons remain under the recovery coordinator's ownership; #339 remains draft and
+undeployed pending its review/visual/input/deployment gates.
+
+## Draft app tracking preserves complete taskbar source — 2026-10-20
+
+The app-ID/running-pill fix is now source-only and includes an explicit
+`--build-running-apps-only` qualification mode. It applies after the complete
+Windows taskbar patch, requires Taskbar.vala and the taskbar-mode schema,
+verifies Taskbar.vala remains byte-identical, builds and exits before install.
+Default installation is unchanged. Three native resolver/AppSystem tests and
+eight wrapper regressions pass; the complete taskbar+tracking native build passes.
+The earlier incompatible deployment was rolled back; the restored live Windows
+taskbar binary/schema and official Teams/Outlook icons/pins are preserved.
+No live deployment is part of this draft. Owner recovery confirmation and
+isolated combined-taskbar UI/focus/typing validation remain gates. See
+`mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
+
+## Import the iPhone's Messages pins — requested 2026-10-20
+
+The cache fallback now has a concrete public Mac reference (Beeper) and passes
+actual Foundation read/export/failure fixtures on ARM macOS 15/26 and Intel
+macOS 26. No-account probes identify an absent cache; process-role rejection is
+no longer a blanket read blocker. All CI images report SIP disabled, so owner
+account/FDA/SIP-enabled access and NAS transfer remain unverified. Updated small
+kit performs no security changes and retains source modification time. The
+earlier process-gate interpretation below is superseded by this result.
+
+PR #349 merged as `6b1d520c675a227394b5a5a88298083f71e81657` after all checks
+passed. Ordered native import/review and encrypted mapping storage are staged
+for next Messages launch. Owner account export, SIP-enabled access and actual
+transfer/import remain unqualified; no successful owner macOS trip is promised.
+
+Open feature: native Pin/Unpin, a qualified ordered Mac snapshot import, then
+direct Linux synchronization of Apple's pin-settings store. Research found
+private IMCore/KVS interfaces and public Mac examples; no supported public
+Linux API or implemented BlueFerry/RustPush phone-pin sync was found. Local
+BlueFerry stars are separate preferences. Preserve exact order, distinguish
+snapshot/stale/unavailable from live sync, and resolve groups using verified
+identity rather than names. No Mac export or phone pin access is qualified yet.
+See [source review and implementation gates](phone-setup/PIN-SYNC-RESEARCH.md).
+
+## Desktop message notification popups — 2026-10-20
+
+Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
+The user-local service is enabled/active as `mseries-desktop-notifications.service`,
+using GTK3/Xwayland override-redirect popups for placement without a compositor
+or Wingpanel restart. It implements the freedesktop notification interface,
+shows up to three bottom-right cards, preserves focus, and dispatches supplied
+Open/Reply actions. It retains no history; no notification center, inline reply,
+images, sound, or native Wayland placement is claimed. Existing DND is respected;
+per-app elementary notification preferences and full accessibility qualification
+remain open. The installer stages by default; `--activate` enables/restarts only
+this service. BlueFerry uses the existing separate version-matched backend overlay
+at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
+as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
+(https://github.com/erikwb/blueferry); this repository does not redistribute its
+full source. Rebase the backend overlay after package upgrades.
+
+Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
+Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
+replacement, expiry, close and DND were checked using synthetic content only.
+Retained screenshots are fixtures. Live synthetic notification geometry was
+360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
+and bottom. The service remains active/enabled and BlueFerry remains active.
+BlueFerry notification tests (92) and combined overlay tests (201) passed; its
+Reply action opens the existing conversation through opaque-handle activation.
+No real phone messages were sent or deliberately marked read by these checks.
+Actual phone-notification click-to-app focus and next-login startup remain
+unverified. This is transformed-desktop work, not factory-image qualification.
+
+## Working iPhone messages and native Messages app — 2026-10-20
+
+The controlled 5.87 trial now has **real send and receive evidence**. Root-owned
+BlueZ 5.87 bluetoothd/obexd/client run from a scoped prefix; bearer methods were
+verified on the actual daemon. The fresh upstream Connect-first pairing exposed
+Hands-Free and produced Classic + LE keys. After the owner enabled the newly
+visible Show Message Notifications switch, MAP/MNS opened. One authorized self
+text was sent and received, followed by an authorized contact test and two real
+incoming replies. Contacts retained; optional ANCS remains unavailable. No
+message contents, phone numbers or keys enter Git. The combination worked; the
+trial does not isolate a single causal change.
+
+Fixed the live candidate's version-detection mismatch by matching bluetoothctl
+to the daemon in scoped service/launcher PATHs. BlueFerry otherwise read distro
+CLI 5.85 and selected compatibility despite 5.87 running. Persistent drop-ins
+are installed without restarting the working message session. Reproducible
+installer/rollback: `mseries/install-messaging-bluez.sh`. Distro binaries,
+kernel/bootloader and Wingpanel remain untouched. The pairing flow removed only
+BlueFerry's phone-audio restriction; normal Hands-Free is now offered.
+
+New `mseries-messages` / Messages desktop entry: GTK 4 + Granite 7, conversation
+sidebar/search, plain-text bubbles, explicit contact/address selection,
+contact-photo avatars with initials fallback, larger sidebar names,
+multiline composer/Ctrl+Enter, per-conversation drafts while open, pending and
+retry states, responsive navigation, theme following and original app icon.
+Backend transport, encrypted history and group routing stay upstream. Setup
+hands off to this native client; advanced group setup remains in BlueFerry.
+
+Inbox catch-up queries up to 200 phone-exposed recent entries at open/reconnect
+and logind resume,
+on manual refresh and after five minutes between successful reads, using wall
+time so suspend counts. Snapshot merges preserve known group routes and dedupe
+MAP handles. Inbox-only snapshots stay in memory; no plaintext archive is added.
+A live query returned 11 entries. Complete iCloud history and sent-history import
+are not supported; controlled sleep/missed-message recovery and reboot remain
+unverified. Source details: `phone-setup/UPSTREAM-REVIEW.md`, user behavior and
+rollback: `phone-setup/README.md`.
+
+Contact-photo caching was explicitly requested and enabled; a real PBAP sync
+returned 727 contacts and 34 photos while MAP stayed connected.
+
+Verification: 26 setup/protocol/reconnect/model tests and 9 private-display GTK
+checks; light/dark/narrow synthetic screenshots reviewed. Draft routing across
+conversation switches, duplicate-send prevention, failed-send retry retention,
+group identity tokens, malicious addresses, search, offline state and narrow
+navigation covered. Live native app started, MAP stayed connected, and recent
+inbox rendering loaded without startup errors. Final send through the redesigned
+composer and assistive-technology traversal remain hardware/UI follow-ups.
+Localization strings are extractable; translated catalogs are not shipped.
+
+
+## Transparent Outlook icon; dock deployment recovered — 2026-10-20
+
+Outlook now fetches the transparent, checksum-pinned Office SVG directly from
+Microsoft's CDN. The old white-backed touch icon was removed locally. GTK
+resolves the SVG and its corner alpha is verified zero. Teams/Outlook icons,
+launcher entries and dock pins are retained; both launchers advertise their
+observed Brave StartupWMClass. Fourteen offline web-launcher tests pass.
+
+A live app-tracking experiment incorrectly rebuilt the dock without the owner's
+existing Windows Taskbar.vala customization, replacing the intended bottom bar.
+The recovery chat restored the retained pre-change binary, SHA256
+`960642d81bd83c4ec06be02c6a37ffa6967a874ddd42e4011827bc696002541f`.
+This chat verified that hash, active dock service and private `taskbar-mode=true`.
+All further dock deployments/restarts are stopped pending owner recovery
+confirmation. Icons/launchers remain installed; native tracking/pill changes
+were rolled back with the incompatible executable. The experimental source and
+tests are retained separately in this task's scratch directory, not wired into
+the installer. Any future tracking fix must preserve the complete customized
+taskbar source and be isolated-tested first. No compositor or Wingpanel restart
+was performed. The safe icon/launcher PR excludes the native dock experiment.
+
+## Work Mode and Teams/Outlook deployment — 2026-10-20
+
+Historical 11:39 deployment snapshot. The later #338 recovery entry above
+supersedes the dock binary and launcher/icon status; its owner-recovery hold
+remains in force. This receipt does not authorize another dock deployment.
+
+Merged dev `8d85efe` is installed: Work Mode helper/settings, native dock, Teams
+and Outlook shortcuts, and compositor package. Wingpanel and the running
+compositor are unchanged; the compositor loads at next login. A concurrent dock
+service restart was observed; its current binary matches the installed build.
+Existing settings/pins/wallpaper and Brave session selection are preserved.
+See OS9-HANDOFF.md and the deployment receipt for checks and backups. Respect
+the #338 recovery hold before further dock deployment or restart; native
+taskbar/window-clearance and Teams/Outlook qualification remain open.
+
+## Work Mode integration reconciled — 2026-10-20
+
+#329 now preserves current gesture/cursor and floating-window clearance behavior
+alongside taskbar modes, and selects the size-system token appropriate to the dock.
+Nine Work Mode tests, 41 compositor tests, strict Clippy, native dock/settings builds
+and private window/focus/typing checks pass. #337's status-note conflicts are
+reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
+See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
+remaining native taskbar/network and Teams/Outlook qualification checks.
+
+## Teams official dock icon and Outlook Mail shortcut — 2026-10-20
+
+Owner requested the official Teams dock icon and that the dock Mail button open
+Outlook Web. Teams now fetches the website's icon directly from Microsoft's CDN,
+verifies the pinned source checksum, extracts the original 256-pixel PNG without
+alteration, and refreshes the local GTK icon cache. The Microsoft asset is not
+redistributed in Git. Teams was pinned through `install-teams.sh --pin`.
+`install-outlook-web.py` replaces only the elementary Mail dock pin with Outlook
+Web in Brave's Default profile; the original launcher order is backed up locally.
+The system mailto handler remains `io.elementary.mail.desktop`. No panel/dock
+restart or media-stack changes. The Outlook launch was accepted by the existing
+Brave session; authenticated mailbox access was not observed.
+
+Fourteen offline tests pass, including actual Gio Outlook dispatch with a recording
+browser, pin preservation/idempotence, official-icon checksum rejection, unchanged
+ICO-to-PNG extraction and offline icon preservation. The host GTK icon theme now
+resolves Teams to the official PNG and Outlook to the installed elementary Mail
+icon. Both desktop entries validate. Owner sign-in to Teams remains confirmed;
+live media, dock grouping and Outlook mailbox operation remain unverified.
+
+## Open PR integration review — 2026-10-20
+
+Scratch-ignore PR #335 merged. Reviewed #322/#334/#320/#312/#324/#326 with
+combined-source CI and preserved both sets of conflicting status notes. Local
+Teams, calendar tracker, bundled identity, 33 compositor tests and isolated
+gesture rendering pass. CodexBar v0.78.0 custom-port check and routine staging
+pass; the module loads at next login without a panel restart. See OS9-HANDOFF.md
+for receipts and GitHub PRs for final merge outcomes. Next: #329 needs runtime
+conflict resolution and checks for its latest taskbar/compositor head; intentional
+drafts remain gated. Native gesture and live UI qualification remain open.
+
+## Gesture package staged for next login — 2026-10-20 (Codex)
+
+PR #326 CI passed before the latest cursor integration. Merged `dev` through
+`6073858` into the feature branch, keeping the themed cursor and all three
+settings watchers. Its 33 all-feature tests pass. The first release package
+(PR-only source `806cde7`) was deliberately not installed: another task had
+staged compositor `432fe4b` with unmerged Windows Work Mode/top-panel/taskbar
+clearance changes. A separate `codex/gesture-deployment` branch combines those
+exact installed compositor changes with gestures at `314652f`; PR #326 does not
+absorb the unrelated Work Mode feature. Combined build passes 38 all-feature
+tests, warnings-denied all-feature Clippy, release packaging and the isolated
+GTK Cairo gesture pixel/state smoke. The packaging helper now honors
+`CARGO_TARGET_DIR` for shared worktree builds.
+
+Installed `0.1.0+git432fe4b+gestures.20261020` with `sudo -n dpkg -i`, followed
+only by `systemctl --user daemon-reload`. Production binary excludes the
+`gesture-probe` socket and retains the Work Mode D-Bus panel interface. Strict
+schema validation, all shared-library resolution, installed payload SHA-256,
+`gsettings get org.techmore.mseries.gestures four-finger-pinch-in` (`'launcher'`),
+and the installer's read-only `--verify` pass. Compositor PID 1944 and Wingpanel
+PID 2135/start times and the running compositor executable hash are unchanged:
+**installed but not loaded**. No compositor restart or logout was requested.
+The dock PID changed 153271 → 160644 at 10:38:17 during concurrent work; this
+task issued no dock restart and the unit contents did not change. Dock is
+active; attribution of that separate restart is unverified, so an unchanged
+whole-session claim is not made.
+
+Package, exact prior-binary rollback .deb, deployment JSON and smoke receipts
+are retained in `~/Documents/Codex/gesture-animation-package-20261020/`.
+See `mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md` for source
+revisions, hashes, rollback command and limits. Next: owner logs out/in normally
+when ready; then qualify physical workspace/overview gestures, tap/natural
+scroll preferences, native pacing, multiple monitors and mixed XWayland windows.
+
+## Finger-following workspace and overview gestures — 2026-10-20 (Codex)
+
+Continued PR #326 from `codex/gesture-animation` and merged latest `dev`
+through `25011bc`, retaining the newer dock clearance implementation.
+`gesture_animation.rs` now tracks swipe progress, velocity and a bounded
+critically damped release spring. Horizontal swipes render the active and
+adjacent workspaces offset under the fingers, resisting at the ends; vertical
+swipes scale/move windows toward or away from the overview grid. Workspace,
+focus and client geometry change only at completion. Cancelled/short swipes
+spring back. Escape, clicks, locks, grabs, session suspension, device removal,
+workspace changes and replacement gestures discard stale previews. The release
+animation honors `org.gnome.desktop.interface enable-animations`. Thumbnail
+rectangles preserve aspect ratio without enlargement. The steady overview
+still configures clients once at completion; it is not yet a persistent
+thumbnail compositor. Both native and nested renderers share scene assembly,
+and hidden neighbor windows receive frame callbacks while previewed.
+
+Validation: 32 all-feature compositor tests pass; default and all-feature
+Clippy checks pass with warnings denied. The private `gesture-probe` build
+feature permits deterministic nested swipe input and is absent from normal
+package builds. Its self-contained Xvfb/D-Bus/GTK Cairo smoke passes actual
+pixel-bound checks for workspace displacement, cancel/restore, edge resistance,
+overview shrink/separation/open/close, interrupted springs and reduced-motion
+release. Selected screenshots were inspected and a 3.5-second motion recording
+was retained under `mseries/pantheon-rust-compositor/gesture-tests/receipts/2026-10-20/`.
+Reproduction commands and measured limits are in that directory's parent README.
+The first GTK Vulkan fixture run lost nested surfaces; the Cairo fixture is the
+qualified path, not a Vulkan pass. Three lint-only cleanups in the newly merged
+`pantheon_shell.rs` retain the dock behavior. `git diff --check` passes.
+
+No animation package installed and no live desktop restarted. The independently
+staged dock compositor package remains separate. Next: physical M-series
+trackpad tuning (360 units per output, 8-unit axis threshold), native frame
+pacing, multiple-output/mixed-XWayland previews and hardware lock/grab tests.
+
+## Trackpad gesture review and dev integration — 2026-10-20 (Codex)
+
+Continued PR #326 on `claude/trackpad-gestures`. Merged `origin/dev` at
+`1740443`, resolving the two handoff/roadmap conflicts while retaining both
+sets of entries and the newer corner-snapping implementation. Review fixed
+in-flight gestures surviving a lock or pointer grab: owned actions now check
+availability on updates and release; locking cancels sequences before focus
+moves; native session suspension and device removal cancel sequences too.
+Window cycling now restricts candidates to managed application windows on the
+active workspace. Invalid/zero/negative pinch scales cannot launch an app.
+The touchpad `click-method=none` setting now explicitly disables libinput's
+software click method (the Rust input 0.10 enum omits this C API value).
+
+Verification: `cargo test -p pantheon-compositor` passes 16 tests (including
+cancelled/invalid pinch regression cases); `cargo clippy -p pantheon-compositor
+--all-targets -- -D warnings` and the same command with `--features native-drm`
+pass. `glib-compile-schemas --strict --dry-run` on the packaged schema passes;
+`bash mseries/pantheon-rust-compositor/test-session-units.sh` passes (the host's
+unrelated spice-vdagent unit emits an existing Install-section warning).
+`git diff --check` passes. Updated the compositor README, architecture status
+and public performance page to describe implemented versus unqualified work.
+No package installed and no running session restarted. Physical device
+configuration, lock/grab interruption on hardware and actual application zoom
+remain unverified. Next: native trackpad qualification and finger-following
+workspace/overview animation; actions still fire on release.
+
+## Rust compositor: macOS-style trackpad gestures and touchpad settings — 2026-10-20 (Claude)
+
+Branch `claude/trackpad-gestures` (from `origin/dev`). The live session runs
+`pantheon-compositor --backend native`. Before this change it recognized only
+3-finger workspace and overview swipes, never applied libinput device options
+(so tap-to-click stayed off whatever Switchboard said) and sent no gestures to
+applications.
+
+- `src/touchpad.rs`: reads `org.gnome.desktop.peripherals.touchpad` and
+  `.mouse` (tap-to-click, tap-and-drag/lock, tap button map, natural scroll,
+  two-finger/edge scrolling, disable-while-typing, middle-click emulation,
+  left-handed, click method, speed, accel profile, send-events). It applies
+  them to each libinput device when the device is added. A GSettings watcher
+  re-applies them to every known device when a key changes, so the
+  Switchboard Mouse & Touchpad plug works live.
+- `zwp_pointer_gestures_v1` (v3) is now registered. Gestures the compositor
+  does not claim are sent to the focused client: two-finger pinch-to-zoom,
+  unbound swipes, and every hold gesture (GTK uses holds to stop kinetic
+  scrolling).
+- `src/gestures.rs` rewritten around bindings read live from elementary's
+  `io.elementary.desktop.wm.gestures` (3/4-finger horizontal: switch-to-workspace,
+  move-to-workspace, switch-windows; swipe up: multitasking-view,
+  toggle-maximized). New `org.techmore.mseries.gestures` schema (shipped in
+  the package under `session/usr/share/glib-2.0/schemas`) adds the pinch
+  elementary lacks: `four-finger-pinch-in` defaults to `launcher` (Launchpad);
+  `three-finger-pinch-in` defaults to `none`. With the overview open, any
+  multi-finger vertical swipe closes it (macOS swipe-down). Five fingers use
+  the four-finger bindings. New compositor actions: move the focused window
+  to the adjacent workspace and follow it; cycle windows on the workspace.
+
+Verification (this host, no session taken over, nothing installed):
+`cargo check -p pantheon-compositor --bins --features native-drm`, `cargo clippy`
+(default workspace and `native-drm`, all targets) clean, `cargo test -p
+pantheon-compositor` 14/14 pass (9 gesture, 2 touchpad, 3 overview).
+`glib-compile-schemas --strict --dry-run` accepts the new schema. Headless smoke
+(Xvfb + `dbus-run-session`, private `XDG_RUNTIME_DIR`, nested Winit backend):
+a GTK Wayland client saw `zwp_pointer_gestures_v1` v3 and created swipe, pinch
+and hold gesture objects.
+
+Not verified: physical trackpad behaviour (the nested backend emits no
+gestures), libinput option application on the real device, thresholds
+(90 px swipe, 0.7 pinch scale) on the M1 Pro panel, and app pinch-zoom in
+Firefox/GTK. The new binary is not installed; that needs a package build and a
+compositor restart, which ends the owner's session. Next: finger-following
+(1:1) workspace and overview animations, and a pinch-out action (show
+desktop) once the compositor has that action.
+## Dropdown and Orchard visual polish — 2026-10-20
+
+Branch `codex/panel-ui-polish` applies the UI specialist skill to CodexBar, Quick
+Settings, Orchard and Battery's dropdown. The owner prioritized Orchard visual
+polish before feature expansion. Changes include readable CodexBar cards, labeled
+Quick Settings sliders, grouped Orchard dropdown metrics/instance rows, a
+responsive Orchard dashboard and selection-only bulk toolbar, and a compact
+Battery summary with expandable activity and an explicit app launcher.
+
+Validation: CodexBar's 17 tests and custom-port check pass (pin remains v0.78.0);
+Orchard's five native suites pass, including seven indicator transitions, row
+identity on unchanged refresh and selection/clear behavior. Patched Quick Settings
+and Power modules compile; private BlueZ checks and shared slider/Battery summary
+probes pass. Light/dark private renders were inspected. CI coverage now includes
+the shared widget probes and native Orchard build/tests. See `PANEL-UI-REVIEW.md`
+for details and limitations. No panel reload; Quick Settings/Power/Orchard are
+built but not installed. CodexBar post-push staging passed all 17 tests, and the panel/daemon PID lists
+were unchanged. Its module loads at next login; native Settings takes effect
+on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
+
+## Top bar increased to 130% and managed service restored — 2026-10-20
+
+Owner reported that 115% was not visibly larger and confirmed the target is
+Wingpanel in the Rust desktop session. Increased `CONTENT_SCALE` to 1.30 for
+all groups together, with matching production measurement/coordinate tests and
+CI wording. Built and installed the updated panel; `test-panel-scale.sh` passed.
+
+Found the manually launched panel was no longer running, while the native
+`pantheon-wingpanel.service` had stayed inactive since the original reload.
+Restored the existing managed service instead of launching another unmanaged
+instance. This uses its existing `GSK_RENDERER=gl` setting for the Rust compositor;
+the earlier manual launch had omitted that setting and logged repeated Vulkan
+surface-loss warnings. The service is active (PID 153373), its executable bytes
+match the newly installed build, and its renderer environment is `gl`. CodexBar
+hover information remains off; upstream pin remains v0.78.0. Physical visual
+size awaits owner feedback. Future reloads in the Rust session should use
+`systemctl --user restart pantheon-wingpanel.service`.
+
+## Entire top bar enlarged 15% — 2026-10-20
+
+Owner clarified that the whole top bar should be bigger. Added
+`wingpanel-content-scale.patch`: native IndicatorBar measurement and allocation
+scale all three groups by 1.15, including Applications, clock, explicit icon/font
+sizes, CodexBar, RepoBar, status controls and their spacing. This replaces the
+uncommitted CodexBar-only size adjustment, so CodexBar is not scaled twice.
+Notch/monitor geometry remains in monitor coordinates. Both native Wingpanel
+installers apply the patch; CI runs the isolated scale check.
+
+Built and installed with `bash mseries/install-wingpanel-codexbar-left.sh` and
+reloaded Wingpanel using `GDK_BACKEND=wayland` (PID 117166; running executable
+bytes match the installed binary). The CodexBar hover preference remains false;
+upstream CodexBar pin remains v0.78.0. `test-panel-scale.sh` passed for production
+measurement and 1.15 coordinate transforms. `test-panel-startup.sh` passed,
+including monitor-width measurement, 20 clock reparent transitions and Gala
+readiness. Physical visual size and dropdown interaction await owner feedback.
+Next: tune only if the owner wants a different scale.
+
+## CodexBar hover information toggle — 2026-10-20
+
+Added **Display > Wingpanel > Hover information**, default off, stored locally as
+`showHoverInfo` in `~/.config/codexbar/wingpanel.json`. It gates pointer tooltips
+throughout the panel subtree, including provider marks, quota dots and hints.
+Menu tooltips and accessible labels remain available. Atomic preference changes
+apply to cached widgets without a provider request. Set the owner's preference
+to false, installed with `bash mseries/deploy-codexbar.sh --restart`, and loaded
+the module in the running Wayland Wingpanel (PID 75113; mapped inode matches the
+installed module). The interrupted reload needed an explicit relaunch with
+`GDK_BACKEND=wayland` because the executor exports `GDK_BACKEND=x11`. The existing
+CodexBar daemon stayed running (PID 2088). Upstream pin remains v0.78.0.
+
+Verification: native build and all 17 Meson tests passed, including preference
+persistence/default-off and recursive live hover enable/disable checks;
+`bash mseries/check-codexbar-port.sh` passed. Pointer behavior on the physical
+desktop has not been visually inspected. Next: owner can enable the toggle to
+restore hover details if desired.
+## GitHub deployment outcomes in Calendar — 2026-10-20
+
+A GitHub tab tracks Rupert deployment ready (#207 in techmore/rupert) and
+Daedalus deployment ready (#17 in techmore/tm-daedalus), with stable priority,
+native sub-issue gate progress, next actions, exact-commit CI and blueprint/
+milestone/PR links. Refresh is read-only on opening, manually and every five
+minutes while visible; offline evidence retains its date. Unknown/skipped/
+cancelled checks do not count as passing. Release/recovery and operator
+acceptance stay explicit GitHub gates. The feature uses the existing gh login.
+Local native compilation and offline GTK/EDS integration are validated; live
+menu activation waits for the next login. See mseries/calendar/README.md.
+
+## Microsoft Teams web desktop integration — 2026-10-20
+
+No prior Teams native port was found in the repository or remote branches. Per
+owner direction, `codex/teams-native` adds the actual Microsoft Teams web client
+as a per-user application shortcut, with an isolated Chrome/Edge mode and an
+explicit `--use-brave-session` mode. The latter reuses the selected regular Brave
+profile through Brave itself; no cookies, password databases or tokens are copied.
+Installed on this J314S using Brave 155.1.97.59, profile `Default`. Chrome
+155.0.8059.84 arm64 was also installed from Google's official package as the
+Microsoft-listed browser fallback. Its package selected Chrome as default;
+Brave was restored (`xdg-settings get default-web-browser` reports
+`brave-browser.desktop`). No panel restart or audio-stack changes.
+
+Verification: ten offline launcher/integration tests pass, including real Gio
+Desktop Exec parsing with special paths, deep-link validation, private isolated
+profiles, preserving sessions across reinstall/uninstall, and sharing the Brave
+profile without copying it. Shell syntax, ShellCheck and desktop-file validation
+pass. Local `--check` confirms Brave session mode; launch was dispatched to the
+browser. A separate temporary in-app browser reached Microsoft's sign-in page.
+Owner confirmed that the Brave workflow worked and signed them in. Dock
+grouping, message delivery, notifications, camera/microphone, screen sharing
+and meeting join remain unverified. This is a web integration, not a native Teams reimplementation or
+factory-image qualification. See `mseries/teams-web/README.md` for commands,
+support boundaries and sources. Next: a real meeting/media and notification check; use Chrome mode if Brave is incompatible with the tenant.
+## UI fixes installed after PR #321 — 2026-10-20
+
+PR #321 merged into `dev` as `9cb1c70`; all ten CI checks passed. Updated the
+existing Orchard launcher binary at `~/.local/bin/com.github.techmore.orchard-incus`,
+Battery UI at `/usr/libexec/mseries/battery/mseries-battery-app.py`, and Apple
+Passwords UI at `~/.local/share/mseries/icloud-passwords/gui/app.py`. Each installed
+file byte-matches the tested build/source. Existing Battery core and Passwords
+worker already matched the merged source, so no full installer was rerun.
+
+Installed-file smoke checks passed on private Xvfb/D-Bus with temporary config/data:
+Battery mapped and handled a mocked dark preference notification; Passwords
+scrolled at 540 × 420 and allowed Sign In focus with its worker stubbed; the actual
+installed Orchard binary stayed alive without GTK criticals. No live application,
+logger, panel, account, VM or wallpaper was restarted/changed. Reopen Orchard for
+Incus, Battery and Apple Passwords (Experimental) to load the fixes. Live user
+interaction and hardware theme switching remain to be tried. File hashes and
+backup location: `mseries/receipts/ui-consistency-install-2026-10-20.json`.
+## Repository housekeeping — 2026-10-20
+
+Updated the owner checkout by 21 commits to `8ed3a76`, backed up two
+byte-identical untracked documents now tracked by dev, and pruned three
+registrations for missing worktree directories. All 43 existing worktrees,
+local branches, and unrelated drafts remain. Git connectivity and whitespace
+checks pass. Five other worktrees have local changes and remain untouched.
+See OS9-HANDOFF.md for commands and backup location. Next: review open
+feature PRs under their own CI and qualification gates.
+
+## Permanent Pantheon dock and floating-window clearance — 2026-10-20
+
+Owner visually confirmed the native Pantheon dock, then explicitly requested
+permanent enablement and windows moving out of its way. Executed
+`mseries/dock-policy/enable-permanent.sh`: removed bounded-trial hooks and
+pending autostart, stopped trial timers, removed disabled marker, selected
+48-pixel icons and auto-hide `never`, and started the regular session dock.
+Live verification: service active, `RuntimeMaxUSec=infinity`, no trial stop
+hook; Rust session already wants the dock at subsequent logins. Recorded the
+new owner authorization in the policy copies and live config.
+
+Rust compositor now fits ordinary floating Wayland and XWayland windows into
+the work area when panels change, moving them first and shrinking only if
+needed. Existing maximized/tiled handling remains; fullscreen and X11
+override-redirect surfaces keep their special behavior. It neither raises
+windows nor changes keyboard focus. Hidden-dock expansion does not restore
+previous floating positions/sizes. Clients may enforce minimum sizes.
+
+Verification: all 18 native-feature compositor unit tests pass, including
+three new move/shrink/offset geometry cases; release build succeeds. Private
+Xvfb/D-Bus integration passes bottom-edge X11 clearance, native/X11 snapping,
+minimize/restore, focus preservation on initial/repeated dock activation, and
+typing. Python controller tests (5) and shell syntax pass. Installed package `0.1.0+gitdbc7b14` using `sudo dpkg -i`;
+service daemon-reload completed without restarting the dock or compositor.
+The new binary is staged for next login; native hardware window movement remains
+pending that login. The live dock remains the patched Vala/GTK Pantheon dock
+hosted by Rust; no Rust dock rewrite is claimed.
+
+Next: load the staged compositor at a normal login and visually verify
+window clearance with both monitors.
+
+
+## Dock test stopped before launch — 2026-10-20
+
+Post-reboot owner reported no dock. Retained report at
+`~/Documents/Codex/2026-10-20/yo/outputs/dock-trial.json` records left snap
+width 960 versus monitor width 2419, then preflight failure; the dock unit
+never started. Live D-Bus now exposes `FocusRoutingVersion=1`. Added explicit
+`--dock-only` mode, retaining compositor identity, Start, focus/typing checks,
+independent timer, RuntimeMaxSec and exact opt-out restoration. Preserve the
+first terminal report rather than overwriting it on a later Stop click.
+
+Validated with Python compilation (warnings treated as errors) and all five
+controller safety tests. Installed the updated controller and requested the
+owner's saved GUI approval for a 60-second dock-only trial; result goes to
+`~/.local/state/mseries/dock-trial/dock-only-20261020.json`. The dock-only attempt ran 09:47:11–09:47:14: typing passed, then a focus
+departure stopped it. Owner saw no dock. Journal confirms a first panel buffer.
+Live preferences are overlapping-window auto-hide and 24-pixel icons. Added
+`--visible` for temporarily disabling auto-hide with 48-pixel icons, restoring
+preferences on normal finish/close. Presented the required approval for this
+visibility test; result pending in `visible-20261020.json`. Rust workspace has
+no dock crate: the current dock is the patched Vala/GTK dock hosted by the Rust
+compositor; a full Rust dock port is still outstanding. Next: inspect this receipt and dock journal; investigate
+the separate snap geometry discrepancy.
+
+
+
+## Claude account and usage display — 2026-10-20
+
+CodexBar now selects the Claude app account for the main quota when its login differs
+from the CLI, and names the CLI login separately. Current profile metadata corrects
+stale Pro labels after Max upgrades. Verified with live account metadata, 43 helper
+tests, 17 panel test groups and the custom-port check; split-login fixtures render in
+both themes. Routine deployment stages the native module for next login; live visual
+acceptance remains pending.
+
+## October 20 desktop focus and snapping
+
+- Implemented XWayland tiling/monitor movement, left/right drag snap zones, panel
+  first-buffer/activation focus protections, and an explicit window-recovery
+  chooser. See [focus audit](pantheon-rust-compositor/FOCUS-AUDIT-2026-10-20.md).
+- Keep the live dock opt-out while the older compositor runs; qualify the new
+  native login before considering dock activation. Physical edge dragging,
+  mixed-display snapping and all context-menu paths remain owner acceptance.
+- `.20-enh1` is booted with PMP ready and two connected displays. Earlier scoped
+  GPU/fsync captures passed; the current capture failed because Rust lacks
+  DisplayConfig `PowerSaveMode`, not because display enumeration failed.
+  Suspend/resume, recovery boots, sustained VRR and matched energy A/B remain open.
+
+## Native UI consistency review — 2026-10-20
+
+Branch `codex/ui-consistency-review` applies the new UI specialist skill. Orchard
+now keeps primary actions in the header and puts secondary destinations in a
+named menu; filters and bulk actions wrap, long names ellipsize with tooltips,
+and changed controls have accessible labels. Apple Passwords scrolls its login
+form and sizes stack pages independently. Orchard and Battery follow Granite's
+color preference at startup and on notifications.
+
+Verification: Orchard compiled and passed all four component tests; its UI
+fixture renders at 720 × 640 with a long name in both themes, while the original
+header's 761-pixel minimum fails the narrow-window check. All nine Passwords GUI
+tests passed, including a short window with enlarged text; the original login
+allocates 574 pixels for a 420-pixel request. Battery passed 26 tests including
+startup/live color preference checks. Six light/dark screenshots were inspected.
+`git diff --check` passed. See `mseries/UI-CONSISTENCY-REVIEW.md` for the review,
+commands, limits and follow-ups. These changes are not installed; the running
+desktop is unchanged. Next: review the PR, then qualify the installed apps;
+follow up on remaining dialogs, Battery refresh state and theme/contrast gaps.
+
+## UI consistency skill — 2026-10-20
+
+Branch `codex/mseries-ui-specialist` adds the repository-owned
+`.agents/skills/elementaryos-mseries-ui-specialist/` and an `AGENTS.md` entry
+for automatic use during UI work, with implicit invocation explicitly enabled
+in `agents/openai.yaml`. Inspected GTK 4/Granite 7 Vala and Python screens, Wingpanel 9
+indicators, the Switchboard/libadwaita Work Mode plug, and two retained
+Troubleshooter screenshots at `ed0d31a`. The skill records Apple's design
+standards as the owner's quality reference and explicitly links the original
+`swiftui-specialist` at upstream revision
+`6f9ff8d5ad6000491cb0f483a776b7062e41cd97`; no upstream Apple content is vendored.
+
+Verification: skill-creator `quick_validate.py` passed; relative reference links
+and fully qualified repository source paths checked; pinned upstream entry
+point retrieved successfully; `git diff --check` passed. This is guidance only:
+no application UI, runtime packages, panel or wallpaper changed. Other screen
+families were source-inspected, not newly rendered or hardware-qualified.
+Next: apply the skill to the next scoped UI change and refine conventions from
+that review; the source map is an inspection baseline, not a frozen design.
+
+## Windows Work Mode work-network trigger — 2026-10-20
+
+Windows Work Mode can now be limited to work networks identified by public IP or CIDR,
+combined with the weekday schedule. Lookup is cached per uplink and only made when the
+other rules pass. Remaining: visual panel review, a real scheduled/network transition,
+and the active dock appearance.
+
+## Work Mode wallpaper — 2026-10-20
+
+Added a native Switchboard panel under Personal with a Windows Work Mode switch, a
+work-wallpaper picker with four bundled original choices and custom image support,
+weekday scheduling, and start/end times. A per-user systemd timer checks once a
+minute and restores the wallpaper that was active
+before Work Mode began. The panel, timer, and bundled Windows 11-inspired Blue
+Flow wallpaper, Blue Ribbons, Violet Arc, and Forest Flow are installed on the
+J314S desktop. The three newer choices are original bundled artwork. Work Mode remains off, so
+the existing wallpaper is unchanged. The Switchboard constructor-order crash
+is fixed; System Settings exits cleanly on relaunch. An isolated GSettings
+run passed apply/restore checks without changing the live desktop. Visual panel
+inspection and a real scheduled transition remain open.
+
+PR #311 merged the dock integration and visible rename to Windows Work Mode; it
+is installed on the J314S desktop. The mode remains off, preserving the current
+wallpaper and dock preferences. While active it adapts elementary's existing
+dock to 40-pixel icons with auto-hide disabled, keeping the user's pinned apps
+and native running-window behavior; preferences are restored when the mode ends.
+The UI has not been visually inspected, and a real scheduled transition remains
+open. Start, Search, system tray and widgets are outside this partial dock
+implementation.
+
+For additional wallpaper choices, Windows itself supports Store themes and a
+daily Spotlight image ([Microsoft personalization guide](https://support.microsoft.com/en-us/windows/experience/personalization/personalize-your-windows-experience-with-themes),
+[background guide](https://support.microsoft.com/en-us/windows/experience/personalization/change-the-desktop-background-in-windows)). Microsoft’s
+copyright guidance says redistribution needs an express license or permission
+([reuse guidance](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions)).
+Do not scrape or bundle Spotlight or Windows theme files into this repo. The
+panel already accepts a user-local image; any bundled set should use original
+artwork or assets with explicit redistribution rights and per-file license
+notes.
+
+## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
+
+The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
+candidate was packaged locally and checked in private Xvfb: Winit and XWayland
+started, and Zenity appeared in the compositor's live Gala-compatible window
+snapshot with focus and the expected two-workspace count. On 2026-10-19 the
+opt-in LightDM session also completed its first native M1 Pro login and scanout:
+kernel DRM state showed the compositor's AR30 framebuffer active at 3024x1964,
+and the owner confirmed the desktop was usable. Startup felt slow; Wingpanel,
+the bottom dock and a colored wallpaper/background were absent in the Rust
+session. A five-minute rollback returned LightDM to Gala, where the owner
+reported the background had returned. The native display path and automatic
+rollback are proven, but full Pantheon readiness and daily-use stability are
+not. Installed Wingpanel also
+connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
+and received a valid nested `GetCurrentState` response. It is not evidence for
+physical keyboard input or full shell integration. A private GTK/Wayland
+Zenity field now also receives nested key events and commits Japanese text
+through IBus/Mozc `mozc-jp` with a private Hiragana-on profile. F5 app behavior,
+host source switching, native input and full experimental Pantheon shell
+integration remain unqualified.
+
+Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
+clarified that the goal is to identify and implement the compositor features
+needed by the M-series/Pantheon experience, not port Mutter or reproduce all
+its features. The scoped requirements and upstream feature radar are in
+[`pantheon-rust-compositor/README.md`](pantheon-rust-compositor/README.md) and
+[`EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+The list is grounded in this repo's notch-aware panel, dock work area, display
+profiles/hotplug, window snapping, input and session work. Features such as
+Xwayland, IBus, accessibility and screencasting are conditional on an actual
+supported workflow. The measured M1 Pro requires cross-device rendering:
+Asahi `/dev/dri/card1` supplies EGL/renderD128 but no KMS resources, while Apple
+`/dev/dri/card2` owns connected displays and has no EGL device. The opt-in Smithay nested prototype in
+`rust/pantheon-compositor/` passes local `cargo check` and `cargo build`. It
+advertises Pantheon's protocol v2, places
+panel surfaces using anchor/size/offset, and applies exclusive panel geometry
+when configuring maximized windows. A changed panel work area now reconfigures
+already maximized windows, while unchanged panel repaints do not send redundant
+configures. Work-area caches now cover every active output; maximized/fullscreen
+windows and popup constraints use the output containing their window, and panel
+removal triggers work-area reflow. New committed toplevels are centered and
+cascaded in the focused window's work area, falling back to the pointer output
+and then the primary output; they are activated and focused. Absolute pointer events map to all logical
+outputs. The configured primary connector is retained through monitor profile
+application and hotplug while it remains connected, falling back to eDP or the
+first available output. These new behaviors are compile-checked but not runtime-qualified. The
+v2 protocol probe completed a nested Xvfb run and sent panel requests over the
+Wayland socket. Installed Wingpanel 8.0.4 also connected in an
+isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
+and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
+service. The prototype now returns its read-only `GetCurrentState` query using
+all tracked output modes and logical positions, and increments the state serial
+on output add/update/remove before emitting `MonitorsChanged`; Wingpanel connects without the
+missing-service error. `ApplyMonitorsConfig` validates connector assignments,
+mode IDs, scale and transform, applies native DRM mode changes through Smithay's
+shared output manager with rollback, and applies temporary layout changes.
+Method 2 saves a per-user monitor profile and native startup restores it.
+Native output disable/re-enable is implemented, including persistence of the
+enabled state and keeping disabled connectors in the monitor inventory.
+Native transitions keep existing outputs live while staging replacements, and
+can atomically reassign one CRTC to a different connector when the encoder
+supports it. Outputs outside the requested set are retired after all requested
+outputs are active; failures attempt to restore the prior set, modes and layout.
+The path builds but still needs hardware and failure qualification.
+Mirroring, unsupported properties and nested Winit monitor-set changes remain
+rejected. Both default and native DRM builds compile; live native mode and
+output-set changes remain unqualified. The compositor advertises
+`wp_fractional_scale_v1` and `wp_viewporter`, updating window surface scale
+preferences from mapped outputs. Moving surfaces across differently scaled
+outputs still needs runtime verification. The compositor also serves Wingpanel's `org.gnome.Shell`
+accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
+an isolated nested run. `xdg-activation-v1` now validates recent seat-backed
+tokens, consumes them after use and raises/focuses mapped target windows when
+the session is unlocked; app launch flows remain unverified. The
+`xdg_toplevel.set_minimized` request now unmaps and retains windows, which valid activation requests
+can restore at their previous position; this is not runtime-qualified.
+The compositor now handles the existing half-snap and quarter-snap keyboard
+chords, uses the focused window's output work area, and reflows tracked tiles
+when work areas change. `Super+Shift+Left/Right` moves a window to the adjacent
+output while preserving its work-area offset or tile position. This code is
+compile-checked only. It loads shortcut arrays from the installed Mutter,
+Pantheon and GNOME GSettings schemas at session startup, with built-in defaults
+when those schemas are unavailable. Drag-to-corner preview, live binding
+reload, multi-output behavior, and runtime snapping qualification remain open.
+The keyboard's XKB model, active layout, options, and repeat settings now load
+from the user's GNOME input-source and keyboard schemas. A one-second settings
+poll applies layout/option and repeat changes to connected Wayland clients.
+Live behavior has only been compile-checked. The M1 Pro currently selects US
+XKB with `ctrl:swap_lwin_lctl`; its installed `mozc-jp` IBus source is inactive
+and remains conditional.
+Quarter drag previews now appear in the 40-logical-pixel output corners,
+Escape cancels the snap, fixed-size windows are excluded, and release applies
+the selected quarter. This path is compile-checked only.
+`ShowOSD` renders a minimal brightness/volume indicator with icon and level
+meter; text labels, full Pantheon styling, lock-screen action modes and physical
+media-key activation remain unimplemented or unqualified. Relative pointer motion now
+updates pointer focus and drives the compositor's existing move/resize grabs;
+xdg popup requests now install Smithay keyboard/pointer grabs for managed
+toplevel roots. Both features build locally; popup behavior has not been
+runtime-qualified. Autohide, blur, multi-output reflow, monitor mode
+application, Dock behavior and full session integration remain unqualified.
+The first internal-panel native scanout is confirmed; external output, input,
+stability and comparative performance work remains. A public search found elementary's
+[Gala](https://github.com/elementary/gala) still based on libmutter, with no
+first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
+remains a separate workstream. Read-only enumeration on the current M-series
+host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
+`/dev/dri/card2`, and connected `eDP-1`/`DP-2` outputs; this is device presence,
+not evidence of compositor modesetting. The opt-in native DRM path is
+implemented while keeping nested Winit as the default. The `native-drm`
+Smithay dependency feature now compiles locally after installing
+`libseat-dev`. The non-invasive `pantheon-drm-probe` reports the Asahi renderer
+on card1/renderD128, with KMS resource queries unsupported there. Card2 owns
+`eDP-1` and currently reports external connectors disconnected; card2 has no
+EGL device. A 2026-10-19 release-mode preflight allocated scanout-capable
+DMA-BUFs at the preferred 3024×1964 size on Asahi and imported AB30, AR30, AB24
+and AR24 into Apple GBM using the implicit modifier. Apple `ADDFB2` rejected
+AB30 with `EINVAL`; it accepted AR30, AB24 and AR24. Each unassigned test
+framebuffer was immediately removed. Native output formats now omit AB30 and
+prefer the three accepted formats. The probe did not acquire DRM master, attach
+a framebuffer to a plane, modeset, or change output state. This establishes
+cross-device import and KMS framebuffer registration. All three DRM plane
+objects also advertise AR30, AB24 and AR24, though the non-master query reports
+no current CRTC/framebuffer assignment. Plane routing, atomic modesetting,
+visible scanout and failure handling remain first-session requirements for
+this M1 Pro, not optional general multi-GPU support. The executable now keeps nested Winit as
+its default and provides an explicit `--backend native` path behind
+`native-drm`; this wires libseat,
+libinput, connected outputs on the first usable KMS device, calloop rendering
+and vblank completion. It prioritizes eDP and places additional outputs to its
+right. DisplayConfig no longer advertises a fabricated Winit output in native
+mode. Both build configurations pass locally. Native mode has not been
+launched because it deliberately takes over the active display. Connector
+addition/removal reconciliation is implemented with a two-second poll. On
+hotplug, connected outputs keep their current positions and new outputs are
+placed after the existing layout. Hotplug, saved-layout restore, session
+switching and actual M-series scanout remain unqualified. Local
+`cargo check --bins` and `cargo build --bins` pass with and without
+`native-drm`; they establish compilation only, not successful
+connector modesetting.
+
+Read-only DisplayConfig now lists the modes reported by each native DRM
+connector, including current/preferred flags and timing-derived refresh rates.
+It still cannot apply a requested mode, position, scale or transform; native
+mode/layout configuration and rollback are the next display-settings work.
+
+Smithay's `ext-session-lock-v1` is implemented in both rendering backends:
+applications are hidden behind lock surfaces or black, input is confined to
+the locker, and lock confirmation waits for each mapped output to present a
+cleared frame. Default and `native-drm` builds pass. Real locker behavior,
+authentication/PAM integration, nested runtime behavior and native lock/unlock
+remain unqualified; the compositor does not provide the lock-screen UI.
+
+The compositor can now optionally send systemd `READY=1` after its Wayland
+listener and selected backend initialize (`--notify-systemd`). On native
+startup, readiness follows renderer and connected-output initialization. This
+provides a truthful readiness boundary used by the repository-only opt-in
+service; it does not install or switch the host login session. Native
+runtime/session behavior remains unqualified.
+
+A separate `pantheon-rust-wayland` session payload now mirrors the installed
+GNOME session/systemd contract: a unique login entry, a compositor component
+hidden under systemd, a notify service with an explicit Wayland socket, and a
+session-target drop-in preserving the installed Pantheon support services.
+The service retries unexpected exits after two seconds, capped at three starts
+per minute, then requests the session shutdown target. It is repository-only
+and has not been installed or runtime-qualified. The next gate is native-session
+qualification in an isolated login, including socket/environment handoff,
+ordinary apps, lock/logout and failure recovery.
+
+The experimental compositor can now be deployed onto the existing stack beside
+Gala with `mseries/install-pantheon-rust-compositor.sh` (dry run by default;
+`--status`/`--verify` read-only; `--install`, `--select`, `--restore-gala`,
+`--uninstall` need root and `--yes`). The Gala package, binary and
+`pantheon-wayland` session entry are never modified, no unit is started or
+enabled, and selecting the Rust session only rewrites the LightDM autologin
+drop-in with a backup. `summarize-metrics.py` reduces the retained session
+captures to per-process mean/median/min/max, and the public performance page
+`docs/rust-compositor-performance.html` (linked from the build monitor)
+publishes them with the honest status: idle compositor CPU is about 11.1 % of
+one core in both sessions under unmatched workloads, whole-system power is
+unmeasured, and no performance win is established.
+
+The prototype now recognizes native libinput touchpad swipes for workspace
+navigation and the overview: non-cancelled three-or-more-finger swipes that
+pass a 90-logical-pixel threshold with horizontal dominance select the adjacent
+workspace in the content-following direction and stop at the first/last
+workspace, and an upward swipe of the same size toggles the grid overview.
+Gestures are ignored while the session is locked or a move, resize or popup
+grab is active; pinch gestures remain unrecognized. The state machine lives in
+`rust/pantheon-compositor/src/gestures.rs` with unit tests; `cargo test -p
+pantheon-compositor` passes, both default and `native-drm` builds check, and
+clippy is clean.
+
+`PerformAction(1)` no longer errors: it toggles a grid overview ("expose")
+implemented in `rust/pantheon-compositor/src/overview.rs`. The mode arranges
+each output's active-workspace windows into a centered grid inside the work
+area, saves and restores plain, tiled, maximized and fullscreen arrangements,
+focuses a clicked window and closes on Escape or a second toggle. A private
+Xvfb/Winit D-Bus smoke with two GTK Wayland windows opened and closed the mode
+and the compositor logged both transitions; the grid layout has unit tests.
+Scaled thumbnails, animations, drag reorganization and native qualification
+remain open.
+
+The installed nested Winit backend never emits gesture events, so physical
+M-series trackpad qualification, user-configurable bindings and where the
+overview lands on the keyboard-accessible path remain open. Gala is still the
+active session and no package was installed from this batch.
+
+## CodexBar: Grok Build, upstream v0.78.0 and native CI — 2026-10-19
+
+Done on `claude/codexbar-grok-production`: Grok Build card and local tokens; upstream pin v0.78.0
+(restores Grok CLI billing); two use-after-free strings in the panel fixed with a generated-C guard;
+one shared helper list for installers/deploy/image; native module and Xvfb probes in CI.
+Follow-ups: live Grok usage check on the owner's account after install; first CI run of the
+`codexbar-wingpanel` job on `ubuntu-26.04-arm`; incremental transcript offsets and `Indicator.vala`
+card extraction remain from the [performance audit](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md#next-measured-work).
+
+## Release stages: F5 parity first, support assistants after — 2026-10-18
+
+Owner's order:
+
+1. **Stage 1 (gates v0.0.1):** F5 speech-to-text with the ease of macOS dictation
+   ([#196](https://github.com/techmore/ElementaryOS_MSeries/issues/196)), plus the
+   native elementary OS / Granite app audit
+   ([#242](https://github.com/techmore/ElementaryOS_MSeries/issues/242)). Open
+   gate: physical F5 in ChatGPT still fails (see the v0.0.1 F5 entry below).
+2. **Stage 2:** support assistants on the shared Pantheon MCP broker, starting
+   with troubleshooting ([#203](https://github.com/techmore/ElementaryOS_MSeries/issues/203),
+   draft PR #185, disabled). Speech and Share eyes become clients of that broker.
+
+v0.0.1 is cut (`dev` → `main`, see `mseries/BRANCHING.md`) only when stage 1 passes.
+
+## v0.0.1 English F5 candidate; ChatGPT input correction staged — 2026-10-18
+
+The owner narrowed v0.0.1 to English F5 speech to text on the existing M1 Pro
+32 GB desktop; factory ISO, voice replies and diagnosis remain separate.
+The fresh physical F5 check in ChatGPT FAILED: the key reached the listener,
+but focused-field metadata was unavailable and it refused before microphone
+capture. This is retained app-input failure evidence, not model WER. The earlier
+seven installed routes and completed CPU/MLX comparisons are unchanged.
+
+A reviewed per-user lowercase `chatgpt.desktop` override is now staged through
+`dictation-launch.py --chromium`, enabling renderer accessibility and the IBus
+environment at next full app launch. Seventeen launcher contracts pass, including
+independent GLib quoting/spacing, URL/action preservation, owner-edit refusal and
+private rollback. Desktop resolution selects that override. ChatGPT, listener,
+input bridge and everyday4B were not restarted. No microphone/model was used.
+A later owner retry also failed; read-only process metadata still shows the
+original ChatGPT process without the new flags/environment. The fix has not
+activated. Fully Quit, reopen from Applications, verify new process flags, then
+physical F5 in the chat composer is the remaining acceptance gate. Preserve password/active-field guards.
+The owner permits OS-level dictation integration; it is not a reason to type into
+an unknown field. Native compositor input/broker work remains future development.
+
+RC2 archive `d5c0e9b2…` is built from exact source `13a8b847ef3c754cbe37fe68686463bb2ec9f269`.
+All 25 extracted-package/host checks passed. That exact head passed all seven CI
+jobs in run `39157224321`. The source-only STT payload is now installed: all 16
+runtime hashes and managers match, the transcript-only launcher is active for
+its next invocation, strict CPU/IBus is ready, all seven debug overrides are
+absent, native input preferences and everyday4B PID are preserved. One post-install
+sample had 13,683,703,808 bytes available, maximum 2,489 RPM / 42.331 C. This was
+static/readiness verification without microphone/model inference. It is not
+physical F5 acceptance in ChatGPT. RC1's terminal-error idle refusal was fixed
+without changing its retained receipt or any live status to obtain a pass.
+
+Release worktree: `ElementaryOS_MSeries-f5-v001`, branch `release/f5-v0.0.1`.
+Source-only deterministic Git-blob packaging, strict read-only preflight,
+versioned rollback and a transcript-only UI are prepared. Native/ANE/MLX assets
+stay available on the host but are not bundled or requalified. See
+[release candidate instructions](releases/v0.0.1/README.md) and its sanitized
+[receipts](releases/v0.0.1/receipts/). No v0.0.1 tag/release has been published.
+Advanced diagnostic work is isolated on `feat/quiet-diagnostic-agent`, disabled
+and not qualified; never add it to the STT artifact or use everyday4B for repairs.
+The existing six-hour developer watcher continues; do not duplicate it or rerun
+finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
+post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
+
+## Signal Granite palette completeness — 2026-10-18
+
+PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
+UI color family. Three focused tests cover every system accent, fixed-width
+asset replacement including uppercase logo colors, and custom-color fallback;
+the validation workflow runs them. This fixes the reviewed regression without
+claiming the broader native app or screenshot drag work in issue #227. No local
+Signal installation, account migration or application restart was performed.
+
+## Diagnostic entry armed once; no reboot — 2026-10-18
+
+Owner explicitly authorized arming `elementary-aurora20-enh1-diagnostic` for one
+boot, without rebooting. Verified image hashes and GRUB syntax first; then
+`grub-reboot` set exactly that next_entry. Host still runs `.20`. GRUB clears
+next_entry before launching the selected kernel; subsequent normal boots retain
+`mseries-full-height` on `.20`. [Arming receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Watch the last initcall and mseries-boot stage markers; capture the last screen
+if the trial stalls. Recovery: power off if unresponsive, then explicitly select
+“elementary OS (M-series full-height desktop)” in the five-second GRUB menu.
+No candidate boot result or fix is claimed yet. Do not reboot on the owner's behalf.
+
+## Diagnostic candidate staged, no trial armed — 2026-10-18
+
+PR #229 merged as `387d1ec`. The diagnostic image regenerated from merged source
+matches `b7c6a3e74e1c90d4d5925551cdfa44d41e38f1e0f83d456c4a5eb1bea9dd8c35`
+and is staged separately at
+`/boot/initrd.img-7.1.12-elementary-aurora20-enh1-diagnostic`. A non-default manual
+GRUB entry `elementary-aurora20-enh1-diagnostic` uses the existing candidate kernel
+with initcall/debug logging arguments. GRUB syntax passes. The complete grubenv
+bytes are unchanged and next_entry remains empty. Original candidate, working
+.20 image/initramfs, shared boot.bin and generated grub.cfg hashes are unchanged.
+[Staging receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-staging.json)
+records exact hashes and the private rollback directory. No reboot, trial arming
+or hardware qualification. The owner must explicitly authorize the later test;
+the cause of the original hang remains unknown.
+
+## Candidate kernel boot hang: offline audit — 2026-10-18
+
+Owner reports kernel messages followed by a hang before completing candidate
+boot. Current host is back on `.20`; no retained candidate journal/pstore cause.
+[Review](aurora/hardware-tests/2026-10-18-j314s-enh1-boot-hang.md) records unchanged
+staged hashes, exact preserved unlock userspace, 93 matching candidate modules
+and valid archive dependency references. No causal driver fault was established.
+Added a read-only archive audit and a separate offline diagnostic initramfs
+preparer with stage markers and preserved hook failure status. Real candidate
+archive audit and generated shell syntax pass; five new regression tests pass.
+No kernel/bootloader/module installation, boot selection change or reboot.
+Next: review diagnostics before any separately authorized hardware trial; failed
+candidate remains unqualified. The login-time capture cannot diagnose pre-login
+hangs and QEMU without the required console driver was inconclusive.
+
+## Screen-share real dock qualification — 2026-10-18
+
+PR #225 was exercised with its real share server and GTK app on a private Gala
+Wayland desktop with the actual patched elementary dock. The dock build had only
+a read-only launcher observer to report widget state and render its icon to PNG.
+The running launcher appeared; a pending viewer produced visible badge text 1
+with opacity 1; admission cleared it; stop plus link revocation exited the app.
+The original immediate present/minimize sequence left the window visible on
+Wayland. Deferring initial minimize until the compositor has processed mapping
+fixes that case; explicit activation cancels a pending initial minimize. Private
+Gala now reports the window hidden at startup. Actual dock Super+1 activation
+restores/focuses it, and Alt+F4 returns it to the dock. No owner desktop restart,
+real screen capture or production server change was performed. This qualifies
+the private Wayland dock path; factory boot and production Internet/LAN routing
+remain separate acceptance work.
+
+## PR #159 merge validation — 2026-10-18
+
+Merged current main (including calendar PR #211) into the startup repair branch,
+retaining both the startup report and all newer handoff/roadmap entries. On this
+composed tree: 12 display-space Python tests, native notch/crowding allocation,
+private actual-Gala startup test (old timeout reproduced, repaired timeout absent,
+finite pre-surface sizing and 20 clock transitions), and six image-wiring tests
+pass. New shell scripts pass ShellCheck; installer shell syntax passes. Non-patch
+changes pass whitespace checks; unified patch context lines retain their required
+leading spaces. No desktop installation or panel restart was performed in this
+merge review. Fresh-login timing and owner visual acceptance remain pending.
+
+## Aurora .20 top bar and startup repair — 2026-10-18
+
+[Installed repair and tests](display-space/STARTUP-FIX-2026-10-18.md): Wingpanel
+now requests a finite monitor width before its first surface/monitor event;
+empty bars and clock reparenting no longer emit the tested GTK criticals. Migrated
+stale cropped saved modes to full-height modes, preserving desk VRR and external
+preferences. The deliberately disabled dock no longer counts toward Gala's panel
+readiness. A nonfatal, board-guarded pre-start helper keeps stale modes from loading.
+The patched panel is running. Native tests reproduce/remove the five-second
+panel timeout and pass initial sizing plus 20 clock transitions; 12 Python tests
+and existing native allocation checks pass. Fresh-login timing and owner visual
+confirmation remain pending. Kernel, bootloader and dock-disabled state preserved.
+
+## CodexBar inclusive15% quota display — 2026-10-18
+
+Owner clarified that Claude must reveal the bold red written percentage at15%
+as well as below it. The shared dot formatter now uses remaining<=15, preserving
+consistent behavior across providers and both account rows.15.1% remains dot-only.
+Dropdown quota bars and their percentage labels now share the dots' visual
+thresholds: green >70%, yellow25–70%, red<25%. The underlying ETA/alert warning
+thresholds remain separate. Native probes assert actual bar CSS matches remaining
+quota in literal and dot modes. Hover/reset behavior is unchanged.
+Boundary regression covers15%,15.1%,14%,10%,0% and missing values. Routine deploy
+stages the native update for next login; no additional panel reload was requested.
+
+
+## Claude pre-switch handoffs and reviewed GitHub backups — 2026-10-18
+
+Added automatic handoffs for the most recently focused active local Code
+conversation on cross-account desktop Switch (and first-time app sign-in setup).
+After the app flushes/exits but before either login changes, the helper saves a
+private brief from bounded recent visible transcript text and workspace Git status.
+Thinking/signature/tool blocks are excluded. A fresh, tool-free Claude Code print
+call uses the departing CLI account only when its identity matches the desktop;
+otherwise, or on quota/network/timeout failure, a labeled emergency excerpt brief
+is saved. The original conversation/transcript stays intact. The destination gets
+a separate top-of-list Handoff conversation with a new transcript ID containing
+only the plain-text brief, workspace bindings, and an original-conversation pointer.
+No prompt starts work automatically and no thinking is claimed to cross organizations.
+Same-account restarts do not spend tokens on another summary.
+
+Private 0600 brief/receipt files live under codexbar-claude-app/handoffs, including
+an immediately recoverable latest pointer before auth changes. Summary generation
+is bounded to45 seconds,64K visible input characters and2400 output tokens; briefs
+are lossy and explicitly say earlier details may be omitted. Source auth is never
+copied into artifacts. The helper has no ambient polling or new service/database.
+
+Owner chose each workspace's existing GitHub origin with reviewed public-safe
+summaries. Publishing is deliberately separate from Switch: a native editable
+review window requires an explicit Publish reviewed handoff action and writes a
+new codex/handoff-* branch plus draft PR. No owner working-tree/index/main changes.
+Emergency raw excerpts never prefill the public draft. Credential-pattern screening
+is an additional check, not a substitute for owner review. Retrying publication can
+reuse the same branch/PR; offline/failed publication retains the local handoff.
+The success dialog offers Review GitHub handoff; the standalone command is
+python3 ~/.local/lib/codexbar-cli/codexbar-claude.py handoff-review.
+
+Verified: Claude Code2.1.299 live synthetic summarization with OAuth, safe mode,
+no tools/hooks/MCP/session persistence; a separate live synthetic resume recalled
+the task from the handoff-only seed. Owner conversations/accounts were not changed
+for these tests. Review UI rendered under Xvfb; simulated publication remained
+idle until the explicit click and received only edited review text.16 handoff tests,
+41 switcher tests,15 history tests and deployment regression pass; all15 native
+targets and full port check pass. Upstream CodexBar remains v0.77.0. Actual GitHub
+publication awaits owner review by design; a live owner account switch with this
+new handoff feature remains unverified. Native review-button changes install for
+next login; helper changes apply on the next Switch. No panel reload is requested.
+
+
+## Claude account switch and Code context live verification — 2026-10-18
+
+Owner authorized switching from saved account1 to account2. The installed helper
+matches main's explicit-desktop-switch fix. Both saved app sessions and history
+preflights passed. The live combined switch stopped old main process72180 and
+reopened Claude as524238; CLI and desktop identity hints matched the requested
+target. Owner independently confirmed the correct main-UI account.
+
+The operation exported/imported34 local Code conversations, with zero unavailable.
+All 34 destination records, transcripts and workspace directories exist; session,
+CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
+Claude's own post-start logs loaded13 active records from the exact target index
+(nine imported plus four existing) and25 deferred archived records. Initial
+existingSessions=0 is logged before disk loading and is not a rejection signal.
+After clarification that the concern was the Code tab, owner confirmed the context
+is working. Separate CSP conversations are not merged with imported conversations.
+
+A read-only delegated loader review found no missing required schema fields or
+hidden-record flag defect. Regular Chat/Projects and Cowork remain outside this
+local Code import. An uncommitted optional automatic-focus experiment was removed:
+its launch did not yield reliable focus confirmation. No speculative navigation
+behavior is shipped. Production Claude helper40 and history15 tests pass.
+
+No credential values or raw conversations were printed or added to the repository.
+Wingpanel522634, Gala2678 and CodexBar daemon44641 remained running and healthy;
+no panel reload was needed for this live Claude verification. Account2 remains
+selected at the owner's request. The quiet crash watch continues.
+
+
+## CodexBar compact rows grouped by account — 2026-10-18
+
+Owner corrected the compact layout: the top row must contain multiple active
+account values, rather than only 7D. In dot mode the active 5H and 7D indicators
+now share the top row beside the provider mark; saved-account windows occupy the
+bottom row. Token visibility still follows its independent dropdown preference.
+Reset times stay hover-only. The same rule applies to all three providers, and
+single-account providers do not add an empty bottom row. Literal mode is unchanged.
+
+Native assertions check 5H/7D share a parent and alternate values appear below,
+in addition to existing percentages/hover/height checks. All 15 native targets passed the row correction; the light fixture was visually
+inspected before pushing. Owner then changed the numeric threshold: below 15%
+the written percentage is shown in bold red; 15% and above remains dot-only.
+Dot colors retain >70 green, 25–70 yellow, <25 red. Boundary tests cover 14/15. Owner's requested reload activated hover-only resets
+as panel PID513013 with Gala2678 and daemon44641 unchanged; the layout correction
+requires an additional reload under the same active request after deployment.
+No provider app switching or unrelated changes are part of this correction.
+
+
+## Claude desktop Switch no-op investigation and fix — 2026-10-18
+
+Owner clarified that confirming Switch never closes/reopens the main Claude app.
+A delegated investigation found the Indicator passes --desktop correctly and
+installed process matching points at the running main app. Saved desktop bundles
+have distinct non-expired session cookies; only sanitized identity/presence metadata
+was inspected, with no credential values printed or live account changes.
+
+Reproduced a concrete pre-stop no-op: app_switch returned early when config and
+capture UUIDs matched the target, calling only the CLI switch. Those UUIDs derive
+from lastKnownAccountUuid, a persisted hint rather than authenticated UI identity.
+Removed that shortcut. An explicit desktop switch now validates the target, stops
+the app, restores the pre-capture saved target, switches CLI if requested, and
+relaunches even when local hints match. Existing rollback and history checks stay.
+Regression verifies both app-only and combined flows restore the actual saved
+cookie fixture and invoke stop/restore/(CLI)/launch. All 40 Claude helper tests and
+15 history tests pass. No live Claude shutdown, switch, or session write was used
+for investigation/testing. This faulty path is reproduced in isolation; attribution
+to the owner's exact click and authenticated main-UI success remain unverified.
+Next: owner retries Switch and confirms the main UI identity; do not infer that
+identity from lastKnownAccountUuid or process existence alone.
+
+Helper takes effect on the next Switch after routine deployment, without any
+panel reload. Dot-mode hover-only reset code is installed but loads next login.
+Quiet Wingpanel/Gala watch remains healthy (panel491179, Gala2678, daemon44641).
+
+
+## CodexBar dot mode: reset details on hover — 2026-10-18
+
+Dot mode now omits bar reset countdowns for active five-hour/weekly quotas and
+alternate-account windows. Active-dot tooltips include the measured percentage
+and reset countdown (or explicit unknown/due-now state); alternate hover retains
+all window percentages and reset times. Literal mode and dropdown details keep
+their existing reset preference. No polling changes or new preferences.
+
+All 15 native targets pass, including no visible reset countdowns/arrows in dot
+mode, reset details on active hover, critical numeric values and <=32px height.
+Light compact rendering inspected: the same fixture's minimum width drops from
+about 634px with countdowns to 368px without them. This is a fixture measurement,
+not a promise for every account/provider combination. Upstream remains v0.77.0.
+Routine deployment installs native changes for next login; no new panel reload
+is requested by this batch. The existing quiet Wingpanel/Gala watch continues.
+
 ## Quiet diagnostic agent foundation: disabled source draft — 2026-10-18
 
 [Implementation, evidence and promotion gates](local-ai/DIAGNOSTIC-AGENT-EXPERIMENT.md).
@@ -265,6 +1568,16 @@ for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal mess
 coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
+
+## RepoBar UX pass 2 — 2026-10-18
+
+20-repo scrolling dashboard with Show all, native RepoBar Settings window, keyboard navigation and shortcuts, undo
+toasts, remembered tab. Next: confirm on the live panel after a reload.
+
+## RepoBar native UI pass — 2026-10-18
+
+RepoBar's popover now matches CodexBar (switcher, status-dot cards, pills, details chips, icon dock, state pages);
+headless probe + `deploy-repobar.sh` added. Next: confirm on the live panel after a panel reload.
 
 ## RepoBar port in progress — 2026-10-18
 
@@ -751,6 +2064,24 @@ Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
 `bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
 installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
 enables Calendar and confirms a known remote event appears on its date.
+
+**Verse of the Day + tab (2026-10-18).** A third **+** tab beside Events/Tasks
+shows a daily World English Bible verse (400-verse public-domain list, seeded
+per-year shuffle, no repeats within a year) with SermonAudio, YouTube sermon and
+Bible Gateway links, laid out with Granite/Wingpanel widgets. 22/22 private
+fixture groups pass in light and dark; the patch applies to the pin and rebuilds
+byte-identically. See [calendar/README.md](calendar/README.md#verse-of-the-day--tab).
+
+**Bible tab production readiness (2026-10-19).** The calendar panel (agenda,
+Tasks, Bible tab with daily verse and Titus study) is now a third pilot package,
+`mseries-wingpanel-datetime`. It is version-gated to datetime 2.4.2, diverts
+the stock plugin so daily upgrades can't overwrite it, and ships the accounts
+launcher. CI builds it, checks the bundled data and runs the private-EDS suite
+against the packaged library. The arrow buttons got accessible names.
+The owner's desktop now runs the package (0mseries2). CI proves for all three
+pilot packages that a stock upgrade can't overwrite ours and that removal
+restores the stock plugin (2026-10-20). Remaining: apt publishing (signing key,
+#52).
 
 
 ## README status overview — 2026-10-18
@@ -1283,6 +2614,7 @@ sudo available to enable DNS collection without dialogs.
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
 | OpenCode Go in M-series CodexBar | The wrapper passes an explicit API key from `auth.json`, falling back to the active unexpired OAuth access token in OpenCode v2’s `credential` table. Live account quota works; seven-day local token counts accompany it in the panel and card. | Live OAuth quota verified on 0.77.0; wrapper/helper tests and port checks pass. OAuth refresh remains OpenCode’s responsibility. |
+| Emporia elementary desktop client | Installed and live (2026-10-18) on the authenticated HTTPS origin with this device's enrolled credentials; no local poller. The Wingpanel Temperatures view has an overview, warnings and a sortable sensor list with trends and sparklines; the 3D house hues each room by temperature. SER8 collector on 2.3.64 with a verified rollback backup (see handoff). | Owner check of hover and click in the live popover; later collector releases use the same backup-and-switch process. |
 
 ## Open problems
 
@@ -1294,8 +2626,7 @@ on October 14 did not enumerate the dock's mouse or Ethernet.
 | Problem | Why | Next step |
 |---|---|---|
 | **Built-in display dims unexpectedly** (owner-reported urgent bug, 2026-10-14) | The user installer disables ambient screen adjustment and idle dimming, and the image enhancement layer supplies the same defaults to new sessions. Manual brightness, blanking, and suspend remain available. | Apply the brightness stage, then confirm on AC/battery and through suspend/resume. If brightness still changes, capture the backlight value and related power-service logs. Cause remains unconfirmed. |
-| Homeboard elementary Tasks sync bridge | It needs `gir1.2-ecal-2.0` and `gir1.2-edataserver-1.2`, then owner Google sign-in. Only the browser launcher is installed so far. | Install the two system packages with admin access, run the upstream Linux installer, and let the owner complete Google sign-in. Do not save credentials in this repository. |
-| Emporia elementary desktop client | The Linux client requires WebKitGTK 6; the public HTTPS origin is still gated on TLS and authentication, while a second local poller could duplicate the active SER8 collector. | Install the WebKit dependency, configure only the owner's existing collector tunnel or a verified authenticated HTTPS origin, and test the client without enabling a collector. |
+| Homeboard elementary Tasks sync bridge | Production bridge (`techmore/homeboard`, pinned in `mseries/install-homeboard-sync.sh`) installed and running in the background on this desktop (2026-10-19): auto-restart, D-Bus activation, upgrade/uninstall, back-off, keyring timeout, journal logs. Calendar agenda tests run in CI. Status: signed out. | Owner chooses **Sign In…** in the calendar's Tasks tab and completes Google sign-in; then confirm a round trip (tick in the dropdown → Homeboard within seconds, and a Homeboard edit back within a minute). |
 | **Expand elementary root using the 112 GiB gap** | Gap is before the Asahi stub/EFI/root unit; the added Btrfs member would require early LUKS unlock and initramfs discovery | Verify gap was prepared by Asahi Installer, review read-only preflight and verified backups; see [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md) |
 | **Monitor through the dock** (2 DP + HDMI on a WD22TB4) | Needs DisplayPort tunnelling inside USB4 (unimplemented upstream; Sven Peter: "requires reverse engineering that is not done yet"). The CD321x firmware picks USB4 and Linux has no mode control, so a fall-back to plain DP Alt Mode can't be forced. **Owner directed the RE path (2026-10-15): make the dock work, not the Mac's own ports.** The display crossbar already knows how to route the controller to the ACIO DP IN adapters (`dpin0`/`dpin1`); the missing piece is "who drives the DP IN adapter, and when". Experiment 1 is implemented and awaiting a hardware boot — see [`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Non-dock fallbacks are in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md). | Build the `-dptunnel` kernel (`FAIRYDUST_DP_TUNNEL=1`, or the `fairydust_tunnel` CI dispatch), boot it with `thunderbolt.allow_dp_tunnel=1`, run [`fairydust/usb4/test-dp-tunnel.sh`](fairydust/usb4/test-dp-tunnel.sh), and force the controller link through the connector `force_link` debugfs. Then replace the hammer with the real trigger; the last step needs a macOS m1n1-hypervisor trace from a second computer. |
 | Suspend with a USB4 dock attached | `thunderbolt-apple-acio` vetoes suspend by design; the Mac stays awake with the display off | Needs the ACIO sleep/wake handshake (large). Cheap option: a clean "docked lid" mode that locks and stops the 30 s retries. |
@@ -1549,6 +2880,8 @@ browser integration and remaining Files/Gala patches remain open.
 - Agent-first Pantheon feature proposal (October 18): shared broker/permissions and durable alerts before UI, native app adapters, speech-to-text/speech-to-speech, and explicitly paired WebRTC interaction. See [design and acceptance plan](local-ai/PANTHEON-MCP-DESIGN.md). Proposal only; no new alert broker, voice conversation or WebRTC service installed.
 
 - Upstream performance review (October 18): MLX main d8ac5fe is 28 commits ahead of tested 33630f9. Native-GQA is a candidate; numerically rejected gather routes remain excluded. Mac/MX notification-agent/voice patterns and oMLX options inform the agent-first design. [Pinned comparison and experiment plan](local-ai/UPSTREAM-FEATURE-COMPARISON.md); no runtime/governor changes or M1 Pro speedup claimed.
+
+- Phosphene feasibility (October 19): reviewed v4.19.5 / `287a964` for the 32 GB M1 Pro and elementary OS Vulkan MLX stack. Linux Apple Silicon is community/best-effort, but the checked installer still gates on Darwin/ARM64; MLX video operations are not qualified on our Vulkan fork. Advanced modes need 48 GB and compact-Q8 Hailuo is listed at 36 GB+, so a port is not a priority. No install or render test. [Assessment](local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md).
 ## CodexBar native Claude account switching — 2026-10-18
 
 Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
@@ -1652,3 +2985,230 @@ passed and the original selection was restored; distinct-account round trips use
 
 - Publication follow-through: PR86 merged077bfe5; current-source CI39130696811 passed all5 jobs. Initial Pages39138713351 succeeded and canonical report bytes matched reviewed source.46 dictation/72 assistant/6 image checks pass. Publishing the opt-in candidate does not complete physical F5, panel/lazy rollout or continuous translation gates.
 - Deployment follow-through (October18): qualified lazy CPU speech/IBus and Dictation launcher installed after idle/quiet/pref checks. Fresh listener32.67MiB before SDK load; not after-use memory. Owner reports physical F5 speech appears in Original transcript: native-app human pass, earlier popup failure retained. New installed focus-retry regression failed then passed after fix; receipts retain both and installed-source checks.46 contracts pass. Real spoken content/private backups excluded. Continuous translated previews and final grammar-after-release remain the next work; current translation is post-utterance.
+
+
+## Optional Apple Passwords experiment — 2026-10-18
+
+Added `install-icloud-passwords.sh --experimental`, a per-user opt-in installer
+and three application launchers. Default first-boot behavior stays disabled;
+`enhance.sh` ships the installer/public key only. Pinned upstream client
+916ef17a5a14965f353d556a53ca3eedc1439113 and ARM64 anisette image digest;
+rootless user service binds localhost and persists its identity volume.
+Brave receives a stable Chromium MV3 extension manifest and native-host registration.
+Keyring failure is fatal instead of falling back to a disk master key.
+
+Locally installed and reinstallation checked; helper HTTP/JSON and isolated
+empty-vault native ping pass. Keyring is unlocked and listener is loopback-only.
+92 upstream tests + 11 subtests, three integration contracts, shell syntax and
+shellcheck pass. No Apple account credentials entered or real vault inspected.
+Owner must load the extension once in Brave, then sign in directly via the
+Set Up Apple Passwords launcher. Account recovery, actual sync/autofill, ADP,
+reboot and factory-image behavior remain unverified. See
+[setup, limitations, disable steps and source pins](icloud-passwords/README.md).
+
+
+### Apple Passwords native GTK/Granite onboarding and -80045 follow-up
+
+Owner requested a native elementary GUI after GSA init returned -80045. Added
+GTK4/Granite7 sign-in, private pipe worker, 2FA/device selection, unchecked explicit
+recovery consent, search/reveal, Sync Now and local sign-out. The UI blocks closing
+or cancellation while an irreversible recovery request is in flight. Password
+retention is opt-in; credentials never enter process argv/environment or logs.
+Installed a single native Applications entry, retired the terminal setup/sync entries
+and opened the GUI locally. Default feature opt-in boundary remains unchanged.
+
+Applied the reported endpoint-specific identity workaround from Dadoum/anisette-v3-server#61
+without resetting the client/helper identity. Enforced TLS verification across GSA,
+iCloud and web auth, with fingerprint-pinned Apple PKI roots in an app-scoped CA
+bundle; system trust unchanged. Verified GSA/setup/idmsa TLS using credential-free
+GETs. Added safe GSA transport/non-plist errors.
+
+Validation: ten GUI/IPC/keyring/CA-pin tests, four mocked endpoint/TLS/consent tests,
+129 upstream tests + 11 subtests; the one obsolete Mac-escrow-header assertion is
+superseded by the port endpoint test. Installer repeat, shell syntax and compilation
+pass. First owner attempt never reached passcode recovery. No agent login attempted;
+actual compatibility fix, account recovery, sync/autofill and factory boot remain
+unverified pending owner testing in the native app. Details: icloud-passwords/README.md.
+
+
+### Approval/code waiting fix — 2026-10-18
+
+Owner reports phone approval arrives but Linux fails before code entry. The native
+worker now offers the code dialog before waiting on the trusted-device notification
+HTTP response. Code entry waits on the private input pipe without a user-entry timeout;
+there is only one code dialog and one notification request. A notification read timeout
+continues to normal code validation without resending; TLS, connection and explicit
+HTTP errors remain fatal. Errors now retain a safe stage label. No recovery behavior
+or retry budget changed. This addresses a demonstrated timeout path, not a proven
+root cause of the owner’s current failure.
+
+Three mocked tests cover prompt-before-response, one-request read-timeout handoff,
+and fatal TLS failure. Six native GUI/IPC tests pass. Installed the updated worker
+and notification patch for the next owner-initiated sign-in. Live authentication
+and sync remain unverified; no credentials or codes were entered by the agent.
+
+
+### Native Apple Passwords UX refinement — 2026-10-18
+
+Added persistent mnemonic account/password labels, clearer optional password-storage
+copy, sign-in step guidance, and contextual Verify Code / Use This Device / Unlock
+Keychain actions. Verification codes are visible for proofreading, accept pasted
+spacing, and require exactly six ASCII digits before submission. Waiting for the
+owner pauses the spinner and explicitly says the app is waiting; notification
+progress cannot overwrite that state. Recovery consent remains unchecked by default.
+
+Added sorted password results, empty/no-match guidance, labeled username/password
+details, distinct error styling, and contextual Complete Setup. Sync is hidden
+until keychain setup is complete; sign-in fields disable during an operation.
+Helper startup moved into the background worker so the GTK thread stays responsive.
+Eight GUI/IPC tests and three mocked approval-handoff tests pass. Installed updated
+app/worker bytes locally without restarting an active session; reopen the app for
+new layout code. Authentication/sync success is still unqualified.
+
+## PR #234 cleanup qualification — 2026-10-18
+
+Merged current main and retained the parallel radio-test report. Radio install now
+aborts on failed copies and refuses existing helper/policy paths instead of
+overwriting their ownership manifest; uninstall without our manifest leaves
+services alone. Three sandboxed installer tests pass. The userspace radio suite
+passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
+the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
+the native widget passes all eight stub checks, with portal access disabled so
+temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
+was corrected using in-memory archive entries; receiver code is unchanged. CI now
+checks both vendored userspace suites. These are source/UI qualifications, not
+a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
+the subsequent parallel report records one iPhone receive pass. Send and real-panel
+acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
+obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
+No radio activation, panel reload or reboot was
+performed during this cleanup review. The diagnostic boot selection is untouched.
+
+
+## CodexBar QuickSwitch width — 2026-10-20
+- Compact popover layout merged to `dev` via PR #315: 240 px minimum width, bounded dynamic labels, status and action dock on separate rows.
+- Verified 11/11 headless render fixtures at a 280 px target (268 px captured content), 17/17 Meson test groups, and the live Wingpanel mapping the installed module. See `OS9-HANDOFF.md` for the deployment detail.
+- Audit (2026-10-19): AUDIT-DEEPER Aurora unified 7.2.10 (DCP/CIO/PMP vs carried patches) and elementary kmscon default (#917) at the next elementary sync. See mseries/upstream-audits/daily/2026-10-19.md.
+
+## Session reconciliation — 2026-10-20
+
+Merged #290, #301–303, #305, and #307 to `dev`; reviewed integration notes, CI results, and parked branch/worktree dispositions are recorded in [OS9-HANDOFF.md](OS9-HANDOFF.md). Shelf-native drag behavior, older video-playback helpers, power-tuning A/B measurements, and the dirty appearance-mode worktree remain open and preserved. No unmerged worktree or local draft was deleted.
+
+### Experimental iPhone onboarding and macOS guest preparation (2026-10-20)
+
+`codex/messaging-macos-lab`: native Connect iPhone wizard, optional BlueFerry
+integration and personal Bubbles build prepared. iPhone 14 Pro/iOS 27.0.1 MAP
+permissions remain blocked; do not advertise working messaging yet. Machine Lab
+has read-only VMApple readiness checks and current pinned Linux/KVM research;
+M1 Pro boot, iMessage activation and dock-triggered full state save/restore are
+not qualified. See `phone-setup/README.md` and
+`machine-lab/experiments/vmapple/README.md`.
+
+## One-visit Mac activation kit — 2026-10-20
+
+Experimental messaging branch now includes a public downloadable Mac checklist
+and pinned helper downloader at `phone-setup/macos-visit/`. Messaging requires
+the genuine native hardware export and private transfer back to Linux. Optional
+Machine Lab guest collection is documented for the same visit, with storage and
+compatibility limits explicit. Shell checks pass; macOS execution and Bubbles
+activation still require the owner. No claim that future VM work will never need
+another macOS visit.
+
+Single collector now includes the Machine Lab guest instead of leaving it as a
+manual optional path: pinned downloads, genuine hardware export, native guest
+startup, portable identity/storage configuration and re-read external hashes.
+A completion receipt means files collected and transferred, not a qualified
+Linux macOS boot. Next owner action: run it in native macOS with AC power and
+an external exFAT drive; bring the verified private bundle back to Linux.
+
+No-external-drive path: collector accepts an existing internal exFAT shared
+partition. Creating one remains a separate capacity/backup/resize decision on
+macOS; the collector performs no partition operations. Merely leaving the bundle
+in macOS Downloads is not accessible from this Linux installation.
+
+Native messaging redo: prior failed audio workaround rolled back; installed
+Connect iPhone gains bounded Retry Connection without unpairing and stable
+blocked/service/disconnected states. MAP transport and CONNECT probes all still
+receive iPhone Forbidden. Text delivery remains the blocker, not solved by UI
+checks or contact sync. No further VM/partition work is part of this retry.
+
+Upstream protocol audit retained in `phone-setup/UPSTREAM-REVIEW.md`: installed
+BlueFerry is current, but BlueZ 5.85 cannot provide the supported modern ANCS
+bearer methods. Experimental advertisement/OBEX overrides were reverted after
+failing to establish MAP. Stage a reversible BlueZ 5.87 trial before another
+full-mode pairing; do not present that prerequisite as a guaranteed permission fix.
+## Taskbar reboot/update persistence audit — 2026-10-20
+
+Verified installed session dependency, private wrapper/executable path, persistent
+taskbar-mode/pins, enabled unscheduled Work Mode login service/timer, and official
+user-local icon/launcher files. No reboot or live dock changes were issued. Fixed
+two update gaps: legacy dock_profile.py now preserves taskbar visibility/size/pins
+using the private schema; factory payload now carries the complete taskbar/shared
+CodexBar sources, tests, and official Teams/Outlook installer paths. Three isolated
+regression tests exercise the real payload and profile apply/revert paths.
+
+## Windows taskbar + CodexBar persistence — 2026-10-20
+
+The canonical dock installer now applies the complete Windows taskbar stack and
+CodexBar integration through `mseries/dock-taskbar/prepare-source.sh`. Source guards
+reject a missing TaskbarRow, StartMenu, schema or CodexBar item. The taskbar button
+sits left of Wi-Fi with a separate divider/gap; hover opens the shared native quota
+menu without a keyboard grab, click pins it, leave closes after a crossing grace.
+Owner requested larger popup text: 25% larger, 320-pixel body and 420-pixel
+scroll viewport; the change is scoped to the taskbar popup.
+The newer native Start menu and scoped Windows 11 CSS are included in the patch.
+Teams' official icon and Outlook's transparent official SVG/launcher metadata are
+retained. No icon asset is redistributed; existing local pins are unchanged.
+
+A clean-build/linked-type/GTK hover regression check is wired into CodexBar CI;
+`install-dock-drawers.sh --build-only` also runs the isolated hover probe before
+any install. Tests use fake HOME/backend and cannot restart the desktop. See
+`mseries/dock-taskbar/README.md`. Persistence work does not install/restart the dock;
+the earlier complete Windows taskbar/CodexBar local deployment stays in place.
+Do not deploy an app-tracking-only dock build lacking this full stack.
+
+## Work Mode integration reconciled — 2026-10-20
+
+#329 now preserves current gesture/cursor and floating-window clearance behavior
+alongside taskbar modes, and selects the size-system token appropriate to the dock.
+Nine Work Mode tests, 41 compositor tests, strict Clippy, native dock/settings builds
+and private window/focus/typing checks pass. #337's status-note conflicts are
+reconciled and 14 offline Teams/Outlook tests pass. No live desktop deployment.
+See OS9-HANDOFF.md for receipts. Next: updated-head CI before merging, then the
+remaining native taskbar/network and Teams/Outlook qualification checks.
+
+## Teams/Outlook running markers and larger CodexBar popup — 2026-10-20
+
+App tracking is now applied after the full canonical taskbar stack, with SHA-256
+protection of Taskbar/StartMenu/CodexBar/shared sources and linked-type checks.
+Brave StartupWMClass identities resolve to the existing official-icon launchers.
+Markers synchronize for already-open apps at startup; open apps are gray, focused
+apps blue, and closed pins unmarked. The owner requested another 25% font increase:
+CodexBar uses 1.5625em, 400-pixel minimum body and 480-pixel scrolling viewport.
+
+Clean native build, schemas, actual GTK Launcher startup/focus/close/reopen probe,
+three resolver/AppSystem tests including both Teams/Outlook lifecycle and pin
+retention, existing hover/focus/leave/pin probe, shell checks and light/dark fixture
+inspection pass locally. Live read-only matching resolves both open Brave apps.
+Source work reuses PR #339 and supersedes its draft; no partial dock deployment.
+See mseries/DOCK-APP-TRACKING.md for boundaries and reproduction commands.
+
+## Darker running-app markers — 2026-10-20
+
+Owner requested darker gray running dots/pills. The complete taskbar now uses
+65% black in light mode and 35% white in dark mode (previously 45% / 55%).
+Focused blue markers, geometry, Start menu, CodexBar and app icons are unchanged.
+Full canonical native build/schema, actual Launcher startup/focus/close/reopen
+and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
+All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
+only in these two marker colors.
+
+- 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
+
+- 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
+
+- 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.

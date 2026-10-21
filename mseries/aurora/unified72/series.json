@@ -1,31 +1,22 @@
 {
   "schema": 1,
   "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
-  "revision": 2,
+  "revision": 3,
   "source": {
     "repository": "aurora-silicon/linux",
-    "commit": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+    "commit": "644133b7799f759c5bfd88507b6246d298b6509c",
     "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
-    "name": "linux-aurora-582e9ef3d44c93082e8abc740ad3e0a8dde29752.tar.gz",
-    "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/582e9ef3d44c93082e8abc740ad3e0a8dde29752",
-    "archive_root": "linux-aurora-582e9ef3d44c93082e8abc740ad3e0a8dde29752",
-    "sha256": "47597a08b0d13cbace050ac16e0b5ad4b91fe3f0d307041bf7b6cec803b057fd"
+    "name": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c.tar.gz",
+    "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/644133b7799f759c5bfd88507b6246d298b6509c",
+    "archive_root": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c",
+    "sha256": "10cc0be484644e98bf13ef181ddd268e50d4e4da0993e97d8e6b61cb6037e31a"
   },
   "kernel_release": {
-    "unified72": "7.2.10-elementary-aurora72-wip1"
+    "unified72": "7.2.10-elementary-aurora72-wip2"
   },
-  "debian_package": "linux-image-elementary-aurora72-wip1",
-  "debian_version": "7.2.10+elementary.aurora72.wip1-1",
-  "patches": [
-    {
-      "file": "0001-stock-bindgen-layout-policy.patch",
-      "sha256": "bba23efd3298c7f4fba31bde6a7a798b73fcbce7d07cb87683422d429615dedd",
-      "upstream": "https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
-      "head": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
-      "profile": "candidate",
-      "note": "Unmodified authored review fix from .20; applies cleanly to 7.2.10; stock bindgen default, opt-in layout checker retained"
-    }
-  ],
+  "debian_package": "linux-image-elementary-aurora72-wip2",
+  "debian_version": "7.2.10+elementary.aurora72.wip2-1",
+  "patches": [],
   "config": {
     "candidate": {
       "UDMABUF": "y",
@@ -37,5 +28,16 @@
     "tools/asahi/pmp-bootargs-tests.rs",
     "tools/asahi/pmp-power-tests.rs"
   ],
-  "qualification": "Pinned draft PR snapshot. Build candidate only; no local boot or battery improvement. Seed config is the fixed .20 recipe, resolved against 7.2.10; it is not upstream's Fedora-config hardware result."
+  "qualification": "Merged PR #139 source pinned as a new build-only candidate. Local source review and selected host tests do not establish complete 64-fix parity, native build success or J314S boot/power/recovery acceptance. Preserve shared-DTB fallback compatibility and review upstream M1-family Touch ID regression before hardware use.",
+  "superseded_patches": [
+    {
+      "file": "0001-stock-bindgen-layout-policy.patch",
+      "sha256": "bba23efd3298c7f4fba31bde6a7a798b73fcbce7d07cb87683422d429615dedd",
+      "upstream": "https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "head": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "profile": "candidate",
+      "note": "Historical local port for wip1; corresponding stock-bindgen default and BINDGEN_LAYOUT_TESTS opt-in are now carried in merged upstream source. Retained for provenance; not applied to wip2."
+    }
+  ],
+  "review_receipt": "review-2026-10-21.json"
 }

@@ -1,0 +1,36 @@
+=== HW baseline (lsize 32, must always pass) ===
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l32 f32","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 col randint l32 f32","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f32 f32 row randint l32 f16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f32 f32 col randint l32 f16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f16 f16 row randint l32 f16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f16 f16 col randint l32 f16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f32 f32 f32 f32 row randint l32 f32","elements":256,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f32 f32 f32 f32 col randint l32 f32","elements":256,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f16 f16 f32 f32 row randint l32 f16","elements":256,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f16 f16 f32 f32 col randint l32 f16","elements":256,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f16 f16 f16 f16 row randint l32 f16","elements":256,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f16 f16 f16 f16 col randint l32 f16","elements":256,"mismatches":0,"result":"PASS"}
+=== workgroup sizes (SW path after fix) ===
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l1 f32","elements":64,"mismatches":0,"result":"PASS"}
+
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l8 f32","elements":64,"mismatches":0,"result":"PASS"}
+
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l16 f32","elements":64,"mismatches":0,"result":"PASS"}
+
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l48 f32","elements":128,"mismatches":0,"result":"PASS"}
+
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l33 f32","elements":128,"mismatches":0,"result":"PASS"}
+
+=== pointer forms ===
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f16 f16 row randint l32 u16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row randint l32 u16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f16 f16 row randint l32 u8","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"16x16x16 f32 f32 f32 f32 col randint l32 u16","elements":256,"mismatches":0,"result":"PASS"}
+=== precise contraction (NoContraction must survive) ===
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row precise l32 f32","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f32 f32 f32 f32 row precise l16 f32","elements":64,"mismatches":0,"result":"PASS"}
+=== divergent component updates ===
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f32 f32 row divergent l16 u16","elements":64,"mismatches":0,"result":"PASS"}
+{"tool":"cmshape2","device":"Apple M1 Pro (G13S C0)","driver":"Mesa 26.3.0-devel (git-f144c7949b)","shape":"8x8x8 f16 f16 f32 f32 col divergent l33 u16","elements":128,"mismatches":0,"result":"PASS"}
+SUMMARY pass=25 fail=5

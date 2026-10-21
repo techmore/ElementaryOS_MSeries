@@ -1,0 +1,58 @@
+diff --git a/src/HotCorners/Barrier.vala b/src/HotCorners/Barrier.vala
+index 1ebb42d..461e34e 100644
+--- a/src/HotCorners/Barrier.vala
++++ b/src/HotCorners/Barrier.vala
+@@ -56,7 +56,9 @@ public class Gala.Barrier : Object {
+     }
+ 
+     ~Barrier () {
+-        barrier.destroy ();
++        if (barrier != null) {
++            barrier.destroy ();
++        }
+     }
+ 
+     private void on_hit (Meta.BarrierEvent event) {
+@@ -74,7 +76,8 @@ public class Gala.Barrier : Object {
+             barrier.release (event);
+         }
+ 
+-        if (triggered && event.time - triggered_time > 150) {
++        // Without retrigger there is no reason to keep holding the pointer once triggered.
++        if (triggered && (retrigger_pressure_threshold >= int.MAX || event.time - triggered_time > 150)) {
+             barrier.release (event);
+         }
+ 
+diff --git a/src/ShellClients/HideTracker.vala b/src/ShellClients/HideTracker.vala
+index e7fc441..347d8e9 100644
+--- a/src/ShellClients/HideTracker.vala
++++ b/src/ShellClients/HideTracker.vala
+@@ -134,8 +134,12 @@ public class Gala.HideTracker : Object {
+         show ();
+     }
+ 
+-    private void setup_barrier () {
+-        if (panel == null) {
++    public void setup_barrier () {
++        // A panel that never hides has nothing to reveal, and its edge barrier would
++        // only trap the pointer against the screen edge.
++        barrier = null;
++
++        if (panel == null || panel.hide_mode == NEVER) {
+             return;
+         }
+ 
+diff --git a/src/ShellClients/PanelWindow.vala b/src/ShellClients/PanelWindow.vala
+index 46ebeab..7635741 100644
+--- a/src/ShellClients/PanelWindow.vala
++++ b/src/ShellClients/PanelWindow.vala
+@@ -21,6 +21,9 @@ public class Gala.PanelWindow : ShellWindow, RootTarget {
+             _hide_mode = value;
+ 
+             update_strut ();
++            if (hide_tracker != null) {
++                hide_tracker.setup_barrier ();
++            }
+             if (workspace_hide_tracker != null) {
+                 workspace_hide_tracker.recalculate_all_workspaces ();
+             }

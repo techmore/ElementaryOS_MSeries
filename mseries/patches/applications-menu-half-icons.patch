@@ -1,0 +1,74 @@
+diff --git a/src/Views/GridView.vala b/src/Views/GridView.vala
+index 3c43a57..52d299f 100644
+--- a/src/Views/GridView.vala
++++ b/src/Views/GridView.vala
+@@ -5,8 +5,8 @@
+  */
+ 
+ public class Slingshot.Widgets.Grid : Gtk.Box {
+-    private const int PAGE_ROWS = 3;
+-    private const int PAGE_COLUMNS = 5;
++    private const int PAGE_ROWS = 4;
++    private const int PAGE_COLUMNS = 7;
+     private const int MAX_APPS_IN_PAGE = (PAGE_ROWS * PAGE_COLUMNS);
+ 
+     private Adw.Carousel paginator;
+@@ -132,7 +132,7 @@ public class Slingshot.Widgets.Grid : Gtk.Box {
+             column_homogeneous = true,
+             margin_start = 12,
+             margin_end = 12,
+-            row_spacing = 24,
++            row_spacing = 12,
+             column_spacing = 0
+         };
+ 
+diff --git a/src/Widgets/AppButton.vala b/src/Widgets/AppButton.vala
+index 154d9b2..af77640 100644
+--- a/src/Widgets/AppButton.vala
++++ b/src/Widgets/AppButton.vala
+@@ -9,7 +9,7 @@ public class Slingshot.Widgets.AppButton : Gtk.Button {
+ 
+     public Backend.App app { get; construct; }
+ 
+-    private const int ICON_SIZE = 64;
++    private const int ICON_SIZE = 32;
+     private Gtk.Label badge;
+ 
+     public AppButton (Backend.App app) {
+@@ -25,8 +25,8 @@ public class Slingshot.Widgets.AppButton : Gtk.Button {
+             ellipsize = END,
+             justify = CENTER,
+             lines = 2,
+-            max_width_chars = 16,
+-            width_chars = 16,
++            max_width_chars = 12,
++            width_chars = 12,
+             wrap_mode = WORD_CHAR
+         };
+ 
+diff --git a/src/Widgets/AppListRow.vala b/src/Widgets/AppListRow.vala
+index f857c21..7c37da5 100644
+--- a/src/Widgets/AppListRow.vala
++++ b/src/Widgets/AppListRow.vala
+@@ -32,7 +32,7 @@ public class Slingshot.AppListRow : Gtk.ListBoxRow {
+ 
+         var image = new Gtk.Image () {
+             gicon = icon,
+-            pixel_size = 32
++            pixel_size = 16
+         };
+ 
+         var name_label = new Gtk.Label (app_info.get_display_name ()) {
+diff --git a/src/Widgets/SearchItem.vala b/src/Widgets/SearchItem.vala
+index 033706f..680fc0f 100644
+--- a/src/Widgets/SearchItem.vala
++++ b/src/Widgets/SearchItem.vala
+@@ -5,7 +5,7 @@
+  */
+ 
+ public class Slingshot.Widgets.SearchItem : Gtk.ListBoxRow {
+-    private const int ICON_SIZE = 32;
++    private const int ICON_SIZE = 16;
+ 
+     public signal bool launch_app ();
+ 

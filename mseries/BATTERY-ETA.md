@@ -79,3 +79,38 @@ sparkline, and a "Battery History…" hint; clicking it opens the Battery app. T
 the popover opens. Without that file the stock rows stay. Accessory batteries (mouse) leave the popover with the stock
 rows and live on the app's Accessories page. Builds clean with `--build-only`; not installed yet, appearance unverified.
 
+
+Update (2026-10-18, dropdown): the card is now the whole battery dropdown content: headline, charge and watts, a six-hour
+sparkline, Typical runtime and Health, the three most recent runs on battery, the biggest CPU users, and the top
+suggestion, all from real logger/UPower data in `summary.txt`. Clicking anywhere on it opens the Battery app. Built and
+installed on the M1 Pro (Wingpanel restarted and stayed up); its look on the live bar is not yet confirmed.
+
+Update (2026-10-18, dropdown 2): the dropdown also lists accessory batteries (the mouse, which the stock rows used to
+show) and a Sleep drain stat once there is a night asleep on battery. Installed; Wingpanel restarted and stayed up.
+
+Update (2026-10-18, dropdown 3): the dropdown adds "Recent power changes" (the last three rises/drops from the last 6 h
+with the likely cause and busiest process), "Power profiles" (average and idle draw per profile once more than one has
+been used on battery) and peak-watt / 6 h labels on the sparkline. Installed; Wingpanel restarted and stayed up.
+
+Update (2026-10-18, verified on the live bar): a screenshot of the real desktop (portal screenshot) shows the watts label
+("15.2 W") beside the battery icon and percentage. The dropdown card cannot be opened without a click on the owner's
+screen, so it was rendered from the same HistoryCard code against the real summary file under the installed elementary
+stylesheet; that showed wrapping rows and a collision between the sparkline label and the line, now fixed (ellipsized
+rows, shortened causes, peak label at the top right, "6 h ago" at the bottom left).
+
+Correction (2026-10-18): the watts label looked "missing" on the live bar because the owner's saved choice is off
+(`~/.config/mseries/battery-meter.ini`, `show-watts=false`, the switch from `panel-power-watts-toggle.patch`). It is not a bug.
+The earlier screenshot that showed "15.2 W" came from a hand-built module without that toggle patch; the installer build
+(all four patches) was restored afterwards. Always install via `install-battery-eta.sh`, never a partial build.
+
+Verified live (2026-10-18): the dropdown was opened on the owner's real desktop (one pointer click on the battery icon,
+approved by the owner, then Escape) and captured with the screenshot portal. It shows the card (headline, charge and watts,
+six-hour sparkline, Typical runtime, Health, recent runs, power changes, accessories) above the stock brightness slider and
+power profiles, under the "Show Percentage" and "Show Watts in Menu Bar" switches. Stat values were indented against their
+labels; fixed (heading style instead of h4). Rows are one line each at the popover's width.
+
+## Retired: card-style menu patch — 2026-10-19
+
+A second menu redesign (`panel-power-battery-menu.patch`: headline card, health/cycles/temperature tiles, charge-limit state,
+segmented power modes) was written without knowing `dev` already had the Battery History menu above. It did not apply on top of it
+and was dropped; the patch file is removed. The `ChargeCycles` and `ChargeEndThreshold` UPower properties it read are not used by dev.

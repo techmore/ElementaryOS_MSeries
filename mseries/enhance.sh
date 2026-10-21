@@ -8,7 +8,9 @@
 #
 # Modules (all on by default; each is idempotent and independent):
 #   tuning    zram swap (zstd, half of RAM), zswap off, ModemManager off, AppCenter
-#             background daemon not autostarted for new users
+#             background daemon not autostarted for new users, faster apt defaults
+#             (no Translation downloads, no pdiffs, retries, lock wait,
+#             no per-install man-db index rebuild)
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
 #   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
@@ -100,6 +102,23 @@ EOF
 # ElementaryOS_MSeries: zram already compresses swap
 w /sys/module/zswap/parameters/enabled - - - - 0
 EOF
+  put 0644 /etc/apt/apt.conf.d/90-mseries-speed <<'EOF2'
+// ElementaryOS_MSeries: faster apt on a fast link.
+// No Translation-* index downloads (the desktop is not localised from apt metadata).
+Acquire::Languages "none";
+// Fetch whole indices; applying pdiffs is slower than downloading them on broadband.
+Acquire::PDiffs "false";
+// Retry flaky mirror connections instead of failing the whole update.
+Acquire::Retries "3";
+// Wait for a concurrent apt/PackageKit run instead of aborting.
+DPkg::Lock::Timeout "120";
+EOF2
+  # man-db's trigger rebuilds the man index on nearly every apt run (55 times in one
+  # session's log); the daily man-db.timer still keeps the index current.
+  rm -f "$R/var/lib/man-db/auto-update"
+  if [[ $R == "" ]] && command -v debconf-set-selections >/dev/null; then
+    echo 'man-db man-db/auto-update boolean false' | debconf-set-selections || true
+  fi
   # This Mac has no modem.
   systemctl --root="${ROOT}" disable ModemManager.service >/dev/null 2>&1 || true
   # AppCenter's background daemon (~680 MB resident) is not started for new
@@ -110,7 +129,7 @@ Type=Application
 Name=AppCenter (background updates disabled)
 Hidden=true
 EOF
-  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users"
+  log "tuning: zram swap, zswap off, ModemManager off, AppCenter daemon off for new users, faster apt defaults"
 }
 
 mod_power() {
@@ -184,6 +203,7 @@ mod_battery() {
   copy 0755 "$here/battery/mseries-battery-app.py" $lib/mseries-battery-app.py
   copy 0644 "$here/battery/mseries-battery-logger.service" /usr/lib/systemd/user/mseries-battery-logger.service
   copy 0644 "$here/battery/org.mseries.Battery.desktop" /usr/share/applications/org.mseries.Battery.desktop
+  copy 0644 "$here/battery/org.mseries.Battery.svg" /usr/share/icons/hicolor/scalable/apps/org.mseries.Battery.svg
   mkdir -p "$R/usr/local/bin"
   ln -sfn $lib/mseries-battery.py "$R/usr/local/bin/mseries-battery"
   enable --global mseries-battery-logger.service
@@ -328,19 +348,20 @@ mod_theme() {
 # their data relative to the directory above themselves.
 mod_payload() {
   local prefix=/usr/share/elementary-mac f
-  for f in install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
+  for f in install-teams.sh install-outlook-web.py install-codexbar-wingpanel.sh install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
+           install-icloud-passwords.sh icloud-passwords/setup.py icloud-passwords/app.py icloud-passwords/worker.py icloud-passwords/gsa-errors.patch icloud-passwords/notification-wait.patch icloud-passwords/chromium-key.pub icloud-passwords/README.md \
            display-space/full_height_boot.py display-space/dock_profile.py \
            calendar/accounts lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf video-decode/brave-youtube install-native-firefox.sh install-touchegg.sh \
            install-network-throughput.sh install-quick-settings-brightness.sh install-bluetooth-control-center.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh install-battery-eta.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_claude_handoff.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh lib-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala \
+           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala quick-settings/Controls.vala \
            gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"
@@ -351,6 +372,14 @@ mod_payload() {
   copy 0644 "$here/panel-factory-pins.json" "$prefix/mseries/panel-factory-pins.json"
   for f in "$here"/patches/*.patch; do
     copy 0644 "$f" "$prefix/mseries/patches/$(basename "$f")"
+  done
+  # Keep factory/update payloads on the same complete taskbar path as a repo checkout.
+  # Preserve executable bits for helpers invoked directly by another installer.
+  local tree
+  for tree in dock-taskbar dock-tests codexbar-wingpanel teams-web; do
+    while IFS= read -r -d '' f; do
+      copy "$(stat -c %a "$f")" "$f" "$prefix/mseries/${f#"$here"/}"
+    done < <(find "$here/$tree" -type d \( -name __pycache__ -o -name build \) -prune -o -type f ! -name '*.pyc' -print0)
   done
   # User setup works from immutable /usr and keeps models/state in the user's home.
   for f in "$here"/local-ai/*.py "$here"/local-ai/*.sh "$here"/local-ai/*.json "$here"/local-ai/*.patch "$here"/local-ai/*.lock; do

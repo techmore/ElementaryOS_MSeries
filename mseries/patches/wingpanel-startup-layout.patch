@@ -1,0 +1,114 @@
+diff --git a/src/PanelWindow.vala b/src/PanelWindow.vala
+index d5183f8..798fad2 100644
+--- a/src/PanelWindow.vala
++++ b/src/PanelWindow.vala
+@@ -220,14 +220,18 @@ public class Wingpanel.PanelWindow : Gtk.Window {
+ 
+         minimum_baseline = natural_baseline = -1;
+ 
+-        var monitor_width = int.MAX;
++        // GTK measures before the surface has entered a monitor. Never request
++        // int.MAX here: it can become the initial Wayland panel width.
++        var display = get_display ();
++        Gdk.Monitor? monitor = notch_monitor;
+         unowned var surface = get_surface ();
+-        if (surface != null) {
+-            unowned var monitor = get_display ().get_monitor_at_surface (surface);
+-            if (monitor != null) {
+-                monitor_width = monitor.geometry.width;
+-            }
++        if (monitor == null && surface != null) {
++            monitor = display.get_monitor_at_surface (surface);
++        }
++        if (monitor == null) {
++            monitor = display.get_monitors ().get_item (0) as Gdk.Monitor;
+         }
++        var monitor_width = monitor != null ? monitor.geometry.width : 1;
+ 
+         if (!Services.DisplayConfig.is_logical_layout ()) {
+             monitor_width /= get_scale_factor ();
+diff --git a/src/Widgets/IndicatorBar.vala b/src/Widgets/IndicatorBar.vala
+index 9b673d4..e939324 100644
+--- a/src/Widgets/IndicatorBar.vala
++++ b/src/Widgets/IndicatorBar.vala
+@@ -31,14 +31,25 @@ public class Wingpanel.Widgets.IndicatorBar : Granite.Bin {
+             orientation = HORIZONTAL,
+             selection_mode = NONE
+         };
+-        flow_box.bind_model (indicator_entries, (indicator_entry) => (IndicatorEntry) indicator_entry);
++        resume_model ();
+ 
+         indicator_entries.items_changed.connect (update_flow_box_max_children);
+ 
+         child = flow_box;
+     }
+ 
++    // Detach entries from their old FlowBoxChild before another bar adopts
++    // them when the clock moves between the centered and notch layouts.
++    public void suspend_model () {
++        flow_box.bind_model (null, null);
++    }
++
++    public void resume_model () {
++        flow_box.bind_model (indicator_entries, (indicator_entry) => (IndicatorEntry) indicator_entry);
++        update_flow_box_max_children ();
++    }
++
+     private void update_flow_box_max_children () {
+-        flow_box.max_children_per_line = indicator_entries.get_n_items ();
++        flow_box.max_children_per_line = uint.max (1, indicator_entries.get_n_items ());
+     }
+ }
+diff --git a/src/Widgets/Panel.vala b/src/Widgets/Panel.vala
+index 721c14c..9e23eac 100644
+--- a/src/Widgets/Panel.vala
++++ b/src/Widgets/Panel.vala
+@@ -36,6 +36,8 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+     private Gtk.ScrolledWindow left_scroll;
+     private Gtk.ScrolledWindow right_scroll;
+     private IndicatorBar center_menubar;
++    private IndicatorBar left_menubar;
++    private IndicatorBar right_menubar;
+ 
+     // Full-height J314 panel: use the existing native clock/popover beside the
+     // camera, with independently scrollable halves so crowded indicators cannot
+@@ -65,17 +67,16 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+         if (active == notch_active) {
+             return;
+         }
++        left_menubar.suspend_model ();
++        center_menubar.suspend_model ();
++        right_menubar.suspend_model ();
+         notch_active = active;
+-        // Remove the native clock from its old FlowBox before adding it to
+-        // the other one; GTK widgets cannot have two parents during refiltering.
+-        if (notch_active) {
+-            center_filter.changed (DIFFERENT);
+-            left_filter.changed (DIFFERENT);
+-        } else {
+-            left_filter.changed (DIFFERENT);
+-            center_filter.changed (DIFFERENT);
+-        }
++        left_filter.changed (DIFFERENT);
++        center_filter.changed (DIFFERENT);
+         right_filter.changed (DIFFERENT);
++        left_menubar.resume_model ();
++        center_menubar.resume_model ();
++        right_menubar.resume_model ();
+         rebuild_layout ();
+     }
+ 
+@@ -152,11 +153,11 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+             right_filter
+         );
+ 
+-        var left_menubar = new IndicatorBar (left_indicator_entries);
++        left_menubar = new IndicatorBar (left_indicator_entries);
+ 
+         center_menubar = new IndicatorBar (center_indicator_entries);
+ 
+-        var right_menubar = new IndicatorBar (right_indicator_entries);
++        right_menubar = new IndicatorBar (right_indicator_entries);
+ 
+         left_scroll = scroll_bar (left_menubar, Gtk.Align.START);
+         right_scroll = scroll_bar (right_menubar, Gtk.Align.END);

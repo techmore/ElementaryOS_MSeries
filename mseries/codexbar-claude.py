@@ -43,6 +43,7 @@ from typing import Any
 
 import codexbar_cache
 import codexbar_claude_history as history
+import codexbar_claude_handoff as handoff
 
 def cswap_path() -> str | None:
     local = pathlib.Path.home() / ".local/bin/cswap"
@@ -93,20 +94,91 @@ def account_row(row: dict[str, Any], now: dt.datetime) -> dict[str, Any] | None:
     usage = row.get("usage") if isinstance(row.get("usage"), dict) else {}
     windows = [w for w in (window("primary", "5 hour", 300, usage.get("fiveHour"), now),
                            window("secondary", "7 day", 10080, usage.get("sevenDay"), now)) if w]
+    # Model-scoped weekly caps (Fable today) ride along as extra windows. They are marked "scoped" so the panel
+    # draws them but never lets one cap decide which account has the most headroom for other models.
+    for item in usage.get("scoped") if isinstance(usage.get("scoped"), list) else []:
+        name = item.get("name") if isinstance(item, dict) else None
+        scoped = window("scoped", name.strip()[:16], 0, item, now) if isinstance(name, str) and name.strip() else None
+        if scoped:
+            scoped["scoped"] = True
+            windows.append(scoped)
     return {"number": number, "email": email, "active": bool(row.get("active")), "windows": windows,
             "status": row.get("usageStatus") if isinstance(row.get("usageStatus"), str) else ""}
 
 
+PLAN_TTL_SECONDS = 6 * 3600
+PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
+
+
+def plan_name(organization_type: Any, tier: Any) -> str:
+    """claude_max + default_claude_max_20x -> "max20x"; a subscription label, never an identifier."""
+    kind = organization_type.lower().removeprefix("claude_") if isinstance(organization_type, str) else ""
+    tier = tier.lower() if isinstance(tier, str) else ""
+    if kind == "max":
+        return "max20x" if "20x" in tier else "max5x" if "5x" in tier else "max"
+    return kind if kind in {"free", "pro", "team", "enterprise"} else ""
+
+
+def fetch_profile(token: str) -> dict[str, Any] | None:
+    """Anthropic's own profile endpoint for one login: its current plan, unlike the token's issue-time stamp."""
+    import urllib.request
+    request = urllib.request.Request(PROFILE_URL, headers={"Authorization": f"Bearer {token}",
+                                                           "anthropic-beta": "oauth-2025-04-20"})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            data = json.loads(response.read())
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def profile_plan(uuid: str, credentials: list[dict[str, Any]], now: float | None = None) -> str:
+    """The plan Anthropic reports now, cached per account; uses an unexpired saved token, never refreshes one."""
+    if not uuid:
+        return ""
+    now = time.time() if now is None else now
+    name = "claude-plan-" + re.sub(r"[^A-Za-z0-9-]", "", uuid)
+    entry = codexbar_cache.load(name).get("entry")
+    entry = entry if isinstance(entry, dict) else None
+    cached = entry.get("data") if entry and isinstance(entry.get("data"), str) else ""
+    if entry and (codexbar_cache.is_fresh(entry, PLAN_TTL_SECONDS, now) or codexbar_cache.in_backoff(entry, now)):
+        return cached
+    for data in credentials:
+        oauth = data.get("claudeAiOauth") if isinstance(data.get("claudeAiOauth"), dict) else {}
+        token, expires = oauth.get("accessToken"), oauth.get("expiresAt")
+        if not isinstance(token, str) or not isinstance(expires, (int, float)) or expires / 1000 < now + 60:
+            continue
+        profile = fetch_profile(token)
+        account = profile.get("account") if profile and isinstance(profile.get("account"), dict) else {}
+        organization = profile.get("organization") if profile and isinstance(profile.get("organization"), dict) else {}
+        if account.get("uuid") != uuid:
+            continue  # a token that answers for someone else is not this account's plan
+        plan = plan_name(organization.get("organization_type"), organization.get("rate_limit_tier"))
+        if plan:
+            codexbar_cache.store(name, {"entry": codexbar_cache.succeeded(plan, now)})
+            return plan
+    if any(isinstance(d.get("claudeAiOauth"), dict) for d in credentials):
+        codexbar_cache.store(name, {"entry": codexbar_cache.failed(entry, now)})
+    return cached
+
+
 def account_plan(number: int, email: str, active: bool = False) -> str:
-    """Read subscription metadata only; never return credentials or change a saved login."""
+    """Current subscription: Anthropic's profile, then the freshest local profile copy, then the token's stamp.
+
+    The token's subscriptionType is fixed when it is issued, so an upgrade (Pro to Max) never shows there.
+    Only plan labels leave this function; credentials and identifiers stay inside it.
+    """
     xdg = os.environ.get("XDG_DATA_HOME", "")
     root = pathlib.Path(xdg) if xdg and os.path.isabs(xdg) else pathlib.Path.home() / ".local/share"
     paths = (root / "claude-swap" / "credentials").glob(f".creds-{number}-*.enc")
     saved = next((p for p in paths if p.name == f".creds-{number}-{email}.enc"), None)
     credentials: list[dict[str, Any]] = []
+    profiles: list[dict[str, Any]] = []
     if active:
         home = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR") or pathlib.Path.home() / ".claude")
         credentials.append(read_json(home / ".credentials.json"))
+        base = os.environ.get("CLAUDE_CONFIG_DIR") or str(pathlib.Path.home())
+        profiles.append(read_json(pathlib.Path(base) / ".claude.json").get("oauthAccount") or {})
     if saved is not None:
         try:
             data = json.loads(base64.b64decode(saved.read_bytes(), validate=True))
@@ -114,6 +186,22 @@ def account_plan(number: int, email: str, active: bool = False) -> str:
                 credentials.append(data)
         except (OSError, ValueError):
             pass
+    configs = list((root / "claude-swap" / "configs").glob(f".claude-config-{number}-*.json"))
+    config = next((c for c in configs if c.name == f".claude-config-{number}-{email}.json"), None)
+    if config is not None:
+        profiles.append(read_json(config).get("oauthAccount") or {})
+    profiles = [p for p in profiles if isinstance(p, dict) and isinstance(p.get("emailAddress"), str)
+                and p["emailAddress"].lower() == email.lower()]
+    uuid = next((p["accountUuid"] for p in profiles if isinstance(p.get("accountUuid"), str)), "")
+    plan = profile_plan(uuid, credentials)
+    if plan:
+        return plan
+    profiles.sort(key=lambda p: p.get("profileFetchedAt") if isinstance(p.get("profileFetchedAt"), (int, float)) else 0,
+                  reverse=True)
+    for profile in profiles:
+        plan = plan_name(profile.get("organizationType"), profile.get("organizationRateLimitTier"))
+        if plan:
+            return plan
     for data in credentials:
         oauth = data.get("claudeAiOauth")
         plan = oauth.get("subscriptionType") if isinstance(oauth, dict) else None
@@ -387,8 +475,9 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
             target = load_session(uuid)  # validate before stopping the app or changing the CLI
             current = read_json(app_root() / "config.json").get("lastKnownAccountUuid", "")
             captured = capture_app()
-            if current == uuid and captured == uuid:
-                return switch(cli, number) if number else (True, "The Claude app already uses this account.")
+            # lastKnownAccountUuid is only a persisted hint, not proof of the
+            # running UI's identity. An explicit desktop switch must still stop,
+            # restore the validated target and relaunch, even when hints match.
             if not captured:
                 current = read_json(session_root() / "pending-login.json").get("previous", "")
             if not current:
@@ -405,9 +494,12 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
                     exported = history.export_history(plan, session_root() / "code-history")
                 except OSError:
                     raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
+                brief = handoff.prepare(plan, session_root() / "handoffs",
+                    claude_cli() if cli_identity()[1] == current else None)
                 restore_app(target)
                 try:
                     report = history.import_missing(plan, exported)
+                    handoff.install(plan, brief)
                 except OSError:
                     raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
                 if number:
@@ -425,7 +517,10 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
                 return False, "The account was saved for the Claude app, but it could not restart. Open Claude from the dock."
             (session_root() / "pending-login.json").unlink(missing_ok=True)
             return True, ("Claude's app session was switched and the app restarted." +
-                          (" Claude Code's command line uses the same account." if number else "") + history_message(report))
+                          (" Claude Code's command line uses the same account." if number else "") + history_message(report) +
+                          (" A fresh Code conversation named Handoff contains your work brief. " +
+                           ("Summary generation was unavailable; it contains emergency excerpts. " if brief["receipt"]["kind"] == "emergency-excerpts" else "") +
+                           "Review the local brief before publishing it to GitHub." if brief else ""))
     except (OSError, ValueError, sqlite3.Error, TimeoutError, subprocess.SubprocessError) as error:
         # Never echo raw config, cookie data, or subprocess output on failure.
         return False, str(error) if isinstance(error, ValueError) else "Claude's app session could not be switched; try again after closing Claude."
@@ -452,6 +547,8 @@ def app_login(number: str) -> tuple[bool, str]:
                     exported = history.export_history(plan, session_root() / "code-history")
                 except OSError:
                     raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
+                brief = handoff.prepare(plan, session_root() / "handoffs",
+                    claude_cli() if cli_identity()[1] == current else None)
                 with contextlib.closing(sqlite3.connect(":memory:")) as db:
                     db.deserialize(original["cookies"])
                     db.execute("DELETE FROM cookies")
@@ -461,6 +558,7 @@ def app_login(number: str) -> tuple[bool, str]:
                 restore_app({"config": {}, "cookies": empty_cookies})
                 try:
                     report = history.import_missing(plan, exported)
+                    handoff.install(plan, brief)
                 except OSError:
                     raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
             except (OSError, ValueError, sqlite3.Error, TimeoutError):
@@ -542,11 +640,20 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
             account["desktopReady"] = True
         except (OSError, ValueError):
             account["desktopReady"] = False
+    # Desktop Code sessions use the app login. Keep CLI identity intact for switching,
+    # and explicitly select the account whose quota the desktop indicator presents.
+    display_uuid = desktop["accountUuid"] if desktop["installed"] else ""
+    for account in accounts:
+        account["panelActive"] = account["desktopActive"] if display_uuid else account["active"]
+    selected = next((a for a in accounts if a["panelActive"]), None)
+    display_email = (desktop["email"] if display_uuid else active_email)
+    display_plan = selected["plan"] if selected else ""
     note = desktop_note(desktop, active_email, cli_uuid)
     result: dict[str, Any] = {
         "available": True, "accounts": accounts, "activeEmail": active_email, "activePlan": active_plan,
         "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
-        "desktopNote": note, "desktopSnapshotError": snapshot_error}
+        "desktopNote": note, "desktopSnapshotError": snapshot_error,
+        "displayEmail": display_email, "displayPlan": display_plan}
     if listed is None:
         result["failed"] = True  # cswap did not answer; the caller may prefer its last good listing
     return result
@@ -658,6 +765,12 @@ def add(cli: str | None) -> tuple[bool, str]:
 
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
+    if command == "handoff-review":
+        try:
+            return handoff.review(session_root() / "handoffs")
+        except (OSError, ValueError, KeyError, ImportError):
+            print("No valid local handoff is available to review.", file=sys.stderr)
+            return 1
     cli = cswap_path()
     if command not in {"list", "history-preview"}:
         codexbar_cache.store("claude-list", {})  # every other command can change the accounts; never serve the old list
@@ -707,12 +820,20 @@ def main(arguments: list[str]) -> int:
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
     if command == "switch" and len(arguments) > 1:
+        started = time.time()
         if "--desktop" in arguments:
             uuid = account_uuid(arguments[1])
             ok, message = app_switch(uuid, cli, arguments[1]) if uuid else (False, "This saved account has no app identity. Sign in to it in Claude and save the login again.")
         else:
             ok, message = switch(cli, arguments[1])
-        print(json.dumps({"ok": ok, "message": message}))
+        handoff_ready = False
+        if ok and "--desktop" in arguments:
+            try:
+                latest = session_root() / "handoffs/latest.json"
+                handoff_ready = latest.stat().st_mtime >= started
+            except OSError:
+                pass
+        print(json.dumps({"ok": ok, "message": message, "handoffReady": handoff_ready}))
         return 0 if ok else 1
     print("usage: codexbar-claude.py list | login | add | app-save | switch <number> [--desktop] | app-switch <uuid> | history-preview <number>", file=sys.stderr)
     return 2

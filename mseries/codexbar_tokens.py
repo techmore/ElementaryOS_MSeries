@@ -34,6 +34,14 @@ def codex_tokens(usage: dict[str, Any]) -> int:
     return count(usage.get("input_tokens")) + count(usage.get("output_tokens"))
 
 
+def grok_tokens(usage: dict[str, Any]) -> int:
+    # Grok Build: cachedReadTokens is a subset of inputTokens and reasoningTokens
+    # of outputTokens, so totalTokens (= input + output) already counts both.
+    if usage.get("totalTokens") is not None:
+        return count(usage["totalTokens"])
+    return count(usage.get("inputTokens")) + count(usage.get("outputTokens"))
+
+
 def opencode_tokens(usage: Any) -> int:
     if not isinstance(usage, dict):
         return 0

@@ -1,9 +1,12 @@
 /* Isolated EDS integration test; only synthetic sources on a private D-Bus. */
 [CCode (has_target = false)]
 public delegate Wingpanel.Indicator? IndicatorFactory (Module module, Wingpanel.ServerType server);
+[CCode (has_target = false)]
+public delegate int VerseChoose (GLib.DateTime day, string[] seasons);
 
 class AgendaTest : Object {
     Wingpanel.Indicator indicator;
+    VerseChoose verse_choose;
     Gtk.Widget widget;
     E.SourceRegistry registry;
     ECal.Client events;
@@ -553,6 +556,205 @@ class AgendaTest : Object {
         for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) dump_labels (child);
     }
 
+    string[] verse_seasons;
+    int pick_verse (GLib.DateTime day, int count) {
+        return verse_choose (day, verse_seasons);
+    }
+
+    string verse_date () {
+        string text;
+        named (widget, "verse-day").get ("secondary-text", out text);
+        return text;
+    }
+
+    string header_text (Gtk.Widget root, string property) {
+        string text;
+        named (root, "verse-day").get (property, out text);
+        return text;
+    }
+
+    async void study_checks (Gtk.Window window) throws Error {
+        var study = (Gtk.ToggleButton) named (widget, "verse-mode-study");
+        assert (study.label == "Titus" && study.sensitive);
+        study.active = true;
+        yield expect ("About the Letter");
+        assert (header_text (widget, "label") == "Titus");
+        var previous = (Gtk.Button) named (widget, "verse-previous");
+        var next = (Gtk.Button) named (widget, "verse-next");
+        var overview = (Gtk.Button) named (widget, "verse-today");
+        assert (overview.label == "Overview" && !overview.sensitive && !previous.sensitive);
+        assert (!named (widget, "study-passage").visible);
+        assert (!((Gtk.Button) named (widget, "verse-copy")).sensitive);
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "study-overview");
+
+        next.clicked ();
+        assert (header_text (widget, "label") == "Titus 1:1–4");
+        assert (header_text (widget, "secondary-text") == "A Greeting Full of the Gospel · 1 of 9");
+        var passage = ((Gtk.Label) named (widget, "study-passage")).get_text ();
+        assert (passage.has_prefix ("1\u2009Paul, a servant of God"));
+        assert (passage.contains ("4\u2009to Titus, my true child"));
+        assert (((Gtk.Label) named (widget, "study-insight")).label.contains ("compressed sermon"));
+        for (int i = 0; i < 6; i++) next.clicked ();
+        assert (header_text (widget, "label") == "Titus 3:1–7");
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "study-section");
+        for (int i = 0; i < 5; i++) next.clicked ();
+        assert (header_text (widget, "label") == "Titus 3:12–15" && !next.sensitive && previous.sensitive);
+        ((Gtk.Button) named (widget, "verse-copy")).clicked ();
+        yield expect ("Copied");
+        var copied = yield widget.get_clipboard ().read_text_async (null);
+        assert (copied.has_prefix ("Titus 3:12–15 (WEB)\nWhen I send Artemas to you"));
+        assert (!copied.contains ("{") && copied.has_suffix ("Grace be with you all. Amen."));
+        yield expect ("Copy Passage");
+
+        // A fresh panel (as after logging in) reopens the study on the same section.
+        void* symbol;
+        var module = Module.open (library, ModuleFlags.LAZY);
+        assert (module.symbol ("get_indicator", out symbol));
+        var second = ((IndicatorFactory) symbol) (module, Wingpanel.ServerType.SESSION).get_widget ();
+        assert (((Gtk.ToggleButton) named (second, "verse-mode-study")).active);
+        assert (header_text (second, "label") == "Titus 3:12–15");
+
+        // Back to the daily verse; the study keeps its place for next time.
+        indicator.closed ();
+        indicator.opened ();
+        assert (header_text (widget, "label") == "Titus 3:12–15");
+        ((Gtk.ToggleButton) named (widget, "verse-mode-daily")).active = true;
+        assert (header_text (widget, "label") == "Verse of the Day");
+        assert (verse_date ().has_suffix (" · " + new GLib.DateTime.now_local ().format ("%A, %B %-d")));
+        assert (((Gtk.Button) named (widget, "verse-today")).label == "Today");
+        stdout.printf ("PASS Titus study: overview, sections, verse numbers, copy, remembered place\n");
+    }
+
+    async void verse_checks (Gtk.Window window) throws Error {
+        var stack = find_stack (widget);
+        var page = stack.get_page (stack.get_child_by_name ("verse"));
+        assert (page.icon_name == "list-add-symbolic");
+        assert (page.title == "Bible");
+        stack.visible_child_name = "verse";
+        var data = GLib.resources_lookup_data ("/io/elementary/desktop/wingpanel/datetime/daily-verses.tsv",
+            GLib.ResourceLookupFlags.NONE);
+        string[] references = {};
+        string[] texts = {};
+        string[] headings = {};
+        string[] seasons = {};
+        foreach (var line in ((string) data.get_data ()).split ("\n")) {
+            var fields = line.split ("\t", 4);
+            if (line.has_prefix ("#") || fields.length < 2) continue;
+            references += fields[0];
+            texts += fields[1];
+            headings += fields.length > 2 ? fields[2] : "";
+            seasons += fields.length > 3 ? fields[3] : "";
+        }
+        verse_seasons = seasons;
+        int unreserved = 0;
+        foreach (var season in seasons) if (season == "") unreserved++;
+        assert (unreserved >= 366);
+        // Feast days, including Easter-based dates in two different years.
+        string[,] feasts = {
+            { "2026-12-24", "Isaiah 9:6" }, { "2026-12-25", "Luke 2:10-12" },
+            { "2027-01-01", "Lamentations 3:22-23" }, { "2027-01-06", "Matthew 2:10-11" },
+            { "2026-02-18", "Joel 2:13" }, { "2026-03-29", "John 12:12-13" },
+            { "2026-04-03", "Isaiah 53:5" }, { "2026-04-05", "Matthew 28:6" },
+            { "2026-05-24", "Acts 2:4" }, { "2026-11-26", "Psalm 100:4-5" },
+            { "2027-03-28", "Matthew 28:6" }, { "2027-11-25", "Psalm 100:4-5" },
+            { "2028-04-16", "Matthew 28:6" }, { "2028-06-04", "Acts 2:4" }
+        };
+        for (int f = 0; f < feasts.length[0]; f++) {
+            var parts = feasts[f, 0].split ("-");
+            var feast_day = new GLib.DateTime.local (int.parse (parts[0]), int.parse (parts[1]), int.parse (parts[2]), 12, 0, 0);
+            assert (references[pick_verse (feast_day, references.length)] == feasts[f, 1]);
+        }
+        // Thanksgiving's Thursday a week earlier and Easter Monday are ordinary days.
+        assert (seasons[pick_verse (new GLib.DateTime.local (2026, 11, 19, 12, 0, 0), references.length)] == "");
+        assert (seasons[pick_verse (new GLib.DateTime.local (2026, 4, 6, 12, 0, 0), references.length)] == "");
+        var today = pick_verse (new GLib.DateTime.now_local (), references.length);
+        yield expect ("— " + references[today]);
+        yield expect (texts[today]);
+        foreach (var id in new string[] { "verse-sermons", "verse-videos", "verse-context", "verse-copy" }) {
+            assert (named (widget, id) is Gtk.Button && ((Gtk.Button) named (widget, id)).sensitive);
+        }
+        var now = new GLib.DateTime.now_local ();
+        var today_button = (Gtk.Button) named (widget, "verse-today");
+        assert (!today_button.sensitive);
+        assert (verse_date ().has_prefix ("Today · "));
+        ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        yield expect ("— " + references[pick_verse (now.add_days (1), references.length)]);
+        assert (today_button.sensitive);
+        assert (verse_date ().has_prefix ("Tomorrow · "));
+        ((Gtk.Button) named (widget, "verse-previous")).clicked ();
+        ((Gtk.Button) named (widget, "verse-previous")).clicked ();
+        yield expect ("— " + references[pick_verse (now.add_days (-1), references.length)]);
+        assert (verse_date ().has_prefix ("Yesterday · "));
+        today_button.clicked ();
+        yield expect ("— " + references[today]);
+        assert (!today_button.sensitive);
+
+        // A Psalm heading is a caption, not part of the verse text.
+        int ahead = 1;
+        while (headings[pick_verse (now.add_days (ahead), references.length)] == "") ahead++;
+        for (int i = 0; i < ahead; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        var psalm = pick_verse (now.add_days (ahead), references.length);
+        yield expect (headings[psalm]);
+        yield expect (texts[psalm]);
+        assert (named (widget, "verse-heading").visible);
+        assert (!texts[psalm].has_prefix (headings[psalm]));
+        // Single-digit days are not padded (GLib pads %e with a figure space).
+        assert (!verse_date ().contains ("\u2007") && !verse_date ().contains ("  "));
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse-psalm");
+
+        // Copy puts the verse and reference on the clipboard and confirms in place.
+        ((Gtk.Button) named (widget, "verse-copy")).clicked ();
+        yield expect ("Copied");
+        var copied = yield widget.get_clipboard ().read_text_async (null);
+        assert (copied == "“%s” — %s (WEB)".printf (texts[psalm], references[psalm]));
+        yield expect ("Copy Verse");
+
+        // A feast day names itself in the header and shows its reserved verse.
+        var christmas = new GLib.DateTime.local (now.get_year (), 12, 25, 0, 0, 0);
+        var start = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        if (christmas.compare (start) < 0) christmas = christmas.add_years (1);
+        int to_christmas = (int) (christmas.difference (start.add_days (ahead)) / GLib.TimeSpan.DAY);
+        if (christmas.difference (start.add_days (ahead)) % GLib.TimeSpan.DAY > GLib.TimeSpan.HOUR * 12) to_christmas++;
+        for (int i = 0; i < to_christmas; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        yield expect ("— Luke 2:10-12");
+        assert (verse_date () == "Christmas Day · " + christmas.format ("%A, %B %-d"));
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse-christmas");
+
+        // Reopening the panel returns to today's verse.
+        indicator.closed ();
+        indicator.opened ();
+        yield expect ("— " + references[today]);
+        assert (verse_date ().has_prefix ("Today · "));
+        // No repeats inside a year (leap or not); stable within a day; reshuffled each year.
+        foreach (var year in new int[] { 2026, 2027, 2028 }) {
+            var used = new GenericSet<int> (direct_hash, direct_equal);
+            var day = new GLib.DateTime.local (year, 1, 1, 0, 0, 0);
+            for (; day.get_year () == year; day = day.add_days (1)) {
+                var index = pick_verse (day, references.length);
+                assert (index >= 0 && index < references.length);
+                assert (!used.contains (index));
+                used.add (index);
+                var late = new GLib.DateTime.local (year, day.get_month (), day.get_day_of_month (), 23, 59, 0);
+                assert (pick_verse (late, references.length) == index);
+            }
+        }
+        var day_2026 = new GLib.DateTime.local (2026, 3, 1, 9, 0, 0);
+        var same = 0;
+        for (int i = 0; i < 30; i++) {
+            if (pick_verse (day_2026.add_days (i), references.length) ==
+                pick_verse (day_2026.add_years (1).add_days (i), references.length)) same++;
+        }
+        assert (same < 5);
+        assert (verse_choose (day_2026, new string[0]) == -1);
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse");
+        stdout.printf ("PASS verse tab: today's verse, sermon links, no repeats within a year\n");
+    }
+
     async void expect (string title, bool present = true) throws Error {
         for (int n = 0; n < 200; n++) {
             if (contains (widget, title) == present) return;
@@ -778,6 +980,146 @@ class AgendaTest : Object {
         yield expect ("Retained draft", false);
     }
 
+    string? header_of (Gtk.Widget row) {
+        var header = ((Gtk.ListBoxRow) row).get_header () as Gtk.Label;
+        return header != null ? header.label : null;
+    }
+
+    void write_homeboard (string json) throws Error {
+        var dir = Path.build_filename (Environment.get_user_state_dir (), "homeboard");
+        DirUtils.create_with_parents (dir, 0700);
+        var temporary = Path.build_filename (dir, "panel.json.tmp");
+        FileUtils.set_contents (temporary, json);
+        FileUtils.rename (temporary, Path.build_filename (dir, "panel.json"));
+    }
+
+    string day (int offset) { return new GLib.DateTime.now_local ().add_days (offset).format ("%Y%m%d"); }
+
+    async void organized_task_checks () throws Error {
+        var stack = find_stack (widget);
+        stack.visible_child_name = "tasks";
+        var page = stack.get_page (stack.get_child_by_name ("tasks"));
+        add (tasks, todo ("Late task", false, "DUE;VALUE=DATE:" + day (-1) + "\r\n").replace ("UID:test-task", "UID:late"));
+        add (tasks, todo ("Today task", false, "DUE;VALUE=DATE:" + day (0) + "\r\n").replace ("UID:test-task", "UID:today"));
+        add (tasks, todo ("Urgent tomorrow", false, "DUE;VALUE=DATE:" + day (1) + "\r\nPRIORITY:1\r\nCATEGORIES:Kitchen\r\n").replace ("UID:test-task", "UID:urgent"));
+        add (tasks, todo ("Calm tomorrow", false, "DUE;VALUE=DATE:" + day (1) + "\r\n").replace ("UID:test-task", "UID:calm"));
+        add (tasks, todo ("Someday task").replace ("UID:test-task", "UID:someday"));
+        yield expect ("Someday task");
+        yield expect ("Urgent tomorrow");
+        yield expect ("Late task");
+        for (int i = 0; i < 5; i++) yield pause ();
+        var late = task_row (widget, "Late task");
+        var due_today = task_row (widget, "Today task");
+        var urgent = task_row (widget, "Urgent tomorrow");
+        var calm = task_row (widget, "Calm tomorrow");
+        var someday = task_row (widget, "Someday task");
+        int i_late = ((Gtk.ListBoxRow) late).get_index (), i_today = ((Gtk.ListBoxRow) due_today).get_index ();
+        int i_urgent = ((Gtk.ListBoxRow) urgent).get_index (), i_calm = ((Gtk.ListBoxRow) calm).get_index ();
+        int i_someday = ((Gtk.ListBoxRow) someday).get_index ();
+        assert (i_late < i_today && i_today < i_urgent && i_urgent < i_calm && i_calm < i_someday);
+        assert (header_of (late) == "Overdue" && header_of (due_today) == "Today");
+        assert (header_of (urgent) == "Tomorrow" && header_of (calm) == null && header_of (someday) == "No due date");
+        assert (contains (late, "Overdue since yesterday") && contains (due_today, "Due today"));
+        assert (contains (urgent, "Due tomorrow") && contains (urgent, " · agenda-test-tasks · Kitchen"));
+        assert (named (urgent, "task-priority") != null && named (calm, "task-priority") == null);
+        assert (named (someday, "task-due") == null);
+        assert (page.needs_attention);
+        preview ((Gtk.Window) widget.get_root (), "calendar-task-sections");
+        stdout.printf ("PASS task sections, overdue/today wording, priority-first order, project category and overdue tab dot\n");
+
+        tasks.remove_object_sync ("late", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Late task", false);
+        for (int n = 0; n < 100 && page.needs_attention; n++) yield pause ();
+        assert (!page.needs_attention);
+        var undo_bar = (Gtk.Revealer) named (widget, "task-undo-bar");
+        var undo = (Gtk.Button) named (widget, "task-undo");
+        task_check (due_today).active = true;
+        yield expect ("Today task", false);
+        yield expect ("Completed “Today task”");
+        assert (undo_bar.reveal_child && undo.visible);
+        undo.clicked ();
+        yield expect ("Today task");
+        ICal.Component reopened;
+        tasks.get_object_sync ("today", null, out reopened, null);
+        var record = new ECal.Component.from_icalcomponent (reopened.clone ());
+        assert (reopened.get_status () == ICal.PropertyStatus.NEEDSACTION);
+        assert (record.get_percent_complete () == 0 && record.get_completed () == null);
+        assert (reopened.get_due ().as_ical_string () == day (0));
+        for (int n = 0; n < 100 && undo_bar.reveal_child; n++) yield pause ();
+        assert (!undo_bar.reveal_child);
+        add (tasks, todo ("Weekly chore", false, "DTSTART;VALUE=DATE:" + day (0) + "\r\nDUE;VALUE=DATE:" + day (0) +
+            "\r\nRRULE:FREQ=WEEKLY;COUNT=3\r\n").replace ("UID:test-task", "UID:weekly"));
+        yield expect ("Weekly chore");
+        assert (contains (task_row (widget, "Weekly chore"), " · agenda-test-tasks · Repeats"));
+        task_check (task_row (widget, "Weekly chore")).active = true;
+        yield expect ("Completed · next one scheduled");
+        assert (undo_bar.reveal_child && !undo.visible);
+        stdout.printf ("PASS Undo reopens a panel-completed task; repeating tasks say the next one is scheduled\n");
+
+        var entry = (Gtk.Entry) named (widget, "task-title");
+        var due = (Gtk.DropDown) named (widget, "task-due");
+        assert (due.selected == 0);
+        due.selected = 2;
+        entry.text = "Quick dated task";
+        Signal.emit_by_name (entry, "activate");
+        yield expect ("Quick dated task");
+        for (int n = 0; n < 150 && !entry.sensitive; n++) yield pause ();
+        assert (due.selected == 0 && entry.text == "");
+        assert (contains (task_row (widget, "Quick dated task"), "Due tomorrow"));
+        SList<ECal.Component> saved;
+        tasks.get_object_list_as_comps_sync ("#t", out saved, null);
+        bool found = false;
+        foreach (var task in saved) {
+            if (task.get_icalcomponent ().get_summary () != "Quick dated task") continue;
+            var when = task.get_icalcomponent ().get_due ();
+            assert (when != null && when.is_date () && when.as_ical_string () == day (1));
+            found = true;
+        }
+        assert (found);
+        stdout.printf ("PASS quick-add due choice saves an all-day DUE and resets to No date\n");
+
+        var strip = named (widget, "homeboard-status");
+        assert (strip != null && !strip.visible);
+        var actions = new SimpleActionGroup ();
+        int synced = 0;
+        var sync_action = new SimpleAction ("sync", null);
+        sync_action.activate.connect (() => synced++);
+        actions.add_action (sync_action);
+        var bus = Bus.get_sync (BusType.SESSION);
+        bus.export_action_group ("/org/techmore/Homeboard", actions);
+        bool acquired = false;
+        Bus.own_name_on_connection (bus, "org.techmore.Homeboard", BusNameOwnerFlags.NONE, () => { acquired = true; }, null);
+        for (int n = 0; n < 100 && !acquired; n++) yield pause ();
+        assert (acquired);
+        write_homeboard ("{\"state\":\"signed-out\",\"signedIn\":false,\"status\":\"Sign in to Homeboard to sync\",\"tasks\":[]}");
+        for (int n = 0; n < 200 && !strip.visible; n++) yield pause ();
+        assert (strip.visible);
+        yield expect ("Sign in to Homeboard to sync");
+        assert (named (strip, "homeboard-connect").visible && !named (strip, "homeboard-sync").sensitive);
+        var stamp = new GLib.DateTime.now_utc ().add_minutes (-5).format_iso8601 ();
+        write_homeboard ("{\"state\":\"ok\",\"signedIn\":true,\"status\":\"Synced 4 tasks\",\"lastSuccess\":\"" + stamp + "\",\"tasks\":[]}");
+        yield expect ("Synced 4 tasks · 5 min ago");
+        preview ((Gtk.Window) widget.get_root (), "calendar-homeboard");
+        assert (!named (strip, "homeboard-connect").visible && named (strip, "homeboard-sync").sensitive);
+        bool close_requested = false;
+        ulong close_handler = indicator.close.connect (() => { close_requested = true; });
+        ((Gtk.Button) named (strip, "homeboard-sync")).clicked ();
+        yield expect ("Syncing…");
+        for (int n = 0; n < 100 && synced == 0; n++) yield pause ();
+        assert (synced == 1 && !close_requested);
+        SignalHandler.disconnect (indicator, close_handler);
+        write_homeboard ("{\"state\":\"ok\",\"signedIn\":true,\"status\":\"Synced 5 tasks\",\"lastSuccess\":\"" +
+            new GLib.DateTime.now_utc ().format_iso8601 () + "\",\"tasks\":[]}");
+        yield expect ("Synced 5 tasks · just now");
+        // Older bridges publish only a status sentence and an update time.
+        write_homeboard ("{\"status\":\"Synced 6 tasks\",\"updated_at\":\"" + new GLib.DateTime.now_utc ().format_iso8601 () + "\",\"tasks\":[]}");
+        yield expect ("Synced 6 tasks · just now");
+        stdout.printf ("PASS Homeboard strip: hidden until installed, sign-in/synced states, sync over D-Bus, legacy status file\n");
+        foreach (var uid in new string[] { "today", "urgent", "calm", "someday" }) {
+            tasks.remove_object_sync (uid, null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        }
+    }
+
     async void run () {
         try {
             registry = new E.SourceRegistry.sync (null);
@@ -816,6 +1158,21 @@ class AgendaTest : Object {
             for (int i = 0; i < 5; i++) yield pause ();
             preview (window, "calendar-tasks");
             stdout.printf ("PASS tabs, separate calendars with shared UID, undated task\n");
+            find_stack (widget).visible_child_name = "github";
+            yield expect ("Rupert deployment ready");
+            yield expect ("Daedalus deployment ready");
+            yield expect ("1 of 2 gates complete");
+            yield expect ("main CI: failing · last observed");
+            yield expect ("main CI: unknown · last observed");
+            yield expect ("Next: Verify fresh restore");
+            for (int i = 0; i < 6; i++) yield pause ();
+            yield expect ("Refresh unavailable. Check network and gh auth status.");
+            assert (named (widget, "github-refresh").sensitive);
+            preview (window, "calendar-github");
+            stdout.printf ("PASS GitHub outcomes: persistent priority, gate progress, CI failure/unknown, offline evidence and retry\n");
+            yield verse_checks (window);
+            yield study_checks (window);
+            find_stack (widget).visible_child_name = "tasks";
 
             events.modify_object_sync (new ICal.Component.from_string (event ("Updated event")), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
             yield expect ("Updated event");
@@ -854,18 +1211,24 @@ class AgendaTest : Object {
             yield expect ("Second calendar same UID");
             yield checkbox_checks ();
             yield quick_add_checks ();
+            yield organized_task_checks ();
             result = 0;
         } catch (Error e) { stderr.printf ("FAIL: %s\n", e.message); }
         loop.quit ();
     }
 
+    string library;
+
     public int execute (string library) {
+        this.library = library;
         var module = Module.open (library, ModuleFlags.LAZY);
         assert (module != null);
         module.make_resident ();
         void* symbol;
         assert (module.symbol ("get_indicator", out symbol));
         var factory = (IndicatorFactory) symbol;
+        assert (module.symbol ("date_time_daily_verse_choose", out symbol));
+        verse_choose = (VerseChoose) symbol;
         indicator = factory (module, Wingpanel.ServerType.SESSION);
         loop = new MainLoop ();
         run.begin ();

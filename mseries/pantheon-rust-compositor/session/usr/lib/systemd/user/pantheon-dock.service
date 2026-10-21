@@ -1,0 +1,20 @@
+[Unit]
+Description=Elementary Dock for the experimental Pantheon Rust session
+BindsTo=pantheon-rust-compositor@wayland.service
+After=pantheon-rust-compositor@wayland.service pantheon-wingpanel.service
+PartOf=gnome-session-initialized.target
+ConditionEnvironment=XDG_SESSION_TYPE=wayland
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+[Service]
+Type=simple
+# See pantheon-wingpanel.service: no linux-dmabuf, so avoid GTK4's Vulkan renderer.
+Environment=GSK_RENDERER=gl
+# Keep the owner's opt-out. The launcher resolves the patched per-user dock
+# before falling back to the distribution binary.
+ExecCondition=/usr/bin/test ! -e %h/.config/mseries/dock/user-disabled
+ExecStart=/usr/bin/pantheon-rust-dock
+Restart=on-failure
+RestartSec=2s
+TimeoutStopSec=5s

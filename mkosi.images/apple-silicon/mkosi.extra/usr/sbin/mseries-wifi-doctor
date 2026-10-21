@@ -1,0 +1,90 @@
+#!/bin/bash
+# Diagnose and repair "cannot join a Wi-Fi network" on Apple Silicon Broadcom parts.
+#   sudo mseries-wifi-doctor [SSID]     # report + safe fixes; with SSID, drop the saved profile and rejoin
+#   sudo mseries-wifi-doctor --report   # report only, change nothing
+# The report is also copied to /boot/efi/wifi-report.txt (FAT, readable from macOS) when that exists.
+# Order of fixes: unblock radio, make sure the vendor firmware is provisioned, reload brcmfmac (a wedged
+# chip rejects associations with status 16, which NetworkManager shows as a wrong password), turn off
+# scan MAC randomisation (see install-omdrop-radio.sh), then rescan and rejoin.
+set -uo pipefail
+export LC_ALL=C
+
+report_only=0 ssid=""
+case ${1:-} in
+  --report) report_only=1 ;;
+  -h|--help) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *) ssid=${1:-} ;;
+esac
+[[ $EUID -eq 0 ]] || { echo "Run with sudo." >&2; exit 2; }
+
+out=$(mktemp)
+exec > >(tee "$out") 2>&1
+step() { printf '\n===== %s =====\n' "$*"; }
+fix() { (( report_only )) && { echo "(report only) skipped: $*"; return 0; }; "$@"; }
+
+step "hardware and kernel"
+uname -r
+lspci -nn 2>/dev/null | grep -E '14e4' || echo "no Broadcom PCI device found"
+
+step "firmware"
+ls /lib/firmware/brcm/ 2>/dev/null | grep -E '4378|4387' || echo "no brcmfmac4378/4387 blobs in /lib/firmware/brcm"
+fix systemctl restart mseries-wifi-firmware.service
+journalctl -b -t mseries-wifi-firmware --no-pager 2>/dev/null | tail -5
+
+step "radio"
+rfkill list
+fix rfkill unblock all
+fix nmcli radio wifi on
+
+step "driver log"
+dmesg | grep -i -E 'brcmfmac|brcm.*firmware' | tail -20
+wedged=$(journalctl -b -u wpa_supplicant -u NetworkManager --no-pager 2>/dev/null |
+  grep -cE 'ASSOC-REJECT.*status_code=16|status 16|scan.*-52')
+echo "wedge-signature lines this boot: $wedged"
+
+step "reload driver"
+if (( report_only )); then
+  echo "(report only) skipped"
+else
+  if lsmod | awk '$1 == "brcmfmac" {found = 1} END {exit !found}'; then
+    modprobe -r --remove-holders brcmfmac || echo "unload failed; continuing"
+  fi
+  modprobe brcmfmac && sleep 4
+  systemctl restart NetworkManager && sleep 4
+fi
+nmcli device status
+
+step "scan MAC randomisation"
+if grep -rhs 'wifi.scan-rand-mac-address' /etc/NetworkManager/conf.d /usr/lib/NetworkManager/conf.d /etc/NetworkManager/NetworkManager.conf | grep -q '=no'; then
+  echo "already off"
+elif (( report_only )); then
+  echo "on (default); a fix would write /etc/NetworkManager/conf.d/90-mseries-wifi.conf"
+else
+  install -d /etc/NetworkManager/conf.d
+  printf '[device]\nwifi.scan-rand-mac-address=no\n\n[connection]\nwifi.cloned-mac-address=preserve\n' > /etc/NetworkManager/conf.d/90-mseries-wifi.conf
+  systemctl reload NetworkManager 2>/dev/null || systemctl restart NetworkManager
+  echo "turned off"
+fi
+
+step "networks in range"
+fix nmcli device wifi rescan; sleep 4
+nmcli -f IN-USE,SSID,SECURITY,SIGNAL device wifi list
+
+if [[ -n $ssid ]] && (( ! report_only )); then
+  step "rejoin '$ssid'"
+  nmcli -t -f NAME connection show | grep -Fxq "$ssid" && nmcli connection delete "$ssid"
+  # An open network has no key-mgmt; naming one makes NetworkManager ask for a password it never needs.
+  nmcli device wifi connect "$ssid"
+  sleep 5
+  nmcli device status
+  ip -br address
+  step "captive portal check"
+  curl -sS -m 8 -o /dev/null -w 'http=%{http_code} redirect=%{redirect_url}\n' http://neverssl.com
+  echo "A redirect above means a portal: open http://neverssl.com in a browser and accept it."
+fi
+
+step "recent NetworkManager log"
+journalctl -b -u NetworkManager -u wpa_supplicant --no-pager 2>/dev/null | tail -40
+
+if [[ -d /boot/efi ]]; then cp "$out" /boot/efi/wifi-report.txt 2>/dev/null && echo "Report saved to /boot/efi/wifi-report.txt"; fi
+rm -f "$out"

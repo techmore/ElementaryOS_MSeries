@@ -15,6 +15,8 @@ namespace MSeries {
         public ViewerInfo[] viewers = {};
         public bool live = false;
         public bool reachable = false;
+        public int link_count = 0;
+        public bool link_auto = false;
         public string? link_id = null;
         public string? link_token = null;
         public int64 link_expires = 0;
@@ -97,11 +99,13 @@ namespace MSeries {
             }
             viewers = vs;
             bool link_alive = false;
+            link_count = s.has_member ("links") ? (int) s.get_array_member ("links").get_length () : 0;
             if (s.has_member ("links")) {
                 s.get_array_member ("links").foreach_element ((a, i, n) => {
                     var o = n.get_object ();
                     if (link_id != null && o.get_string_member ("id") == link_id) {
                         link_alive = true;
+                        link_auto = o.has_member ("auto_admit") && o.get_boolean_member ("auto_admit");
                         link_expires = o.get_int_member ("expires_at");
                     }
                 });
@@ -112,17 +116,17 @@ namespace MSeries {
 
         public string digest () {
             var sb = new StringBuilder ();
-            sb.append ("%s|%s|%s|".printf (reachable.to_string (), live.to_string (), link_id ?? ""));
+            sb.append ("%s|%s|%s|%d|".printf (reachable.to_string (), live.to_string (), link_id ?? "", link_count));
             foreach (var v in viewers) sb.append ("%s:%s;".printf (v.vid, v.state));
             return sb.str;
         }
 
         public string? viewer_link (string base_for_viewers) {
-            return link_token == null ? null : base_for_viewers + "/v#" + link_token;
+            return link_token == null ? null : base_for_viewers + "/v/" + link_token;
         }
 
-        public async bool create_link () {
-            var r = yield call ("POST", "/api/v1/share/links", "{}");
+        public async bool create_link (bool auto_admit = false) {
+            var r = yield call ("POST", "/api/v1/share/links", auto_admit ? "{\"auto_admit\":true}" : "{}");
             if (r == null || !r.has_member ("token")) return false;
             link_id = r.get_string_member ("id");
             link_token = r.get_string_member ("token");

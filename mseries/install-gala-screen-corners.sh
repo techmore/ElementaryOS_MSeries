@@ -27,6 +27,9 @@
 # gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
 
 #
+# gala-screenshot-shelf-placement.patch puts the screenshot shelf (a plain Wayland window, so drops into
+# Wayland apps like Signal work) in the bottom-right corner; the shelf switches to it at the next login.
+#
 # And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector, Space switches to
 # window mode (blue highlight on the window under the pointer, click captures it); dragging still selects an area.
 set -euo pipefail
@@ -86,11 +89,15 @@ git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
 
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-shelf-placement.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/gala"
 sudo meson install -C "$build_dir" --no-rebuild >/dev/null
+# Tells the screenshot shelf that a Gala started after this point places its Wayland window itself.
+sudo install -d "$prefix/share"
+sudo touch "$prefix/share/mseries-shelf-wayland"
 
 # Launcher with automatic fallback to the stock compositor.
 launcher=$prefix/bin/mseries-gala
@@ -100,6 +107,15 @@ sudo tee "$launcher" >/dev/null <<'LAUNCHER'
 flag="$HOME/.cache/mseries-gala-failed"
 patched=/usr/local/lib/mseries/gala/bin/gala
 libs=/usr/local/lib/mseries/gala/lib
+# Patched libmutter from install-gala-mutter-fix.sh, used only while it matches the system mutter.
+mfix=/usr/local/lib/mseries/gala/mutter-fix
+if [ -r "$mfix/mutter-version" ] && [ -e "$mfix/libmutter-18.so.0" ]; then
+  if [ "$(cat "$mfix/mutter-version")" = "$(dpkg-query -W -f='${Version}' libmutter-18-0 2>/dev/null)" ]; then
+    libs="$mfix:$libs"
+  else
+    logger -t mseries-gala "patched libmutter is for $(cat "$mfix/mutter-version"), system has another version; not using it"
+  fi
+fi
 
 use_stock() {
   logger -t mseries-gala "$1; starting stock /usr/bin/gala"

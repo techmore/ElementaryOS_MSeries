@@ -40,6 +40,10 @@ def main(argv):
         return 0
 
     conn = core.connect()
+    try:
+        core.import_upower(conn)           # real history UPower kept from before this logger existed
+    except Exception as error:
+        print("UPower import skipped: %s" % error, file=sys.stderr)
     detector = core.EventDetector()
     alert = core.DrainAlert(core.load_config())
     last_day = None

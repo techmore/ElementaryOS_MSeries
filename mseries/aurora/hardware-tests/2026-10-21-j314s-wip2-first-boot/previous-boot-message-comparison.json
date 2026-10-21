@@ -1,0 +1,27 @@
+{
+  "previous_kernel": "7.1.12-elementary-aurora20-enh1",
+  "previous_log_available": true,
+  "message_counts": {
+    "deferred_dp_phy": {
+      "previous": 2,
+      "current_initial_log": 3
+    },
+    "lacs_response": {
+      "previous": 2,
+      "current_initial_log": 2
+    },
+    "clock_frequency": {
+      "previous": 8,
+      "current_initial_log": 6
+    },
+    "wifi_p2p_address": {
+      "previous": 1,
+      "current_initial_log": 1
+    },
+    "ioav_open": {
+      "previous": 1,
+      "current_initial_log": 1
+    }
+  },
+  "limits": "Counts from journal comparison; unequal uptimes and potentially different dock topology. Not evidence of regression or health. Raw owner logs retained privately."
+}

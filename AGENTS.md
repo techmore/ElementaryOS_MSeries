@@ -2,6 +2,9 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current J314S host: owner confirms the dock works on Aurora .20; external 1080p/60 is active.
+> October 21 Aurora 7.2 wip2 trial: owner confirms dock picture on all 3 USB-C ports,
+> with delayed initial training; `.20` remains default and actual recovery/suspend
+> still unqualified. [Scoped port/timing follow-up](mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
 > [Scoped VRR/dock result](mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
 > records a visual pass and brief kernel VRR activation. Sustained VRR, long-run dock stability,
 > physical-port verification and suspend/resume remain open. Check this result before repeating older RE.
@@ -25,6 +28,10 @@
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.
 - Keep the owner’s menu bar stable: stage routine indicator updates without restarting Wingpanel. Reload only when the owner explicitly requests it or to recover from a confirmed panel defect.
+- **Branches:** `dev` is the default branch and what the owner runs; `main` is the
+  frozen stable line (v0.0.1). Branch from
+  `origin/dev` and open PRs with `--base dev`; only release PRs (`dev` → `main`) and
+  urgent hotfixes go to `main`. See [mseries/BRANCHING.md](mseries/BRANCHING.md).
 - Commit and push completed, reviewed batches to GitHub. Use one agent for
   Git writes at a time. A delegated worker must report to its coordinator
   instead of committing unless explicitly assigned ownership of Git writes.
@@ -50,3 +57,15 @@
 - Do not change the owner's bootloader, kernel, or running audio stack as
   part of image work. Preserve unrelated local changes and untracked drafts.
 - Maintain the Omarchy Mac package boundary described in `mseries/PORT-MAP.md`.
+
+## UI consistency guidance
+
+Automatically use the project
+[UI specialist skill](.agents/skills/elementaryos-mseries-ui-specialist/SKILL.md)
+when building, editing or reviewing ElementaryOS_MSeries screens, settings,
+indicators and UI interaction states, even when the user does not name the skill.
+Read its entry point and the references relevant to the changed surface.
+It maps the existing GTK/Granite, Wingpanel and Switchboard surfaces and records
+Apple's SwiftUI specialist skill and Human Interface Guidelines as reference
+guidance. The owner values Apple's design standards; express that quality
+through native elementary OS conventions and the target screen's actual toolkit.

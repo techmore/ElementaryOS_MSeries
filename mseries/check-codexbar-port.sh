@@ -26,11 +26,40 @@ else
 fi
 rm -rf "$empty"
 
-for f in codexbar-cache codexbar-accounts codexbar-claude codexbar-claude-history codexbar-opencode-local codexbar-opencode-login codexbar-sessions; do
+# Grok Build (upstream provider since v0.78.0 restored CLI billing): we draw its card, so the id must stay "grok".
+if "$cli" config providers --format json 2>/dev/null | grep -q '"provider" *: *"grok"'; then
+  ok "CLI lists the grok provider"
+else
+  bad "CLI no longer lists provider grok; the panel's Grok card and installer order would go stale"
+fi
+grok_bin=$(command -v grok || true)
+for candidate in "${GROK_HOME:-$HOME/.grok}/bin/grok" "$HOME/.local/bin/grok"; do
+  [[ -z $grok_bin && -x $candidate ]] && grok_bin=$candidate
+done
+if [[ -n $grok_bin ]]; then
+  if grok_json=$("$cli" usage --provider grok --format json 2>/dev/null) && grep -Eq '"primary" *: *\{' <<<"$grok_json"; then
+    ok "grok usage reports a credits window"
+  elif grok_json=$("$cli" usage --provider grok --format json 2>/dev/null) && grep -q '"accountEmail"' <<<"$grok_json"; then
+    ok "grok is signed in (plan has no credits window; the card says so)"
+  else
+    note "grok usage returned no credits window (run grok login, or check network)"
+  fi
+  config="${XDG_CONFIG_HOME:-$HOME/.config}/codexbar/linux.json"
+  if python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); sys.exit(0 if c.get("provider")=="custom" and "grok" in c.get("providerOrder",[]) else 1)' "$config" 2>/dev/null; then
+    ok "grok is in the panel's provider order"
+  else
+    note "grok is installed but not in $config providerOrder; rerun install-codexbar.sh or add it in Settings → Providers"
+  fi
+else
+  note "Grok Build is not installed; its card stays hidden"
+fi
+
+for f in codexbar-cache codexbar-accounts codexbar-claude codexbar-claude-history codexbar-claude-handoff codexbar-opencode-local codexbar-opencode-login codexbar-sessions; do
   python3 "$repo/mseries/test-$f.py" >/dev/null 2>&1 && ok "tests: $f" || bad "tests: $f"
 done
 python3 "$repo/mseries/test-codexbar-performance.py" >/dev/null 2>&1 && ok "tests: performance/watch" || bad "tests: performance/watch"
 python3 "$repo/mseries/test-codexbar-wrapper.py" >/dev/null 2>&1 && ok "tests: wrapper" || bad "tests: wrapper"
+python3 "$repo/mseries/test-codexbar-deploy.py" >/dev/null 2>&1 && ok "tests: deploy/payload" || bad "tests: deploy/payload"
 
 build=$(mktemp -d); trap 'rm -rf "$build"' EXIT
 if meson setup "$build" "$repo/mseries/codexbar-wingpanel" >/dev/null 2>&1 && ninja -C "$build" >/dev/null 2>&1 \

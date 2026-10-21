@@ -44,7 +44,7 @@ namespace MSeries {
                 var dialog = new Gtk.AboutDialog () {
                     transient_for = this, modal = true, program_name = "CodexBar",
                     logo_icon_name = "mseries-codexbar-openai-symbolic",
-                    comments = "Seven-day token counts cover coding activity recorded on this computer across accounts and providers. They include processed input, output and cached tokens. They do not represent remaining plan quota, activity on other devices, or ordinary ChatGPT and claude.ai chats.",
+                    comments = "Seven-day token counts cover coding activity recorded on this computer across accounts and providers. They include processed input, output and cached tokens. They do not represent remaining plan quota, activity on other devices, or ordinary ChatGPT, claude.ai and grok.com chats.",
                     website = "https://github.com/techmore/ElementaryOS_MSeries",
                     website_label = "elementary OS port"
                 };
@@ -92,13 +92,19 @@ namespace MSeries {
                 Process.spawn_command_line_sync ("%s config providers --format json".printf (Shell.quote (cli_path)), out out_text);
                 var parser = new Json.Parser ();
                 parser.load_from_data (out_text, -1);
-                var array = parser.get_root ().get_array ();
-                for (uint i = 0; i < array.get_length (); i++) {
-                    var item = array.get_object_element (i);
-                    var id = item.get_string_member ("provider");
-                    names.insert (id, item.get_string_member ("displayName"));
+                var root = parser.get_root ();
+                var array = root != null && root.get_node_type () == Json.NodeType.ARRAY ? root.get_array () : null;
+                for (uint i = 0; array != null && i < array.get_length (); i++) {
+                    // External CLI output: skip malformed entries instead of tripping GLib criticals.
+                    var node = array.get_element (i);
+                    if (node.get_node_type () != Json.NodeType.OBJECT) continue;
+                    var item = node.get_object ();
+                    var id = item.get_string_member_with_default ("provider", "");
+                    if (!SettingsModel.valid_provider_id (id) || id in picker_ids) continue;
+                    var display_name = item.get_string_member_with_default ("displayName", id);
+                    names.insert (id, display_name);
                     picker_ids += id;
-                    picker_model.append (item.get_string_member ("displayName"));
+                    picker_model.append (display_name);
                 }
             } catch (Error e) {
                 // the picker stays empty; the provider list still works
@@ -350,7 +356,8 @@ namespace MSeries {
         private Gtk.Widget build_display () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             var panel = section ("Wingpanel");
-            add_row (panel, row ("Quota style", "Dots show remaining quota; hover for percentages", quota_style ()));
+            add_row (panel, row ("Quota style", "Dots hide reset times; enable hover information for details", quota_style ()));
+            add_row (panel, row ("Hover information", "Show usage details when the pointer rests on the menu bar", panel_toggle ("showHoverInfo")));
             add_row (panel, row ("Token counts", "Keep seven-day totals in the dropdown to save bar space", token_location ()));
 
             add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));
@@ -440,7 +447,10 @@ namespace MSeries {
         private Gtk.Widget provider_row (string id, int index, int count) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             line.add_css_class ("cb-row");
-            var mark = "mseries-codexbar-%s-symbolic".printf (id == "codex" ? "openai" : id == "opencodego" ? "opencode" : id);
+            string mark_name = id;
+            if (id == "codex") mark_name = "openai";
+            else if (id == "opencodego") mark_name = "opencode";
+            var mark = "mseries-codexbar-%s-symbolic".printf (mark_name);
             var icon = new Gtk.Image.from_icon_name (Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (mark)
                 ? mark : "application-x-executable-symbolic") { pixel_size = 16 };
             line.append (icon);
@@ -471,6 +481,17 @@ namespace MSeries {
     internal class SettingsApp : Gtk.Application {
         public SettingsApp () {
             GLib.Object (application_id: "com.steipete.CodexBar.Settings", flags: ApplicationFlags.DEFAULT_FLAGS);
+        }
+
+        protected override void startup () {
+            base.startup ();
+            Granite.init ();
+            var settings = Gtk.Settings.get_default ();
+            var desktop = Granite.Settings.get_default ();
+            settings.gtk_application_prefer_dark_theme = desktop.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+            desktop.notify["prefers-color-scheme"].connect (() => {
+                settings.gtk_application_prefer_dark_theme = desktop.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+            });
         }
 
         protected override void activate () {

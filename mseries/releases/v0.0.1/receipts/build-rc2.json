@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "complete": true,
+  "passed": true,
+  "scope": "extracted committed RC2 read-only prerequisites; not microphone/F5 acceptance",
+  "source_commit": "13a8b847ef3c754cbe37fe68686463bb2ec9f269",
+  "archive_sha256": "d5c0e9b2b36f257edf6cba6e74bb39e5870205fa2ccb6645f39e7bff66d166a5",
+  "host_check_count": 25,
+  "package_manifest_verified": true,
+  "outer_checksums_verified": true,
+  "prior_rc1_refusal_retained": true,
+  "services_changed": false,
+  "model_inference": false,
+  "microphone_recorded": false,
+  "published": false
+}

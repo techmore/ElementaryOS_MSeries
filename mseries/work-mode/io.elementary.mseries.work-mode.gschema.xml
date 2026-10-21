@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.elementary.mseries.work-mode" path="/io/elementary/mseries/work-mode/">
+    <key name="enabled" type="b">
+      <default>false</default>
+      <summary>Enable Windows Work Mode</summary>
+      <description>Use the selected work wallpaper and Windows-inspired dock while active.</description>
+    </key>
+    <key name="scheduled" type="b">
+      <default>false</default>
+      <summary>Schedule Windows Work Mode</summary>
+      <description>Switch the work wallpaper and dock automatically during configured work hours.</description>
+    </key>
+    <key name="weekdays-only" type="b">
+      <default>true</default>
+      <summary>Weekdays only</summary>
+      <description>Apply the work wallpaper Monday through Friday.</description>
+    </key>
+    <key name="start-time" type="s">
+      <default>'09:00'</default>
+      <summary>Work start time</summary>
+      <description>Local time at which the work wallpaper becomes active.</description>
+    </key>
+    <key name="end-time" type="s">
+      <default>'17:00'</default>
+      <summary>Work end time</summary>
+      <description>Local time at which the normal wallpaper is restored.</description>
+    </key>
+    <key name="network-trigger" type="b">
+      <default>false</default>
+      <summary>Only on work networks</summary>
+      <description>Apply Windows Work Mode only while this computer's public IP address matches one of the work public IP addresses.</description>
+    </key>
+    <key name="work-public-ips" type="as">
+      <default>[]</default>
+      <summary>Work public IP addresses</summary>
+      <description>Public IPv4/IPv6 addresses or CIDR ranges that identify a work network.</description>
+    </key>
+    <key name="public-ip-service" type="s">
+      <default>'https://api.ipify.org'</default>
+      <summary>Public IP lookup service</summary>
+      <description>HTTPS endpoint that returns the caller's public IP address as plain text. Contacted only while the work-network rule is on.</description>
+    </key>
+    <key name="work-wallpaper" type="s">
+      <default>'/usr/share/backgrounds/mseries/work-mode-azure-bloom.png'</default>
+      <summary>Work wallpaper image</summary>
+      <description>Image file used while Windows Work Mode is active. Starts with the supplied Azure Bloom wallpaper.</description>
+    </key>
+    <key name="icon-theme" type="s">
+      <default>''</default>
+      <summary>Work icon theme</summary>
+      <description>Icon theme used while Windows Work Mode is active, such as 'Win11-dark' from mseries/install-work-mode-icons.sh. Empty keeps the current icon theme. Ignored when the theme is not installed.</description>
+    </key>
+  </schema>
+</schemalist>

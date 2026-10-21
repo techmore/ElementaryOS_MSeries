@@ -10,13 +10,9 @@ case ${1:-} in
   *) echo 'Usage: deploy-codexbar.sh [--restart|--no-restart]' >&2; exit 2 ;;
 esac
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-lib="$HOME/.local/lib/codexbar-cli"
-mkdir -p "$lib"
-for helper in codexbar_claude_history.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
-  install -m 0755 "$repo/mseries/$helper" "$lib/$helper"
-done
-install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"
-mv -f "$HOME/.local/bin/codexbar.new" "$HOME/.local/bin/codexbar"
+source "$repo/mseries/lib-codexbar.sh"
+codexbar_install_helpers "$repo"
+codexbar_install_wrapper "$repo"
 
 build=$(mktemp -d "${TMPDIR:-/tmp}/codexbar-deploy.XXXXXX")
 trap 'rm -rf "$build"' EXIT
@@ -29,7 +25,7 @@ sudo install -m 0755 "$build/libcodexbar.so" "$indicators_dir/libcodexbar.so"
 # Icon-theme invalidation affects the whole live panel. Do not rewrite unchanged marks
 # or refresh its icon cache on routine code/documentation deployments.
 icons_changed=false
-for mark in openai claude opencode; do
+for mark in "${CODEXBAR_MARKS[@]}"; do
   source_icon="$repo/mseries/codexbar-wingpanel/icons/$mark.svg"
   installed_icon="/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
   if ! cmp -s "$source_icon" "$installed_icon"; then

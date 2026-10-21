@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-20",
+  "source": "Recovery chat complete Windows taskbar snapshot, including updated StartMenu and TaskbarCodexBar",
+  "preserved_source_sha256": {
+    "src/StartMenu.vala": "5c29b1beecc1b3e2be94ef6fa332cc69e7b119316108ca78fa255dd26ca295df",
+    "src/Taskbar.vala": "b3c0dce77c717195aa83094e4295278fdf93d7e3099e9a7631458b3e6186ff31",
+    "src/TaskbarCodexBar.vala": "4dd9e49ff7e68fe690a6a37bd1b803e9db84b9601659906ccc94dfa2ef1b90d7"
+  },
+  "all_preserved_files_byte_identical_after_patch": true,
+  "native_combined_build": "passed",
+  "deployed": false,
+  "remaining_gates": [
+    "Owner recovery confirmation",
+    "Isolated combined-taskbar UI/focus/typing validation",
+    "Coordinated owner-authorized deployment"
+  ],
+  "canonical_preparation_qualification": {
+    "dev_commit": "689ffdf6aca2cbddf1f54637de22e45d0fb29d38",
+    "helper": "mseries/dock-taskbar/prepare-source.sh",
+    "command": "bash mseries/install-dock-drawers.sh --build-running-apps-only",
+    "native_build": "passed",
+    "protected_files": [
+      "src/Taskbar.vala",
+      "src/StartMenu.vala",
+      "src/TaskbarCodexBar.vala",
+      "src/codexbar/*.vala"
+    ],
+    "sha256_preservation_guard": "passed",
+    "gtk_probe": "hover opens, preserves typing focus, leave closes, click pins and toggles",
+    "deployed": false
+  }
+}

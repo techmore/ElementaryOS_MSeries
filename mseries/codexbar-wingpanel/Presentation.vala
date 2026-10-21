@@ -4,12 +4,18 @@ namespace MSeries {
 
     internal class Presentation : GLib.Object {
         // Dense bar dots deliberately use different thresholds from quota warnings.
+        public static QuotaLevel visual_level (double remaining) {
+            if (remaining < 0) return QuotaLevel.UNKNOWN;
+            return remaining > 70 ? QuotaLevel.OK : remaining >= 25 ? QuotaLevel.LOW : QuotaLevel.CRITICAL;
+        }
+
         public static string dot_color (double remaining) {
-            return remaining > 70 ? "success_color" : remaining >= 25 ? "warning_color" : "error_color";
+            var level = visual_level (remaining);
+            return level == QuotaLevel.OK ? "success_color" : level == QuotaLevel.LOW ? "warning_color" : "error_color";
         }
 
         public static string dot_percent (double remaining) {
-            return remaining >= 0 && remaining < 10 ? " %0.0f%%".printf (remaining) : "";
+            return remaining >= 0 && remaining <= 15 ? " %0.0f%%".printf (remaining) : "";
         }
 
         public static QuotaLevel level_for (double remaining) {
@@ -44,6 +50,8 @@ namespace MSeries {
         public static string plan_label (string plan) {
             var value = plan.strip ();
             if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "max20x") return "Max 20×";
+            if (value.down () == "max5x") return "Max 5×";
             if (value.down () == "prolite") return "Pro Lite";
             if (value.down () == "go") return "Go";
             return value.substring (0, 1).up () + value.substring (1);
@@ -122,8 +130,12 @@ namespace MSeries {
                 var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
                 var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
                 var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
-                var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
-                    : countdown_text (reset.to_unix () - now_unix);
+                // Explicit owned string: valac frees the owned inner value of a nested
+                // literal/call ternary before copying it (use-after-free in generated C).
+                string eta = "?";
+                if (reset != null) {
+                    eta = reset.to_unix () <= now_unix ? "now" : countdown_text (reset.to_unix () - now_unix);
+                }
                 if (parts.len > 0) parts.append (" · ");
                 parts.append (label);
                 if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));
@@ -143,7 +155,7 @@ namespace MSeries {
                 var single = new Json.Array ();
                 single.add_object_element (window.ref ());
                 var parts = account_quota (single, now_unix, show_percent, show_reset).split (" ↻", 2);
-                var level = level_for (remaining.get_double ());
+                var level = visual_level (remaining.get_double ());
                 var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
                 if (text.len > 0) text.append (" · ");
                 text.append (color.length > 0
@@ -161,6 +173,8 @@ namespace MSeries {
             double lowest = 101;
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
+                // A model-scoped cap (Fable) limits that model only; it never lowers the account's headroom.
+                if (JsonBoundary.flag (window, "scoped", false)) continue;
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
                 var remaining = node.get_double ();

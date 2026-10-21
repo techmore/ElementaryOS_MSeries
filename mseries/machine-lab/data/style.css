@@ -1,0 +1,185 @@
+/* Machine Lab: elementary OS look. Colors come from the system theme
+   (@bg_color, @fg_color, @accent_color, @borders, @SILVER_*, @BLUEBERRY_*)
+   so light/dark and the user's accent follow the desktop automatically. */
+
+.ml-sidebar {
+    background: alpha(@fg_color, 0.04);
+}
+
+.ml-sidebar-title {
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.55;
+    margin: 12px 18px 4px 18px;
+}
+
+.ml-sidebar row {
+    border-radius: 6px;
+    margin: 1px 8px;
+    padding: 4px 4px;
+}
+
+.ml-machine-name { font-weight: 600; }
+.ml-machine-sub  { font-size: 0.85em; opacity: 0.65; }
+
+.ml-hero-icon {
+    padding: 14px;
+    border-radius: 18px;
+    background: linear-gradient(to bottom, alpha(@accent_color, 0.18), alpha(@accent_color, 0.06));
+    box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.25);
+}
+
+.ml-pill {
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 0.85em;
+    font-weight: 600;
+    background: alpha(@fg_color, 0.08);
+}
+.ml-pill.running {
+    color: @success_color;
+    background: alpha(@success_color, 0.15);
+}
+.ml-pill.stopped { opacity: 0.8; }
+
+.ml-card {
+    border-radius: 12px;
+    background: @card_bg_color;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.1), 0 1px 3px alpha(black, 0.12);
+}
+
+.ml-spec {
+    padding: 14px 16px;
+}
+.ml-spec-value { font-weight: 600; }
+.ml-spec-label { font-size: 0.85em; opacity: 0.65; }
+.ml-spec image { opacity: 0.7; }
+
+.ml-drop {
+    border-radius: 12px;
+    border: 2px solid alpha(@fg_color, 0.12);
+    background: alpha(@fg_color, 0.03);
+    padding: 18px;
+}
+.ml-drop.hover, .ml-drop.chosen {
+    border-color: @accent_color;
+    background: alpha(@accent_color, 0.08);
+}
+
+.ml-fineprint { font-size: 0.85em; opacity: 0.65; }
+
+.ml-dot {
+    border-radius: 99px;
+    background: alpha(@fg_color, 0.35);
+    box-shadow: 0 0 0 2px @bg_color;
+}
+.ml-dot.running { background: #68b723; }
+.ml-pill.running { color: #3a9104; background: alpha(#68b723, 0.2); }
+.ml-empty-icon { opacity: 0.9; }
+.ml-mono { font-family: monospace; font-weight: 600; }
+.ml-note {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: alpha(@accent_color, 0.1);
+    box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.25);
+}
+.ml-form-row { padding: 12px 16px; }
+.ml-form-sep { border-bottom: 1px solid alpha(@fg_color, 0.08); }
+.ml-console-frame {
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.12);
+}
+textview.ml-console, textview.ml-console text {
+    background: #1d1f23;
+    color: #d8dde6;
+}
+
+/* Per-machine colors (elementary palette) */
+.ml-c-0.ml-hero-icon { background: linear-gradient(to bottom, alpha(#3689e6, 0.38), alpha(#3689e6, 0.12)); box-shadow: inset 0 0 0 1px alpha(#3689e6, 0.5); }
+.ml-c-0.ml-row-icon { background: linear-gradient(to bottom, alpha(#3689e6, 0.35), alpha(#3689e6, 0.1)); box-shadow: inset 0 0 0 1px alpha(#3689e6, 0.45); }
+.ml-s-0 { background: #3689e6; }
+.ml-c-1.ml-hero-icon { background: linear-gradient(to bottom, alpha(#28bca3, 0.38), alpha(#28bca3, 0.12)); box-shadow: inset 0 0 0 1px alpha(#28bca3, 0.5); }
+.ml-c-1.ml-row-icon { background: linear-gradient(to bottom, alpha(#28bca3, 0.35), alpha(#28bca3, 0.1)); box-shadow: inset 0 0 0 1px alpha(#28bca3, 0.45); }
+.ml-s-1 { background: #28bca3; }
+.ml-c-2.ml-hero-icon { background: linear-gradient(to bottom, alpha(#68b723, 0.38), alpha(#68b723, 0.12)); box-shadow: inset 0 0 0 1px alpha(#68b723, 0.5); }
+.ml-c-2.ml-row-icon { background: linear-gradient(to bottom, alpha(#68b723, 0.35), alpha(#68b723, 0.1)); box-shadow: inset 0 0 0 1px alpha(#68b723, 0.45); }
+.ml-s-2 { background: #68b723; }
+.ml-c-3.ml-hero-icon { background: linear-gradient(to bottom, alpha(#f9c440, 0.38), alpha(#f9c440, 0.12)); box-shadow: inset 0 0 0 1px alpha(#f9c440, 0.5); }
+.ml-c-3.ml-row-icon { background: linear-gradient(to bottom, alpha(#f9c440, 0.35), alpha(#f9c440, 0.1)); box-shadow: inset 0 0 0 1px alpha(#f9c440, 0.45); }
+.ml-s-3 { background: #f9c440; }
+.ml-c-4.ml-hero-icon { background: linear-gradient(to bottom, alpha(#ffa154, 0.38), alpha(#ffa154, 0.12)); box-shadow: inset 0 0 0 1px alpha(#ffa154, 0.5); }
+.ml-c-4.ml-row-icon { background: linear-gradient(to bottom, alpha(#ffa154, 0.35), alpha(#ffa154, 0.1)); box-shadow: inset 0 0 0 1px alpha(#ffa154, 0.45); }
+.ml-s-4 { background: #ffa154; }
+.ml-c-5.ml-hero-icon { background: linear-gradient(to bottom, alpha(#ed5353, 0.38), alpha(#ed5353, 0.12)); box-shadow: inset 0 0 0 1px alpha(#ed5353, 0.5); }
+.ml-c-5.ml-row-icon { background: linear-gradient(to bottom, alpha(#ed5353, 0.35), alpha(#ed5353, 0.1)); box-shadow: inset 0 0 0 1px alpha(#ed5353, 0.45); }
+.ml-s-5 { background: #ed5353; }
+.ml-c-6.ml-hero-icon { background: linear-gradient(to bottom, alpha(#de3e80, 0.38), alpha(#de3e80, 0.12)); box-shadow: inset 0 0 0 1px alpha(#de3e80, 0.5); }
+.ml-c-6.ml-row-icon { background: linear-gradient(to bottom, alpha(#de3e80, 0.35), alpha(#de3e80, 0.1)); box-shadow: inset 0 0 0 1px alpha(#de3e80, 0.45); }
+.ml-s-6 { background: #de3e80; }
+.ml-c-7.ml-hero-icon { background: linear-gradient(to bottom, alpha(#a56de2, 0.38), alpha(#a56de2, 0.12)); box-shadow: inset 0 0 0 1px alpha(#a56de2, 0.5); }
+.ml-c-7.ml-row-icon { background: linear-gradient(to bottom, alpha(#a56de2, 0.35), alpha(#a56de2, 0.1)); box-shadow: inset 0 0 0 1px alpha(#a56de2, 0.45); }
+.ml-s-7 { background: #a56de2; }
+
+.ml-row-icon { padding: 3px; border-radius: 8px; }
+.ml-swatch {
+    min-width: 22px; min-height: 22px; padding: 0;
+    border-radius: 99px; border: none;
+    box-shadow: inset 0 0 0 1px alpha(black, 0.2);
+}
+.ml-swatch:checked { box-shadow: 0 0 0 2px @bg_color, 0 0 0 4px alpha(@fg_color, 0.55); }
+.ml-ok { color: #3a9104; }
+.ml-card.bad { box-shadow: 0 0 0 1px alpha(#ed5353, 0.6), 0 1px 3px alpha(black, 0.12); }
+
+@keyframes ml-pulse {
+    0%   { box-shadow: 0 0 0 2px @bg_color, 0 0 0 2px alpha(#68b723, 0.7); }
+    100% { box-shadow: 0 0 0 2px @bg_color, 0 0 0 7px alpha(#68b723, 0); }
+}
+.ml-dot.running { animation: ml-pulse 1.6s ease-out infinite; }
+
+.ml-step-badge {
+    min-width: 26px; min-height: 26px;
+    border-radius: 99px;
+    font-weight: 700; font-size: 0.9em;
+    background: alpha(@accent_color, 0.15);
+    color: @accent_color;
+}
+.ml-step-badge.done { background: #68b723; color: white; }
+.ml-pill.new { color: @accent_color; background: alpha(@accent_color, 0.15); }
+
+.ml-gallery-card {
+    padding: 16px;
+    border-radius: 14px;
+    background: @card_bg_color;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.1), 0 1px 3px alpha(black, 0.12);
+}
+.ml-gallery-card:hover { box-shadow: 0 0 0 2px @accent_color, 0 2px 8px alpha(black, 0.18); }
+
+.ml-pill.paused { color: #946800; background: alpha(#f9c440, 0.35); }
+
+.ml-screen-frame {
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.2), 0 2px 8px alpha(black, 0.25);
+}
+.ml-screen-frame label, .ml-screen-frame image { color: #d8dde6; }
+
+.ml-fs-bar {
+    padding: 6px 8px;
+    border-radius: 99px;
+    background: alpha(black, 0.72);
+    box-shadow: 0 4px 16px alpha(black, 0.4);
+    transition: opacity 250ms ease;
+}
+
+.ml-fs-bar button.suggested-action { background: #3689e6; color: #fff; }
+.ml-step-ok { color: #3a9104; font-weight: 700; }
+.ml-step-fail { color: #c6262e; font-weight: 700; }
+.ml-step-skip { opacity: 0.55; font-weight: 700; }
+
+.ml-warn {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: alpha(#f9c440, 0.2);
+    box-shadow: inset 0 0 0 1px alpha(#f9c440, 0.6);
+}

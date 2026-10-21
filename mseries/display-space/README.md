@@ -1,5 +1,31 @@
 # Full-height native desktop on the 14-inch M1 Pro
 
+## Larger top bar — 2026-10-20
+
+All top-bar indicator groups now render at 130% scale: Applications, clock,
+CodexBar, RepoBar and system status controls, including explicit font/icon sizes
+and spacing. The native GTK measurement and allocation both account for the
+scale, so pointer targets follow the visible controls. Notch clearance and
+monitor coordinates retain their original geometry; crowded halves still scroll.
+This is implemented in `patches/wingpanel-content-scale.patch`, applied by both
+Wingpanel installers after the startup layout patch. Dropdown windows retain
+their own sizing. CodexBar hover information stays off.
+
+Installed and loaded through `pantheon-wingpanel.service` on the owner’s Rust
+Wayland desktop, retaining its configured GL renderer. Reload with
+`systemctl --user restart pantheon-wingpanel.service`. The production scale test
+(`bash mseries/display-space/test-panel-scale.sh`) checks 1.30 measurement and
+coordinate transforms under Xvfb; `test-panel-startup.sh` also passes with the
+scale patch, including 20 clock reparent transitions. Physical appearance still
+needs owner feedback. Adjust `CONTENT_SCALE` in the patch to tune the size.
+
+## Startup repair on the full-height Aurora .20 host
+
+[October 18 repair](STARTUP-FIX-2026-10-18.md) fixes initial unbounded panel sizing,
+empty/transitioning indicator bars, stale cropped saved modes and the disabled
+dock readiness timeout. The patched Wingpanel is deployed; full-login validation
+remains pending. The historical setup description below predates that boot.
+
 `bash mseries/install-desktop-space.sh` builds the native Wingpanel and elementary
 dock, installs them, applies a compact dock profile, and prepares a full-height
 boot choice. Run as the desktop user; system changes use sudo. Reboot when ready.

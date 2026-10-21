@@ -24,6 +24,46 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  teams-web:
+    name: Teams desktop launcher contracts
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install desktop integration test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
+      - name: Test without browsers, accounts or network
+        run: |
+          bash -n mseries/install-teams.sh
+          python3 -B -m unittest discover -s mseries/teams-web -p 'test_*.py' -v
+
+  speech-release:
+    name: English F5 release contracts (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install private GTK test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
+      - name: Verify source-only release, rollback and host checks
+        run: |
+          bash -n mseries/releases/v0.0.1/install.sh
+          python3 -B -m unittest discover -s mseries/releases -p 'test_*.py'
+          python3 -B mseries/releases/v0.0.1/test_preflight.py
+      - name: Verify transcript-only UI without microphone or models
+        run: |
+          python3 -B mseries/dictation/speech-only-panel-smoke.py
+          python3 -B mseries/dictation/speech-only-panel-smoke.py --default-review
+
+  ui-scale:
+    name: Size system ladder and Quick Settings text size (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native GTK and private D-Bus test dependencies
+        run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas dbus-x11 xvfb xauth
+      - name: Planner unit tests
+        run: python3 -m unittest discover -s mseries/ui-scale -p 'test_*.py' -v
+      - name: Drive the text-size widget on a private display
+        run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm
@@ -33,6 +73,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Exercise BlueZ controls without touching hardware
         run: bash mseries/quick-settings/tests/test-bluetooth.sh
+      - name: Validate shared sliders and battery summary in both themes
+        run: |
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme light
+          python3 mseries/panel-ui-probes/run-probes.py --output "$RUNNER_TEMP/panel-ui" --theme dark
 
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
@@ -40,13 +84,31 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK and Granite test dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
         run: |
           python3 -m py_compile mseries/orchard-incus/orchard_incus/*.py mseries/orchard-incus/tools/*.py
           xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
             PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
             python3 -m unittest discover -s mseries/orchard-incus/tests
+
+      - name: Prepare native indicator API
+        run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
+      - name: Build and test native Orchard windows and dropdown
+        run: |
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          meson compile -C "$RUNNER_TEMP/orchard-native"
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
+
+  work-mode:
+    name: Windows Work Mode schedule and work-network rules (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GSettings test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
+      - name: Test with keyfile GSettings, a local IP service and no user services
+        run: python3 -B mseries/work-mode/test_work_mode.py
 
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
@@ -58,19 +120,87 @@ jobs:
       - name: Verify activation, delayed Gala readiness and session stops
         run: |
           bash mseries/dock-tests/test-startup.sh
+          bash mseries/dock-tests/test-running-apps.sh
           python3 mseries/dock-tests/test-launcher.py
 
   desktop-space:
-    name: Native notch GTK allocation (arm64)
+    name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install GTK test dependencies
-        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev xvfb xauth build-essential
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
+      - name: Test top-bar 130 percent measurement and allocation
+        run: bash mseries/display-space/test-panel-scale.sh
       - name: Test production notch geometry and crowded panel allocation
         run: bash mseries/display-space/test-notch-layout.sh
       - name: Verify exact-kernel boot profile and rollback
         run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
+
+  machine-lab:
+    name: Machine Lab build and logic tests (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth
+      - name: Build and run the logic tests (persistence, discovery, QMP transport)
+        run: |
+          meson setup build-ml mseries/machine-lab
+          meson compile -C build-ml
+          xvfb-run -a meson test -C build-ml --print-errorlogs
+      - name: Check the version flag and desktop metadata
+        run: |
+          xvfb-run -a build-ml/machine-lab --version
+          desktop-file-validate mseries/machine-lab/data/io.github.mseries.MachineLab.desktop
+          appstreamcli validate --no-net mseries/machine-lab/data/io.github.mseries.MachineLab.metainfo.xml
+      - name: Build the Debian package
+        run: |
+          sudo apt-get install -y dpkg-dev
+          MACHINE_LAB_OUTPUT_DIR="$RUNNER_TEMP/ml-deb" bash mseries/machine-lab/build-deb.sh
+
+  codexbar-wingpanel:
+    name: CodexBar Wingpanel module, render and interaction probes (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native build and headless test dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
+          libgtk-4-dev libjson-glib-dev libgee-0.8-dev libgranite-7-dev sassc gettext
+          libadwaita-1-dev libx11-dev libwayland-dev libwayland-bin
+          python3 python3-gi xvfb xauth dbus-x11 librsvg2-common xdotool ffmpeg
+      - name: Provide Granite 7.7 and the pinned Wingpanel indicator API when the distro lacks them
+        run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/prefix" >> "$GITHUB_ENV"
+      - name: Build the module; run unit tests, generated-C guard, Switch/ingestion/token/Grok probes
+        run: |
+          meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
+          ninja -C "$RUNNER_TEMP/codexbar"
+          meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          bash mseries/dock-taskbar/test-build.sh
+
+  calendar-agenda:
+    name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build and headless EDS test dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
+          libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
+          libical-dev evolution-data-server gsettings-desktop-schemas libglib2.0-bin python3 xvfb xauth dbus
+          dbus-x11 librsvg2-common accountsservice
+      - name: Add elementary's AccountsService extension (the clock reads its TimeFormat)
+        run: |
+          # elementary/default-settings, GPL-3.0; the same file elementary OS installs.
+          url=https://raw.githubusercontent.com/elementary/default-settings/915d1a0b63865ce3f0d44a68318d55ef9ca90fe6/accountsservice/io.elementary.pantheon.AccountsService.xml
+          sudo curl -fsSL "$url" -o /usr/share/dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml
+          sudo mkdir -p /usr/share/accountsservice/interfaces
+          sudo ln -sf ../../dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml /usr/share/accountsservice/interfaces/
+          sudo systemctl restart accounts-daemon
+      - name: Build the pinned indicator with our patch and run every agenda group
+        run: bash mseries/calendar/ci-test-agenda.sh "$RUNNER_TEMP/agenda"
 
   validate:
     name: mkosi summary + script checks (arm64)
@@ -82,93 +212,31 @@ jobs:
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
 
-      - name: Shell syntax check (M-series scripts)
-        run: |
-          set -e
-          bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
-          bash -n mkosi.images/apple-silicon/mkosi.finalize
-          bash -n mkosi.images/apple-silicon/build-network-indicator
-          bash -n mkosi.images/apple-silicon/build-local-ai
-          for f in mseries/local-ai/*.sh; do bash -n "$f"; done
-          python3 -m py_compile mseries/local-ai/*.py
-          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
-          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
-          bash -n transform/elementary-grow.sh
-          bash -n bin/elementary-mac-setup
-          for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
-          bash -n mseries/vms/mseries-vm
-          bash mseries/vms/test-mseries-vm.sh
-          bash mseries/test-quieter-sound-theme.sh
-          bash mseries/test-elementary-mac-setup.sh
-          bash mseries/test-installer-flow.sh
-          bash -n assemble-iso.sh
-          bash -n mseries/local-build-worker.sh
-          bash -n mseries/fairydust/debian/build.sh
-          bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
-          bash -n mseries/aurora-sep/install-aurora-sep.sh
-          bash -n mseries/aurora-sep/install-touchid-gui.sh
-          python3 -m py_compile mseries/fairydust/debian/assemble-m1n1-bootbin.py
-          python3 mseries/fairydust/debian/test-assemble-m1n1-bootbin.py
-          python3 -m py_compile mseries/fairydust/debian/verify-m1n1-esp.py
-          python3 mseries/fairydust/debian/test-verify-m1n1-esp.py
-          python3 -m py_compile mseries/fairydust/debian/monitor.py mseries/check-kernel-config.py
-          bash -n mseries/iso-label.sh
-          bash -n mseries/test-iso-label.sh
-          bash mseries/test-iso-label.sh
-          bash mseries/test-greeter-obex-fix.sh
-          bash -n mseries/install-signal.sh
-          bash -n mseries/install-codexbar.sh
-          bash -n mseries/deploy-codexbar.sh
-          python3 mseries/test-codexbar-deploy.py
-          bash -n mseries/check-codexbar-port.sh
-          python3 mseries/test-codexbar-cache.py
-          python3 mseries/test-codexbar-sessions.py
-          python3 mseries/test-codexbar-performance.py
-          python3 mseries/test-codexbar-accounts.py
-          python3 mseries/test-codexbar-claude.py
-          python3 mseries/test-codexbar-claude-history.py
-          python3 mseries/test-codexbar-wrapper.py
-          python3 mseries/test-codexbar-opencode-local.py
-          python3 mseries/test-codexbar-opencode-login.py
-          python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
-          python3 -m py_compile mseries/display-space/*.py
-          bash -n mseries/display-space/test-notch-layout.sh
-          python3 -m py_compile mseries/apply-desktop-settings.py
-          python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
-          python3 mseries/test-wifi-resume.py
-          bash -n mseries/power/mseries-power mseries/power/vrr-check.sh mseries/power/macos-baseline/make_test_videos.sh
-          python3 -m py_compile mseries/power/macos-baseline/*.py
-          python3 mseries/test-power-cap.py
-          python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
-          python3 mseries/test-power-install.py
-          bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
-          python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
-          for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
-          python3 mseries/fairydust/usb4/tools/test-staging-tools.py
-          python3 mseries/aurora-sep/test_touchid_core.py
-          python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
-          python3 mseries/local-ai/test_people_watch.py
-          python3 mseries/test-image-wiring.py
-          python3 mseries/video-decode/test-brave-factory.py
-          python3 mseries/video-decode/test-youtube-launch.py
-          shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
-          python3 mseries/boot/test-prepare-uki-kernels.py
-          python3 mseries/test-kernel-config.py
-          python3 mseries/test-local-build-preflight.py
-          node mseries/test-build-status.mjs
-          node mseries/test-local-build-status.mjs
-          python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
-          python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
-          python3 -m unittest discover -s mseries/audio -p 'test_*.py'
-          python3 -m unittest discover -s mseries/airplay -p 'test_*.py'
-          python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
-          python3 -m unittest discover -s mseries/dictation -p 'test_*.py'
+      # The check list lives in mseries/validate.sh so the same command works on a
+      # developer machine (`just check`); add new checks there, not here.
+      - name: Syntax, shellcheck and unit checks (bash mseries/validate.sh)
+        run: bash mseries/validate.sh
 
+      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290 after
+      # two one-second retries). Keep the pinned tarball in the Actions cache and,
+      # on a miss, retry for up to ~3 minutes before giving up.
+      - name: Restore the pinned Fairydust source tarball
+        id: fairydust-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/fairydust.tar.gz
+          key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
+      - name: Download the pinned Fairydust source tarball
+        if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 6 --retry-delay 30 --retry-all-errors \
+            --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
+            -o "$RUNNER_TEMP/fairydust.tar.gz"
       - name: Validate experimental dock patches offline
         run: |
           set -euo pipefail
-          curl -fL --retry 2 https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 -o "$RUNNER_TEMP/fairydust.tar.gz"
           python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation"
 
       - name: mkosi config parse check (all images)
@@ -184,7 +252,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install offline test tools
-        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
         run: |
           set -euo pipefail
@@ -199,3 +267,6 @@ jobs:
           python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py
+          python3 mseries/test-omdrop-installer.py
+          python3 -m unittest discover -s mseries/omdrop-awdl/tests
+          python3 -m unittest discover -s mseries/omdrop/tests

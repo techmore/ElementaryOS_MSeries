@@ -1,0 +1,56 @@
+diff --git a/configs/devices/aarch64-softmmu/default.mak b/configs/devices/aarch64-softmmu/default.mak
+index ad8028c..93f4022 100644
+--- a/configs/devices/aarch64-softmmu/default.mak
++++ b/configs/devices/aarch64-softmmu/default.mak
+@@ -9,4 +9,3 @@ include ../arm-softmmu/default.mak
+ # CONFIG_XLNX_VERSAL=n
+ # CONFIG_SBSA_REF=n
+ # CONFIG_NPCM8XX=n
+-CONFIG_VMAPPLE=n
+diff --git a/hw/vmapple/Kconfig b/hw/vmapple/Kconfig
+index 2382b29..7a3289b 100644
+--- a/hw/vmapple/Kconfig
++++ b/hw/vmapple/Kconfig
+@@ -15,7 +15,6 @@ config VMAPPLE_VIRTIO_BLK
+ config VMAPPLE
+     bool
+     depends on ARM
+-    depends on HVF
+     default y if ARM
+     imply PCI_DEVICES
+     select ARM_GICV3
+@@ -30,5 +29,4 @@ config VMAPPLE
+     select VMAPPLE_AES
+     select VMAPPLE_BDIF
+     select VMAPPLE_CFG
+-    select MAC_PVG_MMIO
+     select VMAPPLE_VIRTIO_BLK
+diff --git a/hw/vmapple/aes.c b/hw/vmapple/aes.c
+index 553e688..93960f2 100644
+--- a/hw/vmapple/aes.c
++++ b/hw/vmapple/aes.c
+@@ -253,7 +253,7 @@ static bool cmd_iv(AESState *s)
+ 
+ static void dump_data(const char *desc, const void *p, size_t len)
+ {
+-    static const size_t MAX_LEN = 0x1000;
++    enum { MAX_LEN = 0x1000 };   /* constant expression: gcc rejects the VLA initializer */
+     char hex[MAX_LEN * 2 + 1] = "";
+ 
+     if (len > MAX_LEN) {
+diff --git a/hw/vmapple/vmapple.c b/hw/vmapple/vmapple.c
+index 607181f..98b82f3 100644
+--- a/hw/vmapple/vmapple.c
++++ b/hw/vmapple/vmapple.c
+@@ -209,6 +209,11 @@ static void create_gfx(VMAppleMachineState *vms, MemoryRegion *mem)
+     int irq_iosfc = vms->irqmap[VMAPPLE_APV_IOSFC];
+     SysBusDevice *gfx;
+ 
++    if (!object_class_by_name("apple-gfx-mmio")) {
++        /* Paravirtual graphics exists only on macOS hosts (ParavirtualizedGraphics.framework). */
++        warn_report("apple-gfx-mmio is not available on this host: the guest gets no GPU");
++        return;
++    }
+     gfx = SYS_BUS_DEVICE(qdev_new("apple-gfx-mmio"));
+     sysbus_mmio_map(gfx, 0, vms->memmap[VMAPPLE_APV_GFX].base);
+     sysbus_mmio_map(gfx, 1, vms->memmap[VMAPPLE_APV_IOSFC].base);

@@ -2,6 +2,7 @@
 """Tests for the claude-swap bridge. cswap is faked; no real Claude login is touched."""
 
 from contextlib import closing
+import copy
 import datetime as dt
 import importlib.util
 import os
@@ -38,6 +39,10 @@ class ClaudeTest(unittest.TestCase):
     """Every test runs against a fake HOME: the helper reads ~/.claude.json and the desktop app's config."""
 
     def setUp(self):
+        summary = mock.patch.object(MODULE.handoff, "summarize", return_value=("Fixture handoff: goal, progress, next steps.", "model-summary"))
+        summary.start()
+        self.addCleanup(summary.stop)
+
         import tempfile
         self._home = tempfile.TemporaryDirectory()
         self.home = pathlib.Path(self._home.name)
@@ -80,6 +85,18 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual(data["accounts"][1]["windows"], [])
         self.assertNotIn("token", str(data))
 
+    def test_model_scoped_weekly_cap_is_an_extra_marked_window(self):
+        listing = copy.deepcopy(LIST)
+        listing["accounts"][0]["usage"]["scoped"] = [
+            {"name": "Fable", "pct": 45.0, "resetsAt": "2026-10-21T12:00:00Z"},
+            {"name": "", "pct": 10.0}, {"pct": 5.0}, "junk", {"name": "Bad", "pct": "x"}]
+        with mock.patch.object(MODULE, "run", return_value=listing):
+            data = MODULE.listing("cswap", NOW)
+        windows = data["accounts"][0]["windows"]
+        self.assertEqual([w["label"] for w in windows], ["5 hour", "7 day", "Fable"])
+        self.assertEqual((windows[2]["remaining"], windows[2]["minutes"], windows[2]["scoped"]), (55.0, 0, True))
+        self.assertNotIn("scoped", windows[0])
+
     def test_saved_plan_metadata_is_account_specific_and_contains_no_tokens(self):
         for number, email, plan in ((1, "work@example.com", "max"), (2, "me@example.com", "pro")):
             path = self.home / f".local/share/claude-swap/credentials/.creds-{number}-{email}.enc"
@@ -102,6 +119,18 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual([a["plan"] for a in data["accounts"]], ["", "pro"])
         self.assertEqual(data["activePlan"], "pro")
         self.assertNotIn(SECRET, MODULE.json.dumps(data))
+
+    def test_profile_upgrade_overrides_issue_time_plan_and_is_identity_checked(self):
+        credentials = [{"claudeAiOauth": {"accessToken": SECRET, "expiresAt": 9999999999999,
+                                          "subscriptionType": "pro"}}]
+        upgraded = {"account": {"uuid": "upgrade-test"}, "organization": {
+            "organization_type": "claude_max", "rate_limit_tier": "default_claude_max_20x"}}
+        with mock.patch.object(MODULE, "fetch_profile", return_value=upgraded) as fetch:
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1000), "max20x")
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1001), "max20x")
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(MODULE.profile_plan("different-account", credentials, now=1000), "")
+        self.assertNotIn(SECRET, MODULE.json.dumps(MODULE.codexbar_cache.load("claude-plan-upgrade-test")))
 
     def test_missing_or_corrupt_plan_stays_unknown(self):
         path = self.home / ".local/share/claude-swap/credentials/.creds-1-work@example.com.enc"
@@ -179,6 +208,8 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["activeEmail"], "work@example.com")
+        self.assertEqual(data["displayEmail"], "me@example.com")
+        self.assertEqual([a["panelActive"] for a in data["accounts"]], [False, True])
         self.assertEqual([a["active"] for a in data["accounts"]], [True, False])
         self.assertEqual(data["desktop"], {"installed": True, "email": "me@example.com", "differs": True})
         self.assertIn("me@example.com", data["desktopNote"])
@@ -191,6 +222,7 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["desktop"], {"installed": True, "email": "", "differs": True})
+        self.assertFalse(any(a["panelActive"] for a in data["accounts"]))
         self.assertIn("a different account", data["desktopNote"])
 
     def test_add_explains_a_missing_login_and_reports_success(self):
@@ -299,6 +331,31 @@ class ClaudeTest(unittest.TestCase):
         self.assertTrue(ok, message)
         self.assertEqual(events, ["stop", "export", "import", "cli", "launch"])
         self.assertIn("1 local Code conversation added", message)
+
+    def test_handoff_is_saved_before_account_change_and_seeded_before_relaunch(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        self.code_history()
+        events = []
+        prepare, install = MODULE.handoff.prepare, MODULE.handoff.install
+        def build(*args):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+            brief = prepare(*args)
+            self.assertTrue((brief["folder"] / "handoff.md").is_file())
+            events.append("summary-before-auth-change")
+            return brief
+        def seed(plan, brief):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+            install(plan, brief)
+            events.append("fresh-seed")
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE.handoff, "prepare", side_effect=build), \
+             mock.patch.object(MODULE.handoff, "install", side_effect=seed), \
+             mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+            ok, message = MODULE.app_switch("uuid-work")
+        self.assertTrue(ok, message)
+        self.assertEqual(events, ["summary-before-auth-change", "fresh-seed", "launch"])
+        self.assertIn("fresh Code conversation", message)
 
     def test_history_export_failure_restores_original_sign_in(self):
         self.app_session(WORK, "work-encrypted")
@@ -479,6 +536,41 @@ class ClaudeTest(unittest.TestCase):
              mock.patch.object(MODULE, "switch", side_effect=cli_switch):
             self.assertTrue(MODULE.app_switch("uuid-work", "cswap", "1")[0])
         self.assertEqual(events, ["stop-app", "switch-cli", "launch-app"])
+
+    def test_matching_desktop_hint_still_restores_saved_target_and_restarts(self):
+        # The config hint can name the requested account while the running UI
+        # still uses another session. Preserve the target loaded before capture.
+        for number in (None, "2"):
+            with self.subTest(number=number):
+                self.app_session(ME, "saved-target-encrypted")
+                with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+                    db.execute("UPDATE cookies SET encrypted_value=?", (b"live-other-encrypted",))
+                events = []
+                restore = MODULE.restore_app
+
+                def do_restore(session):
+                    self.assertEqual(events, ["stop"])
+                    restore(session)
+                    with closing(sqlite3.connect(MODULE.cookie_path())) as db:
+                        self.assertEqual(db.execute("SELECT encrypted_value FROM cookies").fetchone()[0],
+                                         b"saved-target-encrypted")
+                    events.append("restore")
+
+                def do_cli(cli, account):
+                    self.assertEqual(events, ["stop", "restore"])
+                    self.assertEqual(account, "2")
+                    events.append("cli")
+                    return True, "done"
+
+                with mock.patch.object(MODULE, "stop_app", side_effect=lambda: events.append("stop") or True), \
+                     mock.patch.object(MODULE, "restore_app", side_effect=do_restore), \
+                     mock.patch.object(MODULE, "switch", side_effect=do_cli) as cli, \
+                     mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+                    ok, message = MODULE.app_switch("uuid-me", "cswap", number)
+                self.assertTrue(ok, message)
+                self.assertEqual(events, ["stop", "restore"] + (["cli"] if number else []) + ["launch"])
+                if number is None:
+                    cli.assert_not_called()
 
     def test_relaunch_drops_inherited_claude_oauth_environment(self):
         with mock.patch.dict(MODULE.os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": SECRET}), \

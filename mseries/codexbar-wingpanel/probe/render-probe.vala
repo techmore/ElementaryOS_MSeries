@@ -36,6 +36,17 @@ Gtk.Label? find_label (Gtk.Widget widget, string text) {
     return null;
 }
 
+void assert_quota_bar_colors (Gtk.Widget widget) {
+    var bar = widget as Gtk.ProgressBar;
+    if (bar != null && bar.sensitive) {
+        var level = MSeries.Presentation.visual_level (bar.fraction * 100);
+        assert (bar.has_css_class (level == MSeries.QuotaLevel.OK ? "level-ok" :
+            level == MSeries.QuotaLevel.LOW ? "level-low" : "level-critical"));
+    }
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
+        assert_quota_bar_colors (child);
+}
+
 int main (string[] args) {
     if (args.length < 2) {
         stderr.printf ("usage: render-probe OUT.png [delay-ms]\n");
@@ -84,7 +95,8 @@ int main (string[] args) {
     if (Environment.get_variable ("CB_HIDE_PANEL") == null) root.append (bar);
     root.append (popover_body);
     var window = new Gtk.Window () { child = root, decorated = false };
-    window.present ();
+    bool compact_probe = Environment.get_variable ("CB_ASSERT_COMPACT") != null;
+    if (!compact_probe) window.present ();
 
     var loop = new MainLoop ();
     Timeout.add (delay, () => {
@@ -132,11 +144,74 @@ int main (string[] args) {
             assert (!text.contains ("7D 62%") && !text.contains ("7D 72%"));
             assert (text.contains ("5H ● 5%") && text.contains ("5H ● 0%"));
             var weekly = find_label (bar, "7D ●");
-            assert (weekly != null && weekly.tooltip_text.contains ("% remaining"));
+            assert (weekly != null && weekly.tooltip_text.contains ("% remaining") && weekly.tooltip_text.contains ("Resets in"));
+            var primary = find_label (bar, "5H ●");
+            assert (primary != null && primary.tooltip_text.contains ("Resets in"));
+            assert (primary.get_parent () == weekly.get_parent ());
+            var alternate = find_label (bar, "5H ● 5%");
+            assert (alternate != null && alternate.get_parent () != primary.get_parent ());
+            assert (alternate.label.contains ("weight=\"bold\"") && alternate.label.contains ("foreground="));
+            Graphene.Rect primary_bounds, alternate_bounds;
+            assert (primary.compute_bounds (bar, out primary_bounds));
+            assert (alternate.compute_bounds (bar, out alternate_bounds));
+            assert (primary_bounds.origin.y < alternate_bounds.origin.y);
+            assert (!text.contains ("↻") && !text.contains ("3d11h") && !text.contains ("3h09m"));
             int minimum, natural;
             bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
             assert (natural <= 32);
         }
+        if (Environment.get_variable ("CB_ASSERT_GROK") != null) {
+            // Bar: Grok follows Codex and Claude, token-first with its weekly credits beside the count.
+            var text = local_label_text (bar);
+            assert (text.contains ("763K tok") && text.contains ("7D 76%"));
+            var grok_tokens = find_label (bar, "763K tok");
+            var claude_tokens = find_label (bar, "31.2M tok");
+            Graphene.Rect grok_bounds, claude_bounds;
+            assert (grok_tokens.compute_bounds (bar, out grok_bounds));
+            assert (claude_tokens.compute_bounds (bar, out claude_bounds));
+            assert (grok_bounds.origin.x > claude_bounds.origin.x);
+            assert (find_label (bar, "7D 76%").get_parent () == grok_tokens.get_parent ());
+            // Menu: tier, product shares and reset credits; malformed sections are skipped.
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("SuperGrok") && menu.contains ("me@grok.example"));
+            // Its only window is weekly and already sits beside the token count: no repeated lower row.
+            assert (text.index_of ("7D 76%") == text.last_index_of ("7D 76%"));
+            assert (menu.contains ("Usage breakdown · Grok Build 18% · Grok Chat 6%"));
+            assert (menu.contains ("Limit Reset Credits · Available 1 available"));
+            assert (!menu.contains ("Malformed") && !menu.contains ("not an object"));
+            assert (menu.contains ("763K tokens"));
+        }
+        if (Environment.get_variable ("CB_ASSERT_GROK_FREE") != null) {
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("Signed in as me@grok.example on the Free plan"));
+            assert (!menu.contains ("run grok login"));
+            assert (find_button (popover_body, "Sign in…") == null);
+        }
+        if (Environment.get_variable ("CB_ASSERT_GROK_SIGNIN") != null) {
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("If you are signed out, run grok login"));
+            var sign_in = find_button (popover_body, "Sign in…");
+            assert (sign_in != null);
+            assert (find_button (popover_body, "Open Settings…") == null);
+            sign_in.clicked ();
+            var log = GLib.Path.build_filename (Environment.get_home_dir (), "terminal.log");
+            // Checked before the 1 s capture ends the probe; the fake launcher only appends one line.
+            Timeout.add (500, () => {
+                string contents;
+                try {
+                    FileUtils.get_contents (log, out contents);
+                } catch (Error e) {
+                    contents = "";
+                }
+                var expected = GLib.Path.build_filename (Environment.get_home_dir (), ".grok/bin/grok") + " login";
+                if (!contents.contains (expected)) {
+                    stderr.printf ("grok login was not launched; terminal log: %s\n", contents);
+                    render_failed = true;
+                }
+                return Source.REMOVE;
+            });
+        }
+        assert_quota_bar_colors (popover_body);
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
         if (page != null && pages != null) {
@@ -144,8 +219,16 @@ int main (string[] args) {
         }
         // No window manager under Xvfb, so size the window to the content ourselves.
         int min, nat;
-        root.measure (Gtk.Orientation.VERTICAL, 360, out min, out nat, null, null);
-        window.set_default_size (360, nat);
+        int target_width = compact_probe ? 280 : 360;
+        root.measure (Gtk.Orientation.VERTICAL, target_width, out min, out nat, null, null);
+        if (compact_probe) {
+            // Size the first realization after fixture data has populated the UI.
+            window.set_default_size (target_width, nat);
+            window.present ();
+        } else {
+            // Preserve the original timing for panel token-layout probes.
+            window.set_default_size (target_width, nat);
+        }
         Timeout.add (800, () => {
             if (Environment.get_variable ("CB_SCROLL") == "end") {
                 var scroll = find_scroll (root);
@@ -189,6 +272,13 @@ Gtk.Widget? first_card (Gtk.Widget root) {
 }
 
 void capture (Gtk.Widget root, Gtk.Window window, string path, MainLoop loop) {
+    if (Environment.get_variable ("CB_ASSERT_COMPACT") != null) {
+        int min_width, natural_width;
+        root.measure (Gtk.Orientation.HORIZONTAL, -1, out min_width, out natural_width, null, null);
+        assert (natural_width <= 280);
+        assert (root.get_width () <= 300);
+    }
+
     {
         var paintable = new Gtk.WidgetPaintable (root);
         var snapshot = new Gtk.Snapshot ();
@@ -217,6 +307,16 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
     if (root is Gtk.ScrolledWindow) return (Gtk.ScrolledWindow) root;
     for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
         var found = find_scroll (child);
+        if (found != null) return found;
+    }
+    return null;
+}
+
+Gtk.Button? find_button (Gtk.Widget widget, string text) {
+    var button = widget as Gtk.Button;
+    if (button != null && button.label == text) return button;
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_button (child, text);
         if (found != null) return found;
     }
     return null;

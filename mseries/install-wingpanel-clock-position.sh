@@ -39,6 +39,10 @@ git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-full-height.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-clockright-order.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-startup-layout.patch"
+
+# Enlarge all top-bar indicators together, preserving notch geometry.
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-content-scale.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release
 ninja -C "$build_dir" >/dev/null

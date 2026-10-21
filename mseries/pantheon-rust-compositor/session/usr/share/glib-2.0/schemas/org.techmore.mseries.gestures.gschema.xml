@@ -1,0 +1,21 @@
+<schemalist>
+  <enum id="org.techmore.mseries.gestures.PinchAction">
+    <value nick="none" value="0"/>
+    <value nick="launcher" value="1"/>
+    <value nick="multitasking-view" value="2"/>
+  </enum>
+  <!-- Touchpad pinches that elementary's io.elementary.desktop.wm.gestures
+       schema has no value for. Swipe bindings stay in elementary's schema. -->
+  <schema id="org.techmore.mseries.gestures" path="/org/techmore/mseries/gestures/">
+    <key name="three-finger-pinch-in" enum="org.techmore.mseries.gestures.PinchAction">
+      <default>'none'</default>
+      <summary>Three-finger pinch-in gesture</summary>
+      <description>The action for drawing three fingers together on the touchpad.</description>
+    </key>
+    <key name="four-finger-pinch-in" enum="org.techmore.mseries.gestures.PinchAction">
+      <default>'launcher'</default>
+      <summary>Four-finger pinch-in gesture</summary>
+      <description>The action for drawing the thumb and three fingers together, like Launchpad on macOS.</description>
+    </key>
+  </schema>
+</schemalist>
