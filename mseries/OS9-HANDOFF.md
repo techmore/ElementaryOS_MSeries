@@ -10189,3 +10189,10 @@ selected sources including binding headers, and compiled the exact Asahi J773g
 DT at 94fb23346d522edf53722357c426a3e58030beea. Retained compiler warning and
 SHA-256 receipt under m4-mini/receipts. fdtget confirms J773g compatibility and
 disabled pre-loader framebuffer. No full kernel build or hardware validation.
+
+Public mini patch review now records verified legacy patch provenance and rejects
+promotion of the partial-initialization diagnostic path. Full Asahi source at
+94fb233 (7.1.13) downloaded with retained SHA-256; arm64 defconfig + asahi.config
+configuration passes with Clang/GNU ld after LLVM=1 failed for missing ld.lld.
+Image/modules/dtbs build started at four jobs; result remains pending. No kernel
+build success or mini runtime support is claimed.
