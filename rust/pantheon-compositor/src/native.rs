@@ -53,7 +53,10 @@ use crate::{
     display_config::{
         OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
     },
+    edid::{self, Candidate},
     hotplug::{EventKind, HotplugScheduler, event_triggers_reconcile},
+    kms_props::{connector_edid, named_property},
+    link_status::{self, Action, LINK_STATUS_GOOD, ResetState},
 };
 
 /// Grace period before a disabled output global is removed from clients.
@@ -73,6 +76,79 @@ const OUTPUT_FORMATS: &[smithay::backend::allocator::Fourcc] = &[
     smithay::backend::allocator::Fourcc::Abgr8888,
     smithay::backend::allocator::Fourcc::Argb8888,
 ];
+
+/// Identity published for a monitor: the Wayland `PhysicalProperties` make,
+/// model and serial, and the vendor/product/serial the display-config service
+/// reports (and the profile watcher matches on).
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct OutputIdentity {
+    vendor: String,
+    product: String,
+    serial: String,
+}
+
+impl OutputIdentity {
+    /// What the backend used to publish for every monitor. Still used for the
+    /// panel, which exposes no EDID, and when an EDID cannot be read or parsed.
+    fn fallback(name: &str) -> Self {
+        Self {
+            vendor: "Apple".into(),
+            product: name.into(),
+            serial: "Unknown".into(),
+        }
+    }
+
+    fn physical_properties(&self, connector_info: &connector::Info) -> PhysicalProperties {
+        let (width, height) = connector_info.size().unwrap_or((0, 0));
+        PhysicalProperties {
+            size: (width as i32, height as i32).into(),
+            subpixel: connector_info.subpixel().into(),
+            make: self.vendor.clone(),
+            model: self.product.clone(),
+            serial_number: self.serial.clone(),
+        }
+    }
+}
+
+fn connector_identity<D: DrmControlDevice>(
+    device: &D,
+    connector: connector::Handle,
+    name: &str,
+) -> OutputIdentity {
+    connector_edid(device, connector)
+        .and_then(|(bytes, _)| edid::parse(&bytes))
+        .map_or_else(
+            || OutputIdentity::fallback(name),
+            |parsed| OutputIdentity {
+                vendor: parsed.vendor,
+                product: parsed.product,
+                serial: parsed.serial,
+            },
+        )
+}
+
+/// Drop connectors that are stale copies of another connected connector's
+/// monitor (see `edid::stale_duplicates`). Returns the handles removed.
+fn remove_stale_duplicates<D: DrmControlDevice>(
+    device: &D,
+    connected: &mut Vec<connector::Info>,
+) -> Vec<connector::Handle> {
+    let candidates = connected
+        .iter()
+        .filter_map(|info| {
+            let (edid, blob_id) = connector_edid(device, info.handle())?;
+            Some(Candidate {
+                key: info.handle(),
+                edid,
+                blob_id,
+                interface_id: info.interface_id(),
+            })
+        })
+        .collect::<Vec<_>>();
+    let stale = edid::stale_duplicates(&candidates);
+    connected.retain(|info| !stale.contains(&info.handle()));
+    stale
+}
 
 fn output_mode_snapshots(
     modes: &[smithay::reexports::drm::control::Mode],
@@ -119,6 +195,11 @@ pub struct NativeKmsDevice {
     pub outputs: Vec<NativeKmsOutput>,
     disabled_connectors: HashSet<connector::Handle>,
     disconnected_disabled_connectors: HashSet<connector::Handle>,
+    /// Connectors currently hidden because another connector carries the same
+    /// monitor; used to log a change once instead of on every poll.
+    suppressed_duplicates: HashSet<connector::Handle>,
+    /// Per-connector memory for answering `link-status = Bad`.
+    link_resets: HashMap<connector::Handle, Option<ResetState>>,
     pub notifier: Option<DrmDeviceNotifier>,
     pending_global_removals: Vec<(
         smithay::reexports::wayland_server::backend::GlobalId,
@@ -206,17 +287,9 @@ impl NativeKmsDevice {
             connector_info.interface().as_str(),
             connector_info.interface_id()
         );
-        let (physical_width, physical_height) = connector_info.size().unwrap_or((0, 0));
-        let output = Output::new(
-            name.clone(),
-            PhysicalProperties {
-                size: (physical_width as i32, physical_height as i32).into(),
-                subpixel: connector_info.subpixel().into(),
-                make: "Apple".into(),
-                model: name.clone(),
-                serial_number: "Unknown".into(),
-            },
-        );
+        let identity =
+            connector_identity(self.manager.device_mut(), connector_info.handle(), &name);
+        let output = Output::new(name.clone(), identity.physical_properties(connector_info));
         let available_modes = connector_info.modes().to_vec();
         let preferred = available_modes
             .iter()
@@ -662,6 +735,45 @@ impl NativeKmsDevice {
         Ok(Some(output.output.clone()))
     }
 
+    /// Answer `link-status = Bad` on mapped connectors by writing `Good` back.
+    ///
+    /// The DCP driver marks a link Bad when its pipeline lost the mode and
+    /// relies on userspace to trigger a modeset; plane-only flips never do.
+    /// Writing `Good` is a full modeset through the atomic core. Bounded by
+    /// `link_status::decide` so a sink that never trains cannot cause a loop.
+    /// Returns true when any connector was reset.
+    fn reset_bad_link_status(&mut self) -> bool {
+        let now = Instant::now();
+        let mapped = self
+            .outputs
+            .iter()
+            .map(|output| (output.connector, output.output.name()))
+            .collect::<Vec<_>>();
+        self.link_resets
+            .retain(|handle, _| mapped.iter().any(|(mapped, _)| mapped == handle));
+        let mut reset_any = false;
+        for (handle, name) in mapped {
+            let device = self.manager.device_mut();
+            let Some((property, value)) = named_property(device, handle, "link-status") else {
+                continue;
+            };
+            let memory = self.link_resets.entry(handle).or_default();
+            if link_status::decide(memory, value, now) != Action::Reset {
+                continue;
+            }
+            match device.set_property(handle, property, LINK_STATUS_GOOD) {
+                Ok(()) => {
+                    tracing::info!(output = %name, "link-status was Bad; reset to Good to retrain the link");
+                    reset_any = true;
+                }
+                Err(error) => {
+                    tracing::warn!(output = %name, %error, "could not reset link-status to Good");
+                }
+            }
+        }
+        reset_any
+    }
+
     /// Reconcile connected DRM connectors with the outputs published to the
     /// Wayland space. Smithay's DRM notifier reports page flips and failures
     /// only; connector changes arrive via the udev monitor (see
@@ -672,15 +784,33 @@ impl NativeKmsDevice {
         state: &mut PantheonCompositor,
     ) -> Result<bool, Box<dyn std::error::Error>> {
         let resources = self.manager.device_mut().resource_handles()?;
-        let mut connected = Vec::new();
-        let mut connected_handles = HashSet::new();
+        let mut all_connected = Vec::new();
         for handle in resources.connectors() {
             let info = self.manager.device_mut().get_connector(*handle, false)?;
             if info.state() == connector::State::Connected {
-                connected_handles.insert(info.handle());
-                if !info.modes().is_empty() {
-                    connected.push(info);
-                }
+                all_connected.push(info);
+            }
+        }
+        // After a dock moves to another Type-C PHY the driver can keep the old
+        // DisplayPort connector reported as connected. Treat the stale copy as
+        // disconnected so no phantom output is mapped between the real screens.
+        let stale = remove_stale_duplicates(self.manager.device_mut(), &mut all_connected);
+        for handle in &stale {
+            if self.suppressed_duplicates.insert(*handle) {
+                tracing::warn!(
+                    connector = ?handle,
+                    "ignoring connector that duplicates another connected monitor's EDID (stale dock route)"
+                );
+            }
+        }
+        self.suppressed_duplicates
+            .retain(|handle| stale.contains(handle));
+        let mut connected = Vec::new();
+        let mut connected_handles = HashSet::new();
+        for info in all_connected {
+            connected_handles.insert(info.handle());
+            if !info.modes().is_empty() {
+                connected.push(info);
             }
         }
         connected.sort_by_key(|info| {
@@ -755,11 +885,13 @@ impl NativeKmsDevice {
                 {
                     let mode = Mode::from(mode);
                     let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
+                    let identity =
+                        connector_identity(self.manager.device_mut(), info.handle(), &name);
                     state.display_config.update(OutputSnapshot {
-                        connector: name.clone(),
-                        vendor: "Apple".into(),
-                        product: name,
-                        serial: "Unknown".into(),
+                        connector: name,
+                        vendor: identity.vendor,
+                        product: identity.product,
+                        serial: identity.serial,
                         width: mode.size.w,
                         height: mode.size.h,
                         refresh_millihz: mode.refresh,
@@ -818,17 +950,8 @@ impl NativeKmsDevice {
                 .map(Mode::from)
                 .unwrap_or(mode);
             let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
-            let (physical_width, physical_height) = info.size().unwrap_or((0, 0));
-            let output = Output::new(
-                name.clone(),
-                PhysicalProperties {
-                    size: (physical_width as i32, physical_height as i32).into(),
-                    subpixel: info.subpixel().into(),
-                    make: "Apple".into(),
-                    model: name.clone(),
-                    serial_number: "Unknown".into(),
-                },
-            );
+            let identity = connector_identity(self.manager.device_mut(), info.handle(), &name);
+            let output = Output::new(name.clone(), identity.physical_properties(&info));
             output.set_preferred(preferred_mode);
             for available_mode in &available_modes {
                 output.add_mode(Mode::from(*available_mode));
@@ -869,6 +992,10 @@ impl NativeKmsDevice {
             claimed_crtcs.insert(crtc);
             changed = true;
             tracing::info!(%name, ?mode, "mapped newly connected DRM output");
+        }
+
+        if self.reset_bad_link_status() {
+            state.request_native_redraw();
         }
 
         if changed {
@@ -924,11 +1051,12 @@ impl NativeKmsDevice {
                     } else {
                         1.0
                     };
+                    let physical = output.output.physical_properties();
                     state.display_config.update(OutputSnapshot {
-                        connector: name.clone(),
-                        vendor: "Apple".into(),
-                        product: name,
-                        serial: "Unknown".into(),
+                        connector: name,
+                        vendor: physical.make,
+                        product: physical.model,
+                        serial: physical.serial_number,
                         width: mode.size.w,
                         height: mode.size.h,
                         refresh_millihz: mode.refresh,
@@ -1051,6 +1179,13 @@ impl NativeKmsDevice {
             }
             discovered.push(connector);
         }
+        let stale_at_startup = remove_stale_duplicates(&drm, &mut discovered);
+        if !stale_at_startup.is_empty() {
+            tracing::warn!(
+                connectors = ?stale_at_startup,
+                "ignoring connectors that duplicate another connected monitor's EDID (stale dock route)"
+            );
+        }
         discovered.sort_by_key(|connector| {
             (
                 connector.interface() != connector::Interface::EmbeddedDisplayPort,
@@ -1092,11 +1227,12 @@ impl NativeKmsDevice {
                     .copied()
                     .unwrap_or(preferred);
                 let mode = Mode::from(selected);
+                let identity = connector_identity(&drm, connector.handle(), &name);
                 state.display_config.update(OutputSnapshot {
-                    connector: name.clone(),
-                    vendor: "Apple".into(),
-                    product: name,
-                    serial: "Unknown".into(),
+                    connector: name,
+                    vendor: identity.vendor,
+                    product: identity.product,
+                    serial: identity.serial,
                     width: mode.size.w,
                     height: mode.size.h,
                     refresh_millihz: mode.refresh,
@@ -1214,16 +1350,10 @@ impl NativeKmsDevice {
                 7 => smithay::utils::Transform::Flipped270,
                 _ => smithay::utils::Transform::Normal,
             };
-            let (physical_width, physical_height) = selected.connector.size().unwrap_or((0, 0));
+            let identity = connector_identity(manager.device(), selected.connector.handle(), &name);
             let output = Output::new(
                 name.clone(),
-                PhysicalProperties {
-                    size: (physical_width as i32, physical_height as i32).into(),
-                    subpixel: selected.connector.subpixel().into(),
-                    make: "Apple".into(),
-                    model: name.clone(),
-                    serial_number: "Unknown".into(),
-                },
+                identity.physical_properties(&selected.connector),
             );
             let preferred_mode = available_modes
                 .iter()
@@ -1264,10 +1394,10 @@ impl NativeKmsDevice {
                 state.primary_output_name = Some(name.clone());
             }
             state.display_config.update(OutputSnapshot {
-                connector: name.clone(),
-                vendor: "Apple".into(),
-                product: name,
-                serial: "Unknown".into(),
+                connector: name,
+                vendor: identity.vendor,
+                product: identity.product,
+                serial: identity.serial,
                 width: mode.size.w,
                 height: mode.size.h,
                 refresh_millihz: mode.refresh,
@@ -1303,6 +1433,8 @@ impl NativeKmsDevice {
             outputs,
             disabled_connectors,
             disconnected_disabled_connectors: HashSet::new(),
+            suppressed_duplicates: stale_at_startup.into_iter().collect(),
+            link_resets: HashMap::new(),
             notifier: Some(notifier),
             pending_global_removals: Vec::new(),
         })

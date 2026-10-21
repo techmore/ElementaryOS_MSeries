@@ -89,6 +89,78 @@ popups above all windows.
   check that no popup is drawn twice (no ghost at the window's old stack position) and
   that damage tracking still repaints correctly when a menu closes.
 
+## Dock HDMI dark after replug: stale connector, link-status, identity — 2026-10-21 (Claude Code)
+
+Branch `claude/dock-replug-display-fix` (from `origin/dev`), committed locally, **not pushed, not
+deployed**. Full evidence and verification:
+[hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md](aurora/hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md).
+
+**Cause.** The AOC 24E2QA on the WD22TB4's HDMI arrives over the Thunderbolt DP tunnel. After the dock
+moved Type-C PHYs at ~40 s the kernel left the old connector (DP-2) reported as connected, so the Rust
+compositor mapped a phantom output between the real screens. Both connectors carried `link-status = Bad`,
+which the compositor never reads, and every monitor was published as `Apple:<connector>:Unknown`, so
+`mseries-display-profiles` matched nothing (`no profile for the displays attached`).
+
+**Done in the branch.** The compositor now reads each connector's EDID and publishes the real identity,
+treats a connector whose EDID duplicates a newer connector's as disconnected, and writes
+`link-status = Good` back (bounded: 3 tries, 5 s apart) to force the modeset the DCP driver asks for.
+`check-display-paths.sh` and `pantheon-drm-probe` report identity, `link-status` and stale duplicates.
+55 compositor tests (14 new), clippy and fmt pass; the probe ran read-only on the live device and picked
+DP-1 as live and DP-2 as stale, as diagnosed.
+
+**Not verified.** The `Good` write and resulting modeset need DRM master, so they need the new
+compositor running in a new session. Deploy with
+`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes --build` (stages the package, never
+restarts the running session), sign out and in, then look for `link-status was Bad; reset to Good` in
+`journalctl --user -u pantheon-rust-compositor@wayland.service`, a single DP output in
+`busctl --user call org.gnome.Mutter.DisplayConfig /org/gnome/Mutter/DisplayConfig org.gnome.Mutter.DisplayConfig GetCurrentState`
+with AOC identity, and the monitor showing the desktop. Owner action: with the AOC attached run
+`mseries-display-profiles save <name>` once so the watcher has a profile for it.
+
+**Deployed locally 2026-10-21.** Installed package `0.1.0+gitc995a60.dockfix1`: the compositor build that was
+already running (`c995a60` on `codex/rust-gala-stack-integration`, which carries the redraw-reason counters
+that `dev` lacks) plus only this fix, built in a local-only worktree. It was not built from `dev`, so none of
+`dev`'s unrelated gesture or taskbar changes were introduced. Rollback: the previous binary is saved at
+`~/.cache/mseries-build/rollback/pantheon-compositor.c995a60`
+(`sudo install -m 0755 <that file> /usr/bin/pantheon-compositor`, then log in again), or
+`sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes` for the Gala session. The
+package only loads at login; a one-shot timer runs
+`mseries/pantheon-rust-compositor/validate-dock-recovery.sh` about 2.5 minutes after the logout and writes
+`~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
+Merging PR #357 into `dev` does not by itself deploy anything.
+
+**Correction to the first local deployment (2026-10-21 08:10).** The first package (`0.1.0+gitc995a60.dockfix1`) was built
+on the older `codex/rust-gala-stack-integration` lineage, which lacks about 17 `dev` commits: the Work Mode top-bar
+receiver (`SetTopPanelMode`), bottom-taskbar window clearance, XWayland and edge snapping fixes, the themed cursor, gesture
+animation, and the session unit that launches the patched dock (`pantheon-rust-dock`). That is why the Rust session
+showed no snapping, the stock dock, a visible top bar, and a plain cursor. Replaced by `0.1.0+gitdev.dockfix2`: `dev` + this
+PR + the redraw-counter commit (`c995a60c`, the only commit the old lineage had that `dev` lacks). Local-only branch
+`local/dockfix-on-dev`, worktree `~/Projects/mseries-dockfix-v2`. Rollbacks in `~/.cache/mseries-build/rollback/`
+(`pantheon-compositor.c995a60`, `pantheon-compositor.dockfix1`). The validator now also checks `TopPanelMode` and that the
+patched dock runs; before the reboot it failed exactly those two checks on the old build. Stutter is not yet analysed:
+re-measure with the redraw counters after the new build is running.
+
+**Validated on hardware (2026-10-21 08:07, first package).** Cold boot into the Rust session with the deployed package:
+`validate-dock-recovery.sh` reports PASS (running binary matches the installed one, AOC published once with its EDID
+identity, link-status Good, `link-status was Bad; reset to Good` logged and followed by a clean second DCP modeset). Still
+open: the stale-duplicate path needs a dock replug while logged in; whether the AOC shows the desktop and how the session
+feels needs a person at the screen. See the evidence file above.
+
+**Why the Rust session did not start (2026-10-21).** Not a compositor failure: after a logout the elementary
+greeter starts the session stored in `io.elementary.greeter last-session-type` (lightdm user's dconf), which
+was `ubuntu`; `.dmrc`/AccountsService are ignored and LightDM never autologins after a logout. Pick
+"Pantheon (Rust compositor, experimental)" with the greeter's session button once; it then persists. A cold
+boot autologins into the Rust session via `50-elementary-mac-autologin.conf` regardless. The new compositor
+has still not been started in a login, so the deployment is not yet validated. The GNOME (`ubuntu`) session
+that was used instead renders on the GPU (`renderD128`, Mesa Asahi) but feels slow; not investigated further.
+
+**Work Mode.** It is on because the manual switch is on (`enabled true`, no schedule, no network rule),
+not because of the dock. The helper reads only the switch, the schedule and the public IP; a test now
+guards that. Owner decision stands: no dock- or display-based home/office inference.
+
+**Still open, owner-raised, not started.** Clean up the dev kernel lane (`.20-enh1`) and port wanted
+upstream features; polling-based performance comparison of the Rust compositor against native Gala.
+`~/Projects/mseries-compositor` is another session's worktree with uncommitted changes; do not reuse it.
 
 ## Aurora 7.2 all three dock ports working; pilot timing — 2026-10-21
 
