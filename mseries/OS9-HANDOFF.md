@@ -28,8 +28,8 @@ Fixes the popup/attention defects from section 1 of
   marked. Exported as `demands-attention` in `GetWindows`, and a change emits `WindowsChanged`.
   Behaviour change: activation tokens are now kept under `strict` too, so the refusal reaches the
   policy and can be attributed; `strict` still never raises without a trusted serial.
-- **Verified.** `cargo test -p pantheon-compositor` 58 pass (new: 3 attention, 2 Gala export,
-  1 activation); `cargo clippy --all-targets -- -D warnings` clean with default and all features
+- **Verified.** `cargo test -p pantheon-compositor` 53 pass (new: 3 attention, 2 Gala export;
+  1 activation test rewritten); `cargo clippy --all-targets -- -D warnings` clean with default and all features
   (also fixed 4 pre-existing `needless_borrow` errors); `cargo fmt --check` clean. Nested probe
   `mseries/pantheon-rust-compositor/activation-probe/run.sh`, new `focus-probe.py` scenarios, 7/7
   pass on this branch. The same scenarios against the installed `/usr/bin/pantheon-compositor`
@@ -37,7 +37,8 @@ Fixes the popup/attention defects from section 1 of
   leaves A inactive with no keyboard; no attention key exists.
 - **BadWindow bursts: reduced, not gone.** Counting xwm ChangeProperty BadWindow errors from
   80 short-lived cards with focus changes during the burst: 124-129 before (3-4 errors on many
-  cards), 92-96 after (about 2 per card, the same as with no focus changes at all). The
+  cards, 14-19 beyond 2 per card), 89-96 after (about 2 per card, 0-3 beyond, the same as with no
+  focus changes at all). The
   activation-driven writes are gone; the remaining 2 per card come from Smithay's own X11 map
   path for windows destroyed while mapping and were not attributed further.
 - **Not verified.** The live session: nothing installed and nothing restarted; loads at next login
