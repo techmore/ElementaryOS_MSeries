@@ -124,3 +124,10 @@ after the first boot.
   pattern for the fairydust lane
 - `mseries/BUG-FIX-ROADMAP.md` — Touch ID row and test order
 - `mseries/local-ai/touchid-watch.py` — upstream signal watcher
+
+## Settings page (preferred)
+
+`mseries/touchid-settings/` is the native GTK 4 Settings page (Settings → Personal → Touch ID) that
+supersedes the GTK 3 app above for enrolling fingers and choosing what they unlock. It reuses
+`mseries-aurora-touchid-apply-pam`, which now accepts `--only sudo|polkit-1`. Install with
+`bash mseries/install-touchid-settings.sh`; see [touchid-settings/README.md](../touchid-settings/README.md).
