@@ -26,6 +26,8 @@ XML = """
     <method name="DeleteEnrolledFinger"><arg type="s" direction="in"/></method>
     <property name="name" type="s" access="read"/>
     <property name="num-enroll-stages" type="i" access="read"/>
+    <property name="finger-needed" type="b" access="read"/>
+    <property name="finger-present" type="b" access="read"/>
     <signal name="EnrollStatus"><arg type="s"/><arg type="b"/></signal>
   </interface>
 </node>
@@ -39,6 +41,12 @@ enroll_timer = 0
 pending_finger = None
 stage = 0
 log = lambda *a: print("[fake-fprintd]", *a, file=sys.stderr, flush=True)
+
+
+def prop(conn, name, value):
+    """Emit fprintd's finger-needed / finger-present property change."""
+    conn.emit_signal(None, DEVICE, "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                     GLib.Variant("(sa{sv}as)", ("net.reactivated.Fprint.Device", {name: GLib.Variant("b", value)}, [])))
 
 
 def emit(conn, status, done):
@@ -60,6 +68,9 @@ def tick(conn):
     if stage % 5 == 3:
         emit(conn, "enroll-retry-scan", False)
         return True
+    if args.finger_events:
+        prop(conn, "finger-present", True)
+        GLib.timeout_add(args.interval // 3, lambda: (prop(conn, "finger-present", False), False)[1])
     emit(conn, "enroll-stage-passed", False)
     if stage >= args.stages:
         fingers.append(pending_finger)
@@ -86,6 +97,8 @@ def on_call(conn, sender, path, iface, method, params, inv):
             return
         pending_finger, stage = params.unpack()[0], 0
         inv.return_value(None)
+        if args.finger_events:
+            prop(conn, "finger-needed", True)
         enroll_timer = GLib.timeout_add(args.interval, tick, conn)
     elif method == "EnrollStop":
         if enroll_timer:
@@ -109,6 +122,8 @@ def on_get(conn, sender, path, iface, prop):
         return GLib.Variant("s", "Fake secure enclave fingerprint sensor")
     if prop == "num-enroll-stages":
         return GLib.Variant("i", args.stages)
+    if prop in ("finger-needed", "finger-present"):
+        return GLib.Variant("b", False)
 
 
 def main():
@@ -119,6 +134,7 @@ def main():
     p.add_argument("--interval", type=int, default=450)
     p.add_argument("--fail-at", type=int, default=0)
     p.add_argument("--duplicate-at", type=int, default=0)
+    p.add_argument("--finger-events", action="store_true")
     args = p.parse_args()
     fingers.extend(f for f in args.fingers.split(",") if f)
     nodes = Gio.DBusNodeInfo.new_for_xml(XML)

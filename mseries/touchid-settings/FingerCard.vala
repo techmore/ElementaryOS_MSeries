@@ -10,7 +10,7 @@ namespace MSeriesTouchId {
             Object (finger: finger);
             var label = finger_label (finger);
 
-            var art = new FingerprintArt (60, 8, 2.6) { lit = true };
+            var art = new FingerprintArt (60, 8, 2.6) { lit = true, seed = finger_seed (finger) };
             art.update_property (Gtk.AccessibleProperty.LABEL, "Fingerprint", -1);
 
             var name = new Gtk.Label (label) {

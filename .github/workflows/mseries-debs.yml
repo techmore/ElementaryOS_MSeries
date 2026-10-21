@@ -86,9 +86,11 @@ jobs:
           echo "the elementary daily PPA is unreachable" >&2
           exit 1
 
+      # The PPA's pool also answers 503 in bursts, so retry the downloads, not just the index.
       - name: Install plugin build dependencies
         run: |
-          sudo apt-get install -y --no-install-recommends \
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
             dpkg-dev git meson ninja-build valac gettext pkg-config \
             libwingpanel-9-dev libgranite-7-dev libgtk-4-dev \
             libadwaita-1-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev \
@@ -96,7 +98,13 @@ jobs:
             libgnome-desktop-4-dev libibus-1.0-dev \
             libpackagekit-glib2-dev libportal-dev libaccountsservice-dev libwayland-dev \
             libecal2.0-dev libedataserver1.2-dev libical-dev libjson-glib-dev \
-            io.elementary.panel.network io.elementary.quick-settings io.elementary.panel.datetime
+            io.elementary.panel.network io.elementary.quick-settings io.elementary.panel.datetime; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          echo "could not install the build dependencies" >&2
+          exit 1
 
       - name: Style checks for the packaging scripts (bash mseries/validate.sh --only debs)
         run: |

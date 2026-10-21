@@ -18,7 +18,6 @@ page_sources = files(
     'Diagnostics.vala',
     'Style.vala',
     'FingerprintArt.vala',
-    'HandDiagram.vala',
     'FingerCard.vala',
     'EnrollDialog.vala',
     'TouchIdPage.vala',
