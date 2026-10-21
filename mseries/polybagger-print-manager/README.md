@@ -37,8 +37,8 @@ That matches what we saw on 2026-10-21 (three sends, three labels, then a clear 
 sent unchanged because they load nothing.
 
 ## Icon
-`io.techmore.PolyBaggerPrintManager.svg`: elementary-style icon of the roll bagger (film roll, status screen
-with the green ready dot, a poly bag with a barcode label). `install.sh` installs it to `hicolor` (SVG plus
+`io.techmore.PolyBaggerPrintManager.svg`: elementary-style tan industrial label printer (media window, green
+ready light, a barcode label feeding out). `install.sh` installs it to `hicolor` (SVG plus
 PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it from the dock's context menu.
 
 ## The window
@@ -48,7 +48,11 @@ PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it 
   printer drops off USB) and the last job.
 - **Sidebar**: Favorites (star a label), Recent (last six sends) and All labels. Search filters the full
   library; Ctrl+F or just start typing.
-- **Detail**: label preview, Labels to print, Send, then the two bagger confirmation steps and the checks.
+- **Print card**: label, preview, How many (with 1 / 100 / 500 / 1000 presets) and one button that says what
+  it will do ("Print 1,000 Labels"; Ctrl+P). The count is remembered.
+- **Result card**: what was sent, and the one check that matters: does the bagger show the label?
+- **Today**: every job today with time, label and count, plus totals (sent, labels, failed).
+- **Details** (collapsed): connection checks, Send Test Label, activity log.
 - **Help** (?): the machine flow and the known issues below.
 
 ## What the app checks

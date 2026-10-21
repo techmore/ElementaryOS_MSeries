@@ -21,25 +21,107 @@ Not verified: a real MMS (none received), full-text recovery for listed messages
 Open upstream idea: a BlueFerry `GetMessage(handle)` call would let the listing path
 resolve full text.
 
-## PolyBagger T1000 Print Manager — 2026-10-21
+## Messages: duplicate conversations and a GUI-test guard — 2026-10-21
 
-`mseries/polybagger-print-manager/` (PR #363): GTK 4 + Granite 7 app and CLI for the T-1000 bagger's inline
-Zebra (TI-1000Z frame). Key machine fact from the TI-1000Z manual pp. 20–22: a ZPL send only **loads** a
-label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label". The app
-sets `^PQ` from "Labels to print" on a temp copy, verifies delivery through CUPS, then asks the operator to
-confirm the bagger screen and one Manual Cycle. Status bar with a ready dot, favorites, recents, offline label
-store (`~/.local/share/polybagger-print-manager`), `install.sh` for the launcher. README lists known issues.
+Owner reported Messages "not showing my texts" and screen flicker. Both traced and fixed
+without opening any window (data checks were GTK-free; GUI tests ran on a hidden display).
 
-- **Verified (printer JJK245392):** USB detect, CUPS status, delivered jobs; after a printer reboot the owner
-  saw three sends print three labels. `^PQ` insertion unit-checked on recall, straight and store files.
-  GUI checked by headless Xvfb renders (light, dark, confirmation card, fixture favorites/recents).
-- **Not verified:** a quantity above 1 on the machine, a full click-through send in the GUI, `--setup`,
-  the plug/unplug toast. The printer itself has separate intermittent faults (stalls at "waiting for printer",
-  dropped off USB once; reboot cleared it).
-- **Side effect:** testing rewrote `E:CCSBLACK.ZPL` on JJK245392 with the repo's store file.
-- **Next:** run one production batch with Labels to print set, confirm the count matches bag cycles and the
-  label clears at the end; read the printer's Reprint setting on the bagger screen.
+- **Texts missing from a conversation.** Read-only against the live daemon: 14 conversations
+  with zero exceptions, but Mike Chuisano appeared twice. BlueFerry's thread holds `+1908…`,
+  the phone's inbox snapshot reports `1908…`, and `merge_inbox` compared the raw strings, so
+  five newer texts (to 20:32) landed in a duplicate phone-only conversation while the real
+  one stopped at 16:57. `merge_inbox` now matches by BlueFerry's `canonical_address` plus the
+  North American 10/11-digit twin, never guesses between two claimants, and still drops senders
+  that are not valid recipients. Real data after the fix: 14 conversations become 13, Mike is
+  one conversation with all 10 texts, no duplicate names, and his sending route is unchanged.
+- **Flicker.** Another session ran `xvfb-run python3 -m unittest test_messages_gui` from the
+  desktop session without `GDK_BACKEND=x11`; with `WAYLAND_DISPLAY` set GTK opened the test
+  windows on the live Wayland desktop (one was visible in the compositor's window list), which
+  also grabbed the keyboard. `gui_safety.py` now refuses real-looking displays and forces X11;
+  the same run now stays on the virtual display. The other GUI tests in this repo are not
+  guarded and should adopt it.
 
+Verification: 53 model and 67 GTK tests pass, no warnings; mutation checks fail the tests (old
+string matching fails 4; each guard mutation fails one). Messages was closed during the incident;
+it is not relaunched or reinstalled by this entry (install with
+`bash mseries/install-phone-setup.sh`, then relaunch when ready).
+
+## Rust compositor: panels, alerts and dialogs hidden behind snapped windows — 2026-10-21
+
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed no
+tooltip, and more generally anything that should float over a snapped window (indicator
+menus, an app's own alert or modal dialog) could end up behind it. In
+`rust/pantheon-compositor` every surface was an ordinary element of the smithay `Space`
+at the same z-index, so any window raise (a click, focus, restore) put that window on top
+of the panel, of its own transient dialogs and of keep-above surfaces. A tiled window
+fills the work area, so it covered them completely. Clicking the bar hid the panel case
+because the click re-raised the panel.
+
+- **Fix** (`claude/panel-popups-above-windows`, PR #361 to `dev`), all in
+  `pantheon_shell.rs`:
+  - Panels (Wingpanel, the dock) get `RenderZindex::Top`; smithay keeps the stack sorted
+    by z-index, so a raise of an ordinary window never crosses them. Their popups render
+    with them. XWayland override-redirect windows (menus, the GTK3 notification cards)
+    already render at `RenderZindex::Overlay`.
+  - `raise_window()` replaces every direct `Space::raise_element` of a window and raises
+    the window's transient descendants (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`) above
+    it in their existing order, as Gala does, so a click on a snapped window no longer
+    buries its own dialog.
+  - `io_elementary_pantheon_extended_behavior_v1.set_keep_above` is honored with a
+    z-index between ordinary windows and the panels (applied on request or at first map,
+    reset when the object is destroyed). `make_centered`, `make_modal`, `focus` and
+    monitor labels are still ignored.
+- **Password prompts** (follow-up commit, owner report that they still sat behind
+  snapped apps): the elementary polkit agent sends `make_modal` / `make_centered` /
+  `set_keep_above`; all three now put it on the keep-above layer, and `make_modal` /
+  `focus` raise and focus it. The GNOME keyring prompter (`gcr-prompter`,
+  `org.gnome.keyring.*Prompter`) sends no hints and has no parent, so it gets the
+  keep-above layer by app ID at first map. Dimming and true centering are not implemented.
+  The same commit runs `cargo fmt` over the `activation.rs` / `state.rs` code merged from
+  `dev`, which failed `fmt --check`.
+- **Installed now:** `0.1.0+gitdev.dockfix2.panelstack3.popups1` (deploy branch
+  `local/panel-stack-on-dockfix` = dockfix2 lineage + PR #361 + PR #364's popup commit +
+  the prompt commit; not the `dev` activation change). Previous binary saved as
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2.popups1`.
+  Loads at next login; 49 tests pass on the PR branch.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -D warnings` and `cargo test` (41 tests) pass.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + the two
+  commits of the PR, built in `~/Projects/mseries-panel-stack-deploy` (branch
+  `local/panel-stack-on-dockfix`) and installed with
+  `install-pantheon-rust-compositor.sh --install`. The running session still executes the
+  previous binary; the fix loads at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
+- **Unverified.** After the next login: hover CodexBar beside a snapped window; open a
+  modal dialog from a snapped app, click the app, confirm the dialog stays on top; send a
+  `notify-send` with two snapped windows. Not covered: popups (tooltips, menus) of an
+  unfocused window still render with that window, so a menu that reaches over a
+  higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
+  popups above all windows.
+
+## PolyBagger T1000 Print Manager — 2026-10-21 (end of day, before reboot)
+
+`mseries/polybagger-print-manager/` (PRs #363, #366, #368, all merged to `dev`): GTK 4 + Granite 7 app and CLI for
+the T-1000 bagger's inline Zebra (ZTC 110Xi4, TI-1000Z frame, USB, serial JJK245392). A ZPL send only **loads** a
+label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label" (TI-1000Z
+manual pp. 20–22). Main view: print card (How many with 1/100/500/1000 presets, "Print N Labels", Ctrl+P), result
+card with the one bagger check, Today list with totals, status bar with a ready dot, favorites/recents, offline
+label store. Tan industrial label-printer icon. Launcher installed from this checkout with `install.sh`.
+
+- **Working (owner):** single sends print one label each; after loading with a count the owner reported it
+  "kinda working". The CCS label was loaded with `--qty 1000` at 09:2x (job 20, StoredLabel expected).
+- **Queue fix:** a printer power cycle mid-job paused CUPS and disabled Send. Queue
+  `ZTC-110Xi4-203dpi-ZPL` now has `printer-error-policy=retry-job`; the app shows **Resume Queue…** if it pauses.
+- **Taskbar:** new apps show the wrong icon (it showed Messages) until the Windows-mode taskbar restarts; it was
+  restarted through `mseries-dock-change` with owner approval and now shows the tan icon. Pin from the taskbar's
+  own right-click menu; outside edits to `launchers` do not stick.
+- **Network:** the Xi4 is not on 10.20.0.0/24. The Zebra at 10.20.0.61 is a different printer (ZT410,
+  18J191104090). Use the bagger's Printer Settings **Print Network** to see whether the Xi4 has a print server.
+- **After the reboot, check:** app opens from Applications/taskbar with the tan icon; status dot green; queue still
+  `retry-job` (IPP Get-Printer-Attributes `printer-error-policy`; `lpoptions` does not show it); the bagger's loaded label
+  is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
+- **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
 
 ## Rust compositor: GTK present() now raises the window — 2026-10-21
 

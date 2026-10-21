@@ -120,11 +120,26 @@ mod tests {
 
     #[test]
     fn env_value_defaults_to_raise_and_only_strict_restores_old_behaviour() {
-        assert_eq!(ActivationPolicy::from_env_value(None), ActivationPolicy::Raise);
-        assert_eq!(ActivationPolicy::from_env_value(Some("raise")), ActivationPolicy::Raise);
-        assert_eq!(ActivationPolicy::from_env_value(Some("")), ActivationPolicy::Raise);
-        assert_eq!(ActivationPolicy::from_env_value(Some("nonsense")), ActivationPolicy::Raise);
-        assert_eq!(ActivationPolicy::from_env_value(Some(" Strict ")), ActivationPolicy::Strict);
+        assert_eq!(
+            ActivationPolicy::from_env_value(None),
+            ActivationPolicy::Raise
+        );
+        assert_eq!(
+            ActivationPolicy::from_env_value(Some("raise")),
+            ActivationPolicy::Raise
+        );
+        assert_eq!(
+            ActivationPolicy::from_env_value(Some("")),
+            ActivationPolicy::Raise
+        );
+        assert_eq!(
+            ActivationPolicy::from_env_value(Some("nonsense")),
+            ActivationPolicy::Raise
+        );
+        assert_eq!(
+            ActivationPolicy::from_env_value(Some(" Strict ")),
+            ActivationPolicy::Strict
+        );
     }
 
     #[test]
@@ -147,8 +162,14 @@ mod tests {
 
     #[test]
     fn untrusted_token_is_ignored_when_strict_and_raises_when_idle() {
-        assert_eq!(verdict(ActivationPolicy::Strict, request(false)), Verdict::Ignore);
-        assert_eq!(verdict(ActivationPolicy::Raise, request(false)), Verdict::ActivateNow);
+        assert_eq!(
+            verdict(ActivationPolicy::Strict, request(false)),
+            Verdict::Ignore
+        );
+        assert_eq!(
+            verdict(ActivationPolicy::Raise, request(false)),
+            Verdict::ActivateNow
+        );
         let mut r = request(false);
         r.since_last_key = Some(Duration::from_secs(30));
         assert_eq!(verdict(ActivationPolicy::Raise, r), Verdict::ActivateNow);
@@ -158,7 +179,10 @@ mod tests {
     fn untrusted_token_waits_while_the_user_is_typing() {
         let mut r = request(false);
         r.since_last_key = Some(Duration::from_millis(300));
-        assert_eq!(verdict(ActivationPolicy::Raise, r), Verdict::ActivateWhenIdle);
+        assert_eq!(
+            verdict(ActivationPolicy::Raise, r),
+            Verdict::ActivateWhenIdle
+        );
         r.since_last_key = Some(TYPING_IDLE);
         assert_eq!(verdict(ActivationPolicy::Raise, r), Verdict::ActivateNow);
     }
@@ -175,18 +199,32 @@ mod tests {
         }
         let mut r = request(true);
         r.token_age = TOKEN_MAX_AGE;
-        assert_eq!(verdict(ActivationPolicy::Raise, r), Verdict::ActivateNow, "exactly at the limit still counts");
+        assert_eq!(
+            verdict(ActivationPolicy::Raise, r),
+            Verdict::ActivateNow,
+            "exactly at the limit still counts"
+        );
     }
 
     #[test]
     fn deferred_activation_waits_for_a_pause_then_goes_or_gives_up() {
         let typing = Some(Duration::from_millis(100));
         let paused = Some(Duration::from_secs(2));
-        assert_eq!(defer_step(Duration::from_millis(250), typing), DeferStep::Wait);
-        assert_eq!(defer_step(Duration::from_millis(250), paused), DeferStep::Go);
+        assert_eq!(
+            defer_step(Duration::from_millis(250), typing),
+            DeferStep::Wait
+        );
+        assert_eq!(
+            defer_step(Duration::from_millis(250), paused),
+            DeferStep::Go
+        );
         assert_eq!(defer_step(Duration::from_millis(250), None), DeferStep::Go);
         assert_eq!(defer_step(DEFER_LIMIT, paused), DeferStep::GiveUp);
-        assert_eq!(defer_step(DEFER_LIMIT + DEFER_POLL, typing), DeferStep::GiveUp, "never waits forever");
+        assert_eq!(
+            defer_step(DEFER_LIMIT + DEFER_POLL, typing),
+            DeferStep::GiveUp,
+            "never waits forever"
+        );
     }
 
     #[test]
