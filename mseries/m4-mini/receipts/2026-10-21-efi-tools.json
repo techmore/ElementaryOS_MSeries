@@ -1,0 +1,18 @@
+{
+  "files": {
+    "systemd-boot-efi_259.5-0ubuntu3.4+elementary3~ubuntu9.1_arm64.deb": "1e5bf8f6cef2ed0ebac38cb3af494d7e0356aae7a1e6e1633902daf61ee2c85f",
+    "systemd-ukify_259.5-0ubuntu3.4+elementary3~ubuntu9.1_all.deb": "b83f6fdc55395fc9a8c4891a3c9c2562cdef83cdda123b9638d9c53a888325b3",
+    "python3-pefile_2024.8.26-2.1_all.deb": "75ec46b516dd136ec66552347ec43cb96fada2358a5fa953c146a9a362d6609e",
+    "python3-zstandard_0.25.0-1build1_arm64.deb": "ad51d3c4a1d105184fea0f500a9ee873768a0d330e217fe160aa6653c789fec9",
+    "extracted/usr/lib/systemd/ukify": "26be7225d6783ad4c64907d07c06e70063b59dfc6e53d6a70821c119448aaa24",
+    "extracted/usr/lib/systemd/boot/efi/linuxaa64.efi.stub": "6a12c82c0252488933c381b8b54e25bfd16157aadb312c6511f9fa7a641ce596"
+  },
+  "packages": {
+    "systemd-boot-efi_259.5-0ubuntu3.4+elementary3~ubuntu9.1_arm64.deb": "Package: systemd-boot-efi\nVersion: 259.5-0ubuntu3.4+elementary3~ubuntu9.1",
+    "systemd-ukify_259.5-0ubuntu3.4+elementary3~ubuntu9.1_all.deb": "Package: systemd-ukify\nVersion: 259.5-0ubuntu3.4+elementary3~ubuntu9.1",
+    "python3-pefile_2024.8.26-2.1_all.deb": "Package: python3-pefile\nVersion: 2024.8.26-2.1",
+    "python3-zstandard_0.25.0-1build1_arm64.deb": "Package: python3-zstandard\nVersion: 0.25.0-1build1"
+  },
+  "scope": "work-local extracted EFI assembly tools; no host installation",
+  "stub_architecture": "AArch64"
+}

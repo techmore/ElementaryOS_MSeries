@@ -1,3 +1,15 @@
+## M4 mini: unsigned EFI assembly verified — 2026-10-21
+
+build-efi.py validates pinned work-local tool/stub hashes, M4 kernel hash and
+completed initramfs receipt; requires one explicit root target; uses empty
+ukify config; embeds no DTB. Manual assembly and two wrapper runs yield the
+same 64,882,176-byte ARM64 UKI hash. Exact .linux/.initrd bytes and metadata
+match inputs; missing/duplicate root targets reject before output creation.
+[Receipt](m4-mini/receipts/2026-10-21-m4-efi.json).
+The test root label eos-m4-test does not identify an owner partition. No boot
+entries/EFI partition writes, signing or runtime boot. Matched loader/firmware,
+full desktop and physical M4/macOS/Recovery acceptance remain required.
+
 ## M4 mini: initramfs build and early-driver policy pass — 2026-10-21
 
 build-initramfs.py builds inside the configured root using isolated user/mount/

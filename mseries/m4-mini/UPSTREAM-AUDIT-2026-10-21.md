@@ -235,4 +235,24 @@ The firmware warnings remain in the receipt, including the Apple ASMedia
 controller file. Its applicability to the owner's actual USB topology is
 unverified; other warnings name unrelated SoCs in the broad defconfig. No
 proprietary blob was imported. Archive assembly does not prove storage reads,
-USB input, display, firmware handoff or boot on the M4. EFI assembly remains.
+USB input, display, firmware handoff or boot on the M4. Unsigned EFI assembly now passes as described below.
+
+## Unsigned research EFI assembly
+
+`build-efi.py --tools WORK_LOCAL_EFI_TOOLS --kernel VERIFIED_IMAGE
+--initramfs VERIFIED_INITRAMFS_DIRECTORY --cmdline EXPLICIT_CMDLINE_FILE
+--output NEW_DIRECTORY` assembles an unsigned ARM64 UKI. It verifies the
+retained tool/stub/package hashes and kernel/initramfs hashes, refuses an
+incomplete initramfs, and requires exactly one nonempty root= target. An
+empty ukify configuration prevents host settings from entering the artifact.
+It verifies exact embedded .linux/.initrd bytes and .cmdline/.uname/.osrel
+metadata, and rejects .dtb/.dtbauto sections so the matched bootloader remains
+responsible for the fixed-up handoff.
+
+The full assembly test passes. Manual assembly and two wrapper runs produce
+the same 64,882,176-byte artifact and SHA-256. The offline command line uses
+root=LABEL=eos-m4-test; that is a test filesystem contract, not an observed
+owner partition. No boot entry, EFI partition or installed loader changed.
+This unsigned artifact is not an installation image or boot qualification:
+matched firmware/loader handoff, actual root identity, full desktop support
+and M4/macOS/Recovery tests remain outstanding.

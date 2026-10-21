@@ -1,0 +1,31 @@
+{
+  "kernel_release": "7.1.13-elementary-m4-gravity1",
+  "uki_sha256": "e83c49598fdd00761337cd5734b44fdfbbb3e64ad4e97babf4188c8648700ab7",
+  "kernel_sha256": "db3833e9ae2073c5063d733254561bb4bebaed0ee6091f9aadf32dee16f7803b",
+  "initramfs_sha256": "96914b246788b6def7d725d1f5cba0a9d3627e50c377e78d2c0c3b709ca424e9",
+  "sections": [
+    ".text",
+    ".rodata",
+    ".data",
+    ".sbat",
+    ".sdmagic",
+    ".reloc",
+    ".osrel",
+    ".cmdline",
+    ".uname",
+    ".linux",
+    ".initrd"
+  ],
+  "cmdline": "root=LABEL=eos-m4-test rw rootwait console=tty0",
+  "stub_sha256": "6a12c82c0252488933c381b8b54e25bfd16157aadb312c6511f9fa7a641ce596",
+  "relocation_directory_size": 144,
+  "embedded_payloads": "exact kernel/initramfs bytes and metadata verified",
+  "status": "unsigned research EFI assembled only; no boot entries, partition writes or hardware qualification",
+  "hardware_validated": false,
+  "negative_checks": [
+    "missing root target rejected before output creation",
+    "duplicate root target, including empty root=, rejected before output creation"
+  ],
+  "root_target_scope": "eos-m4-test is an explicit offline test label; no owner partition identity or installation inferred",
+  "repeatability": "manual assembly and two wrapper runs produced the same UKI SHA-256"
+}
