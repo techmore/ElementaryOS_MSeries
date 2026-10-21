@@ -9,6 +9,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Optional emulation source provenance — 2026-10-21
+
+MuVM/libkrun/libkrunfw version tags now bind to immutable source commits; existing
+caches must match origin/revision and have clean source before privileged work.
+Eleven offline regressions pass; no emulation rebuild or host installation. Next:
+qualify a future owner-authorized rebuild with the recorded source identities.
+[Receipt](upstream-audits/security/2026-10-21-muvm-source-provenance.md).
+
 ## Daedalus portal and NmapUI desktop experience — 2026-10-21
 
 Daedalus `main` is CI-green with review fixes and an elementary look; NmapUI has a native window, dock actions and a
