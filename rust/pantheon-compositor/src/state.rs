@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
@@ -48,6 +49,7 @@ use crate::display_config::{
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
 };
 use crate::gala_compat::{DesktopSnapshot, GalaAction, GalaCompatHandle, GalaWindow};
+use crate::metrics::client::{ClientRegistry, ClientStats};
 #[cfg(feature = "native-drm")]
 use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
@@ -55,7 +57,14 @@ use crate::shell_compat::ShellCompatHandle;
 use crate::tiling::{CornerSnapPreview, TilingBindings};
 use crate::workspace::WorkspaceManager;
 #[cfg(feature = "native-drm")]
-use smithay::reexports::calloop::channel::Sender;
+use smithay::reexports::calloop::ping::Ping;
+
+/// The peer pid of a new client connection, read once at connect.
+fn peer_pid(stream: &std::os::unix::net::UnixStream) -> Option<u32> {
+    smithay::reexports::rustix::net::sockopt::socket_peercred(stream)
+        .ok()
+        .map(|credentials| credentials.pid.as_raw_pid() as u32)
+}
 
 fn is_ibus_input_method_stream(stream: &std::os::unix::net::UnixStream) -> bool {
     use std::os::unix::fs::MetadataExt;
@@ -187,9 +196,50 @@ pub struct PantheonCompositor {
     pub winit_redraw_sender: Option<channel::Sender<()>>,
     #[cfg(feature = "native-drm")]
     pub native_backend: Option<NativeBackend>,
+    /// Wakes the native render pass. Requests made before it runs coalesce
+    /// into one pass (`native_redraw_pending`), instead of one channel message
+    /// and one pass per request.
     #[cfg(feature = "native-drm")]
-    pub native_redraw_sender: Option<Sender<()>>,
+    pub native_redraw_ping: Option<Ping>,
+    #[cfg(feature = "native-drm")]
+    pub(crate) native_redraw_pending: Cell<bool>,
+    /// A 1 s timer serving frame callbacks of surfaces shown on no output.
+    #[cfg(feature = "native-drm")]
+    pub(crate) hidden_frame_sweep_armed: Cell<bool>,
+
+    /// Per-client commit counters, keyed by pid.
+    pub(crate) client_registry: ClientRegistry,
+    /// Monotonic time of the first commit or input since the last render pass
+    /// (start of the dirty→flip latency).
+    #[cfg_attr(not(feature = "native-drm"), allow(dead_code))]
+    pub(crate) dirty_since: Cell<Option<Duration>>,
+    pub(crate) monotonic_clock: smithay::utils::Clock<smithay::utils::Monotonic>,
+    /// Bumped when a window title or app id changes, for the Gala snapshot.
+    pub(crate) title_generation: Cell<u64>,
+    /// What the last published Gala snapshot was built from.
+    gala_snapshot_key: std::cell::RefCell<Option<GalaSnapshotKey>>,
+    gala_snapshot_at: Cell<Option<std::time::Instant>>,
+    /// (window, output scale) layout the fractional-scale preferences were last sent for.
+    fractional_scale_fingerprint: Cell<Option<u64>>,
+    /// Snap preview and OSD rectangles, kept so unchanged ones add no damage.
+    pub(crate) solid_buffers: crate::cursor::SolidBuffers,
+    /// Where wallpaper scaling threads deliver their result.
+    pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
 }
+
+/// Everything the Gala snapshot depends on that can change between dispatches.
+#[derive(Clone, PartialEq, Eq)]
+struct GalaSnapshotKey {
+    workspaces: u64,
+    titles: u64,
+    focus: Option<smithay::reexports::wayland_server::backend::ObjectId>,
+    x11_focus: Option<u32>,
+    panels: usize,
+}
+
+/// Republish at least this often even when nothing seemed to change, in case
+/// a change has no hook (bounded staleness, not a timer: only on dispatch).
+const GALA_SNAPSHOT_MAX_AGE: Duration = Duration::from_secs(1);
 
 impl PantheonCompositor {
     pub fn new(
@@ -314,12 +364,10 @@ impl PantheonCompositor {
         )?;
 
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(30)),
-            |_, _, _| {
-                if let Some(line) = crate::redraw_stats::report() {
-                    tracing::info!("{line}");
-                }
-                TimeoutAction::ToDuration(Duration::from_secs(30))
+            Timer::from_duration(crate::metrics::REPORT_INTERVAL),
+            |_, _, state| {
+                state.report_metrics();
+                TimeoutAction::ToDuration(crate::metrics::REPORT_INTERVAL)
             },
         )?;
 
@@ -343,6 +391,25 @@ impl PantheonCompositor {
         let wallpaper = wallpaper_selection
             .as_ref()
             .and_then(crate::wallpaper::load_wallpaper);
+        let (wallpaper_scaled_sender, wallpaper_scaled) = channel::channel();
+        event_loop
+            .handle()
+            .insert_source(wallpaper_scaled, |event, _, state| {
+                let channel::Event::Msg(result) = event else {
+                    return;
+                };
+                let Some(wallpaper) = state.wallpaper.as_ref() else {
+                    return;
+                };
+                let live_sizes = state
+                    .space
+                    .outputs()
+                    .filter_map(|output| crate::cursor::output_pixel_size(state, output))
+                    .collect::<Vec<_>>();
+                if wallpaper.accept(result, &live_sizes) {
+                    state.request_native_redraw();
+                }
+            })?;
 
         // Setup a wayland socket that will be used to accept clients
         let socket_name = Self::init_wayland_listener(display, event_loop)?;
@@ -460,17 +527,106 @@ impl PantheonCompositor {
             #[cfg(feature = "native-drm")]
             native_backend: None,
             #[cfg(feature = "native-drm")]
-            native_redraw_sender: None,
+            native_redraw_ping: None,
+            #[cfg(feature = "native-drm")]
+            native_redraw_pending: Cell::new(false),
+            #[cfg(feature = "native-drm")]
+            hidden_frame_sweep_armed: Cell::new(false),
+            client_registry: ClientRegistry::default(),
+            dirty_since: Cell::new(None),
+            monotonic_clock: smithay::utils::Clock::new(),
+            title_generation: Cell::new(0),
+            gala_snapshot_key: std::cell::RefCell::new(None),
+            gala_snapshot_at: Cell::new(None),
+            fractional_scale_fingerprint: Cell::new(None),
+            solid_buffers: Default::default(),
+            wallpaper_scaled_sender,
         })
     }
 
     pub fn request_native_redraw(&self) {
-        crate::redraw_stats::request();
+        crate::metrics::request();
         self.request_winit_redraw();
         #[cfg(feature = "native-drm")]
-        if let Some(sender) = &self.native_redraw_sender {
-            let _ = sender.send(());
+        if let Some(ping) = &self.native_redraw_ping
+            && !self.native_redraw_pending.replace(true)
+        {
+            ping.ping();
         }
+    }
+
+    /// A window title, app id or X11 property changed: republish the snapshot.
+    pub(crate) fn note_title_changed(&self) {
+        self.title_generation
+            .set(self.title_generation.get().wrapping_add(1));
+    }
+
+    /// Note that client content or input changed, for dirty→flip latency.
+    pub(crate) fn mark_dirty(&self) {
+        if self.dirty_since.get().is_none() {
+            self.dirty_since
+                .set(Some(self.monotonic_clock.now().into()));
+        }
+    }
+
+    /// Log and reset the 30 s metrics window.
+    fn report_metrics(&mut self) {
+        let counters = crate::metrics::take_counters();
+        let clients = self.client_registry.take_window();
+        #[cfg_attr(not(feature = "native-drm"), allow(unused_mut))]
+        let mut outputs = Vec::new();
+        #[cfg(feature = "native-drm")]
+        if let Some(backend) = self.native_backend.as_mut() {
+            outputs = backend.kms.take_metrics();
+        }
+        crate::metrics::report(counters, &clients, &outputs);
+    }
+
+    /// Commit counters for the client that owns `surface`. Wayland clients
+    /// carry theirs in `ClientState`; Xwayland surfaces are attributed to the
+    /// X11 window's own pid once the window is known (cached on the surface).
+    pub(crate) fn commit_stats_for(&mut self, surface: &WlSurface) -> Option<Arc<ClientStats>> {
+        let client = surface.client()?;
+        if let Some(state) = client.get_data::<ClientState>() {
+            return Some(state.stats.clone());
+        }
+        client.get_data::<smithay::xwayland::XWaylandClientData>()?;
+        let cached = smithay::wayland::compositor::with_states(surface, |states| {
+            states
+                .data_map
+                .insert_if_missing_threadsafe(X11CommitAttribution::default);
+            let attribution = states.data_map.get::<X11CommitAttribution>()?;
+            let mut attribution = attribution.0.lock().ok()?;
+            if let Some(stats) = &attribution.stats {
+                return Some(Ok(stats.clone()));
+            }
+            attribution.misses += 1;
+            Some(Err(attribution.misses))
+        })?;
+        let misses = match cached {
+            Ok(stats) => return Some(stats),
+            Err(misses) => misses,
+        };
+        let pid = self
+            .space
+            .elements()
+            .filter_map(|window| window.x11_surface())
+            .find(|x11| x11.wl_surface().as_ref() == Some(surface))
+            .map(|x11| x11.pid());
+        use crate::metrics::client::{X11Attribution as Decision, attribute_x11};
+        let stats = match attribute_x11(pid, misses, X11_ATTRIBUTION_ATTEMPTS) {
+            Decision::Client(pid) => self.client_registry.for_pid(pid),
+            Decision::Xwayland => self.client_registry.xwayland(),
+            Decision::XwaylandForNow => return Some(self.client_registry.xwayland()),
+        };
+        smithay::wayland::compositor::with_states(surface, |states| {
+            if let Some(attribution) = states.data_map.get::<X11CommitAttribution>()
+                && let Ok(mut attribution) = attribution.0.lock()
+            {
+                attribution.stats = Some(stats.clone());
+            }
+        });
+        Some(stats)
     }
 
     pub fn request_winit_redraw(&self) {
@@ -539,12 +695,33 @@ impl PantheonCompositor {
     }
 
     /// Publish the window/workspace snapshot to the Gala-compat D-Bus service.
-    /// Called after every event-loop dispatch (it only copies on change).
+    /// Called after every event-loop dispatch; skips the rebuild when nothing
+    /// it depends on changed (at most `GALA_SNAPSHOT_MAX_AGE` stale).
     pub(crate) fn publish_gala_snapshot(&self) {
         let focus = self
             .seat
             .get_keyboard()
             .and_then(|keyboard| keyboard.current_focus());
+        let key = GalaSnapshotKey {
+            workspaces: self.workspace_manager.generation(),
+            titles: self.title_generation.get(),
+            focus: focus.as_ref().map(|surface| surface.id()),
+            x11_focus: self
+                .x11_keyboard_focus
+                .as_ref()
+                .map(|surface| surface.window_id()),
+            panels: self.panels.len(),
+        };
+        let now = std::time::Instant::now();
+        let fresh = self
+            .gala_snapshot_at
+            .get()
+            .is_some_and(|at| now.duration_since(at) < GALA_SNAPSHOT_MAX_AGE);
+        if fresh && self.gala_snapshot_key.borrow().as_ref() == Some(&key) {
+            return;
+        }
+        self.gala_snapshot_key.replace(Some(key));
+        self.gala_snapshot_at.set(Some(now));
         let windows = self
             .workspace_manager
             .windows()
@@ -1701,7 +1878,25 @@ impl PantheonCompositor {
         Ok(())
     }
 
+    /// Send each window's preferred fractional scale for the output it is on.
+    /// Cheap when nothing moved between outputs: a fingerprint of the (window,
+    /// output scale) layout is compared first and the surface trees are only
+    /// walked when it changed.
     pub fn update_fractional_scale_preferences(&self) {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        for window in self.space.elements() {
+            window.id().hash(&mut hasher);
+            self.space
+                .outputs_for_element(window)
+                .first()
+                .map(|output| output.current_scale().fractional_scale().to_bits())
+                .hash(&mut hasher);
+        }
+        let fingerprint = hasher.finish();
+        if self.fractional_scale_fingerprint.replace(Some(fingerprint)) == Some(fingerprint) {
+            return;
+        }
         for window in self.space.elements() {
             let Some(output) = self.primary_output_for(window) else {
                 continue;
@@ -1741,13 +1936,22 @@ impl PantheonCompositor {
             //
             // You may also associate some data with the client when inserting the client.
             let is_ibus_input_method_client = is_ibus_input_method_stream(&client_stream);
+            let pid = peer_pid(&client_stream);
+            let stats = match pid {
+                Some(pid) => state.client_registry.for_pid(pid),
+                None => state
+                    .client_registry
+                    .get_or_insert(u32::MAX, || "unknown".into()),
+            };
             state
                 .display_handle
                 .insert_client(
                     client_stream,
                     Arc::new(ClientState {
+                        compositor_state: CompositorClientState::default(),
                         is_ibus_input_method_client,
-                        ..ClientState::default()
+                        pid,
+                        stats,
                     }),
                 )
                 .unwrap();
@@ -2054,10 +2258,28 @@ impl PantheonCompositor {
 
 /// Data associated with a wayland client that connects to PantheonCompositor.
 /// One instance of this type per client.
-#[derive(Default)]
 pub struct ClientState {
     pub compositor_state: CompositorClientState,
     pub is_ibus_input_method_client: bool,
+    /// Peer pid, read once at connect (no per-commit `SO_PEERCRED`).
+    #[allow(dead_code)]
+    pub pid: Option<u32>,
+    /// Commit counters shared by every connection from this pid.
+    pub stats: Arc<ClientStats>,
+}
+
+/// Failed lookups before an Xwayland surface with no X11 window is counted
+/// as Xwayland's own for good (about two seconds of 60 Hz commits).
+const X11_ATTRIBUTION_ATTEMPTS: u32 = 120;
+
+/// Per-surface cache of which X11 client an Xwayland surface belongs to.
+#[derive(Default)]
+struct X11CommitAttribution(std::sync::Mutex<X11Attribution>);
+
+#[derive(Default)]
+struct X11Attribution {
+    stats: Option<Arc<ClientStats>>,
+    misses: u32,
 }
 
 impl ClientData for ClientState {

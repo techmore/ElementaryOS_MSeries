@@ -136,6 +136,16 @@ impl XwmHandler for PantheonCompositor {
 
     fn new_override_redirect_window(&mut self, _xwm: XwmId, _window: X11Surface) {}
 
+    fn property_notify(
+        &mut self,
+        _xwm: XwmId,
+        _window: X11Surface,
+        _property: smithay::xwayland::xwm::WmWindowProperty,
+    ) {
+        // Title, class, pid and hints feed the Gala window snapshot.
+        self.note_title_changed();
+    }
+
     fn map_window_request(&mut self, _xwm: XwmId, surface: X11Surface) {
         if let Err(error) = surface.set_mapped(true) {
             tracing::warn!(?error, "could not map X11 window");
