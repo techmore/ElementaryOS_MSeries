@@ -16,6 +16,15 @@ def main():
     # This address is established by the caller's fresh dbus-run-session. Never
     # inherit the owner's system bus, even when it exists on a development host.
     os.environ['DBUS_SYSTEM_BUS_ADDRESS'] = os.environ['DBUS_SESSION_BUS_ADDRESS']
+    schemas = Gio.SettingsSchemaSource.get_default()
+    installed, relocatable = schemas.list_schemas(True)
+    expected = {'io.elementary.dock', 'io.elementary.dock.keybindings',
+                'org.techmore.mseries.dock', 'io.elementary.desktop.wm.keybindings'}
+    assert set(installed) | set(relocatable) == expected, (installed, relocatable)
+    assert not relocatable
+    keybindings = Gio.Settings.new('io.elementary.desktop.wm.keybindings')
+    assert keybindings.get_strv('switch-to-workspace-last') == ['<Super>End', '<Super>0']
+    print('PASS: exact four-schema private inventory; pinned Gala key type/default; no host schemas', flush=True)
     ready = runtime / 'portal-ready'
     portal = subprocess.Popen([sys.executable, str(Path(__file__).with_name('test-launcher-qualification.py')), '--portal'],
                               env={**os.environ, 'QUAL_PORTAL_READY': str(ready)})

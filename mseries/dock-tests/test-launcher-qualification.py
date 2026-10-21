@@ -190,10 +190,11 @@ def main():
                                          ('OutlookFixture','brave-outlook.office.com__mail_-Default','outlook'),
                                          ('ClosedFixture','ClosedFixture','closed')]:
                 (apps/(name+'.desktop')).write_text('[Desktop Entry]\nType=Application\nName='+name+'\nExec=/usr/bin/false\nIcon='+str(icons/(icon+'.svg'))+'\nStartupWMClass='+identity+'\n')
+            (home/'schema-free-data').mkdir()
             runtime = home/'runtime'
             runtime.mkdir(mode=0o700)
             env = {**os.environ, 'HOME': str(home), 'XDG_CONFIG_HOME': str(home/'config'), 'XDG_CACHE_HOME': str(home/'cache'),
-                   'XDG_DATA_HOME': str(home/'.local/share'), 'XDG_RUNTIME_DIR': str(runtime), 'GSETTINGS_BACKEND': 'memory', 'GIO_USE_VFS': 'local', 'GIO_USE_VOLUME_MONITOR': 'unix',
+                   'XDG_DATA_HOME': str(home/'.local/share'), 'XDG_DATA_DIRS': str(home/'schema-free-data'), 'XDG_RUNTIME_DIR': str(runtime), 'GSETTINGS_BACKEND': 'memory', 'GIO_USE_VFS': 'local', 'GIO_USE_VOLUME_MONITOR': 'unix',
                    'GDK_BACKEND': 'x11', 'GSK_RENDERER': 'cairo', 'GTK_A11Y': 'none', 'GTK_USE_PORTAL': '0', 'LC_ALL': 'C.UTF-8',
                    'QUAL_PRIVATE': '1', 'QUAL_PORTAL_READY': str(home/'portal-ready'), 'QUAL_OUT': str(output), 'QUAL_STATE': str(home/'state.json'), 'QUAL_TYPED': str(home/'typed'),
                    'QUAL_EVENTS': str(home/'events'), 'GTK_THEME': 'io.elementary.stylesheet.blueberry'+(':dark' if theme=='dark' else '')}

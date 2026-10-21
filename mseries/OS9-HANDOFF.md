@@ -9750,6 +9750,16 @@ and end-to-end link opening remain unverified until the next login.
   marker/hover and nested launcher tests use these isolated services too.
   Full native build/interaction suite, fatal-critical cached-widget fixture and
   protocol preflights pass locally; owner system services are excluded.
+- Hosted run39658908386 then exposed a second fixture assumption: the developer's
+  Gala workspace-keybindings schema had hidden a missing input on Ubuntu CI.
+  The private fixture now compiles the prepared production dock/custom schemas plus
+  a test-only consumed-key subset of Gala f0791434ac40a50f2aec64700a47b3bb04145752.
+  Its schema ID/path, string-array type and SuperEnd/Super0 defaults are exact.
+  A preflight asserts the complete four-schema inventory and absence of all host
+  schemas. Marker, launcher and hover runtimes also exclude host schema data roots;
+  build tools retain their normal VAPI metadata paths. The exact missing-schema
+  failure reproduces before the change; actual widget and full native suite pass
+  with private runtime schema roots afterward. Nothing is installed on the host.
 - RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
   relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
   Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar
