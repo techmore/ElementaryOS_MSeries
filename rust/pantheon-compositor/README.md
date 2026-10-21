@@ -104,6 +104,38 @@ call `present()` while a different client has focus. Expected output:
     idle    raise   focused=A after ~100 ms
     typing  strict  never raised
     typing  raise   focused=A only after typing stopped, all keystrokes delivered
+    popup   raise   keys reached A, menu closed, A active
+    orcard  raise   A kept the keyboard and stayed active, card got the click, no ChangeProperty BadWindow
+    attention strict  A marked demands-attention, cleared on focus; same for X11 urgency
+
+## Menus, X11 popups and attention
+
+- **Open menus never block a focus change.** While an xdg_popup grab is live,
+  Smithay ignores every `keyboard.set_focus` except to the menu, so a raise from
+  the dock, an activation, a workspace switch, the overview or a polkit prompt
+  used to leave the keys in the old menu. `end_popup_grab_unless(root)`
+  (`handlers/xdg_shell.rs`) dismisses the menus and drops the popup keyboard
+  and pointer grabs first. It runs from `focus_window_keyboard`, X11 focus,
+  top-panel focus, workspace switch, overview, lock, and when the menu's own
+  window is minimized, moved to another workspace or destroyed.
+- **Refused grabs send `popup_done`** (locked session, root not mapped, invalid
+  grab, input already grabbed), so a client never keeps a menu nothing can close.
+- **Override-redirect and no-input X11 windows are raised, never activated or
+  focused.** That covers the notification cards from
+  `mseries/desktop-notifications/popup.py`, tooltips and X11 menus
+  (`xwayland::x11_accepts_focus`). Mapping one used to deactivate the focused app,
+  and clicking one left the keyboard with nobody.
+- **Focus sends the activated state at once.** `focus_window_keyboard` now sends
+  the pending configure, so a window focused over D-Bus no longer draws itself
+  inactive.
+- **Demands attention.** A window is marked when an activation request is refused
+  (`Verdict::Ignore`), when a deferred activation gives up because the user kept
+  typing, on X11 `_NET_WM_STATE_DEMANDS_ATTENTION` and on `WM_HINTS` urgency.
+  The mark clears when the window gets keyboard focus (or is destroyed) and is
+  exported as `demands-attention` (boolean) in `GetWindows`; a change emits
+  `WindowsChanged`. Every activation token is now kept under both policies so a
+  refusal can be attributed to its window; `strict` still never raises without
+  a trusted serial. The dock does not show the mark yet.
 
 ## Current limits
 

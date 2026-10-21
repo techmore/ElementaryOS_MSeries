@@ -43,6 +43,7 @@ use crate::activation::{
     ActivationPolicy, DEFER_POLL, DeferStep, MAX_DEFERRED, Request, Verdict, accepts_token,
     defer_step, verdict,
 };
+use crate::attention::Reason;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -171,6 +172,8 @@ pub struct PantheonCompositor {
     /// The seat's current popup grab and its root surface. Smithay keeps one grab
     /// stack per seat, so a grab from another root must end this one first.
     pub active_popup_grab: Option<(WlSurface, PopupGrab<PantheonCompositor>)>,
+    /// Windows that asked to be raised and were not (see `attention.rs`).
+    pub(crate) attention: crate::attention::Attention,
     pub cursor_status: CursorImageStatus,
     pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
@@ -465,6 +468,7 @@ impl PantheonCompositor {
             initially_positioned: HashSet::new(),
             popups,
             active_popup_grab: None,
+            attention: crate::attention::Attention::default(),
             cursor_status: CursorImageStatus::default_named(),
             cursor_theme: crate::cursor_theme::CursorTheme::load(
                 crate::cursor_theme::configured_selection(),
@@ -609,6 +613,7 @@ impl PantheonCompositor {
                     app_id,
                     title,
                     has_focus,
+                    demands_attention: !has_focus && self.attention.contains(window.id()),
                     workspace_index: workspace_index as i32,
                     time_appeared_on_workspace: window.id() as i64,
                 }
@@ -764,16 +769,8 @@ impl PantheonCompositor {
             if self.is_panel_surface(surface) {
                 return Err("cannot minimize a panel surface".into());
             }
-            let was_focused = self
-                .seat
-                .get_keyboard()
-                .and_then(|keyboard| keyboard.current_focus())
-                .is_some_and(|mut focused| {
-                    while let Some(parent) = smithay::wayland::compositor::get_parent(&focused) {
-                        focused = parent;
-                    }
-                    focused == *surface
-                });
+            let was_focused = self.keyboard_focus_is_in(surface);
+            self.end_popup_grab_of(surface);
             self.workspace_manager.set_location(window.id(), location);
             window.set_activated(false);
             self.space.unmap_elem(&window);
@@ -961,6 +958,8 @@ impl PantheonCompositor {
         if current == workspace {
             return Ok(());
         }
+        // The old workspace's windows (and their menus) are about to unmap.
+        self.end_popup_grab_unless(None);
 
         let visible = self
             .space
@@ -1026,7 +1025,11 @@ impl PantheonCompositor {
         for (window, location) in &target_windows {
             self.space.map_element(window.clone(), *location, false);
         }
-        if let Some((window, _)) = target_windows.last() {
+        if let Some((window, _)) = target_windows
+            .iter()
+            .rev()
+            .find(|(window, _)| crate::xwayland::window_accepts_focus(window))
+        {
             self.raise_window(window, true);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             if let Some(toplevel) = window.toplevel() {
@@ -1077,6 +1080,12 @@ impl PantheonCompositor {
             if let Some(location) = self.space.element_location(&window) {
                 self.workspace_manager.set_location(id, location);
             }
+            let had_focus = window
+                .toplevel()
+                .is_some_and(|toplevel| self.keyboard_focus_is_in(toplevel.wl_surface()));
+            if let Some(toplevel) = window.toplevel() {
+                self.end_popup_grab_of(&toplevel.wl_surface().clone());
+            }
             let was_x11_focused = window
                 .x11_surface()
                 .is_some_and(|surface| self.x11_keyboard_focus.as_ref() == Some(surface));
@@ -1086,12 +1095,7 @@ impl PantheonCompositor {
                 self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
                 self.focus_next_window();
             }
-            if window.toplevel().is_some_and(|toplevel| {
-                self.seat
-                    .get_keyboard()
-                    .and_then(|keyboard| keyboard.current_focus())
-                    .is_some_and(|focused| focused == *toplevel.wl_surface())
-            }) {
+            if had_focus {
                 self.focus_next_window();
             }
         }
@@ -1926,8 +1930,8 @@ impl XdgActivationHandler for PantheonCompositor {
         self.xdg_activation_state
             .retain_tokens(|_, token| token.timestamp.elapsed() < ACTIVATION_TOKEN_TTL);
         self.arm_activation_sweep();
-        // A token without a valid recent input serial is still kept under the
-        // `raise` policy; request_activation decides what to do with it.
+        // Kept under every policy; request_activation applies the policy and
+        // turns a refusal into a demands-attention mark.
         accepts_token(
             self.activation_policy,
             self.activation_serial_trusted(&data),
@@ -1955,7 +1959,11 @@ impl XdgActivationHandler for PantheonCompositor {
             since_last_key: self.last_key_press.map(|pressed| pressed.elapsed()),
         };
         match verdict(self.activation_policy, request) {
-            Verdict::Ignore => {}
+            Verdict::Ignore => {
+                if let Some(window) = self.workspace_window_for_root(&root) {
+                    self.request_attention(&window, Reason::ActivationIgnored);
+                }
+            }
             Verdict::ActivateNow => self.activate_root_surface(root),
             Verdict::ActivateWhenIdle => self.defer_activation(root),
         }
@@ -2005,6 +2013,9 @@ impl PantheonCompositor {
                         DeferStep::GiveUp => {
                             state.deferred_activations =
                                 state.deferred_activations.saturating_sub(1);
+                            if let Some(window) = state.workspace_window_for_root(&root) {
+                                state.request_attention(&window, Reason::ActivationGaveUp);
+                            }
                             TimeoutAction::Drop
                         }
                     }
@@ -2091,7 +2102,11 @@ where
 
 impl PantheonCompositor {
     /// See [`place_in_space`]: move a window and keep its place in the stack.
-    pub(crate) fn place_window(&mut self, window: &Window, location: impl Into<Point<i32, Logical>>) {
+    pub(crate) fn place_window(
+        &mut self,
+        window: &Window,
+        location: impl Into<Point<i32, Logical>>,
+    ) {
         place_in_space(&mut self.space, window, location.into());
     }
 }

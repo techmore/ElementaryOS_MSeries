@@ -13,6 +13,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Rust compositor: menus, notification cards, attention — 2026-10-21
+
+D1, D2, D3 and D8 from the next-gen investigation fixed: an open menu no longer keeps the keyboard when
+the compositor focuses another window, refused menus get `popup_done`, X11 notification cards and menus
+never take activation or focus, and windows that are refused activation (or set X11 urgency) are
+exported as `demands-attention` in `GetWindows`. Nested probe 7/7. Loads at next login. Next: dock
+patch to show `demands-attention`, then D4-D6 (activation trust, new-window focus, modals).
+
 ## Software Updates app — 2026-10-21
 
 Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.

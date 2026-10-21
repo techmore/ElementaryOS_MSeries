@@ -290,6 +290,7 @@ impl PantheonCompositor {
                             }
                         });
                     } else {
+                        self.end_popup_grab_unless(None);
                         self.set_x11_keyboard_focus(None, serial);
                         self.space.elements().for_each(|window| {
                             window.set_activated(false);

@@ -222,6 +222,7 @@ impl
                     && state.find_window_for_surface(surface).is_some()
                     && let Some(keyboard) = state.seat.get_keyboard()
                 {
+                    state.end_popup_grab_unless(Some(surface));
                     state.set_x11_keyboard_focus(None, SERIAL_COUNTER.next_serial());
                     keyboard.set_focus(
                         state,
@@ -359,6 +360,8 @@ impl PantheonCompositor {
     /// Without this a click on a snapped window buried its own modal dialog, since the
     /// tiled window covers the whole work area under it.
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
+        // Override-redirect and no-input X11 windows are raised, never activated.
+        let activate = activate && crate::xwayland::window_accepts_focus(window);
         self.space.raise_element(window, activate);
         let children = self
             .space
@@ -976,7 +979,7 @@ impl PantheonCompositor {
             state.size = Some(target.size);
         });
         surface.send_pending_configure();
-        self.place_window(&window, target.loc);
+        self.place_window(window, target.loc);
     }
 
     /// Hard stop: a regular window may never sit behind a bottom panel (the
@@ -1043,7 +1046,7 @@ impl PantheonCompositor {
         }
         // element_location is the element origin; geometry may be offset from it.
         let shifted = Point::from((location.x, location.y + (new_y - rect.loc.y)));
-        self.place_window(&window, shifted);
+        self.place_window(window, shifted);
     }
 
     pub(crate) fn keep_all_clear_of_bottom_panels(&mut self) {
