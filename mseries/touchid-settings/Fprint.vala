@@ -43,6 +43,11 @@ namespace MSeriesTouchId {
         "left-ring-finger", "right-little-finger", "left-little-finger"
     };
 
+    /* A small stable number per finger so each print is drawn with its own ridge pattern. */
+    public int finger_seed (string name) {
+        return (int) (GLib.str_hash (name) % 97);
+    }
+
     public string finger_label (string name) {
         var text = name.replace ("-", " ");
         return text.substring (0, 1).up () + text.substring (1);
