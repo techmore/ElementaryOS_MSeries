@@ -20,6 +20,12 @@ deterministic debs, fails closed without `MSERIES_APT_KEY`. Not published or run
 ([runbook](release/KEY-RUNBOOK.md)) and picks how `gh-pages` is served (Pages source is `dev:/docs`), then first publish, `run_module` .deb-first (#52),
 Rust compositor into the suites after its health check. [Details and Nix measurements](RELEASE-PIPELINE.md).
 
+## Software Updates app — 2026-10-21
+
+Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.
+Not run on the M1 or against a real repository yet. Next: package it into the `dev`/`stable` suites, a Switchboard pane, translations, an
+update notification. [Details](updates-app/README.md).
+
 ## Customer update mechanism (first slice) — 2026-10-21
 
 `mseries-update` stages signed `mseries-*` package updates, applies them before the next login and rolls back
