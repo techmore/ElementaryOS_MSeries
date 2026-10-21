@@ -28,6 +28,23 @@ Phase 0 of section 2 of `mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION
   ack-timeout path, Electron/Chromium clients. Nothing installed or restarted; it loads with the next compositor package and login.
 - **Next.** Phase 1: Snap Assist for halves and a two-member snap group with shared-edge resize (`SnapNode`/`SnapGroup`).
 
+## Release pipeline: dev and stable apt suites from one workflow — 2026-10-21 (Claude Code)
+
+- **What:** `.github/workflows/mseries-debs.yml` now builds and tests the three plugin debs plus `mseries-update` once per push/PR, and publishes
+  the `dev` suite on push to `dev` and the `stable` suite on push to `main` (a merged release PR) through `mseries/release/assemble-apt.sh`
+  (separate pools, per-suite `InRelease`, other suite untouched). Dev versions are `...~dev<commit time>.<sha>`; stable has no `~`. The compositor deb
+  builds as an artifact only. Owner decisions applied: GitHub Pages/`gh-pages`, offline key + signing subkey in `MSERIES_APT_KEY`, plugins and
+  updater first. Details and the Nix measurements: `mseries/RELEASE-PIPELINE.md`; key steps: `mseries/release/KEY-RUNBOOK.md`.
+- **Verified (no hardware):** `mseries/release/test-assemble.sh` in an Ubuntu 24.04 container: fail-closed with no/garbage key, both suites coexist with
+  stable byte-identical after a dev publish, signatures verify and tampering is rejected, real `apt-get update` + `apt-cache policy` accept both signed
+  suites with no warnings, dev retention, version ordering. `build.sh` debs are now byte-identical across rebuilds (`SOURCE_DATE_EPOCH`); the old script's were not.
+  Compositor deb builds here (116 s cold).
+- **Not verified:** the workflow in CI (the elementary daily PPA returned 503), a real signature or publish (no key), the gh-pages creation/push path,
+  hosted HTTPS use by `mseries-update`, anything on the M1. **Open for the owner:** the repo's Pages source is `dev:/docs`, so `gh-pages` is not served by
+  Pages; see the options in `RELEASE-PIPELINE.md`. Create the key (KEY-RUNBOOK) and set `MSERIES_APT_KEY` to start publishing.
+- **Nix:** measured, not adopted. A flake would pin Vala/Meson and sources, but the plugin must link the Ubuntu/elementary libraries it loads into; the
+  aarch64 `vmTools` images do not exist. Details in `RELEASE-PIPELINE.md`.
+
 ## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
 
 Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
@@ -1181,34 +1198,54 @@ Nothing was deployed or changed on the phone during this investigation. The
 working text session remains intact. Verification-code assistance is separate
 unfinished work and remains uninstalled.
 
-## Desktop message notification popups — 2026-10-20
+## Desktop notifications and taskbar bell — 2026-10-20
 
-Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
-The user-local service is enabled/active as `mseries-desktop-notifications.service`,
-using GTK3/Xwayland override-redirect popups for placement without a compositor
-or Wingpanel restart. It implements the freedesktop notification interface,
-shows up to three bottom-right cards, preserves focus, and dispatches supplied
-Open/Reply actions. It retains no history; no notification center, inline reply,
-images, sound, or native Wayland placement is claimed. Existing DND is respected;
-per-app elementary notification preferences and full accessibility qualification
-remain open. The installer stages by default; `--activate` enables/restarts only
-this service. BlueFerry uses the existing separate version-matched backend overlay
-at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
-as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
-(https://github.com/erikwb/blueferry); this repository does not redistribute its
-full source. Rebase the backend overlay after package upgrades.
+PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
+popups to Apple-style upper-right placement, newest first, with a dock-gray
+360x72 layout, reduced padding, rounded RGBA/X Shape silhouette and one explicit
+Reply button. Known Reply/inline-reply aliases are deduplicated. Notification
+preview text remains plain and is exposed accessibly. Asynchronous, bounded
+metadata probes inspect only known Wingpanel/Dock first frames; existing workarea
+reservations are not subtracted twice. This desktop measured Wingpanel=124 and
+dock=72 logical pixels, with declared fallback insets. A live popup measured
+360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
+from the right. No compositor or Wingpanel restart was required.
 
-Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
-Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
-replacement, expiry, close and DND were checked using synthetic content only.
-Retained screenshots are fixtures. Live synthetic notification geometry was
-360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
-and bottom. The service remains active/enabled and BlueFerry remains active.
-BlueFerry notification tests (92) and combined overlay tests (201) passed; its
-Reply action opens the existing conversation through opaque-handle activation.
-No real phone messages were sent or deliberately marked read by these checks.
-Actual phone-notification click-to-app focus and next-login startup remain
-unverified. This is transformed-desktop work, not factory-image qualification.
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
+secondary click offers Mark all as read and Do Not Disturb. The service retains
+up to 100 memory-only notification records, resets history on service restart,
+and exposes a content-free Changed signal plus bounded user-session snapshots.
+The taskbar requests 50 records and reports unavailable state explicitly.
+Mark all as read changes only local notification history; reason-4 toast cleanup
+does not write iPhone read state. DND uses elementary's saved preference.
+Historical trusted BlueFerry entries reopen via a fixed installed helper and
+validated opaque handle; notification argv is never executed. Other supplied
+valid desktop IDs can open installed applications on explicit click.
+
+A real incoming phone notification's single Reply button was clicked. The GTK
+client received the same opaque handle, displayed the matching reply destination,
+and had compositor focus. A scoped bridge only raises one matching BlueFerry GTK
+window after an explicit action from its backend owner. No message was sent.
+32 isolated backend/model/provenance tests passed, plus private Xvfb/D-Bus popup
+and actual history/MarkAllRead/DND API checks using memory settings. Native bell
+probes cover service absence, history, Open/Reply, local read controls, rejected
+DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
+
+Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
+TaskbarNotifications and AppResolver. The private dock build was installed and
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
+mode, auto-hide setting, icon size and ordered launcher pins compared identical
+before/after. Rollback binary/wrapper and preference receipt are private under
+~/.local/state/mseries-notifications. Live bell/history opening is verified;
+the owner confirmed both right-click controls appear. Notification,
+dock and BlueFerry services remain active. Full accessibility qualification,
+physical next-login recovery and factory-image qualification remain open.
 
 ## Working iPhone messages and native Messages app — 2026-10-20
 

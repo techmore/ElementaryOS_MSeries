@@ -31,7 +31,7 @@ bundles (Signal, CodexBar, Brave) keep their own installers and `atomic-app.py` 
 | Concern | Decision |
 | --- | --- |
 | Source | A signed apt repository (`InRelease`, key pinned by a keyring file) read through a **private** source list and lists directory. System `apt upgrade` never sees it, and refreshing it never refreshes the rest of the system. |
-| Channels | Two apt suites in the same repository: `stable` (default; moves only on a release) and `dev` (every merge to `dev`). `mseries-update channel dev` rewrites the private source. Dev versions carry `~dev<date>.<sha>` so the matching stable build always sorts above them and a switch back never needs a downgrade. The updater never installs a version lower than the installed one. |
+| Channels | Two apt suites in the same repository: `stable` (default; moves only on a release) and `dev` (every merge to `dev`). `mseries-update channel dev` rewrites the private source. Dev versions carry `~dev<commit time>.<sha>` (the full `YYYYMMDDHHMMSS`, not just the date, so two merges on one day still order by time; see [RELEASE-PIPELINE.md](RELEASE-PIPELINE.md)) so the matching stable build always sorts above them and a switch back never needs a downgrade. The updater never installs a version lower than the installed one. |
 | Staging | `stage` refreshes metadata, plans the install with `apt-get --simulate`, downloads each exact `.deb`, records SHA-256 for each, and also stores a copy of the **currently installed** version of every affected package (the rollback set). It installs nothing. If a rollback copy cannot be obtained the update is refused. A dependency the repository cannot satisfy fails at staging, so the updater never pulls in new third-party packages. |
 | Apply | One `dpkg -i` of the whole set. Before it, a write-ahead journal (`restore` = exact old versions) is fsynced; staged files are re-hashed. Any failure (dpkg error, wrong version afterwards, `dpkg --verify` problems, unresolved `.so` libraries, a failing script in `health.d/`) converges back to the journalled versions and records the target versions as skipped so they are not retried automatically. dpkg itself is not transactional, so "atomic" here means: **the machine ends on the old complete set or the new complete set, restored from the journal even after power loss**. |
 | When it applies | At the next boot, by `mseries-update-boot.service`, ordered before `display-manager.service`. No session exists, so no running Wingpanel, dock or compositor is disturbed. `apply --now` exists but must be spelled out; dpkg replaces files by rename so a running session keeps its old copies until next login. No maintainer script or unit restarts anything. |
@@ -76,8 +76,8 @@ mseries/update/test_*.py           fake-repo fault injection, real apt/dpkg in a
   the confirm unit have only been checked by reading the unit files.
 - No signed repository exists. `Signed-By` keyring handling, `InRelease` verification failure behaviour
   and key rotation are untested beyond apt's own behaviour.
-- The first `mseries-update` package and the `dev`/`stable` suites are not published; `mseries-debs.yml`
-  still publishes one suite and fails closed without `MSERIES_APT_KEY`.
+- The first `mseries-update` package and the `dev`/`stable` suites are not published: `mseries-debs.yml` publishes both
+  suites and fails closed without `MSERIES_APT_KEY`, which does not exist yet.
 - Panel UI, polkit action, battery reading on the real `macsmc` supply, metered-connection detection through
   NetworkManager on a tethered phone, and behaviour when the confirm unit runs on a Rust-compositor session.
 - Packages that already have a Debian-style `Pre-Depends`/`Conflicts` change between versions are not
@@ -103,8 +103,9 @@ mseries/update/test_*.py           fake-repo fault injection, real apt/dpkg in a
 
 ## Roadmap after this slice
 
-1. Publish: split `mseries-debs.yml` publish into `dev` (on merge) and `stable` (on release) suites with
-   version rules above; build `mseries-update` in the same run (done in `build.sh`).
+1. Publish: **done, unpublished** (2026-10-21): `mseries-debs.yml` builds `mseries-update` with the plugins and publishes `dev` (push to
+   `dev`) and `stable` (push to `main`) suites through `mseries/release/assemble-apt.sh`; fails closed without `MSERIES_APT_KEY`.
+   [RELEASE-PIPELINE.md](RELEASE-PIPELINE.md), [release/KEY-RUNBOOK.md](release/KEY-RUNBOOK.md).
 2. Wire `enhance-firstboot.sh` `run_module` to install the signed debs first (#52) and seed the update source.
 3. Polkit action plus a UI reading `status --json`: **done as a Rust app** (launcher, no Switchboard pane yet); package it into the suites next.
 4. Extend the health check with a compositor/dock probe and add the Rust compositor package.
