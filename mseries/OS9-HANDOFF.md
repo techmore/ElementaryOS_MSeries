@@ -8,6 +8,7 @@
   now poll for their first render (5–7 s cap) and `run-legend-probe.sh` captures after 6 s. `meson test`: 18/18, three consecutive runs.
 - **Verified:** render probe PNGs for healthy (light + dark) and shared-accounts at 1×; the popover measures 571×746 and 1117×804 logical px.
 - **Not verified:** on the live panel. Deployed with `deploy-codexbar.sh` (no restart); the module loads at next login or an explicit `--restart`.
+
 ## Disk Space app: cards and circle disk usage analyzer — 2026-10-21 (Claude Code)
 
 - **What:** `rust/mseries-diskspace` (GTK 4 + Granite 7, granite-rs), launcher `org.techmore.mseries.DiskSpace`, `mseries/diskspace-app/`
