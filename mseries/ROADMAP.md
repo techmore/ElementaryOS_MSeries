@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Native attention and display lifecycle candidate — 2026-10-21
+
+Built, uninstalled deployment candidate retains the working dock/panel/popup
+lineage while integrating existing merged activation PR #362. Adds default-off
+bounded display lifecycle timings; no debounce/recovery change or speedup claim.
+Native release/package build passed; no integration tests or live deployment
+performed. Next: coordinator source review and attended next-login validation;
+collect repeated matched port traces before a focused EDID-read optimization.
+Successful EDID identity reads are reused within a scan; absent/malformed EDID
+still retries and no cache crosses a reconciliation. Speedup is unmeasured.
+See `pantheon-rust-compositor/DISPLAY-LIFECYCLE.md` and latest handoff.
+
 ## Native Messages experience landed — 2026-10-20
 
 PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name

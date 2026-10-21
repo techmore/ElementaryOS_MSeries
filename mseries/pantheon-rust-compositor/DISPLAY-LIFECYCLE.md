@@ -2,7 +2,9 @@
 
 `PANTHEON_DISPLAY_TRACE=1` opts the native compositor into structured
 `pantheon_display_lifecycle` records. It is off by default and reads the switch
-once at startup. This candidate is built but **not installed or loaded**.
+once at startup. The `.activation1.displaytrace2` candidate is installed for next login,
+**not loaded in the current session**. A dedicated next-login tracing drop-in
+is staged. See the main-repo deployment receipt.
 The existing activation implementation from merged PR #362 is included in the
 same candidate; it is not a second activation mechanism.
 

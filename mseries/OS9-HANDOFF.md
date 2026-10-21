@@ -1,4 +1,18 @@
-# OS 9 implementation / Claude Code handoff
+## Installed next-login activation/display trace candidate — 2026-10-21
+
+Deployment base a54f6e9 is preserved with activation commit 64e923b6 and display
+trace/within-scan successful EDID reuse commit 77eb6f89. Final package suffix
+`.activation1.displaytrace2` is installed, not loaded. PID1918 retains old
+executable SHA7670cfc; installed executable SHA15ae6c8f. Dedicated next-login
+trace drop-in staged; no restart/logout/reboot. Native release/package/check
+pass, all13 companion files match previous install, no new tests/probes.
+No measured speedup. Build/deployment receipts retained in the main repository
+handoff branch `codex/display-lifecycle`; source there includes current dev.
+Original `.displaytrace1` build receipt is historical and uninstalled.
+
+All task presets remain paused/on-demand. Start the next chat by reading
+`mseries/maintenance/README.md` and the newest main-repo handoff. Kernel #359,
+dock #357 and popup #364 merged to dev; actual .20 fallback remains pending.
 
 ## Dock HDMI dark after replug: stale connector, link-status, identity — 2026-10-21 (Claude Code)
 

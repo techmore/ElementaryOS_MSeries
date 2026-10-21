@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-21T14:07:18.439433+00:00",
+  "base_commit": "a54f6e92435e753b945b7e96fe81c59af3e7856d",
+  "integrated_existing_commits": [
+    "fda5aeccac02b76ac7db545b97bf708d16cd53f1",
+    "28b0300a97f614b5f903604422c837a16d0972f2"
+  ],
+  "source_state": "working-tree changes, coordinator owns commit and push",
+  "package": {
+    "file": "pantheon-rust-compositor_0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace1_arm64.deb",
+    "version": "0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace1",
+    "bytes": 4992878,
+    "sha256": "7335b47ade56291ea6c4b05e76d5bc8d28adafada524f46662cf6296fc381240",
+    "binary_sha256": "c6933ece707cd45c5570bab640ff2066c1ec68fb0c8647989650ae6c46ee5e32",
+    "native_drm": true,
+    "release": true
+  },
+  "installed": {
+    "version": "0.1.0+gitdev.dockfix2.panelstack3.popups1",
+    "binary_sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e",
+    "running_binary": [
+      {
+        "pid": 1918,
+        "sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e"
+      }
+    ]
+  },
+  "rollback": {
+    "file": "pantheon-rust-compositor_0.1.0+gitdev.dockfix2.panelstack3.popups1_arm64.reconstructed.deb",
+    "sha256": "b6dee8d358f10168fe3cc3d8ec5bc69daa8adea06a35033baf402575bb31cf7e",
+    "reconstructed_from_installed_payload_and_metadata": true,
+    "binary_sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e"
+  },
+  "validation": {
+    "native_release_build": "passed",
+    "package_assembly": "passed",
+    "locked_native_cargo_check": "passed",
+    "diff_whitespace": "passed",
+    "tests_run": false,
+    "probes_run": false,
+    "installed": false,
+    "loaded": false,
+    "session_restarted": false,
+    "unit_or_environment_changes": false,
+    "package_support_files_identical": true,
+    "package_support_file_count": 13
+  },
+  "toolchain": {
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)"
+  },
+  "commands": {
+    "build": "CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=<existing cache> OUTDIR=<private candidate directory> DEB_VERSION=0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace1 bash mseries/pantheon-rust-compositor/build-deb.sh",
+    "check": "CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=<existing cache> cargo check --locked --manifest-path rust/Cargo.toml -p pantheon-compositor --bin pantheon-compositor --features native-drm"
+  },
+  "logs": {
+    "build-displaytrace.log": "340a0dbc657116438fc9dcb670e5796757e1fe59508d5dc2fddf64509a515212",
+    "check.log": "184e0d9ceebd4dc528098400b7c5af5512fa94b2e21234ca45287342a79b14f8"
+  },
+  "display_policy": {
+    "trace_default": "off",
+    "trace_env": "PANTHEON_DISPLAY_TRACE=1",
+    "records_per_fixed_minute": 512,
+    "suppression_notice_per_exhausted_minute": 1,
+    "event_debounce_ms": 250,
+    "event_recheck_ms": 1000,
+    "udev_safety_poll_ms": 30000,
+    "fallback_poll_ms": 2000,
+    "global_retirement_ms": 2000,
+    "link_retry_ms": 5000,
+    "link_max_attempts": 3,
+    "policy_changes": false,
+    "speedup_claim": false
+  },
+  "source_files_sha256": {
+    "rust/pantheon-compositor/Cargo.toml": "898d10f17de407cf2c80246c1dc4e95b194f48372140a61fa2ae4a2bb0e79aa1",
+    "rust/pantheon-compositor/README.md": "ba41217de490b38b35e0114462fa6373dff5f2253c1c47c0843caea88ce4825b",
+    "rust/pantheon-compositor/SMITHAY-LICENSE.txt": "331891ba7afe9ea12e7f9834bdb37db7abd9131183ed85215f6b4109b0303877",
+    "rust/pantheon-compositor/THIRD-PARTY.md": "98932ae0697722fa21da059b28169c5ce58fdb4d1c704e0404f2b767dfe6a265",
+    "rust/pantheon-compositor/protocol/pantheon-desktop-shell-v1.xml": "12498aa3273701b19eb599791bac7bc5b30492b11057c9835e84c8cb70541ba4",
+    "rust/pantheon-compositor/src/activation.rs": "d53acddd2b1b944d2091bab651fd529818870848c160bef65c4a58ecae6c1215",
+    "rust/pantheon-compositor/src/bin/pantheon-drm-probe.rs": "7fc091dded13ee7d7236c43ed7b64f730783dd92682ed7b6e85e5621c71b7849",
+    "rust/pantheon-compositor/src/bin/pantheon-shell-probe.rs": "8c06ded4857311c070d362badf8b04f972bd36d6b8f35ff6321034f50a1f897e",
+    "rust/pantheon-compositor/src/cursor.rs": "a672486930422d43c6ce7830be33deaf51844a3caa5895d53be50bc41e10cd6c",
+    "rust/pantheon-compositor/src/cursor_theme.rs": "8bfddaa7bf2f0899e477852eea3be9f0f3d1ab14b3ba8dd889e1b4ee1706b905",
+    "rust/pantheon-compositor/src/display_config.rs": "349b86174234f4a5041906c2a4f4f3c46c1f8d40e9d869b357ec066e5de2f103",
+    "rust/pantheon-compositor/src/display_trace.rs": "c6f18140aeb1bb4d65783ef30c3a082d9c9378d0322c25e241b9512d52bc5dc4",
+    "rust/pantheon-compositor/src/edid.rs": "8455c4861aa19d843c5408bd7fc1ec20465c25b0ede96715a87d3df418dfc9f6",
+    "rust/pantheon-compositor/src/gala_compat.rs": "3b2a62ba20a6728a84ebe1f28f495057608e7258546c568c92bdde8df57f9aca",
+    "rust/pantheon-compositor/src/gesture_animation.rs": "57f4b6a590b8ca56c1ab5ab6d3585bfbc851348ed9737f0dad668650514752d5",
+    "rust/pantheon-compositor/src/gesture_probe.rs": "96d1ba9e66baeeb7e55958b80cef04dd568aa9407406cbe6c317abdfe0e7bd33",
+    "rust/pantheon-compositor/src/gestures.rs": "5771cf17b2d3581c4d29540b9dae770ec658ceb5bcebab6658b2197869960f08",
+    "rust/pantheon-compositor/src/grabs/mod.rs": "535bb575451c84cae8d88ebe7e697787ab698c076c5df53ff8b4f40c647000b6",
+    "rust/pantheon-compositor/src/grabs/move_grab.rs": "81255fc3c7d7243b702a0735563f8790eea8f8da871edb6adaed66d806d9db2a",
+    "rust/pantheon-compositor/src/grabs/resize_grab.rs": "025baa4597bbb91f03d8092e9ddadbe2ac06bea6173fb2786b9727d8795a334c",
+    "rust/pantheon-compositor/src/handlers/compositor.rs": "67476353b6deae3606ae650932f3e10f19730bc73d1b5a639b9602bb6233f61b",
+    "rust/pantheon-compositor/src/handlers/input_method.rs": "93ef971bea3c57b2afc4e499e8bb4aaeb5393add4254d7bb740ae50f74f53d32",
+    "rust/pantheon-compositor/src/handlers/mod.rs": "f3b2a6101b616bb6ba66d861c69fa990a4acce3ff5902419f836875cf477b4d5",
+    "rust/pantheon-compositor/src/handlers/xdg_shell.rs": "00584d4df6d58bc76e41ea93b042520239ab40b2b041695fb288f2d99678dec8",
+    "rust/pantheon-compositor/src/hotplug.rs": "ea75be4affc0fa410faecd7c9b2dffb4f4f98adfe0c92f22e4eefd9ef0ed7eea",
+    "rust/pantheon-compositor/src/input.rs": "452871b00eeb752529cf3d1420b8f6d1084bb924cf375408a6e6cf7c68d7762a",
+    "rust/pantheon-compositor/src/kms_props.rs": "0a4059b8a7b003aa08754be9cf40a6faaa7147822c68164e63c297f5ce82cc60",
+    "rust/pantheon-compositor/src/link_status.rs": "9fb934731cb3eb98b41cb5b1eb1bcc3fcd810b9653c918b3b0b69fbfb77b9ad4",
+    "rust/pantheon-compositor/src/main.rs": "325c1b224a96bc416494481645b51bfc3fedd23f0cfdefcb69fbc57682abdbf8",
+    "rust/pantheon-compositor/src/native.rs": "fc8227979b457cdf05d521af2cf349a970dd4defbaaaa978fe6900da6d1f7c8f",
+    "rust/pantheon-compositor/src/overview.rs": "36400f080930b032ac55ad5a0d15e66e05683164dcf5a3e50fc18e08a4a3666c",
+    "rust/pantheon-compositor/src/pantheon_shell.rs": "30d040941fef6fb66f0a359ec0ddc69c087abf6211e7e2d7152b7135460fec9c",
+    "rust/pantheon-compositor/src/popup_stack.rs": "26ee284d33fd372e58cacab899e71be7ef6056a4779b58e8c557ff669879154f",
+    "rust/pantheon-compositor/src/protocols.rs": "d0fac83d154880e7c4b176355b15cc425f133bdcc44b7f342af512525e633044",
+    "rust/pantheon-compositor/src/redraw_stats.rs": "c4cc497320c5529a03ca426e9799be3a95a45426cf0401057d6dfd659a4c7ed1",
+    "rust/pantheon-compositor/src/shell_compat.rs": "e02cbdaa43ce7e4dadb7f898ed09ffc2f52a884e48fc04d5ec3136333941efaa",
+    "rust/pantheon-compositor/src/state.rs": "620337183fe00c492522f4e7cc5c746ade8c32ad6e32f98e856673351f9c5415",
+    "rust/pantheon-compositor/src/tiling.rs": "b3c723648f4758bc7afb27ca4a591d8432f2b30107d1e7bde6730a0f07ebc390",
+    "rust/pantheon-compositor/src/touchpad.rs": "e7ced082772684fb56620631af7605025ba16dcb557d8ed34cbcca554ad0c0db",
+    "rust/pantheon-compositor/src/wakeups.rs": "db2758a75a85bbc3aac5522ed714e8929545ac5ef9739f1db5da4548db1b5669",
+    "rust/pantheon-compositor/src/wallpaper.rs": "df4e74b7a23d8a784633f5695bb8695ee0d7b106a3cd6c237c38ecfb4e9da686",
+    "rust/pantheon-compositor/src/winit.rs": "d4bad42b595c6184c10a163434470902f24bbcd6d3473a6c55f21065a482900a",
+    "rust/pantheon-compositor/src/workspace.rs": "d5431d75725cc3e24d80b7a5268702e6c5fb333eba46e0dbc9dcdb9935e44d3a",
+    "rust/pantheon-compositor/src/xwayland.rs": "febd7a054ac4bc8f24d8ea60d73a25c174fe0e36b3fd8156ad0b975c4ac5ed73",
+    "rust/Cargo.toml": "7411874cebad1af71ca26b2020f6fd123633017dbe6e0f4f19f08aa0a3f3b4d3",
+    "rust/Cargo.lock": "3bbd459297f9addb5e6299b92bb7931c5d9ace9c099bec5507059ac49a422b0f",
+    "mseries/pantheon-rust-compositor/build-deb.sh": "7aaf9b29136d451acb22d33316de775a3a380d35b22ce165d9ec10d16d3a53d7"
+  },
+  "package_payload_comparison": [
+    {
+      "path": "/usr/bin/mseries-restore-windows",
+      "candidate_sha256": "154c2ae67f56684b537b388f71c6b4742edf670940495719f0ac6c38da3a7120",
+      "installed_sha256": "154c2ae67f56684b537b388f71c6b4742edf670940495719f0ac6c38da3a7120",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/bin/pantheon-compositor",
+      "candidate_sha256": "c6933ece707cd45c5570bab640ff2066c1ec68fb0c8647989650ae6c46ee5e32",
+      "installed_sha256": "7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e",
+      "matches_installed": false
+    },
+    {
+      "path": "/usr/bin/pantheon-rust-dock",
+      "candidate_sha256": "f320b05a00e8a0d5ab7ab7c5f46a815b9ce68aca56a0ae2887db0363f4bc3c85",
+      "installed_sha256": "f320b05a00e8a0d5ab7ab7c5f46a815b9ce68aca56a0ae2887db0363f4bc3c85",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/bin/pantheon-rust-session",
+      "candidate_sha256": "d062279b5b1f624e91be75352d326d5ca7acdbb0eb133ad0b4715af9cde53a70",
+      "installed_sha256": "d062279b5b1f624e91be75352d326d5ca7acdbb0eb133ad0b4715af9cde53a70",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/lib/systemd/user/gnome-session@pantheon-rust-wayland.target.d/session.conf",
+      "candidate_sha256": "3a3d4a9762df5c12cf0c4b238f2d3a9e7efd15a799ddacdffa26f94d5b184680",
+      "installed_sha256": "3a3d4a9762df5c12cf0c4b238f2d3a9e7efd15a799ddacdffa26f94d5b184680",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/lib/systemd/user/pantheon-dock.service",
+      "candidate_sha256": "09783617fc57f577201a549efb06263b428b749bfbefb8ae0af5fb5b6469c25e",
+      "installed_sha256": "09783617fc57f577201a549efb06263b428b749bfbefb8ae0af5fb5b6469c25e",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/lib/systemd/user/pantheon-rust-compositor.target",
+      "candidate_sha256": "0a2afb245cd165a6389a98a3fba4f131f9faaa4f6952ffaa0489b1827b793fa4",
+      "installed_sha256": "0a2afb245cd165a6389a98a3fba4f131f9faaa4f6952ffaa0489b1827b793fa4",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/lib/systemd/user/pantheon-rust-compositor@.service",
+      "candidate_sha256": "8571df052c306c78eb665a9f4a95dd7f2af504b7e75413b75225f389303dc414",
+      "installed_sha256": "8571df052c306c78eb665a9f4a95dd7f2af504b7e75413b75225f389303dc414",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/lib/systemd/user/pantheon-wingpanel.service",
+      "candidate_sha256": "08086fc5c5f90c13fc7e25dc8198d200191e718a8b7d2228f9e7eec6d4e281e4",
+      "installed_sha256": "08086fc5c5f90c13fc7e25dc8198d200191e718a8b7d2228f9e7eec6d4e281e4",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/share/applications/mseries-restore-windows.desktop",
+      "candidate_sha256": "001b6d72f590fe04a23b5c8f9563269340362ec51bf27e0a0bdb7234b5ba031a",
+      "installed_sha256": "001b6d72f590fe04a23b5c8f9563269340362ec51bf27e0a0bdb7234b5ba031a",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/share/applications/pantheon-rust-compositor.desktop",
+      "candidate_sha256": "2a2a515eaa7c27f6f79c069ba771ba9d247809a5b73a07b472d72c90c2632d08",
+      "installed_sha256": "2a2a515eaa7c27f6f79c069ba771ba9d247809a5b73a07b472d72c90c2632d08",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/share/glib-2.0/schemas/org.techmore.mseries.gestures.gschema.xml",
+      "candidate_sha256": "5956f590011a7fb98dcadbe25c5c78c1f4aa35c8b1910a49f07e33e0515315d1",
+      "installed_sha256": "5956f590011a7fb98dcadbe25c5c78c1f4aa35c8b1910a49f07e33e0515315d1",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/share/gnome-session/sessions/pantheon-rust-wayland.session",
+      "candidate_sha256": "edd5e5675097d3d79c060796bcad066daf90705402a12c43cdc2732ee45f87f9",
+      "installed_sha256": "edd5e5675097d3d79c060796bcad066daf90705402a12c43cdc2732ee45f87f9",
+      "matches_installed": true
+    },
+    {
+      "path": "/usr/share/wayland-sessions/pantheon-rust-wayland.desktop",
+      "candidate_sha256": "0d96264d606ef38d15a9bbc21f0c094e8dbaf75c52083616858b3b0a892afef5",
+      "installed_sha256": "0d96264d606ef38d15a9bbc21f0c094e8dbaf75c52083616858b3b0a892afef5",
+      "matches_installed": true
+    }
+  ],
+  "limits": [
+    "No new interaction tests or activation probe run on this integration.",
+    "No live display tracing run; candidate is not installed or loaded.",
+    "Pageflip acknowledgement does not prove physical picture.",
+    "No display timing parameter, kernel, or compositor polling policy change."
+  ]
+}
