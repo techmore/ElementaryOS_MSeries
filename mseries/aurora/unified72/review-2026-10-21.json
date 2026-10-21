@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-21",
+  "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "previous_source": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+  "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
+  "upstream_status": "merged",
+  "archive_verification": {
+    "sha256": "10cc0be484644e98bf13ef181ddd268e50d4e4da0993e97d8e6b61cb6037e31a",
+    "bytes": 270217427,
+    "method": "Entire codeload gzip streamed through SHA256; tar root independently read from gzip stream without full extraction.",
+    "archive_root": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c"
+  },
+  "files": [
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/queue/mod.rs",
+      "sha256": "4487dce9dd6062ee80ffcaf0f5cf1d52cf3d247a31f1449247911b09455afcf2"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/util.rs",
+      "sha256": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sep.rs",
+      "sha256": "d5e207e37b98105b0c287a815b9fe63d521d968687d1c2239a01bfab8c029cc1"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sbio.rs",
+      "sha256": "545d74363f9eb81135d8672eb2e19f7b15349c2415350da69067a5bb2b8fc2c7"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/rust/Makefile",
+      "sha256": "524384d1130cb0c6422b9237907d81967573c411116f96fbb7a8926ac7bd4083"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/Makefile",
+      "sha256": "341195c3615673a7c43656a0a779bbd720553a1d05881e90909ff216ae23fee3"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/COPYING",
+      "sha256": "fb5a425bd3b3cd6071a3a9aff9909a859e7c1158d54d32e07658398cd67eb6a0"
+    }
+  ],
+  "selected_review": {
+    "gpu_command_admission": "Render and compute use read_supported with supported-size constants; production util validates unsupported fields/tails.",
+    "sep_loader": "OF table is local with explicit no-autoload policy; no MODULE_OF_TABLE export in inspected file.",
+    "sep_suspend": "sleep_prepare capture-drain timeout logs and returns unit, continuing suspend instead of vetoing with EBUSY.",
+    "bindgen": "Stock --no-layout-tests default plus BINDGEN_LAYOUT_TESTS opt-in already present; local wip1 patch retired from active series."
+  },
+  "host_tests": {
+    "rustc": "1.93.1",
+    "gpu_reader": {
+      "passed": 5,
+      "failed": 0,
+      "boundary": "Unmodified util.rs tests, Result/EINVAL-only kernel type shim; not whole GPU driver execution."
+    },
+    "pmp_bootargs": {
+      "passed": 9,
+      "failed": 0
+    },
+    "pmp_reply_correlation": {
+      "passed": 3,
+      "failed": 0
+    },
+    "pmp_boundary": "Unmodified tools/asahi wrappers and matching production module source at pinned commit."
+  },
+  "licensing": "COPYING: GPL-2.0 WITH Linux-syscall-note; retain full source LICENSES and individual file licensing/attribution in generated artifacts. No upstream contribution authorship claimed.",
+  "native_build": "pending ARM64 CI; no local full build due free disk budget",
+  "qualification": {
+    "full_64_fix_semantic_parity": false,
+    "j314s_boot": false,
+    "suspend_recovery": false,
+    "energy_improvement": false
+  },
+  "remaining_gates": [
+    "Full review parity against .20 beyond selected source paths.",
+    "Source/config resolution and native Image/modules/DTBs/package build and inspection.",
+    "GPU UAPI compatibility with actual intended Mesa and clients.",
+    "Shared boot.bin DTBs: 7.1 fallback needs compatible 5-cell DART backport; an entry alone does not prove fallback boot.",
+    "Upstream reports M1-family Touch ID first-attempt reliability regression and an M1 Pro early hang; local J314S acceptance required.",
+    "Exact boot payload, initramfs/root unlock, image/modules/DTBs, storage/display/radio/suspend and recovery qualification before any stable promotion."
+  ],
+  "repository_tests": {
+    "command": "python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -q",
+    "passed": 63,
+    "failed": 0
+  }
+}

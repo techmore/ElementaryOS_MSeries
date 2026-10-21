@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora 7.2 merged-source refresh selected — 2026-10-21
+
+Owner selected refreshing the independent 7.2 candidate. The unified72 manifest
+now pins merged #139 `644133b7799f` with streamed archive SHA256 and new distinct
+`7.2.10-elementary-aurora72-wip2` / Debian wip2 identity. The already-upstream
+stock-bindgen patch is removed from the active series and retained as historical
+provenance. Five GPU-reader and 12 PMP host tests pass on the selected source;
+three old GPU/SEP source gaps are addressed, not all 64 semantic review gates.
+Native ARM64 config/build/package inspection is pending. No host installation or
+boot payload change. Shared-DTB/old-7.1 fallback, actual Mesa/UAPI, upstream M1
+Touch ID regressions and J314S boot/suspend/recovery remain gates. See
+[the current lane and receipt](aurora/unified72/README.md).
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8

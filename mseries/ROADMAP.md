@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Aurora 7.2 candidate refresh — 2026-10-21
+
+Owner selected merged #139 as the next independent build candidate. unified72
+revision 3 pins `644133b7799f`, new wip2 module/package identity and no duplicate
+bindgen patch. Selected GPU-reader/PMP host tests pass; native build/inspection
+is pending. Next: artifact-only ARM64 CI, then source/config/UAPI and exact
+boot-chain/fallback/J314S acceptance review. No live deployment or power win.
+See [the lane's source review and limits](aurora/unified72/README.md).
+
 ## Native Messages experience landed — 2026-10-20
 
 PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
