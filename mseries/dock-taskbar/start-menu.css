@@ -144,3 +144,18 @@ popover.start-menu .start-search placeholder { color: #606060; }
 dock-window.taskbar.dark popover.start-menu .start-recent { color: #ffffff; }
 dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #bcbcbc; }
 dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
+
+/* Restart and Shut Down: solid dark buttons so they read as deliberate actions. */
+popover.start-menu .start-footer button.start-power-action {
+  background: #2b2b2b;
+  color: #ffffff;
+  border-color: rgba(0,0,0,0.35);
+  margin: 0 3px;
+}
+popover.start-menu .start-footer button.start-power-action:hover { background: #111111; }
+dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action {
+  background: #0d0d0d;
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.14);
+}
+dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action:hover { background: #000000; }
