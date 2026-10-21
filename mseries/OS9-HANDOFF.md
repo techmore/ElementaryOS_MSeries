@@ -3339,6 +3339,13 @@ existing CLI credential selection; desktop account synchronization is not establ
 
 ## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
 
+Maintenance update (2026-10-21): the optional muvm installer now binds its three
+existing version tags to exact commits and checks cached origin, HEAD and source
+cleanliness before any privileged package/install action. Modified or unrelated
+caches are preserved and refused; ignored build outputs remain reusable. Eleven
+offline fixtures, syntax and warning-level ShellCheck pass. No VM, package,
+installed binary or desktop state changed. [Source receipt](upstream-audits/security/2026-10-21-muvm-source-provenance.md).
+
 Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
 page size`). `mseries/install-muvm.sh` builds muvm 0.7.0 + libkrun 1.19.6 + libkrunfw 5.6.2 (guest 6.12.109, 4K pages),
 installs FEX 2610 from its PPA and the Ubuntu 24.04 rootfs; verified `muvm -- FEXBash -c 'uname -m; getconf PAGESIZE'`
