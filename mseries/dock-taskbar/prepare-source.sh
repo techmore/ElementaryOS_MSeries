@@ -27,6 +27,8 @@ PY
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
+# Launcher list must never grow: dedupe on load and on save (it reached 8x before this).
+git -C "$source_dir" apply "$repo/mseries/patches/dock-launchers-dedupe.patch"
 sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'
@@ -36,6 +38,7 @@ for filename, required in {
     'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala'],
     'src/Taskbar.vala': ['new TaskbarCodexBar', 'new TaskbarRepoBar', 'end_box.append (status_box)'],
     'src/MainWindow.vala': ['taskbar-mode', 'TaskbarRow'],
+    'src/AppSystem/AppSystem.vala': ['id_to_app.contains (app_id)'],
     'data/dock.gschema.xml': ['taskbar-mode'],
 }.items():
     text = (root / filename).read_text()

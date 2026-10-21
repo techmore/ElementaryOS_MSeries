@@ -274,6 +274,39 @@ def systemctl(*args):
 # The patched dock reads its schema from a private directory (see install-dock-drawers.sh).
 PRIVATE_DOCK_SCHEMAS = Path.home() / ".local/lib/mseries/dock/share/glib-2.0/schemas"
 DOCK_KEYS = ("icon-size", "autohide-mode", "taskbar-mode")
+# Layout keys each desktop mode owns. `launchers` is deliberately in neither list: the pinned apps are
+# one shared list, so a pin added in either mode shows in both. taskbar-mode is the mode itself.
+PROFILE_KEYS = ("icon-size", "autohide-mode")
+PROFILES = STATE_DIR / "dock-profiles.json"
+
+
+def load_dock_profiles():
+    try:
+        data = json.loads(PROFILES.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_dock_profile(mode, values):
+    profiles = load_dock_profiles()
+    profiles[mode] = values
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    PROFILES.write_text(json.dumps(profiles, indent=2) + "\n", encoding="utf-8")
+
+
+def current_profile(settings, schema):
+    return {key: settings.get_value(key).print_(True) for key in PROFILE_KEYS if schema.has_key(key)}
+
+
+def dedupe_launchers(settings, schema):
+    """The pinned list must never hold an app twice; repair it on every mode change."""
+    if not schema.has_key("launchers"):
+        return
+    current = list(settings.get_strv("launchers"))
+    unique = list(dict.fromkeys(current))
+    if unique != current:
+        settings.set_strv("launchers", unique)
 
 
 def dock_settings():
@@ -335,17 +368,28 @@ def activate_dock(state):
         for key in DOCK_KEYS:
             if schema.has_key(key):
                 dock["original"][key] = settings.get_value(key).print_(True)
+        # What the dock looked like in native mode is that mode's profile, whatever it was changed to.
+        save_dock_profile("elementary", {k: v for k, v in dock["original"].items() if k in PROFILE_KEYS})
         if not dock_running() and systemctl("start", DOCK_UNIT) == 0:
             dock["started_by_work_mode"] = True
         state["dock"] = dock
     elif dock.get("started_by_work_mode") and systemctl("is-active", "--quiet", DOCK_UNIT) != 0:
         systemctl("start", DOCK_UNIT)
 
+    dedupe_launchers(settings, schema)
     taskbar = schema.has_key("taskbar-mode")
+    windows = load_dock_profiles().get("windows", {})
     if schema.has_key("icon-size"):
-        settings.set_int("icon-size", size_system_dock("work-taskbar" if taskbar else "work", 48 if taskbar else 40))
+        # A size the owner chose while in Windows mode wins over the size-system default.
+        if "icon-size" in windows:
+            settings.set_value("icon-size", GLib.Variant.parse(None, windows["icon-size"], None, None))
+        else:
+            settings.set_int("icon-size", size_system_dock("work-taskbar" if taskbar else "work", 48 if taskbar else 40))
     if schema.has_key("autohide-mode"):
-        settings.set_string("autohide-mode", "never")
+        if "autohide-mode" in windows:
+            settings.set_value("autohide-mode", GLib.Variant.parse(None, windows["autohide-mode"], None, None))
+        else:
+            settings.set_string("autohide-mode", "never")
     if taskbar:
         settings.set_boolean("taskbar-mode", True)
 
@@ -366,6 +410,9 @@ def restore_dock(state):
         return
     settings, schema = dock_settings()
     if settings is not None:
+        # Remember the Windows-mode layout for next time, then hand back the native one.
+        save_dock_profile("windows", current_profile(settings, schema))
+        dedupe_launchers(settings, schema)
         original = dock.get("original", {})
         for key, value in original.items():
             if schema.has_key(key):

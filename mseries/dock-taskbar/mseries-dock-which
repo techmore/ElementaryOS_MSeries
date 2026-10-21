@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Which dock is this session really running, and is its launcher list sane?
+
+  mseries-dock-which            report the live dock (binary, schema, settings, launchers)
+  mseries-dock-which --fix      also remove duplicate launchers (backup kept) in the live dock's settings
+
+The dock is resolved from the running process, never from a guess: the stock dock, the
+patched per-user dock and the Rust-session wrapper all read the same dconf path
+(/io/elementary/dock/) but through different binaries and schema directories."""
+import argparse, ast, os, subprocess, sys, time
+
+
+def run(*cmd, env=None):
+    return subprocess.run(cmd, capture_output=True, text=True, env=env).stdout.strip()
+
+
+def live_docks():
+    out = []
+    for line in run("ps", "-eo", "pid=,etimes=,args=").splitlines():
+        pid, age, args = line.split(None, 2)
+        exe = args.split()[0]
+        if os.path.basename(exe) == "io.elementary.dock" and not args.startswith("/bin/sh"):
+            out.append((int(pid), int(age), exe))
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--fix", action="store_true")
+    args = ap.parse_args()
+    docks = live_docks()
+    if not docks:
+        print("No dock process is running.")
+        return 1
+    for pid, age, exe in docks:
+        kind = "patched per-user dock" if "/.local/lib/mseries/dock/" in exe else "stock dock" if exe.startswith("/usr/") else "unknown dock"
+        print(f"dock pid {pid}: {kind}  ({exe}), up {age // 60} min")
+    if len(docks) > 1:
+        print("WARNING: more than one dock is running; only one should own io.elementary.dock.")
+    exe = docks[0][2]
+    env = dict(os.environ)
+    if "/.local/lib/mseries/dock/" in exe:
+        env["GSETTINGS_SCHEMA_DIR"] = os.path.join(exe.split("/bin/")[0], "share/glib-2.0/schemas")
+    raw = run("gsettings", "get", "io.elementary.dock", "launchers", env=env).replace("@as ", "")
+    launchers = ast.literal_eval(raw or "[]")
+    unique = list(dict.fromkeys(launchers))
+    print(f"settings: dconf /io/elementary/dock/  taskbar-mode={run('gsettings','get','io.elementary.dock','taskbar-mode',env=env)}")
+    print(f"launchers: {len(launchers)} saved, {len(unique)} unique")
+    # Mode sync: the dock's layout must match the desktop mode the owner picked.
+    wanted = run("gsettings", "get", "io.elementary.mseries.work-mode", "enabled") == "true"
+    taskbar = run("gsettings", "get", "io.elementary.dock", "taskbar-mode", env=env) == "true"
+    print(f"mode: {'Windows 11' if wanted else 'elementary'} (Work Mode {'on' if wanted else 'off'}); dock layout: {'taskbar' if taskbar else 'floating dock'}")
+    in_sync = wanted == taskbar
+    if not in_sync:
+        print("PROBLEM: the dock layout does not match the desktop mode.")
+        if args.fix:
+            helper = os.path.expanduser("~/.local/bin/mseries-work-mode")
+            subprocess.run([helper, "--tick"], check=False)
+            print("Asked Work Mode to re-apply the mode.")
+    if len(unique) == len(launchers):
+        print("OK: no duplicates." if in_sync else "Launchers fine.")
+        return 0 if in_sync or args.fix else 2
+    print(f"PROBLEM: {len(launchers) - len(unique)} duplicate launcher entries.")
+    if not args.fix:
+        print("Run with --fix to remove them (the dock needs a restart to redraw: systemctl --user restart pantheon-dock).")
+        return 2
+    state = os.path.expanduser("~/.local/state/mseries")
+    os.makedirs(state, exist_ok=True)
+    backup = os.path.join(state, f"dock-launchers-{time.strftime('%Y%m%d-%H%M%S')}.txt")
+    open(backup, "w").write(raw + "\n")
+    subprocess.check_call(["gsettings", "set", "io.elementary.dock", "launchers", repr(unique)], env=env)
+    print(f"Fixed: {len(launchers)} -> {len(unique)}. Old list saved to {backup}.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

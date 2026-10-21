@@ -1,0 +1,25 @@
+diff --git a/src/AppSystem/AppSystem.vala b/src/AppSystem/AppSystem.vala
+index 3d97e6f..03bdbf2 100644
+--- a/src/AppSystem/AppSystem.vala
++++ b/src/AppSystem/AppSystem.vala
+@@ -35,6 +35,11 @@ public class Dock.AppSystem : Object, UnityClient {
+ 
+     public async void load () {
+         foreach (string app_id in settings.get_strv ("launchers")) {
++            // A repeated id in the saved list (or a second load ()) must never add a second launcher:
++            // save_pinned () would write the doubled list back and it grew on every start.
++            if (id_to_app.contains (app_id)) {
++                continue;
++            }
+             var app_info = new GLib.DesktopAppInfo (app_id);
+             if (app_info != null) {
+                 add_app (app_info, true);
+@@ -79,7 +84,7 @@ public class Dock.AppSystem : Object, UnityClient {
+ 
+         for (uint i = 0; i < apps_store.get_n_items (); i++) {
+             var app = (App) apps_store.get_item (i);
+-            if (app.pinned && !app.app_info.get_boolean ("X-MSeries-Transient")) {
++            if (app.pinned && !app.app_info.get_boolean ("X-MSeries-Transient") && !(app.app_info.get_id () in new_pinned_ids)) {
+                 new_pinned_ids += app.app_info.get_id ();
+             }
+         }

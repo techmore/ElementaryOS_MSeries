@@ -100,6 +100,9 @@ class WorkModeTest(unittest.TestCase):
             for adopted in (False, True):
                 settings.reset_mock()
                 with patch.dict(namespace, {
+                    "load_dock_profiles": lambda: {},
+                    "save_dock_profile": lambda mode, values: None,
+                    "dedupe_launchers": lambda settings, schema: None,
                     "dock_settings": lambda: (settings, schema),
                     "dock_running": lambda: True,
                     "which": lambda name: str(tool) if adopted else str(self.root / "missing-tool"),
@@ -111,6 +114,58 @@ class WorkModeTest(unittest.TestCase):
                     settings.set_boolean.assert_called_once_with("taskbar-mode", True)
                 else:
                     settings.set_boolean.assert_not_called()
+
+    def test_each_mode_keeps_its_own_dock_layout_and_pins_stay_shared(self):
+        helper = runpy.run_path(str(HELPER))
+        ns = helper["activate_dock"].__globals__
+        store = {"icon-size": "40", "autohide-mode": "'always'", "taskbar-mode": "false"}
+        launchers = ["a.desktop", "b.desktop", "a.desktop", "b.desktop"]
+
+        class Settings:
+            def get_value(self, key):
+                return MagicMock(print_=lambda _t: store[key])
+
+            def set_value(self, key, variant):
+                store[key] = variant.print_(True)
+
+            def set_int(self, key, value):
+                store[key] = str(value)
+
+            def set_string(self, key, value):
+                store[key] = repr(value)
+
+            def set_boolean(self, key, value):
+                store[key] = str(value).lower()
+
+            def get_strv(self, key):
+                return list(launchers)
+
+            def set_strv(self, key, value):
+                launchers[:] = value
+
+        schema = MagicMock()
+        schema.has_key.side_effect = lambda key: key in {"icon-size", "autohide-mode", "taskbar-mode", "launchers"}
+        profiles = {}
+        with patch.dict(ns, {
+            "dock_settings": lambda: (Settings(), schema), "dock_running": lambda: True,
+            "load_dock_profiles": lambda: dict(profiles),
+            "save_dock_profile": lambda mode, values: profiles.__setitem__(mode, values),
+            "which": lambda name: str(self.root / "missing-tool"),
+        }):
+            state = {}
+            helper["activate_dock"](state)
+            self.assertEqual(profiles["elementary"], {"icon-size": "40", "autohide-mode": "'always'"})
+            self.assertEqual(store["icon-size"], "48")            # Windows default
+            self.assertEqual(launchers, ["a.desktop", "b.desktop"])  # duplicates repaired
+            store["icon-size"] = "56"                              # owner resizes in Windows mode
+            helper["restore_dock"](state)
+            self.assertEqual(store["icon-size"], "40")            # native layout restored
+            self.assertEqual(profiles["windows"]["icon-size"], "56")
+            launchers.append("c.desktop")                          # pin added while native
+            state = {}
+            helper["activate_dock"](state)
+            self.assertEqual(store["icon-size"], "56")            # Windows layout remembered
+            self.assertIn("c.desktop", launchers)                  # pins shared across modes
 
     def test_manual_on_and_restore(self):
         self.gset(SCHEMA, "enabled", True)
