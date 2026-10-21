@@ -35,6 +35,7 @@ namespace MSeries {
 
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             root.append (build_account ());
+            root.append (build_panel ());
             root.append (build_dashboard ());
             root.append (build_updates ());
             root.append (build_notifications ());
@@ -220,6 +221,13 @@ namespace MSeries {
             });
             add_row (account, row ("Read as", "Dashboard, notifications and clones use this account", account_choice));
             return account;
+        }
+
+        private Gtk.Widget build_panel () {
+            var panel = section ("Panel",
+                "Off hides RepoBar in the panel and taskbar and stops its refreshing and notifications. Open RepoBar Settings from the app launcher to turn it back on.");
+            add_row (panel, row ("Show RepoBar in the panel", "Applies now and at every login", toggle_on ("showInPanel", "show-in-panel")));
+            return panel;
         }
 
         private async void refresh_account () {

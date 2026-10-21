@@ -14,6 +14,8 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         button.add_css_class ("taskbar-repobar-button");
         button.update_property (Gtk.AccessibleProperty.LABEL, "RepoBar", -1);
         indicator = new MSeries.RepoBarIndicator ();
+        // RepoBar Settings → "Show RepoBar in the panel" hides the module in the taskbar too.
+        indicator.bind_property ("visible", this, "visible", BindingFlags.SYNC_CREATE);
         var readout = indicator.get_display_widget ();
         enlarge_marks (readout);
         button.child = readout;

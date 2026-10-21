@@ -57,6 +57,8 @@ namespace MSeries {
         private string contribution_style = "dots";
         private bool contributions_expanded = false;
         private string local_root = "";
+        // "Show RepoBar in the panel" (settings.json showInPanel): off hides the module and stops refreshing and notifying.
+        private bool panel_enabled = true;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -238,6 +240,29 @@ namespace MSeries {
             watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
             // Draw the last cached snapshot at once; the helper's answer replaces it when it arrives.
+            apply_panel_enabled ();
+        }
+
+        private static bool read_panel_enabled () {
+            try {
+                var parser = new Json.Parser ();
+                parser.load_from_file (GLib.Path.build_filename (Environment.get_user_config_dir (), "mseries", "repobar", "settings.json"));
+                return parser.get_root ().get_object ().get_boolean_member_with_default ("showInPanel", true);
+            } catch (Error e) {
+                return true;
+            }
+        }
+
+        /* Applies the show-in-panel preference: hidden means no GitHub requests, timers or notifications until it is turned back on. */
+        private void apply_panel_enabled () {
+            panel_enabled = read_panel_enabled ();
+            this.visible = panel_enabled;
+            if (!panel_enabled) {
+                if (refresh_source != 0) Source.remove (refresh_source);
+                refresh_source = 0;
+                refresh_interval = 0;
+                return;
+            }
             render_cached ();
             schedule_refresh (300);
             load_snapshot ();
@@ -423,7 +448,7 @@ namespace MSeries {
         }
 
         private async void read_snapshot (bool force) {
-            if (in_flight) return;
+            if (in_flight || !panel_enabled) return;
             in_flight = true;
             set_refreshing (true);
             if (force) subtitle_label.set_text ("Refreshing…");
@@ -750,7 +775,8 @@ namespace MSeries {
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
-                        load_snapshot ();
+                        if (read_panel_enabled () != panel_enabled) apply_panel_enabled ();
+                        else if (panel_enabled) load_snapshot ();
                         return Source.REMOVE;
                     });
                 });

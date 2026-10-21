@@ -62,6 +62,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas libglib2.0-bin dbus-x11 xvfb xauth
       - name: Planner, dock token and size-lint unit tests
         run: python3 -m unittest discover -s mseries/ui-scale -p 'test_*.py' -v
+      - name: RepoBar account and panel-preference tests (fake gh)
+        run: python3 -B -m unittest discover -s mseries -p 'test_repobar_accounts.py' -v
       - name: No new hard-coded UI sizes (allowlist is the only exception)
         run: bash mseries/ui-scale/check-ui-sizes.sh --strict
       - name: Dock writers keep their shell syntax

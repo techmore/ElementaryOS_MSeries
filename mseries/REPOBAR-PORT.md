@@ -73,12 +73,19 @@ implementation; no macOS source or binary is copied into this project.
 - Optional local scanning skips hidden folders and symlinks and is bounded by
   depth and directory count. `local sync` is explicit: it refuses dirty or
   detached checkouts and only fast-forwards a clean branch after fetching.
+- RepoBar has no separate login item: the module loads with Wingpanel (and the
+  Windows-style taskbar). RepoBar Settings → Panel → Show RepoBar in the panel
+  (`settings set show-in-panel true|false`) is the launch-at-login preference: off
+  hides the module and stops all GitHub requests, timers and notifications, live
+  and at every later login; on brings it back. The installer adds a RepoBar
+  Settings launcher (`io.github.techmore.RepoBar.Settings.desktop`) so the pane stays
+  reachable while the module is hidden.
 - Refresh interval, repository limit, menu sort, host, fork/archive visibility,
   and local scan root/depth are configurable with the CLI.
 
 This port implements the repository dashboard and CLI surfaces, not every
 macOS-only interaction.
-A launch-at-login preference pane is not yet represented in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
+The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux
 integration.
 

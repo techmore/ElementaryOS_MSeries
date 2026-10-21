@@ -70,6 +70,7 @@ DEFAULT_SETTINGS = {
     "version": 1,
     "host": "github.com",
     "account": "",
+    "showInPanel": True,
     "refreshInterval": 300,
     "repoLimit": 20,
     "menuSort": "activity",
@@ -866,11 +867,12 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived", "notify-ci", "notify-workflows", "show-contributions"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci", "notify-workflows", "show-contributions", "show-in-panel"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
         member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
-                  "notify-workflows": "notifyWorkflows", "show-contributions": "showContributions"}[normalized]
+                  "notify-workflows": "notifyWorkflows", "show-contributions": "showContributions",
+                  "show-in-panel": "showInPanel"}[normalized]
         settings[member] = value.lower() == "true"
     elif normalized == "merge-window":
         minutes = int(value.lower().removesuffix("m"))
@@ -904,6 +906,7 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "local-root": "localRoot", "local-depth": "localDepth",
                                                         "notify-ci": "notifyCi", "notify-workflows": "notifyWorkflows",
                                                         "show-contributions": "showContributions",
+                                                        "show-in-panel": "showInPanel",
                                                         "contribution-style": "contributionStyle",
                                                         "merge-window": "mergeWindowMinutes"}.get(normalized, normalized))}
 

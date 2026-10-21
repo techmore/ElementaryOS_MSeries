@@ -114,6 +114,12 @@ class RepoBarAccountsTest(unittest.TestCase):
         out = subprocess.run([sys.executable, "-c", code], env=self.env, capture_output=True, text=True).stdout.strip()
         self.assertEqual(out, "True")
 
+    def test_show_in_panel_defaults_on_and_round_trips(self):
+        self.assertTrue(json.loads(self.run_helper("settings", "show").stdout)["showInPanel"])
+        self.run_helper("settings", "set", "show-in-panel", "false")
+        self.assertFalse(json.loads(self.settings.read_text())["showInPanel"])
+        self.assertEqual(self.run_helper("settings", "set", "show-in-panel", "maybe", check=False).returncode, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
