@@ -290,7 +290,7 @@ namespace MSeries {
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
                 ".mseries-repobar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
                 ".mseries-repobar-bar .stale { opacity: 0.55; } " +
-                ".mseries-repobar-bar .repo-mark { color: @theme_fg_color; }");
+                ".mseries-repobar-bar .repo-mark { opacity: 0.92; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
