@@ -76,8 +76,9 @@ upside down on purpose. A recall file previews the stored copy it recalls.
   showed on USB, and once it dropped off USB entirely. A printer reboot cleared it, after which three sends
   worked. The app shows "Printer not taking jobs" and offers **Cancel Stuck Jobs** (yours only; `cancel -a`
   needs admin).
-- **CUPS pauses the queue after a drop-off.** Re-enabling needs admin: `sudo cupsenable <queue>`. The app
-  shows the command.
+- **CUPS paused the queue after a printer power cycle** (2026-10-21, job in flight), leaving Send disabled.
+  **Resume Queue…** (admin password) clears your leftover jobs, re-enables the queue and sets
+  `printer-error-policy=retry-job` so a power cycle no longer pauses it. Applied to `ZTC-110Xi4-203dpi-ZPL`.
 - **Wrong driver on the auto-created queue.** CUPS made `ZTC-110Xi4-203dpi-ZPL` with an "HP Designjet T920
   PostScript" driver, shared. The app always sends raw, so ZPL is not converted, but a raw queue
   (`--setup`, untested, needs admin) would be safer for other tools.

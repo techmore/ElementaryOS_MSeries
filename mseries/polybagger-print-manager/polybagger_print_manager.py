@@ -225,6 +225,12 @@ def with_quantity(path, qty):
     return Path(tmp), True
 
 
+def resume_queue(queue):
+    """Re-enable a paused queue and set it to retry (not pause) when the printer is power-cycled. Asks for admin auth."""
+    return run(["pkexec", "sh", "-c", f"cupsenable '{queue}' && lpadmin -p '{queue}' -o printer-error-policy=retry-job"],
+               timeout=180)
+
+
 def my_stuck_jobs(queue):
     _, out = run(["lpstat", "-W", "not-completed", "-o", queue])
     return re.findall(r"^(\S+-\d+)\s", out, re.M)
@@ -517,6 +523,9 @@ def gui():
             self.cancel_btn = Gtk.Button(label="Cancel Stuck Jobs"); self.cancel_btn.add_css_class("destructive-action")
             self.cancel_btn.connect("clicked", self.on_cancel_jobs)
             self.setup_btn = Gtk.Button(label="Set Up Print Queue…"); self.setup_btn.connect("clicked", self.on_setup)
+            self.resume_btn = Gtk.Button(label="Resume Queue…"); self.resume_btn.add_css_class("suggested-action")
+            self.resume_btn.set_tooltip_text("Resume the paused queue and stop it pausing after a printer power cycle (admin password)")
+            self.resume_btn.connect("clicked", self.on_resume)
             self.test_btn = Gtk.Button(label="Send Test Label"); self.test_btn.connect("clicked", self.on_test)
             self.send_btn = Gtk.Button(label="Send to Printer"); self.send_btn.add_css_class("suggested-action")
             self.send_btn.add_css_class("pbpm-send"); self.send_btn.connect("clicked", self.on_send)
@@ -527,7 +536,7 @@ def gui():
             self.qty.connect("value-changed", lambda w: save_settings(qty=w.get_value_as_int()))
             qbox.append(lbl("Labels to print")); qbox.append(self.qty)
             spacer = Gtk.Box(hexpand=True)
-            for w in (self.cancel_btn, self.setup_btn, spacer, qbox, self.test_btn, self.send_btn): actions.append(w)
+            for w in (self.cancel_btn, self.resume_btn, self.setup_btn, spacer, qbox, self.test_btn, self.send_btn): actions.append(w)
             right.append(actions)
 
             sc = card(); sc.append(Granite.HeaderLabel(label="Checks"))
@@ -766,12 +775,14 @@ def gui():
             elif stuck:
                 icon, title, sub = "printer-error", "Printer not taking jobs", STUCK_HINT
             elif st["queue_state"] == "disabled":
-                icon, title, sub = "printer-error", "Print queue paused", f"Re-enable it in a terminal: sudo cupsenable {st['queue']}"
+                icon, title, sub = "printer-error", "Print queue paused", ("The printer was switched off or lost during a job. "
+                                                                           "Press Resume Queue (admin password).")
             else:
                 icon, title, sub = "printer-error", "Printer not ready", "Check the printer alerts in the checks below."
             self.big.set_from_icon_name(icon); self.title.set_text(title); self.sub.set_text(sub)
             self.setup_btn.set_visible(plugged and not st["queue"])
             self.cancel_btn.set_visible(stuck)
+            self.resume_btn.set_visible(bool(st["queue"]) and st["queue_state"] == "disabled")
             self.send_btn.set_sensitive(st["ready"]); self.test_btn.set_sensitive(st["ready"])
             return False
 
@@ -805,6 +816,16 @@ def gui():
             def work():
                 rc, out = setup_queue(self.st["usb"][0])
                 GLib.idle_add(lambda: (self.say("Queue created" if rc == 0 else f"Setup failed: {out}"), self.refresh()))
+            threading.Thread(target=work, daemon=True).start()
+
+        def on_resume(self, _):
+            self.say("Resuming the print queue (admin password required)…")
+            q = self.st["queue"]
+            def work():
+                done, _ = cancel_jobs(q)  # jobs left over from the power cut would otherwise print late
+                rc, out = resume_queue(q)
+                GLib.idle_add(lambda: (self.notify("Print queue resumed" if rc == 0 else "Queue not resumed"),
+                                       self.say(out) if rc and out else None, self.refresh()))
             threading.Thread(target=work, daemon=True).start()
 
         def on_cancel_jobs(self, _):
