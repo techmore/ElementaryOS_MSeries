@@ -22,7 +22,10 @@ implementation; no macOS source or binary is copied into this project.
   default-branch CI fails, yellow with a count while runs are pending, and green
   when a pull request merged within the last hour (`mseries-repobar settings set
   merge-window 5..1440` minutes). Nothing shows when all is quiet; the tooltip names
-  the last merge. Pending counts repositories whose default-branch checks are running.
+  the last merge. Pending counts GitHub Actions runs in progress or queued on any branch or pull request in
+  recently active repositories (runs older than six hours are ignored); the tooltip lists them.
+  Desktop notifications announce each workflow run that finishes (RepoBar Settings → Notifications → Workflow runs,
+  `settings set notify-workflows true|false`).
 - The panel badge is the GitHub mark rendered as a GTK symbolic icon, so it
   follows the current theme's foreground color.
 - The Wingpanel menu shares CodexBar's compact elementary OS styling: 9 pt body
