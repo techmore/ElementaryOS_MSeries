@@ -16,7 +16,7 @@ namespace MSeriesTouchId {
 
         private Sensor sensor;
         private string finger;
-        private HandDiagram hands;
+        private Gtk.Label finger_chip;
         private FingerprintArt art;
         private Gtk.Label title_label;
         private Gtk.Label hint_label;
@@ -28,6 +28,12 @@ namespace MSeriesTouchId {
         private Gtk.Button done_button;
 
         private ulong status_handler = 0;
+        private ulong props_handler = 0;
+        private uint invite_timer = 0;
+        private uint idle_timer = 0;
+        private bool live_events = false;
+        private bool finger_down = false;
+        private bool nudged = false;
         private uint cue_timer = 0;
         private bool cue_place = true;
         private bool claimed = false;
@@ -60,10 +66,12 @@ namespace MSeriesTouchId {
             done_button.clicked.connect (() => force_close ());
             header.pack_end (done_button);
 
-            hands = new HandDiagram () { enrolled = enrolled, target = finger };
-            art = new FingerprintArt (172, 12, 3.8);
+            finger_chip = new Gtk.Label (finger_label (finger)) { halign = Gtk.Align.CENTER };
+            finger_chip.add_css_class ("mst-step");
+            finger_chip.add_css_class ("mst-active");
+            art = new FingerprintArt (172, 12, 3.8) { seed = finger_seed (finger) };
 
-            title_label = new Gtk.Label ("Place your %s".printf (finger_label (finger).down ())) {
+            title_label = new Gtk.Label ("Getting the sensor ready…") {
                 wrap = true,
                 justify = Gtk.Justification.CENTER
             };
@@ -75,13 +83,12 @@ namespace MSeriesTouchId {
                 max_width_chars = 38
             };
             hint_label.add_css_class ("dim-label");
-            hint_label.set_text (
-                "Rest it on the sensor for a moment, then lift and place it again. Shift your finger a little each time so its edges are covered.");
+            hint_label.set_text ("Keep your finger off the sensor for a moment.");
 
             step_place = make_step ("Place");
             step_lift = make_step ("Lift");
             var step_repeat = make_step ("Repeat");
-            steps = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { halign = Gtk.Align.CENTER };
+            steps = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { halign = Gtk.Align.CENTER, visible = false };
             steps.append (step_place);
             steps.append (step_lift);
             steps.append (step_repeat);
@@ -99,7 +106,7 @@ namespace MSeriesTouchId {
                 margin_end = 32,
                 halign = Gtk.Align.CENTER
             };
-            body.append (hands);
+            body.append (finger_chip);
             body.append (art);
             body.append (title_label);
             body.append (hint_label);
@@ -112,7 +119,7 @@ namespace MSeriesTouchId {
             child = view;
 
             closed.connect (() => {
-                stop_cue ();
+                stop_timers ();
                 finished (added);
             });
             close_attempt.connect (() => request_end.begin ());
@@ -159,6 +166,18 @@ namespace MSeriesTouchId {
             }
         }
 
+        private void stop_timers () {
+            stop_cue ();
+            if (invite_timer != 0) {
+                GLib.Source.remove (invite_timer);
+                invite_timer = 0;
+            }
+            if (idle_timer != 0) {
+                GLib.Source.remove (idle_timer);
+                idle_timer = 0;
+            }
+        }
+
         /* ---- enrolment ---------------------------------------------------- */
 
         public async void begin_enrol () {
@@ -172,14 +191,98 @@ namespace MSeriesTouchId {
             }
 
             status_handler = sensor.device.enroll_status.connect (on_status);
+            /* If fprintd reports finger presence, follow it live; otherwise the timed cue stands in. */
+            props_handler = ((GLib.DBusProxy) sensor.device).g_properties_changed.connect (on_properties);
             try {
                 yield sensor.device.enroll_start (finger);
                 enrolling = true;
-                art.state = ArtState.WAITING;
-                start_cue ();
+                become_ready ();
             } catch (GLib.Error e) {
                 fail ("Touch ID could not start", e.message);
                 yield cleanup ();
+            }
+        }
+
+        /* The sensor is up and listening: this is the moment to put a finger on it. People click Add
+         * with a pointer, so the sheet must not assume the finger is already there. */
+        private void become_ready () {
+            art.state = ArtState.WAITING;
+            steps.visible = true;
+            prompt_place ();
+            start_cue ();
+            start_invite ();
+            idle_timer = GLib.Timeout.add_seconds (15, () => {
+                idle_timer = 0;
+                if (enrolling && stages_passed == 0 && !finger_down && !nudged) {
+                    nudged = true;
+                    title_label.set_text ("Still waiting for your finger");
+                    set_hint ("Place your fingertip flat on the sensor, covering the whole pad.");
+                }
+                return GLib.Source.REMOVE;
+            });
+        }
+
+        private void prompt_place () {
+            if (stages_passed == 0) {
+                title_label.set_text ("Place your finger on the sensor now");
+                set_hint ("Rest your %s flat on the sensor. The print fills in as each touch is read."
+                    .printf (finger_label (finger).down ()));
+            } else {
+                title_label.set_text ("Place your finger again");
+                set_hint ("Lift, then rest it on the sensor again, covering a slightly different part.");
+            }
+        }
+
+        /* A ripple every couple of seconds invites the first touch, then stops. */
+        private void start_invite () {
+            if (!Gtk.Settings.get_default ().gtk_enable_animations) {
+                return;
+            }
+            invite_timer = GLib.Timeout.add (1800, () => {
+                if (!enrolling || stages_passed > 0 || finger_down) {
+                    invite_timer = 0;
+                    return GLib.Source.REMOVE;
+                }
+                art.ripple ();
+                return GLib.Source.CONTINUE;
+            });
+        }
+
+        /* fprintd's finger-needed / finger-present, when the sensor driver reports them. */
+        private void on_properties (GLib.Variant changed, string[] invalidated) {
+            if (!enrolling) {
+                return;
+            }
+            var present = changed.lookup_value ("finger-present", GLib.VariantType.BOOLEAN);
+            var needed = changed.lookup_value ("finger-needed", GLib.VariantType.BOOLEAN);
+            if (present == null && needed == null) {
+                return;
+            }
+            if (!live_events) {
+                /* Real events arrived: stop the timed cue and let the sensor drive it. */
+                live_events = true;
+                stop_cue ();
+            }
+            if (present != null) {
+                finger_down = present.get_boolean ();
+                if (finger_down) {
+                    step_place.add_css_class ("mst-active");
+                    step_lift.remove_css_class ("mst-active");
+                    art.ripple ();
+                    title_label.set_text ("Hold still");
+                    set_hint ("Reading your fingerprint.");
+                } else {
+                    step_lift.add_css_class ("mst-active");
+                    step_place.remove_css_class ("mst-active");
+                    if (stages_passed > 0) {
+                        title_label.set_text ("Lift, then place it again");
+                    }
+                }
+            }
+            if (needed != null && needed.get_boolean () && !finger_down) {
+                step_place.add_css_class ("mst-active");
+                step_lift.remove_css_class ("mst-active");
+                prompt_place ();
             }
         }
 
@@ -250,11 +353,9 @@ namespace MSeriesTouchId {
         private void succeed () {
             added = true;
             enrolling = false;
-            stop_cue ();
+            stop_timers ();
             steps.visible = false;
             art.state = ArtState.SUCCESS;
-            hands.enrolled = append_finger (hands.enrolled, finger);
-            hands.target = null;
             title_label.set_text ("Fingerprint Added");
             set_hint ("You can use it to approve commands and system prompts. Your password still works.");
             cancel_button.visible = false;
@@ -265,21 +366,11 @@ namespace MSeriesTouchId {
             update_art_description ();
         }
 
-        private static string[] append_finger (string[] list, string finger) {
-            string[] result = {};
-            foreach (var item in list) {
-                result += item;
-            }
-            result += finger;
-            return result;
-        }
-
         private void fail (string title, string detail) {
             enrolling = false;
-            stop_cue ();
+            stop_timers ();
             steps.visible = false;
             art.state = ArtState.FAILED;
-            hands.target = null;
             title_label.set_text (title);
             set_hint (detail);
             cancel_button.set_label ("Close");
@@ -304,6 +395,10 @@ namespace MSeriesTouchId {
             if (status_handler != 0) {
                 sensor.device.disconnect (status_handler);
                 status_handler = 0;
+            }
+            if (props_handler != 0) {
+                ((GLib.DBusProxy) sensor.device).disconnect (props_handler);
+                props_handler = 0;
             }
             if (enrolling) {
                 enrolling = false;

@@ -1,3 +1,12 @@
+## Touch ID sheet: place-finger prompt and prints instead of hands — 2026-10-21
+
+Owner feedback after the first real enrolment: people click Add with a pointer, so the sheet cannot assume a finger is already on the sensor, and
+fingerprints read better than the hand diagram. The sheet now says "Getting the sensor ready…" then **"Place your finger on the sensor now"**
+(ripple invite, 15 s nudge) and follows fprintd's `finger-present`/`finger-needed` live when the driver reports them, with the timed cue as the
+fallback; the hero shows three prints (own ridge pattern per finger, empty slots dim) and the hand widget is removed. UI tests 18/18 against the
+fake fprintd (which can now report finger events). **Not verified:** whether the Secure Enclave driver reports `finger-present`/`finger-needed`
+(unknown until a real enrolment is watched with `busctl monitor`), and on the real sensor.
+
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
