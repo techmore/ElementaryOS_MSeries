@@ -25,7 +25,7 @@ per boot. Running when checked: `7.2.10-elementary-aurora72-wip2`, no one-shot a
 
 ## Decisions and risks
 
-- **Owner decision:** run with `options apple_sep xart_guard=0` (what upstream's M1 Pro and SiliconForest do) or keep the
+- **Owner decision (guard off approved as a separate boot entry, 2026-10-21; not booted):** run with `options apple_sep xart_guard=0` (what upstream's M1 Pro and SiliconForest do) or keep the
   guard on. Guard off may rewrite shared pre-Linux xART records; macOS Touch ID is then unverified. Upstream also warns
   xART mistakes can force a DFU restore. Guard unchanged.
 - **Leftover state:** one identity sits in the enclave, with catacomb files in `/var/lib`, that fprintd cannot use.
