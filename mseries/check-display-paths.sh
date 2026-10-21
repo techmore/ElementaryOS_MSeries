@@ -57,6 +57,76 @@ for c in /sys/class/drm/card*/card*-*; do
   kv "$name" "${st[$name]}"
 done
 
+# --- connector health -----------------------------------------------------
+# link-status Bad means the display coprocessor lost the mode and wants a
+# modeset; identical EDIDs on two connected connectors mean a stale dock route.
+say ""
+say "== Connector health =="
+declare -A edid_sum
+stale_pair=""
+for c in /sys/class/drm/card*/card*-*; do
+  [ -e "$c/edid" ] || continue
+  name=$(basename "$c")
+  [ "$(cat "$c/status" 2>/dev/null)" = connected ] || continue
+  # sysfs reports size 0 for the EDID file, so count the bytes actually read.
+  [ "$(wc -c <"$c/edid")" -gt 0 ] || continue
+  sum=$(md5sum <"$c/edid" | cut -c1-12)
+  if [ -n "${edid_sum[$sum]:-}" ]; then
+    stale_pair="${edid_sum[$sum]} and $name"
+  fi
+  edid_sum[$sum]=$name
+  kv "$name EDID" "$sum"
+done
+python3 -I - <<'PY' 2>/dev/null || say "  (link-status unavailable: needs libdrm and read access to /dev/dri)"
+import ctypes, glob, os
+class Res(ctypes.Structure):
+    _fields_ = [("fbs_n", ctypes.c_int), ("fbs", ctypes.c_void_p), ("crtcs_n", ctypes.c_int), ("crtcs", ctypes.c_void_p),
+                ("conn_n", ctypes.c_int), ("conn", ctypes.POINTER(ctypes.c_uint32)), ("enc_n", ctypes.c_int),
+                ("enc", ctypes.c_void_p), ("a", ctypes.c_uint32), ("b", ctypes.c_uint32), ("c", ctypes.c_uint32), ("d", ctypes.c_uint32)]
+class Conn(ctypes.Structure):
+    _fields_ = [("id", ctypes.c_uint32), ("enc", ctypes.c_uint32), ("type", ctypes.c_uint32), ("type_id", ctypes.c_uint32),
+                ("connection", ctypes.c_int), ("mmw", ctypes.c_uint32), ("mmh", ctypes.c_uint32), ("sub", ctypes.c_int),
+                ("modes_n", ctypes.c_int), ("modes", ctypes.c_void_p), ("props_n", ctypes.c_int),
+                ("props", ctypes.POINTER(ctypes.c_uint32)), ("vals", ctypes.POINTER(ctypes.c_uint64))]
+class Enum(ctypes.Structure):
+    _fields_ = [("v", ctypes.c_uint64), ("n", ctypes.c_char * 32)]
+class Prop(ctypes.Structure):
+    _fields_ = [("id", ctypes.c_uint32), ("flags", ctypes.c_uint32), ("name", ctypes.c_char * 32), ("nv", ctypes.c_int),
+                ("v", ctypes.c_void_p), ("ne", ctypes.c_int), ("e", ctypes.POINTER(Enum))]
+lib = ctypes.CDLL("libdrm.so.2")
+lib.drmModeGetResources.restype = ctypes.POINTER(Res)
+lib.drmModeGetConnector.restype = ctypes.POINTER(Conn)
+lib.drmModeGetProperty.restype = ctypes.POINTER(Prop)
+kinds = {10: "DP", 11: "HDMI-A", 14: "eDP"}
+bad = False
+for node in sorted(glob.glob("/dev/dri/card*")):
+    try:
+        fd = os.open(node, os.O_RDWR)
+    except OSError:
+        continue
+    res = lib.drmModeGetResources(fd)
+    if not res:
+        continue
+    for i in range(res.contents.conn_n):
+        c = lib.drmModeGetConnector(fd, res.contents.conn[i]).contents
+        if c.connection != 1:
+            continue
+        for k in range(c.props_n):
+            p = lib.drmModeGetProperty(fd, c.props[k]).contents
+            if p.name == b"link-status":
+                value = next((p.e[j].n.decode() for j in range(p.ne) if p.e[j].v == c.vals[k]), str(c.vals[k]))
+                print(f"  {os.path.basename(node)}-{kinds.get(c.type, c.type)}-{c.type_id} link-status".ljust(36), value)
+                bad = bad or value == "Bad"
+if bad:
+    print("  [BAD]  a connected link reports Bad: the display needs a modeset to retrain.")
+PY
+if [ -n "$stale_pair" ]; then
+  say "  [STALE] $stale_pair are connected with byte-identical EDIDs."
+  say "         -> One is a leftover after the dock moved Type-C ports; the compositor"
+  say "            ignores the one with the older EDID (updated pantheon-compositor);"
+  say "            until it is deployed, a reboot with the dock attached clears it."
+fi
+
 # --- verdicts -------------------------------------------------------------
 say ""
 say "== Verdict =="
@@ -89,7 +159,11 @@ else
   say "  [NO]   No DP connector; fairydust DP-altmode not active on this build."
 fi
 
-say "  [DEAD] Dock video (WD22TB4 HDMI/DP): needs USB4 DP tunnelling (unimplemented)."
+if [ "${dp_conn:-}" ]; then
+  say "  [LIVE] Dock video (WD22TB4 HDMI/DP): a DisplayPort tunnel is up on $dp_conn."
+else
+  say "  [--]   Dock video (WD22TB4 HDMI/DP): no tunnel connector is connected right now."
+fi
 
 say ""
 say "== Next action =="

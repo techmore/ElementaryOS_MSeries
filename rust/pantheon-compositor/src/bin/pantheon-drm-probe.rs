@@ -14,6 +14,17 @@ use smithay::backend::{
 };
 use smithay::reexports::drm::control::{Device as _, FbCmd2Flags};
 
+// Same parsing and property code the compositor runs, so a read-only probe on
+// real hardware verifies it without taking DRM master.
+#[path = "../edid.rs"]
+#[allow(dead_code)]
+mod edid;
+#[path = "../kms_props.rs"]
+mod kms_props;
+#[path = "../link_status.rs"]
+#[allow(dead_code)]
+mod link_status;
+
 struct KmsTarget {
     path: PathBuf,
     width: u32,
@@ -116,10 +127,49 @@ fn inspect_kms_connectors(
             }
         };
 
+        let mut edid_names: Vec<String> = Vec::new();
+        let mut edid_candidates: Vec<edid::Candidate<usize>> = Vec::new();
         for handle in resources.connectors() {
             match device.get_connector(*handle, false) {
                 Ok(connector) => {
                     println!("  {}: {:?}", connector, connector.state());
+                    if connector.state()
+                        == smithay::reexports::drm::control::connector::State::Connected
+                    {
+                        if let Some((bytes, blob_id)) =
+                            kms_props::connector_edid(&device, connector.handle())
+                        {
+                            match edid::parse(&bytes) {
+                                Some(identity) => println!(
+                                    "    EDID blob {blob_id}: {}:{}:{} (unique serial: {})",
+                                    identity.vendor,
+                                    identity.product,
+                                    identity.serial,
+                                    identity.has_unique_serial
+                                ),
+                                None => println!("    EDID blob {blob_id}: unparseable"),
+                            }
+                            edid_candidates.push(edid::Candidate {
+                                key: edid_names.len(),
+                                edid: bytes,
+                                blob_id,
+                                interface_id: connector.interface_id(),
+                            });
+                            edid_names.push(connector.to_string());
+                        }
+                        if let Some((_, value)) =
+                            kms_props::named_property(&device, connector.handle(), "link-status")
+                        {
+                            println!(
+                                "    link-status: {}",
+                                if value == link_status::LINK_STATUS_BAD {
+                                    "Bad"
+                                } else {
+                                    "Good"
+                                }
+                            );
+                        }
+                    }
                     let is_separate_device = render_path.is_some_and(|render_path| {
                         smithay::backend::drm::DrmNode::from_path(render_path)
                             .ok()
@@ -158,6 +208,18 @@ fn inspect_kms_connectors(
                 }
                 Err(error) => println!("  connector {:?}: {error}", handle),
             }
+        }
+
+        let stale = edid::stale_duplicates(&edid_candidates);
+        if !stale.is_empty() {
+            println!(
+                "  stale duplicate connectors (same monitor EDID, older blob): {}",
+                stale
+                    .iter()
+                    .map(|index| edid_names[*index].as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         }
 
         let is_render_device = render_path.is_some_and(|render_path| {
