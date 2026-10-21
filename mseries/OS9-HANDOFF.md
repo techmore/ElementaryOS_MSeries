@@ -1,31 +1,45 @@
 # OS 9 implementation / Claude Code handoff
 
-## Rust compositor: panel tooltips hidden behind tiled windows — 2026-10-21
+## Rust compositor: panels, alerts and dialogs hidden behind snapped windows — 2026-10-21
 
-Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed
-no tooltip. In `rust/pantheon-compositor` the Pantheon panel is an ordinary element of
-the smithay `Space`, and a panel's popups (tooltips, indicator menus) render as part of
-the panel. Every window raise (`Space::raise_element`, `map_element(.., true)`) put that
-window above the panel, and a tiled window fills the work area right under the bar, so it
-covered the popup. Clicking the bar hid the defect because the click re-raised the panel.
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed no
+tooltip, and more generally anything that should float over a snapped window (indicator
+menus, an app's own alert or modal dialog) could end up behind it. In
+`rust/pantheon-compositor` every surface was an ordinary element of the smithay `Space`
+at the same z-index, so any window raise (a click, focus, restore) put that window on top
+of the panel, of its own transient dialogs and of keep-above surfaces. A tiled window
+fills the work area, so it covered them completely. Clicking the bar hid the panel case
+because the click re-raised the panel.
 
-- **Fix** (`claude/panel-popups-above-windows`, PR to `dev`): `raise_window()` in
-  `pantheon_shell.rs` raises a window and then re-raises every panel; all seven raise
-  sites use it. `restack_panels()` also runs after each event-loop dispatch in `main.rs`,
-  so windows mapped with `activate` (new, restored from minimize/workspace, X11) cannot
-  land above a panel either; it requests a redraw only when the stack actually changed.
+- **Fix** (`claude/panel-popups-above-windows`, PR #361 to `dev`), all in
+  `pantheon_shell.rs`:
+  - Panels (Wingpanel, the dock) get `RenderZindex::Top`; smithay keeps the stack sorted
+    by z-index, so a raise of an ordinary window never crosses them. Their popups render
+    with them. XWayland override-redirect windows (menus, the GTK3 notification cards)
+    already render at `RenderZindex::Overlay`.
+  - `raise_window()` replaces every direct `Space::raise_element` of a window and raises
+    the window's transient descendants (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`) above
+    it in their existing order, as Gala does, so a click on a snapped window no longer
+    buries its own dialog.
+  - `io_elementary_pantheon_extended_behavior_v1.set_keep_above` is honored with a
+    z-index between ordinary windows and the panels (applied on request or at first map,
+    reset when the object is destroyed). `make_centered`, `make_modal`, `focus` and
+    monitor labels are still ignored.
 - **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
   --all-targets -D warnings` and `cargo test` (41 tests) pass.
-- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack1` = `local/dockfix-on-dev`
-  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + this
-  commit, built in `~/Projects/mseries-panel-stack-deploy` (branch
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + the two
+  commits of the PR, built in `~/Projects/mseries-panel-stack-deploy` (branch
   `local/panel-stack-on-dockfix`) and installed with
   `install-pantheon-rust-compositor.sh --install`. The running session still executes the
   previous binary; the fix loads at the next login. Rollback binary:
   `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
-- **Unverified.** Hover over CodexBar beside a snapped window after the next login. Side
-  effect to watch: X11 override-redirect popups (menus of XWayland apps) that overlap the
-  bar's strip now draw beneath the bar, as under Gala.
+- **Unverified.** After the next login: hover CodexBar beside a snapped window; open a
+  modal dialog from a snapped app, click the app, confirm the dialog stays on top; send a
+  `notify-send` with two snapped windows. Not covered: popups (tooltips, menus) of an
+  unfocused window still render with that window, so a menu that reaches over a
+  higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
+  popups above all windows.
 
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
