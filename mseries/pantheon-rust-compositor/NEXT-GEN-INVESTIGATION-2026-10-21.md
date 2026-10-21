@@ -24,6 +24,11 @@ than `dev`; the compositor sources are equivalent for these findings.
 
 ## 1. Popups and attention
 
+> **Status (later on October 21):** D1, D2, D3 and D8 are fixed on `dev`; see the OS9-HANDOFF
+> entry "menus, notification cards and attention" and the compositor README. D2's BadWindow
+> bursts are reduced, not gone. The dock does not show `demands-attention` yet. D4-D7 and D9
+> remain open. Line references below are to the pre-fix `fac0e41a`.
+
 How it works: popups are tracked by Smithay's `PopupManager` (`handlers/xdg_shell.rs:44-62`),
 drawn above every toplevel (`popup_stack.rs:74-139`), and grabbed in `grab()`
 (`xdg_shell.rs:244-313`). Activation goes through `activation::verdict`
