@@ -24,6 +24,23 @@ const TOP_CLIENTS: usize = 5;
 static REQUESTS: AtomicU64 = AtomicU64::new(0);
 static RENDER_PASSES: AtomicU64 = AtomicU64::new(0);
 static VBLANKS: AtomicU64 = AtomicU64::new(0);
+/// Never reset; the watchdog status line takes rates from these.
+static VBLANKS_TOTAL: AtomicU64 = AtomicU64::new(0);
+pub(crate) static COMMITS_TOTAL: AtomicU64 = AtomicU64::new(0);
+
+/// Running totals since start.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Totals {
+    pub vblanks: u64,
+    pub commits: u64,
+}
+
+pub fn totals() -> Totals {
+    Totals {
+        vblanks: VBLANKS_TOTAL.load(Ordering::Relaxed),
+        commits: COMMITS_TOTAL.load(Ordering::Relaxed),
+    }
+}
 
 /// A redraw was requested (before coalescing).
 pub fn request() {
@@ -39,6 +56,7 @@ pub fn render_pass() {
 #[cfg_attr(not(feature = "native-drm"), allow(dead_code))]
 pub fn vblank() {
     VBLANKS.fetch_add(1, Ordering::Relaxed);
+    VBLANKS_TOTAL.fetch_add(1, Ordering::Relaxed);
 }
 
 /// Global counters for one window.

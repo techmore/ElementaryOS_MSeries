@@ -119,6 +119,12 @@ impl OutputStats {
         }
     }
 
+    /// How long the frame in flight has waited for its flip, if any.
+    pub fn in_flight_age(&self, now: Duration) -> Option<Duration> {
+        self.in_flight
+            .map(|in_flight| now.saturating_sub(in_flight.queued_at))
+    }
+
     /// Last flip time, for estimating the next vblank after an empty frame.
     pub fn last_flip_time(&self) -> Option<Duration> {
         self.last_flip.map(|(time, _)| time)

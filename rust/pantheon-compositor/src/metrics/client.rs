@@ -68,6 +68,7 @@ impl ClientStats {
     /// Count one commit. Relaxed atomics only: no lock, no syscall.
     pub fn commit(&self, buffer: BufferKind, damage_px: u64, frame_callbacks: u64) {
         self.commits.fetch_add(1, Ordering::Relaxed);
+        super::COMMITS_TOTAL.fetch_add(1, Ordering::Relaxed);
         match buffer {
             BufferKind::Shm => {
                 self.shm.fetch_add(1, Ordering::Relaxed);
@@ -123,6 +124,16 @@ impl ClientRegistry {
     /// Stats for Xwayland's own surfaces.
     pub fn xwayland(&mut self) -> Arc<ClientStats> {
         self.get_or_insert(XWAYLAND_KEY, || "Xwayland".into())
+    }
+
+    /// `name(pid)` of the client with the most commits so far in this window.
+    pub fn busiest(&self) -> Option<String> {
+        self.by_pid
+            .values()
+            .map(|stats| (stats.commits.load(Ordering::Relaxed), stats))
+            .filter(|(commits, _)| *commits > 0)
+            .max_by_key(|(commits, stats)| (*commits, std::cmp::Reverse(stats.pid)))
+            .map(|(_, stats)| format!("{}({})", stats.name, stats.pid))
     }
 
     /// Take every client's counters for this window, busiest first, and forget
@@ -286,6 +297,20 @@ mod tests {
             attribute_x11(Some(Some(7)), 500, 120),
             X11Attribution::Client(7)
         );
+    }
+
+    #[test]
+    fn busiest_peeks_without_resetting() {
+        let mut registry = ClientRegistry::default();
+        assert_eq!(registry.busiest(), None);
+        let quiet = registry.get_or_insert(1, || "quiet".into());
+        let loud = registry.get_or_insert(2, || "loud".into());
+        quiet.commit(BufferKind::Shm, 0, 0);
+        for _ in 0..3 {
+            loud.commit(BufferKind::Dmabuf, 0, 0);
+        }
+        assert_eq!(registry.busiest().as_deref(), Some("loud(2)"));
+        assert_eq!(registry.take_window()[0].commits, 3);
     }
 
     #[test]

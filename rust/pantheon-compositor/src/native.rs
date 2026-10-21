@@ -915,6 +915,18 @@ impl NativeKmsDevice {
         Ok(Some(output.output.clone()))
     }
 
+    /// Outputs whose queued flip has been pending for at least `threshold`.
+    pub fn stuck_flips(&self, now: Duration, threshold: Duration) -> Vec<(String, Duration)> {
+        self.outputs
+            .iter()
+            .filter(|output| output.frame_pending)
+            .filter_map(|output| {
+                let age = output.stats.in_flight_age(now)?;
+                (age >= threshold).then(|| (output.output.name(), age))
+            })
+            .collect()
+    }
+
     /// Take every output's frame stats for the metrics window.
     pub fn take_metrics(&mut self) -> Vec<(String, crate::metrics::output::OutputWindow)> {
         self.outputs
