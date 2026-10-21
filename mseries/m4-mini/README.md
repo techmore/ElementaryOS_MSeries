@@ -52,3 +52,20 @@ See [the mini patch review](MINI-PATCH-REVIEW.md) for the public diagnostic patc
 ## Gravity mini candidate
 
 The expanded audit found Gravity Linux’s developer alpha with project-reported mini HDMI/DCP and GPU. See [Gravity integration](GRAVITY-INTEGRATION.md); this supersedes broad no-mini-support conclusions in the initial audit. `build-dtb.py --source gravity-mini` compiles the separately pinned mini profile. Current development heads are distinct from the published alpha bundle.
+
+## Full Gravity source build
+
+`build-kernel.py` checks the pinned source archive, applies the retained Gravity
+config overlays and uses a distinct `-elementary-m4-gravity1` module release.
+It requires work-local matching Rust library sources and an existing Clang/GNU
+toolchain. Example:
+
+```sh
+python3 mseries/m4-mini/build-kernel.py --archive /path/to/linux-4fc326f.tar.gz --rust-library /path/to/rust/library --output /path/to/new/build-root --jobs 2
+```
+
+The resolved config must retain 16 KiB pages, Rust, appledrm and asahi_m4.
+The script emits a success receipt only after Image, modules and DTBs build.
+The first native full-build run remains pending; the wrapper itself has not yet
+completed an end-to-end run. Kernel and Mesa Asahi UAPI headers match byte for
+byte at the pinned Gravity heads; see the receipt for the precise scope.

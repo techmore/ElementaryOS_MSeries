@@ -34,3 +34,19 @@ Next: obtain the complete Gravity source and packaging provenance, build its
 kernel with a separate module release, reconcile its Mesa UAPI and firmware
 handoff, and map the required services to elementary OS without replacing the
 working J314S kernel or bootloader. No mini support is enabled in the installer.
+
+## Packaging versus current kernel
+
+The pinned packages sources.json selects kernel dea38a96aa86679d5e24da16b799030fe07ad2f6
+and bootloader f64760b501214c749788f89620c078d8b39b0453. Those differ
+from the development heads. Mesa is already the same pinned revision. The
+current kernel is 13 commits ahead, with 14 changed files. The direct J773g
+change corrects the SPMI SID 8 USB-PD select interrupt from 64 to 65. Other
+changes include Air MTP and DCP support and shared DART/display changes, so
+mini regression validation still matters. The current research build includes
+that interrupt correction; it is not described as the original alpha build.
+
+The full build applies Gravity config overlays after Asahi config. In particular
+CONFIG_DRM_ASAHI_M4=m is required; the unmodified Asahi fragment leaves it off.
+The build wrapper checks this resolved setting rather than treating any successful
+Image build as an M4 graphics build. Its first full end-to-end run is pending.

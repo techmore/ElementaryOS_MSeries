@@ -70,6 +70,22 @@
         "include/dt-bindings/pinctrl/apple.h",
         "include/dt-bindings/spmi/spmi.h"
       ]
+    },
+    {
+      "name": "gravity-uapi-kernel",
+      "repository": "GravityLinux/linux",
+      "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "files": [
+        "include/uapi/drm/asahi_drm.h"
+      ]
+    },
+    {
+      "name": "gravity-uapi-mesa",
+      "repository": "GravityLinux/mesa",
+      "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "files": [
+        "include/drm-uapi/asahi_drm.h"
+      ]
     }
   ],
   "boot_companions": [
@@ -142,5 +158,117 @@
       "no Thunderbolt/USB4"
     ],
     "local_hardware_validated": false
+  },
+  "gravity_packaging_sources": {
+    "kernel": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/linux.git",
+      "ref": "dea38a96aa86679d5e24da16b799030fe07ad2f6",
+      "archive": "gravity-m4.patch",
+      "base_ref": "3988dac1664c05fa7c8310fcad8eee10428b5f43",
+      "root": "linux-7.1.13",
+      "base_srpm": {
+        "url": "https://download.copr.fedorainfracloud.org/results/@asahi/kernel/srpm-builds/10979408/kernel-7.1.13-403.asahi.fc44.src.rpm",
+        "sha256": "b21403621e44d6390c089126afb2c8ee41a9926b4bd7a840b544b39ffd15be9a"
+      }
+    },
+    "mesa": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/mesa.git",
+      "ref": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "archive": "mesa-26.3.0-devel.tar.xz",
+      "root": "mesa-26.3.0-devel",
+      "note": "Published M4 compiler and driver updates, including automatic Apple9 rendering selection and ordinary varying export for legacy clip vertex."
+    },
+    "uboot-tools": {
+      "kind": "spec",
+      "note": "Asahi/Fedora source plus nine checked-in Gravity patches through a2f6913694ff26908c16948af3f8372429782263; see UPSTREAM.md."
+    },
+    "rust-speakersafetyd": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/speakersafetyd.git",
+      "ref": null,
+      "archive": "speakersafetyd-2.0.1.tar.gz",
+      "root": "speakersafetyd-2.0.1",
+      "note": "Confirm the downstream fork URL, pin its commit, align Version with Cargo.toml, review Fedora patches/dependencies and validate the M4 safety profiles. No release tag is required."
+    },
+    "gravity-bootloader": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/bootloader.git",
+      "ref": "f64760b501214c749788f89620c078d8b39b0453",
+      "archive": "gravity-bootloader-1.6.1.tar.gz",
+      "omit_submodules": [
+        "artwork"
+      ],
+      "root": "gravity-bootloader-1.6.1",
+      "note": "Preserve DCP firmware-version and firmware-compat as 26.6.2; pair with the kernel's exact actual-version check. Publish pinned source commits before building."
+    },
+    "gravity-scripts": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/scripts.git",
+      "ref": "12418e50125a72749a75917db578db55ea42704c",
+      "archive": "gravity-scripts-20260915.tar.gz",
+      "root": "gravity-scripts-20260915",
+      "note": "Publish this locally pinned scripts commit to the Gravity repository."
+    },
+    "gravity-installer": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/installer.git",
+      "ref": "34c9ded9e2e4efd9add6bb984d5c50656ea324da",
+      "archive": "gravity-installer-0.9.1.tar.gz",
+      "omit_submodules": [
+        "artwork",
+        "bootloader"
+      ],
+      "root": "gravity-installer-0.9.1",
+      "note": "Qualified recovery extraction plus per-radio J773g Wi-Fi and Bluetooth factory calibration."
+    },
+    "gravity-platform-metapackage": {
+      "kind": "spec"
+    },
+    "gravity-repos": {
+      "kind": "spec"
+    },
+    "gravity-remix-scripts": {
+      "kind": "local",
+      "archive": "gravity-remix-scripts-20260915.tar.gz",
+      "root": "gravity-remix-scripts-20260915"
+    },
+    "gravity-release": {
+      "kind": "spec"
+    },
+    "gravity-appstream-metadata": {
+      "kind": "spec"
+    },
+    "gravity-logos": {
+      "kind": "git",
+      "url": "https://github.com/GravityLinux/artwork.git",
+      "ref": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "archive": "gravity-logos-20260915.tar.gz",
+      "root": "gravity-logos-20260915",
+      "note": "CC-BY-4.0 artwork, MIT generator, separate trademark policy. Publish this locally pinned revision."
+    }
+  },
+  "gravity_packaging_comparison": {
+    "ahead_by": 13,
+    "behind_by": 0,
+    "files": [
+      "Documentation/devicetree/bindings/iommu/apple,dart.yaml",
+      "arch/arm64/boot/dts/apple/t8132-j624.dts",
+      "arch/arm64/boot/dts/apple/t8132-j715.dts",
+      "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "drivers/gpu/drm/apple/Kconfig",
+      "drivers/gpu/drm/apple/dcp-internal.h",
+      "drivers/gpu/drm/apple/dcp.c",
+      "drivers/gpu/drm/apple/dcp_backlight.c",
+      "drivers/gpu/drm/apple/iomfb_template.c",
+      "drivers/gpu/drm/apple/iomfb_template.h",
+      "drivers/gpu/drm/apple/iomfb_v26_6.c",
+      "drivers/hid/dockchannel-hid/dockchannel-hid.c",
+      "drivers/iommu/apple-dart.c"
+    ],
+    "status": "ahead",
+    "total_commits": 13
   }
 }

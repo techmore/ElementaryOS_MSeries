@@ -10203,3 +10203,11 @@ gravity-mini DT profile; complete include capture and compiler run pass with
 retained warnings. Asahi/Gravity source histories diverge despite both reporting
 7.1.13; capped GitHub compare is not a complete patch. Full Gravity source download
 started for independent build/packaging work. No local hardware support claim.
+
+Gravity follow-up: retained packaging config overlays and added a full-source
+build wrapper with an explicit M4 GPU config gate. Current resolved config
+passes; deleting DRM_ASAHI_M4 fails as expected. Kernel/Mesa Asahi UAPI headers
+match byte-for-byte (receipt retained). Packaging pins an older kernel; current
+head includes the J773g SID8 select-IRQ correction 64 -> 65 plus shared Air
+changes. Native Gravity build session 82290 and Asahi session 29830 remain
+running; no Image/modules success claimed.
