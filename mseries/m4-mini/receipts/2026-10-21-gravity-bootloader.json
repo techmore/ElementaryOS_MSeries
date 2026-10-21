@@ -1,0 +1,33 @@
+{
+  "repository": "GravityLinux/bootloader",
+  "commit": "f02d4a52017915febb222539636b5b025a70407a",
+  "artwork_commit": "e613a87e526f8fec439c4129e69dd2821b38d258",
+  "commands": [
+    [
+      "make",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-gravity-bootloader-source",
+      "ARCH=",
+      "RELEASE=1",
+      "LOGO=",
+      "CHAINLOADING=0",
+      "-j2"
+    ],
+    [
+      "make",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-gravity-bootloader-source",
+      "ARCH=",
+      "RELEASE=1",
+      "LOGO=",
+      "CHAINLOADING=1",
+      "-j2"
+    ]
+  ],
+  "artifacts": {
+    "m1n1-stage2.bin": "d06867029992c2a78da01dab6189d9218f42af284cb94dab10c6ba60d37f9ad6",
+    "m1n1-stage1.bin": "e13bcee8814c3f75de50f5bfc168d28936d4662c397ad8f53087dbb754ecca41"
+  },
+  "optional_logo": "omitted; raw binary target",
+  "status": "source compilation only; no boot authorization, installation or J773g runtime test"
+}

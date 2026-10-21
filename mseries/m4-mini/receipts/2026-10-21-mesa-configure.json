@@ -4,8 +4,8 @@
   "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
   "configuration": "Asahi+llvmpipe OpenGL, Asahi Vulkan, X11+Wayland, LLVM enabled, upstream tests enabled",
   "prefix": "/opt/elementary-m4-gravity1",
-  "status": "Meson setup passed; native compilation in progress; no compiler tests or runtime pass yet",
-  "build_handle": 71394,
+  "status": "Meson setup passed; first compile stopped on work-local XCB header closure; retry preparation in progress",
+  "build_handle": null,
   "work_local_dependencies": [
     {
       "file": "libwayland-dev_1.24.0-2_arm64.deb",

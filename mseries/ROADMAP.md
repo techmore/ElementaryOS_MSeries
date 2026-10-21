@@ -2778,8 +2778,11 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
     license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 10. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
-Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (initial upstream support and experimental J713 work exist; J773g dual boot remains unqualified: no supported installer, no qualified mini GPU
-driver, M3 only now nearing a first release).
+Not realistic here: macOS 27 guests (`MACOS-VM.md`). M4 Mac mini is a separate
+research port: Gravity Linux publishes a developer alpha reporting HDMI/DCP and
+GPU support. Its matched kernel/Mesa/bootloader stack is pinned in
+`m4-mini/research.json`; elementary integration and this owner’s J773g dual boot
+remain unqualified. See `m4-mini/GRAVITY-INTEGRATION.md`.
 
 ## Second computers available for the m1n1 hypervisor trace
 

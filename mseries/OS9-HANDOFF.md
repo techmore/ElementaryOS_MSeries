@@ -10224,3 +10224,10 @@ Wayland/XCB development packages were extracted into work-local storage, leaving
 system Mesa unchanged. Native compile handle 71394 is running; tests and staged
 libraries remain pending. Added isolated build/staging wrapper and dependency
 receipt. Existing kernel builds remain active.
+
+Gravity bootloader stage 2 and chainloading stage 1 both compile at f02d4a5;
+new wrapper verified end-to-end against clean source with pinned artwork.
+Retained both output hashes in m4-mini/receipts. Optional packaging logo omitted
+using the upstream raw target; no binary deployment or Apple OS authorization.
+Mesa compilation stopped on incomplete work-local XCB headers; filling the
+missing development-package closure before resuming the same build tree.

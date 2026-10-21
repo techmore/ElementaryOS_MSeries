@@ -94,3 +94,13 @@ Wayland. It enables upstream tests, runs the upstream AGX compiler, Apple9 launc
 with prefix /opt/elementary-m4-gravity1. It does not replace system Mesa or
 activate a session. Optional --pkg-config-path supports extracted work-local
 development packages. The full first build and compiler tests remain pending.
+
+## Matched raw bootloader build
+
+`build-bootloader.py --source PINNED_GIT_CHECKOUT --cargo-home WORK_CARGO_CACHE
+--output NEW_DIRECTORY --jobs 2` checks the exact Gravity commit, clean tracked
+source and artwork submodule before building stage 2 and chainloading stage 1.
+Both stages compiled successfully; their SHA-256 receipt is retained. The raw
+binary target omits the optional packaging-supplied Gravity logo. No installed
+bootloader, OS authorization, boot configuration or startup selection changed.
+These are development-head artifacts, not copies of the original alpha release.
