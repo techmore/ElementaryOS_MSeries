@@ -1,3 +1,14 @@
+## M4 mini: combined payload overlay — 2026-10-21
+
+stage-stack.py checks exact kernel/Mesa/policy package hashes before creating
+an isolated root. Combined assembly, all 1598 modules, dry-run GPU/display/NIC
+dependencies, staged sleep config and private Mesa llvmpipe render/readback
+pass. Wrong package hash is rejected before output creation.
+[Receipt](m4-mini/receipts/2026-10-21-combined-stack.json).
+This is an overlay, not a complete OS: base dependencies, initramfs, EFI/firmware
+handoff, graphical session activation and physical M4 acceptance remain open.
+No installer admission or current host state changed.
+
 ## M4 mini: full kernel build and package pass — 2026-10-21
 
 The corrected Gravity 4fc326f build finished exit 0 for Image/modules/DTBs.

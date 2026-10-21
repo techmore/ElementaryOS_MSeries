@@ -1,0 +1,28 @@
+{
+  "packages": {
+    "kernel": {
+      "package": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-1_arm64.deb",
+      "sha256": "99cb07bc668054dac798279075fe495b1d8e5bef9a94ac1685d26c995f364166"
+    },
+    "mesa": {
+      "package": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-2_arm64.deb",
+      "sha256": "532a1c7364820b8052f1e326f4cf4f2d1afc2725f7843aff6fa1ed478ab62e4a"
+    },
+    "policy": {
+      "package": "elementary-m4-gravity-policy_20261021-1_arm64.deb",
+      "sha256": "0d256ab2d0a84c60e7c0b969e71af44b1b7d23f984dd0b6a5d54f02ffb7f6322"
+    }
+  },
+  "module_count": 1598,
+  "module_dependency_dry_run": "passed for asahi_m4, appledrm, atlantic, tg3",
+  "status": "payload overlay assembled only; no base OS, initramfs, EFI or firmware",
+  "base_os_dependencies_resolved": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "combined_root_checks": [
+    "isolated llvmpipe EGL render/readback passed",
+    "systemd-analyze resolves staged sleep policy",
+    "no installer admission or global Mesa activation"
+  ],
+  "negative_check": "incorrect package hash rejected before output creation"
+}

@@ -179,3 +179,14 @@ resolution pass. Package contents are confined to the distinct module release
 and documentation, with no maintainer scripts or boot writes. Atlantic's
 AQC113C alias is present; no owner controller/link test has run. See the build
 and package receipts. These are build/package results, not boot acceptance.
+
+## Combined candidate payload overlay
+
+`stage-stack.py --kernel KERNEL_DEB --mesa MESA_DEB --policy POLICY_DEB
+--output NEW_DIRECTORY` verifies all three package hashes against retained
+receipts before extracting into a new root. It runs no package scripts or
+installation commands. Combined-root module dependency, sleep config and
+isolated llvmpipe render/readback checks pass. Invalid package hashes are
+rejected before output creation. This overlay contains no base OS, initramfs,
+EFI or firmware; base package dependencies and M4 hardware remain unqualified.
+A complete factory image and graphical session activation are still required.
