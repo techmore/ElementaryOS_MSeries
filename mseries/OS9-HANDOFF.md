@@ -275,6 +275,30 @@ this entry records what landed and what is installed here.
 
 Next: reconcile with TM-NmapUI-elementary (#249) and replace the dev-server unit; resolve the unmerged Daedalus PRs.
 
+## Remote Desktop (WebRTC, Rust) for phones — 2026-10-21
+
+Owner request: finish the Rust WebRTC desktop-streaming feature and phone support, integrated natively in
+elementary OS and Windows Work Mode. Implemented in `mseries/remote-desktop/` (own Cargo workspace; see its README).
+It supersedes the Node/Python prototype on `feat/webrtc`, which was not touched. The 2026-10-19 media-path decision
+(no SFU/server media plane) is respected: media stays peer-to-peer between host and phone.
+
+- `remote-core`: protocol, single-use invites, HMAC resume tokens, consent state machine (view-only default,
+  separate control grant, grace/idle/length limits), input gate (rate limit, lock check, per-event permission),
+  test-pattern + GStreamer/PipeWire capture, OpenH264 encode/decode, backoff, JSONL audit.
+- `remote-rtc`: webrtc-rs 0.21 host/viewer peers; `remote-hostd`: daemon, axum listener, phone web client
+  (touch gestures, keyboard, reconnect/ICE restart), D-Bus `io.elementary.mseries.Remote`, Mutter backend,
+  `tm-remote-viewer`. Audit now records viewer IP, connect time and a per-session link-quality summary (owner request).
+- Native: GTK4/Granite app + consent prompt + Wingpanel indicator (`native/`), Work Mode taskbar anchor
+  (`dock-taskbar/TaskbarRemote.vala`, `patches/dock-taskbar-remote.patch`), installer `install-remote-desktop.sh`
+  (user-level, remote access off by default, panel module loads at next login, nothing restarted).
+- Verified headless: fmt, clippy -D warnings, 32+10+5+4 Rust tests; daemon/D-Bus smoke on a private bus; headless
+  Chrome with touch decoding the stream and delivering tap/drag/right-click/typing; Mutter D-Bus marshalling against a
+  fake service from mutter's interface XML; GTK renders; full pinned dock build with the anchor (`test-build.sh` PASS).
+- NOT verified: live Gala/Mutter capture+input (current session is the Rust compositor), real phone/iOS Safari,
+  NAT/TURN, indicator loaded in the live shell, CPU cost of software H.264 on M1 Pro, suspend/resume, audio (not built).
+  Nothing was installed or deployed on the owner's desktop.
+- Next: owner-approved install, then a live Gala session test with a real phone; measure encode CPU; decide TURN.
+
 ## Maintenance handoff for the next chat — 2026-10-21
 
 Read [maintenance/README.md](maintenance/README.md) and its saved prompt snapshot.

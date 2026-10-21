@@ -76,7 +76,7 @@ meson setup "$work/build" "$work/source" --buildtype=release
 meson compile -C "$work/build"
 glib-compile-schemas --strict --dry-run "$work/source/data"
 # These type names are emitted by the actual linked Vala classes.
-for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockAppResolver; do
+for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarRemote DockAppResolver; do
   strings "$work/build/src/io.elementary.dock" | grep -F "$component" > /dev/null
 done
 bash "$here/../dock-tests/test-size-policy.sh" "$work/source" "$work/build"

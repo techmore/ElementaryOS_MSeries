@@ -1,0 +1,46 @@
+[package]
+name = "remote-hostd"
+description = "M-Series remote desktop host daemon: signalling, consent, native D-Bus control"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "mseries-remote-hostd"
+path = "src/main.rs"
+
+[[bin]]
+name = "tm-remote-viewer"
+path = "src/bin/viewer.rs"
+
+[features]
+default = ["dbus", "mutter"]
+# Session-bus control interface for the native GTK/Wingpanel UI.
+dbus = ["dep:zbus"]
+# Pantheon/Gala (Mutter) ScreenCast + RemoteDesktop capture and input.
+mutter = ["dep:zbus"]
+
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+base64 = "0.22"
+bytes = "1"
+clap = { version = "4", features = ["derive"] }
+futures = "0.3"
+if-addrs = "0.13"
+qrcode = { version = "0.14", default-features = false }
+rand = "0.9"
+remote-core = { path = "../remote-core" }
+remote-rtc = { path = "../remote-rtc" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.26"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zbus = { version = "5", default-features = false, features = ["tokio", "blocking-api"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"

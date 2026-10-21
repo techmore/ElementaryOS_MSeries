@@ -1,0 +1,45 @@
+name: Remote Desktop (WebRTC)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - mseries/remote-desktop/**
+      - mseries/install-remote-desktop.sh
+      - mseries/dock-taskbar/**
+      - mseries/patches/dock-taskbar-remote.patch
+      - .github/workflows/remote-desktop.yml
+jobs:
+  rust:
+    name: Rust core, loopback WebRTC, D-Bus smoke
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build and test dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake dbus gstreamer1.0-tools python3
+      - name: Format, lint and test
+        working-directory: mseries/remote-desktop
+        run: |
+          cargo fmt --all --check
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+          cargo test --workspace --locked
+      - name: Headless whole-system smoke (private session bus)
+        working-directory: mseries/remote-desktop
+        run: |
+          cargo build --workspace --locked
+          bash scripts/smoke-headless.sh target
+  native:
+    name: Native GTK app, panel indicator and renders
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y valac meson ninja-build libgtk-4-dev libgranite-7-dev libjson-glib-dev xvfb xauth
+      - name: Build, unit-test and render
+        run: |
+          meson setup build mseries/remote-desktop/native
+          ninja -C build
+          meson test -C build --print-errorlogs
+          ninja -C build render-probe
+          bash mseries/remote-desktop/native/probe/run-probe.sh build shots light
