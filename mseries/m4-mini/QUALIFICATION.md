@@ -3,6 +3,9 @@
 Target: owner-reported plain M4 mini, 16 GB, 1 TB, optional 10 Gb Ethernet,
 macOS 27 and HDMI. Expected Mac16,10/J773g identity is not yet measured.
 The prepared artifacts do not establish that this machine is ready to install.
+Owner confirms the M4 is currently unavailable for read-only checks and asks
+to continue public-source preparation. Hardware receipts remain open; do not
+repeatedly request an inventory until availability changes.
 
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |

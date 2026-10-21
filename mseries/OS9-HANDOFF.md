@@ -1,3 +1,9 @@
+## M4 owner availability — 2026-10-21
+
+Owner confirms the M4 mini is unavailable and requests continued public-source
+preparation. Continue source/software integration; do not infer physical support
+or repeatedly ask for inventory. QUALIFICATION.md retains the native gates.
+
 ## M4 mini: mainline comparison and qualification gates — 2026-10-21
 
 Mainline torvalds/linux 4df4d2a (Makefile 7.3.0) was checked at exact paths:
