@@ -129,3 +129,18 @@ It selects only that command's private EGL/DRI/Vulkan libraries and adds Gravity
 llvmpipe OpenGL for smoke tests; it does not provide a software Vulkan driver.
 An extracted payload works because the launcher relocates its temporary Vulkan
 manifest. No global environment, loader config or current compositor is changed.
+
+## Candidate M4 image power policy
+
+`package-policy.py --output NEW_DIRECTORY` packages unchanged MIT-licensed
+Gravity vendor sleep settings. The arm64 package depends on the separately
+named M4 kernel payload, ships six vendor config files and has no maintainer
+scripts. Staged `systemd-analyze cat-config` resolves the sleep/logind drop-ins;
+payload hash and control checks pass. It is not installed by this work and
+does not enable the M4 installer. Remove through a package revision when M4
+sleep is qualified. Administrator overrides remain possible.
+
+Current complete upstream trees of alsa-ucm-conf-asahi (1473329) and
+asahi-audio (ab1b469) contain no J773g/t8132 paths. This is a profile inventory,
+not proof that direct ALSA playback fails. Confirm actual card names and routing
+on the mini before adding a model profile; do not reuse older Mac DSP assets.

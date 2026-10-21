@@ -1,0 +1,20 @@
+{
+  "package": "elementary-m4-gravity-policy_20261021-1_arm64.deb",
+  "package_sha256": "0d256ab2d0a84c60e7c0b969e71af44b1b7d23f984dd0b6a5d54f02ffb7f6322",
+  "upstream_commit": "711c2a110416d28010ccdd118b83111776bff207",
+  "vendor_files": {
+    "usr/lib/systemd/sleep.conf.d/90-gravity-no-sleep.conf": "26c948beb35d409f02ce6459c4794fdc86b61274028c8b5799fbfeb608733efd",
+    "usr/lib/systemd/logind.conf.d/90-gravity-no-sleep-logind.conf": "cd5b40baaabd240430528c31c68b2db6893c7eb66caadf9b9843744393554a4d",
+    "usr/lib/systemd/system/systemd-suspend.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-hibernate.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-hybrid-sleep.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-suspend-then-hibernate.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d"
+  },
+  "maintainer_scripts": false,
+  "status": "candidate image policy packaged; no installation or hardware qualification",
+  "checks": [
+    "extracted vendor file hashes match",
+    "control archive contains only control; no maintainer scripts",
+    "systemd-analyze cat-config resolves staged sleep/logind policy"
+  ]
+}

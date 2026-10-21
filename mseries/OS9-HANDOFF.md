@@ -1,3 +1,13 @@
+## M4 mini: candidate image sleep policy — 2026-10-21
+
+Added package-policy.py and unchanged MIT Gravity vendor configs for unsupported
+M4 sleep. Debian packaging and staged systemd config resolution pass; six vendor
+files hash-match, no maintainer scripts, no installation. The package depends
+on the separate M4 kernel payload and is not enabled in the factory installer.
+[Receipt](m4-mini/receipts/2026-10-21-m4-sleep-policy.json). Complete current
+Asahi UCM/audio trees have no J773g/t8132 profile paths; actual mini card routing
+remains untested. Kernel build remains live; finish it before bundle assembly.
+
 ## M4 mini: desktop service reconciliation — 2026-10-21
 
 The private Mesa package now includes a child-process launcher preserving Gravity's

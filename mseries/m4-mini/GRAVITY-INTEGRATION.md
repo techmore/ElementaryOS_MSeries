@@ -106,6 +106,7 @@ enable the proposed unavailable daemon as a substitute. Matching UCM and
 PipeWire routing remain target-image integration requirements.
 
 Gravity also ships vendor sleep policy disabling suspend, hibernate, hybrid
-sleep and suspend-then-hibernate. A target elementary image needs equivalent
-M4-specific policy until runtime support is demonstrated; this research
-payload changes no host sleep settings.
+sleep and suspend-then-hibernate. The candidate package-policy.py payload now stages that unchanged vendor
+policy with a dependency on the distinct M4 kernel. Package and staged config
+resolution checks pass; no host sleep settings changed. Factory image selection
+and physical runtime qualification remain open.

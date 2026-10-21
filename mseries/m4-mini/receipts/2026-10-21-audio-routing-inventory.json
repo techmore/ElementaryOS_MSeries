@@ -1,0 +1,20 @@
+{
+  "repositories": [
+    {
+      "repository": "AsahiLinux/alsa-ucm-conf-asahi",
+      "commit": "1473329acab595dfef039f38c384ce16674d6b15",
+      "complete_tree": true,
+      "paths_examined": 57,
+      "j773_or_t8132_path_matches": []
+    },
+    {
+      "repository": "AsahiLinux/asahi-audio",
+      "commit": "ab1b46928d056bb02bb4ad72d522dab57dc9efe1",
+      "complete_tree": true,
+      "paths_examined": 88,
+      "j773_or_t8132_path_matches": []
+    }
+  ],
+  "conclusion": "No J773g-specific UCM profile or asahi-audio DSP asset in these current upstream trees; raw PCM routing is not tested by this inventory",
+  "hardware_validated": false
+}

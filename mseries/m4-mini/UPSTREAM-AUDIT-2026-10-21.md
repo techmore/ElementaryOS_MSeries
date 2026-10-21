@@ -135,3 +135,10 @@ dependency in favor of J773g kernel protection; the kernel explicitly describes
 electrical parameters as assumptions awaiting measurement. Physical speaker
 safety remains unqualified. Gravity also blocks system sleep through vendor
 policy; equivalent M4 image policy and matched UCM routing remain open.
+
+The candidate M4 sleep-policy Debian package now builds with six unchanged
+Gravity vendor configuration files, a dependency on the distinct M4 kernel and
+no maintainer scripts. Staged systemd config resolution and payload hash checks
+pass. It has not been installed or enabled in the factory image. Full current
+Asahi UCM/audio tree inventory finds no J773g/t8132-specific profile paths;
+actual mini card discovery/routing still needs qualification.
