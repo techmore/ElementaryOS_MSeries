@@ -19,6 +19,32 @@ Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of 
   Wingpanel-plugin lock can be split into build (parallel) and install (serial); download tarballs ahead of the build
   (issue item 3); `ninja -j` tuning under parallel mode.
 
+## Daedalus and NmapUI: owner-approved merges and live checks — 2026-10-21
+
+The owner approved merging the remaining green PRs and a scan of the current network.
+
+- **Merged (tm-daedalus):** #21 (link-local ranges no longer valid scan targets or scopes; CIS key last-use and
+  optional expiry; Nikto finding withdrawn as a misreading, correction in the review doc), #10 (demo login,
+  production secrets, request bodies, heartbeat, icon fetch), #8, #18 (deployment blueprint and gates), and #7
+  (ruff lint in CI; ruff then found three new issues in merged code, fixed). Merging #10 and #21 broke one
+  heartbeat test on `main` (a link-local detected network); #7's merge commit updated that expectation and `main` is green again.
+  Still open: #9 (UI account menu on phones, favicon, marketing accessibility), not selected.
+- **Merged (TM-NmapUI):** #248 (npm advisories) and #250 (scan errors, keyboard and screen-reader access). #250
+  conflicted with `main`'s new pause/resume; main's real buttons were kept and the old "inert controls" test now asserts
+  disabled-at-idle with `data-pause-state`. #249 (move the native app to TM-NmapUI-elementary) is another agent's and still open.
+- **Scan on the current network:** Quick Scan of 10.20.0.0/24 ran to completion headlessly through the web UI;
+  the indicator showed progress and listed 15 devices afterwards. (Target field had held the old 192.168.222.0/24; it was
+  set to the approved network before starting.)
+- **Dock progress:** on the real session bus, the loaded Wingpanel indicator emitted `com.canonical.Unity.LauncherEntry`
+  `Update` with `progress-visible=true` and rising `progress` during the scan, and the dock source consumes that
+  interface. The dock drawing the bar was not observed on screen.
+- **Quicklist `--quick-scan`:** verified later the same day. A second instance (headless, isolated display) with
+  `--quick-scan` started a Quick Scan of 10.20.0.0/24 through the single running service; `--tab` was verified earlier.
+  Note this left a second scan of the approved network running.
+- The NmapUI service now runs under Gunicorn (see the earlier entry).
+
+Still open: production host access, Developer ID signing and notarization, Google Admin tenant consent, physical scanner fleet runs.
+
 ## Pantheon shell upstream pass and Quick Settings preparation — 2026-10-21
 
 Reviewed eleven customized shell components against current upstream default
