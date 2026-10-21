@@ -28,6 +28,7 @@ mod popup_stack;
 #[cfg(feature = "native-drm")]
 mod prewarm;
 mod protocols;
+mod redraw_stats;
 mod shell_compat;
 mod state;
 mod tiling;
