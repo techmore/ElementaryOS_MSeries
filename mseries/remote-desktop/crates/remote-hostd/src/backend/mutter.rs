@@ -39,9 +39,29 @@ fn berr(e: impl std::fmt::Display) -> BackendError {
     BackendError::Other(e.to_string())
 }
 
-type Mode = (String, i32, i32, f64, f64, Vec<f64>, HashMap<String, OwnedValue>);
-type Monitor = ((String, String, String, String), Vec<Mode>, HashMap<String, OwnedValue>);
-type LogicalMonitor = (i32, i32, f64, u32, bool, Vec<(String, String, String, String)>, HashMap<String, OwnedValue>);
+type Mode = (
+    String,
+    i32,
+    i32,
+    f64,
+    f64,
+    Vec<f64>,
+    HashMap<String, OwnedValue>,
+);
+type Monitor = (
+    (String, String, String, String),
+    Vec<Mode>,
+    HashMap<String, OwnedValue>,
+);
+type LogicalMonitor = (
+    i32,
+    i32,
+    f64,
+    u32,
+    bool,
+    Vec<(String, String, String, String)>,
+    HashMap<String, OwnedValue>,
+);
 
 /// The primary monitor's connector and its current logical size in pixels.
 #[derive(Debug, Clone, PartialEq)]
@@ -59,7 +79,12 @@ pub fn pick_target(monitors: &[Monitor], logical: &[LogicalMonitor]) -> Option<T
     let mode = monitor
         .1
         .iter()
-        .find(|m| matches!(m.6.get("is-current").and_then(|v| bool::try_from(v).ok()), Some(true)))
+        .find(|m| {
+            matches!(
+                m.6.get("is-current").and_then(|v| bool::try_from(v).ok()),
+                Some(true)
+            )
+        })
         .or_else(|| monitor.1.first())?;
     Some(Target {
         connector,
@@ -79,13 +104,22 @@ pub struct Session {
 
 impl Drop for Session {
     fn drop(&mut self) {
-        if let Ok(p) = Proxy::new(&self.conn, RD_NAME, self.rd_path.as_str(), "org.gnome.Mutter.RemoteDesktop.Session") {
+        if let Ok(p) = Proxy::new(
+            &self.conn,
+            RD_NAME,
+            self.rd_path.as_str(),
+            "org.gnome.Mutter.RemoteDesktop.Session",
+        ) {
             let _ = p.call_method("Stop", &());
         }
     }
 }
 
+#[derive(Default)]
 pub struct MutterBackend;
+
+/// Session, PipeWire node id, encode size.
+pub type Connected = (Arc<Session>, u32, (u32, u32));
 
 impl MutterBackend {
     pub fn new() -> Self {
@@ -96,7 +130,9 @@ impl MutterBackend {
     pub fn probe() -> Result<(), String> {
         let conn = Connection::session().map_err(|e| e.to_string())?;
         let rd = Proxy::new(&conn, RD_NAME, RD_PATH, RD_NAME).map_err(|e| e.to_string())?;
-        let version: i32 = rd.get_property("Version").map_err(|e| format!("{RD_NAME} is not available: {e}"))?;
+        let version: i32 = rd
+            .get_property("Version")
+            .map_err(|e| format!("{RD_NAME} is not available: {e}"))?;
         let _ = version;
         Ok(())
     }
@@ -105,31 +141,54 @@ impl MutterBackend {
     /// PipeWire node and the encode size. Split out so the D-Bus marshalling
     /// can be exercised against a fake service without GStreamer.
     #[doc(hidden)]
-    pub fn connect(&self, max_width: u32) -> Result<(Arc<Session>, u32, (u32, u32)), BackendError> {
+    pub fn connect(&self, max_width: u32) -> Result<Connected, BackendError> {
         let conn = Connection::session().map_err(berr)?;
 
         let dc = Proxy::new(&conn, DC_NAME, DC_PATH, DC_NAME).map_err(berr)?;
         let state = dc.call_method("GetCurrentState", &()).map_err(berr)?;
-        let (_serial, monitors, logical, _props): (u32, Vec<Monitor>, Vec<LogicalMonitor>, HashMap<String, OwnedValue>) =
-            state.body().deserialize().map_err(berr)?;
-        let target = pick_target(&monitors, &logical).ok_or_else(|| BackendError::Other("no monitor to share".into()))?;
+        let (_serial, monitors, logical, _props): (
+            u32,
+            Vec<Monitor>,
+            Vec<LogicalMonitor>,
+            HashMap<String, OwnedValue>,
+        ) = state.body().deserialize().map_err(berr)?;
+        let target = pick_target(&monitors, &logical)
+            .ok_or_else(|| BackendError::Other("no monitor to share".into()))?;
 
         let rd = Proxy::new(&conn, RD_NAME, RD_PATH, RD_NAME).map_err(berr)?;
         let rd_path: OwnedObjectPath = rd.call("CreateSession", &()).map_err(berr)?;
-        let rd_session = Proxy::new(&conn, RD_NAME, rd_path.clone(), "org.gnome.Mutter.RemoteDesktop.Session").map_err(berr)?;
+        let rd_session = Proxy::new(
+            &conn,
+            RD_NAME,
+            rd_path.clone(),
+            "org.gnome.Mutter.RemoteDesktop.Session",
+        )
+        .map_err(berr)?;
         let session_id: String = rd_session.get_property("SessionId").map_err(berr)?;
 
         let sc = Proxy::new(&conn, SC_NAME, SC_PATH, SC_NAME).map_err(berr)?;
         let mut props: HashMap<&str, Value<'_>> = HashMap::new();
         props.insert("remote-desktop-session-id", Value::from(session_id));
         let sc_path: OwnedObjectPath = sc.call("CreateSession", &(props,)).map_err(berr)?;
-        let sc_session = Proxy::new(&conn, SC_NAME, sc_path.clone(), "org.gnome.Mutter.ScreenCast.Session").map_err(berr)?;
+        let sc_session = Proxy::new(
+            &conn,
+            SC_NAME,
+            sc_path.clone(),
+            "org.gnome.Mutter.ScreenCast.Session",
+        )
+        .map_err(berr)?;
         let mut rprops: HashMap<&str, Value<'_>> = HashMap::new();
         rprops.insert("cursor-mode", Value::from(CURSOR_EMBEDDED));
         let stream_path: OwnedObjectPath = sc_session
             .call("RecordMonitor", &(target.connector.as_str(), rprops))
             .map_err(berr)?;
-        let stream = Proxy::new(&conn, SC_NAME, stream_path.clone(), "org.gnome.Mutter.ScreenCast.Stream").map_err(berr)?;
+        let stream = Proxy::new(
+            &conn,
+            SC_NAME,
+            stream_path.clone(),
+            "org.gnome.Mutter.ScreenCast.Stream",
+        )
+        .map_err(berr)?;
         // Subscribe before Start: the node id arrives as a signal.
         let mut added = stream.receive_signal("PipeWireStreamAdded").map_err(berr)?;
 
@@ -147,7 +206,10 @@ impl MutterBackend {
     }
 }
 
-fn wait_for_node(added: &mut zbus::blocking::proxy::SignalIterator<'_>, timeout: Duration) -> Result<u32, BackendError> {
+fn wait_for_node(
+    added: &mut zbus::blocking::proxy::SignalIterator<'_>,
+    timeout: Duration,
+) -> Result<u32, BackendError> {
     // The iterator blocks; bound it with a watchdog thread-free deadline check
     // by polling `next` on a helper thread.
     let deadline = Instant::now() + timeout;
@@ -160,7 +222,9 @@ fn wait_for_node(added: &mut zbus::blocking::proxy::SignalIterator<'_>, timeout:
         });
         match rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
             Ok(r) => r,
-            Err(_) => Err(BackendError::Other("the compositor did not start the screen stream".into())),
+            Err(_) => Err(BackendError::Other(
+                "the compositor did not start the screen stream".into(),
+            )),
         }
     })
 }
@@ -172,7 +236,8 @@ impl Backend for MutterBackend {
 
     fn open(&self, max_width: u32, fps: u32) -> Result<Streams, BackendError> {
         let (session, node, (w, h)) = self.connect(max_width)?;
-        let source = GstPipeSource::spawn(node, w, h, fps).map_err(|e: CaptureError| BackendError::Capture(e))?;
+        let source = GstPipeSource::spawn(node, w, h, fps)
+            .map_err(|e: CaptureError| BackendError::Capture(e))?;
         Ok(Streams {
             source: Box::new(source),
             input: Box::new(MutterInput::new(session, LockWatch::logind())),
@@ -191,16 +256,36 @@ impl LockWatch {
     /// Test hook: a constant answer instead of asking logind.
     #[doc(hidden)]
     pub fn fixed(locked: bool) -> Self {
-        Self { session_proxy: None, cached: Mutex::new((Instant::now(), locked)), fixed: Some(locked) }
+        Self {
+            session_proxy: None,
+            cached: Mutex::new((Instant::now(), locked)),
+            fixed: Some(locked),
+        }
     }
 
     pub fn logind() -> Self {
         let proxy = Connection::system().ok().and_then(|sys| {
-            let mgr = Proxy::new(&sys, "org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager").ok()?;
+            let mgr = Proxy::new(
+                &sys,
+                "org.freedesktop.login1",
+                "/org/freedesktop/login1",
+                "org.freedesktop.login1.Manager",
+            )
+            .ok()?;
             let path: OwnedObjectPath = mgr.call("GetSession", &("auto",)).ok()?;
-            Proxy::new(&sys, "org.freedesktop.login1", path.to_owned(), "org.freedesktop.login1.Session").ok()
+            Proxy::new(
+                &sys,
+                "org.freedesktop.login1",
+                path.to_owned(),
+                "org.freedesktop.login1.Session",
+            )
+            .ok()
         });
-        Self { session_proxy: proxy, cached: Mutex::new((Instant::now() - Duration::from_secs(10), false)), fixed: None }
+        Self {
+            session_proxy: proxy,
+            cached: Mutex::new((Instant::now() - Duration::from_secs(10), false)),
+            fixed: None,
+        }
     }
 
     /// Locked or inactive. Unknown (no logind) counts as locked: fail closed.
@@ -234,7 +319,12 @@ pub struct MutterInput {
 
 impl MutterInput {
     pub fn new(session: Arc<Session>, login: LockWatch) -> Self {
-        Self { session, login, keys_down: Vec::new(), buttons_down: Vec::new() }
+        Self {
+            session,
+            login,
+            keys_down: Vec::new(),
+            buttons_down: Vec::new(),
+        }
     }
 
     fn rd(&self) -> Result<Proxy<'static>, InputError> {
@@ -248,7 +338,8 @@ impl MutterInput {
     }
 
     fn key(&mut self, rd: &Proxy<'_>, sym: u32, down: bool) -> Result<(), InputError> {
-        rd.call_method("NotifyKeyboardKeysym", &(sym, down)).map_err(|e| InputError::Backend(e.to_string()))?;
+        rd.call_method("NotifyKeyboardKeysym", &(sym, down))
+            .map_err(|e| InputError::Backend(e.to_string()))?;
         if down {
             self.keys_down.push(sym);
         } else {
@@ -258,7 +349,8 @@ impl MutterInput {
     }
 
     fn button(&mut self, rd: &Proxy<'_>, code: i32, down: bool) -> Result<(), InputError> {
-        rd.call_method("NotifyPointerButton", &(code, down)).map_err(|e| InputError::Backend(e.to_string()))?;
+        rd.call_method("NotifyPointerButton", &(code, down))
+            .map_err(|e| InputError::Backend(e.to_string()))?;
         if down {
             self.buttons_down.push(code);
         } else {
@@ -279,13 +371,20 @@ impl InputSink for MutterInput {
         let e = |err: zbus::Error| InputError::Backend(err.to_string());
         match event {
             InputEvent::Move { dx, dy } => {
-                rd.call_method("NotifyPointerMotionRelative", &(*dx, *dy)).map_err(e)?;
+                rd.call_method("NotifyPointerMotionRelative", &(*dx, *dy))
+                    .map_err(e)?;
             }
             InputEvent::MoveAbs { x, y } => {
                 let (w, h) = self.session.logical;
-                rd.call_method("NotifyPointerMotionAbsolute", &(self.session.stream_path.as_str(), x * w, y * h)).map_err(e)?;
+                rd.call_method(
+                    "NotifyPointerMotionAbsolute",
+                    &(self.session.stream_path.as_str(), x * w, y * h),
+                )
+                .map_err(e)?;
             }
-            InputEvent::Button { button, down } => self.button(&rd, button.evdev() as i32, *down)?,
+            InputEvent::Button { button, down } => {
+                self.button(&rd, button.evdev() as i32, *down)?
+            }
             InputEvent::Click { button } => {
                 let code = button.evdev() as i32;
                 let down = self.button(&rd, code, true);
@@ -293,10 +392,12 @@ impl InputSink for MutterInput {
                 down.and(up)?;
             }
             InputEvent::Scroll { dx, dy } => {
-                rd.call_method("NotifyPointerAxis", &(*dx, *dy, AXIS_SOURCE_FINGER)).map_err(e)?;
+                rd.call_method("NotifyPointerAxis", &(*dx, *dy, AXIS_SOURCE_FINGER))
+                    .map_err(e)?;
             }
             InputEvent::Key { key, modifiers } => {
-                let sym = keysym::keysym(key).ok_or_else(|| InputError::Backend("unmapped key".into()))?;
+                let sym = keysym::keysym(key)
+                    .ok_or_else(|| InputError::Backend("unmapped key".into()))?;
                 let mut held = Vec::new();
                 let result = (|| {
                     for m in modifiers {
@@ -351,22 +452,56 @@ mod tests {
 
     fn mode(w: i32, h: i32, current: bool) -> Mode {
         let mut props = HashMap::new();
-        props.insert("is-current".to_string(), OwnedValue::try_from(Value::from(current)).unwrap());
+        props.insert(
+            "is-current".to_string(),
+            OwnedValue::try_from(Value::from(current)).unwrap(),
+        );
         ("m".into(), w, h, 60.0, 60.0, vec![1.0], props)
     }
 
     #[test]
     fn picks_primary_monitor_current_mode_at_logical_size() {
         let monitors = vec![
-            (("DP-1".into(), "".into(), "".into(), "".into()), vec![mode(1920, 1080, true)], HashMap::new()),
-            (("eDP-1".into(), "".into(), "".into(), "".into()), vec![mode(3024, 1964, false), mode(3024, 1964, true)], HashMap::new()),
+            (
+                ("DP-1".into(), "".into(), "".into(), "".into()),
+                vec![mode(1920, 1080, true)],
+                HashMap::new(),
+            ),
+            (
+                ("eDP-1".into(), "".into(), "".into(), "".into()),
+                vec![mode(3024, 1964, false), mode(3024, 1964, true)],
+                HashMap::new(),
+            ),
         ];
         let logical = vec![
-            (0, 0, 1.0, 0, false, vec![("DP-1".into(), "".into(), "".into(), "".into())], HashMap::new()),
-            (1920, 0, 2.0, 0, true, vec![("eDP-1".into(), "".into(), "".into(), "".into())], HashMap::new()),
+            (
+                0,
+                0,
+                1.0,
+                0,
+                false,
+                vec![("DP-1".into(), "".into(), "".into(), "".into())],
+                HashMap::new(),
+            ),
+            (
+                1920,
+                0,
+                2.0,
+                0,
+                true,
+                vec![("eDP-1".into(), "".into(), "".into(), "".into())],
+                HashMap::new(),
+            ),
         ];
         let t = pick_target(&monitors, &logical).unwrap();
-        assert_eq!(t, Target { connector: "eDP-1".into(), width: 1512, height: 982 });
+        assert_eq!(
+            t,
+            Target {
+                connector: "eDP-1".into(),
+                width: 1512,
+                height: 982
+            }
+        );
     }
 
     #[test]

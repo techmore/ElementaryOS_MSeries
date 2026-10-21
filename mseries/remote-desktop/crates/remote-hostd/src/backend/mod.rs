@@ -65,7 +65,10 @@ impl Backend for TestBackend {
 /// Even output size at most `max_width` wide, keeping the aspect ratio.
 pub fn fit(width: u32, height: u32, max_width: u32) -> (u32, u32) {
     let (w, h) = if width > max_width {
-        (max_width, (height as u64 * max_width as u64 / width as u64) as u32)
+        (
+            max_width,
+            (height as u64 * max_width as u64 / width as u64) as u32,
+        )
     } else {
         (width, height)
     };

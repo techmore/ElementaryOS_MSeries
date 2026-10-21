@@ -26,8 +26,12 @@ fn err(e: impl ToString) -> ClientError {
 
 /// Parse `http://host:port/#i=TOKEN` into (`ws://host:port/ws`, token).
 pub fn parse_link(link: &str) -> Result<(String, String), ClientError> {
-    let rest = link.strip_prefix("http://").ok_or_else(|| err("expected an http:// link"))?;
-    let (hostport, frag) = rest.split_once("/#i=").ok_or_else(|| err("link has no #i= invite"))?;
+    let rest = link
+        .strip_prefix("http://")
+        .ok_or_else(|| err("expected an http:// link"))?;
+    let (hostport, frag) = rest
+        .split_once("/#i=")
+        .ok_or_else(|| err("link has no #i= invite"))?;
     if hostport.is_empty() || frag.is_empty() {
         return Err(err("malformed link"));
     }
@@ -35,14 +39,21 @@ pub fn parse_link(link: &str) -> Result<(String, String), ClientError> {
 }
 
 pub async fn send(ws: &mut Ws, m: &ClientMsg) -> Result<(), ClientError> {
-    ws.send(Message::Text(serde_json::to_string(m).map_err(err)?.into())).await.map_err(err)
+    ws.send(Message::Text(serde_json::to_string(m).map_err(err)?.into()))
+        .await
+        .map_err(err)
 }
 
 pub async fn recv(ws: &mut Ws, timeout: Duration) -> Result<ServerMsg, ClientError> {
     loop {
-        match tokio::time::timeout(timeout, ws.next()).await.map_err(|_| err("timed out waiting for the host"))? {
+        match tokio::time::timeout(timeout, ws.next())
+            .await
+            .map_err(|_| err("timed out waiting for the host"))?
+        {
             Some(Ok(Message::Text(t))) => return serde_json::from_str(&t).map_err(err),
-            Some(Ok(Message::Close(_))) | None => return Err(err("the host closed the connection")),
+            Some(Ok(Message::Close(_))) | None => {
+                return Err(err("the host closed the connection"))
+            }
             Some(Ok(_)) => continue,
             Some(Err(e)) => return Err(err(e)),
         }
@@ -90,7 +101,17 @@ pub async fn run(link: &str, opts: Options) -> Result<Report, ClientError> {
     let mut resume: Option<String> = None;
     let mut attempt = 0u32;
     loop {
-        match once(&url, &invite, &mut resume, &opts, &mut report, &mut started, &mut attempt).await {
+        match once(
+            &url,
+            &invite,
+            &mut resume,
+            &opts,
+            &mut report,
+            &mut started,
+            &mut attempt,
+        )
+        .await
+        {
             Ok(()) => {
                 report.seconds = started.elapsed().as_secs_f64();
                 return Ok(report);
@@ -121,17 +142,36 @@ async fn once(
     let hello = ClientMsg::Hello {
         version: PROTOCOL_VERSION,
         device: opts.device.clone(),
-        invite: if resume.is_none() { Some(invite.to_string()) } else { None },
+        invite: if resume.is_none() {
+            Some(invite.to_string())
+        } else {
+            None
+        },
         resume: resume.clone(),
     };
     send(&mut ws, &hello).await.map_err(Fail::Retry)?;
     let (resume_token, control) = loop {
-        match recv(&mut ws, opts.wait_for_owner).await.map_err(Fail::Retry)? {
-            ServerMsg::Pending { expires_in_s, .. } => eprintln!("waiting for the owner to approve ({expires_in_s}s)…"),
-            ServerMsg::Granted { resume_token, control, .. } => break (resume_token, control),
-            ServerMsg::Denied { reason } => return Err(Fail::Fatal(err(format!("denied: {reason}")))),
-            ServerMsg::Error { code, message } => return Err(Fail::Fatal(err(format!("{code}: {message}")))),
-            ServerMsg::Ended { reason } => return Err(Fail::Fatal(err(format!("ended: {reason}")))),
+        match recv(&mut ws, opts.wait_for_owner)
+            .await
+            .map_err(Fail::Retry)?
+        {
+            ServerMsg::Pending { expires_in_s, .. } => {
+                eprintln!("waiting for the owner to approve ({expires_in_s}s)…")
+            }
+            ServerMsg::Granted {
+                resume_token,
+                control,
+                ..
+            } => break (resume_token, control),
+            ServerMsg::Denied { reason } => {
+                return Err(Fail::Fatal(err(format!("denied: {reason}"))))
+            }
+            ServerMsg::Error { code, message } => {
+                return Err(Fail::Fatal(err(format!("{code}: {message}"))))
+            }
+            ServerMsg::Ended { reason } => {
+                return Err(Fail::Fatal(err(format!("ended: {reason}"))))
+            }
             _ => {}
         }
     };
@@ -144,16 +184,26 @@ async fn once(
 
     let mut viewer = ViewerPeer::new(&opts.rtc).await.map_err(retry)?;
     let offer = viewer.create_offer().await.map_err(retry)?;
-    send(&mut ws, &ClientMsg::Offer { sdp: offer }).await.map_err(Fail::Retry)?;
+    send(&mut ws, &ClientMsg::Offer { sdp: offer })
+        .await
+        .map_err(Fail::Retry)?;
     let answer = loop {
-        match recv(&mut ws, Duration::from_secs(15)).await.map_err(Fail::Retry)? {
+        match recv(&mut ws, Duration::from_secs(15))
+            .await
+            .map_err(Fail::Retry)?
+        {
             ServerMsg::Answer { sdp } => break sdp,
-            ServerMsg::Error { code, message } => return Err(Fail::Fatal(err(format!("{code}: {message}")))),
+            ServerMsg::Error { code, message } => {
+                return Err(Fail::Fatal(err(format!("{code}: {message}"))))
+            }
             _ => {}
         }
     };
     viewer.set_answer(answer).await.map_err(retry)?;
-    viewer.wait_connected(Duration::from_secs(15)).await.map_err(retry)?;
+    viewer
+        .wait_connected(Duration::from_secs(15))
+        .await
+        .map_err(retry)?;
     *attempt = 0;
 
     let mut sent_input = false;
@@ -177,9 +227,14 @@ async fn once(
         }
         if opts.send_input && !sent_input && report.frames > 5 {
             sent_input = true;
-            let _ = viewer.send_input(&InputEvent::Move { dx: 1.0, dy: 1.0 }).await;
+            let _ = viewer
+                .send_input(&InputEvent::Move { dx: 1.0, dy: 1.0 })
+                .await;
         }
-        if matches!(viewer.link_state(), remote_rtc::LinkState::Failed | remote_rtc::LinkState::Closed) {
+        if matches!(
+            viewer.link_state(),
+            remote_rtc::LinkState::Failed | remote_rtc::LinkState::Closed
+        ) {
             break 'stream Err(retry("connection lost"));
         }
     };
@@ -194,7 +249,9 @@ fn note_frame(report: &mut Report, f: &Frame, started: Instant) {
     report.frames += 1;
     report.width = f.width;
     report.height = f.height;
-    report.first_frame_ms.get_or_insert(started.elapsed().as_millis());
+    report
+        .first_frame_ms
+        .get_or_insert(started.elapsed().as_millis());
 }
 
 #[cfg(test)]

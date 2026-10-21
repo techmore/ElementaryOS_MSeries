@@ -74,7 +74,8 @@ impl TokenKey {
         self.mac(&payload)
             .verify_slice(&sig)
             .map_err(|_| AuthError::BadSignature)?;
-        let claims: Claims = serde_json::from_slice(&payload).map_err(|_| AuthError::MalformedToken)?;
+        let claims: Claims =
+            serde_json::from_slice(&payload).map_err(|_| AuthError::MalformedToken)?;
         if now >= claims.exp {
             return Err(AuthError::Expired);
         }
@@ -119,7 +120,8 @@ impl InviteStore {
 
     fn prune(&mut self, now: Millis) {
         self.invites.retain(|_, i| i.expires > now);
-        self.failures.retain(|t| now.saturating_sub(*t) < FAIL_WINDOW_MS);
+        self.failures
+            .retain(|t| now.saturating_sub(*t) < FAIL_WINDOW_MS);
     }
 
     pub fn pending(&mut self, now: Millis) -> usize {
@@ -154,7 +156,11 @@ impl InviteStore {
         let h = hash(token);
         // Equal-hash lookup; the explicit ct compare keeps this robust if the
         // map is ever replaced by a scan.
-        let found = self.invites.keys().find(|k| bool::from(k.ct_eq(&h))).copied();
+        let found = self
+            .invites
+            .keys()
+            .find(|k| bool::from(k.ct_eq(&h)))
+            .copied();
         match found.and_then(|k| self.invites.remove(&k)) {
             Some(inv) => Ok(InviteGrant {
                 allow_control: inv.allow_control,
@@ -179,7 +185,10 @@ mod tests {
     #[test]
     fn token_roundtrip_and_tamper() {
         let k = TokenKey::fixed(7);
-        let t = k.issue(&Claims { sid: "s1".into(), exp: 1000 });
+        let t = k.issue(&Claims {
+            sid: "s1".into(),
+            exp: 1000,
+        });
         assert_eq!(k.verify(&t, 10).unwrap().sid, "s1");
         assert_eq!(k.verify(&t, 1000), Err(AuthError::Expired));
         let other = TokenKey::fixed(8);

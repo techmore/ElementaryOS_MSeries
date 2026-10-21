@@ -47,7 +47,10 @@ pub fn keysym(key: &str) -> Option<u32> {
 
 /// Keysyms for each character of `text`.
 pub fn text_keysyms(text: &str) -> Vec<u32> {
-    text.chars().filter(|c| typeable(*c)).map(char_keysym).collect()
+    text.chars()
+        .filter(|c| typeable(*c))
+        .map(char_keysym)
+        .collect()
 }
 
 pub fn modifier_keysym(m: Modifier) -> u32 {

@@ -30,7 +30,9 @@ impl Backoff {
         if self.max_attempts.is_some_and(|m| attempt >= m) {
             return None;
         }
-        let exp = self.base.saturating_mul(1u32.checked_shl(attempt.min(16)).unwrap_or(u32::MAX));
+        let exp = self
+            .base
+            .saturating_mul(1u32.checked_shl(attempt.min(16)).unwrap_or(u32::MAX));
         let capped = exp.min(self.cap);
         let j = 0.5 + 0.5 * jitter.clamp(0.0, 1.0);
         Some(capped.mul_f64(j))
@@ -53,7 +55,10 @@ mod tests {
 
     #[test]
     fn unbounded_attempts_never_overflow() {
-        let b = Backoff { max_attempts: None, ..Backoff::default() };
+        let b = Backoff {
+            max_attempts: None,
+            ..Backoff::default()
+        };
         assert_eq!(b.delay(u32::MAX, 1.0), Some(Duration::from_secs(15)));
     }
 }

@@ -167,7 +167,13 @@ impl ConsentManager {
         }
     }
 
-    fn log(&mut self, event: &str, session: Option<&str>, device: Option<&str>, detail: Option<&str>) {
+    fn log(
+        &mut self,
+        event: &str,
+        session: Option<&str>,
+        device: Option<&str>,
+        detail: Option<&str>,
+    ) {
         let ev = AuditEvent {
             ts_ms: self.clock.now_ms(),
             event: event.into(),
@@ -176,6 +182,17 @@ impl ConsentManager {
             detail: detail.map(Into::into),
         };
         self.audit.record(&ev);
+    }
+
+    /// Operational audit entry (viewer address, link quality). Never frame or input content.
+    pub fn audit_note(&mut self, event: &str, device: Option<&str>, detail: &str) {
+        let sid = match &self.state {
+            State::Active { session, .. } | State::Grace { session, .. } => {
+                Some(session.id.clone())
+            }
+            _ => None,
+        };
+        self.log(event, sid.as_deref(), device, Some(detail));
     }
 
     pub fn take_events(&mut self) -> Vec<Event> {
@@ -194,7 +211,16 @@ impl ConsentManager {
         }
         let now = self.clock.now_ms();
         let token = self.invites.create(now, allow_control)?;
-        self.log("invite_created", None, None, Some(if allow_control { "control_offered" } else { "view_only" }));
+        self.log(
+            "invite_created",
+            None,
+            None,
+            Some(if allow_control {
+                "control_offered"
+            } else {
+                "view_only"
+            }),
+        );
         Ok(token)
     }
 
@@ -228,7 +254,11 @@ impl ConsentManager {
 
     /// Owner answered. `Allow { control: true }` needs the invite to have
     /// offered control; otherwise the owner can only grant view-only.
-    pub fn decide(&mut self, request_id: &str, decision: Decision) -> Result<Option<Grant>, ConsentError> {
+    pub fn decide(
+        &mut self,
+        request_id: &str,
+        decision: Decision,
+    ) -> Result<Option<Grant>, ConsentError> {
         self.tick();
         let req = match &self.state {
             State::Pending { req } if req.id == request_id => req.clone(),
@@ -290,12 +320,15 @@ impl ConsentManager {
         let now = self.clock.now_ms();
         let claims = self.key.verify(resume_token, now)?;
         let (mut session, last_activity, was_grace) = match &self.state {
-            State::Active { session, last_activity } if session.id == claims.sid => {
-                (session.clone(), *last_activity, false)
-            }
-            State::Grace { session, last_activity, .. } if session.id == claims.sid => {
-                (session.clone(), *last_activity, true)
-            }
+            State::Active {
+                session,
+                last_activity,
+            } if session.id == claims.sid => (session.clone(), *last_activity, false),
+            State::Grace {
+                session,
+                last_activity,
+                ..
+            } if session.id == claims.sid => (session.clone(), *last_activity, true),
             _ => return Err(ConsentError::NoSession),
         };
         session.connected = true;
@@ -303,22 +336,48 @@ impl ConsentManager {
             session: session.clone(),
             last_activity: last_activity.max(now),
         };
-        self.log(if was_grace { "session_attached" } else { "session_reattached" }, Some(&session.id), Some(&session.device), None);
-        self.events.push(Event::Attached { session_id: session.id.clone() });
+        self.log(
+            if was_grace {
+                "session_attached"
+            } else {
+                "session_reattached"
+            },
+            Some(&session.id),
+            Some(&session.device),
+            None,
+        );
+        self.events.push(Event::Attached {
+            session_id: session.id.clone(),
+        });
         Ok(session)
     }
 
     /// The viewer's connection dropped; keep the session for the grace period.
     pub fn detach(&mut self) {
         let now = self.clock.now_ms();
-        if let State::Active { session, last_activity } = &self.state {
+        if let State::Active {
+            session,
+            last_activity,
+        } = &self.state
+        {
             let mut session = session.clone();
             session.connected = false;
             let until = now + self.policy.grace_ms;
             let last_activity = *last_activity;
-            self.log("session_detached", Some(&session.id), Some(&session.device), None);
-            self.events.push(Event::Detached { session_id: session.id.clone() });
-            self.state = State::Grace { session, until, last_activity };
+            self.log(
+                "session_detached",
+                Some(&session.id),
+                Some(&session.device),
+                None,
+            );
+            self.events.push(Event::Detached {
+                session_id: session.id.clone(),
+            });
+            self.state = State::Grace {
+                session,
+                until,
+                last_activity,
+            };
         }
     }
 
@@ -338,8 +397,16 @@ impl ConsentManager {
         }
         session.control = control;
         let (sid, device) = (session.id.clone(), session.device.clone());
-        self.log("mode_changed", Some(&sid), Some(&device), Some(if control { "control" } else { "view_only" }));
-        self.events.push(Event::ModeChanged { session_id: sid, control });
+        self.log(
+            "mode_changed",
+            Some(&sid),
+            Some(&device),
+            Some(if control { "control" } else { "view_only" }),
+        );
+        self.events.push(Event::ModeChanged {
+            session_id: sid,
+            control,
+        });
         Ok(())
     }
 
@@ -363,11 +430,22 @@ impl ConsentManager {
             State::Idle => {}
             State::Pending { req } => {
                 self.log("consent_cancelled", None, Some(&req.device), Some(reason));
-                self.events.push(Event::Denied { request_id: req.id, reason: reason.into() });
+                self.events.push(Event::Denied {
+                    request_id: req.id,
+                    reason: reason.into(),
+                });
             }
             State::Active { session, .. } | State::Grace { session, .. } => {
-                self.log("session_ended", Some(&session.id), Some(&session.device), Some(reason));
-                self.events.push(Event::Ended { session_id: session.id, reason: reason.into() });
+                self.log(
+                    "session_ended",
+                    Some(&session.id),
+                    Some(&session.device),
+                    Some(reason),
+                );
+                self.events.push(Event::Ended {
+                    session_id: session.id,
+                    reason: reason.into(),
+                });
             }
         }
     }
@@ -391,7 +469,10 @@ impl ConsentManager {
                 let _ = id;
                 self.end("viewer did not return");
             }
-            State::Active { session, last_activity } => {
+            State::Active {
+                session,
+                last_activity,
+            } => {
                 if now.saturating_sub(session.started_ms) >= self.policy.max_session_ms {
                     self.end("session length limit reached");
                 } else if now.saturating_sub(*last_activity) >= self.policy.idle_timeout_ms {
@@ -411,10 +492,34 @@ impl ConsentManager {
         let now = self.clock.now_ms();
         let invites_pending = self.invites.pending(now);
         match &self.state {
-            State::Idle => Status { phase: Phase::Idle, pending: None, session: None, grace_until_ms: None, invites_pending },
-            State::Pending { req } => Status { phase: Phase::Pending, pending: Some(req.clone()), session: None, grace_until_ms: None, invites_pending },
-            State::Active { session, .. } => Status { phase: Phase::Active, pending: None, session: Some(session.clone()), grace_until_ms: None, invites_pending },
-            State::Grace { session, until, .. } => Status { phase: Phase::Grace, pending: None, session: Some(session.clone()), grace_until_ms: Some(*until), invites_pending },
+            State::Idle => Status {
+                phase: Phase::Idle,
+                pending: None,
+                session: None,
+                grace_until_ms: None,
+                invites_pending,
+            },
+            State::Pending { req } => Status {
+                phase: Phase::Pending,
+                pending: Some(req.clone()),
+                session: None,
+                grace_until_ms: None,
+                invites_pending,
+            },
+            State::Active { session, .. } => Status {
+                phase: Phase::Active,
+                pending: None,
+                session: Some(session.clone()),
+                grace_until_ms: None,
+                invites_pending,
+            },
+            State::Grace { session, until, .. } => Status {
+                phase: Phase::Grace,
+                pending: None,
+                session: Some(session.clone()),
+                grace_until_ms: Some(*until),
+                invites_pending,
+            },
         }
     }
 }
@@ -428,14 +533,20 @@ mod tests {
     fn manager() -> (ConsentManager, ManualClock, MemoryAudit) {
         let clock = ManualClock::new(1_000_000);
         let audit = MemoryAudit::default();
-        let m = ConsentManager::new(Policy::default(), Arc::new(clock.clone()), Box::new(audit.clone()));
+        let m = ConsentManager::new(
+            Policy::default(),
+            Arc::new(clock.clone()),
+            Box::new(audit.clone()),
+        );
         (m, clock, audit)
     }
 
     fn approved(m: &mut ConsentManager, control_offered: bool, control: bool) -> Grant {
         let inv = m.create_invite(control_offered).unwrap();
         let req = m.request(&inv, "Pixel 8").unwrap();
-        m.decide(&req.id, Decision::Allow { control }).unwrap().unwrap()
+        m.decide(&req.id, Decision::Allow { control })
+            .unwrap()
+            .unwrap()
     }
 
     #[test]
@@ -472,7 +583,10 @@ mod tests {
             m.decide(&req.id, Decision::Allow { control: true }),
             Err(ConsentError::ControlNotPermitted)
         );
-        let g = m.decide(&req.id, Decision::Allow { control: false }).unwrap().unwrap();
+        let g = m
+            .decide(&req.id, Decision::Allow { control: false })
+            .unwrap()
+            .unwrap();
         m.attach(&g.resume_token).unwrap();
         assert_eq!(m.set_control(true), Err(ConsentError::ControlNotPermitted));
     }
@@ -483,7 +597,10 @@ mod tests {
         let inv = m.create_invite(false).unwrap();
         let req = m.request(&inv, "Pixel 8").unwrap();
         c.advance(60_000);
-        assert_eq!(m.decide(&req.id, Decision::Allow { control: false }), Err(ConsentError::NoSuchRequest));
+        assert_eq!(
+            m.decide(&req.id, Decision::Allow { control: false }),
+            Err(ConsentError::NoSuchRequest)
+        );
         assert_eq!(m.status().phase, Phase::Idle);
     }
 
@@ -556,12 +673,21 @@ mod tests {
         let (mut m, _c, a) = manager();
         let inv = m.create_invite(true).unwrap();
         let req = m.request(&inv, "Pixel 8").unwrap();
-        let g = m.decide(&req.id, Decision::Allow { control: true }).unwrap().unwrap();
+        let g = m
+            .decide(&req.id, Decision::Allow { control: true })
+            .unwrap()
+            .unwrap();
         m.attach(&g.resume_token).unwrap();
         m.end("owner stopped");
         assert_eq!(
             a.names(),
-            ["invite_created", "consent_requested", "consent_granted", "session_attached", "session_ended"]
+            [
+                "invite_created",
+                "consent_requested",
+                "consent_granted",
+                "session_attached",
+                "session_ended"
+            ]
         );
         let dump = serde_json::to_string(&a.events()).unwrap();
         assert!(!dump.contains(&inv) && !dump.contains(&g.resume_token));
@@ -570,7 +696,10 @@ mod tests {
     #[test]
     fn bad_invites_are_audited_and_rejected() {
         let (mut m, _c, a) = manager();
-        assert!(matches!(m.request("nope", "X"), Err(ConsentError::Auth(AuthError::InvalidInvite))));
+        assert!(matches!(
+            m.request("nope", "X"),
+            Err(ConsentError::Auth(AuthError::InvalidInvite))
+        ));
         assert!(a.names().contains(&"invite_rejected".to_string()));
     }
 }

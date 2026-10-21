@@ -31,7 +31,11 @@ struct Args {
 #[tokio::main]
 async fn main() {
     let a = Args::parse();
-    let rtc = if a.loopback { RtcConfig::loopback() } else { RtcConfig::default() };
+    let rtc = if a.loopback {
+        RtcConfig::loopback()
+    } else {
+        RtcConfig::default()
+    };
     let opts = Options {
         duration: Duration::from_secs(a.seconds),
         device: a.device,
@@ -50,7 +54,10 @@ async fn main() {
             );
         }
         Err(e) => {
-            println!("{}", serde_json::json!({ "ok": false, "error": e.to_string() }));
+            println!(
+                "{}",
+                serde_json::json!({ "ok": false, "error": e.to_string() })
+            );
             std::process::exit(1);
         }
     }

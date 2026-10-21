@@ -63,7 +63,9 @@ impl FileAudit {
             use std::os::unix::fs::OpenOptionsExt;
             opts.mode(0o600);
         }
-        Ok(Self { file: opts.open(path)? })
+        Ok(Self {
+            file: opts.open(path)?,
+        })
     }
 }
 

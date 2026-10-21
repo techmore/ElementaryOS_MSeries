@@ -1,6 +1,6 @@
 //! The desktop side: answer an offer, stream H.264, receive input.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -12,7 +12,8 @@ use rtc::media::Sample;
 use rtc::media_stream::MediaStreamTrack;
 use rtc::peer_connection::configuration::media_engine::MIME_TYPE_H264;
 use rtc::rtp_transceiver::rtp_sender::{
-    RTCRtpCodec, RTCRtpCodecParameters, RTCRtpCodingParameters, RTCRtpEncodingParameters, RtpCodecKind,
+    RTCRtpCodec, RTCRtpCodecParameters, RTCRtpCodingParameters, RTCRtpEncodingParameters,
+    RtpCodecKind,
 };
 use tokio::sync::{mpsc, watch};
 use webrtc::data_channel::{DataChannel, DataChannelEvent};
@@ -27,7 +28,8 @@ use webrtc::runtime::default_runtime;
 
 use crate::{LinkState, RtcConfig, RtcError};
 
-pub(crate) const H264_FMTP: &str = "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f";
+pub(crate) const H264_FMTP: &str =
+    "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f";
 pub(crate) const H264_PT: u8 = 102;
 
 pub(crate) fn h264_codec() -> RTCRtpCodecParameters {
@@ -40,7 +42,6 @@ pub(crate) fn h264_codec() -> RTCRtpCodecParameters {
             rtcp_feedback: vec![],
         },
         payload_type: H264_PT,
-        ..Default::default()
     }
 }
 
@@ -51,7 +52,6 @@ pub(crate) fn ice_servers(cfg: &RtcConfig) -> Vec<RTCIceServer> {
             urls: s.urls.clone(),
             username: s.username.clone(),
             credential: s.credential.clone(),
-            ..Default::default()
         })
         .collect()
 }
@@ -71,12 +71,15 @@ struct Handler {
     runtime: Arc<dyn webrtc::runtime::Runtime>,
     force_key: Arc<AtomicBool>,
     connected: Arc<AtomicBool>,
+    stats: Arc<StatsCounters>,
 }
 
 #[async_trait::async_trait]
 impl PeerConnectionEventHandler for Handler {
     async fn on_ice_gathering_state_change(&self, state: RTCIceGatheringState) {
-        let _ = self.gather_done.send(state == RTCIceGatheringState::Complete);
+        let _ = self
+            .gather_done
+            .send(state == RTCIceGatheringState::Complete);
     }
 
     async fn on_connection_state_change(&self, state: RTCPeerConnectionState) {
@@ -92,6 +95,11 @@ impl PeerConnectionEventHandler for Handler {
                 // Frames sent before DTLS is up are lost, so the stream starts here.
                 self.force_key.store(true, Ordering::SeqCst);
                 self.connected.store(true, Ordering::SeqCst);
+                self.stats
+                    .connected_at
+                    .lock()
+                    .unwrap()
+                    .get_or_insert_with(Instant::now);
             }
             LinkState::Connecting => {}
             _ => self.connected.store(false, Ordering::SeqCst),
@@ -179,7 +187,28 @@ pub struct HostPeer {
     stop: Arc<AtomicBool>,
     force_key: Arc<AtomicBool>,
     connected: Arc<AtomicBool>,
+    stats: Arc<StatsCounters>,
     gather_timeout: Duration,
+}
+
+/// Cheap link-quality counters, read at session end. Nothing per-frame is logged.
+#[derive(Debug, Default)]
+pub struct StatsCounters {
+    pub frames_sent: AtomicU64,
+    pub frames_dropped: AtomicU64,
+    pub bytes_sent: AtomicU64,
+    pub connected_at: Mutex<Option<Instant>>,
+    pub created: Mutex<Option<Instant>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StatsSnapshot {
+    pub frames_sent: u64,
+    pub frames_dropped: u64,
+    pub bytes_sent: u64,
+    /// Offer accepted -> media path up.
+    pub connect_ms: Option<u64>,
+    pub streamed_s: f64,
 }
 
 pub struct VideoParams {
@@ -190,7 +219,11 @@ pub struct VideoParams {
 
 impl From<&RtcConfig> for VideoParams {
     fn from(c: &RtcConfig) -> Self {
-        Self { fps: c.fps, bitrate_bps: c.bitrate_bps, keyframe_interval_s: c.keyframe_interval_s }
+        Self {
+            fps: c.fps,
+            bitrate_bps: c.bitrate_bps,
+            keyframe_interval_s: c.keyframe_interval_s,
+        }
     }
 }
 
@@ -212,6 +245,8 @@ impl HostPeer {
         let channel_out = Arc::new(Mutex::new(None));
         let force_key = Arc::new(AtomicBool::new(true));
         let connected = Arc::new(AtomicBool::new(false));
+        let stats = Arc::new(StatsCounters::default());
+        *stats.created.lock().unwrap() = Some(Instant::now());
         let handler = Arc::new(Handler {
             gather_done: gather_tx,
             callbacks,
@@ -220,10 +255,15 @@ impl HostPeer {
             runtime: runtime.clone(),
             force_key: force_key.clone(),
             connected: connected.clone(),
+            stats: stats.clone(),
         });
 
         let pc = PeerConnectionBuilder::new()
-            .with_configuration(RTCConfigurationBuilder::new().with_ice_servers(ice_servers(cfg)).build())
+            .with_configuration(
+                RTCConfigurationBuilder::new()
+                    .with_ice_servers(ice_servers(cfg))
+                    .build(),
+            )
             .with_media_engine(media)
             .with_interceptor_registry(registry)
             .with_handler(handler)
@@ -233,7 +273,8 @@ impl HostPeer {
             .await?;
         let pc: Box<dyn PeerConnection> = Box::new(pc);
 
-        pc.set_remote_description(RTCSessionDescription::offer(offer_sdp)?).await?;
+        pc.set_remote_description(RTCSessionDescription::offer(offer_sdp)?)
+            .await?;
 
         // The track must exist before the answer is created so it binds to the
         // viewer's recvonly video transceiver.
@@ -246,7 +287,10 @@ impl HostPeer {
                 "Desktop".to_owned(),
                 RtpCodecKind::Video,
                 vec![RTCRtpEncodingParameters {
-                    rtp_coding_parameters: RTCRtpCodingParameters { ssrc: Some(ssrc), ..Default::default() },
+                    rtp_coding_parameters: RTCRtpCodingParameters {
+                        ssrc: Some(ssrc),
+                        ..Default::default()
+                    },
                     codec: h264_codec().rtp_codec,
                     ..Default::default()
                 }],
@@ -263,7 +307,9 @@ impl HostPeer {
             .codecs
             .first()
             .map(|c| c.payload_type)
-            .ok_or_else(|| RtcError::WebRtc("no H.264 negotiated; the viewer must offer H.264".into()))?;
+            .ok_or_else(|| {
+                RtcError::WebRtc("no H.264 negotiated; the viewer must offer H.264".into())
+            })?;
 
         let peer = Self {
             pc,
@@ -276,6 +322,7 @@ impl HostPeer {
             stop: Arc::new(AtomicBool::new(false)),
             force_key,
             connected,
+            stats,
             gather_timeout: Duration::from_millis(cfg.gather_timeout_ms),
         };
         let sdp = peer.gathered_local_sdp().await?;
@@ -295,14 +342,19 @@ impl HostPeer {
     /// Viewer sent a new offer on the live connection (ICE restart after a
     /// network change). Returns the new answer.
     pub async fn renegotiate(&self, offer_sdp: String) -> Result<String, RtcError> {
-        self.pc.set_remote_description(RTCSessionDescription::offer(offer_sdp)?).await?;
+        self.pc
+            .set_remote_description(RTCSessionDescription::offer(offer_sdp)?)
+            .await?;
         let answer = self.pc.create_answer(None).await?;
         self.pc.set_local_description(answer).await?;
         self.force_key.store(true, Ordering::SeqCst);
         self.gathered_local_sdp().await
     }
 
-    pub async fn add_remote_candidate(&self, candidate: webrtc::peer_connection::RTCIceCandidateInit) -> Result<(), RtcError> {
+    pub async fn add_remote_candidate(
+        &self,
+        candidate: webrtc::peer_connection::RTCIceCandidateInit,
+    ) -> Result<(), RtcError> {
         Ok(self.pc.add_ice_candidate(candidate).await?)
     }
 
@@ -326,7 +378,11 @@ impl HostPeer {
     /// Start streaming `source`. Capture + encode run on a dedicated thread;
     /// samples cross a 2-deep channel so a slow network drops frames (and
     /// forces an IDR) instead of growing latency.
-    pub fn start_video(&self, mut source: Box<dyn FrameSource>, params: VideoParams) -> Result<(), RtcError> {
+    pub fn start_video(
+        &self,
+        mut source: Box<dyn FrameSource>,
+        params: VideoParams,
+    ) -> Result<(), RtcError> {
         let (w, h) = source.dimensions();
         let mut enc = H264Encoder::new(w, h, params.fps, params.bitrate_bps)
             .map_err(|e| RtcError::WebRtc(e.to_string()))?;
@@ -334,6 +390,7 @@ impl HostPeer {
         let stop = self.stop.clone();
         let force_key = self.force_key.clone();
         let connected = self.connected.clone();
+        let stats = self.stats.clone();
         let frame_interval = Duration::from_secs_f64(1.0 / params.fps.max(1) as f64);
         let key_every = (params.fps.max(1) * params.keyframe_interval_s.max(1)) as u64;
 
@@ -379,7 +436,12 @@ impl HostPeer {
                     let now = Instant::now();
                     let dur = now.duration_since(last).max(Duration::from_millis(1));
                     last = now;
-                    if tx.try_send((bytes::Bytes::from(bits), dur)).is_err() {
+                    let len = bits.len() as u64;
+                    if tx.try_send((bytes::Bytes::from(bits), dur)).is_ok() {
+                        stats.frames_sent.fetch_add(1, Ordering::Relaxed);
+                        stats.bytes_sent.fetch_add(len, Ordering::Relaxed);
+                    } else {
+                        stats.frames_dropped.fetch_add(1, Ordering::Relaxed);
                         if tx.is_closed() {
                             break;
                         }
@@ -394,7 +456,11 @@ impl HostPeer {
         let (ssrc, pt) = (self.ssrc, self.payload_type);
         tokio::spawn(async move {
             while let Some((data, duration)) = rx.recv().await {
-                let sample = Sample { data, duration, ..Sample::new(Instant::now()) };
+                let sample = Sample {
+                    data,
+                    duration,
+                    ..Sample::new(Instant::now())
+                };
                 if let Err(e) = track.sample_writer(ssrc, pt).write_sample(&sample).await {
                     tracing::info!("video write ended: {e}");
                     break;
@@ -402,6 +468,20 @@ impl HostPeer {
             }
         });
         Ok(())
+    }
+
+    pub fn stats(&self) -> StatsSnapshot {
+        let created = *self.stats.created.lock().unwrap();
+        let connected = *self.stats.connected_at.lock().unwrap();
+        StatsSnapshot {
+            frames_sent: self.stats.frames_sent.load(Ordering::Relaxed),
+            frames_dropped: self.stats.frames_dropped.load(Ordering::Relaxed),
+            bytes_sent: self.stats.bytes_sent.load(Ordering::Relaxed),
+            connect_ms: created
+                .zip(connected)
+                .map(|(a, b)| b.duration_since(a).as_millis() as u64),
+            streamed_s: connected.map(|c| c.elapsed().as_secs_f64()).unwrap_or(0.0),
+        }
     }
 
     pub async fn close(&self) {

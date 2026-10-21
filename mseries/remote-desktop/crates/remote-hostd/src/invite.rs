@@ -39,7 +39,10 @@ fn label_for(ip: IpAddr) -> &'static str {
 /// `base` addresses to offer. Tailnet first (encrypted by WireGuard), then LAN.
 pub fn candidate_hosts(advertise: &[String]) -> Vec<(String, String)> {
     if !advertise.is_empty() {
-        return advertise.iter().map(|h| ("Configured".to_string(), h.clone())).collect();
+        return advertise
+            .iter()
+            .map(|h| ("Configured".to_string(), h.clone()))
+            .collect();
     }
     let mut out: Vec<(u8, String, String)> = Vec::new();
     for iface in if_addrs::get_if_addrs().unwrap_or_default() {
@@ -73,7 +76,11 @@ pub fn qr_rows(text: &str) -> Vec<String> {
     let w = code.width();
     code.to_colors()
         .chunks(w)
-        .map(|row| row.iter().map(|c| if *c == Color::Dark { '1' } else { '0' }).collect())
+        .map(|row| {
+            row.iter()
+                .map(|c| if *c == Color::Dark { '1' } else { '0' })
+                .collect()
+        })
         .collect()
 }
 
@@ -91,7 +98,9 @@ mod tests {
     fn qr_is_square_and_binary() {
         let rows = qr_rows("http://100.64.0.9:8484/#i=abcdefghijklmnopqrstuv");
         assert!(rows.len() >= 21);
-        assert!(rows.iter().all(|r| r.len() == rows.len() && r.chars().all(|c| c == '0' || c == '1')));
+        assert!(rows
+            .iter()
+            .all(|r| r.len() == rows.len() && r.chars().all(|c| c == '0' || c == '1')));
     }
 
     #[test]

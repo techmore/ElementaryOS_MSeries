@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Remote Desktop requests
+Comment=Shows the approval prompt when a phone asks to connect
+Exec=mseries-remote --background
+Icon=preferences-system-sharing
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

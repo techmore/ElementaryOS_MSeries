@@ -4,7 +4,9 @@
 //! the sender simply writes nothing for it.
 
 use openh264::decoder::Decoder;
-use openh264::encoder::{BitRate, Encoder, EncoderConfig, FrameRate, IntraFramePeriod, RateControlMode, UsageType};
+use openh264::encoder::{
+    BitRate, Encoder, EncoderConfig, FrameRate, IntraFramePeriod, RateControlMode, UsageType,
+};
 use openh264::formats::YUVSource;
 use openh264::OpenH264API;
 
@@ -60,7 +62,10 @@ impl H264Encoder {
             .intra_frame_period(IntraFramePeriod::from_num_frames(fps.saturating_mul(5)));
         let enc = Encoder::with_api_config(OpenH264API::from_source(), cfg)
             .map_err(|e| CodecError::Encode(e.to_string()))?;
-        Ok(Self { enc, size: (width, height) })
+        Ok(Self {
+            enc,
+            size: (width, height),
+        })
     }
 
     pub fn force_keyframe(&mut self) {
@@ -70,9 +75,15 @@ impl H264Encoder {
     /// One access unit in Annex B (start-code delimited NALs).
     pub fn encode(&mut self, frame: &Frame) -> Result<Vec<u8>, CodecError> {
         if (frame.width, frame.height) != self.size {
-            return Err(CodecError::Size { want: self.size, got: (frame.width, frame.height) });
+            return Err(CodecError::Size {
+                want: self.size,
+                got: (frame.width, frame.height),
+            });
         }
-        let bits = self.enc.encode(&I420View(frame)).map_err(|e| CodecError::Encode(e.to_string()))?;
+        let bits = self
+            .enc
+            .encode(&I420View(frame))
+            .map_err(|e| CodecError::Encode(e.to_string()))?;
         Ok(bits.to_vec())
     }
 }
@@ -83,12 +94,17 @@ pub struct H264Decoder {
 
 impl H264Decoder {
     pub fn new() -> Result<Self, CodecError> {
-        Ok(Self { dec: Decoder::new().map_err(|e| CodecError::Decode(e.to_string()))? })
+        Ok(Self {
+            dec: Decoder::new().map_err(|e| CodecError::Decode(e.to_string()))?,
+        })
     }
 
     /// Feed one access unit; returns a frame once the decoder has one.
     pub fn decode(&mut self, annexb: &[u8]) -> Result<Option<Frame>, CodecError> {
-        let out = self.dec.decode(annexb).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let out = self
+            .dec
+            .decode(annexb)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         Ok(out.map(|yuv| {
             let (w, h) = yuv.dimensions();
             let (sy, su, sv) = yuv.strides();
@@ -102,7 +118,11 @@ impl H264Decoder {
             for row in 0..h / 2 {
                 i420.extend_from_slice(&yuv.v()[row * sv..row * sv + w / 2]);
             }
-            Frame { width: w as u32, height: h as u32, i420 }
+            Frame {
+                width: w as u32,
+                height: h as u32,
+                i420,
+            }
         }))
     }
 }
@@ -126,7 +146,10 @@ mod tests {
             }
         }
         assert!(seen.len() >= 18, "decoded {} of 20", seen.len());
-        assert!(seen.windows(2).all(|w| w[1] > w[0]), "counters not increasing: {seen:?}");
+        assert!(
+            seen.windows(2).all(|w| w[1] > w[0]),
+            "counters not increasing: {seen:?}"
+        );
     }
 
     #[test]

@@ -37,7 +37,12 @@ pub struct RateLimiter {
 
 impl RateLimiter {
     pub fn new(rate_per_s: f64, burst: f64, now: Millis) -> Self {
-        Self { rate: rate_per_s, burst, tokens: burst, last_ms: now }
+        Self {
+            rate: rate_per_s,
+            burst,
+            tokens: burst,
+            last_ms: now,
+        }
     }
 
     pub fn allow(&mut self, now: Millis) -> bool {
@@ -68,7 +73,11 @@ pub struct InputGate {
 
 impl InputGate {
     pub fn new(sink: Box<dyn InputSink>, now: Millis) -> Self {
-        Self { sink, limiter: RateLimiter::new(240.0, 60.0, now), dirty: false }
+        Self {
+            sink,
+            limiter: RateLimiter::new(240.0, 60.0, now),
+            dirty: false,
+        }
     }
 
     /// `control` is the consent machine's current answer, evaluated per event so
@@ -148,16 +157,25 @@ mod tests {
         let (mut g, s) = gate();
         let mv = InputEvent::Move { dx: 1.0, dy: 1.0 };
         assert_eq!(g.handle(&mv, false, 0), Outcome::Rejected("view_only"));
-        assert_eq!(g.handle(&InputEvent::Ping { t: 1 }, false, 0), Outcome::Applied);
+        assert_eq!(
+            g.handle(&InputEvent::Ping { t: 1 }, false, 0),
+            Outcome::Applied
+        );
         assert!(s.events.lock().unwrap().is_empty());
     }
 
     #[test]
     fn downgrade_takes_effect_on_the_next_event_and_releases_buttons() {
         let (mut g, s) = gate();
-        let down = InputEvent::Button { button: Button::Left, down: true };
+        let down = InputEvent::Button {
+            button: Button::Left,
+            down: true,
+        };
         assert_eq!(g.handle(&down, true, 0), Outcome::Applied);
-        assert_eq!(g.handle(&InputEvent::Move { dx: 1.0, dy: 0.0 }, false, 1), Outcome::Rejected("view_only"));
+        assert_eq!(
+            g.handle(&InputEvent::Move { dx: 1.0, dy: 0.0 }, false, 1),
+            Outcome::Rejected("view_only")
+        );
         assert_eq!(s.releases.load(Ordering::SeqCst), 1);
     }
 
@@ -165,7 +183,9 @@ mod tests {
     fn rate_limit_applies_and_recovers() {
         let (mut g, s) = gate();
         let mv = InputEvent::Move { dx: 1.0, dy: 0.0 };
-        let applied = (0..200).filter(|_| g.handle(&mv, true, 0) == Outcome::Applied).count();
+        let applied = (0..200)
+            .filter(|_| g.handle(&mv, true, 0) == Outcome::Applied)
+            .count();
         assert_eq!(applied, 60);
         assert_eq!(g.handle(&mv, true, 0), Outcome::Rejected("rate_limited"));
         assert_eq!(g.handle(&mv, true, 500), Outcome::Applied);
@@ -176,7 +196,9 @@ mod tests {
     fn locked_desktop_is_reported_not_typed() {
         let (mut g, s) = gate();
         s.locked.store(true, Ordering::SeqCst);
-        let k = InputEvent::Text { text: "hunter2".into() };
+        let k = InputEvent::Text {
+            text: "hunter2".into(),
+        };
         assert_eq!(g.handle(&k, true, 0), Outcome::Rejected("desktop_locked"));
         assert!(s.events.lock().unwrap().is_empty());
     }

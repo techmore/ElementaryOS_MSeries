@@ -1,5 +1,11 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Remote Desktop (WebRTC) for phones — 2026-10-21
+
+Rust host + phone web client + native GTK/Wingpanel/Work Mode taskbar integration landed in `mseries/remote-desktop/`.
+Headless-verified (loopback WebRTC, headless Chrome touch, D-Bus smoke, dock build); live Gala/phone verification,
+TURN and encode-CPU measurement remain open. See `mseries/remote-desktop/README.md` and the OS9 handoff.
+
 ## Daedalus portal and NmapUI desktop experience — 2026-10-21
 
 Daedalus `main` is CI-green with review fixes and an elementary look; NmapUI has a native window, dock actions and a

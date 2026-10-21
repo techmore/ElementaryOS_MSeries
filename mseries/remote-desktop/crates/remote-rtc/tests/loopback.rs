@@ -28,10 +28,20 @@ async fn connect(control: bool) -> Rig {
     };
     let mut viewer = ViewerPeer::new(&cfg).await.unwrap();
     let offer = viewer.create_offer().await.unwrap();
-    let (host, answer) = HostPeer::accept(offer, &cfg, callbacks, control).await.unwrap();
+    let (host, answer) = HostPeer::accept(offer, &cfg, callbacks, control)
+        .await
+        .unwrap();
     viewer.set_answer(answer).await.unwrap();
-    viewer.wait_connected(Duration::from_secs(10)).await.expect("connect");
-    Rig { host, viewer, inputs, states }
+    viewer
+        .wait_connected(Duration::from_secs(10))
+        .await
+        .expect("connect");
+    Rig {
+        host,
+        viewer,
+        inputs,
+        states,
+    }
 }
 
 fn pattern() -> Box<dyn FrameSource> {
@@ -39,7 +49,11 @@ fn pattern() -> Box<dyn FrameSource> {
 }
 
 fn params() -> VideoParams {
-    VideoParams { fps: 30, bitrate_bps: 2_000_000, keyframe_interval_s: 2 }
+    VideoParams {
+        fps: 30,
+        bitrate_bps: 2_000_000,
+        keyframe_interval_s: 2,
+    }
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -57,29 +71,56 @@ async fn streams_decodable_ordered_video_and_round_trips_input() {
         }
     }
     let elapsed = started.elapsed().as_secs_f64();
-    assert!(counters.len() >= 45, "only {} frames decoded in {elapsed:.1}s", counters.len());
-    assert!(counters.windows(2).all(|w| w[1] > w[0]), "frames out of order: {counters:?}");
+    assert!(
+        counters.len() >= 45,
+        "only {} frames decoded in {elapsed:.1}s",
+        counters.len()
+    );
+    assert!(
+        counters.windows(2).all(|w| w[1] > w[0]),
+        "frames out of order: {counters:?}"
+    );
     let span = counters.last().unwrap() - counters.first().unwrap() + 1;
     let delivered = counters.len() as f64 / span as f64;
-    println!("loopback video: {} frames / {:.1}s, delivery {:.0}% of {} produced", counters.len(), elapsed, delivered * 100.0, span);
+    println!(
+        "loopback video: {} frames / {:.1}s, delivery {:.0}% of {} produced",
+        counters.len(),
+        elapsed,
+        delivered * 100.0,
+        span
+    );
     assert!(delivered > 0.8, "lost too many frames: {delivered}");
 
     // Input: mode on open, then ping/pong and a click reaching the callback.
     let mut saw_mode = false;
     for _ in 0..5 {
-        if let Some(HostEvent::Mode { control }) = rig.viewer.next_event(Duration::from_millis(500)).await {
+        if let Some(HostEvent::Mode { control }) =
+            rig.viewer.next_event(Duration::from_millis(500)).await
+        {
             assert!(control);
             saw_mode = true;
             break;
         }
     }
     assert!(saw_mode, "host never announced its mode");
-    rig.viewer.send_input(&InputEvent::Ping { t: 42 }).await.unwrap();
-    rig.viewer.send_input(&InputEvent::Move { dx: 3.0, dy: -2.0 }).await.unwrap();
-    rig.viewer.send_input(&InputEvent::Click { button: Button::Left }).await.unwrap();
+    rig.viewer
+        .send_input(&InputEvent::Ping { t: 42 })
+        .await
+        .unwrap();
+    rig.viewer
+        .send_input(&InputEvent::Move { dx: 3.0, dy: -2.0 })
+        .await
+        .unwrap();
+    rig.viewer
+        .send_input(&InputEvent::Click {
+            button: Button::Left,
+        })
+        .await
+        .unwrap();
     let mut pong = false;
     for _ in 0..5 {
-        if let Some(HostEvent::Pong { t }) = rig.viewer.next_event(Duration::from_millis(500)).await {
+        if let Some(HostEvent::Pong { t }) = rig.viewer.next_event(Duration::from_millis(500)).await
+        {
             assert_eq!(t, 42);
             pong = true;
             break;
@@ -88,7 +129,15 @@ async fn streams_decodable_ordered_video_and_round_trips_input() {
     assert!(pong, "no pong");
     tokio::time::sleep(Duration::from_millis(200)).await;
     let got = rig.inputs.lock().unwrap().clone();
-    assert_eq!(got, vec![InputEvent::Move { dx: 3.0, dy: -2.0 }, InputEvent::Click { button: Button::Left }]);
+    assert_eq!(
+        got,
+        vec![
+            InputEvent::Move { dx: 3.0, dy: -2.0 },
+            InputEvent::Click {
+                button: Button::Left
+            }
+        ]
+    );
     assert!(rig.states.lock().unwrap().contains(&LinkState::Connected));
     rig.host.close().await;
     rig.viewer.close().await;
@@ -104,7 +153,9 @@ async fn malformed_input_is_rejected_not_delivered() {
         .unwrap();
     let mut rejected = false;
     for _ in 0..6 {
-        if let Some(HostEvent::Rejected { .. }) = rig.viewer.next_event(Duration::from_millis(400)).await {
+        if let Some(HostEvent::Rejected { .. }) =
+            rig.viewer.next_event(Duration::from_millis(400)).await
+        {
             rejected = true;
             break;
         }
@@ -119,7 +170,11 @@ async fn malformed_input_is_rejected_not_delivered() {
 async fn video_survives_an_ice_restart() {
     let mut rig = connect(false).await;
     rig.host.start_video(pattern(), params()).unwrap();
-    assert!(rig.viewer.next_frame(Duration::from_secs(5)).await.is_some());
+    assert!(rig
+        .viewer
+        .next_frame(Duration::from_secs(5))
+        .await
+        .is_some());
 
     let offer = rig.viewer.restart_ice_offer().await.unwrap();
     let answer = rig.host.renegotiate(offer).await.unwrap();
@@ -130,7 +185,12 @@ async fn video_survives_an_ice_restart() {
     let mut after = 0;
     let started = Instant::now();
     while started.elapsed() < Duration::from_secs(3) {
-        if rig.viewer.next_frame(Duration::from_millis(500)).await.is_some() {
+        if rig
+            .viewer
+            .next_frame(Duration::from_millis(500))
+            .await
+            .is_some()
+        {
             after += 1;
         }
     }
@@ -144,7 +204,9 @@ async fn mode_changes_reach_the_viewer_live() {
     let mut rig = connect(false).await;
     let mut first = None;
     for _ in 0..5 {
-        if let Some(HostEvent::Mode { control }) = rig.viewer.next_event(Duration::from_millis(500)).await {
+        if let Some(HostEvent::Mode { control }) =
+            rig.viewer.next_event(Duration::from_millis(500)).await
+        {
             first = Some(control);
             break;
         }
@@ -153,16 +215,22 @@ async fn mode_changes_reach_the_viewer_live() {
     rig.host.set_control(true);
     let mut second = None;
     for _ in 0..5 {
-        if let Some(HostEvent::Mode { control }) = rig.viewer.next_event(Duration::from_millis(500)).await {
+        if let Some(HostEvent::Mode { control }) =
+            rig.viewer.next_event(Duration::from_millis(500)).await
+        {
             second = Some(control);
             break;
         }
     }
     assert_eq!(second, Some(true));
-    rig.host.notify(HostEvent::Ended { reason: "test".into() });
+    rig.host.notify(HostEvent::Ended {
+        reason: "test".into(),
+    });
     let mut ended = false;
     for _ in 0..5 {
-        if let Some(HostEvent::Ended { .. }) = rig.viewer.next_event(Duration::from_millis(500)).await {
+        if let Some(HostEvent::Ended { .. }) =
+            rig.viewer.next_event(Duration::from_millis(500)).await
+        {
             ended = true;
             break;
         }

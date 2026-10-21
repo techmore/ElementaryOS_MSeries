@@ -9,7 +9,9 @@ use std::time::Duration;
 
 use remote_core::audit::AuditSink;
 use remote_core::clock::Clock;
-use remote_core::consent::{ConsentError, ConsentManager, Decision, Event, Grant, PendingRequest, Policy, Status};
+use remote_core::consent::{
+    ConsentError, ConsentManager, Decision, Event, Grant, PendingRequest, Policy, Status,
+};
 use remote_core::input::{InputGate, Outcome};
 use remote_core::protocol::{ClientMsg, HostEvent, ServerMsg};
 use remote_rtc::host::{HostCallbacks, HostPeer, VideoParams};
@@ -73,10 +75,18 @@ pub struct Controller {
 pub fn rtc_from_config(cfg: &Config) -> RtcConfig {
     let mut ice_servers = Vec::new();
     if !cfg.stun.is_empty() {
-        ice_servers.push(IceServer { urls: cfg.stun.clone(), username: String::new(), credential: String::new() });
+        ice_servers.push(IceServer {
+            urls: cfg.stun.clone(),
+            username: String::new(),
+            credential: String::new(),
+        });
     }
     if let Some(t) = &cfg.turn {
-        ice_servers.push(IceServer { urls: t.urls.clone(), username: t.username.clone(), credential: t.credential.clone() });
+        ice_servers.push(IceServer {
+            urls: t.urls.clone(),
+            username: t.username.clone(),
+            credential: t.credential.clone(),
+        });
     }
     RtcConfig {
         ice_servers,
@@ -166,20 +176,39 @@ impl Controller {
         if !*self.enabled.borrow() {
             return Err("Sharing is off. Turn it on first.".into());
         }
-        let port = self.with(|i| i.listen.map(|a| a.port())).ok_or("The listener is not up yet.")?;
+        let port = self
+            .with(|i| i.listen.map(|a| a.port()))
+            .ok_or("The listener is not up yet.")?;
         let token = self
             .with(|i| i.consent.create_invite(allow_control))
             .map_err(|e| e.to_string())?;
         let hosts = invite::candidate_hosts(&self.cfg.advertise);
         let links = invite::build_links(&hosts, port, &token);
-        let qr = links.first().map(|l| invite::qr_rows(&l.url)).unwrap_or_default();
+        let qr = links
+            .first()
+            .map(|l| invite::qr_rows(&l.url))
+            .unwrap_or_default();
         let expires_ms = self.clock.now_ms() + self.with(|i| i.consent.policy().invite_ttl_ms);
         let _ = self.ui.send(UiEvent::Status);
-        Ok(InviteInfo { links, qr, expires_ms, control_offered: allow_control })
+        Ok(InviteInfo {
+            links,
+            qr,
+            expires_ms,
+            control_offered: allow_control,
+        })
     }
 
-    pub async fn decide(self: &Arc<Self>, request_id: &str, allow: bool, control: bool) -> Result<(), String> {
-        let decision = if allow { Decision::Allow { control } } else { Decision::Deny };
+    pub async fn decide(
+        self: &Arc<Self>,
+        request_id: &str,
+        allow: bool,
+        control: bool,
+    ) -> Result<(), String> {
+        let decision = if allow {
+            Decision::Allow { control }
+        } else {
+            Decision::Deny
+        };
         let result = self.with(|i| {
             let r = i.consent.decide(request_id, decision);
             if let Ok(Some(grant)) = &r {
@@ -241,7 +270,10 @@ impl Controller {
                             (i.peer.take(), i.viewer.take())
                         });
                         if let Some(lp) = peer {
-                            lp.peer.notify(HostEvent::Ended { reason: reason.clone() });
+                            self.log_quality(&lp, &format!("session ended: {reason}"));
+                            lp.peer.notify(HostEvent::Ended {
+                                reason: reason.clone(),
+                            });
                             // Give the data channel a moment to flush the notice.
                             tokio::time::sleep(Duration::from_millis(100)).await;
                             lp.peer.close().await;
@@ -264,6 +296,30 @@ impl Controller {
         let _ = self.ui.send(UiEvent::Status);
     }
 
+    /// One line per peer: how well the link did. Aggregates only; no content.
+    fn log_quality(&self, lp: &LivePeer, why: &str) {
+        let st = lp.peer.stats();
+        let sent = st.frames_sent + st.frames_dropped;
+        let drop_pct = if sent == 0 {
+            0.0
+        } else {
+            st.frames_dropped as f64 * 100.0 / sent as f64
+        };
+        let kbps = if st.streamed_s > 0.5 {
+            st.bytes_sent as f64 * 8.0 / 1000.0 / st.streamed_s
+        } else {
+            0.0
+        };
+        let detail = format!(
+            "{why}; connect_ms={}; streamed_s={:.1}; frames={}; dropped={} ({drop_pct:.1}%); avg_kbps={kbps:.0}",
+            st.connect_ms.map(|m| m.to_string()).unwrap_or_else(|| "none".into()),
+            st.streamed_s,
+            st.frames_sent,
+            st.frames_dropped,
+        );
+        self.with(|i| i.consent.audit_note("link_quality", None, &detail));
+    }
+
     fn callbacks(
         self: &Arc<Self>,
         gen: u64,
@@ -282,7 +338,9 @@ impl Controller {
                 let outcome = gate.lock().unwrap().handle(&ev, control, me.clock.now_ms());
                 if let Outcome::Rejected(reason) = outcome {
                     if let Some(p) = slot.lock().unwrap().upgrade() {
-                        p.notify(HostEvent::Rejected { reason: reason.into() });
+                        p.notify(HostEvent::Rejected {
+                            reason: reason.into(),
+                        });
                     }
                 }
             })
@@ -303,7 +361,9 @@ impl Controller {
                                     let _ = i.consent.attach(&t);
                                 }
                             }
-                            LinkState::Disconnected | LinkState::Failed | LinkState::Closed => i.consent.detach(),
+                            LinkState::Disconnected | LinkState::Failed | LinkState::Closed => {
+                                i.consent.detach()
+                            }
                             LinkState::Connecting => {}
                         }
                     });
@@ -314,15 +374,28 @@ impl Controller {
         HostCallbacks { on_input, on_state }
     }
 
-    async fn handle_offer(self: &Arc<Self>, gen: u64, sdp: String, tx: &mpsc::UnboundedSender<ServerMsg>) {
-        let existing = self.with(|i| i.peer.as_ref().filter(|p| p.gen == gen).map(|p| p.peer.clone()));
+    async fn handle_offer(
+        self: &Arc<Self>,
+        gen: u64,
+        sdp: String,
+        tx: &mpsc::UnboundedSender<ServerMsg>,
+    ) {
+        let existing = self.with(|i| {
+            i.peer
+                .as_ref()
+                .filter(|p| p.gen == gen)
+                .map(|p| p.peer.clone())
+        });
         if let Some(peer) = existing {
             match peer.renegotiate(sdp).await {
                 Ok(answer) => {
                     let _ = tx.send(ServerMsg::Answer { sdp: answer });
                 }
                 Err(e) => {
-                    let _ = tx.send(ServerMsg::Error { code: "renegotiate_failed".into(), message: e.to_string() });
+                    let _ = tx.send(ServerMsg::Error {
+                        code: "renegotiate_failed".into(),
+                        message: e.to_string(),
+                    });
                 }
             }
             return;
@@ -330,18 +403,28 @@ impl Controller {
 
         let backend = self.backend.clone();
         let (max_width, fps) = (self.cfg.max_width, self.cfg.fps);
-        let streams = match tokio::task::spawn_blocking(move || backend.open(max_width, fps)).await {
+        let streams = match tokio::task::spawn_blocking(move || backend.open(max_width, fps)).await
+        {
             Ok(Ok(s)) => s,
             Ok(Err(e)) => {
-                let _ = tx.send(ServerMsg::Error { code: "capture_failed".into(), message: e.to_string() });
+                let _ = tx.send(ServerMsg::Error {
+                    code: "capture_failed".into(),
+                    message: e.to_string(),
+                });
                 return;
             }
             Err(e) => {
-                let _ = tx.send(ServerMsg::Error { code: "capture_failed".into(), message: e.to_string() });
+                let _ = tx.send(ServerMsg::Error {
+                    code: "capture_failed".into(),
+                    message: e.to_string(),
+                });
                 return;
             }
         };
-        let gate = Arc::new(Mutex::new(InputGate::new(streams.input, self.clock.now_ms())));
+        let gate = Arc::new(Mutex::new(InputGate::new(
+            streams.input,
+            self.clock.now_ms(),
+        )));
         let slot = Arc::new(Mutex::new(Weak::new()));
         let control = self.with(|i| i.consent.can_control());
         let callbacks = self.callbacks(gen, gate.clone(), slot.clone());
@@ -350,32 +433,61 @@ impl Controller {
                 let peer = Arc::new(peer);
                 *slot.lock().unwrap() = Arc::downgrade(&peer);
                 if let Err(e) = peer.start_video(streams.source, VideoParams::from(&self.rtc)) {
-                    let _ = tx.send(ServerMsg::Error { code: "encode_failed".into(), message: e.to_string() });
+                    let _ = tx.send(ServerMsg::Error {
+                        code: "encode_failed".into(),
+                        message: e.to_string(),
+                    });
                     peer.close().await;
                     return;
                 }
                 let old = self.with(|i| i.peer.replace(LivePeer { peer, gate, gen }));
                 if let Some(old) = old {
+                    self.log_quality(&old, "replaced by new connection");
                     old.peer.close().await;
                 }
                 let _ = tx.send(ServerMsg::Answer { sdp: answer });
             }
             Err(e) => {
-                let _ = tx.send(ServerMsg::Error { code: "offer_rejected".into(), message: e.to_string() });
+                let _ = tx.send(ServerMsg::Error {
+                    code: "offer_rejected".into(),
+                    message: e.to_string(),
+                });
             }
         }
     }
 
     /// Serve one viewer signalling connection until it ends.
-    pub async fn serve_viewer(self: Arc<Self>, mut rx: mpsc::Receiver<ClientMsg>, tx: mpsc::UnboundedSender<ServerMsg>) {
-        let err = |code: &str, message: &str| ServerMsg::Error { code: code.into(), message: message.into() };
+    pub async fn serve_viewer(
+        self: Arc<Self>,
+        mut rx: mpsc::Receiver<ClientMsg>,
+        tx: mpsc::UnboundedSender<ServerMsg>,
+        remote: Option<std::net::SocketAddr>,
+    ) {
+        let err = |code: &str, message: &str| ServerMsg::Error {
+            code: code.into(),
+            message: message.into(),
+        };
 
-        let Ok(Some(ClientMsg::Hello { device, invite, resume, .. })) =
-            tokio::time::timeout(Duration::from_secs(10), rx.recv()).await
+        let Ok(Some(ClientMsg::Hello {
+            device,
+            invite,
+            resume,
+            ..
+        })) = tokio::time::timeout(Duration::from_secs(10), rx.recv()).await
         else {
             let _ = tx.send(err("hello_required", "Expected a hello message."));
             return;
         };
+        let ip = remote
+            .map(|a| a.ip().to_string())
+            .unwrap_or_else(|| "unknown".into());
+        self.with(|i| {
+            i.consent.audit_note(
+                "viewer_connected",
+                Some(&device),
+                &format!("ip={ip}; resume={}", resume.is_some()),
+            )
+        });
         if !*self.enabled.borrow() {
             let _ = tx.send(err("disabled", "Sharing is off on this computer."));
             return;
@@ -398,7 +510,10 @@ impl Controller {
                     return;
                 }
                 Err(ConsentError::Auth(_)) => {
-                    let _ = tx.send(err("invalid_invite", "That link is invalid, used or expired."));
+                    let _ = tx.send(err(
+                        "invalid_invite",
+                        "That link is invalid, used or expired.",
+                    ));
                     return;
                 }
                 Err(e) => {
@@ -407,7 +522,10 @@ impl Controller {
                 }
             };
             let wait_s = self.with(|i| i.consent.policy().consent_timeout_ms) / 1000;
-            let _ = tx.send(ServerMsg::Pending { request_id: req.id.clone(), expires_in_s: wait_s });
+            let _ = tx.send(ServerMsg::Pending {
+                request_id: req.id.clone(),
+                expires_in_s: wait_s,
+            });
             match tokio::time::timeout(Duration::from_secs(wait_s + 5), wrx).await {
                 Ok(Ok(Decided::Granted(g))) => g,
                 Ok(Ok(Decided::Denied(reason))) => {
@@ -415,7 +533,9 @@ impl Controller {
                     return;
                 }
                 _ => {
-                    let _ = tx.send(ServerMsg::Denied { reason: "Nobody answered in time.".into() });
+                    let _ = tx.send(ServerMsg::Denied {
+                        reason: "Nobody answered in time.".into(),
+                    });
                     return;
                 }
             }
@@ -424,7 +544,11 @@ impl Controller {
             match attached {
                 Ok(session) => {
                     let grace_ms = self.with(|i| i.consent.policy().grace_ms);
-                    Grant { session, resume_token: resume, grace_ms }
+                    Grant {
+                        session,
+                        resume_token: resume,
+                        grace_ms,
+                    }
                 }
                 Err(_) => {
                     let _ = tx.send(err("resume_failed", "The session ended. Scan a new link."));
@@ -442,7 +566,10 @@ impl Controller {
             i.resume_token = Some(grant.resume_token.clone());
             i.gen += 1;
             if let Some((_, old)) = i.viewer.replace((i.gen, tx.clone())) {
-                let _ = old.send(ServerMsg::Error { code: "replaced".into(), message: "Another connection took over.".into() });
+                let _ = old.send(ServerMsg::Error {
+                    code: "replaced".into(),
+                    message: "Another connection took over.".into(),
+                });
             }
             i.gen
         });
@@ -471,8 +598,17 @@ impl Controller {
             }
             match msg {
                 ClientMsg::Offer { sdp } => self.handle_offer(gen, sdp, &tx).await,
-                ClientMsg::Candidate { candidate, sdp_mid, sdp_mline_index } => {
-                    if let Some(p) = self.with(|i| i.peer.as_ref().filter(|p| p.gen == gen).map(|p| p.peer.clone())) {
+                ClientMsg::Candidate {
+                    candidate,
+                    sdp_mid,
+                    sdp_mline_index,
+                } => {
+                    if let Some(p) = self.with(|i| {
+                        i.peer
+                            .as_ref()
+                            .filter(|p| p.gen == gen)
+                            .map(|p| p.peer.clone())
+                    }) {
                         let init = remote_rtc::RTCIceCandidateInit {
                             candidate,
                             sdp_mid,

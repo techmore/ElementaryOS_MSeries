@@ -18,8 +18,8 @@ use webrtc::data_channel::{DataChannel, DataChannelEvent};
 use webrtc::media_stream::track_remote::{TrackRemote, TrackRemoteEvent};
 use webrtc::peer_connection::{
     register_default_interceptors, MediaEngine, PeerConnection, PeerConnectionBuilder,
-    PeerConnectionEventHandler, RTCConfigurationBuilder, RTCIceGatheringState, RTCPeerConnectionState,
-    RTCSessionDescription, Registry,
+    PeerConnectionEventHandler, RTCConfigurationBuilder, RTCIceGatheringState,
+    RTCPeerConnectionState, RTCSessionDescription, Registry,
 };
 use webrtc::runtime::default_runtime;
 
@@ -36,7 +36,9 @@ struct Handler {
 #[async_trait::async_trait]
 impl PeerConnectionEventHandler for Handler {
     async fn on_ice_gathering_state_change(&self, state: RTCIceGatheringState) {
-        let _ = self.gather_done.send(state == RTCIceGatheringState::Complete);
+        let _ = self
+            .gather_done
+            .send(state == RTCIceGatheringState::Complete);
     }
 
     async fn on_connection_state_change(&self, state: RTCPeerConnectionState) {
@@ -113,7 +115,11 @@ impl ViewerPeer {
         let (state_tx, state_rx) = watch::channel(LinkState::Connecting);
         let (frames_tx, frames_rx) = mpsc::channel(8);
         let pc = PeerConnectionBuilder::new()
-            .with_configuration(RTCConfigurationBuilder::new().with_ice_servers(ice_servers(cfg)).build())
+            .with_configuration(
+                RTCConfigurationBuilder::new()
+                    .with_ice_servers(ice_servers(cfg))
+                    .build(),
+            )
             .with_media_engine(media)
             .with_interceptor_registry(registry)
             .with_handler(Arc::new(Handler {
@@ -194,7 +200,10 @@ impl ViewerPeer {
     }
 
     pub async fn set_answer(&self, sdp: String) -> Result<(), RtcError> {
-        Ok(self.pc.set_remote_description(RTCSessionDescription::answer(sdp)?).await?)
+        Ok(self
+            .pc
+            .set_remote_description(RTCSessionDescription::answer(sdp)?)
+            .await?)
     }
 
     pub async fn wait_connected(&mut self, timeout: Duration) -> Result<(), RtcError> {
@@ -214,11 +223,17 @@ impl ViewerPeer {
     }
 
     pub async fn next_frame(&mut self, timeout: Duration) -> Option<Frame> {
-        tokio::time::timeout(timeout, self.frames.recv()).await.ok().flatten()
+        tokio::time::timeout(timeout, self.frames.recv())
+            .await
+            .ok()
+            .flatten()
     }
 
     pub async fn next_event(&mut self, timeout: Duration) -> Option<HostEvent> {
-        tokio::time::timeout(timeout, self.events.recv()).await.ok().flatten()
+        tokio::time::timeout(timeout, self.events.recv())
+            .await
+            .ok()
+            .flatten()
     }
 
     pub async fn send_input(&self, ev: &InputEvent) -> Result<(), RtcError> {

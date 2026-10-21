@@ -42,7 +42,10 @@ impl RemoteService {
     }
 
     async fn decide(&self, request_id: &str, allow: bool, control: bool) -> zbus::fdo::Result<()> {
-        self.ctl.decide(request_id, allow, control).await.map_err(failed)
+        self.ctl
+            .decide(request_id, allow, control)
+            .await
+            .map_err(failed)
     }
 
     async fn set_control(&self, control: bool) -> zbus::fdo::Result<()> {
@@ -62,7 +65,8 @@ impl RemoteService {
     async fn status_changed(emitter: &SignalEmitter<'_>, status_json: &str) -> zbus::Result<()>;
 
     #[zbus(signal)]
-    async fn consent_requested(emitter: &SignalEmitter<'_>, request_json: &str) -> zbus::Result<()>;
+    async fn consent_requested(emitter: &SignalEmitter<'_>, request_json: &str)
+        -> zbus::Result<()>;
 }
 
 /// Claim the bus name and forward controller events as signals. Fails if
@@ -76,7 +80,9 @@ pub async fn serve(ctl: Arc<Controller>) -> zbus::Result<zbus::Connection> {
     let mut rx = ctl.subscribe();
     let emitter_conn = conn.clone();
     tokio::spawn(async move {
-        let Ok(emitter) = SignalEmitter::new(&emitter_conn, OBJECT_PATH) else { return };
+        let Ok(emitter) = SignalEmitter::new(&emitter_conn, OBJECT_PATH) else {
+            return;
+        };
         loop {
             match rx.recv().await {
                 Ok(UiEvent::Status) => {

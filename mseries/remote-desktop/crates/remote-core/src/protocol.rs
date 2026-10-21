@@ -125,7 +125,10 @@ impl ClientMsg {
                 if *version != PROTOCOL_VERSION {
                     return Err(ProtocolError::Version(*version));
                 }
-                if device.is_empty() || device.chars().count() > 64 || device.chars().any(|c| c.is_control()) {
+                if device.is_empty()
+                    || device.chars().count() > 64
+                    || device.chars().any(|c| c.is_control())
+                {
                     return Err(ProtocolError::Invalid("device"));
                 }
                 match (invite, resume) {
@@ -185,14 +188,28 @@ pub enum Modifier {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum InputEvent {
     /// Relative pointer motion in logical pixels (touchpad swipe).
-    Move { dx: f64, dy: f64 },
+    Move {
+        dx: f64,
+        dy: f64,
+    },
     /// Absolute pointer position, normalised 0.0..=1.0 across the stream.
-    MoveAbs { x: f64, y: f64 },
+    MoveAbs {
+        x: f64,
+        y: f64,
+    },
     /// Press or release a button (drag).
-    Button { button: Button, down: bool },
+    Button {
+        button: Button,
+        down: bool,
+    },
     /// Press and release atomically.
-    Click { button: Button },
-    Scroll { dx: f64, dy: f64 },
+    Click {
+        button: Button,
+    },
+    Scroll {
+        dx: f64,
+        dy: f64,
+    },
     /// Tap one key (names like `Enter`, `ArrowLeft` or a single character).
     Key {
         key: String,
@@ -200,9 +217,13 @@ pub enum InputEvent {
         modifiers: Vec<Modifier>,
     },
     /// Type literal text.
-    Text { text: String },
+    Text {
+        text: String,
+    },
     /// Latency probe; answered with [`HostEvent::Pong`] even in view-only mode.
-    Ping { t: u64 },
+    Ping {
+        t: u64,
+    },
     /// The viewer's video stalled (lost packets); ask for an immediate IDR.
     /// Handled by the media layer and allowed in view-only mode.
     Keyframe,
@@ -212,12 +233,20 @@ pub enum InputEvent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum HostEvent {
-    Pong { t: u64 },
+    Pong {
+        t: u64,
+    },
     /// Current permission; sent on open and whenever it changes.
-    Mode { control: bool },
+    Mode {
+        control: bool,
+    },
     /// Input was dropped (view-only, rate limit, locked desktop, invalid).
-    Rejected { reason: String },
-    Ended { reason: String },
+    Rejected {
+        reason: String,
+    },
+    Ended {
+        reason: String,
+    },
 }
 
 const MAX_MOTION: f64 = 2000.0;
@@ -252,7 +281,10 @@ impl InputEvent {
                     Err(ProtocolError::Invalid("position"))
                 }
             }
-            InputEvent::Button { .. } | InputEvent::Click { .. } | InputEvent::Ping { .. } | InputEvent::Keyframe => Ok(()),
+            InputEvent::Button { .. }
+            | InputEvent::Click { .. }
+            | InputEvent::Ping { .. }
+            | InputEvent::Keyframe => Ok(()),
             InputEvent::Key { key, modifiers } => {
                 let mut seen = std::collections::HashSet::new();
                 if key.is_empty()
@@ -267,7 +299,10 @@ impl InputEvent {
                 }
             }
             InputEvent::Text { text } => {
-                if text.is_empty() || text.chars().count() > 512 || !text.chars().all(keysym::typeable) {
+                if text.is_empty()
+                    || text.chars().count() > 512
+                    || !text.chars().all(keysym::typeable)
+                {
                     Err(ProtocolError::Invalid("text"))
                 } else {
                     Ok(())
@@ -295,7 +330,10 @@ mod tests {
     fn rejects_wrong_version_and_oversize() {
         let v2 = r#"{"type":"hello","version":2,"device":"x","invite":"a"}"#;
         assert_eq!(ClientMsg::parse(v2), Err(ProtocolError::Version(2)));
-        let big = format!(r#"{{"type":"offer","sdp":"{}"}}"#, "a".repeat(MAX_SIGNAL_BYTES));
+        let big = format!(
+            r#"{{"type":"offer","sdp":"{}"}}"#,
+            "a".repeat(MAX_SIGNAL_BYTES)
+        );
         assert_eq!(ClientMsg::parse(&big), Err(ProtocolError::TooLarge));
     }
 
@@ -311,14 +349,27 @@ mod tests {
         assert!(InputEvent::parse(br#"{"kind":"move","dx":1e9,"dy":0}"#).is_err());
         assert!(InputEvent::parse(br#"{"kind":"move_abs","x":1.5,"y":0}"#).is_err());
         assert!(InputEvent::parse(br#"{"kind":"key","key":"Enter","modifiers":["ctrl"]}"#).is_ok());
-        assert!(InputEvent::parse(br#"{"kind":"key","key":"Enter","modifiers":["ctrl","ctrl"]}"#).is_err());
+        assert!(
+            InputEvent::parse(br#"{"kind":"key","key":"Enter","modifiers":["ctrl","ctrl"]}"#)
+                .is_err()
+        );
         assert!(InputEvent::parse(br#"{"kind":"key","key":"NoSuchKey"}"#).is_err());
         assert!(InputEvent::parse(br#"{"kind":"text","text":""}"#).is_err());
     }
 
     #[test]
     fn nan_is_not_representable_in_json_but_infinity_text_is_rejected() {
-        assert!(InputEvent::Move { dx: f64::NAN, dy: 0.0 }.validate().is_err());
-        assert!(InputEvent::Move { dx: f64::INFINITY, dy: 0.0 }.validate().is_err());
+        assert!(InputEvent::Move {
+            dx: f64::NAN,
+            dy: 0.0
+        }
+        .validate()
+        .is_err());
+        assert!(InputEvent::Move {
+            dx: f64::INFINITY,
+            dy: 0.0
+        }
+        .validate()
+        .is_err());
     }
 }

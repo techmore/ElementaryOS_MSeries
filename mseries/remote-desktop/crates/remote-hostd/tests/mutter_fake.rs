@@ -56,13 +56,22 @@ impl RdSession {
         self.0.lock().unwrap().push("rd.Stop".into());
     }
     async fn notify_keyboard_keysym(&self, keysym: u32, state: bool) {
-        self.0.lock().unwrap().push(format!("key {keysym:#x} {state}"));
+        self.0
+            .lock()
+            .unwrap()
+            .push(format!("key {keysym:#x} {state}"));
     }
     async fn notify_pointer_button(&self, button: i32, state: bool) {
-        self.0.lock().unwrap().push(format!("button {button:#x} {state}"));
+        self.0
+            .lock()
+            .unwrap()
+            .push(format!("button {button:#x} {state}"));
     }
     async fn notify_pointer_axis(&self, dx: f64, dy: f64, flags: u32) {
-        self.0.lock().unwrap().push(format!("axis {dx} {dy} {flags}"));
+        self.0
+            .lock()
+            .unwrap()
+            .push(format!("axis {dx} {dy} {flags}"));
     }
     async fn notify_pointer_motion_relative(&self, dx: f64, dy: f64) {
         self.0.lock().unwrap().push(format!("rel {dx} {dy}"));
@@ -74,18 +83,33 @@ impl RdSession {
 
 #[zbus::interface(name = "org.gnome.Mutter.ScreenCast")]
 impl Sc {
-    async fn create_session(&self, props: HashMap<String, OwnedValue>) -> zbus::fdo::Result<OwnedObjectPath> {
-        let id: String = props["remote-desktop-session-id"].downcast_ref::<String>().unwrap();
-        self.0.lock().unwrap().push(format!("sc.CreateSession rd={id}"));
+    async fn create_session(
+        &self,
+        props: HashMap<String, OwnedValue>,
+    ) -> zbus::fdo::Result<OwnedObjectPath> {
+        let id: String = props["remote-desktop-session-id"]
+            .downcast_ref::<String>()
+            .unwrap();
+        self.0
+            .lock()
+            .unwrap()
+            .push(format!("sc.CreateSession rd={id}"));
         Ok(OwnedObjectPath::try_from(SC_SESSION).unwrap())
     }
 }
 
 #[zbus::interface(name = "org.gnome.Mutter.ScreenCast.Session")]
 impl ScSession {
-    async fn record_monitor(&self, connector: String, props: HashMap<String, OwnedValue>) -> zbus::fdo::Result<OwnedObjectPath> {
+    async fn record_monitor(
+        &self,
+        connector: String,
+        props: HashMap<String, OwnedValue>,
+    ) -> zbus::fdo::Result<OwnedObjectPath> {
         let cursor: u32 = props["cursor-mode"].downcast_ref::<u32>().unwrap();
-        self.0.lock().unwrap().push(format!("sc.RecordMonitor {connector} cursor={cursor}"));
+        self.0
+            .lock()
+            .unwrap()
+            .push(format!("sc.RecordMonitor {connector} cursor={cursor}"));
         Ok(OwnedObjectPath::try_from(STREAM).unwrap())
     }
 }
@@ -96,18 +120,63 @@ impl Stream {
     async fn pipe_wire_stream_added(emitter: &SignalEmitter<'_>, node_id: u32) -> zbus::Result<()>;
 }
 
-type Mode = (String, i32, i32, f64, f64, Vec<f64>, HashMap<String, OwnedValue>);
-type Monitor = ((String, String, String, String), Vec<Mode>, HashMap<String, OwnedValue>);
-type Logical = (i32, i32, f64, u32, bool, Vec<(String, String, String, String)>, HashMap<String, OwnedValue>);
+type Mode = (
+    String,
+    i32,
+    i32,
+    f64,
+    f64,
+    Vec<f64>,
+    HashMap<String, OwnedValue>,
+);
+type Monitor = (
+    (String, String, String, String),
+    Vec<Mode>,
+    HashMap<String, OwnedValue>,
+);
+type Logical = (
+    i32,
+    i32,
+    f64,
+    u32,
+    bool,
+    Vec<(String, String, String, String)>,
+    HashMap<String, OwnedValue>,
+);
 
 #[zbus::interface(name = "org.gnome.Mutter.DisplayConfig")]
 impl DisplayConfig {
-    async fn get_current_state(&self) -> (u32, Vec<Monitor>, Vec<Logical>, HashMap<String, OwnedValue>) {
+    async fn get_current_state(
+        &self,
+    ) -> (u32, Vec<Monitor>, Vec<Logical>, HashMap<String, OwnedValue>) {
         let mut cur = HashMap::new();
-        cur.insert("is-current".to_string(), OwnedValue::try_from(Value::from(true)).unwrap());
-        let mode: Mode = ("3024x1964@120".into(), 3024, 1964, 120.0, 120.0, vec![2.0], cur);
-        let mon: Monitor = (("eDP-1".into(), "APP".into(), "m1".into(), "0".into()), vec![mode], HashMap::new());
-        let logical: Logical = (0, 0, 2.0, 0, true, vec![("eDP-1".into(), "APP".into(), "m1".into(), "0".into())], HashMap::new());
+        cur.insert(
+            "is-current".to_string(),
+            OwnedValue::try_from(Value::from(true)).unwrap(),
+        );
+        let mode: Mode = (
+            "3024x1964@120".into(),
+            3024,
+            1964,
+            120.0,
+            120.0,
+            vec![2.0],
+            cur,
+        );
+        let mon: Monitor = (
+            ("eDP-1".into(), "APP".into(), "m1".into(), "0".into()),
+            vec![mode],
+            HashMap::new(),
+        );
+        let logical: Logical = (
+            0,
+            0,
+            2.0,
+            0,
+            true,
+            vec![("eDP-1".into(), "APP".into(), "m1".into(), "0".into())],
+            HashMap::new(),
+        );
         (1, vec![mon], vec![logical], HashMap::new())
     }
     #[zbus(property)]
@@ -131,7 +200,9 @@ fn private_bus() -> Option<(Bus, String)> {
         .ok()?;
     use std::io::{BufRead, BufReader};
     let mut line = String::new();
-    BufReader::new(child.stdout.take()?).read_line(&mut line).ok()?;
+    BufReader::new(child.stdout.take()?)
+        .read_line(&mut line)
+        .ok()?;
     Some((Bus(child), line.trim().to_string()))
 }
 
@@ -145,20 +216,33 @@ fn backend_talks_the_documented_protocol() {
     std::env::set_var("DBUS_SESSION_BUS_ADDRESS", &addr);
 
     let log: Log = Arc::new(Mutex::new(Vec::new()));
-    let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap();
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+        .unwrap();
     let l = log.clone();
     let _service = rt.block_on(async move {
         zbus::connection::Builder::session()
             .unwrap()
-            .name("org.gnome.Mutter.RemoteDesktop").unwrap()
-            .name("org.gnome.Mutter.ScreenCast").unwrap()
-            .name("org.gnome.Mutter.DisplayConfig").unwrap()
-            .serve_at("/org/gnome/Mutter/RemoteDesktop", Rd(l.clone())).unwrap()
-            .serve_at(SESSION, RdSession(l.clone())).unwrap()
-            .serve_at("/org/gnome/Mutter/ScreenCast", Sc(l.clone())).unwrap()
-            .serve_at(SC_SESSION, ScSession(l.clone())).unwrap()
-            .serve_at(STREAM, Stream).unwrap()
-            .serve_at("/org/gnome/Mutter/DisplayConfig", DisplayConfig).unwrap()
+            .name("org.gnome.Mutter.RemoteDesktop")
+            .unwrap()
+            .name("org.gnome.Mutter.ScreenCast")
+            .unwrap()
+            .name("org.gnome.Mutter.DisplayConfig")
+            .unwrap()
+            .serve_at("/org/gnome/Mutter/RemoteDesktop", Rd(l.clone()))
+            .unwrap()
+            .serve_at(SESSION, RdSession(l.clone()))
+            .unwrap()
+            .serve_at("/org/gnome/Mutter/ScreenCast", Sc(l.clone()))
+            .unwrap()
+            .serve_at(SC_SESSION, ScSession(l.clone()))
+            .unwrap()
+            .serve_at(STREAM, Stream)
+            .unwrap()
+            .serve_at("/org/gnome/Mutter/DisplayConfig", DisplayConfig)
+            .unwrap()
             .build()
             .await
             .unwrap()
@@ -171,13 +255,35 @@ fn backend_talks_the_documented_protocol() {
     assert_eq!(size, (1512, 982));
 
     let mut input = MutterInput::new(session, LockWatch::fixed(false));
-    input.apply(&InputEvent::Move { dx: 3.5, dy: -2.0 }).unwrap();
-    input.apply(&InputEvent::MoveAbs { x: 0.5, y: 0.25 }).unwrap();
-    input.apply(&InputEvent::Click { button: Button::Right }).unwrap();
-    input.apply(&InputEvent::Scroll { dx: 0.0, dy: 12.0 }).unwrap();
-    input.apply(&InputEvent::Key { key: "c".into(), modifiers: vec![Modifier::Ctrl] }).unwrap();
-    input.apply(&InputEvent::Text { text: "hi".into() }).unwrap();
-    input.apply(&InputEvent::Button { button: Button::Left, down: true }).unwrap();
+    input
+        .apply(&InputEvent::Move { dx: 3.5, dy: -2.0 })
+        .unwrap();
+    input
+        .apply(&InputEvent::MoveAbs { x: 0.5, y: 0.25 })
+        .unwrap();
+    input
+        .apply(&InputEvent::Click {
+            button: Button::Right,
+        })
+        .unwrap();
+    input
+        .apply(&InputEvent::Scroll { dx: 0.0, dy: 12.0 })
+        .unwrap();
+    input
+        .apply(&InputEvent::Key {
+            key: "c".into(),
+            modifiers: vec![Modifier::Ctrl],
+        })
+        .unwrap();
+    input
+        .apply(&InputEvent::Text { text: "hi".into() })
+        .unwrap();
+    input
+        .apply(&InputEvent::Button {
+            button: Button::Left,
+            down: true,
+        })
+        .unwrap();
     input.release_all();
 
     let got = log.lock().unwrap().clone();
@@ -208,9 +314,16 @@ fn backend_talks_the_documented_protocol() {
     let (session2, _, _) = MutterBackend::new().connect(1920).unwrap();
     let mut locked = MutterInput::new(session2, LockWatch::fixed(true));
     let before = log.lock().unwrap().len();
-    assert!(locked.apply(&InputEvent::Text { text: "secret".into() }).is_err());
+    assert!(locked
+        .apply(&InputEvent::Text {
+            text: "secret".into()
+        })
+        .is_err());
     let after: Vec<String> = log.lock().unwrap()[before..].to_vec();
-    assert!(after.iter().all(|l| !l.starts_with("key")), "typed into a locked desktop: {after:?}");
+    assert!(
+        after.iter().all(|l| !l.starts_with("key")),
+        "typed into a locked desktop: {after:?}"
+    );
     drop(locked);
     drop(input);
     std::thread::sleep(std::time::Duration::from_millis(200));

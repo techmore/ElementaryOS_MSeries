@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Remote Desktop
+GenericName=Share this computer with your phone
+Comment=Let your phone see and, if you allow it, control this computer
+Exec=mseries-remote
+Icon=preferences-system-sharing
+Terminal=false
+Categories=Network;RemoteAccess;
+Keywords=phone;remote;vnc;rdp;screen;share;support;
+StartupNotify=true
+X-GNOME-UsesNotifications=true

@@ -50,7 +50,10 @@ pub struct TestPattern {
 
 impl TestPattern {
     pub fn new(w: u32, h: u32) -> Self {
-        assert!(w >= 256 && h >= 128 && w % 2 == 0 && h % 2 == 0, "pattern needs even dimensions >= 256x128");
+        assert!(
+            w >= 256 && h >= 128 && w % 2 == 0 && h % 2 == 0,
+            "pattern needs even dimensions >= 256x128"
+        );
         Self { w, h, n: 0 }
     }
 
@@ -99,7 +102,11 @@ impl TestPattern {
                 }
             }
         }
-        Frame { width: w, height: h, i420: buf }
+        Frame {
+            width: w,
+            height: h,
+            i420: buf,
+        }
     }
 
     /// Read the counter strip back from a (possibly decoded/lossy) frame.
@@ -145,15 +152,32 @@ impl GstPipeSource {
         }
         let caps = format!("video/x-raw,format=I420,width={w},height={h},framerate={fps}/1");
         let mut child = Command::new("gst-launch-1.0")
-            .args(["-q", "pipewiresrc", &format!("path={node_id}"), "do-timestamp=true"])
-            .args(["!", "videoconvert", "!", "videoscale", "!", "videorate", "!", &caps])
+            .args([
+                "-q",
+                "pipewiresrc",
+                &format!("path={node_id}"),
+                "do-timestamp=true",
+            ])
+            .args([
+                "!",
+                "videoconvert",
+                "!",
+                "videoscale",
+                "!",
+                "videorate",
+                "!",
+                &caps,
+            ])
             .args(["!", "fdsink", "fd=1", "sync=false"])
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| CaptureError::Failed(format!("gst-launch-1.0: {e}")))?;
-        let out = child.stdout.take().ok_or_else(|| CaptureError::Failed("no pipe".into()))?;
+        let out = child
+            .stdout
+            .take()
+            .ok_or_else(|| CaptureError::Failed("no pipe".into()))?;
         Ok(Self { child, out, w, h })
     }
 }
@@ -169,7 +193,11 @@ impl FrameSource for GstPipeSource {
             std::io::ErrorKind::UnexpectedEof => CaptureError::Ended,
             _ => CaptureError::Failed(e.to_string()),
         })?;
-        Ok(Frame { width: self.w, height: self.h, i420: buf })
+        Ok(Frame {
+            width: self.w,
+            height: self.h,
+            i420: buf,
+        })
     }
 }
 

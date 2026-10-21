@@ -117,7 +117,9 @@ fn make_backend(cfg: &Config) -> Result<Arc<dyn Backend>, String> {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .init();
     let cli = Cli::parse();
 
@@ -139,17 +141,30 @@ async fn main() {
         std::process::exit(2);
     });
     let audit: Box<dyn AuditSink> = {
-        let path = cfg.audit_log.clone().unwrap_or_else(Config::default_audit_path);
+        let path = cfg
+            .audit_log
+            .clone()
+            .unwrap_or_else(Config::default_audit_path);
         match FileAudit::open(&path) {
             Ok(a) => Box::new(a),
             Err(e) => {
-                tracing::warn!("audit log {} unavailable ({e}); keeping it in memory only", path.display());
+                tracing::warn!(
+                    "audit log {} unavailable ({e}); keeping it in memory only",
+                    path.display()
+                );
                 Box::new(MemoryAudit::default())
             }
         }
     };
     let rtc = rtc_from_config(&cfg);
-    let ctl = Controller::new(cfg.clone(), rtc, backend, Arc::new(SystemClock), audit, Policy::default());
+    let ctl = Controller::new(
+        cfg.clone(),
+        rtc,
+        backend,
+        Arc::new(SystemClock),
+        audit,
+        Policy::default(),
+    );
     ctl.spawn_ticker();
     tokio::spawn(run_listener_manager(ctl.clone()));
 
@@ -160,7 +175,10 @@ async fn main() {
         match remote_hostd::dbus::serve(ctl.clone()).await {
             Ok(c) => Some(c),
             Err(e) => {
-                eprintln!("cannot own {} on the session bus: {e}", remote_hostd::dbus::BUS_NAME);
+                eprintln!(
+                    "cannot own {} on the session bus: {e}",
+                    remote_hostd::dbus::BUS_NAME
+                );
                 std::process::exit(1);
             }
         }
@@ -194,7 +212,10 @@ async fn main() {
 }
 
 async fn check(cfg: &Config) {
-    println!("config: backend={} listen={} fps={} bitrate={}kbps", cfg.backend, cfg.listen, cfg.fps, cfg.bitrate_kbps);
+    println!(
+        "config: backend={} listen={} fps={} bitrate={}kbps",
+        cfg.backend, cfg.listen, cfg.fps, cfg.bitrate_kbps
+    );
     let hosts = remote_hostd::invite::candidate_hosts(&cfg.advertise);
     if hosts.is_empty() {
         println!("network: no non-loopback IPv4 address found");
@@ -202,8 +223,17 @@ async fn check(cfg: &Config) {
     for (label, host) in hosts {
         println!("network: {label} {host}");
     }
-    let gst = std::process::Command::new("gst-launch-1.0").arg("--version").output();
-    println!("gstreamer: {}", if gst.map(|o| o.status.success()).unwrap_or(false) { "found" } else { "MISSING (needed for screen capture)" });
+    let gst = std::process::Command::new("gst-launch-1.0")
+        .arg("--version")
+        .output();
+    println!(
+        "gstreamer: {}",
+        if gst.map(|o| o.status.success()).unwrap_or(false) {
+            "found"
+        } else {
+            "MISSING (needed for screen capture)"
+        }
+    );
     #[cfg(feature = "mutter")]
     if cfg.backend == "mutter" {
         match remote_hostd::backend::mutter::MutterBackend::probe() {
@@ -230,7 +260,10 @@ async fn ctl(op: &Ctl) {
             Ctl::Enable => proxy.set_enabled(true).await?,
             Ctl::Disable => proxy.set_enabled(false).await?,
             Ctl::Invite { control } => println!("{}", proxy.create_invite(*control).await?),
-            Ctl::Approve { request_id, control } => proxy.decide(request_id, true, *control).await?,
+            Ctl::Approve {
+                request_id,
+                control,
+            } => proxy.decide(request_id, true, *control).await?,
             Ctl::Deny { request_id } => proxy.decide(request_id, false, false).await?,
             Ctl::Control { state } => proxy.set_control(matches!(state, OnOff::On)).await?,
             Ctl::Stop => proxy.stop().await?,
