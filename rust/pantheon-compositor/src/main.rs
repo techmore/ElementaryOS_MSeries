@@ -43,6 +43,7 @@ mod tiling;
 mod touchpad;
 mod wakeups;
 mod wallpaper;
+mod watchdog;
 mod winit;
 mod workspace;
 mod xwayland;
@@ -156,6 +157,11 @@ fn stderr_is_journal() -> bool {
 /// Wayland socket and selected backend. Native startup only reaches this point
 /// after the renderer and connected KMS outputs have been initialized.
 pub(crate) fn notify_systemd_ready() -> io::Result<()> {
+    notify_systemd("READY=1\nSTATUS=Wayland socket and compositor backend initialized")
+}
+
+/// Send one sd_notify message (`KEY=value` lines) to `NOTIFY_SOCKET`.
+pub(crate) fn notify_systemd(message: &str) -> io::Result<()> {
     let socket = std::env::var_os("NOTIFY_SOCKET")
         .ok_or_else(|| io::Error::other("--notify-systemd requires NOTIFY_SOCKET"))?;
     let encoded_socket = socket.as_encoded_bytes();
@@ -167,7 +173,7 @@ pub(crate) fn notify_systemd_ready() -> io::Result<()> {
 
     let notification = UnixDatagram::unbound()?;
     notification.connect_addr(&address)?;
-    notification.send(b"READY=1\nSTATUS=Wayland socket and compositor backend initialized")?;
+    notification.send(message.as_bytes())?;
     Ok(())
 }
 

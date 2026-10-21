@@ -1,3 +1,30 @@
+## Compositor: linux-dmabuf on by default (P1) and systemd watchdog — 2026-10-21 (Claude Code)
+
+Owner approved both ("approved please continue"). **Installed nowhere, unqualified until the next login**, which is the trial;
+the running compositor was not restarted.
+
+- **linux-dmabuf ON by default on native.** `zwp_linux_dmabuf_v1` v4 with the render-node feedback. Each output also builds a
+  scanout feedback (scanout tranche on the apple-drm device, primary + overlay plane formats ∩ GPU-sampleable formats) that is
+  sent only to surfaces presented zero-copy, as Anvil does. Nothing is scanned out directly yet (P6), so every client gets the
+  render feedback and no app is steered to a scanout-only (e.g. linear) layout. **Off switch:** drop-in
+  `[Service]` / `Environment=PANTHEON_DISABLE_DMABUF=1` (or `PANTHEON_ENABLE_DMABUF=0`) via
+  `systemctl --user edit pantheon-rust-compositor@wayland.service`, then log in again.
+- **Watchdog.** `WatchdogSec=30s` in `pantheon-rust-compositor@.service`; the compositor pings `WATCHDOG=1` every 10 s from an
+  event-loop timer, with `STATUS=` such as `58 flips/s, 114 commits/s, busiest brave(1234)`. A page flip pending over 1 s is
+  logged (`page flip has not completed`) and appended to STATUS, but pings continue. A hung loop is killed after 30 s and
+  restarted (`Restart=on-failure`), which ends every Wayland client.
+- **Verified:** 142 compositor tests (new: dmabuf switch, watchdog interval/`WATCHDOG_PID`, status line, busiest client), strict
+  clippy with and without `native-drm`, fmt, `test-session-units.sh`.
+- **What to check at the next login:**
+  1. Brave, Claude and ChatGPT windows draw (not blank or black); `journalctl --user -u pantheon-rust-compositor@wayland -g
+     'linux-dmabuf'` shows `advertising linux-dmabuf v4 on the native renderer`.
+  2. Claude's GPU process no longer runs with `--use-gl=disabled` (`ps -eo args | grep -- --type=gpu-process`).
+  3. `compositor stats`: `dmabuf_commits` > 0 and `top=` entries marked `/dmabuf`; compositor CPU and `output frame stats`
+     `fps`/`render_us` against the before numbers in the entry below.
+  4. `systemctl --user status pantheon-rust-compositor@wayland` shows the STATUS line; `systemctl --user show -p WatchdogUSec pantheon-rust-compositor@wayland` is 30s.
+  If apps go blank: add the `PANTHEON_DISABLE_DMABUF=1` drop-in and log in again.
+- **Not in scope here:** idle/DPMS (P3), taken by the investigation session.
+
 ## CodexBar dropdown at double text size — 2026-10-21 (Claude Code)
 
 - **What:** owner asked for the CodexBar Wingpanel dropdown to be twice as large. `.mseries-codexbar` now sets `font-size: 2em`

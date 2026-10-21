@@ -14,6 +14,7 @@ done
 check pantheon-dock.service 'pantheon-wingpanel.service'
 check pantheon-dock.service 'user-disabled'
 check 'pantheon-rust-compositor@.service' 'Type=notify'
+check 'pantheon-rust-compositor@.service' 'WatchdogSec=30s'
 check 'pantheon-rust-compositor@.service' 'dbus-update-activation-environment --systemd WAYLAND_DISPLAY'
 check 'gnome-session@pantheon-rust-wayland.target.d/session.conf' 'Wants=pantheon-wingpanel.service'
 check 'gnome-session@pantheon-rust-wayland.target.d/session.conf' 'Wants=pantheon-dock.service'

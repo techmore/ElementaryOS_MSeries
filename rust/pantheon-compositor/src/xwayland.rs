@@ -94,6 +94,7 @@ pub fn start(
                                         "could not notify systemd that Pantheon is ready"
                                     );
                                 }
+                                crate::watchdog::start(state);
                             }
                             if let Some((program, args)) = state.pending_command.take()
                                 && let Err(error) =
