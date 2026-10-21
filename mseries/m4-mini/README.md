@@ -351,3 +351,19 @@ ISO, installed desktop or physical boot has passed. Gravity kernel/Mesa and
 Asahi kernel heads were rechecked and still match the recorded revisions.
 
 [Live staging receipt](receipts/2026-10-21-live-kernel-staging.json).
+
+## Full elementary dependency closure
+
+The combined factory invocation uses both `--profile=daily` and
+`--profile=m4-mini`. Real mkosi parser checks verify that daily/common
+repository trees are available through SandboxTrees before package install.
+The full elementary desktop/minimal/standard/live/installer-session dependency
+plan resolves with 1,411 additions and no additional kernel image. The reused
+test root first required aligning eleven newer Ubuntu systemd packages with
+the elementary package family; pin 999 alone does not downgrade existing
+packages. Factory ordering already supplies these preferences early.
+
+The isolated full-desktop installation is still running; closure does not
+constitute successful package configuration or a graphical session. Service
+starts are blocked in the target root, and no running-host packages change.
+[Dependency receipt](receipts/2026-10-21-desktop-resolution.json).

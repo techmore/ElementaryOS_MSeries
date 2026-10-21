@@ -12,13 +12,14 @@ repeatedly request an inventory until availability changes.
 | Current source selection | Gravity kernel/Mesa heads rechecked; selected mainline/Aurora comparisons retained | Track future changes as separate candidates; do not mix firmware contracts |
 | Kernel | Full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Final-DT RAM/ramoops checker passes synthetic tests; actual 16 GB map and runtime stability still needed |
 | Boot chain | Both raw bootloader stages and matching U-Boot compile | Native handoff with required GPU/DCP firmware and owner OS authorization |
-| Userspace | 188-package configured base root; package audit and llvmpipe pass | Complete elementary desktop, native M4 GPU/KMS, login and applications |
-| Initramfs/EFI | Archive/early modules pass; exact EFI payloads and repeatability checked | Actual root identity and boot on mini; test label is not an owner partition |
+| Userspace | Configured minimal root and real Casper pass; full elementary/live dependency plan resolves (1,411 additions); desktop configuration is running | Completed desktop package configuration, native M4 GPU/KMS, login and applications |
+| Initramfs/EFI | Archive/early modules and real Casper live-hook replay pass; exact research EFI payloads and repeatability checked | Actual root identity and boot on mini; test label is not an owner partition |
 | 10 Gb Ethernet | AQTION module, AQC113C PCI alias and dependency resolution verified | Read controller ID; test negotiated speed, traffic, reconnect and error counters |
 | HDMI | Gravity reports native HDMI; source profile uses primary DCP/HDMI-A/PHY4 | Owner monitor mode, hotplug and sustained display on elementary |
 | Radio/USB | J773g Wi-Fi mapping tests pass; early input modules present | Owner firmware/calibration, USB topology and wired/Bluetooth input |
 | Audio | Kernel protection source reviewed; electrical assumptions remain explicit | Actual routing and measured protection; no speaker safety qualification |
-| Dual boot | Installer policy accepts synthetic macOS 27 and selects separate IPSW | Owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
+| Factory image | Opt-in mkosi profiles, Mesa /usr retention and live kernel staging pass scoped checks | Complete image assembly and installer/session integration |
+| Dual boot | Installer policy accepts synthetic macOS 27 and selects separate IPSW; M4 command-line installer refuses generic disk erase | Owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
 | Lifecycle | Gravity reports flaky shutdown/reboot and unsupported sleep; sleep policy packaged | Physical restart/shutdown behavior; do not enable sleep based on assembly |
 
 For host facts, run `bash macos-inventory.sh` on the mini in macOS. The script

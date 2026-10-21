@@ -1,0 +1,31 @@
+{
+  "scope": "public repository dependency preparation, not full factory assembly",
+  "requested": [
+    "elementary-desktop",
+    "elementary-minimal",
+    "elementary-standard",
+    "elementary-live",
+    "io.elementary.installer-session"
+  ],
+  "resolution": "passed after explicit alignment with elementary systemd family",
+  "new_packages": 1411,
+  "systemd_alignment_packages": 11,
+  "systemd_target": "259.5-0ubuntu3.4+elementary3~ubuntu9.1",
+  "archives_megabytes": 1073,
+  "additional_installed_megabytes": 3617,
+  "plan_lines": 1422,
+  "plan_sha256": "251dc0e3ccc1b0f23b3d8025c6b3c4b75ef6ffe57dc92e8890f15acb2e1bf403",
+  "apt_inputs_sha256": {
+    "repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources": "15c321156114e7df1f2c70177a56ace62a0817d8226f8a5fc72d2d124a178320",
+    "repos/daily/etc/apt/sources.list.d/elementary-os-patches.sources": "98294e571d6054415fad3480ef8895da29a270b70f1dc93e21ddec3bbd8ab21f",
+    "repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg": "e8695a039a8a8a197bfb386001ad66517061f7b215eee244aa1b7ae495ca208e",
+    "repos/common-files/etc/apt/keyrings/elementary-os.gpg": "6a6f875ae237a359419638bec9f43769dfb9d137a7d04b6821fe13dd5998ea03",
+    "repos/common-files/etc/apt/preferences.d/deprioritize-gnome": "e6160210850946028d96ea70786746b488d7d29b83a57494b498a15950e57fb1",
+    "repos/common-files/etc/apt/preferences.d/prioritize-patches": "ae21c9ee03db95e0f2ab728a50dfdadc05f7dd3b43965c761ef710e6815470dd",
+    "repos/common-files/etc/apt/preferences.d/restrict-proprietary": "b28997399344a0c07969254e5e30e983d274d2a2f59e658bdb5787a383299250"
+  },
+  "first_failure": "test root contained Ubuntu systemd 259.9 installed before elementary pin 999; ordinary pin does not downgrade installed packages",
+  "factory_order_review": "daily/proposed SandboxTrees exposes repo keys/sources/preferences before package installation; real parser verifies both daily and common-files trees",
+  "installation_status": "download/configuration process live; no configured desktop success claimed",
+  "hardware_validated": false
+}

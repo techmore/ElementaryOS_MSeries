@@ -1,3 +1,25 @@
+## M4 mini: full desktop dependency closure — 2026-10-21
+
+Applied the real daily/common APT sources, keys and preferences to the isolated
+candidate root. Initial closure failed because the reused root had Ubuntu
+systemd 259.9 installed before the elementary pin 999 was present. Explicitly
+aligning its eleven installed systemd-family packages with the elementary
+259.5 build resolves the full desktop/minimal/standard/live/installer-session
+plan: 1,411 additions, 1,073 MB downloads, 3,617 MB installed. No extra kernel
+image is selected. This is a test-root ordering issue: mkosi's existing daily
+SandboxTrees exposes both repository trees before package installation. Added
+a real parser assertion for the combined daily+m4-mini profile.
+
+Full desktop installation is active in exec session 10396, process apt-get
+1063120 at the last check. Work-local command/log: work/m4-desktop-install-
+command.json and work/m4-desktop-install.log (relative to this chat workspace).
+Root work/m4-mmdebstrap-fullmap-root; downloads /tmp/elementary-m4-desktop-debs.
+Mapped user/mount/PID namespace, private read-only proc and target-only
+policy-rc.d exit 101 prevent service starts. No host install or desktop restart.
+Resume this handle and inspect terminal status before retrying or starting any
+other package writer. Download is progressing; no configured desktop pass yet.
+[Resolution receipt](m4-mini/receipts/2026-10-21-desktop-resolution.json).
+
 ## M4 mini: live-kernel staging and installed storage initrd — 2026-10-21
 
 Added an M4-only live post-install hook to satisfy assemble-iso.sh's /boot

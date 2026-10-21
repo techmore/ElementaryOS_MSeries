@@ -60,6 +60,11 @@ installer = Path(live_extra) / 'usr/sbin/elementary-install'
 refusal = subprocess.run(['/bin/sh', str(installer)], env={'PATH': '/nonexistent'},
                          capture_output=True, text=True)
 assert refusal.returncode == 1 and 'cannot preserve macOS' in refusal.stderr
+daily = images(resolve('--architecture=arm64', '--profile=daily', '--profile=m4-mini'))
+sandbox_sources = {item['Source'] for item in daily['base']['SandboxTrees']}
+assert str(repo / 'repos/daily') in sandbox_sources
+assert str(repo / 'repos/common-files') in sandbox_sources
+assert set(daily['base']['Packages']) == set(m4['base']['Packages'])
 wrong = resolve('--architecture=x86-64', '--profile=m4-mini')
 assert wrong.returncode != 0 and 'Architecture=arm64 in [Assert]' in wrong.stderr
 conflict = resolve('--architecture=arm64', '--profile=m4-mini', '--profile=fairydust')
