@@ -15,6 +15,30 @@
 - **Nix:** measured, not adopted. A flake would pin Vala/Meson and sources, but the plugin must link the Ubuntu/elementary libraries it loads into; the
   aarch64 `vmTools` images do not exist. Details in `RELEASE-PIPELINE.md`.
 
+## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
+
+Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
+across Codex, Claude, OpenCode and Grok now gets a number and a hue: account 1 in a tinted legend row
+above the cards, the others below. Cards keep only the numbered badge next to the plan; alternate
+accounts become one tinted row (badge, quota, Switch). The bar shows the signed-in account's number
+after each company mark and numbers alternates with the same global, hue-colored numbers. Opt-in via
+`accountLegend` (Settings > Display > Wingpanel > Account legend); details in `CODEXBAR-PORT.md`.
+
+- **Verified.** `meson test` 18/18, including the new `account-legend` probe (named once with the
+  legend on, repeated with it off, bar hue matches) and `presentation` unit tests for numbering and hues.
+  Rendered light/dark with the new `shared-accounts` fixture.
+- **Not verified.** The live panel with the owner's real accounts until Wingpanel loads the new module.
+
+## Dock & Taskbar page in System Settings — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/dock-switcher/` (Vala Switchboard plug, **Settings → Personal → Dock & Taskbar**) switches the patched dock between the
+  Windows 11 taskbar and the elementary dock by writing `io.elementary.dock` `taskbar-mode` (the dock reads it live), plus the dock's
+  Hide automatically setting. Read-back confirmation, Undo toast, follows external changes, honest stock-dock / opted-out / not-installed
+  states. Installer: `bash mseries/install-dock-switcher.sh` (plug only; restarts nothing). Details: `mseries/dock-switcher/README.md`.
+- **Verified:** build, 7 unit tests, plug loaded and constructed through `get_plug`, screenshots (light/dark/disabled/1.5x text, headless).
+- **Not verified:** inside a live System Settings window, a real switch against the running dock, screen-reader use.
+- **Not installed:** the plug is merged but not installed on the owner's machine until `install-dock-switcher.sh` is run.
+
 ## Typing stutter: interactive CPU weights for the session — 2026-10-21 (Claude Code)
 
 - **Cause found:** the stutter coincides with CPU saturation by nice-0 batch work. On a fresh boot with a `llama-bench -t 8` run, parallel
@@ -1144,34 +1168,54 @@ Nothing was deployed or changed on the phone during this investigation. The
 working text session remains intact. Verification-code assistance is separate
 unfinished work and remains uninstalled.
 
-## Desktop message notification popups — 2026-10-20
+## Desktop notifications and taskbar bell — 2026-10-20
 
-Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
-The user-local service is enabled/active as `mseries-desktop-notifications.service`,
-using GTK3/Xwayland override-redirect popups for placement without a compositor
-or Wingpanel restart. It implements the freedesktop notification interface,
-shows up to three bottom-right cards, preserves focus, and dispatches supplied
-Open/Reply actions. It retains no history; no notification center, inline reply,
-images, sound, or native Wayland placement is claimed. Existing DND is respected;
-per-app elementary notification preferences and full accessibility qualification
-remain open. The installer stages by default; `--activate` enables/restarts only
-this service. BlueFerry uses the existing separate version-matched backend overlay
-at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
-as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
-(https://github.com/erikwb/blueferry); this repository does not redistribute its
-full source. Rebase the backend overlay after package upgrades.
+PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
+popups to Apple-style upper-right placement, newest first, with a dock-gray
+360x72 layout, reduced padding, rounded RGBA/X Shape silhouette and one explicit
+Reply button. Known Reply/inline-reply aliases are deduplicated. Notification
+preview text remains plain and is exposed accessibly. Asynchronous, bounded
+metadata probes inspect only known Wingpanel/Dock first frames; existing workarea
+reservations are not subtracted twice. This desktop measured Wingpanel=124 and
+dock=72 logical pixels, with declared fallback insets. A live popup measured
+360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
+from the right. No compositor or Wingpanel restart was required.
 
-Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
-Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
-replacement, expiry, close and DND were checked using synthetic content only.
-Retained screenshots are fixtures. Live synthetic notification geometry was
-360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
-and bottom. The service remains active/enabled and BlueFerry remains active.
-BlueFerry notification tests (92) and combined overlay tests (201) passed; its
-Reply action opens the existing conversation through opaque-handle activation.
-No real phone messages were sent or deliberately marked read by these checks.
-Actual phone-notification click-to-app focus and next-login startup remain
-unverified. This is transformed-desktop work, not factory-image qualification.
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
+secondary click offers Mark all as read and Do Not Disturb. The service retains
+up to 100 memory-only notification records, resets history on service restart,
+and exposes a content-free Changed signal plus bounded user-session snapshots.
+The taskbar requests 50 records and reports unavailable state explicitly.
+Mark all as read changes only local notification history; reason-4 toast cleanup
+does not write iPhone read state. DND uses elementary's saved preference.
+Historical trusted BlueFerry entries reopen via a fixed installed helper and
+validated opaque handle; notification argv is never executed. Other supplied
+valid desktop IDs can open installed applications on explicit click.
+
+A real incoming phone notification's single Reply button was clicked. The GTK
+client received the same opaque handle, displayed the matching reply destination,
+and had compositor focus. A scoped bridge only raises one matching BlueFerry GTK
+window after an explicit action from its backend owner. No message was sent.
+32 isolated backend/model/provenance tests passed, plus private Xvfb/D-Bus popup
+and actual history/MarkAllRead/DND API checks using memory settings. Native bell
+probes cover service absence, history, Open/Reply, local read controls, rejected
+DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
+
+Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
+TaskbarNotifications and AppResolver. The private dock build was installed and
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
+mode, auto-hide setting, icon size and ordered launcher pins compared identical
+before/after. Rollback binary/wrapper and preference receipt are private under
+~/.local/state/mseries-notifications. Live bell/history opening is verified;
+the owner confirmed both right-click controls appear. Notification,
+dock and BlueFerry services remain active. Full accessibility qualification,
+physical next-login recovery and factory-image qualification remain open.
 
 ## Working iPhone messages and native Messages app — 2026-10-20
 
