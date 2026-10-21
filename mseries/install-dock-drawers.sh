@@ -30,7 +30,7 @@ patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
 
 mode=${1:-install}
-case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
+case $mode in install|--build-only|--build-running-apps-only|--revert) ;; *) echo "Usage: $0 [--build-only|--build-running-apps-only|--revert]" >&2; exit 2;; esac
 if [[ $mode == --revert ]]; then
   rm -f "$wrapper"
   echo "Reverted: the stock dock ($stock) is used at your next login."
@@ -66,6 +66,8 @@ git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
+# --build-running-apps-only is a build-only compatibility alias. Canonical
+# preparation now applies tracking and validates shared-source preservation.
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
@@ -75,7 +77,7 @@ for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarNot
 done
 glib-compile-schemas --strict --dry-run "$source_dir/data"
 bash "$repo/mseries/dock-taskbar/test-hover.sh"
-if [[ $mode == --build-only ]]; then
+if [[ $mode == --build-only || $mode == --build-running-apps-only ]]; then
   echo 'Native dock build and schema validation passed; installed dock unchanged.'
   exit 0
 fi

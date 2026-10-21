@@ -1,0 +1,14 @@
+{
+  "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "baseline": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "path": "include/uapi/drm/asahi_drm.h",
+  "old_sha256": "2698ae2b447945202ed45bcdb93ea34db3782e191473da045e63a5524550b4ef",
+  "new_sha256": "0bed9d45468035f76d5d9d58330664a2685c9c9378e93f1a72f48f9f881a7ccc",
+  "declarations_equal_after_comment_whitespace_removal": true,
+  "observed_mesa_packages": {
+    "libegl-mesa0": "26.0.8-1ubuntu0.3",
+    "libgl1-mesa-dri": "26.0.8-1ubuntu0.3",
+    "mesa-vulkan-drivers": "26.0.8-1ubuntu0.3"
+  },
+  "limits": "Read-only header comparison and installed package metadata. Header changes are two documentation comments, including an M3/T6030 capability restriction. This does not establish command-handler behavior, actual client/runtime compatibility or hardware acceptance."
+}

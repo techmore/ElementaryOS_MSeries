@@ -32,32 +32,39 @@ index 8efd72d..0abec9f 100644
  .taskbar-codexbar-popup { font-size: 1.5625em; }
 +
 +/* Match Windows taskbar state: gray for open apps; blue only for focus. */
-+dock-window.taskbar .running-indicator {
-+    min-width: 8px; min-height: 3px; background: rgba(0, 0, 0, 0.65);
++dock-window.taskbar .running-indicator, dock-window.taskbar .running-indicator:disabled {
++    min-width: 8px; min-height: 3px; opacity: 1; background: #606060;
 +}
-+dock-window.taskbar.dark .running-indicator { background: rgba(255, 255, 255, 0.35); }
++dock-window.taskbar.dark .running-indicator, dock-window.taskbar.dark .running-indicator:disabled { background: #606060; }
 +dock-window.taskbar .multiple-windows .running-indicator { min-width: 12px; }
 +dock-window.taskbar launcher.focused .running-indicator { min-width: 18px; background: #0078d4; }
 +dock-window.taskbar.dark launcher.focused .running-indicator { background: #4cc2ff; }
 diff --git a/src/AppSystem/App.vala b/src/AppSystem/App.vala
-index e4aabd3..a5d175e 100644
+index e4aabd3..3fec27e 100644
 --- a/src/AppSystem/App.vala
 +++ b/src/AppSystem/App.vala
-@@ -149,7 +149,7 @@ public class Dock.App : Object {
+@@ -149,7 +149,14 @@ public class Dock.App : Object {
              } else if (windows.length == 1) {
                  WindowSystem.get_default ().desktop_integration.focus_window.begin (windows[0].uid);
              } else if (WindowSystem.get_default ().desktop_integration != null) {
 -                WindowSystem.get_default ().desktop_integration.show_windows_for.begin (app_info.get_id ());
-+                WindowSystem.get_default ().desktop_integration.show_windows_for.begin (windows[0].app_id);
++                var group = AppResolver.shared_window_id (windows);
++                if (group != null) {
++                    WindowSystem.get_default ().desktop_integration.show_windows_for.begin (group);
++                } else {
++                    // Mixed aliases share this launcher but cannot share the compositor's
++                    // exact-ID overview. Focus one window instead of showing a partial group.
++                    WindowSystem.get_default ().desktop_integration.focus_window.begin (windows[0].uid);
++                }
              }
          } catch (Error e) {
              critical (e.message);
 diff --git a/src/AppSystem/AppResolver.vala b/src/AppSystem/AppResolver.vala
 new file mode 100644
-index 0000000..f3a2015
+index 0000000..cf2e252
 --- /dev/null
 +++ b/src/AppSystem/AppResolver.vala
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,127 @@
 +/* SPDX-License-Identifier: GPL-3.0-or-later
 + * Copyright 2026 ElementaryOS_MSeries contributors
 + */
@@ -73,6 +80,9 @@ index 0000000..f3a2015
 +        return instance;
 +    }
 +
++    private HashTable<string, DesktopAppInfo> exact_ids;
++    private HashTable<string, bool> ambiguous_ids;
++    private HashTable<string, bool> ambiguous_classes;
 +    private HashTable<string, DesktopAppInfo> ids;
 +    private HashTable<string, DesktopAppInfo> classes;
 +    private HashTable<string, DesktopAppInfo> executables;
@@ -85,6 +95,9 @@ index 0000000..f3a2015
 +    }
 +
 +    private void reload () {
++        exact_ids = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
++        ambiguous_ids = new HashTable<string, bool> (str_hash, str_equal);
++        ambiguous_classes = new HashTable<string, bool> (str_hash, str_equal);
 +        ids = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
 +        classes = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
 +        executables = new HashTable<string, DesktopAppInfo> (str_hash, str_equal);
@@ -96,10 +109,14 @@ index 0000000..f3a2015
 +                continue;
 +            }
 +            var id = desktop.get_id ().casefold ();
++            exact_ids[desktop.get_id ()] = desktop;
++            if (ids.contains (id)) ambiguous_ids[id] = true;
 +            ids[id] = desktop;
 +            var startup_class = desktop.get_startup_wm_class ();
 +            if (startup_class != null && startup_class != "") {
-+                classes[startup_class.casefold ()] = desktop;
++                var class_key = startup_class.casefold ();
++                if (classes.contains (class_key)) ambiguous_classes[class_key] = true;
++                classes[class_key] = desktop;
 +            }
 +            var executable = desktop.get_executable ();
 +            if (executable != null && executable != "") {
@@ -118,14 +135,17 @@ index 0000000..f3a2015
 +            return resolved[window_id];
 +        }
 +        var key = window_id.casefold ();
-+        DesktopAppInfo? info = ids[key];
-+        if (info == null && !key.has_suffix (".desktop")) {
++        // Exact desktop IDs remain authoritative on case-sensitive filesystems.
++        DesktopAppInfo? info = exact_ids[window_id];
++        if (info == null && !window_id.has_suffix (".desktop")) {
++            info = exact_ids[window_id + ".desktop"];
++        }
++        if (info == null && !ambiguous_ids.contains (key)) info = ids[key];
++        if (info == null && !key.has_suffix (".desktop") && !ambiguous_ids.contains (key + ".desktop")) {
 +            info = ids[key + ".desktop"];
 +        }
-+        if (info == null) {
-+            info = classes[key];
-+        }
-+        if (info == null && !ambiguous_executables.contains (key)) {
++        if (info == null && !ambiguous_classes.contains (key)) info = classes[key];
++        if (info == null && !ambiguous_classes.contains (key) && !ambiguous_executables.contains (key)) {
 +            info = executables[key];
 +        }
 +        if (info == null) {
@@ -135,6 +155,16 @@ index 0000000..f3a2015
 +            resolved[window_id] = info;
 +        }
 +        return info;
++    }
++
++    // The compositor overview accepts one exact raw identity, not a desktop alias.
++    public static string? shared_window_id (GenericArray<Window> windows) {
++        if (windows.length == 0) return null;
++        var identity = windows[0].app_id;
++        foreach (var window in windows) {
++            if (window.app_id != identity) return null;
++        }
++        return identity;
 +    }
 +
 +    private DesktopAppInfo? transient_app (string window_id) {
@@ -206,7 +236,7 @@ index 3ba2fc5..3d97e6f 100644
              }
  
 diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
-index 9b2d05d..73aa68a 100644
+index 9b2d05d..b65f8ac 100644
 --- a/src/AppSystem/Launcher.vala
 +++ b/src/AppSystem/Launcher.vala
 @@ -38,16 +38,12 @@ public class Dock.Launcher : BaseItem {
@@ -230,7 +260,7 @@ index 9b2d05d..73aa68a 100644
              }
          }
      }
-@@ -77,7 +73,9 @@ public class Dock.Launcher : BaseItem {
+@@ -77,9 +73,11 @@ public class Dock.Launcher : BaseItem {
          insert_action_group (App.ACTION_GROUP_PREFIX, app.app_action_group);
  
          var shell_section = new Menu ();
@@ -239,8 +269,11 @@ index 9b2d05d..73aa68a 100644
 +            shell_section.append (_("Keep in Dock"), ACTION_PREFIX + PINNED_ACTION);
 +        }
  
-         if (Environment.find_program_in_path ("io.elementary.appcenter") != null) {
+-        if (Environment.find_program_in_path ("io.elementary.appcenter") != null) {
++        if (!app.app_info.get_boolean ("X-MSeries-Transient") && Environment.find_program_in_path ("io.elementary.appcenter") != null) {
              shell_section.append (_("Uninstall"), App.ACTION_PREFIX + App.UNINSTALL_ACTION);
+             shell_section.append (_("View in AppCenter"), App.ACTION_PREFIX + App.VIEW_ACTION);
+         }
 @@ -130,7 +128,7 @@ public class Dock.Launcher : BaseItem {
          overlay.add_overlay (badge_container);
          overlay.add_overlay (progress_revealer);

@@ -112,6 +112,10 @@ impl PantheonCompositor {
                 let serial = SERIAL_COUNTER.next_serial();
                 let time = Event::time(&event);
                 let key_state = event.state();
+                if key_state == smithay::backend::input::KeyState::Pressed {
+                    // Lets xdg-activation hold back a raise while the user is typing.
+                    self.last_key_press = Some(std::time::Instant::now());
+                }
                 let x11_focus = self.x11_keyboard_focus.clone();
                 let seat = self.seat.clone();
 
@@ -270,18 +274,14 @@ impl PantheonCompositor {
                     && ButtonState::Pressed == button_state
                     && !pointer.is_grabbed()
                 {
-                    if let Some((window, _loc)) = self
-                        .space
-                        .element_under(pointer.current_location())
-                        .map(|(w, l)| (w.clone(), l))
-                    {
+                    if let Some(window) = self.window_under(pointer.current_location()) {
                         let panel_surface = window
                             .toplevel()
                             .is_some_and(|top| self.is_panel_surface(top.wl_surface()));
                         if panel_surface {
-                            self.space.raise_element(&window, false);
+                            self.raise_window(&window, false);
                         } else {
-                            self.space.raise_element(&window, true);
+                            self.raise_window(&window, true);
                             self.focus_window_keyboard(&window, serial);
                         }
                         self.space.elements().for_each(|window| {

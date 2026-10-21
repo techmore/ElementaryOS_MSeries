@@ -21,6 +21,11 @@ image can be selected through the file chooser.
 
 ## Rules
 
+Work Mode never looks at attached displays, the Thunderbolt dock or any other
+hardware to decide whether you are at work. The only inputs are the main switch,
+the schedule and the public IP rule below. A work desktop that appears at home
+means the main switch is on with no schedule or network rule limiting it.
+
 Windows Work Mode applies only while **every** rule you turned on is satisfied:
 the main switch, the schedule (if on), and the work-network rule (if on). With
 both schedule and network on, it means "during work hours, at work".

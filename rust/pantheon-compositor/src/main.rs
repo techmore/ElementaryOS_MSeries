@@ -1,8 +1,11 @@
 #![allow(irrefutable_let_patterns)]
 
+mod activation;
 mod cursor;
 mod cursor_theme;
 mod display_config;
+#[cfg(feature = "native-drm")]
+mod edid;
 mod gala_compat;
 mod gesture_animation;
 #[cfg(feature = "gesture-probe")]
@@ -14,9 +17,14 @@ mod handlers;
 mod hotplug;
 mod input;
 #[cfg(feature = "native-drm")]
+mod kms_props;
+#[cfg(feature = "native-drm")]
+mod link_status;
+#[cfg(feature = "native-drm")]
 pub mod native;
 mod overview;
 mod pantheon_shell;
+mod popup_stack;
 mod protocols;
 mod shell_compat;
 mod state;

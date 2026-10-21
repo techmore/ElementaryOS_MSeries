@@ -332,7 +332,7 @@ impl PantheonCompositor {
             })
             .cloned();
         if let Some(window) = next_window {
-            self.space.raise_element(&window, true);
+            self.raise_window(&window, true);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             self.focus_window_keyboard(&window, serial);
             self.space.elements().for_each(|window| {
@@ -462,6 +462,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
 
             if let Some(location) = placement {
                 state.space.map_element(window.clone(), location, true);
+                state.apply_keep_above(&window);
                 state.initially_positioned.insert(surface_id);
 
                 let serial = smithay::utils::SERIAL_COUNTER.next_serial();

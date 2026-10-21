@@ -39,6 +39,10 @@ use smithay::{
     },
 };
 
+use crate::activation::{
+    ActivationPolicy, DEFER_POLL, DeferStep, MAX_DEFERRED, Request, Verdict, accepts_token,
+    defer_step, verdict,
+};
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
@@ -97,6 +101,10 @@ pub struct PantheonCompositor {
     pub xdg_activation_state: XdgActivationState,
     pub(crate) loop_handle: LoopHandle<'static, PantheonCompositor>,
     activation_sweep_armed: bool,
+    pub activation_policy: ActivationPolicy,
+    /// When the user last pressed a key; xdg-activation waits while they type.
+    pub last_key_press: Option<std::time::Instant>,
+    deferred_activations: usize,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
     pub lock_surfaces: HashMap<String, LockSurface>,
@@ -125,6 +133,8 @@ pub struct PantheonCompositor {
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    /// Surfaces that asked `io_elementary_pantheon_extended_behavior_v1.set_keep_above`.
+    pub keep_above: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     /// Runtime-only top-panel suppression (Windows Work Mode). Lives only in
     /// compositor memory, so every new session starts with the top bar shown.
     pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
@@ -389,6 +399,11 @@ impl PantheonCompositor {
             xdg_activation_state,
             loop_handle,
             activation_sweep_armed: false,
+            activation_policy: ActivationPolicy::from_env_value(
+                std::env::var("PANTHEON_ACTIVATION_POLICY").ok().as_deref(),
+            ),
+            last_key_press: None,
+            deferred_activations: 0,
             session_lock_state,
             session_locked: false,
             lock_surfaces: HashMap::new(),
@@ -417,6 +432,7 @@ impl PantheonCompositor {
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
+            keep_above: HashSet::new(),
             top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
@@ -777,7 +793,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn window_app_id(&self, window: &Window) -> Option<String> {
+    pub(crate) fn window_app_id(&self, window: &Window) -> Option<String> {
         if let Some(toplevel) = window.toplevel() {
             smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                 states
@@ -820,7 +836,7 @@ impl PantheonCompositor {
                 return Err(format!("window {uid} could not be restored"));
             }
         }
-        self.space.raise_element(&window, true);
+        self.raise_window(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.focus_window_keyboard(&window, serial);
         self.refresh_panel_visibility();
@@ -1000,7 +1016,7 @@ impl PantheonCompositor {
             self.space.map_element(window.clone(), *location, false);
         }
         if let Some((window, _)) = target_windows.last() {
-            self.space.raise_element(window, true);
+            self.raise_window(window, true);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             if let Some(toplevel) = window.toplevel() {
                 if let Some(keyboard) = self.seat.get_keyboard() {
@@ -1775,6 +1791,11 @@ impl PantheonCompositor {
             }
             return None;
         }
+        // Popups draw above every toplevel (see `popup_stack`), so they are hit
+        // first, across all windows, before the space's own top-down search.
+        if let Some((_, surface, location)) = crate::popup_stack::popup_under(&self.space, pos) {
+            return Some((surface, location.to_f64()));
+        }
         self.space
             .element_under(pos)
             .and_then(|(window, location)| {
@@ -1782,6 +1803,18 @@ impl PantheonCompositor {
                     .surface_under(pos - location.to_f64(), WindowSurfaceType::ALL)
                     .map(|(s, p)| (s, (p + location).to_f64()))
             })
+    }
+
+    /// The window that owns the surface under `pos`: the owner of a popup drawn
+    /// above its neighbours, else the top-most window whose input region contains
+    /// `pos`. Pair of `surface_under` for click-to-raise and focus.
+    pub fn window_under(&self, pos: Point<f64, Logical>) -> Option<Window> {
+        if let Some((window, _, _)) = crate::popup_stack::popup_under(&self.space, pos) {
+            return Some(window);
+        }
+        self.space
+            .element_under(pos)
+            .map(|(window, _)| window.clone())
     }
 
     pub fn track_output_for_lock(&mut self, output: &smithay::output::Output) {
@@ -1882,16 +1915,12 @@ impl XdgActivationHandler for PantheonCompositor {
         self.xdg_activation_state
             .retain_tokens(|_, token| token.timestamp.elapsed() < ACTIVATION_TOKEN_TTL);
         self.arm_activation_sweep();
-        let Some((serial, seat)) = data.serial else {
-            return false;
-        };
-        let Some(keyboard) = self.seat.get_keyboard() else {
-            return false;
-        };
-        Seat::from_resource(&seat) == Some(self.seat.clone())
-            && keyboard
-                .last_enter()
-                .is_some_and(|last_enter| serial.is_no_older_than(&last_enter))
+        // A token without a valid recent input serial is still kept under the
+        // `raise` policy; request_activation decides what to do with it.
+        accepts_token(
+            self.activation_policy,
+            self.activation_serial_trusted(&data),
+        )
     }
 
     fn request_activation(
@@ -1901,10 +1930,6 @@ impl XdgActivationHandler for PantheonCompositor {
         surface: WlSurface,
     ) {
         self.xdg_activation_state.remove_token(&token);
-        if self.session_locked || token_data.timestamp.elapsed() > Duration::from_secs(10) {
-            return;
-        }
-
         let mut root = surface;
         while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
             root = parent;
@@ -1912,6 +1937,75 @@ impl XdgActivationHandler for PantheonCompositor {
         if self.is_panel_surface(&root) {
             return;
         }
+        let request = Request {
+            serial_trusted: self.activation_serial_trusted(&token_data),
+            token_age: token_data.timestamp.elapsed(),
+            session_locked: self.session_locked,
+            since_last_key: self.last_key_press.map(|pressed| pressed.elapsed()),
+        };
+        match verdict(self.activation_policy, request) {
+            Verdict::Ignore => {}
+            Verdict::ActivateNow => self.activate_root_surface(root),
+            Verdict::ActivateWhenIdle => self.defer_activation(root),
+        }
+    }
+}
+
+impl PantheonCompositor {
+    /// The token's serial is one this seat issued and is no older than the last
+    /// keyboard enter, i.e. it came from the user's own input.
+    fn activation_serial_trusted(&self, data: &XdgActivationTokenData) -> bool {
+        let Some((serial, seat)) = data.serial.as_ref() else {
+            return false;
+        };
+        let Some(keyboard) = self.seat.get_keyboard() else {
+            return false;
+        };
+        Seat::from_resource(seat) == Some(self.seat.clone())
+            && keyboard
+                .last_enter()
+                .is_some_and(|last_enter| serial.is_no_older_than(&last_enter))
+    }
+
+    /// Hold a raise back until the user pauses typing, then perform it. The
+    /// wait is bounded, and so is the number of activations waiting.
+    fn defer_activation(&mut self, root: WlSurface) {
+        if self.deferred_activations >= MAX_DEFERRED {
+            return;
+        }
+        self.deferred_activations += 1;
+        let started = std::time::Instant::now();
+        let armed =
+            self.loop_handle
+                .insert_source(Timer::from_duration(DEFER_POLL), move |_, _, state| {
+                    let since_key = state.last_key_press.map(|pressed| pressed.elapsed());
+                    match defer_step(started.elapsed(), since_key) {
+                        DeferStep::Wait => TimeoutAction::ToDuration(DEFER_POLL),
+                        DeferStep::Go => {
+                            state.deferred_activations =
+                                state.deferred_activations.saturating_sub(1);
+                            if !state.session_locked
+                                && smithay::reexports::wayland_server::Resource::is_alive(&root)
+                            {
+                                state.activate_root_surface(root.clone());
+                            }
+                            TimeoutAction::Drop
+                        }
+                        DeferStep::GiveUp => {
+                            state.deferred_activations =
+                                state.deferred_activations.saturating_sub(1);
+                            TimeoutAction::Drop
+                        }
+                    }
+                });
+        if armed.is_err() {
+            self.deferred_activations = self.deferred_activations.saturating_sub(1);
+        }
+    }
+
+    /// Bring the toplevel owning `root` to the front: switch to its workspace,
+    /// restore it if minimized, raise it and give it keyboard focus.
+    fn activate_root_surface(&mut self, root: WlSurface) {
         let managed = self
             .workspace_manager
             .windows()
@@ -1938,7 +2032,7 @@ impl XdgActivationHandler for PantheonCompositor {
                 return;
             }
         }
-        self.space.raise_element(&window, true);
+        self.raise_window(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.focus_window_keyboard(&window, serial);
         self.space.elements().for_each(|window| {

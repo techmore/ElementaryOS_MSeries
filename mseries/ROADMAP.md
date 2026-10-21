@@ -1,5 +1,195 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## All three wip2 dock ports pass scoped picture — 2026-10-21
+
+Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
+one-cycle polling≈4.5s partner→active desktop each, with label/boundary corrections
+and 0.5 s resolution disclosed. Not a speed ranking or pixel latency benchmark.
+New read-only timing tool and 5 tests; existing 71 Aurora tests pass after dev
+conflict resolution. Next dev merge, exact lifecycle tracing and actual `.20`
+recovery; boot default unchanged, no stable promotion/power claim.
+[Timing follow-up](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
+
+Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
+shared payload verified; one-shot consumed, `.20` remains normal default.
+Five-minute boot/PMP/idle and M1 Pro GLES shader/readback plus 1 MiB fsync pass.
+Owner confirms internal display/input and front-left dock picture (slow to
+appear); hinge-side left port picture fails, right untested. External 1080p/60
+observed. Next matched physical-port evidence and real `.20` recovery; no
+suspend, stable or energy-improvement acceptance.
+[Report](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
+## Deferred reboot: mismatch triage and test readiness — 2026-10-21
+
+24 mechanically-neither patches triaged: 19 source contracts retained,
+five deeper/partial reviews open. Full 64-fix semantics and hardware acceptance
+remain unqualified. Exact private post-boot collector/smoke commands are ready;
+compiler/EGL/GLES/GI dependencies exist. No hardware tests or installed changes.
+The one-shot remains armed for the owner's later attended reboot.
+[Audit](aurora/unified72/static-contract-review-2026-10-21.json),
+[manual sequence](aurora/unified72/BOOT-TRIAL.md#manual-collection-after-the-attended-wip2-boot).
+
+## Aurora 7.2 one-shot armed — 2026-10-21
+
+Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
+`elementary-aurora72-wip2-trial` is armed; `.20` remains persistent default,
+old/shared payload bytes are unchanged, no reboot yet. Next is owner/Claude
+attended reboot, basic unlock/display/input and manual qualification, then
+actual `.20` recovery. Hardware/suspend/power acceptance remains open.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json).
+This supersedes the unarmed staging status below.
+
+## Aurora 7.2 staged for an attended trial — 2026-10-21
+
+Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,
+legacy-DTB/unlock checks and bounded DART/DCP/radio host controls. Owner approved
+unarmed staging: separate package/Image/initramfs and non-default GRUB entry are
+installed, all 2,042 regular package files verified. `.20` stays default;
+`next_entry` empty, old fallback assets/shared `boot.bin` unchanged; no reboot.
+71 repository unit tests pass. [Receipt and boundaries](aurora/unified72/boot-preflight-2026-10-21.json).
+Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unlock
+acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
+qualification remain open; no measured power win.
+[First-boot plan](aurora/unified72/BOOT-TRIAL.md).
+
+## Native Messages experience landed — 2026-10-20
+
+PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
+resolution and unread dots (the two entries below). Messages now has a native,
+Apple-like conversation experience on the same BlueFerry backend: colour-coded
+avatars, grouped bubbles with time headings, optimistic sending that never
+doubles a message, link and media previews, an offline banner with Retry
+Connection, a New Message sheet with recents, keyboard shortcuts, and a code
+split into controller / model / widgets / style modules. Installed and running
+on the owner's desktop. Tests: 30 model, 5 media, 47 GTK; CI green. Open:
+in-app group participant confirmation, shortcuts overlay, opt-in Enter-to-send,
+live media-link check. Details: `OS9-HANDOFF.md` (same date) and
+`phone-setup/README.md`.
+
+## Messages media links — 2026-10-20
+
+Added bounded public-HTTPS image/GIF previews and YouTube thumbnail/title cards.
+Uses a separate two-worker pool, RAM-only capped cache and decoded-frame bounds;
+private-network targets, credentials and nonstandard ports are rejected. Sent
+links auto-load, incoming links require Load Preview unless already cached.
+Real test links sent to self were received fully in backend threads; MAP subject
+summaries truncated longer bodies to 128 characters, so summary equality alone
+was an inadequate receipt. Actual GTK rendering passed for YouTube 480×360
+thumbnail, photo 500×477 and GIF 400×400/44 frames, including frame advancement,
+light/dark/narrow review. Playback opens YouTube externally; MAP image/GIF
+attachment payloads remain unavailable. Tests: 11 message models, five media
+models, 17 private GTK checks. README includes the requested frontend integration
+prompt; this is the existing GTK/Granite-over-BlueFerry architecture.
+
+## Messages readability and unread indicators — 2026-10-20
+
+Enlarged sidebar names to 1.4em and favorite names to 1.1em semibold. Added
+blue unread dots immediately left of avatars in list and favorites, preserving
+their position when photos load. Cached phonebook is now paged fully and used
+for exact unique name resolution, with upstream-style NANP alternate matching;
+groups, ambiguous contacts and international suffixes are never guessed.
+Snapshot-only messages contribute explicit unread state. 11 model and 16 private
+GTK checks pass. Phonebook refreshed (727 address entries). Three user-authorized
+YouTube/photo/GIF text links were sent to self and verified as full incoming
+backend messages. MAP summaries truncate long subjects at 128 characters; native
+image/video/GIF rendering remains unfinished, and attachment payloads remain
+unavailable through this MAP path. Pin snapshot is still not imported.
+
+## Four-across contact favorites and Applications launcher — 2026-10-20
+
+Favorites now use a four-column photo/initials grid above ordinary conversations,
+with a themed horizontal separator. Search reflows tiles; selection preserves
+drafts. 15 private GTK tests pass; light/dark/narrow fixtures reviewed. Installed
+for next Messages launch. Applications entry is visible and missing icon fixed
+by the scoped hicolor index/cache. No panel/dock restart.
+
+## Verification-code offers — 2026-10-20
+
+Installed/enabled helper adds near-pointer code cards, an available shortcut and explicit
+AT-SPI field insertion. Native keyboard-to-field and private Brave copy-only
+paths are covered by synthetic fixtures; direct Chromium fill needs an extension.
+Offers are memory-only, expire in five minutes and respect SMS domain binding.
+Installer/uninstaller preserves unrelated shortcuts and existing Messages/phone
+services. Owner-field/compositor placement/focus qualification remains open.
+See [implementation and limits](phone-setup/VERIFICATION-CODES.md).
+
+## PR #343 source-merge qualification passed — 2026-10-20
+
+Production GTK launcher controls pass light/dark visual inspection and real
+private-display click/hover/menu/Escape/typing checks. Mixed and uniform window
+identities dispatch the expected compositor actions; transient menus are correct.
+The canonical clean build now runs these checks in CI. Receipts/screenshots:
+`mseries/dock-tests/receipts/qualification-343-2026-10-20/`. No desktop deployment
+or Wingpanel restart. Next: updated-head CI and source merge; hardware deployment
+acceptance remains separate and requires its own authorization.
+
+## PR #339 superseded; review hardening retained — 2026-10-20
+
+Reconciled with concurrent #342; its startup/focus markers and focused-blue
+style are preserved. Fixed ambiguous app matching, mixed-identity activation and
+invalid transient app-management actions.
+Five native tests, eight wrapper checks, complete taskbar build/preservation and
+private focus/typing checks pass. Source-only review receipt and screenshot are
+retained under `mseries/dock-tests/receipts/review-339-2026-10-20/`. No deployment
+or Wingpanel restart. Next: owner recovery confirmation, representative visual/
+input acceptance and separately authorized deployment for the hardening follow-up.
+The coordinator closed #339 as superseded by #342 during this review; do not reopen
+the obsolete PR. The original tracking integration has already landed.
+
+## Tracking draft reconciled with canonical taskbar preparation — 2026-10-20
+
+Draft #339 now uses #341's canonical `mseries/dock-taskbar/prepare-source.sh`
+for both its production-method test and its explicit build-only mode. The latter
+hashes Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala and all copied shared
+CodexBar Vala sources before applying the experimental tracking patch, verifies
+all remain byte-identical, performs the complete build/schema and GTK hover/focus
+checks, then exits before installation. Default installation remains unchanged.
+Three tracking regressions, eight wrapper tests, the full canonical native build
+and the real GTK hover/focus/leave/pin probe pass against dev `689ffdf6`.
+No live files, settings or services were changed. The deployed #341 taskbar and
+icons remain under the recovery coordinator's ownership; #339 remains draft and
+undeployed pending its review/visual/input/deployment gates.
+
+## Draft app tracking preserves complete taskbar source — 2026-10-20
+
+The app-ID/running-pill fix is now source-only and includes an explicit
+`--build-running-apps-only` qualification mode. It applies after the complete
+Windows taskbar patch, requires Taskbar.vala and the taskbar-mode schema,
+verifies Taskbar.vala remains byte-identical, builds and exits before install.
+Default installation is unchanged. Three native resolver/AppSystem tests and
+eight wrapper regressions pass; the complete taskbar+tracking native build passes.
+The earlier incompatible deployment was rolled back; the restored live Windows
+taskbar binary/schema and official Teams/Outlook icons/pins are preserved.
+No live deployment is part of this draft. Owner recovery confirmation and
+isolated combined-taskbar UI/focus/typing validation remain gates. See
+`mseries/DOCK-APP-TRACKING.md` for the incident boundary and next work.
+
+## Import the iPhone's Messages pins — requested 2026-10-20
+
+The cache fallback now has a concrete public Mac reference (Beeper) and passes
+actual Foundation read/export/failure fixtures on ARM macOS 15/26 and Intel
+macOS 26. No-account probes identify an absent cache; process-role rejection is
+no longer a blanket read blocker. All CI images report SIP disabled, so owner
+account/FDA/SIP-enabled access and NAS transfer remain unverified. Updated small
+kit performs no security changes and retains source modification time. The
+earlier process-gate interpretation below is superseded by this result.
+
+PR #349 merged as `6b1d520c675a227394b5a5a88298083f71e81657` after all checks
+passed. Ordered native import/review and encrypted mapping storage are staged
+for next Messages launch. Owner account export, SIP-enabled access and actual
+transfer/import remain unqualified; no successful owner macOS trip is promised.
+
+Open feature: native Pin/Unpin, a qualified ordered Mac snapshot import, then
+direct Linux synchronization of Apple's pin-settings store. Research found
+private IMCore/KVS interfaces and public Mac examples; no supported public
+Linux API or implemented BlueFerry/RustPush phone-pin sync was found. Local
+BlueFerry stars are separate preferences. Preserve exact order, distinguish
+snapshot/stale/unavailable from live sync, and resolve groups using verified
+identity rather than names. No Mac export or phone pin access is qualified yet.
+See [source review and implementation gates](phone-setup/PIN-SYNC-RESEARCH.md).
+
 ## Desktop notifications and taskbar bell — 2026-10-20
 
 PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
@@ -1051,7 +1241,7 @@ reopened Claude as524238; CLI and desktop identity hints matched the requested
 target. Owner independently confirmed the correct main-UI account.
 
 The operation exported/imported34 local Code conversations, with zero unavailable.
-All34 destination records, transcripts and workspace directories exist; session,
+All 34 destination records, transcripts and workspace directories exist; session,
 CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
 Claude's own post-start logs loaded13 active records from the exact target index
 (nine imported plus four existing) and25 deferred archived records. Initial
@@ -3002,3 +3192,13 @@ Full canonical native build/schema, actual Launcher startup/focus/close/reopen
 and CodexBar hover/focus/leave/pin probes, and resolver lifecycle tests pass.
 All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
+
+- 2026-10-20: corrected taskbar running-marker specificity/opacity and applied 80% black light-mode markers; native build/schema and three lifecycle checks passed; privately deployed.
+
+- 2026-10-20: owner requested a further marker darkening pass; solid black light-mode markers rebuilt and loaded in the active taskbar.
+
+- 2026-10-20: final owner-tuned running markers use #444444 in both modes, matching the silver taskbar; rebuilt and loaded.
+
+- 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
+
+- 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
