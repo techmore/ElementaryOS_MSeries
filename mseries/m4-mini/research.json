@@ -128,8 +128,10 @@
     },
     "u-boot": {
       "repository": "GravityLinux/u-boot",
-      "branch": "main",
-      "commit": "a44f46af0aa17e48572e0d46c0d082886ee353c3"
+      "branch": "gravity-alpha-20260925",
+      "commit": "a2f6913694ff26908c16948af3f8372429782263",
+      "selection_reason": "Gravity packaging records this M4 patch tip; default main lacks the downstream stack",
+      "discovered_default_head": "a44f46af0aa17e48572e0d46c0d082886ee353c3"
     },
     "packages": {
       "repository": "GravityLinux/packages",

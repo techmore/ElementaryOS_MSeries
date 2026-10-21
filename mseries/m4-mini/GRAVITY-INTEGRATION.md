@@ -60,3 +60,13 @@ configuration uses the enabled primary `dcp` node with HDMI-A connector and
 DPTX PHY 4; older dcpext0-only experiments must not substitute for this profile.
 These source-level checks make a coherent loader/firmware bundle necessary.
 They have not been exercised on the owner's mini.
+
+## U-Boot branch correction
+
+GravityLinux/u-boot defaults to main at a44f46af, an upstream maintenance
+commit. The M4 patch tip recorded in packaging is instead
+a2f6913694ff26908c16948af3f8372429782263 on gravity-alpha-20260925.
+The selected research pin now uses that branch. Its final change supplies
+J773g Wi-Fi calibration alongside Bluetooth, with reported full Fedora
+EFI boot validation. These source reports are not local hardware tests.
+Default branch discovery is retained as provenance, not used for the build.

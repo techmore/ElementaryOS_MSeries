@@ -10231,3 +10231,11 @@ Retained both output hashes in m4-mini/receipts. Optional packaging logo omitted
 using the upstream raw target; no binary deployment or Apple OS authorization.
 Mesa compilation stopped on incomplete work-local XCB headers; filling the
 missing development-package closure before resuming the same build tree.
+
+M4 concrete root-layer fix: transform now copies BCM4388 host firmware variants;
+first-boot provisioning recognizes PCI 4434 only on J773g and requires Sakhalin
+4388c0 firmware plus signature. Gravity installer mapping is recorded; no blobs
+imported. Five synthetic tests pass (complete handoff, missing signature, other
+board, both legacy families, transform detection) and are wired into hardware CI.
+Corrected U-Boot selection to gravity-alpha-20260925/a2f6913; default main is
+upstream and lacks the M4 patch stack. Its native apple_m1 build is running.
