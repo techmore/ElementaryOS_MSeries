@@ -230,11 +230,19 @@ bar and menu. Other-account rows and hints can be hidden in the panel bar separa
 controls tooltips throughout the top-panel bar and defaults to off (`showHoverInfo: false`). Dropdown tooltips
 and accessible names retain full quota information. Local options live in `~/.config/codexbar/wingpanel.json`, loaded
 by `PanelPreferences.vala`, and are never sent to upstream `--configure`. A directory monitor handles atomic file
-replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled except compact quota and hover information;
+replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled except compact quota, hover information and the account legend;
 malformed files retain the last valid values and the Settings window reports save errors.
 
 Build/run `test-live-preferences` via `probe/run-live-preferences.sh BUILD_DIR` to check live changes against
 isolated backends. For render variants, pass `CB_DISPLAY_PREFS=/absolute/path/to/wingpanel.json` to `probe/run-probe.sh`.
+
+**Account legend** (`accountLegend`, default off; Settings > Display > Wingpanel) is a denser Quota page for one
+person with several sign-ins shared across providers. Every distinct email gets one number and one hue
+(`Presentation.account_legend`/`account_hue`; signed-in accounts first, in provider order). Account 1 is named in a
+tinted row above the cards and the others below them; the cards show only the numbered badge beside the plan, and
+each alternate account collapses to one tinted row (badge, quota, Switch). In the bar, the signed-in row gets its
+account's number after the company mark and the alternate row uses the same global numbers in their hue, so `4`
+means the same email in every provider. Probe: `probe/run-legend-probe.sh BUILD_DIR` (`shared-accounts` fixture).
 
 ### Claude conversation continuity
 

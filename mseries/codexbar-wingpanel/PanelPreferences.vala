@@ -3,7 +3,7 @@ namespace MSeries {
     public class PanelPreferences : GLib.Object {
         private Json.Object values = new Json.Object ();
         private string path;
-        private const string[] KEYS = { "showPercent", "showReset", "showAccounts", "showHints", "showTokens", "compactQuota", "showHoverInfo" };
+        private const string[] KEYS = { "showPercent", "showReset", "showAccounts", "showHints", "showTokens", "compactQuota", "showHoverInfo", "accountLegend" };
         public string last_error { get; private set; default = ""; }
 
         public PanelPreferences () {
@@ -13,7 +13,7 @@ namespace MSeries {
 
         public bool get_bool (string key) {
             var node = values.get_member (key);
-            return node != null && node.get_value_type () == typeof (bool) ? node.get_boolean () : key != "compactQuota" && key != "showHoverInfo";
+            return node != null && node.get_value_type () == typeof (bool) ? node.get_boolean () : key != "compactQuota" && key != "showHoverInfo" && key != "accountLegend";
         }
 
         private Json.Object read_values () throws Error {
