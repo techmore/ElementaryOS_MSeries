@@ -1,3 +1,19 @@
+## M4 mini: actual factory base build started — 2026-10-21
+
+Native mkosi base-only attempt uses daily+m4-mini and --dependency= followed
+by --dependency=base (the reset matters; without it all factory images remain
+selected). Source/pins are committed at bec0418a. First attempt exited before
+building because default package cache /var/cache/mkosi is unwritable in the
+mapped namespace. Retry adds an explicit work-local package cache; session
+27312 is live and fetching Ubuntu tools-tree metadata at the last check.
+
+Authoritative command/log under this chat workspace's work directory:
+m4-factory-base-command-r2.json and m4-factory-base-build-r2.log. Output,
+workspace, incremental cache and package cache are separate work/m4-factory-*
+directories. Only base+main are selected; no ISO or actual machine boot is
+attempted. Resume the live handle before deciding to retry. The full configured
+desktop tests are terminal passes, separate from this ongoing factory build.
+
 ## M4 mini: full desktop configured, foreign board hook removed — 2026-10-21
 
 Desktop installation session 10396 terminated with exit 100: the X13s initramfs
