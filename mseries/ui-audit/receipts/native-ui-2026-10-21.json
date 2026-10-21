@@ -1,0 +1,120 @@
+{
+  "source_head": "fe390c78ea47808290469173d9a0dd68263b3f35",
+  "source_files_sha256": {
+    "mseries/local-ai/troubleshooter-ui.py": "4153f1ba0c1c9a86c7819bc703dfcdcb376da2063df90109d6feef102bdfdc23",
+    "mseries/airplay/mseries-airplay-outputs": "fa901daf53974d4859db15e7fe21d1eb3663159f5104012fe947563131a65dff",
+    "mseries/display-settings/mseries-display-settings": "9412ce1fffc4f059b61cfddb3e948e2000d62768e332acf1bb4299b49d630e60",
+    "mseries/ui-audit/run-private-checks.sh": "fc62a83fd3b400b163f333a8f342e499d2df65a07cd2501ed05ba3749464c7eb",
+    "mseries/local-ai/tests/check-troubleshooter-ui.py": "e0bb3bb262222628d88c0d69c2115ed21adc74a563045c71fd67486a304e54bb",
+    "mseries/airplay/tests/check-airplay-ui.py": "59b8248f0d49d4c01d3a172c58294cc85f5cf1a6daaf986e75e6a99263a045e5"
+  },
+  "scope": "Synthetic responsiveness/state and actual scale assertions, private Xvfb; no live accounts, audio, model or display mutations",
+  "theme_css_sha256": {
+    "3.0": "6784302a1ffaec5ef81668426442b98b7000465c685d3c420bbc921a06d4da4f",
+    "4.0": "4f1d2cb81b3c16bc0d2330c108b52470244592ff935f15be42305482f1633b40"
+  },
+  "toolkit_checks": [
+    "GTK3 AirPlay",
+    "GTK4 Troubleshooter",
+    "GTK3 display canvas"
+  ],
+  "screen_reader_qualified": false,
+  "images": [
+    {
+      "path": "dark-scale1/airplay-ready.png",
+      "sha256": "13ae7eb7c4cdb8e92f2c6965487036a637528f12d6e2a05ba10a1fcb0db9c34e",
+      "pixels": [
+        360,
+        156
+      ]
+    },
+    {
+      "path": "dark-scale1/troubleshooter-error.png",
+      "sha256": "f1ba5b066623f9e9f87b8d40e1ea9d912703e5d91083540658b09fe3e34787f4",
+      "pixels": [
+        680,
+        560
+      ]
+    },
+    {
+      "path": "dark-scale1/troubleshooter-ready.png",
+      "sha256": "6fad47910eb2b86ad6235222d5c684e0bf737cbde1ad5b079a6586506a8a305f",
+      "pixels": [
+        680,
+        560
+      ]
+    },
+    {
+      "path": "dark-scale2/airplay-ready.png",
+      "sha256": "b20390477281d6734ce82261a60a2b2bd5c28fcf30d3d2dfd014e58599d7cff8",
+      "pixels": [
+        720,
+        548
+      ]
+    },
+    {
+      "path": "dark-scale2/troubleshooter-error.png",
+      "sha256": "42278b02caf81c5ed7fa0b8a543e702851f60f626c0cc3dc92cf609e89f5248d",
+      "pixels": [
+        1360,
+        1120
+      ]
+    },
+    {
+      "path": "dark-scale2/troubleshooter-ready.png",
+      "sha256": "e49000725951fda53d5ad5b61daf8bcbd8133be6a758484d35fe8f01dc29829a",
+      "pixels": [
+        1360,
+        1120
+      ]
+    },
+    {
+      "path": "light-scale1/airplay-ready.png",
+      "sha256": "dfd6f3e587ea22b59f7895b4c166bb2ea2f556a9f1a09d563761574f171f4281",
+      "pixels": [
+        360,
+        274
+      ]
+    },
+    {
+      "path": "light-scale1/troubleshooter-error.png",
+      "sha256": "09c11ecfdd1420aacfb03c346ee808e9c64c83d55fa36d1f43c8ca6e97f1687e",
+      "pixels": [
+        680,
+        560
+      ]
+    },
+    {
+      "path": "light-scale1/troubleshooter-ready.png",
+      "sha256": "85186c67adafcff0502f7d60287a01af4b73c8e925e569f940ecc9620022a5c2",
+      "pixels": [
+        680,
+        560
+      ]
+    },
+    {
+      "path": "light-scale2/airplay-ready.png",
+      "sha256": "fd0be41bf1a4053b03a7f8a46ed2d57cf4cad5c0ead20c2d3b939284fdc7b0d1",
+      "pixels": [
+        720,
+        312
+      ]
+    },
+    {
+      "path": "light-scale2/troubleshooter-error.png",
+      "sha256": "6d87085bca29f4acd699d530f4bddfa361940be385471a5447fe7adfe1590a59",
+      "pixels": [
+        1360,
+        1120
+      ]
+    },
+    {
+      "path": "light-scale2/troubleshooter-ready.png",
+      "sha256": "da579a3f206886249f3fb602cfe6cb63741a67056d9d701eea886516c5755dba",
+      "pixels": [
+        1360,
+        1120
+      ]
+    }
+  ]
+}
