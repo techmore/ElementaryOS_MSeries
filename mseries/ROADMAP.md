@@ -3189,3 +3189,12 @@ only in these two marker colors.
 - 2026-10-20: owner requested slightly lighter markers; #555555 rebuilt and loaded in both taskbar modes.
 
 - 2026-10-20: owner-tuned running markers lightened slightly to #606060 in both modes; rebuilt and loaded.
+
+## Native Share Eyes freshness follow-up — 2026-10-21
+
+Source guard and synthetic regressions reject future/zero/missing launcher
+heartbeats; 15-second freshness, clearing and recovery remain verified. Native
+app/probe builds and private light/dark off-state renders pass. Not installed or
+loaded. [Upstream/compatibility receipt](SHARE-EYES-FRESHNESS-2026-10-21.md) records
+unchanged Torrential upstream and successful Signal module build; real tray,
+sharing/device and next-load acceptance remain open.

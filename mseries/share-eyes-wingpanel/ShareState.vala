@@ -48,7 +48,8 @@ namespace MSeries {
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
                         var o = root.get_object ();
                         int64 updated = o.has_member ("updated") ? o.get_int_member ("updated") : 0;
-                        if (now - updated <= STALE_SECS) {
+                        // Future timestamps after a clock correction are not fresh heartbeats.
+                        if (updated > 0 && updated <= now && now - updated <= STALE_SECS) {
                             n_running = true;
                             n_live = o.has_member ("live") && o.get_boolean_member ("live");
                             if (n_live && o.has_member ("viewers")) {
