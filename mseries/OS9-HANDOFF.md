@@ -9700,6 +9700,29 @@ and end-to-end link opening remain unverified until the next login.
 - Unverified: a visual check of the new control, and dock follow-through on real hardware.
 - Next: phases 2–4 in #332: other dock writers, Wingpanel scale from #312, app type-ramp migration, Qt/Electron.
 
+### 2026-10-21: taskbar tokens and relative app text (#332)
+
+- Managed taskbar icons now consume the same `icon-size` setting as the dock;
+  unadopted, malformed or unsupported-version policy retains the legacy 48px
+  taskbar. The CLI publishes a versioned private adoption marker before changing
+  icon settings, using unique atomic temporaries for concurrent CLI/watcher writes.
+  Quick Settings adoption also reconciles the existing font policy.
+- RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
+  relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
+  Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar
+  **24pt** readout is preserved as the only absolute-font exception.
+- Native dock source build and compiled policy fixture, 35 focused Python tests,
+  Quick Settings fixture, CodexBar 17 suites and two RepoBar account-cache probes
+  pass. Private light/dark fixtures assert actual GDK scale1/2 and save metadata;
+  their logical-coordinate PNGs are not physical mixed-monitor qualification.
+- A proposed dynamic panel transform was rejected before publication: inherited
+  compensation does not cover explicit/rem typography in upstream indicators,
+  which could scale twice. Wingpanel remains at its existing1.30 transform.
+- Remaining: safe panel sizing design, Qt/Electron font-only adoption and physical
+  internal125%/dock100% acceptance. No monitor settings, live panel/dock restart
+  or physical acceptance is included. Routine CodexBar staging preserves the panel
+  and daemon; replaced modules load next login.
+
 ## Repository housekeeping — 2026-10-20
 
 - Fetched with `git fetch origin --prune`; fast-forwarded the owner's `dev`
