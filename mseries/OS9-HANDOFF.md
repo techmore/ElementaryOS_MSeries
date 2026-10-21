@@ -1,3 +1,12 @@
+## M4 mini documentation consistency — 2026-10-21
+
+README now leads with the selected Gravity stack and actual build/test scope;
+older J713 and diagnostic mini source results are explicitly historical. The
+old patch review no longer describes dcpext0-only routing as current: Gravity's
+primary DCP/HDMI-A/PHY 4 contract is authoritative for this candidate. PR #444
+currently reports no GitHub checks, so no CI pass is claimed. Full kernel build
+remains live on its original handle.
+
 ## M4 mini: candidate image sleep policy — 2026-10-21
 
 Added package-policy.py and unchanged MIT Gravity vendor configs for unsupported

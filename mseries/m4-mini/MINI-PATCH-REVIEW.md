@@ -1,3 +1,8 @@
+> Historical diagnostic review. The selected candidate is now Gravity's matched
+> J773g stack; see [the current audit](UPSTREAM-AUDIT-2026-10-21.md).
+> Gravity uses primary DCP with HDMI-A and PHY 4. The older dcpext0-only
+> experiment below is not the accepted current HDMI routing.
+
 # Public J773g prior-art review — 2026-10-21
 
 **Superseding discovery:** Gravity Linux publishes an M4 mini developer alpha with project-reported HDMI/DCP and GPU support. The earlier Asahi/Aurora-only conclusions below are incomplete. See GRAVITY-INTEGRATION.md and research.json for the newly pinned stack; elementary integration and local hardware qualification remain open.
@@ -40,8 +45,9 @@ it or be stacked without a semantic comparison.
   mapping review; Linux bus numbering must not substitute for physical ports.
 - The firmware-derived ANS PMGR chain is an unproven hypothesis, not an accepted
   fix. Compare it with current t8132-pmgr.dtsi and captured device-tree data.
-- dcpext0 is the mini HDMI investigation path. The J713 internal-panel protocol
-  and native-scanout admission do not qualify that external-display path.
+- The older dcpext0-only mini HDMI experiment provides negative diagnostic
+  evidence. Gravity now uses primary DCP/HDMI-A/PHY 4; neither that older
+  experiment nor J713 internal-panel admission should replace its routing.
 
 Next work is full-source baseline compilation and review of candidate changes
 against that baseline. No legacy patch is installed or advertised as support.
