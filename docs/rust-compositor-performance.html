@@ -18,23 +18,23 @@ nav{margin-bottom:8px}.banner{background:var(--amber-wash);border:1px solid var(
 .track{height:12px;border-radius:99px;background:var(--line);overflow:hidden}.fill{height:100%;border-radius:inherit;background:var(--blue);min-width:2px}.fill.rust{background:var(--teal)}
 .bar-value{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
 table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0}th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
-.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:600;white-space:normal}
 .tag.done{color:var(--teal);background:var(--teal-wash)}.tag.partial{color:var(--amber);background:var(--amber-wash)}.tag.open{color:#a43a2e;background:#ffebe9}
 @media(prefers-color-scheme:dark){.tag.open{color:#ff9d91;background:#452723}}
 code{background:var(--wash);border-radius:4px;padding:1px 5px;font-size:14px}pre{background:var(--wash);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:13.5px}
 ul{margin:8px 0;padding-left:22px}li{margin:6px 0}
 footer{border-top:1px solid var(--line);padding-top:18px;margin-top:34px;font-size:14px;color:var(--muted)}
+.table-scroll{overflow-x:auto;margin:1rem 0}.table-scroll table{margin:0}@media(max-width:600px){.table-scroll table{min-width:40rem}}
 </style>
 </head>
 <body>
 <nav><a href="index.html">← M-series</a> · <a href="build-status.html">Build monitor</a></nav>
 <h1>Rust compositor performance</h1>
-<p class="muted">Smithay “pantheon-compositor” versus Gala/libmutter on the M1 Pro · evidence through 19 October 2026</p>
+<p class="muted">Smithay “pantheon-compositor” versus Gala/libmutter on the M1 Pro · performance captures from 19 October; deployment status reconciled 21 October 2026</p>
 
 <div class="banner"><strong>Experimental — no performance win is established.</strong>
-<p>The Rust compositor is an opt-in session beside Gala, not a replacement. The retained samples were taken under
-different workloads and session ages, none is a matched A/B, and whole-system power has not been measured. Gala
-remains the session that logs in. Nothing on this page should be read as a Rust advantage; it records what has
+<p>The Rust compositor has since been used on the transformed desktop; Gala remains an available rollback session. The retained samples were taken under
+different workloads and session ages, none is a matched A/B, and whole-system power has not been measured. The October 19 captures below describe those historical sessions, not a fresh measurement of the October 21 stack. Nothing on this page should be read as a Rust advantage; it records what has
 actually been measured, how, and what is still open.</p></div>
 
 <h2>What is being compared</h2>
@@ -59,7 +59,7 @@ post-login qualification session at 15:56 UTC at 3024×1964.</p>
   <div class="bar-row"><span>Gala</span><div class="track"><div class="fill" style="width:99.8%"></div></div><span class="bar-value">11.10 %</span></div>
   <div class="bar-row"><span>Rust</span><div class="track"><div class="fill rust" style="width:100%"></div></div><span class="bar-value">11.12 %</span></div>
 </div>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <thead><tr><th>Capture</th><th>Process</th><th>Mean</th><th>Median</th><th>Range</th><th>RSS median</th></tr></thead>
 <tbody>
 <tr><td rowspan="2">Gala idle, 30 s</td><td>gala</td><td>11.10 %</td><td>11.20 %</td><td>10.80–11.20 %</td><td>178,720 KiB (174.5 MiB)</td></tr>
@@ -67,7 +67,7 @@ post-login qualification session at 15:56 UTC at 3024×1964.</p>
 <tr><td rowspan="2">Rust idle qualification, 30 s</td><td>pantheon-compositor</td><td>11.12 %</td><td>11.32 %</td><td>9.67–11.80 %</td><td>173,504 KiB (169.4 MiB)</td></tr>
 <tr><td>Wingpanel</td><td>1.19 %</td><td>1.00 %</td><td>0.80–2.00 %</td><td>472,544 KiB (461.5 MiB)</td></tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>Read this carefully.</strong> The two compositor figures are within noise of each other; the difference
 is not a result. The Gala capture did not record a Wingpanel row, so total-session CPU is still unpaired — a later
 corrected Gala capture measured a median 15.6 % for Gala plus 0.7 % for Wingpanel, but from a different session
@@ -76,13 +76,13 @@ that was not paired with the Rust sample. The in-repository evidence documents q
 
 <h2>Memory, idle</h2>
 <p class="muted">Resident set size, same two captures.</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <thead><tr><th>Process</th><th>Gala session</th><th>Rust session</th></tr></thead>
 <tbody>
 <tr><td>Compositor</td><td>178,720 KiB median</td><td>173,504 KiB median</td></tr>
 <tr><td>Wingpanel</td><td>not captured</td><td>472,544 KiB median</td></tr>
 </tbody>
-</table>
+</table></div>
 <p>The roughly 5 MiB compositor gap is not a meaningful memory result. Wingpanel's ~460 MiB is the same installed
 GTK application in both sessions; the Gala capture simply did not include it.</p>
 
@@ -98,7 +98,7 @@ The owner reported the session felt responsive but noticed the ~2.1 s wallpaper-
 milestones are not a measure of perceived first interaction.</p>
 
 <h2>Startup milestones, Rust session</h2>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <thead><tr><th>Milestone</th><th>When</th></tr></thead>
 <tbody>
 <tr><td>OS boot to graphical target</td><td>10.5 s</td></tr>
@@ -107,7 +107,7 @@ milestones are not a measure of perceived first interaction.</p>
 <tr><td>Portal ready</td><td>~0.8 s after compositor readiness</td></tr>
 <tr><td>First Wingpanel buffer</td><td>~2.25 s after session-manager start (~2.11 s after wallpaper)</td></tr>
 </tbody>
-</table>
+</table></div>
 <p class="muted">From the instrumented build <code>0.1.0+git7a0ac92</code> journal capture. The remaining ~1.1 s
 between the Wingpanel process starting and its first surface request is not yet attributed. On the Gala side, one
 rollback login showed a roughly two-minute panel delay associated with late portal activation; that relationship
@@ -123,8 +123,9 @@ still needs a controlled check.</p>
 <li>A crash-free soak and working recovery before any daily-use claim.</li>
 </ul>
 
-<h2>Open gates before the Rust session could replace Gala</h2>
-<table>
+<h2>Qualification gates and later deployment status</h2>
+<p>October 21 handoffs record Rust compositor use plus later attention, display-tracing and popup fixes with separate installed/loaded identities. Pending updates require the next owner-chosen login and their own input/display checks; a successful source build does not qualify the running combination.</p>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <thead><tr><th>Gate</th><th>Status</th></tr></thead>
 <tbody>
 <tr><td>Native internal-panel scanout</td><td><span class="tag done">Passed in isolated logins</span></td></tr>
@@ -132,10 +133,10 @@ still needs a controlled check.</p>
 <tr><td>Matched performance and power comparison</td><td><span class="tag open">Not established</span></td></tr>
 <tr><td>Native keyboard/pointer, IBus commit, lock/unlock, recovery</td><td><span class="tag open">Open</span></td></tr>
 <tr><td>Window-corner consistency (owner-reported)</td><td><span class="tag open">Open</span></td></tr>
-<tr><td>External monitor / dock HDMI</td><td><span class="tag open">Kernel/DCP-bound, not compositor-fixable</span></td></tr>
+<tr><td>External monitor / dock HDMI</td><td><span class="tag open">October 21 wip2: all three Mac USB-C ports have scoped 1080p/60 dock picture confirmation; repeated hotplug, recovery and suspend remain open</span></td></tr>
 <tr><td>Mac-style trackpad gestures</td><td><span class="tag partial">PR #326: configurable swipes, launcher pinch, application gesture forwarding and live touchpad settings implemented; finger-following workspace/overview previews and spring release pass nested render checks; installed for next login, not yet loaded; physical qualification and native pacing remain open</span></td></tr>
 </tbody>
-</table>
+</table></div>
 
 <h2>How the numbers are produced</h2>
 <pre># matched 30 s captures in each session (same workload label and display mode)
@@ -160,10 +161,9 @@ sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes # rol
 Selecting the Rust session only changes the LightDM autologin drop-in, takes effect at the next login, and never
 logs anyone out.</p>
 
-<footer>Generated from repository evidence on 2026-10-19. Deep evidence, the stage-by-stage migration view and the
-readiness decision live in the repository on branch <code>codex/rust-gala-stack-integration</code>:
-<a href="https://github.com/techmore/ElementaryOS_MSeries/blob/codex/rust-gala-stack-integration/mseries/pantheon-rust-compositor/README.md">pantheon-rust-compositor</a>.
-This page records measurements, not a recommendation; the Rust session remains experimental and Gala remains the
-production session and rollback.</footer>
+<footer>October 19 measurement history; deployment context reconciled 2026-10-21. Deep evidence, the stage-by-stage migration view and the
+readiness decision live in the repository on branch <code>dev</code>:
+<a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/pantheon-rust-compositor/README.md">pantheon-rust-compositor</a>.
+This page records measurements, not a recommendation; the Rust session remains experimental and Gala remains a rollback option. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/OS9-HANDOFF.md">current handoff</a> for package and loaded-session identities.</footer>
 </body>
 </html>

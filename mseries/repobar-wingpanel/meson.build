@@ -38,3 +38,7 @@ executable(
   dependencies: [granite_dep, json_dep],
   install: false,
 )
+
+# Isolated account-change/error regression; fake helper only.
+executable('account-cache-probe', 'Indicator.vala', 'probe/account-cache-probe.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep], install: false)

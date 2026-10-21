@@ -11,37 +11,41 @@ th,td{border:1px solid #ccc;padding:.45rem .6rem;text-align:left;font-size:.92re
 th{background:#f4f4f4}
 .ok{color:#1a7f37;font-weight:bold}.open{color:#9a6700;font-weight:bold}.blocked{color:#b42318;font-weight:bold}
 footer{margin-top:2rem;font-size:.85rem;color:#555}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}body{overflow-wrap:break-word}img{max-width:100%;height:auto}
+.table-scroll{overflow-x:auto;margin:1rem 0}.table-scroll table{margin:0}@media(max-width:600px){.table-scroll table{min-width:40rem}}
 </style>
 </head>
 <body>
 <p><a href="index.html">&larr; back</a></p>
 <h1>Bugs and fixes</h1>
-<p>Updated 2026-10-17. The installed elementary OS 9 desktop boots on an M1 Pro; the factory arm64 ISO built successfully but has not been booted on hardware. Items are ranked by how often they are hit, how small the fix is and what they depend on. The full detail and evidence are in the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">repository roadmap</a>. See also <a href="features.html">customizations and Omarchy parity</a> and the <a href="support.html">support matrix</a>.</p>
+<p>Status reconciled 2026-10-21. Older fixed entries retain their original evidence dates. The installed elementary OS 9 desktop boots on an M1 Pro; the factory arm64 ISO built successfully but has not been booted on hardware. Items are ranked by how often they are hit, how small the fix is and what they depend on. The full detail and evidence are in the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/BUG-FIX-ROADMAP.md">repository roadmap</a>. See also <a href="features.html">customizations and Omarchy parity</a> and the <a href="support.html">support matrix</a>.</p>
 
-<h2>Open and in progress, ranked</h2>
-<table>
+<h2>Current fixes and remaining acceptance checks</h2>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <tr><th>#</th><th>Item</th><th>Status</th><th>Next step</th></tr>
 <tr><td>1</td><td>Launcher search text was hard to read</td><td class="ok">Fixed 2026-10-14; please confirm</td><td>Press Command+Space and type. The colors and font size are in <code>mseries/mseries-launcher.py</code>.</td></tr>
 <tr><td>2</td><td>Window buttons on the left, Mac style</td><td class="ok">Fixed 2026-10-14; please confirm</td><td>Check a few windows. Revert by changing the layout in <code>mseries/apply-desktop-settings.py</code>.</td></tr>
 <tr><td>3</td><td>Dock Ethernet icon dying on replug</td><td class="ok">Fixed 2026-10-14; verify on the next replug</td><td>A permanent profile bound to the adapter replaces the temporary one NetworkManager kept deleting; the Realtek firmware package is installed. Replug the dock and watch the panel icon.</td></tr>
 <tr><td>4</td><td>Lid-open login needs the power button</td><td class="ok">Closed; docked case untested</td><td>The undocked path works. A tracer (<code>mseries-lid-trace</code>) logs the next docked lid close.</td></tr>
-<tr><td>5</td><td>Screenshot thumbnail: drag to use without keeping, hold Alt to also keep</td><td class="open">Built 2026-10-14; please try</td><td>Drag a fresh screenshot into an app with and without Alt, and tell us what happens. See <code>mseries/screenshot-shelf/README.md</code>.</td></tr>
+<tr><td>5</td><td>Screenshot retention and drag into apps</td><td class="open">Retention fix merged October 21; real target acceptance open</td><td>Originals now always remain in Downloads/Screenshots after accepted, refused or cancelled drops. Copy and Show provide fallbacks; Alt is no longer needed to keep a file. Seven private GTK regressions pass, but drag completion does not prove Signal attached the image. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/screenshot-shelf/README.md">Policy and remaining checks</a>.</td></tr>
 <tr><td>6</td><td>Preview-style markup for images and PDFs</td><td class="open">Built 2026-10-14; please try</td><td>Click the thumbnail, or use Open With, Markup. Images use Swappy; PDFs open in Papers. PDF signing is not covered.</td></tr>
 <tr><td>7</td><td>Omarchy parity gaps</td><td class="open">Mostly done</td><td>Audio watchdog and rules installed. Still open: the function-key default (running with media keys first; needs your choice) and the microphone mapper.</td></tr>
-<tr><td>8</td><td>Touch ID for login</td><td class="blocked">SEP boots; the first Aurora boot then froze (2026-10-17); cause unknown</td><td>The Aurora kernel (omacom/linux-aurora) and its Touch ID userspace are installed. The Secure Enclave was disabled in the m1n1 device tree; enabling it and adding an alias brought it up (<code>/dev/sep-bio</code> exists, driver bound, calibration firmware extracted locally). The missing fingerprint sensor node is now ported into the boot device tree, and a Touch ID settings app handles enrollment. The Aurora kernel was booted once: the Secure Enclave came up, then the machine hung about 34 seconds in with no panic logged (details below). Next: find the cause before a second boot, then enroll a finger and wire sudo, polkit and the lock screen. Password stays as fallback. See <code>mseries/aurora-touchid-state.md</code>.</td></tr>
-<tr><td>9</td><td>iMessage</td><td class="open">Documented; install later</td><td>Preferred: Tether (iPhone to Linux, one-time-code handoff; needs BlueZ 5.86, this Mac has 5.85). BlueFerry works with 5.85. BlueBubbles is the fallback. Install after the reinstall.</td></tr>
-<tr><td>10</td><td>iCloud password sync</td><td class="open">Documented; decide later</td><td>Leaning to a Brave extension (icp supports Brave) or Brave Sync. Nothing installed.</td></tr>
+<tr><td>8</td><td>Touch ID for login</td><td class="blocked">Matching blocked by xART guard</td><td>Aurora SEP and sensor code exists and was exercised on wip2. Enrolment finishes in the enclave but the guard refuses saving; matching remains blocked. Native Touch ID Settings is installed. The guard is unchanged pending the owner’s decision; real matching, PAM and lock-screen acceptance remain open, with password fallback retained. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/aurora-sep/XART-GUARD.md">Current evidence and upstream findings</a>.</td></tr>
+<tr><td>9</td><td>iMessage / SMS</td><td class="ok">Real send and receive verified October 20; follow-ups open</td><td>Native Messages uses BlueFerry and the scoped BlueZ 5.87 stack with a nearby iPhone. Public HTTPS media-link previews and recent-inbox catch-up are implemented; MAP attachment payloads and complete iCloud history are unavailable. Group confirmation, live sign-in code insertion, reboot/suspend recovery and automatic pin sync retain their own gates. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/phone-setup/README.md">Setup and current qualification</a>.</td></tr>
+<tr><td>10</td><td>iCloud password sync</td><td class="open">Optional implementation; off by default</td><td>The unofficial read-only Apple Passwords experiment provides native setup and Brave integration. Owner sign-in and explicit enablement are required; no password writes, passkeys or Advanced Data Protection qualification are claimed. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/icloud-passwords/README.md">Setup and limits</a>.</td></tr>
 <tr><td>11</td><td>Small checks</td><td class="open">Needs hardware checks</td><td>Brightness keys and level after login; keyboard light on lock and lid; Wi-Fi resume; build and test the Gala keyboard-helper guard (patch written); file the drafted Wingpanel crash report.</td></tr>
 <tr><td>12</td><td>Factory image</td><td class="blocked">Release blocker for the image</td><td>Boot the built ISO on hardware; package the audio chain and Wi-Fi firmware; test from the image.</td></tr>
-<tr><td>13</td><td>Dock display, suspend with a dock, USB-C after resume</td><td class="blocked">Kernel work; fixes staged, untested</td><td>Still no dock video. Controlled boots found two DP-IN failures (retry on no-link, and a crash on a stale PHY); both are fixed in the staged kernel patch 0011 and the desktop-crash race has a LightDM wait for the display. None of it has been booted yet. The dock driver still refuses suspend (docked lid mode locks instead); USB-C devices can vanish after resume. Details in <code>mseries/REBOOT-QUEUE.md</code>.</td></tr>
+<tr><td>13</td><td>Dock display, suspend with a dock, USB-C after resume</td><td class="open">All three ports show a picture on wip2; recovery and stability open</td><td>October 21 owner confirmations cover rear-left, front-left and right Mac USB-C ports at external 1080p/60. The initial rear-left blank screen recovered. One-shot trial consumed; .20 remains persistent default. Next: actual fallback recovery, repeated matched hotplug cycles and attended suspend checks. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md">Per-port evidence and limits</a>.</td></tr>
 <tr><td>14</td><td>Hotkey app drawers and dock panel</td><td class="open">Installed; needs a relogin to test</td><td>Control+N toggles a per-app drawer, Control+Alt+N assigns the focused app, a Drawer Shortcuts settings app and a Command+Option dock panel are installed, and the dock can be slid along its edge with Command-drag. Log out and in, then run <code>mseries/check-drawers.sh</code>. The dock slide offset resets when the dock restarts.</td></tr>
 <tr><td>15</td><td>ArtCraft apps as Adobe and Office replacements</td><td class="open">Not started</td><td>Build, license-check and benchmark each Rust app on arm64 before packaging any.</td></tr>
 <tr><td>16</td><td>Dock monitor: audio and video out of sync; monitor speakers not usable</td><td class="open">Reported 2026-10-18; not measured</td><td>The picture works at 1080p60 (4K30 stays dark; 4K60 is not offered by this TV). HDMI audio is off in the driver (marked unstable upstream), so sound plays on the Mac speakers or an AirPlay output, and the lag has not been traced. See <code>mseries/AV-SYNC-EXTERNAL-DISPLAY.md</code>.</td></tr>
-</table>
+</table></div>
 
-<h2>Fixed</h2>
-<table>
+<h2>Historical fixes</h2>
+<p>These entries record what changed at the time. For current Touch ID, kernel and screenshot status, use the table above; old boot failures and retention behavior are not the current state.</p>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <tr><th>When</th><th>Problem</th><th>Fix</th></tr>
+<tr><td>2026-10-21</td><td>Troubleshooter and AirPlay windows could freeze during backend checks; display arrangement cut off monitor labels.</td><td>Bounded background operations with recovery, system-font ellipsis and accessible keyboard selection. Private GTK light/dark and scale 1/2 fixtures pass. Full native UI, screen-reader and real device/account acceptance remains open; see <code>mseries/ui-audit/NATIVE-UI-2026-10-21.md</code>.</td></tr>
 <tr><td>2026-10-17</td><td>Touch ID: the Secure Enclave driver bound to nothing, so no fingerprint device existed.</td><td>The SEP was disabled in m1n1's embedded j314s device tree, and m1n1 only injects its firmware when the node has an alias. Both patched with a byte-checked swap (backups kept). The driver binds and <code>/dev/sep-bio</code> exists. Sensor calibration firmware extracted locally; the SPI fingerprint node ported into the boot device tree. Fingerprint enrollment has not been tested; the first boot froze before it.</td></tr>
 <tr><td>2026-10-17</td><td>The Aurora Touch ID kernel dropped to an initramfs shell.</td><td>Its shipped initramfs was an Arch image with no hooks (no cryptsetup, LVM or busybox). Rebuilt from the known-good image with the Aurora modules; the original is kept in /var/backups.</td></tr>
 <tr><td>2026-10-17</td><td>No graphical way to enroll a fingerprint.</td><td>Added a Touch ID settings app (GTK4) for enrollment and the PAM chain.</td></tr>
@@ -79,11 +83,11 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Oct 12-13</td><td>The Mac stayed awake with the display off when the lid closed on a USB4 dock.</td><td>Added docked lid mode, which locks instead of retrying suspend. Running; a lid-close test with the dock is pending.</td></tr>
 <tr><td>Oct 12-13</td><td>Network speed and usage were not visible, and the indicator was not part of the image.</td><td>Added the speed graph and usage view, and pinned the build into the Apple Silicon image overlay.</td></tr>
 <tr><td>Oct 12-13</td><td>No plain-language way to see what failed on the machine.</td><td>Added the Local Troubleshooter, briefing and read-only assistant, all running on-device.</td></tr>
-</table>
+</table></div>
 
 <h2>Reported earlier, not yet ranked</h2>
 <p>Recorded from earlier owner reports. They are not in the ranked list above yet.</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <tr><th>Issue</th><th>Next step</th><th>Status</th></tr>
 <tr><td>App windows do not consistently follow the Mac display's rounded shape.</td><td>Define a system-level window-surface policy, then qualify native, third-party, maximized, fullscreen, dialog, and external-display cases.</td><td>Needs implementation and visual qualification</td></tr>
 <tr><td>The red and blue palette still feels harsh in use; existing GTK overrides do not reach every toolkit.</td><td>Review shared theme/system settings and check contrast, focus, selection, and warning/error distinction across supported toolkits.</td><td>Needs palette review</td></tr>
@@ -93,21 +97,21 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>A bug was reported in Energy Monitor, but the affected behavior is unspecified.</td><td>Capture the failing flow, expected and actual results, app version, and reproduction steps.</td><td>Needs details</td></tr>
 <tr><td>Touch ID passkey/WebAuthn user verification is unverified on M1 Pro.</td><td>Needs working fingerprint enrollment first (see item 8); then verify passkey creation and sign-in while retaining password/recovery fallback.</td><td>Owner requested; waiting on Touch ID boot test</td></tr>
 <tr><td>Successful authentication is not remembered for a configurable period; duration and reauthentication rules are undefined.</td><td>Define duration, scope, idle/lock/suspend expiry, and fresh-verification behavior.</td><td>Owner requested; policy to define</td></tr>
-</table>
+</table></div>
 
 <h2>Verified on hardware 2026-10-17</h2>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <tr><th>Check</th><th>Result</th></tr>
 <tr><td>Aurora kernel with the patched boot device tree (21:56)</td><td>Partly works, then froze. <code>apple_sep</code> bound to the Secure Enclave, which accepted its firmware, advertised 12 endpoints and registered the hardware RNG; <code>apple-sep.service</code> succeeded. About 34 seconds in the log simply stops: no panic, oops or shutdown, the next boot reported the journal as uncleanly shut down, and pstore held nothing. The log shows no fingerprint-sensor lines and no <code>/dev/sep-bio</code> before the stop. The cause is unknown (the SEP, the new SPI sensor node, the display controller or something else). The machine currently runs the stock <code>7.1.13-3-2-ARCH</code> kernel.</td></tr>
-</table>
+</table></div>
 
 <h2>Verified on hardware 2026-10-14</h2>
-<table>
+<div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>
 <tr><th>Check</th><th>Result</th></tr>
 <tr><td>Dell WD22TB4 Thunderbolt 4 dock on the M1 Pro (kernel 7.1.13 Fairydust USB4)</td><td>The USB4 link trains, the dock enumerates, and the downstream USB hub, mouse and wired Ethernet work. Ethernet takes a DHCP lease and connects. The displays do not (see below).</td></tr>
 <tr><td>Lid close, suspend (s2idle), lid open, resume without a dock</td><td>Works: a 14 minute 44 second suspend returned the moment the lid opened. The display controller powered back on and the login greeter started. Wi-Fi reconnected within about three seconds.</td></tr>
 <tr><td>Docked lid mode (<code>mseries-docked-lid</code>)</td><td>Running; it logged <em>dock attached: holding the lid-switch inhibitor</em> when the dock was plugged in. A lid-close test <em>with</em> the dock attached has not been repeated since.</td></tr>
-</table>
+</table></div>
 
 
 <footer>Findings distinguish confirmed failures from gaps that still need a test. Fixed items marked "please confirm" were applied on the M1 Pro but not yet seen by the owner.</footer>

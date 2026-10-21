@@ -114,3 +114,15 @@ labels; fixed (heading style instead of h4). Rows are one line each at the popov
 A second menu redesign (`panel-power-battery-menu.patch`: headline card, health/cycles/temperature tiles, charge-limit state,
 segmented power modes) was written without knowing `dev` already had the Battery History menu above. It did not apply on top of it
 and was dropped; the patch file is removed. The `ChargeCycles` and `ChargeEndThreshold` UPower properties it read are not used by dev.
+
+## Level-aware battery gauge (added 2026-10-21)
+
+UPower's panel icon only has a few steps (`battery-good-symbolic` anywhere around 30–60%) and no colour.
+`patches/panel-power-level-gauge.patch` adds `Widgets/BatteryGauge.vala`, a drawn battery whose fill height tracks the
+exact charge and whose colour eases lime → amber → muted strawberry as it drops (bolt overlay while charging). The
+Battery app draws the same gauge. Non-battery states (loading, backlight) keep the symbolic icon. Applied last by
+`install-battery-eta.sh`. Built and loaded in the live Wingpanel; the owner still needs to eyeball it in the bar.
+
+The gauge also carries the percentage as a number on the battery (`patches/panel-power-gauge-percentage.patch`, applied
+after the level gauge; the app's gauge does the same). Digits are dark over the fill, foreground colour over the empty
+part, with a light halo where the fill edge crosses them. While charging, a small bolt sits above the number.

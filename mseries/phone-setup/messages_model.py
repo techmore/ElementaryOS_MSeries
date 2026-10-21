@@ -3,6 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import gettext
+import re
 from zlib import crc32
 from blueferry.events import canonical_address
 from blueferry.recipients import validate_recipient
@@ -54,7 +55,7 @@ def lookup_contact_name(address, index):
 def resolve_contact_names(threads, index):
     """Presentation only: never alter thread identities, groups or recipients."""
     for thread in threads:
-        if thread.get('is_group') or len(thread.get('recipients', [])) != 1:
+        if thread.get('is_group') or thread.get('sender_alphanumeric') or len(thread.get('recipients', [])) != 1:
             continue
         if name := lookup_contact_name(thread['recipients'][0], index):
             thread['name'] = name
@@ -85,8 +86,6 @@ def merge_inbox(threads, inbox):
                 owners.setdefault(key, []).append(thread)
     phone_only = {}
     for raw in inbox:
-        if raw.get('handle') in handles:
-            continue
         sender = raw.get('sender_phone_norm') or raw.get('sender', '')
         address = address_key(sender)
         if not address:
@@ -100,14 +99,24 @@ def merge_inbox(threads, inbox):
         thread = candidates[0] if len(candidates) == 1 else None
         if thread is None:
             thread = next((phone_only[key] for key in keys if key in phone_only), None)
+        if thread is None and raw.get('handle') in handles:
+            continue
         if thread is None:
             key = 'inbox:' + address
             thread = dict(key=key, name=raw.get('contact_name') or raw.get('sender') or address,
-                          recipients=[address], is_group=False, reply_ready=True,
+                          recipients=[address], is_group=False, reply_ready=not bool(raw.get('sender_alphanumeric')),
                           messages=[], last_ts='', inbox_only=True)
             result[key] = thread
             for identity in keys or (address,):
                 phone_only[identity] = thread
+        # Newer BlueFerry marks sender IDs represented as keypad digits. Never
+        # promote those digits into a reply route, even for duplicate snapshots.
+        if raw.get('sender_alphanumeric'):
+            thread['reply_ready'] = False
+            thread['sender_alphanumeric'] = str(raw['sender_alphanumeric'])
+            thread['name'] = thread['sender_alphanumeric']
+        if raw.get('handle') in handles:
+            continue
         thread['messages'].append(dict(handle=raw.get('handle', ''), body=raw.get('body', ''),
                                        timestamp=raw.get('timestamp', ''), outgoing=False,
                                        read=raw.get('read', False), sender=raw.get('sender', ''), phone_list=True))
@@ -145,7 +154,7 @@ class ConversationState:
         if key in self.pending or not body.strip():
             raise ValueError('Write a message first.')
         if not thread.get('reply_ready'):
-            raise ValueError('Confirm this conversation’s participants in BlueFerry before replying.')
+            raise ValueError(reply_block_reason(thread))
         recipients = thread.get('recipients', [])
         backend_thread = not thread.get('inbox_only') and not thread.get('new')
         if not backend_thread and len(recipients) != 1:
@@ -165,6 +174,12 @@ class ConversationState:
 # --- Group replies and failures -------------------------------------------
 # BlueFerry refuses to message a group until a client has shown its participants
 # and the user confirmed them. These helpers let the window do exactly that.
+
+def reply_block_reason(thread):
+    if thread.get('is_group'):
+        return _('Confirm this group’s participants in Advanced BlueFerry before replying.')
+    return _('This sender cannot receive replies.')
+
 
 def needs_group_confirmation(thread):
     """A replyable group whose participant list the user has not confirmed yet."""
@@ -287,6 +302,116 @@ def conversation_preview(thread):
     return preview, bool(last.get('outgoing'))
 
 
+# --- Tapbacks and quoted replies -------------------------------------------
+# The phone's Bluetooth link carries iMessage only as plain text, so a Tapback
+# arrives as an ordinary message such as: Liked “Do you have a starlink mini?”
+# These helpers fold such a message onto the message it names, and build the
+# quote a reply carries. Nothing is guessed: a Tapback whose target cannot be
+# found stays a normal bubble.
+
+REACTION_EMOJI = {'Loved': '❤️', 'Liked': '👍', 'Disliked': '👎', 'Laughed at': '😂',
+                  'Emphasized': '‼️', 'Questioned': '❓'}
+_REMOVED_WORDS = {'heart': 'Loved', 'like': 'Liked', 'dislike': 'Disliked', 'laugh': 'Laughed at',
+                  'exclamation mark': 'Emphasized', 'question mark': 'Questioned'}
+_QUOTED = r'[“"](.+)[”"]'
+_WHO = r'(?:(?P<who>[^“"\n]{1,40}?) )?'
+_TAPBACK = re.compile(r'^' + _WHO + r'(?P<verb>Loved|Liked|Disliked|Laughed at|Emphasized|Questioned) ' + _QUOTED + r'$', re.S | re.I)
+_EMOJI_TAPBACK = re.compile(r'^' + _WHO + r'Reacted (?P<emoji>\S+) to ' + _QUOTED + r'$', re.S | re.I)
+_REMOVED = re.compile(r'^' + _WHO + r'Removed a (?P<word>heart|like|dislike|laugh|exclamation mark|question mark) from ' + _QUOTED + r'$', re.S | re.I)
+QUOTE_LIMIT = 80
+
+
+def _squash(text):
+    return ' '.join(str(text or '').split())
+
+
+def parse_tapback(body):
+    """(reaction, quoted text, removed, who) for a Tapback message, else None.
+
+    `who` is the name the phone wrote before the verb ("Derek laughed at …"), or ''.
+    """
+    text = str(body or '').strip()
+    found = _TAPBACK.match(text)
+    if found:
+        verb = found.group('verb').capitalize() if found.group('verb').lower() != 'laughed at' else 'Laughed at'
+        return verb, found.group(found.lastindex), False, (found.group('who') or '').strip()
+    found = _EMOJI_TAPBACK.match(text)
+    if found:
+        return found.group('emoji'), found.group(found.lastindex), False, (found.group('who') or '').strip()
+    found = _REMOVED.match(text)
+    if found:
+        return _REMOVED_WORDS[found.group('word').lower()], found.group(found.lastindex), True, (found.group('who') or '').strip()
+    return None
+
+
+def reaction_symbol(reaction):
+    return REACTION_EMOJI.get(reaction, reaction)
+
+
+def _names_message(body, quoted):
+    """True when `quoted` is `body`, or the phone's shortened copy of it."""
+    body, quoted = _squash(body), _squash(quoted)
+    if not quoted:
+        return False
+    if quoted.endswith('…') or quoted.endswith('...'):
+        return body.startswith(quoted.rstrip('….').rstrip())
+    return body == quoted
+
+
+def fold_reactions(messages):
+    """Copies of `messages` with each Tapback folded onto the message it names.
+
+    A folded message gains `reactions`: [{'reaction', 'by'}], one per person
+    (a newer Tapback from the same person replaces the older one, and a removal
+    deletes it). `by` is the sender's name, 'You' for ours, or '' when a direct
+    chat does not say.
+    """
+    folded = []
+    for message in messages:
+        copy = dict(message)
+        parsed = parse_tapback(copy.get('body'))
+        target = None
+        if parsed:
+            reaction, quoted, removed, named = parsed
+            target = next((earlier for earlier in reversed(folded)
+                           if _names_message(earlier.get('body'), quoted)), None)
+        if target is None:
+            folded.append(copy)
+            continue
+        who = 'You' if copy.get('outgoing') else (named or str(copy.get('sender') or ''))
+        kept = [r for r in target.get('reactions', []) if r['by'] != who]
+        if not removed:
+            kept.append({'reaction': reaction, 'by': who})
+        target['reactions'] = kept
+    return folded
+
+
+def reaction_summary(reactions):
+    """(symbols, tooltip) for a reaction chip, in the order they were given."""
+    symbols = ''.join(dict.fromkeys(reaction_symbol(r['reaction']) for r in reactions))
+    by_kind = []
+    for entry in reactions:
+        who = entry['by'] or _('Them')
+        by_kind.append('%s %s' % (reaction_symbol(entry['reaction']), who))
+    return symbols, ' · '.join(by_kind)
+
+
+def quote_snippet(message, is_group=False):
+    """A one-line quote of a message for a reply, naming the sender in groups."""
+    text, attachment, _shortened = message_parts(message)
+    line = _squash(text) or (_('Attachment') if attachment else '')
+    if len(line) > QUOTE_LIMIT:
+        line = line[:QUOTE_LIMIT - 1].rstrip() + '…'
+    if is_group and not message.get('outgoing') and message.get('sender'):
+        return '%s: “%s”' % (message['sender'], line)
+    return '“%s”' % line
+
+
+def reply_body(quote, body):
+    """What is sent for a reply: a quote line, then the user's words."""
+    return '↪ %s\n%s' % (quote, body) if quote else body
+
+
 def layout_messages(messages, is_group=False, now=None):
     """Turn a message list into render items: centred time headings and bubbles.
 
@@ -295,6 +420,7 @@ def layout_messages(messages, is_group=False, now=None):
     last bubble. Messages whose timestamp cannot be parsed are never grouped;
     they keep their own caption as before.
     """
+    messages = fold_reactions(messages)
     items = []
     run = []
     previous = None  # (datetime, direction identity) of the prior message

@@ -26,6 +26,7 @@ git -C "$build_dir/src" remote add origin https://github.com/JoseExposito/touche
 git -C "$build_dir/src" fetch -q --depth=1 origin "$source_commit"
 git -C "$build_dir/src" checkout -q --detach FETCH_HEAD
 # CMake 4 rejects the project's old minimum-version declaration; 3.5 restores the old behaviour.
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib-build.sh" 2>/dev/null && mseries_ccache_enable cmake || true   # optional ccache (#47)
 cmake -S "$build_dir/src" -B "$build_dir/build" -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$build_dir/build" -j"$(nproc)"

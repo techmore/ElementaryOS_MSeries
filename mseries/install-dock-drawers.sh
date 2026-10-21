@@ -32,7 +32,8 @@ stock=/usr/bin/io.elementary.dock
 mode=${1:-install}
 case $mode in install|--build-only|--build-running-apps-only|--revert) ;; *) echo "Usage: $0 [--build-only|--build-running-apps-only|--revert]" >&2; exit 2;; esac
 if [[ $mode == --revert ]]; then
-  rm -f "$wrapper"
+  rm -f "$wrapper" "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/pantheon-dock.service.d/keep-apps.conf"
+  systemctl --user daemon-reload 2>/dev/null || :
   echo "Reverted: the stock dock ($stock) is used at your next login."
   echo "The private build is left in $prefix (delete it to reclaim space)."
   exit 0
@@ -72,7 +73,7 @@ bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
-for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarNotifications DockAppResolver; do
+for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarNotifications DockAppResolver; do
   strings "$build_dir/src/io.elementary.dock" | grep -F "$component" > /dev/null
 done
 glib-compile-schemas --strict --dry-run "$source_dir/data"
@@ -140,6 +141,12 @@ fi
 exit "\$rc"
 LAUNCHER
 chmod 0755 "$wrapper"
+# Apps launched from the dock live in pantheon-dock.service's cgroup; the default KillMode would kill them
+# (ChatGPT, Codex, Claude...) whenever the dock is restarted. KillMode=process ends only the dock itself.
+dropin=${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/pantheon-dock.service.d
+mkdir -p "$dropin"
+printf '[Service]\n# Restarting the dock must not close apps launched from it.\nKillMode=process\n' > "$dropin/keep-apps.conf"
+systemctl --user daemon-reload 2>/dev/null || :
 # A successfully rebuilt dock gets another chance after a previous fallback.
 rm -f "${HOME}/.cache/mseries-dock-failed"
 

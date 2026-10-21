@@ -1,0 +1,315 @@
+{
+  "start": "2026-10-21T07:30:09.450809-04:00",
+  "end": "2026-10-21T07:30:39.640903-04:00",
+  "kernel": "7.1.12-elementary-aurora20-enh1",
+  "classification": "in-use observational sample; not idle or paired A/B",
+  "elapsed_s": 30.043666338000094,
+  "collector_source": "techmore/ElementaryOS_MSeries_Optimization powerlab/sample.py at e88183d425fe4161d81d16376a6e20c0893422f7",
+  "sampler": {
+    "n": 30,
+    "median_w": 17.303,
+    "p10_w": 16.817,
+    "p90_w": 18.53,
+    "mean_w": 17.576,
+    "min_w": 16.701,
+    "max_w": 19.927,
+    "source": "smc-total-system-power",
+    "status": "Discharging",
+    "top_irqs": [
+      {
+        "irq": "36 Level arch_timer",
+        "per_s": 3702
+      },
+      {
+        "irq": "IPI1 call interrupts",
+        "per_s": 3127
+      },
+      {
+        "irq": "IPI0 Rescheduling interrupts",
+        "per_s": 651
+      },
+      {
+        "irq": "92 Level 38bc08000.mbox-recv",
+        "per_s": 472
+      },
+      {
+        "irq": "58 Level 406408000.mbox-recv",
+        "per_s": 242
+      },
+      {
+        "irq": "197 Level xhci-hcd:usb1",
+        "per_s": 72
+      }
+    ]
+  },
+  "aggregate_cpu_busy_pct": 17.37,
+  "cpu_denominator": "aggregate across all logical cores; per-process entries use one core = 100%",
+  "top_processes": [
+    {
+      "name": "claude-desktop",
+      "one_core_cpu_pct": 50.09
+    },
+    {
+      "name": "claude-desktop",
+      "one_core_cpu_pct": 24.13
+    },
+    {
+      "name": "pantheon-compos",
+      "one_core_cpu_pct": 23.0
+    },
+    {
+      "name": "ChatGPT",
+      "one_core_cpu_pct": 16.94
+    },
+    {
+      "name": "ChatGPT",
+      "one_core_cpu_pct": 8.15
+    },
+    {
+      "name": "claude-desktop",
+      "one_core_cpu_pct": 4.93
+    },
+    {
+      "name": "claude",
+      "one_core_cpu_pct": 3.0
+    },
+    {
+      "name": "kworker/1:7-events",
+      "one_core_cpu_pct": 2.26
+    },
+    {
+      "name": "kworker/1:8-events",
+      "one_core_cpu_pct": 1.66
+    },
+    {
+      "name": "kworker/u40:2-asahi_sched",
+      "one_core_cpu_pct": 1.3
+    },
+    {
+      "name": "kworker/0:10-events",
+      "one_core_cpu_pct": 1.16
+    },
+    {
+      "name": "kworker/0:11-events",
+      "one_core_cpu_pct": 1.16
+    },
+    {
+      "name": "WebKitWebProces",
+      "one_core_cpu_pct": 1.13
+    },
+    {
+      "name": "ChatGPT",
+      "one_core_cpu_pct": 1.13
+    },
+    {
+      "name": "Xwayland",
+      "one_core_cpu_pct": 1.1
+    }
+  ],
+  "before": {
+    "battery": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "online": "1"
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "online": "0"
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "online": "1"
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "online": "0"
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "online": "0"
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Discharging",
+        "capacity": "89",
+        "power_now": "-17418000",
+        "energy_now": "52588200",
+        "energy_full": "62118600",
+        "charge_control_end_threshold": "80"
+      }
+    },
+    "brightness": {
+      "apple-panel-bl": {
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "related_cpus": "6 7 8 9",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy2": {
+        "related_cpus": "2 3 4 5",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy0": {
+        "related_cpus": "0 1",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "idle_governor": "menu",
+    "sleep": "[s2idle]",
+    "pressure": {
+      "cpu": "some avg10=9.55 avg60=16.55 avg300=18.05 total=342298002\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+      "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=46143\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=43134",
+      "io": "some avg10=0.00 avg60=0.07 avg300=0.02 total=6160976\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2586672"
+    },
+    "pcm_states": {
+      "/proc/asound/card0/pcm0c/sub0/status": "unknown",
+      "/proc/asound/card0/pcm0p/sub0/status": "unknown",
+      "/proc/asound/card0/pcm1p/sub0/status": "unknown",
+      "/proc/asound/card0/pcm2c/sub0/status": "state: RUNNING",
+      "/proc/asound/card1/pcm0c/sub0/status": "unknown"
+    }
+  },
+  "after": {
+    "battery": {
+      "macsmc-ac": {
+        "type": "Mains",
+        "online": "1"
+      },
+      "tps6598x-source-psy-0-003a": {
+        "type": "USB",
+        "online": "0"
+      },
+      "tps6598x-source-psy-0-0038": {
+        "type": "USB",
+        "online": "1"
+      },
+      "tps6598x-source-psy-0-003f": {
+        "type": "USB",
+        "online": "0"
+      },
+      "tps6598x-source-psy-0-003b": {
+        "type": "USB",
+        "online": "0"
+      },
+      "macsmc-battery": {
+        "type": "Battery",
+        "status": "Discharging",
+        "capacity": "89",
+        "power_now": "-17225000",
+        "energy_now": "52497000",
+        "energy_full": "62164200",
+        "charge_control_end_threshold": "80"
+      }
+    },
+    "brightness": {
+      "apple-panel-bl": {
+        "actual_brightness": "503",
+        "max_brightness": "500"
+      }
+    },
+    "cpufreq": {
+      "policy6": {
+        "related_cpus": "6 7 8 9",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy2": {
+        "related_cpus": "2 3 4 5",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "3036000"
+      },
+      "policy0": {
+        "related_cpus": "0 1",
+        "scaling_governor": "schedutil",
+        "scaling_min_freq": "600000",
+        "scaling_max_freq": "2064000"
+      }
+    },
+    "idle_governor": "menu",
+    "sleep": "[s2idle]",
+    "pressure": {
+      "cpu": "some avg10=25.40 avg60=20.23 avg300=18.82 total=350303864\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+      "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=46143\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=43134",
+      "io": "some avg10=0.00 avg60=0.04 avg300=0.01 total=6229170\nfull avg10=0.00 avg60=0.01 avg300=0.00 total=2609602"
+    },
+    "pcm_states": {
+      "/proc/asound/card0/pcm0c/sub0/status": "unknown",
+      "/proc/asound/card0/pcm0p/sub0/status": "unknown",
+      "/proc/asound/card0/pcm1p/sub0/status": "unknown",
+      "/proc/asound/card0/pcm2c/sub0/status": "state: RUNNING",
+      "/proc/asound/card1/pcm0c/sub0/status": "unknown"
+    }
+  },
+  "display": {
+    "modes": [
+      {
+        "connector": "eDP-1",
+        "width": 3024,
+        "height": 1964,
+        "refresh_hz": 120.0,
+        "refresh_mode": "fixed"
+      },
+      {
+        "connector": "DP-2",
+        "width": 1920,
+        "height": 1080,
+        "refresh_hz": 60.0,
+        "refresh_mode": "fixed"
+      },
+      {
+        "connector": "DP-1",
+        "width": 1920,
+        "height": 1080,
+        "refresh_hz": 60.0,
+        "refresh_mode": "fixed"
+      }
+    ],
+    "layout": [
+      {
+        "x": 0,
+        "y": 0,
+        "scale": 1.25,
+        "transform": 0,
+        "primary": true,
+        "connectors": [
+          "eDP-1"
+        ]
+      },
+      {
+        "x": 2420,
+        "y": 0,
+        "scale": 1.0,
+        "transform": 0,
+        "primary": false,
+        "connectors": [
+          "DP-2"
+        ]
+      },
+      {
+        "x": 4340,
+        "y": 0,
+        "scale": 1.0,
+        "transform": 0,
+        "primary": false,
+        "connectors": [
+          "DP-1"
+        ]
+      }
+    ],
+    "power_save_mode": "unavailable",
+    "dpms_error": "Error"
+  },
+  "observer": "SMC and powerlab interrupt reads; /proc process enumeration only at endpoints; no workload control; observer overhead unquantified"
+}

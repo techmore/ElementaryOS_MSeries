@@ -1,0 +1,42 @@
+diff --git a/data/Application.css b/data/Application.css
+index 8efd72d..0e7d3a6 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -467,7 +467,10 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
+ }
+ 
+ /* CodexBar forms its own group beside the system status controls. */
+-.taskbar-codexbar-button { padding: 8px; min-width: 24px; min-height: 24px; border-radius: 6px; }
++.taskbar-codexbar-button { padding: 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
++.taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
++/* The readout size follows the dock's icon size (TaskbarRepoBar.vala), so it changes with the mode and text step. */
++.taskbar-repobar-popup { font-size: 1.4em; }
+ .taskbar-codexbar-separator { opacity: 0.35; }
+ 
+ /* Windows 11 Start appearance, owner requested 2026-10-20.
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+index a6b8597..ced842f 100644
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -190,6 +190,8 @@ public class Dock.TaskbarRow : Gtk.Widget {
+         };
+         var codexbar_group = new Gtk.Box (HORIZONTAL, 0) { valign = CENTER };
+         codexbar_group.append (new TaskbarCodexBar ());
++        var repobar = new TaskbarRepoBar () { margin_start = 6 };
++        codexbar_group.append (repobar);
+         var group_separator = new Gtk.Separator (VERTICAL) {
+             height_request = 24,
+             valign = CENTER,
+diff --git a/src/meson.build b/src/meson.build
+index e363e98..5b6ca7f 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -9,6 +9,8 @@ sources = [
+     'codexbar/RefreshPolicy.vala',
+     'codexbar/QuotaEta.vala',
+     'codexbar/Presentation.vala',
++    'TaskbarRepoBar.vala',
++    'repobar/Indicator.vala',
+ 
+     'BaseIconGroup.vala',
+     'BaseItem.vala',

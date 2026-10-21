@@ -9,6 +9,9 @@ BASELINE = ('ARM64_16K_PAGES', 'DRM_APPLE', 'DRM_ASAHI', 'DRM_APPLE_AUDIO',
             'PHY_APPLE_ATC', 'SND_SOC_APPLE_MCA')
 EXPERIMENTAL = ('RESET_APPLE_CIO', 'USB4_APPLE_SOC', 'VIDEO_APPLE_AVD')
 VM_CONSOLE = ('SERIAL_AMBA_PL011', 'SERIAL_AMBA_PL011_CONSOLE')
+# Bluetooth HID plus the Apple, Magic and Logitech (HID++) drivers and their battery reports.
+PERIPHERALS = ('BT_HIDP', 'UHID', 'HID_BATTERY_STRENGTH', 'HID_APPLE', 'HID_MAGICMOUSE',
+               'HID_LOGITECH_HIDPP', 'HID_LOGITECH_DJ')
 BUILTIN = ('ARM64_16K_PAGES',) + VM_CONSOLE
 
 
@@ -39,8 +42,12 @@ def main():
     parser.add_argument('config', type=Path)
     parser.add_argument('--require', choices=('baseline', 'fairydust'), default='baseline',
                         help='fairydust additionally requires the experimental USB4/video symbols')
+    parser.add_argument('--peripherals', action='store_true',
+                        help='also require Bluetooth HID and the Apple/Magic/Logitech input drivers')
     args = parser.parse_args()
     required = BASELINE + ((EXPERIMENTAL + VM_CONSOLE) if args.require == 'fairydust' else ())
+    if args.peripherals:
+        required += PERIPHERALS
     try:
         report = inspect(args.config, required)
     except (OSError, UnicodeError, ValueError) as exc:

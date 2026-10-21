@@ -1,0 +1,198 @@
+diff --git a/src/Indicator.vala b/src/Indicator.vala
+index 75c1699..117e2c3 100644
+--- a/src/Indicator.vala
++++ b/src/Indicator.vala
+@@ -210,6 +210,7 @@ public class Power.Indicator : Wingpanel.Indicator {
+         if (display_device != null && display_widget != null) {
+             var icon_name = display_device.get_symbolic_icon_name_for_battery ();
+             display_widget.icon_name = icon_name;
++            display_widget.show_level (display_device.percentage, display_device.is_charging);
+ 
+             /* Debug output for designers */
+             debug ("Icon changed to \"%s\"", icon_name);
+diff --git a/src/Widgets/BatteryGauge.vala b/src/Widgets/BatteryGauge.vala
+new file mode 100644
+index 0000000..2d98f37
+--- /dev/null
++++ b/src/Widgets/BatteryGauge.vala
+@@ -0,0 +1,118 @@
++/*
++ * A battery outline whose fill drops with the charge and shifts colour softly as it gets low.
++ * Replaces the symbolic icon, which only has a handful of steps and no colour.
++ */
++public class Power.Widgets.BatteryGauge : Gtk.DrawingArea {
++    private struct Stop {
++        double pct;
++        double red;
++        double green;
++        double blue;
++    }
++
++    // lime while healthy, easing through amber to a muted strawberry
++    private const Stop[] STOPS = {
++        { 60, 0.45, 0.74, 0.30 },
++        { 35, 0.90, 0.72, 0.24 },
++        { 18, 0.93, 0.52, 0.22 },
++        { 8, 0.82, 0.30, 0.30 }
++    };
++
++    public double percentage { get; set; default = 0; }
++    public bool charging { get; set; default = false; }
++
++    construct {
++        content_width = 14;
++        content_height = 24;
++        valign = Gtk.Align.CENTER;
++        halign = Gtk.Align.CENTER;
++        set_draw_func (draw);
++        notify["percentage"].connect (queue_draw);
++        notify["charging"].connect (queue_draw);
++    }
++
++    public static void colour_for (double pct, out double red, out double green, out double blue) {
++        pct = pct.clamp (0, 100);
++        if (pct >= STOPS[0].pct) {
++            red = STOPS[0].red; green = STOPS[0].green; blue = STOPS[0].blue;
++            return;
++        }
++        for (int i = 1; i < STOPS.length; i++) {
++            if (pct >= STOPS[i].pct) {
++                var t = (pct - STOPS[i].pct) / (STOPS[i - 1].pct - STOPS[i].pct);
++                red = STOPS[i].red + (STOPS[i - 1].red - STOPS[i].red) * t;
++                green = STOPS[i].green + (STOPS[i - 1].green - STOPS[i].green) * t;
++                blue = STOPS[i].blue + (STOPS[i - 1].blue - STOPS[i].blue) * t;
++                return;
++            }
++        }
++        red = STOPS[STOPS.length - 1].red;
++        green = STOPS[STOPS.length - 1].green;
++        blue = STOPS[STOPS.length - 1].blue;
++    }
++
++    private static void round_rect (Cairo.Context cr, double x, double y, double w, double h, double r) {
++        cr.new_sub_path ();
++        cr.arc (x + w - r, y + r, r, -Math.PI / 2, 0);
++        cr.arc (x + w - r, y + h - r, r, 0, Math.PI / 2);
++        cr.arc (x + r, y + h - r, r, Math.PI / 2, Math.PI);
++        cr.arc (x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
++        cr.close_path ();
++    }
++
++    private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
++        var fg = get_color ();
++        double line = 1.4;
++        double cap_h = height * 0.09;
++        double body_x = line / 2;
++        double body_y = cap_h + line / 2;
++        double body_w = width - line;
++        double body_h = height - cap_h - line;
++
++        cr.set_line_width (line);
++        round_rect (cr, width * 0.30, 0, width * 0.40, cap_h + 1, 1);
++        cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.6);
++        cr.fill ();
++        round_rect (cr, body_x, body_y, body_w, body_h, 3);
++        cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.08);
++        cr.fill_preserve ();
++        cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.65);
++        cr.stroke ();
++
++        double inset = line + 1.2;
++        double inner_x = body_x + inset;
++        double inner_y = body_y + inset;
++        double inner_w = body_w - 2 * inset;
++        double inner_h = body_h - 2 * inset;
++        double fill_h = inner_h * percentage.clamp (0, 100) / 100.0;
++        if (fill_h >= 0.5) {
++            double red, green, blue;
++            colour_for (percentage, out red, out green, out blue);
++            cr.save ();
++            round_rect (cr, inner_x, inner_y, inner_w, inner_h, 1.8);
++            cr.clip ();
++            cr.set_source_rgba (red, green, blue, 0.95);
++            cr.rectangle (inner_x, inner_y + inner_h - fill_h, inner_w, fill_h);
++            cr.fill ();
++            cr.restore ();
++        }
++
++        if (charging) {
++            double cx = width / 2.0;
++            double cy = body_y + body_h / 2;
++            double s = width * 0.16;
++            cr.move_to (cx + s * 0.35, cy - s * 1.9);
++            cr.rel_line_to (-s * 0.95, s * 1.15);
++            cr.rel_line_to (s * 0.55, 0);
++            cr.rel_line_to (-s * 0.35, s * 1.9);
++            cr.rel_line_to (s * 0.95, -s * 1.15);
++            cr.rel_line_to (-s * 0.55, 0);
++            cr.close_path ();
++            cr.set_source_rgba (1, 1, 1, 0.92);
++            cr.fill_preserve ();
++            cr.set_source_rgba (0, 0, 0, 0.35);
++            cr.set_line_width (0.7);
++            cr.stroke ();
++        }
++    }
++}
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index 9055c04..1cf3392 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -25,9 +25,18 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+     public string icon_name {
+         set {
+             image.icon_name = value;
++            // Battery states are drawn by the gauge; anything else (loading, backlight) keeps the symbolic icon.
++            var is_battery = value.has_prefix ("battery");
++            image.visible = !is_battery;
++            gauge.visible = is_battery;
+         }
+     }
+ 
++    public void show_level (double pct, bool charging) {
++        gauge.percentage = pct;
++        gauge.charging = charging;
++    }
++
+     public bool allow_percent { get; set; default = false; }
+     public int percentage {
+         set {
+@@ -41,6 +50,7 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+     private Gtk.Revealer power_draw_revealer;
+     private Gtk.Label power_draw_label;
+     private Gtk.Image image;
++    private BatteryGauge gauge;
+ 
+     construct {
+         valign = Gtk.Align.CENTER;
+@@ -50,6 +60,10 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+             pixel_size = 24
+         };
+ 
++        gauge = new BatteryGauge () {
++            visible = false
++        };
++
+         percent_label = new Gtk.Label (null);
+         charge_eta_label = new Gtk.Label (null);
+         charge_eta_label.add_css_class ("dim-label");
+@@ -65,6 +79,7 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+         };
+ 
+         append (image);
++        append (gauge);
+         append (percent_revealer);
+         power_draw_label = new Gtk.Label (null);
+         power_draw_label.add_css_class ("dim-label");
+diff --git a/src/meson.build b/src/meson.build
+index 40051eb..443f57e 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -24,6 +24,7 @@ files = files(
+     'Services/DeviceManager.vala',
+     'Widgets/DeviceList.vala',
+     'Widgets/DeviceRow.vala',
++    'Widgets/BatteryGauge.vala',
+     'Widgets/DisplayWidget.vala',
+     'Widgets/PopoverWidget.vala',
+     'Widgets/ScreenBrightness.vala',

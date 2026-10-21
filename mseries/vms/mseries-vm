@@ -449,7 +449,8 @@ cmd_start() {
               -device "virtserialport,chardev=vdagent,name=com.redhat.spice.0")
     fi
     if (( headless )); then
-        if [[ ${CLIPBOARD:-off} == on ]]; then
+        if [[ ${CLIPBOARD:-off} == on || ${MSERIES_VM_DBUS_DISPLAY:-off} == on ]]; then
+            # QEMU's D-Bus display: clipboard, and the screen stream / resize for Machine Lab.
             # shellcheck disable=SC2054
             cmd+=(-display dbus,p2p=on)
         else

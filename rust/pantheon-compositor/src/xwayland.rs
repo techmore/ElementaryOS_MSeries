@@ -328,7 +328,7 @@ impl XwmHandler for PantheonCompositor {
                 .cloned()
         };
         if let Some(window) = window {
-            self.space.map_element(window, geometry.loc, false);
+            self.place_window(&window, geometry.loc);
         }
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
@@ -477,7 +477,7 @@ impl PantheonCompositor {
         if let Err(error) = surface.configure(Some(target)) {
             tracing::warn!(?error, "could not configure X11 window state");
         }
-        self.space.map_element(window, target.loc, false);
+        self.place_window(&window, target.loc);
         if !maximized && !fullscreen {
             self.x11_managed_windows.remove(&id);
         }

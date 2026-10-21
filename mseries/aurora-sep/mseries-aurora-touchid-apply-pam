@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 # Wire pam_fprintd into the password prompts (run as root via pkexec).
 #
-#   mseries-aurora-touchid-apply-pam            add fingerprint unlock
-#   mseries-aurora-touchid-apply-pam --remove   take it back out
+#   mseries-aurora-touchid-apply-pam                        add to sudo and polkit
+#   mseries-aurora-touchid-apply-pam --remove               take both back out
+#   mseries-aurora-touchid-apply-pam --only sudo            one service (sudo | polkit-1)
+#   mseries-aurora-touchid-apply-pam --only polkit-1 --remove
 #
-# Same lines the upstream aurora-touchid-setup writes, kept here so the GUI
-# does not need a terminal. Idempotent; timestamped backups; the password
-# stays a working fallback in every stack.
+# Same lines the upstream aurora-touchid-setup writes, kept here so the Touch ID
+# settings page does not need a terminal. Idempotent; timestamped backups; the
+# password stays a working fallback in every stack.
 set -euo pipefail
 
 log()  { printf '%s\n' "$*"; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
-[[ $EUID -eq 0 ]] || die "must run as root (the GUI calls this with pkexec)"
+
+# MSERIES_PAM_DIR lets the test suite run unprivileged against a scratch
+# directory. pkexec clears the environment, so it cannot redirect a real run.
+pam_dir=${MSERIES_PAM_DIR:-/etc/pam.d}
+if [[ -z ${MSERIES_PAM_DIR:-} ]]; then
+  [[ $EUID -eq 0 ]] || die "must run as root (the settings page calls this with pkexec)"
+fi
 
 add_line='auth      sufficient pam_fprintd.so'
 stamp=$(date +%Y%m%d-%H%M%S)
@@ -37,31 +45,45 @@ remove() {
   fi
 }
 
-case ${1:-} in
-  --remove)
-    remove /etc/pam.d/sudo
-    remove /etc/pam.d/polkit-1
-    log "done. Enrolled fingerprints stay; clear with: fprintd-delete \$USER"
-    ;;
-  "")
-    apply /etc/pam.d/sudo
-    if [[ ! -f /etc/pam.d/polkit-1 ]]; then
-      # polkit has no stock PAM file on elementary; give it a full stack.
-      cat > /etc/pam.d/polkit-1 <<EOF
+add_sudo() { apply "$pam_dir/sudo"; }
+
+add_polkit() {
+  if [[ ! -f $pam_dir/polkit-1 ]]; then
+    # polkit has no stock PAM file on elementary; give it a full stack.
+    cat > "$pam_dir/polkit-1" <<PAM
 auth      sufficient pam_fprintd.so
 auth      required pam_unix.so
 
 account   required pam_unix.so
 password  required pam_unix.so
 session   required pam_unix.so
-EOF
-      log "/etc/pam.d/polkit-1: created with fingerprint unlock (password still works)"
-    else
-      apply /etc/pam.d/polkit-1
-    fi
-    log "done. Try: sudo -k; sudo true"
-    ;;
-  *)
-    die "unknown option: $1 (use --remove)"
-    ;;
-esac
+PAM
+    log "$pam_dir/polkit-1: created with fingerprint unlock (password still works)"
+  else
+    apply "$pam_dir/polkit-1"
+  fi
+}
+
+mode=add
+only=
+while (( $# )); do
+  case $1 in
+    --remove) mode=remove ;;
+    --only)
+      shift
+      [[ ${1:-} == sudo || ${1:-} == polkit-1 ]] || die "--only takes sudo or polkit-1"
+      only=$1 ;;
+    *) die "unknown option: $1 (use --remove, --only sudo|polkit-1)" ;;
+  esac
+  shift
+done
+
+if [[ $mode == remove ]]; then
+  [[ -z $only || $only == sudo ]]     && remove "$pam_dir/sudo"
+  [[ -z $only || $only == polkit-1 ]] && remove "$pam_dir/polkit-1"
+  log "done. Enrolled fingerprints stay; clear with: fprintd-delete \$USER"
+else
+  [[ -z $only || $only == sudo ]]     && add_sudo
+  [[ -z $only || $only == polkit-1 ]] && add_polkit
+  log "done. Try: sudo -k; sudo true"
+fi

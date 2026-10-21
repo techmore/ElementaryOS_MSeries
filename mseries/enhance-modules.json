@@ -1,0 +1,53 @@
+{
+  "comment": "Dependency and lock graph for the first-boot modules of mseries/enhance-firstboot.sh. Only read when parallel mode is opted into (MSERIES_PARALLEL=1 or --parallel); the default run is serial and ignores it. Rule: a module may overlap another only when they share no mutable state. Anything that holds the apt/dpkg lock stays serial with every other holder (lock \"apt\"). Modules that install into the same directory stay ordered (lock \"wingpanel-plugins\") because the issue (#47) asks for that and no measurement yet shows the lock is worth relaxing. Every module builds in its own mktemp directory and clones into it, so the builds themselves share nothing; the locks cover the install step, which is why they are held for the whole module.",
+  "tasks": {
+    "brave": {
+      "locks": ["apt"],
+      "why": "Adds an apt source and keyring, runs apt-get update and apt-get install brave-browser: holds the apt and dpkg locks, and changes the package lists every other apt user reads."
+    },
+    "video": {
+      "why": "Downloads a pinned tarball into its own mktemp directory, builds with meson/ninja, installs one driver file into the dri directory and one sysctl drop-in. Nothing else writes those paths, and it runs no apt or dpkg command (build requirements arrive in the combined install)."
+    },
+    "gestures": {
+      "locks": ["apt"],
+      "why": "install-touchegg.sh runs `sudo apt install` for its build requirements (a no-op after the combined install, but it still takes the apt and dpkg locks), then cmake --install into /usr and systemctl enable --now."
+    },
+    "network": {
+      "locks": ["wingpanel-plugins"],
+      "why": "Replaces libnetwork.so in the Wingpanel plugin directory and keeps a backup under /usr/local/lib/mseries. Ordered with the other panel indicators."
+    },
+    "desktop-user-deps": {
+      "locks": ["apt"],
+      "why": "No script: it only installs packages. After the combined install it does nothing; when that fails (and parallel mode is therefore not used) it would run apt-get, so it is declared an apt holder."
+    },
+    "netusage-policy": {
+      "why": "Installs one polkit rule file (/etc/polkit-1/rules.d/49-mseries-netusage.rules). No other module writes it; no apt, no build."
+    },
+    "quick": {
+      "locks": ["wingpanel-plugins"],
+      "why": "Replaces libquick-settings.so in the Wingpanel plugin directory and writes shared icon files. Ordered with the other panel indicators."
+    },
+    "sound": {
+      "locks": ["wingpanel-plugins"],
+      "why": "Replaces libsound.so in the Wingpanel plugin directory. Ordered with the other panel indicators."
+    },
+    "keyboard": {
+      "locks": ["wingpanel-plugins"],
+      "why": "Replaces libkeyboard.so in the Wingpanel plugin directory. Ordered with the other panel indicators."
+    },
+    "files": {
+      "why": "Builds the Files portal in its own mktemp directory and installs one binary (io.elementary.files.xdg-desktop-portal) with its own backup. Nothing else touches pantheon-files or that path."
+    },
+    "osk": {
+      "why": "Builds a patched gala-daemon in its own mktemp directory and installs /usr/bin/gala-daemon with its own backup. No other module touches gala."
+    },
+    "battery-panel": {
+      "locks": ["wingpanel-plugins"],
+      "why": "Replaces the Wingpanel power indicator module (libpower.so) and keeps its backup. Ordered with the other panel indicators."
+    },
+    "firefox": {
+      "locks": ["apt"],
+      "why": "Optional module. Adds the Mozilla apt source and runs apt-get update and apt-get install firefox: an apt and dpkg lock holder."
+    }
+  }
+}

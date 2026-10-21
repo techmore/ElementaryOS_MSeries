@@ -5,7 +5,11 @@ mod cursor;
 mod cursor_theme;
 mod display_config;
 #[cfg(feature = "native-drm")]
+mod display_trace;
+#[cfg(feature = "native-drm")]
 mod edid;
+#[cfg(feature = "native-drm")]
+mod flip_retry;
 mod gala_compat;
 mod gesture_animation;
 #[cfg(feature = "gesture-probe")]
@@ -25,7 +29,10 @@ pub mod native;
 mod overview;
 mod pantheon_shell;
 mod popup_stack;
+#[cfg(feature = "native-drm")]
+mod prewarm;
 mod protocols;
+mod redraw_stats;
 mod shell_compat;
 mod state;
 mod tiling;

@@ -51,6 +51,7 @@ echo "$sha256  $work/src.tar.gz" | sha256sum --check --status || { echo 'Source 
 tar -xzf "$work/src.tar.gz" -C "$work"
 src=$(echo "$work"/libva-v4l2_request-*)
 
+source "$here/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$work/build" "$src" --prefix=/usr --buildtype=release -Dcodec_av1=enabled -Ddriverdir="$driverdir" >/dev/null
 ninja -C "$work/build" src/v4l2_request_drv_video.so >/dev/null
 built="$work/build/src/v4l2_request_drv_video.so"

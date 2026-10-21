@@ -22,6 +22,18 @@ OUTPUT = STATE / 'latest.json'
 UNIT = 'pantheon-dock.service'
 TIMER = 'mseries-dock-trial-stop.timer'
 TITLE = 'One-minute dock safety test'
+# Native dock icon size at the default step of the size system (#332).
+DEFAULT_ICON_SIZE = 48
+
+
+def size_system_dock(mode, fallback):
+    """Dock token from the M-Series size system once it is adopted, else the old literal."""
+    tool = shutil.which('mseries-ui-scale') or str(HOME / '.local/bin/mseries-ui-scale')
+    try:
+        result = subprocess.run([tool, '--dock-size', mode], capture_output=True, text=True, timeout=5, check=False)
+        return int(result.stdout) if result.returncode == 0 else fallback
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return fallback
 
 
 def systemctl(*args, check=True):
@@ -247,7 +259,7 @@ def gui(seconds, after_login, dock_only=False, visible=False):
                     self.saved_preferences = {key: settings.get_value(key) for key in
                                               ('autohide-mode', 'icon-size')}
                     settings.set_string('autohide-mode', 'never')
-                    settings.set_int('icon-size', 48)
+                    settings.set_int('icon-size', size_system_dock('native', DEFAULT_ICON_SIZE))
                     Gio.Settings.sync()
                 arm(seconds)
                 self.running = True
@@ -341,7 +353,7 @@ def main():
     parser.add_argument('--configure', action='store_true')
     parser.add_argument('--after-login', action='store_true')
     parser.add_argument('--visible', action='store_true',
-                        help='Temporarily use 48-pixel icons and no auto-hide')
+                        help='Temporarily use the native dock icon size (48 px at the default step) and no auto-hide')
     parser.add_argument('--dock-only', action='store_true',
                         help='Test dock focus and typing independently of snapping')
     args = parser.parse_args()
