@@ -25,8 +25,16 @@ no GTK warnings; nine deliberate breakages each failed a test, including Enter
 confirming a group. Not verified: a real group send on the phone, which needs the
 owner to confirm the dialog once. Installed copy not yet relaunched by this entry.
 
-Next: Enter-to-send as an opt-in (needs input-method-safe handling), live check of
-media links, compositor `present()` raise (separate branch, see below).
+Enter-to-send opt-in landed in the same PR: menu switch **Press Enter to Send** (off by
+default), stored in `~/.config/mseries/messages.json` (0600, booleans only, nothing else
+ever written). Input-method safe by construction: a plain Return is armed for 80 ms and
+only a literal newline insert is swallowed and turned into a send; composed text from an
+input method sends nothing. Verified with a real xdotool Return and Shift+Return as well
+as synthetic events; 41 model and 66 GTK tests pass; seven of eight deliberate breakages
+fail a test (the eighth was not a real defect). Not verified: an actual Japanese/Chinese
+input method, only its observable effect (composed text arriving instead of a newline).
+
+Next: live check of media links; compositor `present()` raise is its own PR (#362).
 
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
