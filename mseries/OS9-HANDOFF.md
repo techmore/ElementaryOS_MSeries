@@ -1,3 +1,7 @@
+## GitHub Pages development documentation — 2026-10-21
+
+Owner selected `dev/docs` as the GitHub Pages source, replacing frozen `main/docs`. The website refresh reconciles wip2 boot/all-port dock evidence, Touch ID xART guard blocking, working Messages, screenshot retention and optional Apple Passwords. Historical benchmark dates and outstanding hardware/recovery gates remain explicit. The removed October 13 installer is no longer advertised as available. Source links and live build/validation/Pages queries follow `dev`. Publish only after website checks; verify the exact deployed revision and live bytes. No OS release or host deployment is part of this change.
+
 ## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
 
 - **Multi-account:** `settings.json` gains `account` (empty follows the GitHub CLI's active account, as before) and
