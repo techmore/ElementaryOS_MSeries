@@ -3207,3 +3207,9 @@ Prepared sender-ID read-only snapshot compatibility and accurate direct-sender
 reply guidance; see `phone-setup/UPSTREAM-REVIEW.md` and newest OS9 handoff.
 Next: qualify the current BlueFerry backend separately on the BlueZ 5.85
 compatibility path before any service upgrade or hardware acceptance claim.
+
+### 2026-10-21 Machine Lab CI fixture reliability
+
+Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
+only owned synthetic peers. No application behavior or VM acceptance change.
+See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
