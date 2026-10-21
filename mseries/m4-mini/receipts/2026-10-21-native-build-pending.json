@@ -11,5 +11,7 @@
   "parallel_jobs": 4,
   "initial_attempt": "LLVM=1 configuration failed: ld.lld unavailable; retried with CC=clang LD=ld HOSTCC=clang successfully",
   "hardware_validation": false,
-  "note": "Build process session 30535; revalidate handle before reporting success or retrying."
+  "note": "Retry build process session 29830; result pending. Do not restart without checking live handle.",
+  "first_build_result": "failed at prepare: matching Rust core sources absent",
+  "retry": "matching rust-src 1.99.0 fetched into work directory; retry uses explicit RUST_LIB_SRC"
 }
