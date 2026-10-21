@@ -1,3 +1,29 @@
+## M4 mini: research desktop session without graphical installer — 2026-10-21
+
+Moved installer-session into the !m4-mini live drop-in and omitted the graphical
+installer from M4's explicit live runtime. Added a profile-only LightDM drop-in
+selecting pantheon-wayland for login and autologin; Casper still supplies the
+live user. Ordinary images retain their installer packages and package sets.
+This closes the direct GUI-installer route identified in the previous audit,
+without claiming an Apple dual-boot installer exists.
+
+Purged only the two installer packages from the isolated root and copied the
+M4 extra tree. Effective lightdm --show-config selects Pantheon Wayland; installer
+binary/session/service are absent. The resulting 1,626-package root passes
+package/dependency checks, desktop libraries and strict schemas. Mesa software
+rendering/retention and Casper live-kernel replay pass again. Fresh empty-status
+closure of actual public profile package names also excludes all installer
+and foreign-board packages, including transitive recommendations. No graphical login
+or physical M4 test. Installer admission stays false; the partition-preserving
+Apple adapter remains necessary for the owner's dual-boot goal.
+
+Factory base build session 27312 remains live at the latest check, downloading
+base packages after completing the tools tree. Its base-only scope is unaffected
+by these live-profile edits. Work command/log remain m4-factory-base-command-r2.json
+and m4-factory-base-build-r2.log. Resume before any retry. Full assembly and
+native firmware/HDMI/10 Gb qualification remain open.
+[Receipt](m4-mini/receipts/2026-10-21-research-session.json).
+
 ## M4 mini: actual factory base build started — 2026-10-21
 
 Native mkosi base-only attempt uses daily+m4-mini and --dependency= followed

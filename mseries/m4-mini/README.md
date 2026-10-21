@@ -325,7 +325,8 @@ retention evidence, not a complete installed image or desktop boot.
 
 The M4 live profile overrides the disk-erasing `elementary-install` command
 with a refusal because it cannot preserve macOS. The graphical installer
-session is not yet qualified or disabled by this command override. Do not
+session is not covered by this command override; the later M4 live-profile
+change below omits its packages entirely. Do not
 use this research image for installation. A partition-preserving Apple adapter
 is still required. The separate M4 live hook described below now supplies the `/boot` kernel
 copy expected by `assemble-iso.sh`; full ISO integration remains open.
@@ -363,14 +364,14 @@ test root first required aligning eleven newer Ubuntu systemd packages with
 the elementary package family; pin 999 alone does not downgrade existing
 packages. Factory ordering already supplies these preferences early.
 
-The isolated full-desktop installation is still running; closure does not
-constitute successful package configuration or a graphical session. Service
+That installation subsequently configured with the board-specific fixes below;
+dependency closure alone does not establish a working graphical session. Service
 starts are blocked in the target root, and no running-host packages change.
 [Dependency receipt](receipts/2026-10-21-desktop-resolution.json).
 
 ## Configured elementary desktop
 
-The full desktop root now has 1,628 configured packages. The initial install
+The first configured full desktop root had 1,628 packages. The initial install
 failed in the foreign X13s initramfs firmware hook. M4's live profile therefore
 selects `elementary-live` common dependencies directly, without the X13s/X1E
 board packages; ordinary builds retain their metapackage. This failure was in
@@ -383,9 +384,29 @@ session files. Both Mesa rendering modes and the full-desktop Casper kernel
 hook replay pass too. Firmware/root-device warnings remain recorded. No
 graphical session or native GPU/HDMI operation was tested.
 
-The live installer package sets LightDM's default to the installer session;
+The generic live installer package sets LightDM's default to the installer session;
 its user unit launches the graphical installer directly. The command-line
 refusal does not disable that path. Installer admission remains false until
 the live session and Apple partition-preserving workflow are integrated.
 
 [Configured-desktop receipt](receipts/2026-10-21-configured-desktop.json).
+
+## Research live-session selection
+
+The M4 live profile now omits the graphical installer and installer-session
+packages. Generic images retain them through the `!m4-mini` live drop-in. A
+profile-only LightDM configuration selects `pantheon-wayland` for normal login
+and autologin; Casper supplies the live user. This removes the unqualified
+GUI-installer path, while the command-line installer continues to refuse
+whole-disk erasure. It does not implement the desired Apple dual-boot adapter.
+
+The resulting 1,626-package research root passes package/library/schema checks.
+`lightdm --show-config` confirms both session settings, and the installer binary,
+session file and user service are absent. Mesa software rendering with persistent
+`/usr` and the Casper initramfs hook pass after the package changes. No graphical
+login or native GPU/HDMI operation was tested. A fresh empty-status APT closure of the actual profile public package names
+also excludes the installer/session and foreign board packages, including
+transitive recommendations. Private M4 packages are validated separately.
+The actual factory base build is running; complete image assembly remains open.
+
+[Research-session receipt](receipts/2026-10-21-research-session.json).

@@ -38,11 +38,12 @@ assert set(m4['base']['Packages']) == (set(default['base']['Packages']) - {'linu
 for name in default:
     if name not in {'base', 'liveiso'}:
         assert set(default[name]['Packages']) == set(m4[name]['Packages']), name
-assert 'elementary-live' in default['liveiso']['Packages']
+assert {'elementary-live', 'io.elementary.installer-session'} <= set(default['liveiso']['Packages'])
 live_runtime = {'apparmor-profiles', 'casper', 'cifs-utils', 'discover', 'distinst',
-                'expect', 'gparted', 'io.elementary.installer', 'os-prober', 'wamerican', 'xfsprogs'}
-assert set(m4['liveiso']['Packages']) == (set(default['liveiso']['Packages']) - {'elementary-live'}) | live_runtime
-assert not {'elementary-live', 'ubuntu-x13s-settings-nogrub', 'ubuntu-x1e-settings-nogrub'} & set(m4['liveiso']['Packages'])
+                'expect', 'gparted', 'os-prober', 'wamerican', 'xfsprogs'}
+assert set(m4['liveiso']['Packages']) == (set(default['liveiso']['Packages']) - {'elementary-live', 'io.elementary.installer-session'}) | live_runtime
+assert not {'elementary-live', 'io.elementary.installer', 'io.elementary.installer-session',
+            'ubuntu-x13s-settings-nogrub', 'ubuntu-x1e-settings-nogrub'} & set(m4['liveiso']['Packages'])
 assert set(m4['liveiso']['KernelInitrdModules']) == set(default['liveiso']['KernelInitrdModules']) | {
     'nvme_apple', 'pcie_apple', 'hid_apple', 'hid_magicmouse'}
 assert set(m4['sysupdate']['KernelInitrdModules']) == set(default['sysupdate']['KernelInitrdModules']) | {

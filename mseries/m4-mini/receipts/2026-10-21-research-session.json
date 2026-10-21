@@ -1,0 +1,46 @@
+{
+  "scope": "configured M4 research desktop; excludes unqualified graphical installer; no graphical login or physical boot",
+  "installed_package_count": 1626,
+  "required_versions": {
+    "casper": "26.04.2",
+    "distinst": "0.3.2~1777413141~26.04~a772e15~dev",
+    "elementary-desktop": "1.582+r657~daily~ubuntu9.1",
+    "elementary-m4-gravity-mesa1": "26.3.0~devel+gravity.87ac51d-4",
+    "elementary-m4-gravity-policy": "20261021-2",
+    "elementary-minimal": "1.582+r657~daily~ubuntu9.1",
+    "elementary-standard": "1.582+r657~daily~ubuntu9.1",
+    "gala": "8.6.2+r3205+pkg135~daily~ubuntu9.1",
+    "io.elementary.wingpanel": "8.0.4+r814+pkg79~daily~ubuntu9.1",
+    "lightdm": "1.32.0-6ubuntu4+elementary2~ubuntu9.1",
+    "linux-image-elementary-m4-gravity1": "7.1.13+elementary.m4.gravity1-2"
+  },
+  "dpkg_audit": "clean",
+  "apt_dependency_check": "passed",
+  "desktop_libraries": {
+    "/usr/bin/gala": "all linked libraries resolved",
+    "/usr/bin/io.elementary.wingpanel": "all linked libraries resolved",
+    "/usr/sbin/lightdm": "all linked libraries resolved"
+  },
+  "schemas": "strict dry run passed",
+  "lightdm_session": "Pantheon Wayland for login and autologin",
+  "graphical_installer_packages": "absent",
+  "pantheon_wayland_session": "present",
+  "hardware_validated": false,
+  "graphical_login_tested": false,
+  "factory_image_built": false,
+  "installer_admission": false,
+  "graphics_retention": "PASS: ordinary and launcher software rendering, read-only /usr and initially empty /opt",
+  "live_initramfs": "PASS: real M4 hook with Casper, overlayfs and early Apple storage/input modules",
+  "source_files_sha256": {
+    "mkosi.images/liveiso/mkosi.profiles/m4-mini/mkosi.conf": "3a30b43143e19dcf0ae2e9c1ae70670503e2829202be0cd4d6641824655eb504",
+    "mkosi.images/liveiso/mkosi.profiles/m4-mini/mkosi.extra/etc/lightdm/lightdm.conf.d/90-elementary-m4-research.conf": "aac7d7b19f8cbd95a7b851fa508c7c418895086547b70c5ac4cc4cf70bd8ab22",
+    "mseries/m4-mini/check-desktop-root.py": "4e3169a800beed57db46af38074f8889a09261556d6ad24b3e72050d9c485def"
+  },
+  "fresh_public_dependency_closure": {
+    "exit": 0,
+    "packages": 1730,
+    "forbidden_installer_and_foreign_board_packages": "absent, including transitive/recommended selection",
+    "scope": "actual mkosi base+live public package names against empty dpkg status; three private M4 packages validated separately",
+    "plan_sha256": "6d0759cc12a94b24bb90ed71c1cb55a62e501a0e7c310a98dd968a6ae1a3a722"
+  }
+}
