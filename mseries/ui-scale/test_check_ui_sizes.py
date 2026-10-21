@@ -106,7 +106,7 @@ class Repository(unittest.TestCase):
 
     def test_repobar_taskbar_readout_stays_allowlisted_for_the_owner(self):
         entries = json.loads((HERE / "ui-size-allowlist.json").read_text())["allowed"]
-        entry = next(e for e in entries if e["file"].endswith("dock-taskbar-repobar.patch") and e["match"] == "font-size: 18pt")
+        entry = next(e for e in entries if e["file"].endswith("dock-taskbar-repobar.patch") and e["match"] == "font-size: 20pt")
         self.assertEqual(entry["count"], 2)
         self.assertIn("Owner", entry["reason"])
 
