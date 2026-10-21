@@ -1,3 +1,20 @@
+## Release pipeline: dev and stable apt suites from one workflow — 2026-10-21 (Claude Code)
+
+- **What:** `.github/workflows/mseries-debs.yml` now builds and tests the three plugin debs plus `mseries-update` once per push/PR, and publishes
+  the `dev` suite on push to `dev` and the `stable` suite on push to `main` (a merged release PR) through `mseries/release/assemble-apt.sh`
+  (separate pools, per-suite `InRelease`, other suite untouched). Dev versions are `...~dev<commit time>.<sha>`; stable has no `~`. The compositor deb
+  builds as an artifact only. Owner decisions applied: GitHub Pages/`gh-pages`, offline key + signing subkey in `MSERIES_APT_KEY`, plugins and
+  updater first. Details and the Nix measurements: `mseries/RELEASE-PIPELINE.md`; key steps: `mseries/release/KEY-RUNBOOK.md`.
+- **Verified (no hardware):** `mseries/release/test-assemble.sh` in an Ubuntu 24.04 container: fail-closed with no/garbage key, both suites coexist with
+  stable byte-identical after a dev publish, signatures verify and tampering is rejected, real `apt-get update` + `apt-cache policy` accept both signed
+  suites with no warnings, dev retention, version ordering. `build.sh` debs are now byte-identical across rebuilds (`SOURCE_DATE_EPOCH`); the old script's were not.
+  Compositor deb builds here (116 s cold).
+- **Not verified:** the workflow in CI (the elementary daily PPA returned 503), a real signature or publish (no key), the gh-pages creation/push path,
+  hosted HTTPS use by `mseries-update`, anything on the M1. **Open for the owner:** the repo's Pages source is `dev:/docs`, so `gh-pages` is not served by
+  Pages; see the options in `RELEASE-PIPELINE.md`. Create the key (KEY-RUNBOOK) and set `MSERIES_APT_KEY` to start publishing.
+- **Nix:** measured, not adopted. A flake would pin Vala/Meson and sources, but the plugin must link the Ubuntu/elementary libraries it loads into; the
+  aarch64 `vmTools` images do not exist. Details in `RELEASE-PIPELINE.md`.
+
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by

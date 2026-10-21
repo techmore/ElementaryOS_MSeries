@@ -1,29 +1,61 @@
-# M-series plugin .debs: build pinned Wingpanel plugins once in CI so
-# first boot installs binaries instead of compiling (issue #52).
-# Manual dispatch (and a build-only PR check). Without `publish`, produces artifacts only — no secrets,
-# no repository writes. Publishing needs the MSERIES_APT_KEY secret
-# (key-custody decision still open) and fails closed without it.
+# M-series signed packages: build the Wingpanel plugin debs and mseries-update once in CI, then
+# publish them into a static apt repository with two suites (mseries/RELEASE-PIPELINE.md).
+#
+#   push to dev   -> `dev` suite     versions carry ~dev<commit time>.<sha>
+#   push to main  -> `stable` suite  (merging a release PR dev -> main, or a hotfix)
+#   pull_request  -> build and test only; never publishes, never sees the key
+#
+# Publishing needs the MSERIES_APT_KEY secret (mseries/release/KEY-RUNBOOK.md) and fails closed:
+# an unsigned repository is never written. Until the key exists, merges to dev/main build and test
+# and publish nothing, with a warning. A manual run with publish=true fails if the key is missing.
+# The pantheon-rust-compositor deb is built as an artifact only; it joins the suites once the
+# updater's health check covers its recovery path.
 name: M-series plugin packages
 
 on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish to the Pages-hosted apt repo (needs MSERIES_APT_KEY)
+        description: Publish this ref (dev -> dev suite, main -> stable suite); needs MSERIES_APT_KEY
         type: boolean
         required: false
         default: false
-  # Build-only check when the packaging itself changes (publish never runs:
-  # inputs.publish is unset outside workflow_dispatch).
-  pull_request:
+  push:
+    branches: [dev, main]
     paths:
       - "mseries/debs/**"
       - "mseries/update/**"
+      - "mseries/release/**"
       - "mseries/UPDATER-DESIGN.md"
+      - "mseries/RELEASE-PIPELINE.md"
       - ".github/workflows/mseries-debs.yml"
       - "mseries/panel-factory-pins.json"
       - "mseries/patches/datetime-agenda-tabs.patch"
       - "mseries/calendar/**"
+      - "mseries/quick-settings/**"
+      - "mseries/netspeed/**"
+      - "mseries/patches/network-*.patch"
+      - "rust/**"
+      - "mseries/pantheon-rust-compositor/**"
+      - "mseries/window-recovery/**"
+  # Build-only check (a release PR dev -> main builds the stable versions it would publish).
+  pull_request:
+    paths:
+      - "mseries/debs/**"
+      - "mseries/update/**"
+      - "mseries/release/**"
+      - "mseries/UPDATER-DESIGN.md"
+      - "mseries/RELEASE-PIPELINE.md"
+      - ".github/workflows/mseries-debs.yml"
+      - "mseries/panel-factory-pins.json"
+      - "mseries/patches/datetime-agenda-tabs.patch"
+      - "mseries/calendar/**"
+      - "mseries/quick-settings/**"
+      - "mseries/netspeed/**"
+      - "mseries/patches/network-*.patch"
+      - "rust/**"
+      - "mseries/pantheon-rust-compositor/**"
+      - "mseries/window-recovery/**"
 
 permissions:
   contents: read
@@ -32,6 +64,10 @@ concurrency:
   group: mseries-debs-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  # stable for main and for a release PR into main; dev for everything else.
+  MSERIES_CHANNEL: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'stable' || 'dev' }}
+
 jobs:
   build:
     runs-on: ubuntu-26.04-arm
@@ -39,10 +75,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Launchpad answers 503 now and then (it broke PR #429's first build); retry before failing.
       - name: Add elementary daily PPA (build + gate headers)
         run: |
-          sudo add-apt-repository -y ppa:elementary-os/daily
-          sudo apt-get update
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
 
       - name: Install plugin build dependencies
         run: |
@@ -61,7 +103,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends shellcheck
           bash mseries/validate.sh --only debs
 
-      - name: Build pilot plugin packages
+      - name: Test apt assembly, signing and the version rules (throwaway key, no secrets)
+        run: |
+          sudo apt-get install -y --no-install-recommends apt-utils gnupg
+          bash mseries/release/test-assemble.sh
+
+      - name: Build plugin packages and the updater (${{ env.MSERIES_CHANNEL }} channel)
         run: |
           chmod +x mseries/debs/build.sh
           OUTDIR=out/mseries-debs bash mseries/debs/build.sh
@@ -88,11 +135,17 @@ jobs:
           bash mseries/calendar/test-agenda.sh \
             "$RUNNER_TEMP/datetime/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so"
 
-      - name: Verify package metadata
+      - name: Verify package metadata and the channel version rule
         run: |
           set -e
           for deb in out/mseries-debs/*.deb; do
             dpkg-deb -f "$deb" Package Version Architecture Depends
+            version=$(dpkg-deb -f "$deb" Version)
+            if [[ $MSERIES_CHANNEL == dev ]]; then
+              [[ $version =~ '~dev'[0-9]{14}\.[0-9a-f]{7}$ ]] || { echo "dev version '$version' lacks ~dev<time>.<sha>" >&2; exit 1; }
+            else
+              [[ $version != *'~'* ]] || { echo "stable version '$version' carries a pre-release marker" >&2; exit 1; }
+            fi
             case "$deb" in
               */mseries-update_*) ;;   # the updater ships no plugin
               *) dpkg-deb -c "$deb" | grep '\.so$' ;;
@@ -132,53 +185,138 @@ jobs:
           path: out/mseries-debs/
           retention-days: 14
 
+  # The Rust compositor is experimental and opt-in. Built here so a release cannot break it
+  # unnoticed; not published to either suite yet (UPDATER-DESIGN.md, decision 3).
+  compositor:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install compositor build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential dpkg-dev git pkg-config cargo rustc \
+            libseat-dev libinput-dev libgbm-dev libdrm-dev libudev-dev libxkbcommon-dev \
+            libwayland-dev libegl-dev libgles-dev libglib2.0-dev
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: compositor-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: compositor-${{ runner.arch }}-
+
+      - name: Build the compositor package
+        run: |
+          # A package version that sorts by commit time, so a later build always supersedes an earlier one.
+          stamp=$(TZ=UTC git show -s --format=%cd --date=format:%Y%m%d%H%M%S HEAD)
+          DEB_VERSION="0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
+            OUTDIR=out/compositor bash mseries/pantheon-rust-compositor/build-deb.sh
+
+      - name: Upload compositor package
+        uses: actions/upload-artifact@v7
+        with:
+          name: pantheon-rust-compositor-deb-${{ github.run_id }}
+          path: out/compositor/pantheon-rust-compositor_*.deb
+          retention-days: 14
+
   publish:
     needs: build
-    if: inputs.publish
+    # Never on a pull request. A manual run publishes only when asked; the ref picks the suite.
+    if: >-
+      github.event_name == 'push'
+      || (github.event_name == 'workflow_dispatch' && inputs.publish)
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     permissions:
       contents: write
+    # Two runs (a dev merge and a release) must not interleave their pushes to gh-pages.
+    concurrency:
+      group: mseries-apt-publish
+      cancel-in-progress: false
+    env:
+      MSERIES_APT_KEY: ${{ secrets.MSERIES_APT_KEY }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: gh-pages
+      - name: Pick the suite from the ref
+        id: suite
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/dev) echo "channel=dev" >> "$GITHUB_OUTPUT" ;;
+            refs/heads/main) echo "channel=stable" >> "$GITHUB_OUTPUT" ;;
+            *) echo "only dev and main publish; $GITHUB_REF does not." >&2; exit 1 ;;
+          esac
 
-      - name: Download plugin packages
+      # Fail closed. Automatic runs warn and publish nothing so the missing key is visible without
+      # turning every merge red; a manual publish that cannot sign is an error.
+      - name: Require the repository key
+        id: key
+        run: |
+          if [[ -n $MSERIES_APT_KEY ]]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+            echo "MSERIES_APT_KEY is not set; refusing to publish an unsigned repo." >&2
+            exit 1
+          else
+            echo "::warning title=Not published::MSERIES_APT_KEY is not set, so the ${{ steps.suite.outputs.channel }} suite was built and tested but not published."
+            echo "have=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.key.outputs.have == 'true'
+        with:
+          path: src
+          persist-credentials: false
+
+      - name: Download packages
+        if: steps.key.outputs.have == 'true'
         uses: actions/download-artifact@v8
         with:
           name: mseries-plugin-debs-${{ github.run_id }}
           path: repo-incoming/
 
-      - name: Fail closed without the repository key
-        run: |
-          if [[ -z "${{ secrets.MSERIES_APT_KEY }}" ]]; then
-            echo 'MSERIES_APT_KEY is not set; refusing to publish an unsigned repo.' >&2
-            exit 1
-          fi
-
-      - name: Assemble and sign the apt repo
+      - name: Check out gh-pages (created on first publish)
+        if: steps.key.outputs.have == 'true'
         env:
-          MSERIES_APT_KEY: ${{ secrets.MSERIES_APT_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth#AUTHORIZATION: basic }"
+          url="https://github.com/${GITHUB_REPOSITORY}.git"
+          if git -c "http.extraheader=$auth" ls-remote --exit-code --heads "$url" gh-pages >/dev/null; then
+            git -c "http.extraheader=$auth" clone --quiet --depth 1 --branch gh-pages "$url" pages
+          else
+            git init --quiet pages
+            git -C pages checkout --quiet --orphan gh-pages
+            git -C pages remote add origin "$url"
+          fi
+          echo "AUTH_HEADER=$auth" >> "$GITHUB_ENV"
+
+      - name: Assemble and sign the ${{ steps.suite.outputs.channel }} suite
+        if: steps.key.outputs.have == 'true'
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends apt-utils gnupg
-          mkdir -p apt/pool apt/dists/stable/main/binary-arm64
-          cp repo-incoming/*.deb apt/pool/
-          (cd apt && apt-ftparchive packages pool > dists/stable/main/binary-arm64/Packages)
-          gzip -kf apt/dists/stable/main/binary-arm64/Packages
-          (cd apt/dists/stable && apt-ftparchive release . > Release)
-          gpg --batch --import <(printf '%s' "$MSERIES_APT_KEY")
-          gpg --batch --yes --clearsign -o apt/dists/stable/InRelease \
-            apt/dists/stable/Release
-          sha256sum apt/pool/*.deb > apt/SHA256SUMS
+          bash src/mseries/release/assemble-apt.sh \
+            --channel "${{ steps.suite.outputs.channel }}" --incoming repo-incoming --tree pages/apt
 
-      - name: Commit the repo to gh-pages
+      - name: Commit the repository to gh-pages
+        if: steps.key.outputs.have == 'true'
         run: |
           set -euo pipefail
+          cd pages
           git config user.name 'mseries-debs'
           git config user.email 'mseries-debs@users.noreply.github.com'
           git add apt/
-          git commit -m "mseries plugin debs: run ${{ github.run_id }} (see #52)" || exit 0
-          git push origin gh-pages
+          git commit -m "mseries ${{ steps.suite.outputs.channel }} suite: ${GITHUB_SHA:0:7}, run ${{ github.run_id }}" || exit 0
+          for attempt in 1 2 3; do
+            if git -c "http.extraheader=$AUTH_HEADER" push origin gh-pages; then exit 0; fi
+            git -c "http.extraheader=$AUTH_HEADER" pull --rebase origin gh-pages
+          done
+          echo "could not push to gh-pages" >&2
+          exit 1

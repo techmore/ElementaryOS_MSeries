@@ -13,6 +13,13 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Release pipeline for the customer updater — 2026-10-21
+
+One workflow builds the plugin debs and `mseries-update` and publishes a signed `dev` suite (merge to `dev`) and `stable` suite (merge to `main`);
+deterministic debs, fails closed without `MSERIES_APT_KEY`. Not published or run in CI yet (PPA outage, no key). Next: owner creates the key
+([runbook](release/KEY-RUNBOOK.md)) and picks how `gh-pages` is served (Pages source is `dev:/docs`), then first publish, `run_module` .deb-first (#52),
+Rust compositor into the suites after its health check. [Details and Nix measurements](RELEASE-PIPELINE.md).
+
 ## Customer update mechanism (first slice) — 2026-10-21
 
 `mseries-update` stages signed `mseries-*` package updates, applies them before the next login and rolls back

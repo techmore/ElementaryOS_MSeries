@@ -272,7 +272,7 @@ check docs 'test-local-build-status.mjs' 'node mseries/test-local-build-status.m
 
 # -- debs: style checks for the plugin packaging (mseries-debs.yml) ----------
 check debs 'packaging scripts (bash -n, shellcheck)' \
-  'bash -n mseries/debs/build.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh && shellcheck -S warning mseries/debs/build.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh'
+  'bash -n mseries/debs/build.sh mseries/release/assemble-apt.sh mseries/release/test-assemble.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh && shellcheck -S warning mseries/debs/build.sh mseries/release/assemble-apt.sh mseries/release/test-assemble.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh'
 check debs 'calendar data bundled in the patch' 'python3 mseries/calendar/check-bundled-data.py'
 check debs 'panel-factory-pins.json parses' 'python3 -c "import json,sys; json.load(open(\"mseries/panel-factory-pins.json\"))"'
 
