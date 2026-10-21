@@ -212,6 +212,12 @@ class WorkModeTest(unittest.TestCase):
         self.assertFalse(self.wallpaper_applied())
         self.assertEqual(FakeIpService.hits, 0)
 
+    def test_mode_choice_never_reads_display_or_dock_hardware(self):
+        """Owner rule: work/home comes only from the switch, the schedule and the public IP."""
+        source = HELPER.read_text()
+        for needle in ("/sys/class/drm", "boltctl", "thunderbolt", "DisplayConfig", "xrandr", "wlr-randr"):
+            self.assertNotIn(needle, source, f"{needle} must not influence Work Mode")
+
 
 if __name__ == "__main__":
     unittest.main()
