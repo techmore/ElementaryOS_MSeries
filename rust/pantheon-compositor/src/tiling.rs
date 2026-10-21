@@ -290,7 +290,7 @@ impl PantheonCompositor {
                 return;
             }
             self.x11_managed_windows.remove(&surface.window_id());
-            self.space.map_element(window.clone(), rect.loc, false);
+            self.place_window(&window, rect.loc);
             self.tiled_windows.insert(
                 wl_surface.id(),
                 TiledWindow {
@@ -362,7 +362,7 @@ impl PantheonCompositor {
                 tracing::warn!(?error, "could not move X11 window to output");
                 return;
             }
-            self.space.map_element(window, location, false);
+            self.place_window(&window, location);
             #[cfg(feature = "native-drm")]
             self.request_native_redraw();
         }
@@ -382,7 +382,7 @@ impl PantheonCompositor {
             state.size = Some(rect.size);
         });
         surface.send_pending_configure();
-        self.space.map_element(window.clone(), rect.loc, false);
+        self.place_window(&window, rect.loc);
         self.tiled_windows.insert(
             surface.wl_surface().id(),
             TiledWindow {

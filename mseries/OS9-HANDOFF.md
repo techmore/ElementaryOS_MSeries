@@ -11,6 +11,19 @@
   Installed to the image only; nothing was installed on this host and no service restarted.
 - **Next:** try a real Magic Keyboard/Trackpad on a cable and over Bluetooth, then record the result here.
 
+## Software Updates app: Rust + Granite 7 front end for mseries-update — 2026-10-21 (Claude Code)
+
+- **What:** `rust/mseries-updates` (window), `rust/mseries-update-core` (status model, closed command set, root helper), polkit action
+  `org.techmore.mseries.update` (admin password, no terminal), launcher `org.techmore.mseries.Updates`. Reads `mseries-update status --json`
+  and offers Check, Install at Next Restart, Roll Back… and the channel (Advanced); no update logic in the UI. Details: `mseries/updates-app/README.md`.
+- **Verified (no hardware):** `bash mseries/updates-app/test.sh` and the new CI workflow `mseries-updates-app.yml`: unit tests (model, allowlist, exit codes),
+  helper refuses everything off the allowlist, the real `mseries-update.py status --json` parsed by the Rust side, headless render under Xvfb of every state
+  (light and dark, narrow window) with each button sending exactly one command and failures/cancel/busy handled, staged install, polkit policy checked
+  with `pkaction` in CI. Also run in a clean Ubuntu 26.04 container.
+- **Not verified:** a real password prompt in the Pantheon session, `pkexec` through to the real updater, an update actually staging/applying, any
+  run on the M1, a screen reader. **Not built:** Switchboard pane or Wingpanel entry, translations, a package in the apt suites, update notifications.
+  Nothing was installed or restarted on this machine.
+
 ## Touch ID sheet: place-finger prompt and prints instead of hands — 2026-10-21
 
 Owner feedback after the first real enrolment: people click Add with a pointer, so the sheet cannot assume a finger is already on the sensor, and
@@ -19,6 +32,12 @@ fingerprints read better than the hand diagram. The sheet now says "Getting the 
 fallback; the hero shows three prints (own ridge pattern per finger, empty slots dim) and the hand widget is removed. UI tests 18/18 against the
 fake fprintd (which can now report finger events). **Not verified:** whether the Secure Enclave driver reports `finger-present`/`finger-needed`
 (unknown until a real enrolment is watched with `busctl monitor`), and on the real sensor.
+## Compositor: snapped windows no longer cover newer windows — 2026-10-21
+
+Owner reported that windows cannot register over a snapped window and the Touch ID sheet could not be used or dragged. Cause and fix in
+`mseries/pantheon-rust-compositor/STACKING-FIX-2026-10-21.md`: re-applying tiles and work-area limits used `Space::map_element`, which lifts
+an already-mapped window to the top; they now use `relocate_element` via `place_window`. Four regression tests, 48/48 pass. **Not deployed, not
+verified on the live desktop**: needs `mseries/install-pantheon-rust-compositor.sh` and a session restart, which the owner must approve.
 
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
