@@ -90,7 +90,26 @@ for connector in $published; do
   esac
 done
 
-# 5. Evidence from the compositor journal (informational).
+# 5. Windows Work Mode: the compositor must hide the top bar and the patched dock must run.
+work_on=$(gsettings get io.elementary.mseries.work-mode enabled 2>/dev/null)
+if [ "$work_on" = true ]; then
+  mode=$(busctl --user get-property org.pantheon.gala /org/techmore/mseries/Panels org.techmore.mseries.Panels TopPanelMode 2>&1)
+  case "$mode" in
+    "u 1") ok "Work Mode is on and the compositor has the top bar hidden (TopPanelMode 1)" ;;
+    *) bad "Work Mode is on but the compositor does not report the top bar hidden ($mode)" ;;
+  esac
+  dock_pid=$(pgrep -u "$(id -u)" -f '/io.elementary.dock$' | head -1)
+  dock_exe=$([ -n "$dock_pid" ] && readlink "/proc/$dock_pid/exe" || true)
+  case "$dock_exe" in
+    "$HOME"/.local/lib/mseries/dock/*) ok "the patched taskbar dock is running ($dock_exe)" ;;
+    "") bad "no dock process is running" ;;
+    *) bad "the stock dock is running ($dock_exe), not the patched Windows-style one" ;;
+  esac
+else
+  say "  NOTE  Work Mode is off; top bar and taskbar dock checks skipped"
+fi
+
+# 6. Evidence from the compositor journal (informational).
 say "compositor journal since this login:"
 journalctl --user -b --no-pager -o short-monotonic -u "$unit" 2>/dev/null \
   | grep -E 'link-status was Bad|could not reset link-status|ignoring connector|mapped newly connected|unmapped disconnected|native output render failed' \
