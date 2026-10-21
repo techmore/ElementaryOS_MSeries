@@ -139,8 +139,16 @@ autologins at seat start, never after a logout, so the logout showed the greeter
 requested the session it had remembered for the account (`ubuntu`, GNOME; `~/.dmrc` and AccountsService
 `XSession` both dated from 2026-10-19). `lightdm.log` shows no `pantheon-rust-session` start after the
 logout. Earlier short boots on 2026-10-20 (-3, -2, -1) were deliberate reboots and the Rust session
-started and ran normally on each. Fix applied for this: AccountsService `XSession`/`Session` and
-`~/.dmrc` now name `pantheon-rust-wayland`, so the greeter preselects it. A validation job
+started and ran normally on each. The account-level change (AccountsService `XSession`/`Session`, `~/.dmrc`) did **not** help, and the
+second login at 07:59 again requested `ubuntu`. The elementary greeter ignores those: in
+`src/Application.vala` it starts from its own GSettings key `io.elementary.greeter last-session-type`
+(stored in the `lightdm` user's dconf, `/var/lib/lightdm/.config/dconf`), then LightDM's default-session
+hint, then the first listed session, and `MainWindow.authentication_complete` rewrites that key with
+whatever the session button said at login. That key was `'ubuntu'`, so every greeter login started GNOME
+and the Rust session was never attempted; it did not fail. Writing the key as `lightdm` was refused by the
+permission classifier, so the supported route is the greeter's own session button next to the password
+field: choose "Pantheon (Rust compositor, experimental)" once and the greeter stores it. The account-level
+values are harmless and left in place. A validation job
 (`dockfix-validate-watch`) waits for the Rust compositor and then writes
 `~/.local/state/mseries/dock-recovery-rust-session-*.txt`.
 

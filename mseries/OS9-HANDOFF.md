@@ -40,6 +40,14 @@ package only loads at login; a one-shot timer runs
 `~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
 Merging PR #357 into `dev` does not by itself deploy anything.
 
+**Why the Rust session did not start (2026-10-21).** Not a compositor failure: after a logout the elementary
+greeter starts the session stored in `io.elementary.greeter last-session-type` (lightdm user's dconf), which
+was `ubuntu`; `.dmrc`/AccountsService are ignored and LightDM never autologins after a logout. Pick
+"Pantheon (Rust compositor, experimental)" with the greeter's session button once; it then persists. A cold
+boot autologins into the Rust session via `50-elementary-mac-autologin.conf` regardless. The new compositor
+has still not been started in a login, so the deployment is not yet validated. The GNOME (`ubuntu`) session
+that was used instead renders on the GPU (`renderD128`, Mesa Asahi) but feels slow; not investigated further.
+
 **Work Mode.** It is on because the manual switch is on (`enabled true`, no schedule, no network rule),
 not because of the dock. The helper reads only the switch, the schedule and the public IP; a test now
 guards that. Owner decision stands: no dock- or display-based home/office inference.
