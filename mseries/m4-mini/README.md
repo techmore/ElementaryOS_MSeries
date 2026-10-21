@@ -201,3 +201,22 @@ is `unshare --user --map-auto --map-root-user --mount --pid --fork`, running
 mmdebstrap in root mode inside that namespace. No home permissions changed.
 This is minimal userspace acceptance, not a complete elementary desktop,
 initramfs, EFI bundle, physical boot or M4 GPU qualification.
+
+## Configured-root initramfs
+
+`build-initramfs.py --root CONFIGURED_CANDIDATE_ROOT --output NEW_DIRECTORY`
+builds in user/mount/PID namespaces and inspects the resulting archive. It
+checks the pinned Image and module-local config hashes, confirms required
+module contents and the early load list, and rejects the live / root. The
+end-to-end run passes with 1090 members. Apple NVMe, PCIe, keyboard and Magic
+Mouse modules are present and early-loaded. Ext4, USB HID and xHCI are built
+into this kernel. Kernel package revision 2 adds config-RELEASE under the
+module directory; all older payload bytes match. Policy revision 2 adds the
+initramfs module list and initramfs-tools dependency. Neither package writes
+boot files or has maintainer scripts.
+
+The firmware warnings remain in the receipt, including the Apple ASMedia
+controller file. Its applicability to the owner's actual USB topology is
+unverified; other warnings name unrelated SoCs in the broad defconfig. No
+proprietary blob was imported. Archive assembly does not prove storage reads,
+USB input, display, firmware handoff or boot on the M4. EFI assembly remains.

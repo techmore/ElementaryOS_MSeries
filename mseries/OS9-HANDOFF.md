@@ -1,3 +1,17 @@
+## M4 mini: initramfs build and early-driver policy pass — 2026-10-21
+
+build-initramfs.py builds inside the configured root using isolated user/mount/
+PID namespaces, checks Image/config hashes, inspects the archive and its early
+load list, and rejects / as input before creating output. End-to-end pass:
+1090 members, Apple NVMe/PCIe and Apple keyboard/Magic Mouse modules present
+and explicitly early-loaded. Kernel package revision 2 adds a module-local
+config required by mkinitramfs; all previous payload bytes are unchanged.
+Policy revision 2 adds the early module list and initramfs-tools dependency.
+[Receipt](m4-mini/receipts/2026-10-21-m4-initramfs.json).
+Firmware warnings are retained, including asmedia/asm2214a-apple.bin; applicability
+to actual mini USB topology and owner firmware extraction remain unqualified.
+No EFI bundle, physical boot or host /boot changes. Next: EFI assembly.
+
 ## M4 mini: configured base root and Mesa dependency fix — 2026-10-21
 
 mmdebstrap completed an isolated resolute/elementary base root with 188 configured

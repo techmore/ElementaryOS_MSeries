@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location('m4_kernel', HERE / 'build-kernel.
 kernel = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(kernel)
 NAME = 'linux-image-elementary-m4-gravity1'
-VERSION = '7.1.13+elementary.m4.gravity1-1'
+VERSION = '7.1.13+elementary.m4.gravity1-2'
 
 
 def check(build, archive):
@@ -68,6 +68,7 @@ def main():
         for name in ['build', 'source']:
             (modules / name).unlink(missing_ok=True)
         shutil.copy2(args.build / 'arch/arm64/boot/Image', modules / 'vmlinuz')
+        shutil.copy2(args.build / '.config', modules / ('config-' + release))
         (modules / 'dtbs').mkdir()
         shutil.copy2(args.build / 'arch/arm64/boot/dts/apple/t8132-j773g.dtb', modules / 'dtbs')
         subprocess.run(['depmod', '-b', str(payload / 'usr'), release], check=True)

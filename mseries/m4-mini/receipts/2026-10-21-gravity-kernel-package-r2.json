@@ -1,0 +1,21 @@
+{
+  "kernel_release": "7.1.13-elementary-m4-gravity1",
+  "package": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-2_arm64.deb",
+  "package_sha256": "9241b96c69c8394732f7158d824313186f1eb4dd8018309e84f209c465f15936",
+  "source_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "status": "payload packaged only; not installed or hardware-qualified",
+  "payload_modules": 1598,
+  "maintainer_scripts": false,
+  "payload_scope": "usr/lib/modules/unique-release and usr/share/doc only; no boot files",
+  "package_checks": [
+    "Image matches build hash",
+    "all 1598 modules present",
+    "modprobe dry-run resolves asahi_m4, appledrm, atlantic and tg3"
+  ],
+  "hardware_validated": false,
+  "source_correspondence": "original pinned archive plus exact packaging patches and config retained in package documentation",
+  "revision": 2,
+  "derivation": "verified revision 1 payload repacked with module-local kernel config and package revision update; no recompilation or module change",
+  "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "payload_equivalence": "all revision 1 file contents/symlinks unchanged; exactly one module-local config file added"
+}

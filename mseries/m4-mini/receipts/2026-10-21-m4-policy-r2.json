@@ -1,0 +1,17 @@
+{
+  "package": "elementary-m4-gravity-policy_20261021-2_arm64.deb",
+  "package_sha256": "d237ae65511f8198556f66fe06f1e26e3e30cdd25bf54e7bb6e6c0b95015de20",
+  "upstream_commit": "711c2a110416d28010ccdd118b83111776bff207",
+  "vendor_files": {
+    "usr/lib/systemd/sleep.conf.d/90-gravity-no-sleep.conf": "26c948beb35d409f02ce6459c4794fdc86b61274028c8b5799fbfeb608733efd",
+    "usr/lib/systemd/logind.conf.d/90-gravity-no-sleep-logind.conf": "cd5b40baaabd240430528c31c68b2db6893c7eb66caadf9b9843744393554a4d",
+    "usr/lib/systemd/system/systemd-suspend.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-hibernate.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-hybrid-sleep.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/lib/systemd/system/systemd-suspend-then-hibernate.service.d/90-gravity-block-sleep.conf": "691727b9c59c50cc99b2ce4a9bf0ecd817e2b2409c9ed2076f480a7a68d21c9d",
+    "usr/share/initramfs-tools/modules.d/elementary-m4": "857ad31c01fbc03e3d8ecbe982d4897134d5a473b4b51150338ec96fdbdfd52e"
+  },
+  "maintainer_scripts": false,
+  "status": "candidate image policy packaged; no installation or hardware qualification",
+  "own_integration": "usr/share/initramfs-tools/modules.d/elementary-m4 adds early nvme_apple, pcie_apple, hid_apple, hid_magicmouse"
+}

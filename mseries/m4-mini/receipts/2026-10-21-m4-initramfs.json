@@ -1,0 +1,32 @@
+{
+  "kernel_release": "7.1.13-elementary-m4-gravity1",
+  "initramfs_sha256": "96914b246788b6def7d725d1f5cba0a9d3627e50c377e78d2c0c3b709ca424e9",
+  "members": 1090,
+  "early_modules": [
+    "hid_apple",
+    "hid_magicmouse",
+    "nvme_apple",
+    "pcie_apple"
+  ],
+  "required_contents": [
+    "init",
+    "conf/modules",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/nvme/host/nvme-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/pci/controller/pcie-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/hid/hid-apple.ko",
+    "usr/lib/modules/7.1.13-elementary-m4-gravity1/kernel/drivers/hid/hid-magicmouse.ko"
+  ],
+  "warnings": [
+    "W: Possible missing firmware /lib/firmware/microchip/mscc_vsc8584_revb_int8051_fb48.bin for built-in driver mscc",
+    "W: Possible missing firmware /lib/firmware/microchip/mscc_vsc8574_revb_int8051_29e8.bin for built-in driver mscc",
+    "W: Possible missing firmware /lib/firmware/asmedia/asm2214a-apple.bin for built-in driver xhci_pci",
+    "W: Possible missing firmware /lib/firmware/r8a779x_usb3_v1.dlmem for built-in driver xhci_rcar_hcd",
+    "W: Possible missing firmware /lib/firmware/r8a779x_usb3_v3.dlmem for built-in driver xhci_rcar_hcd",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra124/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra210/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra186/xusb.bin for built-in driver xhci_tegra",
+    "W: Possible missing firmware /lib/firmware/nvidia/tegra194/xusb.bin for built-in driver xhci_tegra"
+  ],
+  "status": "configured-root initramfs built and inspected; missing firmware/runtime qualification remain",
+  "hardware_validated": false
+}
