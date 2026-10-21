@@ -15,6 +15,11 @@
   <provides><binary>machine-lab</binary></provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.11.0" date="2026-10-21">
+      <description>
+        <p>Display: the machine's screen follows the size of the Display tab, is streamed from QEMU instead of polled, and shows the guest's own pointer.</p>
+      </description>
+    </release>
     <release version="0.10.0" date="2026-10-21">
       <description>
         <p>Clipboard: copy on this computer and paste in the machine (text), with loop prevention, a size limit and switches for each direction.</p>

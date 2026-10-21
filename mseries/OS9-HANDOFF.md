@@ -1,3 +1,24 @@
+## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
+
+Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of deterministic failures) is separate.
+- **Timing:** `elementary-mac-enhance` and `post-install.sh` write one JSON line per module/stage (start, end, wall, CPU)
+  and end with a table sorted slowest first, a `timing:` summary line and `timing-summary.json`
+  (`elementary-mac-enhance --timing` shows the last run). Helpers: `mseries/lib-timing.sh`, `mseries/modrun.py summarize`.
+- **Parallel runner (opt-in, default still serial):** `--parallel[=N]` or `MSERIES_PARALLEL=1` (`MSERIES_JOBS=N`);
+  `MSERIES_SERIAL=1` forces serial. The graph and the reason for every lock are in `mseries/enhance-modules.json`:
+  apt/dpkg holders (brave, gestures, firefox, desktop-user-deps) share one lock and the five Wingpanel-plugin modules
+  share another; video, files, osk and netusage-policy are free. Falls back to serial when python3 or the scheduler
+  files are missing, when one worker is configured, or when the combined requirements install failed.
+- **ccache:** `mseries/lib-build.sh` wraps the C/C++ compiler (meson `CC`/`CXX`, cmake launchers) when ccache is
+  installed; `MSERIES_CCACHE=0` disables. No hard dependency.
+- **Tests (hermetic, fake modules):** `test-modrun.py`, `test-enhance-firstboot.sh` (now in `validate.sh`),
+  `test-post-install-timing.sh`, `test-build-ccache.sh`.
+- **Numbers:** `mseries/benchmarks/installer-speed.py` gives 2.49x (6.50 s to 2.61 s scaled) on fake sleep-only modules.
+  That is **synthetic**. Real-install before/after on the Mac is **not measured**.
+- **Next:** time a real first boot serial vs `--parallel` on the M1 Pro; decide from real timings whether the
+  Wingpanel-plugin lock can be split into build (parallel) and install (serial); download tarballs ahead of the build
+  (issue item 3); `ninja -j` tuning under parallel mode.
+
 ## Daedalus and NmapUI: owner-approved merges and live checks — 2026-10-21
 
 The owner approved merging the remaining green PRs and a scan of the current network.
@@ -9850,3 +9871,20 @@ configurator no longer creates a Hermes profile or desktop launcher. The unused
 `mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
 venv, config, state, and any previously generated desktop launcher in a user's
 home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.
+
+## Native Messages upstream read-only sender compatibility — 2026-10-21
+
+Reviewed BlueFerry `60fd7ef1...69122b3b` metadata changes. Native Messages now
+keeps an inbox-only sender read-only when optional `sender_alphanumeric` metadata
+is present, including duplicate-handle refreshes; contact-name resolution preserves
+that sender identity. Direct blocked senders now get accurate reply-unavailable
+guidance instead of group-confirmation instructions. Model checks: 69 tests pass;
+targeted isolated GTK restriction/draft test passes. See
+`phone-setup/UPSTREAM-REVIEW.md`. The full isolated GTK regression receipt is
+retained in the morning-task output directory.
+
+Source only: backend pin, Bluetooth state, desktop session and real messages
+unchanged. Current upstream has 51 commits beyond our recorded backend; a separate
+backend qualification is still needed before its sender detection/LE/media fixes
+can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
+features; those need native Incus design, not blind Swift feature parity claims.

@@ -29,25 +29,16 @@ public class GdkHostClipboard : Object, HostClipboard {
 }
 
 namespace ClipboardLink {
-    /* Connect a bridge to a running machine: hand QEMU one end of a socketpair as a D-Bus display client
-     * (see Machine.qmp_add_dbus_client). False if QEMU was started without the D-Bus display. */
+    /* Connect a bridge to a running machine over the machine's shared D-Bus connection to QEMU (see
+     * Machine.qemu_connection). False if QEMU was started without the D-Bus display. */
     public async bool connect_machine (ClipboardBridge bridge, Machine machine) {
         if (bridge.active) {
             return true;
         }
-        int fd = machine.qmp_add_dbus_client ();
-        if (fd < 0) {
+        var connection = yield machine.qemu_connection ();
+        if (connection == null) {
             return false;
         }
-        DBusConnection connection;
-        try {
-            var stream = SocketConnection.factory_create_connection (new Socket.from_fd (fd));
-            connection = new DBusConnection.sync (stream, null,
-                DBusConnectionFlags.AUTHENTICATION_CLIENT | DBusConnectionFlags.DELAY_MESSAGE_PROCESSING, null, null);
-        } catch (Error e) {
-            bridge.status ("Clipboard sharing could not start: " + e.message);
-            return false;
-        }
-        return yield bridge.attach (connection);
+        return yield bridge.attach (connection, false);
     }
 }

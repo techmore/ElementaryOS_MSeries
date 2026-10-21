@@ -31,6 +31,14 @@ public class Machine : Object {
 
     public signal void state_changed ();
     public signal void finished (int code);
+
+    construct {
+        state_changed.connect (() => {
+            if (!running) {
+                drop_qemu_connection ();
+            }
+        });
+    }
     public signal void installer_detached ();
 
     public bool managed { get { return kind == "managed"; } }
@@ -260,6 +268,47 @@ public class Machine : Object {
         return ours;
     }
 
+    /* The one D-Bus connection to QEMU's display, shared by the clipboard and the screen stream: QEMU serves a
+     * single control client at a time (each new add_client takes over the exported objects). Null when the
+     * machine is not running or was started without the D-Bus display; callers then fall back (screendump). */
+    private DBusConnection? qemu_bus = null;
+    private bool qemu_bus_connecting = false;
+
+    public async DBusConnection? qemu_connection () {
+        while (qemu_bus_connecting) {
+            Timeout.add (50, qemu_connection.callback);
+            yield;
+        }
+        if (qemu_bus != null && !qemu_bus.closed) {
+            return qemu_bus;
+        }
+        qemu_bus = null;
+        if (!running) {
+            return null;
+        }
+        qemu_bus_connecting = true;
+        int fd = qmp_add_dbus_client ();
+        if (fd >= 0) {
+            try {
+                var stream = SocketConnection.factory_create_connection (new Socket.from_fd (fd));
+                qemu_bus = yield new DBusConnection (stream, null, DBusConnectionFlags.AUTHENTICATION_CLIENT, null, null);
+            } catch (Error e) {
+                append_log ("[D-Bus display connection failed: %s]\n".printf (e.message));
+            }
+        }
+        qemu_bus_connecting = false;
+        return qemu_bus;
+    }
+
+    /* Forget (and close) the shared connection, for instance when the machine stopped. */
+    public void drop_qemu_connection () {
+        var b = qemu_bus;
+        qemu_bus = null;
+        if (b != null && !b.closed) {
+            b.close.begin (null);
+        }
+    }
+
     /* Turn clipboard sharing on or off. Managed guests keep it in vm.conf (applies on next start). */
     public void apply_clipboard (bool on) {
         clipboard = on;
@@ -435,6 +484,8 @@ public class Machine : Object {
         }
         var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
         string[] argv;
+        // QEMU's D-Bus display carries the screen stream, the resize request and the clipboard.
+        l.setenv ("MSERIES_VM_DBUS_DISPLAY", "on", true);
         if (managed) {
             argv = { launcher, "start", vm_name, "--headless" };
         } else {
@@ -445,6 +496,7 @@ public class Machine : Object {
             l.setenv ("MACHINE_NAME", name, true);
             l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
             l.setenv ("MACHINE_CLIPBOARD", clipboard ? "on" : "off", true);
+            l.setenv ("MACHINE_DBUS", "on", true);
             l.setenv ("MACHINE_ARCH", arch, true);
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");

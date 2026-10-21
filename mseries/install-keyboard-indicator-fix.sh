@@ -16,6 +16,7 @@ git -C "$work/source" remote add origin https://github.com/elementary/panel-keyb
 git -C "$work/source" fetch -q --depth=1 origin 2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76
 git -C "$work/source" checkout -q --detach FETCH_HEAD
 git -C "$work/source" apply "$repo/mseries/patches/keyboard-popover-active.patch"
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/libkeyboard.so" | grep -q 'not found'; then
