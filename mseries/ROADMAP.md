@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Aurora 7.2 one-shot armed — 2026-10-21
+
+Repeat native CI 39601423970 passed both matrix jobs. Owner-authorized one-shot
+`elementary-aurora72-wip2-trial` is armed; `.20` remains persistent default,
+old/shared payload bytes are unchanged, no reboot yet. Next is owner/Claude
+attended reboot, basic unlock/display/input and manual qualification, then
+actual `.20` recovery. Hardware/suspend/power acceptance remains open.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json).
+This supersedes the unarmed staging status below.
+
 ## Aurora 7.2 staged for an attended trial — 2026-10-21
 
 Merged #139 `644133b7799f` wip2 passed native build, independent artifact audit,

@@ -1,6 +1,21 @@
-# J314S wip2: staged, unarmed experimental trial
+# J314S wip2: one-shot armed experimental trial
 
-## Installed state, October 21, 2026
+## Current one-shot state, October 21, 2026
+
+Owner authorized arming after repeat CI passed. Both matrix jobs in run
+39601423970 passed; all staged/fallback hashes, package verification, GRUB syntax
+and environment storage checks passed again. At 13:23:18 UTC (09:23:18 EDT),
+`grub-reboot --boot-directory=/boot elementary-aurora72-wip2-trial` set and verified
+that exact `next_entry`. `.20` remains persistent default; no reboot occurred.
+[Arming receipt](one-shot-armed-2026-10-21.json) supersedes the earlier unarmed
+status below. This authorization covers the armed one-shot; the owner controls
+the attended reboot. Do not automatically re-arm after the trial.
+
+To cancel before reboot, first verify the one-shot still equals this trial,
+then use `sudo grub-editenv /boot/grub/grubenv set next_entry=` and verify it is
+empty; preserve another owner's changed selection. Record cancellation separately.
+
+## Earlier installed state, October 21, 2026
 
 Owner approved **unarmed staging**. Installed separate package
 `linux-image-elementary-aurora72-wip2` version `7.2.10+elementary.aurora72.wip2-1`,
@@ -74,7 +89,7 @@ replay exclusion. Full 64-fix semantic parity remains open.
 2. With an owner present and explicit go-ahead, select
    **TRIAL: Aurora 7.2 wip2** once at GRUB. A separately authorized one-shot may
    be used; do not change the persistent default. No service should arm this
-   automatically. The current authorization stops at unarmed staging.
+   automatically. Owner has since authorized and completed this one-shot arming; do not repeat it automatically.
 3. Use the password for root unlock/login initially. Do not re-enroll Touch ID,
    disable xART, or add optional sleep/user4k parameters. Upstream records M1
    first-attempt Touch ID regression and an unexplained M1 Pro early hang.

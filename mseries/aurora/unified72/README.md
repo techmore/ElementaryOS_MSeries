@@ -2,12 +2,13 @@
 
 ## Current host state — October 21, 2026
 
-Owner approved and completed **unarmed staging** of wip2: the separate package,
-Image/initramfs and non-default GRUB entry are installed. `.20` remains default,
-`next_entry` is empty, old boot files and shared `boot.bin` are unchanged. Running
-kernel remains `.20-enh1`; no 7.2 boot or hardware qualification is claimed.
-See [staging/attended trial plan](BOOT-TRIAL.md) and
-[preflight receipt](boot-preflight-2026-10-21.json). Never automatically arm this trial.
+Both repeat native CI matrix jobs passed [run 39601423970](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970)
+at `ed08d50`. Owner-authorized **one-shot is armed** for
+`elementary-aurora72-wip2-trial`. `.20` remains persistent default; old boot files
+and shared `boot.bin` are unchanged. Running kernel remains `.20-enh1`; no reboot
+or 7.2 hardware acceptance is claimed. See [arming receipt](one-shot-armed-2026-10-21.json),
+[attended boot plan](BOOT-TRIAL.md) and [preflight receipt](boot-preflight-2026-10-21.json).
+Do not automatically re-arm after this trial.
 
 ## Merged source refresh — October 21, 2026
 
@@ -90,7 +91,7 @@ fail on pin/config/identity errors; none installs a package.
 
 ## Hardware and compatibility gates
 
-This is an **experimental, staged but unarmed trial**, not hardware-qualified. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
+This is an **experimental, one-shot-armed trial**, not hardware-qualified. The [October 18 parity inventory](../branch-audits/2026-10-18-review-parity.json)
 records the old `582e9ef3` snapshot; retain it as history. The new focused review
 supersedes only its three inspected GPU/SEP gap descriptions, not all 64 semantic
 review requirements. Check the intended Mesa/kernel UAPI and actual client

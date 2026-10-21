@@ -1,5 +1,30 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora 7.2 one-shot armed after repeat CI pass — 2026-10-21
+
+Owner authorized arming when the repeat run passed, then asked to continue.
+Both native matrix jobs passed [repeat CI 39601423970](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970)
+at `ed08d50`. Rechecked installed package, Image/initramfs, old fallback files,
+shared `boot.bin`, menu syntax and empty prior one-shot; all passed. Ran
+`sudo grub-reboot --boot-directory=/boot elementary-aurora72-wip2-trial` at
+13:23:18 UTC (09:23:18 EDT). Verified **next_entry=elementary-aurora72-wip2-trial**.
+Persistent default stays `.20`; all protected files except the intentional
+GRUB environment update remain unchanged. Running `.20-enh1`; **no reboot**.
+[Arming receipt](aurora/unified72/one-shot-armed-2026-10-21.json),
+[repeat CI receipt](aurora/unified72/repeat-ci-2026-10-21.json).
+Root-private pre-arm environment/receipt:
+`/var/lib/mseries-kernel-tests/arming/20261021T132318Z-aurora72-wip2`.
+
+**Next:** owner/Claude attended reboot into `7.2.10-elementary-aurora72-wip2`,
+password unlock, internal/dock display/input, current-boot logs and manual
+qualification + shader/fsync checks, then actual `.20` recovery before suspend
+or power tests. GRUB clears the one-shot before kernel loading; subsequent normal
+boots retain `.20` default. If trial hangs, record the last message and select
+STABLE `.20` on recovery. Existing source/hardware limits still apply. Do not
+re-arm automatically after this boot, regenerate GRUB or rewrite `boot.bin`.
+Arming does not establish any new hardware acceptance. This checkpoint
+supersedes the earlier unarmed status below.
+
 ## Aurora 7.2 wip2 staged, unarmed — 2026-10-21
 
 Owner explicitly approved the checked unarmed staging proposal. Installed separate
