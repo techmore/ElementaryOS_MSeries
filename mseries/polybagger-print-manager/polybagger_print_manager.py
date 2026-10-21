@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""PolyBagger T1000 Print Manager: detect the Zebra label printer and verify ZPL jobs went through.
+"""PolyBagger T1000 Print Manager: load labels onto the T-1000's inline Zebra printer and verify each step.
 
-GUI (elementary OS, GTK3 + Granite):   ./polybagger_print_manager.py
+The printer (Zebra ZTC 110Xi4 engine in an Advanced Poly TI-1000Z frame) prints onto the bag film only when
+the bagger cycles. Sending ZPL *loads* a label; the bagger's Printer Settings screen then changes from
+"No Label" to "New Label" (or "StoredLabel" after a recall), and each Manual Cycle prints one label.
+
+GUI (elementary OS, GTK 4 + Granite 7):   ./polybagger_print_manager.py
 Terminal:
   ./polybagger_print_manager.py --status                       USB + CUPS state, exit 0 ready / 2 not ready
-  ./polybagger_print_manager.py --send FILE.zpl [--yes]        send raw ZPL and verify it, exit 0 pass / 1 fail / 2 not ready
+  ./polybagger_print_manager.py --send FILE.zpl [--qty N] [--yes]  load a label for N bags (^PQ) and verify, exit 0/1/2
   ./polybagger_print_manager.py --watch                        print a line each time the printer is plugged/unplugged
   ./polybagger_print_manager.py --sync [--pull]                refresh the offline label store (works with no network)
+  ./polybagger_print_manager.py --cancel                       cancel your stuck jobs
   ./polybagger_print_manager.py --setup                        create the raw CUPS queue (asks for admin auth)
 Add --json to --status / --send for machine-readable output.
 """
@@ -29,10 +34,10 @@ LOG_PATH = DATA_DIR / "log.jsonl"
 STORE = DATA_DIR / "labels"  # offline copy of the label library; printing never needs the network
 THRIL_REPO = Path.home() / "Projects/thril"
 SOURCES = [THRIL_REPO / "poly-bagger/UPC Labels"]
-PREFERRED = ["CCSBLACK_store_flash.zpl", "CCSBLACK_recall_flash.zpl", "ccs_black_label.zpl"]
+PREFERRED = ["CCSBLACK_recall_flash.zpl", "ccs_black_label.zpl", "CCSBLACK_store_flash.zpl"]
 JOB_TIMEOUT = 60
 
-TEST_LABEL = "^XA\n^PW700\n^LL320\n^FO40,40^A0N,55,55^FDZEBRA LINK TEST^FS\n" \
+TEST_LABEL = "^XA\n^PW700\n^LL320\n^FO40,40^A0N,55,55^FDPRINTER TEST^FS\n" \
              "^FO40,125^A0N,40,40^FD{stamp}^FS\n^FO40,205^GB620,70,5^FS\n^XZ\n"
 
 
@@ -126,12 +131,50 @@ def check_zpl(path):
     return True, warns
 
 
+STUCK_HINT = ("The printer is not taking data. On the bagger's Printer Settings screen check the printer is ON and in "
+              "Run mode (not Setup). If it stays stuck, power-cycle the printer, then cancel the stuck jobs.")
+
+MACHINE_FLOW = [
+    "Printer Settings on the bagger: printer ON, Run mode (not Setup).",
+    "Set Labels to print to the bags in this run (for example 1000). It is sent as ^PQ, the label's Quantity.",
+    "Send the label. The screen changes from No Label to New Label, or StoredLabel after a recall.",
+    "Press Manual Cycle: one bag through, one label printed.",
+    "Check Reprint: ReprintBuffer or Reprint ON keeps printing the same label every cycle.",
+    "Each bag cycle uses one label. When the quantity is used up the label clears (back to No Label).",
+    "Clear Labels unloads the current label (back to No Label). Send or recall it again.",
+]
+
+KNOWN_ISSUES = [
+    "The library's label files carry no ^PQ, so the printer defaults to a quantity of 1 and clears after one bag. "
+    "Set Labels to print instead of re-sending the file for every bag.",
+    "CUPS \"completed\" means the printer received the data. It does not mean a label printed: that needs a bag cycle.",
+    "The printer can stop taking data (jobs sit at \"waiting for printer\") or drop off USB. A printer reboot has cleared it.",
+    "After a drop-off CUPS may disable the queue. Re-enabling needs admin: sudo cupsenable <queue>.",
+    "Sending the same label twice can leave it printing on every cycle if Reprint is on. Check the bagger screen.",
+    "Clear Labels on the bagger unloads the label. Stored flash formats (E:) are not erased by it, per the TI-1000Z manual.",
+    "The auto-created CUPS queue uses an HP driver and is shared. This app always sends raw, so ZPL is not converted.",
+    "The printer hardware has its own intermittent faults (see docs/polybagger-t1000-printer-link-troubleshooting.md).",
+]
+
+
+def kind_of(path):
+    try:
+        d = Path(path).read_text(errors="replace")
+    except OSError:
+        return "Unreadable"
+    if "^XF" in d: return "Recalls from printer flash"
+    if "^DF" in d: return "Stores to printer flash"
+    return "Loads a label"
+
+
 def expectation(path):
-    """What the operator should see after the job completes."""
+    """(kind, what the operator should see on the bagger after the printer receives the job)."""
     data = Path(path).read_text(errors="replace")
-    if "^DF" in data and "^XF" not in data and "^PQ" not in data:
-        return "store", "Stored to printer flash: no label should come out. Send the recall file to confirm."
-    return "label", "A label should have printed."
+    if "^XF" in data:
+        return "recall", "Recalls the stored label. The bagger's Printer Settings screen should show StoredLabel."
+    if "^DF" in data and "^PQ" not in data:
+        return "store", "Saves the label to printer flash. Nothing loads on the bagger: send the recall file next."
+    return "label", "Loads the label. The bagger's Printer Settings screen should show New Label."
 
 
 def send_and_verify(path, queue, progress=lambda msg: None):
@@ -155,7 +198,7 @@ def send_and_verify(path, queue, progress=lambda msg: None):
             _, done = run(["lpstat", "-W", "completed", "-o", queue])
             if job in done:
                 return {"ok": True, "stage": "completed", "job": job,
-                        "seconds": round(time.time() - t0, 1), "detail": "CUPS reports the job completed"}
+                        "seconds": round(time.time() - t0, 1), "detail": "Delivered: CUPS reports the printer received it"}
             gone += 1
             if gone >= 3:
                 return {"ok": False, "stage": "vanished", "job": job,
@@ -164,7 +207,53 @@ def send_and_verify(path, queue, progress=lambda msg: None):
     state, reasons = queue_state(queue)
     _, jobline = run(["lpstat", "-W", "not-completed", "-o", queue])
     return {"ok": False, "stage": "timeout", "job": job,
-            "detail": f"not completed after {JOB_TIMEOUT}s; printer {state}, reasons: {reasons or 'none'}. {jobline}"}
+            "detail": f"Not delivered after {JOB_TIMEOUT}s (printer {state}, {', '.join(reasons) or 'no alerts'}). {STUCK_HINT}"}
+
+
+def with_quantity(path, qty):
+    """Path to send: a temporary copy with ^PQ<qty> (the label Quantity) for printable labels.
+    Store-only files (^DF) are returned unchanged; they print nothing."""
+    data = Path(path).read_text(errors="replace")
+    kind, _ = expectation(path)
+    if kind == "store" or qty is None:
+        return Path(path), False
+    data = re.sub(r"\^PQ[0-9]+(,[0-9]*)*(,[YN])*", "", data)
+    i = data.rindex("^XZ")
+    data = data[:i] + f"^PQ{int(qty)}\n" + data[i:]
+    fd, tmp = tempfile.mkstemp(prefix=Path(path).stem + "-", suffix=".zpl")
+    os.write(fd, data.encode()); os.close(fd)
+    return Path(tmp), True
+
+
+def my_stuck_jobs(queue):
+    _, out = run(["lpstat", "-W", "not-completed", "-o", queue])
+    return re.findall(r"^(\S+-\d+)\s", out, re.M)
+
+
+def cancel_jobs(queue):
+    """Cancel queued jobs one by one (cancel -a needs admin; your own jobs do not)."""
+    done, failed = [], []
+    for job in my_stuck_jobs(queue):
+        (done if run(["cancel", job])[0] == 0 else failed).append(job)
+    return done, failed
+
+
+SETTINGS = DATA_DIR / "settings.json"
+
+
+def load_settings():
+    try:
+        return json.loads(SETTINGS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def save_settings(**kv):
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        SETTINGS.write_text(json.dumps({**load_settings(), **kv}))
+    except OSError:
+        pass
 
 
 def log_result(entry):
@@ -211,9 +300,8 @@ def label_files():
 
 
 def label_preview(path):
-    """(pixbuf|None, caption) rendered from the ^GFA graphics in a ZPL file. A recall file
-    (^XF) is resolved to the sibling file that stores that format (^DF)."""
-    from gi.repository import GdkPixbuf, GLib
+    """((width, height, rgb_bytes)|None, caption) rendered from the ^GFA graphics in a ZPL file.
+    A recall file (^XF) is resolved to the sibling file that stores that format (^DF)."""
     path = Path(path)
     data = path.read_text(errors="replace")
     note = ""
@@ -239,8 +327,7 @@ def label_preview(path):
             if y + r >= H: break
             row = b"".join(lut[b] for b in raw[r * bpr:(r + 1) * bpr])[: max(0, (W - x)) * 3]
             canvas[((y + r) * W + x) * 3: ((y + r) * W + x) * 3 + len(row)] = row
-    pb = GdkPixbuf.Pixbuf.new_from_bytes(GLib.Bytes.new(bytes(canvas)), GdkPixbuf.Colorspace.RGB, False, 8, W, H, W * 3)
-    return pb, f"{note}{W}x{H} dots, {W/203:.1f} x {H/203:.1f} in at 203 dpi"
+    return (W, H, bytes(canvas)), f"{note}{W}x{H} dots, {W/203:.1f} x {H/203:.1f} in at 203 dpi"
 
 
 # ---------------------------------------------------------------- CLI
@@ -259,6 +346,9 @@ def describe(st):
 
 
 def cli(args):
+    if args.cancel:
+        st = status(); done, failed = cancel_jobs(st["queue"]) if st["queue"] else ([], [])
+        print(f"cancelled: {' '.join(done) or 'none'}" + (f"; failed: {' '.join(failed)}" if failed else "")); return 1 if failed else 0
     if args.setup:
         st = status()
         if not st["usb"]:
@@ -285,11 +375,20 @@ def cli(args):
         print(describe(st)); return 2
     for w in warns:
         print("WARNING:", w, file=sys.stderr)
-    res = send_and_verify(args.send, st["queue"], progress=lambda m: print(" ", m, file=sys.stderr))
+    job_path, temp = with_quantity(args.send, args.qty)
+    try:
+        res = send_and_verify(job_path, st["queue"], progress=lambda m: print(" ", m, file=sys.stderr))
+    finally:
+        if temp: os.unlink(job_path)
+    res["quantity"] = args.qty
     kind, hint = expectation(args.send)
     res.update(file=str(args.send), expect=hint)
-    if res["ok"] and not args.yes and sys.stdin.isatty():
-        res["operator_confirmed"] = input(f"{hint} Did it? [y/N] ").strip().lower().startswith("y")
+    if res["ok"] and kind != "store" and not args.yes and sys.stdin.isatty():
+        res["bagger_loaded"] = input(f"{hint} Does it? [y/N] ").strip().lower().startswith("y")
+        if res["bagger_loaded"]:
+            res["labels_per_cycle"] = input("Press Manual Cycle once. How many labels printed? [0/1/2+] ").strip() or "?"
+    elif res["ok"]:
+        print(hint, file=sys.stderr)
     log_result(res)
     print(json.dumps(res, indent=2) if args.json else
           ("PASS" if res["ok"] else "FAIL") + f": {res['detail']}" + (f" ({res['job']}, {res['seconds']}s)" if res["ok"] else ""))
@@ -298,167 +397,297 @@ def cli(args):
 
 # ---------------------------------------------------------------- GUI
 
-CSS = b"""
-.zl label { font-size: 15px; }
-.zl label.zl-title { font-size: 28px; font-weight: 700; }
-.zl label.zl-row-title { font-size: 16px; font-weight: 600; }
-.zl label.zl-row-sub { font-size: 13px; opacity: 0.7; }
-.zl label.zl-caption { font-size: 13px; opacity: 0.7; }
-.zl list row { padding: 10px 14px; }
-.zl .zl-card { padding: 18px; border-radius: 10px; }
-.zl button.zl-send { font-size: 17px; font-weight: 600; padding: 12px 34px; }
-.zl button { padding: 8px 16px; }
-.zl .zl-ok { color: @success_color; } .zl .zl-bad { color: @error_color; }
+CSS = """
+window.pbpm label { font-size: 15px; }
+window.pbpm label.pbpm-title { font-size: 28px; font-weight: 700; }
+window.pbpm label.pbpm-row-title { font-size: 16px; font-weight: 600; }
+window.pbpm label.pbpm-sub { font-size: 13px; opacity: 0.75; }
+window.pbpm .pbpm-sidebar row { padding: 10px 14px; }
+window.pbpm .pbpm-card { padding: 18px; }
+window.pbpm button.pbpm-send { font-size: 17px; font-weight: 600; padding: 10px 30px; }
+window.pbpm .pbpm-help label { font-size: 14px; }
+window.pbpm .pbpm-statusbar { padding: 8px 14px; border-bottom: 1px solid alpha(currentColor, 0.12); }
+window.pbpm .pbpm-chip { padding: 5px 12px; border-radius: 999px; background: alpha(currentColor, 0.07); }
+window.pbpm .pbpm-chip label { font-size: 14px; }
+window.pbpm .pbpm-dot { min-width: 18px; min-height: 18px; border-radius: 999px; }
+window.pbpm .pbpm-dot.ready { background: #68b723; }
+window.pbpm .pbpm-dot.check { background: #f9c440; }
+window.pbpm .pbpm-dot.stop { background: #c6262e; }
+window.pbpm label.pbpm-overall { font-size: 17px; font-weight: 700; }
+window.pbpm .pbpm-sidebar-head { padding: 12px 14px 4px 14px; }
 """
 
-
-def kind_of(path):
-    try:
-        d = Path(path).read_text(errors="replace")
-    except OSError:
-        return "Unreadable"
-    if "^XF" in d: return "Recalls from printer flash"
-    if "^DF" in d: return "Stores to printer flash (no label)"
-    return "Prints a label"
+STEPS = [("usb", "Printer connected (USB)"), ("queue", "Print queue set up"), ("ready", "Printer taking jobs"),
+         ("file", "Label file valid"), ("sent", "Delivered to printer"),
+         ("loaded", "Bagger shows the label loaded"), ("cycle", "One label per Manual Cycle")]
+ICON = {"ok": "emblem-default", "bad": "dialog-error", "warn": "dialog-warning", "todo": "content-loading-symbolic"}
 
 
 def gui():
     import gi
-    gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk, GLib, Gio, Gdk
-    try:
-        gi.require_version("Granite", "1.0")
-        from gi.repository import Granite
-    except (ValueError, ImportError):
-        Granite = None
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Granite", "7.0")
+    from gi.repository import Gtk, Gdk, GLib, Gio, Granite
 
-    STEPS = [("usb", "Zebra detected on USB"), ("queue", "CUPS queue exists"),
-             ("ready", "Queue enabled, nothing stuck"), ("file", "ZPL file valid"),
-             ("sent", "Job sent to CUPS"), ("done", "Printer accepted the job")]
-    ICON = {"ok": "process-completed-symbolic", "bad": "dialog-error-symbolic", "todo": "media-record-symbolic"}
-
-    def lbl(text="", cls=None, xalign=0.0, wrap=False):
+    def lbl(text="", *classes, xalign=0.0, wrap=False):
         l = Gtk.Label(label=text, xalign=xalign, wrap=wrap)
-        if cls: l.get_style_context().add_class(cls)
+        for c in classes: l.add_css_class(c)
         return l
+
+    def margins(w, m):
+        w.set_margin_top(m); w.set_margin_bottom(m); w.set_margin_start(m); w.set_margin_end(m)
+        return w
+
+    def icon_button(icon, tip, cb):
+        b = Gtk.Button(icon_name=icon, tooltip_text=tip)
+        b.update_property([Gtk.AccessibleProperty.LABEL], [tip])
+        b.connect("clicked", cb)
+        return b
+
+    def card():
+        b = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        b.add_css_class(Granite.STYLE_CLASS_CARD); b.add_css_class("pbpm-card")
+        return b
 
     class Win(Gtk.ApplicationWindow):
         def __init__(self, app):
-            super().__init__(application=app, default_width=1120, default_height=800)
-            self.get_style_context().add_class("zl")
-            prov = Gtk.CssProvider(); prov.load_from_data(CSS)
-            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-            self.busy = False; self.last = None; self.recent = {}; self.was_plugged = None
-            self.files = list(label_files()); self.kinds = {}
+            super().__init__(application=app, default_width=1180, default_height=860, title="PolyBagger Print Manager")
+            self.add_css_class("pbpm")
+            self.busy = False; self.last = None; self.recent = {}; self.was_plugged = None; self.st = None
+            self.kinds = {}
 
-            hb = Gtk.HeaderBar(show_close_button=True, title="PolyBagger Print Manager"); self.set_titlebar(hb)
-            self.search = Gtk.SearchEntry(placeholder_text="Search labels", width_chars=30)
-            self.search.connect("search-changed", lambda *_: self.listbox.invalidate_filter())
-            hb.set_custom_title(self.search)
-            openb = Gtk.Button.new_from_icon_name("document-open-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
-            openb.set_tooltip_text("Open a ZPL file…"); openb.connect("clicked", self.on_browse); hb.pack_start(openb)
-            syncb = Gtk.Button.new_from_icon_name("view-refresh-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
-            syncb.set_tooltip_text("Update offline label store from GitHub"); syncb.connect("clicked", self.on_sync); hb.pack_start(syncb)
-            if Granite:
-                s = Granite.Settings.get_default(); g = Gtk.Settings.get_default()
-                dark = lambda *_: setattr(g.props, "gtk_application_prefer_dark_theme", s.props.prefers_color_scheme == Granite.SettingsColorScheme.DARK)
-                dark(); s.connect("notify::prefers-color-scheme", dark)
+            hb = Gtk.HeaderBar(); self.set_titlebar(hb)
+            self.search = Gtk.SearchEntry(placeholder_text="Search labels", width_chars=34)
+            self.search.connect("search-changed", lambda *_: self.on_search())
+            hb.set_title_widget(self.search)
+            hb.pack_start(icon_button("document-open-symbolic", "Open a ZPL file", self.on_browse))
+            hb.pack_start(icon_button("view-refresh-symbolic", "Update the offline label store", self.on_sync))
+            helpb = Gtk.MenuButton(icon_name="help-contents-symbolic", tooltip_text="How this machine prints")
+            helpb.set_popover(self.build_help()); hb.pack_end(helpb)
+            self.search.set_key_capture_widget(self)
 
-            accel = Gtk.AccelGroup(); self.add_accel_group(accel)
-            self.search.add_accelerator("grab-focus", accel, Gdk.KEY_f, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
+            paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, position=380,
+                              shrink_start_child=False, resize_start_child=False, vexpand=True)
+            root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            root.append(self.build_statusbar()); root.append(paned)
+            self.set_child(root)
 
-            paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, position=340); self.add(paned)
-
-            # left: label list
+            # sidebar: searchable label library
             self.listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
+            self.listbox.add_css_class("pbpm-sidebar")
             self.listbox.set_filter_func(self.row_visible)
+            self.listbox.set_header_func(self.row_header)
             self.listbox.connect("row-selected", lambda *_: self.update_preview())
-            self.empty = lbl("No labels match", "zl-caption", 0.5); self.empty.set_margin_top(24)
-            left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-            sw = Gtk.ScrolledWindow(); sw.add(self.listbox)
-            left.pack_start(sw, True, True, 0); left.pack_start(self.empty, False, False, 0)
-            paned.pack1(left, False, False)
-            for p in self.files: self.add_row(p)
+            self.listbox.set_placeholder(Granite.Placeholder(
+                title="No labels", description="Nothing matches the search, or the label store is empty. "
+                "Use the refresh button to sync from GitHub.", icon=Gio.ThemedIcon.new("edit-find-symbolic")))
+            paned.set_start_child(Gtk.ScrolledWindow(child=self.listbox, hscrollbar_policy=Gtk.PolicyType.NEVER))
 
-            # right: status, preview, actions
-            right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin=24)
-            overlay = Gtk.Overlay(); overlay.add(right); paned.pack2(overlay, True, False)
-            self.toast = Granite.WidgetsToast.new("") if Granite and hasattr(Granite, "WidgetsToast") else None
-            if self.toast: overlay.add_overlay(self.toast)
+            # detail
+            right = margins(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18), 24)
+            overlay = Gtk.Overlay(child=Gtk.ScrolledWindow(child=right, hscrollbar_policy=Gtk.PolicyType.NEVER))
+            self.toast = Granite.Toast(title=""); overlay.add_overlay(self.toast)
+            paned.set_end_child(overlay)
 
             banner = Gtk.Box(spacing=18)
             self.big = Gtk.Image(pixel_size=64)
-            tb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER)
-            self.title = lbl("", "zl-title"); self.sub = lbl("", "zl-caption", wrap=True)
-            tb.pack_start(self.title, False, False, 0); tb.pack_start(self.sub, False, False, 0)
-            banner.pack_start(self.big, False, False, 0); banner.pack_start(tb, True, True, 0)
-            right.pack_start(banner, False, False, 0)
+            tb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER, hexpand=True)
+            self.title = lbl("", "pbpm-title"); self.sub = lbl("", "pbpm-sub", wrap=True)
+            tb.append(self.title); tb.append(self.sub)
+            banner.append(self.big); banner.append(tb); right.append(banner)
 
-            pcard = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8); pcard.get_style_context().add_class("card")
-            pcard.get_style_context().add_class("zl-card")
-            self.pname = lbl("Select a label", "zl-row-title")
-            self.preview = Gtk.Image(); self.preview_cap = lbl("", "zl-caption", wrap=True)
-            pcard.pack_start(self.pname, False, False, 0); pcard.pack_start(self.preview, True, True, 6)
-            pcard.pack_start(self.preview_cap, False, False, 0)
-            right.pack_start(pcard, True, True, 0)
+            pc = card()
+            self.pname = lbl("Select a label", "pbpm-row-title")
+            self.kind_lbl = lbl("", "pbpm-sub")
+            self.preview = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN, height_request=280)
+            self.preview_cap = lbl("", "pbpm-sub", wrap=True)
+            for w in (self.pname, self.kind_lbl, self.preview, self.preview_cap): pc.append(w)
+            right.append(pc)
 
-            grid = Gtk.Grid(row_spacing=8, column_spacing=12); self.rows = {}
+            # bagger confirmation (shown after a delivered job)
+            self.ask_card = card()
+            self.ask_head = Granite.HeaderLabel(label="On the bagger")
+            self.ask_text = lbl("", wrap=True)
+            self.ask_buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END)
+            for w in (self.ask_head, self.ask_text, self.ask_buttons): self.ask_card.append(w)
+            self.ask = Gtk.Revealer(child=self.ask_card, reveal_child=False)
+            right.append(self.ask)
+
+            actions = Gtk.Box(spacing=10)
+            self.cancel_btn = Gtk.Button(label="Cancel Stuck Jobs"); self.cancel_btn.add_css_class("destructive-action")
+            self.cancel_btn.connect("clicked", self.on_cancel_jobs)
+            self.setup_btn = Gtk.Button(label="Set Up Print Queue…"); self.setup_btn.connect("clicked", self.on_setup)
+            self.test_btn = Gtk.Button(label="Send Test Label"); self.test_btn.connect("clicked", self.on_test)
+            self.send_btn = Gtk.Button(label="Send to Printer"); self.send_btn.add_css_class("suggested-action")
+            self.send_btn.add_css_class("pbpm-send"); self.send_btn.connect("clicked", self.on_send)
+            qbox = Gtk.Box(spacing=8, valign=Gtk.Align.CENTER)
+            self.qty = Gtk.SpinButton.new_with_range(1, 10000, 1); self.qty.set_value(load_settings().get("qty", 1))
+            self.qty.set_tooltip_text("Labels to print: one per bag cycle, sent as ^PQ (the label Quantity)")
+            self.qty.update_property([Gtk.AccessibleProperty.LABEL], ["Labels to print"])
+            self.qty.connect("value-changed", lambda w: save_settings(qty=w.get_value_as_int()))
+            qbox.append(lbl("Labels to print")); qbox.append(self.qty)
+            spacer = Gtk.Box(hexpand=True)
+            for w in (self.cancel_btn, self.setup_btn, spacer, qbox, self.test_btn, self.send_btn): actions.append(w)
+            right.append(actions)
+
+            sc = card(); sc.append(Granite.HeaderLabel(label="Checks"))
+            grid = Gtk.Grid(row_spacing=10, column_spacing=12); self.rows = {}
             for i, (k, text) in enumerate(STEPS):
-                img = Gtk.Image(icon_name=ICON["todo"]); sp = Gtk.Spinner()
+                img = Gtk.Image(icon_name=ICON["todo"], pixel_size=20); sp = Gtk.Spinner()
                 st = Gtk.Stack(); st.add_named(img, "img"); st.add_named(sp, "spin")
-                det = lbl("", "zl-caption", 1.0); det.set_hexpand(True)
+                det = lbl("", "pbpm-sub", xalign=1.0); det.set_hexpand(True); det.set_ellipsize(3)
                 grid.attach(st, 0, i, 1, 1); grid.attach(lbl(text), 1, i, 1, 1); grid.attach(det, 2, i, 1, 1)
                 self.rows[k] = (img, sp, st, det)
-            exp = Gtk.Expander(label="Checks", expanded=True); exp.add(grid); right.pack_start(exp, False, False, 0)
+            sc.append(grid); right.append(sc)
 
-            self.confirm = Gtk.InfoBar(message_type=Gtk.MessageType.QUESTION, revealed=False, no_show_all=True)
-            self.confirm_lab = lbl("", wrap=True); self.confirm.get_content_area().add(self.confirm_lab)
-            self.confirm.add_button("Yes", Gtk.ResponseType.YES); self.confirm.add_button("No", Gtk.ResponseType.NO)
-            self.confirm.connect("response", self.on_confirm); right.pack_start(self.confirm, False, False, 0)
+            self.log = Gtk.TextView(editable=False, monospace=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+            right.append(Gtk.Expander(label="Activity log", child=Gtk.ScrolledWindow(child=self.log, min_content_height=120)))
 
-            self.setup_btn = Gtk.Button(label="Set Up Printer Queue…"); self.setup_btn.connect("clicked", self.on_setup)
-            self.cancel_btn = Gtk.Button(label="Cancel Stuck Jobs"); self.cancel_btn.get_style_context().add_class("destructive-action")
-            self.cancel_btn.connect("clicked", self.on_cancel_jobs)
-            self.test_btn = Gtk.Button(label="Send Test Label"); self.test_btn.connect("clicked", self.on_test)
-            self.send_btn = Gtk.Button(label="Send to Printer"); self.send_btn.get_style_context().add_class("suggested-action")
-            self.send_btn.get_style_context().add_class("zl-send"); self.send_btn.connect("clicked", self.on_send)
-            bb = Gtk.Box(spacing=10)
-            for b in (self.setup_btn, self.cancel_btn): bb.pack_start(b, False, False, 0)
-            bb.pack_end(self.send_btn, False, False, 0); bb.pack_end(self.test_btn, False, False, 0)
-            right.pack_start(bb, False, False, 0)
-
-            lexp = Gtk.Expander(label="Log"); lsw = Gtk.ScrolledWindow(min_content_height=90)
-            self.log = Gtk.TextView(editable=False, monospace=True); lsw.add(self.log); lexp.add(lsw)
-            right.pack_start(lexp, False, False, 0)
-
+            self.library = list(label_files())
+            self.rebuild_sidebar()
+            self.apply_status(status(), first=True)
             GLib.timeout_add_seconds(1, self.poll)
-            self.show_all(); self.confirm.hide()
-            first = self.listbox.get_row_at_index(0)
-            if first: self.listbox.select_row(first)
-            self.refresh(first=True)
-            shot = os.environ.get("PBPM_SHOT")
-            if shot:  # dev aid: save a PNG of the window content, then quit
-                def snap():
-                    import cairo
-                    c = self.get_child(); a = c.get_allocation()
-                    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, a.width, a.height)
-                    cr = cairo.Context(surf); cr.set_source_rgb(1, 1, 1); cr.paint(); c.draw(cr)
-                    surf.write_to_png(shot); self.get_application().quit(); return False
-                GLib.timeout_add(1500, snap)
+            GLib.timeout_add_seconds(5, self.poll_queue)
+            self.maybe_snapshot()
 
-        # -- label list
-        def add_row(self, path):
+        # -- help popover: machine flow + known issues
+        def build_help(self):
+            box = margins(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=460), 16)
+            box.add_css_class("pbpm-help")
+            box.append(Granite.HeaderLabel(label="How the T-1000 printer prints"))
+            for i, t in enumerate(MACHINE_FLOW, 1): box.append(lbl(f"{i}. {t}", wrap=True))
+            box.append(Granite.HeaderLabel(label="Known issues"))
+            for t in KNOWN_ISSUES: box.append(lbl(f"• {t}", wrap=True))
+            return Gtk.Popover(child=Gtk.ScrolledWindow(child=box, propagate_natural_height=True, max_content_height=640,
+                                                        hscrollbar_policy=Gtk.PolicyType.NEVER))
+
+        # -- status bar: what the computer sees right now
+        def build_statusbar(self):
+            bar = Gtk.Box(spacing=10); bar.add_css_class("pbpm-statusbar")
+            overall = Gtk.Box(spacing=10, margin_end=8, valign=Gtk.Align.CENTER)
+            self.dot = Gtk.Box(valign=Gtk.Align.CENTER); self.dot.add_css_class("pbpm-dot")
+            self.overall = lbl("", "pbpm-overall")
+            overall.append(self.dot); overall.append(self.overall); bar.append(overall)
+            self.chips = {}
+            for key, tip in (("printer", "Printer connection seen by this computer"),
+                             ("queue", "Print queue state"), ("label", "Label on the printer (last known)"),
+                             ("job", "Last job")):
+                chip = Gtk.Box(spacing=6, tooltip_text=tip); chip.add_css_class("pbpm-chip")
+                img = Gtk.Image(pixel_size=16); text = lbl("")
+                chip.append(img); chip.append(text); bar.append(chip)
+                self.chips[key] = (img, text)
+            return bar
+
+        def update_overall(self):
+            st = self.st or {}
+            ls = (load_settings().get("label_state") or {}).get("state")
+            if not st.get("usb") or "waiting-for-printer" in st.get("reasons", []) or not st.get("queue"):
+                state, text = "stop", "Not ready"
+            elif not st.get("ready"):
+                state, text = "stop", "Not ready"
+            elif ls == "in":
+                state, text = "ready", "Ready"
+            elif ls == "sent":
+                state, text = "check", "Confirm label"
+            else:
+                state, text = "check", "Ready, no label"
+            for c in ("ready", "check", "stop"): self.dot.remove_css_class(c)
+            self.dot.add_css_class(state); self.overall.set_text(text)
+            self.dot.update_property([Gtk.AccessibleProperty.LABEL], [text])
+
+        def chip(self, key, icon, text):
+            img, l = self.chips[key]; img.set_from_icon_name(ICON[icon]); l.set_text(text)
+
+        def show_label_state(self):
+            ls = load_settings().get("label_state") or {}
+            name = Path(ls.get("file", "")).stem.replace("_", " ")
+            at = f" · {ls['time'][11:16]}" if ls.get("time") else ""
+            state = ls.get("state")
+            if state == "in":
+                self.chip("label", "ok", f"Label in: {name} × {ls.get('qty', 1)}{at}")
+            elif state == "sent":
+                self.chip("label", "warn", f"Sent, not confirmed: {name} × {ls.get('qty', 1)}{at}")
+            elif state == "none":
+                self.chip("label", "bad", f"No label{at}")
+            else:
+                self.chip("label", "todo", "Label: unknown")
+            self.update_overall()
+
+        def set_label_state(self, state, **kv):
+            save_settings(label_state={"state": state, "time": time.strftime("%Y-%m-%d %H:%M:%S"), **kv})
+            self.show_label_state()
+
+        # -- label list: favorites, recents, then the whole library
+        def rebuild_sidebar(self, select=None):
+            select = select or self.current_file()
+            child = self.listbox.get_first_child()
+            while child:
+                nxt = child.get_next_sibling()
+                if isinstance(child, Gtk.ListBoxRow): self.listbox.remove(child)
+                child = nxt
+            st = load_settings()
+            known = {str(p): p for p in self.library}
+            favs = [known[f] for f in st.get("favorites", []) if f in known]
+            recents = [known[f] for f in st.get("recents", []) if f in known][:6]
+            target = None
+            for section, paths in (("Favorites", favs), ("Recent", recents), ("All labels", self.library)):
+                for p in paths:
+                    row = self.add_row(p, section)
+                    if target is None and select and p == select: target = row
+            target = target or self.listbox.get_row_at_index(0)
+            if target: self.listbox.select_row(target)
+
+        def add_row(self, path, section="All labels"):
             self.kinds[path] = kind = kind_of(path)
-            row = Gtk.ListBoxRow(); row.path = path
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            box.pack_start(lbl(path.stem.replace("_", " "), "zl-row-title"), False, False, 0)
-            box.pack_start(lbl(f"{kind} · {max(1, path.stat().st_size // 1024) if path.stat().st_size >= 1024 else path.stat().st_size} {"KB" if path.stat().st_size >= 1024 else "bytes"}", "zl-row-sub"), False, False, 0)
-            row.add(box); self.listbox.add(row); row.show_all(); return row
+            size = path.stat().st_size
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
+            text.append(lbl(path.stem.replace("_", " "), "pbpm-row-title"))
+            text.append(lbl(f"{kind} · {size // 1024} KB" if size >= 1024 else f"{kind} · {size} bytes", "pbpm-sub"))
+            fav = str(path) in load_settings().get("favorites", [])
+            star = Gtk.Button(icon_name="starred-symbolic" if fav else "non-starred-symbolic",
+                              tooltip_text="Remove from favorites" if fav else "Add to favorites", valign=Gtk.Align.CENTER)
+            star.add_css_class("flat")
+            star.update_property([Gtk.AccessibleProperty.LABEL], ["Remove from favorites" if fav else "Add to favorites"])
+            star.connect("clicked", lambda _b, p=path: self.toggle_favorite(p))
+            box = Gtk.Box(spacing=8); box.append(text); box.append(star)
+            row = Gtk.ListBoxRow(child=box); row.path = path; row.section = section
+            self.listbox.append(row)
+            return row
+
+        def toggle_favorite(self, path):
+            favs = load_settings().get("favorites", [])
+            favs = [f for f in favs if f != str(path)] if str(path) in favs else favs + [str(path)]
+            save_settings(favorites=favs); self.rebuild_sidebar(select=path)
+
+        def remember_recent(self, path):
+            rec = [str(path)] + [r for r in load_settings().get("recents", []) if r != str(path)]
+            save_settings(recents=rec[:6]); self.rebuild_sidebar(select=path)
+
+        def row_header(self, row, before):
+            # while searching only the full library is shown, so no section headers
+            if self.search.get_text().strip():
+                row.set_header(None); return
+            if before is None or before.section != row.section:
+                h = Granite.HeaderLabel(label=row.section); h.add_css_class("pbpm-sidebar-head")
+                row.set_header(h)
+            else:
+                row.set_header(None)
 
         def row_visible(self, row):
             q = self.search.get_text().strip().lower()
-            ok = not q or all(w in (row.path.stem + " " + self.kinds.get(row.path, "")).lower().replace("_", " ") for w in q.split())
-            return ok
+            if not q: return True
+            if row.section != "All labels": return False
+            hay = (row.path.stem + " " + self.kinds.get(row.path, "")).lower().replace("_", " ")
+            return all(w in hay for w in q.split())
+
+        def on_search(self):
+            self.listbox.invalidate_filter(); self.listbox.invalidate_headers()
+            sel = self.listbox.get_selected_row()
+            if sel is None or not sel.get_child_visible() or not self.row_visible(sel):
+                i = 0
+                while (r := self.listbox.get_row_at_index(i)) is not None:
+                    if self.row_visible(r): self.listbox.select_row(r); break
+                    i += 1
 
         def current_file(self):
             r = self.listbox.get_selected_row(); return r.path if r else None
@@ -466,86 +695,122 @@ def gui():
         def say(self, msg):
             b = self.log.get_buffer(); b.insert(b.get_end_iter(), time.strftime("%H:%M:%S ") + msg + "\n")
 
+        def notify(self, msg):
+            self.say(msg); self.toast.set_title(msg); self.toast.send_notification()
+
         def mark(self, key, state, detail=""):
             img, sp, st, det = self.rows[key]
             if state == "work": sp.start(); st.set_visible_child_name("spin")
-            else:
-                sp.stop(); img.set_from_icon_name(ICON[state], Gtk.IconSize.LARGE_TOOLBAR); st.set_visible_child_name("img")
-            det.set_text(detail)
+            else: sp.stop(); img.set_from_icon_name(ICON[state]); st.set_visible_child_name("img")
+            det.set_text(detail); det.set_tooltip_text(detail or None)
 
         def update_preview(self):
             p = self.current_file()
-            self.empty.set_visible(self.listbox.get_row_at_index(0) is None)
             if not p: return
             self.pname.set_text(p.stem.replace("_", " "))
+            self.kind_lbl.set_text(expectation(p)[1])
             try:
-                pb, cap = label_preview(p)
-            except Exception as e:
-                pb, cap = None, f"No preview: {e}"
-            if pb:  # labels are sent upside down; invert for auditing only
-                from gi.repository import GdkPixbuf
-                pb = pb.rotate_simple(GdkPixbuf.PixbufRotation.UPSIDEDOWN)
-                cap += ". Preview inverted 180° for auditing only; the file is sent as-is."
-                w = 640
-                pb = pb.scale_simple(w, int(pb.get_height() * w / pb.get_width()), 2)
-                self.preview.set_from_pixbuf(pb)
-            else: self.preview.clear()
+                img, cap = label_preview(p)
+            except Exception as e:  # a preview must never block printing
+                img, cap = None, f"No preview: {e}"
+            if img:  # labels are sent upside down on purpose; show them inverted for auditing only
+                w, h, rgb = img
+                tex = Gdk.MemoryTexture.new(w, h, Gdk.MemoryFormat.R8G8B8, GLib.Bytes.new(rgb[::-1]), w * 3)
+                self.preview.set_paintable(tex)
+                cap += ". Preview inverted 180° for auditing only; the file is sent unchanged."
+            else:
+                self.preview.set_paintable(None)
             self.preview_cap.set_text(cap)
 
+        # -- status
         def poll(self):
             if bool(usb_zebras()) != self.was_plugged and not self.busy: self.refresh()
             return True
 
-        def refresh(self, first=False):
-            self.st = st = status(); plugged = bool(st["usb"])
+        def poll_queue(self):
+            if not self.busy: self.refresh()
+            return True
+
+        def refresh(self):
+            def work():
+                st = status(); GLib.idle_add(self.apply_status, st)
+            threading.Thread(target=work, daemon=True).start()
+
+        def apply_status(self, st, first=False):
+            self.st = st; plugged = bool(st["usb"])
             if not first and plugged != self.was_plugged:
-                msg = "Zebra plugged in" if plugged else "Zebra unplugged"; self.say(msg)
-                if self.toast: self.toast.set_title(msg); self.toast.send_notification()
+                self.notify("Printer plugged in" if plugged else "Printer unplugged")
+                if not plugged: self.set_label_state("unknown")  # a power cut or reboot drops the loaded label
             self.was_plugged = plugged
+            stuck = "waiting-for-printer" in st["reasons"]
             d = st["usb"][0] if plugged else None
+            self.chip("printer", "ok" if plugged else "bad", f"Connected · {d['serial']}" if d else "Printer not connected")
+            q = ("ok", "Queue ready") if st["ready"] else \
+                ("bad", "Stalled: waiting for printer") if stuck else \
+                ("bad", "Queue paused") if st["queue_state"] == "disabled" else \
+                ("bad", "No print queue") if not st["queue"] else ("warn", f"Queue {st['queue_state']}")
+            self.chip("queue", *q)
+            if first: self.chip("job", "todo", "No job yet this session")
+            self.show_label_state()
             self.mark("usb", "ok" if plugged else "bad", f"{d['product']} · {d['serial']}" if d else "not found")
             self.mark("queue", "ok" if st["queue"] else ("bad" if plugged else "todo"), st["queue"] or "none")
             self.mark("ready", "ok" if st["ready"] else ("bad" if st["queue"] else "todo"),
-                      st["queue_state"] + (f" · {' '.join(st['reasons'])}" if st["reasons"] else ""))
-            for k in ("file", "sent", "done"): self.mark(k, "todo")
-            icon, title, sub = (("printer", "Printer ready", "Pick a label on the left and press Send.") if st["ready"] else
-                                ("printer-error", "Detected, not ready",
-                                 "Create the printer queue." if not st["queue"] else
-                                 "A job is stuck waiting for the printer. Check power, media and ribbon, then cancel stuck jobs." if "waiting-for-printer" in st["reasons"] else
-                                 "Check the queue and printer alerts.") if plugged else
-                                ("printer-error", "No Zebra detected", "Plug in the USB cable and power the printer on. This window updates by itself."))
-            self.big.set_from_icon_name(icon, Gtk.IconSize.DIALOG); self.big.set_pixel_size(64)
-            self.title.set_text(title); self.sub.set_text(sub)
+                      "stuck: waiting for printer" if stuck else st["queue_state"] + (f" · {' '.join(st['reasons'])}" if st["reasons"] else ""))
+            if self.busy: return False
+            if st["ready"]:
+                icon, title, sub = "printer", "Printer ready", "Pick a label and send it. Then confirm on the bagger screen."
+            elif not plugged:
+                icon, title, sub = "printer-error", "No printer detected", "Plug in the USB cable and power the printer on. This window updates by itself."
+            elif not st["queue"]:
+                icon, title, sub = "printer-error", "Print queue missing", "Set up the print queue to continue."
+            elif stuck:
+                icon, title, sub = "printer-error", "Printer not taking jobs", STUCK_HINT
+            elif st["queue_state"] == "disabled":
+                icon, title, sub = "printer-error", "Print queue paused", f"Re-enable it in a terminal: sudo cupsenable {st['queue']}"
+            else:
+                icon, title, sub = "printer-error", "Printer not ready", "Check the printer alerts in the checks below."
+            self.big.set_from_icon_name(icon); self.title.set_text(title); self.sub.set_text(sub)
             self.setup_btn.set_visible(plugged and not st["queue"])
-            self.cancel_btn.set_visible("waiting-for-printer" in st["reasons"])
-            self.send_btn.set_sensitive(st["ready"] and not self.busy); self.test_btn.set_sensitive(st["ready"] and not self.busy)
+            self.cancel_btn.set_visible(stuck)
+            self.send_btn.set_sensitive(st["ready"]); self.test_btn.set_sensitive(st["ready"])
+            return False
 
         # -- actions
         def on_browse(self, _):
-            dlg = Gtk.FileChooserNative(title="Open ZPL file", transient_for=self, action=Gtk.FileChooserAction.OPEN)
-            f = Gtk.FileFilter(); f.set_name("ZPL"); f.add_pattern("*.zpl"); f.add_pattern("*.ZPL"); dlg.add_filter(f)
-            if dlg.run() == Gtk.ResponseType.ACCEPT:
-                self.listbox.select_row(self.add_row(Path(dlg.get_filename())))
+            dlg = Gtk.FileDialog(title="Open ZPL file")
+            f = Gtk.FileFilter(name="ZPL labels"); f.add_pattern("*.zpl"); f.add_pattern("*.ZPL")
+            filters = Gio.ListStore.new(Gtk.FileFilter); filters.append(f); dlg.set_filters(filters)
+            def done(d, res):
+                try: gf = d.open_finish(res)
+                except GLib.Error: return
+                p = Path(gf.get_path())
+                if p not in self.library: self.library.append(p)
+                self.rebuild_sidebar(select=p)
+            dlg.open(self, None, done)
 
         def on_sync(self, _):
+            self.say("Updating the label store…")
             def work():
                 c, n, note = sync_library(pull=True)
                 def done():
-                    self.say(f"Label store: {n} labels, {c} updated. {note}")
-                    for p in sorted(STORE.glob("*.zpl")):
-                        if p not in self.kinds: self.add_row(p)
+                    self.library = list(label_files()) + [p for p in self.library if p.parent != STORE]
+                    self.rebuild_sidebar()
+                    self.notify(f"Label store: {n} labels, {c} updated")
+                    if note: self.say(note)
                 GLib.idle_add(done)
             threading.Thread(target=work, daemon=True).start()
 
         def on_setup(self, _):
-            self.say("Creating CUPS queue (authentication required)…")
+            self.say("Creating the print queue (admin password required)…")
             def work():
                 rc, out = setup_queue(self.st["usb"][0])
                 GLib.idle_add(lambda: (self.say("Queue created" if rc == 0 else f"Setup failed: {out}"), self.refresh()))
             threading.Thread(target=work, daemon=True).start()
 
         def on_cancel_jobs(self, _):
-            rc, out = run(["cancel", "-a", self.st["queue"]]); self.say(f"Cancelled queued jobs: {out or 'ok'}"); self.refresh()
+            done, failed = cancel_jobs(self.st["queue"])
+            self.notify(f"Cancelled {len(done)} stuck job(s)" + (f", {len(failed)} could not be cancelled" if failed else ""))
+            self.refresh()
 
         def on_test(self, _):
             fd, tmp = tempfile.mkstemp(suffix=".zpl")
@@ -554,58 +819,146 @@ def gui():
 
         def on_send(self, _):
             p = self.current_file()
-            if p: self.start_send(p)
+            if not p: return
+            last = self.recent.get(str(p))
+            if last and time.time() - last < 120:
+                dlg = Granite.MessageDialog.new_with_image_from_icon_name(
+                    "Send this label again?",
+                    f"{p.name} was sent {int(time.time() - last)} s ago. Each send loads the label again. If the bagger "
+                    "shows ReprintBuffer or Reprint ON, it keeps printing on every cycle.",
+                    "dialog-warning", Gtk.ButtonsType.CANCEL)
+                dlg.set_transient_for(self); dlg.set_modal(True)
+                dlg.add_button("Send Again", Gtk.ResponseType.ACCEPT).add_css_class("suggested-action")
+                def resp(d, r):
+                    d.destroy()
+                    if r == Gtk.ResponseType.ACCEPT: self.start_send(p)
+                dlg.connect("response", resp); dlg.present()
+                return
+            self.start_send(p)
 
         def start_send(self, path, temp=False):
-            for k in ("file", "sent", "done"): self.mark(k, "todo")
-            last = self.recent.get(str(path))
-            if last and time.time() - last < 120 and not temp:
-                d = Gtk.MessageDialog(transient_for=self, message_type=Gtk.MessageType.WARNING, buttons=Gtk.ButtonsType.NONE,
-                                      text="Sent this file moments ago",
-                                      secondary_text=f"{path.name} was sent {int(time.time() - last)} s ago. Send it again?")
-                d.add_button("Cancel", Gtk.ResponseType.CANCEL); d.add_button("Send Again", Gtk.ResponseType.OK)
-                resp = d.run(); d.destroy()
-                if resp != Gtk.ResponseType.OK: return
-            self.recent[str(path)] = time.time()
+            for k in ("file", "sent", "loaded", "cycle"): self.mark(k, "todo")
             ok, warns = check_zpl(path)
             if not ok: self.mark("file", "bad", warns[0]); return
-            self.mark("file", "ok", f"{path.stat().st_size // 1024} KB" + (" · warning" if warns else ""))
+            if not temp: self.recent[str(path)] = time.time()
+            self.mark("file", "warn" if warns else "ok", f"{path.stat().st_size // 1024} KB" + (" · see log" if warns else ""))
             for w in warns: self.say("WARNING: " + w)
             self.busy = True; self.send_btn.set_sensitive(False); self.test_btn.set_sensitive(False)
-            self.confirm.hide(); self.mark("sent", "work"); self.sub.set_text("Sending…")
+            self.ask.set_reveal_child(False); self.mark("sent", "work")
+            self.title.set_text("Sending…"); self.sub.set_text(path.name)
             queue = self.st["queue"]
+            qty = 1 if temp else self.qty.get_value_as_int()
             def work():
-                res = send_and_verify(path, queue, progress=lambda m: GLib.idle_add(self.say, m))
+                job_path, job_temp = with_quantity(path, qty)
+                try:
+                    res = send_and_verify(job_path, queue, progress=lambda m: GLib.idle_add(self.say, m))
+                finally:
+                    if job_temp: os.unlink(job_path)
+                res["quantity"] = qty
                 GLib.idle_add(self.finish, path, res, temp)
             threading.Thread(target=work, daemon=True).start()
 
         def finish(self, path, res, temp):
             self.busy = False; res["file"] = str(path)
+            kind, hint = expectation(path); res["expect"] = hint
+            log_result(res); self.last = res
+            self.say(("DELIVERED " if res["ok"] else "FAILED ") + res["detail"])
+            self.chip("job", "ok" if res["ok"] else "bad",
+                      f"{'Delivered' if res['ok'] else 'Not delivered'} · {path.name if not temp else 'test label'} · {time.strftime('%H:%M')}")
+            if res["ok"] and not temp: self.remember_recent(path)
+            if res["ok"] and kind != "store": self.set_label_state("sent", file=str(path), qty=res.get("quantity", 1))
             if res["ok"]:
-                self.mark("sent", "ok", res["job"]); self.mark("done", "ok", f"{res['seconds']} s")
-                _, hint = expectation(path)
-                self.title.set_text("Print command went through"); self.sub.set_text(res["detail"])
-                self.confirm_lab.set_text(hint + "\nDid that happen?"); self.confirm.set_revealed(True); self.confirm.show_all()
-                self.last = res
+                self.mark("sent", "ok", f"{res['job']} · {res['seconds']} s")
+                self.big.set_from_icon_name("printer")
+                if kind == "store":
+                    self.title.set_text("Saved to printer flash")
+                    self.sub.set_text("Nothing loads on the bagger from a store file. Send the recall file next.")
+                else:
+                    self.title.set_text("Label delivered, confirm on the bagger")
+                    self.sub.set_text(f"The printer has the label for {res['quantity']} bag(s). One prints per bag cycle, "
+                                      "then the label clears.")
+                    self.ask_step(1, hint)
             else:
-                self.mark("sent", "ok" if res.get("job") else "bad", res.get("job", "")); self.mark("done", "bad", res["stage"])
-                self.big.set_from_icon_name("printer-error", Gtk.IconSize.DIALOG)
-                self.title.set_text("Print did NOT go through"); self.sub.set_text(res["detail"]); log_result(res)
-            self.say(("PASS " if res["ok"] else "FAIL ") + res["detail"])
+                self.mark("sent", "bad", res["stage"])
+                self.big.set_from_icon_name("printer-error")
+                self.title.set_text("Label not delivered"); self.sub.set_text(res["detail"])
             if temp: os.unlink(path)
-            st = status(); self.st = st
-            self.cancel_btn.set_visible("waiting-for-printer" in st["reasons"])
-            self.send_btn.set_sensitive(st["ready"]); self.test_btn.set_sensitive(st["ready"])
+            self.refresh()
+            return False
 
-        def on_confirm(self, bar, resp):
-            if self.last:
-                self.last["operator_confirmed"] = resp == Gtk.ResponseType.YES
-                log_result(self.last); self.say(f"Operator confirmed: {self.last['operator_confirmed']}")
-            bar.set_revealed(False); bar.hide()
+        # -- operator confirmation on the bagger
+        def ask_step(self, step, hint=""):
+            child = self.ask_buttons.get_first_child()
+            while child: nxt = child.get_next_sibling(); self.ask_buttons.remove(child); child = nxt
+            if step == 1:
+                self.ask_head.set_label("Step 1 of 2 · Bagger Printer Settings screen")
+                self.ask_text.set_label(hint + " Does it?")
+                opts = [("Still No Label", "no"), ("Shows the Label", "yes")]
+            else:
+                self.ask_head.set_label("Step 2 of 2 · Manual Cycle")
+                self.ask_text.set_label("Press Manual Cycle once on the bagger. How many labels printed on that bag?")
+                opts = [("None", "0"), ("More Than One", "2+"), ("Exactly One", "1")]
+            for text, val in opts:
+                b = Gtk.Button(label=text)
+                if val in ("yes", "1"): b.add_css_class("suggested-action")
+                b.connect("clicked", lambda _b, v=val: self.on_answer(step, v))
+                self.ask_buttons.append(b)
+            self.ask.set_reveal_child(True)
+
+        def on_answer(self, step, val):
+            entry = {"job": self.last.get("job"), "file": self.last.get("file")}
+            if step == 1:
+                loaded = val == "yes"
+                log_result({**entry, "bagger_loaded": loaded})
+                if loaded: self.set_label_state("in", file=entry["file"], qty=self.last.get("quantity", 1))
+                else: self.set_label_state("none")
+                self.mark("loaded", "ok" if loaded else "bad", "operator confirmed" if loaded else "still No Label")
+                if loaded: self.ask_step(2); return
+                self.title.set_text("Bagger did not load the label")
+                self.sub.set_text("Check the printer is ON and in Run mode, then send again. If it repeats, power-cycle the printer.")
+            else:
+                log_result({**entry, "labels_per_cycle": val})
+                self.mark("cycle", "ok" if val == "1" else "bad", {"1": "one label", "0": "none printed", "2+": "more than one"}[val])
+                if val == "1":
+                    self.title.set_text("Verified: one label per cycle"); self.sub.set_text("Ready for production.")
+                elif val == "0":
+                    self.title.set_text("Nothing printed on the cycle")
+                    self.sub.set_text("Check ribbon, media and the print head on the bagger screen (No Ribbon / Error).")
+                else:
+                    self.title.set_text("Printed more than once")
+                    self.sub.set_text("Turn Reprint OFF on the bagger's Printer Settings screen, then Clear Labels and send once.")
+            self.ask.set_reveal_child(False)
+
+        # -- dev aid: PBPM_SHOT=/path.png renders the window to a PNG, then quits
+        def maybe_snapshot(self):
+            shot = os.environ.get("PBPM_SHOT")
+            if not shot: return
+            if os.environ.get("PBPM_SHOT_H"): self.set_default_size(1180, int(os.environ["PBPM_SHOT_H"]))
+            if os.environ.get("PBPM_SHOT_ASK"):
+                self.ask_step(1, expectation(self.current_file())[1])
+            def snap():
+                w, h = self.get_width(), self.get_height()
+                paint = Gtk.WidgetPaintable.new(self)
+                snapshot = Gtk.Snapshot(); paint.snapshot(snapshot, w, h)
+                node = snapshot.to_node()
+                if node: self.get_native().get_renderer().render_texture(node, None).save_to_png(shot)
+                self.get_application().quit(); return False
+            GLib.timeout_add(1800, snap)
 
     class App(Gtk.Application):
         def __init__(self):
-            super().__init__(application_id="io.techmore.PolyBaggerPrintManager", flags=Gio.ApplicationFlags.FLAGS_NONE)
+            super().__init__(application_id="io.techmore.PolyBaggerPrintManager", flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+
+        def do_startup(self):
+            Gtk.Application.do_startup(self)
+            Granite.init()
+            gs, gtk = Granite.Settings.get_default(), Gtk.Settings.get_default()
+            dark = lambda *_: setattr(gtk.props, "gtk_application_prefer_dark_theme",
+                                      gs.props.prefers_color_scheme == Granite.SettingsColorScheme.DARK)
+            dark(); gs.connect("notify::prefers-color-scheme", dark)
+            prov = Gtk.CssProvider(); prov.load_from_string(CSS)
+            Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
         def do_activate(self):
             (self.props.active_window or Win(self)).present()
 
@@ -615,8 +968,10 @@ def gui():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--status", action="store_true"); ap.add_argument("--send", metavar="FILE")
+    ap.add_argument("--cancel", action="store_true", help="cancel your stuck jobs on the queue")
+    ap.add_argument("--qty", type=int, default=1, metavar="N", help="with --send: labels to print (^PQ), default 1")
     ap.add_argument("--watch", action="store_true"); ap.add_argument("--setup", action="store_true")
     ap.add_argument("--sync", action="store_true", help="refresh the offline label store"); ap.add_argument("--pull", action="store_true", help="with --sync: git pull the thril repo first")
     ap.add_argument("--json", action="store_true"); ap.add_argument("--yes", action="store_true", help="skip the 'did it print?' prompt")
     a = ap.parse_args()
-    sys.exit(cli(a) if (a.status or a.send or a.watch or a.setup or a.sync) else gui())
+    sys.exit(cli(a) if (a.status or a.send or a.watch or a.setup or a.sync or a.cancel) else gui())
