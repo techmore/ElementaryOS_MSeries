@@ -54,6 +54,14 @@ by hand.** Corrects an earlier theory that the refused record was Linux's own. A
 was deleted at the owner's request; reports belong on omacom/linux-aurora as a per-Mac issue. Nothing is posted; a redrafted report is pending the owner.
 Stale Touch ID claims in `BUG-FIX-ROADMAP.md` and `ROADMAP.md` were updated. Verified: `validate.sh` 76/76, aurora unit tests 72, Touch ID UI tests 14/14,
 PAM helper test. Not verified: matching on this Mac, `.20` behaviour, any change to the guard.
+## Kernel wip3 candidate prepared (build-only) — 2026-10-21
+
+Owner asked to coordinate the next kernel part (USB4/HDMI display work). Chosen scope: upstream #158 (Asahi 7.2.11 base)
+plus #157 (external-display colour); #154 (shared Thunderbolt DP bandwidth, may cap a single-monitor dock at HBR2 x4) was not
+included. `mseries/aurora/unified72/series.json` revision 4 pins `7.2.11-elementary-aurora72-wip3` with #157 as a local patch
+and a new review receipt. Verified: patch dry-run on #158 head and current integration, full-tree `candidate.py prepare` and
+`check`, 72 aurora unit tests. CI runs the native build for this PR. Native CI build passed and its artifact was audited (`native-build-wip3-2026-10-21.json`). **Not done:** boot payload
+(the trial prep script was adapted but nothing is prepared, staged or armed), 64-fix parity at 7.2.11, any hardware test. wip2 stays installed; one-shot to wip2 was armed separately.
 
 ## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
 
