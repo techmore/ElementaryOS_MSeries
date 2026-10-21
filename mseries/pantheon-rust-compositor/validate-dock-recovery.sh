@@ -98,13 +98,23 @@ if [ "$work_on" = true ]; then
     "u 1") ok "Work Mode is on and the compositor has the top bar hidden (TopPanelMode 1)" ;;
     *) bad "Work Mode is on but the compositor does not report the top bar hidden ($mode)" ;;
   esac
-  dock_pid=$(pgrep -u "$(id -u)" -f '/io.elementary.dock$' | head -1)
-  dock_exe=$([ -n "$dock_pid" ] && readlink "/proc/$dock_pid/exe" || true)
-  case "$dock_exe" in
-    "$HOME"/.local/lib/mseries/dock/*) ok "the patched taskbar dock is running ($dock_exe)" ;;
-    "") bad "no dock process is running" ;;
-    *) bad "the stock dock is running ($dock_exe), not the patched Windows-style one" ;;
-  esac
+  # The launcher is a shell script whose command line also ends in the dock's name, so
+  # judge by the executable of every candidate rather than by the first match.
+  patched=0; stock=0
+  for pid in $(pgrep -u "$(id -u)" -f 'io.elementary.dock'); do
+    exe=$(readlink "/proc/$pid/exe" 2>/dev/null || true)
+    case "$exe" in
+      "$HOME"/.local/lib/mseries/dock/*) patched=1 ;;
+      /usr/bin/io.elementary.dock) stock=1 ;;
+    esac
+  done
+  if [ "$patched" = 1 ]; then
+    ok "the patched taskbar dock is running (~/.local/lib/mseries/dock)"
+  elif [ "$stock" = 1 ]; then
+    bad "the stock dock is running, not the patched Windows-style one"
+  else
+    bad "no dock process is running"
+  fi
 else
   say "  NOTE  Work Mode is off; top bar and taskbar dock checks skipped"
 fi
