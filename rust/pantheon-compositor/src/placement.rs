@@ -85,6 +85,16 @@ impl Placement {
         }
     }
 
+    /// The tile this window returns to: its own, or the one remembered under
+    /// maximize or fullscreen.
+    pub fn resting_tile(&self) -> Option<&Tile> {
+        match self {
+            Self::Floating => None,
+            Self::Tiled(tile) => Some(tile),
+            Self::Maximized { prior } | Self::Fullscreen { prior } => prior.resting_tile(),
+        }
+    }
+
     pub fn is_floating(&self) -> bool {
         matches!(self, Self::Floating)
     }
@@ -713,6 +723,13 @@ mod tests {
             placement,
             ..Default::default()
         };
+        assert_eq!(
+            record
+                .placement
+                .resting_tile()
+                .map(|tile| tile.output.as_str()),
+            Some("DP-1")
+        );
         record.unfullscreen();
         record.unmaximize();
         assert_eq!(

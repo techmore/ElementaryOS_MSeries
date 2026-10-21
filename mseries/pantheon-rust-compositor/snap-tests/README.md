@@ -30,6 +30,16 @@ growing inward from the screen edge on both sides (S5); then a GTK 3 window on
 XWayland snapping, resizing itself and being told its tile rect again (S7), and
 restoring. Results are written to `snap-receipts.json` beside the compositor log.
 
+Phase 1 adds 11 checks (34 in all) with three GTK 4 windows: snapping a half
+offers Snap Assist in the empty half; arrows move the selection; Escape closes
+it; clicking a thumbnail snaps that window there and forms a two-member snap
+group; dragging the shared edge 200 px resizes both members (the probe's
+`split-press X Y` starts the same grab a border resize does); maximize and
+restore keep the group and its split; un-snapping one member dissolves the group
+and returns the other to its half; snapping beside an existing tile groups at
+once. Probe additions: `focus N` (Nth window by creation), `assist
+next|prev|choose|dismiss`, `assist-click X Y`, `assist-status`.
+
 Not covered: X11 drag-out, multiple outputs (S3 is covered by unit tests only),
 panels/dock work areas, the ack timeout path and native input.
 
@@ -37,3 +47,6 @@ panels/dock work areas, the ack timeout path and native input.
 `snap-receipts.json` and the compositor's `snap probe` lines. The 14
 `pending=true` lines are placements waiting for the client's ack (S4): the
 window keeps its old geometry until the acked commit.
+
+`receipts/2026-10-21-phase1/` keeps the 34/34 run of the phase-1 branch with a
+screenshot of Snap Assist (`snap-assist.png`).

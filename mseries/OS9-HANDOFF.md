@@ -1,3 +1,27 @@
+## Compositor snapping phase 1: Snap Assist and two-member snap groups — 2026-10-21 (Claude Code)
+
+Phase 1 of section 2 of `NEXT-GEN-INVESTIGATION-2026-10-21.md`, on top of phase 0 (#449).
+
+- **Snap Assist.** Snapping a half (keys or drag) when the other half is empty shows live, scaled thumbnails of the other windows
+  on that output and workspace in the empty half, on light plates over a dimmed backdrop; the selection has an elementary-accent
+  ring. Arrows/Tab, Return/space or a click choose; hover selects; Escape or any other key (passed through) dismisses; drags,
+  workspace switches, the overview and mode changes close it. Rendered in the shared native/nested scene by rescaling the
+  windows' own surfaces (the gesture-preview technique), so clients are never resized. No titles yet (no text rendering).
+- **Snap groups.** `src/snap_group.rs` (new, pure): `SnapNode` split tree, `SnapGroup`, `layout()` with minimum sizes and a
+  240 px floor, ratio clamping. Choosing in Assist, or snapping beside a window already on the other half, forms a horizontal
+  pair. Members raise together; resizing from the shared edge (xdg or X11) starts `SplitResizeGrab`, which moves the split and
+  reconfigures both (ack-gated, `Resizing` state set); maximize/fullscreen keep membership; un-snap, close, move to another
+  output or workspace dissolves the group and the other member returns to its plain half. Phase-2 shapes (quarters, 1+2,
+  thirds) already lay out in the solver but are not formed yet.
+- **Verified.** fmt; strict clippy (`--release --features native-drm --all-targets` and `--features gesture-probe`);
+  `cargo test --release --features native-drm` 113 + 19; nested `snap-tests/run-snap.sh` 34/34 (11 new), receipts and a
+  screenshot in `snap-tests/receipts/2026-10-21-phase1/`. An X11 restore check was hardened to wait for XWayland's geometry
+  update (it once read the old height).
+- **Not verified.** Native input/trackpad, multiple monitors, the dock work area, Electron/Chromium, real border-drag cursor
+  feedback on the shared edge. Nothing installed or restarted.
+- **Next (phase 2).** Split-on-drop to add a third/fourth app, layout templates/picker, titles in Assist (needs text rendering),
+  rounded plates, hotplug survival.
+
 ## Disk Space app: cards and circle disk usage analyzer — 2026-10-21 (Claude Code)
 
 - **What:** `rust/mseries-diskspace` (GTK 4 + Granite 7, granite-rs), launcher `org.techmore.mseries.DiskSpace`, `mseries/diskspace-app/`

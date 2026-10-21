@@ -75,7 +75,15 @@ stays snapped and grows inward from the screen edge, and snapped X11 windows
 that resize themselves are told their rect again. The window's output is the
 one its geometry overlaps most, not a random one. Bindings load at session
 start (`org.techmore.mseries.snapping` `maximize`/`restore` plus the Mutter and
-GNOME keys, with built-in defaults). Nested regression:
+GNOME keys, with built-in defaults). Phase 1: snapping a half next to an
+empty half opens **Snap Assist**, live scaled thumbnails of the other windows on
+that output and workspace in the empty half (arrows/Tab, Return or click to
+choose, Escape or any other key to dismiss; clients are not resized). Choosing
+one, or snapping beside a window already on the other half, forms a two-member
+**snap group** (`src/snap_group.rs`, a `SnapNode` split tree): members raise
+together, dragging their shared edge resizes both (clamped to minimum sizes),
+maximize/restore keeps the group, and un-snapping, closing or moving a member
+returns the other to its half. Nested regression:
 [snap-tests](snap-tests/README.md). Multi-output, X11 and native input remain
 owner acceptance.
 

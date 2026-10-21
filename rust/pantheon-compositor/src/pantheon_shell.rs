@@ -353,6 +353,8 @@ impl PantheonCompositor {
     /// Without this a click on a snapped window buried its own modal dialog, since the
     /// tiled window covers the whole work area under it.
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
+        // Snap groups come forward together, the raised member on top.
+        self.raise_group_siblings(window);
         self.space.raise_element(window, activate);
         let children = self
             .space
