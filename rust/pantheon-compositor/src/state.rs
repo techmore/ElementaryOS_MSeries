@@ -1651,7 +1651,7 @@ impl PantheonCompositor {
                 });
                 if !visible {
                     let target = Point::from((fallback.loc.x + 32, fallback.loc.y + 32));
-                    self.space.map_element(window.clone(), target, false);
+                    self.place_window(&window, target);
                     self.workspace_manager.set_location(window.id(), target);
                 }
             }
@@ -2068,4 +2068,107 @@ pub struct ClientState {
 impl ClientData for ClientState {
     fn initialized(&self, _client_id: ClientId) {}
     fn disconnected(&self, _client_id: ClientId, _reason: DisconnectReason) {}
+}
+
+/// Move `element` to `location` without changing where it sits in the stack.
+///
+/// `Space::map_element` lifts the element to the top even when it is already
+/// mapped. Re-applying a tile, a work-area limit or a window mode with it therefore
+/// raised every snapped window above all newer windows: a dialog opened over a
+/// snapped window ended up behind it and could not be reached or dragged.
+/// `relocate_element` keeps the stacking order. An element that is not mapped yet
+/// is mapped, on top.
+pub(crate) fn place_in_space<E>(space: &mut Space<E>, element: &E, location: Point<i32, Logical>)
+where
+    E: smithay::desktop::space::SpaceElement + PartialEq + Clone,
+{
+    if space.elements().any(|mapped| mapped == element) {
+        space.relocate_element(element, location);
+    } else {
+        space.map_element(element.clone(), location, false);
+    }
+}
+
+impl PantheonCompositor {
+    /// See [`place_in_space`]: move a window and keep its place in the stack.
+    pub(crate) fn place_window(&mut self, window: &Window, location: impl Into<Point<i32, Logical>>) {
+        place_in_space(&mut self.space, window, location.into());
+    }
+}
+
+#[cfg(test)]
+mod stacking_tests {
+    use super::place_in_space;
+    use smithay::{
+        desktop::{Space, space::SpaceElement},
+        output::Output,
+        utils::{IsAlive, Logical, Point, Rectangle},
+    };
+
+    /// A window stand-in: the stacking logic needs no Wayland surface.
+    #[derive(Clone, Debug, PartialEq)]
+    struct Fake(u32);
+
+    impl IsAlive for Fake {
+        fn alive(&self) -> bool {
+            true
+        }
+    }
+
+    impl SpaceElement for Fake {
+        fn bbox(&self) -> Rectangle<i32, Logical> {
+            Rectangle::new((0, 0).into(), (10, 10).into())
+        }
+        fn is_in_input_region(&self, _point: &Point<f64, Logical>) -> bool {
+            true
+        }
+        fn set_activate(&self, _activated: bool) {}
+        fn output_enter(&self, _output: &Output, _overlap: Rectangle<i32, Logical>) {}
+        fn output_leave(&self, _output: &Output) {}
+    }
+
+    fn order(space: &Space<Fake>) -> Vec<u32> {
+        space.elements().map(|fake| fake.0).collect()
+    }
+
+    #[test]
+    fn map_element_lifts_an_already_mapped_element_which_is_why_place_in_space_exists() {
+        let mut space = Space::<Fake>::default();
+        for id in 1..=3 {
+            space.map_element(Fake(id), (0, 0), false);
+        }
+        space.map_element(Fake(1), (5, 5), false);
+        assert_eq!(order(&space), vec![2, 3, 1]);
+    }
+
+    #[test]
+    fn placing_a_snapped_window_keeps_it_under_a_newer_dialog() {
+        let mut space = Space::<Fake>::default();
+        // 1 is a snapped window, 2 is a dialog opened over it later.
+        space.map_element(Fake(1), (0, 0), false);
+        space.map_element(Fake(2), (40, 40), false);
+
+        // Re-applying the tile (as a work-area change does) must not lift 1 above 2.
+        place_in_space(&mut space, &Fake(1), (0, 0).into());
+        assert_eq!(order(&space), vec![1, 2]);
+    }
+
+    #[test]
+    fn placing_updates_the_location_and_keeps_every_position_in_the_stack() {
+        let mut space = Space::<Fake>::default();
+        for id in 1..=4 {
+            space.map_element(Fake(id), (0, 0), false);
+        }
+        place_in_space(&mut space, &Fake(2), (7, 9).into());
+        assert_eq!(order(&space), vec![1, 2, 3, 4]);
+        assert_eq!(space.element_location(&Fake(2)), Some((7, 9).into()));
+    }
+
+    #[test]
+    fn placing_an_unmapped_element_maps_it_on_top() {
+        let mut space = Space::<Fake>::default();
+        space.map_element(Fake(1), (0, 0), false);
+        place_in_space(&mut space, &Fake(2), (3, 3).into());
+        assert_eq!(order(&space), vec![1, 2]);
+    }
 }
