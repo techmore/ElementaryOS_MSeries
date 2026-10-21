@@ -103,6 +103,20 @@ acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
 qualification remain open; no measured power win.
 [First-boot plan](aurora/unified72/BOOT-TRIAL.md).
 
+## October 21 maintenance checkpoint: kernel application next
+
+*Superseded:* the Aurora 7.2 wip2 staging, one-shot and first-boot entries above record what happened next.
+
+Kernel and power maintenance prompts were manually trialed, evidence-audited and
+refined; all eight recurring tasks remain paused. No measured optimization or
+new kernel adoption follows. **Next:** identify the owner's intended kernel
+candidate and prepare its pinned source/config/build change before continuing
+with package task 03. Reconcile #139's merged upstream state, avoid a direct #163
+backport, and retain exact boot/recovery qualification gates. Power tooling also
+needs capability-aware display capture without silently accepting missing DPMS.
+See [the handoff and retained evidence](maintenance/2026-10-21/README.md).
+
+
 ## Native Messages experience landed — 2026-10-20
 
 PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name

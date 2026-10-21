@@ -86,8 +86,8 @@ Patches are scanned on their added lines only. Existing sizes are listed in
 reason, so line moves don't matter but a new size, or one more of an old size, fails. Migrating a
 size means deleting it and trimming its entry; `--strict` (used in CI) also fails when an entry
 is larger than what the sources contain, so the list can only shrink. `--list` prints everything the
-scanner finds. The RepoBar taskbar readout (24pt) is allowlisted on purpose: the owner chose it.
-It remains the sole intentional absolute-font exception. RepoBar/CodexBar,
+scanner finds. The RepoBar taskbar readout is half the dock icon size in points (48 px icons give 24pt, 72 px give 36pt), computed in
+`TaskbarRepoBar.vala` from the same token the dock uses, so it follows the mode and text step together. RepoBar/CodexBar,
 legacy Orchard and Start-menu fonts now use relative units. The lint inventory
 also covers Machine Lab, Battery, Screenshot Shelf, native Orchard and OpenCode
 login; their existing relative fonts remain intact. Glyph geometry exceptions

@@ -86,13 +86,6 @@
       "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
-      "file": "mseries/patches/dock-taskbar-repobar.patch",
-      "rule": "font-abs",
-      "match": "font-size: 24pt",
-      "count": 2,
-      "reason": "Owner-chosen RepoBar taskbar readout size (#382; raised to 24pt, which keeps two stacked rows inside the 72 px taskbar); intentionally not scaled by the ladder. Do not change without the owner."
-    },
-    {
       "file": "mseries/patches/dock-taskbar.patch",
       "rule": "icon-px",
       "match": "-gtk-icon-size: 1px",
