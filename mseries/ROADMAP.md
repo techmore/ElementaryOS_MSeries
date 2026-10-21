@@ -1,3 +1,14 @@
+## Rust compositor next-generation investigation — 2026-10-21
+
+Read-only audit of popups/attention, snapping, performance/battery and monitoring:
+[pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md).
+Top items: popup grabs block compositor focus changes (D1); X11 notification cards steal
+activation (D2); no demands-attention channel to the dock (D3); snapped windows lose their
+floating size and maximize/snap erase each other (S1, S2); linux-dmabuf is off on native so
+Electron/Chromium render in software (P1); every window gets frame callbacks every flip (P2);
+no idle/DPMS (P3); no frame timing or watchdog. Next: metrics first, then D1/D2, then P2/P1/P3,
+then snapping phase 0 and Snap Assist for halves. Nothing implemented or qualified yet.
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
