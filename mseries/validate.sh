@@ -210,6 +210,7 @@ check installer 'test-quieter-sound-theme.sh' 'bash mseries/test-quieter-sound-t
 check installer 'vms/test-mseries-vm.sh' 'bash mseries/vms/test-mseries-vm.sh'
 check installer 'test-local-build-preflight.py' 'python3 mseries/test-local-build-preflight.py'
 check installer 'test-image-wiring.py' 'python3 mseries/test-image-wiring.py'
+check installer 'test-muvm-source.py' 'python3 mseries/test-muvm-source.py'
 check installer 'test-wifi-resume.py' 'python3 mseries/test-wifi-resume.py'
 check installer 'test-signal-accent.py' 'python3 mseries/test-signal-accent.py'
 
