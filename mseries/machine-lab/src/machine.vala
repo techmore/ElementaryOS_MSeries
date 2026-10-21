@@ -15,6 +15,7 @@ public class Machine : Object {
     public string arch { get; set; default = "aarch64"; }       // "aarch64" (KVM, fast) or "x86_64" (emulated, slow)
     public bool clipboard { get; set; default = false; }     // share the clipboard (needs spice-vdagent in the guest)
     public string? recipe { get; set; default = null; }      // "omarchy": download and install unattended
+    public string guest { get; set; default = ""; }          // managed: the GUEST key of vm.conf ("windows", "omarchy", ...)
 
     // Live information, not persisted.
     public bool paused { get; private set; default = false; }
@@ -30,9 +31,18 @@ public class Machine : Object {
 
     public signal void state_changed ();
     public signal void finished (int code);
+
+    construct {
+        state_changed.connect (() => {
+            if (!running) {
+                drop_qemu_connection ();
+            }
+        });
+    }
     public signal void installer_detached ();
 
     public bool managed { get { return kind == "managed"; } }
+    public bool is_windows { get { return managed && guest == "windows"; } }
     public bool emulated { get { return arch == "x86_64"; } }
     public string arch_label { get { return emulated ? "x86-64" : "ARM64"; } }
     public bool running { get { return managed ? managed_running : proc != null; } }
@@ -71,6 +81,20 @@ public class Machine : Object {
         } catch (Error e) {
             return 0;
         }
+    }
+
+    /* One KEY=VALUE from a managed guest's vm.conf, or null when the file or the key is missing. */
+    public string? conf_value (string key) {
+        try {
+            string text;
+            FileUtils.get_contents (Path.build_filename (dir, "vm.conf"), out text);
+            foreach (var line in text.split ("\n")) {
+                if (line.has_prefix (key + "=")) {
+                    return line.substring (key.length + 1).strip ();
+                }
+            }
+        } catch (Error e) {}
+        return null;
     }
 
     /* Sign-in details the unattended installer saved for the guest. */
@@ -242,6 +266,47 @@ public class Machine : Object {
             Posix.close (fds[0]);
         }
         return ours;
+    }
+
+    /* The one D-Bus connection to QEMU's display, shared by the clipboard and the screen stream: QEMU serves a
+     * single control client at a time (each new add_client takes over the exported objects). Null when the
+     * machine is not running or was started without the D-Bus display; callers then fall back (screendump). */
+    private DBusConnection? qemu_bus = null;
+    private bool qemu_bus_connecting = false;
+
+    public async DBusConnection? qemu_connection () {
+        while (qemu_bus_connecting) {
+            Timeout.add (50, qemu_connection.callback);
+            yield;
+        }
+        if (qemu_bus != null && !qemu_bus.closed) {
+            return qemu_bus;
+        }
+        qemu_bus = null;
+        if (!running) {
+            return null;
+        }
+        qemu_bus_connecting = true;
+        int fd = qmp_add_dbus_client ();
+        if (fd >= 0) {
+            try {
+                var stream = SocketConnection.factory_create_connection (new Socket.from_fd (fd));
+                qemu_bus = yield new DBusConnection (stream, null, DBusConnectionFlags.AUTHENTICATION_CLIENT, null, null);
+            } catch (Error e) {
+                append_log ("[D-Bus display connection failed: %s]\n".printf (e.message));
+            }
+        }
+        qemu_bus_connecting = false;
+        return qemu_bus;
+    }
+
+    /* Forget (and close) the shared connection, for instance when the machine stopped. */
+    public void drop_qemu_connection () {
+        var b = qemu_bus;
+        qemu_bus = null;
+        if (b != null && !b.closed) {
+            b.close.begin (null);
+        }
     }
 
     /* Turn clipboard sharing on or off. Managed guests keep it in vm.conf (applies on next start). */
@@ -419,6 +484,8 @@ public class Machine : Object {
         }
         var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
         string[] argv;
+        // QEMU's D-Bus display carries the screen stream, the resize request and the clipboard.
+        l.setenv ("MSERIES_VM_DBUS_DISPLAY", "on", true);
         if (managed) {
             argv = { launcher, "start", vm_name, "--headless" };
         } else {
@@ -429,6 +496,7 @@ public class Machine : Object {
             l.setenv ("MACHINE_NAME", name, true);
             l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
             l.setenv ("MACHINE_CLIPBOARD", clipboard ? "on" : "off", true);
+            l.setenv ("MACHINE_DBUS", "on", true);
             l.setenv ("MACHINE_ARCH", arch, true);
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
@@ -723,6 +791,7 @@ public class MachineStore : Object {
                 m.vm_name = n;
                 m.id = "vm-" + n;
                 string guest = kf.has_key ("c", "GUEST") ? kf.get_string ("c", "GUEST") : n;
+                m.guest = guest;
                 switch (guest) {
                     case "omarchy": m.name = "Omarchy"; m.color = 7; break;
                     case "elementary": m.name = "elementary OS"; m.color = 0; break;

@@ -1,0 +1,250 @@
+{
+  "comment": "Hard-coded UI sizes tolerated by check-ui-sizes.sh. Each group is (file, rule, matched text) with the most occurrences allowed. Shrink entries as sizes migrate to the size system (#332); adding one needs a real reason.",
+  "allowed": [
+    {
+      "file": "mseries/codexbar-wingpanel/AccountDialog.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 18",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/AccountDialog.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 40",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 12",
+      "count": 2,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 13",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 18",
+      "count": 3,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/codexbar-wingpanel/settings/SettingsApp.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 16",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/display-space/dock_profile.py",
+      "rule": "dock-size",
+      "match": "DEFAULT_ICON_SIZE = 40",
+      "count": 1,
+      "reason": "Fallback used only when the size system is absent or unmanaged; equals the default-step token (enforced by mseries/ui-scale/test_dock_consumers.py)."
+    },
+    {
+      "file": "mseries/dock-policy/enable-permanent.sh",
+      "rule": "dock-size",
+      "match": "icon_size=48",
+      "count": 2,
+      "reason": "Fallback used only when the size system is absent or unmanaged; equals the default-step token (enforced by mseries/ui-scale/test_dock_consumers.py)."
+    },
+    {
+      "file": "mseries/dock-taskbar/TaskbarCodexBar.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 28",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/dock-trial/dock-trial.py",
+      "rule": "dock-size",
+      "match": "DEFAULT_ICON_SIZE = 48",
+      "count": 1,
+      "reason": "Fallback used only when the size system is absent or unmanaged; equals the default-step token (enforced by mseries/ui-scale/test_dock_consumers.py)."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar-codexbar.patch",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar-repobar.patch",
+      "rule": "font-abs",
+      "match": "font-size: 24pt",
+      "count": 2,
+      "reason": "Owner-chosen RepoBar taskbar readout size (#382; raised to 24pt, which keeps two stacked rows inside the 72 px taskbar); intentionally not scaled by the ladder. Do not change without the owner."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "-gtk-icon-size: 1px",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "-gtk-icon-size: 24px",
+      "count": 2,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "-gtk-icon-size: 32px",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 3,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "pixel_size = 40",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/patches/dock-taskbar.patch",
+      "rule": "icon-px",
+      "match": "pixel_size = 48",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 10",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 12",
+      "count": 8,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 16",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 18",
+      "count": 3,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/repobar-wingpanel/settings/SettingsApp.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+    },
+    {
+      "file": "mseries/work-mode/mseries-work-mode",
+      "rule": "dock-size",
+      "match": "48 if taskbar else 40",
+      "count": 1,
+      "reason": "Fallback used only when the size system is unmanaged; equals the default-step work/work-taskbar tokens."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=24",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=18",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=28",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/battery/mseries-battery-app.py",
+      "rule": "icon-px",
+      "match": "pixel_size=20",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration does not change glyph geometry."
+    },
+    {
+      "file": "mseries/codexbar-opencode-login.py",
+      "rule": "icon-px",
+      "match": "pixel_size=18",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/codexbar-opencode-login.py",
+      "rule": "icon-px",
+      "match": "pixel_size=40",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard-incus-native/src/Dashboard.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 32",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard-incus-native/src/Indicator.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 16",
+      "count": 1,
+      "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/patches/wingpanel-content-scale.patch",
+      "rule": "panel-scale",
+      "match": "CONTENT_SCALE = 1.30f",
+      "count": 1,
+      "reason": "Wingpanel content scale (#312) is still a fixed 1.30. Phase 2 follow-up: derive it from the ladder; changes the live panel, so it needs a panel rebuild and visual check."
+    }
+  ]
+}

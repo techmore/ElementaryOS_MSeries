@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Test-only consumed-key subset of elementary/gala data/gala.gschema.xml.
+     Source pin: f0791434ac40a50f2aec64700a47b3bb04145752 (our installed Gala baseline).
+     https://github.com/elementary/gala/blob/f0791434ac40a50f2aec64700a47b3bb04145752/data/gala.gschema.xml
+     Preserve the production schema ID, path, key type and default. This file is
+     compiled only inside private fixture directories; it is never installed. -->
+<schemalist>
+  <schema path="/io/elementary/desktop/wm/keybindings/" id="io.elementary.desktop.wm.keybindings">
+    <key type="as" name="switch-to-workspace-last">
+      <default><![CDATA[['<Super>End', '<Super>0']]]></default>
+      <summary>Shortcut to move to last workspace</summary>
+      <description></description>
+    </key>
+  </schema>
+</schemalist>

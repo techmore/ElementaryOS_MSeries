@@ -1,0 +1,9 @@
+{
+  "upstream_harness_sha256": "67c7298886807cc4ba0b8d007d0450d11902d31a10c3f2806eabda31ab6c0149",
+  "ported_harness_sha256": "1ad3f7c6174a363408a51e85e97229cfaac32e4033f6b38b17d408df00a4d3ec",
+  "patch_sha256": "37d14b5082a4025839d84a5dc4b7653a20ab3b05e845e49e0c86ce572c1c9200",
+  "exit": 0,
+  "controls": 12,
+  "production_source_unchanged": true,
+  "scope": "Only host type/service stubs and expected drain-on-sync-failure behavior adapted to current production API; added firmware-mirror/handoff and two-stream error controls. Original failed compilation log retained; no kernel source modification."
+}

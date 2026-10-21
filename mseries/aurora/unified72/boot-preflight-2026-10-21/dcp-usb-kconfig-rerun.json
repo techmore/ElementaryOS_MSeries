@@ -1,0 +1,7 @@
+{
+  "result": "pass",
+  "cases": 4,
+  "boundary": "Original pm.kconfig producer with absolute output path; reruns only the initial suite failure caused by relative output path, with no production source edits.",
+  "producer_sha256": "8a3cf541e675a0372a64daeb56c3dbcb3d1993848cb145a4b2cfbdc61e7c88c3",
+  "harness_sha256": "a521f791b02a94eb282fcafbbaf0a467051dfc735d06a59ed8a06d95cdc3c03b"
+}

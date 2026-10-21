@@ -175,11 +175,13 @@ check syntax 'fairydust/debian scripts' \
 check syntax 'fairydust/usb4 scripts' \
   'bash -n mseries/fairydust/usb4/test-dp-tunnel.sh; python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py'
 check syntax 'aurora-sep installers' \
-  'bash -n mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh'
+  'bash -n mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/install-touchid-settings.sh mseries/touchid-settings/tests/run-ui-tests.sh mseries/touchid-settings/tests/test-pam-helper.sh mseries/aurora-sep/mseries-aurora-touchid-apply-pam; python3 -m py_compile mseries/touchid-settings/tests/fake_fprintd.py'
 check syntax 'iso-label.sh, vms/mseries-vm' \
   'bash -n mseries/iso-label.sh mseries/test-iso-label.sh mseries/vms/mseries-vm'
 check syntax 'codexbar scripts' \
   'bash -n mseries/install-signal.sh mseries/install-codexbar.sh mseries/deploy-codexbar.sh mseries/lib-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh'
+check syntax 'modrun.py, installer-speed.py, post-install.sh' \
+  'python3 -m py_compile mseries/modrun.py mseries/benchmarks/installer-speed.py; bash -n mseries/post-install.sh'
 check syntax 'display-space/*.py, test-notch-layout.sh, apply-desktop-settings.py' \
   'python3 -m py_compile mseries/display-space/*.py mseries/apply-desktop-settings.py; bash -n mseries/display-space/test-notch-layout.sh'
 check syntax 'power scripts' \
@@ -187,7 +189,7 @@ check syntax 'power scripts' \
 
 # -- shellcheck: the scripts that run as root on a user's Mac -----------------
 check shellcheck 'installer, enhancements, boot and VM scripts' \
-  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh'
+  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/lib-build.sh mseries/lib-timing.sh mseries/test-enhance-firstboot.sh mseries/test-build-ccache.sh mseries/test-post-install-timing.sh'
 check shellcheck 'video-decode, widevine' \
   'shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh'
 check shellcheck 'calendar, homeboard' \
@@ -199,11 +201,16 @@ check shellcheck 'codexbar' \
 check installer 'test-elementary-mac-setup.sh' 'bash mseries/test-elementary-mac-setup.sh'
 check installer 'test-installer-flow.sh' 'bash mseries/test-installer-flow.sh'
 check installer 'test-iso-label.sh' 'bash mseries/test-iso-label.sh'
+check installer 'test-enhance-firstboot.sh' 'bash mseries/test-enhance-firstboot.sh'
+check installer 'test-post-install-timing.sh' 'bash mseries/test-post-install-timing.sh'
+check installer 'test-build-ccache.sh' 'bash mseries/test-build-ccache.sh'
+check installer 'test-modrun.py' 'python3 mseries/test-modrun.py'
 check installer 'test-greeter-obex-fix.sh' 'bash mseries/test-greeter-obex-fix.sh'
 check installer 'test-quieter-sound-theme.sh' 'bash mseries/test-quieter-sound-theme.sh'
 check installer 'vms/test-mseries-vm.sh' 'bash mseries/vms/test-mseries-vm.sh'
 check installer 'test-local-build-preflight.py' 'python3 mseries/test-local-build-preflight.py'
 check installer 'test-image-wiring.py' 'python3 mseries/test-image-wiring.py'
+check installer 'test-muvm-source.py' 'python3 mseries/test-muvm-source.py'
 check installer 'test-wifi-resume.py' 'python3 mseries/test-wifi-resume.py'
 check installer 'test-signal-accent.py' 'python3 mseries/test-signal-accent.py'
 
@@ -216,6 +223,7 @@ check kernel 'boot/test-prepare-uki-kernels.py' 'python3 mseries/boot/test-prepa
 check kernel 'test-kernel-config.py' 'python3 mseries/test-kernel-config.py'
 check kernel 'aurora unit tests' "python3 -m unittest discover -s mseries/aurora -p 'test_*.py'"
 check kernel 'aurora-sep/test_touchid_core.py' 'python3 mseries/aurora-sep/test_touchid_core.py'
+check kernel 'touchid-settings/tests/test-pam-helper.sh' 'bash mseries/touchid-settings/tests/test-pam-helper.sh'
 
 # -- power ---------------------------------------------------------------------
 check power 'test-power-cap.py' 'python3 mseries/test-power-cap.py'
@@ -229,6 +237,14 @@ check desktop 'brightness unit tests' "python3 -m unittest discover -s mseries/b
 check desktop 'keyboard-backlight unit tests' "python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'"
 check desktop 'audio unit tests' "python3 -m unittest discover -s mseries/audio -p 'test_*.py'"
 check desktop 'airplay unit tests' "python3 -m unittest discover -s mseries/airplay -p 'test_*.py'"
+
+# -- updater: staged, rollback-safe M-series updates (mseries/UPDATER-DESIGN.md) ----
+# test_real_tools.py drives the real apt-get/dpkg against a scratch root and skips itself
+# when dpkg-dev is missing; CI installs it so the skip never hides a regression there.
+check updater 'unit, fault-injection and real apt/dpkg tests' "python3 -B -m unittest discover -s mseries/update -p 'test_*.py'"
+check updater 'install script (bash -n, shellcheck)' 'bash -n mseries/update/install.sh && shellcheck -S warning mseries/update/install.sh'
+check updates-app 'install and test scripts (bash -n, shellcheck)' 'bash -n mseries/updates-app/install.sh mseries/updates-app/test.sh && shellcheck -S warning mseries/updates-app/install.sh mseries/updates-app/test.sh'
+check updates-app 'polkit policy and launcher parse' 'python3 -c "import xml.etree.ElementTree as ET; ET.parse(\"rust/mseries-updates/data/org.techmore.mseries.update.policy.in\")" && grep -q ^Exec=mseries-updates rust/mseries-updates/data/org.techmore.mseries.Updates.desktop'
 check desktop 'video-decode/test-brave-factory.py' 'python3 mseries/video-decode/test-brave-factory.py'
 check desktop 'video-decode/test-youtube-launch.py' 'python3 mseries/video-decode/test-youtube-launch.py'
 check desktop 'pantheon-rust-compositor metrics' \

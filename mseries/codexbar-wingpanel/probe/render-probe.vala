@@ -305,6 +305,13 @@ void capture (Gtk.Widget root, Gtk.Window window, string path, MainLoop loop) {
     }
 
     {
+        var requested_scale = Environment.get_variable ("GDK_SCALE");
+        assert (requested_scale == null || window.get_scale_factor () == int.parse (requested_scale));
+        try {
+            FileUtils.set_contents (path + ".json",
+                "{\"gdkScale\":%d,\"logicalWidth\":%d,\"logicalHeight\":%d}\n".printf (
+                    window.get_scale_factor (), root.get_width (), root.get_height ()));
+        } catch (Error e) { error ("%s", e.message); }
         var paintable = new Gtk.WidgetPaintable (root);
         var snapshot = new Gtk.Snapshot ();
         paintable.snapshot (snapshot, root.get_width (), root.get_height ());

@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "kind": "focused-static-contract-review",
+  "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "reviewed_at": "2026-10-21T13:36:29.792070+00:00",
+  "review_scope": "All 24 mechanically-neither cases triaged for their described source contract; not complete 64-fix semantic qualification. The 40 reverse-applicable cases remain mechanical evidence only.",
+  "counts": {
+    "contract-retained": 19,
+    "subsystem-review-open": 2,
+    "documentation-review-open": 1,
+    "partial-contract-review": 2
+  },
+  "checks": [
+    {
+      "sha": "17059686aaa39e3892df7df6af6b5ca074f3e411",
+      "subject": "arm64: user4k: keep 4K userspace off unless booted with user4k=on",
+      "patch_sha256": "a8fac55d260fe35aa2e50a07dab726d9f7bfd9d968468ff32381d9d6c13fab69",
+      "disposition": "contract-retained",
+      "assessment": "Runtime policy is still default-off via user4k_enabled(), early_param, exec selection and PRCTL validation. MM_SUBPAGE remains compiled in; boot-time opt-out is not absence of all shared MM changes.",
+      "source_files": [
+        "arch/arm64/mm/context.c",
+        "arch/arm64/kernel/process.c"
+      ]
+    },
+    {
+      "sha": "249829c32c880ddba07771db7c9c95a2baa0dbd2",
+      "subject": "Documentation: arm64: user4k: say the option is on by default",
+      "patch_sha256": "f8a06049ddc1af29e1d24baef47c5ad81a05954787e5c31dc153327e0ff2a020",
+      "disposition": "contract-retained",
+      "assessment": "Documentation distinguishes default-y build option from default-off runtime feature.",
+      "source_files": [
+        "Documentation/arch/arm64/user4k.rst"
+      ]
+    },
+    {
+      "sha": "d97563b36cd13a215367a44db6f8f4952b97f508",
+      "subject": "arm64: build mixed-granule userspace by default",
+      "patch_sha256": "68cece4b2074b7b8209eb2d7a193f266bf6c31169b6ec2a0b4dc62d8eeb112b5",
+      "disposition": "contract-retained",
+      "assessment": "Kconfig still defaults ARM64_USER4K_EXPERIMENTAL=y and explicitly documents runtime opt-in. Resolved candidate enables this and MM_SUBPAGE.",
+      "source_files": [
+        "arch/arm64/Kconfig.debug"
+      ]
+    },
+    {
+      "sha": "4154c885c0b9938379ffbeb6795260eb004db3b8",
+      "subject": "perf/core: restore the speculation bound on AUX page lookups",
+      "patch_sha256": "ef821e50b560c75e13142b32aaeeccc13ffe93b399ce920236c043f3f97c5afb",
+      "disposition": "contract-retained",
+      "assessment": "AUX lookup still applies array_index_nospec to pagenum against aux_nr_pages before indexing.",
+      "source_files": [
+        "kernel/events/core.c"
+      ]
+    },
+    {
+      "sha": "4f088212736f57544e4785cfe8a3392facd24790",
+      "subject": "exec: drop the user page-size preference on privilege-gaining exec",
+      "patch_sha256": "2ebb8ca75dce9830ff98eb0acf83b0d7c08e2ea72db796750beaf7a9b406827e",
+      "disposition": "contract-retained",
+      "assessment": "Preference-free secure_page_shift is recorded by arm64 exec and bprm_secure_page_size selects it on privilege-gaining exec. No new set-ID/runtime test here.",
+      "source_files": [
+        "arch/arm64/kernel/process.c",
+        "fs/exec.c"
+      ]
+    },
+    {
+      "sha": "e0e270cd746e23a63170ba28f3f8f8e1e69af174",
+      "subject": "vfio/type1: compile out fragment provider paths without MM_SUBPAGE",
+      "patch_sha256": "be419a9a99f72ebf7269986f708bef4d616b30185c7292deaffd962009a950ca",
+      "disposition": "contract-retained",
+      "assessment": "vfio_dma_has_fragments retains IS_ENABLED(CONFIG_MM_SUBPAGE) && dma->fragments; all nine fragment-use decision sites call it.",
+      "source_files": [
+        "drivers/vfio/vfio_iommu_type1.c"
+      ]
+    },
+    {
+      "sha": "55a5ef43af232e5ee879de616bcde38c301ee228",
+      "subject": "userfaultfd: keep the UFFDIO_COPY source check without user4k",
+      "patch_sha256": "05376200321e96f158722f0688e8e7b40aa64809ffffb3d9eda6bc1753f6b160",
+      "disposition": "contract-retained",
+      "assessment": "Old fs/userfaultfd.c moved to mm/userfaultfd.c. Exact reviewed source-check branch survives: current->mm byte range with MM_SUBPAGE, registered ctx->mm unaligned range otherwise. USERFAULTFD is disabled in the candidate.",
+      "source_files": [
+        "mm/userfaultfd.c"
+      ]
+    },
+    {
+      "sha": "c5a6961ce15a57575a07b0170a5c892c08119cab",
+      "subject": "io_uring/rsrc: limit the fragment-owner account skip to user4k",
+      "patch_sha256": "fb7f9460c829878b956fe3a8a5a6825288ecbe4ccb9a448e4459b57b779fff71",
+      "disposition": "subsystem-review-open",
+      "assessment": "headpage_already_acct is gone. Native compound-page accounting now uses hpage_acct_ref/unref and io_buffer_account_pin, while fragment accounting has separate CONFIG_MM_SUBPAGE implementation. The old one-line skip patch cannot certify this replacement accounting/lifetime model.",
+      "source_files": [
+        "io_uring/rsrc.c"
+      ]
+    },
+    {
+      "sha": "0b87330a6e1e1fcbcc40b6786e05956fec1e8c30",
+      "subject": "mm/vmscan: gate MGLRU legacy-memcg writeback change on subpage",
+      "patch_sha256": "17efcdb184c33540349085389eb7d2bf00fe9941608e769db2eeba1378f226ee",
+      "disposition": "subsystem-review-open",
+      "assessment": "sort_folio no longer contains the old writeback branch and isolate_folio no longer contains the old reclaim-clear branch. This is a changed reclaim implementation, not proof of a missing two-line guard or equivalent behavior. Compare upstream base and stress legacy-memcg/writeback separately.",
+      "source_files": [
+        "mm/vmscan.c"
+      ]
+    },
+    {
+      "sha": "d0565a858891cbeb7a5db56fe8aa33ea3ec03052",
+      "subject": "docs: index the new Apple documents and fix their title markup",
+      "patch_sha256": "b43bcb1254c856d0948f1efb6a8a457e66848402d6261bc82b23c46854d7daa1",
+      "disposition": "documentation-review-open",
+      "assessment": "Some indexes/titles survive but apple-ave and the old/new PMP-DVFS paths are absent from the compared snapshot. Documentation relocation/removal remains to be traced. No J314S executable behavior inferred from this patch.",
+      "source_files": [
+        "Documentation/arch/arm64/index.rst",
+        "Documentation/gpu/drivers.rst"
+      ]
+    },
+    {
+      "sha": "0765e6acfd1ff2bd9250bfeb8dc9bee9f4742030",
+      "subject": "drm/apple: build the AFK service test only with the display driver",
+      "patch_sha256": "da39ca3a8b2ca303d0252bde8f11868ecf70da9dd26bbb3caff950743b72f44c",
+      "disposition": "contract-retained",
+      "assessment": "AFK service test is under apple/Makefile reached through DRM_APPLE; parent Makefile no longer builds it unconditionally. Kconfig preserves DRM_APPLE || !DRM_APPLE tristate bound.",
+      "source_files": [
+        "drivers/gpu/drm/Makefile",
+        "drivers/gpu/drm/apple/Makefile",
+        "drivers/gpu/drm/apple/Kconfig"
+      ]
+    },
+    {
+      "sha": "52841d18939ab9cb79b0b12ae012fdca6c43a80f",
+      "subject": "vfio/type1: make the retained-fragment KUnit tests depend on TMPFS",
+      "patch_sha256": "aa778bc42a5b6212fdae91f1a3ff9224cb544c30d0b7a5c3c777722a43158758",
+      "disposition": "contract-retained",
+      "assessment": "Both arm64 VFIO harnesses retain TMPFS dependency. VFIO account tests now require MM_SUBPAGE and TMPFS outright: stricter applicability than old non-subpage test support, with the required mixed-granule guard retained.",
+      "source_files": [
+        "arch/arm64/Kconfig.debug",
+        "drivers/vfio/Kconfig"
+      ]
+    },
+    {
+      "sha": "b8c3c61294648b9263f208f7203a8bed8ba235e7",
+      "subject": "usb: typec: tipd: put the debugfs command file behind a Kconfig option",
+      "patch_sha256": "b498344b68bd89e2919d55f06d470dd3cd18e0312709785cac0ab85d45f58cd6",
+      "disposition": "contract-retained",
+      "assessment": "Debug command creation remains behind CONFIG_TYPEC_TPS6598X_DEBUG_COMMANDS; resolved candidate disables it. Read-only register interface is separate. No controller command was sent.",
+      "source_files": [
+        "drivers/usb/typec/tipd/Kconfig",
+        "drivers/usb/typec/tipd/debugfs.c"
+      ]
+    },
+    {
+      "sha": "d4f767b6f7d373fc00d8e9824e6b5e00f7dc43a6",
+      "subject": "wifi: brcmfmac: drop the runtime AWDL interface_create parameters",
+      "patch_sha256": "f089101553cbaeae7b40e36a6cb285a172a1ed8fe80034ad41381acffb0d5cc9",
+      "disposition": "contract-retained",
+      "assessment": "AWDL flags/index remain constants; awdl_bssid is charp mode0444, with no writable flags/index module parameters. No radio reconfiguration performed.",
+      "source_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c"
+      ]
+    },
+    {
+      "sha": "1b50cbd1e008f61375b34e09d121f0bff5aec2a6",
+      "subject": "drm/asahi: reject unsupported command fields on the M1/M2 queue path",
+      "patch_sha256": "aa35058ba4f2cd811091cdf36d9ae1a08d3de8fffaef9d67273ff09f4d697540",
+      "disposition": "contract-retained",
+      "assessment": "Render and compute readers still use read_supported for bounded versioned structures; prior pinned-source GPU-reader controls passed. Header/reader inspection does not qualify actual GPU command behavior.",
+      "source_files": [
+        "drivers/gpu/drm/asahi/queue/mod.rs",
+        "drivers/gpu/drm/asahi/util.rs"
+      ]
+    },
+    {
+      "sha": "d25e17cc3e469a4bb0b51aa423bcd3689a40a638",
+      "subject": "drm: apple: answer DPTX group 1 calls 3 and 4 on 13.5 firmware again",
+      "patch_sha256": "02781438fa86f5770f2ad39d37c2ed6d6db49096fd487018cef81c88dfad3293",
+      "disposition": "contract-retained",
+      "assessment": "dptxport_group_call retains 13.5 group1 command3/4 dispatch to the bounded reply helper; legacy12.3/13.5 otherwise dispatch by command. Native wire_v2 dispatch is explicitly separate. This is source compatibility for observed13.5, not HDMI audio acceptance.",
+      "source_files": [
+        "drivers/gpu/drm/apple/dptxep.c"
+      ]
+    },
+    {
+      "sha": "07fc9fe06c29194561a3e5fceb846cde39fea569",
+      "subject": "drm: apple: relink a Type-C sink only when DCP drops it at link-up",
+      "patch_sha256": "7dfd2c1fffe958082758032feb0a22d9a769183c0522e37406d0ec4dc88c1d58",
+      "disposition": "partial-contract-review",
+      "assessment": "Reviewed eligibility, spinlocked state, retry/time bounds and IRQ_HPD behavior. Legacy direct Type-C relinks are bounded and tunnels excluded; native/H17P paths use separate lifecycle. Complete attach/unplug concurrency and all route effects still require subsystem/hardware review.",
+      "source_files": [
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/dcp-relink.h"
+      ]
+    },
+    {
+      "sha": "0378c54a442e13c8e3f94cefb5b17dc11d12d203",
+      "subject": "usb: typec: tipd: send each IRQ_HPD request to the display route once",
+      "patch_sha256": "538fcbb7385b508788b5bacdd49486baa4362d275f926254b23aa6c6f8f56468",
+      "disposition": "contract-retained",
+      "assessment": "cd321x_dp_send still suppresses unchanged status, emits a new IRQ as SEND, and emits an edge for repeated coalesced pulses. Core routes pulse/edge separately and updates cached status after success. Actual partner IRQ timing remains untested.",
+      "source_files": [
+        "drivers/usb/typec/tipd/core.c",
+        "drivers/usb/typec/tipd/cd321x-pm.h"
+      ]
+    },
+    {
+      "sha": "418c346f87ebdf46936d0e35055d0f62ee879732",
+      "subject": "tools/aurora-sep: tests: Let the T8112 SEP DMA harness build again",
+      "patch_sha256": "3b016a67d8afb97830349f056f3340cf910114d50b9169bc131a16a20782cbca",
+      "disposition": "contract-retained",
+      "assessment": "T8112 host fixture contains fw_mirror and firmware mapping/handoff stubs, reordered and extended. This is fixture-source review; this particular harness was not executed in this continuation.",
+      "source_files": [
+        "tools/aurora-sep/tests/test_t8112_sep_dma.py"
+      ]
+    },
+    {
+      "sha": "bf80deeb634ab95a865b6d08b3d234b65e9d88d6",
+      "subject": "soc: apple: sep: Let suspend proceed when a capture is slow to stop",
+      "patch_sha256": "3d5aa50fe45163c1d3b41e8ad07391ec9239c48bb926a55a9829f7f3df71b03e",
+      "disposition": "contract-retained",
+      "assessment": "Void PM event callback and sleep_prepare allow capture-stop timeout to continue suspend; Rust/C shim signatures agree. Actual suspend is deliberately deferred until basic boot and recovery pass.",
+      "source_files": [
+        "drivers/soc/apple/pm.rs",
+        "drivers/soc/apple/pm_shim.c",
+        "drivers/soc/apple/sbio.rs",
+        "drivers/soc/apple/shim.h"
+      ]
+    },
+    {
+      "sha": "c80c151a1851ea49535777086adc6020d70e372a",
+      "subject": "soc: apple: sep: Initialise an empty host-state store file again",
+      "patch_sha256": "b408baf0cb75bbc3b7443f7df51d2359d172be14a37a23dfc720cc07dff71f5c",
+      "disposition": "contract-retained",
+      "assessment": "Store::from_file initializes empty/all-zero files only for Size/Header damage; describe rejects oversized/nonzero content, and other invalid stores return refusal without writing. Generic StoreIo/memory fixture replaced old filesystem-only helper. No owner store was opened or modified.",
+      "source_files": [
+        "drivers/soc/apple/store.rs"
+      ]
+    },
+    {
+      "sha": "1d66b81ec0ea1d51c26fc259532b36fbe3420f06",
+      "subject": "soc: apple: sep: Do not autoload the driver through a module alias",
+      "patch_sha256": "b4e7a2490396a68c52d9f1edd9849f2e53264324d638c7bcd3be70d774a0f89f",
+      "disposition": "contract-retained",
+      "assessment": "SEP OF_TABLE is a private IdArray rather than an exported module alias. Previously audited package/module boundary preserved; loader/owner policy still controls loading. No module was loaded.",
+      "source_files": [
+        "drivers/soc/apple/sep.rs"
+      ]
+    },
+    {
+      "sha": "d4b2c4ac469856efbfdb127b02ac6fb3d9515f73",
+      "subject": "spi: apple-qspi: keep the T8140 boot NOR read-only outside nvram",
+      "patch_sha256": "ba2ab6454630eb25d4c65913b56dd4edc87317ce9a6d66971ba484406d2f977d",
+      "disposition": "partial-contract-review",
+      "assessment": "T8140 nvram-window policy and apple_qspi_window_allowed gate remain; later driver adds more layout/transaction controls. Full write/erase policy equivalence not claimed. T8140-specific path does not qualify or need exercising on J314S; no NOR access performed.",
+      "source_files": [
+        "drivers/spi/spi-apple-qspi.c",
+        "drivers/spi/spi-apple-qspi-policy.h"
+      ]
+    },
+    {
+      "sha": "2bf01adf4862725d602e9d7fe38248f240624c29",
+      "subject": "pmdomain: apple: pmp-report: match T8140 report entries by compatible",
+      "patch_sha256": "57c80f2215290623d581357457058b6ce1d7be1c2e2f4c818c8b459e4eeac6c0",
+      "disposition": "contract-retained",
+      "assessment": "Entry OF table retains distinct apple,t8140-pmp-v2-report-entry matching. Old exact-hunk failure reflects surrounding table movement. T8140 entry matching is not proof of J314S PMP/energy behavior.",
+      "source_files": [
+        "drivers/pmdomain/apple/pmp-report.c"
+      ]
+    }
+  ],
+  "source_file_sha256": {
+    "arch/arm64/mm/context.c": "29d16b5a18c611a2325f1d74d590478aa6ea8a7548570ca5d3d29d5945743d9c",
+    "arch/arm64/kernel/process.c": "d7c8231005296ae780a89dc2ced5439317faa36cacbe84825b405b64c928ad09",
+    "Documentation/arch/arm64/user4k.rst": "121d505b6d33ff3f1b14172a26904d893fe6ddaf6cc54d0db5001c7e656fbde6",
+    "arch/arm64/Kconfig.debug": "e35669f5b0b3df27483ac4943dff1429fce755c44df8bdda8b7d4b360969d678",
+    "kernel/events/core.c": "5d415fc3c5a05060577b88a7612cc1c7401b5ecdf94039bbae6d9b92b9a7a5f7",
+    "fs/exec.c": "72dcf0f816519dd94935846c2756d9b9cfaa500ac3d9b6a6a84ee81bcb890ef6",
+    "drivers/vfio/vfio_iommu_type1.c": "6ff628b4a88d35006ac86260076547e9d34822001546877f4ce67dbe6c0336ce",
+    "mm/userfaultfd.c": "c10281bd3f4d3601295372719d08655ffc5e915e141517f1a1763ad851016e88",
+    "io_uring/rsrc.c": "a66479894bd9d53242dcc9e8260f6957490fe16817231b68b061f9d7910be408",
+    "mm/vmscan.c": "98a5551210092c4f34def5eb3a2caed2af5886620c80dfbdde8964dc915607a9",
+    "Documentation/arch/arm64/index.rst": "80cbcd1ef686f661fa4982e8e526129bd5b48809b83d4f16430c91fcc1ee0f6e",
+    "Documentation/gpu/drivers.rst": "b5ea0632c13cbf1d2d132d59071f02855bdd714abb2cf4d844eb0c84ee06914e",
+    "drivers/gpu/drm/Makefile": "aa1097d094602582c1408436c56fd6c8862d443d610d6626c37c0aba72710e79",
+    "drivers/gpu/drm/apple/Makefile": "0d1aac886444568e6f283d1668e8d007af01017e09d5e93d6a9836f5c8ad8d6a",
+    "drivers/gpu/drm/apple/Kconfig": "aab0e280af9df4d64ad9b8e51ce04e9e36a034ed48cc730add40d7e28164cf36",
+    "drivers/vfio/Kconfig": "8a372864fa08a5d283065f2d6d547f92a3eee310aa03bf00e8427dcfa350c33f",
+    "drivers/usb/typec/tipd/Kconfig": "9574a0810560f293754b150adde751ea7a7a62d2a118114eaaa43f71929d5e1c",
+    "drivers/usb/typec/tipd/debugfs.c": "99c72f8bca32942d8e16e4fbd403b55e2a07c0d7ba059b6e5ce38714a03c3f38",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c": "ff2682518d106dcdd501abb73af919da0481e00e6eced0102fb238540c99aa23",
+    "drivers/gpu/drm/asahi/queue/mod.rs": "4487dce9dd6062ee80ffcaf0f5cf1d52cf3d247a31f1449247911b09455afcf2",
+    "drivers/gpu/drm/asahi/util.rs": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6",
+    "drivers/gpu/drm/apple/dptxep.c": "5d855e76f1136579f74e8fe7bcb5fb701f4a7496b2c75253514ce20c7aafce67",
+    "drivers/gpu/drm/apple/dcp.c": "fc37f11a3c06dc389b272816773d9c11618e5def145f2788c419341c78402d11",
+    "drivers/gpu/drm/apple/dcp-relink.h": "4cc43a69deb661461be47ac2f1f5287fd30d698e58b81cb1a937bdf82acae252",
+    "drivers/usb/typec/tipd/core.c": "3b1b0a981f2a5653792a7dd8d57b35fa6c1db636bbf11f18c3c3641e4a9294d5",
+    "drivers/usb/typec/tipd/cd321x-pm.h": "c9751f037da606198c0e5b9161048cdd2c35d1b2c6ac4123a6e52829cdbc4795",
+    "tools/aurora-sep/tests/test_t8112_sep_dma.py": "c118e5d812e51fdfa57dbb979b32ed826561e474ffc6b1edf2b7bb3065964f46",
+    "drivers/soc/apple/pm.rs": "bd0358ee7db06ed59d2867b760270b2c441305ffa667d295b3de0b2f38f08b72",
+    "drivers/soc/apple/pm_shim.c": "98d2321963c924f8e99e257e61eda06252d81dec6425547d95ac55acb7218402",
+    "drivers/soc/apple/sbio.rs": "545d74363f9eb81135d8672eb2e19f7b15349c2415350da69067a5bb2b8fc2c7",
+    "drivers/soc/apple/shim.h": "c063758c7f773a213b0f300ae286a0fb8db40c2756bd07206dcd0893a8e884ce",
+    "drivers/soc/apple/store.rs": "e51531276a051fb3557b3440feb76b63cd05e1673af652d419b7251d98a64f90",
+    "drivers/soc/apple/sep.rs": "d5e207e37b98105b0c287a815b9fe63d521d968687d1c2239a01bfab8c029cc1",
+    "drivers/spi/spi-apple-qspi.c": "8de36648e6dd085c29b2b264fc3b50e7fb1d55e9fd7fca7d0fe88f2e28172121",
+    "drivers/spi/spi-apple-qspi-policy.h": "c1f4ae487ff2e2363469b018a76b4516fb534043b051512277f7a645a7377062",
+    "drivers/pmdomain/apple/pmp-report.c": "aaa787641f17e46c6faafa61bdda442a2bf8b8ccf2995c5a233568cba196adf9"
+  },
+  "resolved_config_sha256": "005829aa9a52d1640e2bf82ed6c0eddd2ce2e4a78086397684452e4d50ad0c1a",
+  "relocated_userfaultfd_provenance": {
+    "from": "fs/userfaultfd.c",
+    "to": "mm/userfaultfd.c",
+    "source": "retained audited CI corresponding-source archive",
+    "artifact_zip_sha256": "f0be95387d5275fcc89d7902ae3b66a01ae28d39f9ac9ba635524ae8507edee2"
+  },
+  "hardware_tests_run": false,
+  "kernel_patches_applied": false,
+  "boot_selection_changed": false,
+  "complete_semantic_parity_established": false,
+  "remaining": [
+    "io_uring compound/fragment accounting replacement",
+    "MGLRU writeback/reclaim replacement",
+    "documentation relocation/removal",
+    "full Type-C relink concurrency/route lifecycle",
+    "full T8140 QSPI transaction/window equivalence",
+    "semantic qualification beyond mechanical evidence for the 40 reverse-applicable commits",
+    "attended J314S 7.2 boot, actual clients and .20 recovery"
+  ]
+}

@@ -8,6 +8,8 @@
 #   elementary-mac-enhance --status              what is done / skipped / failed
 #   elementary-mac-enhance --retry [MODULE]      forget a failure (or all) and run again
 #   elementary-mac-enhance --run --with firefox  also install an optional module
+#   elementary-mac-enhance --run --parallel[=N]  opt in: run independent modules at once (N jobs)
+#   elementary-mac-enhance --timing              wall and CPU time of each module in the last run
 #
 # Modules, each independent and best-effort (a failure is logged and never stops
 # the others or the boot):
@@ -34,6 +36,21 @@
 # combined step fails. A failure that would repeat (missing package, file or
 # commit) is not retried on later boots; only network trouble is. `--retry`
 # clears either kind.
+#
+# Timing (#47): every module that runs is timed (start, end, wall and CPU seconds,
+# one JSON line each in $STATE/timing.jsonl); the run ends with a table sorted by
+# wall time, a one-line summary and $STATE/timing-summary.json. A run that has
+# nothing left to do leaves the previous timing in place.
+#
+# Parallel mode is opt-in and the default stays serial. Enable it with --parallel,
+# or MSERIES_PARALLEL=1 (for the service: a drop-in with Environment=MSERIES_PARALLEL=1).
+# MSERIES_JOBS=N sets the worker count (default: half the cores). Modules that hold
+# the apt/dpkg lock never overlap one another, nor do the ones that replace
+# Wingpanel plugins (the lock and dependency table, with the reason for each, is
+# mseries/enhance-modules.json; the scheduler is mseries/modrun.py). MSERIES_SERIAL=1
+# forces the serial path, and so does anything that makes parallel unsafe: no python3
+# or scheduler files, one worker, or a failed combined requirements install (each module
+# would then run its own apt-get).
 # shellcheck disable=SC1010  # "done" is a state name here, not the keyword
 set -uo pipefail
 
@@ -42,7 +59,16 @@ LOG=${ELEMENTARY_MAC_LOG:-/var/log/elementary-mac-enhance.log}
 PAYLOAD=${ELEMENTARY_MAC_PAYLOAD:-/usr/share/elementary-mac}
 COMPATIBLE=${ELEMENTARY_MAC_COMPATIBLE:-/proc/device-tree/compatible}
 MAX_ATTEMPTS=3
-DEPS_READY=0   # 1 once the combined requirements install succeeded
+DEPS_READY=${ELEMENTARY_MAC_DEPS_READY:-0}   # 1 once the combined requirements install succeeded
+SELF=$(readlink -f "$0")
+MODRUN=${ELEMENTARY_MAC_MODRUN:-$PAYLOAD/mseries/modrun.py}
+GRAPH=${ELEMENTARY_MAC_GRAPH:-$PAYLOAD/mseries/enhance-modules.json}
+TIMING_LOG=$STATE/timing.jsonl
+SUMMARY_JSON=$STATE/timing-summary.json
+PARALLEL=${MSERIES_PARALLEL:-0}
+# shellcheck source=mseries/lib-timing.sh
+source "${ELEMENTARY_MAC_TIMING_LIB:-$PAYLOAD/mseries/lib-timing.sh}" 2>/dev/null ||
+  { timing_begin() { :; }; timing_end() { :; }; timing_summary() { :; }; }
 PATH=$PAYLOAD/shim:$PATH   # `sudo` as a no-op: the install scripts were written for a user account
 export PATH DEBIAN_FRONTEND=noninteractive
 
@@ -186,6 +212,51 @@ run_module() {
   unlink "$out"
 }
 
+# -- timing (#47) ----------------------------------------------------------------
+# run_module with start, end, wall and CPU time written to the timing log
+# (the helpers are mseries/lib-timing.sh; without them nothing is timed).
+time_module() { # time_module MODULE
+  local m=$1 status st
+  timing_begin
+  run_module "$m"
+  case $(state "$m") in done) status=ok st=0 ;; skipped) status=not-applicable st=77 ;; *) status=failed st=1 ;; esac
+  timing_end "$TIMING_LOG" "$m" "$status" "$st"
+}
+
+# Table sorted by wall time and a one-line summary into the log; with a mode, also the JSON file.
+print_timing() { # print_timing [MODE]
+  timing_summary "$TIMING_LOG" "${1:-}" "${1:+$SUMMARY_JSON}" | tee -a "$LOG"
+}
+
+# -- parallel mode (opt-in) -------------------------------------------------------
+# Why parallel cannot be used now, or nothing when it can.
+parallel_blocker() { # parallel_blocker JOBS MODULE...
+  local jobs=$1 m; shift
+  [[ ${MSERIES_SERIAL:-} == 1 ]] && { echo "MSERIES_SERIAL=1"; return; }
+  command -v python3 >/dev/null 2>&1 || { echo "python3 is not installed"; return; }
+  [[ -f $MODRUN && -f $GRAPH ]] || { echo "scheduler files missing from the payload"; return; }
+  (( jobs > 1 )) || { echo "only one worker"; return; }
+  (( DEPS_READY )) || { echo "the combined requirements install did not complete, so modules would each run apt-get"; return; }
+  python3 "$MODRUN" check --graph "$GRAPH" --only "$(IFS=,; echo "$*")" >/dev/null 2>&1 ||
+    echo "a module is missing from $GRAPH"
+}
+
+# Run the modules through the scheduler, each in its own process with its own log,
+# then append the logs in module order so the combined log reads the same every time.
+run_parallel() { # run_parallel JOBS MODULE...
+  local jobs=$1 m cmd; shift
+  local logs=$STATE/logs
+  rm -rf "$logs"; mkdir -p "$logs"
+  printf -v cmd '%q ' env "ELEMENTARY_MAC_LOG=$logs/{name}.log" "ELEMENTARY_MAC_DEPS_READY=$DEPS_READY" bash "$SELF" --one '{name}'
+  log "running $# modules with up to $jobs at a time (apt holders and Wingpanel plugins stay one at a time)"
+  python3 "$MODRUN" run --graph "$GRAPH" --only "$(IFS=,; echo "$*")" --jobs "$jobs" --cmd "$cmd" \
+    --timing-log "$TIMING_LOG" --summary-json "$SUMMARY_JSON" --no-replay | tee -a "$LOG"
+  for m in "$@"; do
+    [[ -f $logs/$m.log ]] && cat "$logs/$m.log" >>"$LOG"
+  done
+  rm -rf "$logs"
+}
+
 status() {
   local m s
   for m in "${DEFAULT[@]}" firefox; do
@@ -201,10 +272,13 @@ main() {
   local action=--run extra=() m target=""
   while (( $# )); do
     case $1 in
-      --run | --status) action=$1 ;;
+      --run | --status | --timing) action=$1 ;;
+      --one) action=--one; target=${2:?--one needs a module}; shift ;;
+      --parallel) PARALLEL=1 ;;
+      --parallel=*) PARALLEL=1; MSERIES_JOBS=${1#--parallel=} ;;
       --retry) action=--retry; [[ ${2:-} && ${2:0:2} != -- ]] && { target=$2; shift; } ;;
       --with) extra+=("${2:?--with needs a module}"); shift ;;
-      -h | --help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; return 0 ;;
+      -h | --help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; return 0 ;;
       *) echo "unknown argument: $1" >&2; return 2 ;;
     esac
     shift
@@ -213,6 +287,13 @@ main() {
   mkdir -p "$STATE"
   case $action in
     --status) status; return ;;
+    --timing)
+      [[ -s $TIMING_LOG ]] || { echo "no timing recorded yet"; return 0; }
+      timing_summary "$TIMING_LOG"; return ;;
+    --one)   # internal: one module for the parallel scheduler; the parent did the checks
+      [[ -n ${SCRIPT[$target]:-} || -n ${DEPS[$target]:-} ]] || { log "unknown module $target"; return 1; }
+      run_module "$target"
+      case $(state "$target") in done) return 0 ;; skipped) return 77 ;; *) return 1 ;; esac ;;
     --retry)
       for m in "${DEFAULT[@]}" firefox; do
         [[ -z $target || $target == "$m" ]] && rm -f "$STATE/$m.attempts" "$STATE/$m.reason"
@@ -227,13 +308,29 @@ main() {
   wait_for_network || { log "no network after 5 minutes; will try again next boot"; return 0; }
   apt-get update >>"$LOG" 2>&1 || true
 
-  local todo=("${DEFAULT[@]}" "${extra[@]}")
+  local todo=("${DEFAULT[@]}" "${extra[@]}") runnable=() jobs reason
   install_requirements_once "${todo[@]}"
   for m in "${todo[@]}"; do
     [[ -n ${SCRIPT[$m]:-} || -n ${DEPS[$m]:-} ]] || { log "unknown module $m"; continue; }
     case $(state "$m") in done | skipped) continue ;; esac
-    run_module "$m"
+    runnable+=("$m")
   done
+  (( ${#runnable[@]} )) && : >"$TIMING_LOG"   # a run with nothing to do keeps the last real timing
+  jobs=${MSERIES_JOBS:-$(( $(nproc 2>/dev/null || echo 2) / 2 ))}
+  [[ $jobs =~ ^[0-9]+$ ]] || jobs=1
+  if [[ $PARALLEL == 1 ]] && (( ${#runnable[@]} )); then
+    reason=$(parallel_blocker "$jobs" "${runnable[@]}")
+    if [[ -z $reason ]]; then
+      run_parallel "$jobs" "${runnable[@]}"
+      runnable=()
+    else
+      log "parallel mode requested but not used: $reason; running one at a time"
+    fi
+  fi
+  for m in "${runnable[@]}"; do
+    time_module "$m"
+  done
+  (( ${#runnable[@]} )) && print_timing serial
 
   # Retire the service once nothing is left to attempt.
   local pending=0

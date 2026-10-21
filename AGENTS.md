@@ -2,6 +2,9 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current J314S host: owner confirms the dock works on Aurora .20; external 1080p/60 is active.
+> October 21 Aurora 7.2 wip2 trial: owner confirms dock picture on all 3 USB-C ports,
+> with delayed initial training; `.20` remains default and actual recovery/suspend
+> still unqualified. [Scoped port/timing follow-up](mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
 > [Scoped VRR/dock result](mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
 > records a visual pass and brief kernel VRR activation. Sustained VRR, long-run dock stability,
 > physical-port verification and suspend/resume remain open. Check this result before repeating older RE.

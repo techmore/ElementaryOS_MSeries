@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "kind": "dock-port-discovery-timing",
+  "recorded_at": "2026-10-21T13:58:16.054356+00:00",
+  "physical_port_owner_label": "front-left",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "identity_sha256": "f35ab09fa4ccf4fd20856c84ed4bb3826ad1fc4728a5e0981678362beb957459",
+  "kernel_release": "7.2.10-elementary-aurora72-wip2",
+  "source_receipt_sha256": "b051c84f046c87b63553f2b254dbe8b3b1fd81dd98ad75c8dfab53afa6ef7db9",
+  "runner_sha256": "3cb22f867a629227b0e2e665d9c4a29ff06692f9a91ac814f7c229127d80fa71",
+  "requested_poll_interval_s": 0.5,
+  "state_changes": 8,
+  "timing_origin": "partner_detected",
+  "first_observed_stage_seconds": {
+    "partner_detected": 0.0,
+    "dock_enumerated": 2.991,
+    "monitor_connected": 4.005,
+    "compositor_active": 4.509
+  },
+  "active_mode_stable_at_finish": true,
+  "final_state": {
+    "partners": [
+      "port1-partner"
+    ],
+    "dock": [
+      "0-1"
+    ],
+    "connected": [
+      "card2-DP-1"
+    ],
+    "active_modes": [
+      {
+        "connector": "DP-1",
+        "width": 1920,
+        "height": 1080,
+        "refresh_hz": 60.0
+      }
+    ],
+    "display_query_error": null
+  },
+  "result": "active-mode-observed",
+  "physical_picture": "requires owner confirmation; not measured by polling",
+  "limits": "One plug cycle; detection-to-state timing, not physical insertion-to-visible-image. Poll/query latency applies; no driver/parameter/mode changes, no USB functional/suspend/recovery or repeated stability qualification."
+}

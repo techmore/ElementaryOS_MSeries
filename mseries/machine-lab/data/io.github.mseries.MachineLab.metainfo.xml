@@ -15,6 +15,21 @@
   <provides><binary>machine-lab</binary></provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.11.0" date="2026-10-21">
+      <description>
+        <p>Display: the machine's screen follows the size of the Display tab, is streamed from QEMU instead of polled, and shows the guest's own pointer.</p>
+      </description>
+    </release>
+    <release version="0.10.0" date="2026-10-21">
+      <description>
+        <p>Clipboard: copy on this computer and paste in the machine (text), with loop prevention, a size limit and switches for each direction.</p>
+      </description>
+    </release>
+    <release version="0.9.0" date="2026-10-21">
+      <description>
+        <p>Windows guests: download the virtio-win drivers on request and attach them with an unattended-install answer file.</p>
+      </description>
+    </release>
     <release version="0.8.0" date="2026-10-19">
       <description>
         <p>Start from a ready-made disk image instead of installing, and save disks as images.</p>

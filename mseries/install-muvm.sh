@@ -9,6 +9,7 @@ set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$repo/mseries/lib-apt.sh"
+source "$repo/mseries/muvm-source.sh"
 if [[ ${1:-} == --uninstall ]]; then
   sudo rm -f /usr/local/bin/muvm /usr/local/bin/muvm-guest /etc/ld.so.conf.d/mseries-libkrun.conf \
     /usr/local/lib64/libkrun.so* /usr/local/lib/aarch64-linux-gnu/libkrunfw.so* \
@@ -21,7 +22,16 @@ fi
 # FEX PPA key: the signer of the resolute InRelease; the fingerprint is pinned and checked after download.
 fex_fpr=EDB98BFE8A2310DC9C4A376E76DBFEBEA206F5AC
 muvm_tag=muvm-0.7.0 krun_tag=v1.19.6 krunfw_tag=v5.6.2
+# Resolve tags to immutable upstream commits; cached trees must match too.
+muvm_commit=b761e07b84652e7fb00df83315907c1809899080
+krun_commit=227b2de6ed323fe180e02f871c5f325a90c13cc2
+krunfw_commit=f14ac64ca8a04c6c9d76cac1c61ee050809c88c9
 build=${MSERIES_BUILD_DIR:-$HOME/.cache/mseries-build/muvm}
+mkdir -p "$build"
+# Check/download source before any privileged package or install operation.
+mseries_muvm_source "https://github.com/containers/libkrunfw.git" "$build/libkrunfw" "$krunfw_tag" "$krunfw_commit"
+mseries_muvm_source "https://github.com/containers/libkrun.git" "$build/libkrun" "$krun_tag" "$krun_commit"
+mseries_muvm_source "https://github.com/AsahiLinux/muvm.git" "$build/muvm" "$muvm_tag" "$muvm_commit"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 curl -fsS "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x$fex_fpr" -o "$work/key.asc"
@@ -35,12 +45,7 @@ mseries_apt_refresh
 sudo apt-get install -y --no-install-recommends fex-emu-armv8.4 passt \
   clang libclang-dev flex bison bc libelf-dev python3-pyelftools libvirglrenderer-dev libepoxy-dev \
   libdrm-dev libpipewire-0.3-dev libcap-ng-dev libssl-dev libudev-dev libgbm-dev pkg-config patch xz-utils
-mkdir -p "$build"
 cd "$build"
-clone() { [[ -d $2 ]] || git clone -q --depth 1 --branch "$3" "https://github.com/$1.git" "$2"; }
-clone containers/libkrunfw libkrunfw "$krunfw_tag"
-clone containers/libkrun libkrun "$krun_tag"
-clone AsahiLinux/muvm muvm "$muvm_tag"
 # libkrunfw's default aarch64 guest config is CONFIG_ARM64_4K_PAGES=y, which is the point of the VM.
 grep -q '^CONFIG_ARM64_4K_PAGES=y' libkrunfw/config-libkrunfw_aarch64
 make -C libkrunfw -j"$(nproc)"

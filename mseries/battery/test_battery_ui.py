@@ -35,5 +35,38 @@ class ColorSchemeTests(unittest.TestCase):
                                  expected)
 
 
+@unittest.skipUnless(os.environ.get("DISPLAY"), "Run GTK checks under xvfb-run")
+class GaugeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location(
+            "battery_ui_gauge", Path(__file__).with_name("mseries-battery-app.py"))
+        cls.ui = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.ui)
+
+    def test_colour_eases_from_green_to_soft_red(self):
+        green, amber, red = (self.ui.level_colour(p) for p in (100, 30, 5))
+        self.assertGreater(green[1], green[0])
+        self.assertGreater(amber[0], amber[2])
+        self.assertGreater(red[0], red[1])
+        self.assertEqual(self.ui.level_colour(100), self.ui.level_colour(70))
+        steps = [self.ui.level_colour(p) for p in range(100, -1, -1)]
+        for a, b in zip(steps, steps[1:]):  # no jumps between neighbouring percentages
+            self.assertLess(max(abs(x - y) for x, y in zip(a, b)), 0.06)
+
+    def test_fill_height_follows_charge(self):
+        def filled_rows(pct):
+            surface = self.ui.cairo.ImageSurface(self.ui.cairo.FORMAT_ARGB32, 40, 64)
+            gauge = self.ui.BatteryGauge(pct, False)
+            gauge.draw(gauge, self.ui.cairo.Context(surface), 40, 64)
+            data, stride = surface.get_data(), surface.get_stride()
+            return sum(1 for y in range(64) if data[y * stride + 20 * 4 + 3] > 200
+                       and data[y * stride + 20 * 4 + 1] > 120)  # opaque green-ish pixels in the middle column
+
+        self.assertEqual(filled_rows(0), 0)
+        self.assertLess(filled_rows(25), filled_rows(50))
+        self.assertLess(filled_rows(50), filled_rows(100))
+
+
 if __name__ == "__main__":
     unittest.main()
