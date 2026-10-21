@@ -1,3 +1,48 @@
+## Compositor: frame metrics, targeted frame callbacks, battery P7/P8 — 2026-10-21 (Claude Code)
+
+Implements monitoring phase 0–1 and the low-risk battery items from `NEXT-GEN-INVESTIGATION-2026-10-21.md` (§3, §4) in
+`rust/pantheon-compositor`. Loads at the next login; nothing was installed or restarted.
+
+- **Metrics** (`src/metrics/`): fixed 84-bucket log histogram (1 µs–4 s, ≤25% error); per output render CPU, queue→flip and
+  dirty→flip p50/p95/p99 from the kernel's vblank timestamp and sequence (previously discarded), late frames, skipped vblanks,
+  empty ratio; per client commits, shm vs dmabuf, damaged pixels and frame callbacks. The 30 s `redraw stats` line is replaced by
+  structured `compositor stats` and `output frame stats` events (target `pantheon_metrics`). Read with
+  `journalctl --user -u pantheon-rust-compositor@wayland -g 'compositor stats|output frame stats'`.
+- **Attribution:** the client pid is read once at connect and cached with an `Arc<ClientStats>` in `ClientState` (no per-commit
+  `SO_PEERCRED` syscall or global mutex). Xwayland commits are attributed to the X11 window's `_NET_WM_PID`, cached per surface,
+  so ChatGPT (X11) no longer shows up as `pantheon-compos`.
+- **Journal:** under systemd no ANSI codes or second timestamp, and an sd-daemon `<N>` prefix sets PRIORITY (`journalctl -p err`
+  now sees errors). Default filter `info,smithay::xwayland::xwm=warn` (drops the routine X11 `BadWindow` INFO lines). Unchanged
+  30 s safety reconciles of the display trace log at DEBUG.
+- **P2 frame callbacks:** only surfaces whose primary scanout output flipped get a callback; surfaces shown nowhere get one per
+  second (with a sweep timer so they are served on an idle desktop too); empty frames send callbacks at the estimated next vblank
+  instead of none. Escape hatch: `PANTHEON_FRAME_CALLBACKS=all` restores the old behaviour without a rebuild.
+- **P7:** wallpaper pre-scaled to each output's pixel size on a helper thread (about 0.5 s per size under load) and marked
+  opaque; full-size copy released once every output has its own. Snap preview and OSD keep their `SolidColorBuffer`s. Fractional
+  scale preferences only re-sent when the window→output layout changes. Redraw requests coalesce through a calloop `Ping` plus a
+  pending flag (one render pass per dispatch instead of one per request). The Gala snapshot is rebuilt only when workspaces,
+  focus, titles or panels changed (at most 1 s stale otherwise).
+- **P8:** `[profile.release]` with `lto = "thin"`, `codegen-units = 1` in `rust/Cargo.toml` (workspace-wide). Measured here under load average
+  25–30 from other builds: a full release build of the compositor took 4 m 27 s (about 4 m 38 s before, same conditions); a
+  compositor-only rebuild went from 32 s to 1 m 46 s; the binary shrank from 22.8 MB to 18.0 MB. No runtime
+  speed measured yet. `target-cpu` deliberately not set (one package for every M-series machine).
+- **Also:** four pre-existing `clippy::needless_borrow` errors on `dev` (`place_window(&window, ..)`) fixed so strict clippy passes.
+- **Before (live session, pid 1934, 30 min on mains, `redraw stats`):** averages over 60 windows (21:05–21:35 UTC):
+  114 commits/s, 191 redraw requests/s, 58.6 vblanks/s = frames queued (peaks of 119/s), 0.9 empty frames/s. Top committers
+  claude-desktop 40/s, brave 37/s and "pantheon-compos(1934)" 34/s, which is really Xwayland/ChatGPT. Each of the 191 requests/s
+  was its own channel message and render pass (most skipped as frame-pending after recomputing fractional scales), so about
+  130 passes/s did no rendering; with the `Ping` they coalesce to at most one per dispatch.
+- **Verified:** `cargo test -p pantheon-compositor --features native-drm` (102 passed, 27 new), strict clippy with and without
+  `native-drm`, fmt. Unit tests cover histogram percentiles, output timing (late/skipped/idle), the X11 attribution decision,
+  registry reset/cleanup, damage clipping, journal line format and wallpaper crop/scale.
+- **Not verified:** any of this on the live session (needs the package installed and a new login): the after numbers, frame
+  pacing with targeted callbacks, the scaled wallpaper on the DCP, the Gala snapshot on a long session.
+- **Not done (needs owner approval):** linux-dmabuf by default (P1, trial login with `PANTHEON_ENABLE_DMABUF=1` first) and
+  `WatchdogSec=` (a watchdog restart kills every Wayland client). Output damage % is not exposed by Smithay's `DrmCompositor`;
+  per-client damaged pixels stand in. Lock-screen surfaces still get no frame callbacks (pre-existing).
+- **Next:** install at next login, compare `output frame stats`/`compositor stats` with the before numbers above, then the P1
+  dmabuf trial.
+
 ## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
 
 Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email

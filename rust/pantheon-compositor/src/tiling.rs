@@ -290,7 +290,7 @@ impl PantheonCompositor {
                 return;
             }
             self.x11_managed_windows.remove(&surface.window_id());
-            self.place_window(&window, rect.loc);
+            self.place_window(window, rect.loc);
             self.tiled_windows.insert(
                 wl_surface.id(),
                 TiledWindow {
@@ -382,7 +382,7 @@ impl PantheonCompositor {
             state.size = Some(rect.size);
         });
         surface.send_pending_configure();
-        self.place_window(&window, rect.loc);
+        self.place_window(window, rect.loc);
         self.tiled_windows.insert(
             surface.wl_surface().id(),
             TiledWindow {

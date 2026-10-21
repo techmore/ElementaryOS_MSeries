@@ -19,6 +19,55 @@ use smithay::{
 
 use crate::PantheonCompositor;
 
+/// Solid-colour overlay pieces kept across frames. A new `SolidColorBuffer`
+/// every frame has a new id, so the damage tracker repaints it every frame
+/// even when nothing changed; a kept buffer only damages when its size or
+/// colour changes (or it moves).
+#[derive(Default)]
+pub(crate) struct SolidBuffers(
+    std::cell::RefCell<std::collections::HashMap<(String, SolidSlot), SolidColorBuffer>>,
+);
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub(crate) enum SolidSlot {
+    SnapPreview,
+    /// The n-th rectangle of the shell OSD.
+    Osd(u8),
+}
+
+impl SolidBuffers {
+    /// The kept buffer for `slot` on `output`, updated to `size` and `color`.
+    pub(crate) fn get(
+        &self,
+        output: &str,
+        slot: SolidSlot,
+        size: Size<i32, Logical>,
+        color: [f32; 4],
+    ) -> SolidColorBuffer {
+        let mut buffers = self.0.borrow_mut();
+        let buffer = buffers
+            .entry((output.to_owned(), slot))
+            .or_insert_with(|| SolidColorBuffer::new(size, color));
+        // `update` only bumps the commit counter when something differs.
+        buffer.update(size, color);
+        buffer.clone()
+    }
+}
+
+/// Physical pixel size of an output, as the wallpaper is scaled for it.
+pub(crate) fn output_pixel_size(
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Option<(i32, i32)> {
+    let geometry = state.space.output_geometry(output)?;
+    let size = geometry
+        .size
+        .to_f64()
+        .to_physical(output.current_scale().fractional_scale())
+        .to_i32_round::<i32>();
+    Some((size.w, size.h))
+}
+
 render_elements! {
     pub CursorRenderElement<R> where R: ImportAll + ImportMem;
     Surface=WaylandSurfaceRenderElement<R>,
@@ -135,7 +184,12 @@ where
     if let Some(preview) = state.corner_snap_preview.as_ref()
         && preview.output.name() == output.name()
     {
-        let buffer = SolidColorBuffer::new(preview.rect.size, [0.18, 0.46, 0.92, 1.0]);
+        let buffer = state.solid_buffers.get(
+            &output.name(),
+            SolidSlot::SnapPreview,
+            preview.rect.size,
+            [0.18, 0.46, 0.92, 1.0],
+        );
         let location = (preview.rect.loc - output_geometry.loc)
             .to_f64()
             .to_physical(scale)
@@ -161,31 +215,16 @@ where
 {
     let wallpaper = state.wallpaper.as_ref()?;
     let output_geometry = state.space.output_geometry(output)?;
-    let source: Size<f64, Logical> = (wallpaper.width as f64, wallpaper.height as f64).into();
-    let target = output_geometry.size.to_f64();
-    let source_region = if wallpaper.picture_options == "zoom" && target.w > 0.0 && target.h > 0.0 {
-        let source_aspect = source.w / source.h;
-        let target_aspect = target.w / target.h;
-        if source_aspect > target_aspect {
-            let width = source.h * target_aspect;
-            Some(Rectangle::<f64, Logical>::new(
-                ((source.w - width) / 2.0, 0.0).into(),
-                (width, source.h).into(),
-            ))
-        } else {
-            let height = source.w / target_aspect;
-            Some(Rectangle::<f64, Logical>::new(
-                (0.0, (source.h - height) / 2.0).into(),
-                (source.w, height).into(),
-            ))
-        }
-    } else {
-        None
-    };
+    let size = output_pixel_size(state, output)?;
+    let (buffer, source_region) =
+        match wallpaper.buffer_for(size, Some(&state.wallpaper_scaled_sender))? {
+            crate::wallpaper::WallpaperBuffer::Scaled(buffer) => (buffer, None),
+            crate::wallpaper::WallpaperBuffer::Fallback(buffer, crop) => (buffer, crop),
+        };
     MemoryRenderBufferRenderElement::from_buffer(
         renderer,
         (0.0, 0.0),
-        &wallpaper.buffer,
+        &buffer,
         None,
         source_region,
         Some(output_geometry.size),
@@ -239,15 +278,20 @@ where
         Size::from((width, height)),
     );
     let scale = Scale::from(output.current_scale().fractional_scale());
+    let output_name = output.name();
     let mut elements = Vec::new();
+    let mut slot = 0_u8;
     let mut append = |rect: Rectangle<i32, Logical>, color: [f32; 4], opacity: f32| {
         let location = (rect.loc - geometry.loc)
             .to_f64()
             .to_physical(scale)
             .to_i32_round();
         let size = rect.size;
+        slot = slot.wrapping_add(1);
         if size.w > 0 && size.h > 0 {
-            let buffer = SolidColorBuffer::new(size, color);
+            let buffer = state
+                .solid_buffers
+                .get(&output_name, SolidSlot::Osd(slot), size, color);
             let element = SolidColorRenderElement::from_buffer(
                 &buffer,
                 location,

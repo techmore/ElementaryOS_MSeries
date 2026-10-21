@@ -13,6 +13,13 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Compositor monitoring and battery (phase 0–1, P2/P7/P8) — 2026-10-21
+
+Frame timing per output (render CPU, queue→flip, dirty→flip, late frames), per-client commits with shm/dmabuf split and correct
+X11 attribution, journal priorities, frame callbacks only for surfaces on the flipped output, and the small CPU fixes. Loads at
+next login; after-numbers still to collect. Next: P1 dmabuf trial login, P3 idle/DPMS, then the D-Bus `Stats` interface and CLI.
+[Handoff](OS9-HANDOFF.md).
+
 ## Software Updates app — 2026-10-21
 
 Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.

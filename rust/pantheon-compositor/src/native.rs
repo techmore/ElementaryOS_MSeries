@@ -65,6 +65,11 @@ use crate::{
 /// Grace period before a disabled output global is removed from clients.
 const GLOBAL_REMOVAL_DELAY: Duration = Duration::from_secs(2);
 
+/// Surfaces not shown on the output that flipped (occluded, off-screen, or on
+/// another monitor) still get a frame callback this often, so they keep
+/// making progress without animating at the full refresh rate.
+const HIDDEN_FRAME_CALLBACK_INTERVAL: Duration = Duration::from_secs(1);
+
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
 pub type NativeGpuManager = GpuManager<GbmRendererBackend>;
 pub type NativeAllocator = GbmAllocator<DrmDeviceFd>;
@@ -147,18 +152,21 @@ fn remove_stale_duplicates<D: DrmControlDevice>(
             let started = display_trace::enabled().then(Instant::now);
             let read = connector_edid(device, info.handle());
             if let Some(monotonic_us) = display_trace::stamp() {
-                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                display_trace::lifecycle_event!(monotonic_us = monotonic_us as u64,
                     connector = ?info.handle(), stage = "edid_read", success = read.is_some(),
                     duration_us = started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
                     "existing duplicate-route EDID query completed");
             }
             let (edid, blob_id) = read?;
             if let Some(parsed) = edid::parse(&edid) {
-                identities.insert(info.handle(), OutputIdentity {
-                    vendor: parsed.vendor,
-                    product: parsed.product,
-                    serial: parsed.serial,
-                });
+                identities.insert(
+                    info.handle(),
+                    OutputIdentity {
+                        vendor: parsed.vendor,
+                        product: parsed.product,
+                        serial: parsed.serial,
+                    },
+                );
             }
             Some(Candidate {
                 key: info.handle(),
@@ -221,6 +229,12 @@ pub struct NativeKmsOutput {
     pub global_id: smithay::reexports::wayland_server::backend::GlobalId,
     pub frame_pending: bool,
     trace: Option<OutputTrace>,
+    /// Frame timing for the 30 s metrics window.
+    stats: crate::metrics::output::OutputStats,
+    /// The last render pass produced no damage, so no vblank will come to send
+    /// frame callbacks; an estimated-vblank timer has to.
+    needs_estimated_frame: bool,
+    estimated_frame_armed: bool,
 }
 
 pub struct NativeKmsDevice {
@@ -769,13 +783,17 @@ impl NativeKmsDevice {
         renderer: &mut NativeRenderer,
         state: &PantheonCompositor,
     ) -> Result<usize, Box<dyn std::error::Error>> {
-        state.update_fractional_scale_preferences();
+        crate::metrics::render_pass();
+        let dirty_at = state.dirty_since.get();
+        let mut skipped_pending = false;
         let mut rendered = 0;
         let mut busy = false;
         for output in &mut self.outputs {
             if output.frame_pending {
+                skipped_pending = true;
                 continue;
             }
+            let started = Instant::now();
             let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
             let elements = if state.session_locked {
                 render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
@@ -792,11 +810,14 @@ impl NativeKmsDevice {
                 },
                 FrameFlags::DEFAULT,
             )?;
+            // Remember which output each surface is mostly shown on, so the
+            // vblank only sends frame callbacks to surfaces on that output.
+            update_primary_scanout_outputs(state, &output.output, &frame.states);
             if frame.is_empty {
-                crate::redraw_stats::frame_empty();
+                output.stats.record_empty();
+                output.needs_estimated_frame = true;
                 continue;
             }
-            crate::redraw_stats::frame_queued();
             match output.drm_output.queue_frame(()) {
                 Ok(()) => {}
                 Err(error) if flip_retry::is_busy(&error) => {
@@ -813,8 +834,18 @@ impl NativeKmsDevice {
             if let Some(trace) = &mut output.trace {
                 trace.queued(&output.output.name());
             }
+            output.stats.record_queued(
+                state.monotonic_clock.now().into(),
+                started.elapsed(),
+                dirty_at,
+            );
             output.frame_pending = true;
+            output.needs_estimated_frame = false;
             rendered += 1;
+        }
+        // Content that was waiting on a busy output will be drawn next pass.
+        if !skipped_pending && !busy {
+            state.dirty_since.set(None);
         }
         self.busy_retry = busy;
         if busy {
@@ -838,6 +869,8 @@ impl NativeKmsDevice {
     pub fn frame_submitted(
         &mut self,
         crtc: smithay::reexports::drm::control::crtc::Handle,
+        flip: Duration,
+        sequence: Option<u32>,
     ) -> Result<Option<Output>, Box<dyn std::error::Error>> {
         let Some(output) = self.outputs.iter_mut().find(|output| output.crtc == crtc) else {
             return Ok(None);
@@ -846,8 +879,71 @@ impl NativeKmsDevice {
         if let Some(trace) = &mut output.trace {
             trace.submitted(&output.output.name());
         }
+        let refresh = output
+            .output
+            .current_mode()
+            .and_then(|mode| crate::metrics::output::refresh_period(mode.refresh));
+        output.stats.record_flip(flip, sequence, refresh);
         output.frame_pending = false;
         Ok(Some(output.output.clone()))
+    }
+
+    /// Take every output's frame stats for the metrics window.
+    pub fn take_metrics(&mut self) -> Vec<(String, crate::metrics::output::OutputWindow)> {
+        self.outputs
+            .iter_mut()
+            .filter_map(|output| {
+                output
+                    .stats
+                    .take_window()
+                    .map(|window| (output.output.name(), window))
+            })
+            .collect()
+    }
+
+    /// Outputs whose last pass was empty and have no estimated-vblank timer
+    /// yet: mark them armed and return when each one's next vblank is due.
+    fn arm_estimated_frames(
+        &mut self,
+        now: Duration,
+    ) -> Vec<(smithay::reexports::drm::control::crtc::Handle, Duration)> {
+        let mut due = Vec::new();
+        for output in &mut self.outputs {
+            if !output.needs_estimated_frame || output.estimated_frame_armed || output.frame_pending
+            {
+                continue;
+            }
+            let Some(refresh) = output
+                .output
+                .current_mode()
+                .and_then(|mode| crate::metrics::output::refresh_period(mode.refresh))
+            else {
+                continue;
+            };
+            let at = crate::metrics::output::next_vblank_estimate(
+                now,
+                output.stats.last_flip_time(),
+                refresh,
+            );
+            output.estimated_frame_armed = true;
+            due.push((output.crtc, at.saturating_sub(now)));
+        }
+        due
+    }
+
+    /// The estimated vblank for an empty frame arrived: returns the output to
+    /// send frame callbacks for, unless a real frame took over meanwhile.
+    fn estimated_frame_due(
+        &mut self,
+        crtc: smithay::reexports::drm::control::crtc::Handle,
+    ) -> Option<Output> {
+        let output = self.outputs.iter_mut().find(|output| output.crtc == crtc)?;
+        output.estimated_frame_armed = false;
+        if !std::mem::take(&mut output.needs_estimated_frame) || output.frame_pending {
+            return None;
+        }
+        output.stats.empty_frame_callbacks += 1;
+        Some(output.output.clone())
     }
 
     /// Release the placeholder framebuffer left by a finished prewarm. Call
@@ -1325,6 +1421,9 @@ impl NativeKmsDevice {
                 global_id,
                 frame_pending: false,
                 trace: output_trace,
+                stats: Default::default(),
+                needs_estimated_frame: false,
+                estimated_frame_armed: false,
             });
             claimed_crtcs.insert(crtc);
             changed = true;
@@ -1491,10 +1590,22 @@ impl NativeKmsDevice {
             });
 
         if let Some(monotonic_us) = display_trace::stamp() {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                generation = trace.generation, stage = "reconcile_result", changed,
-                active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
-                "connector reconciliation completed");
+            // A change is always worth INFO, even on a routine safety poll,
+            // and so is the rest of this operation's trace.
+            if changed {
+                display_trace::end_quiet();
+            }
+            if !display_trace::quiet() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, stage = "reconcile_result", changed,
+                    active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
+                    "connector reconciliation completed");
+            } else {
+                tracing::debug!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, stage = "reconcile_result", changed,
+                    active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
+                    "connector reconciliation completed");
+            }
         }
         Ok(changed)
     }
@@ -1781,6 +1892,9 @@ impl NativeKmsDevice {
                 global_id,
                 frame_pending: false,
                 trace: output_trace,
+                stats: Default::default(),
+                needs_estimated_frame: false,
+                estimated_frame_armed: false,
             });
         }
         if outputs.is_empty() {
@@ -1849,7 +1963,7 @@ impl NativeBackend {
                     _ => {}
                 }
                 state.process_input_event(event);
-                #[cfg(feature = "native-drm")]
+                state.mark_dirty();
                 state.request_native_redraw();
             })?;
 
@@ -1888,13 +2002,20 @@ impl NativeBackend {
 
         event_loop
             .handle()
-            .insert_source(drm_notifier, |event, _, state| match event {
+            .insert_source(drm_notifier, |event, metadata, state| match event {
                 smithay::backend::drm::DrmEvent::VBlank(crtc) => {
-                    crate::redraw_stats::vblank();
+                    crate::metrics::vblank();
+                    // The kernel's flip timestamp (CLOCK_MONOTONIC on this
+                    // driver); fall back to now for a realtime-only device.
+                    let flip = match metadata.as_ref().map(|metadata| metadata.time) {
+                        Some(smithay::backend::drm::DrmEventTime::Monotonic(time)) => time,
+                        _ => state.monotonic_clock.now().into(),
+                    };
+                    let sequence = metadata.as_ref().map(|metadata| metadata.sequence);
                     let Some(backend) = state.native_backend.as_mut() else {
                         return;
                     };
-                    let output = match backend.kms.frame_submitted(crtc) {
+                    let output = match backend.kms.frame_submitted(crtc, flip, sequence) {
                         Ok(Some(output)) => output,
                         Ok(None) => return,
                         Err(error) => {
@@ -1906,15 +2027,11 @@ impl NativeBackend {
                         }
                     };
                     state.confirm_lock_output_frame(&output.name());
-                    state.gesture_frame_windows().iter().for_each(|window| {
-                        window.send_frame(
-                            &output,
-                            state.start_time.elapsed(),
-                            Some(Duration::ZERO),
-                            |_, _| Some(output.clone()),
-                        );
-                    });
+                    send_frame_callbacks(state, &output);
                     state.space.refresh();
+                    // After refresh, so a window that moved to another
+                    // output gets that output's scale (no-op otherwise).
+                    state.update_fractional_scale_preferences();
                     state.popups.cleanup();
                     let _ = state.display_handle.flush_clients();
                     state.request_native_redraw();
@@ -1925,8 +2042,8 @@ impl NativeBackend {
                 }
             })?;
 
-        let (redraw_sender, redraw_receiver) = channel::channel();
-        state.native_redraw_sender = Some(redraw_sender);
+        let (redraw_ping, redraw_source) = smithay::reexports::calloop::ping::make_ping()?;
+        state.native_redraw_ping = Some(redraw_ping);
         state.native_backend = Some(Self {
             _session: session,
             renderer,
@@ -1939,16 +2056,32 @@ impl NativeBackend {
         let redraw_handle = event_loop.handle();
         event_loop
             .handle()
-            .insert_source(redraw_receiver, move |event, _, state| {
-                if !matches!(event, ChannelEvent::Msg(())) {
-                    return;
-                }
+            .insert_source(redraw_source, move |(), _, state| {
+                state.native_redraw_pending.set(false);
                 let Some(mut backend) = state.native_backend.take() else {
                     return;
                 };
                 match backend.kms.render(&mut backend.renderer, state) {
                     Ok(_) => {
                         consecutive_render_failures = 0;
+                        let now: Duration = state.monotonic_clock.now().into();
+                        for (crtc, delay) in backend.kms.arm_estimated_frames(now) {
+                            let timer = Timer::from_duration(delay);
+                            let armed = redraw_handle.insert_source(timer, move |_, _, state| {
+                                let output = state
+                                    .native_backend
+                                    .as_mut()
+                                    .and_then(|backend| backend.kms.estimated_frame_due(crtc));
+                                if let Some(output) = output {
+                                    send_frame_callbacks(state, &output);
+                                    let _ = state.display_handle.flush_clients();
+                                }
+                                TimeoutAction::Drop
+                            });
+                            if let Err(error) = armed {
+                                tracing::warn!(?error, "could not arm the empty-frame callback timer");
+                            }
+                        }
                         if backend.kms.take_busy_retry() {
                             let retry = Timer::from_duration(flip_retry::RETRY_DELAY);
                             let _ = redraw_handle.insert_source(retry, |_, _, state| {
@@ -2068,6 +2201,126 @@ impl NativeBackend {
     }
 }
 
+/// Record, for every surface drawn in this output's frame, whether this
+/// output is now the one it is mostly shown on.
+fn update_primary_scanout_outputs(
+    state: &PantheonCompositor,
+    output: &Output,
+    render_states: &smithay::backend::renderer::element::RenderElementStates,
+) {
+    use smithay::desktop::utils::update_surface_primary_scanout_output;
+    for window in state.gesture_frame_windows() {
+        window.with_surfaces(|surface, states| {
+            update_surface_primary_scanout_output(
+                surface,
+                output,
+                states,
+                None,
+                render_states,
+                smithay::backend::renderer::element::default_primary_scanout_output_compare,
+            );
+        });
+    }
+}
+
+/// Frame callbacks after `output` presented (or would have, for an empty
+/// frame): surfaces whose primary scanout output is `output` get one now;
+/// surfaces shown nowhere get one at most every
+/// `HIDDEN_FRAME_CALLBACK_INTERVAL`. If such a hidden surface is still
+/// waiting, a sweep timer makes sure it is served even on an idle desktop.
+fn send_frame_callbacks(state: &PantheonCompositor, output: &Output) {
+    use smithay::wayland::compositor::SurfaceAttributes;
+    let time = state.start_time.elapsed();
+    if legacy_frame_callbacks() {
+        for window in state.gesture_frame_windows() {
+            window.send_frame(output, time, Some(Duration::ZERO), |_, _| {
+                Some(output.clone())
+            });
+        }
+        return;
+    }
+    let hidden_waiting = std::cell::Cell::new(false);
+    let hidden_waiting = &hidden_waiting;
+    for window in state.gesture_frame_windows() {
+        window.send_frame(
+            output,
+            time,
+            Some(HIDDEN_FRAME_CALLBACK_INTERVAL),
+            |surface, states| {
+                let primary =
+                    smithay::desktop::utils::surface_primary_scanout_output(surface, states);
+                if primary.is_none()
+                    && !states
+                        .cached_state
+                        .get::<SurfaceAttributes>()
+                        .current()
+                        .frame_callbacks
+                        .is_empty()
+                {
+                    hidden_waiting.set(true);
+                }
+                primary
+            },
+        );
+    }
+    if hidden_waiting.get() {
+        arm_hidden_frame_sweep(state);
+    }
+}
+
+/// `PANTHEON_FRAME_CALLBACKS=all` restores the old behaviour (every window
+/// on every flip of every output), as a no-rebuild fallback if targeted
+/// callbacks ever stall a client.
+fn legacy_frame_callbacks() -> bool {
+    static LEGACY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *LEGACY.get_or_init(|| {
+        let legacy = std::env::var("PANTHEON_FRAME_CALLBACKS").is_ok_and(|value| value == "all");
+        if legacy {
+            tracing::info!(
+                "PANTHEON_FRAME_CALLBACKS=all: frame callbacks to every window on every flip"
+            );
+        }
+        legacy
+    })
+}
+
+/// Serve hidden surfaces' frame callbacks once per interval while any are
+/// waiting; the timer drops itself when none are.
+fn arm_hidden_frame_sweep(state: &PantheonCompositor) {
+    if state.hidden_frame_sweep_armed.replace(true) {
+        return;
+    }
+    let timer = Timer::from_duration(HIDDEN_FRAME_CALLBACK_INTERVAL);
+    let armed = state.loop_handle.insert_source(timer, |_, _, state| {
+        state.hidden_frame_sweep_armed.set(false);
+        let outputs = state
+            .native_backend
+            .as_ref()
+            .map(|backend| {
+                backend
+                    .kms
+                    .outputs
+                    .iter()
+                    .map(|output| output.output.clone())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        // Re-arms itself through send_frame_callbacks if anyone still waits.
+        for output in &outputs {
+            send_frame_callbacks(state, output);
+        }
+        let _ = state.display_handle.flush_clients();
+        TimeoutAction::Drop
+    });
+    if let Err(error) = armed {
+        state.hidden_frame_sweep_armed.set(false);
+        tracing::warn!(
+            ?error,
+            "could not arm the hidden-surface frame callback timer"
+        );
+    }
+}
+
 /// Opt-in `zwp_linux_dmabuf_v1` for native clients. Off by default until a
 /// native trial has qualified it: set `PANTHEON_ENABLE_DMABUF=1` for the
 /// compositor service. Without it clients use wl_shm (software GTK rendering).
@@ -2135,15 +2388,31 @@ fn reconcile_tick(state: &mut PantheonCompositor) -> (TimeoutAction, Option<Inst
     let now = Instant::now();
     let removal = backend.kms.next_global_removal_deadline();
     let tick = backend.hotplug.tick(now, removal);
+    // A safety poll with no pending event: trace it at DEBUG unless it finds
+    // a change (the reconcile result is still logged at INFO then).
+    let _quiet = display_trace::QuietScope::enter(
+        tick.reconcile
+            && tick.safety_due
+            && !tick.event_due
+            && !tick.followup_due
+            && !tick.removal_due,
+    );
     if tick.reconcile {
         if let Some(monotonic_us) = display_trace::stamp() {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                stage = "scheduler_tick", event_due = tick.event_due, followup_due = tick.followup_due,
-                removal_due = tick.removal_due, safety_due = tick.safety_due,
+            display_trace::lifecycle_event!(
+                monotonic_us = monotonic_us as u64,
+                stage = "scheduler_tick",
+                event_due = tick.event_due,
+                followup_due = tick.followup_due,
+                removal_due = tick.removal_due,
+                safety_due = tick.safety_due,
                 session_paused = backend.session_paused,
-                event_wait_us = backend.trace_pending_event.map(|(t, _)| t.elapsed().as_micros() as u64),
+                event_wait_us = backend
+                    .trace_pending_event
+                    .map(|(t, _)| t.elapsed().as_micros() as u64),
                 burst_events = backend.trace_pending_event.map(|(_, n)| n).unwrap_or(0),
-                "display scheduler reconcile decision");
+                "display scheduler reconcile decision"
+            );
         }
         backend.trace_pending_event = None;
         if !backend.session_paused

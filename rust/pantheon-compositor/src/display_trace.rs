@@ -6,7 +6,7 @@
 
 use std::sync::{
     Mutex, OnceLock,
-    atomic::{AtomicU64, Ordering},
+    atomic::{AtomicBool, AtomicU64, Ordering},
 };
 use std::time::Instant;
 
@@ -15,6 +15,48 @@ static ENABLED: OnceLock<bool> = OnceLock::new();
 static EPOCH: OnceLock<Instant> = OnceLock::new();
 static NEXT_GENERATION: AtomicU64 = AtomicU64::new(1);
 static BUDGET: Mutex<(u128, u32)> = Mutex::new((0, 0));
+static QUIET: AtomicBool = AtomicBool::new(false);
+
+/// A lifecycle record at INFO, or at DEBUG inside a [`QuietScope`] (a
+/// routine safety-poll reconcile that has found nothing new so far).
+macro_rules! lifecycle_event {
+    ($($arg:tt)+) => {
+        if $crate::display_trace::quiet() {
+            tracing::debug!(target: "pantheon_display_lifecycle", $($arg)+)
+        } else {
+            tracing::info!(target: "pantheon_display_lifecycle", $($arg)+)
+        }
+    };
+}
+pub(crate) use lifecycle_event;
+
+pub fn quiet() -> bool {
+    QUIET.load(Ordering::Relaxed)
+}
+
+/// Leave quiet mode early (a quiet reconcile found a change).
+pub fn end_quiet() {
+    QUIET.store(false, Ordering::Relaxed);
+}
+
+/// While alive, lifecycle records go to DEBUG. Used for the periodic safety
+/// reconcile, which logs five INFO lines every 30 s even when nothing changed.
+pub struct QuietScope(());
+
+impl QuietScope {
+    pub fn enter(quiet: bool) -> Option<Self> {
+        quiet.then(|| {
+            QUIET.store(true, Ordering::Relaxed);
+            Self(())
+        })
+    }
+}
+
+impl Drop for QuietScope {
+    fn drop(&mut self) {
+        QUIET.store(false, Ordering::Relaxed);
+    }
+}
 
 pub fn enabled() -> bool {
     *ENABLED.get_or_init(|| std::env::var("PANTHEON_DISPLAY_TRACE").is_ok_and(|v| v == "1"))
@@ -57,8 +99,13 @@ impl Operation {
             0
         };
         if let Some(monotonic_us) = stamp() {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                generation, operation = name, stage = "begin", "display operation");
+            lifecycle_event!(
+                monotonic_us = monotonic_us as u64,
+                generation,
+                operation = name,
+                stage = "begin",
+                "display operation"
+            );
         }
         Self {
             generation,
@@ -77,10 +124,14 @@ impl Drop for Operation {
         if let Some(started) = self.started
             && let Some(monotonic_us) = stamp()
         {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                generation = self.generation, operation = self.name, stage = "end",
+            lifecycle_event!(
+                monotonic_us = monotonic_us as u64,
+                generation = self.generation,
+                operation = self.name,
+                stage = "end",
                 duration_us = started.elapsed().as_micros() as u64,
-                "display operation exited (consult transition/error records for outcome)");
+                "display operation exited (consult transition/error records for outcome)"
+            );
         }
     }
 }

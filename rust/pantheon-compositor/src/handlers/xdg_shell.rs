@@ -41,6 +41,14 @@ impl XdgShellHandler for PantheonCompositor {
             .add_window(window, Point::from((0, 0)));
     }
 
+    fn title_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
+    }
+
+    fn app_id_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
+    }
+
     fn new_popup(&mut self, surface: PopupSurface, _positioner: PositionerState) {
         self.unconstrain_popup(&surface);
         let _ = self.popups.track_popup(PopupKind::Xdg(surface));

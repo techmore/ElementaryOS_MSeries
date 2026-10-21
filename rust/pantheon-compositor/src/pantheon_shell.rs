@@ -976,7 +976,7 @@ impl PantheonCompositor {
             state.size = Some(target.size);
         });
         surface.send_pending_configure();
-        self.place_window(&window, target.loc);
+        self.place_window(window, target.loc);
     }
 
     /// Hard stop: a regular window may never sit behind a bottom panel (the
@@ -1043,7 +1043,7 @@ impl PantheonCompositor {
         }
         // element_location is the element origin; geometry may be offset from it.
         let shifted = Point::from((location.x, location.y + (new_y - rect.loc.y)));
-        self.place_window(&window, shifted);
+        self.place_window(window, shifted);
     }
 
     pub(crate) fn keep_all_clear_of_bottom_panels(&mut self) {
