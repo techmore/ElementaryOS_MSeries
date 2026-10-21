@@ -1,4 +1,4 @@
-<!-- DRAFT. NOT POSTED. For a new issue on omacom/linux-aurora (template: "Aurora Linux per-Mac test report").
+<!-- RECOMMENDATION (2026-10-21): DO NOT POST THIS. Reading omacom PR #139's review thread showed the maintainers already explained the guard and M1 Pro behaviour and track the first-attempt failure rate; see ../XART-GUARD.md. Revisit after a full pass with the guard off. DRAFT. NOT POSTED. For a new issue on omacom/linux-aurora (template: "Aurora Linux per-Mac test report").
      The machine's owner must approve before anything is posted. Redrafted 2026-10-21 after reading XART-SAFETY.md and
      aurora-silicon/linux#361, which answer the questions an earlier draft asked. See ../XART-GUARD.md. -->
 
