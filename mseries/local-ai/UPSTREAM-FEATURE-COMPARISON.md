@@ -22,7 +22,7 @@ The [Mac convergence spec](https://github.com/omacom/omarchy-mac/blob/a76179cdcf
 |---|---|---|
 | Unified notification history, silencing and action routing | Fault signatures are collected; there is no shared alert/workflow inbox yet | Reuse the interaction contract through a native Pantheon broker/inbox. Respect the owner's quiet policy. |
 | Crash notification opens a selected coding agent with coredump facts | `recent_faults` supplies bounded kernel/app evidence; automatic model diagnosis is off | Carry event identity, evidence and acknowledgement into the proposed alert agent. Require qualified explanation/action paths. |
-| Default-agent launcher supports several coding harnesses | Newelle personal/desktop, Crush coding and experimental Hermes launchers | Share capabilities and grants between clients; do not transplant global bypass-permission flags. |
+| Default-agent launcher supports several coding harnesses | Newelle personal/desktop and Crush coding launchers | Share capabilities and grants between clients; do not transplant global bypass-permission flags. |
 | Voxtype configuration/model management | Existing F5 native streaming implementation; latest handoff reports built-in mic attempts recognized no text | Resolve/verify native capture quality first; keep controls native and distinguish dictation from commands. |
 | MLX assistant voice controls and optional wake word | No speech-to-speech agent session or WebRTC service | Reuse proven components where their contracts fit; add explicit conversation sessions and broker authorization. |
 

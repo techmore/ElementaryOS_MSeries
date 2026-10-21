@@ -130,9 +130,9 @@ WantedBy=default.target
     launcher = '''#!/usr/bin/python3
 import argparse, json, os, subprocess, time, urllib.request
 from pathlib import Path
-p=argparse.ArgumentParser(); p.add_argument('--quality',action='store_true'); p.add_argument('app', choices=['desktop','personal','hermes','coding']); p.add_argument('args', nargs=argparse.REMAINDER); a=p.parse_args()
-profile={'coding':'coder','hermes':'personal','personal':'everyday','desktop':'everyday'}[a.app]
-if a.quality and a.app!='hermes': profile='coder9' if a.app=='coding' else 'quality'
+p=argparse.ArgumentParser(); p.add_argument('--quality',action='store_true'); p.add_argument('app', choices=['desktop','personal','coding']); p.add_argument('args', nargs=argparse.REMAINDER); a=p.parse_args()
+profile={'coding':'coder','personal':'everyday','desktop':'everyday'}[a.app]
+if a.quality: profile='coder9' if a.app=='coding' else 'quality'
 if a.app in ('desktop','personal') and subprocess.run(['systemctl','--user','is-active','--quiet','mseries-ai-personal.service']).returncode==0: profile='personal'
 # One supervised worker owns the GPU/model budget at a time.
 managed=['everyday','quality','coder9','compact','compact35','personal','coder','coder7','liquid','bonsai']
@@ -165,12 +165,6 @@ if a.app in ('desktop','personal'):
     setup="import json,sys; from gi.repository import Gio; s=Gio.Settings.new('io.github.qwersyk.Newelle'); d=json.loads(s.get_string('llm-settings')); d['openai'].update(api='local',endpoint='http://127.0.0.1:'+sys.argv[2]+'/v1',model=sys.argv[1],models=json.dumps([[sys.argv[1],sys.argv[1]]])); s.set_string('llm-settings',json.dumps(d)); s.set_string('language-model','openai'); Gio.Settings.sync()"
     subprocess.run(['flatpak','run','--command=python3','io.github.qwersyk.Newelle','-c',setup,selected,str(port)],check=True)
     os.execvp('flatpak',['flatpak','run','io.github.qwersyk.Newelle']+a.args)
-if a.app=='hermes':
-    os.environ['HERMES_HOME']=str(h/'.local/share/mseries-assistants/personal')
-    os.environ['OPENAI_API_KEY']='local'
-    (h/'Documents/Assistant Workspace').mkdir(parents=True,exist_ok=True)
-    os.chdir(h/'Documents/Assistant Workspace')
-    os.execv(str(h/'.local/share/mseries-assistants/hermes/venv/bin/hermes'),['hermes']+a.args)
 workspace=h/('Documents/Coding Assistant Quality' if a.quality else 'Documents/Coding Assistant')
 workspace.mkdir(parents=True,exist_ok=True)
 if not (workspace/'.crushrc').exists() or expected not in (workspace/'.crushrc').read_text(): refused('Coding profile does not match the selected model; run install-crush.py to configure the local preset.')
@@ -182,18 +176,8 @@ os.execv(str(h/'.local/bin/crush'),['crush']+a.args)
     mcp = {'command': '/usr/bin/python3', 'args': [str(LIB / 'os-mcp.py')]}
     personal = HOME / '.local/share/mseries-assistants/personal'
     personal.mkdir(parents=True, exist_ok=True, mode=0o700)
-    hermes = {'model': {'provider': 'custom', 'base_url': 'http://127.0.0.1:8766/v1',
-                        'default': QUALITY_MODEL, 'context_length': 64000},
-              'agent': {'reasoning_effort': 'none', 'max_turns': 12},
-              'platform_toolsets': {'cli': ['memory', 'session_search']},
-              'memory': {'memory_enabled': True, 'user_profile_enabled': True},
-              'mcp_servers': {'mseries-os': mcp}, 'fallback_model': [],
-              'tools': {'tool_search': {'enabled': 'off'}}}
-    if not (personal / 'config.yaml').exists():
-        # JSON is valid YAML; no extra host Python dependencies are needed.
-        put(personal / 'config.yaml', json.dumps(hermes, indent=2) + '\n')
-    for app, title in [('desktop', 'Desktop Assistant'), ('personal', 'Personal Assistant'), ('hermes', 'Hermes Assistant (Experimental)'), ('coding', 'Coding Assistant')]:
-        terminal = 'true' if app in ('hermes', 'coding') else 'false'
+    for app, title in [('desktop', 'Desktop Assistant'), ('personal', 'Personal Assistant'), ('coding', 'Coding Assistant')]:
+        terminal = 'true' if app == 'coding' else 'false'
         put(HOME / f'.local/share/applications/mseries-{app}-assistant.desktop',
             f'[Desktop Entry]\nType=Application\nName={title}\nExec="{HOME}/.local/bin/mseries-assistant" {app}\nIcon=utilities-system-monitor\nTerminal={terminal}\nCategories=Utility;\n', 0o644)
     # Configure inside Flatpak's own settings namespace, without opening a window.
