@@ -1,3 +1,27 @@
+## M4 mini: retain Mesa in installed /usr image — 2026-10-21
+
+Found a real factory defect: sysupdate repart copies /usr only, losing the
+/opt-only Mesa payload. Mesa r4 now retains all bytes unchanged under
+/usr/lib/elementary-m4-gravity1, with a compatibility link and vendor tmpfiles
+restoration for compiled /opt paths. The M4 profile uses canonical /usr loader
+and Vulkan paths. Its hook handles an empty legacy directory preserved by dpkg,
+refuses unexpected nonempty contents, restores the link and refreshes ldconfig.
+The isolated-root r3-to-r4 upgrade passes with clean dpkg audit. With /usr bound
+read-only and /opt masked by empty tmpfs, link restoration and both ordinary
+and launcher EGL software rendering pass using Mesa 26.3. No full image boot.
+
+The generic elementary-install command wipes a whole disk, conflicting with
+macOS dual boot. M4's profile now overrides that command with an explicit
+refusal; the parser proves this override is M4-only, and execution with an
+empty tool PATH refuses before invoking disk tools. This does not yet disable
+or qualify the graphical installer. A proper Apple partition-preserving adapter
+and installer-session integration remain necessary before installer admission.
+Next factory defects: assemble-iso.sh expects /boot/vmlinuz although the research
+kernel deliberately lives in /usr/lib/modules; sysupdate also needs explicit
+Apple NVMe/PCIe initrd modules. Full factory assembly and physical testing remain
+open. Hardware is unavailable; no boot, firmware, HDMI or 10 Gb pass claimed.
+[Receipt](m4-mini/receipts/2026-10-21-gravity-mesa-package-r4.json).
+
 ## M4 mini: opt-in factory graphics activation — 2026-10-21
 
 The M4-only extra tree prioritizes matched private Mesa/GBM through the target

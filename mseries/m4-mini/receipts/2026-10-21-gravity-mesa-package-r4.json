@@ -1,0 +1,23 @@
+{
+  "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "package": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb",
+  "package_sha256": "89950d877d41272106ee878572cf705b1c3e07f98a865df6dced881a41ddea5b",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "dependencies": "python3, libegl1, libgl1, libvulkan1, libc6 (>= 2.43), libdisplay-info3 (>= 0.3.0), libdrm2 (>= 2.4.109), libexpat1 (>= 2.0.1), libgbm1 (>= 21.3.0~rc1), libgcc-s1 (>= 3.0), libllvm21 (>= 1:21.1.0), libstdc++6 (>= 13.1), libudev1 (>= 183), libwayland-client0 (>= 1.24.0), libx11-6 (>= 2:1.4.99.1), libx11-xcb1, libxcb-dri3-0 (>= 1.17.0), libxcb-glx0 (>= 1.8), libxcb-present0 (>= 1.17.0), libxcb-randr0 (>= 1.13), libxcb-shm0, libxcb-sync1, libxcb-xfixes0, libxcb1 (>= 1.9.2), libxext6, libxshmfence1, libxxf86vm1 (>= 1:1.1.4), libzstd1 (>= 1.5.5), zlib1g (>= 1:1.1.4)",
+  "status": "private-prefix payload packaged; no installation, activation or M4 GPU qualification",
+  "payload_layout": "all Mesa bytes retained in usr/lib/elementary-m4-gravity1; /opt compatibility link and vendor tmpfiles restoration",
+  "upgrade_from_r3": "dpkg install passes; dpkg audit clean; factory hook removes only empty legacy directory before restoring compatibility link",
+  "configured_root_render": "PASS: unwrapped EGL software rendering Mesa 26.3.0-devel",
+  "usr_retention_simulation": "PASS: /usr bind mounted read-only, /opt masked with empty tmpfs; tmpfiles restores link; ordinary and wrapper software EGL pass",
+  "hardware_validated": false,
+  "factory_retention_regression": "PASS: real hook refuses nonempty legacy prefix without data loss, removes empty legacy directory, restores link with read-only /usr; ordinary and wrapper rendering require matched Mesa version",
+  "combined_package_stage": "PASS: current kernel r2, Mesa r4 and policy r2 receipts verified, 1598 modules and four module dependency dry-runs",
+  "factory_files_sha256": {
+    "mkosi.images/base/mkosi.profiles/m4-mini/activate-graphics.chroot": "e8c062dbe7bc72aeb3f7aa23a2ffd61b78703acc91496495723761674574eaec",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.conf": "e2afc8891a9f99a28e04068a798c99681b7762f052887a939e1c976d00b7fda4",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/etc/ld.so.conf.d/00-elementary-m4-gravity.conf": "7813534689a30253bb558ed13f0de76395523e3c366bcbee2902f47c00062c58",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/lib/environment.d/50-elementary-m4-mesa.conf": "fe36795e6f6ffece5b261e48ecc6a9c5074a2d5c438b38b145e4e727a4a0d7a8",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/lib/systemd/system/lightdm.service.d/50-elementary-m4-mesa.conf": "203ec47884edf4e2b90c0ef707561970165e6b0d209bfe53ef728f9842029757",
+    "mkosi.images/base/mkosi.profiles/m4-mini/mkosi.extra/usr/share/vulkan/icd.d/elementary-m4-asahi.aarch64.json": "05b2e0e2f75ed9a8adf029ccc592644ec676f7518df1d723c9115ee146837344"
+  }
+}

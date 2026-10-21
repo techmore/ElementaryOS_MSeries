@@ -272,7 +272,7 @@ constitute an enabled M4 factory installer or complete desktop image.
 
 ## Opt-in factory package selection
 
-The new `m4-mini` mkosi profile selects exact kernel revision 2, Mesa revision 3
+The new `m4-mini` mkosi profile selects exact kernel revision 2, Mesa revision 4
 and policy revision 2 packages in the base image, and adds Apple NVMe/PCIe/
 keyboard/Magic Mouse modules to the live ISO initrd settings. It asserts arm64
 and rejects combination with the incompatible Fairydust stack. Normal builds
@@ -306,3 +306,28 @@ a complete elementary session, or a full factory image. The owner's M4 is
 unavailable; physical firmware, HDMI, memory and 10 Gb checks remain open.
 
 [Activation receipt](receipts/2026-10-21-factory-graphics.json).
+
+## Installed-image retention correction
+
+The installed sysupdate artifact copies only `/usr`. Mesa package revision 4
+therefore stores all private graphics bytes in `/usr/lib/elementary-m4-gravity1`.
+It retains compatibility with the compiled `/opt` prefix through a symlink and
+vendor tmpfiles configuration. The M4 profile uses canonical `/usr` paths for
+ldconfig and the global Vulkan manifest. The factory hook removes only an
+empty obsolete prefix directory that dpkg may preserve during upgrade.
+
+The r3-to-r4 upgrade passes in the isolated configured root with a clean dpkg
+audit. `test-factory-retention.py --root ROOT --smoke COMPILED_EGL_TEST` masks
+`/opt` with empty tmpfs and makes `/usr` read-only: tmpfiles restoration and
+both unwrapped and launcher software rendering pass with Mesa 26.3. All
+original staged Mesa files/symlinks retain their contents. This is scoped
+retention evidence, not a complete installed image or desktop boot.
+
+The M4 live profile overrides the disk-erasing `elementary-install` command
+with a refusal because it cannot preserve macOS. The graphical installer
+session is not yet qualified or disabled by this command override. Do not
+use this research image for installation. A partition-preserving Apple adapter
+is still required. `assemble-iso.sh` also expects a `/boot` kernel copy that
+the research package intentionally omits; full ISO integration remains open.
+
+[Current Mesa package receipt](receipts/2026-10-21-gravity-mesa-package-r4.json).

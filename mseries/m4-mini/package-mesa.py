@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 
 NAME = 'elementary-m4-gravity-mesa1'
-VERSION = '26.3.0~devel+gravity.87ac51d-3'
+VERSION = '26.3.0~devel+gravity.87ac51d-4'
 COMMIT = '87ac51d411f0e58a9433567ec2666f457be89e1d'
 ARCHIVE_SHA = '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e'
 
@@ -50,8 +50,17 @@ def main():
     with tempfile.TemporaryDirectory(prefix='m4-mesa-package-') as temp:
         root = Path(temp)
         payload = root / 'debian' / NAME
-        shutil.copytree(prefix, payload / 'opt/elementary-m4-gravity1', symlinks=True)
-        launcher = payload / 'opt/elementary-m4-gravity1/bin/run-mesa'
+        # Keep all bytes in /usr: factory sysupdate retains only that tree.
+        # Mesa's compiled /opt paths remain valid through a compatibility link.
+        persistent = payload / 'usr/lib/elementary-m4-gravity1'
+        shutil.copytree(prefix, persistent, symlinks=True)
+        (payload / 'opt').mkdir()
+        (payload / 'opt/elementary-m4-gravity1').symlink_to('/usr/lib/elementary-m4-gravity1')
+        tmpfiles = payload / 'usr/lib/tmpfiles.d/elementary-m4-mesa.conf'
+        tmpfiles.parent.mkdir(parents=True, exist_ok=True)
+        tmpfiles.write_text('# Restore compatibility after /usr-only factory image installation.\n'
+                            'L /opt/elementary-m4-gravity1 - - - - /usr/lib/elementary-m4-gravity1\n')
+        launcher = persistent / 'bin/run-mesa'
         launcher.parent.mkdir(exist_ok=True)
         shutil.copy2(Path(__file__).with_name('run-mesa.py'), launcher)
         launcher.chmod(0o755)
@@ -69,7 +78,7 @@ def main():
                    'Description: Experimental M4 private-prefix graphics libraries\n'
                    ' No system graphics replacement or automatic activation.\n')
         (debian / 'control').write_text('Source: ' + NAME + '\n\n' + control)
-        packaged_prefix = payload / 'opt/elementary-m4-gravity1'
+        packaged_prefix = persistent
         libraries = [p for p in (packaged_prefix / 'lib').glob('*.so*') if p.is_file() and not p.is_symlink()]
         result = subprocess.run(['dpkg-shlibdeps', '--ignore-missing-info', '-O',
                                  '-l' + str((packaged_prefix / 'lib').resolve())] +

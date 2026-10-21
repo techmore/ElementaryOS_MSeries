@@ -21,5 +21,6 @@
   "full_factory_image_built": false,
   "desktop_session_tested": false,
   "hardware_validated": false,
-  "owner_hardware_available": false
+  "owner_hardware_available": false,
+  "superseded_by": "2026-10-21-gravity-mesa-package-r4.json (persistent /usr layout)"
 }

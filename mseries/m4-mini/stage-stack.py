@@ -10,7 +10,7 @@ import subprocess
 HERE = Path(__file__).resolve().parent
 RECEIPTS = {
     'kernel': '2026-10-21-gravity-kernel-package-r2.json',
-    'mesa': '2026-10-21-gravity-mesa-package-r3.json',
+    'mesa': '2026-10-21-gravity-mesa-package-r4.json',
     'policy': '2026-10-21-m4-policy-r2.json',
 }
 

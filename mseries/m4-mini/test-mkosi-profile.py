@@ -30,7 +30,7 @@ def images(result):
 default = images(resolve('--architecture=arm64'))
 m4 = images(resolve('--architecture=arm64', '--profile=m4-mini'))
 expected = {'linux-image-elementary-m4-gravity1=7.1.13+elementary.m4.gravity1-2',
-            'elementary-m4-gravity-mesa1=26.3.0~devel+gravity.87ac51d-3',
+            'elementary-m4-gravity-mesa1=26.3.0~devel+gravity.87ac51d-4',
             'elementary-m4-gravity-policy=20261021-2'}
 assert 'linux-image-generic' in default['base']['Packages']
 assert not any('gravity' in item for item in default['base']['Packages'])
@@ -47,6 +47,14 @@ assert sum(item['Source'] == extra for item in m4['base']['ExtraTrees']) == 1
 assert not any(item['Source'] == extra for item in default['base']['ExtraTrees'])
 assert m4['base']['PostInstallationScripts'].count(hook) == 1
 assert hook not in default['base']['PostInstallationScripts']
+live_extra = str(repo / 'mkosi.images/liveiso/mkosi.profiles/m4-mini/mkosi.extra')
+assert sum(item['Source'] == live_extra for item in m4['liveiso']['ExtraTrees']) == 1
+assert not any(item['Source'] == live_extra for item in default['liveiso']['ExtraTrees'])
+# The M4 command must refuse installation before invoking any external tool.
+installer = Path(live_extra) / 'usr/sbin/elementary-install'
+refusal = subprocess.run(['/bin/sh', str(installer)], env={'PATH': '/nonexistent'},
+                         capture_output=True, text=True)
+assert refusal.returncode == 1 and 'cannot preserve macOS' in refusal.stderr
 wrong = resolve('--architecture=x86-64', '--profile=m4-mini')
 assert wrong.returncode != 0 and 'Architecture=arm64 in [Assert]' in wrong.stderr
 conflict = resolve('--architecture=arm64', '--profile=m4-mini', '--profile=fairydust')

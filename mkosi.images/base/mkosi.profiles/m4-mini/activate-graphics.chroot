@@ -2,6 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Runs inside the opt-in target image after ExtraTrees and packages.
 set -eu
-test -f /opt/elementary-m4-gravity1/lib/libEGL_mesa.so.0
-test -f /opt/elementary-m4-gravity1/lib/libgbm.so.1
+test -f /usr/lib/elementary-m4-gravity1/lib/libEGL_mesa.so.0
+test -f /usr/lib/elementary-m4-gravity1/lib/libgbm.so.1
+# dpkg preserves an old directory when upgrading a directory to a symlink.
+# Remove only an empty obsolete prefix; never discard unexpected contents.
+if [ -d /opt/elementary-m4-gravity1 ] && [ ! -L /opt/elementary-m4-gravity1 ]; then
+    rmdir /opt/elementary-m4-gravity1
+fi
+systemd-tmpfiles --create /usr/lib/tmpfiles.d/elementary-m4-mesa.conf
+test "$(readlink /opt/elementary-m4-gravity1)" = /usr/lib/elementary-m4-gravity1
 /sbin/ldconfig

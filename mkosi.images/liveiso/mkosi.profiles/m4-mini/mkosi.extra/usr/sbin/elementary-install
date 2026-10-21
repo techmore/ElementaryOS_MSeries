@@ -1,0 +1,5 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# This research profile has no qualified Apple dual-boot partition workflow.
+printf '%s\n' 'M4 research image: installation is not available.' 'The generic installer erases an entire disk and cannot preserve macOS.' 'Use this image only for qualified boot testing until the Apple dual-boot adapter is implemented.' >&2
+exit 1
