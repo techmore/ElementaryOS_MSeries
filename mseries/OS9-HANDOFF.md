@@ -11,6 +11,7 @@
   or type filters, live scan preview, an apt package. The `/` scan skips `/home` (a separate Btrfs subvolume); the status bar says so.
   Nothing was installed or restarted on this machine.
 - **Next:** try it from the launcher on the M1, scan `/home` and System, and record anything that looks wrong here.
+
 ## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
 
 Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
