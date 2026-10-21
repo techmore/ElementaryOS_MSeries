@@ -19,6 +19,7 @@ free-space check, toasts, light/dark and accent following the system.
 - **Display tab**: the machine's desktop inside the app (QEMU `screendump` frames as uncompressed PPM over QMP, about 30 fps while the screen changes; mouse and keyboard sent back over a dedicated `qmp-view.sock` so the viewer never blocks `mseries-vm` control commands; click the screen to capture, Ctrl+Alt+G to release; Ctrl+Alt+Del and screenshot buttons). Machines start headless so the screen lives in the app, not a separate QEMU window.
 - **Ready-made images**: load a bootable disk instead of installing; save a disk as an image (`src/images.vala`).
 - **Snapshots**: disk restore points per machine (`src/snapshots.vala`).
+- **Windows drivers**: a pinned, checksum-verified virtio-win download and a generated `autounattend.xml` (DriverPaths for ARM64/amd64, optional local account, opt-in disk wipe) attached to not-yet-installed `mseries-vm` Windows guests (`src/unattend.vala`, `src/virtiowin.vala`, `src/windows-ui.vala`).
 - **Incus**: containers and VMs managed by Incus listed in the sidebar with lifecycle actions, terminal, log and a create dialog (`src/incus-model.vala`, `src/incus-ui.vala`).
 - Live console from the launcher output, or the guest serial log for imported machines.
 

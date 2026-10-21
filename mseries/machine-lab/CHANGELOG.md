@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.0 (2026-10-21)
+- Windows guests: a Settings card downloads the pinned virtio-win 0.1.302 ISO on request (HTTPS only, SHA-256 and size checked, failed or corrupt downloads are deleted) and attaches it with a generated `autounattend.xml` disc. The answer file loads `viostor`, `vioscsi`, `NetKVM` and `vioinput` in the windowsPE pass and stages the full driver set in specialize (DriverPaths plus a pnputil fallback), with an optional local account and an opt-in, confirmed disk wipe. Only machines that are not installed and not running are changed. Unit tests cover the generator (XML validity, ARM64/amd64 driver paths, escaping, defaults), the media list and the download failure states (#265).
+
 ## 0.8.0 (2026-10-19)
 - Ready-made images: load a bootable disk (qcow2, raw, vmdk, vdi, compressed xz/zst/gz, or a UTM zip) instead of installing, and save any machine's disk as a compressed image. Images are format-checked and refused if they reference other files on the host. Tested with real `qemu-img` and `xz`.
 
