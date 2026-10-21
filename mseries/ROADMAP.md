@@ -1572,6 +1572,23 @@ coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
 
+
+## RepoBar account cache isolation — 2026-10-21
+
+Follow-up to #414: follow-CLI mode resolves and pins the active stored CLI account
+for each helper process, including worker requests. Snapshot and endpoint caches
+require the resolved host/login; inherited token overrides cannot select another
+identity. Unknown/signed-out accounts fail closed; validated same-account stale
+snapshots remain available. The indicator no longer reads raw disk snapshots,
+discards responses spanning settings changes and clears account-derived state on
+terminal helper errors. No live panel restart or deployment.
+
+Checks: 18 fake-CLI regressions; native indicator/module/settings build; two private
+D-Bus/Xvfb account probes (late old-account response and prior account + helper
+failure); light/dark healthy/offline renders; strict size lint. CI now exercises
+the native probes. Actual second-account login remains owner acceptance. #414 was
+merged independently before this follow-up was published; this patch is separate.
+
 ## RepoBar UX pass 2 — 2026-10-18
 
 20-repo scrolling dashboard with Show all, native RepoBar Settings window, keyboard navigation and shortcuts, undo

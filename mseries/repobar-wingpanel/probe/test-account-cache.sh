@@ -4,6 +4,12 @@ set -euo pipefail
 build=$(realpath "$1")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+cat > "$work/bus.conf" <<'BUS'
+<busconfig>
+  <type>session</type><listen>unix:tmpdir=/tmp</listen>
+  <policy context="default"><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy>
+</busconfig>
+BUS
 for mode in race failure; do
   home="$work/$mode"
   mkdir -p "$home/.local/bin" "$home/.config/mseries/repobar" "$home/.cache/mseries/repobar"
@@ -25,6 +31,6 @@ HELPER
   env -i PATH="$PATH" HOME="$home" LANG=C.UTF-8 XDG_CONFIG_HOME="$home/.config" \
     RB_TEST_MODE="$mode" GDK_BACKEND=x11 GSK_RENDERER=cairo GIO_USE_VFS=local GTK_A11Y=none \
     XDG_DATA_DIRS="$home/.local/share" GSETTINGS_SCHEMA_DIR=/usr/share/glib-2.0/schemas \
-    xvfb-run -a dbus-run-session -- "$build/account-cache-probe"
+    xvfb-run -a dbus-run-session --config-file="$work/bus.conf" -- "$build/account-cache-probe"
   echo "account-cache $mode passed"
 done
