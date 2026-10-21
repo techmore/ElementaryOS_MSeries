@@ -168,7 +168,8 @@
         "accessible_names": "not qualified by this inventory",
         "screen_reader": "not qualified by this inventory"
       },
-      "status": "open evidence gate"
+      "status": "open evidence gate",
+      "current_batch_evidence": "PR424: 17 component suites; actual scale1/2 light/dark probes and 348px popover-only fixtures; staged without panel restart, loads next login."
     },
     {
       "surface": "RepoBar panel and settings",
@@ -192,7 +193,8 @@
         "accessible_names": "not qualified by this inventory",
         "screen_reader": "not qualified by this inventory"
       },
-      "status": "open evidence gate"
+      "status": "open evidence gate",
+      "current_batch_evidence": "PR424 relative-font checks retain PR418 account isolation; 18 fake-account tests and two native account probes. Owner taskbar readout remains24pt."
     },
     {
       "surface": "Signal",
@@ -336,7 +338,8 @@
         "accessible_names": "not qualified by this inventory",
         "screen_reader": "not qualified by this inventory"
       },
-      "status": "confirmed clipping/font/selection defects fixed locally; full display acceptance open"
+      "status": "confirmed clipping/font/selection defects fixed locally; full display acceptance open",
+      "current_batch_evidence": "Current batch: six private GTK3 tests, including real Right/Tab delivery, accessible names, bounded labels, and four light/dark scale1/2 captures; fake backend, no monitor writes."
     },
     {
       "surface": "Display profiles",
@@ -480,7 +483,8 @@
         "accessible_names": "not qualified by this inventory",
         "screen_reader": "not qualified by this inventory"
       },
-      "status": "open evidence gate"
+      "status": "open evidence gate",
+      "current_batch_evidence": "PR421: seven private GTK retention tests and light/dark fixture renders; no real Signal compose/profile acceptance."
     },
     {
       "surface": "OmDrop / AirDrop",
@@ -528,7 +532,8 @@
         "accessible_names": "not qualified by this inventory",
         "screen_reader": "not qualified by this inventory"
       },
-      "status": "confirmed main-loop blocker fixed locally; actual audio and full screen-reader acceptance open"
+      "status": "confirmed main-loop blocker fixed locally; actual audio and full screen-reader acceptance open",
+      "current_batch_evidence": "Current batch: asynchronous operations, private delayed/error/empty/long-name fixtures in both themes and actual scale1/2; no audio actions."
     },
     {
       "surface": "Share eyes dock app",
@@ -915,5 +920,11 @@
       "status": "open evidence gate"
     }
   ],
-  "fresh_checks_note": "Current native-ui242 worktree has independent content hashes in private responsiveness receipt; baseline inventory revision remains unchanged."
+  "fresh_checks_note": "Current native-ui242 worktree has independent content hashes in private responsiveness receipt; baseline inventory revision remains unchanged.",
+  "integration_notes": [
+    "This inventory retains its original fe390c78 source-tree identities. Later file-level fixture receipts bind changed code; missing release acceptance is not promoted to pass.",
+    "Screenshot retention source/tests changed through merged PR421. Original source milestone is superseded; actual Signal attachment/session acceptance remains open.",
+    "PR424 changes taskbar tokens, relative CodexBar/RepoBar/legacy Orchard fonts and scale-aware probes. Its fixture evidence is separate from the older inventory baseline; dynamic panel transform remains unshipped.",
+    "Later owner Touch ID UI/documentation changes invalidate old full-surface visual claims; actual guard/matching and fresh surface acceptance remain distinct."
+  ]
 }

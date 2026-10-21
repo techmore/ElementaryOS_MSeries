@@ -746,7 +746,7 @@ its owned helper on close; stale UI completions are ignored. Display arrangement
 uses bounded system-font labels, full tooltips/accessibility summaries and visible
 keyboard focus with selection that does not apply a display configuration.
 
-Private real-GTK checks pass in light/dark at actual scale1/2, plus four fake-display
+Private real-GTK checks pass in light/dark at actual scale1/2, plus six fake-display
 canvas tests, 73 local-AI unit tests and six AirPlay core tests. A new CI job retains
 source-bound fixtures. See `ui-audit/NATIVE-UI-2026-10-21.md` and its 38-family
 inventory. This fixes three confirmed blockers; it does not close the full native

@@ -43,6 +43,48 @@ class CanvasTests(unittest.TestCase):
         self.assertFalse(self.canvas.on_key(None, SimpleNamespace(keyval=ui.Gdk.KEY_a)))
         self.app.be.apply.assert_not_called()
 
+    def test_native_key_event_reaches_focused_canvas(self):
+        self.app.show_all()
+        self.canvas.grab_focus()
+        context = ui.GLib.MainContext.default()
+        while context.pending():
+            context.iteration(False)
+        first = self.app.sel
+        self.assertIs(self.app.get_focus(), self.canvas)
+        # Real X11 key delivery, scoped to this private fixture window.
+        import subprocess
+        from gi.repository import GdkX11
+        xid = str(self.app.get_window().get_xid())
+        subprocess.run(['xdotool', 'windowfocus', '--sync', xid], check=True, timeout=3)
+        import time
+        deadline = time.monotonic() + 1
+        while not self.canvas.has_focus() and time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            time.sleep(.01)
+        self.assertTrue(self.canvas.has_focus())
+        subprocess.run(['xdotool', 'key', '--window', xid, 'Right'], check=True, timeout=3)
+        deadline = time.monotonic() + 1
+        while self.app.sel is first and time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            time.sleep(.01)
+        self.assertIsNot(self.app.sel, first)
+        subprocess.run(['xdotool', 'key', '--window', xid, 'Tab'], check=True, timeout=3)
+        deadline = time.monotonic() + 1
+        while self.app.get_focus() is self.canvas and time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            time.sleep(.01)
+        self.assertIsNot(self.app.get_focus(), self.canvas)
+        self.app.be.apply.assert_not_called()
+
+    def test_controls_have_accessible_names(self):
+        for widget, name in [(self.app.res_c, 'Resolution'), (self.app.hz_c, 'Refresh rate'),
+                             (self.app.scale_c, 'Scale'), (self.app.rot_c, 'Rotation'),
+                             (self.app.prof_entry, 'Profile name')]:
+            self.assertEqual(widget.get_accessible().get_name(), name)
+
     def test_full_label_remains_available_to_tooltip_and_accessibility(self):
         self.app.sel.label = 'Fixture monitor with a long name ' + '長い名前' * 10
         self.canvas.update_accessible()

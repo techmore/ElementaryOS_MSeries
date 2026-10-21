@@ -20,16 +20,17 @@ for theme in light dark; do
   for scale in 1 2; do
     capture="$output/$theme-scale$scale"
     mkdir -p "$capture"
-    for surface in troubleshooter airplay; do
+    for surface in troubleshooter airplay display; do
       case "$surface" in
         troubleshooter) test_path=mseries/local-ai/tests/check-troubleshooter-ui.py ;;
         airplay) test_path=mseries/airplay/tests/check-airplay-ui.py ;;
+        display) test_path=mseries/display-settings/test_canvas.py ;;
       esac
       env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HOME="$private/home" \
         XDG_CONFIG_HOME="$private/config" XDG_CACHE_HOME="$private/cache" \
         XDG_DATA_HOME="$private/data" XDG_RUNTIME_DIR="$private/runtime" \
         GTK_THEME="$gtk_theme" GDK_SCALE="$scale" GDK_DPI_SCALE=1 \
-        MSERIES_UI_CAPTURE="$capture" GSK_RENDERER=cairo GDK_BACKEND=x11 \
+        MSERIES_UI_CAPTURE="$capture" MSERIES_DISPLAY_FAKE=1 GSK_RENDERER=cairo GDK_BACKEND=x11 \
         G_DEBUG=fatal-criticals GTK_A11Y=none GIO_USE_VFS=local \
         xvfb-run -a -s '-screen 0 2400x1800x24' dbus-run-session --config-file="$private/bus.conf" -- \
         /usr/bin/python3 "$here/$test_path" -v >"$capture/$surface.log" 2>&1
@@ -38,12 +39,12 @@ for theme in light dark; do
   done
 done
 
-bash "$here/mseries/display-settings/test-canvas.sh" >"$output/display-canvas.log" 2>&1
 /usr/bin/python3 - "$here" "$output" <<'PY'
 import hashlib,json,pathlib,struct,subprocess,sys
 root,out=map(pathlib.Path,sys.argv[1:])
 paths=['mseries/local-ai/troubleshooter-ui.py','mseries/airplay/mseries-airplay-outputs',
-       'mseries/display-settings/mseries-display-settings','mseries/ui-audit/run-private-checks.sh',
+       'mseries/display-settings/mseries-display-settings','mseries/display-settings/test_canvas.py',
+       'mseries/display-settings/test-canvas.sh','mseries/ui-audit/run-private-checks.sh',
        'mseries/local-ai/tests/check-troubleshooter-ui.py','mseries/airplay/tests/check-airplay-ui.py']
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 images=[]

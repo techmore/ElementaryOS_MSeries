@@ -310,11 +310,12 @@ class App(Gtk.Window):
         fr = Gtk.Frame()
         fr.add(self.canvas)
         left.pack_start(fr, True, True, 0)
-        hint = Gtk.Label(label="Drag a screen to move it. Screens snap edge to edge.", xalign=0)
+        hint = Gtk.Label(label="Drag screens to arrange them. Use Left and Right to select one.", xalign=0, wrap=True)
         hint.get_style_context().add_class("dim-label")
         left.pack_start(hint, False, False, 0)
         pf = Gtk.Box(spacing=6)
         self.prof_entry = Gtk.Entry(placeholder_text="Profile name, e.g. Home desk")
+        self.prof_entry.get_accessible().set_name("Profile name")
         sv = Gtk.Button(label="Save layout as profile")
         sv.connect("clicked", self.on_save_profile)
         ap = Gtk.Button(label="Apply matching profile")
@@ -334,7 +335,10 @@ class App(Gtk.Window):
         self.res_c, self.hz_c, self.scale_c, self.rot_c = (Gtk.ComboBoxText() for _ in range(4))
         for i, (t, w) in enumerate((("Resolution", self.res_c), ("Refresh rate", self.hz_c),
                                     ("Scale", self.scale_c), ("Rotation", self.rot_c))):
-            grid.attach(Gtk.Label(label=t, xalign=0), 0, i, 1, 1)
+            label = Gtk.Label(label=t, xalign=0)
+            label.set_mnemonic_widget(w)
+            w.get_accessible().set_name(t)
+            grid.attach(label, 0, i, 1, 1)
             w.set_hexpand(True)
             grid.attach(w, 1, i, 1, 1)
         for t, c in (("Normal", self.rot_c),):
