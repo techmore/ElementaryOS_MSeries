@@ -218,6 +218,12 @@ pub struct NativeRenderer {
     pub render_node: DrmNode,
     pub render_gbm: GbmDevice<DrmDeviceFd>,
     pub gpus: NativeGpuManager,
+    /// Default linux-dmabuf feedback (render node, sampling formats) and the
+    /// formats it lists; `None` while linux-dmabuf is not advertised.
+    dmabuf: Option<(
+        smithay::wayland::dmabuf::DmabufFeedback,
+        smithay::backend::allocator::format::FormatSet,
+    )>,
 }
 
 pub struct NativeKmsOutput {
@@ -231,6 +237,9 @@ pub struct NativeKmsOutput {
     trace: Option<OutputTrace>,
     /// Frame timing for the 30 s metrics window.
     stats: crate::metrics::output::OutputStats,
+    /// linux-dmabuf feedback with this output's scanout tranche, sent only to
+    /// surfaces presented zero-copy on one of its planes (built on first use).
+    scanout_feedback: Option<smithay::wayland::dmabuf::DmabufFeedback>,
     /// The last render pass produced no damage, so no vblank will come to send
     /// frame callbacks; an estimated-vblank timer has to.
     needs_estimated_frame: bool,
@@ -813,6 +822,24 @@ impl NativeKmsDevice {
             // Remember which output each surface is mostly shown on, so the
             // vblank only sends frame callbacks to surfaces on that output.
             update_primary_scanout_outputs(state, &output.output, &frame.states);
+            if let Some((default_feedback, render_formats)) = &renderer.dmabuf {
+                let scanout_feedback = output.scanout_feedback.get_or_insert_with(|| {
+                    scanout_feedback(
+                        &output.drm_output,
+                        renderer.render_node,
+                        self.node,
+                        render_formats,
+                    )
+                    .unwrap_or_else(|| default_feedback.clone())
+                });
+                send_dmabuf_feedback(
+                    state,
+                    &output.output,
+                    &frame.states,
+                    default_feedback,
+                    scanout_feedback,
+                );
+            }
             if frame.is_empty {
                 output.stats.record_empty();
                 output.needs_estimated_frame = true;
@@ -1422,6 +1449,7 @@ impl NativeKmsDevice {
                 frame_pending: false,
                 trace: output_trace,
                 stats: Default::default(),
+                scanout_feedback: None,
                 needs_estimated_frame: false,
                 estimated_frame_armed: false,
             });
@@ -1893,6 +1921,7 @@ impl NativeKmsDevice {
                 frame_pending: false,
                 trace: output_trace,
                 stats: Default::default(),
+                scanout_feedback: None,
                 needs_estimated_frame: false,
                 estimated_frame_armed: false,
             });
@@ -2321,14 +2350,28 @@ fn arm_hidden_frame_sweep(state: &PantheonCompositor) {
     }
 }
 
-/// Opt-in `zwp_linux_dmabuf_v1` for native clients. Off by default until a
-/// native trial has qualified it: set `PANTHEON_ENABLE_DMABUF=1` for the
-/// compositor service. Without it clients use wl_shm (software GTK rendering).
+/// Whether to advertise linux-dmabuf on the native backend: on by default
+/// since 2026-10-21 (owner-approved trial); `PANTHEON_DISABLE_DMABUF=1` or
+/// `PANTHEON_ENABLE_DMABUF=0` turns it off.
+fn dmabuf_enabled(disable: Option<&str>, enable: Option<&str>) -> bool {
+    disable != Some("1") && enable != Some("0")
+}
+
+/// `zwp_linux_dmabuf_v1` v4 for native clients, so Mesa picks the Asahi GPU
+/// and Chromium/Electron/GTK render on it instead of in software over wl_shm.
+/// The default feedback lists the render node's formats; each output also
+/// builds a scanout feedback (see [`scanout_feedback`]).
 fn advertise_dmabuf(state: &mut PantheonCompositor) {
     use smithay::backend::renderer::ImportDma;
     use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
 
-    if std::env::var_os("PANTHEON_ENABLE_DMABUF").is_none_or(|value| value != "1") {
+    if !dmabuf_enabled(
+        std::env::var("PANTHEON_DISABLE_DMABUF").ok().as_deref(),
+        std::env::var("PANTHEON_ENABLE_DMABUF").ok().as_deref(),
+    ) {
+        tracing::info!(
+            "linux-dmabuf disabled by PANTHEON_DISABLE_DMABUF/PANTHEON_ENABLE_DMABUF; clients use wl_shm"
+        );
         return;
     }
     let Some(backend) = state.native_backend.as_mut() else {
@@ -2342,18 +2385,87 @@ fn advertise_dmabuf(state: &mut PantheonCompositor) {
             return;
         }
     };
-    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats).build() {
+    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats.clone()).build() {
         Ok(feedback) => feedback,
         Err(error) => {
             tracing::warn!(%error, "could not build dmabuf feedback; linux-dmabuf not advertised");
             return;
         }
     };
+    backend.renderer.dmabuf = Some((feedback.clone(), formats));
     let dh = state.display_handle.clone();
     state
         .dmabuf_state
         .create_global_with_default_feedback::<PantheonCompositor>(&dh, &feedback);
     tracing::info!("advertising linux-dmabuf v4 on the native renderer");
+}
+
+/// Feedback for a surface the display controller scans out directly: a
+/// scanout tranche on the KMS device with the output's plane formats (limited
+/// to ones the GPU can also sample, so composition stays a fallback), then
+/// the normal render tranche. Only sent to surfaces presented zero-copy, so
+/// ordinary windows are not steered to scanout-only layouts.
+fn scanout_feedback(
+    drm_output: &NativeDrmOutput,
+    render_node: DrmNode,
+    kms_node: DrmNode,
+    render_formats: &smithay::backend::allocator::format::FormatSet,
+) -> Option<smithay::wayland::dmabuf::DmabufFeedback> {
+    use smithay::backend::allocator::format::FormatSet;
+    use smithay::reexports::wayland_protocols::wp::linux_dmabuf::zv1::server::zwp_linux_dmabuf_feedback_v1::TrancheFlags;
+    use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
+
+    let plane_formats = drm_output.with_compositor(|compositor| {
+        let surface = compositor.surface();
+        surface
+            .plane_info()
+            .formats
+            .iter()
+            .copied()
+            .chain(
+                surface
+                    .planes()
+                    .overlay
+                    .iter()
+                    .flat_map(|plane| plane.formats.iter().copied()),
+            )
+            .collect::<FormatSet>()
+    });
+    let scanout_formats = plane_formats
+        .intersection(render_formats)
+        .copied()
+        .collect::<FormatSet>();
+    DmabufFeedbackBuilder::new(render_node.dev_id(), render_formats.clone())
+        .add_preference_tranche(
+            kms_node.dev_id(),
+            TrancheFlags::Scanout,
+            scanout_formats,
+            4u32..=6,
+        )
+        .build()
+        .inspect_err(|error| tracing::warn!(%error, "could not build scanout dmabuf feedback"))
+        .ok()
+}
+
+/// Send each surface drawn on `output` the feedback that fits how it was
+/// presented (smithay only resends when it changes).
+fn send_dmabuf_feedback(
+    state: &PantheonCompositor,
+    output: &Output,
+    render_states: &smithay::backend::renderer::element::RenderElementStates,
+    default_feedback: &smithay::wayland::dmabuf::DmabufFeedback,
+    scanout_feedback: &smithay::wayland::dmabuf::DmabufFeedback,
+) {
+    use smithay::backend::renderer::element::utils::select_dmabuf_feedback;
+    for window in state.gesture_frame_windows() {
+        window.send_dmabuf_feedback(
+            output,
+            smithay::desktop::utils::surface_primary_scanout_output,
+            |surface, _| {
+                select_dmabuf_feedback(surface, render_states, default_feedback, scanout_feedback)
+            },
+        );
+    }
 }
 
 /// Record a hotplug-relevant event and arm the one-shot reconcile timer the
@@ -2477,6 +2589,7 @@ impl NativeRenderer {
                         render_node,
                         render_gbm,
                         gpus,
+                        dmabuf: None,
                     });
                 }
                 Ok(None) => {}
@@ -2516,5 +2629,20 @@ impl NativeRenderer {
             .unwrap_or(node);
         gpus.as_mut().add_node(render_node, gbm.clone())?;
         Ok(Some((render_node, gbm)))
+    }
+}
+
+#[cfg(test)]
+mod dmabuf_tests {
+    use super::dmabuf_enabled;
+
+    #[test]
+    fn dmabuf_is_on_unless_switched_off() {
+        assert!(dmabuf_enabled(None, None));
+        assert!(dmabuf_enabled(None, Some("1")));
+        assert!(dmabuf_enabled(Some("0"), None));
+        assert!(!dmabuf_enabled(Some("1"), None));
+        assert!(!dmabuf_enabled(None, Some("0")));
+        assert!(!dmabuf_enabled(Some("1"), Some("1")));
     }
 }
