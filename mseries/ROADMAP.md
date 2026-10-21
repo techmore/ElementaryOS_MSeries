@@ -1,3 +1,9 @@
+## Compositor snapping phase 1 — 2026-10-21
+
+Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together
+from their shared edge (`src/snap_group.rs`, `src/snap_assist.rs`). Nested regression 34/34; native and multi-monitor acceptance
+open. Next: phase 2 (split-on-drop for a third and fourth app, templates, titles).
+
 ## Compositor snapping phase 0 — 2026-10-21
 
 One placement per window (`src/placement.rs`), restore after snap/maximize, Super+Up/Down, toggling Super+Left/Right,

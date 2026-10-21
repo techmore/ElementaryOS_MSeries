@@ -35,6 +35,8 @@ mod prewarm;
 mod protocols;
 mod redraw_stats;
 mod shell_compat;
+mod snap_assist;
+mod snap_group;
 mod state;
 mod tiling;
 mod touchpad;
