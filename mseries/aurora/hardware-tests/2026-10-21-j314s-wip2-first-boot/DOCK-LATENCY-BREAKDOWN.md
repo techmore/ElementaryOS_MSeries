@@ -39,3 +39,37 @@ Findings:
   also stalls during it. Moving it off-thread is the next compositor-side item.
 * The `link-status was Bad; reset to Good` write 32 ms after mapping is cheap
   (DCP logs `Already set to timingID` and finishes in ~5 ms).
+
+## Trial: off-thread external modeset (`PANTHEON_PREWARM_MODESET=1`)
+
+Smithay's modeset commit is blocking and sits inside `initialize_output`, whose
+renderer and output manager are not `Send` (checked by compiling a `Send`
+assertion), so the ~245 ms DCP modeset cannot simply move to a thread. The flag
+instead performs the same modeset early on a helper thread through a duplicate
+of the DRM master fd, using a black XRGB8888 dumb buffer on the CRTC's primary
+plane. The kernel skips a modeset whose connector/CRTC/mode already match (DCP
+logs `Already set to timingID` and returns in ~5 ms), so the compositor's own
+commit becomes cheap. The reconcile skips an external connector until its helper
+reports back and then maps it; any failure (test commit rejected, thread error,
+no suitable plane, 3 s timeout) falls back to the normal inline path. The flag
+also starts the helper on the first udev event, before the 40 ms debounce.
+
+Verified without hardware commit rights: planning, dumb buffer, ADDFB and the
+atomic request build against the live DCP device
+(`pantheon-drm-probe --prewarm-dry-run --include-internal` reaches the commit;
+the commit itself needs DRM master, which the running compositor holds), plus
+state-machine unit tests. **Not yet verified:** that DCP accepts the commit and
+that Smithay's later commit really is a no-op. Trial with the owner present:
+
+```sh
+systemctl --user edit pantheon-rust-compositor@wayland.service
+# [Service]
+# Environment=PANTHEON_PREWARM_MODESET=1
+```
+
+Log in again, plug the dock, and compare the journal: expect
+`prewarming modeset on a helper thread`, `prewarmed modeset finished`, then
+`mapped newly connected DRM output` with the kernel's second
+`set_digital_out_mode` finishing in ms rather than ~245 ms. A
+`prewarm failed; mapping inline` warning means the fallback ran; remove the
+drop-in if the external output ever stays blank.
