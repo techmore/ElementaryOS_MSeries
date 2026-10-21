@@ -28,6 +28,18 @@ restarts the running session), sign out and in, then look for `link-status was B
 with AOC identity, and the monitor showing the desktop. Owner action: with the AOC attached run
 `mseries-display-profiles save <name>` once so the watcher has a profile for it.
 
+**Deployed locally 2026-10-21.** Installed package `0.1.0+gitc995a60.dockfix1`: the compositor build that was
+already running (`c995a60` on `codex/rust-gala-stack-integration`, which carries the redraw-reason counters
+that `dev` lacks) plus only this fix, built in a local-only worktree. It was not built from `dev`, so none of
+`dev`'s unrelated gesture or taskbar changes were introduced. Rollback: the previous binary is saved at
+`~/.cache/mseries-build/rollback/pantheon-compositor.c995a60`
+(`sudo install -m 0755 <that file> /usr/bin/pantheon-compositor`, then log in again), or
+`sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes` for the Gala session. The
+package only loads at login; a one-shot timer runs
+`mseries/pantheon-rust-compositor/validate-dock-recovery.sh` about 2.5 minutes after the logout and writes
+`~/.local/state/mseries/dock-recovery-*.txt`. Read that report before treating the fix as validated.
+Merging PR #357 into `dev` does not by itself deploy anything.
+
 **Work Mode.** It is on because the manual switch is on (`enabled true`, no schedule, no network rule),
 not because of the dock. The helper reads only the switch, the schedule and the public IP; a test now
 guards that. Owner decision stands: no dock- or display-based home/office inference.
