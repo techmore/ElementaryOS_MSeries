@@ -1,3 +1,22 @@
+## RepoBar multi-account and show-in-panel (#393) — 2026-10-21 (Claude Code)
+
+- **Multi-account:** `settings.json` gains `account` (empty follows the GitHub CLI's active account, as before) and
+  `showInPanel`. `mseries-repobar auth accounts` lists every `gh` sign-in (parsed from `gh auth status`; gh 2.46 has no
+  JSON), `auth use LOGIN[@HOST]` / `settings set account` picks one and refuses accounts gh is not signed in to.
+  A chosen account runs through its own token (`gh auth token --user`, passed only to that request's `gh` child; never
+  stored or printed) rather than `gh auth switch`, so git and other tools keep their own active account. Snapshot and
+  API caches are now per host and account (a snapshot from another account is ignored). RepoBar Settings → Account has
+  a **Read as** picker and **Add Account…**; the list refreshes when the window regains focus.
+- **Launch at login:** RepoBar loads with Wingpanel/the taskbar, so the preference is **Settings → Panel → Show RepoBar in
+  the panel** (`settings set show-in-panel`). Off hides the module (also in the taskbar via a `visible` binding) and stops
+  helper calls, timers and notifications; on resumes it live. A `RepoBar Settings` `.desktop` launcher is installed by
+  `install-repobar-wingpanel.sh` and `deploy-repobar.sh` so Settings stays reachable while hidden.
+- **Verified:** `python3 -B -m unittest mseries/test_repobar_accounts.py` (10 tests, fake `gh`); module, settings app and
+  probe build with meson; headless settings render shows the picker; with `showInPanel` false the probe's helper is called
+  0 times (1 when on). **Not verified:** a second real GitHub account (only `techmore` is signed in here), the taskbar
+  binding on a running desktop, and a live Wingpanel load (routine deploy installs without restarting; the module loads at
+  next login). Next: sign a second account in with `gh auth login` and confirm **Read as** switches the dashboard.
+
 ## Installer speed (#47): timing, opt-in parallel runner, ccache — 2026-10-21
 
 Part of #47; the bfd26508 / PR #303 work (one combined apt install, no retry of deterministic failures) is separate.
