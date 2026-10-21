@@ -254,3 +254,18 @@ See QUALIFICATION.md for evidence versus outstanding native gates. The new
 macos-inventory.sh collects filtered read-only host facts; macOS execution
 is not yet tested. No source/build result qualifies the owner's 10 Gb variant,
 16 GB loader map, complete desktop or macOS/Recovery round trip.
+
+## Final loader memory capture check
+
+`check-memory-handoff.py --dtb FINAL_LOADER_DTB` checks J773g declared RAM
+ranges and ramoops bounds/collisions. It rejects zero-size source placeholders,
+invalid RAM alignment, overlapping RAM, an out-of-RAM ramoops range and
+collision with another reservation. Six regression tests pass. The retained
+unfixed source DT is rejected. A synthetic 16 GB declared map passes, but
+that does not establish the owner's physical memory map. Unrelated reserved
+regions need not have RAM page alignment; this is not a complete firmware
+reservation validator. GPU/DCP source gates remain separate and mandatory.
+
+Factory integration remains unfinished: the ordinary base profile still
+selects linux-image-generic. The standalone M4 package/EFI tests do not
+constitute an enabled M4 factory installer or complete desktop image.

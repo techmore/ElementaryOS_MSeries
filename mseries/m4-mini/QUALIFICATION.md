@@ -10,7 +10,7 @@ repeatedly request an inventory until availability changes.
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Current source selection | Gravity kernel/Mesa heads rechecked; selected mainline/Aurora comparisons retained | Track future changes as separate candidates; do not mix firmware contracts |
-| Kernel | Full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Actual 16 GB loader map, reservations and runtime stability |
+| Kernel | Full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Final-DT RAM/ramoops checker passes synthetic tests; actual 16 GB map and runtime stability still needed |
 | Boot chain | Both raw bootloader stages and matching U-Boot compile | Native handoff with required GPU/DCP firmware and owner OS authorization |
 | Userspace | 188-package configured base root; package audit and llvmpipe pass | Complete elementary desktop, native M4 GPU/KMS, login and applications |
 | Initramfs/EFI | Archive/early modules pass; exact EFI payloads and repeatability checked | Actual root identity and boot on mini; test label is not an owner partition |

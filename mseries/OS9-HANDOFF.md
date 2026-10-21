@@ -1,3 +1,14 @@
+## M4 mini: offline final-memory handoff check — 2026-10-21
+
+check-memory-handoff.py validates J773g final-DT declared RAM bounds and the
+fixed ramoops reservation. Six regression tests pass, including undersized/
+zero RAM, wrong board and firmware collision rejection. The retained original
+source DT is correctly rejected because its loader memory fixups are absent.
+A synthetic 16 GB map passes, without setting hardware qualification. This
+checks declared RAM/ramoops only, not physical capacity or GPU/DCP contracts.
+The factory base still includes linux-image-generic; no M4 factory profile
+has been enabled or claimed working. Continue explicit image integration.
+
 ## M4 owner availability — 2026-10-21
 
 Owner confirms the M4 mini is unavailable and requests continued public-source

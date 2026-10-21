@@ -1,0 +1,11 @@
+{
+  "tests": {
+    "16g": "accepted",
+    "8g": "rejected",
+    "zero": "rejected",
+    "collision": "rejected",
+    "unfixed_source_dtb": "rejected"
+  },
+  "scope": "synthetic declared RAM bounds and ramoops collision checks; no owner RAM map captured",
+  "hardware_validated": false
+}
