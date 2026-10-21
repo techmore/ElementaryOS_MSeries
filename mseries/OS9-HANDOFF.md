@@ -81,6 +81,58 @@ this entry records what landed and what is installed here.
 
 Next: reconcile with TM-NmapUI-elementary (#249) and replace the dev-server unit; resolve the unmerged Daedalus PRs.
 
+## Maintenance handoff for the next chat — 2026-10-21
+
+Read [maintenance/README.md](maintenance/README.md) and its saved prompt snapshot.
+All 16 local task presets remain PAUSED/on-demand; run and audit one at a time.
+No next maintenance task was launched. Task 01/02 were manually audited/refined;
+remaining queues need their first real run/result audit. Rupert remains separate.
+
+**Merged to dev:** kernel candidate and all-port evidence #359 (`30018f19`),
+dock recovery #357 (`fed52f4c`), popup stacking/input #364 (`a057b04d`). Handoff
+conflicts were resolved by retaining both histories. Later historical statements
+that these PRs are unmerged or rear-left never works are superseded here.
+
+**Kernel actually running:** `7.2.10-elementary-aurora72-wip2`, current boot
+`38b8049d-918a-4901-9441-17673d8a5d50`; one-shot consumed, `next_entry=` empty,
+persistent default remains `.20`. All three dock ports now have owner picture
+confirmation; front-left/right have explicit input confirmation. Initial rear
+blanking recovered. Pilot partner-to-active times: right 4.486 s, rear-left
+4.509 s, front-left 4.511 s (retained boundary correction); 0.5 s sampling,
+one move each, no cable-to-pixels or speed ranking. Actual .20 recovery,
+suspend, long-run and controlled power acceptance remain open. Do not auto-rearm.
+
+**Compositor installed, not loaded:**
+`0.1.0+gitdev.dockfix2.panelstack3.popups1.activation1.displaytrace2`.
+Installed SHA256 `15ae6c8f936f63047ca2e06551fd310ede697e3cb226cdceb47c1b855ee213b3`;
+PID 1918 still executes original SHA256
+`7670cfc01be5026dd27ebd912c42b5a2d55449806d10383c2c09d5cc2e4e532e`.
+Preserved the exact dock/panel/popup/password-prompt deployment lineage. Existing
+PR #362 activation code is integrated; no pointer warp was added. New default-off
+bounded lifecycle trace covers scheduler, connector, KMS, link reset, map/unmap,
+EDID query duration and first queue/pageflip. A dedicated user-unit drop-in sets
+`PANTHEON_DISPLAY_TRACE=1` and its logging filter for the next owner-chosen login.
+Only daemon-reload was performed; no compositor/Wingpanel restart or logout.
+
+Successful parsed EDID identities are reused within each startup/reconcile scan,
+removing a redundant query for newly mapped outputs. Missing/malformed EDID still
+retries; no cache crosses a reconciliation. Debounce/link retry policy unchanged.
+Native release/package and locked compilation checks pass; dpkg integrity clean,
+all 13 companion payload files unchanged. No new interaction tests/probes or live
+traces were run, and end-to-end speedup is unmeasured. Exact source/build/package,
+installed/loaded and reconstructed rollback receipts are in
+`pantheon-rust-compositor/receipts/2026-10-21-activation-displaytrace2-*.json`.
+Private packages/logs are retained under the original chat workspace
+`outputs/compositor-activation-candidate`; preserve these for rollback.
+
+**Next:** owner chooses login to load attention/logging changes, then verify
+actual focus/typing, popup routing and dock picture/input. Collect repeated
+matched per-port lifecycle timings. Complete actual default .20 recovery before
+power/suspend qualification. Upstream review found no new local dock kernel
+patch: Aurora already supplies it. A host-only DART range fixture adaptation is
+worth considering; integration/WIP/prior partial PR evidence is in
+`aurora/unified72/UPSTREAM-CANDIDATES.md`. No upstream publication was made.
+
 ## Running markers: small lighter adjustment — 2026-10-20
 
 Owner requested a touch lighter: final marker color is #606060 in both modes,

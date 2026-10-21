@@ -53,6 +53,7 @@ use crate::{
     display_config::{
         OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
     },
+    display_trace::{self, Operation, OutputTrace},
     edid::{self, Candidate},
     hotplug::{EventKind, HotplugScheduler, event_triggers_reconcile},
     kms_props::{connector_edid, named_property},
@@ -128,16 +129,36 @@ fn connector_identity<D: DrmControlDevice>(
         )
 }
 
-/// Drop connectors that are stale copies of another connected connector's
-/// monitor (see `edid::stale_duplicates`). Returns the handles removed.
+/// Drop stale duplicate routes and retain successfully parsed identities for
+/// this scan only. Missing/malformed EDID is not cached, preserving the later
+/// identity-read retry while a dock is settling. No cache crosses a reconcile.
 fn remove_stale_duplicates<D: DrmControlDevice>(
     device: &D,
     connected: &mut Vec<connector::Info>,
-) -> Vec<connector::Handle> {
+) -> (
+    Vec<connector::Handle>,
+    HashMap<connector::Handle, OutputIdentity>,
+) {
+    let mut identities = HashMap::new();
     let candidates = connected
         .iter()
         .filter_map(|info| {
-            let (edid, blob_id) = connector_edid(device, info.handle())?;
+            let started = display_trace::enabled().then(Instant::now);
+            let read = connector_edid(device, info.handle());
+            if let Some(monotonic_us) = display_trace::stamp() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    connector = ?info.handle(), stage = "edid_read", success = read.is_some(),
+                    duration_us = started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
+                    "existing duplicate-route EDID query completed");
+            }
+            let (edid, blob_id) = read?;
+            if let Some(parsed) = edid::parse(&edid) {
+                identities.insert(info.handle(), OutputIdentity {
+                    vendor: parsed.vendor,
+                    product: parsed.product,
+                    serial: parsed.serial,
+                });
+            }
             Some(Candidate {
                 key: info.handle(),
                 edid,
@@ -148,7 +169,8 @@ fn remove_stale_duplicates<D: DrmControlDevice>(
         .collect::<Vec<_>>();
     let stale = edid::stale_duplicates(&candidates);
     connected.retain(|info| !stale.contains(&info.handle()));
-    stale
+    identities.retain(|handle, _| !stale.contains(handle));
+    (stale, identities)
 }
 
 /// The mode an output is first brought up with: preferred, else the first.
@@ -197,6 +219,7 @@ pub struct NativeKmsOutput {
     pub drm_output: NativeDrmOutput,
     pub global_id: smithay::reexports::wayland_server::backend::GlobalId,
     pub frame_pending: bool,
+    trace: Option<OutputTrace>,
 }
 
 pub struct NativeKmsDevice {
@@ -210,6 +233,8 @@ pub struct NativeKmsDevice {
     suppressed_duplicates: HashSet<connector::Handle>,
     /// Per-connector memory for answering `link-status = Bad`.
     link_resets: HashMap<connector::Handle, Option<ResetState>>,
+    trace_connectors: HashMap<connector::Handle, (connector::State, usize)>,
+    trace_link_status: HashMap<connector::Handle, u64>,
     /// Early modesets on helper threads (`PANTHEON_PREWARM_MODESET=1`).
     prewarm: prewarm::Slots<connector::Handle, prewarm::Warmed>,
     /// CRTC each running or finished prewarm programmed.
@@ -228,6 +253,7 @@ pub struct NativeBackend {
     pub kms: NativeKmsDevice,
     session_paused: bool,
     hotplug: HotplugScheduler,
+    trace_pending_event: Option<(Instant, u32)>,
 }
 
 /// Result of one prewarm helper thread, delivered to the compositor loop.
@@ -280,6 +306,7 @@ impl NativeKmsDevice {
         connector_info: &connector::Info,
         mode: smithay::reexports::drm::control::Mode,
     ) -> Result<(), String> {
+        let trace = Operation::begin("reassign_crtc_connector");
         let Some(index) = self
             .outputs
             .iter()
@@ -408,6 +435,7 @@ impl NativeKmsDevice {
         self.outputs[index].output = output;
         self.outputs[index].global_id = global_id;
         self.outputs[index].frame_pending = false;
+        self.outputs[index].trace = trace.output();
         self.disabled_connectors.insert(old_connector);
         self.disabled_connectors.remove(&connector_info.handle());
         Ok(())
@@ -420,6 +448,12 @@ impl NativeKmsDevice {
         enabled: &HashSet<String>,
         requested_mode_ids: &HashMap<String, String>,
     ) -> Result<(), String> {
+        let trace = Operation::begin("set_enabled_outputs");
+        if let Some(monotonic_us) = display_trace::stamp() {
+            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                generation = trace.generation, requested_count = enabled.len(), active_count = self.outputs.len(), requested_outputs = ?enabled,
+                stage = "enable_disable_request", "requested output set");
+        }
         if enabled.is_empty() {
             return Err("at least one output must remain enabled".into());
         }
@@ -566,6 +600,11 @@ impl NativeKmsDevice {
             state.space.unmap_output(&output.output);
             state.forget_output_during_lock(&output.output.name());
             self.disabled_connectors.insert(output.connector);
+            if let Some(monotonic_us) = display_trace::stamp() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, output = %output.output.name(), stage = "disabled",
+                    "output unmapped by explicit configuration");
+            }
             tracing::info!(output = %output.output.name(), "disabled DRM output by monitor configuration");
             drop(output);
         }
@@ -589,6 +628,7 @@ impl NativeKmsDevice {
         state: &PantheonCompositor,
         requested: &HashMap<String, Mode>,
     ) -> Result<(), String> {
+        let trace = Operation::begin("apply_modes");
         let mut gpu_renderer = renderer
             .gpus
             .single_renderer(&renderer.render_node)
@@ -644,10 +684,19 @@ impl NativeKmsDevice {
 
         let mut applied = Vec::new();
         for (crtc, target, original) in changes {
+            let started = display_trace::enabled().then(Instant::now);
             let result = {
                 let mut manager = self.manager.lock();
                 manager.use_mode(&crtc, target, &mut gpu_renderer, &render_elements)
             };
+            if let Some(monotonic_us) = display_trace::stamp() {
+                let mode = Mode::from(target);
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, ?crtc, stage = "use_mode", success = result.is_ok(),
+                    width = mode.size.w, height = mode.size.h, refresh_millihz = mode.refresh,
+                    duration_us = started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
+                    "requested KMS mode commit returned");
+            }
             if let Err(error) = result {
                 let mut rollback_errors = Vec::new();
                 for (rollback_crtc, rollback_mode) in applied.into_iter().rev() {
@@ -671,6 +720,9 @@ impl NativeKmsDevice {
                     "DRM rejected a display mode ({error:?}) and rollback also failed: {}",
                     rollback_errors.join("; ")
                 ));
+            }
+            if let Some(output) = self.outputs.iter_mut().find(|o| o.crtc == crtc) {
+                output.trace = trace.output();
             }
             applied.push((crtc, original));
         }
@@ -740,6 +792,9 @@ impl NativeKmsDevice {
             }
             crate::redraw_stats::frame_queued();
             output.drm_output.queue_frame(())?;
+            if let Some(trace) = &mut output.trace {
+                trace.queued(&output.output.name());
+            }
             output.frame_pending = true;
             rendered += 1;
         }
@@ -754,6 +809,9 @@ impl NativeKmsDevice {
             return Ok(None);
         };
         output.drm_output.frame_submitted()?;
+        if let Some(trace) = &mut output.trace {
+            trace.submitted(&output.output.name());
+        }
         output.frame_pending = false;
         Ok(Some(output.output.clone()))
     }
@@ -883,7 +941,7 @@ impl NativeKmsDevice {
     /// Writing `Good` is a full modeset through the atomic core. Bounded by
     /// `link_status::decide` so a sink that never trains cannot cause a loop.
     /// Returns true when any connector was reset.
-    fn reset_bad_link_status(&mut self) -> bool {
+    fn reset_bad_link_status(&mut self, generation: u64) -> bool {
         let now = Instant::now();
         let mapped = self
             .outputs
@@ -892,20 +950,42 @@ impl NativeKmsDevice {
             .collect::<Vec<_>>();
         self.link_resets
             .retain(|handle, _| mapped.iter().any(|(mapped, _)| mapped == handle));
+        self.trace_link_status
+            .retain(|handle, _| mapped.iter().any(|(mapped, _)| mapped == handle));
         let mut reset_any = false;
         for (handle, name) in mapped {
             let device = self.manager.device_mut();
             let Some((property, value)) = named_property(device, handle, "link-status") else {
                 continue;
             };
+            if display_trace::enabled() && self.trace_link_status.get(&handle) != Some(&value) {
+                self.trace_link_status.insert(handle, value);
+                if let Some(monotonic_us) = display_trace::stamp() {
+                    tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                        generation, output = %name, stage = "link_status", raw_link_status = value,
+                        "existing link-status read changed");
+                }
+            }
             let memory = self.link_resets.entry(handle).or_default();
             if link_status::decide(memory, value, now) != Action::Reset {
                 continue;
             }
-            match device.set_property(handle, property, LINK_STATUS_GOOD) {
+            let attempt = memory.as_ref().map(ResetState::attempts).unwrap_or(0);
+            let started = display_trace::enabled().then(Instant::now);
+            let result = device.set_property(handle, property, LINK_STATUS_GOOD);
+            if let Some(monotonic_us) = display_trace::stamp() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation, output = %name, stage = "link_reset", attempt, success = result.is_ok(),
+                    duration_us = started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
+                    "bounded existing Bad-to-Good link reset attempt");
+            }
+            match result {
                 Ok(()) => {
                     tracing::info!(output = %name, "link-status was Bad; reset to Good to retrain the link");
                     reset_any = true;
+                    if let Some(output) = self.outputs.iter_mut().find(|o| o.connector == handle) {
+                        output.trace = OutputTrace::new(generation);
+                    }
                 }
                 Err(error) => {
                     tracing::warn!(output = %name, %error, "could not reset link-status to Good");
@@ -924,18 +1004,43 @@ impl NativeKmsDevice {
         renderer: &mut NativeRenderer,
         state: &mut PantheonCompositor,
     ) -> Result<bool, Box<dyn std::error::Error>> {
+        let trace = Operation::begin("refresh_connectors");
         let resources = self.manager.device_mut().resource_handles()?;
         let mut all_connected = Vec::new();
         for handle in resources.connectors() {
             let info = self.manager.device_mut().get_connector(*handle, false)?;
+            if display_trace::enabled() {
+                let snapshot = (info.state(), info.modes().len());
+                if self.trace_connectors.get(handle) != Some(&snapshot) {
+                    self.trace_connectors.insert(*handle, snapshot);
+                    if let Some(monotonic_us) = display_trace::stamp() {
+                        tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                            generation = trace.generation, connector = ?handle,
+                            state = ?info.state(), mode_count = info.modes().len(),
+                            stage = "connector_transition", "connector state or mode count changed");
+                    }
+                }
+            }
             if info.state() == connector::State::Connected {
                 all_connected.push(info);
             }
         }
+        if display_trace::enabled() {
+            self.trace_connectors.retain(|handle, _| {
+                let present = resources.connectors().contains(handle);
+                if !present && let Some(monotonic_us) = display_trace::stamp() {
+                    tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                        generation = trace.generation, connector = ?handle, stage = "connector_removed",
+                        "connector absent from DRM resources");
+                }
+                present
+            });
+        }
         // After a dock moves to another Type-C PHY the driver can keep the old
         // DisplayPort connector reported as connected. Treat the stale copy as
         // disconnected so no phantom output is mapped between the real screens.
-        let stale = remove_stale_duplicates(self.manager.device_mut(), &mut all_connected);
+        let (stale, mut identities) =
+            remove_stale_duplicates(self.manager.device_mut(), &mut all_connected);
         for handle in &stale {
             if self.suppressed_duplicates.insert(*handle) {
                 tracing::warn!(
@@ -1011,6 +1116,11 @@ impl NativeKmsDevice {
                 state.space.unmap_output(&output.output);
                 state.forget_output_during_lock(&output.output.name());
                 state.display_config.remove(output.output.name());
+                if let Some(monotonic_us) = display_trace::stamp() {
+                    tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                        generation = trace.generation, output = %output.output.name(), stage = "disconnected",
+                        "output global disabled and output unmapped");
+                }
                 tracing::info!(output = %output.output.name(), "unmapped disconnected DRM output");
             }
             self.outputs
@@ -1034,8 +1144,9 @@ impl NativeKmsDevice {
                 {
                     let mode = Mode::from(mode);
                     let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
-                    let identity =
-                        connector_identity(self.manager.device_mut(), info.handle(), &name);
+                    let identity = identities.remove(&info.handle()).unwrap_or_else(|| {
+                        connector_identity(self.manager.device_mut(), info.handle(), &name)
+                    });
                     state.display_config.update(OutputSnapshot {
                         connector: name,
                         vendor: identity.vendor,
@@ -1127,7 +1238,9 @@ impl NativeKmsDevice {
                 .map(Mode::from)
                 .unwrap_or(mode);
             let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
-            let identity = connector_identity(self.manager.device_mut(), info.handle(), &name);
+            let identity = identities.remove(&info.handle()).unwrap_or_else(|| {
+                connector_identity(self.manager.device_mut(), info.handle(), &name)
+            });
             let output = Output::new(name.clone(), identity.physical_properties(&info));
             output.set_preferred(preferred_mode);
             for available_mode in &available_modes {
@@ -1140,6 +1253,8 @@ impl NativeKmsDevice {
                 NativeMultiRenderer<'_>,
                 CursorRenderElement<NativeMultiRenderer<'_>>,
             >::default();
+            let output_trace = trace.output();
+            let initialize_started = display_trace::enabled().then(Instant::now);
             let initialized = self.manager.lock().initialize_output(
                 crtc,
                 drm_mode,
@@ -1159,6 +1274,13 @@ impl NativeKmsDevice {
             };
             self.release_prewarm(info.handle());
 
+            if let Some(monotonic_us) = display_trace::stamp() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, output = %name, stage = "kms_initialized",
+                    width = mode.size.w, height = mode.size.h, refresh_millihz = mode.refresh,
+                    duration_us = initialize_started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
+                    "new output KMS initialization completed");
+            }
             let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
             self.outputs.push(NativeKmsOutput {
                 connector: info.handle(),
@@ -1168,13 +1290,14 @@ impl NativeKmsDevice {
                 drm_output,
                 global_id,
                 frame_pending: false,
+                trace: output_trace,
             });
             claimed_crtcs.insert(crtc);
             changed = true;
             tracing::info!(%name, ?mode, "mapped newly connected DRM output");
         }
 
-        if self.reset_bad_link_status() {
+        if self.reset_bad_link_status(trace.generation) {
             state.request_native_redraw();
         }
 
@@ -1223,6 +1346,11 @@ impl NativeKmsDevice {
                     .output
                     .change_current_state(None, None, None, Some(location));
                 state.space.map_output(&output.output, location);
+                if let Some(monotonic_us) = display_trace::stamp() {
+                    tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                        generation = trace.generation, output = %name, stage = "space_mapped",
+                        x = location.x, y = location.y, "output published to compositor space");
+                }
                 state.track_output_for_lock(&output.output);
                 if let Some(mode) = output.output.current_mode() {
                     let scale = output.output.current_scale().fractional_scale();
@@ -1316,12 +1444,24 @@ impl NativeKmsDevice {
                     state
                         .display_handle
                         .remove_global::<PantheonCompositor>(global.clone());
+                    if let Some(monotonic_us) = display_trace::stamp() {
+                        tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                            generation = trace.generation, stage = "global_retired",
+                            disabled_for_us = now.duration_since(*disabled_at).as_micros() as u64,
+                            "disabled output global removed after existing grace period");
+                    }
                     false
                 } else {
                     true
                 }
             });
 
+        if let Some(monotonic_us) = display_trace::stamp() {
+            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                generation = trace.generation, stage = "reconcile_result", changed,
+                active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
+                "connector reconciliation completed");
+        }
         Ok(changed)
     }
 
@@ -1340,6 +1480,7 @@ impl NativeKmsDevice {
         renderer: &mut NativeRenderer,
         state: &mut PantheonCompositor,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let trace = Operation::begin("open_output_device");
         let mut session = session.clone();
         let fd = session.open(
             path,
@@ -1359,7 +1500,7 @@ impl NativeKmsDevice {
             }
             discovered.push(connector);
         }
-        let stale_at_startup = remove_stale_duplicates(&drm, &mut discovered);
+        let (stale_at_startup, mut identities) = remove_stale_duplicates(&drm, &mut discovered);
         if !stale_at_startup.is_empty() {
             tracing::warn!(
                 connectors = ?stale_at_startup,
@@ -1407,7 +1548,9 @@ impl NativeKmsDevice {
                     .copied()
                     .unwrap_or(preferred);
                 let mode = Mode::from(selected);
-                let identity = connector_identity(&drm, connector.handle(), &name);
+                let identity = identities
+                    .remove(&connector.handle())
+                    .unwrap_or_else(|| connector_identity(&drm, connector.handle(), &name));
                 state.display_config.update(OutputSnapshot {
                     connector: name,
                     vendor: identity.vendor,
@@ -1530,7 +1673,11 @@ impl NativeKmsDevice {
                 7 => smithay::utils::Transform::Flipped270,
                 _ => smithay::utils::Transform::Normal,
             };
-            let identity = connector_identity(manager.device(), selected.connector.handle(), &name);
+            let identity = identities
+                .remove(&selected.connector.handle())
+                .unwrap_or_else(|| {
+                    connector_identity(manager.device(), selected.connector.handle(), &name)
+                });
             let output = Output::new(
                 name.clone(),
                 identity.physical_properties(&selected.connector),
@@ -1552,6 +1699,7 @@ impl NativeKmsDevice {
                 Some((x, y).into()),
             );
 
+            let output_trace = trace.output();
             let drm_output = match manager.lock().initialize_output(
                 selected.crtc,
                 selected.mode,
@@ -1598,6 +1746,7 @@ impl NativeKmsDevice {
                 drm_output,
                 global_id,
                 frame_pending: false,
+                trace: output_trace,
             });
         }
         if outputs.is_empty() {
@@ -1615,6 +1764,8 @@ impl NativeKmsDevice {
             disconnected_disabled_connectors: HashSet::new(),
             suppressed_duplicates: stale_at_startup.into_iter().collect(),
             link_resets: HashMap::new(),
+            trace_connectors: HashMap::new(),
+            trace_link_status: HashMap::new(),
             prewarm: prewarm::Slots::default(),
             prewarm_crtcs: HashMap::new(),
             prewarm_sender: None,
@@ -1670,6 +1821,7 @@ impl NativeBackend {
             session_notifier,
             move |event, _, state| match event {
                 SessionEvent::PauseSession => {
+                    let _trace = Operation::begin("session_pause");
                     state.cancel_active_gesture(smithay::backend::input::InputTime::now());
                     libinput_context.suspend();
                     if let Some(backend) = state.native_backend.as_mut() {
@@ -1679,6 +1831,7 @@ impl NativeBackend {
                     tracing::info!("native compositor session paused");
                 }
                 SessionEvent::ActivateSession => {
+                    let _trace = Operation::begin("session_activate");
                     tracing::info!("native compositor session activated");
                     if let Err(error) = libinput_context.resume() {
                         tracing::error!(?error, "failed to resume libinput");
@@ -1744,6 +1897,7 @@ impl NativeBackend {
             kms,
             session_paused: false,
             hotplug: HotplugScheduler::new(Instant::now(), false),
+            trace_pending_event: None,
         });
         let mut consecutive_render_failures = 0;
         event_loop
@@ -1837,10 +1991,23 @@ impl NativeBackend {
                 if !event_triggers_reconcile(kind, device, backend.kms.node.dev_id()) {
                     return;
                 }
+                let now = Instant::now();
+                let deadline = backend.hotplug.on_event(now);
+                if display_trace::enabled() {
+                    let pending = backend.trace_pending_event.get_or_insert((now, 0));
+                    pending.1 = pending.1.saturating_add(1);
+                    if let Some(monotonic_us) = display_trace::stamp() {
+                        tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                            device, ?kind, stage = "udev_event", coalesced = deadline.is_none(),
+                            burst_events = pending.1,
+                            deadline_in_us = deadline.map(|t| t.saturating_duration_since(now).as_micros() as u64),
+                            "relevant DRM uevent received");
+                    }
+                }
                 if !backend.session_paused {
                     backend.kms.prewarm_new_outputs();
                 }
-                arm_reconcile(&timer_handle, state);
+                arm_deadline(&timer_handle, deadline);
             })?;
         }
         loop_handle.insert_source(Timer::from_duration(safety_interval), move |_, _, state| {
@@ -1896,7 +2063,13 @@ fn arm_reconcile(handle: &LoopHandle<'_, PantheonCompositor>, state: &mut Panthe
     let Some(backend) = state.native_backend.as_mut() else {
         return;
     };
-    let Some(deadline) = backend.hotplug.on_event(Instant::now()) else {
+    let deadline = backend.hotplug.on_event(Instant::now());
+    arm_deadline(handle, deadline);
+}
+
+/// Arm the reconcile timer for a deadline the scheduler already returned.
+fn arm_deadline(handle: &LoopHandle<'_, PantheonCompositor>, deadline: Option<Instant>) {
+    let Some(deadline) = deadline else {
         return;
     };
     let armed = handle.insert_source(Timer::from_deadline(deadline), |_, _, state| {
@@ -1916,11 +2089,22 @@ fn reconcile_tick(state: &mut PantheonCompositor) -> (TimeoutAction, Option<Inst
     let now = Instant::now();
     let removal = backend.kms.next_global_removal_deadline();
     let tick = backend.hotplug.tick(now, removal);
-    if tick.reconcile
-        && !backend.session_paused
-        && let Err(error) = backend.kms.refresh_connectors(&mut backend.renderer, state)
-    {
-        tracing::warn!(?error, "failed to reconcile native DRM connectors");
+    if tick.reconcile {
+        if let Some(monotonic_us) = display_trace::stamp() {
+            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                stage = "scheduler_tick", event_due = tick.event_due, followup_due = tick.followup_due,
+                removal_due = tick.removal_due, safety_due = tick.safety_due,
+                session_paused = backend.session_paused,
+                event_wait_us = backend.trace_pending_event.map(|(t, _)| t.elapsed().as_micros() as u64),
+                burst_events = backend.trace_pending_event.map(|(_, n)| n).unwrap_or(0),
+                "display scheduler reconcile decision");
+        }
+        backend.trace_pending_event = None;
+        if !backend.session_paused
+            && let Err(error) = backend.kms.refresh_connectors(&mut backend.renderer, state)
+        {
+            tracing::warn!(?error, "failed to reconcile native DRM connectors");
+        }
     }
     // Removals queued by this very reconcile may need a later wakeup.
     let removal = backend.kms.next_global_removal_deadline();

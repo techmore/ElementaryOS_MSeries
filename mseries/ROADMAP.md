@@ -1,3 +1,12 @@
+## On-demand maintenance continuation — 2026-10-21
+
+Queue/prompts and next-chat instructions: [maintenance/README.md](maintenance/README.md).
+All 16 presets stay paused; continue one at a time. Kernel/dock/popup PRs #359,
+#357 and #364 merged to dev. All three dock ports confirmed. Attention fix,
+bounded display lifecycle logging and within-scan EDID read reuse installed for
+next login, not currently loaded; no measured speedup. Actual .20 recovery,
+suspend and controlled power remain open. Read latest handoff before proceeding.
+
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
 ## Daedalus portal and NmapUI desktop experience — 2026-10-21
