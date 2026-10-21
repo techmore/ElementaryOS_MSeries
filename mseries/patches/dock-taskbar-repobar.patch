@@ -8,9 +8,9 @@ index 8efd72d..0e7d3a6 100644
  /* CodexBar forms its own group beside the system status controls. */
 -.taskbar-codexbar-button { padding: 8px; min-width: 24px; min-height: 24px; border-radius: 6px; }
 +.taskbar-codexbar-button { padding: 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
-+.taskbar-repobar-button { padding: 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
-+.taskbar-repobar-button .seg-value { font-size: 13pt; }
-+.taskbar-repobar-button .seg-alert { font-size: 12pt; }
++.taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
++.taskbar-repobar-button .seg-value { font-size: 14pt; }
++.taskbar-repobar-button .seg-alert { font-size: 14pt; }
 +.taskbar-repobar-popup { font-size: 1.5625em; }
  .taskbar-codexbar-separator { opacity: 0.35; }
  

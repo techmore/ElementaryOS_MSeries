@@ -71,22 +71,33 @@ namespace MSeries {
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
             mark.add_css_class ("repo-mark");
             panel.append (mark);
+            // Two stacked columns keep the readout narrow: PR over issue counts, then running workflows over a recent merge.
             // GitHub's own pull request and issue marks label the two counts.
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 2 });
-            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
+            var counts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            counts.add_css_class ("repo-counts");
+            var pull_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            pull_row.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_prs.add_css_class ("seg-value");
-            panel.append (panel_prs);
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 4 });
-            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER };
+            pull_row.append (panel_prs);
+            counts.append (pull_row);
+            var issue_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            issue_row.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_issues.add_css_class ("seg-value");
-            panel.append (panel_issues);
-            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, visible = false };
-            panel_alert.add_css_class ("seg-alert");
-            panel.append (panel_alert);
-            panel_running = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
+            issue_row.append (panel_issues);
+            counts.append (issue_row);
+            panel.append (counts);
+            var alerts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            alerts.add_css_class ("repo-alerts");
+            panel_running = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
             panel_running.add_css_class ("seg-alert");
             panel_running.add_css_class ("alert-pending");
-            panel.append (panel_running);
+            alerts.append (panel_running);
+            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
+            panel_alert.add_css_class ("seg-alert");
+            alerts.append (panel_alert);
+            panel.append (alerts);
             panel.set_tooltip_text ("RepoBar · loading GitHub status… · Middle-click to refresh");
             var click = new Gtk.GestureClick () { button = 2 };
             click.released.connect (() => refresh ());
@@ -290,8 +301,8 @@ namespace MSeries {
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 7pt; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 8.5pt; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 8pt; font-weight: 700; } " +
                 ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
                 ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
@@ -553,7 +564,7 @@ namespace MSeries {
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
-            update_panel (prs, issues, failing, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
+            update_panel (prs, issues, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
 
             // Unchanged data and filters: keep the existing cards so open detail panes survive polling.
             string key = "%s|%d|%d|%s".printf (last_snapshot_text.hash ().to_string (), scope, filter, search_entry.get_text ());
@@ -641,25 +652,20 @@ namespace MSeries {
 
         /* Panel dot: red while default-branch CI fails, yellow with a count while runs are pending, green when a pull
            request merged within the configured window (an hour by default), and hidden when nothing is going on. */
-        private void update_panel (int prs, int issues, int failing, int pending, GLib.DateTime? last_merge,
+        private void update_panel (int prs, int issues, int pending, GLib.DateTime? last_merge,
                                    string last_merge_repo, int repo_count, bool stale) {
             panel_prs.set_text (prs.to_string ());
             panel_issues.set_text (issues.to_string ());
             int64 merge_age = last_merge != null ? (GLib.get_real_time () - last_merge.to_unix () * 1000000) / 1000000 : -1;
             bool merged_recently = merge_age >= 0 && merge_age <= merge_window_minutes * 60;
-            // Failing and running show side by side: a failing repo must not hide workflows in progress.
-            panel_alert.remove_css_class ("alert-bad");
+            // Yellow counts workflow runs in progress; green marks a recent merge. Failing CI is left to notifications.
             panel_alert.remove_css_class ("alert-good");
             string status = "";
-            if (failing > 0) {
-                panel_alert.set_text ("● %d".printf (failing));
-                panel_alert.add_css_class ("alert-bad");
-                status = " · CI failing on %d".printf (failing);
-            } else if (merged_recently) {
+            if (merged_recently) {
                 panel_alert.set_text ("●");
                 panel_alert.add_css_class ("alert-good");
             }
-            panel_alert.set_visible (failing > 0 || merged_recently);
+            panel_alert.set_visible (merged_recently);
             if (pending > 0) {
                 panel_running.set_text ("● %d".printf (pending));
                 status += " · %d workflow run%s in progress".printf (pending, pending == 1 ? "" : "s");
