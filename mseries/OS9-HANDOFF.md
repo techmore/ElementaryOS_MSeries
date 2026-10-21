@@ -9732,3 +9732,11 @@ All 46 production Vala files match #342 byte-for-byte; the stylesheet differs
 only in these two marker colors.
 
 PR #343 qualification was rerun after reconciling dev `4cf7a90`, retaining desktop notifications, persistence fixes and darker marker colors. Full canonical build, both-theme real pointer/menu/Escape/typing and native regression checks passed; refreshed screenshots were visually inspected. No deployment or Wingpanel restart.
+## Hermes setup retired — 2026-10-21
+
+Owner confirmed the Hermes assistant is no longer used. The maintained installer
+no longer fetches Hermes or installs its dependency lock, and the assistant
+configurator no longer creates a Hermes profile or desktop launcher. The unused
+`mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
+venv, config, state, and any previously generated desktop launcher in a user's
+home were not deleted by this source change. The next configuration removes only the exact stock generated Hermes desktop entry, preserving customized entries. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.
