@@ -21,7 +21,7 @@ the running compositor was not restarted.
   2. Claude's GPU process no longer runs with `--use-gl=disabled` (`ps -eo args | grep -- --type=gpu-process`).
   3. `compositor stats`: `dmabuf_commits` > 0 and `top=` entries marked `/dmabuf`; compositor CPU and `output frame stats`
      `fps`/`render_us` against the before numbers in the entry below.
-  4. `systemctl --user status pantheon-rust-compositor@wayland` shows the STATUS line and `Watchdog: 30s`.
+  4. `systemctl --user status pantheon-rust-compositor@wayland` shows the STATUS line; `systemctl --user show -p WatchdogUSec pantheon-rust-compositor@wayland` is 30s.
   If apps go blank: add the `PANTHEON_DISABLE_DMABUF=1` drop-in and log in again.
 - **Not in scope here:** idle/DPMS (P3), taken by the investigation session.
 
