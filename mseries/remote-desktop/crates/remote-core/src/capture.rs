@@ -72,6 +72,14 @@ impl TestPattern {
                 v_plane[cy * (wu / 2) + cx] = [128, 200, 60, 150, 90, 128, 180, 70][bar];
             }
         }
+        // Neutral chroma under the counter strip so RGB readers (a browser
+        // canvas) see the same black/white as the luma plane.
+        for cy in 0..12.min(hu / 2) {
+            for cx in 0..wu / 2 {
+                u_plane[cy * (wu / 2) + cx] = 128;
+                v_plane[cy * (wu / 2) + cx] = 128;
+            }
+        }
         // Moving square, 32x32.
         let sx = (n as usize * 8) % (wu - 32 - 8).max(1);
         let sy = hu / 3 + ((n as usize * 3) % (hu / 3));

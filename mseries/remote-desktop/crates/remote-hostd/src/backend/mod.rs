@@ -28,6 +28,21 @@ pub trait Backend: Send + Sync {
     fn open(&self, max_width: u32, fps: u32) -> Result<Streams, BackendError>;
 }
 
+/// Records like [`RecordingSink`] and logs each event, so scripts can see what
+/// a phone sent without a real desktop.
+struct LoggingSink(RecordingSink);
+
+impl InputSink for LoggingSink {
+    fn apply(&mut self, event: &remote_core::protocol::InputEvent) -> Result<(), InputError> {
+        tracing::info!("test-backend input: {event:?}");
+        self.0.apply(event)
+    }
+
+    fn release_all(&mut self) {
+        self.0.release_all();
+    }
+}
+
 /// Synthetic desktop for headless tests and demos; input is recorded, not injected.
 #[derive(Default)]
 pub struct TestBackend {
@@ -42,7 +57,7 @@ impl Backend for TestBackend {
     fn open(&self, _max_width: u32, _fps: u32) -> Result<Streams, BackendError> {
         Ok(Streams {
             source: Box::new(TestPattern::new(640, 360)),
-            input: Box::new(self.sink.clone()),
+            input: Box::new(LoggingSink(self.sink.clone())),
         })
     }
 }
