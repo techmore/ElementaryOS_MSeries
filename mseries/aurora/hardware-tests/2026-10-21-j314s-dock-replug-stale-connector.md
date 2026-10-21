@@ -174,6 +174,28 @@ Not exercised by this boot: the stale-duplicate suppression, because this cold b
 `disconnected`). It needs a dock replug while logged in, as in the original incident. Not verified by this agent: that the
 AOC visibly shows the desktop, and day-to-day responsiveness of the Rust session. Both need a person looking at the screen.
 
+## Second deployment: `dev`-based build (2026-10-21 08:14, cold boot into the Rust session)
+
+The first package was built on the older `codex/rust-gala-stack-integration` line and lacked about 17 `dev` commits, which
+explains the reported regressions: no snapping, stock dock, visible top bar, plain cursor outside apps. It was replaced by
+`0.1.0+gitdev.dockfix2` (`dev` + this change + the redraw-counter commit `c995a60c`). Rollback binaries are in
+`~/.cache/mseries-build/rollback/`.
+
+`validate-dock-recovery.sh` on that boot (after fixing one validator bug where the dash wrapper of the dock launcher was mistaken
+for the dock): **RESULT: PASS** on eight checks. Running binary matches the installed one (`b01d51ac7c244862`); AOC published once
+with its EDID identity; both links Good; `TopPanelMode 1` (the compositor hides the top bar while Windows Work Mode is on); the
+patched dock under `~/.local/lib/mseries/dock` is running instead of `/usr/bin/io.elementary.dock`; the dock-link reset logged
+again. Against the first package the same two new checks failed (no `/org/techmore/mseries/Panels`, stock dock), which is the
+before/after for the reported symptoms.
+
+Measured with `collect-session-metrics.sh rust 30 ... 5` (this app open and repainting): compositor about 30% of one core, dock 0%,
+Wingpanel under 2%, memory flat. `redraw stats` per 30 s: about 3,440 vblanks and as many frames queued, with the Claude desktop
+client alone committing about 1,870 buffers (roughly 62 per second). This does not show shell CPU starvation; the stutter report is
+**not yet explained** and needs the owner to say when it happens (moving windows, scrolling, one monitor, with or without the app
+that repaints continuously).
+
+Not verifiable by this agent: window snapping, the cursor outside applications, and how it feels.
+
 ## Boot kernel log noise (2026-10-21 boot)
 
 | Message | Count | Cause | Status |
