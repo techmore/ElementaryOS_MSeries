@@ -13,6 +13,8 @@ public class PodmanPage : Gtk.Box {
     private PodmanContainer[] containers = {};
     private PodmanImage[] images = {};
     private PodmanVolume[] volumes = {};
+    private HashTable<string, PodmanStats> stats = new HashTable<string, PodmanStats> (str_hash, str_equal);
+    private HashTable<string, Gtk.Label> stat_labels = new HashTable<string, Gtk.Label> (str_hash, str_equal);
     private string signature = "";
     private bool loading = false;
     private bool reload_again = false;
@@ -38,7 +40,8 @@ public class PodmanPage : Gtk.Box {
         list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE };
         list.add_css_class ("rich-list");
         list.add_css_class ("orchard-list");
-        append (new Gtk.ScrolledWindow () { child = list, vexpand = true });
+        // Rows must fit the window width so the action buttons never scroll out of view.
+        append (new Gtk.ScrolledWindow () { child = list, vexpand = true, hscrollbar_policy = Gtk.PolicyType.NEVER });
 
         status = new Gtk.Label ("") { margin_top = 6, margin_bottom = 6, margin_start = 12, xalign = 0, wrap = true };
         status.add_css_class ("h4");
@@ -78,6 +81,15 @@ public class PodmanPage : Gtk.Box {
             var next = make_signature (next_containers, next_images, next_volumes);
             containers = next_containers; images = next_images; volumes = next_volumes;
             if (next != signature) { signature = next; render (); } else update_summary ();
+            // Counters change every poll, so they are written into the existing rows instead of rebuilding the list.
+            bool any_running = false;
+            foreach (var c in containers) if (c.running) { any_running = true; break; }
+            try {
+                stats = any_running ? PodmanClient.stats_by_name (yield client.list_stats ()) : new HashTable<string, PodmanStats> (str_hash, str_equal);
+            } catch (Error e) {
+                stats = new HashTable<string, PodmanStats> (str_hash, str_equal);
+            }
+            update_stats ();
         } catch (Error e) {
             status.label = "Cannot reach Podman: " + e.message;
         }
@@ -95,6 +107,15 @@ public class PodmanPage : Gtk.Box {
 
     private void clear_list () {
         while (list.get_first_child () != null) list.remove (list.get_first_child ());
+        stat_labels.remove_all ();
+    }
+
+    private void update_stats () {
+        stat_labels.foreach ((name, label) => {
+            var s = stats.lookup (name);
+            label.label = s == null ? "" : "CPU %s · Memory %s · PIDs %s".printf (s.cpu_percent, s.mem_usage.split ("/")[0].strip (), s.pids);
+            label.visible = s != null;
+        });
     }
 
     private void update_summary () {
@@ -126,6 +147,7 @@ public class PodmanPage : Gtk.Box {
             break;
         }
         status.label = shown == 0 ? (search.text.strip () == "" ? "Nothing here." : "No matches.") : "Resources reported by the local Podman.";
+        update_stats ();
     }
 
     private Gtk.Box row_shell (string title, string detail, out Gtk.Box actions) {
@@ -133,7 +155,7 @@ public class PodmanPage : Gtk.Box {
         var labels = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) { hexpand = true };
         var name = new Gtk.Label (title) { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 42, selectable = true };
         name.add_css_class ("h3");
-        var note = new Gtk.Label (detail) { xalign = 0, wrap = true, selectable = true };
+        var note = new Gtk.Label (detail) { xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, selectable = true };
         note.add_css_class ("dim-label");
         labels.append (name);
         labels.append (note);
@@ -151,6 +173,12 @@ public class PodmanPage : Gtk.Box {
         if (c.ports != "") parts += c.ports;
         if (c.pod != "") parts += "pod " + c.pod;
         var row = row_shell (c.name, string.joinv (" · ", parts), out actions);
+        // Live counters sit under the detail line so the action buttons keep a fixed width.
+        var live = new Gtk.Label ("") { xalign = 0, visible = false, ellipsize = Pango.EllipsizeMode.END };
+        live.add_css_class ("dim-label");
+        live.update_property (Gtk.AccessibleProperty.LABEL, "Live CPU and memory for " + c.name, -1);
+        ((Gtk.Box) row.get_first_child ()).append (live);
+        stat_labels.insert (c.name, live);
         var dot = new Gtk.Image.from_icon_name ("media-record-symbolic");
         dot.add_css_class (c.running ? "success" : "dim-label");
         row.prepend (dot);
@@ -171,7 +199,17 @@ public class PodmanPage : Gtk.Box {
                      () => { remove_item.begin (c.id, c.name, "container"); });
         });
         actions.append (remove);
+        var info = new Gtk.Button.from_icon_name ("document-properties-symbolic") { tooltip_text = "Image, ports, mounts, CPU and memory" };
+        info.update_property (Gtk.AccessibleProperty.LABEL, "Container details", -1);
+        info.clicked.connect (() => { open_details (c); });
+        actions.append (info);
         return row;
+    }
+
+    public void open_details (PodmanContainer c) {
+        var window = new PodmanDetails (get_root () as Gtk.Window, client, c);
+        window.changed.connect (() => { signature = ""; reload.begin (); });
+        window.present ();
     }
 
     private Gtk.Widget image_row (PodmanImage i) {

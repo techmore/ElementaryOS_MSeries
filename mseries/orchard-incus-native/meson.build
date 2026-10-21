@@ -23,6 +23,7 @@ app_sources = files(
   'src/MountsWindow.vala',
   'src/LogViewer.vala',
   'src/PodmanClient.vala',
+  'src/PodmanDetails.vala',
   'src/PodmanPage.vala'
 )
 app_dependencies = [

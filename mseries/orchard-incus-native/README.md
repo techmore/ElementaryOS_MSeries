@@ -50,7 +50,14 @@ The CSV, source-view inventory and service-symbol index accompany the report.
   images used by a container and volumes in use are refused. Orchard runs the
   `podman` CLI with JSON output, so no socket service needs enabling, and the page
   shows an install hint when Podman is absent. Image sizes are shown per image
-  and never summed, because images share layers.
+  and never summed, because images share layers. Running containers show live
+  CPU, memory and PID counts from `podman stats` in the list; each container has
+  a details window (image, state, command, published ports, networks, mounts,
+  limits, live counters with CPU/memory graphs, and the raw `podman inspect`
+  document) with start/stop/restart. Counters are shown only for running
+  containers and are never presented as zero when Podman does not report them.
+  `orchard://podman` opens the page. See `docs/screenshot-podman.png` and
+  `docs/screenshot-podman-details.png`.
 - Ctrl+K command palette, fuzzy search, `orchard:` navigation links, preferences,
   server diagnostics and explicitly confirmed host daemon controls.
 - Wingpanel tree icon and running-instance badge (including zero). CPU/memory

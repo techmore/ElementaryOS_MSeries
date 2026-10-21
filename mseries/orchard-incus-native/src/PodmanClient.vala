@@ -62,6 +62,135 @@ public class PodmanVolume : Object {
     }
 }
 
+// One row of `podman stats --no-stream`. Podman reports human-readable strings; the numeric
+// accessors parse them so graphs and sorting work without a second format.
+public class PodmanStats : Object {
+    public string id { get; set; default = ""; }
+    public string name { get; set; default = ""; }
+    public string cpu_percent { get; set; default = ""; }
+    public string mem_usage { get; set; default = ""; }
+    public string mem_percent { get; set; default = ""; }
+    public string net_io { get; set; default = ""; }
+    public string block_io { get; set; default = ""; }
+    public string pids { get; set; default = ""; }
+    public double cpu { get { return PodmanClient.parse_percent (cpu_percent); } }
+    public int64 memory_bytes { get { return PodmanClient.parse_bytes (mem_usage); } }
+
+    public static PodmanStats from_json (Json.Object o) {
+        var s = new PodmanStats ();
+        s.id = o.get_string_member_with_default ("id", "");
+        s.name = o.get_string_member_with_default ("name", "");
+        s.cpu_percent = o.get_string_member_with_default ("cpu_percent", "");
+        s.mem_usage = o.get_string_member_with_default ("mem_usage", "");
+        s.mem_percent = o.get_string_member_with_default ("mem_percent", "");
+        s.net_io = o.get_string_member_with_default ("net_io", "");
+        s.block_io = o.get_string_member_with_default ("block_io", "");
+        s.pids = o.get_string_member_with_default ("pids", "");
+        return s;
+    }
+}
+
+// The parts of `podman inspect` the details window shows; `raw` keeps the full document.
+public class PodmanInspect : Object {
+    public string id { get; set; default = ""; }
+    public string name { get; set; default = ""; }
+    public string image_name { get; set; default = ""; }
+    public string image_id { get; set; default = ""; }
+    public string status { get; set; default = ""; }
+    public string created { get; set; default = ""; }
+    public string started_at { get; set; default = ""; }
+    public string finished_at { get; set; default = ""; }
+    public int64 exit_code { get; set; default = 0; }
+    public int64 pid { get; set; default = 0; }
+    public int64 restart_count { get; set; default = 0; }
+    public string restart_policy { get; set; default = ""; }
+    public string command { get; set; default = ""; }
+    public string pod { get; set; default = ""; }
+    public int64 memory_limit { get; set; default = 0; }
+    public int64 nano_cpus { get; set; default = 0; }
+    public string[] mounts { get; set; default = {}; }
+    public string[] ports { get; set; default = {}; }
+    public string[] networks { get; set; default = {}; }
+    public string[] env { get; set; default = {}; }
+    public string raw { get; set; default = ""; }
+
+    public static PodmanInspect from_json (Json.Object o) {
+        var d = new PodmanInspect ();
+        d.id = o.get_string_member_with_default ("Id", "");
+        d.name = o.get_string_member_with_default ("Name", "");
+        d.image_name = o.get_string_member_with_default ("ImageName", "");
+        d.image_id = o.get_string_member_with_default ("Image", "");
+        d.created = o.get_string_member_with_default ("Created", "");
+        d.restart_count = o.get_int_member_with_default ("RestartCount", 0);
+        d.pod = o.get_string_member_with_default ("Pod", "");
+        var state = PodmanClient.object_member (o, "State");
+        if (state != null) {
+            d.status = state.get_string_member_with_default ("Status", "");
+            d.started_at = state.get_string_member_with_default ("StartedAt", "");
+            d.finished_at = state.get_string_member_with_default ("FinishedAt", "");
+            d.exit_code = state.get_int_member_with_default ("ExitCode", 0);
+            d.pid = state.get_int_member_with_default ("Pid", 0);
+        }
+        var config = PodmanClient.object_member (o, "Config");
+        if (config != null) {
+            string[] argv = {};
+            foreach (var part in PodmanClient.strings (config, "Entrypoint")) argv += part;
+            foreach (var part in PodmanClient.strings (config, "Cmd")) argv += part;
+            d.command = string.joinv (" ", argv);
+            d.env = PodmanClient.strings (config, "Env");
+        }
+        var host = PodmanClient.object_member (o, "HostConfig");
+        if (host != null) {
+            d.memory_limit = host.get_int_member_with_default ("Memory", 0);
+            d.nano_cpus = host.get_int_member_with_default ("NanoCpus", 0);
+            var policy = PodmanClient.object_member (host, "RestartPolicy");
+            if (policy != null) d.restart_policy = policy.get_string_member_with_default ("Name", "");
+        }
+        string[] mounts = {};
+        if (o.has_member ("Mounts") && o.get_member ("Mounts").get_node_type () == Json.NodeType.ARRAY) {
+            foreach (var n in o.get_array_member ("Mounts").get_elements ()) {
+                if (n.get_node_type () != Json.NodeType.OBJECT) continue;
+                var m = n.get_object ();
+                var kind = m.get_string_member_with_default ("Type", "");
+                var source = kind == "volume" ? m.get_string_member_with_default ("Name", "") : m.get_string_member_with_default ("Source", "");
+                var rw = m.has_member ("RW") && m.get_member ("RW").get_node_type () == Json.NodeType.VALUE && m.get_boolean_member ("RW");
+                mounts += "%s%s → %s (%s)".printf (kind != "" ? kind + " " : "", source, m.get_string_member_with_default ("Destination", ""), rw ? "rw" : "ro");
+            }
+        }
+        d.mounts = mounts;
+        var network = PodmanClient.object_member (o, "NetworkSettings");
+        if (network != null) {
+            string[] ports = {};
+            var published = PodmanClient.object_member (network, "Ports");
+            if (published != null) {
+                foreach (var member in published.get_members ()) {
+                    if (published.get_member (member).get_node_type () != Json.NodeType.ARRAY) continue;
+                    foreach (var n in published.get_array_member (member).get_elements ()) {
+                        if (n.get_node_type () != Json.NodeType.OBJECT) continue;
+                        var b = n.get_object ();
+                        var ip = b.get_string_member_with_default ("HostIp", "");
+                        ports += "%s%s → %s".printf (ip != "" ? ip + ":" : "", b.get_string_member_with_default ("HostPort", ""), member);
+                    }
+                }
+            }
+            d.ports = ports;
+            string[] networks = {};
+            var ip = network.get_string_member_with_default ("IPAddress", "");
+            var nets = PodmanClient.object_member (network, "Networks");
+            if (nets != null) {
+                foreach (var member in nets.get_members ()) {
+                    var entry = PodmanClient.object_member (nets, member);
+                    var address = entry != null ? entry.get_string_member_with_default ("IPAddress", "") : "";
+                    networks += address != "" ? "%s · %s".printf (member, address) : member;
+                }
+            }
+            if (networks.length == 0 && ip != "") networks += ip;
+            d.networks = networks;
+        }
+        return d;
+    }
+}
+
 public class PodmanClient : Object {
     private string binary;
     private uint timeout_seconds;
@@ -115,6 +244,15 @@ public class PodmanClient : Object {
         return parse_volumes (yield run ({ "volume", "ls", "--format", "json" }));
     }
 
+    // Live counters for running containers; stopped containers are not reported.
+    public async PodmanStats[] list_stats () throws Error {
+        return parse_stats (yield run ({ "stats", "--no-stream", "--format", "json" }));
+    }
+
+    public async PodmanInspect inspect_container (string id) throws Error {
+        return parse_inspect (yield run ({ "inspect", "--type", "container", "--format", "json", id }));
+    }
+
     // verb: start | stop | restart | pause | unpause
     public async void container_action (string id, string verb) throws Error {
         switch (verb) {
@@ -161,6 +299,78 @@ public class PodmanClient : Object {
         var out = new PodmanVolume[0];
         foreach (var n in parse_array (text).get_elements ()) {
             if (n.get_node_type () == Json.NodeType.OBJECT) out += PodmanVolume.from_json (n.get_object ());
+        }
+        return out;
+    }
+
+    public static PodmanStats[] parse_stats (string text) throws Error {
+        var out = new PodmanStats[0];
+        foreach (var n in parse_array (text).get_elements ()) {
+            if (n.get_node_type () == Json.NodeType.OBJECT) out += PodmanStats.from_json (n.get_object ());
+        }
+        return out;
+    }
+
+    // `podman inspect` returns a one-element array; the full document is kept pretty-printed.
+    public static PodmanInspect parse_inspect (string text) throws Error {
+        var array = parse_array (text);
+        if (array.get_length () == 0 || array.get_element (0).get_node_type () != Json.NodeType.OBJECT) throw new IOError.NOT_FOUND ("Podman did not return this container.");
+        var details = PodmanInspect.from_json (array.get_object_element (0));
+        var generator = new Json.Generator () { pretty = true, indent = 2 };
+        generator.set_root (array.get_element (0));
+        details.raw = generator.to_data (null);
+        return details;
+    }
+
+    // Stats keyed by container name; the stats id is a short prefix of the container id.
+    public static HashTable<string, PodmanStats> stats_by_name (PodmanStats[] stats) {
+        var table = new HashTable<string, PodmanStats> (str_hash, str_equal);
+        foreach (var s in stats) table.insert (s.name, s);
+        return table;
+    }
+
+    // "18.22%" → 18.22; anything unparsable → 0.
+    public static double parse_percent (string text) {
+        var trimmed = text.strip ();
+        if (trimmed.has_suffix ("%")) trimmed = trimmed.substring (0, trimmed.length - 1);
+        return double.parse (trimmed.strip ());
+    }
+
+    // "76.94MB / 33.22GB" → 76940000; the first value only. Podman uses decimal units.
+    public static int64 parse_bytes (string text) {
+        var parts = text.split ("/");
+        if (parts.length == 0) return 0;
+        var first = parts[0].strip ().down ();
+        if (first == "") return 0;
+        int cut = 0;
+        while (cut < first.length && (first[cut].isdigit () || first[cut] == '.')) cut++;
+        var number = double.parse (first.substring (0, cut));
+        var unit = first.substring (cut).strip ();
+        double scale = 1;
+        switch (unit) {
+        case "kb": case "k": scale = 1e3; break;
+        case "mb": case "m": scale = 1e6; break;
+        case "gb": case "g": scale = 1e9; break;
+        case "tb": case "t": scale = 1e12; break;
+        case "kib": scale = 1024.0; break;
+        case "mib": scale = 1024.0 * 1024; break;
+        case "gib": scale = 1024.0 * 1024 * 1024; break;
+        default: scale = 1; break;
+        }
+        return (int64) (number * scale);
+    }
+
+    public static Json.Object? object_member (Json.Object o, string member) {
+        if (!o.has_member (member) || o.get_member (member).get_node_type () != Json.NodeType.OBJECT) return null;
+        return o.get_object_member (member);
+    }
+
+    // All strings of an array member that may be missing or null.
+    public static string[] strings (Json.Object o, string member) {
+        string[] out = {};
+        if (!o.has_member (member) || o.get_member (member).get_node_type () != Json.NodeType.ARRAY) return out;
+        foreach (var n in o.get_array_member (member).get_elements ()) {
+            if (n.get_node_type () == Json.NodeType.VALUE && n.get_value_type () == typeof (string)) out += n.get_string ();
         }
         return out;
     }
