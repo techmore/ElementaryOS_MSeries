@@ -89,10 +89,19 @@ class ModelTests(unittest.TestCase):
         self.assertTrue(all(len(label) <= 48 for _, label in notice.actions))
         self.assertFalse(self.invoked)
 
+    def test_duplicate_reply_aliases_preserve_other_actions(self):
+        from model import actions_from
+        for aliases in (['reply', 'Reply', 'inline-reply', 'Reply'],
+                        ['inline-reply', 'Reply', 'reply', 'Reply']):
+            actions = actions_from(['default', 'Open'] + aliases + ['archive', 'Archive'])
+            self.assertEqual(actions, (('default', 'Open'), ('reply', 'Reply'), ('archive', 'Archive')))
+        self.assertEqual(actions_from(['accept', 'Accept', 'decline', 'Decline']),
+                         (('accept', 'Accept'), ('decline', 'Decline')))
+
     def test_workarea_origin_gaps_and_small_screen(self):
         slots = positions((100, 50, 1280, 720), 3)
-        self.assertEqual(slots[0], (1004, 574, 360, 180))
-        self.assertEqual(slots[1][1], slots[0][1] - 192)
+        self.assertEqual(slots[0], (1004, 66, 360, 72))
+        self.assertEqual(slots[1][1], slots[0][1] + 84)
         for area in ((0, 0, 300, 200), (-1920, 0, 1920, 1080)):
             for x, y, w, h in positions(area, 3):
                 self.assertGreaterEqual(x, area[0])
@@ -105,6 +114,8 @@ class DispatchTests(unittest.TestCase):
     def test_dispatch_is_only_model_and_signals(self):
         from notifications import Server
         fake = Mock()
+        fake.focus_targets = {}
+        fake.store.items = {}
         fake.store.notify.return_value = 42
         self.assertEqual(Server.Notify(fake, 'App', 0, '/evil/image', 'Title', 'Body',
                                       ['reply', 'Reply'], {'omarchy-exec-argv': 'evil'},

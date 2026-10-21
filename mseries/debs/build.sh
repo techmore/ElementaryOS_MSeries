@@ -8,6 +8,9 @@
 #   OUTDIR        where finished .debs and SHA256SUMS land (required)
 #   REPO_ROOT     repository checkout (default: script's grandparent)
 #   ONLY          build just this package (default: all; useful for local checks)
+#   MSERIES_CHANNEL  stable (default) or dev. dev appends ~dev<commit time>.<sha> to every
+#                 version so the matching stable build always sorts above it (UPDATER-DESIGN.md)
+#   SOURCE_DATE_EPOCH  timestamp baked into the .deb files (default: the commit time)
 # Layout mirrors mkosi.images/apple-silicon/build-{network-indicator,quick-settings}
 # plus the firstboot-only extras from mseries/install-network-throughput.sh.
 set -euo pipefail
@@ -16,6 +19,11 @@ set -euo pipefail
 # control fields) so apt and dpkg see an upgrade, not a same-version reinstall.
 REVISION=0mseries3
 
+# Channel version suffix. The stamp is the commit time, not the build time, so a rebuild of
+# a commit gets the same version, and it is part of the sort key: the updater never installs
+# a lower version, so two merges on one day must still order by time, not by sha.
+CHANNEL=${MSERIES_CHANNEL:-stable}
+
 OUTDIR=${OUTDIR:?set OUTDIR to the output directory}
 HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=${REPO_ROOT:-$(cd -- "$HERE/../.." && pwd)}
@@ -23,9 +31,19 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/mseries-debs.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$OUTDIR"
 
+COMMIT=$(git -C "$ROOT" rev-parse HEAD)
+SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-$(git -C "$ROOT" show -s --format=%ct "$COMMIT")}
+export SOURCE_DATE_EPOCH
+case $CHANNEL in
+  stable) CHANNEL_SUFFIX="" ;;
+  dev) CHANNEL_SUFFIX="~dev$(date -u -d "@$SOURCE_DATE_EPOCH" +%Y%m%d%H%M%S).${COMMIT:0:7}" ;;
+  *) echo "error: MSERIES_CHANNEL must be stable or dev, got '$CHANNEL'" >&2; exit 1 ;;
+esac
+
 record() { printf '%s\n' "$*" >> "$OUTDIR/BUILD-PROVENANCE.txt"; }
 : > "$OUTDIR/BUILD-PROVENANCE.txt"
-record "source-commit: $(git -C "$ROOT" rev-parse HEAD)"
+record "source-commit: $COMMIT"
+record "channel: $CHANNEL"
 record "built: $(date -u +%FT%TZ)"
 
 # build_plugin DEB BASE_PKG GATE_PREFIX PLUGIN_PATH MARKER REPO_URL COMMIT [PATCH...] [--] [EXTRA_SETUP]
@@ -91,7 +109,7 @@ build_plugin() {
   # package would reject its own base and accept the next minor's ABI.
   cat > "$pkg/DEBIAN/control" <<EOF
 Package: $deb
-Version: $gate-$REVISION
+Version: $gate-$REVISION$CHANNEL_SUFFIX
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
 Depends: $base (>= $gate~), $base (<< ${gate%.*}.$((${gate##*.} + 1))~)
@@ -129,8 +147,8 @@ EOF
   bash -n "$pkg/DEBIAN/preinst"; bash -n "$pkg/DEBIAN/postinst"; bash -n "$pkg/DEBIAN/postrm"
   # Package directories must not inherit the build user's umask.
   find "$pkg" -type d -exec chmod 0755 {} +
-  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-${REVISION}_arm64.deb" >/dev/null
-  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-${REVISION}_arm64.deb")"
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-${REVISION}${CHANNEL_SUFFIX}_arm64.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-${REVISION}${CHANNEL_SUFFIX}_arm64.deb")"
 }
 
 # --- per-package extras ----------------------------------------------------
@@ -192,9 +210,18 @@ build_updater() {
   mkdir -p "$pkg/DEBIAN"
   DESTDIR=$pkg bash "$ROOT/mseries/update/install.sh" >/dev/null
   install -Dm0644 "$ROOT/mseries/UPDATER-DESIGN.md" "$pkg/usr/share/doc/mseries-update/UPDATER-DESIGN.md"
+  # The public half of the repository key (mseries/release/KEY-RUNBOOK.md). It does not exist until the
+  # owner creates the key; the package then still builds, and `mseries-update init` needs --keyring.
+  local keyring=$ROOT/mseries/release/mseries-archive-keyring.gpg
+  if [[ -s $keyring ]]; then
+    install -Dm0644 "$keyring" "$pkg/usr/share/keyrings/mseries-archive-keyring.gpg"
+    record "$deb: ships the repository keyring ($(gpg --show-keys --with-colons "$keyring" | awk -F: '$1 == "fpr" { print $10; exit }'))"
+  else
+    record "$deb: no repository keyring in the tree yet"
+  fi
   cat > "$pkg/DEBIAN/control" <<EOF
 Package: $deb
-Version: $version-$REVISION
+Version: $version-$REVISION$CHANNEL_SUFFIX
 Architecture: all
 Maintainer: techmore <sdolbec1@gmail.com>
 Depends: python3 (>= 3.10), apt, dpkg, procps
@@ -214,8 +241,8 @@ EOF
   chmod 0755 "$pkg/DEBIAN/postinst"
   bash -n "$pkg/DEBIAN/postinst"
   find "$pkg" -type d -exec chmod 0755 {} +
-  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${version}-${REVISION}_all.deb" >/dev/null
-  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${version}-${REVISION}_all.deb")"
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${version}-${REVISION}${CHANNEL_SUFFIX}_all.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${version}-${REVISION}${CHANNEL_SUFFIX}_all.deb")"
 }
 build_updater
 
