@@ -133,6 +133,192 @@ Touch ID regressions and J314S boot/suspend/recovery remain gates. See
 not full semantic parity. The paused kernel task now resumes active PR/CI and
 requires archive, carried-patch and artifact evidence before success claims.
 
+## Messages: honest full text, attachment chips — 2026-10-21
+
+Audit of "full text / MMS / links" against the live phone (read-only; nothing sent):
+MAP up, 14 threads, 47 messages. Every thread rendered one bubble per message with
+text identical to BlueFerry's body; longest message 456 characters; 9 links rendered
+as links; no empty bubbles. Live messages are whole because BlueFerry fetches the full
+bMessage on the MNS event. The phone's inbox *listing* is capped at 128 characters
+(`Subject`), and one live message was exactly that: a listing-only message that ends
+mid-sentence and looked complete. BlueFerry (system package, 0.8.1) has no D-Bus
+call for a listed message's full body or for attachments, so neither is recoverable
+from the app without a second OBEX client, which the app deliberately is not.
+
+Changes: `message_parts()` in `messages_model.py`; listing-only messages are tagged
+`phone_list` by `merge_inbox` and, at 120+ characters, captioned as shortened;
+empty or U+FFFC bodies render an Attachment chip (and "Attachment" in the sidebar
+preview) instead of an empty bubble. Fixture gained a long message with a link and
+two attachments. Tests: 6 model, 1 GTK; three deliberate model breakages each fail.
+Not verified: a real MMS (none received), full-text recovery for listed messages.
+Open upstream idea: a BlueFerry `GetMessage(handle)` call would let the listing path
+resolve full text.
+
+## Messages: duplicate conversations and a GUI-test guard — 2026-10-21
+
+Owner reported Messages "not showing my texts" and screen flicker. Both traced and fixed
+without opening any window (data checks were GTK-free; GUI tests ran on a hidden display).
+
+- **Texts missing from a conversation.** Read-only against the live daemon: 14 conversations
+  with zero exceptions, but Mike Chuisano appeared twice. BlueFerry's thread holds `+1908…`,
+  the phone's inbox snapshot reports `1908…`, and `merge_inbox` compared the raw strings, so
+  five newer texts (to 20:32) landed in a duplicate phone-only conversation while the real
+  one stopped at 16:57. `merge_inbox` now matches by BlueFerry's `canonical_address` plus the
+  North American 10/11-digit twin, never guesses between two claimants, and still drops senders
+  that are not valid recipients. Real data after the fix: 14 conversations become 13, Mike is
+  one conversation with all 10 texts, no duplicate names, and his sending route is unchanged.
+- **Flicker.** Another session ran `xvfb-run python3 -m unittest test_messages_gui` from the
+  desktop session without `GDK_BACKEND=x11`; with `WAYLAND_DISPLAY` set GTK opened the test
+  windows on the live Wayland desktop (one was visible in the compositor's window list), which
+  also grabbed the keyboard. `gui_safety.py` now refuses real-looking displays and forces X11;
+  the same run now stays on the virtual display. The other GUI tests in this repo are not
+  guarded and should adopt it.
+
+Verification: 53 model and 67 GTK tests pass, no warnings; mutation checks fail the tests (old
+string matching fails 4; each guard mutation fails one). Messages was closed during the incident;
+it is not relaunched or reinstalled by this entry (install with
+`bash mseries/install-phone-setup.sh`, then relaunch when ready).
+
+## Rust compositor: panels, alerts and dialogs hidden behind snapped windows — 2026-10-21
+
+Hovering CodexBar (or any indicator) with a window snapped beside the top bar showed no
+tooltip, and more generally anything that should float over a snapped window (indicator
+menus, an app's own alert or modal dialog) could end up behind it. In
+`rust/pantheon-compositor` every surface was an ordinary element of the smithay `Space`
+at the same z-index, so any window raise (a click, focus, restore) put that window on top
+of the panel, of its own transient dialogs and of keep-above surfaces. A tiled window
+fills the work area, so it covered them completely. Clicking the bar hid the panel case
+because the click re-raised the panel.
+
+- **Fix** (`claude/panel-popups-above-windows`, PR #361 to `dev`), all in
+  `pantheon_shell.rs`:
+  - Panels (Wingpanel, the dock) get `RenderZindex::Top`; smithay keeps the stack sorted
+    by z-index, so a raise of an ordinary window never crosses them. Their popups render
+    with them. XWayland override-redirect windows (menus, the GTK3 notification cards)
+    already render at `RenderZindex::Overlay`.
+  - `raise_window()` replaces every direct `Space::raise_element` of a window and raises
+    the window's transient descendants (xdg `set_parent`, X11 `WM_TRANSIENT_FOR`) above
+    it in their existing order, as Gala does, so a click on a snapped window no longer
+    buries its own dialog.
+  - `io_elementary_pantheon_extended_behavior_v1.set_keep_above` is honored with a
+    z-index between ordinary windows and the panels (applied on request or at first map,
+    reset when the object is destroyed). `make_centered`, `make_modal`, `focus` and
+    monitor labels are still ignored.
+- **Password prompts** (follow-up commit, owner report that they still sat behind
+  snapped apps): the elementary polkit agent sends `make_modal` / `make_centered` /
+  `set_keep_above`; all three now put it on the keep-above layer, and `make_modal` /
+  `focus` raise and focus it. The GNOME keyring prompter (`gcr-prompter`,
+  `org.gnome.keyring.*Prompter`) sends no hints and has no parent, so it gets the
+  keep-above layer by app ID at first map. Dimming and true centering are not implemented.
+  The same commit runs `cargo fmt` over the `activation.rs` / `state.rs` code merged from
+  `dev`, which failed `fmt --check`.
+- **Installed now:** `0.1.0+gitdev.dockfix2.panelstack3.popups1` (deploy branch
+  `local/panel-stack-on-dockfix` = dockfix2 lineage + PR #361 + PR #364's popup commit +
+  the prompt commit; not the `dev` activation change). Previous binary saved as
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2.panelstack2.popups1`.
+  Loads at next login; 49 tests pass on the PR branch.
+- **Verified.** `cargo fmt --check`, `cargo clippy --release --features native-drm
+  --all-targets -D warnings` and `cargo test` (41 tests) pass.
+- **Deployed.** Package `0.1.0+gitdev.dockfix2.panelstack2` = `local/dockfix-on-dev`
+  (the installed `dockfix2` lineage: `dev` + dock replug fix + redraw counters) + the two
+  commits of the PR, built in `~/Projects/mseries-panel-stack-deploy` (branch
+  `local/panel-stack-on-dockfix`) and installed with
+  `install-pantheon-rust-compositor.sh --install`. The running session still executes the
+  previous binary; the fix loads at the next login. Rollback binary:
+  `/var/backups/pantheon-rust-compositor/pantheon-compositor.0.1.0+gitdev.dockfix2`.
+- **Unverified.** After the next login: hover CodexBar beside a snapped window; open a
+  modal dialog from a snapped app, click the app, confirm the dialog stays on top; send a
+  `notify-send` with two snapped windows. Not covered: popups (tooltips, menus) of an
+  unfocused window still render with that window, so a menu that reaches over a
+  higher-stacked neighbour is clipped by it until the window is clicked; Gala draws all
+  popups above all windows.
+
+## PolyBagger T1000 Print Manager — 2026-10-21 (end of day, before reboot)
+
+`mseries/polybagger-print-manager/` (PRs #363, #366, #368, all merged to `dev`): GTK 4 + Granite 7 app and CLI for
+the T-1000 bagger's inline Zebra (ZTC 110Xi4, TI-1000Z frame, USB, serial JJK245392). A ZPL send only **loads** a
+label; it prints one per bag cycle until its Quantity (`^PQ`) is used up, then clears to "No Label" (TI-1000Z
+manual pp. 20–22). Main view: print card (How many with 1/100/500/1000 presets, "Print N Labels", Ctrl+P), result
+card with the one bagger check, Today list with totals, status bar with a ready dot, favorites/recents, offline
+label store. Tan industrial label-printer icon. Launcher installed from this checkout with `install.sh`.
+
+- **Working (owner):** single sends print one label each; after loading with a count the owner reported it
+  "kinda working". The CCS label was loaded with `--qty 1000` at 09:2x (job 20, StoredLabel expected).
+- **Queue fix:** a printer power cycle mid-job paused CUPS and disabled Send. Queue
+  `ZTC-110Xi4-203dpi-ZPL` now has `printer-error-policy=retry-job`; the app shows **Resume Queue…** if it pauses.
+- **Taskbar:** new apps show the wrong icon (it showed Messages) until the Windows-mode taskbar restarts; it was
+  restarted through `mseries-dock-change` with owner approval and now shows the tan icon. Pin from the taskbar's
+  own right-click menu; outside edits to `launchers` do not stick.
+- **Network:** the Xi4 is not on 10.20.0.0/24. The Zebra at 10.20.0.61 is a different printer (ZT410,
+  18J191104090). Use the bagger's Printer Settings **Print Network** to see whether the Xi4 has a print server.
+- **After the reboot, check:** app opens from Applications/taskbar with the tan icon; status dot green; queue still
+  `retry-job` (IPP Get-Printer-Attributes `printer-error-policy`; `lpoptions` does not show it); the bagger's loaded label
+  is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
+- **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
+
+## Rust compositor: GTK present() now raises the window — 2026-10-21
+
+Owner asked for `present()` to raise a window. Cause, proven with a probe app and
+`WAYLAND_DEBUG`: GTK does everything the protocol asks (get_activation_token,
+set_serial(0), commit, done, activate) but `token_created` refused any token whose
+serial was not newer than the last keyboard enter, so the token was never stored and
+`activate` did nothing. The compositor is Wayland-native (Smithay); XWayland is only
+for X11 clients, so this was policy, not an X-only limitation.
+
+Change: new `src/activation.rs` (policy and typing guard, 8 unit tests) wired into
+`state.rs`; the last key press is stamped in `input.rs`. Default policy `raise`
+honours tokens without a serial but waits until the user stops typing for 1.2 s;
+`PANTHEON_ACTIVATION_POLICY=strict` restores the old behaviour.
+
+Verification: `cargo test -p pantheon-compositor` 42 pass, clippy clean, `cargo check
+--features native-drm` clean. New end-to-end script
+`mseries/pantheon-rust-compositor/activation-probe/run.sh` runs the real binary nested in
+a virtual display on a private bus: old policy never raised the window in 9 s; new policy
+raised it in about 100 ms when idle and only after typing stopped otherwise (about 3.8 s,
+with all 25 keystrokes delivered to the other client). My first typing test was wrong
+(one process owns both windows, so its own keyboard serial is legitimately trusted) and was
+rebuilt around two separate clients before the result counted.
+
+**Not installed and not loaded.** The running compositor is unchanged. To use it: build and
+install the package (`sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes
+--build`), then it loads at next login; do not restart the compositor mid-session. Gala remains
+the rollback.
+## Messages sending, group confirmation and native dialogs — 2026-10-21
+
+Owner reported that Messages did not seem to send. Investigation (read-only
+against the live backend; the real send call was intercepted, nothing was sent):
+
+- The UI path is sound. Driving the real app with real thread data, clicking Send
+  and Ctrl+Enter both reached `send_to_thread` with the right thread and text.
+- Direct threads are all replyable and MAP was up. The one group thread,
+  "Derek Ubel, Jan Ubel", is `reply_ready` but `group_confirmed` false. The daemon
+  rejects a group send without `confirm_group` plus the roster token
+  (`ConfirmationRequiredError`), and the app showed only a generic "Could not
+  send", so the refusal looked like nothing happening. Sends had completed on
+  2026-10-20 (PushMessage status=complete) and none were attempted this boot.
+
+Changes: native Granite dialog that lists every recipient before a group send
+(Cancel is the default; stale roster sends nothing); daemon failure reasons in
+plain words; context menu (Mark as Read, Copy Number); Keyboard Shortcuts window.
+Screenshots caught two defects tests had missed (participants collapsed to "…",
+and Granite's action lookup drew no keys) and both are now asserted.
+
+Verification: 36 model, 5 media, 56 GTK tests pass (one screenshot test skips),
+no GTK warnings; nine deliberate breakages each failed a test, including Enter
+confirming a group. Not verified: a real group send on the phone, which needs the
+owner to confirm the dialog once. Installed copy not yet relaunched by this entry.
+
+Enter-to-send opt-in landed in the same PR: menu switch **Press Enter to Send** (off by
+default), stored in `~/.config/mseries/messages.json` (0600, booleans only, nothing else
+ever written). Input-method safe by construction: a plain Return is armed for 80 ms and
+only a literal newline insert is swallowed and turned into a send; composed text from an
+input method sends nothing. Verified with a real xdotool Return and Shift+Return as well
+as synthetic events; 41 model and 66 GTK tests pass; seven of eight deliberate breakages
+fail a test (the eighth was not a real defect). Not verified: an actual Japanese/Chinese
+input method, only its observable effect (composed text arriving instead of a newline).
+
+Next: live check of media links; compositor `present()` raise is its own PR (#362).
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8

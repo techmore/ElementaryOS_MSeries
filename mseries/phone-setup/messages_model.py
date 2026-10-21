@@ -6,6 +6,7 @@ import gettext
 from zlib import crc32
 from blueferry.events import canonical_address
 from blueferry.recipients import validate_recipient
+from blueferry.text_safety import terminal_text
 from blueferry.time_display import format_message_timestamp
 
 _ = gettext.gettext
@@ -21,19 +22,42 @@ def contact_index(records):
     return result
 
 
+def identity_keys(address):
+    """Typed identities for one address: its canonical form, plus the North American twin.
+
+    BlueFerry's canonical form already makes "+1 908 642 0729" and "19086420729" the
+    same identity. A 10-digit number and its 11-digit "1" form are also one phone in
+    the United States and Canada, so both are returned. Other lengths get no twin.
+    Names and unparseable text return ().
+    """
+    key = canonical_address(address)
+    if not key:
+        return ()
+    keys = [key]
+    if key.startswith('phone:'):
+        digits = key[6:]
+        if len(digits) == 10:
+            keys.append('phone:1' + digits)
+        elif len(digits) == 11 and digits.startswith('1'):
+            keys.append('phone:' + digits[1:])
+    return tuple(keys)
+
+
+def lookup_contact_name(address, index):
+    """The one phonebook name for this address, or '' when none or several match."""
+    for key in identity_keys(address):
+        if names := index.get(key, set()):
+            return next(iter(names)) if len(names) == 1 else ''
+    return ''
+
+
 def resolve_contact_names(threads, index):
     """Presentation only: never alter thread identities, groups or recipients."""
     for thread in threads:
         if thread.get('is_group') or len(thread.get('recipients', [])) != 1:
             continue
-        key = canonical_address(thread['recipients'][0])
-        names = index.get(key, set())
-        if not names and key and key.startswith('phone:'):
-            digits = key[6:]
-            alternate = '1'+digits if len(digits)==10 else digits[1:] if len(digits)==11 and digits.startswith('1') else ''
-            names = index.get('phone:'+alternate, set()) if alternate else set()
-        if len(names) == 1:
-            thread['name'] = next(iter(names))
+        if name := lookup_contact_name(thread['recipients'][0], index):
+            thread['name'] = name
     return threads
 
 
@@ -45,30 +69,48 @@ def address_key(address):
 
 
 def merge_inbox(threads, inbox):
-    """Merge a bounded phone snapshot in memory, preserving backend group routes."""
+    """Merge a bounded phone snapshot in memory, preserving backend group routes.
+
+    A snapshot message joins the one direct conversation that owns its sender by
+    identity (so "+19086420729" and "19086420729" are the same person). If no
+    direct conversation owns it, or more than one claims it, it goes to a single
+    phone-only conversation for that sender instead of guessing.
+    """
     result = {t['key']: deepcopy(t) for t in threads}
     handles = {m.get('handle') for t in result.values() for m in t['messages'] if m.get('handle')}
-    by_address = {}
+    owners = {}
     for thread in result.values():
         if not thread.get('is_group') and len(thread.get('recipients', [])) == 1:
-            by_address[address_key(thread['recipients'][0])] = thread
+            for key in identity_keys(thread['recipients'][0]):
+                owners.setdefault(key, []).append(thread)
+    phone_only = {}
     for raw in inbox:
         if raw.get('handle') in handles:
             continue
-        address = address_key(raw.get('sender_phone_norm') or raw.get('sender', ''))
+        sender = raw.get('sender_phone_norm') or raw.get('sender', '')
+        address = address_key(sender)
         if not address:
             continue
-        thread = by_address.get(address)
+        keys = identity_keys(sender)
+        candidates = []
+        for key in keys:
+            for candidate in owners.get(key, []):
+                if candidate not in candidates:
+                    candidates.append(candidate)
+        thread = candidates[0] if len(candidates) == 1 else None
+        if thread is None:
+            thread = next((phone_only[key] for key in keys if key in phone_only), None)
         if thread is None:
             key = 'inbox:' + address
             thread = dict(key=key, name=raw.get('contact_name') or raw.get('sender') or address,
                           recipients=[address], is_group=False, reply_ready=True,
                           messages=[], last_ts='', inbox_only=True)
             result[key] = thread
-            by_address[address] = thread
+            for identity in keys or (address,):
+                phone_only[identity] = thread
         thread['messages'].append(dict(handle=raw.get('handle', ''), body=raw.get('body', ''),
                                        timestamp=raw.get('timestamp', ''), outgoing=False,
-                                       read=raw.get('read', False), sender=raw.get('sender', '')))
+                                       read=raw.get('read', False), sender=raw.get('sender', ''), phone_list=True))
         if raw.get('read') is False:
             thread['unread_count'] = thread.get('unread_count', 0) + 1
         if raw.get('handle'):
@@ -87,6 +129,8 @@ class SendAttempt:
     recipient: str
     token: str
     backend_thread: bool
+    # True only after the user confirmed the displayed participant list.
+    confirm_group: bool = False
 
 
 class ConversationState:
@@ -95,7 +139,7 @@ class ConversationState:
         self.drafts = {}
         self.pending = set()
 
-    def prepare(self, thread):
+    def prepare(self, thread, confirm_group=False):
         key = thread['key']
         body = self.drafts.get(key, '')
         if key in self.pending or not body.strip():
@@ -107,7 +151,8 @@ class ConversationState:
         if not backend_thread and len(recipients) != 1:
             raise ValueError('Choose one recipient.')
         recipient = validate_recipient(recipients[0]) if recipients else ''
-        attempt = SendAttempt(key, body, recipient, thread.get('confirmation_token', ''), backend_thread)
+        attempt = SendAttempt(key, body, recipient, thread.get('confirmation_token', ''), backend_thread,
+                              bool(confirm_group and thread.get('is_group')))
         self.pending.add(key)
         return attempt
 
@@ -115,6 +160,45 @@ class ConversationState:
         self.pending.discard(attempt.key)
         if success and self.drafts.get(attempt.key) == attempt.body:
             self.drafts.pop(attempt.key, None)
+
+
+# --- Group replies and failures -------------------------------------------
+# BlueFerry refuses to message a group until a client has shown its participants
+# and the user confirmed them. These helpers let the window do exactly that.
+
+def needs_group_confirmation(thread):
+    """A replyable group whose participant list the user has not confirmed yet."""
+    return bool(thread.get('is_group') and thread.get('reply_ready')
+                and thread.get('confirmation_token') and not thread.get('group_confirmed'))
+
+
+def blocks_group_confirmation(thread):
+    """The roster itself is incomplete, so it cannot be confirmed from here."""
+    return bool(thread.get('is_group') and thread.get('participants_required'))
+
+
+def group_roster(thread, index):
+    """[(name or '', address)] for every recipient the message would reach."""
+    return [(lookup_contact_name(address, index), address) for address in thread.get('recipients', [])]
+
+
+def send_failure_reason(error):
+    """A short, plain reason for a failed send, from BlueFerry's own wording."""
+    text = ' '.join(terminal_text(str(error or '')).split())
+    lowered = text.lower()
+    known = (
+        (('no longer exists',), _('this conversation is no longer in BlueFerry’s history')),
+        (('unambiguous reply',), _('BlueFerry can’t tell who to reply to')),
+        (('participant', 'confirm'), _('the group’s participants need confirming')),
+        (('group changed',), _('the group changed; review the participants')),
+        (('too many', 'rate limit'), _('too many messages in a short time; wait a minute')),
+        (('forbidden', 'denied', 'authoriz'), _('your iPhone isn’t allowing message access; check Bluetooth settings on the phone')),
+        (('not connected', 'not ready', 'obex', 'bluetooth', 'map '), _('your iPhone isn’t connected for messages')),
+    )
+    for needles, reason in known:
+        if any(needle in lowered for needle in needles):
+            return reason
+    return text[:140] if text else _('BlueFerry could not send it')
 
 
 # --- Presentation helpers -------------------------------------------------
@@ -173,13 +257,34 @@ def short_stamp(value, now=None):
     return f'{month} {parsed.day}' if parsed.year == now.year else f'{month} {parsed.day}, {parsed.year}'
 
 
+# iOS marks an inline attachment with U+FFFC, and the phone's Bluetooth message
+# service sends only text, so a photo or file arrives as that mark or as nothing.
+ATTACHMENT_MARK = '\ufffc'
+# The phone's inbox listing cuts each message at 128 characters and never says so.
+# A listing-only message this long may have lost its tail; live messages are whole.
+SHORTENED_AT = 120
+
+
+def message_parts(message):
+    """(text, has_attachment, shortened) for what a bubble should show."""
+    body = str(message.get('body') or '')
+    attachment = ATTACHMENT_MARK in body or not body.strip()
+    text = body.replace(ATTACHMENT_MARK, '').strip() if attachment else body
+    shortened = bool(message.get('body_truncated')) or (bool(message.get('phone_list')) and len(text) >= SHORTENED_AT)
+    return text, attachment, shortened
+
+
 def conversation_preview(thread):
     """(one-line preview, sent-by-me) for the newest message in a thread."""
     messages = thread.get('messages') or []
     if not messages:
         return '', False
     last = messages[-1]
-    return ' '.join(str(last.get('body', '')).split()), bool(last.get('outgoing'))
+    text, attachment, _shortened = message_parts(last)
+    preview = ' '.join(text.split())
+    if attachment:
+        preview = (preview + ' · ' if preview else '') + _('Attachment')
+    return preview, bool(last.get('outgoing'))
 
 
 def layout_messages(messages, is_group=False, now=None):

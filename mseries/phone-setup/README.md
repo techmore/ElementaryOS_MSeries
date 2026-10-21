@@ -89,6 +89,19 @@ owns sending, recipient checks, history and group safety.
   card under the bubble (see *Media-link previews* below). Sent links load at
   once; incoming ones offer Load Preview. The card is built by the controller
   because it owns the network pool and cache; `messages_widgets` only places it.
+- **Full text, attachments and links.** Messages received while BlueFerry runs
+  arrive whole (BlueFerry fetches the full message; a 456-character text and its
+  link render intact on this phone). The phone's inbox listing, which fills in
+  what arrived while the app was closed, cuts every message at 128 characters
+  without saying so. A message that came only from that listing and is at least
+  120 characters long is captioned **Shortened by your iPhone · open it there for
+  the rest** instead of looking complete; BlueFerry has no call that fetches the
+  full body of a listed message, so the app cannot recover it. The iPhone shares
+  only the text of a message over Bluetooth, so a photo or file arrives as an empty
+  body or iOS's object-replacement mark (U+FFFC). That is drawn as an **Attachment**
+  chip (also in the conversation list preview) rather than an empty bubble, with a
+  tooltip pointing to the iPhone. No MMS has been received on this phone yet, so
+  the chip is verified against fixtures and real-widget tests, not a real MMS.
 - **Conversation.** Header with the contact's avatar and addresses. Bubbles from
   the same person within five minutes form a run with tight spacing and a tail
   on the last bubble. Centred time headings appear after a 30-minute silence or
@@ -99,10 +112,31 @@ owns sending, recipient checks, history and group safety.
   contains it, so it is never doubled. A failed send removes the bubble and
   keeps the draft. When new messages arrive while you are scrolled up, a
   New Messages button offers a jump to the latest.
+- **Group replies.** BlueFerry refuses to message a group until a client has
+  shown who is in it and the user confirmed. Sending to an unconfirmed group now
+  opens a native Granite dialog listing every recipient (names when the phonebook
+  has exactly one match, otherwise the number), with **Cancel as the default
+  button** so Enter can never confirm it. Only the explicit Send button passes
+  `confirm_group` and the roster token to BlueFerry; if the roster changes while
+  the dialog is open nothing is sent. BlueFerry remembers the confirmation, so
+  the dialog appears once per group. A group whose participant list is
+  incomplete still goes to Advanced BlueFerry.
+- **Why a send failed.** A refused or failed send used to say only "Could not
+  send". It now gives BlueFerry's reason in plain words (no longer in history,
+  cannot tell who to reply to, group needs confirming, phone denying message
+  access, not connected, rate limited) and keeps the draft.
+- **Quick actions.** Right-click or long-press a conversation for Mark as Read
+  and Copy Number. **Keyboard Shortcuts** in the menu lists every shortcut with
+  native keycaps.
 - **Composer.** One rounded field with the send button inside it. The button
   slides in when there is something to send and shows a spinner while pending.
-  Ctrl+Enter sends and Enter adds a line, exactly as before; plain Enter does
-  not send because an input-method confirmation must never send by accident.
+  Ctrl+Enter sends and Enter adds a line by default. **Press Enter to Send** in the
+  menu (off by default, remembered in `~/.config/mseries/messages.json`, owner-only, on/off
+  switches only) makes Enter send and Shift+Enter add a line. It is input-method safe: a
+  plain Return is noted, and the message is sent only if a literal newline is then
+  inserted. When an input method uses the key to confirm a composition, the composed
+  text arrives instead and nothing is sent. A Return held longer than 80 ms before its
+  newline, a pasted newline and Ctrl+Enter behave as expected.
 - **Colour.** Outgoing bubbles use the stylesheet's `accent_bg_color` with
   `accent_fg_color`, so the user's accent colour and dark mode are honoured. The
   older `theme_selected_*` pair was not used for text: it measured 1.8:1 in dark
@@ -125,10 +159,10 @@ Code layout (all under `phone-setup/`): `messages.py` is the controller (state,
 worker thread, BlueFerry calls, dialogs); `messages_model.py` holds pure,
 GTK-free logic (message runs, time labels, previews, the send outbox, avatar
 tones); `messages_widgets.py` builds the widgets; `messages_style.py` holds the
-scoped stylesheet. The installer copies all four.
+scoped stylesheet; `messages_settings.py` stores the on/off preferences. The installer copies them all.
 
 Checked with the isolated fixture and Cairo rendering in light, dark and narrow
-layouts, with 30 model tests, 5 media tests and 47 GTK tests (one screenshot
+layouts, with 41 model tests, 5 media tests and 66 GTK tests (one screenshot
 test needs its environment variable and skips), including end-to-end tests that
 push realistic BlueFerry objects through the real refresh path. **Not verified:**
 the redesign has not been run against the live phone, and the owner's open
@@ -146,6 +180,14 @@ history remains in BlueFerry's encrypted store. Offline views retain the current
 window's last snapshot. The app does not download the full iCloud archive or
 recover a complete sent history. A real inbox read returned 11 entries on this
 phone; a controlled suspend/missed-message/reopen scenario remains unverified.
+
+**One person, one conversation.** Snapshot messages join a direct conversation by
+identity, not by string. BlueFerry's threads write a number as `+19086420729` while the phone's
+snapshot reports `19086420729`; those are the same phone (as are a 10-digit number and its
+`1`-prefixed form), so they now share one conversation. Before this, such a person appeared
+twice and their newest texts sat in a duplicate phone-only conversation while the real one
+looked stale. If two threads claim one number the text goes to a single phone-only
+conversation rather than to either, and a sender that is not a valid recipient is still dropped.
 
 ### Verification-code offers
 
@@ -369,3 +411,12 @@ Preserve drafts, focus, selection, light/dark themes and narrow layouts. Test th
 actual behavior before claiming parity. Commit/push coherent changes and open
 PRs against dev. Preserve the running Bluetooth, audio, kernel and panel setup.
 ```
+
+### Running the GUI tests safely
+
+`test_messages_gui.py` opens and closes dozens of windows and sends key events, so it must
+never run against a live desktop. Run it only as `xvfb-run -a python3 test_messages_gui.py`.
+`gui_safety.py` enforces this: the module skips itself unless `DISPLAY` is an isolated virtual
+display (`:90` or higher, which is where `xvfb-run -a` starts), and it forces the X11 backend and
+removes `WAYLAND_DISPLAY`. The second part matters even under `xvfb-run`: with a Wayland session
+in the environment GTK otherwise opens the test windows on the real desktop.

@@ -406,7 +406,7 @@ impl XwmHandler for PantheonCompositor {
         let Some(window) = self.find_x11_window(&surface) else {
             return;
         };
-        self.space.raise_element(&window, true);
+        self.raise_window(&window, true);
         self.focus_window_keyboard(&window, smithay::utils::SERIAL_COUNTER.next_serial());
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
