@@ -88,7 +88,7 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         if (widget is Gtk.Image) {
             var image = (Gtk.Image) widget;
             // The GitHub mark (16) matches CodexBar's 28 px icon; the small count marks stay compact so two rows fit.
-            image.pixel_size = image.pixel_size >= 16 ? (int) Math.round (image.pixel_size * 1.75) : (int) Math.round (image.pixel_size * 1.3);
+            image.pixel_size = image.pixel_size >= 16 ? (int) Math.round (image.pixel_size * 1.75) : (int) Math.round (image.pixel_size * 1.6);
         }
         for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
             enlarge_marks (child);
