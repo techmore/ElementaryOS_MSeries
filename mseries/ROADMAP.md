@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## October 21 maintenance checkpoint: kernel application next
+
+Kernel and power maintenance prompts were manually trialed, evidence-audited and
+refined; all eight recurring tasks remain paused. No measured optimization or
+new kernel adoption follows. **Next:** identify the owner's intended kernel
+candidate and prepare its pinned source/config/build change before continuing
+with package task 03. Reconcile #139's merged upstream state, avoid a direct #163
+backport, and retain exact boot/recovery qualification gates. Power tooling also
+needs capability-aware display capture without silently accepting missing DPMS.
+See [the handoff and retained evidence](maintenance/2026-10-21/README.md).
+
+
 ## Native Messages experience landed — 2026-10-20
 
 PR #353 merged to `dev` (`0bb46b7d`), including PR #352's media links, name
