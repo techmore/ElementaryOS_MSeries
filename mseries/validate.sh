@@ -237,6 +237,12 @@ check desktop 'brightness unit tests' "python3 -m unittest discover -s mseries/b
 check desktop 'keyboard-backlight unit tests' "python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'"
 check desktop 'audio unit tests' "python3 -m unittest discover -s mseries/audio -p 'test_*.py'"
 check desktop 'airplay unit tests' "python3 -m unittest discover -s mseries/airplay -p 'test_*.py'"
+
+# -- updater: staged, rollback-safe M-series updates (mseries/UPDATER-DESIGN.md) ----
+# test_real_tools.py drives the real apt-get/dpkg against a scratch root and skips itself
+# when dpkg-dev is missing; CI installs it so the skip never hides a regression there.
+check updater 'unit, fault-injection and real apt/dpkg tests' "python3 -B -m unittest discover -s mseries/update -p 'test_*.py'"
+check updater 'install script (bash -n, shellcheck)' 'bash -n mseries/update/install.sh && shellcheck -S warning mseries/update/install.sh'
 check desktop 'video-decode/test-brave-factory.py' 'python3 mseries/video-decode/test-brave-factory.py'
 check desktop 'video-decode/test-youtube-launch.py' 'python3 mseries/video-decode/test-youtube-launch.py'
 check desktop 'pantheon-rust-compositor metrics' \
