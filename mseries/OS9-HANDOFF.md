@@ -1,3 +1,16 @@
+## Apple/Logitech peripherals: `mseries-peripherals` — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/hardware/peripherals.py` (installs as `/usr/bin/mseries-peripherals`) with `status`, `pair` and a `watch` user service
+  (`mseries-peripherals.service`, wanted by `graphical-session.target`). One battery reading per accessory (BlueZ's real percent over the
+  HID++ "Normal" level UPower turns into 55%), plug-in matching of a cabled Magic/Logitech device to its paired Bluetooth twin, a Pair
+  offer when none is paired, reconnect on unplug, one low-battery notice. `check-kernel-config.py --peripherals` gates the HID/Bluetooth
+  options. Design and limits: `mseries/PERIPHERALS.md`.
+- **Verified:** MX Vertical on this M1 Pro (`status` 100%, UPower 55%); watcher smoke run; 25 new tests plus install and kernel-gate tests;
+  running 7.2.11-wip3 config and both preserved configs pass `--peripherals`.
+- **Not verified:** every Apple accessory (none on hand), the notification Pair action, MX Vertical cable use, behaviour across suspend.
+  Installed to the image only; nothing was installed on this host and no service restarted.
+- **Next:** try a real Magic Keyboard/Trackpad on a cable and over Bluetooth, then record the result here.
+
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
