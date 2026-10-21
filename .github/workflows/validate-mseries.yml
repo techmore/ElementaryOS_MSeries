@@ -75,6 +75,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
+      - name: Keep all Quick Settings builds on shared source preparation
+        run: python3 mseries/quick-settings/tests/test-source-preparation.py
       - name: Exercise BlueZ controls without touching hardware
         run: bash mseries/quick-settings/tests/test-bluetooth.sh
       - name: Validate shared sliders and battery summary in both themes
