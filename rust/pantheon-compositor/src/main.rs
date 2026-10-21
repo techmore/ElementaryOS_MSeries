@@ -1,5 +1,6 @@
 #![allow(irrefutable_let_patterns)]
 
+mod activation;
 mod cursor;
 mod cursor_theme;
 mod display_config;
