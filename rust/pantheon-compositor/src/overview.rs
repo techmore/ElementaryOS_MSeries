@@ -79,7 +79,7 @@ pub(crate) fn grid_rects(
 }
 
 /// Preserve the client's aspect ratio and never enlarge a thumbnail.
-fn fit_overview_rect(
+pub(crate) fn fit_overview_rect(
     cell: Rectangle<i32, Logical>,
     size: Size<i32, Logical>,
 ) -> Rectangle<i32, Logical> {
@@ -178,6 +178,7 @@ impl PantheonCompositor {
         if self.session_locked {
             return Err("cannot open the overview while the session is locked".into());
         }
+        self.dismiss_snap_assist();
         let active = self.workspace_manager.active();
         let minimized = self
             .minimized_windows
