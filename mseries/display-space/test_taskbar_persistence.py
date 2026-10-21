@@ -64,7 +64,7 @@ class TaskbarPersistence(unittest.TestCase):
                      'dock-tests/test-markers.sh', 'codexbar-wingpanel/Indicator.vala',
                      'codexbar-wingpanel/meson.build', 'dock-taskbar/TaskbarRepoBar.vala', 'repobar-wingpanel/Indicator.vala', 'teams-web/official_icon.py',
                      'install-teams.sh', 'install-outlook-web.py', 'install-codexbar-wingpanel.sh',
-                     'patches/dock-taskbar-codexbar.patch', 'patches/dock-taskbar-repobar.patch', 'patches/dock-running-apps.patch'):
+                     'patches/dock-taskbar-codexbar.patch', 'patches/dock-taskbar-repobar.patch', 'patches/dock-taskbar-power-buttons.patch', 'patches/dock-running-apps.patch'):
             self.assertEqual((payload / name).read_bytes(), (ROOT / 'mseries' / name).read_bytes(), name)
 
 

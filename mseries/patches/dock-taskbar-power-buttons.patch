@@ -1,0 +1,62 @@
+diff --git a/src/StartMenu.vala b/src/StartMenu.vala
+index 105ef82..ff828dc 100644
+--- a/src/StartMenu.vala
++++ b/src/StartMenu.vala
+@@ -150,11 +150,32 @@ public class Dock.StartMenu : Gtk.Popover {
+             TaskbarRow.spawn ({ "io.elementary.settings", "settings://accounts" });
+         });
+ 
+-        var power_button = new Gtk.Button.from_icon_name ("system-shutdown-symbolic") {
+-            tooltip_text = _("Power")
++        // Restart and Shut Down are one click away; the session manager still asks to confirm.
++        var restart_button = new Gtk.Button.from_icon_name ("system-reboot-symbolic") {
++            tooltip_text = _("Restart")
++        };
++        restart_button.add_css_class ("flat");
++        restart_button.update_property (Gtk.AccessibleProperty.LABEL, _("Restart"), -1);
++        restart_button.clicked.connect (() => {
++            popdown ();
++            TaskbarRow.run_session_action.begin ("reboot");
++        });
++
++        var shutdown_button = new Gtk.Button.from_icon_name ("system-shutdown-symbolic") {
++            tooltip_text = _("Shut Down")
++        };
++        shutdown_button.add_css_class ("flat");
++        shutdown_button.update_property (Gtk.AccessibleProperty.LABEL, _("Shut Down"), -1);
++        shutdown_button.clicked.connect (() => {
++            popdown ();
++            TaskbarRow.run_session_action.begin ("shutdown");
++        });
++
++        var power_button = new Gtk.Button.from_icon_name ("view-more-symbolic") {
++            tooltip_text = _("More power options")
+         };
+         power_button.add_css_class ("flat");
+-        power_button.update_property (Gtk.AccessibleProperty.LABEL, _("Power"), -1);
++        power_button.update_property (Gtk.AccessibleProperty.LABEL, _("More power options"), -1);
+         power_menu = TaskbarRow.build_power_menu (this);
+         power_menu.set_parent (power_button);
+         power_button.clicked.connect (() => power_menu.popup ());
+@@ -163,6 +184,8 @@ public class Dock.StartMenu : Gtk.Popover {
+         footer.add_css_class ("start-footer");
+         footer.append (user_button);
+         footer.append (new Gtk.Box (HORIZONTAL, 0) { hexpand = true });
++        footer.append (restart_button);
++        footer.append (shutdown_button);
+         footer.append (power_button);
+ 
+         var content = new Gtk.Box (VERTICAL, 0) {
+diff --git a/src/Taskbar.vala b/src/Taskbar.vala
+index ced842f..1c3f437 100644
+--- a/src/Taskbar.vala
++++ b/src/Taskbar.vala
+@@ -289,7 +289,7 @@ public class Dock.TaskbarRow : Gtk.Widget {
+ 
+     // Log out, restart and shut down go through the session manager, which shows
+     // elementary's own confirmation dialog, so a misclick never ends the session.
+-    private static async void run_session_action (string action) {
++    internal static async void run_session_action (string action) {
+         if (action == "lock") {
+             spawn ({ "loginctl", "lock-session" });
+             return;
