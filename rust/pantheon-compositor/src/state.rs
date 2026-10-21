@@ -791,7 +791,7 @@ impl PantheonCompositor {
         Ok(())
     }
 
-    fn window_app_id(&self, window: &Window) -> Option<String> {
+    pub(crate) fn window_app_id(&self, window: &Window) -> Option<String> {
         if let Some(toplevel) = window.toplevel() {
             smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                 states
