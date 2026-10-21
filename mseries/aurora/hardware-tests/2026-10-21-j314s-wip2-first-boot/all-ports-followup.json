@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "kind": "owner-confirmed-three-port-dock-observation",
+  "recorded_at": "2026-10-21T14:04:42.047491+00:00",
+  "kernel_release": "7.2.10-elementary-aurora72-wip2",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "all_three_ports_owner_picture_confirmed": true,
+  "owner_input_confirmations": [
+    "right",
+    "front-left"
+  ],
+  "rear_left_status": "Later picture confirmed; supersedes earlier no-picture observation. Delay/retry behavior remains to characterize.",
+  "one_shot_consumed": true,
+  "persistent_default": "elementary-aurora20",
+  "timing_samples": [
+    {
+      "physical_port": "right",
+      "owner_picture_confirmed": true,
+      "source_result": "timing-right-01/result.json",
+      "source_events_sha256": "d9da751166a30d436e6329808cb752757456a729c8342e35aa3d70d8aa94bc72",
+      "requested_poll_interval_s": 0.5,
+      "dock_to_active_seconds": 1.502,
+      "partner_to_dock_seconds": 2.984,
+      "partner_to_active_seconds": 4.486,
+      "partner_loss_to_compositor_off_seconds": 0.0,
+      "final_partner": [
+        "port3-partner"
+      ],
+      "final_connector": [
+        "DP-3"
+      ]
+    },
+    {
+      "physical_port": "rear-left",
+      "owner_picture_confirmed": true,
+      "source_result": "timing-front-left-01/result.json",
+      "source_events_sha256": "f28da4bb70125f954981957cf0b838478da97d0cf09ed5c3eede71c197a1e545",
+      "requested_poll_interval_s": 0.5,
+      "dock_to_active_seconds": 1.518,
+      "partner_to_dock_seconds": 2.991,
+      "partner_to_active_seconds": 4.509,
+      "partner_loss_to_compositor_off_seconds": 0.0,
+      "final_partner": [
+        "port1-partner"
+      ],
+      "final_connector": [
+        "DP-1"
+      ],
+      "label_correction": "Runner was requested as front-left; owner retrospectively confirmed rear-left nearest hinge. Original receipt retained unchanged; correction sidecar authoritative."
+    },
+    {
+      "physical_port": "front-left",
+      "owner_picture_confirmed": true,
+      "source_result": "timing-front-left-02/result.json",
+      "source_events_sha256": "5cc730883a57b154169da5cefbc352061326d403ec839c2934dc8977665faa5e",
+      "requested_poll_interval_s": 0.5,
+      "dock_to_active_seconds": 1.515,
+      "partner_to_dock_seconds": 2.996,
+      "partner_to_active_seconds": 4.511,
+      "partner_loss_to_compositor_off_seconds": 0.492,
+      "final_partner": [
+        "port2-partner"
+      ],
+      "final_connector": [
+        "DP-2"
+      ],
+      "origin_correction": "Partner appears in the ready-for-plug event; original Tracker swallowed the edge on baseline completion. Values derived from retained events; targeted regression test/fix added for future runs."
+    }
+  ],
+  "timing_limits": "One owner-operated plug cycle per port,0.5s requested poll interval plus query latency. Not physical insertion-to-visible-pixel timing, not a statistically meaningful speed ranking. Retrospective rear label and front boundary correction disclosed.",
+  "stable_promoted": false,
+  "recovery_boot_tested": false,
+  "suspend_tested": false,
+  "power_improvement_claim": false
+}

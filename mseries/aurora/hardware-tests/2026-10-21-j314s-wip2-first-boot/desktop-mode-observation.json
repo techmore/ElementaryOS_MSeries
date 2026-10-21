@@ -1,0 +1,19 @@
+{
+  "scope": "read-only compositor state; not visual acceptance",
+  "active_monitors": [
+    {
+      "connector": "eDP-1",
+      "width": 3024,
+      "height": 1964,
+      "refresh_hz": 120.0,
+      "refresh_mode": "unknown"
+    }
+  ],
+  "mode_state_available": true,
+  "loaded_graphics_libraries": {
+    "pantheon-compos": [
+      "/usr/lib/aarch64-linux-gnu/libEGL_mesa.so.0.0.0",
+      "/usr/lib/aarch64-linux-gnu/libgallium-26.0.8-1ubuntu0.3.so"
+    ]
+  }
+}

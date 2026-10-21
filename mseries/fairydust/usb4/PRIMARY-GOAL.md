@@ -7,6 +7,24 @@ Everything in `mseries/fairydust/usb4/` serves this goal. Every patch,
 experiment, boot and doc change must say which gate below it moves, or why it
 is needed to move one. Work that moves no gate is not dock-video work.
 
+## Latest October 21 follow-up: picture on all 3 USB-C ports
+
+Owner later confirms rear-left/nearest-hinge picture, superseding its initial
+blank screen. Front-left and right also work. Each external mode observed at
+1080p/60; one-cycle polling≈4.5s partner→desktop with corrections disclosed.
+[Current follow-up](../../aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+Scoped G5 picture across three physical ports; long-run/repeated/recovery/suspend
+and full rate/lane qualification remain open. No new Fairydust/kernel patch.
+
+## October 21 Aurora 7.2 trial update
+
+Scoped **G5 picture** on the reported front-left USB-C port (closest to owner,
+farther from hinge): owner visual confirmation plus external DP-1 1080p/60 and
+Thunderbolt `dpin0` routing observed. Hinge-side left picture fails; right untested.
+Full link-rate/all-port/long-run/recovery qualification remains open. This
+supersedes the historical Fairydust picture frontier below without changing
+those older receipts. [Exact trial report](../../aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md).
+
 ## Gates (in order; qualify one payload and boot at a time)
 
 The table retains best prior experiment evidence. It does not establish the current installed/armed state.

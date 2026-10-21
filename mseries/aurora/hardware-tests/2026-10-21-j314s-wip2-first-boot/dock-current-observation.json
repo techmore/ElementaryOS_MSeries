@@ -1,0 +1,70 @@
+{
+  "uptime_s": 346.19,
+  "drm": {
+    "card2-DP-2": {
+      "status": "disconnected",
+      "enabled": "disabled",
+      "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+    },
+    "card2-HDMI-A-1": {
+      "status": "disconnected",
+      "enabled": "disabled",
+      "modes": ""
+    },
+    "card2-DP-3": {
+      "status": "disconnected",
+      "enabled": "disabled",
+      "modes": ""
+    },
+    "card2-DP-1": {
+      "status": "connected",
+      "enabled": "enabled",
+      "modes": "1920x1080\n1920x1080\n1920x1080\n1920x1080\n1680x1050\n1280x1024\n1280x1024\n1440x900\n1280x960\n1280x720\n1280x720\n1280x720\n1024x768\n1024x768\n1024x768\n800x600\n800x600\n800x600\n800x600\n720x576\n720x480\n720x480\n640x480\n640x480\n640x480\n640x480"
+    },
+    "card2-eDP-1": {
+      "status": "connected",
+      "enabled": "enabled",
+      "modes": "3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964\n3024x1964"
+    }
+  },
+  "thunderbolt": {
+    "domain0": {
+      "device_name": null,
+      "vendor_name": null,
+      "authorized": null,
+      "generation": null
+    },
+    "0-0": {
+      "device_name": "iOS",
+      "vendor_name": "Apple Inc.",
+      "authorized": "1",
+      "generation": "4"
+    },
+    "0-1": {
+      "device_name": "WD22TB4 Thunderbolt Dock",
+      "vendor_name": "Dell",
+      "authorized": "1",
+      "generation": "4"
+    },
+    "0-0:1.1": {
+      "device_name": null,
+      "vendor_name": null,
+      "authorized": null,
+      "generation": null
+    }
+  },
+  "active_monitors": [
+    {
+      "connector": "eDP-1",
+      "width": 3024,
+      "height": 1964,
+      "refresh_hz": 120.0
+    },
+    {
+      "connector": "DP-1",
+      "width": 1920,
+      "height": 1080,
+      "refresh_hz": 60.0
+    }
+  ]
+}
