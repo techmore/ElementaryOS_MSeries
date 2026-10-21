@@ -5,6 +5,8 @@ mod cursor;
 mod cursor_theme;
 mod display_config;
 #[cfg(feature = "native-drm")]
+mod display_trace;
+#[cfg(feature = "native-drm")]
 mod edid;
 mod gala_compat;
 mod gesture_animation;
