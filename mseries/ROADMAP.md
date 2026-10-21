@@ -4,9 +4,11 @@
 
 Owner selected merged #139 as the next independent build candidate. unified72
 revision 3 pins `644133b7799f`, new wip2 module/package identity and no duplicate
-bindgen patch. Selected GPU-reader/PMP host tests pass; native build/inspection
-is pending. Next: artifact-only ARM64 CI, then source/config/UAPI and exact
-boot-chain/fallback/J314S acceptance review. No live deployment or power win.
+bindgen patch. Selected GPU-reader/PMP host tests and native ARM64 build/inspection
+pass [run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051),
+with independent complete-source/checksum/package/DTB audit. Next: finish
+semantic parity and actual Mesa/UAPI plus exact boot-chain/fallback/J314S
+acceptance review. No live deployment or power win.
 See [the lane's source review and limits](aurora/unified72/README.md).
 
 ## Native Messages experience landed — 2026-10-20

@@ -8,10 +8,18 @@ now pins merged #139 `644133b7799f` with streamed archive SHA256 and new distinc
 stock-bindgen patch is removed from the active series and retained as historical
 provenance. Five GPU-reader and 12 PMP host tests pass on the selected source;
 three old GPU/SEP source gaps are addressed, not all 64 semantic review gates.
-Native ARM64 config/build/package inspection is pending. No host installation or
-boot payload change. Shared-DTB/old-7.1 fallback, actual Mesa/UAPI, upstream M1
+Native ARM64 config/Image/modules/DTBs/package inspection and upload passed
+[run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051)
+at `b213999`; the `.20` control passed too. Independent ZIP/checksum/full-source
+digest/package/J314S-DTB audit passed;
+[receipt](aurora/unified72/native-build-2026-10-21.json). Later audit/test/docs
+edits preserve the recorded build input hashes. No host installation or boot
+payload change. Shared-DTB/old-7.1 fallback, actual Mesa/UAPI, upstream M1
 Touch ID regressions and J314S boot/suspend/recovery remain gates. See
-[the current lane and receipt](aurora/unified72/README.md).
+[the current lane and receipt](aurora/unified72/README.md). The refreshed
+64-patch comparison is 0 forward / 40 reverse / 24 neither: mechanical checks,
+not full semantic parity. The paused kernel task now resumes active PR/CI and
+requires archive, carried-patch and artifact evidence before success claims.
 
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 

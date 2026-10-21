@@ -29,13 +29,38 @@ stop timeout continues suspend. Five original GPU-reader host tests and the nine
 PMP argument-parser plus three PMP reply-correlation tests pass at this source.
 These are bounded host controls, not a GPU/kernel boot or complete 64-fix audit.
 The previous GPU util file had seven tests; the merged file has five, so no
-identical test-count/coverage claim is made.
+identical test-count/coverage claim is made. The two omitted cases test
+`read_up_to` stride consumption and zero extension; that implementation differs
+from `.20` only in a local variable name and formatting.
 
-Native source/config/Image/modules/DTBs/package inspection for this revision is
-pending the existing Aurora enhancement CI. Earlier wip1 build receipts do not
-qualify wip2. Full source/config/toolchain provenance and LICENSES travel with
-its generated artifacts. No local 7.2 boot, power saving or hardware acceptance
-is claimed.
+The [refreshed 64-patch comparison](review-patch-applicability-2026-10-21.json)
+checks the affected immutable files at the new source: zero patches apply
+forward, 40 reverse-apply, and 24 apply in neither direction. These independent
+checks locate follow-up work; they do not qualify 40 fixes or prove that the
+other 24 are absent. No patch was adopted from these checks. Selected source
+inspection also finds the `user4k=on` opt-in, privileged-exec page-size reset and
+perf AUX speculation bound retained. Their runtime tests were not run here.
+
+The Asahi UAPI header differs from `.20` in two comments, with declarations
+unchanged after comment/whitespace removal. Installed Mesa packages were
+`26.0.8-1ubuntu0.3` at observation. Header similarity does not qualify driver
+behavior or actual clients on 7.2; that compatibility gate remains open.
+
+Native source/config/Image/modules/DTBs/package build, inspection and artifact
+upload passed in [run 39595756051](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051)
+at repository commit `b21399953faa576b17f3121087742fb597c872a5`. The unchanged
+`.20` control build passed too. [Independent artifact audit](native-build-2026-10-21.json)
+verified GitHub's ZIP digest, every `SHA256SUMS` entry, the full archived prepared
+source-tree digest, package boundaries and the J314S DTB. Full corresponding
+source, resolved config, toolchain provenance and LICENSES are included. Actions
+retention is seven days; the saved receipt includes its expiry and exact digests.
+
+The old recipe seed emits one `NETFILTER_NETLINK=m` warning; `olddefconfig`
+resolves it to `y`, with `NF_TABLES=m` and `NFT_COMPAT=m` retained. This is not a
+warning-free build claim. Subsequent review/test/documentation changes preserve
+the recorded builder/manifest/workflow hashes; artifact-embedded documentation
+remains the snapshot at the tested commit. Earlier wip1 receipts are separate.
+No local 7.2 boot, power saving or hardware acceptance is claimed.
 
 ## Reproduce in an isolated builder
 
