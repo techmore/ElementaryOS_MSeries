@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-21",
+  "source_repository": "aurora-silicon/linux",
+  "source_commit": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
+  "observed_pr_status": "merged",
+  "current_omacom_integration_observation": "89f1e2bf2e4fac3889ab658fe1a6eb460c122fce",
+  "running_kernel": "7.1.12-elementary-aurora20-enh1",
+  "source_files": [
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/queue/mod.rs",
+      "sha256": "4487dce9dd6062ee80ffcaf0f5cf1d52cf3d247a31f1449247911b09455afcf2"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/gpu/drm/asahi/util.rs",
+      "sha256": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sep.rs",
+      "sha256": "d5e207e37b98105b0c287a815b9fe63d521d968687d1c2239a01bfab8c029cc1"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/drivers/soc/apple/sbio.rs",
+      "sha256": "545d74363f9eb81135d8672eb2e19f7b15349c2415350da69067a5bb2b8fc2c7"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/rust/Makefile",
+      "sha256": "524384d1130cb0c6422b9237907d81967573c411116f96fbb7a8926ac7bd4083"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/Makefile",
+      "sha256": "341195c3615673a7c43656a0a779bbd720553a1d05881e90909ff216ae23fee3"
+    },
+    {
+      "url": "https://github.com/aurora-silicon/linux/blob/644133b7799f759c5bfd88507b6246d298b6509c/COPYING",
+      "sha256": "fb5a425bd3b3cd6071a3a9aff9909a859e7c1158d54d32e07658398cd67eb6a0"
+    }
+  ],
+  "checks": {
+    "gpu_command_tail": "Merged queue calls read_supported for render and compute; production util has validation and five tests.",
+    "sep_autoload": "OF_TABLE remains local, with explicit no-module-alias loader ownership comment.",
+    "sep_capture_drain": "sleep_prepare returns unit; timeout logs then continues, rather than returning EBUSY.",
+    "bindgen_policy": "Stock --no-layout-tests default and BINDGEN_LAYOUT_TESTS opt-in already present; old local patch must not be reapplied blindly."
+  },
+  "executed_tests": {
+    "description": "Unmodified merged-source util.rs original tests with Result/EINVAL-only host shim, equivalent boundary to existing review-host-check.py",
+    "compiler": "rustc +1.93.1 --edition=2021 --test -D warnings",
+    "passed": 5,
+    "failed": 0,
+    "limit": "Host GPU-reader tests only. Older suite expected seven tests; this merged file contains five. No claim of equivalent whole-kernel coverage."
+  },
+  "not_performed": [
+    "full 64-fix semantic parity audit",
+    "source archive checksum/extraction/config resolution",
+    "Image/modules/DTBs/package build",
+    "live image/build-ID binding",
+    "J314S hardware boot, suspend, recovery or energy acceptance"
+  ],
+  "risk_notes": [
+    "Upstream PR reports M1-family Touch ID first-attempt regressions.",
+    "Shared boot.bin DTB set requires old-kernel 5-cell DART compatibility; an old boot entry alone is not proven recovery.",
+    "Only 4.9 GiB approximately available on local filesystem; full build should use existing artifact-only ARM64 CI."
+  ],
+  "next_decision": "Owner returned and requested continuation. Exact intended kernel change is still awaiting clarification; no adoption pin or host kernel changed."
+}

@@ -817,6 +817,37 @@ input method, only its observable effect (composed text arriving instead of a ne
 
 Next: live check of media links; compositor `present()` raise is its own PR (#362).
 
+## Resumed kernel review: merged 7.2 source — 2026-10-21
+
+Owner returned. Focused immutable inspection of merged upstream #139
+`644133b7799f` confirms the older GPU command-tail, SEP autoload and SEP
+capture-drain gaps are addressed in the selected source paths. Five original
+GPU-reader host tests pass with the existing Result/EINVAL-only fixture boundary;
+stock-bindgen opt-in policy is already carried. Full 64-fix parity/config/ARM64
+build and J314S recovery/hardware acceptance remain open. Shared-DTB fallback
+compatibility and upstream M1-family Touch ID regressions need explicit review.
+Only about 4.9 GB local free space: use artifact-only ARM64 CI for a full build.
+Exact intended kernel change is still awaiting owner clarification; no build pin
+or host state changed. [Review receipt](maintenance/2026-10-21/kernel-resume-review.json).
+
+
+## Maintenance trials and kernel application handoff — 2026-10-21
+
+Saved eight paused on-demand maintenance tasks, then manually trialed/audited
+kernel and power in order and refined their prompts. Scheduler/model execution
+was not tested; task 03 has not run. Current observation is `.20-enh1` with the
+Rust compositor; no kernel, boot, display, audio or service changes were made.
+Aurora discovery found 59 branches/23 open PRs. #139 is merged while our 7.2
+snapshot is older; #163 cannot be blindly backported across .20's EBUSY/ENOSPC
+contract. Uncontrolled power medians 17.303 W and 41.203 W prove no saving.
+
+Owner is returning later and wants a kernel change applied next. Exact candidate
+is unspecified: resume with that selection and a pinned isolated source/build
+change, preserving hardware/rollback gates. Full findings, portable receipts,
+refined prompts and the display-capture tooling issue are in
+[the October 21 checkpoint](maintenance/2026-10-21/README.md).
+
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
