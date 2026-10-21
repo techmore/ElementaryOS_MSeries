@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## All three wip2 dock ports pass scoped picture — 2026-10-21
+
+Later rear-left picture supersedes initial failure. All 3 ports show 1080p/60;
+one-cycle polling≈4.5s partner→active desktop each, with label/boundary corrections
+and 0.5 s resolution disclosed. Not a speed ranking or pixel latency benchmark.
+New read-only timing tool and 5 tests; existing 71 Aurora tests pass after dev
+conflict resolution. Next dev merge, exact lifecycle tracing and actual `.20`
+recovery; boot default unchanged, no stable promotion/power claim.
+[Timing follow-up](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
 ## Aurora 7.2 first boot: GPU/fsync pass, port acceptance incomplete — 2026-10-21
 
 Actual wip2 boot/Image identity, package/91 early modules and unchanged legacy
@@ -1211,7 +1221,7 @@ reopened Claude as524238; CLI and desktop identity hints matched the requested
 target. Owner independently confirmed the correct main-UI account.
 
 The operation exported/imported34 local Code conversations, with zero unavailable.
-All34 destination records, transcripts and workspace directories exist; session,
+All 34 destination records, transcripts and workspace directories exist; session,
 CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
 Claude's own post-start logs loaded13 active records from the exact target index
 (nine imported plus four existing) and25 deferred archived records. Initial

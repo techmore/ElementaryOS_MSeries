@@ -1,5 +1,14 @@
 # J314S wip2: first boot recorded, qualification incomplete
 
+## Latest per-port follow-up
+
+All three ports now show a dock picture, owner-confirmed; initial rear-left blank
+screen resolved after delay. [Exact follow-up and pilot timings](../hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md)
+supersedes that initial failure. One-shot remains consumed; default `.20`.
+Reuse these completed scoped checks. Actual recovery/suspend/power acceptance is
+still open. Detailed display lifecycle logging is a separate follow-up, with
+current working debounce/recovery behavior preserved.
+
 ## Actual first-boot state, October 21, 2026
 
 Wip2 booted and matched its audited Image/live build ID. Scoped five-minute

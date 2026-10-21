@@ -2,19 +2,18 @@
 
 ## Current host state — October 21, 2026
 
-**Wip2 has booted.** Exact live Image identity/package/modules and unchanged
-legacy shared payload verified. Scoped boot/PMP/idle, real M1 Pro GPU
-shader/readback and 1 MiB fsync pass. Owner confirms internal display/input and
-front-left dock picture, slow to appear; hinge-side left picture fails and right
-port is untested. External 1080p/60 is observed. No all-port/stable/suspend/power
-qualification. One-shot is consumed; `.20` remains persistent default.
-[First-boot report](../hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md),
-[summary](first-boot-2026-10-21.json). Next: matched port acceptance and actual
-`.20` recovery. Do not re-arm automatically.
+**Wip2 has booted and all three USB-C ports show a dock picture.** Later
+rear-left recovery supersedes the initial blank-screen report. Real M1 Pro
+shader/readback, 1 MiB fsync, boot/PMP/idle and internal input pass within their
+recorded scope. External 1080p/60 on each port. One-shot consumed; `.20` remains
+persistent default. No stable promotion, suspend/recovery or energy claim.
 
-Both repeat CI matrix jobs passed run 39601423970; installed package remains the
-independently audited original successful native-build artifact. Historical
-[arming receipt](one-shot-armed-2026-10-21.json) precedes this actual boot.
+[All-port follow-up and pilot timings](../hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md):
+about 4.5 s partner-detection→active desktop per port, one cycle each with 0.5 s polling;
+label/boundary corrections disclosed, not physical insertion→visible-pixel latency.
+[First-boot history](../hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md),
+[upstream review](UPSTREAM-CANDIDATES.md). Both repeat native CI matrix jobs pass;
+kernel build inputs unchanged since tested b213999. No automatic re-arm.
 
 ## Merged source refresh — October 21, 2026
 

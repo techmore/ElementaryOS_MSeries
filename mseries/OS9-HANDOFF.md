@@ -1,5 +1,29 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora 7.2 all three dock ports working; pilot timing — 2026-10-21
+
+Owner later confirms **rear-left nearest hinge works**; the earlier blank-screen
+report was transient and is superseded. Front-left closest to owner and right
+also show picture; front/right input explicitly confirmed. All three external
+modes observed at 1080p/60. No agent driver/service/runtime change caused this
+recovery. [Follow-up and pilot timings](aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+
+One cycle per port: partner→dock≈3s, dock→monitor≈1s, monitor→desktop≈0.5s,
+partner→active desktop≈4.5s. Poll resolution 0.5 s plus query delay; not cable-insertion
+or visible-pixel latency, no statistical ranking. Front boundary recovered from
+retained events and regression-fixed; prior mislabelled rear run corrected by
+owner sidecar. Original receipts retained. Five timing state-machine tests and
+71 Aurora repository tests pass after merging current dev into this branch.
+Only merge conflict was both parties' prepended handoff entries; both preserved.
+Kernel builder/manifest/native-workflow bytes still match tested b213999.
+
+Next: merge this experimental kernel/qualification lane into dev after current
+review/checks, keeping `.20` persistent boot default. No stable-kernel promotion,
+automatic re-arm or reboot. Actual `.20` recovery/suspend/power still pending.
+Display lifecycle logging and attention integration are separate deployment
+work, preserving the current dock/panel/popup lineage. Upstream review identifies
+only a host-fixture candidate, not a newly authored dock kernel fix.
+
 ## Aurora 7.2 first boot: scoped pass; rear-left dock picture fails — 2026-10-21
 
 Owner rebooted into `7.2.10-elementary-aurora72-wip2`. Live build ID

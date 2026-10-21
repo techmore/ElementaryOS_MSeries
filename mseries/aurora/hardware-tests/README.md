@@ -1,6 +1,14 @@
 # Hardware test receipts and release freezes
 
 
+## October 21 follow-up: all three dock ports show picture
+
+Owner's later rear-left confirmation supersedes initial failure. Front-left,
+rear-left and right each show external 1080p/60. Pilot one-cycle timings≈4.5s
+partner-detection→desktop per port; 0.5 s polling and corrections disclosed.
+[Follow-up](2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+Source/kernel unchanged; no stable/recovery/suspend/power qualification follows.
+
 ## October 21: first 7.2 wip2 boot, incomplete qualification
 
 [Report](2026-10-21-j314s-wip2-first-boot/REPORT.md): live Image/build ID,

@@ -1,6 +1,9 @@
 # J314S Aurora 7.2 wip2: first attended boot, October 21, 2026
 
-**Scoped success with a port-specific dock failure; incomplete qualification.**
+**All three ports later show a dock picture; qualification remains incomplete.**
+The [later owner confirmations and timings](PORT-TIMINGS.md) supersede the initial
+rear-left failure below. Original first-boot receipts remain historical evidence.
+
 The actual boot is `7.2.10-elementary-aurora72-wip2`; live build ID
 `e33ad2aa657320824a246a3b04814accdb31df1e` matches the audited Image.
 One-shot consumed (`next_entry` empty); persistent default stays `.20`.
@@ -22,7 +25,7 @@ Old fallback files and the selected shared `boot.bin` remain unchanged.
   address warning also occurred in the previous `.20-enh1` boot. They are not
   silently classified as harmless or a new regression.
 
-## Physical port findings — use the owner's final correction
+## Initial physical port observations — superseded by later recovery
 
 | Mac USB-C position | Owner result | Scope |
 | --- | --- | --- |
@@ -59,7 +62,8 @@ hotplug actions; no idle baseline, A/B or energy saving. Raw journal data,
 private snapshots and device inventory remain under the owner's private outputs
 directory and are not committed.
 
-Next: matched per-port acceptance, then attended return to `.20` to demonstrate
+All three ports have since passed scoped visual acceptance; see the timing
+follow-up. Next: attended return to `.20` to demonstrate
 fallback recovery before suspend and power testing. Do not re-arm automatically,
 change persistent default, or call this a stable promotion. Full 64-fix semantic
 qualification and earlier source-review limits remain open.
