@@ -88,9 +88,9 @@
     {
       "file": "mseries/patches/dock-taskbar-repobar.patch",
       "rule": "font-abs",
-      "match": "font-size: 20pt",
+      "match": "font-size: 24pt",
       "count": 2,
-      "reason": "Owner-chosen RepoBar taskbar readout size (#382; raised to 20pt); intentionally not scaled by the ladder. Do not change without the owner."
+      "reason": "Owner-chosen RepoBar taskbar readout size (#382; raised to 24pt, which keeps two stacked rows inside the 72 px taskbar); intentionally not scaled by the ladder. Do not change without the owner."
     },
     {
       "file": "mseries/patches/dock-taskbar.patch",

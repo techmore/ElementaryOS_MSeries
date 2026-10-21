@@ -91,6 +91,11 @@ namespace MSeriesTouchId {
                 ?? "/usr/local/sbin/mseries-aurora-touchid-apply-pam";
         }
 
+        /* A directory of fake driver attributes for the tests. */
+        public static string? diag_dir () {
+            return test_mode () ? hook ("MSERIES_TOUCHID_DIAG_DIR") : null;
+        }
+
         public static string user () {
             return GLib.Environment.get_user_name ();
         }
