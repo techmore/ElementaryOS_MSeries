@@ -9713,6 +9713,17 @@ and end-to-end link opening remain unverified until the next login.
   activation bus/runtime/display. The actual-manager fatal-critical test also
   exposed an upstream BackgroundItem constructor self-capture; the equivalent
   static map callback fixes that baseline critical without changing icon mapping.
+- Hosted run39657218371 exposed a test-host assumption: Granite fell back to real
+  AccountsService because the fixture lacked a settings portal. Reproduced the
+  same Settings.vala:114 failure locally on a private bus with no Accounts service.
+  Fixtures now serve typed appearance values in a separate private portal process:
+  historical Read has two variant layers; ReadOne has one; color-scheme is uint32
+  and accent-color is a double triple. Unknown keys fail explicitly. The same
+  private no-activation bus serves as the logical system bus, with read-only
+  Switcheroo false/empty-GPU properties; AccountsService remains absent. Outer
+  marker/hover and nested launcher tests use these isolated services too.
+  Full native build/interaction suite, fatal-critical cached-widget fixture and
+  protocol preflights pass locally; owner system services are excluded.
 - RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
   relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
   Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar

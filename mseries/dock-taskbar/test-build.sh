@@ -18,10 +18,34 @@ BUS
     dbus-run-session --config-file="$isolated/bus.conf" -- bash "$0"
   exit
 fi
+# The reachable private bus also serves as the logical system bus; optional
+# service requests must never reach the host system bus.
+export DBUS_SYSTEM_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS"
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 commit=8b45a68a122947ad3a6427bf6e159ec2acf04ad0
 work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
+portal_pid=
+cleanup() {
+  if [[ -n $portal_pid ]]; then
+    kill "$portal_pid" 2>/dev/null || true
+    wait "$portal_pid" 2>/dev/null || true
+  fi
+  rm -rf "$work"
+}
+trap cleanup EXIT
+export QUAL_PORTAL_READY="$XDG_RUNTIME_DIR/dock-portal-ready"
+python3 "$here/../dock-tests/test-launcher-qualification.py" --portal &
+portal_pid=$!
+python3 - "$QUAL_PORTAL_READY" "$portal_pid" <<'PYREADY'
+from pathlib import Path
+import os,sys,time
+ready = Path(sys.argv[1])
+deadline = time.monotonic() + 10
+while not ready.exists():
+    os.kill(int(sys.argv[2]), 0)
+    assert time.monotonic() < deadline, 'Private portal readiness timed out'
+    time.sleep(0.02)
+PYREADY
 mkdir "$work/source"
 if [[ -n ${MSERIES_DOCK_SOURCE:-} ]]; then
   [[ $(git -C "$MSERIES_DOCK_SOURCE" rev-parse HEAD) == "$commit" ]]

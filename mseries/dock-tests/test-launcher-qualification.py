@@ -28,11 +28,27 @@ def portal_service():
     from gi.repository import Gio, GLib
     xml = '<node><interface name="org.freedesktop.portal.Settings"><method name="Read"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="v" direction="out"/></method><method name="ReadOne"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="v" direction="out"/></method><method name="ReadAll"><arg type="as" direction="in"/><arg type="a{sa{sv}}" direction="out"/></method></interface></node>'
     connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    appearance = {
+        'color-scheme': GLib.Variant('u', 0),
+        'accent-color': GLib.Variant('(ddd)', (0.21, 0.54, 0.90)),
+        'contrast': GLib.Variant('u', 0),
+    }
     def call(connection, sender, path, interface, method, params, invocation):
         if method == 'ReadAll':
-            invocation.return_value(GLib.Variant('(a{sa{sv}})', ({},)))
+            import fnmatch
+            patterns, = params.unpack()
+            values = {'org.freedesktop.appearance': appearance} if not patterns or '' in patterns or any(
+                fnmatch.fnmatchcase('org.freedesktop.appearance', pattern) for pattern in patterns) else {}
+            invocation.return_value(GLib.Variant('(a{sa{sv}})', (values,)))
         else:
-            invocation.return_value(GLib.Variant('(v)', (GLib.Variant('u', 0),)))
+            namespace, key = params.unpack()
+            if namespace != 'org.freedesktop.appearance' or key not in appearance:
+                invocation.return_dbus_error('org.freedesktop.portal.Error.NotFound', 'Unknown fixture setting')
+            else:
+                # Deprecated Read preserves the portal's historical double boxing;
+                # ReadOne is the corrected API with a single variant layer.
+                value = GLib.Variant('v', appearance[key]) if method == 'Read' else appearance[key]
+                invocation.return_value(GLib.Variant('(v)', (value,)))
     connection.register_object('/org/freedesktop/portal/desktop', Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0], call, None, None)
     connection.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'RequestName', GLib.Variant('(su)', ('org.freedesktop.portal.Desktop', 0)), None, Gio.DBusCallFlags.NONE, 5000, None)
     appcenter_xml = '<node><interface name="io.elementary.appcenter"><method name="GetComponentFromDesktopId"><arg type="s" direction="in"/><arg type="s" direction="out"/></method><method name="SearchComponents"><arg type="s" direction="in"/><arg type="as" direction="out"/></method></interface></node>'
@@ -40,11 +56,20 @@ def portal_service():
         invocation.return_value(GLib.Variant('(s)', ('',)) if method == 'GetComponentFromDesktopId' else GLib.Variant('(as)', ([],)))
     connection.register_object('/io/elementary/appcenter', Gio.DBusNodeInfo.new_for_xml(appcenter_xml).interfaces[0], appcenter_call, None, None)
     connection.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'RequestName', GLib.Variant('(su)', ('io.elementary.appcenter', 0)), None, Gio.DBusCallFlags.NONE, 5000, None)
+    # The fixture's logical system bus is this same private no-activation bus.
+    # A real Launcher consults these read-only properties while constructing menus.
+    switcheroo_xml = '<node><interface name="net.hadess.SwitcherooControl"><property name="HasDualGpu" type="b" access="read"/><property name="GPUs" type="aa{sv}" access="read"/></interface></node>'
+    gpu_properties = {'HasDualGpu': GLib.Variant('b', False), 'GPUs': GLib.Variant('aa{sv}', [])}
+    def gpu_property(connection, sender, path, interface, prop):
+        return gpu_properties[prop]
+    connection.register_object('/net/hadess/SwitcherooControl', Gio.DBusNodeInfo.new_for_xml(switcheroo_xml).interfaces[0], None, gpu_property, None)
+    connection.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'RequestName', GLib.Variant('(su)', ('net.hadess.SwitcherooControl', 0)), None, Gio.DBusCallFlags.NONE, 5000, None)
     Path(os.environ['QUAL_PORTAL_READY']).touch()
     GLib.MainLoop().run()
 
 
 def inside(binary, output, theme):
+    os.environ['DBUS_SYSTEM_BUS_ADDRESS'] = os.environ['DBUS_SESSION_BUS_ADDRESS']
     assert os.environ['GDK_BACKEND'] == 'x11'
     assert os.environ.get('QUAL_PRIVATE') == '1'
     assert os.environ.get('DISPLAY') and not os.environ.get('WAYLAND_DISPLAY')
@@ -174,7 +199,10 @@ def main():
                    'QUAL_EVENTS': str(home/'events'), 'GTK_THEME': 'io.elementary.stylesheet.blueberry'+(':dark' if theme=='dark' else '')}
             for key in ['DISPLAY', 'WAYLAND_DISPLAY', 'WAYLAND_SOCKET', 'DBUS_SESSION_BUS_ADDRESS']:
                 env.pop(key, None)
-            sp.run(['dbus-run-session', '--', 'xvfb-run', '-a', '-s', '-screen 0 1280x900x24', sys.executable, __file__, binary, str(output), '--inside', theme], env=env, check=True)
+            bus_config = home / 'bus.conf'
+            bus_config.write_text('<busconfig><type>session</type><listen>unix:tmpdir=/tmp</listen>'
+                '<policy context="default"><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>')
+            sp.run(['dbus-run-session', '--config-file=' + str(bus_config), '--', 'xvfb-run', '-a', '-s', '-screen 0 1280x900x24', sys.executable, __file__, binary, str(output), '--inside', theme], env=env, check=True)
 
 
 if __name__ == '__main__':
