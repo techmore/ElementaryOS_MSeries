@@ -1,3 +1,20 @@
+## Touch ID page in System Settings — 2026-10-21
+
+New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
+Switchboard plug), modelled on macOS *Touch ID & Password*: fingerprint list, Add Fingerprint sheet with a print that
+fills per touch, Remove with confirmation, and switches for Terminal Commands (`sudo`) and System Authorization (polkit).
+Login/lock screen is shown disabled (lock-screen PAM service still unidentified).
+
+- Installed on this machine (plug, `/usr/local/sbin/mseries-aurora-touchid-apply-pam`, polkit action); loads next time
+  Settings opens. Opening the page wakes the sensor. The old per-user stand-alone launcher was removed.
+- `mseries-aurora-touchid-apply-pam` now takes `--only sudo|polkit-1` and `--remove`.
+- Verified: PAM helper test (scratch dir), 12 UI checks against a fake fprintd on a private bus and virtual display
+  (states, `sudo` switch writes only `sudo`, sheet stops enrolment and releases the sensor on close), light/dark
+  screenshots, and the real `io.elementary.settings` loading the installed plug against the fake.
+- **Not verified:** enrolment and matching against the real Secure Enclave from this page; PAM changes on `/etc/pam.d`;
+  the `pkexec` prompt wording. Next: supervised first enrolment (fprintd only, xART protections on, password fallback),
+  then identify the lock screen's PAM service.
+
 ## Daedalus portal and NmapUI on this desktop — 2026-10-21
 
 Work done from this repo's session for the owner's "daedalus production ready" and
