@@ -51,8 +51,11 @@ any dock setting change: `$XDG_STATE_HOME/mseries/ui-scale-policy.ini` (default:
 `version=1` and boolean `managed`; missing, malformed, unsupported-version or
 unmanaged markers preserve the legacy 48 px taskbar. Native mode still reads
 `icon-size` regardless of adoption. The JSON remains the only dock-token source.
-`--unmanage` publishes false, leaving current settings untouched; the fallback
-applies on the next normal dock setting/mode refresh. The marker is a generated
+`--unmanage` publishes false, leaving stored settings untouched. A shared native
+policy monitor observes atomic replacement, deletion and malformed-policy changes;
+it refreshes existing launcher icon caches, group layout and separator heights
+without requiring the stored icon size to change. The directory monitor is registered
+before its initial read so first adoption cannot fall between reading and watching. The marker is a generated
 implementation detail, not a user preference. Unique temporary files avoid
 concurrent CLI/watcher writers colliding.
 
@@ -99,7 +102,14 @@ the dock follows the ladder. `mseries-ui-scale --unmanage` stops it.
 
 The native taskbar-policy fixture compiles the exact production methods from the
 patch and checks every dock token plus unmanaged/malformed/version fallbacks on
-isolated settings. The complete prepared dock source builds without installation.
+isolated settings. The complete prepared native dock fixture also creates actual
+Launcher/ItemGroup/ItemManager widgets, keeps `icon-size=40` unchanged, then checks
+adoption, unmanage, malformed and deleted policy transitions update cached icons,
+group geometry and separator height. Its service activation is disabled and runtime,
+D-Bus, settings and display are private. The complete prepared source builds without
+installation. Constructing the real manager with fatal criticals also exposed an
+upstream pre-construction callback capture in `BackgroundItem`; its map callback
+is now static with identical icon ownership and results.
 RepoBar/CodexBar fixture scripts now retain `GDK_SCALE=1|2` through `env -i`, assert
 the actual window scale, and save scale/dimension metadata. Scale2 names have a
 suffix. PNG snapshots use logical widget coordinates; identical PNG dimensions

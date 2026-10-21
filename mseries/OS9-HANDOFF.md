@@ -9721,7 +9721,13 @@ and end-to-end link opening remain unverified until the next login.
   unadopted, malformed or unsupported-version policy retains the legacy 48px
   taskbar. The CLI publishes a versioned private adoption marker before changing
   icon settings, using unique atomic temporaries for concurrent CLI/watcher writes.
-  Quick Settings adoption also reconciles the existing font policy.
+  Quick Settings adoption also reconciles the existing font policy. A shared native
+  policy monitor refreshes already-created launcher/group/separator caches when
+  adoption changes without a settings change; monitor registration precedes reading.
+  Actual widget transitions are tested with icon-size held40 on a private no-service
+  activation bus/runtime/display. The actual-manager fatal-critical test also
+  exposed an upstream BackgroundItem constructor self-capture; the equivalent
+  static map callback fixes that baseline critical without changing icon mapping.
 - RepoBar/CodexBar, legacy Orchard and Start-menu font declarations now use
   relative units. Expanded strict lint covers Machine Lab, Battery, Screenshot
   Shelf, native Orchard and OpenCode login. The owner's explicit RepoBar taskbar
