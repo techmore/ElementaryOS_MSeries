@@ -26,7 +26,15 @@ The Overview tab's setup check tells you which of these is missing and how to fi
 
 ## Display
 
-Starting a machine opens its Display tab: the guest's screen at about 30 fps with its own mouse and keyboard.
+Starting a machine opens its Display tab: the guest's screen with its own mouse and keyboard. Machine Lab takes the picture from
+QEMU's D-Bus display, which pushes only what changed (an idle machine costs nothing); if that is not available it falls back to
+polling about 30 times a second. The guest's own pointer shape is shown as the pointer over the screen.
+
+**Screen size.** By default the machine's screen follows the Display tab: resize the window, or go full screen, and about half a
+second after you stop, the guest is asked for that size (a multiple of 8, between 640x480 and 7680x4320). This needs a virtual monitor
+that can change size (virtio-gpu, which Machine Lab machines use; the Windows setup framebuffer cannot, and the button turns grey). The
+button next to full screen turns it off, in which case the machine keeps its current size and the picture is scaled to fit. The guest
+desktop has to react to a monitor change; GNOME and elementary OS do. Not yet confirmed on a live guest.
 
 | Action | How |
 | --- | --- |
