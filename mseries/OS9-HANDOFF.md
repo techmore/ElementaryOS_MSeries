@@ -9674,4 +9674,4 @@ no longer fetches Hermes or installs its dependency lock, and the assistant
 configurator no longer creates a Hermes profile or desktop launcher. The unused
 `mseries/local-ai/hermes-requirements.lock` was removed. Existing Hermes source,
 venv, config, state, and any previously generated desktop launcher in a user's
-home were not deleted by this source change. Newelle and Crush setup remains unchanged.
+home were not deleted by this source change. Newelle and Crush setup remains unchanged. Factory payload staging now skips empty optional local-AI lock globs; the installer setup, image-wiring, and display-space regressions pass.

@@ -26,6 +26,7 @@ that conflict without changing Browser Harness.
 - `python3 -m py_compile mseries/local-ai/configure-assistants.py`
 - `python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'` — 72 passed
 - `git diff --check`
+- Follow-up CI found factory payload scripts rejected an empty `local-ai/*.lock` glob after the last lock was removed. `mseries/enhance.sh` now skips unmatched optional file patterns; the installer setup, image-wiring, and display-space regressions all pass locally (6 + 6 + 15 tests).
 
 This receipt records source-level retirement only. No user-home environment or launcher was
 modified, and no deployment or hardware qualification was performed.
