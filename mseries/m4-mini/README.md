@@ -1,6 +1,6 @@
 # M4 Mac mini preparation
 
-**Latest hosted result:** Kernel, GLVND Mesa and boot-chain jobs have succeeded.
+**Hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs have succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
 prepared inputs resolve the full image graph; complete image assembly and native
 M4 support remain unvalidated.
@@ -8,6 +8,9 @@ M4 support remain unvalidated.
 [Mesa](receipts/2026-10-21-hosted-mesa-success.json),
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
+
+The newly identified scheduler initialization backport is revision 3 and is
+not included in those baseline results. Its full compile is pending below.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
@@ -933,3 +936,5 @@ evidence only. Its completion cannot prove this newly discovered issue fixed.
 No reference image/package promotion has occurred; a validated revision-3
 kernel and matched image replay are needed before accepting the updated stack.
 [Head observations and backport preflight](receipts/2026-10-21-scheduler-backport-preflight.json).
+
+Revision-3 scheduler kernel run [39709872273](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39709872273) dispatched at `645ee9085def4cdd0d591a403e977727d87682dc`. Source preflight passes; full compile/package results remain pending. [Dispatch snapshot](receipts/2026-10-21-scheduler-kernel-run.json).

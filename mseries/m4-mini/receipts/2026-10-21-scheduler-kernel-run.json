@@ -1,0 +1,11 @@
+{
+  "run_id": 39709872273,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39709872273",
+  "source_head": "645ee9085def4cdd0d591a403e977727d87682dc",
+  "status_at_capture": "in_progress",
+  "scope": "full revision3 kernel compile/package with source-gated scheduler backport; no native runtime result",
+  "baseline_kernel_run": 39698975678,
+  "baseline_image_run": 39708881382,
+  "hardware_validated": false,
+  "factory_promotion": false
+}

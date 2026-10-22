@@ -3958,3 +3958,7 @@ New Aurora ed55042 scheduler initialization fixes apply to Gravity/M4 shared
 Rust Scheduler. Staged a separate compatibility backport and kernel DEB r3;
 exact-source no-fuzz/hash preflight passes, full compile pending. Active image
 39708881382 remains r2 baseline only. No new source-contract/firmware relaxation.
+
+Scheduler-fixed kernel r3 run39709872273 dispatched at645ee908. Existing
+image39708881382 remains r2 baseline. Follow both exact runs; no fixed-kernel
+compile/runtime or updated-image result yet.

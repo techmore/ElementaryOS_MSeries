@@ -10,7 +10,7 @@ repeatedly request an inventory until availability changes.
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Current source selection | Gravity kernel/Mesa heads rechecked; selected mainline/Aurora comparisons retained | Track future changes as separate candidates; do not mix firmware contracts |
-| Kernel | Hosted build and downloaded-package checks pass; full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Final-DT RAM/ramoops checker passes synthetic tests; actual 16 GB map and runtime stability still needed |
+| Kernel | Baseline r2 hosted build/download checks pass; new scheduler-initialization backport r3 is compiling; full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Final-DT RAM/ramoops checker passes synthetic tests; actual 16 GB map and runtime stability still needed |
 | Boot chain | Hosted boot-chain build and downloaded-bundle FAT checks pass; both NO_DISPLAY bootloader stages compile; selected U-Boot wrapper passes with matching config; bundle and synthetic ESP readback pass | Native handoff with required GPU/DCP firmware and owner OS authorization |
 | Userspace | Hosted Mesa GLVND build, five AGX groups and downloaded-package software checks pass; 1,626-package research desktop root configured; package/library/schema/session-file checks, Mesa software rendering and real Casper pass | Native M4 GPU/KMS, graphical login and applications |
 | Initramfs/EFI | Archive/early modules and real Casper live-hook replay pass; exact research EFI payloads and repeatability checked | Actual root identity and boot on mini; test label is not an owner partition |
