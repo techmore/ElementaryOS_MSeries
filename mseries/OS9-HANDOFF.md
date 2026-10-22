@@ -23,7 +23,8 @@ The shared SDK now formats BlueFerry ISO timestamps in the local timezone with
 stable calendar labels (Today, Yesterday, weekday, or date plus year) and a
 12-hour clock, matching the qualified Python client's behavior. Invalid values
 fall back to a short, single-line label. The Rust Messages conversation list
-and message bubbles use the formatter instead of showing raw ISO strings.
+uses compact local labels, and the message timeline uses centered local
+date/time headings instead of raw ISO strings.
 
 **Source/build validation:** `cargo fmt --manifest-path rust/Cargo.toml
 --package mseries-pantheon-kit --package mseries-messages`, `cargo check
@@ -48,6 +49,25 @@ Search does not request more history or log query text.
 rust/Cargo.toml -p mseries-messages`, strict Clippy with warnings denied, and
 `git diff --check` passed. No test suite or GUI interaction was run for this
 change. Next: verify search navigation and clearing on the owner session.
+
+## Rust Messages conversation grouping — 2026-10-22
+
+The shared Rust Pantheon SDK now turns message timestamps into timeline
+presentation hints: messages within five minutes group by direction and, for
+groups, sender; a centered local date/time heading appears at the start of a
+day or after a 30-minute gap. Group messages show the sender once per run.
+Unparseable timestamps stay isolated and use the SDK's safe one-line caption.
+The Rust view uses these hints to tighten spacing between grouped bubbles,
+bringing it closer to the current Python Messages client without changing
+BlueFerry transport or history policy.
+
+**Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml
+--package mseries-pantheon-kit --package mseries-messages`, `cargo check --locked
+--manifest-path rust/Cargo.toml -p mseries-messages`, strict Clippy with warnings
+denied, and `git diff --check` passed. No test suite or GUI render was run.
+Next: inspect long runs, group sender changes, day boundaries, invalid
+timestamps, and narrow windows on the owner session. Phone and accessibility
+acceptance remain open.
 
 ## Disk Space SDK scaling pass — 2026-10-22
 
