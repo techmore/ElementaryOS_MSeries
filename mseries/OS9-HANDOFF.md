@@ -11367,3 +11367,22 @@ mseries/m4-mini/receipts. Both modified workflow YAML files parse successfully.
 Combined Mesa compiler candidate session 37929 remains live, rebuilding the
 actual compiler/NIR libraries and dependent tests. Seven NIR cases are still
 pending. The remote r5 kernel 39721608135 is also live; neither build was restarted.
+
+Combined Mesa PR1 + rodata-errors + scoped helper-divergence build now PASSES.
+All five AGX groups, four actual-NIR semantic cases, three expected stage guards,
+private staging and isolated llvmpipe pass. The helper keeps layer and derived
+sum divergent while workgroup ID is uniform; ordinary fragment and compute
+behavior remain correct, and no-opt-in/index/shared fragment cases hit expected
+assertions. These are userspace tests with core dumps disabled, not kernel faults.
+All six PR1 source originals were restored after the completed trial. Existing
+build outputs are the combined candidate; do not reuse as PR1 without rebuild.
+Receipts: 2026-10-22-mesa-combined-candidate-build.json and
+2026-10-22-mesa-helper-divergence-tests.json under mseries/m4-mini/receipts.
+
+The corrected candidate is still unselected by the production research recipe.
+Next: bind all eight public PR changes plus the two reviewed follow-ups into a
+versioned Mesa compatibility/source manifest, retain historical v4 validation,
+include the exact patches in corresponding-source/reproduction artifacts, build
+and check a fresh research package, then update image inputs only after successful
+hosted component verification. Native full tile-pipeline rendering, compositor
+DMA-BUF imports and hardware remain unqualified. R5 kernel 39721608135 is live.

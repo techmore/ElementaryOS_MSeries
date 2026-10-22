@@ -27,8 +27,10 @@
     }
   },
   "divergence_patch_sha256": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
-  "scope": "combined unselected source candidate; full build and seven actual-NIR cases currently running",
+  "scope": "combined unselected source candidate; full Mesa build, five AGX groups, seven actual-NIR cases and isolated llvmpipe pass; no hardware",
   "divergence_patch": "0001-nir-fragment-workgroup-id-divergence.patch",
   "requires_rodata_candidate": "../rodata-errors/manifest.json",
-  "selected_by_default": false
+  "selected_by_default": false,
+  "full_driver_compiled": true,
+  "real_nir_cases": 7
 }
