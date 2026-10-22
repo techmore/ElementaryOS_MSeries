@@ -29,6 +29,17 @@
   "isolated_acp_tests": 12,
   "temporary_test_threads_archived": true,
   "same_thread_context_carryover": "passed; second T3 turn recalled a synthetic token from the first turn",
+  "read_only_t3_system_status_tool": "completed through the production MCP adapter",
+  "fresh_process_session_load": {
+    "first_process_real_model_turn": "completed and saved",
+    "second_process_session_load": "passed from an isolated temporary state directory",
+    "post_restart_model_recall": "passed"
+  },
+  "live_provider_readiness": {
+    "providers": ["codex", "claudeAgent", "grok", "opencode", "acp-mseries-assistant"],
+    "states": "all enabled, installed, ready",
+    "account_identity_or_credentials_recorded": false
+  },
   "scope_note": "Two real local-model tool round trips; not a broad quality or daily-use qualification.",
   "liquid_24b_preflight": {
     "available_gib": 10.56,

@@ -121,9 +121,11 @@ fresh ACP 0.3.0 thread then used the same tool for 12:15 + 45 minutes and
 returned `13:00`; both projections completed, and both temporary verification
 threads were archived. These are two end-to-end turns, not general
 model-quality or daily-use qualification. A separate same-thread follow-up
-also recalled a synthetic token correctly across two T3 turns. ACP
-`session/load` after an agent-process restart remains unqualified through live
-T3.
+also recalled a synthetic token correctly across two T3 turns. A separate
+real-model bridge test saved a turn, exited the first ACP process, loaded the
+session in a fresh process, and recalled its token. The production T3 path also
+completed a read-only `system_status` call. T3 server restart and reattachment
+remain unqualified.
 
 The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
 GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights
@@ -139,10 +141,10 @@ desktop trial. The ANE-backed Parakeet path is speech transcription, not
 conversational inference. See `local-ai/README.md` and
 `local-ai/APP-INTEGRATION.md` for source links and remaining gates.
 
-Next: qualify multi-turn session restoration and more representative assistant
-workflows before claiming daily use. Recheck the memory admission gate before
-any Liquid 24B trial, and qualify ANE inference only through a supervised local
-endpoint.
+Next: qualify T3 server restart and reattachment plus more representative
+assistant workflows before claiming daily use. Recheck the memory admission
+gate before any Liquid 24B trial, and qualify ANE inference only through a
+supervised local endpoint.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 

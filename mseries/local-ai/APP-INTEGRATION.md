@@ -95,16 +95,21 @@ verification threads were archived. These two T3-to-local-model-to-MCP turns
 do not qualify broader answer quality or daily-use reliability. A separate
 two-turn T3 thread also passed a synthetic context-carryover check: after the
 first turn stored a token in the conversation, the second turn recalled it.
-Agent-process restart and ACP `session/load` recovery still need a live T3
-qualification.
+Another completed T3 thread invoked the production read-only `system_status`
+tool. The installed bridge then passed a real-model process-restart check in
+isolated temporary state: process one saved a turn, process two loaded the
+same ACP session and recalled its token. This verifies bridge `session/load`
+after process exit; T3's own server restart and reattachment flow remains open.
 
 The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
 (`acp-mseries-assistant`); its live config reports `installed=true` and
 `status=ready`, confirming that the server found and initialized the bridge.
 The four existing authenticated providers retained their enabled/installed/auth
-states when this entry was added. Actual model inference remains unqualified
-because the supervised model endpoint was offline; the successful synthetic
-tool-call receipt is an adapter check, not model-quality evidence.
+states when this entry was added. A fresh live config read reports Codex,
+Claude, Grok, OpenCode, and MSeries Assistant installed, enabled and ready.
+The local provider has completed two real model/tool turns plus a read-only
+system-status turn. The earlier synthetic tool-call receipt remains an adapter
+check; these short local turns do not establish broad model quality.
 
 Pantheon's provider setup source now recognizes ACP readiness from the
 T3-reported session status instead of requiring OAuth auth state, and offers
