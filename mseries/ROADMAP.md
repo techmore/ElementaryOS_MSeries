@@ -3987,3 +3987,7 @@ three bside definitions fixes it with identical GPT metadata and active signatur
 verity verification intact; CI now runs fixture. Three scheduler KUnit cases
 PASS on QEMU virt. Accelerator not separately logged; do not assert forcedTCG.
 Negative-control/restoration native session26302 active. Full image replay next.
+
+Baseline image replay39713917690 atcc10d6ef is active with standby export fix
+and signed fixture gate. Kernel r3 39709872273 and native negative/restoration
+control26302 are independent; follow exact handles, do not duplicate.

@@ -1051,3 +1051,5 @@ the actual selected backend. Broader lifetime/aliasing/NoDevice gates remain
 open. A dirty-storage-only negative control is running separately, followed
 by restoring and retesting the positive sources.
 [Positive KUnit result](receipts/2026-10-21-scheduler-kunit-positive.json).
+
+Standby-split-corrected image replay [39713917690](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39713917690) dispatched at `cc10d6ef85fa4111ef0ed207979e24084d4bfb64`. This remains the revision-2 baseline image; fixed scheduler kernel compilation is separate. [Dispatch snapshot](receipts/2026-10-21-hosted-image-retry-3.json).

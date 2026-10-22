@@ -1,0 +1,12 @@
+{
+  "run_id": 39713917690,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39713917690",
+  "source_head": "cc10d6ef85fa4111ef0ed207979e24084d4bfb64",
+  "status_at_capture": "in_progress",
+  "scope": "baseline r2 full image with standby split fix and signed-fixture gate; r3 scheduler kernel separate",
+  "scheduler_kernel_run": 39709872273,
+  "native_control_session": 26302,
+  "complete_factory_image_built": false,
+  "hardware_validated": false,
+  "installer_admission": false
+}
