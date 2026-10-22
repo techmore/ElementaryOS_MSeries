@@ -1,3 +1,20 @@
+## M4 mini: hosted kernel-only build path prepared — 2026-10-21
+
+Added m4_kernel_only input/job to existing artifact-only daily-9.0.yml. It
+excludes ordinary image and Fairydust jobs; conflicting selections fail before
+building. Hosted ARM job uses Rust 1.99.0 with matching library sources, LLVM21,
+immutable Gravity archive and existing full build/package wrappers. Artifacts
+retain original source, patches/configs/recipes, compiler records and hashes.
+No release publishing, boot writes or factory promotion. Candidate binaries
+may differ from the local build; current factory package/Image pins stay fixed.
+
+New check-kernel-package.py validates each candidate against its own trusted
+build/package receipts: Image/config/J773g DTB hashes, 16 KiB header, 1,598
+modules, ARM64 ELF/vermagic, dependency dry runs and absence of package hooks.
+It passes on the actual local r2 package. YAML/selection/permission and embedded
+shell checks pass. Hosted dispatch is next; no remote build success claimed.
+[Preflight](m4-mini/receipts/2026-10-21-hosted-kernel-preflight.json).
+
 ## M4 mini: GPT metadata/payload exporter prepared — 2026-10-21
 
 Added export-partitions.py for Linux-side regular image files. It validates

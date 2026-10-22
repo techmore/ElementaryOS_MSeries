@@ -14,6 +14,11 @@ on:
         type: boolean
         required: false
         default: false
+      m4_kernel_only:
+        description: Build and inspect the pinned M4 research kernel only (no image or promotion)
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -24,7 +29,7 @@ concurrency:
 
 jobs:
   build-kernel:
-    if: inputs.fairydust
+    if: inputs.fairydust && !inputs.m4_kernel_only
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -84,9 +89,102 @@ jobs:
           path: mkosi.packages/
           retention-days: 2
 
+  build-m4-kernel:
+    if: inputs.m4_kernel_only
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    env:
+      RUSTUP_TOOLCHAIN: 1.99.0
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate research-only selection
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true ]]
+          [[ "$(uname -m)" == aarch64 ]]
+          mkdir -p build-record
+          git rev-parse HEAD > build-record/source-commit.txt
+          printf '%s\n' 'M4 kernel candidate only. No image, factory promotion, installation or hardware qualification.' > build-record/STATUS.txt
+      - name: Free disposable runner build space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - name: Install native M4 build and inspection tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential cpio curl dwarves flex \
+            libdw-dev libelf-dev libncurses-dev libssl-dev clang-21 libclang-21-dev \
+            llvm-21 pahole python3 rsync bindgen kmod device-tree-compiler zstd
+      - name: Select matched Rust compiler and library sources
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.0 --profile minimal --component rust-src
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo '/usr/lib/llvm-21/bin' >> "$GITHUB_PATH"
+          echo 'LIBCLANG_PATH=/usr/lib/llvm-21/lib' >> "$GITHUB_ENV"
+      - name: Build and package pinned Gravity M4 kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/linux-4fc326f.tar.gz"
+          curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/GravityLinux/linux/tar.gz/4fc326f6c25ccceb7515e2635c22e01fde5d3bac \
+            --output "$archive"
+          echo '045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8  '"$archive" | sha256sum --check
+          SOURCE_DATE_EPOCH=$(python3 -c 'import sys,tarfile; print(int(tarfile.open(sys.argv[1]).next().mtime))' "$archive")
+          KBUILD_BUILD_TIMESTAMP=$(date -u -d "@$SOURCE_DATE_EPOCH" '+%a %b %d %T UTC %Y')
+          export SOURCE_DATE_EPOCH KBUILD_BUILD_TIMESTAMP
+          export KBUILD_BUILD_USER=elementary-mseries KBUILD_BUILD_HOST=m4-research-ci
+          rust_library="$(rustc --print sysroot)/lib/rustlib/src/rust/library"
+          { rustc --version --verbose; clang --version; ld --version; bindgen --version; pahole --version; df -h; } > build-record/toolchain.txt
+          python3 mseries/m4-mini/build-kernel.py --archive "$archive" \
+            --rust-library "$rust_library" --output "$RUNNER_TEMP/m4-kernel" --jobs 2
+          python3 mseries/m4-mini/package-kernel.py --archive "$archive" \
+            --source "$RUNNER_TEMP/m4-kernel/linux-4fc326f6c25ccceb7515e2635c22e01fde5d3bac" \
+            --build "$RUNNER_TEMP/m4-kernel/build" --output mkosi.packages-m4-research
+          python3 mseries/m4-mini/check-kernel-package.py \
+            --package mkosi.packages-m4-research/linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-2_arm64.deb \
+            --package-receipt mkosi.packages-m4-research/receipt.json \
+            --build-receipt "$RUNNER_TEMP/m4-kernel/receipt.json" --receipt build-record/package-check.json
+          mkdir -p mkosi.packages-m4-research/reproduction
+          cp mseries/m4-mini/{build-kernel,package-kernel,check-kernel-package}.py mkosi.packages-m4-research/reproduction/
+          cp -a mseries/m4-mini/gravity mkosi.packages-m4-research/reproduction/
+          cp mseries/m4-mini/research.json mkosi.packages-m4-research/reproduction/
+          cp "$RUNNER_TEMP/m4-kernel/receipt.json" mkosi.packages-m4-research/build-receipt.json
+          cp build-record/{source-commit.txt,STATUS.txt,toolchain.txt,package-check.json} mkosi.packages-m4-research/
+          (cd mkosi.packages-m4-research && sha256sum *.deb *.tar.gz > SHA256SUMS)
+      - name: Collect research build diagnostics
+        if: always()
+        run: |
+          mkdir -p build-record
+          for candidate in "$RUNNER_TEMP/m4-kernel/build.log" "$RUNNER_TEMP/m4-kernel/receipt.json" "$RUNNER_TEMP/m4-kernel/build/.config"; do
+            if [[ -f "$candidate" ]]; then cp "$candidate" build-record/; fi
+          done
+      - name: Preserve M4 research build records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-kernel-record-${{ github.run_id }}
+          path: build-record/
+          retention-days: 7
+      - name: Preserve unpromoted M4 kernel candidate and corresponding source
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-kernel-candidate-${{ github.run_id }}
+          path: mkosi.packages-m4-research/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 2
+
   build:
     needs: build-kernel
-    if: always() && (!inputs.fairydust || needs.build-kernel.result == 'success')
+    if: always() && !inputs.m4_kernel_only && (!inputs.fairydust || needs.build-kernel.result == 'success')
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:

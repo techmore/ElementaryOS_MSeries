@@ -1,0 +1,19 @@
+{
+  "scope": "hosted M4 kernel-only source build preparation; no hosted result yet",
+  "workflow_sha256": "22376c21372355f09894fa316e637998c24b0c97d8a55a174f3081d6752c90d2",
+  "checker_sha256": "516fe8536751ed9324c2891b09556c1e3e8aae7003486599f8b759e1a168b1b0",
+  "local_package_check": {
+    "source_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "package_sha256": "9241b96c69c8394732f7158d824313186f1eb4dd8018309e84f209c465f15936",
+    "module_count": 1598,
+    "checks": "Image/config/DTB hashes, 16 KiB header, J773g, ELF/vermagic, module dependencies, no package hooks",
+    "scope": "fresh candidate package inspection; no boot or hardware tests",
+    "factory_promotion": false,
+    "hardware_validated": false
+  },
+  "static_checks": "YAML parsed; M4 shell syntax, runner, permissions and ordinary/Fairydust job isolation assertions pass",
+  "selected_input": "m4_kernel_only=true; fairydust=false; fairydust_tunnel=false",
+  "hosted_build_started": false,
+  "factory_promotion": false,
+  "hardware_validated": false
+}

@@ -510,3 +510,21 @@ requires subordinate-ID mapping, currently blocked by the execution runner's
 NoNewPrivs setting. Physical M4/Recovery/HDMI/10 Gb checks remain open.
 
 [Exporter receipt](receipts/2026-10-21-partition-export.json).
+
+## Hosted kernel-only research build
+
+The existing artifact-only OS 9 workflow now accepts `m4_kernel_only=true`
+with both Fairydust inputs false. It builds the immutable Gravity source on
+a hosted ARM runner with Rust 1.99.0/matched library sources and LLVM 21, then
+packages and inspects the candidate. Ordinary image and Fairydust jobs are
+skipped for this selection. Artifacts retain corresponding source, build
+recipes/configuration, toolchain records and checksums; no release is published.
+
+`check-kernel-package.py` ties the candidate to its own build/package receipts
+and checks kernel/DTB identity, 16 KiB pages, module count/architecture/release,
+dependencies and absence of package hooks. Local r2 inspection passes. This
+does not promote a fresh CI binary into factory pins or qualify M4 hardware.
+Candidate hashes can differ across build environments. Full matched Mesa/boot
+chain and image assembly remain separate requirements.
+
+[Hosted preflight](receipts/2026-10-21-hosted-kernel-preflight.json).
