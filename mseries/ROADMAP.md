@@ -61,6 +61,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock launcher regression harness startup race — 2026-10-22
+
+The #518 PR validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)
+found that the fake dock child PID file could exist before its contents were written. The SIGHUP test now waits for a
+numeric PID and detects an early wrapper exit; the focused suite passes 8/8. This changes test synchronization only and
+does not qualify the wip4 kernel candidate. PR #518 remains conflicted with `dev`, and its unified72 source preparation
+needs a fresh successful pinned-source fetch before kernel build or payload inspection can run.
+
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,
