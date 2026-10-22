@@ -4185,3 +4185,11 @@ is an additional policy reference to inspect. No idle patch/flag is selected
 from this observation. The current Gravity announcement still describes a
 developer alpha with limited testing; its HDMI claim is not owner hardware
 qualification. The source wait-state follow-up receipt bounds these uncertainties.
+
+New upstream intake to review next: Asahi apple-soc/dt-7.4 at a8ac6027e82415f4
+and asahi-wip-7.2 at 236788cd2602a24c both contain t8132-j773g.dts and T8132
+SoC/PMGR/common board files. This is a filename inventory, not GPU/DCP/storage
+or firmware compatibility qualification. Compare their actual driver coverage
+and contracts with the complete Gravity stack before selecting a new kernel
+base or transplanting DT data. The earlier selected Asahi integration head
+remains unchanged; these staging branches require a separate applicability pass.
