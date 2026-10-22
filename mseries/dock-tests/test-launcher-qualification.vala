@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Production Dock.App/Launcher with a private, recording compositor service.
+const string T3_APP_ID = "io.github.techmore.ClaudePantheonRs";
+uint t3_name_owner = 0;
 [DBus (name="org.pantheon.gala.DesktopIntegration")]
 class QualificationService : Object {
     public uint version { get { return 1; } }
@@ -121,6 +123,15 @@ void show_fixture (bool dark) {
     window.present ();
     var t3_actions = new Gtk.EventControllerKey ();
     t3_actions.key_pressed.connect ((key) => {
+        if (key == Gdk.Key.F6) {
+            if (t3_name_owner != 0) {
+                Bus.unown_name (t3_name_owner);
+                t3_name_owner = 0;
+            } else {
+                t3_name_owner = Bus.own_name (BusType.SESSION, T3_APP_ID, BusNameOwnerFlags.NONE);
+            }
+            return true;
+        }
         Gtk.Widget? button = key == Gdk.Key.F7 ? find_button_with_label (launchers[4], "Open full chat") :
             key == Gdk.Key.F8 ? find_button_with_label (launchers[4], "Live T3 work") : null;
         if (button == null) return false;
@@ -157,8 +168,18 @@ void show_fixture (bool dark) {
 int main (string[] args) {
     Gtk.init ();
     var loop = new MainLoop ();
-    Bus.own_name (BusType.SESSION,"org.pantheon.gala",BusNameOwnerFlags.NONE,
-        (connection)=>{try {connection.register_object("/org/pantheon/gala/DesktopInterface",new QualificationService());}catch(Error e){error("%s",e.message);}},
-        ()=>show_fixture(args.length>1 && args[1]=="dark"));
+    t3_name_owner = Bus.own_name (BusType.SESSION, T3_APP_ID, BusNameOwnerFlags.NONE,
+        null,
+        () => Bus.own_name (BusType.SESSION, "org.pantheon.gala", BusNameOwnerFlags.NONE,
+            (connection) => {
+                try {
+                    connection.register_object ("/org/pantheon/gala/DesktopInterface", new QualificationService ());
+                } catch (Error e) {
+                    error ("%s", e.message);
+                }
+            },
+            () => show_fixture (args.length > 1 && args[1] == "dark"),
+            null),
+        null);
     loop.run (); return 0;
 }

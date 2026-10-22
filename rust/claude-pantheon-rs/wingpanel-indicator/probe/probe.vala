@@ -95,6 +95,43 @@ int main (string[] args) {
             }
         }
     }
+    if (live) {
+        // A missing GApplication bus owner means the last connected snapshot may
+        // be left behind by a crash before the client's shutdown callback runs.
+        indicator.render (feed, now, false);
+        var crashed_texts = new Gee.ArrayList<string> ();
+        collect (popover, crashed_texts);
+        collect (panel, crashed_texts);
+        foreach (var expected in new string[] { "Last known", "Offline", "Last known · Fix flaky render test", "Last known · Release pipeline" }) {
+            bool found = false;
+            foreach (var t in crashed_texts) if (t.contains (expected)) found = true;
+            if (!found) {
+                stderr.printf ("FAIL: crashed client should show '%s' in %s\n", expected, string.joinv (" | ", crashed_texts.to_array ()));
+                return 1;
+            }
+        }
+        foreach (var hidden in new string[] { "needs you", "permission prompt", "waiting" }) {
+            foreach (var t in crashed_texts) {
+                if (t.contains (hidden)) {
+                    stderr.printf ("FAIL: crashed client presented '%s' as live in %s\n", hidden, string.joinv (" | ", crashed_texts.to_array ()));
+                    return 1;
+                }
+            }
+        }
+        var crashed_actions = new Gee.ArrayList<bool> ();
+        collect_last_known_buttons (popover, crashed_actions);
+        if (crashed_actions.size != 2) {
+            stderr.printf ("FAIL: expected two cached activity rows after client exit, found %d\n", crashed_actions.size);
+            return 1;
+        }
+        foreach (bool enabled in crashed_actions) {
+            if (enabled) {
+                stderr.printf ("FAIL: crashed-client activity row is still actionable\n");
+                return 1;
+            }
+        }
+        indicator.render (feed, now, true);
+    }
     var shot = Environment.get_variable ("PROBE_SHOT");
     if (shot != null) {
         var window = new Gtk.Window () { default_width = 360, default_height = 320 };

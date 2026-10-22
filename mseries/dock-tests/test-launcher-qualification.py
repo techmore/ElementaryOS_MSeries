@@ -156,6 +156,18 @@ def inside(binary, output, theme):
         command('xdotool', 'key', 'F7')  # activate Open full chat through the real button signal
         waitfor(lambda: 'open-full' in Path(os.environ['QUAL_EVENTS']).read_text())
         waitfor(lambda: not state().get('t3_popup'))
+        # Drop the fake client's well-known name to model a crash before its
+        # shutdown callback writes a stale status snapshot.
+        command('xdotool', 'mousemove', '1270', '890')
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        command('xdotool', 'key', 'F6')
+        waitfor(lambda: 'Offline · showing last synced status' in state()['t3_text'])
+        labels = state()['t3_text']
+        assert 'Last known · Codex · 5-hour' in labels and 'Last known · 42% used' in labels, labels
+        assert 'Needs approval' not in labels and 'Live T3 work' not in labels, labels
+        command('xdotool', 'key', 'F6')
+        waitfor(lambda: 'Needs approval' in state()['t3_text'] and 'Live T3 work' in state()['t3_text'])
         command('xdotool', 'mousemove', '1270', '890')
         move('t3r')
         waitfor(lambda: state().get('t3_popup'))
@@ -178,7 +190,7 @@ def inside(binary, output, theme):
                   'mixed_alias_activation_focuses_window': True, 'homogeneous_alias_activation_uses_full_group': True,
                   'transient_menu_hides_invalid_actions': True, 'native_context_menu_escape': True, 'typing_after_actions': True,
                   't3r_hover_selected_account_status': True, 't3r_thread_action': True, 't3r_open_full_action': True,
-                  't3r_click_pin_outside_dismiss_escape': True}
+                  't3r_crash_marks_cached_status_stale': True, 't3r_click_pin_outside_dismiss_escape': True}
         (output/(theme+'.json')).write_text(json.dumps(report, indent=2)+'\n')
         print('PASS production launcher pointer, activation, menus, Escape and typing:', theme)
         print('PASS T3-R popover hover, selected account, thread/full chat routing, pin, outside click and Escape:', theme)

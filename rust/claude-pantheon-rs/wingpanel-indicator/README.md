@@ -36,6 +36,8 @@ copy needs sudo. Build requirements: `meson ninja-build valac libwingpanel-dev l
 libjson-glib-dev libgee-0.8-dev`.
 
 The probe (`probe/probe.vala`, `meson test`) builds the indicator from `probe/status-fixture.json`
-at a fixed instant, checks the headline, countdown, gauges, prompt badge and rotation line, and with
-`PROBE_SHOT=<png>` renders the panel widget and the popover (that is how the capture above was made,
-under Xvfb with the cairo renderer).
+at a fixed instant, checks the headline, countdown, gauges, prompt badge and rotation line, then renders
+the connected snapshot with no client D-Bus owner and verifies that cached activity becomes disabled
+last-known data. `probe/stale-status-fixture.json` covers a normal offline snapshot. With
+`PROBE_SHOT=<png>` the probe renders the panel widget and popover (the capture above was made under Xvfb
+with the cairo renderer).

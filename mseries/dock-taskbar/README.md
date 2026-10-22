@@ -45,7 +45,10 @@ hover to a pinned menu and click dismissal. CI runs the same build/probe path.
 The production-launcher fixture saves the mapped T3-R popup as
 `light-t3r-hover.png` and `dark-t3r-hover.png` in its output directory for visual
 inspection, and checks that the Dock tooltip is not mapped beside the T3-R panel.
-No test installs a binary or restarts a live desktop service.
+It also drops and restores the fake T3-R D-Bus name while the popover is open,
+checking that a crashed client's cached quota stays visible as last known while
+its activity stops being live. No test installs a binary or restarts a live
+desktop service.
 
 Future dock patches must use this full stack. App tracking changes belong after
 it and must preserve `Taskbar.vala`, `TaskbarCodexBar.vala` and the Start menu.
