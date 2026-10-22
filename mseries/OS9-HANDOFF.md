@@ -99,6 +99,16 @@ The current Rust release binary was copied to `~/.local/bin/claude-pantheon-rs` 
 
 Next: qualify multi-turn session restoration and more representative assistant workflows. Do not download the 24B Liquid checkpoint until the supervisor admission gate permits weights, runtime and the six-GiB desktop reserve. Qualify any ANE conversational model separately through a supervised service; raw experimental bring-up remains outside the safe desktop trial. Older-history paging on a large live conversation and poor-network fault injection remain open. Review DeepSeek setup when the paired server advertises it.
 
+The T3 reconnect path now ignores close and shell-subscription callbacks from
+superseded connections, and environment-switch cleanup exits when a newer
+switch has already started. `a13acd12` passed local formatting, all 65 release
+library tests, strict release Clippy, and a release build. The refreshed
+user-local client is running and connected to `eos` with Codex selected; Dock
+remained active. CI for this commit is running in [validation](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39849512686)
+and [package](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39849512647)
+workflows. Live large-thread paging and deliberate high-latency reconnect
+qualification remain open.
+
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
 Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
