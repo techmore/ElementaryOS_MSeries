@@ -48,6 +48,11 @@ assert set(m4['liveiso']['KernelInitrdModules']) == set(default['liveiso']['Kern
     'nvme_apple', 'pcie_apple', 'hid_apple', 'hid_magicmouse'}
 assert set(m4['sysupdate']['KernelInitrdModules']) == set(default['sysupdate']['KernelInitrdModules']) | {
     'nvme_apple', 'pcie_apple'}
+boot_profile = repo / 'mkosi.images/sysupdate/mkosi.profiles/m4-mini'
+assert str(boot_profile / 'verify-boot-chain.chroot') in m4['sysupdate']['PostInstallationScripts']
+assert str(boot_profile / 'verify-boot-chain.chroot') not in default['sysupdate']['PostInstallationScripts']
+assert any(item['Source'] == str(boot_profile / 'mkosi.extra') for item in m4['sysupdate']['ExtraTrees'])
+assert not any(item['Source'] == str(boot_profile / 'mkosi.extra') for item in default['sysupdate']['ExtraTrees'])
 live_hook = str(repo / 'mkosi.images/liveiso/mkosi.profiles/m4-mini/prepare-live-kernel.chroot')
 assert m4['liveiso']['PostInstallationScripts'].count(live_hook) == 1
 assert live_hook not in default['liveiso']['PostInstallationScripts']

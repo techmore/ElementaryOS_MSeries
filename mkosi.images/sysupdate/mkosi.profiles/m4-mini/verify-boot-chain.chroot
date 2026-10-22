@@ -1,0 +1,10 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Runs only in the candidate image, before repart copies /efi into its ESP.
+set -eu
+bundle=/efi/m1n1/boot.bin
+if [ ! -f "$bundle" ] || [ -L "$bundle" ]; then
+    echo 'M4 research image requires the verified J773g boot bundle; see mseries/m4-mini/README.md.' >&2
+    exit 1
+fi
+echo '304d55fb324865d9f2db056eb08cf2c8af204d952b337e757a6c8ad6401a1e22  /efi/m1n1/boot.bin' | sha256sum --check --status

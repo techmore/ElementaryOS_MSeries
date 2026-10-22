@@ -1,0 +1,27 @@
+{
+  "scope": "M4 sysupdate profile resolution and boot hash hook in isolated synthetic root; not full image or ESP readback",
+  "profile_check": "default/M4/Fairydust and conflict assertions pass",
+  "hook_sha256": "0a78280785efcb7d397f28f67514534d3624f2b93286ffcc0837802d6f567e18",
+  "cases": {
+    "valid": {
+      "exit": 0,
+      "expected_result_observed": true
+    },
+    "corrupt": {
+      "exit": 1,
+      "expected_result_observed": true
+    },
+    "missing": {
+      "exit": 1,
+      "expected_result_observed": true
+    },
+    "symlink": {
+      "exit": 1,
+      "expected_result_observed": true
+    }
+  },
+  "staged_research_bundle_sha256": "304d55fb324865d9f2db056eb08cf2c8af204d952b337e757a6c8ad6401a1e22",
+  "initial_probe": "read-only bind mount setup unavailable; completed rehearsal uses copied shell/checksum runtime and no mounts",
+  "hardware_validated": false,
+  "complete_factory_image_built": false
+}

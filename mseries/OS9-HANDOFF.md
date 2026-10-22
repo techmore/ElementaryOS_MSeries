@@ -10832,3 +10832,9 @@ M4 matched research boot-chain now assembled: corrected stage2 + J773g DTB +
 gzip selected U-Boot, following pinned Gravity script. Exact component readback
 passes; older non-NO_DISPLAY stage rejected before output. Stage1 kept separate.
 No ESP writes/boot authorization. Full-image placement and native handoff pending.
+
+M4 sysupdate profile now consumes a research-only /efi/m1n1/boot.bin overlay
+and verifies its hash before repart. Binary rebuilt/staged locally and ignored
+by Git; fresh image checkouts must explicitly stage it or fail. Profile isolation
+and valid/corrupt/missing/symlink hook cases pass. Full-image ESP readback and
+stage1/native handoff remain unverified; installer admission remains false.

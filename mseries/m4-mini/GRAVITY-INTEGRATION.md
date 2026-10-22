@@ -254,3 +254,26 @@ is research-only: source DTB firmware/memory fixups, authorized stage-1 handoff,
 ESP placement/readback in the complete image and native boot remain unverified.
 No ESP or macOS configuration was written.
 [Assembly receipt](receipts/2026-10-21-research-boot-chain.json).
+
+### M4 sysupdate image boot overlay
+
+The M4-only sysupdate profile now includes `%C/mkosi.extra` and runs
+`verify-boot-chain.chroot` before partition assembly. The hook requires the
+reviewed bundle as a regular file at `/efi/m1n1/boot.bin` and checks its exact
+SHA-256. The existing sysupdate ESP definition copies `/efi:/`, so this supplies
+the stage-2 path in the image. Default and Fairydust profiles do not gain the
+overlay or hook. The binary is intentionally ignored by Git and must be rebuilt
+and explicitly staged for each disposable image checkout:
+
+```sh
+install -D -m 0644 /path/to/verified-chain/boot.bin \
+  mkosi.images/sysupdate/mkosi.profiles/m4-mini/mkosi.extra/efi/m1n1/boot.bin
+```
+
+This worktree has the verified research bundle staged. A fresh checkout without
+that bundle will fail the M4 image check rather than silently omit it. Real mkosi
+profile resolution passes, and an isolated synthetic-root hook rehearsal passes
+all four cases: verified bytes accepted; corrupted, missing and symlinked inputs
+rejected. This is profile/hook validation, not complete factory image assembly,
+ESP readback or authorized stage-1/native boot. The installer remains unsupported.
+[Overlay receipt](receipts/2026-10-21-image-boot-overlay.json).
