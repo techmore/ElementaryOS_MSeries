@@ -1,3 +1,21 @@
+## Native Image Studio: GTK workspace and metadata path — 2026-10-22
+
+Added `mseries/image-studio/`: a GTK 4 + Granite 7 creation/library prototype
+with three guided workflows, prompt-type selection, reviewable local-assistant
+suggestions, device memory reporting, persistent recipes, and PNG + JSON output
+storage. Seven core tests pass. Xvfb Create/Library smoke passes with the adult
+Alexandra Daddario college-streamer prompt, including recipe reload and a fixture
+thumbnail/metadata display.
+
+Generation is still gated and no image-engine adapter is wired. The
+implementation host has no running local image or text API and no diffusion model
+in its cache; `mseries-ai-everyday.service` is failed. No worker was started.
+Next: select an image runtime that is compatible
+with the M-Series ARM64/Vulkan stack, qualify model and LoRA files, measure a
+memory budget while preserving the desktop reserve, then connect the engine and
+run the real series. See [handoff](OS9-HANDOFF.md) and
+[app notes](image-studio/README.md).
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
