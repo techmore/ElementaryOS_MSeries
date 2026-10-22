@@ -3884,3 +3884,8 @@ regressions pass. No package success. Replay next; original kernel still active.
 
 M4 explicit-GLVND Mesa replay dispatched:39704499140 at84bf7a7c; intake example
 now selects this run/source. No successful hosted candidate claimed yet.
+
+M4 full-image driver stages trusted inputs/boot bundle in a disposable clone
+and retains the full mkosi graph without dependency overrides. Actual summary
+passes all 11 images; execution probe rejects blocked subordinate-ID setup
+before output creation. No full build/ISO result. Hosted kernel/Mesa still active.

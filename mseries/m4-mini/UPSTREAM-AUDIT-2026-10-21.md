@@ -725,3 +725,31 @@ library tests remain historical evidence; corrected hosted replay is pending.
 [Failure and successful substeps](receipts/2026-10-21-hosted-mesa-failure-3.json).
 
 Corrected GLVND replay: [39704499140](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39704499140), source `84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a`. No completed result yet. [Dispatch snapshot](receipts/2026-10-21-hosted-mesa-retry-4.json).
+
+### Complete-graph research image driver
+
+`build-research-image.py` now consumes the trusted prepared input directory and
+verified boot bundle, rechecks package/source hashes, and stages them in a new
+disposable source clone. It permits only the reviewed live-kernel hash patch,
+keeps the main checkout unchanged and retains corresponding source and input
+records. It selects `daily` + `m4-mini` without dependency overrides, preserving
+the Apple Silicon desktop overlay and full image graph.
+
+```sh
+python3 mseries/m4-mini/build-research-image.py \
+  --inputs /path/to/validated-image-inputs \
+  --boot-bundle /path/to/verified-chain/boot.bin \
+  --mkosi-source /path/to/trusted-mkosi-source \
+  --image-version 20261022013000 \
+  --output /path/to/new-image-workspace --summary-only
+```
+
+Actual summary resolution passes for all 11 images, including base,
+apple-silicon, liveiso and sysupdate, using the existing local validated
+packages. Removing `--summary-only` invokes genkey and the full native mkosi
+build using automatic subordinate IDs; it never falls back to a single-ID
+build. The execution preflight in this environment correctly rejects the
+blocked newuidmap operation before creating an output workspace or starting
+mkosi. Thus no full-image build result is claimed. ISO assembly, output/ESP
+content checks, install adapter and native qualification remain separate work.
+[Driver preflight](receipts/2026-10-21-full-image-driver-preflight.json).

@@ -1,0 +1,39 @@
+{
+  "scope": "full M4 mkosi graph summary",
+  "source_commit": "6e820acc13ebc80409b75adc06a5c8c12f1ecaf0",
+  "driver_sha256": "c99cd9a34450a3dc7a0f635d35b08709137da00ae09d8e6508b3fe515ee91a0c",
+  "image_version": "20261022013000",
+  "images": [
+    "apple-silicon",
+    "base",
+    "default-initrd",
+    "driver-nvidia",
+    "driver-nvidia-addon",
+    "ext-sdk",
+    "ext-virt",
+    "liveiso",
+    "main",
+    "modules-db",
+    "sysupdate"
+  ],
+  "commands": [],
+  "candidate_package_hashes": {
+    "kernel": "9241b96c69c8394732f7158d824313186f1eb4dd8018309e84f209c465f15936",
+    "mesa": "89950d877d41272106ee878572cf705b1c3e07f98a865df6dced881a41ddea5b",
+    "policy": "0fbfcd8ddffe04b9ae26a3c6fe8c2df89d89752e9a677a616706e6765a9a245c"
+  },
+  "boot_bundle_sha256": "304d55fb324865d9f2db056eb08cf2c8af204d952b337e757a6c8ad6401a1e22",
+  "candidate_hash_patch_applied_in_clone": false,
+  "summary_only": true,
+  "mkosi_build_passed": false,
+  "iso_assembled": false,
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "actual_execution_probe": {
+    "result": "rejected before output creation",
+    "reason": "NoNewPrivs blocks newuidmap subordinate-ID setup",
+    "workspace_created": false,
+    "mkosi_started": false
+  }
+}

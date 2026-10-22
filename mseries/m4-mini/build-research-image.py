@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Build the complete M4 mkosi graph in a disposable source clone.
+
+Consumes trusted prepare-image-inputs.py output and the verified research boot
+bundle. Summary-only resolves the actual graph without building. Full execution
+requires proper subordinate IDs; it never substitutes a single-ID build.
+ISO assembly, installation and native hardware acceptance are separate gates.
+"""
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+spec = importlib.util.spec_from_file_location('image_inputs', HERE / 'prepare-image-inputs.py')
+inputs_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(inputs_module)
+
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--inputs', type=Path, required=True)
+    parser.add_argument('--boot-bundle', type=Path, required=True)
+    parser.add_argument('--mkosi-source', type=Path, required=True)
+    parser.add_argument('--image-version', required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--summary-only', action='store_true')
+    args = parser.parse_args()
+    if not re.fullmatch(r'[0-9]{14}', args.image_version):
+        raise ValueError('explicit 14-digit research image version required')
+    output = args.output.resolve()
+    if output.exists() or output.is_relative_to(REPO):
+        raise ValueError('new workspace outside the source checkout required')
+    inputs = args.inputs.resolve()
+    candidate = json.loads((inputs / 'candidate.json').read_text())
+    if (inputs / 'INCOMPLETE').exists() or candidate['schema'] != 1:
+        raise ValueError('complete prepared input workspace required')
+    if candidate['preparer_sha256'] != digest(HERE / 'prepare-image-inputs.py'):
+        raise ValueError('inputs must use the current reviewed preparer')
+    if set(candidate['components']) != {'kernel', 'mesa', 'policy'}:
+        raise ValueError('complete three-component input set required')
+    for component in candidate['components'].values():
+        name = component['file']
+        if Path(name).name != name or not name.endswith('.deb'):
+            raise ValueError('invalid component filename')
+        if digest(inputs / 'packages' / name) != component['sha256']:
+            raise ValueError('prepared component changed')
+    for name, expected in inputs_module.SOURCE_ARCHIVES.values():
+        if digest(inputs / name) != expected:
+            raise ValueError('required corresponding source changed')
+    expected_boot = json.loads((HERE / 'receipts/2026-10-21-research-boot-chain.json').read_text())['boot_bin_sha256']
+    if digest(args.boot_bundle) != expected_boot:
+        raise ValueError('verified J773g boot bundle required')
+    revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()
+    subprocess.run(['git', 'merge-base', '--is-ancestor', candidate['recipe_commit'], revision], cwd=REPO, check=True)
+    baseline = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
+    build = json.loads((inputs / 'records/kernel-build.json').read_text())
+    original = (REPO / inputs_module.HOOK).read_text()
+    patch = inputs_module.live_hook_patch(original, baseline, build)
+    if (inputs / 'candidate-live-kernel.patch').read_text() != patch or digest(inputs / 'candidate-live-kernel.patch') != candidate['live_hook_patch_sha256']:
+        raise ValueError('only the reviewed candidate kernel hash patch is permitted')
+    if not args.summary_only:
+        # Fail before creating a workspace if correct package ownership cannot
+        # be represented. No privilege or UID-mapping fallback is attempted.
+        subprocess.run(['unshare', '--user', '--map-auto', '--map-root-user', 'true'], check=True)
+    output.mkdir(parents=True)
+    marker = output / 'INCOMPLETE'
+    marker.touch()
+    source = output / 'source'
+    subprocess.run(['git', 'clone', '--shared', '--no-checkout', str(REPO), str(source)], check=True)
+    subprocess.run(['git', 'checkout', '--detach', revision], cwd=source, check=True)
+    packages = output / 'packages'
+    packages.mkdir()
+    for component in candidate['components'].values():
+        name = component['file']
+        shutil.copy2(inputs / 'packages' / name, packages / name)
+        if digest(packages / name) != component['sha256']:
+            raise ValueError('copied component hash mismatch')
+    for name in inputs_module.SOURCE_ARCHIVES:
+        archive, expected = inputs_module.SOURCE_ARCHIVES[name]
+        shutil.copy2(inputs / archive, output / archive)
+        if digest(output / archive) != expected:
+            raise ValueError('copied corresponding source mismatch')
+    shutil.copytree(inputs / 'records', output / 'input-records')
+    shutil.copy2(inputs / 'candidate.json', output / 'input-candidate.json')
+    if patch:
+        subprocess.run(['git', 'apply', '--check', '-'], cwd=source, input=patch, text=True, check=True)
+        subprocess.run(['git', 'apply', '-'], cwd=source, input=patch, text=True, check=True)
+    boot = source / 'mkosi.images/sysupdate/mkosi.profiles/m4-mini/mkosi.extra/efi/m1n1/boot.bin'
+    boot.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(args.boot_bundle, boot)
+    if digest(boot) != expected_boot:
+        raise ValueError('copied boot bundle mismatch')
+    (source / 'mkosi.version').write_text(args.image_version + '\n')
+    env = dict(os.environ, PYTHONPATH=str(args.mkosi_source.resolve()))
+    options = ['--profile=daily', '--profile=m4-mini', '--architecture=arm64',
+               '--image-version=' + args.image_version, '--package-directory=' + str(packages),
+               '--output-directory=' + str(output / 'images'),
+               '--workspace-directory=' + str(output / 'workspace'),
+               '--cache-directory=' + str(output / 'cache'),
+               '--package-cache-directory=' + str(output / 'package-cache')]
+    summary = subprocess.check_output([sys.executable, '-m', 'mkosi', *options, '--json', 'summary'], cwd=source, env=env, text=True)
+    (output / 'summary.json').write_text(summary)
+    graph = {image['Image'] for image in json.loads(summary)['Images']}
+    if not {'base', 'apple-silicon', 'liveiso', 'sysupdate'} <= graph:
+        raise ValueError('complete M4 desktop/boot graph must be retained')
+    commands = []
+    if not args.summary_only:
+        prefix = ['unshare', '--user', '--map-auto', '--map-root-user', '--mount', '--pid', '--fork', sys.executable, '-m', 'mkosi']
+        for verb in ['genkey', 'build']:
+            command = prefix + options + [verb]
+            commands.append(command)
+            with (output / (verb + '.log')).open('wb') as log:
+                subprocess.run(command, cwd=source, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+    (output / 'receipt.json').write_text(json.dumps({
+        'scope': 'full M4 mkosi graph summary' if args.summary_only else 'full M4 mkosi graph build; ISO assembly separate',
+        'source_commit': revision, 'driver_sha256': digest(Path(__file__)),
+        'image_version': args.image_version, 'images': sorted(graph), 'commands': commands,
+        'candidate_package_hashes': {name: item['sha256'] for name, item in candidate['components'].items()},
+        'boot_bundle_sha256': expected_boot, 'candidate_hash_patch_applied_in_clone': bool(patch),
+        'summary_only': args.summary_only, 'mkosi_build_passed': not args.summary_only,
+        'iso_assembled': False, 'factory_promotion': False, 'installer_admission': False,
+        'hardware_validated': False}, indent=2) + '\n')
+    marker.unlink()
+    print('Full graph resolved' if args.summary_only else 'Full mkosi graph built; ISO assembly and native qualification still required')
+
+
+if __name__ == '__main__':
+    main()
