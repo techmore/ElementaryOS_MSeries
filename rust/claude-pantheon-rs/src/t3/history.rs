@@ -134,4 +134,73 @@ mod tests {
         assert_eq!(page.next_cursor.as_deref(), Some("next +/opaque"));
         assert!(page.has_more_history);
     }
+
+    #[test]
+    fn slow_history_response_does_not_block_the_gtk_main_context() {
+        use std::cell::Cell;
+        use std::sync::mpsc;
+        use std::time::{Duration, Instant};
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (sent_tx, sent_rx) = mpsc::channel();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0; 1024];
+            loop {
+                let count = stream.read(&mut chunk).unwrap();
+                request.extend_from_slice(&chunk[..count]);
+                if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+
+            // A delayed response stands in for a high-latency T3 Connect or relay hop.
+            thread::sleep(Duration::from_millis(350));
+            sent_tx.send(Instant::now()).unwrap();
+            let body = serde_json::json!({
+                "snapshotSequence": 92,
+                "items": [],
+                "nextCursor": null,
+                "hasMoreHistory": false
+            })
+            .to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .unwrap();
+        });
+
+        let credential = auth::Credential {
+            server: format!("http://{address}"),
+            access_token: "fixture-token".into(),
+            label: "fixture".into(),
+            environment_id: "fixture-env".into(),
+        };
+        let context = gtk::glib::MainContext::new();
+        let timer_at = Cell::new(None);
+        let page = context.block_on(async {
+            let timer = async {
+                gtk::glib::timeout_future(Duration::from_millis(50)).await;
+                timer_at.set(Some(Instant::now()));
+            };
+            let fetch = fetch_page(&credential, "slow-thread", "slow-cursor");
+            let (_, result) = futures_util::future::join(timer, fetch).await;
+            result.unwrap()
+        });
+        let server_sent_at = sent_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        server.join().unwrap();
+
+        assert!(page.items.is_empty());
+        assert!(!page.has_more_history);
+        assert!(
+            timer_at.get().unwrap() < server_sent_at,
+            "the GTK main context must run while the delayed HTTP response is pending"
+        );
+    }
 }
