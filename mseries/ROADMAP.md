@@ -1,3 +1,21 @@
+## M4 mini: hosted source build is live — 2026-10-21
+
+Dispatched existing manual workflow once with m4_kernel_only=true and both
+Fairydust flags false. Run 39698975678, source 2798237ed0b3cd386385e8ec0d92a10fb0987db7,
+job 119563250397 (build-m4-kernel) is in_progress. Checkout and mode validation
+passed; runner space preparation is active at the last check. Ordinary image
+build and Fairydust kernel jobs are authoritatively skipped. No compilation
+or hosted package result yet. Do not redispatch while this run is live.
+
+Inspect this exact run/job through the GitHub Actions API; on completion retain
+its records/candidate artifacts and inspect failures before retrying. No local
+exec process is doing this build. The hosted environment is an independent,
+authorized CI path; local NoNewPrivs mapping limits remain unchanged. Candidate
+binaries will not automatically replace factory pins. Full Mesa/boot chain,
+live/sysupdate assembly, metadata import and native M4 gates remain open.
+[Run](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39698975678),
+[snapshot](m4-mini/receipts/2026-10-21-hosted-kernel-run.json).
+
 ## M4 mini: hosted kernel-only build path prepared — 2026-10-21
 
 Added m4_kernel_only input/job to existing artifact-only daily-9.0.yml. It

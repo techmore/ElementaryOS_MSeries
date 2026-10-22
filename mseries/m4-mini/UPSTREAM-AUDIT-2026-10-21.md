@@ -528,3 +528,9 @@ Candidate hashes can differ across build environments. Full matched Mesa/boot
 chain and image assembly remain separate requirements.
 
 [Hosted preflight](receipts/2026-10-21-hosted-kernel-preflight.json).
+
+Hosted kernel-only run [39698975678](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39698975678)
+was dispatched at source `2798237e`. The initial snapshot confirms the M4 job
+is active and ordinary/Fairydust jobs are skipped. No hosted compile/package
+result is claimed yet; follow the live run before retrying.
+[Dispatch snapshot](receipts/2026-10-21-hosted-kernel-run.json).

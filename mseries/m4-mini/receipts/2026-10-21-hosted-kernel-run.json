@@ -1,0 +1,90 @@
+{
+  "run_id": 39698975678,
+  "job_id": 119563250397,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39698975678",
+  "source_head": "2798237ed0b3cd386385e8ec0d92a10fb0987db7",
+  "status_at_capture": "in_progress",
+  "selected_mode": "m4_kernel_only=true; both Fairydust inputs false",
+  "jobs_at_capture": [
+    {
+      "conclusion": null,
+      "id": 119563250397,
+      "name": "build-m4-kernel",
+      "status": "in_progress",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@v7",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Validate research-only selection",
+          "status": "completed"
+        },
+        {
+          "conclusion": null,
+          "name": "Free disposable runner build space",
+          "status": "in_progress"
+        },
+        {
+          "conclusion": null,
+          "name": "Install native M4 build and inspection tools",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Select matched Rust compiler and library sources",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Build and package pinned Gravity M4 kernel",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Collect research build diagnostics",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Preserve M4 research build records",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Preserve unpromoted M4 kernel candidate and corresponding source",
+          "status": "pending"
+        },
+        {
+          "conclusion": null,
+          "name": "Post Run actions/checkout@v7",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "conclusion": "skipped",
+      "id": 119563251662,
+      "name": "build",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "conclusion": "skipped",
+      "id": 119563251879,
+      "name": "build-kernel",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "scope": "hosted ARM research kernel build/package/check only; no image/release/installation",
+  "factory_promotion": false,
+  "hardware_validated": false
+}
