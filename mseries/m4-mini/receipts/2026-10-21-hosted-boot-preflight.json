@@ -1,0 +1,45 @@
+{
+  "scope": "hosted boot-chain job preparation; no hosted result yet",
+  "fixed_tag_native_build": {
+    "repository": "GravityLinux/bootloader",
+    "commit": "f02d4a52017915febb222539636b5b025a70407a",
+    "artwork_commit": "e613a87e526f8fec439c4129e69dd2821b38d258",
+    "commands": [
+      [
+        "make",
+        "-C",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-gravity-bootloader-source",
+        "ARCH=",
+        "RELEASE=1",
+        "LOGO=",
+        "NO_DISPLAY=1",
+        "CHAINLOADING=0",
+        "-j2"
+      ],
+      [
+        "make",
+        "-C",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-gravity-bootloader-source",
+        "ARCH=",
+        "RELEASE=1",
+        "LOGO=",
+        "NO_DISPLAY=1",
+        "CHAINLOADING=1",
+        "-j2"
+      ]
+    ],
+    "artifacts": {
+      "m1n1-stage2.bin": "33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4",
+      "m1n1-stage1.bin": "69aa13d28160821b78870a883500d744e97d10922b05287121288c41bf607acf"
+    },
+    "optional_logo": "omitted; raw binary target",
+    "m4_bringup": "NO_DISPLAY=1 for both stages; preserve firmware framebuffer",
+    "build_tag": "f02d4a5",
+    "configuration_reference": "GravityLinux/packages@711c2a110416d28010ccdd118b83111776bff207:gravity-bootloader/m1n1-no-display.patch",
+    "status": "source compilation only; no boot authorization, installation or J773g runtime test"
+  },
+  "workflow_sha256": "bfc98dcaeb54097dca748abb0dbba8ab2cc9905e8ad5c3f031cf0c00f5991cbd",
+  "checks": "YAML, boot job shell syntax, image/Fairydust exclusion and two existing workflow regressions pass",
+  "artifact_content": "stage1/boot.bin, component records, bootloader/U-Boot/DT/Rust dependency corresponding source and reproduction layout",
+  "hardware_validated": false
+}

@@ -24,17 +24,22 @@ on:
         type: boolean
         required: false
         default: false
+      m4_boot_only:
+        description: Build and inspect pinned M4 boot-chain research artifacts only
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: os9-mseries-${{ github.ref }}${{ inputs.m4_userspace_only && '-m4-userspace' || '' }}
+  group: os9-mseries-${{ github.ref }}${{ inputs.m4_userspace_only && '-m4-userspace' || inputs.m4_boot_only && '-m4-boot' || '' }}
   cancel-in-progress: false
 
 jobs:
   build-kernel:
-    if: inputs.fairydust && !inputs.m4_kernel_only && !inputs.m4_userspace_only
+    if: inputs.fairydust && !inputs.m4_kernel_only && !inputs.m4_userspace_only && !inputs.m4_boot_only
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -106,6 +111,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true && "${{ inputs.m4_userspace_only }}" != true ]]
+          [[ "${{ inputs.m4_boot_only }}" != true ]]
           [[ "$(uname -m)" == aarch64 ]]
           mkdir -p build-record
           git rev-parse HEAD > build-record/source-commit.txt
@@ -200,6 +206,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true && "${{ inputs.m4_kernel_only }}" != true ]]
+          [[ "${{ inputs.m4_boot_only }}" != true ]]
           [[ "$(uname -m)" == aarch64 ]]
           mkdir -p build-record
           git rev-parse HEAD > build-record/source-commit.txt
@@ -290,7 +297,7 @@ jobs:
 
   build:
     needs: build-kernel
-    if: always() && !inputs.m4_kernel_only && !inputs.m4_userspace_only && (!inputs.fairydust || needs.build-kernel.result == 'success')
+    if: always() && !inputs.m4_kernel_only && !inputs.m4_userspace_only && !inputs.m4_boot_only && (!inputs.fairydust || needs.build-kernel.result == 'success')
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -377,3 +384,96 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
+
+  build-m4-boot:
+    if: inputs.m4_boot_only
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    env:
+      RUSTUP_TOOLCHAIN: 1.99.0
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate boot-only research selection
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true && "${{ inputs.m4_kernel_only }}" != true && "${{ inputs.m4_userspace_only }}" != true ]]
+      - name: Install native boot-chain build and fixture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bison flex bc git curl swig \
+            python3-dev python3-pyelftools pkg-config libssl-dev libgnutls28-dev \
+            libncurses-dev uuid-dev device-tree-compiler mtools fdisk gdisk dosfstools
+          rustup toolchain install 1.99.0 --profile minimal --target aarch64-unknown-none-softfloat
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Build pinned boot stages, U-Boot and J773g tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(uname -m)" == aarch64 ]]
+          mkdir -p boot-record boot-candidate
+          git rev-parse HEAD > boot-record/source-commit.txt
+          printf '%s\n' 'Research build/byte and disposable FAT checks only; no installation, authorization or M4 hardware qualification.' > boot-record/STATUS.txt
+          git init "$RUNNER_TEMP/bootloader"
+          git -C "$RUNNER_TEMP/bootloader" remote add origin https://github.com/GravityLinux/bootloader.git
+          git -C "$RUNNER_TEMP/bootloader" fetch --depth=1 origin f02d4a52017915febb222539636b5b025a70407a
+          git -C "$RUNNER_TEMP/bootloader" checkout --detach FETCH_HEAD
+          git -C "$RUNNER_TEMP/bootloader" submodule update --init artwork
+          python3 mseries/m4-mini/build-bootloader.py --source "$RUNNER_TEMP/bootloader" \
+            --output "$RUNNER_TEMP/stages" --cargo-home "$RUNNER_TEMP/cargo" --jobs 2
+          curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/GravityLinux/u-boot/tar.gz/a2f6913694ff26908c16948af3f8372429782263 \
+            --output "$RUNNER_TEMP/u-boot.tar.gz"
+          python3 mseries/m4-mini/build-uboot.py --archive "$RUNNER_TEMP/u-boot.tar.gz" \
+            --output "$RUNNER_TEMP/uboot" --jobs 2
+          python3 mseries/m4-mini/prepare-sources.py --output "$RUNNER_TEMP/dt-capture"
+          python3 mseries/m4-mini/build-dtb.py --source gravity-mini \
+            --capture "$RUNNER_TEMP/dt-capture" --output "$RUNNER_TEMP/dtb"
+          python3 mseries/m4-mini/assemble-boot-chain.py --bootloader "$RUNNER_TEMP/stages" \
+            --u-boot "$RUNNER_TEMP/uboot/u-boot-nodtb.bin" \
+            --dtb "$RUNNER_TEMP/dtb/t8132-j773g.dtb" --output "$RUNNER_TEMP/chain"
+          python3 mseries/m4-mini/check-boot-esp-fixture.py --bundle "$RUNNER_TEMP/chain/boot.bin" \
+            --receipt boot-record/esp-fixture.json
+          { rustc --version --verbose; gcc --version; ld --version; dtc --version; } > boot-record/toolchain.txt
+          cp "$RUNNER_TEMP/chain/"{boot.bin,m1n1-stage1.bin,receipt.json} boot-candidate/
+          cp "$RUNNER_TEMP/u-boot.tar.gz" boot-candidate/gravity-uboot-corresponding-source.tar.gz
+          tar --exclude=.git --exclude=build -czf boot-candidate/gravity-bootloader-corresponding-source.tar.gz \
+            -C "$RUNNER_TEMP" bootloader
+          tar --exclude=.git -czf boot-candidate/bootloader-rust-dependencies.tar.gz \
+            -C "$RUNNER_TEMP" cargo/registry/src cargo/git/checkouts
+          tar -czf boot-candidate/j773g-source-capture.tar.gz -C "$RUNNER_TEMP" dt-capture
+          mkdir -p boot-candidate/reproduction/mseries/m4-mini boot-candidate/reproduction/mseries/fairydust/debian
+          cp mseries/m4-mini/{build-bootloader,build-uboot,prepare-sources,build-dtb,assemble-boot-chain,check-boot-esp-fixture}.py boot-candidate/reproduction/mseries/m4-mini/
+          cp mseries/m4-mini/research.json boot-candidate/reproduction/mseries/m4-mini/
+          cp -a mseries/m4-mini/receipts boot-candidate/reproduction/mseries/m4-mini/
+          cp mseries/fairydust/debian/verify-m1n1-esp.py boot-candidate/reproduction/mseries/fairydust/debian/
+          cp boot-record/{source-commit.txt,STATUS.txt,toolchain.txt,esp-fixture.json} boot-candidate/
+          (cd boot-candidate && sha256sum *.bin *.tar.gz > SHA256SUMS)
+      - name: Collect boot diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p boot-record
+          for component in stages uboot dtb chain; do
+            if [[ -d "$RUNNER_TEMP/$component" ]]; then
+              mkdir -p "boot-record/$component"
+              for file in "$RUNNER_TEMP/$component/"*.log "$RUNNER_TEMP/$component/"*.stderr "$RUNNER_TEMP/$component/"*build_cfg.h "$RUNNER_TEMP/$component/receipt.json"; do
+                [[ ! -f "$file" ]] || cp "$file" "boot-record/$component/"
+              done
+            fi
+          done
+      - name: Preserve research diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-boot-record-${{ github.run_id }}
+          path: boot-record/
+          retention-days: 7
+      - name: Preserve verified research boot candidate and corresponding source
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-boot-candidate-${{ github.run_id }}
+          path: boot-candidate/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2

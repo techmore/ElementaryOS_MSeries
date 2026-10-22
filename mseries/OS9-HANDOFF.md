@@ -10872,3 +10872,8 @@ config hashes within same toolchain. Research bundle now00be0b4f (explicit new
 U-Boot build); assembler, image hash hook, driver and ESP fixture updated together.
 New bundle FAT readback/corruption rejection and mkosi profile isolation pass.
 No physical deployment/installer admission. Previous receipts kept as history.
+
+M4 boot-only hosted job prepared in daily workflow with independent concurrency,
+full corresponding source/reproduction artifacts and no release/installation.
+Explicit f02d4a5 bootloader tag reproduces prior native hashes; YAML/shell/
+isolation and existing workflow regressions pass. Dispatch next.

@@ -805,3 +805,20 @@ physical deployment. Complete mkosi profile isolation checks pass. The actual
 new bundle also passes disposable GPT/FAT readback and corrupt-file rejection.
 [New bundle](receipts/2026-10-21-repeatable-boot-chain.json),
 [new ESP fixture](receipts/2026-10-21-repeatable-boot-esp.json).
+
+### Hosted boot-chain replay preparation
+
+The registered daily workflow now accepts `m4_boot_only=true` to build the
+selected bootloader stages, source-pinned U-Boot and captured Gravity J773g DTB,
+assemble their reviewed bundle, and run the disposable FAT/GPT check. Its
+concurrency suffix allows the existing kernel and Mesa runs to continue;
+ordinary image and Fairydust jobs are excluded. The candidate artifact retains
+corresponding bootloader/U-Boot/DT source, resolved Rust dependency sources and
+reproduction scripts in their original relative layout. No signing/enrollment
+or release publication step is included.
+
+The bootloader wrapper now explicitly fixes its build tag to `f02d4a5`; a native
+replay produces the unchanged reviewed stage hashes. Workflow parsing, shell
+syntax and selection checks pass. Hosted replay remains required, including
+checking whether this runner reproduces the reviewed artifact hashes.
+[Preflight](receipts/2026-10-21-hosted-boot-preflight.json).

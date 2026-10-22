@@ -35,7 +35,7 @@ def main():
     args.output.mkdir(parents=True)
     marker = args.output / 'INCOMPLETE'
     marker.touch()
-    env = dict(os.environ, CARGO_HOME=str(args.cargo_home.resolve()))
+    env = dict(os.environ, CARGO_HOME=str(args.cargo_home.resolve()), M1N1_VERSION_TAG=COMMIT[:7])
     artifacts = {}
     commands = []
     for stage, chainload in [(2, 0), (1, 1)]:
@@ -57,6 +57,7 @@ def main():
         'repository': 'GravityLinux/bootloader', 'commit': COMMIT, 'artwork_commit': ARTWORK,
         'commands': commands, 'artifacts': artifacts, 'optional_logo': 'omitted; raw binary target',
         'm4_bringup': 'NO_DISPLAY=1 for both stages; preserve firmware framebuffer',
+        'build_tag': COMMIT[:7],
         'configuration_reference': 'GravityLinux/packages@711c2a110416d28010ccdd118b83111776bff207:gravity-bootloader/m1n1-no-display.patch',
         'status': 'source compilation only; no boot authorization, installation or J773g runtime test',
     }, indent=2) + '\n')
