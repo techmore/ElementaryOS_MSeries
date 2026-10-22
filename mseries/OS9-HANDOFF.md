@@ -52,6 +52,37 @@ cache preservation and evidence-based acceptance. No app implementation or draft
 SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
 only; no compiler, packaging or tests run for this change.
 
+## J314S wip3 dock incident and wip4 build status — 2026-10-22
+
+The October 21 wip2 trial produced owner-confirmed WD22TB4 picture on all three
+USB-C ports at 1080p/60 in one observed cycle per port. On October 22, one wip3
+plug on dcpext1 produced no picture; same-port replug did not recover, while a
+different port restored 1080p/60. This is one incident, not sustained or
+all-port wip3 qualification. Preserve the immutable
+[wip3 report at source 3ca5888](https://github.com/techmore/ElementaryOS_MSeries/blob/3ca5888000e9fa47df29d058d0cfbc033bbc749e/mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
+
+The current wip4 source/build candidate is open [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533)
+at head `de375f38acdc8fb3bc88ed65982c09f619e1034d`. ARM64 candidate, unified72
+and eGPU build/payload checks passed in
+[run 39860520050](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860520050);
+M-series validation passed in
+[run 39860519355](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860519355).
+This is source/build evidence only. DCP KUnit, attended J314S boot, WD22TB4
+recovery/repeatability, suspend, long-run stability and paired power qualification
+remain open. No wip4 package was installed or armed; the persistent boot selection
+was not changed.
+
+Older results remain scoped: PR #518's source-preparation run failed after a
+codeload 429, and PR #528's fallback build produced wip3, not wip4; PR #527's
+SIGHUP change only fixes the dock-test harness. These do not supersede PR #533's
+wip4 build result. PR #519 carries the public status correction and remains
+unpublished pending review, merge and a successful Pages deployment. Current
+`origin/dev` is `1692134966206c8d9d008f27c9f9a31247f3813b`; its Pages workflow
+run 39939630433 succeeded, but that does not publish PR #519's unmerged changes.
+No kernel, boot payload, display, power, audio or desktop state changed in this
+maintenance pass.
+
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
