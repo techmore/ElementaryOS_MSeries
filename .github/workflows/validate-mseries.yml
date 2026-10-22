@@ -365,6 +365,15 @@ jobs:
           cd rust
           cargo build --release -p claude-pantheon-rs
           cargo test --release -p claude-pantheon-rs --lib
+      # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
+      - name: Contracts drift against pingdotgg/t3code main (advisory)
+        continue-on-error: true
+        run: |
+          cd rust/claude-pantheon-rs
+          if ! T3_CONTRACTS_REPO="$RUNNER_TEMP/t3code" ./scripts/refresh-contracts.sh --check; then
+            echo "::warning title=T3 contracts drift::contracts/ no longer matches t3code main; run rust/claude-pantheon-rs/scripts/refresh-contracts.sh"
+            exit 1
+          fi
       - name: Check the desktop entry and the AppStream metainfo
         run: |
           desktop-file-validate rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.desktop
