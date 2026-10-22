@@ -125,6 +125,15 @@ binary was rebuilt, atomically installed to `~/.local/bin/claude-pantheon-rs`,
 and relaunched as PID 636588; the fresh feed reports `eos` connected with Codex
 selected, no running or pending work. Exact-commit CI is still pending.
 
+The `6bdb9f5c` validation package passed its module-path assertion because it
+used an absolute temporary output path, but the separate package-workflow
+artifact still omitted the module: that workflow passed a relative
+`out/claude-pantheon-rs` path, which Meson resolved under its build directory.
+Commit `943ab94f` normalizes relative package output paths before Meson runs.
+A local build with the same relative path now places the module in the `.deb`
+at the expected Wingpanel location, and both indicator fixture probes pass.
+The fixed package workflow still needs an exact-commit ARM64 run.
+
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
 Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
