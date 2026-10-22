@@ -8,6 +8,10 @@ The desktop sidebar now groups chats under T3 project/repository context, shows 
 
 The Repos page now keeps repositories pinned in saved order and sorts the rest by their latest chat activity. Each repository card carries that context into a five-row recent-chat preview sorted pinned-first, then by attention and latest activity. Rows show branch and activity age, open the full chat, and expose pin/unpin; **New chat** starts in the matching checkout and creates its T3 project when needed. This uses the current shell snapshot and keeps generic chats without GitHub context out of repo lists. The full repo/issue workflow remains in [issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523); live branch freshness and higher-volume repo-card layout still need qualification.
 
+### Faster T3-R validation cycles — 2026-10-22
+
+The M-series validation workflow now selects jobs by changed component, while manual dispatch retains the full matrix. The T3-R PR selects its six relevant suites instead of queueing unrelated M-series jobs. The plugin-package workflow's build-only PR path now targets `main`, where release PRs are reviewed; pushes to `dev` and `main` retain package builds. The filter was exercised against PR #521, and all 78 T3 library tests pass locally.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed

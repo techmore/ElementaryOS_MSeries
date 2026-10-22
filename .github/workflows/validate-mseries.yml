@@ -26,8 +26,86 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  changes:
+    name: Detect affected M-series components
+    runs-on: ubuntu-24.04
+    outputs:
+      teams_web: ${{ steps.filter.outputs.teams_web }}
+      speech_release: ${{ steps.filter.outputs.speech_release }}
+      ui_scale: ${{ steps.filter.outputs.ui_scale }}
+      bluetooth: ${{ steps.filter.outputs.bluetooth }}
+      native_ui: ${{ steps.filter.outputs.native_ui }}
+      orchard: ${{ steps.filter.outputs.orchard }}
+      work_mode: ${{ steps.filter.outputs.work_mode }}
+      dock_startup: ${{ steps.filter.outputs.dock_startup }}
+      desktop_space: ${{ steps.filter.outputs.desktop_space }}
+      orchard_app: ${{ steps.filter.outputs.orchard_app }}
+      codexbar: ${{ steps.filter.outputs.codexbar }}
+      calendar: ${{ steps.filter.outputs.calendar }}
+      validate: ${{ steps.filter.outputs.validate }}
+      hardware_support: ${{ steps.filter.outputs.hardware_support }}
+      assistant_acp: ${{ steps.filter.outputs.assistant_acp }}
+      claude_pantheon_rs: ${{ steps.filter.outputs.claude_pantheon_rs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Match changed files to component checks
+        id: filter
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            for check in teams_web speech_release ui_scale bluetooth native_ui orchard work_mode dock_startup desktop_space orchard_app codexbar calendar validate hardware_support assistant_acp claude_pantheon_rs; do
+              echo "$check=true" >> "$GITHUB_OUTPUT"
+            done
+            exit 0
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "$BASE_SHA...$GITHUB_SHA")
+          matches() {
+            local path pattern
+            for path in "${changed_files[@]}"; do
+              for pattern in "$@"; do
+                # shellcheck disable=SC2053
+                [[ "$path" == $pattern ]] && return 0
+              done
+            done
+            return 1
+          }
+          emit() {
+            local check="$1"
+            shift
+            if matches "$@"; then
+              echo "$check=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$check=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          emit teams_web 'mseries/install-teams.sh' 'mseries/teams-web/**'
+          emit speech_release 'mseries/releases/**' 'mseries/dictation/**'
+          emit ui_scale 'mseries/ui-scale/**' 'mseries/dock-policy/**' 'mseries/dock-taskbar/**' 'mseries/dock-tests/**' 'mseries/codexbar-wingpanel/**' 'mseries/repobar-wingpanel/**'
+          emit bluetooth 'mseries/quick-settings/**'
+          emit native_ui 'mseries/ui-audit/**' 'mseries/panel-ui-probes/**'
+          emit orchard 'mseries/orchard-incus/**' 'mseries/orchard/**' 'mseries/screenshot-shelf/**' 'mseries/codexbar-wingpanel/**'
+          emit work_mode 'mseries/work-mode/**'
+          emit dock_startup 'mseries/dock-tests/**' 'mseries/dock-taskbar/**' 'mseries/dock-startup/**' 'mseries/install-dock*.sh'
+          emit desktop_space 'mseries/display-space/**'
+          emit orchard_app 'mseries/orchard/**'
+          emit codexbar 'mseries/codexbar-wingpanel/**' 'mseries/repobar-wingpanel/**' 'mseries/dock-taskbar/**'
+          emit calendar 'mseries/calendar/**'
+          emit validate 'Justfile' 'assemble-iso.sh' 'mkosi.conf' 'mkosi.images/**' 'mkosi.conf.d/**' 'mkosi.bump' 'repos/**' 'packages.arm64' 'transform/**' 'bin/**' 'docs/capabilities.*' 'mseries/validate.sh' 'mseries/test-image-wiring.py' '.github/workflows/**'
+          emit hardware_support 'mseries/aurora-sep/**' 'mseries/power/**' 'mseries/hardware/**' 'mseries/video-decode/**' 'mseries/boot/**' 'mseries/omdrop*/**' 'mseries/install-hardware-support.sh'
+          emit assistant_acp 'mseries/local-ai/**'
+          emit claude_pantheon_rs 'rust/claude-pantheon-rs/**'
+
   teams-web:
     name: Teams desktop launcher contracts
+    needs: changes
+    if: needs.changes.outputs.teams_web == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -40,6 +118,8 @@ jobs:
 
   speech-release:
     name: English F5 release contracts (arm64)
+    needs: changes
+    if: needs.changes.outputs.speech_release == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -57,6 +137,8 @@ jobs:
 
   ui-scale:
     name: Size system ladder and Quick Settings text size (arm64)
+    needs: changes
+    if: needs.changes.outputs.ui_scale == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -76,6 +158,8 @@ jobs:
         run: bash mseries/ui-scale/tests/test-text-scale.sh
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
+    needs: changes
+    if: needs.changes.outputs.bluetooth == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -92,6 +176,8 @@ jobs:
 
   native-ui-responsiveness:
     name: Native UI asynchronous backends (arm64)
+    needs: changes
+    if: needs.changes.outputs.native_ui == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -107,6 +193,8 @@ jobs:
 
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
+    needs: changes
+    if: needs.changes.outputs.orchard == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -133,6 +221,8 @@ jobs:
 
   work-mode:
     name: Windows Work Mode schedule and work-network rules (arm64)
+    needs: changes
+    if: needs.changes.outputs.work_mode == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -143,6 +233,8 @@ jobs:
 
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
+    needs: changes
+    if: needs.changes.outputs.dock_startup == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -156,6 +248,8 @@ jobs:
 
   desktop-space:
     name: Native top-bar scale and notch GTK allocation (arm64)
+    needs: changes
+    if: needs.changes.outputs.desktop_space == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -170,6 +264,8 @@ jobs:
 
   orchard-app:
     name: Orchard app build, tests, metadata and Debian package (arm64)
+    needs: changes
+    if: needs.changes.outputs.orchard_app == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -194,6 +290,8 @@ jobs:
   # alias satisfies it from the Orchard app job until the protection list names the new job.
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
+    needs: changes
+    if: needs.changes.outputs.codexbar == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -219,6 +317,8 @@ jobs:
 
   calendar-agenda:
     name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)
+    needs: changes
+    if: needs.changes.outputs.calendar == 'true'
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     steps:
@@ -242,6 +342,8 @@ jobs:
 
   validate:
     name: mkosi summary + script checks (arm64)
+    needs: changes
+    if: needs.changes.outputs.validate == 'true'
     runs-on: ubuntu-26.04-arm
     steps:
       - name: Checkout repository
@@ -291,6 +393,8 @@ jobs:
 
   hardware-support:
     name: Hardware diagnostics and recovery fixtures
+    needs: changes
+    if: needs.changes.outputs.hardware_support == 'true'
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 10
     steps:
@@ -318,6 +422,8 @@ jobs:
 
   mseries-assistant-acp:
     name: MSeries Assistant ACP contracts
+    needs: changes
+    if: needs.changes.outputs.assistant_acp == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -326,6 +432,8 @@ jobs:
 
   claude-pantheon-rs:
     name: Claude (T3 client) build, tests, desktop metadata and .deb (arm64)
+    needs: changes
+    if: needs.changes.outputs.claude_pantheon_rs == 'true'
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 45
     steps:

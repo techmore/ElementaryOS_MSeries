@@ -40,6 +40,7 @@ on:
       - "mseries/window-recovery/**"
   # Build-only check (a release PR dev -> main builds the stable versions it would publish).
   pull_request:
+    branches: [main]
     paths:
       - "mseries/debs/**"
       - "mseries/update/**"
