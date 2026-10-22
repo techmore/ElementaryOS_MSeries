@@ -182,6 +182,12 @@ an owner-only user file. `python3 mseries/local-ai/test_acp_agent.py` passes all
 rejection. The validation workflow now runs these model-free contracts on CI
 dispatch. If a single turn exceeds the retained-history limit, the last valid
 checkpoint stays available and that turn may need to be resent after restart.
+A deployment smoke then ran the installed helper in two fresh ACP processes,
+loaded a synthetic saved turn through `session/load`, and confirmed its token
+reached the second request. Both processes initialized the real MCP service;
+the inference endpoint was a temporary loopback fixture and no model inference
+or MCP tool action ran. This verifies helper-process recovery, not T3 server
+restart and reattachment.
 
 The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
 GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights
