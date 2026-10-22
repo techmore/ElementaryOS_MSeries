@@ -38,11 +38,18 @@ qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
    in `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`). The first arm64 build succeeded; next qualify the generic-kernel boot
    path and verify the produced installer (see FIRST-ISO-BUILD.md).
 3. **Asahi-origin packages.** `asahi-audio`, `alsa-ucm-conf-asahi`, and
-   `speakersafetyd` are available from Ubuntu resolute/universe and the
-   transformed desktop has passed an audio-output check with the matching
-   PipeWire LV2 filter plugin. Package that safe chain into the factory image.
-   `avd-fw` and `libva-v4l2_request-avd` still need a confirmed Ubuntu source
-   (see `packages.arm64`).
+   `speakersafetyd` are available from Ubuntu resolute/universe. The factory
+   image now packages and enables `speakersafetyd` alone; the first-boot DSP
+   chain remains excluded until its volume behavior is qualified. The
+   transformed desktop passed an output check with the matching PipeWire LV2
+   filter plugin, which does not qualify factory-image audio. `avd-fw` and
+   `libva-v4l2_request-avd` still need a confirmed Ubuntu source (see
+   `packages.arm64`). [Focused receipt](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+   The October 21 artifact-only run resolved `speakersafetyd` 1.1.2-4 and
+   passed the liveiso payload check, but failed later in sysupdate repart
+   (`Verity signature partition is empty`); it did not produce a complete ISO.
+   The release recipe masked the mkosi failure until checksum generation. Fix
+   that build path before claiming a completed artifact.
 4. **Bootloader on real hardware.** Apple Silicon boots via m1n1/u-boot;
    verify grub-efi-arm64 + shim path works from USB on a test machine, or
    document the Asahi-installer + chroot route as the interim install path.

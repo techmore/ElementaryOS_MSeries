@@ -14,6 +14,82 @@ Full timeline, what is and is not shown: `mseries/aurora/hardware-tests/2026-10-
   ALSA underrun at the first plug. Not investigated further.
 - **Next.** CI native build of the PR, then owner decides on unarmed staging; design the same-plug re-request on the Thunderbolt side.
 
+## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
+
+Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
+unqualified until the session package is installed and the next login.**
+
+- **`/usr/bin/pantheon-lock`** (session package) runs gtklock with `usr/share/pantheon-rust-compositor/lock/layout.ui` and
+  `style.css`: the user's wallpaper (`picture-uri`, or `-dark` in dark mode), io.elementary.greeter's clock and date
+  styling (values from its `Application.css`), and a Granite-style card with an accent-coloured avatar initial (or the
+  AccountsService/`~/.face` picture), the user's name, and a password field with an accent arrow button. It follows the
+  12/24 h clock, the accent from `gtk-theme`, and `color-scheme` (GTK `:dark` variant). gtklock's widget ids and handlers
+  are kept, so PAM, Caps Lock and error messages still work. Any failure falls back to stock gtklock.
+- **Default locker:** the compositor uses `/usr/bin/pantheon-lock` when installed, else `gtklock`;
+  `PANTHEON_LOCK_COMMAND` still wins.
+- **Correction to the entry below:** the earlier idle probe never gave the nested window X keyboard focus, so it proved
+  frame callbacks, not that typing reached the lock screen. The probe now focuses the window and requires key events:
+  with the fix 12 key events and 9 frame callbacks while typing; the control build (no lock-surface callbacks) also gets
+  12 key events but 0 callbacks, and its screenshot shows the card frozen mid fade-in with no dots — the owner's
+  "no keyboard feedback". With the fix, dots appear as you type.
+- **Verified:** strict clippy both ways, 176 tests (new: default lock command); idle probe 6/6; screenshots with
+  `lock-probe/shoot.sh` in light (owner's settings) and dark: locked, revealed, typing, Caps Lock warning. No password was
+  submitted in any test.
+- **What to check at the next login (after installing the package):** Super+L shows your wallpaper, the big clock and the
+  card; typing shows dots; Caps Lock shows the warning; your password unlocks. If it misbehaves:
+  `Environment=PANTHEON_LOCK_COMMAND=gtklock` drop-in restores the stock look.
+
+## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
+
+Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
+`lock-enabled` and `lock-delay`. **Installed nowhere, unqualified until the next login.**
+
+- **Root cause of "no keyboard feedback":** the lock screen is gtklock 4.0 (what `org.gnome.ScreenSaver.Lock` / Super+L
+  starts; it looks like a login screen). Frame callbacks were only ever sent to windows, never to `ext-session-lock`
+  surfaces, on both backends, so gtklock drew its first frame and then waited forever: keys reached it and Enter still
+  unlocked, but nothing on screen changed. Lock surfaces now get frame callbacks (`send_lock_surface_frames`). Nested
+  control run with the call disabled: 0 callbacks while typing; with it: 5.
+- **Pointer on the lock screen:** it was not drawn while locked; it is now (the volume/brightness OSD too; no snap preview).
+- **Lock on idle:** when the displays blank and the user has been idle for at least 5 s (gsd-power's idle blank, not a lid
+  or a manual switch-off), the compositor reads `org.gnome.desktop.screensaver lock-enabled` / `lock-delay` and
+  `org.gnome.desktop.lockdown disable-lock-screen`. Enabled: lock at once for delay 0 (the owner's setting), otherwise after
+  `lock-delay` seconds unless input comes first, as GNOME Shell does. It starts the same locker as Super+L.
+  **Off switch:** `Environment=PANTHEON_IDLE_LOCK=off` (a number overrides the delay).
+- **Verified:** strict clippy both ways, 175 tests (new: settings decision incl. lockdown and missing schema); idle probe
+  6/6 now with the real gtklock (`idle-probe/run.sh`): manual blank right after input does not lock, idle blank locks,
+  typing on the woken lock screen gets frame callbacks; activation probe 7/7. Both probes now find the binary in the
+  shared cargo target (`~/.cache/cargo-target`).
+- **Still not addressed:** gtklock looks nothing like elementary (stock theme, no wallpaper); lock before suspend
+  (logind `PrepareForSleep` / `Lock`) is not handled by the compositor.
+- **What to check at the next login:** Super+L, type: dots appear as you type; the pointer is visible; unlock works.
+  Then `gsettings set org.gnome.desktop.session idle-delay 60`, wait ~70 s: screen blanks, a key wakes it to the lock
+  screen. Restore `idle-delay 900`.
+
+## Factory speaker safety package wiring — 2026-10-21
+
+Added Ubuntu Resolute `speakersafetyd` 1.1.2-4 to the ARM64 Apple Silicon
+overlay and both liveiso/sysupdate package consumers. The immutable overlay
+retains the package unit's `multi-user.target` enablement link through pruning.
+The DSP chain remains excluded until fresh-image volume behavior is qualified.
+Source version, upstream tag/commit, MIT provenance, review scope, test results
+and qualification limits: [factory audit](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+
+Validation: `python3 mseries/test-image-wiring.py` (7 tests),
+`python3 -m py_compile mseries/test-image-wiring.py`, `git diff --check`, and
+PR CI passed. Artifact-only workflow run [39712066587](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39712066587)
+resolved and installed ARM64 `speakersafetyd` 1.1.2-4 from Resolute universe;
+the generated liveiso payload check passed and confirmed the package-owned
+service link. Final image assembly failed in sysupdate `systemd-repart` with
+`Verity signature partition is empty`; no ISO/checksum was produced. The
+retained build logs are in artifact
+`os9-mseries-build-record-39712066587`. `just do-daily` masked the mkosi error
+until the later checksum step, so the repart failure and recipe error
+propagation need a follow-up. The October 18 blank-disk/installed ARM64 VM
+receipt predates this change; it does not validate speaker protection. Next:
+fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
+payloads, then install and boot that exact image in an isolated VM. Physical
+Apple boot and speaker acceptance remain open.
+
 ## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
 
 `mseries/orchard/` is the one app: Machine Lab's window, sidebar, pages and `style.css` with Orchard's name, icon
@@ -200,8 +276,7 @@ the next login**; the running compositor was not restarted.
   0, or any input, redraws in full and the next frame re-enables the CRTC. A session lock requested while blanked is
   confirmed at once (no frame would ever arrive). **Off switch:** drop-in `Environment=PANTHEON_DISABLE_POWER_SAVE=1`.
 - **Expected behaviour with the owner's settings:** `idle-delay` 900 s, so gsd-power blanks after 15 min idle; `idle-dim`
-  is off. Screen lock on idle is **not** added: in GNOME the shell locks, and this compositor does not, so blanking does not lock
-  (`lock-enabled` true / `lock-delay` 0 has no effect yet). Owner decision.
+  is off. Lock on idle was added the next day (entry above).
 - **Verified:** strict clippy (`native-drm`, all targets), 168 tests (new: watch semantics, cap, inhibition clock, power-save
   modes, off switch); new nested probe `pantheon-rust-compositor/idle-probe/run.sh` (private Xvfb + D-Bus, real
   `GnomeDesktop.IdleMonitor`): idle watch fired at 1.51 s for 1.5 s, user-active fired on input, GTK inhibitor held idle at 0

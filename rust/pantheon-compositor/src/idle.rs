@@ -199,6 +199,11 @@ impl IdleMonitorHandle {
         }
     }
 
+    /// Current idle time in milliseconds (zero while an inhibitor is active).
+    pub fn idle_ms(&self) -> u64 {
+        self.shared.idle_ms()
+    }
+
     pub fn set_inhibited(&self, inhibited: bool) {
         let was = self.shared.inhibited.swap(inhibited, Ordering::AcqRel);
         if was == inhibited {
