@@ -113,6 +113,65 @@ class RetentionTests(unittest.TestCase):
         w.cleanup()
         self.assertTrue(self.original.exists())
 
+    def test_recent_captures_share_one_multi_file_drag_and_remain_saved(self):
+        w = self.show()
+        second = self.root / "Screenshot second.png"
+        third = self.root / "Screenshot third.png"
+        second.write_bytes(self.original.read_bytes())
+        third.write_bytes(self.original.read_bytes())
+        self.app.show(str(second))
+        self.app.show(str(third))
+
+        self.assertIs(self.app.shelf, w)
+        self.assertEqual(w.hint.get_label(), "Drag 3 screenshots · Saved")
+        self.capture(w, "multi-recent")
+        files = w.file_list_for_drag().get_files()
+        self.assertEqual([file.get_path() for file in files], [capture["staged"] for capture in w.captures])
+
+        provider = w.on_prepare(None, 0, 0)
+        self.assertIsInstance(provider, shelf.Gdk.ContentProvider)
+        self.assertEqual(w.drag_count, 3)
+        w.finish("expired")
+        w.cleanup()
+        for capture in w.captures:
+            self.assertFalse(Path(capture["staged"]).exists())
+            self.assertTrue(Path(capture["path"]).exists())
+
+    def test_multi_file_drag_is_bounded_to_latest_supported_batch(self):
+        w = self.show()
+        for index in range(shelf.MAX_DRAG_FILES):
+            path = self.root / f"Screenshot {index}.png"
+            path.write_bytes(self.original.read_bytes())
+            self.app.show(str(path))
+
+        files = w.file_list_for_drag().get_files()
+        expected = [capture["staged"] for capture in w.captures[-shelf.MAX_DRAG_FILES:]]
+        self.assertEqual([file.get_path() for file in files], expected)
+        self.assertEqual(len(files), shelf.MAX_DRAG_FILES)
+        self.assertEqual(w.hint.get_label(), f"Latest {shelf.MAX_DRAG_FILES} of {shelf.MAX_DRAG_FILES + 1} · Saved")
+
+    def test_multi_file_drop_exports_each_image_for_running_flatpaks(self):
+        w = self.show()
+        second = self.root / "Screenshot second.png"
+        second.write_bytes(self.original.read_bytes())
+        self.app.show(str(second))
+        flatpak_apps = {"org.example.Signal"}
+        exports = []
+
+        def export(staged):
+            result = Mock(path=staged, granted=set())
+            exports.append((staged, result))
+            return result
+
+        with patch.object(shelf, "running_flatpak_apps", return_value=flatpak_apps), \
+                patch.object(shelf, "PortalExport", side_effect=export):
+            files = w.file_list_for_drag().get_files()
+
+        self.assertEqual([file.get_path() for file in files], [capture["staged"] for capture in w.captures])
+        self.assertEqual(len(exports), 2)
+        for _staged, portal in exports:
+            portal.grant_running.assert_called_once_with(flatpak_apps)
+
     def test_replacement_during_drag_waits_and_does_not_clear_new_card(self):
         old = self.show()
         old.on_prepare(None, 0, 0)

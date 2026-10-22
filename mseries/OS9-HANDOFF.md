@@ -43,6 +43,26 @@ data was read or changed. Atomic deployments and the separate Flatpak remain
 unmodified. The Signal Beta system install uses the revised palette at the next
 launch. Screenshot-shelf acceptance remains tracked under issue #227.
 
+## Signal screenshot shelf batches recent images — 2026-10-22
+
+The screenshot shelf now keeps recent captures in one transient card and offers
+up to the 12 newest images together as a GTK file list. The thumbnail and
+visible count update to the latest capture. Copy acts on the newest image;
+Show reveals every capture in the current batch. Saved originals remain in
+Downloads/Screenshots, including after accepted, refused or cancelled drags.
+Each image gets its own retained staging copy and, for running Flatpak targets,
+its own document-portal export.
+
+The card now reads GTK theme background and foreground colors, so light/dark
+appearance follows GTK rather than the previous fixed dark surface. Source
+screenshots were inspected in both modes. Ten isolated Xvfb/private-D-Bus
+retention tests pass, including native and Flatpak multi-file list creation,
+the 12-image cap and retention of every original. Python byte-compilation,
+shell syntax and git diff checks pass. This does not verify that Signal
+actually attaches every image: compose preview, paste behavior and the
+XWayland-to-Wayland owner-session path remain open under issue #227. No Signal
+account was opened and no message was sent.
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
