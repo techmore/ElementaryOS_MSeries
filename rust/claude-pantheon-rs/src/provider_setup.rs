@@ -512,7 +512,11 @@ impl AuthWindow {
             })
             .collect();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        let selected = self.method_picker.selected() as usize;
         self.method_picker.set_model(Some(&gtk::StringList::new(&refs)));
+        if !names.is_empty() && selected >= names.len() {
+            self.method_picker.set_selected(0);
+        }
         self.method_row.set_visible(names.len() > 1);
 
         let busy = matches!(state.phase.as_str(), "starting" | "waiting" | "verifying");
@@ -879,4 +883,40 @@ fn provider_title(provider: &Provider) -> String {
         .find(|(driver, _)| *driver == provider.driver)
         .map(|(_, title)| (*title).to_string())
         .unwrap_or_else(|| provider.name())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auth_state_decodes_server_advertised_account_methods() {
+        let state: AuthState = serde_json::from_value(json!({
+            "phase": "idle",
+            "methods": [
+                {"id": "chatgpt", "name": "Sign in with ChatGPT", "description": "Reconnect account.", "accountEmail": "owner@example.test", "type": "agent"},
+                {"id": "chatgpt-change-account", "name": "Use a different ChatGPT account", "description": "Register another account.", "accountEmail": null, "type": "agent"}
+            ]
+        }))
+        .unwrap();
+
+        assert_eq!(state.methods.len(), 2);
+        assert_eq!(state.methods[0].id, "chatgpt");
+        assert_eq!(state.methods[0].account_email.as_deref(), Some("owner@example.test"));
+        assert_eq!(state.methods[1].id, "chatgpt-change-account");
+    }
+
+    #[test]
+    fn auth_state_accepts_forward_compatible_interactions_and_missing_methods() {
+        let state: AuthState = serde_json::from_value(json!({
+            "phase": "waiting",
+            "flowId": "flow-1",
+            "interaction": {"type": "deviceCode", "id": "step-1", "url": "https://example.test/device", "userCode": "ABCD-EFGH", "newServerField": true}
+        }))
+        .unwrap();
+
+        assert!(state.methods.is_empty());
+        assert_eq!(state.flow_id.as_deref(), Some("flow-1"));
+        assert_eq!(state.interaction.as_ref().and_then(|v| v.get("type")).and_then(Value::as_str), Some("deviceCode"));
+    }
 }

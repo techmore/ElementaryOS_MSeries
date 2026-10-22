@@ -9,11 +9,14 @@ still need to be installed and enabled on the T3 Code server.
 
 Validation: `cargo fmt -p claude-pantheon-rs --check`,
 `cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings`,
-`cargo build --release -p claude-pantheon-rs`, and `git diff --check`.
-No tests were run locally. This stays a native GTK/Granite Rust app using standard GTK Wayland support, but
-it has not been installed or exercised in a live Pantheon Rust compositor session; the release build
-does not establish that runtime qualification. Next: run the client and a provider sign-in flow in a
-Pantheon session when available, and record any UI or server compatibility fixes.
+`cargo test --release -p claude-pantheon-rs --lib` (44/44), `cargo build --release -p claude-pantheon-rs`,
+and `git diff --check`. In the active Pantheon Wayland session, the offline GTK app drew its first frame
+in 195 ms using `GDK_BACKEND=wayland` and Cairo. A read-only `server.getConfig` call against T3 Code 0.1.1
+reported Claude, Codex, OpenCode and Grok installed, enabled and authenticated. The provider manager also
+rendered in an isolated GTK preview using that server config; its connected and disabled states displayed
+correctly without changing credentials. Interactive sign-in, package CI, and installation for daily launch
+remain open. The app stays native GTK/Granite and standard GTK Wayland; no GNOME Shell API is required.
+Next: finish package CI, then qualify interactive sign-in in the live session before installing for daily use.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
