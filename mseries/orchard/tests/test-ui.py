@@ -29,7 +29,9 @@ with tempfile.TemporaryDirectory(prefix='orchard-ui-') as directory:
     path=str(Path(directory)/'incus.socket')
     with socketserver.UnixStreamServer(path,Handler) as server:
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-        env={**os.environ,'ORCHARD_PODMAN':str(Path(__file__).with_name('fake-podman.py')),'FAKE_PODMAN_LOG':directory+'/podman.log','INCUS_SOCKET':path,'XDG_CONFIG_HOME':directory+'/config','XDG_STATE_HOME':directory+'/state','XDG_DATA_HOME':directory+'/data','MSERIES_VM_DIR':directory+'/vms','G_DEBUG':'fatal-criticals'}
+        env={**os.environ,'ORCHARD_PODMAN':str(Path(__file__).with_name('fake-podman.py')),'FAKE_PODMAN_LOG':directory+'/podman.log','INCUS_SOCKET':path,'XDG_CONFIG_HOME':directory+'/config','XDG_STATE_HOME':directory+'/state','XDG_DATA_HOME':directory+'/data','MSERIES_VM_DIR':directory+'/vms','G_DEBUG':'fatal-criticals',
+             # No system bus: Granite's AccountsService lookup logs a critical where the service is absent (CI).
+             'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+directory+'/no-system-bus'}
         result=subprocess.run(sys.argv[1:],env=env,timeout=30)
         assert result.returncode==0,result.returncode
         # Second pass on the Podman page: list, live counters and the details window against the fixture.
