@@ -257,8 +257,13 @@ connects in the Pantheon Rust session; live pointer interactions remain open.
 The system package remains mseries2, so the system Wingpanel module is still
 old. Upstream Wingpanel's loader uses the build-time
 `Build.INDICATORS_DIR` constant generated from Meson's install prefix/libdir;
-the current binary has no runtime user-local indicator path. Exact-head
-validation for `f7397cda` was dispatched as run 39863027201 and is queued.
+the current binary has no runtime user-local indicator path. Validation run
+39863027201 for code commit `f7397cda` passed the ARM64 T3 client job and the
+isolated ACP contracts job. The T3 job passed formatting/Clippy, protocol and
+model tests, GTK rendering, contract checks, desktop metadata, the headless
+indicator build/probe, Debian package assembly, and verification that the
+package contains the Wingpanel module. Other unrelated M-series jobs in that
+workflow were still running at the last check.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
