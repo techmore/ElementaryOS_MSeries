@@ -1,0 +1,13 @@
+{
+  "scope": "actual M4 and legacy Asahi driver/Rust core/C scheduler targeted object compile; no module unload/runtime or full kernel/package",
+  "exit": 0,
+  "revision4_sources_restored": true,
+  "objects": {
+    "rust/kernel.o": "4fa45bc5afd24bb8cdc843d35bf0a05b48bf0f8245035cecfd578f942e804675",
+    "drivers/gpu/drm/asahi/asahi_m4.o": "da08d05ebfc779c29df6066f2f07d834d03303471144925a1bba7cd6b4ab3589",
+    "drivers/gpu/drm/asahi/asahi.o": "2d042a07627ac48a86687ec3ddecc64bbd373be3b8b20382cf36d680e659cb20",
+    "drivers/gpu/drm/scheduler/sched_main.o": "ffb09bfd5e0a20cf3e9cab6337eb71cbea2b74040a595d0057d051c35e4d45d9",
+    "drivers/gpu/drm/scheduler/sched_entity.o": "32a23b47bebd17d83b36893ef8f164f78ac0200267196bda8ff2d7dc3e7828dd"
+  },
+  "hardware_validated": false
+}

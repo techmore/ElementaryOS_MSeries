@@ -17,7 +17,9 @@ spec.loader.exec_module(kernel)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--archive', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
-parser.add_argument('--experimental-owner', action='store_true', help='unpromoted allocation-owner candidate and seven-case test recipe')
+choice = parser.add_mutually_exclusive_group()
+choice.add_argument('--experimental-owner', action='store_true', help='unpromoted allocation-owner candidate and seven-case test recipe')
+choice.add_argument('--experimental-module', action='store_true', help='unpromoted owner plus callback module/work-drain candidate and eight-case test recipe')
 args = parser.parse_args()
 if args.output.exists() or kernel.digest(args.archive) != kernel.ARCHIVE_SHA256:
     raise ValueError('new output and pinned kernel archive required')
@@ -36,7 +38,7 @@ kernel.source_patch_gate(source)
 directory = HERE / 'gravity/testing'
 manifest_name = 'manifest.json'
 experimental = {}
-if args.experimental_owner:
+if args.experimental_owner or args.experimental_module:
     directory = HERE / 'gravity/experimental/owner'
     experimental = json.loads((directory / 'manifest.json').read_text())
     for name, expected in experimental.items():
@@ -46,6 +48,17 @@ if args.experimental_owner:
     for name, expected in json.loads((directory / 'resulting-files.json').read_text()).items():
         if kernel.digest(source / name) != expected:
             raise ValueError('experimental owner source mismatch')
+    if args.experimental_module:
+        directory = HERE / 'gravity/experimental/module'
+        module_patches = json.loads((directory / 'manifest.json').read_text())
+        for name, expected in module_patches.items():
+            if Path(name).name != name or kernel.digest(directory / name) != expected:
+                raise ValueError('experimental module patch mismatch')
+            subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source), '-i', str(directory / name)], check=True)
+        experimental.update(module_patches)
+        for name, expected in json.loads((directory / 'resulting-files.json').read_text()).items():
+            if kernel.digest(source / name) != expected:
+                raise ValueError('experimental module source mismatch')
     manifest_name = 'test-manifest.json'
 manifest = json.loads((directory / manifest_name).read_text())
 for name, expected in manifest.items():
@@ -56,7 +69,7 @@ shutil.copy2(HERE / 'gravity/testing/kunit.config', args.output / 'kunit.config'
 (args.output / 'receipt.json').write_text(json.dumps({
     'scope': 'KUnit test-source preparation only; no compile/run/hardware result',
     'commit': kernel.COMMIT, 'source_archive_sha256': kernel.ARCHIVE_SHA256,
-    'experimental_owner_patches': experimental,
+    'experimental_patches': experimental,
     'test_patches': manifest, 'kunit_config_sha256': kernel.digest(args.output / 'kunit.config'), 'compatibility_patches': kernel.compatibility_patches()[1],
     'scheduler_test_source_sha256': kernel.digest(source / 'rust/kernel/drm/sched.rs'),
     'normal_kernel_package_modified': False, 'hardware_validated': False,

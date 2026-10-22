@@ -1,0 +1,7 @@
+Subject: [NEGATIVE TEST ONLY] omit permanent work disables
+
+--- a/drivers/gpu/drm/scheduler/sched_main.c
++++ b/drivers/gpu/drm/scheduler/sched_main.c
+@@ -1438,2 +1437,0 @@
+-	disable_work_sync(&sched->work_run_job);
+-	disable_work_sync(&sched->work_free_job);

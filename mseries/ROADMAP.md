@@ -4071,3 +4071,20 @@ by normal kernel/package/image manifests. Module callback/code lifetime and
 mutable callback aliasing still require review. No installed host component
 changed. Baseline image run 39714779495 and initialization-only r3 kernel
 39709872273 remain live; r4 kernel 39715540751 remains pending.
+
+Unpromoted module/work lifetime follow-up to the owner split: Aurora c163a8d's
+shared module pinning, DRM fops ownership and permanent work-disable changes
+are adapted under `gravity/experimental/module`. Both actual M4 and legacy
+Asahi driver objects, Rust core and both C scheduler objects compile. Eight
+generic ARM64 QEMU cases pass; removing only permanent work disables fails
+the new stable-state assertion. A fresh pinned-archive preparation reproduces
+the exact tested scheduler source without fuzz via --experimental-module.
+The fake backend has MODULE=None, so native/loadable module refcounts and
+unload remain untested; the new case is not exhaustive completion-race stress.
+The initial test compile failed on enum binding prefixes and was corrected
+against generated bindings, preserving the assertion. Five module follow-up
+receipts retain compile, positive/negative, failure and source replay evidence.
+All 12 tracked upstream heads were rechecked; none changed from the previous
+observation (upstream-head-refresh-2 receipt). Normal manifests remain revision
+4; mutable callback aliasing remains open. Image 39714779495 and r3 kernel
+39709872273 remain live; r4 kernel 39715540751 is pending.

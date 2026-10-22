@@ -1,0 +1,83 @@
+{
+  "scope": "unpromoted module/work lifetime candidate plus eight generic ARM64 QEMU cases; fake backend has no loadable module",
+  "exit": 0,
+  "historical_sources_restored": true,
+  "test_source_sha256": "61cdfb5dc9feda8b090360e423f252513bfffa1b49ea83ec6a538d46fb5404ed",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "finalization_permanently_disables_submission_and_free_work",
+            "status": "PASS"
+          },
+          {
+            "name": "deferred_dependency_keeps_allocation_after_owner_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_during_timeout_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_unfinished_job_is_reachable_at_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 8,
+          "passed": 8,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "native_module_unload_tested": false,
+  "hardware_validated": false,
+  "aliasing_review_complete": false
+}
