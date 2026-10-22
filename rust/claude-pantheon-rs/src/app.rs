@@ -5,12 +5,13 @@
 use crate::chat::{self, label};
 use crate::index::{self, Session};
 use crate::look::{iso_to_unix, now_unix, relative_time, tilde};
+use crate::t3::attach;
 use crate::t3::model::Project;
 use crate::t3::model::{Provider, ServerConfig, Shell, ThreadShell, ThreadView, TurnItem};
 use crate::t3::{self, Rpc, auth, ws::WsError};
 use crate::transcript::{self, Transcript};
 use crate::workflow::{self, Issue, PinnedRepo};
-use crate::{diagnostics, handoff, repos, usage};
+use crate::{composer, diagnostics, handoff, palette, repos, usage};
 use futures_util::StreamExt;
 use granite::prelude::{PlaceholderExt, ToastExt};
 use gtk::{gdk, gio, glib, pango, prelude::*};
@@ -83,7 +84,7 @@ pub struct App {
     provider_dd: gtk::DropDown,
     model_dd: gtk::DropDown,
     mode_dd: gtk::DropDown,
-    entry: gtk::TextView,
+    entry: Rc<composer::Composer>,
     send_btn: gtk::Button,
     stop_btn: gtk::Button,
     composer_note: gtk::Label,
@@ -114,6 +115,7 @@ pub struct App {
     list_dirty: Cell<bool>,
     reconnect_attempt: Cell<u32>,
     auto_opened: Cell<bool>,
+    palette: RefCell<Option<Rc<palette::Palette>>>,
     started: Instant,
 }
 
@@ -175,17 +177,49 @@ impl App {
         let new_chat = gtk::Button::from_icon_name("list-add-symbolic");
         new_chat.set_tooltip_text(Some("New Thread (Ctrl+N)"));
         main_header.pack_start(&new_chat);
+        // The app menu (elementary HIG: a MenuButton in the header, sections, accelerator labels drawn by
+        // GTK from the `win.*` accelerators registered in `wire`).
         let menu_model = gio::Menu::new();
-        menu_model.append(Some("Usage"), Some("win.usage"));
-        menu_model.append(Some("Repos and Issues"), Some("win.repos"));
-        menu_model.append(Some("Changes in This Thread"), Some("win.changes"));
-        menu_model.append(Some("Diagnostics"), Some("win.diagnostics"));
-        menu_model.append(Some("Import Sessions from Claude Code and Codex"), Some("win.import"));
-        menu_model.append(Some("Hand Off to Repo"), Some("win.handoff"));
-        menu_model.append(Some("Open Offline Twin"), Some("win.offline"));
-        menu_model.append(Some("Reconnect"), Some("win.reconnect"));
-        menu_model.append(Some("Forget Pairing"), Some("win.forget"));
-        let menu = gtk::MenuButton::builder().icon_name("open-menu-symbolic").menu_model(&menu_model).build();
+        let section = |items: &[(&str, &str)]| {
+            let m = gio::Menu::new();
+            for (label_text, action) in items {
+                m.append(Some(label_text), Some(action));
+            }
+            m
+        };
+        menu_model.append_section(
+            None,
+            &section(&[
+                ("New Thread", "win.new-thread"),
+                ("Command Palette", "win.palette"),
+                ("Search Threads", "win.search"),
+            ]),
+        );
+        menu_model.append_section(
+            None,
+            &section(&[
+                ("Usage", "win.usage"),
+                ("Repos and Issues", "win.repos"),
+                ("Changes in This Thread", "win.changes"),
+                ("Diagnostics", "win.diagnostics"),
+            ]),
+        );
+        menu_model.append_section(
+            None,
+            &section(&[
+                ("Import Sessions from Claude Code and Codex", "win.import"),
+                ("Hand Off to Repo", "win.handoff"),
+                ("Open Offline Twin", "win.offline"),
+                ("Close Thread", "win.close-thread"),
+            ]),
+        );
+        menu_model.append_section(
+            None,
+            &section(&[("Settings", "win.settings"), ("Reconnect", "win.reconnect"), ("Forget Pairing", "win.forget")]),
+        );
+        menu_model.append_section(None, &section(&[("About Claude", "win.about"), ("Quit", "win.quit")]));
+        let menu =
+            gtk::MenuButton::builder().icon_name("open-menu-symbolic").menu_model(&menu_model).primary(true).build();
         menu.set_tooltip_text(Some("Menu"));
         main_header.pack_end(&gtk::WindowControls::new(gtk::PackType::End));
         main_header.pack_end(&menu);
@@ -221,26 +255,10 @@ impl App {
         composer_note.set_hexpand(true);
         composer_note.set_halign(gtk::Align::End);
         pickers.append(&composer_note);
-        let entry = gtk::TextView::builder()
-            .wrap_mode(gtk::WrapMode::WordChar)
-            .accepts_tab(false)
-            .top_margin(8)
-            .bottom_margin(8)
-            .left_margin(10)
-            .right_margin(10)
-            .build();
-        entry.add_css_class("composer-entry");
-        let entry_scroll = gtk::ScrolledWindow::builder()
-            .child(&entry)
-            .hscrollbar_policy(gtk::PolicyType::Never)
-            .max_content_height(180)
-            .propagate_natural_height(true)
-            .hexpand(true)
-            .build();
-        entry_scroll.add_css_class("frame");
+        let entry = composer::Composer::new();
         let send_btn = gtk::Button::from_icon_name("mail-send-symbolic");
         send_btn.add_css_class("suggested-action");
-        send_btn.set_tooltip_text(Some("Send (Ctrl+Enter)"));
+        send_btn.set_tooltip_text(Some("Send (Enter; Shift+Enter for a new line)"));
         send_btn.set_valign(gtk::Align::End);
         let stop_btn = gtk::Button::from_icon_name("media-playback-stop-symbolic");
         stop_btn.add_css_class("destructive-action");
@@ -248,7 +266,7 @@ impl App {
         stop_btn.set_valign(gtk::Align::End);
         stop_btn.set_visible(false);
         let entry_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        entry_row.append(&entry_scroll);
+        entry_row.append(&entry.root);
         entry_row.append(&stop_btn);
         entry_row.append(&send_btn);
         let composer = gtk::Box::new(gtk::Orientation::Vertical, 6);
@@ -402,6 +420,7 @@ impl App {
             list_dirty: Cell::new(false),
             reconnect_attempt: Cell::new(0),
             auto_opened: Cell::new(false),
+            palette: RefCell::new(None),
             started,
         });
 
@@ -421,6 +440,7 @@ impl App {
         }
 
         app.wire(&new_chat);
+        app.wire_composer();
         app.window.present();
         app.reindex();
         if std::env::var_os("CLAUDE_PANTHEON_OFFLINE").is_none() {
@@ -470,50 +490,314 @@ impl App {
         let a = self.clone();
         self.provider_dd.connect_selected_notify(move |_| a.fill_models());
 
-        let actions: Vec<(&str, Box<dyn Fn(&Rc<App>)>)> = vec![
-            ("usage", Box::new(|a| a.show_usage())),
-            ("repos", Box::new(|a| a.show_repos())),
-            ("changes", Box::new(|a| a.show_changes())),
-            ("diagnostics", Box::new(|a| a.show_diagnostics())),
-            ("import", Box::new(|a| a.import_sessions())),
-            ("handoff", Box::new(|a| a.handoff_to_repo())),
-            ("offline", Box::new(|a| a.open_offline_twin())),
-            ("reconnect", Box::new(|a| a.connect_stored())),
-            ("forget", Box::new(|a| a.forget())),
+        // Window actions with their HIG accelerators; the menu shows the labels automatically.
+        type Action = Box<dyn Fn(&Rc<App>)>;
+        let actions: Vec<(&str, &[&str], Action)> = vec![
+            ("new-thread", &["<Control>n"], Box::new(|a| a.new_chat())),
+            (
+                "palette",
+                &["<Control>k"],
+                Box::new(|a| {
+                    a.palette();
+                }),
+            ),
+            ("search", &["<Control>f"], Box::new(|a| a.focus_search())),
+            ("send", &["<Control>Return", "<Control>KP_Enter"], Box::new(|a| a.send())),
+            ("usage", &["<Control><Shift>u"], Box::new(|a| a.show_usage())),
+            ("repos", &[], Box::new(|a| a.show_repos())),
+            ("changes", &[], Box::new(|a| a.show_changes())),
+            ("diagnostics", &[], Box::new(|a| a.show_diagnostics())),
+            ("import", &[], Box::new(|a| a.import_sessions())),
+            ("handoff", &[], Box::new(|a| a.handoff_to_repo())),
+            ("offline", &[], Box::new(|a| a.open_offline_twin())),
+            ("close-thread", &["<Control>w"], Box::new(|a| a.close_thread())),
+            ("settings", &["<Control>comma"], Box::new(|a| a.settings())),
+            ("reconnect", &[], Box::new(|a| a.connect_stored())),
+            ("forget", &[], Box::new(|a| a.forget())),
+            ("about", &[], Box::new(|a| a.about())),
+            ("quit", &["<Control>q"], Box::new(|a| a.window.close())),
         ];
-        for (name, f) in actions {
+        let application = self.window.application();
+        for (name, accels, f) in actions {
             let action = gio::SimpleAction::new(name, None);
             let a = self.clone();
             action.connect_activate(move |_, _| f(&a));
             self.window.add_action(&action);
+            if !accels.is_empty()
+                && let Some(app) = &application
+            {
+                app.set_accels_for_action(&format!("win.{name}"), accels);
+            }
         }
+    }
 
-        let keys = gtk::EventControllerKey::new();
+    fn focus_search(&self) {
+        self.search.grab_focus();
+        self.search.select_region(0, -1);
+    }
+
+    /// Ctrl+K: the command palette over threads, transcripts, projects, repos, issues and actions.
+    pub fn palette(self: &Rc<Self>) -> Rc<palette::Palette> {
+        let catalog = self.palette_catalog();
+        let app = self.clone();
+        let p = palette::Palette::open(
+            self.window.upcast_ref(),
+            catalog,
+            Rc::new(move |action| app.run_palette_action(action)),
+        );
+        *self.palette.borrow_mut() = Some(p.clone());
+        p
+    }
+
+    fn palette_catalog(&self) -> Vec<palette::Entry> {
+        use palette::{Action, Entry};
+        let mut out = Vec::new();
+        let providers = self.providers.borrow();
+        for p in providers.iter().filter(|p| p.ready()) {
+            out.push(Entry {
+                title: format!("New thread on {}", p.name()),
+                kind: "Action".into(),
+                action: Action::NewThread { provider: Some(p.instance_id.clone()) },
+            });
+        }
+        for p in providers.iter().filter(|p| p.ready()) {
+            for m in &p.models {
+                out.push(Entry {
+                    title: format!("Switch model to {} ({})", m.display(), p.name()),
+                    kind: "Model".into(),
+                    action: Action::SetModel { provider: p.instance_id.clone(), model: m.key().to_string() },
+                });
+            }
+        }
+        for (title, page) in [
+            ("Open Usage", "usage"),
+            ("Open Repos and Issues", "repos"),
+            ("Open Diagnostics", "diagnostics"),
+            ("Changes in this thread", "changes"),
+        ] {
+            out.push(Entry { title: title.into(), kind: "Page".into(), action: Action::Page(page.into()) });
+        }
+        for (title, action) in [
+            ("Pair with a T3 environment", "pair"),
+            ("Import sessions from Claude Code and Codex", "import"),
+            ("Hand off to repo", "handoff"),
+            ("Open offline twin", "offline"),
+            ("Reconnect", "reconnect"),
+            ("Close thread", "close-thread"),
+            ("About Claude", "about"),
+        ] {
+            out.push(Entry { title: title.into(), kind: "Action".into(), action: Action::WindowAction(action.into()) });
+        }
+        if let Some(c) = self.conn.borrow().as_ref() {
+            for p in &c.shell.projects {
+                out.push(Entry {
+                    title: format!("New thread in {}", p.title),
+                    kind: "Project".into(),
+                    action: Action::NewThreadIn(p.id.clone()),
+                });
+            }
+            for t in c.shell.threads.iter().filter(|t| t.archived_at.is_none()) {
+                let provider = providers
+                    .iter()
+                    .find(|p| p.instance_id == t.provider_instance_id)
+                    .map(Provider::name)
+                    .unwrap_or_default();
+                let title = crate::transcript::title_from_prompt(&t.title).unwrap_or_else(|| "Untitled thread".into());
+                out.push(Entry { title, kind: format!("Thread · {provider}"), action: Action::OpenId(t.id.clone()) });
+            }
+        }
+        for s in self.sessions.borrow().iter() {
+            out.push(Entry {
+                title: s.title.clone(),
+                kind: format!("Transcript · {}", s.project()),
+                action: Action::OpenId(s.id.clone()),
+            });
+        }
+        let config = self.repos_page.config();
+        for r in &config.repos {
+            out.push(Entry {
+                title: format!("Issues in {}", r.repo),
+                kind: "Repo".into(),
+                action: Action::Repo(r.repo.clone()),
+            });
+        }
+        for (repo, issue) in self.repos_page.cached_issues() {
+            out.push(Entry {
+                title: format!("#{} {}", issue.number, issue.title),
+                kind: format!("Issue · {repo}"),
+                action: Action::StartIssue { repo, number: issue.number },
+            });
+        }
+        out
+    }
+
+    fn run_palette_action(self: &Rc<Self>, action: palette::Action) {
+        use palette::Action;
+        match action {
+            Action::OpenId(id) => self.open_by_id(&id),
+            Action::NewThread { provider } => {
+                if let Some(p) = provider {
+                    self.select_provider(&p, None);
+                }
+                self.new_chat();
+            }
+            Action::NewThreadIn(project_id) => self.new_chat_in(Some(project_id)),
+            Action::SetModel { provider, model } => {
+                self.select_provider(&provider, Some(&model));
+                self.toast(&format!("Next message goes to {model}"));
+            }
+            Action::Page(page) => match page.as_str() {
+                "usage" => self.show_usage(),
+                "repos" => self.show_repos(),
+                "diagnostics" => self.show_diagnostics(),
+                "changes" => self.show_changes(),
+                _ => {}
+            },
+            Action::Repo(repo) => {
+                self.show_repos();
+                let pinned = self.repos_page.config().repos.into_iter().find(|r| r.repo == repo);
+                if let Some(r) = pinned {
+                    self.repos_page.show_issues(self, r);
+                }
+            }
+            Action::StartIssue { repo, number } => {
+                let pinned = self.repos_page.config().repos.into_iter().find(|r| r.repo == repo);
+                let issue = self
+                    .repos_page
+                    .cached_issues()
+                    .into_iter()
+                    .find(|(r, i)| *r == repo && i.number == number)
+                    .map(|(_, i)| i);
+                match (pinned, issue) {
+                    (Some(r), Some(i)) => self.start_issue(r, i),
+                    _ => self.toast("Open the repo's issues first."),
+                }
+            }
+            Action::WindowAction(name) => {
+                if name == "pair" {
+                    self.show_page("pair");
+                } else {
+                    WidgetExt::activate_action(&self.window, &format!("win.{name}"), None).ok();
+                }
+            }
+        }
+    }
+
+    /// Ctrl+W: leaves the open thread or transcript and shows the empty page.
+    pub fn close_thread(self: &Rc<Self>) {
+        self.leave_live();
+        *self.current_session.borrow_mut() = None;
+        *self.transcript.borrow_mut() = None;
+        self.list.unselect_all();
+        self.title.set_text("Claude");
+        self.window.set_title(Some("Claude"));
+        self.subtitle.set_visible(false);
+        self.show_page("empty");
+    }
+
+    /// Ctrl+,: the settings window lands with its own issue; until then say so.
+    fn settings(self: &Rc<Self>) {
+        self.toast("Settings arrive with the settings-window issue; pairing lives in the menu for now.");
+    }
+
+    /// About: version, server and provider state, in a Granite-styled dialog.
+    fn about(self: &Rc<Self>) {
+        let (server, version, environment) = match self.conn.borrow().as_ref() {
+            Some(c) => (
+                format!("{} ({})", c.cred.label, c.cred.server),
+                c.config.environment.get("serverVersion").and_then(Value::as_str).unwrap_or("?").to_string(),
+                c.config
+                    .environment
+                    .get("platform")
+                    .map(|p| {
+                        format!(
+                            "{} {}",
+                            p.get("os").and_then(Value::as_str).unwrap_or(""),
+                            p.get("arch").and_then(Value::as_str).unwrap_or("")
+                        )
+                    })
+                    .unwrap_or_default(),
+            ),
+            None => ("not connected".to_string(), "–".to_string(), String::new()),
+        };
+        let ready: Vec<String> = self.providers.borrow().iter().filter(|p| p.ready()).map(Provider::name).collect();
+        let dialog = gtk::AboutDialog::builder()
+            .transient_for(&self.window)
+            .modal(true)
+            .program_name("Claude")
+            .logo_icon_name("io.github.techmore.ClaudePantheonRs")
+            .version(env!("CARGO_PKG_VERSION"))
+            .comments(format!(
+                "A native elementary OS client of the T3 Code server.\n\nServer: {server}\nServer version: {version} {environment}\nProviders ready: {}",
+                if ready.is_empty() { "none".to_string() } else { ready.join(", ") }
+            ))
+            .website("https://github.com/techmore/ElementaryOS_MSeries")
+            .website_label("techmore/ElementaryOS_MSeries")
+            .license_type(gtk::License::Gpl30Only)
+            .build();
+        dialog.add_css_class("about-dialog");
+        dialog.present();
+    }
+
+    /// Enter sends; pasted or dropped files upload to the server; `@` searches the project's files.
+    fn wire_composer(self: &Rc<Self>) {
         let a = self.clone();
-        keys.connect_key_pressed(move |_, key, _, state| {
-            let ctrl = state.contains(gdk::ModifierType::CONTROL_MASK);
-            match key {
-                gdk::Key::f | gdk::Key::F if ctrl => {
-                    a.search.grab_focus();
-                    glib::Propagation::Stop
-                }
-                gdk::Key::n | gdk::Key::N if ctrl => {
-                    a.new_chat();
-                    glib::Propagation::Stop
-                }
-                gdk::Key::q | gdk::Key::Q if ctrl => {
-                    a.window.close();
-                    glib::Propagation::Stop
-                }
-                gdk::Key::Return | gdk::Key::KP_Enter if ctrl => {
-                    a.send();
-                    glib::Propagation::Stop
-                }
-                _ => glib::Propagation::Proceed,
+        self.entry.on_send(Rc::new(move || a.send()));
+        let a = self.clone();
+        self.entry.on_attach(Rc::new(move |bytes, name| a.upload_attachment(bytes, name)));
+        let a = self.clone();
+        self.entry.on_search(Rc::new(move |query, reply| a.search_project_files(query, reply)));
+    }
+
+    fn upload_attachment(self: &Rc<Self>, bytes: Vec<u8>, name: String) {
+        let (rpc, server) = match self.conn.borrow().as_ref() {
+            Some(c) => (c.rpc.clone(), c.cred.server.clone()),
+            None => {
+                self.entry.set_status("Connect to the server to attach files.");
+                return;
+            }
+        };
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            match attach::upload(&server, &rpc, &name, bytes).await {
+                Ok(a) => app.entry.add_attachment(a),
+                Err(e) => app.entry.set_status(&format!("Could not attach {name}: {e}")),
             }
         });
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
-        self.window.add_controller(keys);
+    }
+
+    /// The project folder the composer writes into: the open thread's, the draft's, else none.
+    fn composer_cwd(&self) -> Option<String> {
+        let conn = self.conn.borrow();
+        let c = conn.as_ref()?;
+        let project_id = self
+            .live
+            .borrow()
+            .as_ref()
+            .map(|l| l.project_id.clone())
+            .or_else(|| self.draft.borrow().as_ref().map(|d| d.project_id.clone()))?;
+        c.shell.projects.iter().find(|p| p.id == project_id).map(|p| p.workspace_root.clone())
+    }
+
+    fn search_project_files(self: &Rc<Self>, query: String, reply: composer::SearchReply) {
+        let (Some(rpc), Some(cwd)) = (self.conn.borrow().as_ref().map(|c| c.rpc.clone()), self.composer_cwd()) else {
+            reply(Vec::new());
+            return;
+        };
+        glib::spawn_future_local(async move {
+            let payload = json!({"cwd": cwd, "query": query, "limit": 40});
+            let paths = match rpc.call("projects.searchEntries", payload).await {
+                Ok(v) => v
+                    .get("entries")
+                    .and_then(Value::as_array)
+                    .map(|a| {
+                        a.iter().filter_map(|e| e.get("path").and_then(Value::as_str).map(str::to_string)).collect()
+                    })
+                    .unwrap_or_default(),
+                Err(_) => Vec::new(),
+            };
+            reply(paths);
+        });
     }
 
     pub fn window(&self) -> &gtk::ApplicationWindow {
@@ -548,8 +832,12 @@ impl App {
         self.search.set_text(text);
     }
 
+    pub fn composer(&self) -> &Rc<composer::Composer> {
+        &self.entry
+    }
+
     pub fn set_entry(&self, text: &str) {
-        self.entry.buffer().set_text(text);
+        self.entry.set_text(text);
     }
 
     pub fn toast(&self, text: &str) {
@@ -1092,6 +1380,26 @@ impl App {
         }
     }
 
+    /// Opens a thread or session by id from outside (the Wingpanel indicator's `open-thread` action);
+    /// a thread that is not in the list yet is retried once the shell arrives.
+    pub fn open_by_id(self: &Rc<Self>, id: &str) {
+        self.window.present();
+        if self.select_id(id) {
+            return;
+        }
+        if self.conn.borrow().is_none() {
+            self.toast("Not connected to the server yet.");
+            return;
+        }
+        let app = self.clone();
+        let id = id.to_string();
+        glib::timeout_add_local_once(std::time::Duration::from_secs(2), move || {
+            if !app.select_id(&id) {
+                app.toast("That thread is not in the list.");
+            }
+        });
+    }
+
     /// Selects a thread or session row by id (tests, and the offline/online twins).
     pub fn select_id(&self, id: &str) -> bool {
         let at = {
@@ -1140,6 +1448,7 @@ impl App {
             self.show_page("busy");
         }
         let twin = self.imported_uuids().get(&session.id).cloned();
+        self.entry.set_draft_key(None);
         self.composer.set_visible(false);
         self.composer_note.set_text(match twin {
             Some(_) => "Imported on the server: open it from the project above to continue.",
@@ -1253,6 +1562,7 @@ impl App {
         self.composer_note.set_text("");
         self.select_provider(&thread.provider_instance_id, thread.model_selection.get("model").and_then(Value::as_str));
         self.select_mode(&thread.runtime_mode);
+        self.entry.set_draft_key(Some(thread.id.clone()));
         let (sub_id, mut stream) = rpc.subscribe(
             "orchestration.subscribeThread",
             json!({"threadId": thread.id, "requestCompletionMarker": true, "acceptBoundedSnapshot": true, "acceptCompactTurnItems": true}),
@@ -1540,6 +1850,11 @@ impl App {
     }
 
     pub fn new_chat(self: &Rc<Self>) {
+        self.new_chat_in(None);
+    }
+
+    /// A new thread in `project_id`, else in the project of what is open, else the first project.
+    pub fn new_chat_in(self: &Rc<Self>, project_id: Option<String>) {
         if self.conn.borrow().is_none() {
             self.toast("Connect to a T3 server to start a thread.");
             self.show_page("pair");
@@ -1549,6 +1864,7 @@ impl App {
         let project = {
             let conn = self.conn.borrow();
             let c = conn.as_ref().unwrap();
+            let by_arg = project_id.as_ref().and_then(|id| c.shell.projects.iter().find(|p| p.id == *id).cloned());
             let by_live = self
                 .live
                 .borrow()
@@ -1559,7 +1875,7 @@ impl App {
                 .borrow()
                 .as_ref()
                 .and_then(|s| c.shell.projects.iter().find(|p| s.cwd.starts_with(&p.workspace_root)).cloned());
-            by_live.or(by_session).or_else(|| c.shell.projects.first().cloned())
+            by_arg.or(by_live).or(by_session).or_else(|| c.shell.projects.first().cloned())
         };
         let Some(project) = project else {
             self.toast("No project on the server yet. Importing your sessions first.");
@@ -1570,6 +1886,7 @@ impl App {
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
         *self.draft.borrow_mut() = Some(Draft { project_id: project.id.clone() });
+        self.entry.set_draft_key(Some(format!("draft:{}", project.id)));
         self.list.unselect_all();
         self.clear_chat();
         let hint = granite::Placeholder::new("New thread");
@@ -1587,22 +1904,15 @@ impl App {
         self.composer.set_visible(true);
         self.composer_note.set_text("");
         self.show_page("chat");
-        self.entry.grab_focus();
-    }
-
-    fn take_entry(&self) -> String {
-        let buffer = self.entry.buffer();
-        let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).to_string();
-        buffer.set_text("");
-        text
+        self.entry.view.grab_focus();
     }
 
     pub fn send(self: &Rc<Self>) {
-        let buffer = self.entry.buffer();
-        let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).trim().to_string();
-        if text.is_empty() {
+        let text = self.entry.text().trim().to_string();
+        if text.is_empty() && self.entry.attachment_count() == 0 {
             return;
         }
+        let text = if text.is_empty() { "See the attached files.".to_string() } else { text };
         self.send_text(text, true);
     }
 
@@ -1620,8 +1930,9 @@ impl App {
             self.toast(&format!("{} is not ready on the server ({}).", provider.name(), provider.auth_text()));
             return;
         }
+        let attachments: Vec<Value> = if clear { self.entry.attachments_json() } else { Vec::new() };
         if clear {
-            self.take_entry();
+            self.entry.clear();
         }
         let live_thread =
             self.live.borrow().as_ref().map(|l| (l.thread_id.clone(), l.running, l.view.active_run_id.clone()));
@@ -1636,7 +1947,7 @@ impl App {
                 };
                 let payload = json!({
                     "type": "message.dispatch", "commandId": new_id(), "threadId": thread_id, "messageId": new_id(),
-                    "text": text, "attachments": [], "createdBy": "user", "creationSource": "web",
+                    "text": text, "attachments": attachments, "createdBy": "user", "creationSource": "web",
                     "modelSelection": {"instanceId": provider.instance_id, "model": model},
                     "dispatchMode": dispatch_mode,
                 });
@@ -1657,7 +1968,7 @@ impl App {
                     "modelSelection": {"instanceId": provider.instance_id, "model": model},
                     "runtimeMode": mode, "interactionMode": "default",
                     "workspaceStrategy": {"type": "root"},
-                    "initialMessage": {"messageId": new_id(), "text": text, "attachments": []},
+                    "initialMessage": {"messageId": new_id(), "text": text, "attachments": attachments},
                 });
                 match rpc.call("orchestration.launchThread", payload).await {
                     Ok(v) => {

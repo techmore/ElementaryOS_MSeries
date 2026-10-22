@@ -31,6 +31,31 @@ Other entry points:
 | `CLAUDE_PANTHEON_RENDERER=gl` | use a GL renderer instead of cairo (see PERFORMANCE.md) |
 | `CLAUDE_PANTHEON_DEBUG=1` | log RPC frames to stderr |
 
+## Keyboard shortcuts
+
+| Keys | Action |
+|---|---|
+| Ctrl+N | New thread |
+| Ctrl+K | Command palette (the thread search until the palette lands) |
+| Ctrl+F | Search threads |
+| Enter | Send (Shift+Enter inserts a newline; Ctrl+Enter also sends) |
+| Ctrl+W | Close the thread |
+| Ctrl+Shift+U | Usage |
+| Ctrl+, | Settings |
+| Ctrl+Q | Quit |
+
+The same actions sit in the app menu (header bar, right) with their accelerator labels, plus Repos
+and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
+Forget Pairing and About (version, server, providers ready).
+
+## Composer
+
+The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
+them: each becomes a chip, uploaded through the server's `attachments.createUploadUrl` and sent with
+the message (10 attachments, 10 MB per image, 50 MB per file). Typing `@` opens a fuzzy picker over the
+thread's project (`projects.searchEntries`) and inserts `@path`. The draft is kept per thread in
+`~/.cache/claude-pantheon-rs/drafts.json` and comes back when the thread is reopened, across restarts.
+
 ## Pairing with the server
 
 The server is `t3 serve` (here: the user service `t3code.service` on `127.0.0.1:3773`). Run `t3 pair`,
@@ -83,7 +108,15 @@ also starts a real thread and waits for its answer.
 ## Install
 
 ```sh
-install -Dm755 ~/.cache/cargo-target/release/claude-pantheon-rs ~/.local/bin/claude-pantheon-rs
-install -Dm644 data/io.github.techmore.ClaudePantheonRs.desktop ~/.local/share/applications/
-install -Dm644 data/io.github.techmore.ClaudePantheonRs.svg ~/.local/share/icons/hicolor/scalable/apps/
+./install.sh                    # release build + install under ~/.local: binary, .desktop (New Thread and
+                                # Usage actions, D-Bus activation), metainfo, hicolor icons 16…128 + symbolic
+./install.sh --prefix /usr      # system-wide (sudo for the copy)
+./install.sh --uninstall
+bash mseries/install-claude-pantheon-rs.sh   # the same from the repo root, with the build requirements check
 ```
+
+The script restarts `pantheon-dock` at the end: the dock keeps showing a placeholder icon for a newly
+installed app until it is restarted. The D-Bus service file lets the desktop entry and
+`gapplication launch io.github.techmore.ClaudePantheonRs` start the app; a second launch, the desktop
+actions and `gapplication action io.github.techmore.ClaudePantheonRs new-thread` all reach the running
+window.

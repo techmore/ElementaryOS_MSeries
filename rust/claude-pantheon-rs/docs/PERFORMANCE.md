@@ -68,6 +68,22 @@ Everything else: parsing off the main thread, widgets only for the visible tail,
 protocol on the GLib loop (no tokio, no worker threads: the WebSocket and HTTP clients sit on
 `gio::SocketClient`), and the sidebar rebuilt once per burst of shell events.
 
+## Per-PR idle numbers
+
+Every PR re-runs `bench.sh` with a Claude thread open (connected, 30 s settle, 20 s sample) and the
+start-up probe; the table tracks drift per feature.
+
+| PR | Change | RSS avg MB | CPU % | Start-up ms (first frame) |
+|---|---|---|---|---|
+| #462 | initial import | 60 | 0.0 | 184 – 213 |
+| #463 | install target, .desktop actions, D-Bus activation, metainfo, icons | 59 | 0.0 | 187 – 205 |
+| #464 | Wingpanel indicator (separate process in the panel; app unchanged apart from the open-thread action) | 59 | 0.0 | 190 – 205 |
+| #465 | .deb package (app + indicator), CI build and release-pipeline artifact; app unchanged | 49 | 0.0 | 230 – 511 (machine loaded by parallel builds, load 12; same binary as #464) |
+| #466 | CI job: fmt --check, clippy -D warnings, tests; 8 clippy fixes (type aliases, while-let, collapsed ifs) | 58 | 0.0 | 194 – 269 |
+| #467 | HIG shortcuts, app menu with accelerator labels, Close Thread, About | 59 | 0.0 | 211 – 215 |
+| #468 | command palette (Ctrl+K) over threads, transcripts, projects, repos, issues and actions | 59 | 0.0 | 212 – 228 |
+| #469 | composer: 8-line growth, Enter sends, attachment chips (paste/drop, uploaded), @ file picker, drafts per thread | 59 | 0.0 | 213 – 230 |
+
 ## Reproduce
 
 ```sh

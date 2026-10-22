@@ -1,0 +1,1737 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-21",
+  "source_revision": "6f716799fcbef277ac24031bf9242e20f5a2415f",
+  "title": "Fixes & enhancements",
+  "entries": [
+    {
+      "id": "kernel-wip2",
+      "title": "Aurora kernel packaging and the wip2 trial",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Recorded outcome",
+      "provided": "Builds and packages pinned Aurora sources for this Ubuntu/elementary stack, with distinct kernel/module identities and retained fallback payloads. Aurora supplies the underlying Apple drivers.",
+      "verification": "October 21 wip2 receipts record attended boot, PMP/idle accounting, GLES shader/readback and a 1 MiB fsync check on J314S.",
+      "limitation": "These are historical wip2 scoped checks, not current wip3 qualification, a stable release or complete source-parity acceptance. .20 is the last documented persistent default.",
+      "next_step": "Record an attended return to the .20 fallback before suspend or controlled energy comparisons.",
+      "priority": "P1",
+      "delivery": "Experimental package and attended host trial",
+      "source": [
+        "mseries/aurora/unified72/series.json",
+        "mseries/aurora/candidate.py"
+      ],
+      "checks": [
+        "mseries/aurora/test_candidate.py",
+        "mseries/aurora/test_qualification.py"
+      ],
+      "evidence": [
+        "mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md"
+      ]
+    },
+    {
+      "id": "kernel-wip3",
+      "title": "7.2.11 wip3 source, staging history and observed release",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "The merged source pins the selected upstream 7.2.11 base and external-display colour patch, with its own package/module identity and retained .20/wip2 fallbacks.",
+      "verification": "The native build and earlier unarmed staging were audited. This site audit later read the running release label as 7.2.11-elementary-aurora72-wip3; the peripheral report independently records that running config.",
+      "limitation": "The old “not booted” staging note is historical. A current release string does not bind Image/modules/DTBs/boot payload or establish wip3 dock, Touch ID, suspend, recovery or full 64-fix semantic acceptance.",
+      "next_step": "Retain an identity-bound current wip3 boot/hardware receipt and verify fallback recovery before transferring any wip2 acceptance.",
+      "priority": "P1",
+      "delivery": "Merged source; running release label observed; hardware qualification incomplete",
+      "source": [
+        "mseries/aurora/unified72/prepare-j314s-trial.py",
+        "mseries/aurora/unified72/BOOT-TRIAL.md"
+      ],
+      "checks": [
+        "mseries/aurora/test_candidate.py",
+        "mseries/aurora/test_qualification.py"
+      ],
+      "evidence": [
+        "mseries/aurora/unified72/native-build-wip3-2026-10-21.json",
+        "mseries/aurora/unified72/boot-preflight-wip3-2026-10-21/staging.json",
+        "mseries/PERIPHERALS.md"
+      ]
+    },
+    {
+      "id": "dock-picture",
+      "title": "WD22TB4 picture on all three Mac USB-C ports",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Upstream integration",
+      "stage": "Recorded outcome",
+      "provided": "Integrates the Aurora display/USB4 stack and adds identity-bound collection and per-port timing tools. This is not a claim that the project authored Aurora’s dock driver.",
+      "verification": "October 21 owner confirmations cover 1080p/60 dock picture on rear-left, front-left and right Mac ports; front-left/right also have explicit input confirmation.",
+      "limitation": "One plug cycle per port, with a corrected label and sampling boundary. The approximately 4.5 s pilot is detection-to-active-state, not cable-to-visible-pixels or a port speed ranking.",
+      "next_step": "Repeat matched per-port hotplug/recovery cycles and collect lifecycle traces before tuning delays.",
+      "priority": "P1",
+      "delivery": "Scoped physical J314S/dock observation",
+      "source": [
+        "mseries/hardware/dock-port-timing.py"
+      ],
+      "checks": [
+        "mseries/hardware/test_dock_port_timing.py"
+      ],
+      "evidence": [
+        "mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md"
+      ]
+    },
+    {
+      "id": "touch-id",
+      "title": "Native Touch ID settings; matching remains blocked",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Blocked",
+      "provided": "Provides an Aurora SEP/fprintd installation path and a native Settings page with enrolment, removal and scoped sudo/polkit controls. Public driver work comes from Aurora.",
+      "verification": "The wip2 sensor/enrolment path was exercised; the enclave finishes enrolment but the xART guard refuses the required save. Private fake-fprintd UI/PAM checks are recorded.",
+      "limitation": "The recorded guard-on trial blocks matching. The owner approved separate guard-off trial entries, but no retained successful matching/PAM/reboot acceptance is established by this audit. UI fixtures do not prove passkeys or macOS interoperability.",
+      "next_step": "Use the separately approved attended trial when the owner chooses; record enrolment, matching, reboot and scoped PAM results with password fallback.",
+      "priority": "P1",
+      "delivery": "Settings installed; authentication blocked",
+      "source": [
+        "mseries/touchid-settings",
+        "mseries/aurora-sep/install-aurora-sep.sh"
+      ],
+      "checks": [
+        "mseries/touchid-settings/tests/test-pam-helper.sh",
+        "mseries/aurora-sep/test_touchid_core.py"
+      ],
+      "evidence": [
+        "mseries/aurora-sep/XART-GUARD.md",
+        "mseries/aurora-sep/TOUCH-ID-STATE.md",
+        "mseries/touchid-settings/README.md"
+      ]
+    },
+    {
+      "id": "wifi-resume",
+      "title": "Apple Wi-Fi resume recovery",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Ported upstream behavior",
+      "stage": "Source reviewed",
+      "provided": "Ports Apple-gated Broadcom recovery to Ubuntu/NetworkManager and supplies firmware/first-boot wiring rather than Arch hooks.",
+      "verification": "Source and regression checks cover device gating and recovery handling; the port map distinguishes supported chip families.",
+      "limitation": "This does not establish repeatable Wi-Fi resume on the current wip2 kernel or a freshly booted factory image. Unsupported Broadcom models are not silently included.",
+      "next_step": "Complete repeated suspend/resume on the exact supported board/kernel after recovery prerequisites pass.",
+      "priority": "P2",
+      "delivery": "Factory/source integration; current hardware acceptance open",
+      "source": [
+        "mkosi.images/apple-silicon",
+        "mseries/test-wifi-resume.py"
+      ],
+      "checks": [
+        "mseries/test-wifi-resume.py"
+      ],
+      "evidence": [
+        "mseries/PORT-MAP.md"
+      ]
+    },
+    {
+      "id": "speaker-safety",
+      "title": "Speaker protection and optional DSP installation",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Recorded outcome",
+      "provided": "Installs Ubuntu’s speakersafetyd and optionally the Asahi model/DSP packages, with an LV2-plugin prerequisite. Protection and DSP algorithms are upstream components.",
+      "verification": "The retained desktop record reports working output through the matched safety/DSP chain; the installer explicitly checks the LV2 path before DSP setup.",
+      "limitation": "The factory package list still lacks this complete audio path. A prior desktop playback pass is not a current wip2 audio/replug qualification.",
+      "next_step": "Close factory packaging and then qualify output, volume restoration and resume on the exact image.",
+      "priority": "P1",
+      "delivery": "Desktop installer; complete factory path remains open",
+      "source": [
+        "mseries/install-audio-stack.sh",
+        "mseries/install-pipewire-lv2.sh"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/packages.arm64",
+        "mseries/PORT-MAP.md"
+      ]
+    },
+    {
+      "id": "audio-watchdog",
+      "title": "Recover an unresponsive PipeWire/WirePlumber stack",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Ported upstream behavior",
+      "stage": "Limited qualification",
+      "provided": "Adds a Pantheon user-service watchdog plus no-suspend/headset-priority rules. It requires repeated probe failures, a restart budget and active/unlocked session checks.",
+      "verification": "The implementation has budget, session and failure-path unit tests; the recorded installation enabled the user service.",
+      "limitation": "The logind lock-state boundary and repeated real logout/resume recovery need physical acceptance. A timer being enabled is not proof of successful recovery.",
+      "next_step": "Exercise a controlled audio failure and lock/resume cases without bypassing speaker safety.",
+      "priority": "P2",
+      "delivery": "Desktop user service and image-layer source",
+      "source": [
+        "mseries/audio/audio-watchdog.py",
+        "mseries/enhance.sh"
+      ],
+      "checks": [
+        "mseries/audio/test_audio_watchdog.py"
+      ],
+      "evidence": [
+        "mseries/PORT-MAP.md"
+      ]
+    },
+    {
+      "id": "microphone-boundary",
+      "title": "Headset-mic priority, without an unnecessary stereo mapper",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Ported upstream behavior",
+      "stage": "Source reviewed",
+      "provided": "Supplies the headset-mic priority rule. Deliberately omits Omarchy’s Quickshell-specific mono-to-stereo meter workaround because the Pantheon indicator accepts mono sources.",
+      "verification": "The current port-map explanation and WirePlumber configuration agree on this boundary.",
+      "limitation": "Omitting that mapper is not an unimplemented Pantheon feature. It also does not establish end-to-end recording quality in every app.",
+      "next_step": "Investigate a real silent-recording report if one occurs; qualify recording and input selection separately.",
+      "priority": "P3",
+      "delivery": "Priority rule; stereo reconciliation intentionally omitted",
+      "source": [
+        "mseries/audio/asahi-headset-mic.conf",
+        "mseries/enhance.sh"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/PORT-MAP.md"
+      ]
+    },
+    {
+      "id": "video-decode",
+      "title": "AVD decode tools and a contained browser experiment",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "Provides bridge/firmware setup and an optional separate YouTube browser path, with factory dependency and launcher wiring. Apple AVD, VA-API and browser decoding remain upstream.",
+      "verification": "October 18 notes record advertised codecs and a scoped contained-browser decode result; the repository includes factory/launcher contracts.",
+      "limitation": "Ordinary sandboxed Brave, the current wip2 combination and factory hardware decode are not thereby qualified. The optional browser’s media-sandbox tradeoff must remain explicit.",
+      "next_step": "Qualify codecs and real client behavior on the selected kernel without presenting the experiment as a default browser fix.",
+      "priority": "P2",
+      "delivery": "Optional runtime experiment and factory source wiring",
+      "source": [
+        "mseries/install-video-decode.sh",
+        "mseries/video-decode/brave-youtube"
+      ],
+      "checks": [
+        "mseries/video-decode/test-youtube-launch.py",
+        "mseries/video-decode/test-brave-factory.py"
+      ],
+      "evidence": [
+        "mseries/video-decode/README.md"
+      ]
+    },
+    {
+      "id": "charge-cpu-policy",
+      "title": "80% charge limit and CPU power policy",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Adds the SMC charge-threshold CLI/policy, Quick Settings switch, battery-aware CPU cap/follow modes and related memory tuning.",
+      "verification": "Historical desktop receipts observed an 80% threshold. Source tests cover cap/install failure handling and the native control.",
+      "limitation": "A charge threshold or governor label is not measured battery-life improvement. Physical unplug transitions and combined policy effects remain separate acceptance.",
+      "next_step": "Verify battery/AC transitions and matched responsiveness/energy behavior with settled controls.",
+      "priority": "P2",
+      "delivery": "Desktop policy and native switch",
+      "source": [
+        "mseries/power/mseries-power",
+        "mseries/install-power.sh",
+        "mseries/quick-settings/ChargeLimit.vala"
+      ],
+      "checks": [
+        "mseries/test-power-cap.py",
+        "mseries/test-power-install.py"
+      ],
+      "evidence": [
+        "mseries/power/README.md"
+      ]
+    },
+    {
+      "id": "power-diagnostics",
+      "title": "Power reports that keep missing display controls unknown",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Source reviewed",
+      "provided": "Supplies sleep/power reports, partial-display capability handling and a repeatable idle/scroll/video scenario collector with matched-comparison admission.",
+      "verification": "The October 21 report retains partial-capability regressions. The newer scenario source requires alternating repeated arms before reporting a winner; no new scenario was run in this audit.",
+      "limitation": "No active-use Linux/macOS parity, idle floor or battery runtime follows. New idle/PowerSaveMode support is now in compositor source; old loaded builds and observations must retain their missing-control limits.",
+      "next_step": "After identity/recovery gates and a new compositor login, verify the display controls, then run settled matched scenarios with correctly identified sensors.",
+      "priority": "P2",
+      "delivery": "Measurement tooling; no new power experiment",
+      "source": [
+        "mseries/power/display_status.py",
+        "mseries/power/power_report.py",
+        "mseries/power/sleep_cost.py",
+        "mseries/benchmarks/power_scenarios.py"
+      ],
+      "checks": [
+        "mseries/power/test_display_status.py",
+        "mseries/power/test_diagnostics.py"
+      ],
+      "evidence": [
+        "mseries/power/POWER-TOOLS-2026-10-21.md"
+      ]
+    },
+    {
+      "id": "brightness",
+      "title": "Brightness keys, OSD and Quick Settings controls",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Routes Pantheon brightness actions through a shell bridge and adds screen/keyboard sliders to native Quick Settings.",
+      "verification": "Bridge/key contracts and shared prepared-source tests exist; prior D-Bus/backlight calls succeeded.",
+      "limitation": "Successful calls are narrower than physical-key response, calibrated brightness or persistence across every login/display state.",
+      "next_step": "Check physical keys, OSD, restore behavior and keyboard-only operation in the exact loaded session.",
+      "priority": "P2",
+      "delivery": "Native controls and session bridge",
+      "source": [
+        "mseries/brightness/shell-bridge.py",
+        "mseries/quick-settings/ScreenBrightness.vala",
+        "mseries/quick-settings/KeyboardBrightness.vala"
+      ],
+      "checks": [
+        "mseries/brightness/test_bridge.py",
+        "mseries/brightness/test_keys.py"
+      ],
+      "evidence": [
+        "mseries/quick-settings/prepare-source.sh",
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "ambient-keyboard",
+      "title": "Ambient keyboard lighting with manual-override handling",
+      "area": "Hardware",
+      "kind": "Enhancement",
+      "origin": "Ported upstream behavior",
+      "stage": "Recorded outcome",
+      "provided": "A Pantheon implementation uses the Apple AOP sensor and UPower, with deadband, manual-override pause and active/unlocked/lid gates.",
+      "verification": "A dated hardware observation read 141 lux and adjusted the keyboard from 0 to 59/255; sensor/state unit tests are present.",
+      "limitation": "That single observation is not physical appearance, lock/lid or suspend/resume qualification. It never adjusts the display brightness.",
+      "next_step": "Qualify manual override and lock/lid/suspend transitions on the owner’s session.",
+      "priority": "P2",
+      "delivery": "Optional per-user helper",
+      "source": [
+        "mseries/keyboard-backlight/backlight.py",
+        "mseries/install-keyboard-backlight.sh"
+      ],
+      "checks": [
+        "mseries/keyboard-backlight/test_backlight.py"
+      ],
+      "evidence": [
+        "mseries/keyboard-backlight/README.md"
+      ]
+    },
+    {
+      "id": "display-profiles",
+      "title": "Monitor layout profiles and reversible display settings",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Stores layouts by monitor identity and adds arrange/diagnose controls with offered modes, profile save/apply and a keep-or-revert timer.",
+      "verification": "Profile and diagnosis unit checks plus private renders are documented; a local built-in VRR profile had a scoped visual pass.",
+      "limitation": "Real drag/Apply workflows, repeated hotplug and sustained VRR are not all qualified. Saved fixed modes can override temporary VRR choices.",
+      "next_step": "Check reversible Apply and laptop-only/docked profile recovery under the current compositor.",
+      "priority": "P2",
+      "delivery": "Optional profile watcher and settings app",
+      "source": [
+        "mseries/display-profiles",
+        "mseries/display-settings"
+      ],
+      "checks": [
+        "mseries/display-profiles/test_display_profiles.py",
+        "mseries/display-settings/test_display_diag.py"
+      ],
+      "evidence": [
+        "mseries/display-profiles/README.md",
+        "mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md"
+      ]
+    },
+    {
+      "id": "bluetooth-controls",
+      "title": "Bluetooth controls inside Quick Settings",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Adds asynchronous adapter power and saved-device connect/disconnect controls, with live BlueZ state and pairing handed to Settings.",
+      "verification": "The private fake-BlueZ production-widget test covers filtering, failure recovery and radio toggles. The duplicate session Bluetooth icon was addressed separately.",
+      "limitation": "Fixture toggles do not establish real device connection, audio routing or next-login behavior. The control does not automatically scan or pair.",
+      "next_step": "Qualify the loaded widget with selected real devices while preserving the working phone session.",
+      "priority": "P2",
+      "delivery": "Native patched panel; physical connection checks separate",
+      "source": [
+        "mseries/quick-settings/Bluetooth.vala",
+        "mseries/patches/bluetooth-control-center.patch"
+      ],
+      "checks": [
+        "mseries/quick-settings/tests/test-bluetooth.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "rust-compositor",
+      "title": "Experimental Rust compositor for the Pantheon desktop",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Implements the project’s shell/window/input contracts on Smithay, beside a retained Gala session; it is not a port of Mutter.",
+      "verification": "Native M1 Pro scanout and subsequent desktop use are recorded. Cargo tests and isolated Wayland/XWayland probes cover selected behavior.",
+      "limitation": "Retained CPU samples use unmatched workloads. No general speed, energy, latency or full Gala parity claim is established.",
+      "next_step": "Keep loaded-package identities explicit and qualify matched input, frame pacing, recovery and sustained daily-use behavior.",
+      "priority": "P1",
+      "delivery": "Experimental installed session; Gala rollback retained",
+      "source": [
+        "rust/pantheon-compositor/src",
+        "mseries/install-pantheon-rust-compositor.sh"
+      ],
+      "checks": [
+        "rust/pantheon-compositor/src/activation.rs",
+        "mseries/pantheon-rust-compositor"
+      ],
+      "evidence": [
+        "docs/rust-compositor-performance.html",
+        "mseries/pantheon-rust-compositor/README.md"
+      ]
+    },
+    {
+      "id": "focus-popups",
+      "title": "Popup stacking, app activation and typing preservation",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Staged",
+      "provided": "Adds a popup-aware render/hit-test stack and activation policy that defers untrusted raises while the user types, plus bounded display lifecycle tracing.",
+      "verification": "Source unit tests and private two-client input/activation probes are retained; October 21 deployment records distinguish installed changes from the older loaded executable.",
+      "limitation": "Passing nested probes does not mean every real popup, password prompt and dock action is accepted on the loaded session.",
+      "next_step": "After the owner-chosen login, verify focus/typing and popup routing against the exact installed build.",
+      "priority": "P1",
+      "delivery": "Source merged; deployment/load boundaries recorded",
+      "source": [
+        "rust/pantheon-compositor/src/activation.rs",
+        "rust/pantheon-compositor/src/popup_stack.rs"
+      ],
+      "checks": [
+        "mseries/pantheon-rust-compositor/activation-probe/run.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "busy-flip",
+      "title": "Recover instead of leaving an output black after a busy flip",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Recognizes EBUSY from DRM queue_frame, leaves a retry pending and returns to a bounded retry/reset path rather than permanently abandoning scanout.",
+      "verification": "The reviewed source contains an explicit busy-retry flag, consecutive-pass bound and production call-site handling.",
+      "limitation": "Source control flow is not proof that the owner’s black-screen event is reproduced or fixed in a loaded build.",
+      "next_step": "Retain a failure/recovery trace for the actual affected output and verify the retry bound on hardware.",
+      "priority": "P1",
+      "delivery": "Merged source fix; physical regression acceptance open",
+      "source": [
+        "rust/pantheon-compositor/src/flip_retry.rs",
+        "rust/pantheon-compositor/src/native.rs"
+      ],
+      "checks": [
+        "rust/pantheon-compositor/src/flip_retry.rs"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "snapping-recovery",
+      "title": "Native half/quarter snapping and a window recovery chooser",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Keeps Gala half/quarter policy and adds Rust placement restoration, ack-gated/min-size-aware snapping, half-screen Snap Assist and two-window groups that resize/raise together, plus the recovery chooser.",
+      "verification": "Phase-0 and phase-1 nested receipts retain 23 and 34 checks respectively. The chooser separately checks the running compositor’s focus-routing capability.",
+      "limitation": "Native multi-output/input, X11 drag-out, ack timeout and panel/dock work-area acceptance remain open. A nested 34-case pass is not qualification of the owner’s loaded session.",
+      "next_step": "Qualify native/multi-output restore and shared-edge interaction before expanding to more-window templates.",
+      "priority": "P2",
+      "delivery": "Compositor-specific source and installers",
+      "source": [
+        "mseries/window-snapping/Main.vala",
+        "mseries/window-recovery/restore-windows.py",
+        "rust/pantheon-compositor/src/placement.rs",
+        "rust/pantheon-compositor/src/snap_group.rs",
+        "rust/pantheon-compositor/src/snap_assist.rs"
+      ],
+      "checks": [
+        "mseries/window-snapping/test-nested.sh",
+        "mseries/window-recovery/test-nested.py",
+        "mseries/pantheon-rust-compositor/snap-tests/run-snap.sh"
+      ],
+      "evidence": [
+        "mseries/window-snapping/README.md",
+        "mseries/window-recovery/README.md",
+        "mseries/pantheon-rust-compositor/snap-tests/README.md"
+      ]
+    },
+    {
+      "id": "gestures",
+      "title": "Finger-following workspace and overview gestures",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Staged",
+      "provided": "Adds configurable swipes, launcher pinch, app gesture forwarding and spring-based workspace/overview previews, honoring animation preferences.",
+      "verification": "The deployment record retains native package/build checks and isolated pixel/state smoke checks, with an installed gesture package.",
+      "limitation": "That record says installed for a later login, not loaded by the installation. Physical trackpad gestures, native pacing and mixed windows remain open.",
+      "next_step": "At an owner-chosen login, verify cancellation, direction, settings, multiple outputs and physical pacing.",
+      "priority": "P2",
+      "delivery": "Staged compositor package",
+      "source": [
+        "rust/pantheon-compositor/src/gesture_animation.rs",
+        "mseries/pantheon-rust-compositor/session"
+      ],
+      "checks": [
+        "mseries/pantheon-rust-compositor/gesture-tests"
+      ],
+      "evidence": [
+        "mseries/pantheon-rust-compositor/GESTURE-DEPLOYMENT-2026-10-20.md"
+      ]
+    },
+    {
+      "id": "taskbar",
+      "title": "Windows-style taskbar and Start menu",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Patches elementary Dock with a full-width taskbar, Start/search and native CodexBar/RepoBar integrations. Canonical preparation preserves the full customized source set. A merged Dock & Taskbar Switchboard plug changes the live-readable taskbar/auto-hide preferences, with stock/missing-dock states.",
+      "verification": "Build, GTK hover/focus and launcher/running-marker probes plus recovery-source preservation receipts are retained.",
+      "limitation": "An earlier partial rebuild replaced the required taskbar and was rolled back. Feature presence is not proof of every launcher group, pin or session-persistence path. The new settings plug has isolated build/load checks and is not recorded installed in the owner’s live Settings session.",
+      "next_step": "Use only canonical preparation, retain the known-good package and verify real launcher focus/grouping after any load.",
+      "priority": "P1",
+      "delivery": "Patched elementary Dock; exact deployment matters",
+      "source": [
+        "mseries/dock-taskbar/prepare-source.sh",
+        "mseries/patches/dock-taskbar.patch",
+        "mseries/dock-switcher"
+      ],
+      "checks": [
+        "mseries/dock-taskbar/test-build.sh",
+        "mseries/dock-taskbar/test-hover.sh",
+        "mseries/dock-tests/test-launcher-qualification.py",
+        "mseries/dock-switcher/tests/test-dock-switcher.vala"
+      ],
+      "evidence": [
+        "mseries/dock-taskbar/README.md",
+        "mseries/DOCK-APP-TRACKING.md",
+        "mseries/dock-switcher/README.md"
+      ]
+    },
+    {
+      "id": "work-mode",
+      "title": "Scheduled Windows Work Mode with restoration",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Adds native Settings, wallpaper/icon/dock state snapshots, schedule and optional public-IP/CIDR rules, plus taskbar/top-panel integration.",
+      "verification": "Pure rule, installer and preference-preservation tests are present. The implementation intersects enabled rules and handles stale IP observations per uplink.",
+      "limitation": "It does not detect work from a dock/display. Real network/taskbar transitions and compositor load acceptance remain separate.",
+      "next_step": "Qualify schedule boundaries, route changes and restoration on the exact loaded combination.",
+      "priority": "P2",
+      "delivery": "Optional Settings panel and per-user timer",
+      "source": [
+        "mseries/work-mode/mseries-work-mode",
+        "mseries/install-work-mode.sh"
+      ],
+      "checks": [
+        "mseries/work-mode/test_work_mode.py"
+      ],
+      "evidence": [
+        "mseries/work-mode/README.md"
+      ]
+    },
+    {
+      "id": "ui-size",
+      "title": "One text-size ladder across controls and dock consumers",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Provides a shared size-system manifest, text-size control, dock tokens and lint rules that bound justified exceptions.",
+      "verification": "Consumer tests cover absent/unmanaged/malformed token outputs; native text-scale tests and strict size lint run in CI.",
+      "limitation": "Some taskbar/panel constants remain explicit exceptions. This is not a claim that every app honors text scaling or passes accessibility review.",
+      "next_step": "Retire remaining exceptions with actual large-text/narrow-layout checks, keeping owner-selected sizes deliberate.",
+      "priority": "P2",
+      "delivery": "Shared source policy and optional watcher",
+      "source": [
+        "mseries/ui-scale/size-system.json",
+        "mseries/quick-settings/TextScale.vala"
+      ],
+      "checks": [
+        "mseries/ui-scale/test_dock_consumers.py",
+        "mseries/ui-scale/test_check_ui_sizes.py"
+      ],
+      "evidence": [
+        "mseries/ui-scale/SIZE-SYSTEM.md"
+      ]
+    },
+    {
+      "id": "full-height",
+      "title": "Notch-aware panel layout and startup ordering",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Prepares a full-height J314S desktop, protected panel/notch allocation, dock work areas and bounded startup readiness instead of assuming a visible dock.",
+      "verification": "Full-height, panel-scale/notch and disabled-dock startup regressions are retained, with separate installation records.",
+      "limitation": "The factory starts cropped. Fresh-login, mixed-output/full-height reboot and physical panel acceptance are not equivalent to a native build or fixture pass.",
+      "next_step": "Qualify full-height startup and output changes with the actual installed kernel/compositor/panel set.",
+      "priority": "P2",
+      "delivery": "Desktop profile; factory full-height acceptance open",
+      "source": [
+        "mseries/display-space/full_height_boot.py",
+        "mseries/display-space/session_startup.py"
+      ],
+      "checks": [
+        "mseries/display-space/test_full_height_boot.py",
+        "mseries/display-space/test_session_startup.py",
+        "mseries/display-space/test-notch-layout.sh"
+      ],
+      "evidence": [
+        "mseries/display-space/README.md"
+      ]
+    },
+    {
+      "id": "screenshot-retention",
+      "title": "Screenshot shelf that always retains originals",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Adds a shelf, Copy/Show/Markup and staged drag/portal export. Saved originals survive accepted, refused and cancelled drops; only temporary transfer assets expire.",
+      "verification": "The October 21 correction includes seven private GTK regressions covering retention, retry, clipboard fallback, staging and cleanup.",
+      "limitation": "A finished drag does not prove Signal attached/read the image. The two-minute transfer grace is not an acknowledgement; real target acceptance remains open.",
+      "next_step": "Verify actual Signal attachment preview/content without sending, multiple captures and cross-session copy/paste.",
+      "priority": "P1",
+      "delivery": "Shelf source/installer; real drop-target acceptance pending",
+      "source": [
+        "mseries/screenshot-shelf/mseries-screenshot-shelf"
+      ],
+      "checks": [
+        "mseries/screenshot-shelf/test-retention.sh",
+        "mseries/screenshot-shelf/test_retention.py"
+      ],
+      "evidence": [
+        "mseries/screenshot-shelf/README.md"
+      ]
+    },
+    {
+      "id": "drawers-launcher",
+      "title": "Readable launcher and hotkey app drawers",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Adds an app launcher with explicit search text styling and Gala hotkey drawers that group/position selected app windows with live config reload.",
+      "verification": "Source and retained implementation records cover launcher styling and the Gala plugin’s assignment/toggle paths.",
+      "limitation": "Gala-only drawers are not automatically implemented in the Rust session. Historical installation does not qualify current session shortcuts and input focus.",
+      "next_step": "Map each shortcut to its supported compositor and confirm real typing, assignment and multi-output placement.",
+      "priority": "P2",
+      "delivery": "Optional launcher and Gala plugin",
+      "source": [
+        "mseries/mseries-launcher.py",
+        "mseries/gala-drawers/Main.vala"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/gala-drawers/README.md",
+        "mseries/BUG-FIX-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "theme",
+      "title": "Theme accents, dark mode and rounded-corner patches",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Provides local theme settings, a sunrise/sunset dark-mode helper and scoped Gala/panel styling patches rather than replacing the elementary toolkit.",
+      "verification": "Installers and source assets are present; prior transformed-desktop records describe the applied theme.",
+      "limitation": "A Gala corner patch does not apply to Rust rendering automatically. Blanket “installed” does not establish consistency in every app or loaded session.",
+      "next_step": "Audit light/dark and high-text-size surfaces per toolkit, retaining native defaults where customization is unsupported.",
+      "priority": "P3",
+      "delivery": "Optional desktop settings and source patches",
+      "source": [
+        "mseries/install-dark-mode.sh",
+        "mseries/dark-mode/mseries-dark-mode",
+        "mseries/theme"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/customizations/README.md",
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "codexbar",
+      "title": "CodexBar: upstream usage engine plus native elementary layer",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Integrates upstream Linux ARM64 CodexBar and adds native Wingpanel/settings, cached session accounting, scoped account helpers and a merged opt-in numbered account legend.",
+      "verification": "The port manifest maps owned files to upstream contracts; unit/native probe coverage exists for JSON boundaries, refresh policy, settings and account helpers.",
+      "limitation": "Provider authentication remains upstream/network dependent. Private legend/layout probes do not establish live real-account or newly loaded module acceptance. Open PR #460 is a separate later layout follow-up.",
+      "next_step": "Preserve schema/settings and the complete taskbar layer on each upstream bump; check live snapshot and target account separately.",
+      "priority": "P2",
+      "delivery": "Upstream CLI with custom native front end/helpers",
+      "source": [
+        "mseries/CODEXBAR-PORT.md",
+        "mseries/codexbar-wingpanel/Indicator.vala",
+        "mseries/codexbar-accounts.py"
+      ],
+      "checks": [
+        "mseries/check-codexbar-port.sh",
+        "mseries/codexbar-wingpanel/test-json-boundary.vala",
+        "mseries/test-codexbar-accounts.py"
+      ],
+      "evidence": [
+        "mseries/CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md"
+      ]
+    },
+    {
+      "id": "repobar",
+      "title": "RepoBar dashboard and account-isolated caches",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Independently implements a native GitHub dashboard, repository/CI/release/Pages links and per-account reads without switching the CLI’s global account.",
+      "verification": "The October 21 follow-up checks resolved-account pinning, per-account caches, stale-response rejection and private native error/account probes.",
+      "limitation": "Only one real signed-in account is recorded. Mocked second-account and private probes do not establish a live multi-account sign-in or newly loaded panel.",
+      "next_step": "Qualify a second owner-authorized account and confirm no old-account state appears across switch/error paths.",
+      "priority": "P2",
+      "delivery": "Optional indicator/settings/helper",
+      "source": [
+        "mseries/repobar-wingpanel",
+        "mseries/repobar.py"
+      ],
+      "checks": [
+        "mseries/test_repobar_accounts.py"
+      ],
+      "evidence": [
+        "mseries/REPOBAR-PORT.md",
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "network-usage",
+      "title": "Network throughput, usage views and Ethernet icon fixes",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Combines pinned panel-network patches with selected UsageWidget/Wi-Fi changes and local usage logging. The canonical installer composes them explicitly.",
+      "verification": "Code inspection confirms selected-file patch application and idempotent UsageWidget wiring; historical records cover speed/saturation and Ethernet-icon fixes.",
+      "limitation": "The old netspeed README says the two patch sets cannot be combined, but the installer now composes selected parts. TCP polling does not fully attribute QUIC or short-lived connections.",
+      "next_step": "Keep the installer as the build entry point; reconcile the stale README and qualify real adapter replug/usage accuracy.",
+      "priority": "P2",
+      "delivery": "Patched network indicator and optional logger",
+      "source": [
+        "mseries/install-network-throughput.sh",
+        "mseries/netspeed/wire-network-usage.py",
+        "mseries/netspeed/netusage/netusage.py"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/netspeed/README.md",
+        "mseries/BUG-FIX-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "iphone-transport",
+      "title": "Real iPhone SMS/iMessage through BlueFerry",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Recorded outcome",
+      "provided": "Integrates BlueFerry’s Bluetooth MAP/MNS messaging and a version-matched scoped BlueZ 5.87 setup; native setup checks actual message access before declaring ready.",
+      "verification": "The October 20 sanitized qualification records authorized send/receive and incoming replies on J314S/iPhone. The upstream backend owns transport and encrypted history.",
+      "limitation": "This is nearby-phone messaging, not direct iCloud transport or a complete history import. ANCS, attachments and suspend/reboot recovery have separate limits.",
+      "next_step": "Qualify reconnect/resume without disturbing the working pairing; retain exact daemon/client identity.",
+      "priority": "P2",
+      "delivery": "Experimental upstream backend plus local setup integration",
+      "source": [
+        "mseries/install-messaging-bluez.sh",
+        "mseries/phone-setup/setup_core.py"
+      ],
+      "checks": [
+        "mseries/phone-setup/test_protocol.py",
+        "mseries/phone-setup/test_connection.py"
+      ],
+      "evidence": [
+        "mseries/phone-setup/messaging-qualification-20261020.json",
+        "mseries/phone-setup/README.md"
+      ]
+    },
+    {
+      "id": "native-messages",
+      "title": "Native Messages UI with safe group confirmation",
+      "area": "Connectivity",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Provides conversation UI, drafts/retry, unread/name resolution, bounded HTTPS media-link previews and explicit roster-bound confirmation before group sends.",
+      "verification": "Source checks cover stale roster/address routing, duplicate sends, escaped rendering and preview limits; private GTK and real self-link evidence are documented.",
+      "limitation": "MAP attachment payloads remain unavailable. Inbox-list summaries can be truncated and are labeled. Real group-send and some input-method/live-preview acceptance remain open.",
+      "next_step": "Finish owner-confirmed group acceptance and live media/input checks without using fixture success as a sent-message result.",
+      "priority": "P2",
+      "delivery": "Native GTK/Granite client of BlueFerry",
+      "source": [
+        "mseries/phone-setup/messages.py",
+        "mseries/phone-setup/messages_model.py",
+        "mseries/phone-setup/message_media.py"
+      ],
+      "checks": [
+        "mseries/phone-setup/test_messages.py",
+        "mseries/phone-setup/test_messages_gui.py",
+        "mseries/phone-setup/test_message_media.py"
+      ],
+      "evidence": [
+        "mseries/phone-setup/README.md"
+      ]
+    },
+    {
+      "id": "message-pins",
+      "title": "Import an ordered Apple Messages pin snapshot",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Source reviewed",
+      "provided": "Provides a read-only macOS export kit and native import/review matching. Local secret handling uses the system keyring rather than publishing contact identifiers.",
+      "verification": "Ordered/empty/missing/denied export and private write/readback tests are documented on macOS CI; import/matching/keyring tests exist.",
+      "limitation": "Actual owner export with SIP enabled is unverified. CI images have SIP disabled. Import is a snapshot, not continuous iPhone pin sync.",
+      "next_step": "Complete the small owner Mac export and reviewed import before planning a continuous synchronization adapter.",
+      "priority": "P2",
+      "delivery": "Explicit export/import candidate",
+      "source": [
+        "mseries/phone-setup/message_pins.py",
+        "mseries/phone-setup/macos-visit"
+      ],
+      "checks": [
+        "mseries/phone-setup/test_message_pins.py",
+        "mseries/phone-setup/test_pin_keyring.py"
+      ],
+      "evidence": [
+        "mseries/phone-setup/macos-visit/README.md"
+      ]
+    },
+    {
+      "id": "verification-codes",
+      "title": "Explicit verification-code suggestions and field fill",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Adds a near-pointer code offer, explicit native accessible-field insertion and browser copy fallback; Messages stays the separate native client.",
+      "verification": "Private field/browser/shortcut fixtures cover stale offers, target checks and insertion boundaries.",
+      "limitation": "Live sign-in acceptance is not established by fixtures. The helper is not unrestricted browser autofill or a phone security-setting change.",
+      "next_step": "Qualify one owner-chosen sign-in surface and stale/focus refusal before expanding app coverage.",
+      "priority": "P2",
+      "delivery": "Optional explicit suggestion helper",
+      "source": [
+        "mseries/phone-setup/verification_codes.py",
+        "mseries/phone-setup/code_fields.py",
+        "mseries/phone-setup/code_offers.py"
+      ],
+      "checks": [
+        "mseries/phone-setup/test_code_fields_gui.py",
+        "mseries/phone-setup/test_code_browser.py"
+      ],
+      "evidence": [
+        "mseries/phone-setup/README.md"
+      ]
+    },
+    {
+      "id": "notification-popups",
+      "title": "Compact upper-right notification popups and explicit Reply",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Recorded outcome",
+      "provided": "Implements bounded native-theme upper-right cards, DND, action deduplication and a scoped explicit BlueFerry focus bridge. Popups and the separate center retain content only in service memory.",
+      "verification": "The later handoff records 360×72 live geometry, a real incoming Reply opening/focusing the matching conversation without sending, and private protocol/focus/workarea checks.",
+      "limitation": "No inline reply, image/sound support or native Wayland placement is claimed. Per-app preferences, full accessibility and physical next-login/factory qualification remain open.",
+      "next_step": "Verify next-login/workarea recovery and keyboard/screen-reader behavior on the exact loaded popup/center/taskbar combination.",
+      "priority": "P2",
+      "delivery": "Installed popup service with later live Reply/focus evidence",
+      "source": [
+        "mseries/desktop-notifications/notifications.py",
+        "mseries/desktop-notifications/popup.py",
+        "mseries/desktop-notifications/focus.py",
+        "mseries/desktop-notifications/workarea.py"
+      ],
+      "checks": [
+        "mseries/desktop-notifications/test_notifications.py",
+        "mseries/desktop-notifications/test_private_smoke.py",
+        "mseries/desktop-notifications/test_focus.py",
+        "mseries/desktop-notifications/test_workarea.py"
+      ],
+      "evidence": [
+        "mseries/desktop-notifications/README.md",
+        "mseries/OS9-HANDOFF.md"
+      ]
+    },
+    {
+      "id": "airdrop",
+      "title": "AirDrop controls and an unqualified Omdrop radio path",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Blocked",
+      "provided": "Vendors MIT Omdrop userspace and adds a native receive-control row. A separate explicit installer stages AWDL userspace helpers without replacing the kernel driver or activating the radio.",
+      "verification": "Private stub-backend controls and installer/preflight behavior are recorded; the vendor test scope has missing prerequisites and omitted core components.",
+      "limitation": "No real local send/receive acceptance is recorded. An upstream chip result is not this host’s result; installed controls do not mean AWDL is active.",
+      "next_step": "With the owner present, satisfy prerequisites and follow the staged radio/transfer plan with rollback.",
+      "priority": "P2",
+      "delivery": "UI/userspace present; radio and real transfer unqualified",
+      "source": [
+        "mseries/quick-settings/AirDropPanel.vala",
+        "mseries/install-omdrop.sh",
+        "mseries/install-omdrop-radio.sh"
+      ],
+      "checks": [
+        "mseries/test-omdrop-installer.py",
+        "mseries/quick-settings/airdrop-probe/run-probe.sh"
+      ],
+      "evidence": [
+        "mseries/omdrop/PROVENANCE.md",
+        "mseries/omdrop-awdl/TEST-PLAN.md"
+      ]
+    },
+    {
+      "id": "airplay-audio",
+      "title": "Sound Output picker and AirPlay destination groups",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Adds a native output list and optional PipeWire RAOP discovery/group controls. Audio transport remains PipeWire/RAOP.",
+      "verification": "Core/render tests and a silent group-stream exercise are documented.",
+      "limitation": "Audible playback, synchronization between receivers, actual Bluetooth/AirPlay switching and login startup are unverified. Dock HDMI audio has a separate experimental kernel/UCM gate.",
+      "next_step": "Qualify audible output switching and receiver sync; treat DCP dock audio as its own attended trial.",
+      "priority": "P2",
+      "delivery": "Optional audio controls and RAOP integration",
+      "source": [
+        "mseries/quick-settings/AudioOutput.vala",
+        "mseries/quick-settings/AirPlayOutputs.vala",
+        "mseries/airplay/airplay_core.py"
+      ],
+      "checks": [
+        "mseries/airplay/test_airplay_core.py",
+        "mseries/audio/test_airplay_outputs_render.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md",
+        "mseries/audio/DOCK-TV-AUDIO.md"
+      ]
+    },
+    {
+      "id": "share-eyes",
+      "title": "Screen-share status and stale-heartbeat rejection",
+      "area": "Connectivity",
+      "kind": "Fix",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Source reviewed",
+      "provided": "Adds native Share Eyes status/controls around the separate rupert-share backend. The freshness fix rejects future/invalid heartbeat times and clears stale credentials/URLs.",
+      "verification": "A regression against the original parser, native build and private light/dark future-state probes are retained.",
+      "limitation": "The fix report says no live panel/share installation. This is not full remote desktop or a new media pipeline; per-viewer browser encode cost remains unmeasured.",
+      "next_step": "Stage through canonical Quick Settings preparation, verify actual freshness and collect matched sharing-cost baselines before media changes.",
+      "priority": "P2",
+      "delivery": "Backend integration with source-only freshness follow-up",
+      "source": [
+        "mseries/share-eyes-wingpanel/ShareState.vala",
+        "mseries/share-eyes-wingpanel/mseries-share-start"
+      ],
+      "checks": [
+        "mseries/share-eyes-wingpanel/test-share-state.vala"
+      ],
+      "evidence": [
+        "mseries/SHARE-EYES-FRESHNESS-2026-10-21.md",
+        "mseries/share-cost/README.md"
+      ]
+    },
+    {
+      "id": "calendar-agenda",
+      "title": "Native Calendar Events, Tasks and GitHub agenda",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Downstream patch",
+      "stage": "Limited qualification",
+      "provided": "Extends the datetime panel with upcoming/month/week/day events, EDS tasks, explicit completion/addition, GitHub tracking and optional daily/study content.",
+      "verification": "Private EDS agenda/native checks and installed panel records exist, including recurrence, rollback/error and Today-navigation fixes.",
+      "limitation": "Real Google OAuth/remote round trip, full physical interaction and all recurrence providers are not implied by isolated local EDS tests.",
+      "next_step": "Complete owner account sign-in and a known remote event/task round trip, preserving source selection.",
+      "priority": "P2",
+      "delivery": "Patched elementary datetime indicator",
+      "source": [
+        "mseries/calendar",
+        "mseries/install-calendar-agenda.sh"
+      ],
+      "checks": [
+        "mseries/calendar/test-agenda.sh",
+        "mseries/calendar/test-github-tracker.py",
+        "mseries/calendar/check-bundled-data.py"
+      ],
+      "evidence": [
+        "mseries/calendar/README.md"
+      ]
+    },
+    {
+      "id": "homeboard",
+      "title": "Homeboard task bridge and launcher",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "Installs a pinned bridge between Homeboard and elementary Tasks/EDS, with restart/backoff/keyring handling and calendar Sign In entry points.",
+      "verification": "The roadmap records the bridge installed/running but signed out; local agenda source tests do not authenticate a remote account.",
+      "limitation": "No successful owner Google/Homeboard round trip is established by service presence.",
+      "next_step": "Complete explicit Sign In and verify completion/readback in both Homeboard and the EDS task view.",
+      "priority": "P2",
+      "delivery": "Optional external bridge; owner sign-in pending",
+      "source": [
+        "mseries/install-homeboard-sync.sh",
+        "mseries/install-homeboard-launcher.sh"
+      ],
+      "checks": [
+        "mseries/calendar/test-agenda.sh"
+      ],
+      "evidence": [
+        "mseries/ROADMAP.md"
+      ]
+    },
+    {
+      "id": "local-assistants",
+      "title": "Local MLX assistants with memory and cooling guards",
+      "area": "AI & speech",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "Configures pinned private Linux MLX/model profiles, Newelle chat/summary memory and guarded coding workflows while retaining desktop memory/cooling reserves.",
+      "verification": "Retained app/tool fixtures and measured model comparisons support specific 4B defaults; model-worker admission and interruption behavior is implemented.",
+      "limitation": "Model quality is task-specific. Larger profiles can exceed reserve; a fan guard is not a noise measurement. Earlier Ornith/Hermes and speech descriptions are historical.",
+      "next_step": "Reuse the qualification queue and evaluate only materially changed model/app cases with exact identities.",
+      "priority": "P2",
+      "delivery": "Optional supervised upstream model/app stack",
+      "source": [
+        "mseries/local-ai/model-worker.py",
+        "mseries/local-ai/configure-assistants.py"
+      ],
+      "checks": [
+        "mseries/local-ai/test_assistants.py"
+      ],
+      "evidence": [
+        "mseries/local-ai/README.md",
+        "docs/local-ai.html"
+      ]
+    },
+    {
+      "id": "scoped-mcp",
+      "title": "Sixteen scoped local MCP tools",
+      "area": "AI & speech",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Provides bounded workspace reads/create-only notes, dedicated Assistant Tasks/Calendar writes, managed-browser reads and unsent local mail drafts; no generic shell tool.",
+      "verification": "Adapter, retry/conflict and independent EDS/RFC822 outcomes are retained. The integration report distinguishes controller/API discovery from actual Newelle GUI dispatch.",
+      "limitation": "Not general app control: no normal-profile browsing, arbitrary task edits, inbox access, mail sending or unrestricted files. The sixteen-schema Newelle GUI workflow gate is still pending in its report.",
+      "next_step": "Finish the queued actual-controller positive/hostile-page cases without duplicating completed inference trials.",
+      "priority": "P2",
+      "delivery": "Scoped stdio adapter, not universal desktop automation",
+      "source": [
+        "mseries/local-ai/os-mcp.py",
+        "mseries/local-ai/app_adapters.py"
+      ],
+      "checks": [
+        "mseries/local-ai/test_app_adapters.py"
+      ],
+      "evidence": [
+        "mseries/local-ai/APP-INTEGRATION.md"
+      ]
+    },
+    {
+      "id": "english-f5",
+      "title": "English F5 streaming dictation with stable-only field output",
+      "area": "AI & speech",
+      "kind": "Fix",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Blocked",
+      "provided": "Integrates Nemotron CPU with optional native engines and a guarded IBus field lease. Stable words stream; unsafe speculative app composition is suppressed; grammar stays separate.",
+      "verification": "The qualification ledger retains public-file ASR/toolkit/real-app successes and failures. The later physical ChatGPT F5 attempt failed before capture; a launcher fix is staged.",
+      "limitation": "Earlier file-audio successes do not erase the current app-specific physical failure. v0.0.1 is an unpublished desktop-update candidate, not an accepted stable speech release.",
+      "next_step": "After the owner’s full ChatGPT relaunch, perform the pending human microphone-to-field acceptance for that exact candidate.",
+      "priority": "P1",
+      "delivery": "Installed/staged candidate; specific human F5 gate unresolved",
+      "source": [
+        "mseries/dictation",
+        "mseries/releases/v0.0.1"
+      ],
+      "checks": [
+        "mseries/dictation/test_f5_output.py",
+        "mseries/dictation/test_f5_races.py",
+        "mseries/releases/v0.0.1/test_preflight.py"
+      ],
+      "evidence": [
+        "mseries/dictation/QUALIFICATION-INDEX.md",
+        "mseries/dictation/F5-ENGLISH-ACCEPTANCE.md",
+        "mseries/releases/v0.0.1/README.md"
+      ]
+    },
+    {
+      "id": "voice-experiments",
+      "title": "Voice reply and alternate speech-engine experiments",
+      "area": "AI & speech",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Source reviewed",
+      "provided": "Retains optional native engine controllers and synthetic English WAV/voice completion work, separate from the English STT candidate.",
+      "verification": "The qualification ledger separates real ASR, replayed ASR events, LLM/WAV completion and preserved harness failures.",
+      "limitation": "A generated WAV or replay is not live conversational microphone/playback acceptance. These experiments are not the delivered STT-only v0.0.1 scope.",
+      "next_step": "Resume only the explicitly selected incomplete stage after checking the ledger/owned queue; do not repeat completed trials.",
+      "priority": "P3",
+      "delivery": "Retained optional experiments",
+      "source": [
+        "mseries/dictation/dictation_voice.py",
+        "mseries/dictation/dictation_ane.py"
+      ],
+      "checks": [
+        "mseries/dictation/test_voice.py",
+        "mseries/dictation/test_ane_ipc.py"
+      ],
+      "evidence": [
+        "mseries/dictation/QUALIFICATION-INDEX.md"
+      ]
+    },
+    {
+      "id": "fault-watch",
+      "title": "Bounded fault collection and optional local diagnosis",
+      "area": "AI & speech",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Collects/deduplicates bounded current/previous-boot failure signatures and offers a native troubleshooting view. Optional model diagnosis never executes suggested repairs.",
+      "verification": "The watcher is recorded active; source tests and retained model-quality failures distinguish deterministic collection from analysis quality.",
+      "limitation": "The 4B repair-advice route failed qualification. Optional 9B analysis has separate memory/admission limits and remains unqualified for the retained app mix.",
+      "next_step": "Validate deterministic evidence completeness first; keep automatic diagnosis off until the selected model/workload is qualified.",
+      "priority": "P2",
+      "delivery": "Deterministic watcher plus optional unqualified model diagnosis",
+      "source": [
+        "mseries/local-ai/crash-watch.py",
+        "mseries/local-ai/troubleshoot.py"
+      ],
+      "checks": [
+        "mseries/local-ai/test_troubleshoot.py"
+      ],
+      "evidence": [
+        "mseries/local-ai/README.md"
+      ]
+    },
+    {
+      "id": "apple-passwords",
+      "title": "Optional read-only Apple Passwords integration",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Source reviewed",
+      "provided": "Provides unofficial client installation, a native setup/vault UI, local helper and Brave extension integration, with keyring-backed storage and explicit recovery handling.",
+      "verification": "Source checks cover setup/auth/network/GUI boundaries. The installer is disabled by default and does not request credentials itself.",
+      "limitation": "Owner authentication and account trust are separate. No writes of new passwords to iCloud, passkeys, native-app autofill or Advanced Data Protection qualification is claimed.",
+      "next_step": "Qualify an explicitly selected owner login/recovery/autofill path without logging or publishing real vault data.",
+      "priority": "P2",
+      "delivery": "Off-by-default unofficial account integration",
+      "source": [
+        "mseries/install-icloud-passwords.sh",
+        "mseries/icloud-passwords"
+      ],
+      "checks": [
+        "mseries/icloud-passwords/test_setup.py",
+        "mseries/icloud-passwords/test_2fa.py",
+        "mseries/icloud-passwords/test_network.py",
+        "mseries/icloud-passwords/test_gui.py"
+      ],
+      "evidence": [
+        "mseries/icloud-passwords/README.md"
+      ]
+    },
+    {
+      "id": "teams-outlook",
+      "title": "Teams and Outlook web launchers with official icons",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "Adds desktop/app-window launchers, pinned official icon fetching, profile selection and ordered dock-pin preservation; Outlook leaves the mailto handler unchanged.",
+      "verification": "Offline launcher/icon tests and owner Teams Brave sign-in are recorded. Launcher dispatch does not inspect or copy browser authentication databases.",
+      "limitation": "These are Microsoft web clients, not native GTK clients. Meetings/media/sharing and Outlook mailbox operations remain unverified; browser support differs by mode.",
+      "next_step": "Qualify the actual tenant’s messaging, camera/mic and sharing in the selected browser mode.",
+      "priority": "P2",
+      "delivery": "Optional web-client integration",
+      "source": [
+        "mseries/install-teams.sh",
+        "mseries/install-outlook-web.py",
+        "mseries/teams-web"
+      ],
+      "checks": [
+        "mseries/teams-web/test_teams.py"
+      ],
+      "evidence": [
+        "mseries/teams-web/README.md"
+      ]
+    },
+    {
+      "id": "orchard",
+      "title": "Native Orchard manager for Incus and rootless Podman",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Provides native Incus instance/resource management, conflict-aware edits, snapshots/backups, logs, panel controls and optional model endpoint/sandbox UI. A merged Podman page manages existing rootless containers/images/volumes through JSON CLI calls, with details/live counters and guarded removal.",
+      "verification": "The upstream-parity report classifies 131 capability rows with explicit adaptations/incompatibilities; native/private runtime and soak evidence is retained. Podman additions are separately documented and do not change the Incus parity count.",
+      "limitation": "This is not identical upstream Orchard or a container engine. Incus 6.0.5’s OCI limitations remain; Podman uses the separately installed engine. Sandbox settings are not a security guarantee. Unified Machine Lab/Orchard PR #491 is outside this snapshot.",
+      "next_step": "Complete remaining manual Incus/Podman operations and absence/error/counter checks; keep the unification candidate separate.",
+      "priority": "P2",
+      "delivery": "Optional native client for an existing Incus daemon",
+      "source": [
+        "mseries/orchard-incus-native/src",
+        "mseries/orchard-incus-native/NOTICE.md"
+      ],
+      "checks": [
+        "mseries/orchard-incus-native/tests"
+      ],
+      "evidence": [
+        "mseries/orchard-incus-native/README.md",
+        "mseries/orchard-incus-native/docs/UPSTREAM-PARITY.md",
+        "docs/orchard-incus.html"
+      ]
+    },
+    {
+      "id": "machine-lab",
+      "title": "Machine Lab and ARM64 guest tooling",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Adds a QEMU/KVM manager, VM inventory/lifecycle, QMP pause/resume and display, image/snapshot support, optional Windows driver media and Incus views.",
+      "verification": "The README records headless-QEMU pause/resume and GTK Broadway display/input checks. Separate VM tools retain elementary/Omarchy boot observations.",
+      "limitation": "A complete automatic new guest install, native Wayland keyboard path and unattended Windows setup are not all qualified. Experimental macOS collection is not a supported Linux macOS guest.",
+      "next_step": "Complete one fresh guest install end to end and qualify native display/input and shutdown recovery.",
+      "priority": "P2",
+      "delivery": "Optional native manager and VM CLI",
+      "source": [
+        "mseries/machine-lab/src",
+        "mseries/vms/mseries-vm"
+      ],
+      "checks": [
+        "mseries/machine-lab/tests",
+        "mseries/vms/test-mseries-vm.sh"
+      ],
+      "evidence": [
+        "mseries/machine-lab/README.md",
+        "mseries/vms/README.md"
+      ]
+    },
+    {
+      "id": "muvm-fex",
+      "title": "4 KiB microVM route for x86 emulation",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Recorded outcome",
+      "provided": "Builds pinned muvm/libkrun/libkrunfw and uses FEX inside a 4 KiB guest to address the host’s 16 KiB-page incompatibility. Source caches now require immutable identity and cleanliness.",
+      "verification": "The retained command returned x86_64 and 4096; the October 21 provenance fix has offline regression coverage.",
+      "limitation": "A command-level microVM pass is not broad x86 app, GPU, sound or package compatibility. No rebuild/deployment occurred during the provenance fix.",
+      "next_step": "Qualify one selected app and a future rebuild against the pinned source identities and rollback path.",
+      "priority": "P3",
+      "delivery": "Optional upstream emulation stack and downstream installer",
+      "source": [
+        "mseries/install-muvm.sh",
+        "mseries/muvm-source.sh"
+      ],
+      "checks": [
+        "mseries/test-muvm-source.py"
+      ],
+      "evidence": [
+        "mseries/upstream-audits/security/2026-10-21-muvm-source-provenance.md"
+      ]
+    },
+    {
+      "id": "torrential",
+      "title": "Private native Torrential packaging recipe",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Blocked",
+      "provided": "Provides a downstream recipe for an optional upstream Rust/GTK Torrential fork using system Transmission, with local policy and backend integration.",
+      "verification": "The port record retains an installed ARM64 app and a successful Ubuntu torrent transfer; later review found no newer upstream source to import.",
+      "limitation": "The audited upstream snapshot lacks a license grant. The recipe is not permission to redistribute the app or ship it in the public factory image; native fork CI also needs work.",
+      "next_step": "Resolve source licensing and native branch validation before any public package/image inclusion.",
+      "priority": "P2",
+      "delivery": "Optional private build recipe; public redistribution blocked",
+      "source": [
+        "mseries/torrential-native/build-deb.sh"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/torrential-native/README.md",
+        "mseries/TORRENTIAL-PORT.md",
+        "mseries/SHARE-EYES-FRESHNESS-2026-10-21.md"
+      ]
+    },
+    {
+      "id": "factory-image",
+      "title": "Experimental ARM64 image factory",
+      "area": "Delivery",
+      "kind": "Enhancement",
+      "origin": "Upstream integration",
+      "stage": "Limited qualification",
+      "provided": "Extends elementary’s mkosi/live-ISO wiring with the Apple layer, reproducible build records, checksum/payload checks and artifact-only CI.",
+      "verification": "A corrected ARM64 ISO reached the graphical installer in QEMU. Desktop transformations and VM boot are separate from an Apple hardware image boot.",
+      "limitation": "No stable ISO release or physical Apple factory boot is qualified. Kernel, firmware and audio/fresh-install parity remain gates; old Actions installers may expire.",
+      "next_step": "Close exact image payload gaps and complete attended Apple installer/post-boot acceptance before publishing a stable image.",
+      "priority": "P1",
+      "delivery": "Experimental build artifacts; no qualified stable ISO",
+      "source": [
+        "mkosi.images/apple-silicon",
+        ".github/workflows/daily-9.0.yml"
+      ],
+      "checks": [
+        "mseries/test-image-wiring.py",
+        "mseries/test-installer-flow.sh"
+      ],
+      "evidence": [
+        "mseries/VM-SMOKE-TEST.md",
+        "mseries/FIRST-ISO-BUILD.md"
+      ]
+    },
+    {
+      "id": "transform",
+      "title": "Additive omarchy-to-elementary transform scaffolding",
+      "area": "Delivery",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Supplies a dry-run/review-oriented transform path designed to add an elementary environment/boot entry beside an existing omarchy-mac install.",
+      "verification": "The design and shell entry point exist; source/config checks are distinct from a successful full transform.",
+      "limitation": "The mseries README still labels the transform untested. Cloning this repository does not perform or qualify installation.",
+      "next_step": "Review dry-run output and recovery prerequisites on the exact target before any attended apply.",
+      "priority": "P2",
+      "delivery": "Untested transform source; no unattended install claim",
+      "source": [
+        "transform/elementary-grow.sh"
+      ],
+      "checks": [],
+      "evidence": [
+        "mseries/TRANSFORM-DESIGN.md",
+        "mseries/README.md"
+      ]
+    },
+    {
+      "id": "installer-performance",
+      "title": "Installer timing, opt-in scheduling and immutable sources",
+      "area": "Delivery",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Adds stage timing, a default-serial/opt-in parallel module graph with apt/panel locks, optional ccache and pinned-source verification for selected builds.",
+      "verification": "Hermetic fake-module/install/compiler tests are retained. The 2.49× example uses synthetic sleep-only modules.",
+      "limitation": "The documented 2.49× synthetic timing is not a real Mac install speedup. Parallel build/resource interactions need measured first-boot acceptance.",
+      "next_step": "Measure serial versus parallel real installs under matched conditions before changing defaults or quoting gains.",
+      "priority": "P2",
+      "delivery": "Opt-in source/build improvements; defaults remain serial",
+      "source": [
+        "mseries/modrun.py",
+        "mseries/enhance-modules.json",
+        "mseries/lib-timing.sh",
+        "mseries/lib-build.sh"
+      ],
+      "checks": [
+        "mseries/test-modrun.py",
+        "mseries/test-post-install-timing.sh",
+        "mseries/test-build-ccache.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md",
+        "mseries/benchmarks/installer-speed-synthetic.json"
+      ]
+    },
+    {
+      "id": "notification-center",
+      "title": "Native bell and bounded recent notification history",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Recorded outcome",
+      "provided": "Adds a native taskbar bell, recent history, explicit Open/Reply, local Mark All Read and saved DND controls. At most 100 history records remain in service memory; the taskbar requests 50.",
+      "verification": "The merged follow-up records canonical full-stack installation, live bell/history opening and owner confirmation that both context controls appear, plus private API/GTK probes.",
+      "limitation": "History disappears on service restart. Local read controls do not mark phone messages read; opening a conversation can do so through normal BlueFerry behavior. Accessibility and next-login acceptance remain incomplete.",
+      "next_step": "Verify service absence/recovery, next-login retention expectations and assistive-technology use.",
+      "source": [
+        "mseries/desktop-notifications/history.py",
+        "mseries/desktop-notifications/center.py",
+        "mseries/dock-taskbar/TaskbarNotifications.vala"
+      ],
+      "checks": [
+        "mseries/desktop-notifications/test_history.py",
+        "mseries/desktop-notifications/test_private_smoke.py"
+      ],
+      "evidence": [
+        "mseries/desktop-notifications/README.md",
+        "mseries/OS9-HANDOFF.md"
+      ],
+      "priority": "P2",
+      "delivery": "Merged and recorded installed; memory-only history"
+    },
+    {
+      "id": "messages-mcp",
+      "title": "Local Messages MCP bridge, with sending disabled by default",
+      "area": "Connectivity",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Exposes local BlueFerry status, threads, thread reads, search and contacts over standard-library stdio. Optional send exposure requires explicit configuration and a thread allowlist.",
+      "verification": "The fake-client suite checks read/search and send policy without a phone. Code bounds bodies, avoids content logging and keeps other people’s text as untrusted data.",
+      "limitation": "This is distinct from the scoped assistant-workspace MCP adapter. Sending is off by default, refuses groups/non-reply-ready threads and is rate-limited; no authenticated live client/send qualification is claimed.",
+      "next_step": "Qualify the selected local client’s read-only discovery and error handling before considering separately authorized send cases.",
+      "source": [
+        "mseries/messages-mcp/messages_mcp.py"
+      ],
+      "checks": [
+        "mseries/messages-mcp/test_messages_mcp.py"
+      ],
+      "evidence": [
+        "mseries/messages-mcp/README.md"
+      ],
+      "priority": "P2",
+      "delivery": "Optional source/build"
+    },
+    {
+      "id": "peripherals",
+      "title": "Accessory battery choice and explicit cable/pairing offers",
+      "area": "Hardware",
+      "kind": "Fix",
+      "origin": "Mixed integration and custom UI",
+      "stage": "Limited qualification",
+      "provided": "Adds an Apple/Logitech status/watch helper that prefers exact battery percentages, matches unambiguous paired cable/Bluetooth twins and offers explicit pairing and low-battery notices.",
+      "verification": "The MX Vertical read 100% where UPower exposed a 55% level guess. Twenty-five offline cases and kernel-config gates are documented; image wiring exists.",
+      "limitation": "No Apple accessory was available. Cable matching, the Pair action, unplug reconnect and suspend are fixture-only or unverified; the helper was not installed on this host by that work.",
+      "next_step": "Qualify one real Magic accessory over cable and Bluetooth, including ambiguous-device refusal and reconnect.",
+      "source": [
+        "mseries/hardware/peripherals.py",
+        "mseries/install-hardware-support.sh"
+      ],
+      "checks": [
+        "mseries/hardware/test_peripherals.py"
+      ],
+      "evidence": [
+        "mseries/PERIPHERALS.md"
+      ],
+      "priority": "P2",
+      "delivery": "Image/source integration; scoped read-only MX observation"
+    },
+    {
+      "id": "software-updater",
+      "title": "Opt-in package updater and native Software Updates app",
+      "area": "Delivery",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Stages exact signed M-series packages with rollback copies, applies through a journaled recovery path and offers a Rust/Granite status/check/stage/rollback UI with a fixed polkit helper command set.",
+      "verification": "Fake-repository fault cases and real apt/dpkg scratch-root interruption/recovery tests are retained. The GUI has fake-state, parser/helper and private render/interaction checks.",
+      "limitation": "No real signed HTTPS repository, root/systemd/LightDM restart or owner desktop end-to-end result is established. Dpkg is not transactional; recovery semantics must not be presented as proven hardware atomicity.",
+      "next_step": "Provision the chosen signed repository, then qualify a staged boot/apply/confirm/rollback sequence on an attended target.",
+      "source": [
+        "mseries/update/mseries-update.py",
+        "rust/mseries-update-core/src",
+        "rust/mseries-updates/src"
+      ],
+      "checks": [
+        "mseries/update/test_real_tools.py",
+        "mseries/update/test_mseries_update.py",
+        "mseries/updates-app/test.sh"
+      ],
+      "evidence": [
+        "mseries/UPDATER-DESIGN.md",
+        "mseries/updates-app/README.md"
+      ],
+      "priority": "P1",
+      "delivery": "Off-by-default source and GUI; real repository/hardware acceptance open"
+    },
+    {
+      "id": "signed-release-pipeline",
+      "title": "Two signed apt suites and reproducible package builds",
+      "area": "Delivery",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Blocked",
+      "provided": "Implements dev/stable package version rules, deterministic builds, per-suite assembly and signature/hash verification before publishing. Compositor/native Claude packages remain artifact-only until their acceptance gates close.",
+      "verification": "Assembly/version/suite-preservation checks and the fail-closed missing-signing-key path are documented.",
+      "limitation": "The signing key/repository publishing and actual customer update round trip are not established. GitHub Pages serves dev/docs; the gh-pages apt branch needs its own hosting decision.",
+      "next_step": "Resolve key custody and apt hosting, perform one reviewed publish and verify a consumer; keep stable OS promotion separate.",
+      "source": [
+        ".github/workflows/mseries-debs.yml",
+        "mseries/release/assemble-apt.sh"
+      ],
+      "checks": [
+        "mseries/release/test-assemble.sh"
+      ],
+      "evidence": [
+        "mseries/RELEASE-PIPELINE.md",
+        "mseries/release/KEY-RUNBOOK.md"
+      ],
+      "priority": "P1",
+      "delivery": "Implemented release workflow; publication prerequisites open"
+    },
+    {
+      "id": "desktop-mode",
+      "title": "Desktop Mode launcher and immediate mode request",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Adds windows/elementary/toggle/status commands and launcher actions that change Work Mode’s enabled preference and invoke its normal tick without logging out.",
+      "verification": "Source inspection confirms the small wrapper delegates actual application/restoration to mseries-work-mode; the mode preference and evaluated status remain distinct.",
+      "limitation": "Enabled schedule/public-IP rules still constrain the normal Work Mode tick. A requested Windows mode does not by itself prove the taskbar/wallpaper changed in a real session.",
+      "next_step": "Qualify both modes with rules on/off and verify actual layout, state restoration and readable status.",
+      "source": [
+        "mseries/work-mode/mseries-desktop-mode",
+        "mseries/work-mode/io.github.techmore.DesktopMode.desktop"
+      ],
+      "checks": [
+        "mseries/work-mode/test_work_mode.py"
+      ],
+      "evidence": [
+        "mseries/work-mode/README.md"
+      ],
+      "priority": "P2",
+      "delivery": "Optional source/build"
+    },
+    {
+      "id": "native-agent-client",
+      "title": "Native agent clients over the T3 Code server",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Provides Vala and Rust/GTK/Granite clients with offline transcript views; the Rust client adds T3 pairing, provider/thread controls, streamed turns, attachments, approvals, imports, diffs and repository workflow surfaces.",
+      "verification": "Protocol fixtures, private rendering, live-server thread and bounded startup/idle measurements are documented. The Rust client has subsequent incremental protocol/model/render fixes.",
+      "limitation": "The T3 server and model providers remain separate upstream services. Permission/Stop, workflow issue actions and installed-package acceptance have incomplete live coverage. Reported idle comparisons mix Xvfb/native process trees and are not a general battery/feature-parity win.",
+      "next_step": "Qualify supervised approval/Stop and installed-and-launched operation before adding it to signed suites; keep workflow side effects explicit.",
+      "source": [
+        "rust/claude-pantheon-rs/src",
+        "mseries/claude-pantheon-native"
+      ],
+      "checks": [
+        "rust/claude-pantheon-rs/tests"
+      ],
+      "evidence": [
+        "rust/claude-pantheon-rs/README.md",
+        "rust/claude-pantheon-rs/docs/PERFORMANCE.md",
+        "mseries/OS9-HANDOFF.md"
+      ],
+      "priority": "P2",
+      "delivery": "Native client source/artifacts; server/account configuration separate"
+    },
+    {
+      "id": "compositor-metrics",
+      "title": "Frame/client metrics and narrower frame callbacks",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Adds per-output render/queue/flip timing, late-frame counters, per-client shm/dmabuf accounting, correct X11 attribution and callbacks limited to the flipped output.",
+      "verification": "Production metrics modules contain unit cases; the merged handoff records source/native checks and says after-measurements still need a new login.",
+      "limitation": "Instrumentation and reduced callback scope do not establish an end-to-end CPU, latency or energy improvement in the loaded session.",
+      "next_step": "Collect comparable before/after output/client metrics with the exact new package loaded, then tie any gain to matched workload evidence.",
+      "source": [
+        "rust/pantheon-compositor/src/metrics",
+        "rust/pantheon-compositor/src/native.rs"
+      ],
+      "checks": [
+        "rust/pantheon-compositor/src/metrics"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md",
+        "mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md"
+      ],
+      "priority": "P2",
+      "delivery": "Optional source/build"
+    },
+    {
+      "id": "dmabuf-watchdog",
+      "title": "Native dmabuf advertisement and event-loop watchdog",
+      "area": "Desktop",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Enables native linux-dmabuf with render-node feedback and provides explicit off switches. Adds systemd watchdog/status pings and reporting for a pending page flip.",
+      "verification": "The merged report records switch/watchdog/status tests, native and non-native Clippy, and session-unit checks. It explicitly says not installed by that work.",
+      "limitation": "No direct scanout is implemented by this change. Native client rendering and power gains remain unqualified. A real hung-loop watchdog restart ends Wayland clients; a merely pending flip is reported without killing them.",
+      "next_step": "At a chosen login verify actual clients draw, buffers/metrics are attributed correctly and rollback switches work before claiming acceleration or savings.",
+      "source": [
+        "rust/pantheon-compositor/src/native.rs",
+        "rust/pantheon-compositor/src/watchdog.rs"
+      ],
+      "checks": [
+        "rust/pantheon-compositor/src/watchdog.rs",
+        "mseries/pantheon-rust-compositor/test-session-units.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md"
+      ],
+      "priority": "P1",
+      "delivery": "Optional source/build"
+    },
+    {
+      "id": "idle-blanking",
+      "title": "Idle monitoring, inhibition and display power-save source",
+      "area": "Desktop",
+      "kind": "Fix",
+      "origin": "Custom implementation",
+      "stage": "Source reviewed",
+      "provided": "Implements Mutter IdleMonitor semantics, Wayland idle/inhibit protocols and a DisplayConfig PowerSaveMode path that blanks/re-enables outputs, with an off switch.",
+      "verification": "The merged record retains watch/inhibition/power-save tests and a private idle probe; it says installed nowhere and no running-compositor restart.",
+      "limitation": "Source support does not prove real panel blank/wake, VRR/dock recovery or gsd-power integration. Screen blanking does not add idle screen locking; that remains a separate gap.",
+      "next_step": "After loading the exact package, qualify idle/inhibit, input wake, lock behavior and multi-output recovery, retaining actual missing-control states for older builds.",
+      "source": [
+        "rust/pantheon-compositor/src/idle.rs",
+        "rust/pantheon-compositor/src/display_config.rs"
+      ],
+      "checks": [
+        "rust/pantheon-compositor/src/idle.rs",
+        "mseries/pantheon-rust-compositor/idle-probe/run.sh"
+      ],
+      "evidence": [
+        "mseries/OS9-HANDOFF.md"
+      ],
+      "priority": "P1",
+      "delivery": "Optional source/build"
+    },
+    {
+      "id": "disk-space",
+      "title": "Native disk-space map and guarded cleanup UI",
+      "area": "Apps",
+      "kind": "Enhancement",
+      "origin": "Custom implementation",
+      "stage": "Limited qualification",
+      "provided": "Adds a Rust/Granite filesystem browser, allocated-block scanner, treemap/sunburst, contents list and explicit Trash/Delete actions with protected-path guards.",
+      "verification": "The report retains unit/layout/guard cases, du comparisons and private GTK interaction/deletion fixtures. No real owner files were used in those tests.",
+      "limitation": "Owner-session use, very large/slow/network trees and screen-reader acceptance are open. Btrfs shared extents are not individually reclaimable totals; the default scan excludes other filesystems/subvolumes.",
+      "next_step": "Qualify an attended read-only home/system scan and accessibility before any real cleanup workflow.",
+      "source": [
+        "rust/mseries-diskspace/src",
+        "mseries/diskspace-app/install.sh"
+      ],
+      "checks": [
+        "mseries/diskspace-app/test.sh"
+      ],
+      "evidence": [
+        "mseries/diskspace-app/README.md"
+      ],
+      "priority": "P2",
+      "delivery": "Optional source/app installer; not recorded installed on owner session"
+    }
+  ],
+  "scope": "Source, installation wiring, check definitions and retained public evidence at the pinned revision. No new host deployment, live hardware experiment, account action or model benchmark was performed by this audit.",
+  "exclusions": [
+    {
+      "title": "Full remote desktop host and phone control",
+      "reason": "Open PR #390 remains separate from Share Eyes and the provided screen-share integration.",
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/pull/390"
+    },
+    {
+      "title": "Unified Machine Lab and Orchard app",
+      "reason": "Open PR #491 is outside this source snapshot; current Machine Lab and Orchard capabilities are described separately.",
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/pull/491"
+    },
+    {
+      "title": "Later CodexBar layout follow-up",
+      "reason": "The account legend is merged; open PR #460 proposes a separate layout/notification-dot iteration.",
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/pull/460"
+    },
+    {
+      "title": "Stable factory ISO, accepted Touch ID passkeys and continuous iPhone pin sync",
+      "reason": "These outcomes remain unqualified; source, controls or snapshots are not acceptance of them.",
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/blob/6f716799fcbef277ac24031bf9242e20f5a2415f/mseries/ROADMAP.md"
+    },
+    {
+      "title": "General Adobe/Office replacement suite",
+      "reason": "The historical ArtCraft opportunity is not an implemented, licensed and qualified suite supplied by this project.",
+      "url": "https://github.com/techmore/ElementaryOS_MSeries/blob/6f716799fcbef277ac24031bf9242e20f5a2415f/mseries/BUG-FIX-ROADMAP.md"
+    }
+  ],
+  "findings": [
+    {
+      "title": "A missing mapper was presented as a port gap",
+      "detail": "Pantheon accepts a mono source; the Quickshell-specific stereo mapper is deliberately omitted. Keep real recording acceptance separate.",
+      "entry": "microphone-boundary"
+    },
+    {
+      "title": "“Installed” blurred compositor and session boundaries",
+      "detail": "Gala drawers/corners, staged Rust updates and currently loaded code need separate labels. Package installation does not activate every behavior.",
+      "entry": "focus-popups"
+    },
+    {
+      "title": "Broad speech success hid a later app-specific failure",
+      "detail": "Public-file/toolkit successes remain valid, while physical F5 in ChatGPT failed before capture and needs post-relaunch human acceptance.",
+      "entry": "english-f5"
+    },
+    {
+      "title": "Native controls were easy to mistake for working transport",
+      "detail": "AirDrop radio/transfer, audible AirPlay and real second-account RepoBar acceptance remain narrower than their UI/build tests. Notification history has since merged and has separate live bell/Reply evidence.",
+      "entry": "airdrop"
+    },
+    {
+      "title": "The network README lagged behind the installer",
+      "detail": "The current installer composes selected patch files and wires UsageWidget. The old instruction to choose either entire patch set is historical.",
+      "entry": "network-usage"
+    },
+    {
+      "title": "Historical staging prose lagged behind the running release",
+      "detail": "The old unbooted note remains a valid staging-time receipt. Later passive inspection observes the wip3 release, while identity-bound hardware acceptance still needs its own evidence.",
+      "entry": "kernel-wip3"
+    },
+    {
+      "title": "Public packaging requires more than a successful local app",
+      "detail": "Torrential’s absent audited license grant blocks public redistribution despite a retained local transfer result.",
+      "entry": "torrential"
+    },
+    {
+      "title": "Synthetic and unmatched numbers cannot establish gains",
+      "detail": "Installer fake-module timing and unmatched compositor/power samples must retain their workload and measurement limits.",
+      "entry": "installer-performance"
+    },
+    {
+      "title": "Merged follow-ups changed what is actually provided",
+      "detail": "Notification history and the dense account legend are now included. New updater, native clients, desktop mode and compositor protocols have source/fixture coverage with distinct publication, installation and real-session gates.",
+      "entry": "software-updater"
+    }
+  ],
+  "runtime_observation": {
+    "captured_utc": "2026-10-22T02:37:15+00:00",
+    "kernel_release": "7.2.11-elementary-aurora72-wip3",
+    "installed_compositor_package": "0.1.0+git75c2c3df",
+    "scope": "Read-only release/package labels. No sensor wake, service activation, installation, reboot or hardware trial. These labels do not bind running Image/module/DTB/boot-payload hashes or qualify the new source."
+  }
+}

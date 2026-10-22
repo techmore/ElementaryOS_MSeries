@@ -38,6 +38,44 @@ thin READMEs pointing here; every file moved with `git mv` (`git log --follow`).
   keyboard path remain as before.
 - **Next.** Decide whether the Python `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console);
   instance search in the sidebar if the palette is not enough.
+## Public fixes and enhancements audit — 2026-10-21
+
+A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.
+
+Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
+
+## Repository housekeeping and Desktop Mode source merge — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) merged to `dev` as
+`6f716799fcbef277ac24031bf9242e20f5a2415f`. It adds the `mseries-desktop-mode`
+command/launcher for toggling Windows Work Mode immediately, installs those files
+through `install-work-mode.sh`, and adjusts the Start menu power-button colors.
+The PR head was `2afd98edc921daa48c45b376cdd195ddd43abf7c`; all 14 required
+checks passed on that head (workflow run
+[39676407155](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39676407155));
+the two skipped CI jobs were URL-comment and reusable-build jobs. Reviewed the
+six-file diff and clean merge against refreshed `origin/dev` `81c5d94a` immediately
+before merging. The PR's own verification used in-memory GSettings and a fake
+helper. This merge did not install the new command/launcher, change live mode or
+saved settings, or restart the dock, panel, compositor, kernel or audio stack.
+Live mode-switch acceptance remains open until separately authorized installation.
+
+Repository pass: refreshed `origin/dev`; the starting checkout was clean but 345
+commits behind before merge and remains intentionally untouched. No tracked build
+directories or `.deb`/`.iso`/`.img` artifacts were found in the `dev` tree. The
+existing six-hour `.github/workflows/upstream-watch.yml`, dashboard and retained
+audit receipts were reused; this pass did not launch a duplicate watcher or claim
+a new upstream observation. Other open PRs remain pending: #491 lacks real
+Incus-action acceptance and its installer restarts the dock; #460, #440 and #390
+conflict with current `dev`; #460 also lacks dark-mode/notification visual review
+and is subject to the CodexBar deploy gate. Drafts #444, #272, #248 and #185 retain
+their stated research/handoff/qualification gates. Existing owner worktrees and
+prunable registrations were left untouched because branch ownership/activity was
+not established as inactive.
+
+Next: after owner authorization, install Work Mode using its documented installer
+and verify one reversible switch in the live session; do not infer installation
+or loaded state from this source merge.
 
 ## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
 
