@@ -849,3 +849,21 @@ silent replacement of the earlier local package hash. Kernel and boot-chain
 hosted jobs remain active at this snapshot. Full-image assembly, native
 M4 GPU/HDMI and Vulkan conformance remain unverified.
 [Successful build, provenance and local checks](receipts/2026-10-21-hosted-mesa-success.json).
+
+### Hosted boot replay correction
+
+Boot run `39706164509` compiled both stages and U-Boot, then source capture
+failed with HTTP429. The job now captures the 14 required Gravity DT members
+from the complete checksum-pinned kernel archive. A local replay produces the
+exact reviewed DTB. That archive is retained with candidate corresponding source.
+
+Hosted records also show different stage-1/U-Boot bytes from local builds;
+stage 1 contains Cargo checkout paths, and identical source/config/compiler
+labels do not guarantee cross-environment binary identity. The assembler now
+accepts an explicitly paired set of trusted fresh build receipts, verifies
+reviewed source/config contracts and stage headers, and checks each binary
+against those receipts. Its default still requires the reviewed golden hashes.
+The FAT fixture can consume the resulting trusted candidate assembly receipt.
+Local fresh-receipt assembly/readback/corruption checks pass; a wrong-source
+receipt is rejected before output. No fresh candidate is a factory promotion.
+[Failure, component records and corrective checks](receipts/2026-10-21-hosted-boot-failure-1.json).

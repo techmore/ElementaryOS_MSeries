@@ -1,0 +1,89 @@
+{
+  "run_id": 39706164509,
+  "source_head": "43abd72757d13a72d537ad69f932ca899e8fed65",
+  "status": "completed",
+  "conclusion": "failure",
+  "failure": "HTTP429 during raw-file source capture after both component builds",
+  "archive_capture_fix": "14 Gravity DT source members from complete SHA-pinned kernel archive; actual DTB equals reviewed hash",
+  "fresh_candidate_handling": "paired trusted source/configuration build receipts plus exact artifact byte checks; defaults remain golden",
+  "local_fresh_assembly_and_fat_check": "passed",
+  "wrong_source_receipt_rejected_before_output": true,
+  "hosted_component_records": {
+    "stages": {
+      "repository": "GravityLinux/bootloader",
+      "commit": "f02d4a52017915febb222539636b5b025a70407a",
+      "artwork_commit": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "commands": [
+        [
+          "make",
+          "-C",
+          "/home/runner/work/_temp/bootloader",
+          "ARCH=",
+          "RELEASE=1",
+          "LOGO=",
+          "NO_DISPLAY=1",
+          "CHAINLOADING=0",
+          "-j2"
+        ],
+        [
+          "make",
+          "-C",
+          "/home/runner/work/_temp/bootloader",
+          "ARCH=",
+          "RELEASE=1",
+          "LOGO=",
+          "NO_DISPLAY=1",
+          "CHAINLOADING=1",
+          "-j2"
+        ]
+      ],
+      "artifacts": {
+        "m1n1-stage2.bin": "33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4",
+        "m1n1-stage1.bin": "bebc8c8f4816f236e77503d5ff670b403b667c2c865ceb20e818ece49260b891"
+      },
+      "optional_logo": "omitted; raw binary target",
+      "m4_bringup": "NO_DISPLAY=1 for both stages; preserve firmware framebuffer",
+      "build_tag": "f02d4a5",
+      "configuration_reference": "GravityLinux/packages@711c2a110416d28010ccdd118b83111776bff207:gravity-bootloader/m1n1-no-display.patch",
+      "status": "source compilation only; no boot authorization, installation or J773g runtime test"
+    },
+    "uboot": {
+      "repository": "GravityLinux/u-boot",
+      "branch": "gravity-alpha-20260925",
+      "commit": "a2f6913694ff26908c16948af3f8372429782263",
+      "archive_sha256": "6adaf60d20f5f53792eefeaf662dbbd481d7d225d5938c80f6379800b685fd6c",
+      "source_date_epoch": 1789776862,
+      "configuration": "apple_m1_defconfig",
+      "localversion": "-gravity-a2f6913",
+      "commands": [
+        [
+          "make",
+          "-C",
+          "/home/runner/work/_temp/uboot/u-boot-a2f6913694ff26908c16948af3f8372429782263",
+          "O=/home/runner/work/_temp/uboot/build",
+          "apple_m1_defconfig"
+        ],
+        [
+          "make",
+          "-C",
+          "/home/runner/work/_temp/uboot/u-boot-a2f6913694ff26908c16948af3f8372429782263",
+          "O=/home/runner/work/_temp/uboot/build",
+          "LOCALVERSION=-gravity-a2f6913",
+          "-j2"
+        ]
+      ],
+      "artifacts": {
+        "u-boot-nodtb.bin": "651351db19fcd373fc465a9796e9e9fbf9c09c46946f24c422c8d5027527e00a",
+        "u-boot.bin": "651351db19fcd373fc465a9796e9e9fbf9c09c46946f24c422c8d5027527e00a",
+        ".config": "e93e0b7cda7efedc1bb76863041a00e08798192ce8723c75377fbce32faea6b7"
+      },
+      "elf_machine": "AArch64",
+      "compiler": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "scope": "pinned-source candidate compilation/configuration only; no firmware handoff",
+      "factory_promotion": false,
+      "hardware_validated": false
+    }
+  },
+  "failure_log_sha256": "d97db66a59e79fda60490ddc57bb0269dbb82ace8158c0cc9812266261422206",
+  "hardware_validated": false
+}

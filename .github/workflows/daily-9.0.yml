@@ -426,16 +426,21 @@ jobs:
             --output "$RUNNER_TEMP/u-boot.tar.gz"
           python3 mseries/m4-mini/build-uboot.py --archive "$RUNNER_TEMP/u-boot.tar.gz" \
             --output "$RUNNER_TEMP/uboot" --jobs 2
-          python3 mseries/m4-mini/prepare-sources.py --output "$RUNNER_TEMP/dt-capture"
+          curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/GravityLinux/linux/tar.gz/4fc326f6c25ccceb7515e2635c22e01fde5d3bac \
+            --output "$RUNNER_TEMP/linux.tar.gz"
+          python3 mseries/m4-mini/prepare-sources.py --gravity-archive "$RUNNER_TEMP/linux.tar.gz" --output "$RUNNER_TEMP/dt-capture"
           python3 mseries/m4-mini/build-dtb.py --source gravity-mini \
             --capture "$RUNNER_TEMP/dt-capture" --output "$RUNNER_TEMP/dtb"
           python3 mseries/m4-mini/assemble-boot-chain.py --bootloader "$RUNNER_TEMP/stages" \
             --u-boot "$RUNNER_TEMP/uboot/u-boot-nodtb.bin" \
-            --dtb "$RUNNER_TEMP/dtb/t8132-j773g.dtb" --output "$RUNNER_TEMP/chain"
+            --dtb "$RUNNER_TEMP/dtb/t8132-j773g.dtb" --output "$RUNNER_TEMP/chain" \
+            --bootloader-receipt "$RUNNER_TEMP/stages/receipt.json" --uboot-receipt "$RUNNER_TEMP/uboot/receipt.json"
           python3 mseries/m4-mini/check-boot-esp-fixture.py --bundle "$RUNNER_TEMP/chain/boot.bin" \
-            --receipt boot-record/esp-fixture.json
+            --bundle-receipt "$RUNNER_TEMP/chain/receipt.json" --receipt boot-record/esp-fixture.json
           { rustc --version --verbose; gcc --version; ld --version; dtc --version; } > boot-record/toolchain.txt
           cp "$RUNNER_TEMP/chain/"{boot.bin,m1n1-stage1.bin,receipt.json} boot-candidate/
+          cp "$RUNNER_TEMP/linux.tar.gz" boot-candidate/gravity-dt-corresponding-kernel-source.tar.gz
           cp "$RUNNER_TEMP/u-boot.tar.gz" boot-candidate/gravity-uboot-corresponding-source.tar.gz
           tar --exclude=.git --exclude=build -czf boot-candidate/gravity-bootloader-corresponding-source.tar.gz \
             -C "$RUNNER_TEMP" bootloader

@@ -27,12 +27,37 @@ def main():
     parser.add_argument('--u-boot', type=Path, required=True)
     parser.add_argument('--dtb', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--bootloader-receipt', type=Path, help='trusted fresh build receipt; requires paired U-Boot receipt')
+    parser.add_argument('--uboot-receipt', type=Path, help='trusted fresh build receipt; requires paired stage receipt')
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError('new output directory required')
     loader = json.loads((HERE / 'receipts/2026-10-21-gravity-bootloader-nodisplay.json').read_text())
     uboot = json.loads((HERE / 'receipts/2026-10-21-gravity-uboot-wrapper.json').read_text())
     kernel = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
+    if bool(args.bootloader_receipt) != bool(args.uboot_receipt):
+        raise ValueError('paired trusted fresh boot receipts required')
+    fresh = bool(args.bootloader_receipt)
+    if fresh:
+        candidate_loader = json.loads(args.bootloader_receipt.read_text())
+        candidate_uboot = json.loads(args.uboot_receipt.read_text())
+        if (candidate_loader['commit'] != loader['commit']
+                or candidate_loader['artwork_commit'] != loader['artwork_commit']
+                or candidate_loader.get('m4_bringup') != loader['m4_bringup']
+                or candidate_loader.get('build_tag') != loader['commit'][:7]
+                or candidate_uboot['commit'] != uboot['commit']
+                or candidate_uboot['archive_sha256'] != uboot['archive_sha256']
+                or candidate_uboot['configuration'] != 'apple_m1_defconfig'
+                or candidate_uboot['artifacts']['.config'] != uboot['artifacts']['.config']):
+            raise ValueError('fresh receipts must retain reviewed source/configuration contracts')
+        for stage in [1, 2]:
+            config = (args.bootloader / f'stage{stage}-build_cfg.h').read_text().splitlines()
+            if '#define NO_DISPLAY' not in config or ('#define CHAINLOADING' in config) != (stage == 1):
+                raise ValueError('fresh stage configuration mismatch')
+        if sha((args.u_boot.parent / '.config').read_bytes()) != candidate_uboot['artifacts']['.config']:
+            raise ValueError('fresh U-Boot config bytes mismatch')
+        loader, uboot = candidate_loader, candidate_uboot
+
     inputs = {
         'stage1': (args.bootloader / 'm1n1-stage1.bin', loader['artifacts']['m1n1-stage1.bin']),
         'stage2': (args.bootloader / 'm1n1-stage2.bin', loader['artifacts']['m1n1-stage2.bin']),
@@ -74,6 +99,8 @@ def main():
         'offsets': {'stage2': 0, 'j773g_dtb': boundary, 'gzip_uboot': end},
         'component_readback': 'exact stage2/DTB bytes and decompressed U-Boot match',
         'configuration': 'NO_DISPLAY; no appended config overrides',
+        'trusted_fresh_build_receipts': fresh,
+        'source_commits': {'bootloader': loader['commit'], 'uboot': uboot['commit'], 'kernel': kernel['commit']},
         'stage1': 'separate artifact; not concatenated or authorized',
         'source_dtb': 'loader fixups still required; not an observed firmware/memory map',
         'factory_promotion': False, 'installer_admission': False,

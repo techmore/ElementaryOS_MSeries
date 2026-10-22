@@ -3919,3 +3919,8 @@ rendering, package and CI checker. Own-repo run/artifact provenance verified;
 downloaded package independently passes local hash/ARM64/layout/software checks.
 Candidate hash6c9b77f1 kept separate from earlier local package. Kernel and boot
 jobs remain active; no full-image/native GPU/HDMI/Vulkan qualification.
+
+M4 boot39706164509 compiled components then hit raw HTTP429. Fixed to pinned
+full-archive DT capture (same DTB hash), retaining corresponding source. Fresh
+paired boot receipts enforce source/config plus byte hashes across environments;
+default golden mode retained. Local assembly/FAT and wrong-source rejection pass.

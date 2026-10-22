@@ -23,10 +23,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', type=Path, required=True)
     parser.add_argument('--receipt', type=Path, required=True)
+    parser.add_argument('--bundle-receipt', type=Path, help='trusted fresh assembly receipt for candidate bytes')
     args = parser.parse_args()
     if args.receipt.exists():
         raise ValueError('new receipt required')
     expected = json.loads((HERE / 'receipts/2026-10-21-repeatable-boot-chain.json').read_text())['boot_bin_sha256']
+    if args.bundle_receipt:
+        candidate = json.loads(args.bundle_receipt.read_text())
+        if not candidate.get('trusted_fresh_build_receipts'):
+            raise ValueError('fresh assembly provenance required')
+        expected = candidate['boot_bin_sha256']
     if hashlib.sha256(args.bundle.read_bytes()).hexdigest() != expected:
         raise ValueError('verified M4 boot bundle required')
     for command in ['sgdisk', 'mkfs.vfat', 'mmd', 'mcopy', 'sfdisk']:
