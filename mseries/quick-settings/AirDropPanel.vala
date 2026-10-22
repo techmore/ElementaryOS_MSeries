@@ -215,6 +215,12 @@ namespace MSeries {
                 ready = d.get_boolean_member_with_default ("ready", false);
                 if (ready) {
                     problem.visible = false;
+                } else if (only_idle_radio (d)) {
+                    // AWDL has a supported on-demand hook that creates the
+                    // idle interface when receiving is enabled. Don't label
+                    // that recoverable state as a missing driver.
+                    problem.label = "The AirDrop radio is idle. It will start when you turn receiving on.";
+                    problem.visible = true;
                 } else {
                     var missing = d.get_array_member ("missing");
                     string first = missing.get_length () > 0 ? missing.get_object_element (0).get_string_member ("say") : "";
@@ -225,6 +231,15 @@ namespace MSeries {
             } catch (GLib.Error err) {
                 // Leave whatever status already shows.
             }
+        }
+
+        private bool only_idle_radio (Json.Object doctor) {
+            if (doctor.get_boolean_member_with_default ("ready", false)) return false;
+            if (!doctor.has_member ("missing")) return false;
+            var missing = doctor.get_array_member ("missing");
+            if (missing.get_length () != 1) return false;
+            var first = missing.get_object_element (0);
+            return first.has_member ("id") && first.get_string_member ("id") == "radio";
         }
 
         private void on_receive_toggled () {

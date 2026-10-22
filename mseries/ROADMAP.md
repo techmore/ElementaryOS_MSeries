@@ -61,7 +61,7 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## AirDrop access in Windows Work Mode — 2026-10-22
+## AirDrop availability in Windows Work Mode — 2026-10-22
 
 Quick Settings has a receive switch in its collapsed AirDrop row. The Windows
 taskbar status area now opens the same panel and backend, keeping AirDrop
@@ -69,6 +69,12 @@ available while Work Mode hides the top panel. The complete private dock build
 was installed and restarted in the active Work Mode session; see
 [OS9-HANDOFF.md](OS9-HANDOFF.md). Native visual and hardware receive acceptance
 remain open.
+
+The AWDL setup service had been disabled, leaving the panel with a misleading
+“radio not running” readiness message after reboot. The idle interface is now
+enabled at boot; it does not advertise. The installer persists this setup, and
+the AirDrop panel explains that a radio-only blocker will be recovered when the
+user turns receiving on. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
 
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 

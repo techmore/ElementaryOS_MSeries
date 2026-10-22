@@ -1,4 +1,4 @@
-## AirDrop controls across elementary and Windows Work Mode — 2026-10-22 (Codex)
+## AirDrop controls and idle-radio recovery — 2026-10-22 (Codex)
 
 The Quick Settings AirDrop row now has a direct `Receive Files` switch while
 keeping duration, audience, device name and received-file controls expandable.
@@ -6,16 +6,27 @@ Windows Work Mode hides the top panel, so the Windows taskbar status area now
 opens that same `MSeries.AirDropPanel` and `omdrop` backend from an AirDrop icon.
 The taskbar creates the panel on first open and it polls only while mapped.
 
-Validation: `AirDropPanel.vala` compiled with GTK 4, Granite 7 and JSON-GLib.
-The complete pinned dock source prepared and linked successfully with
-`DockTaskbarAirDrop` and `MSeriesAirDropPanel`; `git diff --check` passed. The
-repository test suite and probe were not run. At the owner's request, the private
-dock binary was installed and restarted while Windows Work Mode was active. The
-active process is the new private binary. Native visual acceptance and a real
-AirDrop receive on this hardware have not yet been confirmed. The read-only
-backend status currently reports `no_awdl0`; `omdrop doctor` says the driver is
-installed but its Apple-compatible radio is not running, so receive is off until
-that radio comes up.
+The service had been installed but disabled, so a reboot removed `awdl0` and
+`omdrop doctor` reported it as not ready. The owner said AirDrop had worked
+before. Enabled `awdl0.service` persistently and started it; it creates the
+configured idle interface only. `omdrop doctor --json` now reports ready, while
+`omdrop status --json` confirms receiving and visibility remain off. The 2026-10-18
+hardware record confirms interface creation and a two-minute radio window passed;
+no file transfer is recorded.
+
+The M-Series radio installer now checks preflight, reloads NetworkManager's
+unmanaged-device rule and enables/starts the idle service. The shared panel treats
+a missing interface as recoverable when the only blocker is the radio: enabling
+receiving invokes the backend's existing on-demand radio-start hook, rather than
+claiming the Wi-Fi driver is missing. AWDL remains inactive until the user turns
+receiving on.
+
+Validation: complete pinned dock source prepared and linked with
+`DockTaskbarAirDrop` and `MSeriesAirDropPanel`; installed private dock is active
+in Windows Work Mode. `systemctl` reports `awdl0.service` enabled and active/exited;
+`awdl0` exists and is unmanaged; `omdrop doctor --json` reports ready and the
+receiver remains off. Repository tests and probes were not run. Native visual
+acceptance and a real AirDrop receive remain unconfirmed.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
