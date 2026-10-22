@@ -37,9 +37,11 @@ including timestamps near a local timezone boundary.
 The Rust conversation search now matches loaded message bodies as well as
 conversation names, recipients and the latest preview, matching the existing
 Python client. GLib Unicode case folding handles text consistently; the filter
-checks names, previews and recipients before scanning message bodies. It
-searches only the bounded history BlueFerry returns and does not request more
-history or log query text.
+index is rebuilt when BlueFerry refreshes the bounded snapshot, rather than
+normalizing every message again on each keystroke. Local-only conversations
+refresh the index after a successful send. The index is shared across cloned
+conversation models to avoid copying history text while rebuilding the list.
+Search does not request more history or log query text.
 
 **Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml
 --package mseries-messages`, `cargo check --locked --manifest-path
