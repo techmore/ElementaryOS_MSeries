@@ -531,7 +531,7 @@ jobs:
             squashfs-tools xorriso grub-common grub-efi-arm64-bin initramfs-tools-core device-tree-compiler \
             libegl1 libgl1 libvulkan1 libgbm1 libdrm2 libllvm21 \
             libwayland-client0 libwayland-server0 libxcb-dri3-0 libxcb-present0 \
-            libxcb-xfixes0 libxshmfence1 libxxf86vm1
+            libxcb-xfixes0 libxshmfence1 libxxf86vm1 qemu-system-arm qemu-efi-aarch64
       - name: Check signed active-slot export and reserved standby slots
         shell: bash
         run: |
@@ -564,6 +564,24 @@ jobs:
             --retrieved "$RUNNER_TEMP/retrieved" --output "$RUNNER_TEMP/image-inputs"
           cp "$RUNNER_TEMP/image-inputs/candidate.json" image-record/
           cp -a "$RUNNER_TEMP/image-inputs/records" image-record/input-records
+      - name: Check selected kernel EFI handoff and incompatible-page control
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYFIXTURE'
+          import json, os, subprocess
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          kernel = root / 'retrieved/kernel'
+          receipt = json.loads((kernel / 'receipt.json').read_text())
+          common = ['python3', 'mseries/m4-mini/test-kernel-efi-qemu.py',
+                    '--package', str(kernel / receipt['package']),
+                    '--package-receipt', str(kernel / 'receipt.json'),
+                    '--build-receipt', str(kernel / 'build-receipt.json')]
+          subprocess.run(common + ['--output', str(root / 'kernel-efi-positive')], check=True)
+          subprocess.run(common + ['--output', str(root / 'kernel-efi-negative'),
+                         '--cpu', 'cortex-a72', '--expect-incompatible-pages'], check=True)
+          PYFIXTURE
       - name: Select pinned mkosi and execute complete image graph
         shell: bash
         run: |
@@ -652,6 +670,15 @@ jobs:
           if [[ -f "$RUNNER_TEMP/image-verity-check/commands.log" ]]; then
             cp "$RUNNER_TEMP/image-verity-check/commands.log" image-record/actual-verity-commands.log
           fi
+          for trial in kernel-efi-positive kernel-efi-negative; do
+            if [[ -d "$RUNNER_TEMP/$trial" ]]; then
+              mkdir -p "image-record/$trial"
+              for name in receipt.json qemu.log assemble.log init.c; do
+                file="$RUNNER_TEMP/$trial/$name"
+                [[ ! -f "$file" ]] || cp "$file" "image-record/$trial/"
+              done
+            fi
+          done
           df -h > image-record/final-disk-space.txt
           if [[ -d "$RUNNER_TEMP/research-iso" ]]; then
             mkdir -p image-record/iso-logs

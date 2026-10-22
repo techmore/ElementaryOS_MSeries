@@ -1,0 +1,49 @@
+{
+  "observed_at_utc": "2026-10-22T07:43:46.119659+00:00",
+  "scope": "small GRUB ISO assembled by production ARM64 grub-mkrescue; UEFI/QEMU loads and executes menu entry; no kernel or M4 hardware",
+  "commands": [
+    [
+      "grub-mkrescue",
+      "--directory=/usr/lib/grub/arm64-efi",
+      "-o",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-qemu-trial/fixture.iso",
+      "-iso-level",
+      "3",
+      "-volid",
+      "ELEMENTARY_M4_MINI_ARM64",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-qemu-trial/iso_root"
+    ],
+    [
+      "qemu-system-aarch64",
+      "-machine",
+      "virt,accel=tcg",
+      "-cpu",
+      "cortex-a72",
+      "-m",
+      "512",
+      "-bios",
+      "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd",
+      "-nographic",
+      "-monitor",
+      "none",
+      "-nic",
+      "none",
+      "-no-reboot",
+      "-device",
+      "virtio-scsi-pci,id=scsi",
+      "-drive",
+      "file=/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-qemu-trial/fixture.iso,if=none,id=cd,format=raw,media=cdrom,readonly=on",
+      "-device",
+      "scsi-cd,drive=cd"
+    ]
+  ],
+  "iso_sha256": "2494b525b2b43ff875c7b918fcaddc61ce560bb09a7da74717720709a74b19b5",
+  "firmware_sha256": "e264b5d66d05ad3abad9ec0b63dcf0c956007a3af9345dd03f79c5246ffcb392",
+  "marker_seen": true,
+  "qemu_timed_out": false,
+  "kernel_booted": false,
+  "hardware_validated": false,
+  "full_desktop_booted": false,
+  "installer_admission": false,
+  "package_kernel_booted": false
+}

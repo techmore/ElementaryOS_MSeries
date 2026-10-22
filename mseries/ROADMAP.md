@@ -4618,3 +4618,28 @@ at9b4a4d91. The summary receipt explicitly records all three package versions an
 hashes. This is summary-only; no new raw/ISO or Mesa6 image is claimed. Retained
 mkosi section-deprecation warnings are unchanged and did not prevent resolution.
 Receipt: mseries/m4-mini/receipts/2026-10-22-image-profile-gate-selected-summary.json.
+
+## M4 mini: actual R5 packaged kernel EFI handoff verified in QEMU — 2026-10-22
+
+A genuine small ARM64 grub-mkrescue ISO first executed its GRUB menu under UEFI.
+The selected hosted R5 package Image (2817fd29...) then booted via the same EFI/
+GRUB ISO path on QEMU virt/neoverse-n1, reached a minimal static PID1, reported
+7.1.13-elementary-m4-gravity1 and powered off the guest cleanly. The new reusable
+test-kernel-efi-qemu.py binds package/Image hashes to inspected receipts, checks
+16KiB headers, uses a new CPIO fixture and a networkless, read-only-ISO TCG guest.
+Its positive run and Cortex-A72 page-size rejection control both pass. Test
+source, firmware, init/ISO hashes and commands are retained. No host install or
+boot settings changed; this is not the full desktop ISO or native M4 validation.
+
+Exploratory max and max,sve=off,sme=off firmware trials timed out before GRUB;
+root cause is unknown and these are not kernel/M4 failures. Cortex-A72 explicitly
+rejects 16KiB pages; QEMU's v10.2.1 Neoverse-N1 reference model advertises them
+and the actual kernel handoff succeeds there. All exploratory processes are
+terminal. Receipts: 2026-10-22-iso-grub-qemu-execution.json,
+2026-10-22-iso-kernel-page-size-negative-control.json and
+2026-10-22-kernel-efi-qemu-tests.json under mseries/m4-mini/receipts.
+
+The next full-image workflow runs the reusable positive/negative EFI fixtures
+before the mkosi graph and retains their logs/receipts/init source. QEMU ARM64
+firmware/emulator tools are added only to ephemeral CI dependencies. This new
+workflow path has not yet run hosted; the local exact reusable tool passed.
