@@ -53,12 +53,19 @@ inspected in light and dark modes. Clicking Retry kept the app open, and the
 private bus confirmed BlueFerry was not activated. This does not qualify a live
 phone, the owner session, assistive technology or narrow-window behavior.
 
-At PR head `668e136a`, Messages build/package, SDK/System Monitor, Disk Space
-render and all Apple pin-reader checks passed. Software Updates' real-updater
-contract test failed on CI with `Text file busy` while executing its temporary
-wrapper; the exact failing test passes on the MacBook host, so the CI failure is
-not yet explained. Plugin-package and M-series-wiring checks were still running
-at the last check. The three unrelated local edits in the updater worktree are
+The first optimized idle sample is recorded in `RUST-PANTHEON-SDK.md`: 0.00%
+process CPU at `/proc` tick resolution and 146.9 MiB median RSS for one 20-second
+offline Xvfb/Cairo sample after warm-up. It is not a connected-phone or owner
+session performance qualification.
+
+At PR head `c33ad318`, Messages build/package, SDK/System Monitor, Disk Space
+render, Software Updates and all Apple pin-reader checks passed. Plugin-package
+and M-series-wiring checks were still running at the last check. The prior
+`668e136a` Software Updates run failed with `Text file busy` launching its test
+wrapper; CI passed on the next head. Local reruns are mixed: the focused test and
+serialized suite passed, one default-parallel run failed once, and a subsequent
+traced parallel run passed. Treat the intermittent local fixture failure as
+unexplained. The three unrelated local edits in the updater worktree are
 preserved and excluded from this change.
 
 Signal remains the signed official ARM64 client with Pantheon launcher/tray
