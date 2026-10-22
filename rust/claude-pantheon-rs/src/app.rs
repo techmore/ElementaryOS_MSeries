@@ -3908,7 +3908,7 @@ impl App {
     }
 
     /// The server project for a checkout, created when missing.
-    async fn project_for_path(&self, path: &str, title: &str) -> Option<String> {
+    pub(crate) async fn project_for_path(&self, path: &str, title: &str) -> Option<String> {
         let existing = self.projects().iter().find(|p| p.workspace_root == path).map(|p| p.id.clone());
         if existing.is_some() {
             return existing;

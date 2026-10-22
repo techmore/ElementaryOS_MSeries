@@ -4,6 +4,7 @@
 use crate::app::{App, new_id};
 use crate::chat::label;
 use crate::look::{iso_to_unix, now_unix, relative_time};
+use crate::sidebar;
 use crate::skeleton;
 use crate::workflow::{self, Config, Issue, PinnedRepo};
 use granite::prelude::PlaceholderExt;
@@ -75,6 +76,16 @@ fn thread_title(thread: &crate::t3::model::ThreadShell) -> String {
     } else {
         thread.title.clone()
     }
+}
+
+fn sort_repo_threads(threads: &mut [&crate::t3::model::ThreadShell]) {
+    threads.sort_by(|left, right| {
+        sidebar::is_pinned(right)
+            .cmp(&sidebar::is_pinned(left))
+            .then_with(|| sidebar::needs_attention(right).cmp(&sidebar::needs_attention(left)))
+            .then_with(|| sidebar::attention_timestamp(right).cmp(&sidebar::attention_timestamp(left)))
+            .then_with(|| iso_to_unix(&right.updated_at).cmp(&iso_to_unix(&left.updated_at)))
+    });
 }
 
 #[derive(Clone)]
@@ -278,12 +289,41 @@ impl ReposPage {
             self.repo_list.remove(&c);
         }
         let pinned: Vec<PinnedRepo> = self.config.borrow().repos.clone();
+        let projects = app.projects();
+        let threads = app.threads();
         let mut all: Vec<PinnedRepo> = pinned.clone();
         for (repo, path) in &found {
             if !all.iter().any(|r| r.repo == *repo) {
                 all.push(PinnedRepo { repo: repo.clone(), path: path.clone() });
             }
         }
+        let pinned_order: HashMap<String, usize> =
+            pinned.iter().enumerate().map(|(index, repo)| (repo.repo.clone(), index)).collect();
+        let latest_activity: HashMap<String, i64> = all
+            .iter()
+            .map(|repo| {
+                let project_ids: HashSet<&str> = projects
+                    .iter()
+                    .filter(|project| project_matches_repo(project, repo))
+                    .map(|project| project.id.as_str())
+                    .collect();
+                let latest = threads
+                    .iter()
+                    .filter(|thread| thread.archived_at.is_none() && project_ids.contains(thread.project_id.as_str()))
+                    .map(sidebar::attention_timestamp)
+                    .max()
+                    .unwrap_or(0);
+                (repo.repo.clone(), latest)
+            })
+            .collect();
+        all.sort_by_key(|repo| {
+            (
+                usize::from(!pinned_order.contains_key(&repo.repo)),
+                pinned_order.get(&repo.repo).copied().unwrap_or(usize::MAX),
+                std::cmp::Reverse(latest_activity.get(&repo.repo).copied().unwrap_or(0)),
+                repo.repo.to_lowercase(),
+            )
+        });
         if all.is_empty() {
             self.status.set_text("");
             let ph = granite::Placeholder::new("No GitHub repos yet");
@@ -298,7 +338,7 @@ impl ReposPage {
             self.repo_list.append(&ph);
             return;
         }
-        self.status.set_text(&format!("{} pinned of {} GitHub repos known to the server", pinned.len(), all.len()));
+        self.status.set_text(&format!("{} pinned · {} repositories · recent activity first", pinned.len(), all.len()));
         for r in all {
             let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
             card.add_css_class("card");
@@ -339,6 +379,134 @@ impl ReposPage {
             card.append(&automation);
             let summary = label(&crate::look::tilde(&r.path), &["caption", "dim-label"]);
             card.append(&summary);
+
+            let repo_projects: Vec<_> = projects.iter().filter(|project| project_matches_repo(project, &r)).collect();
+            let repo_project_ids: HashSet<&str> = repo_projects.iter().map(|project| project.id.as_str()).collect();
+            let mut repo_threads: Vec<_> = threads
+                .iter()
+                .filter(|thread| thread.archived_at.is_none() && repo_project_ids.contains(thread.project_id.as_str()))
+                .collect();
+            sort_repo_threads(&mut repo_threads);
+            let chats = gtk::Box::new(gtk::Orientation::Vertical, 4);
+            chats.set_margin_top(2);
+            let chat_heading = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            let chat_count = label(
+                &format!("{} {}", repo_threads.len(), if repo_threads.len() == 1 { "chat" } else { "chats" }),
+                &["heading"],
+            );
+            chat_count.set_hexpand(true);
+            chat_heading.append(&chat_count);
+            let new_chat = gtk::Button::with_label("New chat");
+            new_chat.set_tooltip_text(Some("Start a chat in this repository's checkout."));
+            new_chat.set_sensitive(!r.path.trim().is_empty() && app.is_connected());
+            let a = app.clone();
+            let project_path = r.path.clone();
+            let project_title = r.repo.rsplit('/').next().unwrap_or(&r.repo).to_string();
+            new_chat.connect_clicked(move |_| {
+                let app = a.clone();
+                let path = project_path.clone();
+                let title = project_title.clone();
+                glib::spawn_future_local(async move {
+                    if let Some(project_id) = app.project_for_path(&path, &title).await {
+                        app.new_chat_in(Some(project_id));
+                    } else {
+                        app.toast("Could not open this repository as a T3 project.");
+                    }
+                });
+            });
+            chat_heading.append(&new_chat);
+            chats.append(&chat_heading);
+
+            if repo_threads.is_empty() {
+                let hint = if !app.is_connected() {
+                    "Connect to T3 to load chats for this repository."
+                } else if repo_projects.is_empty() {
+                    "No chats in this repository yet. New chat will add this checkout to T3."
+                } else {
+                    "No chats in this repository yet. Start one here or use the chat list."
+                };
+                let empty = label(hint, &["caption", "dim-label"]);
+                empty.set_wrap(true);
+                chats.append(&empty);
+            } else {
+                for thread in repo_threads.iter().take(5) {
+                    let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                    let details = gtk::Box::new(gtk::Orientation::Vertical, 1);
+                    details.set_hexpand(true);
+                    let title = label(&thread_title(thread), &[]);
+                    title.set_max_width_chars(72);
+                    details.append(&title);
+
+                    let branch =
+                        thread.rest.get("branch").and_then(Value::as_str).map(str::trim).filter(|v| !v.is_empty());
+                    let activity = if thread.pending_requests() > 0 {
+                        "Waiting for you"
+                    } else if thread.is_running() {
+                        "Running"
+                    } else if sidebar::needs_attention(thread) {
+                        "Needs attention"
+                    } else {
+                        "Updated"
+                    };
+                    let mut context = Vec::new();
+                    if let Some(branch) = branch {
+                        context.push(branch.to_string());
+                    }
+                    context.push(activity.to_string());
+                    context.push(relative_time(iso_to_unix(&thread.updated_at), now_unix()));
+                    let context = label(&context.join(" · "), &["caption", "dim-label"]);
+                    context.set_max_width_chars(64);
+                    details.append(&context);
+
+                    let open = gtk::Button::new();
+                    open.set_child(Some(&details));
+                    open.set_hexpand(true);
+                    open.set_halign(gtk::Align::Fill);
+                    open.add_css_class("flat");
+                    let accessible = format!("Open chat: {} · {}", thread_title(thread), context.text());
+                    open.update_property(&[gtk::accessible::Property::Label(&accessible)]);
+                    let a = app.clone();
+                    let thread_id = thread.id.clone();
+                    open.connect_clicked(move |_| {
+                        if !a.select_id(&thread_id) {
+                            a.toast("That chat is no longer in the list.");
+                        }
+                    });
+                    row.append(&open);
+
+                    let pinned = sidebar::is_pinned(thread);
+                    let pin = gtk::Button::from_icon_name("view-pin-symbolic");
+                    let pin_label = if pinned { "Unpin chat" } else { "Pin chat" };
+                    pin.set_tooltip_text(Some(pin_label));
+                    pin.update_property(&[gtk::accessible::Property::Label(pin_label)]);
+                    let a = app.clone();
+                    let thread_id = thread.id.clone();
+                    pin.connect_clicked(move |_| {
+                        if let Err(error) = gtk::prelude::WidgetExt::activate_action(
+                            a.window(),
+                            "thread-pin",
+                            Some(&thread_id.to_variant()),
+                        ) {
+                            a.toast(&format!("Could not update chat pin: {error}"));
+                        }
+                    });
+                    row.append(&pin);
+                    chats.append(&row);
+                }
+                if repo_threads.len() > 5 {
+                    let more = label(
+                        &format!(
+                            "Showing 5 prioritized recent chats of {} loaded chats. Open the chat list for the rest.",
+                            repo_threads.len()
+                        ),
+                        &["caption", "dim-label"],
+                    );
+                    more.set_wrap(true);
+                    chats.append(&more);
+                }
+            }
+            card.append(&chats);
+
             let counts = label("", &["caption"]);
             card.append(&counts);
             self.repo_list.append(&card);
@@ -354,6 +522,7 @@ impl ReposPage {
                         c.repos.push(rr);
                     }
                 });
+                a.repos_page().load(a.clone());
             });
             let a = app.clone();
             let rr = r.clone();

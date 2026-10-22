@@ -94,7 +94,13 @@ a webhook keeps its stored secret). The next run, not only the install, therefor
 with the most capacity.
 
 ## What the native client shows
-- **Repos** page: pinned repos, each with lane counts and the next issue up.
+- **Repos** page: pinned repos in saved order, followed by other repos sorted by recent chat activity. Each card
+  shows lane counts and the next issue up. Repo cards also show up to five
+  prioritized recent chats from matching T3 projects (pinned first, then chats needing attention, then latest
+  activity), with branch, activity state and age. Open a chat, pin/unpin it, or start a new chat in that checkout;
+  the checkout is added as a T3 project when needed. Repositories without chats remain visible, while generic
+  non-Git chats are not assigned to a repo. This list reuses the current T3 shell snapshot and does not poll Git
+  or open a second RPC connection for each row.
 - **Issues** panel per repo: live list (GitHub API through the server's token or `gh`),
   filters by lane/priority/agent label, "Start on this" which creates a thread with the chosen
   provider and labels the issue; issue comments stream into the thread view. **Draft issue** saves
