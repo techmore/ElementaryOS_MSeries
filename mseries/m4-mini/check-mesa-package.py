@@ -70,7 +70,7 @@ def main():
             docs = root / 'usr/share/doc/elementary-m4-gravity-mesa1'
             if digest(docs / bundle['file']) != bundle['sha256']:
                 raise ValueError('installed corresponding-source bundle differs')
-            if set(build['supplemental_test_receipts']) != {'helper-divergence', 'rodata-upload'}:
+            if set(build['supplemental_test_receipts']) != compatibility.supplemental_receipt_names(version):
                 raise ValueError('supplemental test provenance missing')
             for name, expected in build['supplemental_test_receipts'].items():
                 if digest(docs / 'supplemental-tests' / (name + '.json')) != expected:

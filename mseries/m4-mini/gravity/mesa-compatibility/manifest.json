@@ -2,7 +2,7 @@
   "schema": 1,
   "base_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
   "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
-  "current_research_version": "26.3.0~devel+gravity.87ac51d-5",
+  "current_research_version": "26.3.0~devel+gravity.87ac51d-6",
   "baseline_sources_sha256": {
     "src/asahi/compiler/agx_compile.c": "081c50afc88b9a08df30af7f8e4004925c1355b303483418789189ce1cc6a221",
     "src/asahi/compiler/agx_compile.h": "0f9c051e68bc8a3d10b0f65822c8cef9e08e8cdfd3270939d5c555d33bf58a13",
@@ -13,7 +13,8 @@
     "src/gallium/drivers/asahi/agx_blit.c": "371fb07affff7892687bf7a6aff3203ad3704e8ed52763816ed1fe1f95ccf02e",
     "src/gallium/drivers/asahi/agx_pipe.c": "d997f41b1a48922b3042a08a9dffd56d9e720d46e68d3d7470b52f42776ec539",
     "src/gallium/drivers/asahi/agx_state.c": "13ae520cf2a063266247350c35c6914311e29093a91918432631bf745fee18e6",
-    "src/gallium/drivers/asahi/agx_state.h": "ad8e31d0db554bdf435326b2e6b34854e420375b0571a3e74e9c451591ff7b5e"
+    "src/gallium/drivers/asahi/agx_state.h": "ad8e31d0db554bdf435326b2e6b34854e420375b0571a3e74e9c451591ff7b5e",
+    "src/asahi/compiler/agx_compile_apple9.c": "60fc71e622387a3ee505c04acee5b3cb7f1f3fee4c7f23ae7fee2564696b54a4"
   },
   "phases": [
     {
@@ -71,6 +72,17 @@
       },
       "provenance": "local MIT follow-up, actual-NIR/reference/candidate receipts",
       "sha256": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6"
+    },
+    {
+      "file": "0004-apple9-external-sampler-2d.patch",
+      "before": {
+        "src/asahi/compiler/agx_compile_apple9.c": "60fc71e622387a3ee505c04acee5b3cb7f1f3fee4c7f23ae7fee2564696b54a4"
+      },
+      "after": {
+        "src/asahi/compiler/agx_compile_apple9.c": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc"
+      },
+      "provenance": "local MIT normalization; actual native compiler matrix and original-code negative control",
+      "sha256": "1a482ea51d5dcd66ab5f97fd56e4b1397eb7ae3c73185004466a11d4862f6ef0"
     }
   ],
   "versions": {
@@ -101,6 +113,34 @@
         "rodata_cases": 8,
         "rodata_negative_detected": true,
         "divergence_cases": 7
+      }
+    },
+    "26.3.0~devel+gravity.87ac51d-6": {
+      "patches": {
+        "0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+        "0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+        "0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
+        "0004-apple9-external-sampler-2d.patch": "1a482ea51d5dcd66ab5f97fd56e4b1397eb7ae3c73185004466a11d4862f6ef0"
+      },
+      "patched_sources_sha256": {
+        "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+        "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+        "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+        "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+        "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+        "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+        "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+        "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+        "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+        "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e",
+        "src/asahi/compiler/agx_compile_apple9.c": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc"
+      },
+      "supplemental_tests": {
+        "rodata_cases": 8,
+        "rodata_negative_detected": true,
+        "divergence_cases": 7,
+        "external_comparisons": 24,
+        "external_rejection_controls": 4
       }
     }
   },

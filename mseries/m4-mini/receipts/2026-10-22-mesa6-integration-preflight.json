@@ -1,0 +1,14 @@
+{
+  "observed_at_utc": "2026-10-22T07:21:06.450264+00:00",
+  "version": "26.3.0~devel+gravity.87ac51d-6",
+  "source_replay": "2026-10-22-mesa6-source-replay.json",
+  "compiler_matrix": "2026-10-22-mesa-external-dynamic-matrix.json",
+  "version_bundle_unit_tests": 7,
+  "hosted_dependency_tests": 2,
+  "actual_downloaded_mesa5_package_still_valid": "e200a45f935e4c589d308eeb05f7fdc62b7083a0767dcaf0e1661aedd9ea90d6",
+  "workflow_yaml_parsed": true,
+  "full_driver_build_complete": false,
+  "package_built": false,
+  "image_mesa_revision": 4,
+  "hardware_validated": false
+}

@@ -45,7 +45,7 @@ class MesaCompatibilityTests(unittest.TestCase):
 
     def test_patch_files_and_compiled_followup_sources_are_bound(self):
         final = module.snapshot(module.CURRENT_VERSION)['patched_sources_sha256']
-        self.assertEqual(len(final), 10)
+        self.assertEqual(len(final), 11)
         for phase in module.MANIFEST['phases']:
             path = module.DIRECTORY / phase['file']
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), phase['sha256'])
@@ -98,6 +98,22 @@ class MesaCompatibilityTests(unittest.TestCase):
                 pass
             with self.assertRaisesRegex(ValueError, 'incomplete'):
                 module.verify_source_bundle(empty, module.CURRENT_VERSION)
+
+    def test_revision5_snapshot_is_immutable_and_still_accepts_actual_package(self):
+        version = '26.3.0~devel+gravity.87ac51d-5'
+        selected = module.snapshot(version)
+        self.assertEqual(hashlib.sha256(json.dumps(selected, sort_keys=True).encode()).hexdigest(),
+                         'd0fa638137aaa15aabb8f231ed335eaa813cad1a90224ec4dc261cd4f9a7833d')
+        actual = json.loads((HERE / 'receipts/2026-10-22-mesa5-hosted-success.json').read_text())
+        checked = actual['independent_package_check']
+        claim = {'package_version': version, 'compatibility_patches': checked['compatibility_patches'],
+                 'patched_sources_sha256': checked['patched_sources_sha256'],
+                 'supplemental_tests': selected['supplemental_tests']}
+        module.metadata(version, claim, claim)
+        self.assertEqual(module.supplemental_receipt_names(version),
+                         {'helper-divergence', 'rodata-upload'})
+        self.assertEqual(module.supplemental_receipt_names(module.CURRENT_VERSION),
+                         {'helper-divergence', 'rodata-upload', 'external-sampler'})
 
     def test_unknown_versions_rejected(self):
         with self.assertRaises(ValueError):

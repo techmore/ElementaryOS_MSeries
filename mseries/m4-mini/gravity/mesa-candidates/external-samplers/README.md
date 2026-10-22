@@ -38,3 +38,10 @@ Primary specification:
 https://registry.khronos.org/OpenGL/extensions/OES/OES_EGL_image_external_essl3.txt
 The backend source and tests retain Mesa's MIT attribution; diagnostic Python
 uses GPL-3.0-or-later. No Apple firmware or GPU execution is involved here.
+
+Follow-up coverage: 24 binary-and-binding comparisons now pass for constant and
+UBO-driven inputs across direct and sampler-state fragment paths, plus four
+external array/shadow rejection controls. The same fixture rejects 20 positive
+external cases against the original compiler (size queries already work).
+Revision6 now prepares this source fix as a fourth exact phase; full integrated
+build/package validation and EGL/GPU acceptance are still pending.

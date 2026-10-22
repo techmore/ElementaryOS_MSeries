@@ -4513,3 +4513,29 @@ build/authenticate it; the receipt binds the tested object separately from the
 restored source tree. Dynamic coordinates, malformed controls, full-driver build,
 new immutable package revision and EGL/GPU qualification remain open. Mesa5 is
 still not selected for image inputs.
+
+## M4 mini: Mesa6 recipe and dynamic compiler coverage — 2026-10-22
+
+The external candidate passes 24 actual compiler binary/binding comparisons:
+six operations, constant/UBO-driven inputs, direct fragment and sampler-state
+paths. Four malformed external array/shadow controls remain rejected while their
+2D references compile. The same fixture against the original native object
+rejects 20 positive external cases (four query cases already work), establishing
+that the test detects the gap rather than simply compiling the fixture.
+
+Prepared immutable Mesa revision 6 with a fourth native Apple9 normalization
+patch and eleven final source hashes. Revision5's ten-file/three-patch snapshot
+is unchanged. Patch application now follows only the requested version's phases;
+source gates merge unchanged baseline files so a mixed v5/new-native source tree
+is rejected. Both v5/v6 corresponding-source bundle roundtrips and source replay
+from the pinned archive pass. The actual downloaded v5 package still passes the
+new checker. Seven version/bundle tests and two hosted dependency tests pass.
+
+Builder, package/checker and hosted workflow now prepare revision6 with the
+integrated-library 24+4 external matrix and complete test sources in its bundle.
+A fresh local full build is running in work/m4-mesa6-native-build, unified exec
+session 99907; do not restart it based on a timeout. No full Mesa6 build/package
+or image success is claimed yet. Selected image Mesa remains4; kernel remainsR5.
+Receipts: 2026-10-22-mesa-external-dynamic-matrix.json,
+2026-10-22-mesa6-source-replay.json and 2026-10-22-mesa6-integration-preflight.json
+under mseries/m4-mini/receipts. Owner hardware remains unavailable.

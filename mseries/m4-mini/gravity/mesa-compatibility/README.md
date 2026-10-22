@@ -1,32 +1,29 @@
-Versioned source gates for the next M4 research Mesa package. The builder, packager and checker now use revision 5 by default, with explicit
-historical revision-4 support. Image/component selection stays on verified Mesa4
-until a fresh hosted Mesa5 package passes.
+Revision 6 is the default research build/package recipe; selected image Mesa
+remains verified revision 4 pending fresh revision-6 package checks. Revision 5
+has passed hosted build/download checks and retains its immutable snapshot.
 
-The base is Gravity Mesa 87ac51d, with its existing pinned archive and kernel UAPI.
-Three immutable phases apply the eight public PR1 commits, the allocation/error
-follow-up and the scoped helper-divergence follow-up. Each phase checks the full
-before/after file hashes and patch hash, applies with zero fuzz, and finally
-checks all ten changed source files. Fresh replay from the original archive
-matches the independently compiled candidate (all six follow-up source hashes).
+The base is Gravity Mesa 87ac51d with the original archive and matched kernel
+UAPI. Four exact phases apply public PR1, rodata error handling, scoped NIR
+workgroup-ID divergence and native Apple9 external-to-2D normalization. Each
+phase checks patch and before/after hashes with zero fuzz. Final source gates
+also check unchanged baseline files. Explicit revision 5 applies only its first
+three phases and rejects a mixed newer native compiler source.
 
-The manifest retains the historical revision-4 no-patch metadata contract.
-Revision 5 requires exact patch/source/test metadata; missing or mixed claims
-are rejected. Source/version gates do not authenticate a signer or qualify GPUs.
-The complete public PR1 alone is not selected: its demonstrated layered-helper
-metadata issue must remain corrected by the later phase.
+Revision 6 adds 24 constant/dynamic compiler byte-and-binding comparisons across
+direct and sampler-state paths and four malformed external controls. These run
+against the freshly built integrated compiler library. Targeted candidate tests
+pass, and the original-object control rejects 20 positive cases. Existing five
+AGX groups, seven NIR cases, eight allocation-helper cases and isolated llvmpipe
+remain required. No compiler-only test qualifies EGL image import or GPU output.
 
-Full combined driver build, five AGX groups, seven actual-NIR cases, eight
-allocation-helper cases and isolated llvmpipe have passed in separate native
-receipts. The compatibility source bundle contains exact patches, recipes, tests and
-MIT/GPL licenses, ships inside the package and beside the base source archive,
-and is retained through image intake. Its extracted module independently replays
-all ten source hashes. A fresh hosted package and native
-compositor/full tile-pipeline/GPU tests remain open. Future revisions must retain
-these snapshots and patch bytes so historical artifacts remain checkable.
+The corresponding-source bundle retains exact patches, full build/package/check
+recipes, all supplemental test sources and MIT/GPL licenses. Source bundle
+creation explicitly selects the version; old v5 artifacts remain verifiable.
+Fresh replay and v5/v6 bundle roundtrips pass. Full revision-6 build/package and
+native compositor, YUV, synchronization and GPU tests remain open.
 
-Public source and authorship: GravityLinux/mesa PR1 ends at
-208d4a484459a12c77bf073362613f842288c2e0; source intake records all eight commit
-IDs, Git blobs and URLs. The follow-ups are local MIT changes, with experimental
-source/tests under gravity/mesa-candidates and testing/mesa. Original Mesa source
-copyright notices and its licenses/MIT are retained in the pinned archive.
-The build/validation/testing Python recipes use GPL-3.0-or-later.
+Public PR1 ends at 208d4a484459a12c77bf073362613f842288c2e0. Intake records
+all eight commits, Git blobs and URLs. Follow-ups retain Mesa MIT attribution;
+Python recipes are GPL-3.0-or-later. The base archive retains source copyright
+notices and licenses/MIT. Version snapshots and patch bytes must remain frozen
+when later research revisions are added.

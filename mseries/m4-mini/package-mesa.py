@@ -57,7 +57,7 @@ def main():
         if digest(prefix / path) != expected:
             raise ValueError('staged library hash mismatch: ' + path)
     args.output.mkdir(parents=True)
-    bundle = compatibility.source_bundle(args.output / compatibility.BUNDLE_NAME, args.source) if selected['patches'] else None
+    bundle = compatibility.source_bundle(args.output / compatibility.BUNDLE_NAME, args.source, version) if selected['patches'] else None
     with tempfile.TemporaryDirectory(prefix='m4-mesa-package-') as temp:
         root = Path(temp)
         payload = root / 'debian' / NAME
@@ -84,8 +84,8 @@ def main():
             shutil.copy2(args.output / bundle['file'], docs / bundle['file'])
             supplemental = docs / 'supplemental-tests'
             supplemental.mkdir()
-            if set(validation['supplemental_test_receipts']) != {'helper-divergence', 'rodata-upload'}:
-                raise ValueError('both supplemental test receipts required')
+            if set(validation['supplemental_test_receipts']) != compatibility.supplemental_receipt_names(version):
+                raise ValueError('versioned supplemental test receipts required')
             for name, expected in validation['supplemental_test_receipts'].items():
                 receipt = args.validation.parent / (name + '-tests') / 'receipt.json'
                 if digest(receipt) != expected:

@@ -1,0 +1,23 @@
+{
+  "observed_at_utc": "2026-10-22T07:18:01.328780+00:00",
+  "base_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "versions": {
+    "26.3.0~devel+gravity.87ac51d-4": {
+      "changed_source_count": 0,
+      "source_gate_passed": true
+    },
+    "26.3.0~devel+gravity.87ac51d-5": {
+      "changed_source_count": 10,
+      "source_gate_passed": true,
+      "source_bundle_roundtrip_passed": true,
+      "mixed_external_revision_rejected": true
+    },
+    "26.3.0~devel+gravity.87ac51d-6": {
+      "changed_source_count": 11,
+      "source_gate_passed": true,
+      "source_bundle_roundtrip_passed": true
+    }
+  },
+  "revision5_snapshot_unchanged": true,
+  "hardware_validated": false
+}

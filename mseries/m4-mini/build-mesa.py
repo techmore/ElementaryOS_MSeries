@@ -69,6 +69,12 @@ def main():
              '--source', str(source / 'src/asahi/vulkan/hk_shader.c'),
              '--output', str(root / 'rodata-upload-tests')],
         ]
+    if selected['supplemental_tests'].get('external_comparisons'):
+        commands.append([
+            'python3', str(HERE / 'testing/mesa/test-external-sampler-matrix.py'),
+            '--mesa-workspace', str(root),
+            '--source-sha256', selected['patched_sources_sha256']['src/asahi/compiler/agx_compile_apple9.c'],
+            '--output', str(root / 'external-sampler-tests')])
     for index, command in enumerate(commands):
         with (root / f'{index}.log').open('wb') as log:
             subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
@@ -95,7 +101,13 @@ def main():
                 rodata['results']['positive']['exit_code'] != 0 or
                 rodata['results']['negative-false-success']['exit_code'] != 1):
             raise ValueError('supplemental Mesa tests did not establish the required cases')
-        for name in ['helper-divergence', 'rodata-upload']:
+        if selected['supplemental_tests'].get('external_comparisons'):
+            external = json.loads((root / 'external-sampler-tests/receipt.json').read_text())
+            if (external['positive_comparisons'] != 24 or external['rejection_controls'] != 4 or
+                    not external['all_compiler_byte_comparisons_passed'] or
+                    external['separate_native_object'] or external['expect_uncorrected']):
+                raise ValueError('external sampler matrix or integrated-library provenance incomplete')
+        for name in compatibility.supplemental_receipt_names(args.compatibility_version):
             supplemental_receipts[name] = compatibility.digest(root / (name + '-tests') / 'receipt.json')
     compatibility.source_gate(source, args.compatibility_version)
     libraries = ['lib/libvulkan_asahi.so', 'lib/libgallium-26.3.0-devel.so',

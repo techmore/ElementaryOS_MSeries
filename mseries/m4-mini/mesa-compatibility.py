@@ -33,7 +33,8 @@ def check_files(source, expected):
 
 def source_gate(source, version=CURRENT_VERSION):
     selected = snapshot(version)
-    expected = selected['patched_sources_sha256'] or MANIFEST['baseline_sources_sha256']
+    expected = dict(MANIFEST['baseline_sources_sha256'])
+    expected.update(selected['patched_sources_sha256'])
     check_files(source, expected)
     return dict(selected['patched_sources_sha256'])
 
@@ -59,7 +60,11 @@ def apply(source, log, version=CURRENT_VERSION):
     check_files(source, MANIFEST['baseline_sources_sha256'])
     if version == HISTORICAL_VERSION:
         return source_gate(source, version)
+    applied = set()
     for phase in MANIFEST['phases']:
+        if phase['file'] not in selected['patches']:
+            continue
+        applied.add(phase['file'])
         patch = DIRECTORY / phase['file']
         if digest(patch) != phase['sha256'] or selected['patches'].get(phase['file']) != phase['sha256']:
             raise ValueError('Mesa compatibility patch checksum mismatch')
@@ -71,14 +76,24 @@ def apply(source, log, version=CURRENT_VERSION):
         if result.returncode:
             raise ValueError('Mesa compatibility patch did not apply: ' + phase['file'])
         check_files(source, phase['after'])
+    if applied != set(selected['patches']):
+        raise ValueError('Mesa version refers to an unknown patch phase')
     return source_gate(source, version)
+
+
+def supplemental_receipt_names(version):
+    selected = snapshot(version)
+    names = {'helper-divergence', 'rodata-upload'} if selected['patches'] else set()
+    if selected['supplemental_tests'].get('external_comparisons'):
+        names.add('external-sampler')
+    return names
 
 
 BUNDLE_NAME = 'gravity-mesa-compatibility-source.tar.gz'
 BUNDLE_ROOT = 'm4-mesa-reproduction'
 
 
-def source_bundle(output, source):
+def source_bundle(output, source, version=CURRENT_VERSION):
     """Ship the base-archive patches and build/test recipes without binary data."""
     import gzip
     import io
@@ -88,6 +103,10 @@ def source_bundle(output, source):
                  'run-mesa.py', 'mesa-compatibility.py', 'test-mesa-software.c',
                  'testing/mesa/test-helper-divergence.py', 'testing/mesa/test-rodata-upload.py']:
         files[name] = (HERE / name).read_bytes()
+    if snapshot(version)['supplemental_tests'].get('external_comparisons'):
+        for name in ['testing/mesa/test-external-sampler-matrix.py',
+                     'testing/mesa/external-sampler-matrix.cpp']:
+            files[name] = (HERE / name).read_bytes()
     for p in DIRECTORY.iterdir():
         if p.is_file():
             files['gravity/mesa-compatibility/' + p.name] = p.read_bytes()
@@ -107,7 +126,7 @@ def source_bundle(output, source):
                     info.size = len(data)
                     info.mode = 0o644
                     archive.addfile(info, io.BytesIO(data))
-    verify_source_bundle(output, CURRENT_VERSION)
+    verify_source_bundle(output, version)
     return {'file': BUNDLE_NAME, 'sha256': digest(output)}
 
 
@@ -134,6 +153,9 @@ def verify_source_bundle(path, version):
                 'testing/mesa/test-helper-divergence.py', 'testing/mesa/test-rodata-upload.py',
                 'gravity/mesa-compatibility/manifest.json',
                 'gravity/mesa-compatibility/test-sources.json', 'SOURCE-SHA256SUMS'}
+    if selected['supplemental_tests'].get('external_comparisons'):
+        required |= {'testing/mesa/test-external-sampler-matrix.py',
+                     'testing/mesa/external-sampler-matrix.cpp'}
     if not required <= data.keys():
         raise ValueError('incomplete compatibility source bundle')
     index = {}
