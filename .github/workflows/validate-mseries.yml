@@ -365,6 +365,11 @@ jobs:
           cd rust
           cargo build --release -p claude-pantheon-rs
           cargo test --release -p claude-pantheon-rs --lib
+      - name: Render conditional Usage cache metrics in GTK
+        run: |
+          cd rust
+          dbus-run-session -- env -u WAYLAND_DISPLAY GDK_BACKEND=x11 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo \
+            xvfb-run -a cargo test --release -p claude-pantheon-rs --test usage-metrics-render -- --test-threads=1
       # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
       - name: Contracts drift against pingdotgg/t3code main (advisory)
         continue-on-error: true
