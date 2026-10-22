@@ -10979,3 +10979,13 @@ Image replay 39714367674 passed signed active-slot/identical-GPT fixture checks,
 then failed copying the receipt from the private root-owned fixture directory.
 The workflow now exports only named public diagnostics using `sudo install`;
 the signing key remains private. Full image assembly did not start in this run.
+
+The opt-in NoDevice retention diagnostic adapted from Aurora 0f89327 passes
+all four generic ARM64 QEMU cases, including the cleanup case that failed
+without retention. See `mseries/m4-mini/receipts/2026-10-21-scheduler-nodevice-retention.json`.
+This optional test patch is excluded from normal kernel/test manifests. It is
+not a production M4 backport: backend opt-in, allocation ownership, timeout
+aliasing, cancellation and full g16-enabled compilation still require review.
+All modified test source files were restored. Full image replay 39714779495
+uses source 0b2afea8 and the reviewed baseline r2 components; it is separate
+from initialization-fixed r3 kernel build 39709872273.

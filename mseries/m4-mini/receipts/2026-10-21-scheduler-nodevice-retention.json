@@ -1,0 +1,74 @@
+{
+  "scope": "experimental opt-in NoDevice retention adaptation and four generic ARM64 QEMU tests; not a production backport or M4 GPU test",
+  "upstream": "https://github.com/aurora-silicon/linux/commit/0f89327272be80ecf44b643c4198614255024367",
+  "exit": 0,
+  "sources_restored": true,
+  "patch_sha256": "72ea7ce47d1cf6f3be069ed0ba6eaea9d1c6f97c939f4480262675c760d938c6",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 4,
+          "passed": 4,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false,
+  "archived_patch_sha256": "5987e1067e3ee2c2e822b57905e5bbfa1f2134561cd69a60aa40f5681d54a71b",
+  "normal_kernel_builder_applies_patch": false,
+  "limitations": [
+    "diagnostic sets retention for the test Rust backend; production requires explicit backend contract",
+    "does not resolve scheduler allocation lifetime or mutable timeout aliasing",
+    "does not exercise M4 GPU firmware or native teardown",
+    "full g16-enabled kernel build with this adaptation has not run"
+  ]
+}

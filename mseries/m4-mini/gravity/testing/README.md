@@ -28,3 +28,9 @@ No assertion or runtime check is removed.
 `nodevice-diagnostic.patch` is an additional opt-in diagnostic after the normal
 test patch. It is not selected by the testing manifest or production builder.
 It reproduces the missing NoDevice cleanup with the initialization fix present.
+
+`nodevice-retention-diagnostic.patch` is an alternative combined diagnostic
+after the normal test patch (do not also apply nodevice-diagnostic.patch).
+It adapts Aurora 0f89327 C retention and opts the test Rust backend in. Four
+QEMU cases pass; production ownership/aliasing review and full GPU build remain
+open. Neither diagnostic is selected by a build manifest.
