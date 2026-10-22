@@ -21,12 +21,18 @@ hosted kernel input now select revision 5. Its DTB still matches the reviewed
 boot bundle. Input preparation with the existing Mesa/policy also passes.
 [Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
 
-The corrected Mesa candidate passes a full driver build, five AGX groups, seven
-actual-NIR cases and isolated software rendering. Its versioned source recipe
-replays exact tested hashes; builder/package/checker and corresponding-source
-integration are prepared for a fresh hosted revision-5 package.
-Selected Mesa stays revision 4. Full desktop ISO, native GPU/unload, installer and
-owner dual-boot acceptance remain unqualified.
+The corrected Mesa revision-5 hosted package and downloaded package/source checks
+now pass, including full driver build, five AGX groups, seven actual-NIR cases,
+eight allocation-helper cases and isolated software rendering.
+[Hosted evidence](receipts/2026-10-22-mesa5-hosted-success.json).
+Selected Mesa stays revision 4: a further diagnostic finds that the advertised
+external sampler is rejected by the native Apple9 compiler while its matching
+2D reference compiles. An unselected normalization candidate produces identical
+basic-sample machine code, but query/fetch/projective, full-driver and EGL import
+validation remain open. [Finding](receipts/2026-10-22-mesa-external-sampler-finding.json),
+[basic candidate](receipts/2026-10-22-mesa-external-basic-candidate.json).
+Full desktop ISO, native GPU/unload, installer and owner dual-boot acceptance
+remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant

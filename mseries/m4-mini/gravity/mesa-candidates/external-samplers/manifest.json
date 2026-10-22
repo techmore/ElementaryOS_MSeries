@@ -1,0 +1,12 @@
+{
+  "file": "src/asahi/compiler/agx_compile_apple9.c",
+  "before_sha256": "60fc71e622387a3ee505c04acee5b3cb7f1f3fee4c7f23ae7fee2564696b54a4",
+  "after_sha256": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc",
+  "patch_sha256": "1a482ea51d5dcd66ab5f97fd56e4b1397eb7ae3c73185004466a11d4862f6ef0",
+  "scope": "targeted native-object basic sampling byte equivalence passed; full external extension matrix/driver build/hardware pending",
+  "specification": "https://registry.khronos.org/OpenGL/extensions/OES/OES_EGL_image_external_essl3.txt",
+  "base_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "requires_corrected_mesa5_recipe": true,
+  "patch": "0001-apple9-external-sampler-2d.patch",
+  "selected_by_default": false
+}

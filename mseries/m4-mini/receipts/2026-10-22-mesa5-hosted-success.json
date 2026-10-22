@@ -1,0 +1,61 @@
+{
+  "observed_at_utc": "2026-10-22T07:11:08.196441+00:00",
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39735310671",
+  "provenance": {
+    "run_id": 39735310671,
+    "source_commit": "c6e561160331e01b593c45809da5bee48efc466b",
+    "workflow": ".github/workflows/daily-9.0.yml",
+    "event": "workflow_dispatch",
+    "repository": "techmore/ElementaryOS_MSeries",
+    "head_repository": "techmore/ElementaryOS_MSeries",
+    "artifact_id": 12407528681,
+    "github_artifact_digest": "sha256:86a55fa7a1f428bba985fd83a610ca7cae37529d472708807db89d58077b0835",
+    "archive_zip_digest_independently_checked": false,
+    "payload_sha256": {
+      "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-5_arm64.deb": "e200a45f935e4c589d308eeb05f7fdc62b7083a0767dcaf0e1661aedd9ea90d6",
+      "gravity-mesa-compatibility-source.tar.gz": "6de68f654c799960b98cd5d00270fc3b852bbd9f0c74ae598e6a962931fcc2d9",
+      "gravity-mesa-corresponding-source.tar.gz": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e"
+    },
+    "status": "completed",
+    "conclusion": "success",
+    "component_job_validated": true,
+    "hardware_validated": false
+  },
+  "independent_package_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "e200a45f935e4c589d308eeb05f7fdc62b7083a0767dcaf0e1661aedd9ea90d6",
+    "package_version": "26.3.0~devel+gravity.87ac51d-5",
+    "compatibility_patches": {
+      "0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+      "0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+      "0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6"
+    },
+    "patched_sources_sha256": {
+      "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+      "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+      "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+      "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+      "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+      "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+      "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+      "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+      "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+      "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e"
+    },
+    "corresponding_compatibility_source": {
+      "file": "gravity-mesa-compatibility-source.tar.gz",
+      "sha256": "6de68f654c799960b98cd5d00270fc3b852bbd9f0c74ae598e6a962931fcc2d9"
+    },
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "selected_for_image": false,
+  "selection_blocker": "Advertised external sampler fails the native Apple9 compiler diagnostic; correction has only targeted basic byte-equivalence evidence.",
+  "hardware_validated": false
+}

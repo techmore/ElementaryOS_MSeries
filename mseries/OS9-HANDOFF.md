@@ -11446,3 +11446,26 @@ selection stays v4 until a fresh v5 artifact is independently inspected. Before
 promotion, also finish source review of PR1's external-image/compositor capability
 contract; software rendering does not validate native DMA-BUF/YUV/compositor use.
 Receipt: mseries/m4-mini/receipts/2026-10-22-mesa5-hosted-run.json.
+
+## M4 mini: Mesa5 artifact verified; external-sampler gap found — 2026-10-22
+
+Hosted run 39735310671 succeeded at c6e561160331e01b593c45809da5bee48efc466b.
+Downloaded revision-5 package and both corresponding-source archives pass independent
+hash, provenance, source-bundle, ARM64/GLVND, five AGX groups and isolated llvmpipe
+checks. Package SHA256: e200a45f935e4c589d308eeb05f7fdc62b7083a0767dcaf0e1661aedd9ea90d6.
+Selected image Mesa stays revision 4: PR1 advertises external sampling, but an
+actual native Apple9 compiler diagnostic compiles its 2D reference (282 bytes)
+and rejects the otherwise identical external sample. This is a compiler contract
+finding, not an observed hardware rendering failure.
+
+The unselected external-samplers candidate normalizes non-array/non-shadow external
+textures at both native lowering entries. A separately compiled actual native
+object produces identical 282-byte code for the basic pair; all seven temporarily
+substituted sources were restored. It has not passed query/fetch/projective,
+full-driver, EGL import/YUV, or physical GPU testing. Keep frozen Mesa5 unchanged;
+finish those tests before preparing a new package revision. New receipts:
+2026-10-22-mesa5-hosted-success.json, 2026-10-22-mesa-external-sampler-finding.json,
+and 2026-10-22-mesa-external-basic-candidate.json in mseries/m4-mini/receipts.
+The owner's M4 is unavailable; public-source preparation continues. Native 10Gb,
+HDMI, macOS27/Recovery and dual boot remain unvalidated. Kernel R5 stays selected;
+the last complete raw image still contains kernel R2 and Mesa4.
