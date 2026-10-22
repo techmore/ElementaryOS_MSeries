@@ -11056,3 +11056,26 @@ mseries-pantheon-kit -p mseries-messages --locked` passed (10 tests),
 The isolated screenshot-shelf retention suite also passed 7 tests using a
 private Xvfb/D-Bus session and synthetic images. No Signal or Messages GUI,
 phone delivery, screenshot drag/drop, or owner desktop acceptance was run.
+
+## Rust Messages refresh lifecycle — 2026-10-22
+
+Closed a refresh-parity gap found against the qualified Python client. Rust
+Messages now has an accessible Automatic refresh switch in its menu. It uses
+the shared SDK `Polling` API at a 30-second interval, starts enabled to preserve
+the current client's automatic update behavior, and pauses while the app window
+is unmapped or when the user disables it. A new SDK `ResumeWatcher` listens
+asynchronously for logind resume signals, so waking the laptop triggers an
+immediate refresh without a permanent polling timer.
+
+BlueFerry reads are now coalesced: only one status/history snapshot runs at a
+time and extra manual, timer, history-change or resume requests queue one
+follow-up. This prevents overlapping D-Bus calls from applying snapshots out
+of order. The resume watcher and poller are stopped when the window closes.
+
+**Validation:** locked Rust tests pass (14 tests across `mseries-pantheon-kit`
+and `mseries-messages`); rustfmt check and strict Clippy with warnings denied
+pass. Resume signal parsing and refresh coalescing have unit coverage. No GTK
+interaction or owner-session wake/refresh check was run. Signal screenshot
+drag/drop, multiple screenshots, paste fallback and live Messages phone
+acceptance remain outstanding under issue #227 and the Rust Messages preview
+gates.
