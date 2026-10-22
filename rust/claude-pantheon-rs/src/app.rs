@@ -36,6 +36,40 @@ enum ConnectOutcome {
     Connected,
     RetryableFailure,
     NeedsUserAction,
+    Cancelled,
+}
+
+#[derive(Default)]
+struct ReconnectGate {
+    generation: u64,
+    scheduled: bool,
+}
+
+impl ReconnectGate {
+    fn reserve(&mut self) -> Option<u64> {
+        if self.scheduled {
+            return None;
+        }
+        self.scheduled = true;
+        Some(self.generation)
+    }
+
+    fn is_current(&self, generation: u64) -> bool {
+        self.scheduled && self.generation == generation
+    }
+
+    fn release(&mut self, generation: u64) -> bool {
+        if !self.is_current(generation) {
+            return false;
+        }
+        self.scheduled = false;
+        true
+    }
+
+    fn cancel(&mut self) {
+        self.generation = self.generation.wrapping_add(1);
+        self.scheduled = false;
+    }
 }
 
 fn retryable_ws_error(error: &WsError) -> bool {
@@ -150,6 +184,8 @@ pub struct App {
     connecting: Cell<bool>,
     list_dirty: Cell<bool>,
     reconnect_attempt: Cell<u32>,
+    reconnect_gate: RefCell<ReconnectGate>,
+    connection_generation: Cell<u64>,
     pending_reopen: RefCell<Option<String>>,
     auto_opened: Cell<bool>,
     // environments (sidebar footer switcher)
@@ -541,6 +577,8 @@ impl App {
             connecting: Cell::new(false),
             list_dirty: Cell::new(false),
             reconnect_attempt: Cell::new(0),
+            reconnect_gate: RefCell::new(ReconnectGate::default()),
+            connection_generation: Cell::new(0),
             pending_reopen: RefCell::new(None),
             auto_opened: Cell::new(false),
             env_button,
@@ -738,7 +776,7 @@ impl App {
             ("terminal", &["<Control><Shift>t"], Box::new(|a| a.toggle_terminal())),
             ("snapshot", &["<Control><Shift>s"], Box::new(|a| a.snapshot())),
             ("settings", &["<Control>comma"], Box::new(|a| a.settings())),
-            ("reconnect", &[], Box::new(|a| a.connect_stored())),
+            ("reconnect", &[], Box::new(|a| a.reconnect_current())),
             ("forget", &[], Box::new(|a| a.forget())),
             ("about", &[], Box::new(|a| a.about())),
             ("quit", &["<Control>q"], Box::new(|a| a.window.close())),
@@ -1401,6 +1439,16 @@ impl App {
 
     // ---- connection ------------------------------------------------------------------------
 
+    fn begin_connection_attempt(&self) -> u64 {
+        let generation = self.connection_generation.get().wrapping_add(1);
+        self.connection_generation.set(generation);
+        generation
+    }
+
+    fn connection_attempt_is_current(&self, generation: u64) -> bool {
+        self.connection_generation.get() == generation
+    }
+
     fn set_status(&self, text: &str, connected: bool) {
         self.status.set_text(text);
         if connected {
@@ -1413,6 +1461,10 @@ impl App {
     /// After a dropped connection: retry with a growing delay (2, 4, 8, 16, 32 s, then every minute),
     /// and reopen the thread that was on screen once the server is back.
     fn schedule_reconnect(self: &Rc<Self>) {
+        if self.conn.borrow().is_some() || self.connecting.get() {
+            return;
+        }
+        let Some(generation) = self.reconnect_gate.borrow_mut().reserve() else { return };
         let attempt = self.reconnect_attempt.get();
         self.reconnect_attempt.set(attempt + 1);
         let delay = std::time::Duration::from_secs(2u64.pow(attempt.min(5)).max(2));
@@ -1420,25 +1472,49 @@ impl App {
         let app = self.clone();
         glib::spawn_future_local(async move {
             glib::timeout_future(delay).await;
+            if !app.reconnect_gate.borrow().is_current(generation) {
+                return;
+            }
             if app.conn.borrow().is_some() {
+                app.reconnect_gate.borrow_mut().release(generation);
                 return;
             }
             let reopen = app.live.borrow().as_ref().map(|l| l.thread_id.clone());
             *app.pending_reopen.borrow_mut() = reopen;
             if app.ensure_route().await.is_err() {
-                app.schedule_reconnect();
+                if app.reconnect_gate.borrow_mut().release(generation) {
+                    app.schedule_reconnect();
+                }
                 return;
             }
-            let Some(cred) = auth::load_for(&app.current_server()).await else { return };
+            if !app.reconnect_gate.borrow().is_current(generation) {
+                return;
+            }
+            let Some(cred) = auth::load_for(&app.current_server()).await else {
+                app.reconnect_gate.borrow_mut().release(generation);
+                app.set_status("Not paired", false);
+                app.set_env_state(environments::State::Idle);
+                app.show_page("pair");
+                return;
+            };
+            if !app.reconnect_gate.borrow().is_current(generation) {
+                return;
+            }
             if app.connecting.replace(true) {
+                app.reconnect_gate.borrow_mut().release(generation);
                 return;
             }
-            match app.connect_with(cred).await {
+            if !app.reconnect_gate.borrow_mut().release(generation) {
+                app.connecting.set(false);
+                return;
+            }
+            let connection_generation = app.begin_connection_attempt();
+            match app.connect_with(cred, connection_generation).await {
                 ConnectOutcome::RetryableFailure => {
                     app.schedule_reconnect();
                     return;
                 }
-                ConnectOutcome::NeedsUserAction => return,
+                ConnectOutcome::NeedsUserAction | ConnectOutcome::Cancelled => return,
                 ConnectOutcome::Connected => {}
             }
             // The shell subscription is asynchronous. Keep this request pending until its first
@@ -1466,14 +1542,21 @@ impl App {
 
     /// Connects with the stored credential, or shows the pairing page.
     pub fn connect_stored(self: &Rc<Self>) {
+        self.reconnect_gate.borrow_mut().cancel();
+        self.reconnect_attempt.set(0);
         if self.connecting.replace(true) {
             return;
         }
+        let connection_generation = self.begin_connection_attempt();
         let app = self.clone();
         glib::spawn_future_local(async move {
             let server = app.current_server();
             app.set_env_state(environments::State::Connecting);
-            if let Err(e) = app.ensure_route().await {
+            let route = app.ensure_route().await;
+            if !app.connection_attempt_is_current(connection_generation) {
+                return;
+            }
+            if let Err(e) = route {
                 app.connecting.set(false);
                 app.set_status(&format!("Route failed: {e}"), false);
                 app.set_env_state(environments::State::Offline);
@@ -1483,9 +1566,13 @@ impl App {
                 return;
             }
             app.pair_server.set_text(&app.current_server());
-            match auth::load_for(&server).await {
+            let credential = auth::load_for(&server).await;
+            if !app.connection_attempt_is_current(connection_generation) {
+                return;
+            }
+            match credential {
                 Some(cred) => {
-                    if app.connect_with(cred).await == ConnectOutcome::RetryableFailure {
+                    if app.connect_with(cred, connection_generation).await == ConnectOutcome::RetryableFailure {
                         app.schedule_reconnect();
                     }
                 }
@@ -1693,6 +1780,9 @@ impl App {
     }
 
     fn reconnect_current(self: &Rc<Self>) {
+        self.reconnect_gate.borrow_mut().cancel();
+        self.reconnect_attempt.set(0);
+        self.begin_connection_attempt();
         let app = self.clone();
         glib::spawn_future_local(async move {
             let taken = app.conn.borrow_mut().take();
@@ -1736,6 +1826,9 @@ impl App {
             self.pair_status.set_text("Paste the token from `t3 pair`.");
             return;
         }
+        self.reconnect_gate.borrow_mut().cancel();
+        self.reconnect_attempt.set(0);
+        let connection_generation = self.begin_connection_attempt();
         let (server, token) = auth::parse_pairing(&input, &self.pair_server.text());
         if server.trim_end_matches('/') != self.current_server().trim_end_matches('/') {
             // A pairing URL for another server: give it an environment of its own and make it current.
@@ -1761,22 +1854,39 @@ impl App {
             match auth::pair(&server, &token).await {
                 Ok(cred) => {
                     let at = auth::store(&cred).await;
+                    if !app.connection_attempt_is_current(connection_generation) {
+                        app.pair_button.set_sensitive(true);
+                        return;
+                    }
                     app.pair_status.set_text(&format!("Paired with {}. Credential stored in the {at}.", cred.label));
                     app.pair_entry.set_text("");
                     app.connecting.set(true);
-                    if app.connect_with(cred).await == ConnectOutcome::RetryableFailure {
+                    if app.connect_with(cred, connection_generation).await == ConnectOutcome::RetryableFailure {
                         app.schedule_reconnect();
                     }
                 }
-                Err(e) => app.pair_status.set_text(&format!("Pairing failed: {e}")),
+                Err(e) if app.connection_attempt_is_current(connection_generation) => {
+                    app.pair_status.set_text(&format!("Pairing failed: {e}"));
+                }
+                Err(_) => return,
             }
             app.pair_button.set_sensitive(true);
         });
     }
 
-    async fn connect_with(self: &Rc<Self>, cred: auth::Credential) -> ConnectOutcome {
+    async fn connect_with(self: &Rc<Self>, cred: auth::Credential, connection_generation: u64) -> ConnectOutcome {
+        if !self.connection_attempt_is_current(connection_generation) {
+            return ConnectOutcome::Cancelled;
+        }
         self.set_status(&format!("Connecting to {}…", cred.server), false);
-        let rpc = match t3::connect(&cred).await {
+        let connection = t3::connect(&cred).await;
+        if !self.connection_attempt_is_current(connection_generation) {
+            if let Ok(rpc) = connection {
+                rpc.close().await;
+            }
+            return ConnectOutcome::Cancelled;
+        }
+        let rpc = match connection {
             Ok(r) => r,
             Err(e) => {
                 let retryable = retryable_ws_error(&e);
@@ -1803,7 +1913,12 @@ impl App {
                 return if retryable { ConnectOutcome::RetryableFailure } else { ConnectOutcome::NeedsUserAction };
             }
         };
-        let config: ServerConfig = match rpc.call("server.getConfig", json!({})).await {
+        let config_result = rpc.call("server.getConfig", json!({})).await;
+        if !self.connection_attempt_is_current(connection_generation) {
+            rpc.close().await;
+            return ConnectOutcome::Cancelled;
+        }
+        let config: ServerConfig = match config_result {
             Ok(v) => serde_json::from_value(v).unwrap_or_default(),
             Err(e) => {
                 self.connecting.set(false);
@@ -1832,6 +1947,7 @@ impl App {
             app.write_status_feed();
             app.schedule_reconnect();
         });
+        self.reconnect_gate.borrow_mut().cancel();
         self.reconnect_attempt.set(0);
         *self.providers.borrow_mut() = config.providers.clone();
         *self.conn.borrow_mut() =
@@ -3953,5 +4069,20 @@ mod reconnect_tests {
         for status in [400, 401, 403, 404, 426] {
             assert!(!retryable_ws_error(&WsError::Refused { status, body: String::new() }));
         }
+    }
+
+    #[test]
+    fn reconnect_gate_allows_only_one_timer_and_invalidates_cancelled_environment_retries() {
+        let mut gate = ReconnectGate::default();
+        let first = gate.reserve().unwrap();
+        assert!(gate.reserve().is_none(), "duplicate transport failures share one retry timer");
+
+        gate.cancel();
+        let next_environment = gate.reserve().unwrap();
+        assert!(!gate.is_current(first));
+        assert!(!gate.release(first), "a stale retry cannot release the new environment's timer");
+        assert!(gate.is_current(next_environment));
+        assert!(gate.release(next_environment));
+        assert!(gate.reserve().is_some(), "the next failure may schedule its own retry");
     }
 }
