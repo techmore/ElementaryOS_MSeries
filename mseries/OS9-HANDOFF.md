@@ -49,7 +49,8 @@ The main window also supports Ctrl+F (search), Ctrl+R (refresh), Ctrl+N (new
 message) and Escape (clear focused search or return to the compact conversation
 list). Search, conversation list, favorite control and composer have SDK
 accessible names. The conversation header can explicitly copy recipient
-addresses to the clipboard. Sending still requires the explicit Send button.
+addresses to the clipboard. The Send button stays available; Ctrl+Enter is an
+alternate send action when sending is enabled, while Enter inserts a newline.
 The startup error screen also has a Retry action that closes the placeholder and
 reactivates Messages, so an unavailable BlueFerry API can be retried in place.
 
