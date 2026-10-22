@@ -29,7 +29,12 @@ with tempfile.TemporaryDirectory(prefix='orchard-ui-') as directory:
     path=str(Path(directory)/'incus.socket')
     with socketserver.UnixStreamServer(path,Handler) as server:
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-        env={**os.environ,'INCUS_SOCKET':path,'XDG_CONFIG_HOME':directory+'/config','XDG_STATE_HOME':directory+'/state','G_DEBUG':'fatal-criticals'}
+        env={**os.environ,'ORCHARD_PODMAN':str(Path(__file__).with_name('fake-podman.py')),'FAKE_PODMAN_LOG':directory+'/podman.log','INCUS_SOCKET':path,'XDG_CONFIG_HOME':directory+'/config','XDG_STATE_HOME':directory+'/state','G_DEBUG':'fatal-criticals'}
         result=subprocess.run(sys.argv[1:],env=env,timeout=20)
+        assert result.returncode==0,result.returncode
+        # Second pass on the Podman page: list, live counters and the details window against the fixture.
+        result=subprocess.run(sys.argv[1:],env={**env,'ORCHARD_UI_PAGE':'podman'},timeout=20)
         server.shutdown()
         assert result.returncode==0,result.returncode
+        calls=Path(directory,'podman.log').read_text()
+        assert 'stats --no-stream --format json' in calls and 'inspect --type container --format json' in calls, calls

@@ -24,6 +24,11 @@ than `dev`; the compositor sources are equivalent for these findings.
 
 ## 1. Popups and attention
 
+> **Status (later on October 21):** D1, D2, D3 and D8 are fixed on `dev`; see the OS9-HANDOFF
+> entry "menus, notification cards and attention" and the compositor README. D2's BadWindow
+> bursts are reduced, not gone. The dock does not show `demands-attention` yet. D4-D7 and D9
+> remain open. Line references below are to the pre-fix `fac0e41a`.
+
 How it works: popups are tracked by Smithay's `PopupManager` (`handlers/xdg_shell.rs:44-62`),
 drawn above every toplevel (`popup_stack.rs:74-139`), and grabbed in `grab()`
 (`xdg_shell.rs:244-313`). Activation goes through `activation::verdict`
@@ -181,6 +186,13 @@ Design:
 - Energy hogs: the battery logger (already waking every 15 s) calls `GetClients`; the
   Battery app gets a "screen updates" column; the high-drain alert names the redrawing app
   (roadmap G4). No new indicator.
+
+## Progress (2026-10-21)
+
+Landed in `dev`: snapping phase 0 (#449) and Snap Assist with two-member groups (#453); frame metrics, targeted frame
+callbacks and P7/P8 (#452); dmabuf on by default and the systemd watchdog (#456); power scenario harness (#448); idle
+monitor, idle inhibit and screen blanking (P3, this branch). Popup/attention D1/D2/D3/D8 is PR #450. All of it is
+unqualified on hardware until the next login; checklists are in `mseries/OS9-HANDOFF.md`.
 
 ## Recommended order
 

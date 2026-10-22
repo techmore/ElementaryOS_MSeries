@@ -617,6 +617,8 @@ impl PantheonCompositor {
             ?position,
             "snap assist opened"
         );
+        // Assist takes the keyboard and clicks; an open menu would keep them.
+        self.end_popup_grab_unless(None);
         self.snap_assist = Some(SnapAssist::new(
             output,
             zone,

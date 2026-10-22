@@ -22,7 +22,8 @@ activation (D2); no demands-attention channel to the dock (D3); snapped windows 
 floating size and maximize/snap erase each other (S1, S2); linux-dmabuf is off on native so
 Electron/Chromium render in software (P1); every window gets frame callbacks every flip (P2);
 no idle/DPMS (P3); no frame timing or watchdog. Next: metrics first, then D1/D2, then P2/P1/P3,
-then snapping phase 0 and Snap Assist for halves. Nothing implemented or qualified yet.
+then snapping phase 0 and Snap Assist for halves. D1, D2, D3 and D8 are since fixed (entry below);
+the rest is not implemented yet.
 
 ## Development website publishing — 2026-10-21
 
@@ -38,6 +39,21 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+## Rust compositor: menus, notification cards, attention — 2026-10-21
+
+D1, D2, D3 and D8 from the next-gen investigation fixed: an open menu no longer keeps the keyboard when
+the compositor focuses another window, refused menus get `popup_done`, X11 notification cards and menus
+never take activation or focus, and windows that are refused activation (or set X11 urgency) are
+exported as `demands-attention` in `GetWindows`. Nested probe 7/7. Loads at next login. Next: dock
+patch to show `demands-attention`, then D4-D6 (activation trust, new-window focus, modals).
+
+## Compositor monitoring and battery (phase 0–1, P2/P7/P8) — 2026-10-21
+
+Frame timing per output (render CPU, queue→flip, dirty→flip, late frames), per-client commits with shm/dmabuf split and correct
+X11 attribution, journal priorities, frame callbacks only for surfaces on the flipped output, and the small CPU fixes. Loads at
+next login; after-numbers still to collect. Next: P1 dmabuf trial login, P3 idle/DPMS, then the D-Bus `Stats` interface and CLI.
+[Handoff](OS9-HANDOFF.md).
 
 ## Release pipeline for the customer updater — 2026-10-21
 

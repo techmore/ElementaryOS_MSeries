@@ -21,7 +21,10 @@ app_sources = files(
   'src/SystemWindow.vala',
   'src/ImagePullWindow.vala',
   'src/MountsWindow.vala',
-  'src/LogViewer.vala'
+  'src/LogViewer.vala',
+  'src/PodmanClient.vala',
+  'src/PodmanDetails.vala',
+  'src/PodmanPage.vala'
 )
 app_dependencies = [
 dependency('gtk4'),
@@ -77,3 +80,8 @@ restart_smoke = executable('orchard-restart-smoke',
   'tests/restart-smoke.vala', 'src/IncusClient.vala', 'src/Instance.vala', 'src/Preferences.vala',
   dependencies: [dependency('libsoup-3.0'), dependency('json-glib-1.0'), dependency('gio-unix-2.0')])
 test('restart-config', find_program('python3'), args: [files('tests/test-restart.py'), restart_smoke.full_path()], timeout: 25)
+
+podman_smoke = executable('orchard-podman-smoke',
+  'tests/podman-smoke.vala', 'src/PodmanClient.vala',
+  dependencies: [dependency('json-glib-1.0'), dependency('gio-unix-2.0')])
+test('podman-client', find_program('python3'), args: [files('tests/test-podman.py'), podman_smoke.full_path()], timeout: 25)

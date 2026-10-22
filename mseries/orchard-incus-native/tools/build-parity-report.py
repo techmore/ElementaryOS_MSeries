@@ -11,7 +11,7 @@ base = f"https://github.com/andrew-waters/orchard/blob/{catalog['upstream_revisi
 rows = catalog['features']
 counts = {status: sum(row['status'] == status for row in rows) for status in sorted({r['status'] for r in rows})}
 lines = ['# Orchard upstream parity', '', f"Reviewed upstream: `{catalog['upstream_revision']}`.", '',
-         'Scope: native Vala/GTK/Granite, Incus only. The owner selected an Incus-only runtime; no Podman, Docker or Apple runtime is installed by this work.', '',
+         'Scope: native Vala/GTK/Granite, Incus runtime. The owner selected an Incus-only runtime for the upstream comparison; no Podman, Docker or Apple runtime is installed by this work. A separate Podman page manages an existing rootless Podman and is outside the comparison rows.', '',
          'This is a feature-by-feature comparison, not a claim of full parity. Implemented means a concrete UI/backend path exists; adapted means a native Incus counterpart exists with the stated behavior differences; partial means meaningful behavior is still missing; incompatible means the upstream contract is outside the installed runtime/platform target. Incus addition identifies scope beyond the upstream comparison. Tests and live verification are stated separately.', '',
          ', '.join(f'{status}: {count}' for status, count in counts.items()) + '.', '',
          catalog['compatibility_note'], '', 'Runtime references: ' + ', '.join(catalog['runtime_sources']), '']

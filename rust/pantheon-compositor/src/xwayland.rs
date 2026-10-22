@@ -22,12 +22,26 @@ use smithay::{
     },
     xwayland::{
         X11Surface, X11Wm, XWayland, XWaylandEvent, XwmHandler,
-        xwm::{Reorder, ResizeEdge, XwmId},
+        xwm::{Reorder, ResizeEdge, WmInputModel, WmWindowProperty, XwmId},
     },
 };
 
 use crate::grabs::{ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge};
-use crate::{PantheonCompositor, tiling::ModeRequest};
+use crate::{PantheonCompositor, attention::Reason, tiling::ModeRequest};
+
+/// Whether the window manager may give this X11 window keyboard focus and
+/// draw it as active. Override-redirect windows (menus, tooltips, the
+/// notification cards from `desktop-notifications/popup.py`) and windows with
+/// ICCCM input model "No Input" (`WM_HINTS.input = False` without
+/// `WM_TAKE_FOCUS`) must only ever be raised: activating one deactivated the
+/// focused app, and focusing one left keystrokes with nobody.
+pub(crate) fn x11_accepts_focus(surface: &X11Surface) -> bool {
+    !surface.is_override_redirect() && surface.input_model() != WmInputModel::None
+}
+
+pub(crate) fn window_accepts_focus(window: &Window) -> bool {
+    window.x11_surface().is_none_or(x11_accepts_focus)
+}
 
 pub fn start(
     event_loop: &mut EventLoop<'static, PantheonCompositor>,
@@ -94,6 +108,7 @@ pub fn start(
                                         "could not notify systemd that Pantheon is ready"
                                     );
                                 }
+                                crate::watchdog::start(state);
                             }
                             if let Some((program, args)) = state.pending_command.take()
                                 && let Err(error) =
@@ -136,6 +151,23 @@ impl XwmHandler for PantheonCompositor {
 
     fn new_override_redirect_window(&mut self, _xwm: XwmId, _window: X11Surface) {}
 
+    fn property_notify(&mut self, _xwm: XwmId, surface: X11Surface, property: WmWindowProperty) {
+        // Title, class, pid and hints feed the Gala window snapshot.
+        self.note_title_changed();
+        // WM_HINTS urgency is an attention request (see attention.rs).
+        if property != WmWindowProperty::Hints {
+            return;
+        }
+        let Some(window) = self.x11_workspace_window(&surface) else {
+            return;
+        };
+        if surface.hints().is_some_and(|hints| hints.urgent) {
+            self.request_attention(&window, Reason::X11Urgency);
+        } else if !surface.demands_attention() {
+            self.clear_attention(&window);
+        }
+    }
+
     fn map_window_request(&mut self, _xwm: XwmId, surface: X11Surface) {
         if let Err(error) = surface.set_mapped(true) {
             tracing::warn!(?error, "could not map X11 window");
@@ -154,22 +186,30 @@ impl XwmHandler for PantheonCompositor {
             })
             .unwrap_or(Point::from((0, 0)));
         let window = Window::new_x11_window(surface.clone());
-        self.space.map_element(window.clone(), location, true);
+        let takes_focus = x11_accepts_focus(&surface);
+        self.space
+            .map_element(window.clone(), location, takes_focus);
         self.workspace_manager.add_window(window.clone(), location);
         let configured = Rectangle::new(location, geometry.size);
         if let Err(error) = surface.configure(Some(configured)) {
             tracing::warn!(?error, "could not configure mapped X11 window");
         }
-        window.set_activated(true);
-        if !self.session_locked {
-            self.focus_window_keyboard(&window, smithay::utils::SERIAL_COUNTER.next_serial());
+        if takes_focus {
+            window.set_activated(true);
+            if !self.session_locked {
+                self.focus_window_keyboard(&window, smithay::utils::SERIAL_COUNTER.next_serial());
+            }
         }
     }
 
     fn mapped_override_redirect_window(&mut self, _xwm: XwmId, surface: X11Surface) {
+        // Never activate: that deactivated the focused app on every
+        // notification card, tooltip and X11 menu, and set
+        // _NET_WM_STATE_FOCUSED on windows that are destroyed moments later
+        // (the ChangeProperty BadWindow bursts in the xwm log).
         let location = surface.last_configure().loc;
         self.space
-            .map_element(Window::new_x11_window(surface), location, true);
+            .map_element(Window::new_x11_window(surface), location, false);
     }
 
     fn unmapped_window(&mut self, _xwm: XwmId, surface: X11Surface) {
@@ -218,6 +258,9 @@ impl XwmHandler for PantheonCompositor {
         }
         if let Some(window) = self.find_x11_window(&surface) {
             self.forget_window_placement(window.id());
+        }
+        if let Some(window) = self.x11_workspace_window(&surface) {
+            self.attention.clear(window.id());
         }
         let id = self
             .workspace_manager
@@ -421,9 +464,32 @@ impl XwmHandler for PantheonCompositor {
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }
+
+    fn demands_attention_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        if let Some(window) = self.x11_workspace_window(&surface) {
+            self.request_attention(&window, Reason::X11Request);
+        }
+    }
+
+    fn undemands_attention_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        if let Some(window) = self.x11_workspace_window(&surface) {
+            self.clear_attention(&window);
+        }
+    }
 }
 
 impl PantheonCompositor {
+    /// The managed window for `surface`, mapped, minimized or on another workspace.
+    fn x11_workspace_window(&self, surface: &X11Surface) -> Option<Window> {
+        self.find_x11_window(surface).or_else(|| {
+            self.workspace_manager
+                .windows()
+                .into_iter()
+                .find(|(window, _, _)| window.x11_surface() == Some(surface))
+                .map(|(window, _, _)| window)
+        })
+    }
+
     fn find_x11_window(&self, surface: &X11Surface) -> Option<Window> {
         self.space
             .elements()
@@ -511,6 +577,13 @@ impl PantheonCompositor {
         if self.x11_keyboard_focus == focus {
             return;
         }
+        if let Some(surface) = focus.as_ref() {
+            // An xdg popup grab would otherwise keep the keys (see end_popup_grab_unless).
+            self.end_popup_grab_unless(None);
+            if let Some(window) = self.x11_workspace_window(surface) {
+                self.clear_attention(&window);
+            }
+        }
         let seat = self.seat.clone();
         if let Some(previous) = self.x11_keyboard_focus.take() {
             <X11Surface as KeyboardTarget<PantheonCompositor>>::leave(
@@ -537,8 +610,22 @@ impl PantheonCompositor {
         window: &Window,
         serial: smithay::utils::Serial,
     ) {
+        if !window_accepts_focus(window) {
+            return;
+        }
+        let keep = window
+            .toplevel()
+            .map(|toplevel| toplevel.wl_surface().clone());
+        self.end_popup_grab_unless(keep.as_ref());
+        self.clear_attention(window);
+        // Send the activated state now: D-Bus focus, workspace switches and
+        // panel/polkit focus have no later configure, so the app kept drawing
+        // itself inactive while it had the keyboard.
         for candidate in self.space.elements() {
             candidate.set_activated(candidate == window);
+            if let Some(toplevel) = candidate.toplevel() {
+                toplevel.send_pending_configure();
+            }
         }
         if let Some(surface) = window.x11_surface() {
             self.set_x11_keyboard_focus(Some(surface.clone()), serial);

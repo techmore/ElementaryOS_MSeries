@@ -18,6 +18,147 @@
 - **Not verified:** the traffic-light dots visually (the X capture came back empty) and the dense table in dark mode. Installed to
   `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` and Wingpanel restarted by hand; previous library kept in the session scratchpad.
 
+## Orchard: Podman container details, live counters, local install — 2026-10-21 (Claude Code)
+
+Follows the Podman page (`mseries/orchard-incus-native`, containers/images/volumes with start/stop/restart/remove).
+
+- **Live counters.** `PodmanClient.list_stats()` runs `podman stats --no-stream --format json`; running rows show
+  CPU %, memory and PID count, written into existing rows on every 5 s poll (no list rebuild, so focus and buttons stay put).
+  Stopped containers show no counters; a stats failure leaves rows blank rather than zero.
+- **Details window.** `PodmanDetails` (new, modelled on `InstanceDetails`): image/ID/state/PID, created/started, command,
+  restart policy, environment count, published ports and networks, mounts (volume/bind, rw/ro), memory/CPU limits, counters
+  refreshed every 3 s with CPU/memory sparklines, and the raw `podman inspect` document under an Inspect tab. Header has
+  Start/Stop/Restart; the page reloads after an action. Row list no longer scrolls horizontally; long image digests wrap.
+  `orchard://podman` opens the page.
+- **Tests.** Fixture `tests/fake-podman.py` now answers `stats` and `inspect`; `podman-smoke` covers stats/inspect parsing,
+  byte/percent parsing and the unknown-container error; `test-ui.py` runs the smoke a second time on the Podman page and
+  builds the details window. `meson test`: 5/5 with the indicator disabled; 6/6 earlier with it enabled.
+- **Installed** on the j314s under `~/.local` (`meson setup build --prefix=$HOME/.local -Dwingpanel=disabled`, `ninja -C build
+  install`): binary, `.desktop`, icons. The Wingpanel indicator's install dir is `/usr/lib` (root) and was not touched; the
+  root-installed indicator from 2026-10-18 has no Podman code and is unaffected. Captures with 11 real rootless containers:
+  `docs/screenshot-podman.png`, `docs/screenshot-podman-details.png` (GTK render of the smoke window; no screenshot tool on
+  this host).
+- **Not verified.** Pause/unpause (client supports it, no button), pods, dark mode review, podman socket API (not used).
+## Compositor: idle monitor, idle inhibit and screen blanking (P3) — 2026-10-21 (Claude Code)
+
+From the [next-generation investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md) (P3): the screen
+never blanked because gsd-power had no idle source and no way to turn the panel off. **Installed nowhere, unqualified until
+the next login**; the running compositor was not restarted.
+
+- **`org.gnome.Mutter.IdleMonitor`** (`src/idle.rs`): ObjectManager at `/org/gnome/Mutter/IdleMonitor`, object `.../Core`
+  with `GetIdletime`, `AddIdleWatch`, `AddUserActiveWatch`, `RemoveWatch`, `ResetIdletime`, signal `WatchFired`, the contract
+  libgnome-desktop-4's `GnomeIdleMonitor` (gsd-power 50, gnome-session) uses. The input path does one atomic store per event
+  and messages the D-Bus thread only after ≥1 s without input or while a user-active watch waits; the thread sleeps until the
+  next watch deadline (no polling).
+- **Wayland idle protocols:** `ext-idle-notify-v1` and `zwp_idle_inhibit_v1`. A live inhibitor (e.g. GTK
+  `inhibit(IDLE)`, browsers playing video) holds idle time at 0 for both, as Mutter does.
+- **`PowerSaveMode` on `org.gnome.Mutter.DisplayConfig`** (read/write, `PropertiesChanged` after it is applied): 1–3 stop
+  rendering and clear every CRTC (`DrmCompositor::clear()`, as niri does; no flip stays pending, so the watchdog is quiet);
+  0, or any input, redraws in full and the next frame re-enables the CRTC. A session lock requested while blanked is
+  confirmed at once (no frame would ever arrive). **Off switch:** drop-in `Environment=PANTHEON_DISABLE_POWER_SAVE=1`.
+- **Expected behaviour with the owner's settings:** `idle-delay` 900 s, so gsd-power blanks after 15 min idle; `idle-dim`
+  is off. Screen lock on idle is **not** added: in GNOME the shell locks, and this compositor does not, so blanking does not lock
+  (`lock-enabled` true / `lock-delay` 0 has no effect yet). Owner decision.
+- **Verified:** strict clippy (`native-drm`, all targets), 168 tests (new: watch semantics, cap, inhibition clock, power-save
+  modes, off switch); new nested probe `pantheon-rust-compositor/idle-probe/run.sh` (private Xvfb + D-Bus, real
+  `GnomeDesktop.IdleMonitor`): idle watch fired at 1.51 s for 1.5 s, user-active fired on input, GTK inhibitor held idle at 0
+  and the watch fired after uninhibit, `PowerSaveMode` 3 → 0 on input with both signals. Activation probe 4/4 unchanged.
+  **Not verified on hardware:** the apple-drm/DCP CRTC off/on cycle.
+- **What to check at the next login:**
+  1. `gdbus call --session -d org.gnome.Mutter.IdleMonitor -o /org/gnome/Mutter/IdleMonitor/Core -m org.gnome.Mutter.IdleMonitor.GetIdletime` counts up while idle.
+  2. Temporarily `gsettings set org.gnome.desktop.session idle-delay 60`, leave the Mac for ~70 s: the panel goes dark; a key or
+     trackpad touch brings it back within about a second with windows intact. Restore `idle-delay 900`.
+  3. Same with the external dock display connected.
+  4. Play a video in Brave: the screen must not blank.
+  If the panel does not come back: press a key again, then add the `PANTHEON_DISABLE_POWER_SAVE=1` drop-in and log in again.
+
+## Rust compositor: menus, notification cards and attention (D1, D2, D3, D8) — 2026-10-21 (Claude Code)
+
+Fixes the popup/attention defects from section 1 of
+`mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`. Details:
+`rust/pantheon-compositor/README.md` ("Menus, X11 popups and attention").
+
+- **D1, open menu blocked focus changes.** New `end_popup_grab_unless(root)` /
+  `end_popup_grab_of(root)` (`handlers/xdg_shell.rs`) dismiss the menus and drop the popup
+  keyboard/pointer grabs. Called from `focus_window_keyboard` (activation, D-Bus FocusWindow,
+  overview exit, polkit/modal focus, new windows), X11 focus, top-panel focus, workspace switch,
+  overview entry, lock, and when the menu's own window is minimized, moved to another workspace
+  or destroyed. Focus in a window's menu now counts as focus in that window
+  (`keyboard_focus_is_in`), so minimizing it from its menu focuses the next window.
+- **D8.** Refused grabs (locked, root not mapped, invalid grab) send `popup_done`; refusals after
+  the grab already dismissed through `ungrab`.
+- **D2, notification cards and X11 menus.** Override-redirect and ICCCM no-input windows are
+  mapped and raised with `activate=false` and never get keyboard focus
+  (`xwayland::x11_accepts_focus`, applied in `raise_window`, `focus_window_keyboard`, managed
+  map, `focus_next_window`, workspace switch). Clicking a card keeps the app's keyboard focus
+  and active state and still delivers the click.
+- **Found while testing:** `focus_window_keyboard` set the activated state but never sent the
+  configure, so a window focused over D-Bus (dock, overview, workspace switch) drew itself
+  inactive. It now sends the pending configure.
+- **D3, attention channel.** New `src/attention.rs`. Marked on a refused activation
+  (`Verdict::Ignore`), the 8 s deferred-activation give-up, X11 `_NET_WM_STATE_DEMANDS_ATTENTION`
+  (mirrored back into `_NET_WM_STATE`) and `WM_HINTS` urgency; cleared on keyboard focus
+  (`SeatHandler::focus_changed` and X11 focus) or destroy; windows that have never mapped are not
+  marked. Exported as `demands-attention` in `GetWindows`, and a change emits `WindowsChanged`.
+  Behaviour change: activation tokens are now kept under `strict` too, so the refusal reaches the
+  policy and can be attributed; `strict` still never raises without a trusted serial.
+- **Verified.** `cargo test -p pantheon-compositor` 53 pass (new: 3 attention, 2 Gala export;
+  1 activation test rewritten); `cargo clippy --all-targets -- -D warnings` clean with default and all features
+  (also fixed 4 pre-existing `needless_borrow` errors); `cargo fmt --check` clean. Nested probe
+  `mseries/pantheon-rust-compositor/activation-probe/run.sh`, new `focus-probe.py` scenarios, 7/7
+  pass on this branch. The same scenarios against the installed `/usr/bin/pantheon-compositor`
+  reproduce the bugs: the menu stays open and takes `xyz` while A gets nothing; clicking a card
+  leaves A inactive with no keyboard; no attention key exists.
+- **BadWindow bursts: reduced, not gone.** Counting xwm ChangeProperty BadWindow errors from
+  80 short-lived cards with focus changes during the burst: 124-129 before (3-4 errors on many
+  cards, 14-19 beyond 2 per card), 89-96 after (about 2 per card, 0-3 beyond, the same as with no
+  focus changes at all). The
+  activation-driven writes are gone; the remaining 2 per card come from Smithay's own X11 map
+  path for windows destroyed while mapping and were not attributed further.
+- **Not verified.** The live session: nothing installed and nothing restarted; loads at next login
+  after the compositor package is installed. Real Electron/Chromium/Firefox menus, a real polkit
+  prompt, and the dock showing attention.
+- **After merging dev (snapping #449/#453, metrics #452, dmabuf/watchdog #456).** Snap Assist
+  closes any open menu when it opens (it takes keys and clicks), and its choice goes through
+  `focus_window_keyboard`; group raises already pass `activate=false`. The Gala snapshot cache key
+  now includes an attention generation, so a mark is published at once instead of within 1 s. The
+  two X11 `property_notify` handlers are one. #452's default `smithay::xwayland::xwm=warn` filter
+  hides the INFO-level BadWindow lines, so `run.sh` now starts the nested compositor with
+  `RUST_LOG=info`. Re-verified on the merge: 118 tests, strict clippy (default and all features),
+  fmt, nested probe 7/7, BadWindow about 2 per card, 3 beyond. The earlier CI `build` failure was a
+  Launchpad PPA 503 during package download, not this change.
+- **Follow-ups.** Dock patch: read `demands-attention` from `GetWindows` in the patched dock's
+  window model and drive the app icon's urgent/bounce state (no dock change in this PR). D4-D9
+  remain open (D9 in part: `has-focus` is still false while a window's menu is open). Smithay's
+  remaining per-card ChangeProperty errors need a Smithay-side look if the log noise matters.
+
+## Compositor: linux-dmabuf on by default (P1) and systemd watchdog — 2026-10-21 (Claude Code)
+
+Owner approved both ("approved please continue"). **Installed nowhere, unqualified until the next login**, which is the trial;
+the running compositor was not restarted.
+
+- **linux-dmabuf ON by default on native.** `zwp_linux_dmabuf_v1` v4 with the render-node feedback. Each output also builds a
+  scanout feedback (scanout tranche on the apple-drm device, primary + overlay plane formats ∩ GPU-sampleable formats) that is
+  sent only to surfaces presented zero-copy, as Anvil does. Nothing is scanned out directly yet (P6), so every client gets the
+  render feedback and no app is steered to a scanout-only (e.g. linear) layout. **Off switch:** drop-in
+  `[Service]` / `Environment=PANTHEON_DISABLE_DMABUF=1` (or `PANTHEON_ENABLE_DMABUF=0`) via
+  `systemctl --user edit pantheon-rust-compositor@wayland.service`, then log in again.
+- **Watchdog.** `WatchdogSec=30s` in `pantheon-rust-compositor@.service`; the compositor pings `WATCHDOG=1` every 10 s from an
+  event-loop timer, with `STATUS=` such as `58 flips/s, 114 commits/s, busiest brave(1234)`. A page flip pending over 1 s is
+  logged (`page flip has not completed`) and appended to STATUS, but pings continue. A hung loop is killed after 30 s and
+  restarted (`Restart=on-failure`), which ends every Wayland client.
+- **Verified:** 142 compositor tests (new: dmabuf switch, watchdog interval/`WATCHDOG_PID`, status line, busiest client), strict
+  clippy with and without `native-drm`, fmt, `test-session-units.sh`.
+- **What to check at the next login:**
+  1. Brave, Claude and ChatGPT windows draw (not blank or black); `journalctl --user -u pantheon-rust-compositor@wayland -g
+     'linux-dmabuf'` shows `advertising linux-dmabuf v4 on the native renderer`.
+  2. Claude's GPU process no longer runs with `--use-gl=disabled` (`ps -eo args | grep -- --type=gpu-process`).
+  3. `compositor stats`: `dmabuf_commits` > 0 and `top=` entries marked `/dmabuf`; compositor CPU and `output frame stats`
+     `fps`/`render_us` against the before numbers in the entry below.
+  4. `systemctl --user status pantheon-rust-compositor@wayland` shows the STATUS line; `systemctl --user show -p WatchdogUSec pantheon-rust-compositor@wayland` is 30s.
+  If apps go blank: add the `PANTHEON_DISABLE_DMABUF=1` drop-in and log in again.
+- **Not in scope here:** idle/DPMS (P3), taken by the investigation session.
+
 ## CodexBar dropdown at double text size — 2026-10-21 (Claude Code)
 
 - **What:** owner asked for the CodexBar Wingpanel dropdown to be twice as large. `.mseries-codexbar` now sets `font-size: 2em`
@@ -52,6 +193,51 @@ Phase 1 of section 2 of `NEXT-GEN-INVESTIGATION-2026-10-21.md`, on top of phase 
   feedback on the shared edge. Nothing installed or restarted.
 - **Next (phase 2).** Split-on-drop to add a third/fourth app, layout templates/picker, titles in Assist (needs text rendering),
   rounded plates, hotplug survival.
+
+## Compositor: frame metrics, targeted frame callbacks, battery P7/P8 — 2026-10-21 (Claude Code)
+
+Implements monitoring phase 0–1 and the low-risk battery items from `NEXT-GEN-INVESTIGATION-2026-10-21.md` (§3, §4) in
+`rust/pantheon-compositor`. Loads at the next login; nothing was installed or restarted.
+
+- **Metrics** (`src/metrics/`): fixed 84-bucket log histogram (1 µs–4 s, ≤25% error); per output render CPU, queue→flip and
+  dirty→flip p50/p95/p99 from the kernel's vblank timestamp and sequence (previously discarded), late frames, skipped vblanks,
+  empty ratio; per client commits, shm vs dmabuf, damaged pixels and frame callbacks. The 30 s `redraw stats` line is replaced by
+  structured `compositor stats` and `output frame stats` events (target `pantheon_metrics`). Read with
+  `journalctl --user -u pantheon-rust-compositor@wayland -g 'compositor stats|output frame stats'`.
+- **Attribution:** the client pid is read once at connect and cached with an `Arc<ClientStats>` in `ClientState` (no per-commit
+  `SO_PEERCRED` syscall or global mutex). Xwayland commits are attributed to the X11 window's `_NET_WM_PID`, cached per surface,
+  so ChatGPT (X11) no longer shows up as `pantheon-compos`.
+- **Journal:** under systemd no ANSI codes or second timestamp, and an sd-daemon `<N>` prefix sets PRIORITY (`journalctl -p err`
+  now sees errors). Default filter `info,smithay::xwayland::xwm=warn` (drops the routine X11 `BadWindow` INFO lines). Unchanged
+  30 s safety reconciles of the display trace log at DEBUG.
+- **P2 frame callbacks:** only surfaces whose primary scanout output flipped get a callback; surfaces shown nowhere get one per
+  second (with a sweep timer so they are served on an idle desktop too); empty frames send callbacks at the estimated next vblank
+  instead of none. Escape hatch: `PANTHEON_FRAME_CALLBACKS=all` restores the old behaviour without a rebuild.
+- **P7:** wallpaper pre-scaled to each output's pixel size on a helper thread (about 0.5 s per size under load) and marked
+  opaque; full-size copy released once every output has its own. Snap preview and OSD keep their `SolidColorBuffer`s. Fractional
+  scale preferences only re-sent when the window→output layout changes. Redraw requests coalesce through a calloop `Ping` plus a
+  pending flag (one render pass per dispatch instead of one per request). The Gala snapshot is rebuilt only when workspaces,
+  focus, titles or panels changed (at most 1 s stale otherwise).
+- **P8:** `[profile.release]` with `lto = "thin"`, `codegen-units = 1` in `rust/Cargo.toml` (workspace-wide). Measured here under load average
+  25–30 from other builds: a full release build of the compositor took 4 m 27 s (about 4 m 38 s before, same conditions); a
+  compositor-only rebuild went from 32 s to 1 m 46 s; the binary shrank from 22.8 MB to 18.0 MB. No runtime
+  speed measured yet. `target-cpu` deliberately not set (one package for every M-series machine).
+- **Also:** four pre-existing `clippy::needless_borrow` errors on `dev` (`place_window(&window, ..)`) fixed so strict clippy passes.
+- **Before (live session, pid 1934, 30 min on mains, `redraw stats`):** averages over 60 windows (21:05–21:35 UTC):
+  114 commits/s, 191 redraw requests/s, 58.6 vblanks/s = frames queued (peaks of 119/s), 0.9 empty frames/s. Top committers
+  claude-desktop 40/s, brave 37/s and "pantheon-compos(1934)" 34/s, which is really Xwayland/ChatGPT. Each of the 191 requests/s
+  was its own channel message and render pass (most skipped as frame-pending after recomputing fractional scales), so about
+  130 passes/s did no rendering; with the `Ping` they coalesce to at most one per dispatch.
+- **Verified:** `cargo test -p pantheon-compositor --features native-drm` (102 passed, 27 new), strict clippy with and without
+  `native-drm`, fmt. Unit tests cover histogram percentiles, output timing (late/skipped/idle), the X11 attribution decision,
+  registry reset/cleanup, damage clipping, journal line format and wallpaper crop/scale.
+- **Not verified:** any of this on the live session (needs the package installed and a new login): the after numbers, frame
+  pacing with targeted callbacks, the scaled wallpaper on the DCP, the Gala snapshot on a long session.
+- **Not done (needs owner approval):** linux-dmabuf by default (P1, trial login with `PANTHEON_ENABLE_DMABUF=1` first) and
+  `WatchdogSec=` (a watchdog restart kills every Wayland client). Output damage % is not exposed by Smithay's `DrmCompositor`;
+  per-client damaged pixels stand in. Lock-screen surfaces still get no frame callbacks (pre-existing).
+- **Next:** install at next login, compare `output frame stats`/`compositor stats` with the before numbers above, then the P1
+  dmabuf trial.
 
 ## Disk Space app: cards and circle disk usage analyzer — 2026-10-21 (Claude Code)
 

@@ -181,10 +181,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo dpkg -i out/mseries-debs/mseries-update_*.deb
-          for unit in boot confirm auto; do
+          for unit in boot confirm; do
             state=$(systemctl is-enabled "mseries-update-$unit.service" 2>&1 || true)
             [[ $state == disabled ]] || { echo "mseries-update-$unit.service is '$state', expected disabled" >&2; exit 1; }
           done
+          # The auto service has no [Install] section (only its timer starts it), so systemd calls it static;
+          # what must stay off is the timer, checked next.
+          state=$(systemctl is-enabled mseries-update-auto.service 2>&1 || true)
+          [[ $state == static || $state == disabled ]] || { echo "mseries-update-auto.service is '$state', expected static" >&2; exit 1; }
           [[ $(systemctl is-enabled mseries-update-auto.timer 2>&1 || true) == disabled ]]
           mseries-update status --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["state"]=="idle", r'
           [[ ! -e /etc/mseries-update && ! -e /var/lib/mseries-update ]]

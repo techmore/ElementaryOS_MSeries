@@ -12,6 +12,8 @@ pub(crate) struct WorkspaceManager {
     windows: HashMap<usize, Window>,
     assignments: HashMap<usize, usize>,
     locations: HashMap<usize, Point<i32, Logical>>,
+    /// Bumped by every change, so the Gala snapshot can skip unchanged dispatches.
+    generation: u64,
 }
 
 impl WorkspaceManager {
@@ -21,6 +23,11 @@ impl WorkspaceManager {
             workspaces: vec![Vec::new()],
             ..Self::default()
         }
+    }
+
+    /// Changes whenever any workspace, window assignment, order or location changes.
+    pub fn generation(&self) -> u64 {
+        self.generation
     }
 
     pub fn active(&self) -> usize {
@@ -36,6 +43,7 @@ impl WorkspaceManager {
     }
 
     pub fn add_window(&mut self, window: Window, location: Point<i32, Logical>) {
+        self.generation = self.generation.wrapping_add(1);
         let id = window.id();
         if let Some(previous) = self.assignments.remove(&id)
             && let Some(windows) = self.workspaces.get_mut(previous)
@@ -49,6 +57,7 @@ impl WorkspaceManager {
     }
 
     pub fn remove_window(&mut self, id: usize) {
+        self.generation = self.generation.wrapping_add(1);
         if let Some(workspace) = self.assignments.remove(&id)
             && let Some(windows) = self.workspaces.get_mut(workspace)
         {
@@ -59,6 +68,7 @@ impl WorkspaceManager {
     }
 
     pub fn assign_window(&mut self, id: usize, workspace: usize) -> bool {
+        self.generation = self.generation.wrapping_add(1);
         if workspace >= self.workspaces.len() || !self.windows.contains_key(&id) {
             return false;
         }
@@ -77,11 +87,13 @@ impl WorkspaceManager {
     }
 
     pub fn add_workspace(&mut self) -> usize {
+        self.generation = self.generation.wrapping_add(1);
         self.workspaces.push(Vec::new());
         self.workspaces.len() - 1
     }
 
     pub fn set_active(&mut self, workspace: usize) -> bool {
+        self.generation = self.generation.wrapping_add(1);
         if workspace >= self.workspaces.len() {
             return false;
         }
@@ -90,6 +102,7 @@ impl WorkspaceManager {
     }
 
     pub fn reorder_workspace(&mut self, index: usize, new_index: usize) -> bool {
+        self.generation = self.generation.wrapping_add(1);
         if index >= self.workspaces.len() || new_index >= self.workspaces.len() {
             return false;
         }
@@ -126,6 +139,7 @@ impl WorkspaceManager {
     }
 
     pub fn set_location(&mut self, id: usize, location: Point<i32, Logical>) {
+        self.generation = self.generation.wrapping_add(1);
         if self.windows.contains_key(&id) {
             self.locations.insert(id, location);
         }
@@ -157,6 +171,7 @@ impl WorkspaceManager {
     }
 
     pub fn set_order_from_visible(&mut self, ordered_ids: &[usize], workspace: usize) {
+        self.generation = self.generation.wrapping_add(1);
         let Some(windows) = self.workspaces.get_mut(workspace) else {
             return;
         };
