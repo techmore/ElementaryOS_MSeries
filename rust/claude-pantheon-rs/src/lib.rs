@@ -27,6 +27,7 @@ pub mod snapshot;
 pub mod status;
 pub mod t3;
 pub mod terminal;
+pub mod thread_cache;
 pub mod transcript;
 pub mod usage;
 pub mod voice;

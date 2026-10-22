@@ -73,6 +73,17 @@ The panel reads the local versioned `status.json` snapshot through a file monito
 or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
 unpairing or switching environments clears the cache.
 
+## Thread resume cache
+
+Settled T3 thread views are cached under `~/.cache/claude-pantheon-rs/threads/`, scoped to the selected environment
+and thread. Each atomic, mode-`0600` record keeps the bounded view, history marker and `snapshotSequence` together;
+environment directories use mode `0700`. The client reopens from that view and asks T3 for `afterSequence`, ignores
+duplicate replay events, and keeps send, stop and approval actions disabled until synchronization completes. Active
+turns stay in memory and are persisted only after they settle, so token-by-token updates do not rewrite the cache.
+Records are capped at 8 MiB each and 64 MiB / 32 entries per environment. Corrupt, wrong-scope and old-schema files
+are discarded; forgetting or removing an environment clears its thread cache. A replay gap beyond the server's
+retention window still falls back to T3's current snapshot.
+
 ## Sidebar
 
 Threads sit under their project with the provider's accent dot, a spinner while a turn runs, a

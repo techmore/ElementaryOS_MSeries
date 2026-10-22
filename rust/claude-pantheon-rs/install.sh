@@ -43,7 +43,7 @@ if ((uninstall)); then
     done
     "${sudo[@]}" gtk-update-icon-cache -q -f "$icons" 2>/dev/null || true
     "${sudo[@]}" update-desktop-database "$apps" 2>/dev/null || true
-    echo "Removed Claude from $prefix."
+    echo "Removed T3-R Pantheon from $prefix."
     exit 0
 fi
 
@@ -84,4 +84,4 @@ fi
 if systemctl --user is-active --quiet pantheon-dock 2>/dev/null; then
     systemctl --user restart pantheon-dock && echo "Restarted pantheon-dock so the new icon shows."
 fi
-echo "Installed Claude to $prefix (binary, desktop entry with New Thread and Usage actions, D-Bus activation, metainfo, icons)."
+echo "Installed T3-R Pantheon to $prefix (quick panel and full chat, New Thread and Usage actions, D-Bus activation, metainfo, icons)."

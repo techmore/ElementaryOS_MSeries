@@ -70,7 +70,14 @@ Settings can search T3's ACP Registry or add a local ACP command for execution o
 supported way to register DeepSeek Harness, for example `dsh --profile default acp`, when the paired server has the CLI.
 DeepSeek's prefix cache is server-side; retain stable prefixes and report cache-hit data only when T3 returns it.
 
-Tracked in [issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523), with T3 Code cache-runtime, cache
-write-regression, ACP Registry, DeepSeek API cache and Harness prompt-prefix research. The compact status path is built;
-the larger per-thread replay/cache contract and live ACP setup remain open. See `mseries/OS9-HANDOFF.md` for exact
-validation results and deployment limits.
+Settled thread views now use a separate environment/thread-scoped cache record containing the bounded projection,
+history marker and T3 `snapshotSequence`. The record is versioned, atomically replaced, mode `0600`, capped at 8 MiB
+per thread and 64 MiB / 32 entries per environment. Active turns remain in memory until they settle; reopening renders
+the cached view and resumes with `afterSequence`, ignores duplicate events, and blocks live actions until the server's
+completion marker. Corrupt or mismatched records are discarded and explicit environment removal/unpair clears them.
+
+The cache write-regression research remains relevant: this client avoids full serialization on each streamed update,
+but it has not yet been profiled against a very large live conversation or verified on a poor network. Tracked in
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523), with T3 Code cache-runtime, ACP Registry,
+DeepSeek API cache and Harness prompt-prefix research. Live ACP setup, real reconnect qualification and a visual
+Pantheon session remain open. See `mseries/OS9-HANDOFF.md` for validation results and deployment limits.

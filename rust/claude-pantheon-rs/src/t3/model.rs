@@ -1,8 +1,12 @@
 //! The parts of the T3 contracts this client reads, decoded leniently: unknown fields and variants are
 //! kept as `Value` or skipped so a newer server does not break the client.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+fn active_run_status(status: &str) -> bool {
+    matches!(status, "preparing" | "queued" | "starting" | "running" | "waiting" | "pending")
+}
 
 #[derive(Deserialize, Default, Clone, Debug)]
 #[serde(default)]
@@ -231,8 +235,8 @@ impl ThreadShell {
     pub fn is_running(&self) -> bool {
         let r = &self.rest;
         r.get("activeRunId").is_some_and(|v| !v.is_null())
-            || r.get("status").and_then(Value::as_str).is_some_and(|s| s == "running")
-            || r.get("latestRun").and_then(|v| v.get("status")).and_then(Value::as_str).is_some_and(|s| s == "running")
+            || r.get("status").and_then(Value::as_str).is_some_and(active_run_status)
+            || r.get("latestRun").and_then(|v| v.get("status")).and_then(Value::as_str).is_some_and(active_run_status)
     }
 
     pub fn pending_requests(&self) -> u64 {
@@ -255,7 +259,7 @@ impl ThreadShell {
 }
 
 /// `ThreadId` → `ThreadShell` plus the projects, as the shell snapshot carries them.
-#[derive(Default, Debug, Clone)]
+#[derive(Deserialize, Default, Debug, Clone)]
 pub struct Shell {
     pub projects: Vec<Project>,
     pub threads: Vec<ThreadShell>,
@@ -308,7 +312,7 @@ impl Shell {
 }
 
 /// One visible item of a thread, flattened from `visibleTurnItems[].item`.
-#[derive(Deserialize, Default, Clone, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 #[serde(default)]
 pub struct TurnItem {
     pub id: String,
@@ -352,7 +356,7 @@ impl TurnItem {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Deserialize, Serialize, Default, Debug, Clone)]
 pub struct ThreadView {
     pub items: Vec<TurnItem>,
     pub active_run_id: Option<String>,
@@ -382,12 +386,41 @@ impl ThreadView {
             view.active_run_id = runs
                 .iter()
                 .rev()
-                .find(|r| r.get("status").and_then(Value::as_str).is_some_and(|s| s == "running" || s == "pending"))
+                .find(|r| r.get("status").and_then(Value::as_str).is_some_and(active_run_status))
                 .and_then(|r| r.get("id"))
                 .and_then(Value::as_str)
                 .map(str::to_string);
         }
         view
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.active_run_id.is_some()
+            || self.runs.iter().any(|run| run.get("status").and_then(Value::as_str).is_some_and(active_run_status))
+    }
+
+    /// Apply a run projection event while retaining fields omitted by compact updates.
+    pub fn upsert_run(&mut self, update: Value) {
+        let id = update.get("id").and_then(Value::as_str);
+        if let Some(id) = id {
+            if let Some(current) = self.runs.iter_mut().find(|run| run.get("id").and_then(Value::as_str) == Some(id)) {
+                if let (Some(current), Some(update)) = (current.as_object_mut(), update.as_object()) {
+                    current.extend(update.iter().map(|(key, value)| (key.clone(), value.clone())));
+                } else {
+                    *current = update;
+                }
+            } else {
+                self.runs.push(update);
+            }
+        }
+        self.active_run_id = self
+            .runs
+            .iter()
+            .rev()
+            .find(|run| run.get("status").and_then(Value::as_str).is_some_and(active_run_status))
+            .and_then(|run| run.get("id"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
     }
 
     pub fn upsert(&mut self, item: TurnItem) {
@@ -496,6 +529,22 @@ mod tests {
         assert_eq!(p.name(), "Claude");
         assert_eq!(p.models[0].display(), "Opus");
         assert_eq!(p.models[0].key(), "opus");
+    }
+
+    #[test]
+    fn run_updates_merge_projection_and_settle_cached_running_state() {
+        let mut view = ThreadView::from_projection(&serde_json::json!({
+            "runs": [{"id": "run-1", "status": "running", "provider": "codex"}]
+        }));
+        assert!(view.is_running());
+        view.upsert_run(serde_json::json!({"id": "run-1", "status": "completed"}));
+        assert!(!view.is_running());
+        assert_eq!(view.runs[0]["provider"], "codex");
+        assert_eq!(view.runs[0]["status"], "completed");
+
+        view.upsert_run(serde_json::json!({"id": "run-2", "status": "waiting"}));
+        assert!(view.is_running());
+        assert_eq!(view.active_run_id.as_deref(), Some("run-2"));
     }
 }
 

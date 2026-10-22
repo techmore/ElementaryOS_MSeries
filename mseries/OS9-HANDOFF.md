@@ -9,8 +9,11 @@ Offline activity is clearly marked stale and cannot open a live thread.
 
 The local status snapshot is schema-versioned, written atomically with mode `0600`, monitored by the quick surface, and
 retains the last successful snapshot as stale when the connection drops. Explicit unpair and environment changes clear
-it. The quick surface does not open a second RPC connection or poll the server. This completes the compact status path;
-it does **not** yet implement T3's larger per-thread replay cache/cursor contract or cache telemetry.
+it. The quick surface does not open a second RPC connection or poll the server. Settled thread views now use a bounded,
+versioned environment/thread cache record that keeps the projection and `snapshotSequence` together, then resumes with
+T3 `afterSequence`. Duplicate replay events are ignored, active turns are not written to disk, and live actions stay
+disabled until synchronization finishes. Corrupt and wrong-scope entries are discarded; unpair/removal clears them.
+Cache hit telemetry and large-history/poor-network profiling remain open.
 
 Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness (`dsh
 --profile default acp`) for execution on the paired T3 server. This uses T3's generic ACP path and keeps credentials on
@@ -19,21 +22,28 @@ Keep prompts and tool schemas stable where T3 permits, and expose hit/miss count
 
 Taskbar mode in the Dock patch scales launcher icons to 90% and trims spacing: the unmanaged 48 px base becomes 43 px,
 the managed 40 px size becomes 36 px, horizontal padding is 5 px, and the top inset is 10 px. Other Dock modes retain
-their configured icon size and padding. No live Dock deployment was done.
+their configured icon size and padding. On 2026-10-22 at 09:56 EDT, `bash mseries/install-dock-drawers.sh` rebuilt and
+installed the private Dock; the `pantheon-dock.service` restart loaded it successfully (PID 3675713). The active settings
+are `taskbar-mode=true` and `icon-size=40`, which resolves to 36 px in this mode.
 
 Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob/main/docs/internals/connection-runtime.md),
 [T3 architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md), [T3 cache write issue #4005](https://github.com/pingdotgg/t3code/issues/4005),
 [T3 ACP providers](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-acp.md), [DeepSeek context cache](https://api-docs.deepseek.com/guides/kv_cache/),
 and [DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
 
-Validation: `cargo fmt -p claude-pantheon-rs --check`, strict release Clippy, and 49 library tests passed; Dock's full
-taskbar build and interaction probes passed in light and dark modes; `desktop-file-validate`, `appstreamcli validate
---no-net`, and `git diff --check` passed; the app-only ARM64 `.deb` assembled in `/tmp/cpr-deb-build`. System package
-installation and a live quick-panel visual pass remain open. The pre-existing user-local app was not replaced, and the
-live Dock was not restarted.
+Validation: `cargo fmt -p claude-pantheon-rs --check`, strict release Clippy, and all 54 library tests passed for the
+thread-resume work, including cache scoping/corruption/size bounds, atomic record round trips, sequence monotonicity,
+and run-settle projection updates. The final sync gate keeps actions disabled until T3's `synchronized` marker, and
+the release build passes after that correction. Dock's full taskbar build and interaction probes passed in light and dark modes;
+the 2026-10-22 install repeated the build and hover probe, then restarted the service into the private binary.
+`desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
+assembled in `/tmp/cpr-deb-build`. The user-local T3-R app was installed and its live status feed confirmed a connected
+environment and selected provider account; the in-progress thread-cache source update is not installed yet. A live
+quick-panel visual pass and system package installation remain open.
 
-Next: finish and qualify the T3 replay/cache contract from issue #523, then install through a supported package-manager
-path and verify quick/full routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session.
+Next: finish the thread-resume validation, install through a supported package-manager path, and verify quick/full
+routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation and
+qualify reconnect on a high-latency link before claiming daily-use readiness.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 

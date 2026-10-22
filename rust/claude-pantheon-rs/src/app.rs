@@ -13,7 +13,7 @@ use crate::transcript::{self, Transcript};
 use crate::workflow::{self, Issue, PinnedRepo};
 use crate::{
     changes, composer, diagnostics, environments, handoff, notify, palette, provider_setup, repos, settings, sidebar,
-    skeleton, snapshot, terminal, usage, voice, winstate,
+    skeleton, snapshot, terminal, thread_cache, usage, voice, winstate,
 };
 use futures_util::StreamExt;
 use granite::prelude::{PlaceholderExt, ToastExt};
@@ -57,7 +57,13 @@ pub struct Conn {
 struct Live {
     thread_id: String,
     project_id: String,
-    sub_id: String,
+    environment_id: Option<String>,
+    base_subtitle: String,
+    sub_id: Option<String>,
+    sequence: Option<u64>,
+    stale: bool,
+    history_cursor: Option<String>,
+    has_more_history: bool,
     view: ThreadView,
     /// Item id → widget currently in the chat column.
     widgets: HashMap<String, gtk::Widget>,
@@ -126,6 +132,7 @@ pub struct App {
     connecting: Cell<bool>,
     list_dirty: Cell<bool>,
     reconnect_attempt: Cell<u32>,
+    pending_reopen: RefCell<Option<String>>,
     auto_opened: Cell<bool>,
     // environments (sidebar footer switcher)
     env_button: gtk::MenuButton,
@@ -508,6 +515,7 @@ impl App {
             connecting: Cell::new(false),
             list_dirty: Cell::new(false),
             reconnect_attempt: Cell::new(0),
+            pending_reopen: RefCell::new(None),
             auto_opened: Cell::new(false),
             env_button,
             env_label,
@@ -1380,6 +1388,7 @@ impl App {
                 return;
             }
             let reopen = app.live.borrow().as_ref().map(|l| l.thread_id.clone());
+            *app.pending_reopen.borrow_mut() = reopen;
             if app.ensure_route().await.is_err() {
                 app.schedule_reconnect();
                 return;
@@ -1393,21 +1402,27 @@ impl App {
                 app.schedule_reconnect();
                 return;
             }
-            if let Some(id) = reopen {
-                let shell = {
-                    let conn = app.conn.borrow();
-                    conn.as_ref().and_then(|c| c.shell.threads.iter().find(|t| t.id == id).cloned())
-                };
-                match shell {
-                    Some(t) => app.open_thread(t),
-                    None => {
-                        // The thread list has not arrived yet; the thread stays open and its stream is
-                        // re-established when the user selects it again.
-                        app.toast("Reconnected.");
-                    }
-                }
-            }
+            // The shell subscription is asynchronous. Keep this request pending until its first
+            // snapshot arrives instead of leaving the thread stranded on the pre-disconnect view.
+            app.try_reopen_pending();
         });
+    }
+
+    fn try_reopen_pending(self: &Rc<Self>) {
+        let Some(id) = self.pending_reopen.borrow().clone() else { return };
+        if self.live.borrow().as_ref().map(|live| live.thread_id.as_str()) != Some(id.as_str()) {
+            self.pending_reopen.borrow_mut().take();
+            return;
+        }
+        let thread = self
+            .conn
+            .borrow()
+            .as_ref()
+            .and_then(|conn| conn.shell.threads.iter().find(|thread| thread.id == id).cloned());
+        if let Some(thread) = thread {
+            self.pending_reopen.borrow_mut().take();
+            self.open_thread(thread);
+        }
     }
 
     /// Connects with the stored credential, or shows the pairing page.
@@ -1588,6 +1603,9 @@ impl App {
             envs.save();
             changed
         };
+        if route_changed {
+            thread_cache::clear_environment(&id);
+        }
         self.refresh_environments();
         let is_current = self.environments.borrow().current.as_deref() == Some(id.as_str());
         if switch && !is_current {
@@ -1606,6 +1624,7 @@ impl App {
             envs.save();
             was
         };
+        thread_cache::clear_environment(id);
         self.env_states.borrow_mut().remove(id);
         self.refresh_environments();
         if was_current {
@@ -1748,6 +1767,13 @@ impl App {
         let app = self.clone();
         rpc.on_close(move |reason| {
             *app.conn.borrow_mut() = None;
+            if let Some(live) = app.live.borrow_mut().as_mut() {
+                live.sub_id = None;
+                live.stale = true;
+                app.subtitle.set_text(&format!("{} · offline · cached view", live.base_subtitle));
+            }
+            app.send_btn.set_sensitive(false);
+            app.stop_btn.set_sensitive(false);
             app.set_env_state(environments::State::Offline);
             app.set_status(&format!("Disconnected: {reason}"), false);
             app.rebuild_list();
@@ -1922,6 +1948,9 @@ impl App {
                 "thread.removed" => {
                     if let Some(id) = v.get("threadId").and_then(Value::as_str) {
                         c.shell.remove_thread(id);
+                        if let Some(environment_id) = self.current_environment_id() {
+                            thread_cache::remove(&environment_id, id);
+                        }
                     }
                 }
                 "project.updated" => {
@@ -1940,6 +1969,7 @@ impl App {
         self.schedule_rebuild();
         self.write_status_feed();
         self.refresh_launcher();
+        self.try_reopen_pending();
     }
 
     /// The dock badge counts running threads; the bar shows while any turn runs (the server reports
@@ -1984,12 +2014,18 @@ impl App {
     fn forget(self: &Rc<Self>) {
         let app = self.clone();
         glib::spawn_future_local(async move {
+            let environment_id = app.current_environment_id();
+            app.pending_reopen.borrow_mut().take();
+            app.live.borrow_mut().take();
             let taken = app.conn.borrow_mut().take();
             if let Some(c) = taken {
                 c.rpc.close().await;
             }
             auth::forget_for(&app.current_server()).await;
             crate::status::clear();
+            if let Some(environment_id) = environment_id {
+                thread_cache::clear_environment(&environment_id);
+            }
             app.set_status("Not paired", false);
             app.set_env_state(environments::State::Idle);
             app.show_page("pair");
@@ -2428,10 +2464,15 @@ impl App {
             self.terminal_pane.detach();
         }
         let taken = self.live.borrow_mut().take();
-        if let Some(live) = taken
-            && let Some(c) = self.conn.borrow().as_ref()
-        {
-            c.rpc.interrupt(&live.sub_id);
+        if let Some(live) = taken {
+            if !live.running {
+                self.persist_thread_cache(&live);
+            }
+            if let Some(sub_id) = live.sub_id
+                && let Some(c) = self.conn.borrow().as_ref()
+            {
+                c.rpc.interrupt(&sub_id);
+            }
         }
         *self.draft.borrow_mut() = None;
         self.stop_btn.set_visible(false);
@@ -2561,6 +2602,22 @@ impl App {
             notify::withdraw(&application, &format!("turn:{}", thread.id));
             notify::withdraw(&application, &format!("ask:{}", thread.id));
         }
+        let environment_id = self.current_environment_id();
+        let in_memory = self
+            .live
+            .borrow()
+            .as_ref()
+            .filter(|live| live.stale && live.thread_id == thread.id && live.environment_id == environment_id)
+            .and_then(|live| {
+                Some(thread_cache::CachedThread::new(
+                    environment_id.as_deref()?,
+                    &live.thread_id,
+                    live.sequence?,
+                    &live.view,
+                    live.history_cursor.as_deref(),
+                    live.has_more_history,
+                ))
+            });
         self.leave_live();
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
@@ -2570,14 +2627,29 @@ impl App {
         };
         let generation = self.generation.get() + 1;
         self.generation.set(generation);
+        let cached = in_memory
+            .or_else(|| environment_id.as_deref().and_then(|environment| thread_cache::load(environment, &thread.id)));
+        let base_subtitle = self.thread_subtitle(&thread);
+        let view = cached.as_ref().map(|record| record.view.clone()).unwrap_or_default();
+        let sequence = cached.as_ref().map(|record| record.sequence);
+        let history_cursor = cached.as_ref().and_then(|record| record.history_cursor.clone());
+        let has_more_history = cached.as_ref().is_some_and(|record| record.has_more_history);
+        let subtitle =
+            if cached.is_some() { format!("{base_subtitle} · cached · syncing") } else { base_subtitle.clone() };
         let title = if thread.title.trim().is_empty() { "Untitled thread".to_string() } else { thread.title.clone() };
         self.title.set_text(&title);
         self.window.set_title(Some(&format!("{title} - T3-R Pantheon")));
         self.subtitle.set_visible(true);
-        self.subtitle.set_text(&self.thread_subtitle(&thread));
-        self.show_page("busy");
+        self.subtitle.set_text(&subtitle);
+        self.show_page(if cached.is_some() { "chat" } else { "busy" });
         self.composer.set_visible(true);
-        self.composer_note.set_text("");
+        self.composer_note.set_text(if cached.is_some() {
+            "Showing saved conversation while syncing with T3…"
+        } else {
+            "Synchronizing with T3…"
+        });
+        self.send_btn.set_sensitive(false);
+        self.stop_btn.set_sensitive(false);
         self.select_provider(&thread.provider_instance_id, thread.model_selection.get("model").and_then(Value::as_str));
         self.select_mode(&thread.runtime_mode);
         self.entry.set_draft_key(Some(thread.id.clone()));
@@ -2589,19 +2661,44 @@ impl App {
                 let _ = rpc.call("orchestration.dispatchCommand", payload).await;
             });
         }
-        let (sub_id, mut stream) = rpc.subscribe(
-            "orchestration.subscribeThread",
-            json!({"threadId": thread.id, "requestCompletionMarker": true, "acceptBoundedSnapshot": true, "acceptCompactTurnItems": true}),
-        );
+        let mut subscribe_payload = json!({
+            "threadId": thread.id,
+            "requestCompletionMarker": true,
+            "acceptBoundedSnapshot": true,
+            "acceptCompactTurnItems": true,
+        });
+        if let Some(record) = &cached {
+            subscribe_payload["afterSequence"] = json!(record.sequence);
+        }
+        let (sub_id, mut stream) = rpc.subscribe("orchestration.subscribeThread", subscribe_payload);
+        let running = thread.is_running() || view.is_running();
         *self.live.borrow_mut() = Some(Live {
             thread_id: thread.id.clone(),
             project_id: thread.project_id.clone(),
-            sub_id,
-            view: ThreadView::default(),
+            environment_id,
+            base_subtitle,
+            sub_id: Some(sub_id),
+            sequence,
+            stale: true,
+            history_cursor,
+            has_more_history,
+            view,
             widgets: HashMap::new(),
-            running: thread.is_running(),
+            running,
         });
-        self.stop_btn.set_visible(thread.is_running());
+        if cached.is_some() {
+            self.render_live();
+            if has_more_history {
+                let note =
+                    label("Earlier history stays on the server; this is the latest window.", &["caption", "dim-label"]);
+                note.set_halign(gtk::Align::Center);
+                self.chat.prepend(&note);
+            }
+            let note = label("Cached conversation · syncing current state…", &["caption", "dim-label"]);
+            note.set_halign(gtk::Align::Center);
+            self.chat.prepend(&note);
+        }
+        self.stop_btn.set_visible(running);
         let app = self.clone();
         glib::spawn_future_local(async move {
             while let Some(item) = stream.next().await {
@@ -2645,16 +2742,80 @@ impl App {
         format!("{provider} · {model} · {mode} · {project}")
     }
 
+    fn persist_thread_cache(&self, live: &Live) {
+        if live.running {
+            return;
+        }
+        let (Some(environment_id), Some(sequence)) = (live.environment_id.as_deref(), live.sequence) else { return };
+        let record = thread_cache::CachedThread::new(
+            environment_id,
+            &live.thread_id,
+            sequence,
+            &live.view,
+            live.history_cursor.as_deref(),
+            live.has_more_history,
+        );
+        if let Err(error) = thread_cache::save(&record) {
+            // Oversized histories remain usable online; they simply do not replace the last good cache.
+            if !error.contains("exceeds") {
+                eprintln!("could not save the T3 thread cache: {error}");
+            }
+        }
+    }
+
+    fn mark_thread_fresh(&self) {
+        let running = if let Some(live) = self.live.borrow_mut().as_mut() {
+            live.stale = false;
+            self.subtitle.set_text(&live.base_subtitle);
+            live.running
+        } else {
+            false
+        };
+        self.composer_note.set_text("");
+        self.send_btn.set_sensitive(true);
+        self.stop_btn.set_sensitive(running);
+    }
+
     fn thread_event(self: &Rc<Self>, v: &Value) {
         let kind = v.get("kind").and_then(Value::as_str).unwrap_or("");
+        let sequence = if kind == "snapshot" {
+            v.get("snapshotSequence").and_then(Value::as_u64)
+        } else {
+            v.get("sequence").and_then(Value::as_u64)
+        };
+        if matches!(kind, "event" | "unknown-event")
+            && sequence.is_some_and(|incoming| {
+                !thread_cache::event_is_new(self.live.borrow().as_ref().and_then(|live| live.sequence), incoming)
+            })
+        {
+            return;
+        }
         match kind {
             "snapshot" => {
+                if sequence.is_some_and(|incoming| {
+                    !thread_cache::snapshot_is_current(
+                        self.live.borrow().as_ref().and_then(|live| live.sequence),
+                        incoming,
+                    )
+                }) {
+                    return;
+                }
                 let view = ThreadView::from_projection(&v["projection"]);
-                let running = view.active_run_id.is_some();
+                let running = view.is_running();
                 if let Some(live) = self.live.borrow_mut().as_mut() {
                     live.view = view;
                     live.running = running;
+                    live.sequence = sequence;
+                    // The snapshot is only the replay base. Keep actions disabled until the
+                    // subscription confirms that catch-up has reached the live edge.
+                    live.stale = true;
+                    live.history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
+                    live.has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
+                    self.subtitle.set_text(&format!("{} · syncing", live.base_subtitle));
                 }
+                self.composer_note.set_text("Synchronizing with T3…");
+                self.send_btn.set_sensitive(false);
+                self.stop_btn.set_sensitive(false);
                 self.render_live();
                 if v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false) {
                     let note = label(
@@ -2668,11 +2829,13 @@ impl App {
                 self.stop_btn.set_visible(running);
                 self.scroll_to_end();
                 self.show_issue_comments();
+                self.persist_current_thread_cache();
             }
             "event" => {
                 let event = &v["event"];
                 let etype = event.get("type").and_then(Value::as_str).unwrap_or("");
                 let payload = &event["payload"];
+                let mut finished = false;
                 match etype {
                     "turn-item.updated" => {
                         if let Ok(item) = serde_json::from_value::<TurnItem>(payload.clone()) {
@@ -2680,22 +2843,13 @@ impl App {
                         }
                     }
                     "run.created" | "run.updated" => {
-                        let status = payload.get("status").and_then(Value::as_str).unwrap_or("");
-                        let running = matches!(status, "running" | "pending" | "queued" | "starting" | "preparing");
-                        let mut finished = false;
                         if let Some(live) = self.live.borrow_mut().as_mut() {
-                            finished = live.running && !running;
-                            live.running = running;
-                            live.view.active_run_id = if running {
-                                payload.get("id").and_then(Value::as_str).map(str::to_string)
-                            } else {
-                                None
-                            };
+                            let was_running = live.running;
+                            live.view.upsert_run(payload.clone());
+                            live.running = live.view.is_running();
+                            finished = was_running && !live.running;
                         }
-                        self.stop_btn.set_visible(running);
-                        if finished {
-                            self.run_finished();
-                        }
+                        self.stop_btn.set_visible(self.live.borrow().as_ref().is_some_and(|live| live.running));
                     }
                     "checkpoint.captured" => {
                         if let Some(live) = self.live.borrow_mut().as_mut() {
@@ -2709,8 +2863,30 @@ impl App {
                     }
                     _ => {}
                 }
+                if let Some(live) = self.live.borrow_mut().as_mut() {
+                    live.sequence = sequence.or(live.sequence);
+                }
+                if finished {
+                    self.run_finished();
+                    self.persist_current_thread_cache();
+                }
+            }
+            "unknown-event" => {
+                if let Some(live) = self.live.borrow_mut().as_mut() {
+                    live.sequence = sequence.or(live.sequence);
+                }
+            }
+            "synchronized" => {
+                self.mark_thread_fresh();
+                self.persist_current_thread_cache();
             }
             _ => {}
+        }
+    }
+
+    fn persist_current_thread_cache(&self) {
+        if let Some(live) = self.live.borrow().as_ref() {
+            self.persist_thread_cache(live);
         }
     }
 
@@ -2722,6 +2898,10 @@ impl App {
     /// Answers a permission prompt; a `decline` may carry a reason after a newline, which is sent to
     /// the thread as a steering message so the agent knows why.
     pub fn answer_request(self: &Rc<Self>, request_id: &str, decision: &str) {
+        if self.live.borrow().as_ref().is_some_and(|live| live.stale) {
+            self.toast("Wait for this conversation to finish syncing before answering.");
+            return;
+        }
         let (rpc, thread_id, run_id) = {
             let conn = self.conn.borrow();
             let live = self.live.borrow();
@@ -3009,6 +3189,7 @@ impl App {
         self.subtitle.set_text(&tilde(&project.workspace_root));
         self.subtitle.set_visible(true);
         self.composer.set_visible(true);
+        self.send_btn.set_sensitive(true);
         self.composer_note.set_text("");
         self.show_page("chat");
         self.entry.view.grab_focus();
@@ -3025,6 +3206,10 @@ impl App {
 
     /// Sends `text` to the open thread, or launches the drafted thread with it.
     pub fn send_text(self: &Rc<Self>, text: String, clear: bool) {
+        if self.live.borrow().as_ref().is_some_and(|live| live.stale) {
+            self.toast("Wait for this conversation to finish syncing before sending.");
+            return;
+        }
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => {
@@ -3102,6 +3287,10 @@ impl App {
     }
 
     pub fn stop(self: &Rc<Self>) {
+        if self.live.borrow().as_ref().is_some_and(|live| live.stale) {
+            self.toast("Wait for this conversation to finish syncing before stopping it.");
+            return;
+        }
         let (rpc, thread_id) = {
             let conn = self.conn.borrow();
             let live = self.live.borrow();
