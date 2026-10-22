@@ -1,0 +1,49 @@
+{
+  "run_id": 39708207843,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708207843",
+  "source_head": "2a61c2ac3ac52feafef4dc1884eb6b8d6d970b55",
+  "status_at_capture": "in_progress",
+  "conclusion_at_capture": null,
+  "jobs_at_capture": [
+    {
+      "id": 119593117472,
+      "name": "build-m4-image",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 119593118491,
+      "name": "build-m4-userspace",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 119593118633,
+      "name": "build",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 119593118840,
+      "name": "build-m4-kernel",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 119593149532,
+      "name": "build-m4-boot",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 119593165910,
+      "name": "build-kernel",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "scope": "complete M4 mkosi research graph and actual raw-image ESP/GPT checks; ISO and native boot separate",
+  "hardware_validated": false,
+  "installer_admission": false,
+  "factory_promotion": false
+}

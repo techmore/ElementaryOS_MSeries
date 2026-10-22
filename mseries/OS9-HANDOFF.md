@@ -10906,3 +10906,7 @@ M4 image-only hosted job prepared: fixed reviewed run/source manifest, verified
 artifact intake, complete native mkosi graph, actual raw ESP/GPT checks and
 research artifacts only. 13 tests plus workflow syntax/isolation pass. Dispatch
 next; no complete image/ISO/installer/native result yet.
+
+Full M4 hosted image run39708207843 dispatched at2a61c2ac. Follow this exact
+handle; do not duplicate on timeout. No full-image result until completion and
+actual artifact checks. Component source runs remain successful.

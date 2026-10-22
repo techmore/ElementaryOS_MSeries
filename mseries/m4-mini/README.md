@@ -886,3 +886,5 @@ success. It does not publish a release, assemble an ISO, run an installer or
 qualify hardware. YAML/shell/isolation checks and 13 relevant tests pass; actual
 hosted execution is required before claiming any full-image result.
 [Preflight](receipts/2026-10-21-hosted-image-preflight.json).
+
+Full hosted image run [39708207843](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708207843) dispatched at `2a61c2ac3ac52feafef4dc1884eb6b8d6d970b55`. Completion and output validation are pending. [Dispatch snapshot](receipts/2026-10-21-hosted-image-run.json).
