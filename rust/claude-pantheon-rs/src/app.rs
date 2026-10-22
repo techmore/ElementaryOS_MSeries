@@ -3292,6 +3292,7 @@ impl App {
                     let adjustment = app.chat_scroll.vadjustment();
                     let old_value = adjustment.value();
                     let old_upper = adjustment.upper();
+                    app.history_scroll_suppressed.set(true);
                     let added = live.view.prepend_history(page.items);
                     live.history_cursor = page.next_cursor;
                     live.has_more_history = page.has_more_history && live.history_cursor.is_some();
@@ -3302,10 +3303,11 @@ impl App {
                         live.has_more_history = false;
                         live.history_cursor = None;
                     }
+                    app.prepend_history_widgets(live, added);
+                    app.update_history_control(live);
                     let continue_loading = added == 0 && live.has_more_history;
                     let should_persist = !live.running;
                     drop(live_state);
-                    app.render_live();
                     if should_persist {
                         app.persist_current_thread_cache();
                     }
@@ -3333,7 +3335,37 @@ impl App {
         });
     }
 
-    fn update_history_control(&self, live: &Live) {
+    /// Insert only the newly fetched history rows; recreating every existing message made older
+    /// pages increasingly expensive as the conversation grew.
+    fn prepend_history_widgets(self: &Rc<Self>, live: &mut Live, added: usize) {
+        if added == 0 {
+            return;
+        }
+        let decide = self.decide_callback();
+        let rows = live
+            .view
+            .items
+            .iter()
+            .take(added)
+            .filter_map(|item| {
+                chat::item_widget(item, Some(decide.clone())).map(|widget| (item.identity_key(), widget))
+            })
+            .collect::<Vec<_>>();
+        let mut anchor = live.history_control.as_ref().map(|button| button.clone().upcast::<gtk::Widget>());
+        for (key, widget) in rows {
+            self.chat.insert_child_after(&widget, anchor.as_ref());
+            anchor = Some(widget.clone());
+            live.widgets.insert(key, widget);
+        }
+    }
+
+    fn update_history_control(&self, live: &mut Live) {
+        if !live.has_more_history && !live.history_loading && live.history_error.is_none() {
+            if let Some(button) = live.history_control.take() {
+                self.chat.remove(&button);
+            }
+            return;
+        }
         if let Some(button) = &live.history_control {
             button.set_label(if live.history_loading {
                 "Loading earlier messages…"
