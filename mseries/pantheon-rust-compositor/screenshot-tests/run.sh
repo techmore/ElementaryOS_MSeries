@@ -13,6 +13,11 @@ if [[ ${1:-} != --inside ]]; then
 BUS
   printf '#!/bin/sh\nprintf sound-requested >"$HOME/sound-requested"\n' >"$scratch/bin/canberra-gtk-play"
   chmod 755 "$scratch/bin/canberra-gtk-play"
+  if [[ ${SCREENSHOT_TEST_SOUND_FALLBACK:-0} == 1 ]]; then
+    printf '#!/bin/sh\nexit 1\n' >"$scratch/bin/canberra-gtk-play"
+    printf '#!/bin/sh\nprintf fallback-requested >"$HOME/sound-requested"\n' >"$scratch/bin/pw-play"
+    chmod 755 "$scratch/bin/pw-play"
+  fi
   echo "Retaining synthetic capture receipt: $scratch"
   env -u WAYLAND_DISPLAY HOME="$scratch/home" XDG_RUNTIME_DIR="$scratch/runtime" \
     XDG_CONFIG_HOME="$scratch/config" XDG_CACHE_HOME="$scratch/cache" XDG_DATA_HOME="$scratch/data" \

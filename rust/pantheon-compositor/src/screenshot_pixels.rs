@@ -279,9 +279,19 @@ pub fn process_request<R>(
                 }
             }
             if saved {
-                let _ = std::process::Command::new("canberra-gtk-play")
+                let played = std::process::Command::new("canberra-gtk-play")
                     .args(["-i", "camera-shutter"])
-                    .status();
+                    .status()
+                    .is_ok_and(|status| status.success());
+                if !played {
+                    match std::process::Command::new("pw-play")
+                        .arg("/usr/share/sounds/freedesktop/stereo/camera-shutter.oga")
+                        .status()
+                    {
+                        Ok(status) if status.success() => {}
+                        _ => tracing::warn!("Screenshot saved, but shutter sound playback failed"),
+                    }
+                }
             }
             busy.store(false, Ordering::Release);
         });

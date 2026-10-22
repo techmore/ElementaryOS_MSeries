@@ -195,6 +195,9 @@ impl SessionLockHandler for PantheonCompositor {
         self.set_x11_keyboard_focus(None, serial);
         keyboard.set_focus(self, None, serial);
 
+        self.screenshot_selection.borrow_mut().cancel();
+        self.screenshot_requested.set(false);
+        self.screenshot_region.set(None);
         self.session_locked = true;
         self.lock_owner = Some(confirmation.ext_session_lock().id());
         self.lock_surfaces.clear();
