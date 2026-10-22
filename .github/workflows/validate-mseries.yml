@@ -21,6 +21,7 @@ on:
       - "bin/**"
       - "mseries/**"
       - "docs/build-status.*"
+      - "docs/capabilities.*"
       - "docs/local-build-status.html"
       - ".github/workflows/**"
 
@@ -242,6 +243,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Fetch the immutable capability audit source
+        run: |
+          audit_revision=$(python3 -c 'import json; print(json.load(open("docs/capabilities.json"))["source_revision"])')
+          [[ "$audit_revision" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags --depth=1 origin "$audit_revision"
 
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
