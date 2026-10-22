@@ -8,9 +8,10 @@ from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 
 ## Taskbar launcher sizing
 
-Taskbar mode reduces launcher icons to 90% of the active size step and trims the item inset. The unmanaged 48 px
-baseline renders at 43 px; size-managed 40 px renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px.
-The helper is taskbar-scoped, so floating and classic Dock layouts keep their configured size and upstream padding.
+Taskbar mode renders launcher glyphs at 90% of the active size token and trims the item inset. The configured token is
+preserved for the shared size ladder and other taskbar elements. The unmanaged 48 px baseline renders at 43 px;
+size-managed 40 px renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px. The rendering adjustment
+is taskbar-scoped, so floating and classic Dock layouts keep their configured size and upstream padding.
 The linked sizing test checks the launcher, item-group width, and separator across size-policy changes. Run the full
 isolated build and interaction probes with `bash mseries/dock-taskbar/test-build.sh`; it does not install or restart
 the live Dock.

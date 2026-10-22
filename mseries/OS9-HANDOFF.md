@@ -20,11 +20,14 @@ Settings can search T3's ACP Registry and add agents, or register a local ACP co
 the server. DeepSeek API prefix caching is server-side and automatic; the client does not add a competing cache layer.
 Keep prompts and tool schemas stable where T3 permits, and expose hit/miss counts only if the server reports them.
 
-Taskbar mode in the Dock patch scales launcher icons to 90% and trims spacing: the unmanaged 48 px base becomes 43 px,
-the managed 40 px size becomes 36 px, horizontal padding is 5 px, and the top inset is 10 px. Other Dock modes retain
-their configured icon size and padding. On 2026-10-22 at 09:56 EDT, `bash mseries/install-dock-drawers.sh` rebuilt and
-installed the private Dock; the `pantheon-dock.service` restart loaded it successfully (PID 3675713). The active settings
-are `taskbar-mode=true` and `icon-size=40`, which resolves to 36 px in this mode.
+Taskbar mode in the Dock patch renders launcher glyphs at 90% and trims spacing: the unmanaged 48 px fallback renders at
+43 px, while an adopted 40 px token renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px. Other
+Dock modes retain their configured icon size and padding. On 2026-10-22 at 10:05 EDT, `bash mseries/install-dock-drawers.sh`
+rebuilt and installed the private Dock; `pantheon-dock.service` restarted successfully (PID 3696072). The live settings
+are `taskbar-mode=true` and stored `icon-size=40`, but `ui-scale-policy.ini` is absent, so the dock is unmanaged and
+currently uses the 48 px fallback, rendering launcher glyphs at 43 px. Other size-aware taskbar elements still use the
+configured token when adopted. A CI size-system fixture exposed the distinction; the source now preserves the shared
+size token and applies the 90% factor only to launcher rendering/layout.
 
 Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob/main/docs/internals/connection-runtime.md),
 [T3 architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md), [T3 cache write issue #4005](https://github.com/pingdotgg/t3code/issues/4005),

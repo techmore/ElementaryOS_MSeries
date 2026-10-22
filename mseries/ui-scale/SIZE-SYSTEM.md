@@ -44,7 +44,13 @@ not the 48 px native dock. `mseries/ui-scale/test_dock_consumers.py` runs each s
 stand-in `mseries-ui-scale` (absent, unmanaged, garbage output, and several steps) and compares the
 result with the old literal, so default-scale behaviour is proven identical.
 
-The compiled taskbar now follows `icon-size` while the size system is managed.
+The compiled taskbar now follows `icon-size` while the size system is managed. Its
+shared size token remains the user-selected ladder value; taskbar launcher glyphs
+render at 90% of that value and the item inset is 5 px. For example, a selected
+40 px token renders a 36 px launcher while RepoBar typography and status icons
+continue to follow the full 40 px token. An unmanaged taskbar keeps the legacy
+48 px token and renders its launchers at 43 px. Native Dock mode keeps its full
+configured icon size and upstream padding.
 The CLI atomically publishes a private generated adoption marker before emitting
 any dock setting change: `$XDG_STATE_HOME/mseries/ui-scale-policy.ini` (default:
 `~/.local/state/mseries/ui-scale-policy.ini`). The format is `[SizeSystem]` with
