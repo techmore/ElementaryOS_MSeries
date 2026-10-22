@@ -123,12 +123,176 @@ fn main() {
         "tool rows show"
     );
     println!("opened offline '{}' ({} bytes)", pick.title, pick.size);
+    // Fenced code blocks render in GtkSourceView (the transcript has plenty).
+    fn has_type(widget: &gtk::Widget, name: &str) -> bool {
+        if widget.type_().name() == name {
+            return true;
+        }
+        let mut child = widget.first_child();
+        while let Some(c) = child {
+            if has_type(&c, name) {
+                return true;
+            }
+            child = c.next_sibling();
+        }
+        false
+    }
+    assert!(has_type(app.window().upcast_ref(), "GtkSourceView"), "a code block became a GtkSourceView");
     app.set_search("zzzz-nothing-matches");
-    pump(100);
+    // GtkSearchEntry delays search-changed by 150 ms.
+    assert!(
+        pump_until("the search to apply", 3, || shown(&app).iter().any(|x| x == "Nothing matches")),
+        "the sidebar placeholder names the situation"
+    );
+    assert_eq!(app.side_placeholder_name(), "empty", "an empty search result shows the hint, not a blank list");
     app.set_search("");
     pump(100);
+    assert!(!has_type(app.window().upcast_ref(), "GtkSpinner"), "loading states are skeletons, not spinners");
+
+    // ---- window state, zoom, HiDPI, a11y ------------------------------------------------------
+    {
+        let scale = app.window().scale_factor();
+        println!("scale factor: {scale}");
+        if std::env::var("GDK_SCALE").as_deref() == Ok("2") {
+            assert_eq!(scale, 2, "GDK_SCALE=2 gives a 2x window");
+        }
+        assert!(app.sidebar_width() >= 200);
+        app.zoom_to(1.2);
+        pump(100);
+        assert!((app.text_zoom() - 1.2).abs() < 1e-9);
+        let dpi = gtk::Settings::default().unwrap().gtk_xft_dpi();
+        assert!(dpi >= 96 * 1024 * 11 / 10, "xft dpi scaled: {dpi}");
+        app.zoom_to(1.0);
+        pump(100);
+        let state = claude_pantheon_rs::winstate::WindowState::capture(
+            app.window(),
+            &gtk::Paned::new(gtk::Orientation::Horizontal),
+        );
+        assert!(state.width >= 640 && state.height >= 420);
+        // Icon-only buttons: each one needs a tooltip (shown) and a label (read); the ones without a
+        // tooltip are listed so a new one stands out in the log.
+        fn icon_buttons_without_tooltip(w: &gtk::Widget, out: &mut Vec<String>) {
+            if let Some(b) = w.downcast_ref::<gtk::Button>()
+                && b.label().is_none()
+                && b.child().is_some_and(|c| c.is::<gtk::Image>())
+                && b.tooltip_text().is_none()
+            {
+                out.push(b.icon_name().map(|n| n.to_string()).unwrap_or_default());
+            }
+            let mut child = w.first_child();
+            while let Some(c) = child {
+                icon_buttons_without_tooltip(&c, out);
+                child = c.next_sibling();
+            }
+        }
+        let mut bare = Vec::new();
+        icon_buttons_without_tooltip(app.window().upcast_ref(), &mut bare);
+        println!("icon buttons without a tooltip: {bare:?}");
+        use claude_pantheon_rs::t3::model::TurnItem;
+        let item: TurnItem = serde_json::from_value(
+            serde_json::json!({"id": "a", "type": "assistant_message", "text": "Hello  there\nfriend"}),
+        )
+        .unwrap();
+        assert_eq!(claude_pantheon_rs::chat::accessible_name(&item), "Assistant: Hello there friend");
+        println!("window state, zoom and a11y ok");
+    }
+
+    // ---- voice input: never sends; a transcript lands in the draft it was recorded for ----------
+    {
+        let avail = claude_pantheon_rs::voice::Availability::probe(None);
+        println!("voice: recorder {:?}, whisper {:?}, model {:?}", avail.recorder, avail.whisper, avail.model);
+        app.composer().set_text("note:");
+        app.insert_transcript("hello from the mic", app.composer().draft_key());
+        assert_eq!(app.composer().text(), "note: hello from the mic");
+        assert!(!app.is_recording());
+        app.insert_transcript("late words", Some("another-thread".into()));
+        assert_eq!(app.composer().text(), "note: hello from the mic", "a transcript for another draft is dropped");
+        app.composer().set_text("");
+        // The shortcut with nothing installed (or no PipeWire under Xvfb) reports instead of crashing.
+        app.toggle_voice();
+        pump(1200);
+        if app.is_recording() {
+            app.toggle_voice();
+            pump(1500);
+        }
+        assert!(!app.is_recording());
+        println!("voice ok");
+    }
+
+    // ---- a transient error toast carries Retry ------------------------------------------------
+    {
+        let hit = std::rc::Rc::new(std::cell::Cell::new(false));
+        let h = hit.clone();
+        app.toast_retry("probe failed", std::rc::Rc::new(move |_| h.set(true)));
+        app.toast_widget().emit_by_name::<()>("default-action", &[]);
+        pump(50);
+        assert!(hit.get(), "the toast's Retry runs the retry closure");
+        app.toast("plain");
+        app.toast_widget().emit_by_name::<()>("default-action", &[]);
+        pump(50);
+        println!("retry toast ok");
+    }
     if let Some(path) = &shot {
         save_png(app.window(), path);
+    }
+
+    // ---- permission card (synthetic pending approval) -----------------------------------------------
+    {
+        use claude_pantheon_rs::t3::model::TurnItem;
+        let item: TurnItem = serde_json::from_value(serde_json::json!({
+            "id": "item-1", "type": "approval_request", "status": "waiting", "requestId": "req-1",
+            "requestKind": "command", "prompt": "rm -rf build/\nand then rebuild", "reason": "The agent wants to run a command"
+        })).unwrap();
+        let answered = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+        let seen = answered.clone();
+        let widget = claude_pantheon_rs::chat::item_widget(
+            &item,
+            Some(std::rc::Rc::new(move |id: &str, decision: &str| {
+                seen.borrow_mut().push(format!("{id}:{decision}"));
+            })),
+        )
+        .expect("a card");
+        let mut t = Vec::new();
+        texts(&widget, &mut t);
+        for expect in ["Run a command?", "rm -rf build/", "Allow Once", "Allow for This Thread", "Deny"] {
+            assert!(t.iter().any(|x| x.contains(expect)), "card shows '{expect}': {t:?}");
+        }
+        fn first_button(w: &gtk::Widget, label_text: &str) -> Option<gtk::Button> {
+            if let Some(b) = w.downcast_ref::<gtk::Button>()
+                && b.label().is_some_and(|l| l == label_text)
+            {
+                return Some(b.clone());
+            }
+            let mut child = w.first_child();
+            while let Some(c) = child {
+                if let Some(b) = first_button(&c, label_text) {
+                    return Some(b);
+                }
+                child = c.next_sibling();
+            }
+            None
+        }
+        first_button(&widget, "Allow for This Thread").expect("button").emit_clicked();
+        assert_eq!(answered.borrow().as_slice(), ["req-1:acceptForSession"]);
+        println!("permission card ok");
+    }
+
+    // ---- visual reply card (no WebKit view until the owner asks) ------------------------------------
+    {
+        use claude_pantheon_rs::t3::model::TurnItem;
+        let item: TurnItem = serde_json::from_value(serde_json::json!({
+            "id": "item-2", "type": "tool_call", "status": "completed", "toolName": "mcp__t3__html_render",
+            "output": "{\"htmlRender\": {\"attachmentId\": \"att-does-not-exist\", \"title\": \"Burn-down chart\", \"height\": 320}}"
+        }))
+        .unwrap();
+        let widget = claude_pantheon_rs::chat::item_widget(&item, None).expect("a page card");
+        let mut t = Vec::new();
+        texts(&widget, &mut t);
+        for expect in ["Burn-down chart", "Show page"] {
+            assert!(t.iter().any(|x| x.contains(expect)), "page card shows '{expect}': {t:?}");
+        }
+        assert!(!has_type(&widget, "WebKitWebView"), "no web view before Show page");
+        println!("page card ok");
     }
 
     // ---- milestone 2: live threads ------------------------------------------------------------
@@ -168,6 +332,24 @@ fn main() {
         if let Some(path) = &shot_m2 {
             save_png(app.window(), path);
         }
+        // ---- sidebar: collapsible sections, context-menu actions -----------------------------------------
+        let (rows_before, headers_before) = app.row_count();
+        app.set_section_collapsed("offline", true);
+        pump(100);
+        let (rows_after, headers_after) = app.row_count();
+        assert!(
+            rows_after < rows_before,
+            "collapsing the offline section hides its rows ({rows_before} -> {rows_after})"
+        );
+        assert!(headers_after < headers_before, "collapsed sections hide their sub-headers");
+        app.set_section_collapsed("offline", false);
+        pump(100);
+        assert_eq!(app.row_count().0, rows_before, "expanding brings the rows back");
+        for action in ["thread-pin", "thread-rename", "thread-handoff", "thread-copy-link", "thread-archive"] {
+            assert!(app.window().lookup_action(action).is_some(), "window action {action} exists");
+        }
+        println!("sidebar ok");
+
         // ---- composer: drafts per thread, attachment chips ---------------------------------------------
         let first = pick.id.clone();
         app.set_entry("half-written thought");
@@ -185,6 +367,49 @@ fn main() {
         app.set_entry("");
         pump(1300);
         println!("composer drafts ok");
+
+        // ---- terminal pane (the server's PTY) --------------------------------------------------------
+        app.toggle_terminal();
+        assert!(
+            pump_until("the terminal to attach", 60, || shown(&app)
+                .iter()
+                .any(|x| x.contains("pid ") || x.contains("running"))),
+            "terminal status: {:?}",
+            shown(&app).iter().filter(|x| x.contains("~/") || x.contains("Terminal")).collect::<Vec<_>>()
+        );
+        assert!(app.terminal_pane().is_attached());
+        pump(300);
+        app.toggle_terminal();
+        pump(200);
+        assert!(!app.terminal_pane().is_attached(), "hiding the pane detaches");
+        println!("terminal ok");
+
+        // ---- changes page ------------------------------------------------------------------------------
+        app.show_changes();
+        assert!(pump_until("the diff", 60, || shown(&app)
+            .iter()
+            .any(|x| x.contains(" files · +") || x.contains("No file changes") || x.starts_with("Diff failed"))));
+        pump(200);
+        println!("changes page: {} files", app.changes_page().file_count());
+        app.select_id(&pick.id);
+        assert!(pump_until("the thread again", 60, || app.live_item_count() > 0));
+        pump(200);
+
+        // ---- settings window -----------------------------------------------------------------------
+        WidgetExt::activate_action(app.window(), "win.settings", None).expect("settings action");
+        pump(400);
+        let settings_window = gtk::Window::list_toplevels()
+            .into_iter()
+            .find(|w| w.downcast_ref::<gtk::Window>().is_some_and(|w| w.title().is_some_and(|t| t == "Settings")));
+        let settings_window = settings_window.expect("a Settings window").downcast::<gtk::Window>().unwrap();
+        let mut t = Vec::new();
+        texts(settings_window.upcast_ref(), &mut t);
+        for expect in ["Default permission mode", "Pairing", "Renderer", "Turn finished"] {
+            assert!(t.iter().any(|x| x.contains(expect)), "settings shows '{expect}'");
+        }
+        settings_window.close();
+        pump(200);
+        println!("settings ok");
 
         // ---- command palette (Ctrl+K) --------------------------------------------------------------
         let palette = app.palette();
@@ -238,8 +463,42 @@ fn main() {
         if let Some(path) = env("CLAUDE_PANTHEON_SHOT_REPOS") {
             save_png(app.window(), &path);
         }
+        // Rotation pass against the live task list (moves nothing unless a runner task sits on a
+        // provider with less capacity than the best one).
+        app.rotate_runners_now();
+        pump(1500);
+        println!("rotation pass ok");
     } else {
         println!("not connected to a T3 server; live checks skipped");
+    }
+    // ---- environments switcher: an unreachable environment, then back to this computer ----------
+    {
+        use claude_pantheon_rs::environments::{Environment, Route, State};
+        let was_connected = app.is_connected();
+        assert_eq!(app.current_environment_id().as_deref(), Some("local"));
+        app.save_environment(
+            Environment {
+                id: "probe".into(),
+                name: "Nowhere".into(),
+                route: Route::Direct { url: "http://127.0.0.1:1".into() },
+            },
+            true,
+        );
+        assert!(pump_until("the probe environment to settle", 30, || matches!(
+            app.environment_state("probe"),
+            State::Offline | State::Idle
+        ) && app.page() == "pair"));
+        assert_eq!(app.current_environment_id().as_deref(), Some("probe"));
+        assert!(shown(&app).iter().any(|x| x.contains("Nowhere")), "the switcher shows the current environment");
+        assert_eq!(app.current_server(), "http://127.0.0.1:1");
+        app.switch_environment("local");
+        if was_connected {
+            assert!(pump_until("reconnect to this computer", 60, || app.is_connected()));
+        }
+        app.remove_environment("probe");
+        assert!(!app.environments().iter().any(|e| e.id == "probe"));
+        assert_eq!(app.current_environment_id().as_deref(), Some("local"));
+        println!("environments ok");
     }
     app.window().destroy();
     println!("PASS: Claude render test");

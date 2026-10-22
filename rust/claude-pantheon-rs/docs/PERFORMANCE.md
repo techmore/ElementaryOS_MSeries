@@ -53,20 +53,14 @@ Tool-row details are built on first expand.
 
 ## What it took
 
-The three findings from the Vala twin (`claude-pantheon/docs/PERFORMANCE.md`) apply here too and are
-built in:
-
-1. **Renderer.** Mesa on Asahi loads LLVM and ~180 MB of shader heap for the GL renderers. `main()`
-   sets `GSK_RENDERER=cairo` unless the environment already names a renderer;
-   `CLAUDE_PANTHEON_RENDERER=gl|ngl|vulkan` switches back.
-2. **Window shadow.** The default client-side decoration is a blurred `box-shadow` that cairo
-   re-blurs over the whole window on every frame; `data/style.css` replaces it with a 1 px outline.
-3. **Cursor blink.** GTK fades the text cursor with a frame-clock tick for ten seconds after each
-   keystroke; `gtk-cursor-blink` is off, so a focused composer costs nothing.
-
-Everything else: parsing off the main thread, widgets only for the visible tail, the whole T3
-protocol on the GLib loop (no tokio, no worker threads: the WebSocket and HTTP clients sit on
-`gio::SocketClient`), and the sidebar rebuilt once per burst of shell events.
+The findings are shared with every GTK app in this repository:
+[`mseries/GTK-PERFORMANCE-ASAHI.md`](../../../mseries/GTK-PERFORMANCE-ASAHI.md) (cairo renderer by
+default with `CLAUDE_PANTHEON_RENDERER` to override, a 1 px CSD outline instead of the blurred
+shadow, cursor blink off, CSS animations gated on map, no synchronous D-Bus at start-up, heavy
+libraries linked but their widgets created lazily, the whole protocol on the GLib loop). What is
+specific here: the T3 WebSocket and HTTP clients sit on `gio::SocketClient` futures (no tokio),
+transcripts parse in `gio::spawn_blocking`, widgets exist only for the visible tail, and the
+sidebar is rebuilt once per burst of shell events.
 
 ## Per-PR idle numbers
 
@@ -83,6 +77,23 @@ start-up probe; the table tracks drift per feature.
 | #467 | HIG shortcuts, app menu with accelerator labels, Close Thread, About | 59 | 0.0 | 211 – 215 |
 | #468 | command palette (Ctrl+K) over threads, transcripts, projects, repos, issues and actions | 59 | 0.0 | 212 – 228 |
 | #469 | composer: 8-line growth, Enter sends, attachment chips (paste/drop, uploaded), @ file picker, drafts per thread | 59 | 0.0 | 213 – 230 |
+| #470 | pulldown-cmark renderer, GtkSourceView 5 code blocks (highlighting, copy, wrap), tables, quotes, links, images | 61 | 0.0 | 205 – 228 |
+| #471 | notifications (turn finished, prompt waiting) and dock badge/progress via Unity LauncherEntry; keyring lookups get a 3 s deadline | 61 | 0.0 | 214 – 268 |
+| #472 | sidebar polish: accent dots, running spinner, unread/needs-you badges, collapsible sections, drag-ordered projects, context menu (pin, rename, hand off, copy link, archive) | 64 | 0.0 | 189 – 201 |
+| #473 | permission prompts as cards: Allow once / Allow for this thread / Deny with reason, Y/N keys, notification mirror | 65 | 0.0 | 193 – 212 |
+| #474 | Changes page: file tree with status, inline/side-by-side GtkSourceView diff, per-hunk copy, restore to checkpoint | 65 | 0.0 | 219 – 240 |
+| #475 | vte4 terminal pane fed from the server's terminal stream (hidden by default; libvte linked at start) | 65 | 0.0 | 247 – 257 |
+| #476 | Settings window (appearance, defaults per project, server, notifications, renderer) | 64 | 0.0 | 304 – 717 (machine at load 16–19 from other agents; the window is built only when opened) |
+| #477 | SnapShot: portal screenshot + AT-SPI window title, attached to the draft (Ctrl+Shift+S) | 66 | 0.0 | 206 – 235 (load 5; the #476 figures were load, not the branch) |
+| #478 | Visual replies: WebKitGTK page cards, view and web process created only on Show page | 69 | 0.0 | 197 – 264 (+3 MB is libwebkitgtk linked in; no WebKit process while no page is shown) |
+| #484 | Protocol version guard and contracts drift check (build-time, no runtime cost) | 69 | 0.0 | 198 – 212 |
+| #479 | Environments switcher (direct, Tailscale, SSH tunnel, T3 Connect), per-environment credentials | 70 | 0.0 | 230 – 567 (machine at load 37–83 from other jobs during the samples) |
+| #480 | Empty states, skeleton loading rows (pulse only while mapped), retry toasts | 68 | 0.0 | 510 – 982 (machine at load 90 from other jobs; an ungated CSS pulse had cost 2.6 % idle, hence the map/unmap gate) |
+| #481 | Window state, text zoom (gtk-xft-dpi), HiDPI check at GDK_SCALE=2, accessible names, focus outlines | 68 | 0.0 | 370 – 611 (machine at load 80 from other jobs) |
+| #482 | Webhook runner tasks (issues.labeled) and per-run provider rotation every 5 min (one list RPC) | 68 | 0.0 | 456 – 696 (machine at load 90 from other jobs) |
+| #485 | Shared GTK-PERFORMANCE-ASAHI.md, standalone checkouts retired (docs only) | 68 | 0.0 | 374 – 731 (machine at load 75 from other jobs) |
+| #486 | dev-clean script, timer and DEV-HYGIENE.md in-repo (no app change) | 65 | 0.0 | 481 – 782 (machine at load 65–80 from other jobs) |
+| #483 | Voice input: pw-record capture + whisper.cpp transcription into the draft (processes only while recording) | 68 | 0.0 | 840 – 1403 (machine at load 95 from other jobs; nothing voice-related runs before the first frame) |
 
 ## Reproduce
 

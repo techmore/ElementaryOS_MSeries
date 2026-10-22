@@ -160,6 +160,8 @@ check syntax 'mseries-brightness (py_compile)' \
   'python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness'
 check syntax 'assemble-iso.sh, local-build-worker.sh' \
   'bash -n assemble-iso.sh mseries/local-build-worker.sh'
+check syntax 'dev-clean/dev-clean.sh, dev-clean/install.sh (shellcheck)' \
+  'bash -n mseries/dev-clean/dev-clean.sh mseries/dev-clean/install.sh && shellcheck -S warning mseries/dev-clean/dev-clean.sh mseries/dev-clean/install.sh'
 check syntax 'transform/elementary-grow.sh, bin/elementary-mac-setup' \
   'bash -n transform/elementary-grow.sh bin/elementary-mac-setup'
 check syntax 'install-*.sh, lib-backup.sh, mkinitcpio-snippet, disable-notch' \
@@ -189,7 +191,7 @@ check syntax 'power scripts' \
 
 # -- shellcheck: the scripts that run as root on a user's Mac -----------------
 check shellcheck 'installer, enhancements, boot and VM scripts' \
-  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-machine-lab.sh mseries/machine-lab/build-deb.sh mseries/machine-lab/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/lib-build.sh mseries/lib-timing.sh mseries/test-enhance-firstboot.sh mseries/test-build-ccache.sh mseries/test-post-install-timing.sh'
+  'shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-pantheon-rust-compositor.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-orchard.sh mseries/orchard/build-deb.sh mseries/orchard/launcher/run-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/lib-build.sh mseries/lib-timing.sh mseries/test-enhance-firstboot.sh mseries/test-build-ccache.sh mseries/test-post-install-timing.sh'
 check shellcheck 'video-decode, widevine' \
   'shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh'
 check shellcheck 'calendar, homeboard' \
@@ -271,6 +273,8 @@ check local-ai 'local-ai unit tests' "python3 -m unittest discover -s mseries/lo
 check dictation 'dictation unit tests' "python3 -m unittest discover -s mseries/dictation -p 'test_*.py'"
 
 # -- docs: the build-status pages under docs/ ---------------------------------
+check docs 'capability audit ledger and pinned evidence' 'python3 mseries/render-capability-audit.py --check'
+check docs 'capability search and filters' 'node mseries/test-capability-audit.cjs'
 check docs 'test-build-status.mjs' 'node mseries/test-build-status.mjs'
 check docs 'test-local-build-status.mjs' 'node mseries/test-local-build-status.mjs'
 

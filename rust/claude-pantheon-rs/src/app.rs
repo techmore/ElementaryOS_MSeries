@@ -4,14 +4,17 @@
 
 use crate::chat::{self, label};
 use crate::index::{self, Session};
-use crate::look::{iso_to_unix, now_unix, relative_time, tilde};
+use crate::look::{now_unix, tilde};
 use crate::t3::attach;
 use crate::t3::model::Project;
 use crate::t3::model::{Provider, ServerConfig, Shell, ThreadShell, ThreadView, TurnItem};
 use crate::t3::{self, Rpc, auth, ws::WsError};
 use crate::transcript::{self, Transcript};
 use crate::workflow::{self, Issue, PinnedRepo};
-use crate::{composer, diagnostics, handoff, palette, repos, usage};
+use crate::{
+    changes, composer, diagnostics, environments, handoff, notify, palette, repos, settings, sidebar, skeleton,
+    snapshot, terminal, usage, voice, winstate,
+};
 use futures_util::StreamExt;
 use granite::prelude::{PlaceholderExt, ToastExt};
 use gtk::{gdk, gio, glib, pango, prelude::*};
@@ -24,6 +27,9 @@ use std::time::Instant;
 /// Transcripts longer than this start folded; a button at the top reveals the rest.
 const TAIL_TURNS: usize = 200;
 pub const DEFAULT_SERVER: &str = "http://127.0.0.1:3773";
+
+/// What a toast's Retry button runs.
+pub type Retry = Rc<dyn Fn(&Rc<App>)>;
 
 const RUNTIME_MODES: [(&str, &str); 4] = [
     ("approval-required", "Ask before actions"),
@@ -67,7 +73,11 @@ struct Draft {
 pub struct App {
     window: gtk::ApplicationWindow,
     // sidebar
+    paned: gtk::Paned,
     list: gtk::ListBox,
+    side_placeholder: gtk::Stack,
+    side_empty: gtk::Box,
+    toast_retry_cb: RefCell<Option<Retry>>,
     rows: RefCell<Vec<Option<Row>>>,
     search: gtk::SearchEntry,
     status: gtk::Label,
@@ -97,7 +107,9 @@ pub struct App {
     usage_page: usage::UsagePage,
     repos_page: Rc<repos::ReposPage>,
     diagnostics_page: Rc<diagnostics::DiagnosticsPage>,
-    changes: gtk::Box,
+    changes_page: Rc<changes::ChangesPage>,
+    terminal_pane: Rc<terminal::TerminalPane>,
+    terminal_revealer: gtk::Revealer,
     // state
     conn: RefCell<Option<Conn>>,
     sessions: RefCell<Vec<Session>>,
@@ -115,7 +127,19 @@ pub struct App {
     list_dirty: Cell<bool>,
     reconnect_attempt: Cell<u32>,
     auto_opened: Cell<bool>,
+    // environments (sidebar footer switcher)
+    env_button: gtk::MenuButton,
+    env_label: gtk::Label,
+    env_icon: gtk::Image,
+    environments: RefCell<environments::Environments>,
+    env_states: RefCell<HashMap<String, environments::State>>,
+    tunnel: RefCell<Option<environments::Tunnel>>,
+    // voice input
+    voice_rec: RefCell<Option<voice::Recorder>>,
+    voice_draft: RefCell<Option<Option<String>>>,
     palette: RefCell<Option<Rc<palette::Palette>>>,
+    sidebar_cfg: RefCell<sidebar::SidebarConfig>,
+    settings: Rc<RefCell<settings::Settings>>,
     started: Instant,
 }
 
@@ -146,6 +170,17 @@ impl App {
             .selection_mode(gtk::SelectionMode::Single)
             .activate_on_single_click(true)
             .build();
+        // Shown by the ListBox while it has no rows: skeleton rows while indexing or connecting, else a hint.
+        let side_placeholder = gtk::Stack::new();
+        side_placeholder.add_named(&skeleton::rows(6), Some("skeleton"));
+        let side_empty = skeleton::empty(
+            "mail-read-symbolic",
+            "No threads yet",
+            "Pair with a T3 server or import your Claude Code sessions.",
+        );
+        side_placeholder.add_named(&side_empty, Some("empty"));
+        side_placeholder.set_visible_child_name("skeleton");
+        list.set_placeholder(Some(&side_placeholder));
         let list_scroll =
             gtk::ScrolledWindow::builder().child(&list).hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).build();
         let status = label("Not connected", &["caption", "dim-label"]);
@@ -154,6 +189,20 @@ impl App {
         status_icon.add_css_class("dim-label");
         let status_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         status_box.add_css_class("sb-status");
+        // The environment switcher: a flat menu button with the current environment's state and name.
+        let env_icon = gtk::Image::from_icon_name("network-server-symbolic");
+        let env_label = label("This computer", &["caption"]);
+        env_label.set_ellipsize(pango::EllipsizeMode::End);
+        env_label.set_max_width_chars(18);
+        let env_child = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        env_child.append(&env_icon);
+        env_child.append(&env_label);
+        env_child.append(&gtk::Image::from_icon_name("pan-down-symbolic"));
+        let env_button =
+            gtk::MenuButton::builder().child(&env_child).has_frame(false).tooltip_text("Environment").build();
+        env_button.add_css_class("env-switch");
+        env_button.update_property(&[gtk::accessible::Property::Label("Environment")]);
+        status_box.append(&env_button);
         status_box.append(&status_icon);
         status_box.append(&status);
         let side = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -211,6 +260,8 @@ impl App {
                 ("Hand Off to Repo", "win.handoff"),
                 ("Open Offline Twin", "win.offline"),
                 ("Close Thread", "win.close-thread"),
+                ("Terminal", "win.terminal"),
+                ("SnapShot (attach a screenshot)", "win.snapshot"),
             ]),
         );
         menu_model.append_section(
@@ -274,17 +325,23 @@ impl App {
         composer.append(&pickers);
         composer.append(&entry_row);
 
+        let terminal_pane = terminal::TerminalPane::new();
+        let terminal_revealer = gtk::Revealer::builder()
+            .child(&terminal_pane.root)
+            .transition_type(gtk::RevealerTransitionType::SlideUp)
+            .reveal_child(false)
+            .build();
         let chat_page = gtk::Box::new(gtk::Orientation::Vertical, 0);
         chat_page.append(&chat_scroll);
+        chat_page.append(&terminal_revealer);
         chat_page.append(&composer);
 
         // ---- other pages ---------------------------------------------------------------------
         let empty = granite::Placeholder::new("Claude for elementary OS");
         empty.set_description("Pick a thread on the left, or start a new one.");
         empty.set_icon(&gio::ThemedIcon::new("mail-read-symbolic"));
-        let busy = gtk::Spinner::builder().spinning(true).width_request(32).height_request(32).build();
-        busy.set_valign(gtk::Align::Center);
-        busy.set_halign(gtk::Align::Center);
+        let busy = skeleton::chat(4);
+        busy.set_valign(gtk::Align::Start);
 
         let pair_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
         pair_box.set_valign(gtk::Align::Center);
@@ -322,16 +379,7 @@ impl App {
         let usage_page = usage::UsagePage::new();
         let repos_page = Rc::new(repos::ReposPage::new());
         let diagnostics_page = Rc::new(diagnostics::DiagnosticsPage::new());
-        let changes = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        changes.set_margin_top(18);
-        changes.set_margin_bottom(18);
-        changes.set_margin_start(24);
-        changes.set_margin_end(24);
-        let changes_scroll = gtk::ScrolledWindow::builder()
-            .child(&changes)
-            .hscrollbar_policy(gtk::PolicyType::Never)
-            .vexpand(true)
-            .build();
+        let changes_page = changes::ChangesPage::new();
 
         let stack = gtk::Stack::new();
         stack.set_transition_type(gtk::StackTransitionType::Crossfade);
@@ -342,7 +390,7 @@ impl App {
         stack.add_named(usage_page.widget(), Some("usage"));
         stack.add_named(repos_page.widget(), Some("repos"));
         stack.add_named(diagnostics_page.widget(), Some("diagnostics"));
-        stack.add_named(&changes_scroll, Some("changes"));
+        stack.add_named(&changes_page.root, Some("changes"));
         stack.set_vexpand(true);
 
         let toast = granite::Toast::new("");
@@ -372,12 +420,34 @@ impl App {
             .icon_name("io.github.techmore.ClaudePantheonRs")
             .child(&paned)
             .build();
+        winstate::WindowState::load().apply(&window, &paned);
+        {
+            let paned = paned.clone();
+            window.connect_close_request(move |w| {
+                winstate::WindowState::capture(w, &paned).save();
+                glib::Propagation::Proceed
+            });
+        }
+        // Names for assistive technology on the controls whose only visible label is an icon or a hint.
+        new_chat.update_property(&[gtk::accessible::Property::Label("New Thread")]);
+        send_btn.update_property(&[gtk::accessible::Property::Label("Send")]);
+        stop_btn.update_property(&[gtk::accessible::Property::Label("Stop")]);
+        search.update_property(&[gtk::accessible::Property::Label("Search chats")]);
+        provider_dd.update_property(&[gtk::accessible::Property::Label("Provider")]);
+        model_dd.update_property(&[gtk::accessible::Property::Label("Model")]);
+        mode_dd.update_property(&[gtk::accessible::Property::Label("Permission mode")]);
+        list.update_property(&[gtk::accessible::Property::Label("Threads")]);
+        side.update_property(&[gtk::accessible::Property::Label("Sidebar")]);
         // Both header bars carry the window controls, so the real title bar stays hidden (elementary style).
         window.set_titlebar(Some(&gtk::Grid::builder().visible(false).build()));
 
         let app = Rc::new(App {
             window,
+            paned,
             list,
+            side_placeholder,
+            side_empty,
+            toast_retry_cb: RefCell::new(None),
             rows: RefCell::new(Vec::new()),
             search,
             status,
@@ -403,7 +473,9 @@ impl App {
             usage_page,
             repos_page,
             diagnostics_page,
-            changes,
+            changes_page,
+            terminal_pane,
+            terminal_revealer,
             conn: RefCell::new(None),
             sessions: RefCell::new(Vec::new()),
             current_session: RefCell::new(None),
@@ -420,7 +492,17 @@ impl App {
             list_dirty: Cell::new(false),
             reconnect_attempt: Cell::new(0),
             auto_opened: Cell::new(false),
+            env_button,
+            env_label,
+            env_icon,
+            environments: RefCell::new(environments::Environments::load()),
+            env_states: RefCell::new(HashMap::new()),
+            tunnel: RefCell::new(None),
+            voice_rec: RefCell::new(None),
+            voice_draft: RefCell::new(None),
             palette: RefCell::new(None),
+            sidebar_cfg: RefCell::new(sidebar::SidebarConfig::load()),
+            settings: Rc::new(RefCell::new(settings::Settings::load())),
             started,
         });
 
@@ -441,6 +523,13 @@ impl App {
 
         app.wire(&new_chat);
         app.wire_composer();
+        app.install_page_resolver();
+        app.refresh_environments();
+        app.settings.borrow().apply_appearance();
+        let zoom = app.settings.borrow().text_zoom;
+        if (zoom - 1.0).abs() > f64::EPSILON {
+            settings::apply_zoom(zoom);
+        }
         app.window.present();
         app.reindex();
         if std::env::var_os("CLAUDE_PANTHEON_OFFLINE").is_none() {
@@ -452,6 +541,13 @@ impl App {
     }
 
     fn wire(self: &Rc<Self>, new_chat: &gtk::Button) {
+        let a = self.clone();
+        self.toast.connect_default_action(move |_| {
+            let cb = a.toast_retry_cb.borrow().clone();
+            if let Some(cb) = cb {
+                cb(&a);
+            }
+        });
         let a = self.clone();
         self.list.connect_row_selected(move |_, row| {
             if a.syncing.get() {
@@ -511,12 +607,61 @@ impl App {
             ("handoff", &[], Box::new(|a| a.handoff_to_repo())),
             ("offline", &[], Box::new(|a| a.open_offline_twin())),
             ("close-thread", &["<Control>w"], Box::new(|a| a.close_thread())),
+            ("terminal", &["<Control><Shift>t"], Box::new(|a| a.toggle_terminal())),
+            ("snapshot", &["<Control><Shift>s"], Box::new(|a| a.snapshot())),
             ("settings", &["<Control>comma"], Box::new(|a| a.settings())),
             ("reconnect", &[], Box::new(|a| a.connect_stored())),
             ("forget", &[], Box::new(|a| a.forget())),
             ("about", &[], Box::new(|a| a.about())),
             ("quit", &["<Control>q"], Box::new(|a| a.window.close())),
+            ("zoom-in", &["<Control>plus", "<Control>equal", "<Control>KP_Add"], Box::new(|a| a.zoom_by(0.1))),
+            ("zoom-out", &["<Control>minus", "<Control>KP_Subtract"], Box::new(|a| a.zoom_by(-0.1))),
+            ("zoom-reset", &["<Control>0", "<Control>KP_0"], Box::new(|a| a.zoom_to(1.0))),
+            ("voice", &["<Control><Shift>v"], Box::new(|a| a.toggle_voice())),
         ];
+        for (name, what) in [
+            ("thread-pin", "pin"),
+            ("thread-rename", "rename"),
+            ("thread-handoff", "handoff"),
+            ("thread-copy-link", "copy-link"),
+            ("thread-archive", "archive"),
+        ] {
+            let action = gio::SimpleAction::new(name, Some(glib::VariantTy::STRING));
+            let a = self.clone();
+            action.connect_activate(move |_, param| {
+                if let Some(id) = param.and_then(|p| p.get::<String>()) {
+                    a.thread_command(&id, what);
+                }
+            });
+            self.window.add_action(&action);
+        }
+        // Y and N answer the oldest pending permission prompt when nothing is being typed.
+        let keys = gtk::EventControllerKey::new();
+        let a = self.clone();
+        keys.connect_key_pressed(move |_, key, _, state| {
+            if state.intersects(gdk::ModifierType::CONTROL_MASK | gdk::ModifierType::ALT_MASK) {
+                return glib::Propagation::Proceed;
+            }
+            let typing = GtkWindowExt::focus(&a.window).is_some_and(|w| {
+                w.is::<gtk::Text>() || w.is::<gtk::TextView>() || w.is::<gtk::Entry>() || w.is::<gtk::SearchEntry>()
+            });
+            if typing {
+                return glib::Propagation::Proceed;
+            }
+            let decision = match key {
+                gdk::Key::y | gdk::Key::Y => "accept",
+                gdk::Key::n | gdk::Key::N => "decline",
+                _ => return glib::Propagation::Proceed,
+            };
+            match a.oldest_pending_request() {
+                Some(id) => {
+                    a.answer_request(&id, decision);
+                    glib::Propagation::Stop
+                }
+                None => glib::Propagation::Proceed,
+            }
+        });
+        self.window.add_controller(keys);
         let application = self.window.application();
         for (name, accels, f) in actions {
             let action = gio::SimpleAction::new(name, None);
@@ -695,9 +840,73 @@ impl App {
         self.show_page("empty");
     }
 
-    /// Ctrl+,: the settings window lands with its own issue; until then say so.
+    /// Ctrl+plus / Ctrl+minus: text zoom in steps of 10 %, remembered in the settings.
+    fn zoom_by(self: &Rc<Self>, delta: f64) {
+        let current = self.settings.borrow().text_zoom;
+        self.zoom_to(((current + delta) * 10.0).round() / 10.0);
+    }
+
+    pub fn zoom_to(self: &Rc<Self>, zoom: f64) {
+        let zoom = zoom.clamp(0.8, 2.0);
+        {
+            let mut s = self.settings.borrow_mut();
+            s.text_zoom = zoom;
+            s.save();
+        }
+        settings::apply_zoom(zoom);
+        self.toast(&format!("Text zoom {} %", (zoom * 100.0).round() as i32));
+    }
+
+    pub fn text_zoom(&self) -> f64 {
+        self.settings.borrow().text_zoom
+    }
+
+    pub fn sidebar_width(&self) -> i32 {
+        self.paned.position()
+    }
+
+    /// Ctrl+,: the settings window.
     fn settings(self: &Rc<Self>) {
-        self.toast("Settings arrive with the settings-window issue; pairing lives in the menu for now.");
+        let providers: Vec<(String, String)> =
+            self.providers.borrow().iter().filter(|p| p.ready()).map(|p| (p.instance_id.clone(), p.name())).collect();
+        let (projects, server, server_label) = match self.conn.borrow().as_ref() {
+            Some(c) => (
+                c.shell.projects.iter().map(|p| (p.id.clone(), p.title.clone())).collect(),
+                Some(c.cred.server.clone()),
+                Some(c.cred.label.clone()),
+            ),
+            None => (Vec::new(), None, None),
+        };
+        let keyring = std::env::var_os("PATH")
+            .map(|p| std::env::split_paths(&p).any(|d| d.join("secret-tool").is_file()))
+            .unwrap_or(false);
+        let a = self.clone();
+        let b = self.clone();
+        settings::SettingsWindow::open(
+            &self.window,
+            self.settings.clone(),
+            settings::Context {
+                providers,
+                projects,
+                server,
+                server_label,
+                keyring,
+                on_pair: Rc::new(move || {
+                    a.show_page("pair");
+                    a.window.present();
+                }),
+                on_unpair: Rc::new(move || b.forget()),
+            },
+        );
+    }
+
+    /// Applies the stored defaults (provider and permission mode) to the composer for a project.
+    fn apply_project_defaults(&self, project_id: &str) {
+        let (provider, mode) = self.settings.borrow().defaults_for(project_id);
+        if let Some(p) = provider {
+            self.select_provider(&p, None);
+        }
+        self.select_mode(&mode);
     }
 
     /// About: version, server and provider state, in a Granite-styled dialog.
@@ -728,8 +937,10 @@ impl App {
             .logo_icon_name("io.github.techmore.ClaudePantheonRs")
             .version(env!("CARGO_PKG_VERSION"))
             .comments(format!(
-                "A native elementary OS client of the T3 Code server.\n\nServer: {server}\nServer version: {version} {environment}\nProviders ready: {}",
-                if ready.is_empty() { "none".to_string() } else { ready.join(", ") }
+                "A native elementary OS client of the T3 Code server.\n\nServer: {server}\nServer version: {version} {environment}\nProviders ready: {}\nOrchestration protocol {} (contracts from t3code {})",
+                if ready.is_empty() { "none".to_string() } else { ready.join(", ") },
+                t3::contracts::PROTOCOL_VERSION,
+                t3::contracts::CONTRACTS_COMMIT
             ))
             .website("https://github.com/techmore/ElementaryOS_MSeries")
             .website_label("techmore/ElementaryOS_MSeries")
@@ -747,6 +958,103 @@ impl App {
         self.entry.on_attach(Rc::new(move |bytes, name| a.upload_attachment(bytes, name)));
         let a = self.clone();
         self.entry.on_search(Rc::new(move |query, reply| a.search_project_files(query, reply)));
+        let a = self.clone();
+        self.entry.on_voice(Rc::new(move |active| {
+            let recording = a.voice_rec.borrow().is_some();
+            if active != recording {
+                a.toggle_voice();
+            }
+        }));
+    }
+
+    // ---- voice input -----------------------------------------------------------------------
+
+    pub fn is_recording(&self) -> bool {
+        self.voice_rec.borrow().is_some()
+    }
+
+    /// Ctrl+Shift+V / the mic button: start a recording, or stop it and transcribe into the draft.
+    pub fn toggle_voice(self: &Rc<Self>) {
+        if self.voice_rec.borrow().is_some() {
+            self.finish_voice();
+            return;
+        }
+        let model = self.settings.borrow().voice_model.clone();
+        let avail = voice::Availability::probe(Some(&model));
+        if !avail.ready() {
+            self.entry.set_voice_active(false);
+            self.entry.set_status(&format!("Voice input needs: {}", avail.hint()));
+            return;
+        }
+        match voice::start_recording() {
+            Ok(rec) => {
+                *self.voice_draft.borrow_mut() = Some(self.entry.draft_key());
+                *self.voice_rec.borrow_mut() = Some(rec);
+                self.entry.set_voice_active(true);
+                self.entry.set_status("Recording… press the mic or Ctrl+Shift+V to stop. Nothing is sent.");
+                // A recording left running is a mistake, not a dictation: stop after two minutes.
+                let app = self.clone();
+                glib::timeout_add_local_once(std::time::Duration::from_secs(120), move || {
+                    if app.voice_rec.borrow().is_some() {
+                        app.finish_voice();
+                    }
+                });
+            }
+            Err(e) => {
+                self.entry.set_voice_active(false);
+                self.entry.set_status(&format!("Could not start recording: {e}"));
+            }
+        }
+    }
+
+    fn finish_voice(self: &Rc<Self>) {
+        let Some(rec) = self.voice_rec.borrow_mut().take() else { return };
+        self.entry.set_voice_active(false);
+        let draft = self.voice_draft.borrow_mut().take().unwrap_or(None);
+        let seconds = rec.started.elapsed().as_secs_f64();
+        if seconds < 0.4 {
+            rec.cancel();
+            self.entry.set_status("");
+            return;
+        }
+        self.entry.set_status("Transcribing…");
+        let (model, language) = {
+            let s = self.settings.borrow();
+            (s.voice_model.clone(), s.voice_language.clone())
+        };
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let wav = match rec.stop().await {
+                Ok(p) => p,
+                Err(e) => {
+                    app.entry.set_status(&format!("Recording failed: {e}"));
+                    return;
+                }
+            };
+            let Some(model) = voice::find_model(Some(&model)) else {
+                app.entry.set_status("No whisper model found.");
+                return;
+            };
+            let result = voice::transcribe(&wav, &model, &language).await;
+            let _ = std::fs::remove_file(&wav);
+            match result {
+                Ok(text) if text.trim().is_empty() => app.entry.set_status("Heard nothing."),
+                Ok(text) => app.insert_transcript(&text, draft),
+                Err(e) => app.entry.set_status(&format!("Transcription failed: {e}")),
+            }
+        });
+    }
+
+    /// Puts a transcript into the draft it was recorded for; a draft that changed hands keeps it out.
+    pub fn insert_transcript(&self, text: &str, draft: Option<String>) {
+        if self.entry.draft_key() != draft {
+            self.entry.set_status("Transcript dropped: the draft changed while it was being transcribed.");
+            return;
+        }
+        self.entry.insert_at_cursor(text);
+        let words = text.split_whitespace().count();
+        self.entry
+            .set_status(&format!("Transcribed {words} word{}; review, then send.", if words == 1 { "" } else { "s" }));
     }
 
     fn upload_attachment(self: &Rc<Self>, bytes: Vec<u8>, name: String) {
@@ -841,8 +1149,42 @@ impl App {
     }
 
     pub fn toast(&self, text: &str) {
+        *self.toast_retry_cb.borrow_mut() = None;
+        self.toast.set_default_action(None);
         self.toast.set_title(text);
         self.toast.send_notification();
+    }
+
+    /// A toast for a transient error with a Retry button that runs `retry`.
+    pub fn toast_retry(&self, text: &str, retry: Retry) {
+        *self.toast_retry_cb.borrow_mut() = Some(retry);
+        self.toast.set_default_action(Some("Retry"));
+        self.toast.set_title(text);
+        self.toast.send_notification();
+    }
+
+    pub fn toast_widget(&self) -> &granite::Toast {
+        &self.toast
+    }
+
+    /// Which placeholder the empty thread list shows: "skeleton" or "empty".
+    pub fn side_placeholder_name(&self) -> String {
+        self.side_placeholder.visible_child_name().map(|n| n.to_string()).unwrap_or_default()
+    }
+
+    fn update_side_placeholder(&self, searching: bool) {
+        let loading = self.indexing.get() || self.connecting.get();
+        let (title, hint) = if searching {
+            ("Nothing matches", "Try another word; the search covers thread titles and projects.")
+        } else if self.conn.borrow().is_none() {
+            ("No threads yet", "Pair with a T3 server, or import your Claude Code sessions from the menu.")
+        } else {
+            ("No threads yet", "Start one with Ctrl+N, or import your Claude Code sessions from the menu.")
+        };
+        let (t, h) = skeleton::empty_labels(&self.side_empty);
+        t.set_text(title);
+        h.set_text(hint);
+        self.side_placeholder.set_visible_child_name(if loading && !searching { "skeleton" } else { "empty" });
     }
 
     pub fn show_page(&self, name: &str) {
@@ -900,7 +1242,11 @@ impl App {
                 return;
             }
             let reopen = app.live.borrow().as_ref().map(|l| l.thread_id.clone());
-            let Some(cred) = auth::load().await else { return };
+            if app.ensure_route().await.is_err() {
+                app.schedule_reconnect();
+                return;
+            }
+            let Some(cred) = auth::load_for(&app.current_server()).await else { return };
             if app.connecting.replace(true) {
                 return;
             }
@@ -933,15 +1279,251 @@ impl App {
         }
         let app = self.clone();
         glib::spawn_future_local(async move {
-            match auth::load().await {
+            let server = app.current_server();
+            app.set_env_state(environments::State::Connecting);
+            if let Err(e) = app.ensure_route().await {
+                app.connecting.set(false);
+                app.set_status(&format!("Route failed: {e}"), false);
+                app.set_env_state(environments::State::Offline);
+                app.pair_status.set_text(&e);
+                app.show_page("pair");
+                return;
+            }
+            app.pair_server.set_text(&app.current_server());
+            match auth::load_for(&server).await {
                 Some(cred) => app.connect_with(cred).await,
                 None => {
                     app.connecting.set(false);
                     app.set_status("Not paired", false);
+                    app.set_env_state(environments::State::Idle);
                     app.show_page("pair");
                 }
             }
         });
+    }
+
+    // ---- environments ----------------------------------------------------------------------
+
+    /// The server URL of the current environment (the local default when none is saved).
+    pub fn current_server(&self) -> String {
+        let envs = self.environments.borrow();
+        match envs.current().map(|e| &e.route) {
+            Some(environments::Route::Ssh { local_port, .. }) => {
+                let port = self.tunnel.borrow().as_ref().map(|t| t.local_port).unwrap_or(*local_port);
+                format!("http://127.0.0.1:{port}")
+            }
+            Some(route) => route.url(),
+            None => DEFAULT_SERVER.to_string(),
+        }
+    }
+
+    pub fn environments(&self) -> Vec<environments::Environment> {
+        self.environments.borrow().list.clone()
+    }
+
+    pub fn current_environment_id(&self) -> Option<String> {
+        self.environments.borrow().current.clone()
+    }
+
+    pub fn environment_state(&self, id: &str) -> environments::State {
+        self.env_states.borrow().get(id).copied().unwrap_or(environments::State::Idle)
+    }
+
+    fn set_env_state(&self, state: environments::State) {
+        if let Some(id) = self.environments.borrow().current.clone() {
+            self.env_states.borrow_mut().insert(id, state);
+        }
+        self.refresh_env_button();
+    }
+
+    fn refresh_env_button(&self) {
+        let envs = self.environments.borrow();
+        let (name, id) = envs
+            .current()
+            .map(|e| (e.name.clone(), e.id.clone()))
+            .unwrap_or_else(|| ("This computer".into(), String::new()));
+        let state = self.env_states.borrow().get(&id).copied().unwrap_or(environments::State::Idle);
+        self.env_label.set_text(&name);
+        self.env_icon.set_icon_name(Some(state.icon()));
+        self.env_button.set_tooltip_text(Some(&format!("Environment: {name} ({})", state.label())));
+    }
+
+    /// Rebuilds the switcher popover from the saved list.
+    pub fn refresh_environments(self: &Rc<Self>) {
+        self.refresh_env_button();
+        let menu = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        menu.set_margin_top(6);
+        menu.set_margin_bottom(6);
+        menu.set_margin_start(6);
+        menu.set_margin_end(6);
+        let list = gtk::ListBox::new();
+        list.add_css_class("env-list");
+        list.set_selection_mode(gtk::SelectionMode::None);
+        let envs = self.environments.borrow().clone();
+        for e in &envs.list {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            row.add_css_class("env-row");
+            let state = self.environment_state(&e.id);
+            row.append(&gtk::Image::from_icon_name(state.icon()));
+            let text = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let name = label(&e.name, &[]);
+            name.set_xalign(0.0);
+            let detail = label(
+                &format!("{} · {} · {}", e.route.kind_label(), e.route.url(), state.label()),
+                &["caption", "dim-label"],
+            );
+            detail.set_xalign(0.0);
+            detail.set_ellipsize(pango::EllipsizeMode::Middle);
+            text.append(&name);
+            text.append(&detail);
+            text.set_hexpand(true);
+            row.append(&text);
+            if envs.current.as_deref() == Some(e.id.as_str()) {
+                row.append(&gtk::Image::from_icon_name("object-select-symbolic"));
+            }
+            let lrow = gtk::ListBoxRow::new();
+            lrow.set_child(Some(&row));
+            lrow.update_property(&[gtk::accessible::Property::Label(&format!("{} environment", e.name))]);
+            list.append(&lrow);
+        }
+        let app = self.clone();
+        let ids: Vec<String> = envs.list.iter().map(|e| e.id.clone()).collect();
+        let button = self.env_button.clone();
+        list.connect_row_activated(move |_, row| {
+            if let Some(id) = ids.get(row.index() as usize) {
+                button.popdown();
+                app.switch_environment(id);
+            }
+        });
+        menu.append(&list);
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let add = gtk::Button::with_label("Add…");
+        let edit = gtk::Button::with_label("Edit…");
+        let remove = gtk::Button::with_label("Remove");
+        remove.add_css_class("destructive-action");
+        let is_local = envs.current.as_deref() == Some("local");
+        remove.set_sensitive(!is_local && envs.list.len() > 1);
+        for b in [&add, &edit, &remove] {
+            b.add_css_class("flat");
+            actions.append(b);
+        }
+        menu.append(&actions);
+        let app = self.clone();
+        let button = self.env_button.clone();
+        add.connect_clicked(move |_| {
+            button.popdown();
+            let a = app.clone();
+            environments::open_dialog(&app.window, None, Rc::new(move |e| a.save_environment(e, true)));
+        });
+        let app = self.clone();
+        let button = self.env_button.clone();
+        edit.connect_clicked(move |_| {
+            button.popdown();
+            let current = app.environments.borrow().current().cloned();
+            if let Some(cur) = current {
+                let a = app.clone();
+                environments::open_dialog(&app.window, Some(cur), Rc::new(move |e| a.save_environment(e, false)));
+            }
+        });
+        let app = self.clone();
+        let button = self.env_button.clone();
+        remove.connect_clicked(move |_| {
+            button.popdown();
+            let id = app.environments.borrow().current.clone();
+            if let Some(id) = id {
+                app.remove_environment(&id);
+            }
+        });
+        let popover = gtk::Popover::new();
+        popover.set_child(Some(&menu));
+        self.env_button.set_popover(Some(&popover));
+    }
+
+    /// Saves (and with `switch` makes current) an environment from the dialog or a test.
+    pub fn save_environment(self: &Rc<Self>, env: environments::Environment, switch: bool) {
+        let id = env.id.clone();
+        let route_changed = {
+            let mut envs = self.environments.borrow_mut();
+            let before = envs.list.iter().find(|e| e.id == id).map(|e| e.route.clone());
+            let changed = before.as_ref() != Some(&env.route);
+            envs.upsert(env);
+            envs.save();
+            changed
+        };
+        self.refresh_environments();
+        let is_current = self.environments.borrow().current.as_deref() == Some(id.as_str());
+        if switch && !is_current {
+            self.switch_environment(&id);
+        } else if is_current && route_changed {
+            self.reconnect_current();
+        }
+    }
+
+    pub fn remove_environment(self: &Rc<Self>, id: &str) {
+        let was_current = {
+            let mut envs = self.environments.borrow_mut();
+            let was = envs.current.as_deref() == Some(id);
+            envs.remove(id);
+            envs.save();
+            was
+        };
+        self.env_states.borrow_mut().remove(id);
+        self.refresh_environments();
+        if was_current {
+            self.reconnect_current();
+        }
+    }
+
+    /// Makes another saved environment current: the connection and tunnel of the old one are
+    /// dropped, the new one's credential is loaded (or its pairing page shown).
+    pub fn switch_environment(self: &Rc<Self>, id: &str) {
+        {
+            let mut envs = self.environments.borrow_mut();
+            if envs.current.as_deref() == Some(id) || !envs.list.iter().any(|e| e.id == id) {
+                return;
+            }
+            envs.current = Some(id.to_string());
+            envs.save();
+        }
+        self.reconnect_current();
+    }
+
+    fn reconnect_current(self: &Rc<Self>) {
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let taken = app.conn.borrow_mut().take();
+            if let Some(c) = taken {
+                c.rpc.close().await;
+            }
+            app.tunnel.borrow_mut().take();
+            *app.live.borrow_mut() = None;
+            app.providers.borrow_mut().clear();
+            app.reconnect_attempt.set(0);
+            app.connecting.set(false);
+            app.refresh_environments();
+            app.rebuild_list();
+            app.connect_stored();
+        });
+    }
+
+    /// Opens the route the current environment needs (an SSH tunnel) before the first request.
+    async fn ensure_route(&self) -> Result<(), String> {
+        let route = self.environments.borrow().current().map(|e| e.route.clone());
+        if let Some(environments::Route::Ssh { target, remote_port, local_port }) = route {
+            let alive = self.tunnel.borrow().as_ref().is_some_and(|t| t.is_alive() && t.local_port == local_port);
+            if alive {
+                return Ok(());
+            }
+            self.set_status(&format!("Opening the SSH tunnel to {target}…"), false);
+            let tunnel = environments::Tunnel::open(&target, remote_port, local_port)?;
+            if !tunnel.wait_ready().await {
+                return Err(format!(
+                    "The SSH tunnel to {target} did not come up (ssh -N -L {local_port}:127.0.0.1:{remote_port}); check the key and host."
+                ));
+            }
+            *self.tunnel.borrow_mut() = Some(tunnel);
+        }
+        Ok(())
     }
 
     fn pair(self: &Rc<Self>) {
@@ -951,6 +1533,23 @@ impl App {
             return;
         }
         let (server, token) = auth::parse_pairing(&input, &self.pair_server.text());
+        if server.trim_end_matches('/') != self.current_server().trim_end_matches('/') {
+            // A pairing URL for another server: give it an environment of its own and make it current.
+            let name = server.trim_start_matches("http://").trim_start_matches("https://").to_string();
+            let id = format!("direct-{}", auth::server_slug(&server));
+            let kind = if server.contains("t3.codes") {
+                environments::Route::T3Connect { url: server.clone() }
+            } else {
+                environments::Route::Direct { url: server.clone() }
+            };
+            {
+                let mut envs = self.environments.borrow_mut();
+                envs.upsert(environments::Environment { id: id.clone(), name, route: kind });
+                envs.current = Some(id);
+                envs.save();
+            }
+            self.refresh_environments();
+        }
         self.pair_status.set_text("Pairing…");
         self.pair_button.set_sensitive(false);
         let app = self.clone();
@@ -976,16 +1575,24 @@ impl App {
             Err(e) => {
                 self.connecting.set(false);
                 let text = match &e {
-                    WsError::Refused { status: 426, body } => format!("Server needs a newer client: {body}"),
+                    WsError::Refused { status: 426, body } => format!(
+                        "Server needs a newer client (this one speaks orchestration protocol {}, contracts {}): {body}",
+                        t3::contracts::PROTOCOL_VERSION,
+                        t3::contracts::CONTRACTS_COMMIT
+                    ),
                     WsError::Refused { status: 401, .. } | WsError::Refused { status: 403, .. } => {
                         "The stored pairing was rejected; pair again.".to_string()
                     }
                     other => format!("Could not connect: {other}"),
                 };
                 self.set_status("Not connected", false);
+                self.set_env_state(environments::State::Offline);
                 self.pair_status.set_text(&text);
                 self.show_page("pair");
                 self.rebuild_list();
+                if !matches!(&e, WsError::Refused { .. }) {
+                    self.toast_retry("Could not reach the server.", Rc::new(|a| a.connect_stored()));
+                }
                 return;
             }
         };
@@ -1000,6 +1607,7 @@ impl App {
         let app = self.clone();
         rpc.on_close(move |reason| {
             *app.conn.borrow_mut() = None;
+            app.set_env_state(environments::State::Offline);
             app.set_status(&format!("Disconnected: {reason}"), false);
             app.rebuild_list();
             app.write_status_feed();
@@ -1010,6 +1618,7 @@ impl App {
         *self.conn.borrow_mut() =
             Some(Conn { rpc: rpc.clone(), cred: cred.clone(), config, shell: Shell::default(), shell_sub: None });
         self.connecting.set(false);
+        self.set_env_state(environments::State::Connected);
         self.refresh_status();
         self.fill_providers();
         if self.page() == "pair" {
@@ -1102,6 +1711,7 @@ impl App {
             }
             self.fill_providers();
             self.refresh_status();
+            self.rotate_runners().await;
         }
     }
 
@@ -1180,6 +1790,34 @@ impl App {
         }
         self.schedule_rebuild();
         self.write_status_feed();
+        self.refresh_launcher();
+    }
+
+    /// The dock badge counts running threads; the bar shows while any turn runs (the server reports
+    /// no fraction, so it sits at the half mark as a "working" indicator).
+    fn refresh_launcher(&self) {
+        if !self.settings.borrow().dock_badge {
+            notify::launcher_entry(0, None);
+            return;
+        }
+        let running =
+            self.conn.borrow().as_ref().map(|c| c.shell.threads.iter().filter(|t| t.is_running()).count()).unwrap_or(0);
+        notify::launcher_entry(running as i64, (running > 0).then_some(0.5));
+    }
+
+    /// Notifies about a thread only while the window is not the active one.
+    fn notify_background(&self, kind: &str, thread_id: &str, title: &str, body: &str, answer: bool) {
+        if self.window.is_active() {
+            return;
+        }
+        {
+            let s = self.settings.borrow();
+            if (answer && !s.notify_prompts) || (!answer && !s.notify_turn_finished) {
+                return;
+            }
+        }
+        let Some(application) = self.window.application() else { return };
+        notify::notify(&application, &format!("{kind}:{thread_id}"), title, body, thread_id, answer);
     }
 
     /// Coalesces bursts of shell events into one list rebuild.
@@ -1201,8 +1839,9 @@ impl App {
             if let Some(c) = taken {
                 c.rpc.close().await;
             }
-            auth::forget().await;
+            auth::forget_for(&app.current_server()).await;
             app.set_status("Not paired", false);
+            app.set_env_state(environments::State::Idle);
             app.show_page("pair");
             app.rebuild_list();
         });
@@ -1236,7 +1875,7 @@ impl App {
         out
     }
 
-    pub fn rebuild_list(&self) {
+    pub fn rebuild_list(self: &Rc<Self>) {
         self.syncing.set(true);
         while let Some(row) = self.list.row_at_index(0) {
             self.list.remove(&row);
@@ -1250,40 +1889,18 @@ impl App {
         let matches = |title: &str, group: &str| {
             needle.is_empty() || title.to_lowercase().contains(&needle) || group.to_lowercase().contains(&needle)
         };
-        let add_header = |rows: &mut Vec<Option<Row>>, text: &str, tooltip: Option<&str>| {
-            let header = gtk::ListBoxRow::builder().selectable(false).activatable(false).build();
-            let header_label = granite::HeaderLabel::new(text);
-            header_label.set_tooltip_text(tooltip);
-            header.set_child(Some(&header_label));
-            header.add_css_class("sb-header");
-            self.list.append(&header);
-            rows.push(None);
-        };
-        let add_row = |title: &str, when: i64, badge: Option<&str>, tooltip: &str| {
-            let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
-            row_box.add_css_class("sb-row");
-            let head = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-            let t = label(title, &["sb-title"]);
-            t.set_hexpand(true);
-            head.append(&t);
-            if let Some(b) = badge {
-                let badge_label = label(b, &["caption", "sb-badge"]);
-                badge_label.set_halign(gtk::Align::End);
-                head.append(&badge_label);
-            }
-            row_box.append(&head);
-            row_box.append(&label(&relative_time(when, now), &["caption", "dim-label"]));
-            let row = gtk::ListBoxRow::new();
-            row.set_child(Some(&row_box));
-            row.set_tooltip_text(Some(tooltip));
-            self.list.append(&row);
-        };
+        let cfg = self.sidebar_cfg.borrow().clone();
+        let searching = !needle.is_empty();
 
-        // Server threads grouped by project, newest project first.
+        // Server threads grouped by project: the owner's order first, then newest project first;
+        // pinned threads lead each section.
         if let Some(c) = self.conn.borrow().as_ref() {
             let mut groups: Vec<(String, String, Vec<usize>)> = Vec::new();
             let mut order: Vec<usize> = (0..c.shell.threads.len()).collect();
-            order.sort_by(|&a, &b| c.shell.threads[b].updated_at.cmp(&c.shell.threads[a].updated_at));
+            order.sort_by(|&a, &b| {
+                let (ta, tb) = (&c.shell.threads[a], &c.shell.threads[b]);
+                sidebar::is_pinned(tb).cmp(&sidebar::is_pinned(ta)).then_with(|| tb.updated_at.cmp(&ta.updated_at))
+            });
             for i in order {
                 let t = &c.shell.threads[i];
                 if t.archived_at.is_some() {
@@ -1304,27 +1921,34 @@ impl App {
                     None => groups.push((t.project_id.clone(), name, vec![i])),
                 }
             }
+            let ordered = cfg.order_projects(groups.iter().map(|(id, _, _)| id.clone()).collect());
+            groups.sort_by_key(|(id, _, _)| ordered.iter().position(|o| o == id).unwrap_or(usize::MAX));
             let providers = self.providers.borrow();
             for (pid, name, members) in &groups {
                 let root = c.shell.projects.iter().find(|p| p.id == *pid).map(|p| tilde(&p.workspace_root));
-                add_header(&mut rows, name, root.as_deref());
+                let collapsed = cfg.collapsed.contains(pid) && !searching;
+                let app = self.clone();
+                let toggle_id = pid.clone();
+                let header = sidebar::project_header(name, root.as_deref(), collapsed, members.len(), move || {
+                    app.toggle_section(&toggle_id);
+                });
+                let app = self.clone();
+                sidebar::make_header_draggable(&header, pid, move |moved, before| app.reorder_project(&moved, &before));
+                self.list.append(&header);
+                rows.push(None);
+                if collapsed {
+                    continue;
+                }
                 for &i in members {
                     let t = &c.shell.threads[i];
-                    let provider = providers
-                        .iter()
-                        .find(|p| p.instance_id == t.provider_instance_id)
-                        .map(Provider::name)
-                        .unwrap_or_else(|| t.provider_instance_id.clone());
-                    let badge = if t.is_running() {
-                        "running".to_string()
-                    } else if t.pending_requests() > 0 {
-                        "needs you".to_string()
-                    } else {
-                        provider
-                    };
+                    let provider = providers.iter().find(|p| p.instance_id == t.provider_instance_id);
+                    let driver = provider.map(|p| p.driver.clone()).unwrap_or_else(|| t.provider_instance_id.clone());
+                    let accent = sidebar::accent_for(provider, &driver);
                     let clean = crate::transcript::title_from_prompt(&t.title);
                     let title = clean.as_deref().unwrap_or("Untitled thread");
-                    add_row(title, iso_to_unix(&t.updated_at), Some(&badge), &format!("{title}\n{}", t.id));
+                    let row = sidebar::thread_row(t, title, &accent, now);
+                    sidebar::attach_menu(&row, sidebar::thread_menu(&t.id, sidebar::is_pinned(t)));
+                    self.list.append(&row);
                     if selected_thread.as_deref() == Some(t.id.as_str()) {
                         select_at = Some(rows.len());
                     }
@@ -1349,15 +1973,45 @@ impl App {
                 }
             }
             if !groups.is_empty() {
-                add_header(&mut rows, "Offline transcripts", Some(&tilde(&index::projects_dir().to_string_lossy())));
+                let collapsed = cfg.collapsed.contains("offline") && !searching;
+                let app = self.clone();
+                let header = sidebar::project_header(
+                    "Offline transcripts",
+                    Some(&tilde(&index::projects_dir().to_string_lossy())),
+                    collapsed,
+                    groups.iter().map(|(_, m)| m.len()).sum(),
+                    move || app.toggle_section("offline"),
+                );
+                self.list.append(&header);
+                rows.push(None);
+                if collapsed {
+                    groups.clear();
+                }
             }
             for (project, members) in &groups {
+                let key = format!("offline:{project}");
                 let root = sessions.get(members[0]).map(|s| tilde(&s.cwd));
-                add_header(&mut rows, &format!("  {project}"), root.as_deref());
+                let collapsed = cfg.collapsed.contains(&key) && !searching;
+                let app = self.clone();
+                let toggle_key = key.clone();
+                let header = sidebar::project_header(
+                    &format!("  {project}"),
+                    root.as_deref(),
+                    collapsed,
+                    members.len(),
+                    move || {
+                        app.toggle_section(&toggle_key);
+                    },
+                );
+                self.list.append(&header);
+                rows.push(None);
+                if collapsed {
+                    continue;
+                }
                 for &i in members {
                     let s = &sessions[i];
-                    let badge = imported.contains_key(&s.id).then_some("imported");
-                    add_row(&s.title, s.mtime, badge, &format!("{}\n{}", s.title, s.id));
+                    let row = sidebar::session_row(&s.title, s.mtime, imported.contains_key(&s.id), &s.id, now);
+                    self.list.append(&row);
                     if selected_session.as_deref() == Some(s.id.as_str()) && selected_thread.is_none() {
                         select_at = Some(rows.len());
                     }
@@ -1371,12 +2025,98 @@ impl App {
             None => self.list.unselect_all(),
         }
         self.syncing.set(false);
+        self.update_side_placeholder(searching);
         // CLAUDE_PANTHEON_OPEN=<thread or session id> opens that chat as soon as its row exists (benchmarks).
         if !self.auto_opened.get()
             && let Ok(id) = std::env::var("CLAUDE_PANTHEON_OPEN")
             && self.select_id(&id)
         {
             self.auto_opened.set(true);
+        }
+    }
+
+    fn toggle_section(self: &Rc<Self>, key: &str) {
+        {
+            let mut cfg = self.sidebar_cfg.borrow_mut();
+            if !cfg.collapsed.remove(key) {
+                cfg.collapsed.insert(key.to_string());
+            }
+            cfg.save();
+        }
+        self.rebuild_list();
+    }
+
+    fn reorder_project(self: &Rc<Self>, moved: &str, before: &str) {
+        {
+            let current: Vec<String> = self
+                .conn
+                .borrow()
+                .as_ref()
+                .map(|c| c.shell.projects.iter().map(|p| p.id.clone()).collect())
+                .unwrap_or_default();
+            let mut cfg = self.sidebar_cfg.borrow_mut();
+            let ordered = cfg.order_projects(current);
+            cfg.move_project(ordered, moved, Some(before));
+            cfg.save();
+        }
+        self.rebuild_list();
+    }
+
+    /// The context-menu commands on a thread row.
+    fn thread_command(self: &Rc<Self>, thread_id: &str, what: &str) {
+        let (rpc, thread) = {
+            let conn = self.conn.borrow();
+            match conn.as_ref() {
+                Some(c) => (c.rpc.clone(), c.shell.threads.iter().find(|t| t.id == thread_id).cloned()),
+                None => return,
+            }
+        };
+        let Some(thread) = thread else { return };
+        let app = self.clone();
+        let id = thread_id.to_string();
+        match what {
+            "pin" => {
+                let kind = if sidebar::is_pinned(&thread) { "thread.unpin" } else { "thread.pin" };
+                glib::spawn_future_local(async move {
+                    let payload = json!({"type": kind, "commandId": new_id(), "threadId": id});
+                    if let Err(e) = rpc.call("orchestration.dispatchCommand", payload).await {
+                        app.toast(&format!("Could not pin: {}", e.message()));
+                    }
+                });
+            }
+            "archive" => {
+                glib::spawn_future_local(async move {
+                    let payload = json!({"type": "thread.archive", "commandId": new_id(), "threadId": id});
+                    match rpc.call("orchestration.dispatchCommand", payload).await {
+                        Ok(_) => app.toast("Archived."),
+                        Err(e) => app.toast(&format!("Could not archive: {}", e.message())),
+                    }
+                });
+            }
+            "rename" => {
+                let current = crate::transcript::title_from_prompt(&thread.title).unwrap_or_default();
+                sidebar::rename_dialog(&self.window, &current, move |title| {
+                    let app = app.clone();
+                    let rpc = rpc.clone();
+                    let id = id.clone();
+                    glib::spawn_future_local(async move {
+                        let payload = json!({"type": "thread.metadata.update", "commandId": new_id(), "threadId": id, "title": title});
+                        if let Err(e) = rpc.call("orchestration.dispatchCommand", payload).await {
+                            app.toast(&format!("Could not rename: {}", e.message()));
+                        }
+                    });
+                });
+            }
+            "handoff" => {
+                self.open_thread(thread);
+                let app = self.clone();
+                glib::timeout_add_local_once(std::time::Duration::from_millis(800), move || app.handoff_to_repo());
+            }
+            "copy-link" => {
+                self.window.clipboard().set_text(&format!("claude-pantheon-rs --thread '{id}'"));
+                self.toast("Copied a command that opens this thread.");
+            }
+            _ => {}
         }
     }
 
@@ -1398,6 +2138,25 @@ impl App {
                 app.toast("That thread is not in the list.");
             }
         });
+    }
+
+    /// Collapses or expands a sidebar section (tests).
+    pub fn set_section_collapsed(self: &Rc<Self>, key: &str, collapsed: bool) {
+        {
+            let mut cfg = self.sidebar_cfg.borrow_mut();
+            if collapsed {
+                cfg.collapsed.insert(key.to_string());
+            } else {
+                cfg.collapsed.remove(key);
+            }
+        }
+        self.rebuild_list();
+    }
+
+    /// Visible sidebar rows (tests): true for thread or session rows, false for headers.
+    pub fn row_count(&self) -> (usize, usize) {
+        let rows = self.rows.borrow();
+        (rows.iter().filter(|r| r.is_some()).count(), rows.iter().filter(|r| r.is_none()).count())
     }
 
     /// Selects a thread or session row by id (tests, and the offline/online twins).
@@ -1423,7 +2182,101 @@ impl App {
 
     // ---- offline transcript ------------------------------------------------------------------
 
+    /// Ctrl+Shift+T: the thread's terminal on the server, in a pane under the chat.
+    pub fn toggle_terminal(self: &Rc<Self>) {
+        let showing = self.terminal_revealer.reveals_child();
+        if showing {
+            self.terminal_revealer.set_reveal_child(false);
+            self.terminal_pane.detach();
+            self.entry.view.grab_focus();
+            return;
+        }
+        let (rpc, thread_id, cwd) = {
+            let conn = self.conn.borrow();
+            let live = self.live.borrow();
+            match (conn.as_ref(), live.as_ref()) {
+                (Some(c), Some(l)) => {
+                    let cwd = c.shell.projects.iter().find(|p| p.id == l.project_id).map(|p| p.workspace_root.clone());
+                    (c.rpc.clone(), l.thread_id.clone(), cwd)
+                }
+                _ => {
+                    self.toast("Open a live thread first; the terminal runs in its project on the server.");
+                    return;
+                }
+            }
+        };
+        let Some(cwd) = cwd else {
+            self.toast("This thread's project has no folder.");
+            return;
+        };
+        self.terminal_revealer.set_reveal_child(true);
+        self.terminal_pane.attach(rpc, thread_id, cwd);
+        self.terminal_pane.grab_focus();
+    }
+
+    /// Ctrl+Shift+S: a screenshot through the portal, named after the focused window (AT-SPI),
+    /// uploaded and attached to the draft.
+    pub fn snapshot(self: &Rc<Self>) {
+        if self.conn.borrow().is_none() {
+            self.toast("Connect to the server to attach screenshots.");
+            return;
+        }
+        if self.live.borrow().is_none() && self.draft.borrow().is_none() {
+            self.toast("Open a thread or start a new one first.");
+            return;
+        }
+        self.entry.set_status("Taking a screenshot…");
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            match snapshot::snap("").await {
+                Ok(capture) => {
+                    let name = snapshot::attachment_name(&capture);
+                    match std::fs::read(&capture.path) {
+                        Ok(bytes) => {
+                            if let Some(t) = &capture.window_title {
+                                app.entry.set_status(&format!("Screenshot of “{t}”; uploading…"));
+                            }
+                            app.upload_attachment(bytes, name);
+                        }
+                        Err(e) => app.entry.set_status(&format!("Could not read the screenshot: {e}")),
+                    }
+                }
+                Err(e) => app.entry.set_status(&format!("Screenshot failed: {e}")),
+            }
+        });
+    }
+
+    /// Signed URLs for visual replies: `assets.createUrl` for the render's attachment.
+    fn install_page_resolver(self: &Rc<Self>) {
+        let app = self.clone();
+        chat::set_page_resolver(Some(Rc::new(move |attachment_id: String, done: Rc<dyn Fn(Option<String>)>| {
+            let (rpc, server) = match app.conn.borrow().as_ref() {
+                Some(c) => (c.rpc.clone(), c.cred.server.clone()),
+                None => {
+                    done(None);
+                    return;
+                }
+            };
+            glib::spawn_future_local(async move {
+                let payload =
+                    json!({"resource": {"_tag": "attachment", "attachmentId": attachment_id, "disposition": "inline"}});
+                let url = rpc.call("assets.createUrl", payload).await.ok().and_then(|v| {
+                    v.get("relativeUrl").and_then(Value::as_str).map(|r| format!("{}{r}", server.trim_end_matches('/')))
+                });
+                done(url);
+            });
+        })));
+    }
+
+    pub fn terminal_pane(&self) -> &Rc<terminal::TerminalPane> {
+        &self.terminal_pane
+    }
+
     fn leave_live(&self) {
+        if self.terminal_revealer.reveals_child() {
+            self.terminal_revealer.set_reveal_child(false);
+            self.terminal_pane.detach();
+        }
         let taken = self.live.borrow_mut().take();
         if let Some(live) = taken
             && let Some(c) = self.conn.borrow().as_ref()
@@ -1464,8 +2317,19 @@ impl App {
             app.loading.set(false);
             match loaded {
                 Ok(Ok(t)) => app.show_transcript(Rc::new(t)),
-                Ok(Err(e)) => app.toast(&format!("Could not read the chat: {e}")),
-                Err(_) => app.toast("Could not read the chat"),
+                Ok(Err(e)) => {
+                    let s = session.clone();
+                    app.show_page("empty");
+                    app.toast_retry(
+                        &format!("Could not read the chat: {e}"),
+                        Rc::new(move |a| a.open_session(s.clone())),
+                    );
+                }
+                Err(_) => {
+                    let s = session.clone();
+                    app.show_page("empty");
+                    app.toast_retry("Could not read the chat", Rc::new(move |a| a.open_session(s.clone())));
+                }
             }
         });
     }
@@ -1543,6 +2407,10 @@ impl App {
     // ---- live thread -------------------------------------------------------------------------
 
     pub fn open_thread(self: &Rc<Self>, thread: ThreadShell) {
+        if let Some(application) = self.window.application() {
+            notify::withdraw(&application, &format!("turn:{}", thread.id));
+            notify::withdraw(&application, &format!("ask:{}", thread.id));
+        }
         self.leave_live();
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
@@ -1563,6 +2431,14 @@ impl App {
         self.select_provider(&thread.provider_instance_id, thread.model_selection.get("model").and_then(Value::as_str));
         self.select_mode(&thread.runtime_mode);
         self.entry.set_draft_key(Some(thread.id.clone()));
+        {
+            let rpc = rpc.clone();
+            let id = thread.id.clone();
+            glib::spawn_future_local(async move {
+                let payload = json!({"type": "thread.visit", "commandId": new_id(), "threadId": id, "visitedAt": workflow::now_iso()});
+                let _ = rpc.call("orchestration.dispatchCommand", payload).await;
+            });
+        }
         let (sub_id, mut stream) = rpc.subscribe(
             "orchestration.subscribeThread",
             json!({"threadId": thread.id, "requestCompletionMarker": true, "acceptBoundedSnapshot": true, "acceptCompactTurnItems": true}),
@@ -1585,7 +2461,11 @@ impl App {
                 match item {
                     Ok(v) => app.thread_event(&v),
                     Err(e) => {
-                        app.toast(&format!("Thread stream ended: {e}"));
+                        let t = thread.clone();
+                        app.toast_retry(
+                            &format!("Thread stream ended: {e}"),
+                            Rc::new(move |a| a.open_thread(t.clone())),
+                        );
                         break;
                     }
                 }
@@ -1667,6 +2547,11 @@ impl App {
                             self.run_finished();
                         }
                     }
+                    "checkpoint.captured" => {
+                        if let Some(live) = self.live.borrow_mut().as_mut() {
+                            live.view.checkpoints.push(payload.clone());
+                        }
+                    }
                     "thread.updated" | "thread.created" => {
                         if let Some(t) = payload.get("title").and_then(Value::as_str) {
                             self.title.set_text(t);
@@ -1681,26 +2566,61 @@ impl App {
 
     fn decide_callback(self: &Rc<Self>) -> chat::Decide {
         let app = self.clone();
-        Rc::new(move |request_id: &str, decision: &str| {
-            let (rpc, thread_id) = {
-                let conn = app.conn.borrow();
-                let live = app.live.borrow();
-                match (conn.as_ref(), live.as_ref()) {
-                    (Some(c), Some(l)) => (c.rpc.clone(), l.thread_id.clone()),
-                    _ => return,
-                }
-            };
-            let payload = json!({
-                "type": "runtime-request.respond", "commandId": new_id(), "threadId": thread_id,
-                "requestId": request_id, "decision": decision,
-            });
-            let app2 = app.clone();
-            glib::spawn_future_local(async move {
-                if let Err(e) = rpc.call("orchestration.dispatchCommand", payload).await {
-                    app2.toast(&format!("Could not answer: {}", e.message()));
-                }
-            });
-        })
+        Rc::new(move |request_id: &str, decision: &str| app.answer_request(request_id, decision))
+    }
+
+    /// Answers a permission prompt; a `decline` may carry a reason after a newline, which is sent to
+    /// the thread as a steering message so the agent knows why.
+    pub fn answer_request(self: &Rc<Self>, request_id: &str, decision: &str) {
+        let (rpc, thread_id, run_id) = {
+            let conn = self.conn.borrow();
+            let live = self.live.borrow();
+            match (conn.as_ref(), live.as_ref()) {
+                (Some(c), Some(l)) => (c.rpc.clone(), l.thread_id.clone(), l.view.active_run_id.clone()),
+                _ => return,
+            }
+        };
+        let (decision, note) = match decision.split_once('\n') {
+            Some((d, n)) => (d.to_string(), n.trim().to_string()),
+            None => (decision.to_string(), String::new()),
+        };
+        let payload = json!({
+            "type": "runtime-request.respond", "commandId": new_id(), "threadId": thread_id,
+            "requestId": request_id, "decision": decision,
+        });
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            if let Err(e) = rpc.call("orchestration.dispatchCommand", payload).await {
+                app.toast(&format!("Could not answer: {}", e.message()));
+                return;
+            }
+            if !note.is_empty() {
+                let dispatch_mode = match run_id {
+                    Some(run) => json!({"type": "steer_active", "targetRunId": run}),
+                    None => json!({"type": "start_immediately"}),
+                };
+                let message = json!({
+                    "type": "message.dispatch", "commandId": new_id(), "threadId": thread_id, "messageId": new_id(),
+                    "text": format!("Denied: {note}"), "attachments": [], "createdBy": "user", "creationSource": "web",
+                    "dispatchMode": dispatch_mode,
+                });
+                let _ = rpc.call("orchestration.dispatchCommand", message).await;
+            }
+            if let Some(application) = app.window.application() {
+                notify::withdraw(
+                    &application,
+                    &format!("ask:{}", app.live.borrow().as_ref().map(|l| l.thread_id.clone()).unwrap_or_default()),
+                );
+            }
+        });
+    }
+
+    /// The oldest pending prompt of the open thread, for the Y/N keys.
+    fn oldest_pending_request(&self) -> Option<String> {
+        self.live
+            .borrow()
+            .as_ref()
+            .and_then(|l| l.view.items.iter().find(|i| i.is_pending_request()).and_then(|i| i.request_id.clone()))
     }
 
     fn render_live(self: &Rc<Self>) {
@@ -1735,6 +2655,22 @@ impl App {
             let mut live = self.live.borrow_mut();
             let Some(live) = live.as_mut() else { return };
             live.view.upsert(item.clone());
+            if item.is_pending_request() {
+                let body = item
+                    .prompt
+                    .clone()
+                    .or(item.reason.clone())
+                    .unwrap_or_else(|| "A permission prompt is waiting".into());
+                let thread_id = live.thread_id.clone();
+                let title = self.title.text().to_string();
+                self.notify_background(
+                    "ask",
+                    &thread_id,
+                    &format!("{title} needs your answer"),
+                    &transcript::first_line(&body, 120),
+                    true,
+                );
+            }
             let new_widget = chat::item_widget(&item, Some(decide));
             match live.widgets.remove(&item.id) {
                 Some(old) => {
@@ -1758,6 +2694,25 @@ impl App {
     }
 
     fn run_finished(self: &Rc<Self>) {
+        if let Some(thread_id) = self.live.borrow().as_ref().map(|l| l.thread_id.clone()) {
+            let last = self.live.borrow().as_ref().and_then(|l| {
+                l.view
+                    .items
+                    .iter()
+                    .rev()
+                    .find(|i| i.kind == "assistant_message")
+                    .map(|i| transcript::first_line(&i.text, 120))
+            });
+            let title = self.title.text().to_string();
+            self.notify_background(
+                "turn",
+                &thread_id,
+                &format!("{title}: turn finished"),
+                &last.unwrap_or_default(),
+                false,
+            );
+        }
+        self.refresh_launcher();
         let pending = self.handoff.borrow_mut().take();
         if let Some(p) = pending {
             let text = self.live.borrow().as_ref().and_then(|l| {
@@ -1886,6 +2841,7 @@ impl App {
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
         *self.draft.borrow_mut() = Some(Draft { project_id: project.id.clone() });
+        self.apply_project_defaults(&project.id);
         self.entry.set_draft_key(Some(format!("draft:{}", project.id)));
         self.list.unselect_all();
         self.clear_chat();
@@ -2231,6 +3187,118 @@ impl App {
         });
     }
 
+    /// The webhook task for a repo (GitHub `issues.labeled` → agent:ready), and the GitHub hook that
+    /// feeds it once the server reports a reachable URL for the task.
+    pub fn install_webhook(self: &Rc<Self>, repo: PinnedRepo) {
+        let rpc = match self.conn.borrow().as_ref() {
+            Some(c) => c.rpc.clone(),
+            None => {
+                self.toast("Not connected.");
+                return;
+            }
+        };
+        let Some((provider, model, reason)) = workflow::runner_selection(&self.providers()) else {
+            self.toast("Every provider's window is full; try again after the earliest reset.");
+            return;
+        };
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let name = repo.repo.rsplit('/').next().unwrap_or(&repo.repo).to_string();
+            let Some(project_id) = app.project_for_path(&repo.path, &name).await else {
+                app.toast("Could not create the project on the server.");
+                return;
+            };
+            workflow::ensure_labels(&repo.repo).await;
+            let existing = app.repos_page.webhook_install(&repo.repo);
+            // A new task gets a fresh secret; an update keeps the stored one unless the hook is still to be made.
+            let secret = match &existing {
+                Some(w) if w.hook_id.is_some() => None,
+                _ => Some(workflow::new_secret()),
+            };
+            let payload = workflow::webhook_task(
+                &repo.repo,
+                &project_id,
+                &provider,
+                &model,
+                existing.as_ref().map(|w| w.task_id.as_str()),
+                secret.as_deref(),
+            );
+            let task = match rpc.call("scheduledTasks.upsert", payload).await {
+                Ok(v) => v.get("task").cloned().unwrap_or(v),
+                Err(e) => {
+                    app.toast(&format!("Could not install the webhook task: {}", e.message()));
+                    return;
+                }
+            };
+            let task_id = task.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+            let url = task.get("webhook").and_then(|w| w.get("url")).and_then(Value::as_str).map(str::to_string);
+            let mut install = workflow::WebhookInstall {
+                task_id: task_id.clone(),
+                url: url.clone(),
+                hook_id: existing.as_ref().and_then(|w| w.hook_id),
+            };
+            if !workflow::endpoint_reachable(url.as_deref()) {
+                app.repos_page.remember_webhook(&repo.repo, install);
+                app.repos_page.load(app.clone());
+                app.toast(&format!(
+                    "Webhook task for {} installed on {} ({reason}); GitHub cannot reach this server yet. Switch to a Tailscale or T3 Connect environment and press Webhook again to create the GitHub hook.",
+                    repo.repo,
+                    provider.name()
+                ));
+                return;
+            }
+            if install.hook_id.is_none()
+                && let (Some(url), Some(secret)) = (url.as_deref(), secret.as_deref())
+            {
+                let body = workflow::github_hook_body(url, secret).to_string();
+                let hooks = format!("repos/{}/hooks", repo.repo);
+                match workflow::gh_with_input(&[&hooks, "-X", "POST", "--input", "-"], Some(&body)).await {
+                    Ok(v) => {
+                        install.hook_id = v.get("id").and_then(Value::as_u64);
+                        app.toast(&format!(
+                            "GitHub hook created for {}; webhook task on {} ({reason})",
+                            repo.repo,
+                            provider.name()
+                        ));
+                    }
+                    Err(e) => app.toast_retry(&format!("The task is installed but GitHub refused the hook: {e}"), {
+                        let r = repo.clone();
+                        Rc::new(move |a| a.install_webhook(r.clone()))
+                    }),
+                }
+            } else {
+                app.toast(&format!("Webhook task for {} updated on {} ({reason})", repo.repo, provider.name()));
+            }
+            app.repos_page.remember_webhook(&repo.repo, install);
+            app.repos_page.load(app.clone());
+        });
+    }
+
+    /// The rotation pass on demand (the render test and the palette).
+    pub fn rotate_runners_now(self: &Rc<Self>) {
+        let app = self.clone();
+        glib::spawn_future_local(async move { app.rotate_runners().await });
+    }
+
+    /// Per-run provider rotation: every five minutes (with the config reload) the runner and
+    /// webhook tasks are re-pointed at the provider with the most capacity, so the next run, not
+    /// only the install, uses it.
+    pub async fn rotate_runners(&self) {
+        let rpc = match self.conn.borrow().as_ref() {
+            Some(c) => c.rpc.clone(),
+            None => return,
+        };
+        let Ok(list) = rpc.call("scheduledTasks.list", json!({})).await else { return };
+        let tasks: Vec<Value> = list.get("tasks").and_then(Value::as_array).cloned().unwrap_or_default();
+        let moves = workflow::rotate_tasks(&tasks, &self.providers());
+        for (title, payload, to) in moves {
+            match rpc.call("scheduledTasks.upsert", payload).await {
+                Ok(_) => self.toast(&format!("{title} now runs on {to}")),
+                Err(e) => eprintln!("rotation of {title} failed: {}", e.message()),
+            }
+        }
+    }
+
     /// Comments of the issue a thread was started from, as a collapsed row at the top of the chat.
     fn show_issue_comments(self: &Rc<Self>) {
         let thread_id = match self.live.borrow().as_ref() {
@@ -2254,52 +3322,47 @@ impl App {
     // ---- changes and diagnostics ------------------------------------------------------------------
 
     /// The full diff of the open thread's checkpoints, one collapsed row per file.
+    /// The Changes page: file tree, inline or side-by-side diff, per-hunk copy, restore to checkpoint.
     pub fn show_changes(self: &Rc<Self>) {
-        let (rpc, thread_id, turns) = {
+        let (rpc, thread_id, turns, checkpoints) = {
             let conn = self.conn.borrow();
             let live = self.live.borrow();
             match (conn.as_ref(), live.as_ref()) {
-                (Some(c), Some(l)) => (c.rpc.clone(), l.thread_id.clone(), l.view.runs.len()),
+                (Some(c), Some(l)) => {
+                    (c.rpc.clone(), l.thread_id.clone(), l.view.runs.len(), l.view.checkpoints.clone())
+                }
                 _ => {
                     self.toast("Open a live thread first.");
                     return;
                 }
             }
         };
-        while let Some(c) = self.changes.first_child() {
-            self.changes.remove(&c);
-        }
-        self.changes.append(&label("Reading the thread's diff…", &["dim-label"]));
-        self.show_page("changes");
         let app = self.clone();
-        glib::spawn_future_local(async move {
-            let payload = json!({"threadId": thread_id, "toTurnCount": turns.max(1)});
-            let result = rpc.call("orchestration.getFullThreadDiff", payload).await;
-            while let Some(c) = app.changes.first_child() {
-                app.changes.remove(&c);
-            }
-            match result {
-                Ok(v) => {
-                    let diff = v.get("diff").and_then(Value::as_str).unwrap_or("");
-                    if diff.trim().is_empty() {
-                        app.changes.append(&label("No file changes recorded for this thread.", &["dim-label"]));
+        let tid = thread_id.clone();
+        let rpc2 = rpc.clone();
+        self.changes_page.on_restore(Rc::new(move |scope, checkpoint| {
+            let app = app.clone();
+            let rpc = rpc2.clone();
+            let payload = json!({
+                "type": "checkpoint.rollback", "restoreFiles": true, "commandId": new_id(), "threadId": tid,
+                "scopeId": scope, "checkpointId": checkpoint,
+            });
+            glib::spawn_future_local(async move {
+                match rpc.call("orchestration.dispatchCommand", payload).await {
+                    Ok(_) => {
+                        app.toast("Restoring files to the checkpoint…");
+                        app.show_changes();
                     }
-                    for (file, body) in split_diff(diff) {
-                        let (adds, dels) = body.lines().fold((0, 0), |(a, d), l| {
-                            if l.starts_with('+') && !l.starts_with("+++") {
-                                (a + 1, d)
-                            } else if l.starts_with('-') && !l.starts_with("---") {
-                                (a, d + 1)
-                            } else {
-                                (a, d)
-                            }
-                        });
-                        app.changes.append(&chat::diff_row(&format!("{file}  +{adds} −{dels}"), body));
-                    }
+                    Err(e) => app.toast(&format!("Restore failed: {}", e.message())),
                 }
-                Err(e) => app.changes.append(&label(&format!("Diff failed: {}", e.message()), &["dim-label"])),
-            }
-        });
+            });
+        }));
+        self.show_page("changes");
+        self.changes_page.load(rpc, thread_id, turns, checkpoints);
+    }
+
+    pub fn changes_page(&self) -> &Rc<changes::ChangesPage> {
+        &self.changes_page
     }
 
     pub fn show_diagnostics(self: &Rc<Self>) {
@@ -2360,24 +3423,4 @@ fn load_css() {
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(&display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
-}
-
-/// Splits a unified diff into (file, hunk text) pairs on `diff --git` headers.
-pub fn split_diff(diff: &str) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = Vec::new();
-    for line in diff.lines() {
-        if let Some(rest) = line.strip_prefix("diff --git ") {
-            let file = rest.split_whitespace().nth(1).map(|b| b.trim_start_matches("b/")).unwrap_or(rest).to_string();
-            out.push((file, String::new()));
-            continue;
-        }
-        match out.last_mut() {
-            Some((_, body)) => {
-                body.push_str(line);
-                body.push('\n');
-            }
-            None => out.push(("changes".into(), format!("{line}\n"))),
-        }
-    }
-    out
 }
