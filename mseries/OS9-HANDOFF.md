@@ -1,3 +1,19 @@
+## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
+
+Continued `rust/claude-pantheon-rs`, the native Rust GTK 4 + Granite client for T3 Code. Settings now
+has a Providers page and a provider manager for Claude Code, ChatGPT via Codex, OpenCode and Grok Build.
+It displays server-reported availability and supports T3's browser, device-code, terminal and credential
+prompts, sign-in method/account selection, sign-out confirmation, cancellation and refresh. Provider
+secrets remain server-owned; auth request and response bodies are redacted from debug logging. Providers
+still need to be installed and enabled on the T3 Code server.
+
+Validation: `cargo fmt --manifest-path rust/claude-pantheon-rs/Cargo.toml`,
+`cargo check --manifest-path rust/claude-pantheon-rs/Cargo.toml --release`, and `git diff --check`.
+No tests were run. This stays a native GTK/Granite Rust app using standard GTK Wayland support, but
+it has not been installed or exercised in a live Pantheon Rust compositor session; the release build
+does not establish that runtime qualification. Next: run the client and a provider sign-in flow in a
+Pantheon session when available, and record any UI or server compatibility fixes.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring

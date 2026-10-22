@@ -48,3 +48,12 @@ Each step: commit, screenshot in `docs/`, PERFORMANCE.md re-run so idle RSS is t
 | 4f visual replies (WebKitGTK 6) | Not built: `webkit6` crate not in the offline cache. |
 | 4g diagnostics | Done: `src/diagnostics.rs`, `subscribeResourceTelemetry` only while the page is open. |
 | 5 workflow | Done except the webhook task (needs a reachable webhook endpoint through T3 Connect or Tailscale) and automatic per-run rotation (the server has no per-run hook; the client re-picks the provider when the runner is re-installed). |
+
+## Native provider onboarding — 2026-10-22
+
+`src/provider_setup.rs` adds a GTK/Granite provider manager under Settings. It reports the server's
+configured instances and supports T3 Code's browser, device-code, terminal and credentials sign-in
+interactions, sign-in method/account selection, plus sign-out. The featured entries are Claude Code,
+ChatGPT via Codex, OpenCode and Grok Build; the T3 server remains the credential owner. New provider
+instances still need to be installed and enabled on the server. The Rust release target compiles; a
+live sign-in flow and an interactive Pantheon session have not yet been qualified.

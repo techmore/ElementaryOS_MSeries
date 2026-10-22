@@ -86,6 +86,15 @@ On loopback the client also points the server's Claude provider at the Claude Co
 the desktop app (`~/.config/Claude/claude-code/<version>/<hash>/claude`) when the server cannot find
 `claude` on PATH.
 
+## Provider sign-in
+
+Open **Settings → Providers → Manage providers…** to see server-reported status and sign in or out of
+Claude Code, ChatGPT through Codex, OpenCode and Grok Build. The sign-in window handles browser and
+device-code steps, terminal prompts and credential forms, and lets you choose among sign-in methods
+and saved accounts advertised by the server. The T3 Code server owns provider credentials; the client
+sends only the responses needed to complete the current sign-in flow. Providers must be installed and
+enabled on the server before they can be connected here.
+
 ## What is where
 
 | Path | Role |

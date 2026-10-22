@@ -193,7 +193,20 @@ impl Rpc {
     fn send_json(&self, v: &Value) {
         if std::env::var_os("CLAUDE_PANTHEON_DEBUG").is_some() {
             let t = v.to_string();
-            eprintln!("rpc -> {}", &t[..t.len().min(160)]);
+            let tag = v.get("tag").and_then(Value::as_str).unwrap_or("");
+            if matches!(
+                tag,
+                "provider.auth.start"
+                    | "provider.auth.respond"
+                    | "provider.auth.complete"
+                    | "provider.chatgpt.import-profile"
+                    | "server.updateSettings"
+            ) {
+                eprintln!("rpc -> {tag} <payload redacted; {} bytes>", t.len());
+            } else {
+                let preview: String = t.chars().take(160).collect();
+                eprintln!("rpc -> {preview}");
+            }
         }
         let _ = self.inner.outgoing.unbounded_send(v.to_string());
     }
@@ -249,7 +262,9 @@ impl Rpc {
 
     fn dispatch(&self, text: &str) {
         if std::env::var_os("CLAUDE_PANTHEON_DEBUG").is_some() {
-            eprintln!("rpc <- {}", &text[..text.len().min(160)]);
+            // Stream chunks can contain terminal sign-in output. Keep debug mode useful without
+            // writing provider prompts, callback URLs or credentials to the terminal.
+            eprintln!("rpc <- {} bytes", text.len());
         }
         let Ok(msg) = serde_json::from_str::<Incoming>(text) else { return };
         match msg.tag.as_str() {

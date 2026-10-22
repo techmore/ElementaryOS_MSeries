@@ -12,8 +12,8 @@ use crate::t3::{self, Rpc, auth, ws::WsError};
 use crate::transcript::{self, Transcript};
 use crate::workflow::{self, Issue, PinnedRepo};
 use crate::{
-    changes, composer, diagnostics, environments, handoff, notify, palette, repos, settings, sidebar, skeleton,
-    snapshot, terminal, usage, voice, winstate,
+    changes, composer, diagnostics, environments, handoff, notify, palette, provider_setup, repos, settings, sidebar,
+    skeleton, snapshot, terminal, usage, voice, winstate,
 };
 use futures_util::StreamExt;
 use granite::prelude::{PlaceholderExt, ToastExt};
@@ -139,6 +139,7 @@ pub struct App {
     voice_draft: RefCell<Option<Option<String>>>,
     palette: RefCell<Option<Rc<palette::Palette>>>,
     sidebar_cfg: RefCell<sidebar::SidebarConfig>,
+    provider_manager: RefCell<Option<Rc<provider_setup::ProviderManager>>>,
     settings: Rc<RefCell<settings::Settings>>,
     started: Instant,
 }
@@ -502,6 +503,7 @@ impl App {
             voice_draft: RefCell::new(None),
             palette: RefCell::new(None),
             sidebar_cfg: RefCell::new(sidebar::SidebarConfig::load()),
+            provider_manager: RefCell::new(None),
             settings: Rc::new(RefCell::new(settings::Settings::load())),
             started,
         });
@@ -869,6 +871,17 @@ impl App {
     fn settings(self: &Rc<Self>) {
         let providers: Vec<(String, String)> =
             self.providers.borrow().iter().filter(|p| p.ready()).map(|p| (p.instance_id.clone(), p.name())).collect();
+        let provider_summary = {
+            let providers = self.providers.borrow();
+            let ready: Vec<String> = providers.iter().filter(|p| p.ready()).map(Provider::name).collect();
+            if providers.is_empty() {
+                "No provider instances are available from the server.".to_string()
+            } else if ready.is_empty() {
+                format!("{} provider instances are configured; none are ready.", providers.len())
+            } else {
+                format!("Connected: {}", ready.join(", "))
+            }
+        };
         let (projects, server, server_label) = match self.conn.borrow().as_ref() {
             Some(c) => (
                 c.shell.projects.iter().map(|p| (p.id.clone(), p.title.clone())).collect(),
@@ -882,15 +895,18 @@ impl App {
             .unwrap_or(false);
         let a = self.clone();
         let b = self.clone();
+        let c = self.clone();
         settings::SettingsWindow::open(
             &self.window,
             self.settings.clone(),
             settings::Context {
                 providers,
+                provider_summary,
                 projects,
                 server,
                 server_label,
                 keyring,
+                on_manage_providers: Rc::new(move || c.manage_providers()),
                 on_pair: Rc::new(move || {
                     a.show_page("pair");
                     a.window.present();
@@ -898,6 +914,45 @@ impl App {
                 on_unpair: Rc::new(move || b.forget()),
             },
         );
+    }
+
+    fn manage_providers(self: &Rc<Self>) {
+        if let Some(manager) = self.provider_manager.borrow().as_ref() {
+            manager.window.present();
+            return;
+        }
+        let (rpc, providers) = match self.conn.borrow().as_ref() {
+            Some(conn) => (conn.rpc.clone(), self.providers.borrow().clone()),
+            None => {
+                self.toast("Pair with a T3 Code server to manage providers.");
+                self.show_page("pair");
+                return;
+            }
+        };
+        let weak = Rc::downgrade(self);
+        let on_changed: Rc<dyn Fn(Vec<Provider>)> = Rc::new(move |providers| {
+            if let Some(app) = weak.upgrade() {
+                app.sync_provider_state(providers);
+            }
+        });
+        let manager = provider_setup::ProviderManager::open(&self.window, rpc, providers, on_changed);
+        *self.provider_manager.borrow_mut() = Some(manager.clone());
+        let weak = Rc::downgrade(self);
+        manager.window.connect_close_request(move |_| {
+            if let Some(app) = weak.upgrade() {
+                app.provider_manager.borrow_mut().take();
+            }
+            glib::Propagation::Proceed
+        });
+    }
+
+    fn sync_provider_state(&self, providers: Vec<Provider>) {
+        *self.providers.borrow_mut() = providers.clone();
+        if let Some(conn) = self.conn.borrow_mut().as_mut() {
+            conn.config.providers = providers;
+        }
+        self.fill_providers();
+        self.refresh_status();
     }
 
     /// Applies the stored defaults (provider and permission mode) to the composer for a project.
