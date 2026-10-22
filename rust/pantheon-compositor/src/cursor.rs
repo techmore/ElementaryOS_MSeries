@@ -130,7 +130,12 @@ where
     }
 
     let scale = Scale::from(output.current_scale().fractional_scale());
-    let mut elements = match &state.cursor_status {
+    let cursor_status = if state.screenshot_selection.borrow().active() {
+        CursorImageStatus::Named(CursorIcon::Crosshair)
+    } else {
+        state.cursor_status.clone()
+    };
+    let mut elements = match &cursor_status {
         CursorImageStatus::Hidden => Vec::new(),
         CursorImageStatus::Surface(surface) if surface.alive() => {
             let hotspot = with_states(surface, |states| {
@@ -155,7 +160,7 @@ where
             )
         }
         CursorImageStatus::Surface(_) | CursorImageStatus::Named(_) => {
-            let icon = match &state.cursor_status {
+            let icon = match &cursor_status {
                 CursorImageStatus::Named(icon) => *icon,
                 _ => CursorIcon::Default,
             };

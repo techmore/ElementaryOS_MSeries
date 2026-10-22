@@ -225,12 +225,33 @@ pub fn process_request<R>(
         return;
     };
     let directory = std::path::PathBuf::from(home).join("Downloads/Screenshots");
+    let region = state.screenshot_region.take();
     let mut images = Vec::new();
     let mut pixels = 0_u64;
     for output in outputs {
         let result = compose_output(renderer, state, output);
         match result {
             Ok(image) => {
+                let image = if let Some(region) = region {
+                    let Some(bounds) = state.space.output_geometry(output) else {
+                        continue;
+                    };
+                    let Some(cropped) = crop_output(
+                        &image,
+                        crate::screenshot::Region {
+                            x: bounds.loc.x,
+                            y: bounds.loc.y,
+                            width: bounds.size.w as u32,
+                            height: bounds.size.h as u32,
+                        },
+                        region,
+                    ) else {
+                        continue;
+                    };
+                    cropped
+                } else {
+                    image
+                };
                 pixels += u64::from(image.width()) * u64::from(image.height());
                 if pixels > MAX_PIXELS as u64 {
                     state.screenshot_busy.store(false, Ordering::Release);

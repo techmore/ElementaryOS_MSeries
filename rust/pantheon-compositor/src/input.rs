@@ -133,12 +133,32 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.screenshot_selection.borrow().active()
+                            && keysym.modified_sym().raw() == smithay::input::keyboard::xkb::keysyms::KEY_Escape
+                        {
+                            state.screenshot_selection.borrow_mut().cancel();
+                            state.request_native_redraw(); state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && !state.session_locked && modifiers.logo && modifiers.shift
+                            && !modifiers.ctrl && !modifiers.alt
+                            && matches!(keysym.modified_sym().raw(), smithay::input::keyboard::xkb::keysyms::KEY_4 | smithay::input::keyboard::xkb::keysyms::KEY_dollar)
+                        {
+                            let point = state.seat.get_pointer().unwrap().current_location();
+                            state.screenshot_selection.borrow_mut().begin((point.x.round() as i32, point.y.round() as i32));
+                            state.request_native_redraw(); state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && !state.session_locked && modifiers.logo && modifiers.shift
                             && !modifiers.ctrl && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(),
                                 smithay::input::keyboard::xkb::keysyms::KEY_3 |
                                 smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
                         {
+                            state.screenshot_selection.borrow_mut().cancel();
+                            state.screenshot_region.set(None);
                             state.screenshot_requested.set(true);
                             state.request_native_redraw();
                             state.request_winit_redraw();
@@ -234,6 +254,13 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                if self.screenshot_selection.borrow().active() {
+                    self.screenshot_selection
+                        .borrow_mut()
+                        .motion((new_location.x.round() as i32, new_location.y.round() as i32));
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                }
                 self.snap_assist_hover(new_location);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
@@ -270,6 +297,13 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                if self.screenshot_selection.borrow().active() {
+                    self.screenshot_selection
+                        .borrow_mut()
+                        .motion((pos.x.round() as i32, pos.y.round() as i32));
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                }
                 self.snap_assist_hover(pos);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
@@ -283,6 +317,26 @@ impl PantheonCompositor {
                 let button = event.button_code();
 
                 let button_state = event.state();
+                if self.screenshot_selection.borrow().active() {
+                    let point = pointer.current_location();
+                    let point = (point.x.round() as i32, point.y.round() as i32);
+                    if self.session_locked {
+                        self.screenshot_selection.borrow_mut().cancel();
+                    } else if button == 0x110 {
+                        if button_state == ButtonState::Pressed {
+                            self.screenshot_selection.borrow_mut().press(point);
+                        } else if let Some(crate::screenshot::CaptureTarget::Region(region)) =
+                            self.screenshot_selection.borrow_mut().release(point)
+                        {
+                            self.screenshot_region.set(Some(region));
+                            self.screenshot_requested.set(true);
+                        }
+                    }
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                    return;
+                }
+
                 if button_state == ButtonState::Pressed {
                     self.cancel_active_gesture(event.time());
                 }
