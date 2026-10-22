@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "writtenAt": "2026-10-22T00:35:10Z",
   "connected": true,
+  "stale": false,
   "server": "eos",
   "selectedProviderId": "codex-work",
   "running": [

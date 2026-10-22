@@ -20,3 +20,5 @@ shared_module(
 probe = executable('probe', 'src/Indicator.vala', 'probe/probe.vala', dependencies: deps)
 test('indicator-probe', probe, args: [meson.current_source_dir() / 'probe/status-fixture.json'],
      env: ['GDK_BACKEND=x11', 'GSETTINGS_BACKEND=memory'], workdir: meson.current_source_dir())
+test('indicator-offline-probe', probe, args: [meson.current_source_dir() / 'probe/stale-status-fixture.json'],
+     env: ['GDK_BACKEND=x11', 'GSETTINGS_BACKEND=memory'], workdir: meson.current_source_dir())

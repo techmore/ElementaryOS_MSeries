@@ -14,6 +14,21 @@ static void collect (Gtk.Widget w, Gee.ArrayList<string> acc) {
     }
 }
 
+static void collect_last_known_buttons (Gtk.Widget w, Gee.ArrayList<bool> enabled) {
+    if (w is Gtk.Button) {
+        var button = (Gtk.Button) w;
+        var child = button.child;
+        if (child is Gtk.Label && ((Gtk.Label) child).label.has_prefix ("Last known ·")) {
+            enabled.add (button.sensitive);
+        }
+    }
+    Gtk.Widget? c = w.get_first_child ();
+    while (c != null) {
+        collect_last_known_buttons (c, enabled);
+        c = c.get_next_sibling ();
+    }
+}
+
 static void pump (int ms) {
     var until = get_monotonic_time () + ms * 1000;
     while (get_monotonic_time () < until) {
@@ -31,13 +46,17 @@ int main (string[] args) {
     var popover = indicator.get_widget ();
     // Render the fixture at a fixed instant so the countdowns are deterministic.
     var now = new DateTime.from_iso8601 ("2026-10-22T00:36:00Z", new TimeZone.utc ());
-    indicator.render (ClaudePantheon.Feed.load (fixture), now);
+    var feed = ClaudePantheon.Feed.load (fixture);
+    indicator.render (feed, now);
 
     var texts = new Gee.ArrayList<string> ();
     collect (popover, texts);
     collect (panel, texts);
     if (panel.tooltip_text != null) texts.add (panel.tooltip_text);
-    string[] expect = { "Codex session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "2", "permission prompt" };
+    bool live = feed.connected && !feed.stale;
+    string[] expect = live
+        ? new string[] { "Codex session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "2", "permission prompt" }
+        : new string[] { "Last known", "Offline", "Last sync showed 2 active item(s)" };
     foreach (var e in expect) {
         bool found = false;
         foreach (var t in texts) if (t.contains (e)) found = true;
@@ -50,6 +69,28 @@ int main (string[] args) {
         foreach (var t in texts) {
             if (t.contains (hidden)) {
                 stderr.printf ("FAIL: selected-provider panel leaked '%s' in %s\n", hidden, string.joinv (" | ", texts.to_array ()));
+                return 1;
+            }
+        }
+    }
+    if (!live) {
+        foreach (var hidden in new string[] { "needs you", "permission prompt", "waiting" }) {
+            foreach (var t in texts) {
+                if (t.contains (hidden)) {
+                    stderr.printf ("FAIL: offline panel presented stale '%s' as live in %s\n", hidden, string.joinv (" | ", texts.to_array ()));
+                    return 1;
+                }
+            }
+        }
+        var stale_actions = new Gee.ArrayList<bool> ();
+        collect_last_known_buttons (popover, stale_actions);
+        if (stale_actions.size != 2) {
+            stderr.printf ("FAIL: expected two stale activity rows, found %d\n", stale_actions.size);
+            return 1;
+        }
+        foreach (bool enabled in stale_actions) {
+            if (enabled) {
+                stderr.printf ("FAIL: stale activity row is still actionable\n");
                 return 1;
             }
         }

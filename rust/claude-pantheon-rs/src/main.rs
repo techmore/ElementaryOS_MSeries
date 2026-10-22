@@ -69,6 +69,7 @@ fn main() -> gtk::glib::ExitCode {
             settings.set_gtk_cursor_blink(false);
         }
     });
+    application.connect_shutdown(|_| claude_pantheon_rs::status::mark_stale());
     let current: Rc<RefCell<Option<Rc<app::App>>>> = Rc::new(RefCell::new(None));
     let slot = current.clone();
     let prefer_full = args.iter().any(|a| a == "--full") || !args.iter().any(|a| a == "--quick") || quit_after_frame;

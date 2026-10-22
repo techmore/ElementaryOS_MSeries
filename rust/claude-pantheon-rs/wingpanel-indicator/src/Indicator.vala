@@ -14,6 +14,7 @@
 public class ClaudePantheon.Feed : Object {
     public bool present = false;
     public bool connected = false;
+    public bool stale = false;
     public string server = "";
     public string selected_provider_id = "";
     public string written_at = "";
@@ -53,6 +54,7 @@ public class ClaudePantheon.Feed : Object {
         var o = root.get_object ();
         feed.present = true;
         feed.connected = o.has_member ("connected") && o.get_boolean_member ("connected");
+        feed.stale = !feed.connected || (o.has_member ("stale") && o.get_boolean_member ("stale"));
         feed.server = o.has_member ("server") ? o.get_string_member ("server") : "";
         feed.selected_provider_id = o.has_member ("selectedProviderId") ? o.get_string_member ("selectedProviderId") : "";
         feed.written_at = o.has_member ("writtenAt") ? o.get_string_member ("writtenAt") : "";
@@ -233,10 +235,12 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
 
     /** Fills every widget from a feed; separate from reload so the probe can render a fixture at a fixed time. */
     public void render (Feed feed, DateTime now) {
-        int prompts = feed.prompt_count ();
+        bool live = feed.present && feed.connected && !feed.stale;
+        bool stale = feed.present && !live;
+        int prompts = live ? feed.prompt_count () : 0;
         string hover = hover_summary (feed, now);
         if (badge != null) {
-            badge.label = prompts > 0 ? "%d".printf (prompts) : (feed.running.size > 0 ? "•" : "");
+            badge.label = prompts > 0 ? "%d".printf (prompts) : (live && feed.running.size > 0 ? "•" : "");
             icon.icon_name = prompts > 0 ? "dialog-question-symbolic" : APP_ID + "-symbolic";
             icon.tooltip_text = hover;
             display_widget.tooltip_text = hover;
@@ -246,9 +250,12 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         if (!feed.present) {
             headline.label = "T3-R is not running";
             headline_detail.label = "Open T3-R to pair with the server";
+        } else if (stale) {
+            headline.label = nearest == null ? "Last known status" : "Last known · %s %s %.0f%%".printf (nearest.provider, nearest.label.down (), nearest.used_percent);
+            headline_detail.label = feed.server == "" ? "Not connected · open T3-R to reconnect" : "Offline · reconnect to refresh";
         } else if (nearest == null) {
-            headline.label = feed.connected ? "No plan windows reported" : "Not connected";
-            headline_detail.label = feed.connected ? feed.server : "Reconnecting from the app";
+            headline.label = "No plan windows reported";
+            headline_detail.label = feed.server;
         } else {
             headline.label = "%s %s %.0f%%".printf (nearest.provider, nearest.label.down (), nearest.used_percent);
             headline_detail.label = Feed.countdown (nearest.resets_at, now);
@@ -256,7 +263,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         clear (windows_box);
         foreach (var w in feed.windows) {
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            var name = new Gtk.Label ("%s · %s".printf (w.provider, w.label)) { xalign = 0, width_chars = 16, ellipsize = Pango.EllipsizeMode.END };
+            var name = new Gtk.Label (stale ? "Last known · %s · %s".printf (w.provider, w.label) : "%s · %s".printf (w.provider, w.label)) { xalign = 0, width_chars = 16, ellipsize = Pango.EllipsizeMode.END };
             name.add_css_class ("caption");
             var bar = new Gtk.LevelBar () { min_value = 0, max_value = 100, hexpand = true, valign = Gtk.Align.CENTER };
             bar.add_offset_value ("low", 60);
@@ -277,11 +284,12 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         next_label.visible = false;
         clear (threads_box);
         foreach (var t in feed.pending) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL };
+            var b = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
             b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var l = new Gtk.Label ("? %s needs you (%d)".printf (t.title, t.count)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            var label = live ? "? %s needs you (%d)".printf (t.title, t.count) : "Last known · %s · %d request(s) at last sync".printf (t.title, t.count);
+            var l = new Gtk.Label (label) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             b.child = l;
-            b.tooltip_text = "Open this thread to answer";
+            b.tooltip_text = live ? "Open this thread to answer" : "Offline; this request may no longer be pending";
             var id = t.id;
             b.clicked.connect (() => {
                 launch (id);
@@ -290,9 +298,10 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             threads_box.append (b);
         }
         foreach (var t in feed.running) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL };
+            var b = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
             b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var l = new Gtk.Label ("▶ %s · %s".printf (t.title, t.provider)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            var label = live ? "▶ %s · %s".printf (t.title, t.provider) : "Last known · %s · %s".printf (t.title, t.provider);
+            var l = new Gtk.Label (label) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             b.child = l;
             var id = t.id;
             b.clicked.connect (() => {
@@ -302,7 +311,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             threads_box.append (b);
         }
         if (feed.running.size == 0 && feed.pending.size == 0) {
-            var l = new Gtk.Label ("Nothing running") { xalign = 0, margin_start = 6 };
+            var l = new Gtk.Label (stale ? "No activity reported at last sync" : "Nothing running") { xalign = 0, margin_start = 6 };
             l.add_css_class (Granite.CssClass.DIM);
             threads_box.append (l);
         }
@@ -316,31 +325,35 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             }
         }
         freshness.label = feed.present
-            ? "%s · %s".printf (feed.connected ? feed.server : "not connected", when)
+            ? "%s · %s".printf (live ? feed.server : feed.server != "" ? "offline · " + feed.server : "not connected", when)
             : "no status feed yet";
     }
 
     private static string hover_summary (Feed feed, DateTime now) {
         if (!feed.present) return "T3-R · Open the client to connect";
         var lines = new Gee.ArrayList<string> ();
-        if (!feed.connected) {
-            lines.add ("T3-R · %s · not connected".printf (feed.server));
-        } else if (feed.windows.size > 0) {
+        bool live = feed.connected && !feed.stale;
+        if (!live) {
+            lines.add (feed.server == "" ? "T3-R · not connected" : "T3-R · %s · offline · last known status".printf (feed.server));
+        }
+        if (feed.windows.size > 0) {
             foreach (var w in feed.windows) {
                 var reset = Feed.countdown (w.resets_at, now);
-                lines.add ("%s · %s %.0f%%%s".printf (
-                    w.provider, w.label, w.used_percent, reset != "" ? " · " + reset : ""));
+                lines.add ("%s%s · %s %.0f%%%s".printf (
+                    live ? "" : "Last known · ", w.provider, w.label, w.used_percent, reset != "" ? " · " + reset : ""));
             }
-        } else if (feed.selected_provider_id == "") {
+        } else if (live && feed.selected_provider_id == "") {
             lines.add ("T3-R · Select a provider in chat");
-        } else {
+        } else if (live) {
             lines.add ("T3-R · No usage windows reported for the selected provider");
         }
-        int prompts = feed.prompt_count ();
+        int prompts = live ? feed.prompt_count () : 0;
         if (prompts > 0) {
             lines.add ("%d permission prompt%s waiting".printf (prompts, prompts == 1 ? "" : "s"));
-        } else if (feed.running.size > 0) {
+        } else if (live && feed.running.size > 0) {
             lines.add ("%d thread%s running".printf (feed.running.size, feed.running.size == 1 ? "" : "s"));
+        } else if (!live && feed.running.size + feed.pending.size > 0) {
+            lines.add ("Last sync showed %d active item(s)".printf (feed.running.size + feed.pending.size));
         }
         return string.joinv ("\n", lines.to_array ());
     }

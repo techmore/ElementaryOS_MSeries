@@ -74,7 +74,9 @@ client directly. `--quick` remains available for the separate compact status win
 
 The Dock popover reads the local versioned `status.json` snapshot through a file monitor; it does not open another RPC
 socket or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
-unpairing or switching environments clears the cache.
+normal application shutdown also marks the snapshot stale. The Wingpanel view labels stale usage and activity as
+last known, disables stale activity rows, and never badges old approval prompts as live. Unpairing or switching
+environments clears the cache.
 
 ## Thread resume cache
 

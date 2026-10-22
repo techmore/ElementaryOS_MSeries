@@ -71,9 +71,6 @@ pub fn build(
 
 pub fn write(v: &Value) {
     let p = path();
-    if let Some(dir) = p.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
     let payload = if v.get("connected").and_then(Value::as_bool) == Some(false) {
         std::fs::read(&p)
             .ok()
@@ -84,8 +81,28 @@ pub fn write(v: &Value) {
     } else {
         v.clone()
     };
+    write_payload(&p, &payload);
+}
+
+/// Persist the last connection as stale when the client exits normally. The panel can then keep its
+/// last-known account and usage without presenting old approvals or running work as live.
+pub fn mark_stale() {
+    let p = path();
+    let Ok(bytes) = std::fs::read(&p) else { return };
+    let Ok(previous) = serde_json::from_slice::<Value>(&bytes) else { return };
+    if previous.get("schemaVersion").and_then(Value::as_u64) != Some(1) {
+        return;
+    }
+    let stale = stale_after_shutdown(&previous, &crate::workflow::now_iso());
+    write_payload(&p, &stale);
+}
+
+fn write_payload(p: &PathBuf, payload: &Value) {
+    if let Some(dir) = p.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
     let tmp = p.with_extension("json.tmp");
-    let Ok(bytes) = serde_json::to_vec_pretty(&payload) else { return };
+    let Ok(bytes) = serde_json::to_vec_pretty(payload) else { return };
     let mut options = std::fs::OpenOptions::new();
     options.write(true).create(true).truncate(true);
     #[cfg(unix)]
@@ -109,6 +126,10 @@ pub fn write(v: &Value) {
 /// Pending prompts and running threads are still carried for a useful last-known summary; consumers
 /// must disable live actions until `connected` becomes true again.
 fn preserve_last_known(previous: &Value, disconnected: &Value) -> Value {
+    preserve_last_known_at(previous, disconnected, &crate::workflow::now_iso())
+}
+
+fn preserve_last_known_at(previous: &Value, disconnected: &Value, now: &str) -> Value {
     let mut next = disconnected.clone();
     for key in ["server", "selectedProviderId", "running", "pendingPrompts", "windows", "nextTask", "writtenAt"] {
         if let Some(value) = previous.get(key) {
@@ -117,8 +138,19 @@ fn preserve_last_known(previous: &Value, disconnected: &Value) -> Value {
     }
     next["connected"] = Value::Bool(false);
     next["stale"] = Value::Bool(true);
-    next["updatedAt"] = Value::String(crate::workflow::now_iso());
+    next["updatedAt"] = Value::String(now.to_string());
     next
+}
+
+fn stale_after_shutdown(previous: &Value, now: &str) -> Value {
+    let disconnected = json!({
+        "schemaVersion": 1,
+        "writtenAt": now,
+        "updatedAt": now,
+        "connected": false,
+        "stale": true,
+    });
+    preserve_last_known_at(previous, &disconnected, now)
 }
 
 /// Remove the cached account and activity after an explicit unpair.
@@ -193,13 +225,13 @@ mod tests {
             "windows": [{"provider": "Codex", "usedPercent": 48.0}],
             "nextTask": {"provider": "Codex", "reason": "ready"}
         });
-        let disconnected = json!({"schemaVersion": 1, "writtenAt": "now", "connected": false, "server": ""});
-        let offline = preserve_last_known(&previous, &disconnected);
+        let offline = stale_after_shutdown(&previous, "2026-10-22T12:30:00Z");
 
         assert_eq!(offline["connected"], false);
         assert_eq!(offline["stale"], true);
         assert_eq!(offline["server"], "workstation");
         assert_eq!(offline["writtenAt"], "2026-10-22T12:00:00Z");
+        assert_eq!(offline["updatedAt"], "2026-10-22T12:30:00Z");
         assert_eq!(offline["running"][0]["id"], "thread-1");
         assert_eq!(offline["pendingPrompts"][0]["count"], 1);
         assert_eq!(offline["windows"][0]["provider"], "Codex");
