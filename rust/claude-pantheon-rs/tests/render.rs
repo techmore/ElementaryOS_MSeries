@@ -72,6 +72,22 @@ fn widget_with_css(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
     None
 }
 
+fn button_with_label(widget: &gtk::Widget, label_text: &str) -> Option<gtk::Button> {
+    if let Some(button) = widget.downcast_ref::<gtk::Button>()
+        && button.label().is_some_and(|label| label == label_text)
+    {
+        return Some(button.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(button) = button_with_label(&c, label_text) {
+            return Some(button);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
 fn chat_scroller(widget: &gtk::Widget) -> Option<gtk::ScrolledWindow> {
     if let Some(scroller) = widget.downcast_ref::<gtk::ScrolledWindow>()
         && widget_with_css(scroller.upcast_ref(), "chat").is_some()
@@ -522,6 +538,38 @@ fn main() {
                 || shown(&app).iter().any(|x| x.contains("No issues match") || x.starts_with("GitHub:"))));
             pump(400);
             println!("issues for {}: {}", first.repo, app.repos_page().issue_count());
+
+            let drafts_before = app.repos_page().config().issue_drafts.len();
+            button_with_label(app.window().upcast_ref(), "Draft issue").expect("issue intake button").emit_clicked();
+            pump(150);
+            let draft_window = gtk::Window::list_toplevels()
+                .into_iter()
+                .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
+                .find(|window| window.title().is_some_and(|title| title.starts_with("Issue brief · ")))
+                .expect("issue brief window opens");
+            let mut draft_text = Vec::new();
+            texts(draft_window.upcast_ref(), &mut draft_text);
+            for expected in [
+                "Problem and desired outcome",
+                "Context and research",
+                "Success criteria",
+                "Constraints and non-goals",
+                "Refine in T3 chat",
+                "File issue",
+            ] {
+                assert!(
+                    draft_text.iter().any(|text| text.contains(expected)),
+                    "issue intake shows {expected}: {draft_text:?}"
+                );
+            }
+            button_with_label(draft_window.upcast_ref(), "Close").expect("close issue draft").emit_clicked();
+            pump(100);
+            assert_eq!(
+                app.repos_page().config().issue_drafts.len(),
+                drafts_before,
+                "closing an empty brief saves no noise"
+            );
+            println!("issue brief opens with problem, research and success fields; empty close leaves no draft");
         }
         if let Some(path) = env("CLAUDE_PANTHEON_SHOT_REPOS") {
             save_png(app.window(), &path);

@@ -197,7 +197,7 @@ feed without starting another connection.
 | `src/chat.rs` | message, tool-row, diff and permission-prompt widgets |
 | `src/render.rs` | Markdown (pulldown-cmark) as widgets; fenced code in GtkSourceView 5 with copy and wrap |
 | `src/usage.rs` | Usage page (CodexBar style) and plan-window gauges |
-| `src/workflow.rs`, `repos.rs` | pinned repos, issue backlog via `gh api`, issue-organized chats, "Start on this", the runner as T3 scheduled tasks |
+| `src/workflow.rs`, `repos.rs` | pinned repos, issue backlog and filing via `gh api`, local issue briefs, issue-organized chats, "Start on this", the runner as T3 scheduled tasks |
 | `src/handoff.rs` | "Hand Off to Repo": structured summary appended to the project's handoff doc, optional commit |
 | `src/changes.rs` | Changes page: file tree, inline/side-by-side diff in GtkSourceView, per-hunk copy, restore to checkpoint |
 | `src/diagnostics.rs` | server resource telemetry as sparklines and process-local thread-cache hit/miss and disk-time totals |

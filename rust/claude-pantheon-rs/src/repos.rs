@@ -9,7 +9,7 @@ use crate::workflow::{self, Config, Issue, PinnedRepo};
 use granite::prelude::PlaceholderExt;
 use gtk::{gio, glib, pango, prelude::*};
 use serde_json::{Value, json};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -17,14 +17,17 @@ pub struct ReposPage {
     root: gtk::Box,
     repo_list: gtk::Box,
     status: gtk::Label,
+    drafts_box: gtk::Box,
     issues_box: gtk::Box,
     issues_title: gtk::Label,
+    new_issue_button: gtk::Button,
     lane_dd: gtk::DropDown,
     prio_dd: gtk::DropDown,
     agent_dd: gtk::DropDown,
     config: RefCell<Config>,
     issues: RefCell<Vec<Issue>>,
     current_repo: RefCell<Option<PinnedRepo>>,
+    filters_wired: Cell<bool>,
 }
 
 fn pill(text: &str, class: &str) -> gtk::Label {
@@ -74,6 +77,70 @@ fn thread_title(thread: &crate::t3::model::ThreadShell) -> String {
     }
 }
 
+#[derive(Clone)]
+struct IssueDraftForm {
+    title: gtk::Entry,
+    problem: gtk::TextView,
+    context: gtk::TextView,
+    success: gtk::TextView,
+    constraints: gtk::TextView,
+    lane: gtk::DropDown,
+    priority: gtk::DropDown,
+    agent_ready: gtk::CheckButton,
+}
+
+impl IssueDraftForm {
+    fn read(&self, repo: &str, id: &str) -> workflow::IssueDraft {
+        let text = |view: &gtk::TextView| {
+            let buffer = view.buffer();
+            buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).to_string()
+        };
+        workflow::IssueDraft {
+            id: id.to_string(),
+            repo: repo.to_string(),
+            title: self.title.text().to_string(),
+            problem: text(&self.problem),
+            context: text(&self.context),
+            success_criteria: text(&self.success),
+            constraints: text(&self.constraints),
+            lane: ["", "build", "feature", "maintenance"]
+                .get(self.lane.selected() as usize)
+                .copied()
+                .unwrap_or_default()
+                .to_string(),
+            priority: ["", "p0", "p1", "p2", "p3"]
+                .get(self.priority.selected() as usize)
+                .copied()
+                .unwrap_or_default()
+                .to_string(),
+            agent_ready: self.agent_ready.is_active(),
+            updated_at: workflow::now_iso(),
+        }
+    }
+}
+
+fn append_issue_text_field(parent: &gtk::Box, title: &str, initial: &str) -> gtk::TextView {
+    let section = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    let heading = label(title, &["heading"]);
+    heading.set_xalign(0.0);
+    section.append(&heading);
+    let view = gtk::TextView::new();
+    view.set_wrap_mode(gtk::WrapMode::WordChar);
+    view.set_top_margin(7);
+    view.set_bottom_margin(7);
+    view.set_left_margin(8);
+    view.set_right_margin(8);
+    view.buffer().set_text(initial);
+    let scroll = gtk::ScrolledWindow::builder()
+        .child(&view)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .min_content_height(78)
+        .build();
+    section.append(&scroll);
+    parent.append(&section);
+    view
+}
+
 impl ReposPage {
     pub fn new() -> ReposPage {
         let status = label("", &["dim-label"]);
@@ -89,14 +156,28 @@ impl ReposPage {
         let lane_dd = gtk::DropDown::from_strings(&["All lanes", "build", "feature", "maintenance"]);
         let prio_dd = gtk::DropDown::from_strings(&["All priorities", "p0", "p1", "p2", "p3"]);
         let agent_dd = gtk::DropDown::from_strings(&["Any agent label", "ready", "running", "done", "blocked", "none"]);
-        let filters = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let new_issue_button = gtk::Button::with_label("Draft issue");
+        new_issue_button.add_css_class("suggested-action");
+        new_issue_button.set_sensitive(false);
+        new_issue_button.set_tooltip_text(Some("Draft an issue for the repository selected below."));
+        let filters = gtk::Box::new(gtk::Orientation::Vertical, 8);
         filters.set_margin_start(24);
         filters.set_margin_end(24);
         filters.set_margin_top(12);
-        filters.append(&issues_title);
-        filters.append(&lane_dd);
-        filters.append(&prio_dd);
-        filters.append(&agent_dd);
+        let heading = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        heading.append(&issues_title);
+        heading.append(&new_issue_button);
+        filters.append(&heading);
+        let filter_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        filter_row.append(&lane_dd);
+        filter_row.append(&prio_dd);
+        filter_row.append(&agent_dd);
+        filters.append(&filter_row);
+        let drafts_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        drafts_box.set_margin_start(24);
+        drafts_box.set_margin_end(24);
+        drafts_box.set_margin_top(10);
+        drafts_box.set_visible(false);
         let issues_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
         issues_box.set_margin_start(24);
         issues_box.set_margin_end(24);
@@ -107,6 +188,7 @@ impl ReposPage {
         column.append(&status);
         column.append(&repo_list);
         column.append(&filters);
+        column.append(&drafts_box);
         column.append(&issues_box);
         let scroll = gtk::ScrolledWindow::builder()
             .child(&column)
@@ -119,14 +201,17 @@ impl ReposPage {
             root,
             repo_list,
             status,
+            drafts_box,
             issues_box,
             issues_title,
+            new_issue_button,
             lane_dd,
             prio_dd,
             agent_dd,
             config: RefCell::new(workflow::load_config()),
             issues: RefCell::new(Vec::new()),
             current_repo: RefCell::new(None),
+            filters_wired: Cell::new(false),
         }
     }
 
@@ -309,7 +394,9 @@ impl ReposPage {
 
     pub fn show_issues(&self, app: &Rc<App>, repo: PinnedRepo) {
         *self.current_repo.borrow_mut() = Some(repo.clone());
+        self.new_issue_button.set_sensitive(true);
         self.issues_title.set_text(&format!("Issues in {}", repo.repo));
+        self.render_drafts(app);
         while let Some(c) = self.issues_box.first_child() {
             self.issues_box.remove(&c);
         }
@@ -347,10 +434,310 @@ impl ReposPage {
     }
 
     pub fn wire_filters(&self, app: Rc<App>) {
+        if self.filters_wired.replace(true) {
+            return;
+        }
         for dd in [&self.lane_dd, &self.prio_dd, &self.agent_dd] {
             let a = app.clone();
             dd.connect_selected_notify(move |_| a.repos_page().render_issues(&a));
         }
+        let a = app;
+        self.new_issue_button.connect_clicked(move |_| {
+            let Some(repo) = a.repos_page().current_repo.borrow().clone() else {
+                a.toast("Open a repository's Issues view first.");
+                return;
+            };
+            let draft = workflow::IssueDraft { id: new_id(), repo: repo.repo.clone(), ..Default::default() };
+            a.repos_page().edit_issue_draft(&a, &repo, draft);
+        });
+    }
+
+    fn render_drafts(&self, app: &Rc<App>) {
+        while let Some(child) = self.drafts_box.first_child() {
+            self.drafts_box.remove(&child);
+        }
+        let Some(repo) = self.current_repo.borrow().clone() else {
+            self.drafts_box.set_visible(false);
+            return;
+        };
+        let drafts: Vec<workflow::IssueDraft> =
+            self.config.borrow().issue_drafts.iter().filter(|draft| draft.repo == repo.repo).cloned().collect();
+        self.drafts_box.set_visible(!drafts.is_empty());
+        if drafts.is_empty() {
+            return;
+        }
+        let heading = label("Saved issue briefs", &["title-4"]);
+        self.drafts_box.append(&heading);
+        for draft in drafts {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            row.add_css_class("card");
+            row.add_css_class("repo-card");
+            let summary = gtk::Box::new(gtk::Orientation::Vertical, 2);
+            summary.set_hexpand(true);
+            let title = if draft.title.trim().is_empty() { "Untitled issue brief" } else { &draft.title };
+            let title = label(title, &[]);
+            title.set_xalign(0.0);
+            let route = format!(
+                "Updated {} · {} · {}{}",
+                relative_time(iso_to_unix(&draft.updated_at), now_unix()),
+                if draft.lane.is_empty() { "no lane" } else { &draft.lane },
+                if draft.priority.is_empty() { "no priority" } else { &draft.priority },
+                if draft.agent_ready { " · agent ready" } else { "" },
+            );
+            let route = label(&route, &["caption", "dim-label"]);
+            route.set_xalign(0.0);
+            summary.append(&title);
+            summary.append(&route);
+            row.append(&summary);
+            let edit = gtk::Button::with_label("Edit");
+            let a = app.clone();
+            let rr = repo.clone();
+            let saved_draft = draft.clone();
+            edit.connect_clicked(move |_| a.repos_page().edit_issue_draft(&a, &rr, saved_draft.clone()));
+            row.append(&edit);
+            let delete = gtk::Button::with_label("Delete");
+            delete.add_css_class("flat");
+            delete.set_tooltip_text(Some("Delete this local issue brief"));
+            let a = app.clone();
+            let draft_id = draft.id.clone();
+            delete.connect_clicked(move |_| {
+                let page = a.repos_page_rc();
+                page.delete_issue_draft(&draft_id);
+                page.render_drafts(&a);
+            });
+            row.append(&delete);
+            self.drafts_box.append(&row);
+        }
+    }
+
+    fn upsert_issue_draft(&self, draft: workflow::IssueDraft) {
+        self.save(move |config| {
+            if let Some(existing) = config.issue_drafts.iter_mut().find(|existing| existing.id == draft.id) {
+                *existing = draft;
+            } else {
+                config.issue_drafts.push(draft);
+            }
+        });
+    }
+
+    fn delete_issue_draft(&self, id: &str) {
+        let id = id.to_string();
+        self.save(move |config| config.issue_drafts.retain(|draft| draft.id != id));
+    }
+
+    fn edit_issue_draft(&self, app: &Rc<App>, repo: &PinnedRepo, mut draft: workflow::IssueDraft) {
+        draft.repo = repo.repo.clone();
+        if draft.id.is_empty() {
+            draft.id = new_id();
+        }
+        let draft_id = draft.id.clone();
+        let window = gtk::Window::builder()
+            .title(format!("Issue brief · {}", repo.repo))
+            .transient_for(app.window())
+            .modal(true)
+            .default_width(720)
+            .default_height(760)
+            .build();
+        let root = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        root.set_margin_start(18);
+        root.set_margin_end(18);
+        root.set_margin_top(16);
+        root.set_margin_bottom(16);
+
+        let intro = label(
+            "Describe the problem and the observable outcome. Keep implementation choices open for the agent and pull-request review.",
+            &["dim-label"],
+        );
+        intro.set_wrap(true);
+        intro.set_xalign(0.0);
+        root.append(&intro);
+
+        let form_column = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        let title_section = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let title_label = label("Issue title", &["heading"]);
+        title_label.set_xalign(0.0);
+        title_section.append(&title_label);
+        let title = gtk::Entry::new();
+        title.set_placeholder_text(Some("A short, specific description of the problem"));
+        title.set_text(&draft.title);
+        title_section.append(&title);
+        form_column.append(&title_section);
+
+        let problem = append_issue_text_field(&form_column, "Problem and desired outcome", &draft.problem);
+        let context = append_issue_text_field(&form_column, "Context and research", &draft.context);
+        let success = append_issue_text_field(&form_column, "Success criteria", &draft.success_criteria);
+        let constraints = append_issue_text_field(&form_column, "Constraints and non-goals", &draft.constraints);
+
+        let routing = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        let lane = gtk::DropDown::from_strings(&["Unassigned lane", "Build", "Feature", "Maintenance"]);
+        lane.set_selected(match draft.lane.as_str() {
+            "build" => 1,
+            "feature" => 2,
+            "maintenance" => 3,
+            _ => 0,
+        });
+        lane.set_hexpand(true);
+        lane.set_tooltip_text(Some("Issue workflow classification; this does not select a model."));
+        let priority = gtk::DropDown::from_strings(&["Unassigned priority", "P0", "P1", "P2", "P3"]);
+        priority.set_selected(match draft.priority.as_str() {
+            "p0" => 1,
+            "p1" => 2,
+            "p2" => 3,
+            "p3" => 4,
+            _ => 0,
+        });
+        priority.set_hexpand(true);
+        priority.set_tooltip_text(Some("Issue priority; this does not select a provider account."));
+        routing.append(&lane);
+        routing.append(&priority);
+        form_column.append(&routing);
+
+        let agent_ready = gtk::CheckButton::with_label("Mark ready for an agent when filed");
+        agent_ready.set_active(draft.agent_ready);
+        agent_ready.set_tooltip_text(Some("Adds agent:ready to the issue for the repo workflow to pick up."));
+        form_column.append(&agent_ready);
+        let scroll = gtk::ScrolledWindow::builder()
+            .child(&form_column)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .vexpand(true)
+            .build();
+        root.append(&scroll);
+
+        let status = label("", &["caption", "dim-label"]);
+        status.set_wrap(true);
+        status.set_xalign(0.0);
+        root.append(&status);
+
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        actions.set_halign(gtk::Align::End);
+        let cancel = gtk::Button::with_label("Close");
+        let save = gtk::Button::with_label("Save draft");
+        let refine = gtk::Button::with_label("Refine in T3 chat");
+        let file = gtk::Button::with_label("File issue");
+        file.add_css_class("suggested-action");
+        actions.append(&cancel);
+        actions.append(&save);
+        actions.append(&refine);
+        actions.append(&file);
+        root.append(&actions);
+        window.set_child(Some(&root));
+
+        let form = IssueDraftForm { title, problem, context, success, constraints, lane, priority, agent_ready };
+        let save_on_close = Rc::new(Cell::new(true));
+        let app_close = app.clone();
+        let repo_close = repo.repo.clone();
+        let form_close = form.clone();
+        let draft_id_close = draft_id.clone();
+        let save_close = save_on_close.clone();
+        window.connect_close_request(move |_| {
+            let draft = form_close.read(&repo_close, &draft_id_close);
+            let has_content = !draft.title.trim().is_empty()
+                || !draft.problem.trim().is_empty()
+                || !draft.context.trim().is_empty()
+                || !draft.success_criteria.trim().is_empty()
+                || !draft.constraints.trim().is_empty()
+                || !draft.lane.is_empty()
+                || !draft.priority.is_empty()
+                || draft.agent_ready;
+            if save_close.get() && has_content {
+                let page = app_close.repos_page_rc();
+                page.upsert_issue_draft(draft);
+                page.render_drafts(&app_close);
+            }
+            glib::Propagation::Proceed
+        });
+        let close_window = window.clone();
+        cancel.connect_clicked(move |_| close_window.close());
+
+        let a = app.clone();
+        let rr = repo.clone();
+        let form_save = form.clone();
+        let draft_id_save = draft_id.clone();
+        let status_save = status.clone();
+        save.connect_clicked(move |_| {
+            let draft = form_save.read(&rr.repo, &draft_id_save);
+            let page = a.repos_page_rc();
+            page.upsert_issue_draft(draft);
+            page.render_drafts(&a);
+            status_save.set_text("Saved on this device. It has not been filed with GitHub.");
+        });
+
+        let a = app.clone();
+        let rr = repo.clone();
+        let form_refine = form.clone();
+        let draft_id_refine = draft_id.clone();
+        let close_window = window.clone();
+        let save_before_refine = save_on_close.clone();
+        let status_refine = status.clone();
+        refine.connect_clicked(move |_| {
+            if !a.is_connected() {
+                status_refine.set_text("Connect to T3 before opening an intake chat.");
+                return;
+            }
+            let project_id =
+                a.projects().into_iter().find(|project| project_matches_repo(project, &rr)).map(|project| project.id);
+            let Some(project_id) = project_id else {
+                status_refine.set_text("No T3 project is associated with this repository yet.");
+                return;
+            };
+            let draft = form_refine.read(&rr.repo, &draft_id_refine);
+            let prompt = workflow::issue_refinement_prompt(&draft);
+            let page = a.repos_page_rc();
+            page.upsert_issue_draft(draft);
+            page.render_drafts(&a);
+            save_before_refine.set(false);
+            close_window.close();
+            a.new_chat_in(Some(project_id));
+            a.set_entry(&prompt);
+        });
+
+        let a = app.clone();
+        let rr = repo.clone();
+        let form_file = form;
+        let draft_id_file = draft_id;
+        let file_button = file.clone();
+        let status_file = status;
+        let window_file = window.clone();
+        let save_after_file = save_on_close;
+        file.connect_clicked(move |_| {
+            let draft = form_file.read(&rr.repo, &draft_id_file);
+            if let Some(error) = draft.validation_error() {
+                status_file.set_text(error);
+                return;
+            }
+            let page = a.repos_page_rc();
+            page.upsert_issue_draft(draft.clone());
+            page.render_drafts(&a);
+            file_button.set_sensitive(false);
+            let status_result = status_file.clone();
+            let file_retry = file_button.clone();
+            let close_window = window_file.clone();
+            let app_task = a.clone();
+            let save_on_success = save_after_file.clone();
+            let repo = rr.clone();
+            glib::spawn_future_local(async move {
+                if !draft.labels().is_empty() {
+                    workflow::ensure_labels(&repo.repo).await;
+                }
+                match workflow::create_issue(&repo.repo, &draft).await {
+                    Ok(issue) => {
+                        let page = app_task.repos_page_rc();
+                        page.delete_issue_draft(&draft.id);
+                        page.render_drafts(&app_task);
+                        let ready = if draft.agent_ready { "; marked ready for the repo workflow" } else { "" };
+                        app_task.toast(&format!("Filed {}#{}{}", repo.repo, issue.number, ready));
+                        save_on_success.set(false);
+                        close_window.close();
+                        page.show_issues(&app_task, repo);
+                    }
+                    Err(error) => {
+                        status_result.set_text(&format!("Could not confirm issue creation: {error}. The local draft is preserved; check GitHub before retrying."));
+                        file_retry.set_sensitive(true);
+                    }
+                }
+            });
+        });
+        window.present();
     }
 
     fn render_issues(&self, app: &Rc<App>) {

@@ -55,12 +55,75 @@ pub struct Config {
     /// A present empty list intentionally overrides the legacy `started` association.
     #[serde(default)]
     pub issue_chats: HashMap<String, Vec<String>>,
+    /// Owner-written issue briefs that have not yet been filed with GitHub.
+    #[serde(default)]
+    pub issue_drafts: Vec<IssueDraft>,
     /// repo → scheduled task id of its runner.
     #[serde(default)]
     pub runners: HashMap<String, String>,
     /// repo → the webhook task and the GitHub hook that feeds it.
     #[serde(default)]
     pub webhooks: HashMap<String, WebhookInstall>,
+}
+
+/// Local issue brief. It describes the problem and acceptance criteria; it deliberately stores no
+/// implementation plan or provider selection, which belong to a later execution decision.
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct IssueDraft {
+    pub id: String,
+    pub repo: String,
+    pub title: String,
+    pub problem: String,
+    pub context: String,
+    pub success_criteria: String,
+    pub constraints: String,
+    pub lane: String,
+    pub priority: String,
+    pub agent_ready: bool,
+    pub updated_at: String,
+}
+
+impl IssueDraft {
+    pub fn validation_error(&self) -> Option<&'static str> {
+        if self.title.trim().is_empty() {
+            Some("Add an issue title before filing.")
+        } else if self.problem.trim().is_empty() {
+            Some("Describe the problem or desired change before filing.")
+        } else if self.success_criteria.trim().is_empty() {
+            Some("Add success criteria so the issue says what done looks like.")
+        } else {
+            None
+        }
+    }
+
+    pub fn body(&self) -> String {
+        let mut sections = vec![format!("## Problem and desired outcome\n{}", self.problem.trim())];
+        for (heading, text) in [
+            ("Context and research", self.context.trim()),
+            ("Success criteria", self.success_criteria.trim()),
+            ("Constraints and non-goals", self.constraints.trim()),
+        ] {
+            if !text.is_empty() {
+                sections.push(format!("## {heading}\n{text}"));
+            }
+        }
+        sections.join("\n\n")
+    }
+
+    /// Issue workflow labels are independent of the provider/account selected for execution.
+    pub fn labels(&self) -> Vec<String> {
+        let mut labels = Vec::new();
+        if LANES.contains(&self.lane.as_str()) {
+            labels.push(format!("lane:{}", self.lane));
+        }
+        if PRIORITIES.contains(&self.priority.as_str()) {
+            labels.push(self.priority.clone());
+        }
+        if self.agent_ready {
+            labels.push("agent:ready".into());
+        }
+        labels
+    }
 }
 
 impl Config {
@@ -218,6 +281,44 @@ pub async fn gh_with_input(args: &[&str], input: Option<&str>) -> Result<Value, 
 pub async fn issues(repo: &str) -> Result<Vec<Issue>, String> {
     let v = gh(&[&format!("repos/{repo}/issues?state=open&per_page=100")]).await?;
     Ok(parse_issues(&v))
+}
+
+/// Files an owner-reviewed issue brief. The request creates an issue only; it does not start an
+/// agent. `agent:ready`, when selected by the owner, is a workflow label consumed separately by
+/// the repo's runner.
+pub async fn create_issue(repo: &str, draft: &IssueDraft) -> Result<Issue, String> {
+    let endpoint = format!("repos/{repo}/issues");
+    let response =
+        gh_with_input(&["-X", "POST", &endpoint, "--input", "-"], Some(&issue_payload(draft).to_string())).await?;
+    let Some(number) = response.get("number").and_then(Value::as_u64) else {
+        return Err("GitHub created an issue but did not return its number.".into());
+    };
+    Ok(Issue {
+        number,
+        title: response.get("title").and_then(Value::as_str).unwrap_or(&draft.title).to_string(),
+        body: response.get("body").and_then(Value::as_str).unwrap_or("").to_string(),
+        url: response.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(),
+        labels: draft.labels(),
+        updated_at: response.get("updated_at").and_then(Value::as_str).unwrap_or("").to_string(),
+        comments: 0,
+    })
+}
+
+pub fn issue_payload(draft: &IssueDraft) -> Value {
+    json!({"title": draft.title.trim(), "body": draft.body(), "labels": draft.labels()})
+}
+
+/// Prompt for a user-reviewed intake chat. The composer remains unsent until the owner presses Send.
+pub fn issue_refinement_prompt(draft: &IssueDraft) -> String {
+    format!(
+        "Help refine a GitHub issue brief for {}. Research relevant context when available, separate confirmed facts from assumptions, and ask focused questions if the scope or success criteria are unclear. Do not propose an implementation plan, edit files, create the issue, or start work. Return a concise brief with: title, problem and desired outcome, context and research links, measurable success criteria, and constraints/non-goals. Keep the solution open for the future implementation agent.\n\nInitial title: {}\n\nProblem or desired change:\n{}\n\nContext and research:\n{}\n\nSuccess criteria:\n{}\n\nConstraints and non-goals:\n{}",
+        draft.repo,
+        if draft.title.trim().is_empty() { "(not set)" } else { draft.title.trim() },
+        if draft.problem.trim().is_empty() { "(not set)" } else { draft.problem.trim() },
+        if draft.context.trim().is_empty() { "(not set)" } else { draft.context.trim() },
+        if draft.success_criteria.trim().is_empty() { "(not set)" } else { draft.success_criteria.trim() },
+        if draft.constraints.trim().is_empty() { "(not set)" } else { draft.constraints.trim() },
+    )
 }
 
 pub async fn comments(repo: &str, number: u64) -> Result<Vec<(String, String, String)>, String> {
@@ -474,6 +575,45 @@ mod tests {
 
         let old: Config = serde_json::from_value(json!({"repos": [], "started": {"o/r#7": "legacy-thread"}})).unwrap();
         assert_eq!(old.chats_for_issue("o/r#7"), vec!["legacy-thread"]);
+    }
+
+    #[test]
+    fn issue_brief_separates_acceptance_contract_from_execution_routing() {
+        let mut draft = IssueDraft {
+            repo: "o/r".into(),
+            title: "Add repo issue intake".into(),
+            problem: "Owners need a place to refine a request.".into(),
+            context: "Current issues can be read from the Repos page.".into(),
+            success_criteria: "A filed issue describes observable outcomes.".into(),
+            constraints: "Do not prescribe implementation.".into(),
+            lane: "feature".into(),
+            priority: "p1".into(),
+            agent_ready: false,
+            ..Default::default()
+        };
+        assert!(draft.body().contains("## Success criteria"));
+        assert!(!draft.body().contains("implementation plan"));
+        assert_eq!(draft.labels(), vec!["lane:feature", "p1"]);
+        let payload = issue_payload(&draft);
+        assert_eq!(payload["title"], "Add repo issue intake");
+        assert_eq!(payload["labels"], json!(["lane:feature", "p1"]));
+        assert!(payload.get("modelSelection").is_none());
+
+        draft.agent_ready = true;
+        assert_eq!(draft.labels(), vec!["lane:feature", "p1", "agent:ready"]);
+        assert!(issue_refinement_prompt(&draft).contains("Keep the solution open"));
+    }
+
+    #[test]
+    fn issue_brief_requires_problem_and_success_before_filing() {
+        let mut draft = IssueDraft::default();
+        assert_eq!(draft.validation_error(), Some("Add an issue title before filing."));
+        draft.title = "A title".into();
+        assert_eq!(draft.validation_error(), Some("Describe the problem or desired change before filing."));
+        draft.problem = "The problem".into();
+        assert_eq!(draft.validation_error(), Some("Add success criteria so the issue says what done looks like."));
+        draft.success_criteria = "An observable outcome".into();
+        assert_eq!(draft.validation_error(), None);
     }
 
     #[test]
