@@ -48,12 +48,14 @@ acceptance remain open.
 The main window also supports Ctrl+F (search), Ctrl+R (refresh), Ctrl+N (new
 message) and Escape (clear focused search or return to the compact conversation
 list). Search, conversation list, favorite control and composer have SDK
-accessible names. Sending still requires the explicit Send button.
+accessible names. The conversation header can explicitly copy recipient
+addresses to the clipboard. Sending still requires the explicit Send button.
 
 **Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml --package mseries-messages`,
 `cargo check --locked --manifest-path rust/Cargo.toml -p mseries-messages`, and
 `git diff --check` passed. No Messages test suite or GUI probe was run for this
-keyboard change. Full interaction and assistive-technology review remains open.
+keyboard and clipboard-action change. Full interaction and assistive-technology
+review remains open.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
