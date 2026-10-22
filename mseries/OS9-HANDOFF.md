@@ -10782,7 +10782,8 @@ through BlueFerry's supported API. It preserves local new-message drafts until
 the service reports the canonical thread, leaves composing available while
 offline, and adds Reply/Copy actions plus attachment and shortened-message
 indicators. Message text is escaped and only checked HTTP(S)/www destinations
-become clickable links. ARM64 package CI passes. These are source/build
+become clickable links. Starred conversations appear in a horizontally
+scrollable favorites strip. ARM64 package CI passes. These are source/build
 receipts; live UI, private GUI and iPhone delivery still need acceptance.
 
 Signal remains on the signed official client. The Rust app needs an
@@ -10793,8 +10794,8 @@ private profile/database or implement its protocol here. See
 
 Source/build checks only; no live GUI, phone, send, install, or desktop-session
 qualification was performed. Current Rust Messages gaps include imported pins,
-favorite layout, contact photos, bounded link/image previews, Tapback/reaction
-folding, detailed delivery and retry feedback, remaining message actions,
+contact photos, bounded link/image previews, Tapback/reaction folding, detailed
+delivery and retry feedback, remaining message actions,
 keyboard/accessibility parity, narrow layouts, localization and end-to-end
 owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
 warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
