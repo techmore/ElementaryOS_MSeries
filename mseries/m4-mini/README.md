@@ -871,3 +871,18 @@ checkout's reference hashes remain unchanged. This is a summary preflight, not
 a complete image, ISO, installer or native M4 result. Source/kernel dates alone
 do not close HDMI, 10 Gb Ethernet, GPU, firmware or macOS/Recovery gates.
 [Integrated preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
+
+### Full hosted image-only build preparation
+
+The daily workflow now accepts `m4_image_only=true`. It consumes only the three
+reviewed run/source pairs in `hosted-inputs.json`, revalidates successful job and
+artifact provenance, prepares matched inputs and invokes the complete image
+driver with checksum-pinned mkosi `f7e3288`. It uses the normal subordinate-ID
+build path, preserves every configured dependency image, and checks the resulting
+raw sysupdate ESP against the selected boot bundle before GPT export/compression.
+
+The job retains build records on failure and research raw/source artifacts on
+success. It does not publish a release, assemble an ISO, run an installer or
+qualify hardware. YAML/shell/isolation checks and 13 relevant tests pass; actual
+hosted execution is required before claiming any full-image result.
+[Preflight](receipts/2026-10-21-hosted-image-preflight.json).

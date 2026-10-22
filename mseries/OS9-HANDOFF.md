@@ -10901,3 +10901,8 @@ hosted components prepare and resolve full11-image graph. Only disposable-clone
 kernel/boot hash hooks differ; source references unchanged. Explicit fresh boot
 receipt boundary (2 groups) and optional boot intake (6 groups) pass. Full image/
 ISO/import/native qualification remains open. Next: full hosted image execution.
+
+M4 image-only hosted job prepared: fixed reviewed run/source manifest, verified
+artifact intake, complete native mkosi graph, actual raw ESP/GPT checks and
+research artifacts only. 13 tests plus workflow syntax/isolation pass. Dispatch
+next; no complete image/ISO/installer/native result yet.

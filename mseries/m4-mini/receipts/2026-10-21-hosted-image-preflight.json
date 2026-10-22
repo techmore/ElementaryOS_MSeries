@@ -1,0 +1,29 @@
+{
+  "scope": "full hosted image-only job preparation; no hosted image build result yet",
+  "workflow_sha256": "b949784bbcd46b2dc8a3135ea65121bc36f80490017180c1994649ec27cbb36e",
+  "inputs": {
+    "schema": 1,
+    "scope": "reviewed successful research component builds; no installer admission",
+    "components": {
+      "kernel": {
+        "run": 39698975678,
+        "source": "2798237ed0b3cd386385e8ec0d92a10fb0987db7"
+      },
+      "mesa": {
+        "run": 39704499140,
+        "source": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a"
+      },
+      "boot": {
+        "run": 39706878433,
+        "source": "5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c"
+      }
+    }
+  },
+  "checks": "YAML and all image shell blocks parse; ordinary/Fairydust exclusion; 13 relevant unit tests pass",
+  "mkosi_commit": "f7e32882d26e2c5f3daba48e1aff5b411e6b4d92",
+  "mkosi_archive_sha256": "ed3ed857f768fb85139517eec4ea673f25d1a597e87ab7a59420c4c0accce3b5",
+  "planned_output_checks": "actual raw-image m1n1 ESP readback and GPT export; compressed raw artifacts and component source bundles",
+  "complete_factory_image_built": false,
+  "hardware_validated": false,
+  "installer_admission": false
+}
