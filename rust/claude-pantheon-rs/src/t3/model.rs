@@ -603,6 +603,52 @@ mod tests {
         assert!(view.is_running());
         assert_eq!(view.active_run_id.as_deref(), Some("run-2"));
     }
+
+    #[test]
+    fn history_pages_prepend_in_position_order_and_keep_live_overlap_once() {
+        use crate::t3::history::ProjectedTurnItem;
+
+        let projected = |position, source_item_id: &str, text: &str| ProjectedTurnItem {
+            position,
+            source_thread_id: "thread-a".into(),
+            source_item_id: source_item_id.into(),
+            item: TurnItem {
+                id: source_item_id.into(),
+                kind: "assistant_message".into(),
+                text: text.into(),
+                ..Default::default()
+            },
+        };
+        let mut view = ThreadView::default();
+        view.upsert(TurnItem {
+            id: "tail".into(),
+            kind: "assistant_message".into(),
+            text: "latest live text".into(),
+            source_thread_id: Some("thread-a".into()),
+            source_item_id: Some("tail".into()),
+            ..Default::default()
+        });
+
+        let added = view.prepend_history(vec![
+            projected(3, "older-3", "third"),
+            projected(1, "older-1", "first"),
+            projected(2, "older-2", "second"),
+            projected(2, "older-2", "duplicate within page"),
+            projected(4, "tail", "stale overlap"),
+        ]);
+        assert_eq!(added, 3);
+        assert_eq!(
+            view.items.iter().map(|item| item.source_item_id.as_deref().unwrap_or("")).collect::<Vec<_>>(),
+            ["older-1", "older-2", "older-3", "tail"]
+        );
+        assert_eq!(view.items[3].text, "latest live text", "history overlap cannot replace a live update");
+
+        let added = view
+            .prepend_history(vec![projected(2, "older-2", "duplicate across pages"), projected(0, "oldest", "oldest")]);
+        assert_eq!(added, 1);
+        assert_eq!(view.items[0].source_item_id.as_deref(), Some("oldest"));
+        assert_eq!(view.items.last().unwrap().text, "latest live text");
+    }
 }
 
 #[cfg(test)]

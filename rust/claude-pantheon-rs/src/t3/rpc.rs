@@ -11,7 +11,10 @@ use serde_json::{Value, json};
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+const PING_INTERVAL: Duration = Duration::from_secs(5);
+const PING_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[derive(Debug, Clone)]
 pub enum RpcError {
@@ -102,11 +105,19 @@ enum Pending {
     Stream(mpsc::UnboundedSender<Result<Value, RpcError>>),
 }
 
+enum OutgoingFrame {
+    Text(String),
+    Ping,
+    Pong(Vec<u8>),
+    Close,
+}
+
 struct Inner {
     ws: Rc<WebSocket>,
     next_id: Cell<u64>,
     pending: RefCell<HashMap<String, Pending>>,
-    outgoing: mpsc::UnboundedSender<String>,
+    outgoing: mpsc::UnboundedSender<OutgoingFrame>,
+    last_received: Cell<Instant>,
     closed: Cell<bool>,
     on_close: RefCell<Vec<CloseHook>>,
 }
@@ -122,12 +133,13 @@ pub struct Rpc {
 impl Rpc {
     /// Wraps an upgraded socket and starts the reader, writer and keep-alive tasks on the main loop.
     pub fn start(ws: Rc<WebSocket>) -> Rpc {
-        let (out_tx, mut out_rx) = mpsc::unbounded::<String>();
+        let (out_tx, mut out_rx) = mpsc::unbounded::<OutgoingFrame>();
         let inner = Rc::new(Inner {
             ws: ws.clone(),
             next_id: Cell::new(1),
             pending: RefCell::new(HashMap::new()),
             outgoing: out_tx,
+            last_received: Cell::new(Instant::now()),
             closed: Cell::new(false),
             on_close: RefCell::new(Vec::new()),
         });
@@ -137,8 +149,17 @@ impl Rpc {
         let w = rpc.clone();
         glib::spawn_future_local(async move {
             use futures_util::StreamExt;
-            while let Some(text) = out_rx.next().await {
-                if let Err(e) = w.inner.ws.send_text(&text).await {
+            while let Some(frame) = out_rx.next().await {
+                let result = match frame {
+                    OutgoingFrame::Text(text) => w.inner.ws.send_text(&text).await,
+                    OutgoingFrame::Ping => w.inner.ws.send_ping().await,
+                    OutgoingFrame::Pong(payload) => w.inner.ws.send_pong(&payload).await,
+                    OutgoingFrame::Close => {
+                        let _ = w.inner.ws.send_close().await;
+                        break;
+                    }
+                };
+                if let Err(e) = result {
                     w.fail_all(format!("send failed: {e}"));
                     break;
                 }
@@ -149,33 +170,47 @@ impl Rpc {
         let r = rpc.clone();
         glib::spawn_future_local(async move {
             loop {
+                if r.inner.closed.get() {
+                    break;
+                }
                 match r.inner.ws.next().await {
-                    Ok(Frame::Text(text)) => r.dispatch(&text),
-                    Ok(Frame::Ping(p)) => {
-                        let _ = r.inner.ws.send_pong(&p).await;
-                    }
-                    Ok(Frame::Pong(_)) | Ok(Frame::Binary(_)) => {}
-                    Ok(Frame::Close(code)) => {
-                        r.fail_all(format!("server closed the connection ({})", code.unwrap_or(0)));
-                        break;
+                    Ok(frame) => {
+                        r.inner.last_received.set(Instant::now());
+                        match frame {
+                            Frame::Text(text) => r.dispatch(&text),
+                            Frame::Ping(payload) => {
+                                let _ = r.inner.outgoing.unbounded_send(OutgoingFrame::Pong(payload));
+                            }
+                            Frame::Pong(_) | Frame::Binary(_) => {}
+                            Frame::Close(code) => {
+                                r.fail_all(format!("server closed the connection ({})", code.unwrap_or(0)));
+                            }
+                        }
                     }
                     Err(e) => {
                         r.fail_all(format!("connection lost: {e}"));
-                        break;
                     }
                 }
             }
         });
 
-        // Keep-alive: one tiny frame every 30 s, nothing else runs while idle.
+        // Match T3's client-runtime socket health check. Any incoming frame is activity; the
+        // timeout detects half-open Wi-Fi/relay links without treating long-running streams as idle.
         let k = rpc.clone();
         glib::spawn_future_local(async move {
             loop {
-                glib::timeout_future(Duration::from_secs(30)).await;
+                glib::timeout_future(PING_INTERVAL).await;
                 if k.inner.closed.get() {
                     break;
                 }
-                k.send_json(&json!({"_tag": "Ping"}));
+                if heartbeat_expired(k.inner.last_received.get(), Instant::now(), PING_TIMEOUT) {
+                    k.fail_all(format!("server stopped responding for {} seconds", PING_TIMEOUT.as_secs()));
+                    break;
+                }
+                if k.inner.outgoing.unbounded_send(OutgoingFrame::Ping).is_err() {
+                    k.fail_all("could not queue the WebSocket heartbeat".into());
+                    break;
+                }
             }
         });
         rpc
@@ -208,7 +243,7 @@ impl Rpc {
                 eprintln!("rpc -> {preview}");
             }
         }
-        let _ = self.inner.outgoing.unbounded_send(v.to_string());
+        let _ = self.inner.outgoing.unbounded_send(OutgoingFrame::Text(v.to_string()));
     }
 
     fn new_id(&self) -> String {
@@ -257,7 +292,7 @@ impl Rpc {
 
     pub async fn close(&self) {
         self.inner.closed.set(true);
-        let _ = self.inner.ws.send_close().await;
+        let _ = self.inner.outgoing.unbounded_send(OutgoingFrame::Close);
     }
 
     fn dispatch(&self, text: &str) {
@@ -321,7 +356,12 @@ impl Rpc {
         for f in self.inner.on_close.borrow().iter() {
             f(reason.clone());
         }
+        let _ = self.inner.outgoing.unbounded_send(OutgoingFrame::Close);
     }
+}
+
+fn heartbeat_expired(last_received: Instant, now: Instant, timeout: Duration) -> bool {
+    now.saturating_duration_since(last_received) >= timeout
 }
 
 fn id_text(v: &Option<Value>) -> Option<String> {
@@ -353,5 +393,14 @@ mod tests {
             serde_json::from_str(r#"{"_tag":"Chunk","requestId":7,"values":[{"kind":"synchronized"}]}"#).unwrap();
         assert_eq!(id_text(&chunk.request_id).as_deref(), Some("7"));
         assert_eq!(chunk.values.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn heartbeat_expires_after_silence_and_resets_on_any_frame() {
+        let last = Instant::now();
+        assert!(!heartbeat_expired(last, last + PING_TIMEOUT - Duration::from_millis(1), PING_TIMEOUT));
+        assert!(heartbeat_expired(last, last + PING_TIMEOUT, PING_TIMEOUT));
+        let received = last + Duration::from_secs(14);
+        assert!(!heartbeat_expired(received, last + PING_TIMEOUT, PING_TIMEOUT));
     }
 }

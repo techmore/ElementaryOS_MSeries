@@ -62,3 +62,76 @@ pub async fn fetch_page(cred: &auth::Credential, thread_id: &str, cursor: &str) 
     }
     serde_json::from_str(&response.body).map_err(|error| format!("Invalid T3 history response: {error}"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    #[test]
+    fn fetches_history_with_encoded_thread_and_opaque_cursor() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0; 1024];
+            loop {
+                let count = stream.read(&mut chunk).unwrap();
+                if count == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..count]);
+                if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+
+            let body = serde_json::json!({
+                "snapshotSequence": 91,
+                "items": [{
+                    "position": 4,
+                    "sourceThreadId": "thread/with space",
+                    "sourceItemId": "older-4",
+                    "item": {"id": "older-4", "type": "assistant_message", "text": "Earlier answer"}
+                }],
+                "nextCursor": "next +/opaque",
+                "hasMoreHistory": true
+            })
+            .to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .unwrap();
+            String::from_utf8(request).unwrap()
+        });
+
+        let credential = auth::Credential {
+            server: format!("http://{address}"),
+            access_token: "fixture-token".into(),
+            label: "fixture".into(),
+            environment_id: "fixture-env".into(),
+        };
+        let context = gtk::glib::MainContext::new();
+        let page = context.block_on(fetch_page(&credential, "thread/with space", "opaque+/=cursor")).unwrap();
+        let request = server.join().unwrap();
+
+        assert!(request.starts_with(
+            "GET /api/orchestration/threads/thread%2Fwith%20space/history?cursor=opaque%2B%2F%3Dcursor HTTP/1.1\r\n"
+        ));
+        assert!(request.lines().any(|line| line == "Authorization: Bearer fixture-token"));
+        assert!(request.lines().any(|line| line == "x-t3-orchestration-protocol: 2"));
+        assert_eq!(page.snapshot_sequence, 91);
+        assert_eq!(page.items.len(), 1);
+        assert_eq!(page.items[0].source_thread_id, "thread/with space");
+        assert_eq!(page.items[0].source_item_id, "older-4");
+        assert_eq!(page.next_cursor.as_deref(), Some("next +/opaque"));
+        assert!(page.has_more_history);
+    }
+}
