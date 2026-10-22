@@ -61,13 +61,15 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## Pinned Aurora source fetch retries — 2026-10-22
+## Pinned Aurora source fetch follow-up — 2026-10-22
 
-The #518 unified72 workflow failed at pinned-source preparation with HTTP 429, before kernel checks/build/package
-inspection. The downloader now applies at most four attempts to HTTP 429/transient 5xx, honors `Retry-After` within a
-30-second cap, and retains checksum verification and fail-closed handling. The 76-test Aurora suite passes using mocked
-responses; no real archive fetch or wip4 build is claimed. #518 remains conflicted with `dev`; rerun its source preparation
-after this retry change is reviewed, then record later build evidence separately.
+Both #518 run 39770268111 and #528 run 39836069576 received repeated HTTP 429 responses from the pinned codeload URL;
+the retry policy exhausted before unified72 source preparation. The candidate profile passed prep and entered its isolated
+CI build. The current follow-up retains archive SHA-256 verification, retries transient responses, then uses the exact
+Git URL, commit and tree SHA-1 pinned in `aurora/unified72/series.json` only after a retryable HTTP error. Mocked checks
+cover both paths, and the preparation receipt records the acquisition method and archive digest; the remote fallback and
+wip4 build still need CI evidence. No local source fetch or hardware/kernel
+installation occurred. #518 remains conflicted with `dev` and unreviewed; verify updated CI before considering its refresh.
 
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
