@@ -998,3 +998,12 @@ disabled and no storage device. No TAP/test result exists yet. Initial Kconfig
 and rust-src location setup failures are retained. Source preparation and a
 live compile are not scheduler or hardware test passes.
 [Preparation record](receipts/2026-10-21-scheduler-kunit-preparation.json).
+
+KUnit compile follow-up: the first source compile stopped before testing on
+older faux-device typestate and an existing KUnit-only iosys_map assertion
+helper's missing Debug bound. The isolated patch now uses the actual older
+Device type and bounds that test assertion method. A fresh no-fuzz patch replay
+reproduces both current test-tree files exactly. The same native build directory
+is resumed under session 92953; no runtime pass is claimed. Production kernel
+patch manifests are unchanged by these test repairs.
+[Repair record](receipts/2026-10-21-scheduler-kunit-api-repair.json).

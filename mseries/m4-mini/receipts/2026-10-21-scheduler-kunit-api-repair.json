@@ -1,0 +1,19 @@
+{
+  "scope": "KUnit-only API/build repair; no runtime test result",
+  "previous_native_session": 17232,
+  "previous_result": "compile failed before tests",
+  "diagnostics": [
+    "faux registration returns Device<Normal> in this kernel, not the newer Bound type",
+    "KUnit iosys_map generic assertion helper needs a Debug bound"
+  ],
+  "repairs": [
+    "use actual older Device type for the test registrations",
+    "bound only the test helper assertion method with Debug"
+  ],
+  "test_patch_sha256": "53ec2a2603757bcfa470ec83e3d96627fe7dcb640db1731ef79cc37a4448709c",
+  "patched_source_exact_replay": "no-fuzz application reproduces both current test-tree files",
+  "current_native_session": 92953,
+  "production_kernel_manifest_changed": false,
+  "kunit_passed": false,
+  "hardware_validated": false
+}

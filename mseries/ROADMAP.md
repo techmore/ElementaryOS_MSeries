@@ -3972,3 +3972,7 @@ Separate scheduler KUnit sources prepared; native session17232 compiling in
 work/m4-scheduler-kunit. Three adapted upstream cases; TCG/no network/storage.
 Test patch is excluded from production kernel manifest. No test result yet;
 follow live session rather than restarting. Both hosted builds also remain active.
+
+KUnit session17232 terminal compile failure: older Device typestate and existing
+KUnit-only iosys assertion Debug bound. Test-side repairs apply/replay exactly;
+resumed same build tree as session92953. No production patch/test pass claimed.

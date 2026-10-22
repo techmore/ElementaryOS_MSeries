@@ -182,7 +182,7 @@ This patch is not part of the normal kernel package patch set.
 +    #[test]
 +    fn dirty_storage_starts_clean() -> Result {
 +        let reg = faux::Registration::new(c"rust-drm-sched-kunit-0", None)?;
-+        let dev: &device::Device<device::Bound> = reg.as_ref().as_ref();
++        let dev: &device::Device = reg.as_ref().as_ref();
 +        let sched = dirty_scheduler(dev, 1)?;
 +        let raw = &sched.0.sched;
 +        // Read the reset flags as bytes: stale storage need not hold a valid bool.
@@ -203,7 +203,7 @@ This patch is not part of the normal kernel package patch set.
 +    #[test]
 +    fn late_completion_after_timeouts() -> Result {
 +        let reg = faux::Registration::new(c"rust-drm-sched-kunit-1", None)?;
-+        let dev: &device::Device<device::Bound> = reg.as_ref().as_ref();
++        let dev: &device::Device = reg.as_ref().as_ref();
 +        let contexts = FenceContexts::new(1, c"rust_drm_sched_kunit", FENCE_KEY)?;
 +        let sched = dirty_scheduler(dev, 1)?;
 +        let mut entity = Entity::new(&sched, Priority::Kernel)?;
@@ -244,7 +244,7 @@ This patch is not part of the normal kernel package patch set.
 +        const ORDER: [usize; JOBS - 2] = [3, 0, 5, 1, 4, 2];
 +
 +        let reg = faux::Registration::new(c"rust-drm-sched-kunit-2", None)?;
-+        let dev: &device::Device<device::Bound> = reg.as_ref().as_ref();
++        let dev: &device::Device = reg.as_ref().as_ref();
 +        let contexts = FenceContexts::new(1, c"rust_drm_sched_kunit", FENCE_KEY)?;
 +        let sched = dirty_scheduler(dev, JOBS as u32)?;
 +        let mut entity = Entity::new(&sched, Priority::Kernel)?;
@@ -321,3 +321,14 @@ This patch is not part of the normal kernel package patch set.
 +        Ok(())
 +    }
 +}
+--- a/rust/kernel/iosys_map.rs
++++ b/rust/kernel/iosys_map.rs
+@@ -545,7 +545,7 @@
+         }
+ 
+         /// Assert whether or not the contents of this struct match src.
+-        pub fn assert_eq(&self, src: &[T]) {
++        pub fn assert_eq(&self, src: &[T]) where T: core::fmt::Debug {
+             assert_eq!(*self.vec.as_ref(), *src)
+         }
+     }
