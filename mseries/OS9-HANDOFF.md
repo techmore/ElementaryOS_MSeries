@@ -3,7 +3,9 @@
 Continued the native GTK 4 + Granite T3 client in `rust/claude-pantheon-rs` and recorded the larger roadmap in
 [issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). In taskbar mode, the T3-R application
 launcher now owns a native GTK popover attached to the Dock icon: hover opens after 250 ms, pointer leave has a 450 ms
-grace period, click pins/toggles, and Escape or outside click dismisses the pinned popup. **Open full chat** presents
+grace period, click pins/toggles, and Escape or outside click dismisses the pinned popup. While taskbar mode is active,
+the T3-R panel suppresses the Dock's shorter launcher tooltip so two popovers do not compete; switching taskbar mode
+off restores the standard tooltip. **Open full chat** presents
 the complete desktop client; New chat, Usage, Settings, and live thread rows route to its matching destination. Outside
 taskbar mode, the launcher opens the full client directly; `--quick` remains an optional standalone status window.
 The popover shows the paired T3 environment and quota for only the provider selected in full chat; other provider
@@ -67,11 +69,14 @@ user-local binary, and D-Bus activation relaunched it as PID 3819605. Its fresh 
 Codex selected, running 0, pending 0. The CodexBar-style Dock popover change then passed a clean pinned Dock 8.3.3 build,
 linked-type checks, existing Dock hover/pin/focus probes, Rust release build and strict release Clippy, desktop-file and
 AppStream validation. The patched Dock was installed under `~/.local/lib/mseries/dock`; `pantheon-dock.service` is now
-running PID 3943130 (wrapper PID 3943115) after restarting to load the newly pinned T3-R launcher and token-sized popup,
-with `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The popup header icon now scales with the shared dock
+running PID 4027229 (wrapper PID 4027212) after restarting to load the T3-R popup tooltip fix, with binary SHA-256
+`131ddbd7a662c999a669c875173c1a787118d0bdaf9c07bec4ee48d12bf5e84e`, and the pinned T3-R launcher remains in place.
+Taskbar settings are `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The popup header icon scales with the shared dock
 icon token at 7/12 of its configured size, keeping 28 px at the 48 px default and 23 px at the 40 px setting. The
 strict size-system unit suite passed all 35 tests, and the full pinned Dock build plus hover/pin/dismiss fixtures passed
-in light and dark themes after this change. The updated T3-R binary was installed
+in light and dark themes after this change. The latest Dock qualification also confirms that no competing launcher
+tooltip is mapped while the T3-R panel is open; the refreshed light and dark captures show the panel attached to the icon.
+The updated T3-R binary was installed
 and D-Bus activation launched the current full window as PID 3871272; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
 running 0, pending 0. The new popover class is linked into the installed Dock, and the dedicated GTK/Xvfb fixture exercises the T3-R icon hover, selected-account content, full-chat/thread actions, click pin, outside dismissal and Escape in both themes. The fixture now captures the mapped T3-R panel during hover in light and dark themes (`light-t3r-hover.png`, `dark-t3r-hover.png` in the requested qualification output directory); the captured panel renders the selected account, quota, activity and full-chat action. Its X11 input and image capture do not qualify the live Wayland pointer path. The T3-R desktop entry was missing from the user's pinned launcher list; it has now been appended while preserving the existing launcher order, so the popup icon stays available when the full chat is closed. The native computer-use tools are unavailable in this session, so a live pointer pass is still pending.
 The GTK render harness now opens the largest local offline conversation (27 MB), verifies the transcript's vertical adjustment reaches both ends, and checks that scrolling leaves the composer's window position unchanged. The full Xvfb render harness passed with no saved T3 credentials in its isolated XDG configuration; live-server checks were skipped in that run.

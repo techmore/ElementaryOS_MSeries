@@ -8,7 +8,9 @@ from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 The T3-R app's own launcher gets an anchored status popover in taskbar mode, using the same 250 ms hover open,
 450 ms leave grace, click-to-pin and Escape behavior as CodexBar. It reads the app's private status snapshot,
 shows only the selected provider account, and sends full chat/new thread/usage/settings/thread actions back through
-the installed T3-R app. The ordinary launcher opens the full chat; the popover does not create another T3 connection.
+the installed T3-R app. While taskbar mode is active, this panel replaces the Dock's shorter launcher tooltip so the
+two popovers do not race; disabling taskbar mode restores the ordinary tooltip and launcher behavior. The ordinary
+launcher opens the full chat; the popover does not create another T3 connection.
 
 ## Taskbar launcher sizing
 
@@ -42,7 +44,8 @@ backend and in-memory settings; it checks hover, focus retention, leave, convert
 hover to a pinned menu and click dismissal. CI runs the same build/probe path.
 The production-launcher fixture saves the mapped T3-R popup as
 `light-t3r-hover.png` and `dark-t3r-hover.png` in its output directory for visual
-inspection. No test installs a binary or restarts a live desktop service.
+inspection, and checks that the Dock tooltip is not mapped beside the T3-R panel.
+No test installs a binary or restarts a live desktop service.
 
 Future dock patches must use this full stack. App tracking changes belong after
 it and must preserve `Taskbar.vala`, `TaskbarCodexBar.vala` and the Start menu.

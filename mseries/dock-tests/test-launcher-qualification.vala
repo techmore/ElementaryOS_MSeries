@@ -55,6 +55,12 @@ bool t3_popup_mapped (Gtk.Widget w) {
     for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (t3_popup_mapped(c)) return true;
     return false;
 }
+bool competing_popup_mapped (Gtk.Widget w) {
+    if (w is Gtk.Popover && !(w is Gtk.PopoverMenu) && w.get_mapped () &&
+        !w.has_css_class ("taskbar-t3r-popup")) return true;
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (competing_popup_mapped(c)) return true;
+    return false;
+}
 bool subtree_has_label (Gtk.Widget w, string text) {
     if (w is Gtk.Label && ((Gtk.Label) w).label == text) return true;
     for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (subtree_has_label(c,text)) return true;
@@ -138,6 +144,7 @@ void show_fixture (bool dark) {
         data.set_member_name("focused_entry");data.add_boolean_value(window.get_focus()!=null && (window.get_focus()==entry || window.get_focus().is_ancestor(entry)));
         data.set_member_name("menus");data.begin_array();foreach(var l in launchers)data.add_boolean_value(popup_mapped(l));data.end_array();
         data.set_member_name("t3_popup");data.add_boolean_value(t3_popup_mapped(launchers[4]));
+        data.set_member_name("t3_competing_popup");data.add_boolean_value(competing_popup_mapped(launchers[4]));
         var t3_text=new StringBuilder (); collect_text (launchers[4], t3_text);
         data.set_member_name("t3_text");data.add_string_value (t3_text.str);
         data.set_member_name("markers");data.begin_array();

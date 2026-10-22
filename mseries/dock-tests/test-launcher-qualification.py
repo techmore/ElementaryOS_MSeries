@@ -134,6 +134,7 @@ def inside(binary, output, theme):
         waitfor(lambda: Path(os.environ['QUAL_TYPED']).read_text() == 'typing-after-menu-and-activation')
         move('t3r')
         waitfor(lambda: state().get('t3_popup'))
+        assert not state().get('t3_competing_popup'), 'the Dock tooltip competed with the T3-R quick panel'
         assert state()['focused_entry'], 'T3 hover popup stole typing focus'
         labels = state()['t3_text']
         assert 'fixture-eos' in labels and 'Codex' in labels and '42% used' in labels, labels
