@@ -1,3 +1,9 @@
+## Public fixes and enhancements audit — 2026-10-21
+
+A structured public capability ledger (`docs/capabilities.json`) now covers 54 scoped areas at immutable source 8a201c3d03c2a128deb5ea090ad61a1cc286dfcc. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Eight claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, unarmed wip3 staging, Torrential redistribution limits and synthetic performance numbers. Open notification-history/remote-desktop/dense-account PRs are tracked separately. No host state, accounts, services or model queues changed.
+
+Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
