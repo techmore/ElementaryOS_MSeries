@@ -1,3 +1,11 @@
+## PolyBagger multi-printer and USB reconnect support — 2026-10-22
+
+`mseries/polybagger-print-manager/` now supports multiple USB printer-class devices,
+per-device raw ZPL CUPS queues, selection among configured CUPS destinations, and USB
+unplug/reconnect status refresh with per-printer label state. Network/shared queues must
+accept raw ZPL. Source is on `codex/polybagger-multi-printer-hotplug`; additional printer
+and physical hotplug qualification remains open. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
