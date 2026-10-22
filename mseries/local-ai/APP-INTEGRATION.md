@@ -111,9 +111,12 @@ The four existing authenticated providers retained their enabled/installed/auth
 states when this entry was added. A fresh live config read reports Codex,
 Claude, Grok, OpenCode, and MSeries Assistant installed, enabled and ready.
 The local provider has completed two real model/tool turns plus a read-only
-system-status turn. The earlier synthetic tool-call receipt remains an adapter
-check; these short local turns do not establish broad model quality. Each
-authenticated cloud provider also returned a minimal exact-response smoke
+system-status turn and a real T3 read of one synthetic Assistant Workspace
+note through `workspace_read_file`; the model returned its exact marker and the
+note and temporary thread were removed. A fresh status read confirmed zero
+running and pending work. The earlier synthetic tool-call receipt remains an
+adapter check; these short local turns do not establish broad model quality.
+Each authenticated cloud provider also returned a minimal exact-response smoke
 through T3 (Codex, Claude, Grok and OpenCode); the four temporary threads were
 archived. This verifies provider routing, not each feature-specific workflow.
 

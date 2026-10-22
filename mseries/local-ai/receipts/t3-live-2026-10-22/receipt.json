@@ -54,7 +54,21 @@
     "scoped_task_read_after_decline": "unique test task absent",
     "temporary_thread_archived": true
   },
-  "scope_note": "Two real local-model tool round trips; not a broad quality or daily-use qualification.",
+  "live_t3_read_only_workflow": {
+    "tool": "workspace_read_file",
+    "synthetic_fixture": true,
+    "result": "exact marker returned through the real T3 local ACP provider",
+    "temporary_thread_archived": true,
+    "fixture_removed": true,
+    "created_workspace_directory_removed": true,
+    "post_settle_status": {
+      "connected": true,
+      "running": 0,
+      "pending": 0
+    },
+    "status_note": "The first immediate status read lagged thread settlement; a subsequent read confirmed idle."
+  },
+  "scope_note": "Two real add_minutes turns plus real system_status and synthetic workspace_read_file turns; not a broad quality or daily-use qualification.",
   "liquid_24b_preflight": {
     "available_gib": 10.56,
     "minimum_weights_plus_desktop_reserve_gib": 18.67,

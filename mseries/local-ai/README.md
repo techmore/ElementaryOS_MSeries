@@ -128,6 +128,10 @@ two local T3-to-model-to-tool turns. It does not qualify broad answer quality,
 T3 server restart/reattachment or daily use. A separate
 same-thread, two-turn context check recalled its synthetic token correctly. The
 production read-only `system_status` tool also completed through a T3 thread.
+The local model also read a synthetic Assistant Workspace note through T3's
+`workspace_read_file` tool and returned the exact marker; the note and temporary
+thread were removed, and a fresh status read confirmed zero running and pending
+work.
 An isolated real-model bridge restart check saved a prompt in one ACP process,
 loaded it in a fresh process, and recalled the token; T3 server restart and
 reattachment still need verification. The Liquid 24B model remains unloaded
