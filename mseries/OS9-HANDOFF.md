@@ -244,8 +244,12 @@ passed. The combined ARM64 package is
 (SHA-256 `6812dd0396978189264be45612952f0685f23ea8c01e4a3252f91301a9344f8b`).
 The matching binary is installed in `~/.local/bin/claude-pantheon-rs` and
 running as PID 956860; its fresh feed reports `eos`, Codex selected, and no
-activity. The system package remains mseries2, so the system Wingpanel module
-is still old. Upstream Wingpanel's loader uses the build-time
+activity. Its process environment is `DESKTOP_SESSION=pantheon-rust-wayland`,
+`XDG_SESSION_TYPE=wayland`, and `WAYLAND_DISPLAY=wayland-0`; the private Dock
+and Wingpanel processes are active. This verifies the client launches and
+connects in the Pantheon Rust session; live pointer interactions remain open.
+The system package remains mseries2, so the system Wingpanel module is still
+old. Upstream Wingpanel's loader uses the build-time
 `Build.INDICATORS_DIR` constant generated from Meson's install prefix/libdir;
 the current binary has no runtime user-local indicator path. Exact-head
 validation for `f7397cda` was dispatched as run 39863027201 and is queued.
