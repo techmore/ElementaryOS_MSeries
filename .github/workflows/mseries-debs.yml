@@ -264,6 +264,7 @@ jobs:
             if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
               cargo rustc pkg-config libgtk-4-dev libgranite-7-dev \
               meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
+              libgtksourceview-5-dev libvte-2.91-gtk4-dev libwebkitgtk-6.0-dev \
               librsvg2-bin dpkg-dev; then exit 0; fi
             echo "attempt $attempt failed; retrying" >&2
             sudo apt-get update || true

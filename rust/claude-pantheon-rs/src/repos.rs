@@ -4,8 +4,10 @@
 use crate::app::{App, new_id};
 use crate::chat::label;
 use crate::look::{iso_to_unix, now_unix, relative_time};
+use crate::skeleton;
 use crate::workflow::{self, Config, Issue, PinnedRepo};
-use gtk::{glib, pango, prelude::*};
+use granite::prelude::PlaceholderExt;
+use gtk::{gio, glib, pango, prelude::*};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -151,8 +153,17 @@ impl ReposPage {
             }
         }
         if all.is_empty() {
-            self.status
-                .set_text("No GitHub checkouts among the server's projects. Import sessions or add a project first.");
+            self.status.set_text("");
+            let ph = granite::Placeholder::new("No GitHub repos yet");
+            ph.set_description("None of the server's projects has a GitHub remote. Import your sessions or add a project with a checkout.");
+            ph.set_icon(&gio::ThemedIcon::new("folder-remote-symbolic"));
+            let import = ph.append_button(
+                &gio::ThemedIcon::new("document-import-symbolic"),
+                "Import Sessions",
+                "Scan Claude Code and Codex sessions on the server",
+            );
+            import.set_action_name(Some("win.import"));
+            self.repo_list.append(&ph);
             return;
         }
         self.status.set_text(&format!("{} pinned of {} GitHub repos known to the server", pinned.len(), all.len()));
@@ -172,7 +183,28 @@ impl ReposPage {
             let runner = gtk::Button::with_label("Install runner");
             runner.set_tooltip_text(Some("A T3 scheduled task every 5 minutes that takes the next agent:ready issue"));
             head.append(&runner);
+            let webhook = gtk::Button::with_label("Webhook");
+            webhook.set_tooltip_text(Some(
+                "A webhook task that starts on GitHub's issues.labeled agent:ready within seconds; the GitHub hook is created when the server's endpoint is reachable (Tailscale or T3 Connect)",
+            ));
+            head.append(&webhook);
             card.append(&head);
+            let automation = {
+                let runner_state = if self.runner_id(&r.repo).is_some() { "installed" } else { "not installed" };
+                let hook_state = match self.webhook_install(&r.repo) {
+                    Some(w) if w.hook_id.is_some() => "installed, GitHub hook created".to_string(),
+                    Some(w) if w.url.is_some() => "task installed, GitHub hook pending".to_string(),
+                    Some(_) => "task installed, endpoint not reachable yet".to_string(),
+                    None => "not installed".to_string(),
+                };
+                label(
+                    &format!(
+                        "runner {runner_state} · webhook {hook_state} · provider re-picked by capacity every 5 min"
+                    ),
+                    &["caption", "dim-label"],
+                )
+            };
+            card.append(&automation);
             let summary = label(&crate::look::tilde(&r.path), &["caption", "dim-label"]);
             card.append(&summary);
             let counts = label("", &["caption"]);
@@ -197,6 +229,9 @@ impl ReposPage {
             let a = app.clone();
             let rr = r.clone();
             runner.connect_clicked(move |_| a.install_runner(rr.clone()));
+            let a = app.clone();
+            let rr = r.clone();
+            webhook.connect_clicked(move |_| a.install_webhook(rr.clone()));
 
             if pinned.iter().any(|p| p.repo == r.repo) {
                 match workflow::issues(&r.repo).await {
@@ -231,7 +266,7 @@ impl ReposPage {
         while let Some(c) = self.issues_box.first_child() {
             self.issues_box.remove(&c);
         }
-        self.issues_box.append(&label("Loading…", &["dim-label"]));
+        self.issues_box.append(&skeleton::rows(5));
         let app = app.clone();
         glib::spawn_future_local(async move {
             workflow::ensure_labels(&repo.repo).await;
@@ -245,7 +280,20 @@ impl ReposPage {
                     while let Some(c) = page.issues_box.first_child() {
                         page.issues_box.remove(&c);
                     }
-                    page.issues_box.append(&label(&format!("GitHub: {e}"), &["dim-label"]));
+                    let ph = granite::Placeholder::new("GitHub did not answer");
+                    ph.set_description(&format!("GitHub: {e}"));
+                    ph.set_icon(&gio::ThemedIcon::new("network-error-symbolic"));
+                    let r = repo.clone();
+                    let a = app.clone();
+                    let retry =
+                        ph.append_button(&gio::ThemedIcon::new("view-refresh-symbolic"), "Retry", "Ask GitHub again");
+                    retry.connect_clicked(move |_| a.repos_page().show_issues(&a, r.clone()));
+                    page.issues_box.append(&ph);
+                    let r = repo.clone();
+                    app.toast_retry(
+                        &format!("GitHub: {e}"),
+                        Rc::new(move |a| a.repos_page().show_issues(a, r.clone())),
+                    );
                 }
             }
         });
@@ -279,9 +327,10 @@ impl ReposPage {
             })
             .collect();
         if shown.is_empty() {
-            self.issues_box.append(&label(
-                "No issues match. Label issues lane:*, p0–p3 and agent:ready to feed the runner.",
-                &["dim-label"],
+            self.issues_box.append(&skeleton::empty(
+                "edit-find-symbolic",
+                "No issues match",
+                "Label issues lane:*, p0–p3 and agent:ready to feed the runner, or widen the filters.",
             ));
             return;
         }
@@ -349,6 +398,17 @@ impl ReposPage {
 
     pub fn runner_id(&self, repo: &str) -> Option<String> {
         self.config.borrow().runners.get(repo).cloned()
+    }
+
+    pub fn webhook_install(&self, repo: &str) -> Option<workflow::WebhookInstall> {
+        self.config.borrow().webhooks.get(repo).cloned()
+    }
+
+    pub fn remember_webhook(&self, repo: &str, install: workflow::WebhookInstall) {
+        let repo = repo.to_string();
+        self.save(move |c| {
+            c.webhooks.insert(repo, install);
+        });
     }
 }
 

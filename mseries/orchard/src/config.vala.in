@@ -1,0 +1,5 @@
+namespace Config {
+    public const string MACOS_CHECK_SOURCE = "@MACOS_CHECK_SOURCE@";
+    public const string VERSION = "@VERSION@";
+    public const string APP_ID = "com.github.techmore.orchard";
+}

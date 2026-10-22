@@ -107,3 +107,5 @@ checks on a private bus/display with temporary HOME and memory settings. The
 fixture refuses direct startup without its private-test flag. Full builds require
 the TaskbarNotifications linked type so partial taskbar builds are rejected.
 See `../desktop-notifications/README.md` for protocol, insets and history limits.
+
+GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).
