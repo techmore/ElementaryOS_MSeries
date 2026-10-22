@@ -90,7 +90,9 @@ also has a contact picker, explicit recipient copy, conversation-list quick
 actions, search across loaded message text, refresh/new-message shortcuts,
 Ctrl+Enter send with plain Enter reserved for newlines, locally formatted
 timestamps, a retry action for startup failure, and SDK-driven message grouping
-with sender labels and date/time headings. These
+with sender labels and date/time headings. Outgoing messages appear immediately
+and remain visible until BlueFerry history confirms the echo; uncertain sends
+keep the draft and are labeled as unknown. These
 source/build changes still need private GUI, accessibility, phone and owner
 acceptance.
 Imported Apple pins need a stable opaque phone ID in BlueFerry's `GetStatus`

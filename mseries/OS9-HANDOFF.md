@@ -69,6 +69,25 @@ Next: inspect long runs, group sender changes, day boundaries, invalid
 timestamps, and narrow windows on the owner session. Phone and accessibility
 acceptance remain open.
 
+## Rust Messages optimistic send feedback — 2026-10-22
+
+Rust Messages now places an outgoing bubble in the conversation as soon as a
+send starts. It marks successful MAP transfer accurately as transfer to the
+iPhone, then keeps the bubble until BlueFerry history echoes a matching outgoing
+body. Matching accounts for earlier identical pending sends, preventing a
+temporary duplicate while history catches up. Known failures remove the
+optimistic bubble and keep the draft; unknown outcomes keep both and tell the
+user to check the iPhone before retrying. The session-only outbox is capped at
+128 unresolved messages.
+
+**Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml
+--package mseries-pantheon-kit --package mseries-messages`, `cargo check --locked
+--manifest-path rust/Cargo.toml -p mseries-messages`, strict Clippy with warnings
+denied, and `git diff --check` passed. No test suite or GUI interaction was run.
+Next: inspect pending, transferred, echoed, failed and unknown-outcome states in
+a private UI fixture, then repeat with a paired iPhone. Delivery receipt claims
+remain unsupported by MAP.
+
 ## Disk Space SDK scaling pass — 2026-10-22
 
 Disk Space now uses SDK text-relative spacing and margins for persistent layout
