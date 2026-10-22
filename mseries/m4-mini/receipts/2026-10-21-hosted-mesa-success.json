@@ -1,0 +1,121 @@
+{
+  "run_id": 39704499140,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39704499140",
+  "source_head": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a",
+  "status": "completed",
+  "conclusion": "success",
+  "provenance": {
+    "run_id": 39704499140,
+    "source_commit": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a",
+    "artifact_id": 12394772349,
+    "artifact_digest": "sha256:d48fe816ed7eceb3081c9d9725de9664408b20261bc6d5398898b388e7a210f7",
+    "download_sha256": "d48fe816ed7eceb3081c9d9725de9664408b20261bc6d5398898b388e7a210f7",
+    "payloads": {
+      "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+      "gravity-mesa-corresponding-source.tar.gz": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e"
+    },
+    "workflow_provenance": "validated successful run/job in own repository",
+    "hardware_validated": false
+  },
+  "build": {
+    "repository": "GravityLinux/mesa",
+    "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+    "uapi_sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+    "options": [
+      "--prefix=/opt/elementary-m4-gravity1",
+      "--libdir=lib",
+      "-Dplatforms=x11,wayland",
+      "-Dgallium-drivers=asahi,llvmpipe",
+      "-Dvulkan-drivers=asahi",
+      "-Dllvm=enabled",
+      "-Dbuild-tests=true",
+      "-Dglvnd=enabled"
+    ],
+    "commands": [
+      [
+        "meson",
+        "setup",
+        "/home/runner/work/_temp/m4-mesa/build",
+        "/home/runner/work/_temp/m4-mesa/mesa-87ac51d411f0e58a9433567ec2666f457be89e1d",
+        "--prefix=/opt/elementary-m4-gravity1",
+        "--libdir=lib",
+        "-Dplatforms=x11,wayland",
+        "-Dgallium-drivers=asahi,llvmpipe",
+        "-Dvulkan-drivers=asahi",
+        "-Dllvm=enabled",
+        "-Dbuild-tests=true",
+        "-Dglvnd=enabled"
+      ],
+      [
+        "meson",
+        "compile",
+        "-C",
+        "/home/runner/work/_temp/m4-mesa/build",
+        "-j",
+        "2"
+      ],
+      [
+        "meson",
+        "test",
+        "-C",
+        "/home/runner/work/_temp/m4-mesa/build",
+        "--no-rebuild",
+        "--print-errorlogs",
+        "agx_tests",
+        "agx_apple9_launcher_tests",
+        "agx_apple9_geometry_tests",
+        "agx2_disasm",
+        "agx2_python_disasm"
+      ],
+      [
+        "meson",
+        "install",
+        "-C",
+        "/home/runner/work/_temp/m4-mesa/build",
+        "--no-rebuild",
+        "--destdir",
+        "/home/runner/work/_temp/m4-mesa/stage"
+      ]
+    ],
+    "build": "passed",
+    "tests": {
+      "meson_groups": 5,
+      "failed_groups": 0
+    },
+    "artifacts": {
+      "lib/libvulkan_asahi.so": "2dc9f6b36c2eebb1e5a4de8da9dc5dcd231608922d0907b2c0593b3767923c86",
+      "lib/libgallium-26.3.0-devel.so": "83bd823e08f6ea59e62c8d0f87326e30dc24d5302a547fb0e42c7d2bc4e4cb37",
+      "lib/libEGL_mesa.so.0.0.0": "5cb53ed252965b67732b2a135eb404c397feadb9bb6b1930d452cf69acdc4af8",
+      "lib/libGLX_mesa.so.0.0.0": "10a2854f01afe359e27c31b6113486264b46dfc8dba2dd6ecd34aa677b4fae38"
+    },
+    "status": "built, AGX tests and isolated software rendering passed, staged only; no M4 GPU runtime qualification"
+  },
+  "hosted_package_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "downloaded_package_local_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "scope": "hosted source compile/five AGX groups/software rendering/package plus independent local downloaded-package validation",
+  "factory_promotion": false,
+  "hardware_validated": false
+}

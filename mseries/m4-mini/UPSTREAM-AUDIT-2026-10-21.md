@@ -1,5 +1,11 @@
 # M4 Mac mini: Gravity Linux and upstream audit
 
+**Latest hosted result:** Gravity Mesa completed its GLVND build, five AGX
+test groups, software rendering and packaging. The downloaded package also
+passes local verification. Hosted kernel and boot-chain jobs remain active;
+complete image and native M4 support are not yet validated.
+[Evidence](receipts/2026-10-21-hosted-mesa-success.json).
+
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
 public stack found in this audit. It does not establish that elementary OS or the
@@ -824,3 +830,22 @@ checking whether this runner reproduces the reviewed artifact hashes.
 [Preflight](receipts/2026-10-21-hosted-boot-preflight.json).
 
 Hosted boot-only replay [39706164509](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706164509) dispatched at `43abd72757d13a72d537ad69f932ca899e8fed65`. No completed result yet. [Dispatch snapshot](receipts/2026-10-21-hosted-boot-run.json).
+
+### Hosted Mesa build and downloaded-package validation pass
+
+Corrected run [39704499140](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39704499140)
+at recipe `84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a` completed successfully.
+The GLVND-enabled source build, five selected AGX test groups, software
+render/readback, packaging and hosted package checks all pass. Downloaded
+artifact provenance was checked against the successful own-repository workflow
+and component job. Package/source checksums pass, and a local replay on the
+actual downloaded package verifies four ARM64 library hashes/ELF identities,
+persistent /usr layout, absence of package hooks and llvmpipe rendering.
+
+The hosted package SHA-256 is
+`6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a`;
+this is a separately retained candidate at the same source/version, not a
+silent replacement of the earlier local package hash. Kernel and boot-chain
+hosted jobs remain active at this snapshot. Full-image assembly, native
+M4 GPU/HDMI and Vulkan conformance remain unverified.
+[Successful build, provenance and local checks](receipts/2026-10-21-hosted-mesa-success.json).

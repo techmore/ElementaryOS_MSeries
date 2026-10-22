@@ -3913,3 +3913,9 @@ isolation and existing workflow regressions pass. Dispatch next.
 
 M4 boot-only run39706164509 dispatched at43abd727 independently of kernel
 39698975678 and Mesa39704499140. No hosted boot result yet.
+
+M4 hosted Mesa39704499140 succeeds: GLVND build, five AGX groups, software
+rendering, package and CI checker. Own-repo run/artifact provenance verified;
+downloaded package independently passes local hash/ARM64/layout/software checks.
+Candidate hash6c9b77f1 kept separate from earlier local package. Kernel and boot
+jobs remain active; no full-image/native GPU/HDMI/Vulkan qualification.
