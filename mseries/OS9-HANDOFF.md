@@ -20,10 +20,12 @@ successful snapshot. Handles deduplicate, ambiguous sender identities remain
 phone-only, group routes are never guessed, and alphanumeric sender IDs cannot
 be replied to. Changes are in draft [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
 
-At `8111132f`, local formatting, locked compile, 25 SDK/Messages unit tests,
-strict Clippy and `git diff --check` pass. GitHub Actions have partial passes
-and remaining queued/pending checks; no failures were reported in the last
-snapshot. Live phone catch-up, read-failure feedback, pin/keyring operation,
+At `e15f9272`, local formatting, locked compile, 25 SDK/Messages unit tests,
+strict Clippy and `git diff --check` pass. SDK text scaling now shares its two
+GTK settings subscriptions across live widgets and prunes dropped callbacks,
+so rebuilt views do not leave per-widget handlers attached to global settings.
+GitHub Actions for the pushed revisions are running or queued; no failures
+were reported in the last snapshot. Live phone catch-up, read-failure feedback, pin/keyring operation,
 owner-session visual and keyboard/accessibility review remain open. BlueFerry
 PR [#277](https://github.com/erikwb/blueferry/pull/277) merged with a stable
 phone UUID, but public v0.8.1 packages predate it, so phone-scoped pin import
