@@ -139,6 +139,8 @@ def inside(binary, output, theme):
         assert 'fixture-eos' in labels and 'Codex' in labels and '42% used' in labels, labels
         assert 'Claude' not in labels, 'popover showed a provider account other than the selected account: ' + labels
         assert 'Needs approval' in labels and 'Live T3 work' in labels, labels
+        command('ffmpeg', '-nostdin', '-loglevel', 'error', '-f', 'x11grab', '-video_size', origin['WIDTH']+'x'+origin['HEIGHT'],
+                '-i', os.environ['DISPLAY']+'+'+origin['X']+','+origin['Y'], '-frames:v', '1', '-update', '1', '-y', str(output/(theme+'-t3r-hover.png')))
         command('xdotool', 'key', 'F8')  # activate the live-thread row without relying on popup-surface coordinates
         try:
             waitfor(lambda: '--thread fixture-thread' in Path(os.environ['QUAL_EVENTS']).read_text())
@@ -221,7 +223,9 @@ def main():
             # Original fixture artwork: no downloaded/redistributed vendor logos.
             icons = home/'.local/share/icons/hicolor/scalable/apps'
             icons.mkdir(parents=True)
-            for name, color in [('teams', '#6264a7'), ('outlook', '#1676b7'), ('closed', '#399d72'), ('application-default-icon', '#737b83')]:
+            for name, color in [('teams', '#6264a7'), ('outlook', '#1676b7'), ('closed', '#399d72'),
+                                ('application-default-icon', '#737b83'),
+                                ('io.github.techmore.ClaudePantheonRs', '#485f9e')]:
                 (icons/(name+'.svg')).write_text('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect x="4" y="4" width="56" height="56" rx="10" fill="'+color+'"/><path d="M18 22h28v20H30l-8 6v-6h-4z" fill="white"/></svg>')
             for name, identity, icon in [('TeamsFixture','brave-teams.microsoft.com__v2_-Default','teams'),
                                          ('OutlookFixture','brave-outlook.office.com__mail_-Default','outlook'),
@@ -231,7 +235,7 @@ def main():
 Type=Application
 Name=T3-R Pantheon fixture
 Exec=fixture-action launch
-Icon=application-default-icon
+Icon=io.github.techmore.ClaudePantheonRs
 Actions=open-full;new-thread;usage;settings;
 
 [Desktop Action open-full]

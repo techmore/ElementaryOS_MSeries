@@ -40,7 +40,9 @@ The clean-build check links the complete application and verifies the Windows
 TaskbarRow, StartMenu and TaskbarCodexBar types. The GTK probe uses a fake HOME,
 backend and in-memory settings; it checks hover, focus retention, leave, converting
 hover to a pinned menu and click dismissal. CI runs the same build/probe path.
-No test installs a binary or restarts a live desktop service.
+The production-launcher fixture saves the mapped T3-R popup as
+`light-t3r-hover.png` and `dark-t3r-hover.png` in its output directory for visual
+inspection. No test installs a binary or restarts a live desktop service.
 
 Future dock patches must use this full stack. App tracking changes belong after
 it and must preserve `Taskbar.vala`, `TaskbarCodexBar.vala` and the Start menu.
