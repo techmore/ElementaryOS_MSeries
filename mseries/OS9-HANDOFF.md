@@ -245,8 +245,10 @@ passed. The combined ARM64 package is
 The matching binary is installed in `~/.local/bin/claude-pantheon-rs` and
 running as PID 956860; its fresh feed reports `eos`, Codex selected, and no
 activity. The system package remains mseries2, so the system Wingpanel module
-is still old. Exact-head validation for `f7397cda` was dispatched as run
-39863027201 and is queued.
+is still old. Upstream Wingpanel's loader uses the build-time
+`Build.INDICATORS_DIR` constant generated from Meson's install prefix/libdir;
+the current binary has no runtime user-local indicator path. Exact-head
+validation for `f7397cda` was dispatched as run 39863027201 and is queued.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
