@@ -3927,3 +3927,10 @@ default golden mode retained. Local assembly/FAT and wrong-source rejection pass
 
 M4 corrected boot replay39706878433 dispatched at5527c5d5. Mesa success retained;
 original kernel39698975678 active. No complete image or native qualification.
+
+M4 hosted kernel39698975678 and boot39706878433 succeed; downloads pass provenance,
+payload and local package/FAT checks. Alongside successful Mesa39704499140, all
+hosted components prepare and resolve full11-image graph. Only disposable-clone
+kernel/boot hash hooks differ; source references unchanged. Explicit fresh boot
+receipt boundary (2 groups) and optional boot intake (6 groups) pass. Full image/
+ISO/import/native qualification remains open. Next: full hosted image execution.

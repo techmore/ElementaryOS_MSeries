@@ -1,0 +1,99 @@
+{
+  "run_id": 39706878433,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706878433",
+  "status": "completed",
+  "conclusion": "success",
+  "provenance": {
+    "run_id": 39706878433,
+    "source_commit": "5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c",
+    "artifact_id": 12394778064,
+    "github_artifact_digest": "sha256:7c1bc11c5aa64b71151b3fecdbaf7887d2b3cffa9f640782ffea238751360d46",
+    "download_sha256": "7c1bc11c5aa64b71151b3fecdbaf7887d2b3cffa9f640782ffea238751360d46",
+    "payloads": {
+      "boot.bin": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+      "m1n1-stage1.bin": "bebc8c8f4816f236e77503d5ff670b403b667c2c865ceb20e818ece49260b891",
+      "bootloader-rust-dependencies.tar.gz": "627457fcbca77567ca0c6f1420ff907c6aa9572df37cb6000345aac5152944b8",
+      "gravity-bootloader-corresponding-source.tar.gz": "a6d2755c7083dc1cff949c5021345eb7121c9c01000e07c695c74fad112cc31a",
+      "gravity-dt-corresponding-kernel-source.tar.gz": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+      "gravity-uboot-corresponding-source.tar.gz": "6adaf60d20f5f53792eefeaf662dbbd481d7d225d5938c80f6379800b685fd6c",
+      "j773g-source-capture.tar.gz": "4e9abb7a580299fd57a9bee0871192213c0ff5674070094c9da7a91ff1f60063"
+    },
+    "scope": "successful own-repository workflow/job and complete boot/source payload checksums",
+    "hardware_validated": false
+  },
+  "assembly": {
+    "scope": "pinned J773g boot-chain byte assembly and readback only",
+    "format_reference": "GravityLinux/scripts@12418e50125a72749a75917db578db55ea42704c:update-m1n1",
+    "inputs": {
+      "stage1": {
+        "sha256": "bebc8c8f4816f236e77503d5ff670b403b667c2c865ceb20e818ece49260b891",
+        "bytes": 1179648
+      },
+      "stage2": {
+        "sha256": "33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4",
+        "bytes": 1146880
+      },
+      "dtb": {
+        "sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+        "bytes": 60000
+      },
+      "u-boot": {
+        "sha256": "651351db19fcd373fc465a9796e9e9fbf9c09c46946f24c422c8d5027527e00a",
+        "bytes": 657256
+      }
+    },
+    "boot_bin_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+    "boot_bin_bytes": 1516583,
+    "offsets": {
+      "stage2": 0,
+      "j773g_dtb": 1146880,
+      "gzip_uboot": 1206880
+    },
+    "component_readback": "exact stage2/DTB bytes and decompressed U-Boot match",
+    "configuration": "NO_DISPLAY; no appended config overrides",
+    "trusted_fresh_build_receipts": true,
+    "source_commits": {
+      "bootloader": "f02d4a52017915febb222539636b5b025a70407a",
+      "uboot": "a2f6913694ff26908c16948af3f8372429782263",
+      "kernel": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    "stage1": "separate artifact; not concatenated or authorized",
+    "source_dtb": "loader fixups still required; not an observed firmware/memory map",
+    "factory_promotion": false,
+    "installer_admission": false,
+    "esp_written": false,
+    "hardware_validated": false
+  },
+  "hosted_esp_fixture": {
+    "scope": "disposable GPT/FAT regular-image fixture; not complete factory output",
+    "bundle_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+    "image_bytes": 100663296,
+    "esp_offset_bytes": 1048576,
+    "esp_bytes": 67108864,
+    "path": "/m1n1/boot.bin",
+    "matching_payload": "PASS: ESP m1n1/boot.bin matches 6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb (1516583 bytes; partition offset 1048576)",
+    "corrupted_payload_rejected": true,
+    "temporary_image_removed": true,
+    "block_devices_opened": false,
+    "host_esp_modified": false,
+    "hardware_validated": false,
+    "complete_factory_image_built": false
+  },
+  "downloaded_bundle_local_esp_fixture": {
+    "scope": "disposable GPT/FAT regular-image fixture; not complete factory output",
+    "bundle_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+    "image_bytes": 100663296,
+    "esp_offset_bytes": 1048576,
+    "esp_bytes": 67108864,
+    "path": "/m1n1/boot.bin",
+    "matching_payload": "PASS: ESP m1n1/boot.bin matches 6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb (1516583 bytes; partition offset 1048576)",
+    "corrupted_payload_rejected": true,
+    "temporary_image_removed": true,
+    "block_devices_opened": false,
+    "host_esp_modified": false,
+    "hardware_validated": false,
+    "complete_factory_image_built": false
+  },
+  "hardware_validated": false,
+  "factory_promotion": false
+}

@@ -1,0 +1,41 @@
+{
+  "scope": "full M4 mkosi graph summary",
+  "source_commit": "d48a7259029e74a81cb77c52eb436be61273825a",
+  "driver_sha256": "4c07efa8bf67099009d310baeb60beff113bd7a22372f45a6667a568024a1ebd",
+  "image_version": "20261022014002",
+  "images": [
+    "apple-silicon",
+    "base",
+    "default-initrd",
+    "driver-nvidia",
+    "driver-nvidia-addon",
+    "ext-sdk",
+    "ext-virt",
+    "liveiso",
+    "main",
+    "modules-db",
+    "sysupdate"
+  ],
+  "commands": [],
+  "candidate_package_hashes": {
+    "kernel": "4a9c112e2bef4398b6f74f37b7a93d5502c15ca1c717a90f237c7ca8ef536960",
+    "mesa": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "policy": "cbfe97de38fd34ed91d467a9d49f96304b503ad3933d3af0777af709e9487ad0"
+  },
+  "boot_bundle_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+  "candidate_boot_hash_patch_applied_in_clone": true,
+  "candidate_hash_patch_applied_in_clone": true,
+  "summary_only": true,
+  "mkosi_build_passed": false,
+  "iso_assembled": false,
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "clone_changed_files": [
+    "mkosi.images/liveiso/mkosi.profiles/m4-mini/prepare-live-kernel.chroot",
+    "mkosi.images/sysupdate/mkosi.profiles/m4-mini/verify-boot-chain.chroot"
+  ],
+  "component_origins": "hosted kernel39698975678, Mesa39704499140, boot39706878433; locally generated policy",
+  "boot_boundary_tests": 2,
+  "artifact_intake_tests": 6
+}

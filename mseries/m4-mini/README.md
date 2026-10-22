@@ -1,10 +1,13 @@
 # M4 Mac mini preparation
 
-**Latest hosted result:** Gravity Mesa completed its GLVND build, five AGX
-test groups, software rendering and packaging. The downloaded package also
-passes local verification. Hosted kernel and boot-chain jobs remain active;
-complete image and native M4 support are not yet validated.
-[Evidence](receipts/2026-10-21-hosted-mesa-success.json).
+**Latest hosted result:** Kernel, GLVND Mesa and boot-chain jobs have succeeded.
+Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
+prepared inputs resolve the full image graph; complete image assembly and native
+M4 support remain unvalidated.
+[Kernel](receipts/2026-10-21-hosted-kernel-success.json),
+[Mesa](receipts/2026-10-21-hosted-mesa-success.json),
+[boot chain](receipts/2026-10-21-hosted-boot-success.json),
+[full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
@@ -845,3 +848,26 @@ receipt is rejected before output. No fresh candidate is a factory promotion.
 [Failure, component records and corrective checks](receipts/2026-10-21-hosted-boot-failure-1.json).
 
 Corrected boot-chain run [39706878433](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706878433) dispatched at `5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c`. Result pending. [Dispatch snapshot](receipts/2026-10-21-hosted-boot-retry-2.json).
+
+### All hosted components verified and integrated into full-graph preflight
+
+Kernel run `39698975678` and corrected boot run `39706878433` succeeded.
+Own-repository run/job/source provenance and complete artifact checksums were
+verified before local checks. Downloaded kernel package validation passes
+Image/config/DTB hashes, 16 KiB ARM64 header, all 1598 modules and required
+module ELF/vermagic/dependency checks. The hosted boot bundle passes local
+FAT/GPT readback and corruption rejection, with corresponding sources retained.
+
+The image driver now accepts an explicit trusted fresh boot-assembly receipt,
+requiring the pinned bootloader/U-Boot/kernel identities, reviewed DTB and
+NO_DISPLAY configuration. Two boundary/patch test groups pass, and six intake
+groups pass. Optional paired `--boot-run`/`--boot-source` inputs add boot artifacts
+to the provenance retriever without changing the existing kernel/Mesa usage.
+
+Prepared hosted kernel + Mesa, local policy and hosted boot inputs resolve all
+11 mkosi images. Both real candidate hash patches apply only in the disposable
+clone; its only tracked changes are the two kernel/boot hash hooks. The main
+checkout's reference hashes remain unchanged. This is a summary preflight, not
+a complete image, ISO, installer or native M4 result. Source/kernel dates alone
+do not close HDMI, 10 Gb Ethernet, GPU, firmware or macOS/Recovery gates.
+[Integrated preflight](receipts/2026-10-21-all-hosted-image-preflight.json).

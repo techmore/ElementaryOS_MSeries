@@ -75,6 +75,20 @@ class ProvenanceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.verify_payload(root, 'b' * 40)
 
+    def test_boot_manifest_requires_both_stage_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'source-commit.txt').write_text(SHA)
+            for name in ['boot.bin', 'm1n1-stage1.bin']:
+                (root / name).write_bytes(name.encode())
+            manifest = root / 'SHA256SUMS'
+            manifest.write_text(''.join(hashlib.sha256((root / name).read_bytes()).hexdigest()
+                                       + '  ' + name + '\n' for name in ['boot.bin', 'm1n1-stage1.bin']))
+            self.assertEqual(len(module.verify_payload(root, SHA, 'boot')), 2)
+            (root / 'm1n1-stage1.bin').unlink()
+            with self.assertRaises(ValueError):
+                module.verify_payload(root, SHA, 'boot')
+
     def test_archive_paths_symlinks_duplicates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

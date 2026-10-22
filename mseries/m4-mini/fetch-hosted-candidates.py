@@ -17,7 +17,7 @@ import zipfile
 
 REPOSITORY = 'techmore/ElementaryOS_MSeries'
 WORKFLOW = '.github/workflows/daily-9.0.yml'
-KINDS = {'kernel': 'build-m4-kernel', 'mesa': 'build-m4-userspace'}
+KINDS = {'kernel': 'build-m4-kernel', 'mesa': 'build-m4-userspace', 'boot': 'build-m4-boot'}
 
 
 def api(path):
@@ -77,10 +77,11 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def verify_payload(target, expected_sha):
+def verify_payload(target, expected_sha, kind="mesa"):
     if (target / 'source-commit.txt').read_text().strip() != expected_sha:
         raise ValueError('artifact source commit differs from run')
-    actual = {p.name for p in target.iterdir() if p.name.endswith(('.deb', '.tar.gz'))}
+    suffixes = ('.bin', '.tar.gz') if kind == 'boot' else ('.deb', '.tar.gz')
+    actual = {p.name for p in target.iterdir() if p.name.endswith(suffixes)}
     recorded = {}
     for line in (target / 'SHA256SUMS').read_text().splitlines():
         match = re.fullmatch(r'([0-9a-f]{64})  ([A-Za-z0-9_.+~%-]+)', line)
@@ -92,7 +93,10 @@ def verify_payload(target, expected_sha):
     for name, expected in recorded.items():
         if digest(target / name) != expected:
             raise ValueError('artifact checksum mismatch: ' + name)
-    if len([name for name in actual if name.endswith('.deb')]) != 1:
+    if kind == 'boot':
+        if {name for name in actual if name.endswith('.bin')} != {'boot.bin', 'm1n1-stage1.bin'}:
+            raise ValueError('complete two-stage boot artifact set required')
+    elif len([name for name in actual if name.endswith('.deb')]) != 1:
         raise ValueError('one component package required')
     return recorded
 
@@ -100,15 +104,19 @@ def verify_payload(target, expected_sha):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for kind in KINDS:
-        parser.add_argument('--' + kind + '-run', type=int, required=True)
-        parser.add_argument('--' + kind + '-source', required=True)
+        parser.add_argument('--' + kind + '-run', type=int, required=kind != 'boot')
+        parser.add_argument('--' + kind + '-source', required=kind != 'boot')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    if bool(args.boot_run) != bool(args.boot_source):
+        raise ValueError('paired boot run and source required')
     if args.output.exists():
         raise ValueError('new retrieval directory required')
     # Check both remote runs before writing or downloading any payload.
     candidates = {}
     for kind in KINDS:
+        if kind == 'boot' and args.boot_run is None:
+            continue
         run_id = getattr(args, kind + '_run')
         expected = getattr(args, kind + '_source')
         endpoint = f'repos/{REPOSITORY}/actions/runs/{run_id}'
@@ -126,7 +134,7 @@ def main():
         target = args.output / kind
         target.mkdir()
         extract(archive, target)
-        hashes = verify_payload(target, run['head_sha'])
+        hashes = verify_payload(target, run['head_sha'], kind)
         # ZIP extraction does not retain executable bits. This binary will only
         # run later in the explicitly invoked Mesa package validation step.
         if kind == 'mesa':

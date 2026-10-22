@@ -9,6 +9,7 @@ ISO assembly, installation and native hardware acceptance are separate gates.
 """
 import argparse
 import hashlib
+import difflib
 import importlib.util
 import json
 import os
@@ -30,10 +31,38 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+
+BOOT_HOOK = 'mkosi.images/sysupdate/mkosi.profiles/m4-mini/verify-boot-chain.chroot'
+
+
+def fresh_boot_hash(receipt, sources, expected_dtb):
+    required = {key: sources[name]['commit'] for key, name in
+                [('bootloader', 'bootloader'), ('uboot', 'u-boot'), ('kernel', 'linux')]}
+    if (not receipt.get('trusted_fresh_build_receipts') or receipt.get('source_commits') != required
+            or receipt.get('configuration') != 'NO_DISPLAY; no appended config overrides'
+            or receipt['inputs']['dtb']['sha256'] != expected_dtb):
+        raise ValueError('trusted fresh boot assembly must retain pinned source/board/configuration')
+    value = receipt['boot_bin_sha256']
+    if not re.fullmatch(r'[0-9a-f]{64}', value):
+        raise ValueError('invalid candidate boot hash')
+    return value
+
+
+def boot_hash_patch(original, baseline, candidate):
+    if not all(re.fullmatch(r'[0-9a-f]{64}', value) for value in [baseline, candidate]):
+        raise ValueError('full boot hashes required')
+    if original.count(baseline) != 1:
+        raise ValueError('boot hook differs from reviewed reference')
+    changed = original.replace(baseline, candidate)
+    return ''.join(difflib.unified_diff(original.splitlines(True), changed.splitlines(True),
+                                       fromfile='a/' + BOOT_HOOK, tofile='b/' + BOOT_HOOK))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--boot-bundle', type=Path, required=True)
+    parser.add_argument('--boot-bundle-receipt', type=Path, help='trusted fresh assembly receipt from a verified hosted build')
     parser.add_argument('--mkosi-source', type=Path, required=True)
     parser.add_argument('--image-version', required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -62,6 +91,12 @@ def main():
         if digest(inputs / name) != expected:
             raise ValueError('required corresponding source changed')
     expected_boot = json.loads((HERE / 'receipts/2026-10-21-repeatable-boot-chain.json').read_text())['boot_bin_sha256']
+    baseline_boot = expected_boot
+    if args.boot_bundle_receipt:
+        receipt = json.loads(args.boot_bundle_receipt.read_text())
+        sources = json.loads((HERE / 'research.json').read_text())['gravity_stack']
+        kernel_pin = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
+        expected_boot = fresh_boot_hash(receipt, sources, kernel_pin['artifacts']['arch/arm64/boot/dts/apple/t8132-j773g.dtb'])
     if digest(args.boot_bundle) != expected_boot:
         raise ValueError('verified J773g boot bundle required')
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()
@@ -73,6 +108,8 @@ def main():
     patch = inputs_module.live_hook_patch(original, baseline, build)
     if (inputs / 'candidate-live-kernel.patch').read_text() != patch or digest(inputs / 'candidate-live-kernel.patch') != candidate['live_hook_patch_sha256']:
         raise ValueError('only the reviewed candidate kernel hash patch is permitted')
+    boot_original = subprocess.check_output(['git', 'show', revision + ':' + BOOT_HOOK], cwd=REPO, text=True)
+    boot_patch = boot_hash_patch(boot_original, baseline_boot, expected_boot)
     if not args.summary_only:
         # Fail before creating a workspace if correct package ownership cannot
         # be represented. No privilege or UID-mapping fallback is attempted.
@@ -100,6 +137,12 @@ def main():
     if patch:
         subprocess.run(['git', 'apply', '--check', '-'], cwd=source, input=patch, text=True, check=True)
         subprocess.run(['git', 'apply', '-'], cwd=source, input=patch, text=True, check=True)
+    if boot_patch:
+        subprocess.run(['git', 'apply', '--check', '-'], cwd=source, input=boot_patch, text=True, check=True)
+        subprocess.run(['git', 'apply', '-'], cwd=source, input=boot_patch, text=True, check=True)
+    (output / 'candidate-boot-hash.patch').write_text(boot_patch)
+    if args.boot_bundle_receipt:
+        shutil.copy2(args.boot_bundle_receipt, output / 'input-boot-bundle-receipt.json')
     boot = source / 'mkosi.images/sysupdate/mkosi.profiles/m4-mini/mkosi.extra/efi/m1n1/boot.bin'
     boot.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(args.boot_bundle, boot)
@@ -131,7 +174,7 @@ def main():
         'source_commit': revision, 'driver_sha256': digest(Path(__file__)),
         'image_version': args.image_version, 'images': sorted(graph), 'commands': commands,
         'candidate_package_hashes': {name: item['sha256'] for name, item in candidate['components'].items()},
-        'boot_bundle_sha256': expected_boot, 'candidate_hash_patch_applied_in_clone': bool(patch),
+        'boot_bundle_sha256': expected_boot, 'candidate_boot_hash_patch_applied_in_clone': bool(boot_patch), 'candidate_hash_patch_applied_in_clone': bool(patch),
         'summary_only': args.summary_only, 'mkosi_build_passed': not args.summary_only,
         'iso_assembled': False, 'factory_promotion': False, 'installer_admission': False,
         'hardware_validated': False}, indent=2) + '\n')
