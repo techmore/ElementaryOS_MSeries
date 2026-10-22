@@ -55,15 +55,16 @@ the 2026-10-22 install repeated the build and hover probe, then restarted the se
 `desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
 assembled in `/tmp/cpr-deb-build`. The user-local T3-R app's status feed confirmed a connected environment and selected
 provider account. The provider-settings DeepSeek shortcut was formatted, release-built, and passed strict release Clippy;
-tests were not rerun. The installed binary matches that release build, but PID 3666742 retains the previous executable
-mapping and was not interrupted. The next app launch will load the history pagination and DeepSeek setup shortcut. The
-paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. A live
+tests were not rerun. The installed binary matches that release build. PID 3666742 was stopped after confirming no
+running work, pending prompts, or saved drafts; D-Bus activation launched PID 3789459 from the installed release binary.
+The full window launched and its fresh status feed reported connected to `eos`, Codex selected, running 0, pending 0.
+The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. A live
 quick-panel visual pass, DeepSeek provider setup, scroll interaction, large-thread history, and high-latency reconnect
 qualification remain open.
 
-Next: after the active process exits, launch the installed thread-history build and review scroll behavior, then verify
-quick/full routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation
-and qualify reconnect on a high-latency link before claiming daily-use readiness.
+Next: review live scrolling and the DeepSeek setup flow in the running window, then qualify quick/full routing and
+selected-provider usage. Profile a large conversation and reconnect on a high-latency link before claiming daily-use
+readiness.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 
