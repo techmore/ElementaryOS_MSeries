@@ -1,3 +1,42 @@
+## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
+
+`rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the
+T3 Code server (`t3 serve`, here the user service `t3code.service` on 127.0.0.1:3773) so one window drives Claude Code,
+Codex, OpenCode and Grok, with the local `~/.claude/projects/*/*.jsonl` transcripts as the offline view. Imported from a
+standalone repo (commits 35d6947 … 9a896de); design notes `docs/T3-SPIKE.md`, `docs/INTEGRATIONS.md`, `docs/WORKFLOW.md`.
+
+- **What it does.** Pairing page (`t3 pair` token → `/oauth/token` bearer session in the keyring via `secret-tool`, else
+  `~/.config/claude-pantheon-rs` 0600; WebSocket tickets; the server's 426 update message shown on mismatch). Sidebar of
+  the server's projects and threads plus the offline JSONL group, linked by uuid (`import:claudeAgent:<uuid>`). Provider,
+  model and permission-mode pickers from `server.getConfig` (four instances authenticated here: Codex, Claude, Grok,
+  OpenCode; supervised mode is the default, full access a per-thread choice). Composer launches or continues a thread;
+  turn items stream (assistant text, commands, diffs, approval prompts with Allow/Deny through `runtime-request.respond`);
+  Stop; import of Claude Code and Codex sessions (`agentSessions.scan/import`); "Hand Off to Repo" (structured summary
+  appended to `*HANDOFF*.md`/`AGENTS.md`/`docs/HANDOFF.md`, optional commit). Usage page in the CodexBar card style with
+  plan windows as gauges and the rotation decision; Repos/Issues pages (`gh api`, lanes/priorities/agent labels, "Start on
+  this", runner as a T3 scheduled task every 5 min on the emptiest provider); Changes page (`getFullThreadDiff`);
+  Diagnostics page (`subscribeResourceTelemetry`). On loopback it points the server's Claude provider at the Claude Code
+  CLI bundled with the desktop app.
+- **Protocol.** `src/t3/`: RFC 6455 and HTTP/1.1 on `gio::SocketClient`, Effect-RPC JSON envelopes
+  (Request/Chunk/Exit/Ack/Interrupt/Ping), orchestration protocol 2, everything on the GLib loop; 26 unit tests against
+  frames recorded from the live server (`tests/fixtures`). Build: `cargo build --release -p claude-pantheon-rs` from `rust/`.
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): client 58–60 MB RSS, 0.0 % CPU idle with a thread open; client +
+  server ≈ 300 MB and ≈ 1 % of a core; Electron claude-desktop 1.66 GB and 112 % in the same run. Start-up 184–213 ms to
+  the first frame (`--quit-after-frame`). The Vala twin's three GTK findings are built in (cairo renderer by default,
+  1 px CSD outline, cursor blink off).
+- **Captures.** `docs/screenshot-m1.png` (offline transcript), `screenshot-m2.png` (live thread, four providers),
+  `screenshot-m3.png` (usage with plan windows), `screenshot-diagnostics.png`, `screenshot-repos.png`; all GSK
+  self-renders from `tests/render.rs` under Xvfb against the real server and transcripts (a real "pong" round trip ran).
+- **Not verified / not built.** Permission prompts and Stop were exercised only by code paths, not by a live prompt
+  (the test thread ran in full access); "Start on this" and "Install runner" not clicked against GitHub (labels would be
+  created on the repo); the Wingpanel indicator (`wingpanel-indicator/`, Vala) is written but not compiled
+  (`libwingpanel-dev` not installed); vte4 terminal and WebKitGTK visual replies not built (crates not in the offline
+  cache); SnapShot helper not built (compositor has no screenshot D-Bus; plan in `docs/INTEGRATIONS.md`); environments
+  switcher not built; webhook runner tasks need a reachable endpoint. Not installed system-wide.
+- **Next.** Install `libwingpanel-dev` and build the indicator; add `vte4`/`webkit6` crates (crates.io is reachable);
+  SnapShot via the portal plus AT-SPI; a compositor-side `ScreenshotWindow` D-Bus method; per-run provider rotation
+  needs a server-side hook or a small scheduler.
+
 ## Native Claude client (Vala/GTK4/Granite) — 2026-10-21 (Claude Code)
 
 `mseries/claude-pantheon-native/`: a native Pantheon client for Claude Code, built to replace the Electron desktop app
