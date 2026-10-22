@@ -95,7 +95,9 @@ refresh, and Alt+Left back navigation. The compact Back button and Escape now
 clear the selected conversation while retaining its draft; Ctrl+F still opens
 the conversation list without discarding the current selection. Local locked
 compile and strict Clippy checks are recorded with the follow-up commit. GUI and
-keyboard interaction acceptance remain open.
+keyboard interaction acceptance remain open. Sidebar rebuilds no longer select
+the first conversation implicitly; this avoids opening it and marking it read
+without user action.
 
 ## Disk Space SDK scaling pass — 2026-10-22
 
