@@ -106,15 +106,19 @@ public class Orchard : Gtk.Application {
 
     protected override void startup () {
         base.startup ();
-        Granite.init ();
+        // Granite.init () and Granite.Settings read the colour-scheme preference through
+        // AccountsService; without the service (CI, a bare session) Granite logs a critical,
+        // so both are skipped there and GTK's defaults apply.
+        bool desktop = accounts_service_available ();
+        if (desktop) {
+            Granite.init ();
+        }
 
         var gtk_settings = Gtk.Settings.get_default ();
         // GTK animates the text cursor's fade with a frame-clock tick for ten seconds after every
         // keystroke, which repaints the window continuously. A steady cursor keeps idle at 0 % CPU.
         gtk_settings.gtk_cursor_blink = false;
-        // Granite.Settings reads the colour-scheme preference through AccountsService; without the
-        // service (CI, a bare session) it logs a critical, so the hookup is skipped there.
-        if (accounts_service_available ()) {
+        if (desktop) {
             var granite_settings = Granite.Settings.get_default ();
             gtk_settings.gtk_application_prefer_dark_theme =
                 granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
