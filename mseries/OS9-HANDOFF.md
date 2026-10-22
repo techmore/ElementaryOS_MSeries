@@ -24,6 +24,31 @@ Owner: "the screen saved to login comes up … there is no keyboard feedback", a
   Then `gsettings set org.gnome.desktop.session idle-delay 60`, wait ~70 s: screen blanks, a key wakes it to the lock
   screen. Restore `idle-delay 900`.
 
+## Factory speaker safety package wiring — 2026-10-21
+
+Added Ubuntu Resolute `speakersafetyd` 1.1.2-4 to the ARM64 Apple Silicon
+overlay and both liveiso/sysupdate package consumers. The immutable overlay
+retains the package unit's `multi-user.target` enablement link through pruning.
+The DSP chain remains excluded until fresh-image volume behavior is qualified.
+Source version, upstream tag/commit, MIT provenance, review scope, test results
+and qualification limits: [factory audit](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+
+Validation: `python3 mseries/test-image-wiring.py` (7 tests),
+`python3 -m py_compile mseries/test-image-wiring.py`, `git diff --check`, and
+PR CI passed. Artifact-only workflow run [39712066587](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39712066587)
+resolved and installed ARM64 `speakersafetyd` 1.1.2-4 from Resolute universe;
+the generated liveiso payload check passed and confirmed the package-owned
+service link. Final image assembly failed in sysupdate `systemd-repart` with
+`Verity signature partition is empty`; no ISO/checksum was produced. The
+retained build logs are in artifact
+`os9-mseries-build-record-39712066587`. `just do-daily` masked the mkosi error
+until the later checksum step, so the repart failure and recipe error
+propagation need a follow-up. The October 18 blank-disk/installed ARM64 VM
+receipt predates this change; it does not validate speaker protection. Next:
+fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
+payloads, then install and boot that exact image in an isolated VM. Physical
+Apple boot and speaker acceptance remain open.
+
 ## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
 
 `mseries/orchard/` is the one app: Machine Lab's window, sidebar, pages and `style.css` with Orchard's name, icon
