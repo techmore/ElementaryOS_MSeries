@@ -593,3 +593,15 @@ run `39698975678` remains independently active at this snapshot. Neither run
 has a successful hosted result yet. Owner hardware is unavailable; continue
 public-source preparation without claiming HDMI, 10 Gb traffic, or dual-boot
 qualification.
+
+### Latest public source refresh
+
+A fresh API check found the seven selected Gravity stack heads, Asahi `asahi`,
+and Aurora `integration/aurora` unchanged. Mainline advanced to
+`4403278e4ea2f654f8130a5c03eb8b4516a0f201` (7.3.0). Its J773g DT path still
+returns 404; the DRM Makefile has no Apple/Asahi entry and Apple NVMe still lacks
+the T8132 match. The 157-commit comparison lists 98 changed files, below the
+API file cap; shared PM/scheduler changes are not thereby semantically qualified
+for this downstream kernel. There is no evidence here for replacing the matched
+Gravity M4 stack with mainline. Retained [head observations](receipts/2026-10-21-source-head-refresh.json)
+and [exact mainline checks](receipts/2026-10-21-mainline-refresh.json).

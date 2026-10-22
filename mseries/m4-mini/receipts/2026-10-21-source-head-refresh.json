@@ -1,0 +1,97 @@
+{
+  "observed_at_utc": "2026-10-22T01:00:32.656760+00:00",
+  "scope": "Public branch-head freshness check; unchanged reviewed source does not prove hardware support",
+  "sources": [
+    {
+      "repository": "GravityLinux/linux",
+      "branch": "gravity-m4",
+      "reviewed_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "observed_head": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "unchanged": true,
+      "commit_date": "2026-10-09T23:49:19Z",
+      "url": "https://github.com/GravityLinux/linux/commit/4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "branch": "main",
+      "reviewed_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "observed_head": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "unchanged": true,
+      "commit_date": "2026-09-22T03:15:21Z",
+      "url": "https://github.com/GravityLinux/mesa/commit/87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    {
+      "repository": "GravityLinux/bootloader",
+      "branch": "main",
+      "reviewed_commit": "f02d4a52017915febb222539636b5b025a70407a",
+      "observed_head": "f02d4a52017915febb222539636b5b025a70407a",
+      "unchanged": true,
+      "commit_date": "2026-10-21T07:50:53Z",
+      "url": "https://github.com/GravityLinux/bootloader/commit/f02d4a52017915febb222539636b5b025a70407a"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "branch": "gravity-alpha-20260925",
+      "reviewed_commit": "a2f6913694ff26908c16948af3f8372429782263",
+      "observed_head": "a2f6913694ff26908c16948af3f8372429782263",
+      "unchanged": true,
+      "commit_date": "2026-09-19T00:14:22Z",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a2f6913694ff26908c16948af3f8372429782263"
+    },
+    {
+      "repository": "GravityLinux/packages",
+      "branch": "main",
+      "reviewed_commit": "711c2a110416d28010ccdd118b83111776bff207",
+      "observed_head": "711c2a110416d28010ccdd118b83111776bff207",
+      "unchanged": true,
+      "commit_date": "2026-09-27T22:01:49Z",
+      "url": "https://github.com/GravityLinux/packages/commit/711c2a110416d28010ccdd118b83111776bff207"
+    },
+    {
+      "repository": "GravityLinux/installer",
+      "branch": "main",
+      "reviewed_commit": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "observed_head": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "unchanged": true,
+      "commit_date": "2026-09-20T04:57:19Z",
+      "url": "https://github.com/GravityLinux/installer/commit/6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "branch": "main",
+      "reviewed_commit": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "observed_head": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "unchanged": true,
+      "commit_date": "2026-09-20T02:18:51Z",
+      "url": "https://github.com/GravityLinux/kiwi-descriptions/commit/07bf52cb2866069c072eb03a8f23af9839d0397c"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "branch": "asahi",
+      "reviewed_commit": "94fb23346d522edf53722357c426a3e58030beea",
+      "observed_head": "94fb23346d522edf53722357c426a3e58030beea",
+      "unchanged": true,
+      "commit_date": "2026-09-12T09:57:34Z",
+      "url": "https://github.com/AsahiLinux/linux/commit/94fb23346d522edf53722357c426a3e58030beea"
+    },
+    {
+      "repository": "aurora-silicon/linux",
+      "branch": "integration/aurora",
+      "reviewed_commit": "6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87",
+      "observed_head": "6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87",
+      "unchanged": true,
+      "commit_date": "2026-10-21T20:07:41Z",
+      "url": "https://github.com/aurora-silicon/linux/commit/6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87"
+    },
+    {
+      "repository": "torvalds/linux",
+      "branch": "master",
+      "reviewed_commit": "4df4d2a577db2d3d57b888bcfb1206fc74661d16",
+      "observed_head": "4403278e4ea2f654f8130a5c03eb8b4516a0f201",
+      "unchanged": false,
+      "commit_date": "2026-10-22T00:38:01Z",
+      "url": "https://github.com/torvalds/linux/commit/4403278e4ea2f654f8130a5c03eb8b4516a0f201"
+    }
+  ],
+  "hardware_validated": false
+}

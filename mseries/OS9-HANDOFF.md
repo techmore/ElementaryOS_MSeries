@@ -10810,3 +10810,8 @@ M4 hosted Mesa retry 39702973626 dispatched at 77f9561c with all 18 captured
 development prerequisites; dependency regression and three candidate patch tests
 pass. Original kernel run 39698975678 remains active. Hardware is unavailable;
 continue public-source work. No hosted success or hardware qualification claimed.
+
+M4 source freshness: selected Gravity stack, Asahi and Aurora heads unchanged;
+mainline now 4403278e (7.3.0), still lacks selected J773g DT/Asahi DRM/T8132 NVMe
+entry points. Exact checks and 98-file comparison retained in m4-mini receipts.
+No source replacement or hardware acceptance inferred from version number.
