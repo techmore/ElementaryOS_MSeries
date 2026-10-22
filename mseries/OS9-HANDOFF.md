@@ -1,11 +1,11 @@
-## Signal accent-on-launch and Messages local favorites — 2026-10-22
+## Signal/Messages transition slice and Rust Pantheon target — 2026-10-22
 
 The official ARM64 Signal Electron client now refreshes its system-accent patch
 when the installed launcher opens it. A mutable user install is recolored only
 when the current accent differs from the saved accent; the original `app.asar`
 remains the restore source. Atomic releases are intentionally left unchanged so
-their content hash stays intact. This provides Pantheon color integration, not a
-native GTK/Granite Signal UI. The real shelf-to-compose attachment preview,
+their content hash stays intact. This remains the transition path, not the target
+Rust Pantheon client. The real shelf-to-compose attachment preview,
 logged-in appearance and display-session boundary still require owner-session
 acceptance; keep issue #227 open.
 
@@ -16,8 +16,9 @@ order remains a separate read-only snapshot. No phone, account, installation or
 running session was changed. Shell syntax and Python byte-compilation pass; the
 Wingpanel Vala module builds against GTK 4.22 and Wingpanel 8.0.4, with two
 existing `Gdk.Texture.for_pixbuf` deprecation warnings. The Messages app was not
-opened and its test suite was not run. Next: owner-session visual and
-keyboard/accessibility acceptance, plus Signal attachment-preview acceptance.
+opened and its test suite was not run.
+
+Owner clarified the destination: first-party apps should follow the Rust GTK4 / Granite-rs pattern of `rust/claude-pantheon-rs` (the T3 Code client). Messages can move its UI to Rust over BlueFerry's existing versioned session-D-Bus API, keeping BlueFerry as the sole MAP client and encrypted-history owner. Signal remains gated on an officially supported secure client/backend boundary; do not treat `libsignal` alone as a stable external SDK or touch its private profile. Plan: [`SIGNAL-PANTHEON-DESIGN.md`](SIGNAL-PANTHEON-DESIGN.md). Next implementation slice: a Rust Messages client/adapter in the `rust/` workspace; retain the current launcher until feature parity and owner-session phone acceptance. The real Signal screenshot preview/appearance and Messages live visual/keyboard/accessibility gates also remain open.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 

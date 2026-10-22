@@ -3,10 +3,12 @@
 Signal's installed launcher now checks the active elementary accent each time
 the official ARM64 Electron client opens and refreshes its user-level `app.asar`
 patch when the preference changed. The opt-in atomic installer keeps its signed
-release tree immutable and therefore retains upstream colors. Signal remains an
-Electron integration, not a GTK/Granite port. The [implementation boundary and
-maintenance approach](SIGNAL-PANTHEON-DESIGN.md) distinguish this intermediate
-integration from a separate native-client proposal. The actual shelf-to-compose drop
+release tree immutable and therefore retains upstream colors. This is only the
+current Signal transition path. The target is Rust GTK4/Granite first-party apps,
+with `claude-pantheon-rs` (T3 Code) as the reference: port Messages over
+BlueFerry's versioned session D-Bus API first; Signal needs a supported secure
+client/backend boundary before a Rust UI can replace Electron. The [Rust app
+plan](SIGNAL-PANTHEON-DESIGN.md) records the staged route. The actual shelf-to-compose drop
 preview, logged-in Signal appearance and owner desktop acceptance still need a
 real-session check; issue #227 remains open.
 

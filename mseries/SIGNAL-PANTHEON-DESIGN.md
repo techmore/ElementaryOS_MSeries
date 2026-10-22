@@ -1,36 +1,45 @@
-# Signal on Pantheon: implementation boundary
+# Rust Pantheon communications apps
 
-Status: the current integration is an intermediate theming and desktop-integration layer, not a native GTK/Granite client. The release gate is tracked in [#227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
+## Target
 
-## Recommended implementation
+The first-party Pantheon app suite should use Rust with GTK 4 and Granite-rs, following the existing `rust/claude-pantheon-rs` app (the T3 Code client) as its implementation and design reference. This request covers the T3 client, Signal and Messages as apps; it does not by itself change the compositor/session project.
 
-Keep Signal's official Desktop client as the messaging implementation and make its Linux experience fit Pantheon through a small, reversible integration layer. Signal Desktop is an Electron/TypeScript application; its own README describes it as the desktop client for Windows, macOS and Linux. The official `libsignal` repository publishes Java, Swift and TypeScript client APIs, but explicitly says use outside Signal is unsupported and that APIs can change without notice. It is not a stable GTK messaging SDK.
+Today, Signal is the signed official Electron client with a Pantheon launcher/tray/accent layer, and Messages is a GTK/Granite Python frontend. Those are working transition paths, not the Rust destination. Keep both usable until their replacements meet feature and owner-session acceptance.
 
-This boundary preserves the upstream implementation that owns device linking, encrypted storage, message synchronization, groups, attachments, calls and protocol changes. A new GTK frontend that reads or writes Signal's private profile would create a second client against private state and is not an acceptable substitute.
+## Messages: Rust frontend over BlueFerry
 
-| Layer | Owns | Maintenance rule |
-| --- | --- | --- |
-| Official Signal Desktop | Account/device link, encryption, message data, calls and sync | Install only a signature-verified upstream release; preserve its profile and rollback path. |
-| Pantheon integration | Desktop identity, launch/tray behavior, notifications, system accent and screenshot transfer | Keep changes narrow, reversible and isolated from the account database. Rebase the accent map from a pristine release after each upstream update. |
-| GTK/Granite native client | No current implementation | Treat as a separate port proposal requiring an upstream-supported client API and an explicit security/maintenance plan before implementation. |
+The Messages frontend can move to Rust without replacing the Bluetooth/message transport. The current Python client calls BlueFerry's typed `BackendClient`, which uses BlueFerry's session D-Bus API (`io.weirdware.BlueFerry.Messages1`). That interface exposes a versioned status and JSON thread/contact/inbox methods, as well as read and send operations. The Rust app should use that same daemon as the sole MAP client and implement a typed Rust adapter for the versioned D-Bus contract.
 
-## Current state and limits
+Preserve BlueFerry as owner of pairing, message routing, group-roster confirmation, encrypted history, send validation and retries. Port the existing UI and presentation behavior into the Rust app; do not create a second Bluetooth/MAP session or migrate message storage into the frontend. Keep the Python frontend available until the Rust app reaches parity and is accepted against the paired iPhone.
 
-`install-signal.sh` installs the signed ARM64 beta. `signal-accent.py` patches a mutable release's bundled CSS to follow the system accent; the launcher refreshes that patch at startup. `--atomic` keeps the verified release tree unchanged and therefore does not receive the accent patch. The Wingpanel indicator and desktop entry provide Pantheon launch behavior. These pieces change presentation and integration only; the message client remains upstream Signal Desktop.
+The reference bindings and app metadata live in `rust/claude-pantheon-rs/Cargo.toml`, its `data/` directory, and its GTK/Granite UI sources. The Rust app should follow the same accessibility, keyboard, light/dark, narrow-window and packaging standards.
 
-Signal's own **System** appearance preference should select light or dark mode. The accent patch must not rewrite chat colors or avatars. Acceptance still needs to verify both appearances, text/control readability and intended logo surfaces on the installed release; Electron's Linux theme detection is a runtime dependency, so a source-level color map alone does not prove it follows Pantheon's preference.
+## Signal: Rust UI needs a supported messaging boundary
 
-The screenshot shelf retains the original regardless of drag outcome. A completed drag is not acknowledgement from Signal. Acceptance must inspect the actual compose preview and content without sending, cover multiple images and copy/paste fallback, and record the XWayland shelf → Wayland Signal case. Preserve the isolated profile and exact client/tool revisions in the receipt. See [the screenshot-shelf guide](screenshot-shelf/README.md).
+The current Signal work is deliberately only an integration layer: signature-verified official ARM64 Signal Desktop, launcher identity, Wingpanel tray behavior and a reversible system-accent patch. It does not make Signal a native Rust app.
 
-## Acceptance before calling the integration complete
+Signal Desktop is an Electron/TypeScript client. Signal's `libsignal` repository publishes Java, Swift and TypeScript bindings for Signal's own clients and says use outside Signal is unsupported and APIs may change without notice. `libsignal` by itself is not a supported GTK messaging SDK or an account/session API. A Rust app that opens Signal's private profile, shares its local database, reimplements its private network flows, or silently treats an Electron wrapper as the Rust UI would not meet the requested outcome.
 
-- Verify accent, light/dark appearance, typography, controls, contrast and logo behavior on a throwaway Signal profile after an upstream update.
-- Verify the Signal tray item activates the app and unread state remains legible in Wingpanel.
-- Drag a screenshot from the shelf and inspect the actual Signal attachment preview and content; repeat with multiple screenshots and the copy/paste fallback, without sending.
-- Repeat the drag on each supported display/session combination. Confirm a refused or unreadable drop leaves the saved original available for retry.
-- Record app version, shelf revision, display backend, observed result and any failure. Keep #227 open until this owner-session evidence exists.
+Therefore the Rust Signal client is a separate upstream/API feasibility gate: identify an officially supported client API or coordinate a supported upstream client boundary before implementing a new UI. Keep the signed official client working as the transition path meanwhile. Do not claim a Rust port or migrate account data until the security, device-link, upgrade and rollback model is explicit.
+
+## Delivery sequence
+
+1. Build the Rust Messages frontend and BlueFerry D-Bus adapter in the `rust/` workspace. Preserve existing safety behavior and feature parity.
+2. Run fixture and rendering checks, then owner-session visual, keyboard/accessibility and live iPhone acceptance before changing the default Messages launcher.
+3. Resolve the Signal transport/API gate. Build the Rust client only on a supported boundary; keep the official client as the functional path until the new client passes account, messaging, update and rollback acceptance.
+4. Integrate both Rust apps into the Pantheon desktop packaging/session path and keep their release and source provenance documented.
+
+## Acceptance
+
+- Messages preserves the existing conversation, contact, pin/favorite, group confirmation, draft, send/retry, read-state, media preview, keyboard and accessibility behaviors over the same BlueFerry service.
+- Messages does not start an independent MAP client; pairing, encrypted history, routing and phone state remain owned by BlueFerry.
+- Signal preserves the official supported cryptographic client path. A Rust interface does not become default until an officially supported backend boundary and data-safe migration/rollback path exist.
+- Both apps pass light/dark, accent, keyboard, accessibility, narrow-window and live desktop acceptance in the Rust Pantheon session.
+- Signal's actual screenshot shelf drop shows the expected compose preview and image content without sending; multiple images, paste fallback and the XWayland shelf → Wayland app case are recorded. Refused drops preserve the original for retry.
 
 ## Upstream references
 
+- [Claude for elementary OS in Rust (T3 Code client)](../rust/claude-pantheon-rs/README.md)
 - [Signal Desktop](https://github.com/signalapp/Signal-Desktop)
-- [libsignal: overview, API stability and supported language bindings](https://github.com/signalapp/libsignal)
+- [libsignal overview and API support statement](https://github.com/signalapp/libsignal)
+- [Signal screenshot integration release gate (#227)](https://github.com/techmore/ElementaryOS_MSeries/issues/227)
