@@ -282,7 +282,7 @@ jobs:
           restore-keys: claude-pantheon-rs-${{ runner.arch }}-
 
       - name: Build the Claude package (app and indicator)
-        run: CLAUDE_PANTHEON_OUTPUT_DIR=out/claude-pantheon-rs bash rust/claude-pantheon-rs/build-deb.sh
+        run: CLAUDE_PANTHEON_ENABLE_INDICATOR=1 CLAUDE_PANTHEON_OUTPUT_DIR=out/claude-pantheon-rs bash rust/claude-pantheon-rs/build-deb.sh
 
       - name: Upload the Claude package
         uses: actions/upload-artifact@v7

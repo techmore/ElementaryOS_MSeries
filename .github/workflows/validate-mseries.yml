@@ -389,7 +389,9 @@ jobs:
           meson compile -C "$RUNNER_TEMP/indicator"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/indicator" --print-errorlogs
       - name: Build the Debian package
-        run: CLAUDE_PANTHEON_OUTPUT_DIR="$RUNNER_TEMP/cpr-deb" bash rust/claude-pantheon-rs/build-deb.sh
+        run: CLAUDE_PANTHEON_ENABLE_INDICATOR=1 CLAUDE_PANTHEON_OUTPUT_DIR="$RUNNER_TEMP/cpr-deb" bash rust/claude-pantheon-rs/build-deb.sh
+      - name: Verify the Wingpanel indicator is included in the package
+        run: dpkg-deb --contents "$RUNNER_TEMP"/cpr-deb/*.deb | grep -F 'usr/lib/aarch64-linux-gnu/wingpanel-9/libclaude-pantheon.so'
       - name: Upload the package
         uses: actions/upload-artifact@v7
         with:
