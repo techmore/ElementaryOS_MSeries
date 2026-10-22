@@ -33,9 +33,11 @@ BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) is open and
 adds the optional UUID without changing Messages API v2. Its branch has no
 reported checks yet. Until that change is merged and released, older status
 replies omit the UUID and import actions explain that BlueFerry must be updated.
-The source changes in this worktree are not on PR #526's current head yet; its
-existing checks do not validate this delta. No local tests were run for this
-handoff entry. Live keyring/UI behavior and owner-phone acceptance remain open.
+Commit `96f2f8cd` is pushed to [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
+Current-head Rust Messages, SDK, Software Updates, Disk Space, pin reader and
+repository validation workflows are queued or pending; no new-head CI result
+is complete yet. No local tests were run for this handoff entry. Live keyring/UI
+behavior and owner-phone acceptance remain open.
 
 ## Rust Messages local timestamp parity — 2026-10-22
 
