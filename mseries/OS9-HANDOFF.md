@@ -10877,3 +10877,6 @@ M4 boot-only hosted job prepared in daily workflow with independent concurrency,
 full corresponding source/reproduction artifacts and no release/installation.
 Explicit f02d4a5 bootloader tag reproduces prior native hashes; YAML/shell/
 isolation and existing workflow regressions pass. Dispatch next.
+
+M4 boot-only run39706164509 dispatched at43abd727 independently of kernel
+39698975678 and Mesa39704499140. No hosted boot result yet.

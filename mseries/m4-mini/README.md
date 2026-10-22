@@ -798,3 +798,5 @@ replay produces the unchanged reviewed stage hashes. Workflow parsing, shell
 syntax and selection checks pass. Hosted replay remains required, including
 checking whether this runner reproduces the reviewed artifact hashes.
 [Preflight](receipts/2026-10-21-hosted-boot-preflight.json).
+
+Hosted boot-only replay [39706164509](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706164509) dispatched at `43abd72757d13a72d537ad69f932ca899e8fed65`. No completed result yet. [Dispatch snapshot](receipts/2026-10-21-hosted-boot-run.json).

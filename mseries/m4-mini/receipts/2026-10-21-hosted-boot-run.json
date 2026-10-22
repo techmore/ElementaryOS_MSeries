@@ -1,0 +1,11 @@
+{
+  "run_id": 39706164509,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706164509",
+  "source_head": "43abd72757d13a72d537ad69f932ca899e8fed65",
+  "status_at_capture": "in_progress",
+  "scope": "hosted boot stages/U-Boot/DT/bundle/FAT replay only; no native boot",
+  "kernel_run": 39698975678,
+  "mesa_run": 39704499140,
+  "hardware_validated": false,
+  "factory_promotion": false
+}
