@@ -39,6 +39,7 @@ mod prewarm;
 mod protocols;
 mod screen_corners;
 pub mod screenshot;
+pub mod screenshot_pixels;
 mod shell_compat;
 mod snap_assist;
 mod snap_group;
