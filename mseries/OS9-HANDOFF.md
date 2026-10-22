@@ -10752,6 +10752,12 @@ startup window sizes do not scale with font size. The kit provides shared
 accessibility names and content-surface geometry. Apple HIG is the usability
 baseline, translated through GTK/Granite patterns.
 
+The SDK now owns the typed BlueFerry Messages API v2 D-Bus client and the shared
+status, thread and contact models used by Rust Messages. BlueFerry remains the
+service owner for MAP, history, recipient checks and contact-photo policy. The
+SDK's avatar decoder validates bounded JPEG/PNG headers and only retains small
+in-memory images; the app preserves the user's existing photo opt-in.
+
 MacBook Pro corner defaults are now consistent in source: app content surfaces
 use 12 logical px; GTK3/GTK4 CSD, Gala window clipping and the built-in display
 mask use a provisional 20 logical px, independent of text scale. The previous
@@ -10783,8 +10789,12 @@ the service reports the canonical thread, leaves composing available while
 offline, and adds Reply/Copy actions plus attachment and shortened-message
 indicators. Message text is escaped and only checked HTTP(S)/www destinations
 become clickable links. Starred conversations appear in a horizontally
-scrollable favorites strip. ARM64 package CI passes. These are source/build
-receipts; live UI, private GUI and iPhone delivery still need acceptance.
+scrollable favorites strip. When BlueFerry's existing photo opt-in is enabled,
+the client fetches photos with `GetContactPhoto`, validates bounded JPEG/PNG
+headers in the shared SDK, decodes small in-memory avatars and drops the cache
+when the photo revision changes. It does not change the opt-in or write photos
+to disk. ARM64 package CI passes. These are source/build receipts; live UI,
+private GUI and iPhone delivery still need acceptance.
 
 Signal remains on the signed official client. The Rust app needs an
 upstream-supported API/integration and security boundary before replacing it;
@@ -10794,9 +10804,10 @@ private profile/database or implement its protocol here. See
 
 Source/build checks only; no live GUI, phone, send, install, or desktop-session
 qualification was performed. Current Rust Messages gaps include imported pins,
-contact photos, bounded link/image previews, Tapback/reaction folding, detailed
+bounded link/image previews, Tapback/reaction folding, detailed
 delivery and retry feedback, remaining message actions,
 keyboard/accessibility parity, narrow layouts, localization and end-to-end
 owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
 warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
-No test suites were run in this continuation.
+This continuation separately passed `cargo fmt --check`, `cargo check --locked`
+and Clippy with `-D warnings` for the SDK and Messages. No test suites were run.
