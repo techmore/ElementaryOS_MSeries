@@ -37,6 +37,19 @@ PR [#277](https://github.com/erikwb/blueferry/pull/277) merged with a stable
 phone UUID, but public v0.8.1 packages predate it, so phone-scoped pin import
 waits for a release with that field.
 
+### Rust Messages offline recovery screen
+
+When BlueFerry cannot be reached, Rust Messages now replaces the generic empty
+conversation view with a connection-specific title and inline Connect iPhone,
+Advanced BlueFerry and Retry actions. Its compose icon now uses the elementary
+symbolic icon name. Local validation on top of PR #526: `cargo fmt --check`,
+locked Messages build, 25 SDK/Messages unit tests, strict Clippy with warnings
+denied, and `git diff --check` pass. A private Xvfb session with an isolated
+D-Bus and controlled Pantheon color-scheme portal rendered and was visually
+inspected in light and dark modes. Clicking Retry kept the app open, and the
+private bus confirmed BlueFerry was not activated. This does not qualify a live
+phone, the owner session, assistive technology or narrow-window behavior.
+
 Signal remains the signed official ARM64 client with Pantheon launcher/tray
 integration and a reversible elementary-palette accent patch for mutable
 installs; atomic releases remain unchanged. The screenshot shelf batches up to
