@@ -1,3 +1,20 @@
+## M4 mini: hosted Mesa configure failure diagnosed — 2026-10-21
+
+Run 39700250329 is terminal failure. Downloaded its m4-mesa-record artifact to
+work/m4-hosted-mesa-run1-records. Meson setup failed before compilation because
+wayland-egl-backend.pc is absent: Ubuntu provides it in the separate
+libwayland-egl-backend-dev package, present in the earlier local dependency
+capture but omitted from the hosted list. Added that one package; source,
+Wayland/driver features and all five test groups remain unchanged. Do not rerun
+the old source SHA; dispatch Mesa-only mode at the fixed branch head.
+
+Kernel run 39698975678 remains in_progress and must not be duplicated. The
+uncommitted prepare-image-inputs.py rehearsal validates the actual local kernel/
+Mesa and newly built policy, retaining sources/receipts and generating a
+candidate-only hash patch without applying it. It is independent of this
+one-package CI fix and remains to be committed/reviewed separately.
+[Failure record](m4-mini/receipts/2026-10-21-hosted-mesa-failure.json).
+
 ## M4 mini: hosted Mesa build is live alongside kernel — 2026-10-21
 
 Dispatched Mesa-only mode once: run 39700250329 at source eece8d5fa212446af7dc2197f54bfe033a91f2ca,

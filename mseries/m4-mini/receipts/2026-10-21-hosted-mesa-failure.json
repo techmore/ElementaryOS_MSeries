@@ -1,0 +1,13 @@
+{
+  "run_id": 39700250329,
+  "source_head": "eece8d5fa212446af7dc2197f54bfe033a91f2ca",
+  "terminal_status": "completed",
+  "conclusion": "failure",
+  "phase": "meson setup before compilation",
+  "cause": "Ubuntu split libwayland-egl-backend-dev was absent from hosted dependencies",
+  "diagnostic": "Dependency wayland-egl-backend not found",
+  "configure_log_sha256": "a99d1c0c070b2be9ed8062e55e20f641eef0526e84d1b3797236343b258c7e8f",
+  "fix": "add libwayland-egl-backend-dev, retain identical source/driver/Wayland/test selection",
+  "kernel_run_unchanged": 39698975678,
+  "hardware_validated": false
+}
