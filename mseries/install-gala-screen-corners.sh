@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Rounded corners on the built-in display (like macOS), via a patched Gala:
-#  * rounded masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS),
-#  * rounded corners on every standard window (GALA_WINDOW_CORNER_RADIUS), and
+# Continuous superellipse corner approximations on the built-in display, via patched Gala:
+#  * masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS),
+#  * the same curve on every standard window (GALA_WINDOW_CORNER_RADIUS), and
 #  * a software dim layer below the panel's 2-nit backlight floor (mseries-brightness keys
 #    use it; patches/gala-screen-dim.patch).
 #

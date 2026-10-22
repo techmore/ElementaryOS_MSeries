@@ -10773,8 +10773,9 @@ built-in display mask use 20 logical px, independent of text scale. On
 to 20 px to match its 20 px display mask and GTK theme; the systemd user manager
 was reloaded without restarting the desktop. It takes effect at the next Gala
 session. The running Gala was not available in this shell, and no live
-screenshot review was possible. The source still uses circular corners, and
-the 20 px curve has not been visually calibrated against the physical panel.
+screenshot review was possible. The source now uses a continuous n=4 superellipse
+approximation for the screen and window clip; this curve and the 20 px radius
+have not been visually calibrated against the physical panel.
 Normal, maximized, fullscreen, dialog, popover and external-screen corners still
 need qualification. See `mseries/RUST-PANTHEON-SDK.md` and the corner
 calibration row in `mseries/BUG-FIX-ROADMAP.md`.
