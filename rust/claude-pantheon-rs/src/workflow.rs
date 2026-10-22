@@ -51,12 +51,24 @@ pub struct Config {
     /// `owner/name#number` → thread id for issues started from the client.
     #[serde(default)]
     pub started: HashMap<String, String>,
+    /// `owner/name#number` → thread ids explicitly organized under that issue in the Repos view.
+    /// A present empty list intentionally overrides the legacy `started` association.
+    #[serde(default)]
+    pub issue_chats: HashMap<String, Vec<String>>,
     /// repo → scheduled task id of its runner.
     #[serde(default)]
     pub runners: HashMap<String, String>,
     /// repo → the webhook task and the GitHub hook that feeds it.
     #[serde(default)]
     pub webhooks: HashMap<String, WebhookInstall>,
+}
+
+impl Config {
+    /// The chats shown beneath an open issue. Newer configs can explicitly replace or clear the
+    /// original one-thread association kept in `started` for issue comments and old installs.
+    pub fn chats_for_issue(&self, key: &str) -> Vec<String> {
+        self.issue_chats.get(key).cloned().unwrap_or_else(|| self.started.get(key).cloned().into_iter().collect())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
@@ -447,6 +459,21 @@ mod tests {
         );
         assert_eq!(repo_from_remote("https://github.com/techmore/rupert").as_deref(), Some("techmore/rupert"));
         assert_eq!(repo_from_remote("https://gitlab.com/x/y"), None);
+    }
+
+    #[test]
+    fn issue_chat_associations_preserve_legacy_and_explicit_empty() {
+        let mut config = Config::default();
+        config.started.insert("o/r#7".into(), "legacy-thread".into());
+        assert_eq!(config.chats_for_issue("o/r#7"), vec!["legacy-thread"]);
+
+        config.issue_chats.insert("o/r#7".into(), vec!["chat-a".into(), "chat-b".into()]);
+        assert_eq!(config.chats_for_issue("o/r#7"), vec!["chat-a", "chat-b"]);
+        config.issue_chats.insert("o/r#7".into(), Vec::new());
+        assert!(config.chats_for_issue("o/r#7").is_empty());
+
+        let old: Config = serde_json::from_value(json!({"repos": [], "started": {"o/r#7": "legacy-thread"}})).unwrap();
+        assert_eq!(old.chats_for_issue("o/r#7"), vec!["legacy-thread"]);
     }
 
     #[test]

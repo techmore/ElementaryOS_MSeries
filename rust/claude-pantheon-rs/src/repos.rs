@@ -10,6 +10,7 @@ use granite::prelude::PlaceholderExt;
 use gtk::{gio, glib, pango, prelude::*};
 use serde_json::{Value, json};
 use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 pub struct ReposPage {
@@ -30,6 +31,47 @@ fn pill(text: &str, class: &str) -> gtk::Label {
     let l = label(text, &["caption", "pill", class]);
     l.set_halign(gtk::Align::Start);
     l
+}
+
+fn project_matches_repo(project: &crate::t3::model::Project, repo: &PinnedRepo) -> bool {
+    if project.deleted_at.is_some() {
+        return false;
+    }
+    if project.workspace_root == repo.path {
+        return true;
+    }
+    let Some(identity) = project.repository_identity.as_ref().and_then(Value::as_object) else { return false };
+    if let (Some(owner), Some(name)) =
+        (identity.get("owner").and_then(Value::as_str), identity.get("name").and_then(Value::as_str))
+        && format!("{owner}/{name}").eq_ignore_ascii_case(&repo.repo)
+    {
+        return true;
+    }
+    ["canonicalKey", "repositoryUrl", "remoteUrl", "cloneUrl", "htmlUrl", "url", "sshUrl", "httpsUrl"]
+        .iter()
+        .filter_map(|key| identity.get(*key).and_then(Value::as_str))
+        .any(|candidate| {
+            if workflow::repo_from_remote(candidate).is_some_and(|found| found.eq_ignore_ascii_case(&repo.repo)) {
+                return true;
+            }
+            let candidate = candidate
+                .trim()
+                .trim_start_matches("https://github.com/")
+                .trim_start_matches("http://github.com/")
+                .trim_start_matches("github.com/")
+                .trim_start_matches("github.com:")
+                .trim_end_matches('/')
+                .trim_end_matches(".git");
+            candidate.eq_ignore_ascii_case(&repo.repo)
+        })
+}
+
+fn thread_title(thread: &crate::t3::model::ThreadShell) -> String {
+    if thread.title.trim().is_empty() {
+        format!("Untitled chat ({})", thread.id.chars().take(8).collect::<String>())
+    } else {
+        thread.title.clone()
+    }
 }
 
 impl ReposPage {
@@ -118,6 +160,11 @@ impl ReposPage {
     /// The thread started for an issue, if the client started one.
     pub fn thread_for_issue(&self, key: &str) -> Option<String> {
         self.config.borrow().started.get(key).cloned()
+    }
+
+    /// All chats shown below an open issue; old installs inherit the client-started thread.
+    pub fn chats_for_issue(&self, key: &str) -> Vec<String> {
+        self.config.borrow().chats_for_issue(key)
     }
 
     /// `owner/name#number` for a thread the client started from an issue.
@@ -326,6 +373,8 @@ impl ReposPage {
                 a => i.agent() == Some(a),
             })
             .collect();
+        let threads_by_id: HashMap<String, crate::t3::model::ThreadShell> =
+            app.threads().into_iter().map(|thread| (thread.id.clone(), thread)).collect();
         if shown.is_empty() {
             self.issues_box.append(&skeleton::empty(
                 "edit-find-symbolic",
@@ -335,6 +384,11 @@ impl ReposPage {
             return;
         }
         for i in shown {
+            let issue_card = gtk::Box::new(gtk::Orientation::Vertical, 5);
+            issue_card.add_css_class("card");
+            issue_card.add_css_class("issue-card");
+            issue_card.set_margin_top(3);
+            issue_card.set_margin_bottom(3);
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
             row.add_css_class("issue-row");
             let number = label(&format!("#{}", i.number), &["caption", "dim-label"]);
@@ -376,15 +430,196 @@ impl ReposPage {
                     row.append(&b);
                 }
             }
-            self.issues_box.append(&row);
+            issue_card.append(&row);
+
+            let linked_ids = self.chats_for_issue(&key);
+            let chat_header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            chat_header.set_margin_start(22);
+            let linked_title = label(
+                &format!("{} {}", linked_ids.len(), if linked_ids.len() == 1 { "chat" } else { "chats" }),
+                &["caption", "dim-label"],
+            );
+            linked_title.set_hexpand(true);
+            chat_header.append(&linked_title);
+            let organize = gtk::Button::with_label("Organize chats");
+            organize.add_css_class("flat");
+            let a = app.clone();
+            let rr = repo.clone();
+            let issue = i.clone();
+            organize.connect_clicked(move |_| a.repos_page().organize_issue_chats(&a, &rr, &issue));
+            chat_header.append(&organize);
+            issue_card.append(&chat_header);
+
+            let linked_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
+            linked_box.set_margin_start(34);
+            linked_box.set_margin_bottom(4);
+            for thread_id in linked_ids {
+                let linked_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                let (title, available) = match threads_by_id.get(&thread_id) {
+                    Some(thread) => (thread_title(thread), true),
+                    None => (format!("Unavailable chat ({})", thread_id.chars().take(8).collect::<String>()), false),
+                };
+                let open_chat = gtk::Button::with_label(&title);
+                open_chat.set_halign(gtk::Align::Start);
+                open_chat.set_hexpand(true);
+                open_chat.add_css_class("flat");
+                if available {
+                    let a = app.clone();
+                    let tid = thread_id.clone();
+                    open_chat.connect_clicked(move |_| {
+                        if !a.select_id(&tid) {
+                            a.toast("That chat is no longer in the list.");
+                        }
+                    });
+                } else {
+                    open_chat.set_sensitive(false);
+                }
+                linked_row.append(&open_chat);
+                let remove = gtk::Button::with_label("Remove");
+                remove.add_css_class("flat");
+                remove.set_tooltip_text(Some("Remove this chat from the issue"));
+                let a = app.clone();
+                let issue_key = key.clone();
+                let tid = thread_id.clone();
+                remove.connect_clicked(move |_| {
+                    let page = a.repos_page_rc();
+                    page.set_issue_chat_link(&issue_key, &tid, false);
+                    page.render_issues(&a);
+                });
+                linked_row.append(&remove);
+                linked_box.append(&linked_row);
+            }
+            if linked_box.first_child().is_none() {
+                let empty = label("No chats organized under this issue yet.", &["caption", "dim-label"]);
+                empty.set_margin_start(34);
+                empty.set_margin_bottom(6);
+                issue_card.append(&empty);
+            } else {
+                issue_card.append(&linked_box);
+            }
+            self.issues_box.append(&issue_card);
         }
+    }
+
+    fn set_issue_chat_link(&self, key: &str, thread_id: &str, linked: bool) {
+        let key = key.to_string();
+        let thread_id = thread_id.to_string();
+        self.save(move |config| {
+            let chats = config
+                .issue_chats
+                .entry(key.clone())
+                .or_insert_with(|| config.started.get(&key).cloned().into_iter().collect());
+            if linked {
+                if !chats.contains(&thread_id) {
+                    chats.push(thread_id);
+                }
+            } else {
+                chats.retain(|id| id != &thread_id);
+            }
+        });
+    }
+
+    fn organize_issue_chats(&self, app: &Rc<App>, repo: &PinnedRepo, issue: &Issue) {
+        let projects = app.projects();
+        let project_ids: HashSet<String> = projects
+            .iter()
+            .filter(|project| project_matches_repo(project, repo))
+            .map(|project| project.id.clone())
+            .collect();
+        let project_titles: HashMap<String, String> = projects.into_iter().map(|p| (p.id, p.title)).collect();
+        let mut threads: Vec<_> =
+            app.threads().into_iter().filter(|thread| project_ids.contains(&thread.project_id)).collect();
+        threads.sort_by_key(|thread| std::cmp::Reverse(iso_to_unix(&thread.updated_at)));
+
+        if threads.is_empty() {
+            app.toast("No chats are available for this repository yet.");
+            return;
+        }
+
+        let key = format!("{}#{}", repo.repo, issue.number);
+        let selected: HashSet<String> = self.chats_for_issue(&key).into_iter().collect();
+        let window = gtk::Window::builder()
+            .title(format!("Chats for {}#{}", repo.repo, issue.number))
+            .transient_for(app.window())
+            .modal(true)
+            .default_width(500)
+            .default_height(560)
+            .build();
+        let root = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        root.set_margin_start(18);
+        root.set_margin_end(18);
+        root.set_margin_top(16);
+        root.set_margin_bottom(16);
+        let intro =
+            label(&format!("Choose chats to group under #{} while this issue is open.", issue.number), &["dim-label"]);
+        intro.set_wrap(true);
+        intro.set_xalign(0.0);
+        root.append(&intro);
+
+        let list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let mut checks = Vec::with_capacity(threads.len());
+        for thread in threads {
+            let check = gtk::CheckButton::new();
+            check.set_active(selected.contains(&thread.id));
+            let item = gtk::Box::new(gtk::Orientation::Vertical, 2);
+            let title = label(&thread_title(&thread), &[]);
+            title.set_xalign(0.0);
+            let project = project_titles.get(&thread.project_id).map(String::as_str).unwrap_or("Project");
+            let context = label(
+                &format!("{project} · {}", relative_time(iso_to_unix(&thread.updated_at), now_unix())),
+                &["caption", "dim-label"],
+            );
+            context.set_xalign(0.0);
+            item.append(&title);
+            item.append(&context);
+            check.set_child(Some(&item));
+            check.set_margin_top(3);
+            check.set_margin_bottom(3);
+            list.append(&check);
+            checks.push((thread.id, check));
+        }
+        let scroll =
+            gtk::ScrolledWindow::builder().child(&list).hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).build();
+        root.append(&scroll);
+
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        actions.set_halign(gtk::Align::End);
+        let cancel = gtk::Button::with_label("Cancel");
+        let done = gtk::Button::with_label("Done");
+        done.add_css_class("suggested-action");
+        actions.append(&cancel);
+        actions.append(&done);
+        root.append(&actions);
+        window.set_child(Some(&root));
+
+        let close_window = window.clone();
+        cancel.connect_clicked(move |_| close_window.close());
+        let a = app.clone();
+        let close_window = window.clone();
+        done.connect_clicked(move |_| {
+            let chats: Vec<String> =
+                checks.iter().filter(|(_, check)| check.is_active()).map(|(thread_id, _)| thread_id.clone()).collect();
+            let page = a.repos_page_rc();
+            let issue_key = key.clone();
+            page.save(move |config| {
+                config.issue_chats.insert(issue_key, chats);
+            });
+            page.render_issues(&a);
+            close_window.close();
+        });
+        window.present();
     }
 
     pub fn remember_started(&self, key: &str, thread_id: &str) {
         let key = key.to_string();
         let thread_id = thread_id.to_string();
         self.save(move |c| {
-            c.started.insert(key, thread_id);
+            c.started.insert(key.clone(), thread_id.clone());
+            if let Some(chats) = c.issue_chats.get_mut(&key)
+                && !chats.contains(&thread_id)
+            {
+                chats.push(thread_id);
+            }
         });
     }
 
@@ -440,4 +675,27 @@ fn _keep(_: &pango::EllipsizeMode) {}
 #[allow(dead_code)]
 fn _id() -> String {
     new_id()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::t3::model::Project;
+
+    #[test]
+    fn repository_threads_match_by_checkout_or_repository_identity() {
+        let repo = PinnedRepo { repo: "techmore/elementaryos_mseries".into(), path: "/src/project".into() };
+        let checkout = Project { workspace_root: "/src/project".into(), ..Default::default() };
+        assert!(project_matches_repo(&checkout, &repo));
+
+        let other_checkout = Project {
+            workspace_root: "/src/worktree".into(),
+            repository_identity: Some(json!({"canonicalKey": "https://github.com/techmore/ElementaryOS_MSeries.git"})),
+            ..Default::default()
+        };
+        assert!(project_matches_repo(&other_checkout, &repo));
+
+        let deleted = Project { deleted_at: Some("2026-10-22T00:00:00Z".into()), ..checkout };
+        assert!(!project_matches_repo(&deleted, &repo));
+    }
 }

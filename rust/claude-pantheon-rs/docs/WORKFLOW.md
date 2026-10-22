@@ -15,6 +15,26 @@ plus `agent:ready` when it is specified well enough for an agent to take unatten
 thread links to it, the PR closes it, and the closing comment is the handoff summary
 (see "Hand off to repo" in INTEGRATIONS.md).
 
+### Issue intake and execution are separate stages (planned)
+The issue is the problem contract, not an implementation plan. A future intake flow should let the
+owner describe the problem, research and refine it, and agree on success criteria before filing it.
+The saved issue should say what is wrong or wanted, who or what it affects, and how success can be
+recognized; the agent remains free to decide how to solve it. That solution can be inspected in the
+branch and pull request before merge.
+
+Issue preparation and work dispatch are separate routing decisions:
+- **Issue routing** decides which repo, lane, priority, and execution workflow fit the issue, and
+  whether it is ready for an unattended run. It does not choose an AI account based on token limits.
+- **Token/provider routing** chooses among the owner's connected T3 provider instances using their
+  authentication state and session/weekly capacity, while honoring the owner's provider policy.
+  It must not rewrite the issue's scope or acceptance criteria.
+
+The intake assistant could be a local model, a connected T3 model, or a deliberate two-pass flow
+that drafts a structured issue brief locally and asks a connected model to check for missing context.
+The owner reviews the brief and explicitly files it; model output never creates an issue or starts an
+agent by itself. Once filed, dispatch can select an execution workflow independently, and the PR
+remains the review point for the agent's proposed solution.
+
 ## The runner lives in the T3 server
 T3 already has the primitives (contracts in `~/claude-work/repos/t3code/packages/contracts/src`):
 - **Usage windows** (`providerUsageLimits.ts`): per provider instance, `windows[]` with
@@ -64,7 +84,10 @@ with the most capacity.
 - **Repos** page: pinned repos, each with lane counts and the next issue up.
 - **Issues** panel per repo: live list (GitHub API through the server's token or `gh`),
   filters by lane/priority/agent label, "Start on this" which creates a thread with the chosen
-  provider and labels the issue; issue comments stream into the thread view.
+  provider and labels the issue; issue comments stream into the thread view. Each open issue can
+  also group multiple existing chats from that repo, with explicit links saved in the local app
+  workflow config. Closed issues leave the open-issue view, so their chats return to the ordinary
+  repo/chat list; reopening an issue restores its grouping. Grouping a chat never changes GitHub.
 - **Usage** page (milestone 3): the windows above as gauges with reset countdowns, per account,
   and the rotation decision ("next task → Codex, Claude at 94 % until 21:40").
 - **Wingpanel indicator**: running tasks, windows nearest exhaustion, pending permission prompts.
