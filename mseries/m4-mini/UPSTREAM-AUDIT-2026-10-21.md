@@ -605,3 +605,32 @@ API file cap; shared PM/scheduler changes are not thereby semantically qualified
 for this downstream kernel. There is no evidence here for replacing the matched
 Gravity M4 stack with mainline. Retained [head observations](receipts/2026-10-21-source-head-refresh.json)
 and [exact mainline checks](receipts/2026-10-21-mainline-refresh.json).
+
+### Hosted candidate provenance before image input preparation
+
+`fetch-hosted-candidates.py` requires explicit run IDs and full recipe source
+commits. It checks the GitHub repository, source repository, workflow path,
+manual-dispatch event, successful completed run and component job, and exactly
+one unexpired candidate artifact. It rejects archive traversal/symlinks and
+checks the embedded source commit and package/source checksums. Downloads stay
+in a new workspace marked `INCOMPLETE` until both components pass. GitHub
+provenance is not an independent signature or a hardware result. The existing
+package validators must still pass through `prepare-image-inputs.py`.
+
+After both selected runs succeed, retrieve with:
+
+```sh
+python3 mseries/m4-mini/fetch-hosted-candidates.py \
+  --kernel-run 39698975678 \
+  --kernel-source 2798237ed0b3cd386385e8ec0d92a10fb0987db7 \
+  --mesa-run 39702973626 \
+  --mesa-source 77f9561ce40e0e1d59b03d720a3c4efddf856441 \
+  --output /path/to/new-candidate-download
+```
+
+The resulting `kernel/` and `mesa/` each contain `receipt.json` (package record),
+`build-receipt.json`, the component `.deb`, and corresponding source archive.
+Mesa also retains `mesa-software` for package checking. No downloaded recipe
+is executed by retrieval. Five local test groups pass; a live incomplete run
+is rejected before workspace creation. Successful retrieval is pending.
+[Preflight receipt](receipts/2026-10-21-hosted-intake-preflight.json).

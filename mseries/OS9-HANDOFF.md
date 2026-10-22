@@ -10815,3 +10815,9 @@ M4 source freshness: selected Gravity stack, Asahi and Aurora heads unchanged;
 mainline now 4403278e (7.3.0), still lacks selected J773g DT/Asahi DRM/T8132 NVMe
 entry points. Exact checks and 98-file comparison retained in m4-mini receipts.
 No source replacement or hardware acceptance inferred from version number.
+
+M4 candidate retrieval now checks explicit successful GitHub run/source/workflow
+provenance, component job and unexpired artifact, safe ZIP paths and embedded
+source/package checksums before image preparation. Five test groups pass; live
+incomplete kernel run is rejected before download/workspace creation. Successful
+retrieval and full-image integration remain pending the same two live builds.

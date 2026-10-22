@@ -1,0 +1,11 @@
+{
+  "scope": "hosted candidate intake preflight; successful retrieval not yet exercised",
+  "tests_passed": 5,
+  "live_incomplete_run_rejected": true,
+  "payload_directory_created": false,
+  "kernel_run": 39698975678,
+  "mesa_run": 39702973626,
+  "retriever_sha256": "98c4c27bfc552d977559a7d5ac0816726dc8c2de405a63095906235d0b58a86c",
+  "hardware_validated": false,
+  "factory_promotion": false
+}
