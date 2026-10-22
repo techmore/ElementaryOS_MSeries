@@ -1007,3 +1007,17 @@ reproduces both current test-tree files exactly. The same native build directory
 is resumed under session 92953; no runtime pass is claimed. Production kernel
 patch manifests are unchanged by these test repairs.
 [Repair record](receipts/2026-10-21-scheduler-kunit-api-repair.json).
+
+### Baseline full-image second attempt reaches repart, then fails
+
+Run `39708881382` is a terminal failure, not an active build. Explicit hosted
+root passed key generation and proceeded through configured images to sysupdate
+filesystem/GPT assembly, unsigned UKI generation and ESP formatting. The
+partition-extraction step then failed with `Verity signature partition is empty`
+using tools-tree systemd-repart 259.9. Final desktop/root/retention and completed
+artifact checks did not run, and no complete image is accepted.
+
+The active/spare signature handling must be traced before another image replay;
+signature policy must not be disabled to obtain a build. Scheduler-fixed r3
+compilation and the isolated KUnit build continue independently.
+[Second image failure](receipts/2026-10-21-hosted-image-failure-2.json).

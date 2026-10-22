@@ -1,0 +1,24 @@
+{
+  "run_id": 39708881382,
+  "source_head": "1aafd4fd781da36712c15d69eedcfb11cbcc1a25",
+  "status": "completed",
+  "conclusion": "failure",
+  "phase": "sysupdate partition extraction",
+  "error": "Verity signature partition is empty",
+  "tool_version_observed": "systemd-repart 259.9-0ubuntu0.1 in tools tree",
+  "observed_progress": [
+    "root execution/key generation passed",
+    "base and preceding configured images built sufficiently to reach sysupdate",
+    "sysupdate filesystem/GPT construction reached unsigned ARM64 UKI and ESP formatting"
+  ],
+  "not_executed": [
+    "final desktop/root/Mesa checks",
+    "actual completed-artifact ESP readback/GPT export",
+    "artifact compression/publication"
+  ],
+  "next_step": "trace empty active/spare signature handling in repart before retry; retain verity signature verification",
+  "build_log_sha256": "5ffaccbeaac43049acc6520245c59c95a7aec046d324f3f4e19811584ceaf784",
+  "complete_factory_image_built": false,
+  "hardware_validated": false,
+  "installer_admission": false
+}

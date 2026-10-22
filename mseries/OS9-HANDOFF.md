@@ -10943,3 +10943,8 @@ follow live session rather than restarting. Both hosted builds also remain activ
 KUnit session17232 terminal compile failure: older Device typestate and existing
 KUnit-only iosys assertion Debug bound. Test-side repairs apply/replay exactly;
 resumed same build tree as session92953. No production patch/test pass claimed.
+
+Image39708881382 terminal failure: reached sysupdate UKI/ESP then repart split
+failed empty verity signature (tools259.9). Final desktop/output checks did not
+run. Trace active/spare signature handling; do not drop verification. Kernel r3
+and native KUnit session92953 remain active separately.
