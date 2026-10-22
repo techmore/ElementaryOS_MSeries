@@ -133,6 +133,10 @@ pub struct Rpc {
 impl Rpc {
     /// Wraps an upgraded socket and starts the reader, writer and keep-alive tasks on the main loop.
     pub fn start(ws: Rc<WebSocket>) -> Rpc {
+        Self::start_with_ping_timing(ws, PING_INTERVAL, PING_TIMEOUT)
+    }
+
+    fn start_with_ping_timing(ws: Rc<WebSocket>, ping_interval: Duration, ping_timeout: Duration) -> Rpc {
         let (out_tx, mut out_rx) = mpsc::unbounded::<OutgoingFrame>();
         let inner = Rc::new(Inner {
             ws: ws.clone(),
@@ -199,12 +203,12 @@ impl Rpc {
         let k = rpc.clone();
         glib::spawn_future_local(async move {
             loop {
-                glib::timeout_future(PING_INTERVAL).await;
+                glib::timeout_future(ping_interval).await;
                 if k.inner.closed.get() {
                     break;
                 }
-                if heartbeat_expired(k.inner.last_received.get(), Instant::now(), PING_TIMEOUT) {
-                    k.fail_all(format!("server stopped responding for {} seconds", PING_TIMEOUT.as_secs()));
+                if heartbeat_expired(k.inner.last_received.get(), Instant::now(), ping_timeout) {
+                    k.fail_all(format!("server stopped responding for {} seconds", ping_timeout.as_secs()));
                     break;
                 }
                 if k.inner.outgoing.unbounded_send(OutgoingFrame::Ping).is_err() {
@@ -402,5 +406,102 @@ mod tests {
         assert!(heartbeat_expired(last, last + PING_TIMEOUT, PING_TIMEOUT));
         let received = last + Duration::from_secs(14);
         assert!(!heartbeat_expired(received, last + PING_TIMEOUT, PING_TIMEOUT));
+    }
+
+    #[test]
+    fn websocket_pings_detect_a_silent_peer_and_trigger_disconnect() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        use std::thread;
+
+        fn server_accept(key: &str) -> String {
+            let mut checksum = glib::Checksum::new(glib::ChecksumType::Sha1).unwrap();
+            checksum.update(key.as_bytes());
+            checksum.update(b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+            glib::base64_encode(&checksum.digest()).to_string()
+        }
+
+        fn accept_and_miss_later_pongs(listener: TcpListener) -> usize {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0; 2048];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let count = stream.read(&mut chunk).unwrap();
+                assert!(count > 0, "client closed before the WebSocket upgrade");
+                request.extend_from_slice(&chunk[..count]);
+            }
+            let request = String::from_utf8(request).unwrap();
+            let key = request
+                .lines()
+                .find_map(|line| {
+                    line.split_once(':').filter(|(name, _)| name.eq_ignore_ascii_case("Sec-WebSocket-Key"))
+                })
+                .map(|(_, value)| value.trim())
+                .unwrap();
+            let accept = server_accept(key);
+            write!(
+                stream,
+                "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {accept}\r\n\r\n"
+            )
+            .unwrap();
+
+            let mut frames = Vec::new();
+            let mut pings = 0;
+            loop {
+                let count = match stream.read(&mut chunk) {
+                    Ok(0) => break,
+                    Ok(count) => count,
+                    Err(error)
+                        if matches!(error.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) =>
+                    {
+                        continue;
+                    }
+                    Err(error) => panic!("fake WebSocket read failed: {error}"),
+                };
+                frames.extend_from_slice(&chunk[..count]);
+                while let Some((_, opcode, payload, used)) = super::super::ws::decode_frame(&frames).unwrap() {
+                    frames.drain(..used);
+                    match opcode {
+                        9 => {
+                            pings += 1;
+                            if pings == 1 {
+                                // One pong proves that receiving a frame resets the deadline.
+                                stream.write_all(&[0x8a, payload.len() as u8]).unwrap();
+                                stream.write_all(&payload).unwrap();
+                            }
+                        }
+                        8 => return pings,
+                        _ => {}
+                    }
+                }
+            }
+            pings
+        }
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || accept_and_miss_later_pongs(listener));
+        let (closed_tx, closed_rx) = std::sync::mpsc::channel();
+        let context = gtk::glib::MainContext::new();
+        let rpc = context.block_on(async {
+            let ws = WebSocket::connect(&format!("ws://{address}/ws")).await.unwrap();
+            let rpc = Rpc::start_with_ping_timing(ws, Duration::from_millis(20), Duration::from_millis(180));
+            rpc.on_close(move |reason| {
+                let _ = closed_tx.send(reason);
+            });
+            for _ in 0..100 {
+                if rpc.is_closed() {
+                    break;
+                }
+                glib::timeout_future(Duration::from_millis(10)).await;
+            }
+            assert!(rpc.is_closed(), "the missed pong must close the RPC session");
+            rpc
+        });
+        let reason = closed_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        assert!(reason.contains("server stopped responding"), "unexpected close reason: {reason}");
+        assert!(server.join().unwrap() >= 2, "the heartbeat sent repeated WebSocket Ping frames");
+        drop(rpc);
     }
 }
