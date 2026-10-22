@@ -97,6 +97,42 @@ where
     read_framebuffer(renderer, &framebuffer, size)
 }
 
+/// Crop an upright output image using global logical desktop bounds.
+/// Pixel ratios come from the rendered image, avoiding integer-scale assumptions.
+pub fn crop_output(
+    image: &image::RgbaImage,
+    output: crate::screenshot::Region,
+    selection: crate::screenshot::Region,
+) -> Option<image::RgbaImage> {
+    if output.width == 0 || output.height == 0 {
+        return None;
+    }
+    let left = i64::from(output.x).max(i64::from(selection.x));
+    let top = i64::from(output.y).max(i64::from(selection.y));
+    let right = (i64::from(output.x) + i64::from(output.width))
+        .min(i64::from(selection.x) + i64::from(selection.width));
+    let bottom = (i64::from(output.y) + i64::from(output.height))
+        .min(i64::from(selection.y) + i64::from(selection.height));
+    if right <= left || bottom <= top {
+        return None;
+    }
+    let pixel = |coordinate: i64, origin: i32, logical: u32, physical: u32, ceil: bool| {
+        let numerator = (coordinate - i64::from(origin)) as u64 * u64::from(physical);
+        let value = if ceil {
+            numerator.div_ceil(u64::from(logical))
+        } else {
+            numerator / u64::from(logical)
+        };
+        value.min(u64::from(physical)) as u32
+    };
+    let x = pixel(left, output.x, output.width, image.width(), false);
+    let y = pixel(top, output.y, output.height, image.height(), false);
+    let end_x = pixel(right, output.x, output.width, image.width(), true);
+    let end_y = pixel(bottom, output.y, output.height, image.height(), true);
+    (end_x > x && end_y > y)
+        .then(|| image::imageops::crop_imm(image, x, y, end_x - x, end_y - y).to_image())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,6 +145,53 @@ mod tests {
         assert_eq!(flipped.get_pixel(0, 0).0, [0, 0, 255, 128]);
         assert_eq!(flipped.get_pixel(0, 1).0, [255, 0, 0, 255]);
     }
+    #[test]
+    fn region_crop_handles_negative_origins_fractional_scale_and_clipping() {
+        use crate::screenshot::Region;
+        let image =
+            image::RgbaImage::from_fn(150, 120, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
+        let output = Region {
+            x: -100,
+            y: -80,
+            width: 100,
+            height: 80,
+        };
+        let selected = Region {
+            x: -90,
+            y: -70,
+            width: 20,
+            height: 20,
+        };
+        let cropped = crop_output(&image, output, selected).unwrap();
+        assert_eq!(cropped.dimensions(), (30, 30));
+        assert_eq!(cropped.get_pixel(0, 0).0, [15, 15, 0, 255]);
+        let clipped = crop_output(
+            &image,
+            output,
+            Region {
+                x: -110,
+                y: -90,
+                width: 20,
+                height: 20,
+            },
+        )
+        .unwrap();
+        assert_eq!(clipped.dimensions(), (15, 15));
+        assert!(
+            crop_output(
+                &image,
+                output,
+                Region {
+                    x: 1,
+                    y: 1,
+                    width: 10,
+                    height: 10
+                }
+            )
+            .is_none()
+        );
+    }
+
     #[test]
     fn rejects_empty_oversized_and_truncated_buffers() {
         assert!(rgba_image(0, 1, &[], false).is_err());
