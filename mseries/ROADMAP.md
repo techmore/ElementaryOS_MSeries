@@ -3962,3 +3962,8 @@ exact-source no-fuzz/hash preflight passes, full compile pending. Active image
 Scheduler-fixed kernel r3 run39709872273 dispatched at645ee908. Existing
 image39708881382 remains r2 baseline. Follow both exact runs; no fixed-kernel
 compile/runtime or updated-image result yet.
+
+Scheduler follow-up: source evidence identifies older job-allocation lifetime,
+whole-job mutable timeout aliasing and M4 NoDevice retention differences. These
+need a matched C/Rust/cancellation review and adversarial tests; r3 initialization
+build does not close them. Retained source hashes and upstream references.

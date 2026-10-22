@@ -1,0 +1,131 @@
+{
+  "scope": "shared scheduler source-applicability follow-up; not native failure or exploit reproduction",
+  "gravity_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "source_file_sha256": {
+    "rust/kernel/drm/sched.rs": "a6fdc061e4a69edd2cd42cdd011b4ba20a4dae4d0e98eeed2519912ca148e8c1",
+    "drivers/gpu/drm/scheduler/sched_main.c": "9e6113f64562dcc4275c21567a28ed28d883e7dec672438329f183df254959b5",
+    "drivers/gpu/drm/scheduler/sched_entity.c": "fa70662d94f20cf97a002cae588a3df8964d48511aaac79b7ef6d9ce0dfd346e",
+    "include/drm/gpu_scheduler.h": "459b9c1b4dc21e922ac4d841f329f9048ce5c3a188d493418305de1c58c312bf",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "630f320e9759364ec3fef7314d2cee6d39be30e5f8680fdd6a0fc1b2c8b4202e"
+  },
+  "references": {
+    "7ba04b60d2caf298bb9119b359629feedfec38c5": {
+      "url": "https://github.com/aurora-silicon/linux/commit/7ba04b60d2caf298bb9119b359629feedfec38c5",
+      "subject": "rust: drm: sched: Keep the scheduler alive while jobs reference it",
+      "files": [
+        "rust/kernel/drm/sched.rs"
+      ]
+    },
+    "d1ebc542fe8e1082a1c6e311b72d4d6c609c940d": {
+      "url": "https://github.com/aurora-silicon/linux/commit/d1ebc542fe8e1082a1c6e311b72d4d6c609c940d",
+      "subject": "rust: drm: sched: Do not stop the scheduler before tearing it down",
+      "files": [
+        "rust/kernel/drm/sched.rs"
+      ]
+    },
+    "0f89327272be80ecf44b643c4198614255024367": {
+      "url": "https://github.com/aurora-silicon/linux/commit/0f89327272be80ecf44b643c4198614255024367",
+      "subject": "drm/sched: separate Rust job timeout state from submission state",
+      "files": [
+        "drivers/gpu/drm/asahi/g17/job.rs",
+        "drivers/gpu/drm/asahi/queue/mod.rs",
+        "drivers/gpu/drm/scheduler/sched_main.c",
+        "include/drm/gpu_scheduler.h",
+        "rust/kernel/drm/sched.rs"
+      ]
+    },
+    "c163a8df57f986f9cb2f3c3275a1dd2b627d7dba": {
+      "url": "https://github.com/aurora-silicon/linux/commit/c163a8df57f986f9cb2f3c3275a1dd2b627d7dba",
+      "subject": "drm/asahi: correct reviewed lifetime, failure and submission paths",
+      "files": [
+        "drivers/gpu/drm/asahi/asahi.rs",
+        "drivers/gpu/drm/asahi/cleanup.rs",
+        "drivers/gpu/drm/asahi/driver.rs",
+        "drivers/gpu/drm/asahi/file.rs",
+        "drivers/gpu/drm/asahi/g17/channel.rs",
+        "drivers/gpu/drm/asahi/g17/command.rs",
+        "drivers/gpu/drm/asahi/g17/completion.rs",
+        "drivers/gpu/drm/asahi/g17/context.rs",
+        "drivers/gpu/drm/asahi/g17/fence.rs",
+        "drivers/gpu/drm/asahi/g17/fw/compute.rs",
+        "drivers/gpu/drm/asahi/g17/fw/kick.rs",
+        "drivers/gpu/drm/asahi/g17/fw/render.rs",
+        "drivers/gpu/drm/asahi/g17/initdata.rs",
+        "drivers/gpu/drm/asahi/g17/job.rs",
+        "drivers/gpu/drm/asahi/g17/mod.rs",
+        "drivers/gpu/drm/asahi/g17/power.rs",
+        "drivers/gpu/drm/asahi/g17/queue/compute.rs",
+        "drivers/gpu/drm/asahi/g17/queue/compute/exit.rs",
+        "drivers/gpu/drm/asahi/g17/queue/mod.rs",
+        "drivers/gpu/drm/asahi/g17/queue/render.rs",
+        "drivers/gpu/drm/asahi/g17/queue/render/memory.rs",
+        "drivers/gpu/drm/asahi/g17/recovery.rs",
+        "drivers/gpu/drm/asahi/g17/recovery/attribution.rs",
+        "drivers/gpu/drm/asahi/g17/runtime.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/compute_exit.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/compute_replay.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/events.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/render.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/render/grow.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/render/prepare.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/render/submit.rs",
+        "drivers/gpu/drm/asahi/g17/runtime/teardown.rs",
+        "drivers/gpu/drm/asahi/g17/teardown.rs",
+        "drivers/gpu/drm/asahi/gem.rs",
+        "drivers/gpu/drm/asahi/gpu.rs",
+        "drivers/gpu/drm/asahi/hw/mod.rs",
+        "drivers/gpu/drm/asahi/mem.rs",
+        "drivers/gpu/drm/asahi/mmu.rs",
+        "drivers/gpu/drm/asahi/mmu/bind.rs",
+        "drivers/gpu/drm/asahi/mmu/lifetime.rs",
+        "drivers/gpu/drm/asahi/pgtable.rs",
+        "drivers/gpu/drm/asahi/queue/mod.rs",
+        "drivers/gpu/drm/asahi/util.rs",
+        "drivers/gpu/drm/drm_gpuvm.c",
+        "drivers/gpu/drm/scheduler/sched_entity.c",
+        "drivers/gpu/drm/scheduler/sched_main.c",
+        "drivers/soc/apple/rtkit.c",
+        "include/drm/drm_gpuvm.h",
+        "include/drm/gpu_scheduler.h",
+        "rust/kernel/drm/device.rs",
+        "rust/kernel/drm/driver.rs",
+        "rust/kernel/drm/gem/mod.rs",
+        "rust/kernel/drm/gpuvm/mod.rs",
+        "rust/kernel/drm/sched.rs"
+      ]
+    }
+  },
+  "findings": [
+    {
+      "area": "scheduler ownership",
+      "observed": "Gravity Job has C job and inner payload only; Entity holds scheduler Arc; C entity kill uses deferred work",
+      "inference": "job-held allocation lifetime fix warrants an older-API backport review",
+      "reference": "7ba04b60d2caf298bb9119b359629feedfec38c5"
+    },
+    {
+      "area": "timeout/submission aliasing",
+      "observed": "Rust run and timeout callbacks each create mutable references to the whole Job; newer Aurora separates TimeoutData",
+      "inference": "shared callback aliasing contract needs review and adversarial scheduling tests",
+      "reference": "0f89327272be80ecf44b643c4198614255024367"
+    },
+    {
+      "area": "NoDevice retention/teardown",
+      "observed": "M4 timed_out returns NoDevice; Gravity timeout removes job and only requeues NO_HANG; SchedulerInner Drop calls stop then fini",
+      "inference": "review retained job/fence ownership and cancellation dependencies together before changing teardown",
+      "references": [
+        "0f89327272be80ecf44b643c4198614255024367",
+        "d1ebc542fe8e1082a1c6e311b72d4d6c609c940d",
+        "c163a8df57f986f9cb2f3c3275a1dd2b627d7dba"
+      ]
+    }
+  ],
+  "revision3_scope": "initialization fix only, not the complete newer scheduler protocol",
+  "next_checks": [
+    "map older C cancellation/parent callback contract",
+    "adapt allocation owner and job references with no reference cycle",
+    "separate timeout data and adapt M4/legacy trait implementations",
+    "exercise deferred dependency teardown, concurrent timeout and late completion before promotion"
+  ],
+  "compatibility_review_complete": false,
+  "hardware_validated": false
+}

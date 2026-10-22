@@ -938,3 +938,22 @@ kernel and matched image replay are needed before accepting the updated stack.
 [Head observations and backport preflight](receipts/2026-10-21-scheduler-backport-preflight.json).
 
 Revision-3 scheduler kernel run [39709872273](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39709872273) dispatched at `645ee9085def4cdd0d591a403e977727d87682dc`. Source preflight passes; full compile/package results remain pending. [Dispatch snapshot](receipts/2026-10-21-scheduler-kernel-run.json).
+
+### Shared scheduler lifetime/timeout follow-up remains open
+
+Review of Aurora's earlier scheduler commits identifies additional shared
+protocol differences beyond revision 3's initialization fix. Gravity jobs do
+not hold a scheduler allocation reference after submission; entity cancellation
+can use deferred work. Its timeout and run callbacks each create a mutable
+reference to the complete Rust job. M4 returns NoDevice on timeout, while the
+newer protocol explicitly retains ENODEV jobs and separates timeout state.
+Gravity also calls stop before fini; Aurora's change to that sequence depends
+on matching cancellation/parent-fence handling.
+
+These source facts warrant an older-API lifetime/concurrency review, not a blind
+copy of the newer G17 wrapper. They do not prove a reproduced native M4 fault.
+Revision 3 remains an initialization-only candidate; even successful compilation
+cannot close deferred dependency teardown, aliasing, late completion and
+NoDevice retention gates. No scheduler-wide safety qualification is claimed.
+The exact source hashes, upstream commit references and required follow-up
+cases are retained in the [review receipt](receipts/2026-10-21-scheduler-lifetime-review.json).
