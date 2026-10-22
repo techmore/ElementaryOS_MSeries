@@ -17,6 +17,21 @@ window/display radius has not been matched to the physical panel; owner visual
 qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
 [Repository Topology](REPOSITORY-TOPOLOGY.md).
 
+## Rust Messages local timestamp parity — 2026-10-22
+
+The shared SDK now formats BlueFerry ISO timestamps in the local timezone with
+stable calendar labels (Today, Yesterday, weekday, or date plus year) and a
+12-hour clock, matching the qualified Python client's behavior. Invalid values
+fall back to a short, single-line label. The Rust Messages conversation list
+and message bubbles use the formatter instead of showing raw ISO strings.
+
+**Source/build validation:** `cargo fmt --manifest-path rust/Cargo.toml
+--package mseries-pantheon-kit --package mseries-messages`, `cargo check
+--locked --manifest-path rust/Cargo.toml -p mseries-messages`, and `git diff
+--check` passed. No test suite or live UI render was run for this change. Next:
+verify same-day, previous-day and older-date labels on the owner session,
+including timestamps near a local timezone boundary.
+
 ## Disk Space SDK scaling pass — 2026-10-22
 
 Disk Space now uses SDK text-relative spacing and margins for persistent layout

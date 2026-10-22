@@ -88,7 +88,8 @@ shared SDK, with opt-in contact photos decoded to bounded in-memory avatars
 and text-form Tapbacks folded onto the messages they quote. The Rust preview
 also has a contact picker, explicit recipient copy, conversation-list quick
 actions, search/refresh/new-message shortcuts, Ctrl+Enter send with plain Enter
-reserved for newlines, and a retry action for startup failure. These
+reserved for newlines, locally formatted timestamps, and a retry action for
+startup failure. These
 source/build changes still need private GUI, accessibility, phone and owner
 acceptance.
 Imported Apple pins need a stable opaque phone ID in BlueFerry's `GetStatus`
