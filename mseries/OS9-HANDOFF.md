@@ -1,3 +1,22 @@
+# Rust Pantheon SDK, Software Updates and System Monitor — 2026-10-22
+
+The shared Rust GTK 4 / Granite SDK remains in the current repository while
+its app set and the proposed Kernel, OS and Apps repositories are proven. The
+rollout includes T3, Messages, Disk Space, Software Updates, private
+Torrential, and the System Monitor preview. The updater is an OS-owned service
+with a typed versioned app contract; the UI and shared client adapters belong
+to the Apps SDK. App releases may version independently after native
+acceptance, and the hub records artifact checksums, SDK/API compatibility and
+qualification receipts. Do not create satellite repositories or move source
+until their builds, packages and hub integration have passed.
+
+System Monitor currently samples host CPU and memory through SDK polling and
+embeds btop via VTE. The custom compositor still needs a versioned read-only
+metrics API before compositor counters can appear there. The provisional Mac
+window/display radius has not been matched to the physical panel; owner visual
+qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
+[Repository Topology](REPOSITORY-TOPOLOGY.md).
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring

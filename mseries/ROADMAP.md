@@ -86,6 +86,16 @@ signed official client until an upstream-supported backend/API exists;
 still need hardware visual qualification; see the system-level issue in
 `BUG-FIX-ROADMAP.md`.
 
+The SDK rollout includes the existing Rust Software Updates app and its typed
+`mseries-update-core` OS contract; privileged transaction policy remains in
+the OS, while shared UI, scaling and future client adapters belong in the Apps SDK. A
+new System Monitor preview uses SDK CPU/memory polling and embeds btop through
+VTE; compositor counters await a versioned OS API. Apps can release
+independently after native acceptance, with SDK/API compatibility and pinned
+artifacts recorded by the project hub. The staged Kernel, OS and Apps
+repository model and release flow are in
+[Repository Topology](REPOSITORY-TOPOLOGY.md).
+
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,
