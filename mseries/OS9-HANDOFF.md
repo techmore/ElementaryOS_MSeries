@@ -57,6 +57,25 @@ live resizing was not qualified because the isolated X server had no window
 manager to deliver normal compositor resize events. Owner visual, accessibility,
 phone-send and screenshot-drop acceptance remain open.
 
+## Rust Messages Enter-to-send preference parity — 2026-10-22
+
+The Rust composer now shares the Python client's `enter_sends` preference in
+`~/.config/mseries/messages.json`. A switch in the app menu selects Enter-to-send
+or Ctrl+Enter-to-send. When Enter-to-send is enabled, Shift+Enter inserts a
+newline and Ctrl+Enter remains an alternative. The GTK text-buffer insertion
+hook sends only when the key event produces a literal newline; composition text
+from an input method is allowed through without sending. The preference uses
+atomic replacement and owner-only file permissions, matching the existing
+Python setting contract.
+
+`cargo fmt --check --manifest-path rust/Cargo.toml --package mseries-messages`,
+`cargo check --locked --manifest-path rust/Cargo.toml -p mseries-messages`,
+`cargo test --locked --manifest-path rust/Cargo.toml -p mseries-messages` (12
+unit tests), and strict Clippy with warnings denied pass. The preference tests
+cover the shared default, malformed values, round-trip persistence and mode
+0600. No live GTK input-method, GUI, or phone interaction was run for this
+change.
+
 ## Rust Messages per-phone pin scope and shared keyring — 2026-10-22
 
 Rust Messages now validates bounded Apple pin snapshots, reviews conversation
@@ -69,10 +88,10 @@ changed phone IDs clear the old view state, and stale asynchronous pin loads are
 ignored. A direct jump to Rust before the Python migration can require
 re-importing the snapshot.
 
-BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) merged as
-`ca2cc6b` on 2026-10-19, adding the optional UUID without changing Messages API
-v2. Older installed BlueFerry versions still omit the UUID until a release
-containing the merged change is installed, so import actions explain that
+BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) remains open at
+`d85819f`; no checks have been reported. It adds the optional UUID without
+changing Messages API v2. Older installed BlueFerry versions omit the UUID
+until the change is merged and released, so import actions explain that
 BlueFerry must be updated.
 Code commit `b3ed900b` is on [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
 The checks at that revision passed: Rust Messages formatting/lint, ARM64 build
