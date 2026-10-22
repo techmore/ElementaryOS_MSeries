@@ -29,7 +29,12 @@ scope questions, and keep implementation choices open. It does not edit files, f
 work. The owner can then switch to any connected T3 provider in the same composer for broader research
 and refinement. **Refine in T3 chat** opens the same reviewable flow with the project's normal provider
 selection. Accepted refinements are copied back into the brief before filing; neither assistant writes
-to the brief automatically.
+to the brief automatically. The local first-pass prompt is limited to 16,000 characters; an oversized
+draft is saved and the UI asks you to shorten it or use the normal T3 route rather than silently
+truncating context. The response is asked to stay within 220 words and avoid echoing clear input. T3
+currently exposes the ACP model as `Default`; the underlying local checkpoint is controlled by the
+paired server and is checked when you send, so ACP `ready` alone does not promise that the model worker
+can start under its memory guard.
 
 Issue preparation and work dispatch are separate routing decisions:
 - **Issue routing** decides which repo, lane, priority, and execution workflow fit the issue, and

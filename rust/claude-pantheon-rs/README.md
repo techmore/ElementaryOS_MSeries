@@ -127,7 +127,9 @@ headers can be dragged into the order you want; the filter and order persist in
 Repos → Issues supports local issue briefs with problem, research/context, success criteria and
 constraints, then explicit GitHub filing. When MSeries Assistant is ready on the paired server,
 **Refine locally** opens an unsent first-pass chat with that local provider selected. You can switch
-to another connected T3 provider in the same composer for research and refinement. Issue labels and
+to another connected T3 provider in the same composer for research and refinement. The local prompt
+is capped at 16,000 characters and asks for a compact brief; its underlying model is managed by the
+paired server and checked when you send. Issue labels and
 readiness control the repo workflow; provider selection remains a separate T3 decision. Chats can be
 grouped beneath open issues and return to the repo chat list when an issue closes.
 

@@ -618,15 +618,33 @@ impl ReposPage {
                 && provider.display_name.as_deref().is_some_and(|name| name.eq_ignore_ascii_case("MSeries Assistant"))
                 && provider.ready()
         });
+        let local_model_label = local_provider.as_ref().map(|provider| {
+            let model = provider
+                .models
+                .iter()
+                .find(|model| model.is_default == Some(true))
+                .or_else(|| provider.models.first())
+                .map(|model| model.display())
+                .unwrap_or("Default");
+            format!("{} · {}", provider.name(), model)
+        });
         if local_provider.is_none() {
             status.set_text("Connect MSeries Assistant in Settings → Providers to enable the local first pass.");
+        } else if let Some(model_label) = &local_model_label {
+            status.set_text(&format!(
+                "Local first pass: {model_label} on the paired T3 server. The underlying model is managed there and checked when you send."
+            ));
         }
         local_refine.set_sensitive(local_provider.is_some());
-        local_refine.set_tooltip_text(Some(if local_provider.is_some() {
-            "Prepare an unsent first-pass request for the paired local MSeries Assistant."
-        } else {
-            "Connect a ready MSeries Assistant in Settings → Providers to use local-first intake."
-        }));
+        let local_tooltip = local_model_label.as_ref().map_or_else(
+            || "Connect a ready MSeries Assistant in Settings → Providers to use local-first intake.".to_string(),
+            |name| {
+                format!(
+                    "Prepare an unsent first-pass request for {name} on the paired T3 server. Model availability is checked when you send."
+                )
+            },
+        );
+        local_refine.set_tooltip_text(Some(&local_tooltip));
         let refine = gtk::Button::with_label("Refine in T3 chat");
         let file = gtk::Button::with_label("File issue");
         file.add_css_class("suggested-action");
@@ -685,6 +703,7 @@ impl ReposPage {
             let draft_id_local = draft_id.clone();
             let close_window = window.clone();
             let save_before_local = save_on_close.clone();
+            let status_local = status.clone();
             local_refine.connect_clicked(move |_| {
                 if !a.is_connected() {
                     a.toast("Connect to T3 before opening a local intake chat.");
@@ -702,6 +721,15 @@ impl ReposPage {
                 let draft = form_local.read(&rr.repo, &draft_id_local);
                 let prompt = workflow::issue_local_intake_prompt(&draft);
                 let page = a.repos_page_rc();
+                if prompt.chars().count() > workflow::MAX_LOCAL_ISSUE_INTAKE_CHARS {
+                    page.upsert_issue_draft(draft);
+                    page.render_drafts(&a);
+                    status_local.set_text(&format!(
+                        "This request is longer than the local assistant's {}-character limit. Shorten the draft or use Refine in T3 chat; your draft is saved.",
+                        workflow::MAX_LOCAL_ISSUE_INTAKE_CHARS
+                    ));
+                    return;
+                }
                 page.upsert_issue_draft(draft);
                 page.render_drafts(&a);
                 save_before_local.set(false);

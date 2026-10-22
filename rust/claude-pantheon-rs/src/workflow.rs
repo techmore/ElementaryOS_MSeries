@@ -323,9 +323,11 @@ pub fn issue_refinement_prompt(draft: &IssueDraft) -> String {
 
 /// First pass for a local MSeries Assistant session. Keep it focused on structuring the request;
 /// the owner may then switch to a connected hosted provider in the same T3 composer for research.
+pub const MAX_LOCAL_ISSUE_INTAKE_CHARS: usize = 16_000;
+
 pub fn issue_local_intake_prompt(draft: &IssueDraft) -> String {
     format!(
-        "Help structure an initial GitHub issue brief for {} using only the information below and tools that are already available. This is an intake pass. Do not edit files, run implementation work, create or modify a GitHub issue, or choose an implementation. Do not invent facts or claim research you did not perform. Return: a concise problem and desired outcome, confirmed context versus assumptions, observable success criteria, constraints/non-goals, and the fewest open questions that materially affect scope. Leave the solution open for a later implementation agent.\n\nInitial title: {}\n\nProblem or desired change:\n{}\n\nContext and research:\n{}\n\nSuccess criteria:\n{}\n\nConstraints and non-goals:\n{}",
+        "Help structure an initial GitHub issue brief for {} using only the information below and tools that are already available. This is an intake pass. Do not edit files, run implementation work, create or modify a GitHub issue, choose an implementation, or claim research you did not perform. Preserve material facts and success criteria; label assumptions and additions. Do not repeat clear input verbatim. Return a concise brief of at most 220 words with: problem/outcome; confirmed context and assumptions; observable success criteria; constraints/non-goals; and only questions that materially change scope. Leave the solution open for a later implementation agent.\n\nInitial title: {}\n\nProblem or desired change:\n{}\n\nContext and research:\n{}\n\nSuccess criteria:\n{}\n\nConstraints and non-goals:\n{}",
         draft.repo,
         if draft.title.trim().is_empty() { "(not set)" } else { draft.title.trim() },
         if draft.problem.trim().is_empty() { "(not set)" } else { draft.problem.trim() },
@@ -628,9 +630,11 @@ mod tests {
         };
         let prompt = issue_local_intake_prompt(&draft);
         assert!(prompt.contains("owner/repo"));
-        assert!(prompt.contains("confirmed context versus assumptions"));
+        assert!(prompt.contains("confirmed context and assumptions"));
         assert!(prompt.contains("Do not edit files"));
         assert!(prompt.contains("Leave the solution open"));
+        assert!(prompt.contains("at most 220 words"));
+        assert!(prompt.contains("Do not repeat clear input verbatim"));
     }
 
     #[test]
