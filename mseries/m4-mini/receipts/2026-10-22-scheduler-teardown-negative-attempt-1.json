@@ -1,0 +1,64 @@
+{
+  "scope": "superseded negative harness attempt, not a clean regression result",
+  "exit": 1,
+  "historical_sources_restored": true,
+  "test_source_sha256": "3ba59bcaf4ebe185806aaaafd1d9632c7600fcfcb63d9ff0968ba43e83430073",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "teardown_accounts_unfinished_parent_once",
+            "status": "FAIL"
+          },
+          {
+            "name": "teardown_accounts_legacy_detached_parent_once",
+            "status": "FAIL"
+          },
+          {
+            "name": "teardown_preserves_completed_parent_error",
+            "status": "FAIL"
+          }
+        ],
+        "misc": {
+          "tests": 3,
+          "passed": 0,
+          "failed": 3,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 3,
+      "passed": 0,
+      "failed": 3,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "native_module_unload_tested": false,
+  "hardware_validated": false,
+  "diagnostic": "helper assertion bypassed KUnit rewriting and panicked; later cases unreliable",
+  "superseded_by": "2026-10-22-scheduler-teardown-negative-control.json"
+}

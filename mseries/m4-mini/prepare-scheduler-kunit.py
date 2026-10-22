@@ -21,6 +21,7 @@ choice = parser.add_mutually_exclusive_group()
 choice.add_argument('--experimental-owner', action='store_true', help='unpromoted allocation-owner candidate and seven-case test recipe')
 choice.add_argument('--experimental-module', action='store_true', help='unpromoted owner plus callback module/work-drain candidate and eight-case test recipe')
 choice.add_argument('--experimental-alias', action='store_true', help='unpromoted owner/module/disjoint-timeout candidate and nine-case test recipe')
+choice.add_argument('--experimental-teardown', action='store_true', help='unpromoted owner/module/timeout/final-cancellation candidate and twelve-case test recipe')
 args = parser.parse_args()
 if args.output.exists() or kernel.digest(args.archive) != kernel.ARCHIVE_SHA256:
     raise ValueError('new output and pinned kernel archive required')
@@ -40,12 +41,14 @@ directory = HERE / 'gravity/testing'
 manifest_name = 'manifest.json'
 experimental = {}
 layers = []
-if args.experimental_owner or args.experimental_module or args.experimental_alias:
+if args.experimental_owner or args.experimental_module or args.experimental_alias or args.experimental_teardown:
     layers.append('owner')
-if args.experimental_module or args.experimental_alias:
+if args.experimental_module or args.experimental_alias or args.experimental_teardown:
     layers.append('module')
-if args.experimental_alias:
+if args.experimental_alias or args.experimental_teardown:
     layers.append('alias')
+if args.experimental_teardown:
+    layers.append('teardown')
 for layer in layers:
     directory = HERE / 'gravity/experimental' / layer
     layer_patches = json.loads((directory / 'manifest.json').read_text())

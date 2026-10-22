@@ -1,0 +1,64 @@
+{
+  "scope": "superseded negative harness attempt, not a clean regression result",
+  "exit": 1,
+  "historical_sources_restored": true,
+  "test_source_sha256": "e6f1154387009604b02637406a9c2ce879b6595f9ce5b60ea7318c7648daf72c",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "",
+            "status": "ERROR"
+          },
+          {
+            "name": "",
+            "status": "ERROR"
+          },
+          {
+            "name": "",
+            "status": "ERROR"
+          }
+        ],
+        "misc": {
+          "tests": 3,
+          "passed": 0,
+          "failed": 0,
+          "crashed": 3,
+          "skipped": 0,
+          "errors": 4
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 3,
+      "passed": 0,
+      "failed": 0,
+      "crashed": 3,
+      "skipped": 0,
+      "errors": 4
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "native_module_unload_tested": false,
+  "hardware_validated": false,
+  "diagnostic": "broad negative replay timed out; first score assertion observed, remaining cases unproven",
+  "superseded_by": "2026-10-22-scheduler-teardown-negative-control.json"
+}

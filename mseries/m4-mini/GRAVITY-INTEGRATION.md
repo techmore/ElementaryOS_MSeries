@@ -384,3 +384,26 @@ is byte-identical to the tested scheduler. This is not exhaustive Rust memory-
 model or actual module-unload proof. See scheduler-alias receipts and
 --experimental-alias. Final cancellation/accounting review remains open.
 Revision-4 full kernel run 39715540751 remains live.
+
+2026-10-22 follow-up: the downloaded baseline image is now locally verified.
+All six compressed raw checksums pass; decompressed source SHA256 f8eb8865bba9
+afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152 (17,482,960,896 bytes)
+matches the hosted record. GPT headers/entries/geometry/GUIDs/labels/attributes
+match, ESP boot.bin matches the reviewed hosted bundle, and active data/hash
+payloads verify against the signed root hash. The embedded certificate's
+fingerprint and CMS signature verify; this establishes internal consistency,
+not external signer trust or Apple enrollment. All eight corresponding-source
+archives match reviewed component/mkosi hashes. Future image builds now retain
+actual active-verity verification and source checksums. Local ESP validation
+used the already extracted sfdisk/mtools without installing host packages.
+
+The complete experimental scheduler candidate now adds matched final
+cancellation/accounting and removal of reset-style stop from finalization.
+Actual M4/legacy driver/Rust/C objects compile and twelve generic ARM64 QEMU
+cases pass, including credits/score cleanup and preservation of completed EIO.
+The isolated pre-fix negative fails score==0 cleanly; earlier helper-panic and
+broad-negative timeout attempts are retained separately as superseded harness
+evidence. Fresh --experimental-teardown preparation matches the tested source.
+Normal manifests remain research kernel revision 4; a full combined candidate
+build and actual module-unload exercise remain open. Revision-4 full build
+39715540751 is still live. ISO, installer import and native M4 remain unqualified.

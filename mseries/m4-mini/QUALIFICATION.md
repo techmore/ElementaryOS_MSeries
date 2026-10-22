@@ -1,4 +1,4 @@
-# M4 mini qualification status — 2026-10-21
+# M4 mini qualification status — 2026-10-22
 
 Target: owner-reported plain M4 mini, 16 GB, 1 TB, optional 10 Gb Ethernet,
 macOS 27 and HDMI. Expected Mac16,10/J773g identity is not yet measured.
@@ -18,8 +18,8 @@ repeatedly request an inventory until availability changes.
 | HDMI | Gravity reports native HDMI; source profile uses primary DCP/HDMI-A/PHY4 | Owner monitor mode, hotplug and sustained display on elementary |
 | Radio/USB | J773g Wi-Fi mapping tests pass; early input modules present | Owner firmware/calibration, USB topology and wired/Bluetooth input |
 | Audio | Kernel protection source reviewed; electrical assumptions remain explicit | Actual routing and measured protection; no speaker safety qualification |
-| Factory image | Full baseline r2 mkosi graph passes hosted assembly; 1,650-package base and 1,741-package live roots plus Mesa/desktop/actual ESP/GPT checks pass | Downloaded raw verification, ISO assembly, actual graphical session and Apple installer integration |
-| Partition export | Metadata/payload exporter passes synthetic GPT/CRC/sector-size tests; no disk import | Real M4 sysupdate artifact, metadata-preserving import and destination/macOS preservation |
+| Factory image | Full baseline r2 mkosi graph passes hosted assembly; 1,650-package base and 1,741-package live roots plus Mesa/desktop/actual ESP/GPT checks pass; downloaded full raw, active signature/verity and all eight source archives verify locally | ISO assembly, actual graphical session and Apple installer integration; embedded signer verification is not Apple authorization |
+| Partition export | Actual 17.48 GB raw GPT/CRC/metadata and three active payloads exported and checked locally; synthetic sector-size regressions pass; no disk import | Metadata-preserving import and destination/macOS preservation |
 | Dual boot | Full pinned installer has 26 passing fixture/mock tests; synthetic macOS 27 selects separate IPSW; M4 command-line installer refuses generic disk erase; graphical installer omitted | Metadata-preserving GPT/verity import, owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
 | Lifecycle | Gravity reports flaky shutdown/reboot and unsupported sleep; sleep policy packaged | Physical restart/shutdown behavior; do not enable sleep based on assembly |
 

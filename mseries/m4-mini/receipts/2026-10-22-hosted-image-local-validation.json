@@ -1,0 +1,170 @@
+{
+  "observed_at_utc": "2026-10-22T04:04:10.941588+00:00",
+  "run_id": 39714779495,
+  "source_commit": "0b2afea89412e3e1004f1091d901e211d138b0bb",
+  "scope": "downloaded baseline r2 full raw and active partitions, local regular-file read-only verification; no ISO/native boot",
+  "compressed_payload_checks": [
+    "driver-nvidia-arm64_20261022030610.raw.zst: OK",
+    "elementary_20261022030610.esp.raw.zst: OK",
+    "elementary_20261022030610.raw.zst: OK",
+    "elementary_20261022030610.usr-arm64-verity-sig.f4bd9b0fea5e42439b48fa28dea5b9e7.raw.zst: OK",
+    "elementary_20261022030610.usr-arm64-verity.5ee7a29dd19344da686b50d324375bf2.raw.zst: OK",
+    "elementary_20261022030610.usr-arm64.c7a4f9412e0d48af0bb2196b817b8d88.raw.zst: OK"
+  ],
+  "raw_sha256": "f8eb8865bba9afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152",
+  "raw_size_bytes": 17482960896,
+  "gpt_matches_hosted_metadata": true,
+  "partitions": [
+    {
+      "index": 1,
+      "type_guid": "c12a7328-f81f-11d2-ba4b-00a0c93ec93b",
+      "unique_guid": "6b78a7f3-934e-4d32-b83f-76079b05a275",
+      "first_lba": 2048,
+      "last_lba": 3147775,
+      "offset_bytes": 1048576,
+      "size_bytes": 1610612736,
+      "label": "elementary_arm64_boot",
+      "attributes_hex": "0x0000000000000000",
+      "no_auto": false,
+      "read_only": false,
+      "growfs": false
+    },
+    {
+      "index": 2,
+      "type_guid": "c23ce4ff-44bd-4b00-b2d4-b41b3419e02a",
+      "unique_guid": "f4bd9b0f-ea5e-4243-9b48-fa28dea5b9e7",
+      "first_lba": 3147776,
+      "last_lba": 3147807,
+      "offset_bytes": 1611661312,
+      "size_bytes": 16384,
+      "label": "elementary_20261022030610_verity_sig",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false,
+      "payload": {
+        "file": "partition-2.img",
+        "sha256": "72707a25d1ff4b5e11f8681c2f66ab73702dd3ebf3d6b9c557bcc0ed0053d492"
+      }
+    },
+    {
+      "index": 3,
+      "type_guid": "6e11a4e7-fbca-4ded-b9e9-e1a512bb664e",
+      "unique_guid": "5ee7a29d-d193-44da-686b-50d324375bf2",
+      "first_lba": 3147808,
+      "last_lba": 3967007,
+      "offset_bytes": 1611677696,
+      "size_bytes": 419430400,
+      "label": "elementary_20261022030610_verity",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false,
+      "payload": {
+        "file": "partition-3.img",
+        "sha256": "d5a836a22de34b417222aab84aadd42a1adf066cf8b9a1ce999d0414cf285915"
+      }
+    },
+    {
+      "index": 4,
+      "type_guid": "b0e01050-ee5f-4390-949a-9101b17104e9",
+      "unique_guid": "c7a4f941-2e0d-48af-0bb2-196b817b8d88",
+      "first_lba": 3967008,
+      "last_lba": 18647071,
+      "offset_bytes": 2031108096,
+      "size_bytes": 7516192768,
+      "label": "elementary_20261022030610_usr",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false,
+      "payload": {
+        "file": "partition-4.img",
+        "sha256": "835ea2729e2952e5e3604cae423463acfc49fb59b7c5fe66bce03f10b408fd87"
+      }
+    },
+    {
+      "index": 5,
+      "type_guid": "c23ce4ff-44bd-4b00-b2d4-b41b3419e02a",
+      "unique_guid": "6e1ea0bf-f0a6-410e-9055-57882dbb8861",
+      "first_lba": 18647072,
+      "last_lba": 18647103,
+      "offset_bytes": 9547300864,
+      "size_bytes": 16384,
+      "label": "_empty",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 6,
+      "type_guid": "6e11a4e7-fbca-4ded-b9e9-e1a512bb664e",
+      "unique_guid": "91e46153-54c7-4e34-b479-c2fb06ec5472",
+      "first_lba": 18647104,
+      "last_lba": 19466303,
+      "offset_bytes": 9547317248,
+      "size_bytes": 419430400,
+      "label": "_empty",
+      "attributes_hex": "0x9000000000000000",
+      "no_auto": true,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 7,
+      "type_guid": "b0e01050-ee5f-4390-949a-9101b17104e9",
+      "unique_guid": "971c4da2-633c-4435-acb1-09f18f574a58",
+      "first_lba": 19466304,
+      "last_lba": 34146367,
+      "offset_bytes": 9966747648,
+      "size_bytes": 7516192768,
+      "label": "_empty",
+      "attributes_hex": "0x8800000000000000",
+      "no_auto": true,
+      "read_only": false,
+      "growfs": true
+    }
+  ],
+  "metadata_sha256": {
+    "protective-mbr.bin": "897aada5a753e27327dde0b3dfdf35125137d49ae0856b4645b3cb8d67e2c56a",
+    "gpt-primary-header.bin": "d4af6615be7610ddefddc020bd5728bb164ef9266239f423ad7e7c327fb69580",
+    "gpt-backup-header.bin": "b50a48e3599c041bf67489be0a4e37223eed348e0f3e31cdfcf6014d25cd1c9b",
+    "gpt-partition-entries.bin": "7f2f544cebc275b98f689e2ca23c70286af2d5205dc7c034f8acd49653147824"
+  },
+  "esp": "PASS: ESP m1n1/boot.bin matches 6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb (1516583 bytes; partition offset 1048576)",
+  "verity": {
+    "scope": "active exported regular-file data/hash/signature consistency; no mount, installation or boot",
+    "source_image_sha256": "f8eb8865bba9afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152",
+    "source_image_size": 17482960896,
+    "root_hash": "c7a4f9412e0d48af0bb2196b817b8d885ee7a29dd19344da686b50d324375bf2",
+    "certificate_fingerprint_sha256": "029db556610e6089a125eb9291cb939e10011098da063a10608455eecc6cf2ee",
+    "payload_sha256": {
+      "signature": "72707a25d1ff4b5e11f8681c2f66ab73702dd3ebf3d6b9c557bcc0ed0053d492",
+      "hash": "d5a836a22de34b417222aab84aadd42a1adf066cf8b9a1ce999d0414cf285915",
+      "data": "835ea2729e2952e5e3604cae423463acfc49fb59b7c5fe66bce03f10b408fd87"
+    },
+    "embedded_certificate_fingerprint_matches": true,
+    "signature_verified": true,
+    "data_hash_verified": true,
+    "trust_scope": "certificate embedded in the research signature; external signer trust is not established",
+    "external_signer_trust_verified": false,
+    "native_trust_enrolled": false,
+    "installer_admission": false,
+    "hardware_validated": false
+  },
+  "iso_assembled": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "corresponding_source_payload_sha256": {
+    "gravity-linux-corresponding-source.tar.gz": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "gravity-mesa-corresponding-source.tar.gz": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+    "bootloader-rust-dependencies.tar.gz": "627457fcbca77567ca0c6f1420ff907c6aa9572df37cb6000345aac5152944b8",
+    "gravity-bootloader-corresponding-source.tar.gz": "a6d2755c7083dc1cff949c5021345eb7121c9c01000e07c695c74fad112cc31a",
+    "gravity-dt-corresponding-kernel-source.tar.gz": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "gravity-uboot-corresponding-source.tar.gz": "6adaf60d20f5f53792eefeaf662dbbd481d7d225d5938c80f6379800b685fd6c",
+    "j773g-source-capture.tar.gz": "4e9abb7a580299fd57a9bee0871192213c0ff5674070094c9da7a91ff1f60063",
+    "mkosi-corresponding-source.tar.gz": "ed3ed857f768fb85139517eec4ea673f25d1a597e87ab7a59420c4c0accce3b5"
+  },
+  "source_payloads_match_reviewed_component_provenance": true
+}

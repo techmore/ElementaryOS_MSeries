@@ -1,0 +1,62 @@
+Subject: [NEGATIVE TEST ONLY] restore pre-fix final cancellation and stop pair
+
+Use only the isolated unfinished-parent case; the wider old legacy path may hang.
+
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -133,25 +133 @@
+-    // SAFETY: fini has stopped/synchronized submission and timeout workers. A parent
+-    // callback can still run on the device completion thread. The scheduler
+-    // fence retains the parent reference while we remove its callback under
+-    // the parent's lock; that also waits for an already-running callback.
+-    let s_fence = unsafe { (*sched_job).s_fence };
+-    // SAFETY: The job retains its scheduler fence and submit work can no longer
+-    // change its parent pointer. The scheduler fence retains the parent reference.
+-    let parent = unsafe { (*s_fence).parent };
+-    let removed_parent_callback = if !parent.is_null() {
+-        // SAFETY: run_job installed (or attempted to install on an already
+-        // signaled parent) this callback before fini synchronized submit work.
+-        unsafe { bindings::dma_fence_remove_callback(parent, addr_of_mut!((*sched_job).cb)) }
+-    } else { false };
+-    let finish_here = removed_parent_callback || (parent.is_null()
+-        // SAFETY: The job retains its initialized finished fence; querying its
+-        // status supports concurrent signaling.
+-        && unsafe { bindings::dma_fence_get_status(addr_of_mut!((*s_fence).finished)) == 0 });
+-    // Null/error run_job calls job_done before submit work returns, so its
+-    // finished fence is already signaled. NULL+unfinished can instead survive
+-    // a legacy backend's prior reset stop: C stop dropped the parent and its
+-    // credits, but not its score. Do not subtract those credits twice.
+-
+-    // SAFETY: cancellation cannot race a scheduler callback using this job
+-    // after the removal/parent-lock synchronization above. The backend must
+-    // retain any still-hardware-owned resources independently of Job storage.
++    // SAFETY: All of our jobs are Job<T>.
+@@ -160,23 +136,3 @@
+-    if finish_here {
+-        // Match drm_sched_job_done's accounting exactly once, only when its
+-        // callback did not do it. Submission/free work is stopped, so fini
+-        // itself unlinks and frees this job; no workqueue rearm is appropriate.
+-        // SAFETY: The job remains live and retains its scheduler allocation.
+-        let sched = unsafe { (*sched_job).sched };
+-        // SAFETY: The live job retains its scheduler and score. Submission/free
+-        // work is stopped and the parent callback cannot account this job again.
+-        unsafe {
+-            if removed_parent_callback {
+-                bindings::atomic_sub((*sched_job).credits as i32,
+-                    addr_of_mut!((*sched).credit_count));
+-            }
+-            bindings::atomic_sub(1, (*sched).score);
+-        }
+-        // SAFETY: The job retains its initialized finished fence while get_raw
+-        // takes a new reference.
+-        let fence = unsafe { Fence::get_raw(addr_of_mut!((*s_fence).finished)) };
+-        fence.set_error(ECANCELED);
+-        fence.signal();
+-    }
+-    // Do not clear/put parent here: s_fence still owns that reference and its
+-    // normal release path drops it. A completed callback's result is retained.
++    let fence = unsafe { Fence::get_raw(&mut (*(*sched_job).s_fence).finished) };
++    fence.set_error(ECANCELED);
++    let _ = fence.signal();
+@@ -403,0 +360 @@
++        unsafe { bindings::drm_sched_stop(self.allocation.sched.get(), core::ptr::null_mut()) };

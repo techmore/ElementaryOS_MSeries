@@ -3,7 +3,8 @@
 **Hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs have succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
 prepared inputs now build the complete mkosi image graph with hosted desktop,
-Mesa, ESP and GPT checks passing. Raw-artifact local validation is downloading;
+Mesa, ESP and GPT checks passing. Downloaded raw/GPT/ESP, active verity/signature
+and corresponding-source hashes now pass local checks;
 ISO assembly, installation and native M4 support remain unvalidated.
 [Kernel](receipts/2026-10-21-hosted-kernel-success.json),
 [Mesa](receipts/2026-10-21-hosted-mesa-success.json),
@@ -26,8 +27,8 @@ Current elementary preparation: the opt-in M4 profile selects the matched
 kernel, Mesa revision 4 and temporary policy. A 1,626-package research desktop
 root passes package, library, schema, software-rendering and Casper initramfs
 checks. LightDM selects Pantheon Wayland; unqualified graphical installer
-packages are omitted. The actual factory base build has passed; live/sysupdate assembly remains open. No complete
-factory image, graphical login, native M4 operation or dual boot has passed.
+packages are omitted. The full baseline mkosi graph now builds and its raw artifact passes local verification.
+ISO assembly, graphical login, native M4 operation and dual boot remain unqualified.
 
 The audit inspected source, branch history, packaging provenance and selected
 production tests. Compilation and synthetic tests are distinguished from physical
@@ -1184,3 +1185,26 @@ is byte-identical to the tested scheduler. This is not exhaustive Rust memory-
 model or actual module-unload proof. See scheduler-alias receipts and
 --experimental-alias. Final cancellation/accounting review remains open.
 Revision-4 full kernel run 39715540751 remains live.
+
+2026-10-22 follow-up: the downloaded baseline image is now locally verified.
+All six compressed raw checksums pass; decompressed source SHA256 f8eb8865bba9
+afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152 (17,482,960,896 bytes)
+matches the hosted record. GPT headers/entries/geometry/GUIDs/labels/attributes
+match, ESP boot.bin matches the reviewed hosted bundle, and active data/hash
+payloads verify against the signed root hash. The embedded certificate's
+fingerprint and CMS signature verify; this establishes internal consistency,
+not external signer trust or Apple enrollment. All eight corresponding-source
+archives match reviewed component/mkosi hashes. Future image builds now retain
+actual active-verity verification and source checksums. Local ESP validation
+used the already extracted sfdisk/mtools without installing host packages.
+
+The complete experimental scheduler candidate now adds matched final
+cancellation/accounting and removal of reset-style stop from finalization.
+Actual M4/legacy driver/Rust/C objects compile and twelve generic ARM64 QEMU
+cases pass, including credits/score cleanup and preservation of completed EIO.
+The isolated pre-fix negative fails score==0 cleanly; earlier helper-panic and
+broad-negative timeout attempts are retained separately as superseded harness
+evidence. Fresh --experimental-teardown preparation matches the tested source.
+Normal manifests remain research kernel revision 4; a full combined candidate
+build and actual module-unload exercise remain open. Revision-4 full build
+39715540751 is still live. ISO, installer import and native M4 remain unqualified.

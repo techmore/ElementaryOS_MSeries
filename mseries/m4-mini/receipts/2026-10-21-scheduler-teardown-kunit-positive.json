@@ -1,0 +1,98 @@
+{
+  "scope": "unpromoted matched final cancellation plus twelve generic ARM64 QEMU cases; accounting and completed error preservation",
+  "exit": 0,
+  "historical_sources_restored": true,
+  "test_source_sha256": "eba6579158cfd04a8c2a86d83ca86d2839c8f4c1a40996967a3077914758275a",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "teardown_accounts_unfinished_parent_once",
+            "status": "PASS"
+          },
+          {
+            "name": "teardown_accounts_legacy_detached_parent_once",
+            "status": "PASS"
+          },
+          {
+            "name": "teardown_preserves_completed_parent_error",
+            "status": "PASS"
+          },
+          {
+            "name": "timeout_overlaps_mutable_submission_state",
+            "status": "PASS"
+          },
+          {
+            "name": "finalization_permanently_disables_submission_and_free_work",
+            "status": "PASS"
+          },
+          {
+            "name": "deferred_dependency_keeps_allocation_after_owner_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_during_timeout_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_unfinished_job_is_reachable_at_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 12,
+          "passed": 12,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "native_module_unload_tested": false,
+  "hardware_validated": false
+}

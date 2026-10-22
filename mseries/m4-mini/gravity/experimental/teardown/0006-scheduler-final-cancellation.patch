@@ -1,0 +1,67 @@
+Subject: [PATCH] rust: drm: synchronize final cancellation and account jobs once
+Origin: https://github.com/aurora-silicon/linux/commit/c9be90533ae06ac64dfe5e35b121cf30a1cc37f0
+Origin: https://github.com/aurora-silicon/linux/commit/d1ebc542fe8e1082a1c6e311b72d4d6c609c940d
+Reference: https://github.com/aurora-silicon/linux/blob/ed55042c712afb987608e3633cb926116ca1962e/rust/kernel/drm/sched.rs
+
+Port final cancellation with parent-lock synchronization, exact accounting and
+error preservation after owner/module/disjoint-timeout changes. Pair it with
+removal of reset-style stop from finalization; explicit legacy reset remains.
+
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -133 +133,25 @@
+-    // SAFETY: All of our jobs are Job<T>.
++    // SAFETY: fini has stopped/synchronized submission and timeout workers. A parent
++    // callback can still run on the device completion thread. The scheduler
++    // fence retains the parent reference while we remove its callback under
++    // the parent's lock; that also waits for an already-running callback.
++    let s_fence = unsafe { (*sched_job).s_fence };
++    // SAFETY: The job retains its scheduler fence and submit work can no longer
++    // change its parent pointer. The scheduler fence retains the parent reference.
++    let parent = unsafe { (*s_fence).parent };
++    let removed_parent_callback = if !parent.is_null() {
++        // SAFETY: run_job installed (or attempted to install on an already
++        // signaled parent) this callback before fini synchronized submit work.
++        unsafe { bindings::dma_fence_remove_callback(parent, addr_of_mut!((*sched_job).cb)) }
++    } else { false };
++    let finish_here = removed_parent_callback || (parent.is_null()
++        // SAFETY: The job retains its initialized finished fence; querying its
++        // status supports concurrent signaling.
++        && unsafe { bindings::dma_fence_get_status(addr_of_mut!((*s_fence).finished)) == 0 });
++    // Null/error run_job calls job_done before submit work returns, so its
++    // finished fence is already signaled. NULL+unfinished can instead survive
++    // a legacy backend's prior reset stop: C stop dropped the parent and its
++    // credits, but not its score. Do not subtract those credits twice.
++
++    // SAFETY: cancellation cannot race a scheduler callback using this job
++    // after the removal/parent-lock synchronization above. The backend must
++    // retain any still-hardware-owned resources independently of Job storage.
+@@ -136,3 +160,23 @@
+-    let fence = unsafe { Fence::get_raw(&mut (*(*sched_job).s_fence).finished) };
+-    fence.set_error(ECANCELED);
+-    let _ = fence.signal();
++    if finish_here {
++        // Match drm_sched_job_done's accounting exactly once, only when its
++        // callback did not do it. Submission/free work is stopped, so fini
++        // itself unlinks and frees this job; no workqueue rearm is appropriate.
++        // SAFETY: The job remains live and retains its scheduler allocation.
++        let sched = unsafe { (*sched_job).sched };
++        // SAFETY: The live job retains its scheduler and score. Submission/free
++        // work is stopped and the parent callback cannot account this job again.
++        unsafe {
++            if removed_parent_callback {
++                bindings::atomic_sub((*sched_job).credits as i32,
++                    addr_of_mut!((*sched).credit_count));
++            }
++            bindings::atomic_sub(1, (*sched).score);
++        }
++        // SAFETY: The job retains its initialized finished fence while get_raw
++        // takes a new reference.
++        let fence = unsafe { Fence::get_raw(addr_of_mut!((*s_fence).finished)) };
++        fence.set_error(ECANCELED);
++        fence.signal();
++    }
++    // Do not clear/put parent here: s_fence still owns that reference and its
++    // normal release path drops it. A completed callback's result is retained.
+@@ -360 +403,0 @@
+-        unsafe { bindings::drm_sched_stop(self.allocation.sched.get(), core::ptr::null_mut()) };

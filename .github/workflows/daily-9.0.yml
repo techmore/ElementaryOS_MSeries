@@ -608,8 +608,11 @@ jobs:
             --image "$raw" --expected "$RUNNER_TEMP/retrieved/boot/boot.bin" \
             | tee image-record/actual-esp-check.txt
           sudo python3 mseries/m4-mini/export-partitions.py --image "$raw" \
-            --output "$RUNNER_TEMP/image-gpt-record"
+            --output "$RUNNER_TEMP/image-gpt-record" --extract 2 --extract 3 --extract 4
           cp "$RUNNER_TEMP/image-gpt-record/manifest.json" image-record/gpt-manifest.json
+          python3 mseries/m4-mini/verify-exported-verity.py \
+            --export "$RUNNER_TEMP/image-gpt-record" --output "$RUNNER_TEMP/image-verity-check"
+          cp "$RUNNER_TEMP/image-verity-check/receipt.json" image-record/actual-verity-check.json
           mkdir -p research-images
           for image in "$RUNNER_TEMP/full-image/images/"*.raw; do
             [[ ! -f "$image" ]] || sudo zstd -T2 -3 -c "$image" > "research-images/$(basename "$image").zst"
@@ -618,6 +621,7 @@ jobs:
           cp "$RUNNER_TEMP/retrieved/boot/"*.tar.gz research-images/
           cp "$RUNNER_TEMP/image-inputs/"*.tar.gz research-images/
           cp "$RUNNER_TEMP/mkosi.tar.gz" research-images/mkosi-corresponding-source.tar.gz
+          (cd research-images && sha256sum *.tar.gz > SOURCE-SHA256SUMS)
       - name: Collect full-image diagnostics
         if: always()
         shell: bash
@@ -635,6 +639,9 @@ jobs:
                 sudo install -m 0644 "$file" "image-record/repart-fixture/$name"
               fi
             done
+          fi
+          if [[ -f "$RUNNER_TEMP/image-verity-check/commands.log" ]]; then
+            cp "$RUNNER_TEMP/image-verity-check/commands.log" image-record/actual-verity-commands.log
           fi
           df -h > image-record/final-disk-space.txt
       - name: Preserve full-image research records

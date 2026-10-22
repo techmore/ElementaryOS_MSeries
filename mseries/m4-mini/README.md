@@ -3,7 +3,8 @@
 **Hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs have succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
 prepared inputs now build the complete mkosi image graph with hosted desktop,
-Mesa, ESP and GPT checks passing. Raw-artifact local validation is downloading;
+Mesa, ESP and GPT checks passing. Downloaded raw/GPT/ESP, active verity/signature
+and corresponding-source hashes now pass local checks;
 ISO assembly, installation and native M4 support remain unvalidated.
 [Kernel](receipts/2026-10-21-hosted-kernel-success.json),
 [Mesa](receipts/2026-10-21-hosted-mesa-success.json),
