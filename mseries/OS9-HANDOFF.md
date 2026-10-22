@@ -11160,3 +11160,5 @@ or firmware compatibility qualification. Compare their actual driver coverage
 and contracts with the complete Gravity stack before selecting a new kernel
 base or transplanting DT data. The earlier selected Asahi integration head
 remains unchanged; these staging branches require a separate applicability pass.
+
+Revision-4 research kernel run [39715540751](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39715540751) succeeded. The downloaded package independently passes Image/config/J773g/16 KiB/module checks (1,598 modules), with initialization and M4 terminal-retention fixes. Combined revision 5 run 39721608135 is building; neither result qualifies native hardware. Evidence: `mseries/m4-mini/receipts/2026-10-22-hosted-kernel-r4-success.json`.

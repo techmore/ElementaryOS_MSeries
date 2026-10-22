@@ -1,0 +1,50 @@
+{
+  "observed_at_utc": "2026-10-22T05:11:13.044216+00:00",
+  "run_id": 39715540751,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39715540751",
+  "status": "completed",
+  "conclusion": "success",
+  "source_commit": "25504a70b0df4df52654974de9df5e3074ab4973",
+  "build": {
+    "repository": "GravityLinux/linux",
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "kernel_release": "7.1.13-elementary-m4-gravity1",
+    "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+    "artifacts": {
+      "arch/arm64/boot/Image": "80e6c04702c8966cae6c8bc315cf60c8e9ef11e9d2c68a0ef1b977cbafd62306",
+      "drivers/gpu/drm/asahi/asahi_m4.ko": "8ded82407b8c71e2cdae44e94767f709ffc1b2bb71b25b781c5788ce66091837",
+      "arch/arm64/boot/dts/apple/t8132-j773g.dtb": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+      "drivers/net/ethernet/aquantia/atlantic/atlantic.ko": "b7194e65075f89a28b53dd6573fda8418ee3dfeb540c1ebcd4539bd1222cae1e",
+      "drivers/net/ethernet/broadcom/tg3.ko": "2c708e461b1ba14a265f20a8b02264da1b9f388db3fb1bb8cde94cc9beab1257"
+    },
+    "packaging_patches": {
+      "0003-arm64-export-can-set-direct-map.patch": "e27f3a475ab6c822e77578e9cd333b3f3dbf0fa4a74ad2d52a23bc332a4d2509",
+      "0004-arm64-export-set-direct-map-invalid.patch": "7507a14aa8c8578c2cf4d53c80278a68024d42220545edbcb38479caa458ea55",
+      "0005-arm64-export-set-direct-map-default.patch": "e2f0b1dcf6ff9dc2c1e6824f4853836dfd0bad313a081af467cbfe73a512b8af",
+      "0006-arm64-export-dcache-clean-inval-poc.patch": "0e377ac3c0ad3b994d5dcb858d862d37e8ed1b298d07e6efb7b6c8bde6b3ce0a"
+    },
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+      "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+    },
+    "status": "source build only; no installation or J773g hardware qualification"
+  },
+  "downloaded_package_check": {
+    "source_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "package_sha256": "bb6b68fb1568ab1a079e3cf64650c095c204fd948bf41d7e4797ece3cace845b",
+    "package_version": "7.1.13+elementary.m4.gravity1-4",
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+      "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+    },
+    "module_count": 1598,
+    "checks": "Image/config/DTB hashes, 16 KiB header, J773g, ELF/vermagic, module dependencies, no package hooks",
+    "scope": "fresh candidate package inspection; no boot or hardware tests",
+    "factory_promotion": false,
+    "hardware_validated": false
+  },
+  "archive_zip_digest_independently_checked": false,
+  "hardware_validated": false,
+  "factory_promotion": false
+}
