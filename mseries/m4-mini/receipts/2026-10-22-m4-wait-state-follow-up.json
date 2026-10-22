@@ -1,0 +1,36 @@
+{
+  "scope": "public M4 wait-state branch applicability follow-up; no low-level patch or new boot flag selected",
+  "repository": "aurora-silicon/linux",
+  "branch": "fix/apple-m4-wait-state",
+  "commit": "3f0822d73dbe341d8073a9db05b316cb564dc92f",
+  "url": "https://github.com/aurora-silicon/linux/commit/3f0822d73dbe341d8073a9db05b316cb564dc92f",
+  "subject": "arm64: handle Apple M4+ wait state without boot flags",
+  "files": [
+    "arch/arm64/include/asm/apple-idle.h",
+    "arch/arm64/include/asm/cputype.h",
+    "arch/arm64/kernel/idle-apple.S",
+    "arch/arm64/kernel/idle.c",
+    "arch/arm64/kernel/pi/idreg-override.c"
+  ],
+  "current_gravity_source_sha256": {
+    "arch/arm64/kernel/idle.c": "c9ac8d3c236e0c7a5b4f3a1b0c179e26cda21622e4300b702b61908ddd25f3c0",
+    "arch/arm64/kernel/pi/idreg-override.c": "304251aede163cab648147a37ec4cb581253ad306a3d3fe8161c025225314061",
+    "arch/arm64/include/asm/cputype.h": "751dc2a650ebdf8437ab473b421493ecfd6cd75547d9eaa54a7d093cf81c0eb6"
+  },
+  "observations": [
+    "Gravity idle.c supports idle=wfi/yield/nop and defaults to ordinary WFI",
+    "Gravity defines an arm64.nowfxt override, while its reviewed M4 config has an empty compiled command line",
+    "The Aurora branch extends a register-preserving idle path to M4+ and forces the WFxT feature override",
+    "No idle=yield/arm64.nowfxt setting was found in the reviewed elementary profiles or selected Gravity kiwi files; this does not prove that a workaround is required or absent from other boot/runtime scripts"
+  ],
+  "not_established": [
+    "whether the selected Gravity bootloader/firmware state requires this Aurora idle path",
+    "shipping Gravity runtime-script command-line policy",
+    "native M4 applicability and physical idle behavior"
+  ],
+  "next_checks": [
+    "inspect the Gravity scripts source referenced by its package spec",
+    "trace bootloader CPU wait-state setup for T8132 and compare the full Aurora patch prerequisites"
+  ],
+  "hardware_validated": false
+}

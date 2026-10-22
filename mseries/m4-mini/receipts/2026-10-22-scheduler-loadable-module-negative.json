@@ -1,0 +1,31 @@
+{
+  "scope": "generic ARM64 QEMU TCG C scheduler/loadable backend module lifetime; not M4 GPU or Rust driver unload",
+  "negative_owner": true,
+  "status": {
+    "exit": 0,
+    "timed_out": false
+  },
+  "passed": false,
+  "expected_negative_failure_observed": true,
+  "clean_guest_after_begin": true,
+  "markers": [
+    "M4_SCHED_MODULE_TEST_BEGIN",
+    "M4_SCHED_MODULE_READY done=0 runs=0",
+    "M4_SCHED_MODULE_TEST_FAIL:callback_module_not_pinned"
+  ],
+  "source_c_sha256": {
+    "drivers/gpu/drm/scheduler/sched_main.c": "472a8898f6f74ce024dd397d89617484be0404b59a915418556ce019bffd88b8",
+    "drivers/gpu/drm/scheduler/sched_entity.c": "24720d2607b02d68f59068033cfa476afe66b8c28e66b5468d11bd8ad2d34ec3",
+    "include/drm/gpu_scheduler.h": "f6cb92b835484468c719286c249844eddbefc581d415c1a8210af6c8e95713e1"
+  },
+  "kernel_sha256": "1ed88293f1ec35780d0f7f2f43abd2ce9b7a413b238937b5b1a897e16c094e92",
+  "kernel_config_sha256": "ce9318419dbd67e0a7ae23e979a370957f8407e38e6022471a0d775abd2c07de",
+  "module_sha256": "b14c629f86483850730b90b7f26aab18ce7aac97c4f94f05da0c4f39d21ce9e4",
+  "module_source_sha256": "047a8a73f7cb08a1f90229bf3030e86b1f92ac80a381952383659772ed9650c4",
+  "init_sha256": "4b72d4786c45dae28de9ec365734a86f78c3ea85faf1b491532b7596b10efa6c",
+  "initramfs_sha256": "158515b3691f02cf4eaf1ec744e43ab9e044d84ac2f26113254b0ea14d46a7aa",
+  "busybox_sha256": "c2f279d1d5640a0f327890d41cad594c0f059f3fed3f96dd72fdcc4f5e18ec02",
+  "accelerator": "tcg only; explicit direct command without fallback",
+  "host_module_loaded": false,
+  "hardware_validated": false
+}

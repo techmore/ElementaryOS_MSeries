@@ -1,0 +1,30 @@
+{
+  "scope": "isolated generic ARM64 QEMU C scheduler/module lifetime fixture preparation; no M4 GPU or Rust module runtime result",
+  "source_root": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-r5-default-preparation/linux-4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "kernel_recipe_revision": 5,
+  "c_source_sha256": {
+    "drivers/gpu/drm/scheduler/sched_main.c": "472a8898f6f74ce024dd397d89617484be0404b59a915418556ce019bffd88b8",
+    "drivers/gpu/drm/scheduler/sched_entity.c": "24720d2607b02d68f59068033cfa476afe66b8c28e66b5468d11bd8ad2d34ec3",
+    "include/drm/gpu_scheduler.h": "f6cb92b835484468c719286c249844eddbefc581d415c1a8210af6c8e95713e1"
+  },
+  "busybox_static_arm64_sha256": "c2f279d1d5640a0f327890d41cad594c0f059f3fed3f96dd72fdcc4f5e18ec02",
+  "profile": "CONFIG_MODULES/MODULE_UNLOAD enabled only for QEMU test; DRM_LIMA selects the shared scheduler; RUST disabled; no physical GPU node",
+  "build_status": "completed",
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T04:48:13.698697+00:00",
+  "build_exit": 0,
+  "kernel_sha256": "1ed88293f1ec35780d0f7f2f43abd2ce9b7a413b238937b5b1a897e16c094e92",
+  "kernel_config_sha256": "ce9318419dbd67e0a7ae23e979a370957f8407e38e6022471a0d775abd2c07de",
+  "module_symvers_sha256": "943b52d4834df2b9122344c50adcd5ca8a88cbb50ca30b68aa0d89fd903a5d8f",
+  "features": {
+    "CONFIG_MODULES": "y",
+    "CONFIG_MODULE_UNLOAD": "y",
+    "CONFIG_DRM_SCHED": "y",
+    "CONFIG_DRM_LIMA": "y",
+    "CONFIG_RUST": "n",
+    "CONFIG_BLK_DEV_INITRD": "y",
+    "CONFIG_ARM64_4K_PAGES": "y"
+  },
+  "clang": "Ubuntu clang version 21.1.8 (6ubuntu1)",
+  "ld": "GNU ld (GNU Binutils for Ubuntu) 2.46"
+}

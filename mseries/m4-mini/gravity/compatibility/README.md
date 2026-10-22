@@ -24,3 +24,8 @@ r5 (all six changes) to distinct immutable patch sets. resulting-files-by-versio
 preserves historical source gates too. No older package is credited with newer
 fixes. Historical experimental recipes start from r4; normal preparation selects
 all six current patches and the twelve-case test recipe.
+
+A separate loadable C-backend QEMU fixture now verifies shared callback-module
+retention and unload after cleanup, with a safe missing-owner negative. It does
+not establish M4 Execution/Rust driver or firmware teardown; that worker boundary
+is tracked separately.

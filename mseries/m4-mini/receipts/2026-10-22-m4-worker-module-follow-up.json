@@ -1,0 +1,26 @@
+{
+  "scope": "M4 asynchronous Execution worker/module boundary follow-up; source observations and inference, not native failure reproduction",
+  "source_base": "GravityLinux/linux@4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "research_recipe_revision": 5,
+  "source_sha256": {
+    "drivers/gpu/drm/asahi/asahi_m4.rs": "83121b03dbdb164c793b4da092a39f7eeeacbddef22bfe2596f6abb0032307c4",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "ea399e483c9b7372725b6888a68a58e77092101e6f8c85324a0e1cf28f353ecf",
+    "drivers/gpu/drm/asahi/g16.rs": "605f15066d3abb5e65da9fe9505e21d4e9e3725a342a7a8cd9fd61e3e1923677",
+    "rust/kernel/workqueue.rs": "f5320cf7052ca4e96f1e3eb0122dfe9dd66747410af9c84e0bd0d5c73b992bba"
+  },
+  "observations": [
+    "Execution is enqueued on system_unbound from SubmissionJob::run",
+    "Execution::run signals a completed job fence before continuing its pump loop or returning",
+    "File::drop uses drain to wait completion fences; no explicit WorkItem join is present in the reviewed M4 entry points",
+    "M4 entry uses module_platform_driver registration; Bootstrap::drop separately attempts firmware shutdown"
+  ],
+  "inference": "A completion fence alone does not prove that module-owned worker callback code has returned. Review registration/device ownership and an explicit queue/join boundary before considering M4 driver unload qualified.",
+  "generic_c_module_fixture_covers_this_worker": false,
+  "next_checks": [
+    "trace platform/DRM registration teardown and remaining Execution Device references",
+    "compare public Aurora module-owned cleanup queue pattern against the older M4 APIs",
+    "reproduce completion-before-worker-return independently of physical GPU before choosing a patch"
+  ],
+  "m4_worker_module_lifetime_qualified": false,
+  "hardware_validated": false
+}

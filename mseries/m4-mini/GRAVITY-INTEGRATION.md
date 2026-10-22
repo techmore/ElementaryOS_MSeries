@@ -421,3 +421,22 @@ Full r5 Image/modules/DTBs/package compilation is the next gate; r4 run
 39715540751 remains live. Reviewed image inputs stay r2 until a newer full
 package passes download checks. Module unload, ISO, installer import and native
 M4 remain unqualified. No installed host component changed.
+
+2026-10-22 r5 and module-lifetime update: full combined research kernel run
+39721608135 is pending at source ab32b7f0748f2898b5e19f4f60d5032917d93051,
+behind live r4 run 39715540751. Both remain unpromoted full-build gates.
+A new reproducible diskless ARM64 QEMU/TCG fixture loads a real C backend module
+against the reviewed shared scheduler. Pending deferred cleanup keeps the module
+busy; dependency completion releases it and unload succeeds. The missing-owner
+negative detects no module reference and powers off before attempting unsafe
+unload. Both use the same kernel/config/BusyBox/init; no host module is loaded.
+The fixture and positive/negative receipts are retained under testing/module-lifetime.
+
+This closes only the shared C callback-module path. Source follow-up observes
+that M4 Execution signals job completion before its pump callback returns;
+File::drop waits those fences, not an explicit WorkItem join. Registration/device
+ownership may provide further guarantees and must be traced before selecting
+a fix. This is an inference from reviewed entry points, not a native fault
+reproduction. The generic C fixture does not cover this Rust worker. See
+m4-worker-module-follow-up receipt. M4 driver unload and firmware/native
+qualification remain open; baseline image integrity is already checked.

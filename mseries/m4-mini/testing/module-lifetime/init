@@ -1,0 +1,38 @@
+#!/bin/sh
+/bin/busybox mount -t proc proc /proc
+/bin/busybox mount -t sysfs sysfs /sys
+/bin/busybox mount -t devtmpfs devtmpfs /dev
+exec </dev/console >/dev/console 2>&1
+fail() {
+    echo "M4_SCHED_MODULE_TEST_FAIL:$1"
+    /bin/busybox poweroff -f
+    while :; do /bin/busybox sleep 1; done
+}
+echo M4_SCHED_MODULE_TEST_BEGIN
+/bin/busybox insmod /m4_sched_module_test.ko || fail load
+base=/sys/module/m4_sched_module_test
+[ "$(/bin/busybox cat "$base/parameters/done")" = 0 ] || fail early_completion
+[ "$(/bin/busybox cat "$base/parameters/runs")" = 0 ] || fail unexpected_run
+refs=$(/bin/busybox cat "$base/refcnt") || fail refcount_unavailable
+[ "$refs" -gt 0 ] || fail callback_module_not_pinned
+# Never try an unsafe unload when the module is unexpectedly unpinned.
+if /bin/busybox rmmod m4_sched_module_test; then fail unloaded_with_pending_callback; fi
+echo M4_SCHED_MODULE_BUSY_AS_EXPECTED
+echo 1 > "$base/parameters/release" || fail dependency_release
+count=0
+while [ "$(/bin/busybox cat "$base/parameters/done")" != 1 ]; do
+    [ "$count" -lt 10 ] || fail cleanup_timeout
+    count=$((count + 1))
+    /bin/busybox sleep 1
+done
+count=0
+while [ "$(/bin/busybox cat "$base/refcnt")" != 0 ]; do
+    [ "$count" -lt 10 ] || fail module_reference_leak
+    count=$((count + 1))
+    /bin/busybox sleep 1
+done
+/bin/busybox rmmod m4_sched_module_test || fail final_unload
+[ ! -d "$base" ] || fail module_still_present
+echo M4_SCHED_MODULE_TEST_PASS
+/bin/busybox poweroff -f
+while :; do /bin/busybox sleep 1; done
