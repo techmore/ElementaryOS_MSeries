@@ -75,6 +75,11 @@ contract adopts Apple HIG usability principles through native Pantheon patterns.
 The project-wide inventory, scaling policy and staged migration order are in
 [Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
 
+Disk Space's first SDK consistency pass now scales persistent spacing and row
+padding with text metrics and names its icon-only actions for assistive
+technology. Its fixed three-pane minimum widths and compact-window navigation
+remain open for a later interaction pass.
+
 Messages is still an optional API v2 prototype beside the qualified Python
 client; its typed BlueFerry D-Bus client and response models now live in the
 shared SDK, with opt-in contact photos decoded to bounded in-memory avatars

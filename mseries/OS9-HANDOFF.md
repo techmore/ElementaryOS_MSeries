@@ -17,6 +17,21 @@ window/display radius has not been matched to the physical panel; owner visual
 qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
 [Repository Topology](REPOSITORY-TOPOLOGY.md).
 
+## Disk Space SDK scaling pass — 2026-10-22
+
+Disk Space now uses SDK text-relative spacing and margins for persistent layout
+groups, font-relative GTK CSS padding for repeated rows, and SDK accessible
+names for its icon-only actions, filesystem navigation list and current-folder
+contents list. No scanning, selection, Trash or permanent-delete behavior
+changed. Fixed three-pane minimum widths and compact-window navigation still
+need an interaction redesign and visual qualification.
+
+**Source validation only:** `git diff --check` passed. No app build, GUI probe or
+test suite was run after this change. The previous PR-head Disk Space CI job was
+still at dependency installation when inspected; a fresh CI run on the updated
+head is needed. Next: inspect light/dark and narrow-window rendering, then
+implement and qualify compact pane navigation.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
