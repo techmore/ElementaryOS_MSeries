@@ -3679,6 +3679,13 @@ impl App {
         self.entry.view.grab_focus();
     }
 
+    /// Opens a repo draft chat with a specific already-connected provider selected in the composer.
+    /// This changes only the new chat's current selection; normal project defaults remain intact.
+    pub fn new_chat_in_with_provider(self: &Rc<Self>, project_id: Option<String>, provider_instance_id: &str) {
+        self.new_chat_in(project_id);
+        self.select_provider(provider_instance_id, None);
+    }
+
     pub fn send(self: &Rc<Self>) {
         let text = self.entry.text().trim().to_string();
         if text.is_empty() && self.entry.attachment_count() == 0 {

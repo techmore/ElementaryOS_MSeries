@@ -321,6 +321,20 @@ pub fn issue_refinement_prompt(draft: &IssueDraft) -> String {
     )
 }
 
+/// First pass for a local MSeries Assistant session. Keep it focused on structuring the request;
+/// the owner may then switch to a connected hosted provider in the same T3 composer for research.
+pub fn issue_local_intake_prompt(draft: &IssueDraft) -> String {
+    format!(
+        "Help structure an initial GitHub issue brief for {} using only the information below and tools that are already available. This is an intake pass. Do not edit files, run implementation work, create or modify a GitHub issue, or choose an implementation. Do not invent facts or claim research you did not perform. Return: a concise problem and desired outcome, confirmed context versus assumptions, observable success criteria, constraints/non-goals, and the fewest open questions that materially affect scope. Leave the solution open for a later implementation agent.\n\nInitial title: {}\n\nProblem or desired change:\n{}\n\nContext and research:\n{}\n\nSuccess criteria:\n{}\n\nConstraints and non-goals:\n{}",
+        draft.repo,
+        if draft.title.trim().is_empty() { "(not set)" } else { draft.title.trim() },
+        if draft.problem.trim().is_empty() { "(not set)" } else { draft.problem.trim() },
+        if draft.context.trim().is_empty() { "(not set)" } else { draft.context.trim() },
+        if draft.success_criteria.trim().is_empty() { "(not set)" } else { draft.success_criteria.trim() },
+        if draft.constraints.trim().is_empty() { "(not set)" } else { draft.constraints.trim() },
+    )
+}
+
 pub async fn comments(repo: &str, number: u64) -> Result<Vec<(String, String, String)>, String> {
     let v = gh(&[&format!("repos/{repo}/issues/{number}/comments?per_page=50")]).await?;
     Ok(v.as_array()
@@ -602,6 +616,21 @@ mod tests {
         draft.agent_ready = true;
         assert_eq!(draft.labels(), vec!["lane:feature", "p1", "agent:ready"]);
         assert!(issue_refinement_prompt(&draft).contains("Keep the solution open"));
+    }
+
+    #[test]
+    fn local_issue_intake_prompt_is_read_only_and_leaves_solution_open() {
+        let draft = IssueDraft {
+            repo: "owner/repo".into(),
+            title: "Slow startup".into(),
+            problem: "The client takes too long to open".into(),
+            ..Default::default()
+        };
+        let prompt = issue_local_intake_prompt(&draft);
+        assert!(prompt.contains("owner/repo"));
+        assert!(prompt.contains("confirmed context versus assumptions"));
+        assert!(prompt.contains("Do not edit files"));
+        assert!(prompt.contains("Leave the solution open"));
     }
 
     #[test]

@@ -122,6 +122,15 @@ visit). Right-click or long-press a thread for Pin, Rename, Hand Off to Repo, Co
 headers can be dragged into the order you want; the filter and order persist in
 `~/.config/claude-pantheon-rs/sidebar.json`.
 
+## Repository issue workflow
+
+Repos → Issues supports local issue briefs with problem, research/context, success criteria and
+constraints, then explicit GitHub filing. When MSeries Assistant is ready on the paired server,
+**Refine locally** opens an unsent first-pass chat with that local provider selected. You can switch
+to another connected T3 provider in the same composer for research and refinement. Issue labels and
+readiness control the repo workflow; provider selection remains a separate T3 decision. Chats can be
+grouped beneath open issues and return to the repo chat list when an issue closes.
+
 ## Composer
 
 The message box grows to eight lines and then scrolls. Paste or drop images and files to attach

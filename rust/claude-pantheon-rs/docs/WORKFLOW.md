@@ -22,18 +22,22 @@ stay on this device in `workflow.json` and save on close. Filing requires a titl
 and success criteria. The filed issue describes what is wanted and how success can be recognized;
 the agent remains free to decide how to solve it, and its proposal is reviewed in the pull request.
 
-**Refine in T3 chat** opens a normal repo chat with a prefilled intake prompt. It does not send the
-prompt automatically, file an issue, edit files, or start implementation. The owner chooses the
-connected provider in the normal chat composer (including a local MSeries Assistant provider when
-configured), reviews the response, and transfers any accepted refinements back into the brief. A
-local-first two-pass research assistant is still a possible follow-up; it is not part of this flow.
+**Refine locally** is enabled when a ready MSeries Assistant provider is connected. It opens a repo
+chat with that local provider selected and a prefilled first-pass prompt; the request remains unsent
+until the owner reviews it. The prompt asks the assistant to separate facts from assumptions, identify
+scope questions, and keep implementation choices open. It does not edit files, file the issue, or start
+work. The owner can then switch to any connected T3 provider in the same composer for broader research
+and refinement. **Refine in T3 chat** opens the same reviewable flow with the project's normal provider
+selection. Accepted refinements are copied back into the brief before filing; neither assistant writes
+to the brief automatically.
 
 Issue preparation and work dispatch are separate routing decisions:
 - **Issue routing** decides which repo, lane, priority, and execution workflow fit the issue, and
   whether it is ready for an unattended run. It does not choose an AI account based on token limits.
 - **Token/provider routing** chooses among the owner's connected T3 provider instances using their
-  authentication state and session/weekly capacity, while honoring the owner's provider policy.
-  It must not rewrite the issue's scope or acceptance criteria.
+  authentication state and session/weekly capacity, while honoring the owner's provider policy. The
+  local first pass uses the explicitly configured MSeries Assistant; later research uses the provider
+  the owner chooses in the composer. Neither choice rewrites the issue's scope or acceptance criteria.
 
 The owner explicitly files the brief. `agent:ready` is off by default; choosing it adds that label
 for the repository workflow. The lane, priority, and readiness labels do not pick a provider. Once

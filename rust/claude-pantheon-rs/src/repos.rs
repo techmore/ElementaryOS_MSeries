@@ -612,11 +612,27 @@ impl ReposPage {
         actions.set_halign(gtk::Align::End);
         let cancel = gtk::Button::with_label("Close");
         let save = gtk::Button::with_label("Save draft");
+        let local_refine = gtk::Button::with_label("Refine locally");
+        let local_provider = app.providers().into_iter().find(|provider| {
+            provider.is_acp_agent()
+                && provider.display_name.as_deref().is_some_and(|name| name.eq_ignore_ascii_case("MSeries Assistant"))
+                && provider.ready()
+        });
+        if local_provider.is_none() {
+            status.set_text("Connect MSeries Assistant in Settings → Providers to enable the local first pass.");
+        }
+        local_refine.set_sensitive(local_provider.is_some());
+        local_refine.set_tooltip_text(Some(if local_provider.is_some() {
+            "Prepare an unsent first-pass request for the paired local MSeries Assistant."
+        } else {
+            "Connect a ready MSeries Assistant in Settings → Providers to use local-first intake."
+        }));
         let refine = gtk::Button::with_label("Refine in T3 chat");
         let file = gtk::Button::with_label("File issue");
         file.add_css_class("suggested-action");
         actions.append(&cancel);
         actions.append(&save);
+        actions.append(&local_refine);
         actions.append(&refine);
         actions.append(&file);
         root.append(&actions);
@@ -661,6 +677,40 @@ impl ReposPage {
             page.render_drafts(&a);
             status_save.set_text("Saved on this device. It has not been filed with GitHub.");
         });
+
+        if let Some(provider_id) = local_provider.map(|provider| provider.instance_id) {
+            let a = app.clone();
+            let rr = repo.clone();
+            let form_local = form.clone();
+            let draft_id_local = draft_id.clone();
+            let close_window = window.clone();
+            let save_before_local = save_on_close.clone();
+            local_refine.connect_clicked(move |_| {
+                if !a.is_connected() {
+                    a.toast("Connect to T3 before opening a local intake chat.");
+                    return;
+                }
+                let project_id = a
+                    .projects()
+                    .into_iter()
+                    .find(|project| project_matches_repo(project, &rr))
+                    .map(|project| project.id);
+                let Some(project_id) = project_id else {
+                    a.toast("No T3 project is associated with this repository yet.");
+                    return;
+                };
+                let draft = form_local.read(&rr.repo, &draft_id_local);
+                let prompt = workflow::issue_local_intake_prompt(&draft);
+                let page = a.repos_page_rc();
+                page.upsert_issue_draft(draft);
+                page.render_drafts(&a);
+                save_before_local.set(false);
+                close_window.close();
+                a.new_chat_in_with_provider(Some(project_id), &provider_id);
+                a.set_entry(&prompt);
+                a.toast("Local first-pass request is ready in the composer. Review it before sending.");
+            });
+        }
 
         let a = app.clone();
         let rr = repo.clone();
