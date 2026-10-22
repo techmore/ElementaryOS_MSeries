@@ -17,6 +17,21 @@ window/display radius has not been matched to the physical panel; owner visual
 qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
 [Repository Topology](REPOSITORY-TOPOLOGY.md).
 
+## T3 follows the active Pantheon theme — 2026-10-22
+
+T3 visual replies now resolve their light/dark surface, foreground and accent
+from the active GTK theme when a WebView is opened. Unstyled page text uses the
+system UI font. The unread activity dot uses the existing GTK `@accent_color`
+style instead of a fixed blue. Provider identity dots retain their own colors.
+Theme lookup adds no polling and is paid only when opening a visual reply.
+
+`cargo fmt --check --manifest-path rust/Cargo.toml -p claude-pantheon-rs`,
+`cargo check --locked --manifest-path rust/Cargo.toml -p claude-pantheon-rs`, and
+`git diff --check` pass. No tests or GUI theme interaction were run. Visual
+checks in both Pantheon light and dark modes remain open; GTK 4.10 deprecated
+named-color lookup without a replacement, so that lookup is narrowly scoped
+and will need revisiting if the app moves to GTK 5.
+
 ## Rust Messages responsive layout and actionable errors — 2026-10-22
 
 The shared SDK now reevaluates responsive classes after mapping and on native
