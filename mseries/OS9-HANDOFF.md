@@ -264,6 +264,14 @@ model tests, GTK rendering, contract checks, desktop metadata, the headless
 indicator build/probe, Debian package assembly, and verification that the
 package contains the Wingpanel module. Other unrelated M-series jobs in that
 workflow were still running at the last check.
+
+The PR was synchronized with current `dev` in commit `498dfba2`, resolving its
+only merge conflict while retaining both T3 and Pantheon lock-screen handoff
+entries. A follow-up review corrected reconnect backoff: the client now retries
+after 2, 4, 8, 16, and 32 seconds, then once per minute. `cargo fmt --check`,
+the four focused reconnect tests, and strict release Clippy pass. The live T3
+service was not restarted; end-to-end server restart and reattachment remain
+unqualified.
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,

@@ -79,6 +79,18 @@ fn retryable_ws_error(error: &WsError) -> bool {
     }
 }
 
+fn reconnect_delay(attempt: u32) -> std::time::Duration {
+    let seconds = match attempt {
+        0 => 2,
+        1 => 4,
+        2 => 8,
+        3 => 16,
+        4 => 32,
+        _ => 60,
+    };
+    std::time::Duration::from_secs(seconds)
+}
+
 const RUNTIME_MODES: [(&str, &str); 4] = [
     ("approval-required", "Ask before actions"),
     ("auto-accept-edits", "Auto-accept edits"),
@@ -1486,7 +1498,7 @@ impl App {
         let Some(generation) = self.reconnect_gate.borrow_mut().reserve() else { return };
         let attempt = self.reconnect_attempt.get();
         self.reconnect_attempt.set(attempt + 1);
-        let delay = std::time::Duration::from_secs(2u64.pow(attempt.min(5)).max(2));
+        let delay = reconnect_delay(attempt);
         self.set_status(&format!("Disconnected; retrying in {} s", delay.as_secs()), false);
         let app = self.clone();
         glib::spawn_future_local(async move {
@@ -4201,6 +4213,12 @@ fn load_css() {
 #[cfg(test)]
 mod reconnect_tests {
     use super::*;
+
+    #[test]
+    fn reconnect_backoff_grows_then_caps_at_one_minute() {
+        let delays = (0..7).map(reconnect_delay).map(|delay| delay.as_secs()).collect::<Vec<_>>();
+        assert_eq!(delays, [2, 4, 8, 16, 32, 60, 60]);
+    }
 
     #[test]
     fn retries_transient_websocket_failures_but_stops_for_pairing_and_version_errors() {
