@@ -3,6 +3,7 @@
 //!   claude-pantheon-rs                      open the window
 //!   claude-pantheon-rs --new-thread         open (or raise) the window on a new thread; also the .desktop action
 //!   claude-pantheon-rs --usage              open on the Usage page
+//!   claude-pantheon-rs --thread ID          open (or raise) the window on that thread
 //!   claude-pantheon-rs --quit-after-frame   draw one frame, print the start-up time and exit (benchmarks)
 //!   claude-pantheon-rs --index              no window: list the sessions the sidebar would show
 
@@ -34,12 +35,19 @@ fn main() -> gtk::glib::ExitCode {
     }
     let quit_after_frame = args.iter().any(|a| a == "--quit-after-frame");
     // Desktop actions and a second launch reach the running instance through GApplication's command line.
-    let forwarded: Vec<String> = args.iter().filter(|a| *a == "--new-thread" || *a == "--usage").cloned().collect();
+    let mut forwarded: Vec<String> = args.iter().filter(|a| *a == "--new-thread" || *a == "--usage").cloned().collect();
+    if let Some(i) = args.iter().position(|a| a == "--thread")
+        && let Some(id) = args.get(i + 1)
+    {
+        forwarded.push("--thread".into());
+        forwarded.push(id.clone());
+    }
 
     // Mesa on Asahi loads LLVM and ~180 MB of shader heap for the GL renderers; cairo draws this window in
     // a third of the memory (see docs/PERFORMANCE.md). CLAUDE_PANTHEON_RENDERER=gl|ngl|vulkan switches back.
     if std::env::var_os("GSK_RENDERER").is_none() {
-        let renderer = std::env::var("CLAUDE_PANTHEON_RENDERER").unwrap_or_else(|_| "cairo".into());
+        let renderer = std::env::var("CLAUDE_PANTHEON_RENDERER")
+            .unwrap_or_else(|_| claude_pantheon_rs::settings::Settings::load().renderer);
         // SAFETY: single-threaded here; GTK has not been initialised and no other thread reads the environment.
         unsafe { std::env::set_var("GSK_RENDERER", renderer) };
     }
@@ -91,10 +99,16 @@ fn main() -> gtk::glib::ExitCode {
     application.add_action(&open);
     application.connect_command_line(move |application, cmdline| {
         application.activate();
-        for arg in cmdline.arguments() {
+        let args = cmdline.arguments();
+        for (i, arg) in args.iter().enumerate() {
             match arg.to_str() {
                 Some("--new-thread") => application.activate_action("new-thread", None),
                 Some("--usage") => application.activate_action("usage", None),
+                Some("--thread") => {
+                    if let Some(id) = args.get(i + 1).and_then(|s| s.to_str()) {
+                        application.activate_action("open-thread", Some(&id.to_variant()));
+                    }
+                }
                 _ => {}
             }
         }

@@ -366,3 +366,5 @@ not create, close, merge or deploy GitHub work.
 association, gate completion, offline evidence and invalid configuration.
 `test-agenda.sh` uses an isolated cache and a failing fake `gh`; no personal
 GitHub credentials or network are used by the integration suite.
+
+GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).

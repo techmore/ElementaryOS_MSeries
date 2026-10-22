@@ -1,3 +1,4 @@
+# GTK on this Mac: renderer, CSD shadow, cursor blink and animation rules in ../GTK-PERFORMANCE-ASAHI.md
 project('mseries-dock-switcher', 'vala', 'c', version: '0.1.0')
 
 switchboard = dependency('switchboard-3')

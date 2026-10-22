@@ -26,7 +26,9 @@ tool, so it needs no Electron, no embedded browser and no extra account setup.
   batches, tool results only become widgets when expanded, the cairo
   renderer keeps Mesa out of the process, the window shadow is a flat
   outline and the text cursor does not blink, because each of those cost
-  real CPU or memory here. [docs/PERFORMANCE.md](docs/PERFORMANCE.md) has the
+  real CPU or memory here (the shared GTK-on-Asahi findings are in
+  [../GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md); this directory is the source, the
+  standalone checkout at `~/Projects/claude-pantheon` a retired pointer). [docs/PERFORMANCE.md](docs/PERFORMANCE.md) has the
   numbers and the reasoning.
 - **Looks native.** Granite widgets, Pantheon typography and header bars, and
   it follows the system light/dark preference.

@@ -219,18 +219,25 @@
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Dashboard.vala",
+      "file": "mseries/orchard/src/Dashboard.vala",
       "rule": "icon-px",
       "match": "pixel_size = 32",
       "count": 1,
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Indicator.vala",
+      "file": "mseries/orchard/src/Indicator.vala",
       "rule": "icon-px",
       "match": "pixel_size = 16",
       "count": 1,
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard/src/PodmanPage.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 24",
+      "count": 1,
+      "reason": "Row glyph at the same 24 px as the Machines pages' spec cards (page.vala, incus-page.vala) so the three sections match; follows the ladder together with them."
     },
     {
       "file": "mseries/patches/wingpanel-content-scale.patch",
