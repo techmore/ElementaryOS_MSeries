@@ -1,3 +1,28 @@
+## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
+
+Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
+unqualified until the session package is installed and the next login.**
+
+- **`/usr/bin/pantheon-lock`** (session package) runs gtklock with `usr/share/pantheon-rust-compositor/lock/layout.ui` and
+  `style.css`: the user's wallpaper (`picture-uri`, or `-dark` in dark mode), io.elementary.greeter's clock and date
+  styling (values from its `Application.css`), and a Granite-style card with an accent-coloured avatar initial (or the
+  AccountsService/`~/.face` picture), the user's name, and a password field with an accent arrow button. It follows the
+  12/24 h clock, the accent from `gtk-theme`, and `color-scheme` (GTK `:dark` variant). gtklock's widget ids and handlers
+  are kept, so PAM, Caps Lock and error messages still work. Any failure falls back to stock gtklock.
+- **Default locker:** the compositor uses `/usr/bin/pantheon-lock` when installed, else `gtklock`;
+  `PANTHEON_LOCK_COMMAND` still wins.
+- **Correction to the entry below:** the earlier idle probe never gave the nested window X keyboard focus, so it proved
+  frame callbacks, not that typing reached the lock screen. The probe now focuses the window and requires key events:
+  with the fix 12 key events and 9 frame callbacks while typing; the control build (no lock-surface callbacks) also gets
+  12 key events but 0 callbacks, and its screenshot shows the card frozen mid fade-in with no dots — the owner's
+  "no keyboard feedback". With the fix, dots appear as you type.
+- **Verified:** strict clippy both ways, 176 tests (new: default lock command); idle probe 6/6; screenshots with
+  `lock-probe/shoot.sh` in light (owner's settings) and dark: locked, revealed, typing, Caps Lock warning. No password was
+  submitted in any test.
+- **What to check at the next login (after installing the package):** Super+L shows your wallpaper, the big clock and the
+  card; typing shows dots; Caps Lock shows the warning; your password unlocks. If it misbehaves:
+  `Environment=PANTHEON_LOCK_COMMAND=gtklock` drop-in restores the stock look.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
