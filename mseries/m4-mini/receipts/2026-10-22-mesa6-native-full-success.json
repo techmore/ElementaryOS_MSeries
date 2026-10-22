@@ -1,0 +1,189 @@
+{
+  "observed_at_utc": "2026-10-22T07:38:58.592690+00:00",
+  "scope": "fresh native ARM64 full source build/package/check in private workspace; no installation or M4 hardware execution",
+  "recipe_commit": "18d6f0198417fd2dcb9efd64a3bf0e5713b018b8",
+  "build": {
+    "repository": "GravityLinux/mesa",
+    "commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+    "package_version": "26.3.0~devel+gravity.87ac51d-6",
+    "builder_sha256": "0fd15d4d48231516e7ab948685f13d8cb9c4c2c558af29f1f36aa2af722c445e",
+    "compatibility_patches": {
+      "0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+      "0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+      "0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
+      "0004-apple9-external-sampler-2d.patch": "1a482ea51d5dcd66ab5f97fd56e4b1397eb7ae3c73185004466a11d4862f6ef0"
+    },
+    "patched_sources_sha256": {
+      "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+      "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+      "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+      "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+      "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+      "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+      "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+      "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+      "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+      "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e",
+      "src/asahi/compiler/agx_compile_apple9.c": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc"
+    },
+    "supplemental_tests": {
+      "rodata_cases": 8,
+      "rodata_negative_detected": true,
+      "divergence_cases": 7,
+      "external_comparisons": 24,
+      "external_rejection_controls": 4
+    },
+    "supplemental_test_receipts": {
+      "external-sampler": "07c618b6ae106d068edcd3b2c5f21b7a78b9860670a5afbd39db1470808e2422",
+      "helper-divergence": "de0313d30872f945feecabac33fe8cf3d3eb0166b9fb7598ecb2f8697328bb1c",
+      "rodata-upload": "da228859c6bf0afa4b2d8e57ddd26b610a0b0c8a5e629d8880ee9d763cdab20c"
+    },
+    "uapi_sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+    "options": [
+      "--prefix=/opt/elementary-m4-gravity1",
+      "--libdir=lib",
+      "-Dplatforms=x11,wayland",
+      "-Dgallium-drivers=asahi,llvmpipe",
+      "-Dvulkan-drivers=asahi",
+      "-Dllvm=enabled",
+      "-Dbuild-tests=true",
+      "-Dglvnd=enabled"
+    ],
+    "commands": [
+      [
+        "meson",
+        "setup",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/build",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/mesa-87ac51d411f0e58a9433567ec2666f457be89e1d",
+        "--prefix=/opt/elementary-m4-gravity1",
+        "--libdir=lib",
+        "-Dplatforms=x11,wayland",
+        "-Dgallium-drivers=asahi,llvmpipe",
+        "-Dvulkan-drivers=asahi",
+        "-Dllvm=enabled",
+        "-Dbuild-tests=true",
+        "-Dglvnd=enabled"
+      ],
+      [
+        "meson",
+        "compile",
+        "-C",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/build",
+        "-j",
+        "2"
+      ],
+      [
+        "meson",
+        "test",
+        "-C",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/build",
+        "--no-rebuild",
+        "--print-errorlogs",
+        "agx_tests",
+        "agx_apple9_launcher_tests",
+        "agx_apple9_geometry_tests",
+        "agx2_disasm",
+        "agx2_python_disasm"
+      ],
+      [
+        "meson",
+        "install",
+        "-C",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/build",
+        "--no-rebuild",
+        "--destdir",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/stage"
+      ],
+      [
+        "python3",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-repo/mseries/m4-mini/testing/mesa/test-helper-divergence.py",
+        "--mesa-workspace",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build",
+        "--candidate-manifest",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-repo/mseries/m4-mini/gravity/mesa-compatibility/test-sources.json",
+        "--output",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/helper-divergence-tests"
+      ],
+      [
+        "python3",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-repo/mseries/m4-mini/testing/mesa/test-rodata-upload.py",
+        "--source",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/mesa-87ac51d411f0e58a9433567ec2666f457be89e1d/src/asahi/vulkan/hk_shader.c",
+        "--output",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/rodata-upload-tests"
+      ],
+      [
+        "python3",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-repo/mseries/m4-mini/testing/mesa/test-external-sampler-matrix.py",
+        "--mesa-workspace",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build",
+        "--source-sha256",
+        "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc",
+        "--output",
+        "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa6-native-build/external-sampler-tests"
+      ]
+    ],
+    "build": "passed",
+    "tests": {
+      "meson_groups": 5,
+      "failed_groups": 0
+    },
+    "artifacts": {
+      "lib/libvulkan_asahi.so": "e559f45f7e6549b28fa28e37daf2384debbbeac260e6d820ad668b7159f8cf5c",
+      "lib/libgallium-26.3.0-devel.so": "c4c0931e6be6da015e4f2a1bab5d61dcb8eed6abf895b8f256e9199cbd00ce6a",
+      "lib/libEGL_mesa.so.0.0.0": "25b44adecb39dc697c535cf7421f6c99544c2632f3310d53df588bf05fc76e52",
+      "lib/libGLX_mesa.so.0.0.0": "698f2c47c790894d2245cd503944e071c61df7e516be828cc7420b15f724f98e"
+    },
+    "status": "built, AGX tests and isolated software rendering passed, staged only; no M4 GPU runtime qualification"
+  },
+  "independent_package_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "9c9e1770a751728a21bb38445e740db25e6ad133f638d4d4fe7ad0fb6fe89d61",
+    "package_version": "26.3.0~devel+gravity.87ac51d-6",
+    "compatibility_patches": {
+      "0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+      "0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+      "0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
+      "0004-apple9-external-sampler-2d.patch": "1a482ea51d5dcd66ab5f97fd56e4b1397eb7ae3c73185004466a11d4862f6ef0"
+    },
+    "patched_sources_sha256": {
+      "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+      "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+      "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+      "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+      "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+      "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+      "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+      "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+      "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+      "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e",
+      "src/asahi/compiler/agx_compile_apple9.c": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc"
+    },
+    "corresponding_compatibility_source": {
+      "file": "gravity-mesa-compatibility-source.tar.gz",
+      "sha256": "8119659658912d9f2c3d6a954f279516dc642c51bee2014d9bb431c8bf5a7170"
+    },
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "external_matrix": {
+    "positive_comparisons": 24,
+    "rejection_controls": 4,
+    "integrated_compiler_library": true,
+    "fixture_sha256": "56ea293bb3ff69415fa34fb696648421e50c700e582d9370d1cf78ae0594f0eb",
+    "runner_sha256": "7155a28754cdb31f6d486e792747f0fef07f8ecc6a43d5a5b552a551cb26ad51",
+    "native_object_sha256": "1e3165e4f16f0c81473bba30d09f0312cf4f6d53cc3e5efe96c640deed67526a"
+  },
+  "ninja_build_steps": 1650,
+  "hosted_run": 39739936855,
+  "hosted_result": "still in progress at local completion",
+  "selected_for_image": false,
+  "hardware_validated": false
+}

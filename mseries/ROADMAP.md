@@ -4581,3 +4581,33 @@ also pass after integration. Receipt:
 mseries/m4-mini/receipts/2026-10-22-mesa6-delivered-source-replay.json.
 Local full build session99907 and hosted run39739936855 are still live; await
 terminal results without restarting them. No package/image promotion yet.
+
+## M4 mini: fresh local Mesa6 full build/package passed — 2026-10-22
+
+Local session99907 is terminal exit0. The current four-phase recipe freshly
+compiled all1,650 targets, passed five AGX groups, seven actual-NIR cases,
+eight allocation-helper cases/negative control, integrated-library24 external
+binary/binding comparisons and four invalid-form controls, staging and isolated
+llvmpipe. No candidate-object override was used for the integrated matrix.
+Local packaging/checker session57058 is also terminal exit0; package SHA256
+9c9e1770a751728a21bb38445e740db25e6ad133f638d4d4fe7ad0fb6fe89d61.
+Embedded/external source-bundle, ARM64, four library hashes, retention and
+extracted-package software rendering checks pass. This local package is not the
+hosted artifact, not installed and not native GPU qualification.
+Receipt: mseries/m4-mini/receipts/2026-10-22-mesa6-native-full-success.json.
+
+Actual R5 kernel/localMesa6/policy intake also passes and retains the additional
+compatibility source archive. Found and fixed a graph-preflight gap: summary
+previously did not bind input package control versions to the committed profile.
+The image driver now rejects missing/duplicate pins, mismatched package names,
+architecture or versions before creating its workspace. Four boundary tests pass
+and are wired into hardware-support CI. Actual Mesa6 inputs are rejected against
+the still-selected Mesa4 profile before mkosi/output creation; the same actual
+controls match an explicit in-memory Mesa6 profile fixture. No checked-in profile
+was changed and no updated image summary/build is claimed. Receipt:
+mseries/m4-mini/receipts/2026-10-22-mesa6-input-profile-boundary.json.
+
+Hosted run39739936855 remains live; await that exact artifact and independent
+validation before selecting Mesa6 and updating the profile coherently. Full
+image/ISO, EGL import/YUV/synchronization, kernel worker unload and native owner
+Mac/Recovery dual-boot gates remain open.

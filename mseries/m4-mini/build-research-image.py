@@ -33,6 +33,27 @@ def digest(path):
 
 
 
+PROFILE = 'mkosi.images/base/mkosi.profiles/m4-mini/mkosi.conf'
+PACKAGE_NAMES = {'kernel': 'linux-image-elementary-m4-gravity1',
+                 'mesa': 'elementary-m4-gravity-mesa1',
+                 'policy': 'elementary-m4-gravity-policy'}
+
+
+def profile_package_versions(profile, controls):
+    result = {}
+    if set(controls) != set(PACKAGE_NAMES):
+        raise ValueError('complete package controls required')
+    for kind, name in PACKAGE_NAMES.items():
+        control = controls[kind]
+        if control.get('Package') != name or control.get('Architecture') != 'arm64':
+            raise ValueError('wrong candidate package identity or architecture: ' + kind)
+        pins = re.findall(r'^\s+' + re.escape(name) + r'=([^\s]+)\s*$', profile, re.MULTILINE)
+        if len(pins) != 1 or pins[0] != control.get('Version'):
+            raise ValueError('candidate version differs from committed image profile: ' + kind)
+        result[kind] = pins[0]
+    return result
+
+
 BOOT_HOOK = 'mkosi.images/sysupdate/mkosi.profiles/m4-mini/verify-boot-chain.chroot'
 
 
@@ -85,12 +106,16 @@ def main():
         raise ValueError('inputs must use the current reviewed preparer')
     if set(candidate['components']) != {'kernel', 'mesa', 'policy'}:
         raise ValueError('complete three-component input set required')
-    for component in candidate['components'].values():
+    controls = {}
+    for kind, component in candidate['components'].items():
         name = component['file']
         if Path(name).name != name or not name.endswith('.deb'):
             raise ValueError('invalid component filename')
         if digest(inputs / 'packages' / name) != component['sha256']:
             raise ValueError('prepared component changed')
+        fields = subprocess.check_output(['dpkg-deb', '--field', str(inputs / 'packages' / name),
+                                          'Package', 'Version', 'Architecture'], text=True)
+        controls[kind] = dict(line.split(': ', 1) for line in fields.splitlines())
     for name, expected in inputs_module.SOURCE_ARCHIVES.values():
         if digest(inputs / name) != expected:
             raise ValueError('required corresponding source changed')
@@ -112,6 +137,8 @@ def main():
         raise ValueError('verified J773g boot bundle required')
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()
     subprocess.run(['git', 'merge-base', '--is-ancestor', candidate['recipe_commit'], revision], cwd=REPO, check=True)
+    profile = subprocess.check_output(['git', 'show', revision + ':' + PROFILE], cwd=REPO, text=True)
+    versions = profile_package_versions(profile, controls)
     baseline = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
     build = json.loads((inputs / 'records/kernel-build.json').read_text())
     original = subprocess.check_output(['git', 'show', revision + ':' + inputs_module.HOOK],
@@ -188,6 +215,7 @@ def main():
         'scope': 'full M4 mkosi graph summary' if args.summary_only else 'full M4 mkosi graph build; ISO assembly separate',
         'source_commit': revision, 'driver_sha256': digest(Path(__file__)),
         'image_version': args.image_version, 'images': sorted(graph), 'commands': commands,
+        'candidate_package_versions': versions,
         'candidate_package_hashes': {name: item['sha256'] for name, item in candidate['components'].items()},
         'boot_bundle_sha256': expected_boot, 'candidate_boot_hash_patch_applied_in_clone': bool(boot_patch), 'candidate_hash_patch_applied_in_clone': bool(patch),
         'summary_only': args.summary_only, 'execution_identity': 'hosted root' if args.hosted_root else 'mapped namespace', 'mkosi_build_passed': not args.summary_only,

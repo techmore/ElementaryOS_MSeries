@@ -27,7 +27,10 @@ The normalization candidate now passes 24 constant/dynamic binary-and-binding
 comparisons across both fragment paths, plus four invalid array/shadow controls;
 the original compiler rejects 20 positive cases. Revision 6 integrates this fix,
 its tests and complete corresponding sources while preserving revision 5.
-Fresh full revision-6 build/package validation is pending. Selected image Mesa
+Fresh local full revision-6 build, five AGX groups, all supplemental tests,
+packaging and extracted-package checks now pass. Fresh hosted validation is
+pending. [Local evidence](receipts/2026-10-22-mesa6-native-full-success.json).
+Selected image Mesa
 stays revision 4. Native EGL import/YUV, GPU/unload, ISO, installer and owner
 hardware dual-boot acceptance remain unqualified.
 [Compiler evidence](receipts/2026-10-22-mesa-external-dynamic-matrix.json),

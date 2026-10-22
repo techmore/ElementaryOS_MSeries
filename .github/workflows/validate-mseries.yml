@@ -295,6 +295,7 @@ jobs:
           python3 -m unittest discover -s mseries/m4-mini -p 'test_partition_export.py'
           python3 -m unittest discover -s mseries/m4-mini -p 'test_partition_import_regular.py'
           python3 -m unittest discover -s mseries/m4-mini -p 'test_image_input_patch.py'
+          python3 -m unittest discover -s mseries/m4-mini -p 'test_image_profile_versions.py'
           python3 -m unittest discover -s mseries/m4-mini -p 'test_hosted_workflow.py'
           python3 -m unittest discover -s mseries/m4-mini -p 'test_hosted_candidates.py'
           python3 -m unittest discover -s mseries/m4-mini -p 'test_hosted_image_names.py'

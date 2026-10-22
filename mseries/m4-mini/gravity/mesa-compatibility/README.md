@@ -19,7 +19,8 @@ remain required. No compiler-only test qualifies EGL image import or GPU output.
 The corresponding-source bundle retains exact patches, full build/package/check
 recipes, all supplemental test sources and MIT/GPL licenses. Source bundle
 creation explicitly selects the version; old v5 artifacts remain verifiable.
-Fresh replay and v5/v6 bundle roundtrips pass. Full revision-6 build/package and
+Fresh replay and v5/v6 bundle roundtrips pass. Fresh local revision-6 full
+build/package and extracted-package checks now pass. Hosted artifact validation,
 native compositor, YUV, synchronization and GPU tests remain open.
 
 Public PR1 ends at 208d4a484459a12c77bf073362613f842288c2e0. Intake records
