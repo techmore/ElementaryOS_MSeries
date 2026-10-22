@@ -17,6 +17,26 @@ window/display radius has not been matched to the physical panel; owner visual
 qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
 [Repository Topology](REPOSITORY-TOPOLOGY.md).
 
+## Rust Messages per-phone pin scope and shared keyring — 2026-10-22
+
+Rust Messages now validates bounded Apple pin snapshots, reviews conversation
+matches, orders the sidebar from the imported snapshot and stores choices in
+Secret Service under BlueFerry's optional stable phone UUID. Before saving, it
+checks that the same phone is still selected. The legacy Python GTK client now
+reads the same UUID and generic Secret Service item, migrating its old
+custom-schema/MAC-hash item locally once a valid UUID is available. Missing or
+changed phone IDs clear the old view state, and stale asynchronous pin loads are
+ignored. A direct jump to Rust before the Python migration can require
+re-importing the snapshot.
+
+BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) is open and
+adds the optional UUID without changing Messages API v2. Its branch has no
+reported checks yet. Until that change is merged and released, older status
+replies omit the UUID and import actions explain that BlueFerry must be updated.
+The source changes in this worktree are not on PR #526's current head yet; its
+existing checks do not validate this delta. No local tests were run for this
+handoff entry. Live keyring/UI behavior and owner-phone acceptance remain open.
+
 ## Rust Messages local timestamp parity — 2026-10-22
 
 The shared SDK now formats BlueFerry ISO timestamps in the local timezone with
@@ -10936,10 +10956,10 @@ when the photo revision changes. It does not change the opt-in or write photos
 to disk. ARM64 package CI passes. These are source/build receipts; live UI,
 private GUI and iPhone delivery still need acceptance.
 
-Imported Apple pins remain blocked on BlueFerry exposing a stable opaque
-per-phone profile identifier through its supported status contract. The Python
-client derives the keyring scope from BlueFerry's private configuration; the
-Rust app will wait for the public service field instead of reading that file.
+At this checkpoint, imported Apple pins were blocked on BlueFerry exposing a
+stable opaque per-phone profile identifier. This note is superseded by the
+current implementation documented at the top of this handoff and BlueFerry
+PR #277.
 
 Signal remains on the signed official client. The Rust app needs an
 upstream-supported API/integration and security boundary before replacing it;
@@ -10996,12 +11016,10 @@ is ready and its checks pass. It keeps the upstream Electron client. The real
 screenshot shelf-to-compose preview, multiple-image, paste fallback and
 XWayland-to-Wayland acceptance remain open in [#227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
 
-The pinned BlueFerry Messages API v2 status does not expose a stable phone
-profile ID. Its compatibility policy allows additive `GetStatus` keys without
-changing the API generation, so BlueFerry can add an opaque ID for the
-configured phone and the Rust SDK can use it for Secret Service scoping. The
-Rust client will not derive that identity from private config, Bluetooth MAC,
-or conversation recipients. See the [pinned API contract](https://github.com/erikwb/blueferry/blob/60fd7ef1abbd25947981f0cf27a521d82784a75f/docs/en/developer/dbus-api.md#compatibility).
+The pinned BlueFerry API commit does not expose a stable phone profile ID.
+Open PR #277 adds that field compatibly; the SDK and Python client now consume
+it, and neither derives new preference scope from private config, Bluetooth
+MAC, or conversation recipients. See the [pinned API contract](https://github.com/erikwb/blueferry/blob/60fd7ef1abbd25947981f0cf27a521d82784a75f/docs/en/developer/dbus-api.md#compatibility).
 
 ## Shared Rust Pantheon dock badges — 2026-10-22
 

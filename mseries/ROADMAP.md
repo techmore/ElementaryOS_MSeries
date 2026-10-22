@@ -103,11 +103,13 @@ the app's shortcuts; F5 and Alt+Left match the existing client, and Back/Escape
 clear the selected conversation while preserving its draft. These source/build
 changes start with no conversation selected, avoiding an automatic open/read on
 refresh. They still need private GUI, accessibility, phone and owner acceptance.
-Imported Apple pins need a stable opaque phone ID in BlueFerry's `GetStatus`
-contract. The pinned API permits this as an additive status key; BlueFerry must
-own and publish it, and the Rust SDK will not derive it from private
-configuration, a Bluetooth address, or conversation recipients. Feature parity
-and owner phone acceptance remain open. Signal's selected official-client path
+Imported Apple pin review now uses BlueFerry's optional stable phone UUID and
+the shared Secret Service item in both Rust and Python clients. BlueFerry PR
+[#277](https://github.com/erikwb/blueferry/pull/277) remains open; older
+BlueFerry versions omit the field and cannot enable pin import. The Python
+client can migrate its prior keyring item after the API release; a direct
+switch to Rust may require re-importing the snapshot. Feature parity and owner
+phone acceptance remain open. Signal's selected official-client path
 is tracked in ready PR [#525](https://github.com/techmore/ElementaryOS_MSeries/pull/525);
 the screenshot shelf-to-compose acceptance remains open in
 [issue #227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
