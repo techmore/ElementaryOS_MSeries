@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-const SCHEMA_VERSION: u32 = 1;
+const SCHEMA_VERSION: u32 = 2;
 const MAX_RECORD_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_ENV_ENTRIES: usize = 32;
 const MAX_ENV_BYTES: u64 = 64 * 1024 * 1024;
@@ -68,11 +68,14 @@ fn bounded_view(view: &ThreadView) -> ThreadView {
     let first_item = view.items.len().saturating_sub(500);
     let first_run = view.runs.len().saturating_sub(100);
     let first_checkpoint = view.checkpoints.len().saturating_sub(100);
+    let items = view.items[first_item..].to_vec();
+    let history_item_keys = items.iter().map(|item| item.identity_key()).collect();
     ThreadView {
-        items: view.items[first_item..].to_vec(),
+        items,
         active_run_id: view.active_run_id.clone(),
         runs: view.runs[first_run..].to_vec(),
         checkpoints: view.checkpoints[first_checkpoint..].to_vec(),
+        history_item_keys,
     }
 }
 

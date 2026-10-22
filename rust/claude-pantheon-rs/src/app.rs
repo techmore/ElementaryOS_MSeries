@@ -64,6 +64,9 @@ struct Live {
     stale: bool,
     history_cursor: Option<String>,
     has_more_history: bool,
+    history_loading: bool,
+    history_error: Option<String>,
+    history_control: Option<gtk::Button>,
     view: ThreadView,
     /// Item id → widget currently in the chat column.
     widgets: HashMap<String, gtk::Widget>,
@@ -126,6 +129,7 @@ pub struct App {
     providers: RefCell<Vec<Provider>>,
     handoff: RefCell<Option<handoff::Pending>>,
     generation: Cell<u64>,
+    history_scroll_suppressed: Cell<bool>,
     syncing: Cell<bool>,
     indexing: Cell<bool>,
     loading: Cell<bool>,
@@ -509,6 +513,7 @@ impl App {
             providers: RefCell::new(Vec::new()),
             handoff: RefCell::new(None),
             generation: Cell::new(0),
+            history_scroll_suppressed: Cell::new(false),
             syncing: Cell::new(false),
             indexing: Cell::new(false),
             loading: Cell::new(false),
@@ -531,6 +536,16 @@ impl App {
             quick_panel: RefCell::new(None),
             settings: Rc::new(RefCell::new(settings::Settings::load())),
             started,
+        });
+
+        let weak_app = Rc::downgrade(&app);
+        app.chat_scroll.vadjustment().connect_value_changed(move |adjustment| {
+            if adjustment.value() <= 48.0
+                && let Some(app) = weak_app.upgrade()
+                && !app.history_scroll_suppressed.get()
+            {
+                app.load_earlier_history();
+            }
         });
 
         // First frame: report start-up time when asked, and quit when benchmarking.
@@ -1771,6 +1786,7 @@ impl App {
                 live.sub_id = None;
                 live.stale = true;
                 app.subtitle.set_text(&format!("{} · offline · cached view", live.base_subtitle));
+                app.update_history_control(live);
             }
             app.send_btn.set_sensitive(false);
             app.stop_btn.set_sensitive(false);
@@ -2682,18 +2698,15 @@ impl App {
             stale: true,
             history_cursor,
             has_more_history,
+            history_loading: false,
+            history_error: None,
+            history_control: None,
             view,
             widgets: HashMap::new(),
             running,
         });
         if cached.is_some() {
             self.render_live();
-            if has_more_history {
-                let note =
-                    label("Earlier history stays on the server; this is the latest window.", &["caption", "dim-label"]);
-                note.set_halign(gtk::Align::Center);
-                self.chat.prepend(&note);
-            }
             let note = label("Cached conversation · syncing current state…", &["caption", "dim-label"]);
             note.set_halign(gtk::Align::Center);
             self.chat.prepend(&note);
@@ -2767,6 +2780,7 @@ impl App {
         let running = if let Some(live) = self.live.borrow_mut().as_mut() {
             live.stale = false;
             self.subtitle.set_text(&live.base_subtitle);
+            self.update_history_control(live);
             live.running
         } else {
             false
@@ -2811,20 +2825,14 @@ impl App {
                     live.stale = true;
                     live.history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
                     live.has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
+                    live.history_loading = false;
+                    live.history_error = None;
                     self.subtitle.set_text(&format!("{} · syncing", live.base_subtitle));
                 }
                 self.composer_note.set_text("Synchronizing with T3…");
                 self.send_btn.set_sensitive(false);
                 self.stop_btn.set_sensitive(false);
                 self.render_live();
-                if v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false) {
-                    let note = label(
-                        "Earlier history stays on the server; this is the latest window.",
-                        &["caption", "dim-label"],
-                    );
-                    note.set_halign(gtk::Align::Center);
-                    self.chat.prepend(&note);
-                }
                 self.show_page("chat");
                 self.stop_btn.set_visible(running);
                 self.scroll_to_end();
@@ -2954,23 +2962,142 @@ impl App {
     }
 
     fn render_live(self: &Rc<Self>) {
+        self.history_scroll_suppressed.set(true);
+        let weak_app = Rc::downgrade(self);
+        glib::idle_add_local_once(move || {
+            if let Some(app) = weak_app.upgrade() {
+                app.history_scroll_suppressed.set(false);
+            }
+        });
         self.clear_chat();
         let decide = self.decide_callback();
         let mut live = self.live.borrow_mut();
         let Some(live) = live.as_mut() else { return };
         live.widgets.clear();
-        let items = live.view.items.clone();
-        let from = items.len().saturating_sub(TAIL_TURNS);
-        if from > 0 {
-            let note = label(&format!("{from} earlier items folded"), &["caption", "dim-label"]);
-            note.set_halign(gtk::Align::Center);
-            self.chat.append(&note);
+        live.history_control = None;
+        if (live.has_more_history && live.history_cursor.is_some())
+            || live.history_loading
+            || live.history_error.is_some()
+        {
+            let button = gtk::Button::with_label(if live.history_loading {
+                "Loading earlier messages…"
+            } else if live.history_error.is_some() {
+                "Retry loading earlier messages"
+            } else {
+                "Load earlier messages"
+            });
+            button.add_css_class("flat");
+            button.set_halign(gtk::Align::Center);
+            button.set_sensitive(!live.history_loading && !live.stale);
+            button.set_tooltip_text(live.history_error.as_deref());
+            button.update_property(&[gtk::accessible::Property::Label("Load earlier messages")]);
+            let weak_app = Rc::downgrade(self);
+            button.connect_clicked(move |_| {
+                if let Some(app) = weak_app.upgrade() {
+                    app.load_earlier_history();
+                }
+            });
+            self.chat.append(&button);
+            live.history_control = Some(button);
         }
-        for item in &items[from..] {
+        let items = live.view.items.clone();
+        for item in &items {
             if let Some(w) = chat::item_widget(item, Some(decide.clone())) {
                 self.chat.append(&w);
-                live.widgets.insert(item.id.clone(), w);
+                live.widgets.insert(item.identity_key(), w);
             }
+        }
+    }
+
+    fn load_earlier_history(self: &Rc<Self>) {
+        let (thread_id, cursor, generation) = {
+            let mut state = self.live.borrow_mut();
+            let Some(live) = state.as_mut() else { return };
+            if live.stale || live.history_loading || !live.has_more_history {
+                return;
+            }
+            let Some(cursor) = live.history_cursor.clone() else { return };
+            let Some(cred) = self.conn.borrow().as_ref().map(|conn| conn.cred.clone()) else { return };
+            live.history_loading = true;
+            live.history_error = None;
+            self.update_history_control(live);
+            (live.thread_id.clone(), cursor, (self.generation.get(), cred))
+        };
+        let (generation, cred) = generation;
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let result = t3::history::fetch_page(&cred, &thread_id, &cursor).await;
+            if app.generation.get() != generation {
+                return;
+            }
+
+            let mut live_state = app.live.borrow_mut();
+            let Some(live) = live_state.as_mut() else { return };
+            if live.thread_id != thread_id {
+                return;
+            }
+            if live.history_cursor.as_deref() != Some(cursor.as_str()) {
+                live.history_loading = false;
+                app.update_history_control(live);
+                return;
+            }
+
+            match result {
+                Ok(page) => {
+                    let adjustment = app.chat_scroll.vadjustment();
+                    let old_value = adjustment.value();
+                    let old_upper = adjustment.upper();
+                    let added = live.view.prepend_history(page.items);
+                    live.history_cursor = page.next_cursor;
+                    live.has_more_history = page.has_more_history && live.history_cursor.is_some();
+                    live.history_loading = false;
+                    live.history_error = None;
+                    if added == 0 && live.has_more_history && live.history_cursor.as_deref() == Some(cursor.as_str()) {
+                        live.has_more_history = false;
+                        live.history_cursor = None;
+                    }
+                    let continue_loading = added == 0 && live.has_more_history;
+                    let should_persist = !live.running;
+                    drop(live_state);
+                    app.render_live();
+                    if should_persist {
+                        app.persist_current_thread_cache();
+                    }
+                    let weak_app = Rc::downgrade(&app);
+                    glib::idle_add_local_once(move || {
+                        if let Some(app) = weak_app.upgrade() {
+                            app.history_scroll_suppressed.set(true);
+                        }
+                        let added_height = adjustment.upper() - old_upper;
+                        adjustment.set_value((old_value + added_height).max(0.0));
+                        if let Some(app) = weak_app.upgrade() {
+                            app.history_scroll_suppressed.set(false);
+                            if continue_loading {
+                                app.load_earlier_history();
+                            }
+                        }
+                    });
+                }
+                Err(error) => {
+                    live.history_loading = false;
+                    live.history_error = Some(error);
+                    app.update_history_control(live);
+                }
+            }
+        });
+    }
+
+    fn update_history_control(&self, live: &Live) {
+        if let Some(button) = &live.history_control {
+            button.set_label(if live.history_loading {
+                "Loading earlier messages…"
+            } else if live.history_error.is_some() {
+                "Retry loading earlier messages"
+            } else {
+                "Load earlier messages"
+            });
+            button.set_sensitive(!live.history_loading && !live.stale);
+            button.set_tooltip_text(live.history_error.as_deref());
         }
     }
 
@@ -2984,6 +3111,13 @@ impl App {
         {
             let mut live = self.live.borrow_mut();
             let Some(live) = live.as_mut() else { return };
+            let mut item = item;
+            if item.source_thread_id.is_none() {
+                item.source_thread_id = Some(live.thread_id.clone());
+            }
+            if item.source_item_id.is_none() {
+                item.source_item_id = Some(item.id.clone());
+            }
             live.view.upsert(item.clone());
             if item.is_pending_request() {
                 let body = item
@@ -3002,18 +3136,19 @@ impl App {
                 );
             }
             let new_widget = chat::item_widget(&item, Some(decide));
-            match live.widgets.remove(&item.id) {
+            let key = item.identity_key();
+            match live.widgets.remove(&key) {
                 Some(old) => {
                     if let Some(w) = new_widget {
                         self.chat.insert_child_after(&w, Some(&old));
-                        live.widgets.insert(item.id.clone(), w);
+                        live.widgets.insert(key, w);
                     }
                     self.chat.remove(&old);
                 }
                 None => {
                     if let Some(w) = new_widget {
                         self.chat.append(&w);
-                        live.widgets.insert(item.id.clone(), w);
+                        live.widgets.insert(key, w);
                     }
                 }
             }

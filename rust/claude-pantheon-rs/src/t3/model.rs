@@ -3,6 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashSet;
 
 fn active_run_status(status: &str) -> bool {
     matches!(status, "preparing" | "queued" | "starting" | "running" | "waiting" | "pending")
@@ -346,6 +347,10 @@ pub struct TurnItem {
     pub name: Option<String>,
     pub title: Option<String>,
     pub steps: Option<Vec<Value>>,
+    #[serde(rename = "sourceThreadId", skip_serializing_if = "Option::is_none")]
+    pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceItemId", skip_serializing_if = "Option::is_none")]
+    pub source_item_id: Option<String>,
     #[serde(flatten)]
     pub rest: Value,
 }
@@ -353,6 +358,13 @@ pub struct TurnItem {
 impl TurnItem {
     pub fn is_pending_request(&self) -> bool {
         self.kind == "approval_request" && self.status != "completed" && self.status != "cancelled"
+    }
+
+    pub fn identity_key(&self) -> String {
+        match (&self.source_thread_id, &self.source_item_id) {
+            (Some(thread), Some(item)) => format!("{thread}\0{item}"),
+            _ => self.id.clone(),
+        }
     }
 }
 
@@ -363,19 +375,39 @@ pub struct ThreadView {
     pub runs: Vec<Value>,
     /// The thread's checkpoints (restore points), as the projection carries them.
     pub checkpoints: Vec<Value>,
+    #[serde(default, skip_serializing_if = "HashSet::is_empty")]
+    pub history_item_keys: HashSet<String>,
 }
 
 impl ThreadView {
     pub fn from_projection(p: &Value) -> ThreadView {
         let mut view = ThreadView::default();
         let visible = p.get("visibleTurnItems").and_then(Value::as_array);
-        let raw: Vec<&Value> = match visible {
-            Some(v) if !v.is_empty() => v.iter().map(|w| w.get("item").unwrap_or(w)).collect(),
-            _ => p.get("turnItems").and_then(Value::as_array).map(|a| a.iter().collect()).unwrap_or_default(),
-        };
-        for r in raw {
-            if let Ok(item) = serde_json::from_value::<TurnItem>(r.clone()) {
-                view.items.push(item);
+        if let Some(rows) = visible.filter(|rows| !rows.is_empty()) {
+            for row in rows {
+                if let Ok(mut item) = serde_json::from_value::<TurnItem>(row.get("item").unwrap_or(row).clone()) {
+                    item.source_thread_id = row
+                        .get("sourceThreadId")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .or_else(|| p.pointer("/thread/id").and_then(Value::as_str).map(str::to_string));
+                    item.source_item_id = row
+                        .get("sourceItemId")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .or_else(|| Some(item.id.clone()));
+                    view.history_item_keys.insert(item.identity_key());
+                    view.items.push(item);
+                }
+            }
+        } else if let Some(raw) = p.get("turnItems").and_then(Value::as_array) {
+            for row in raw {
+                if let Ok(mut item) = serde_json::from_value::<TurnItem>(row.clone()) {
+                    item.source_thread_id = p.pointer("/thread/id").and_then(Value::as_str).map(str::to_string);
+                    item.source_item_id = Some(item.id.clone());
+                    view.history_item_keys.insert(item.identity_key());
+                    view.items.push(item);
+                }
             }
         }
         if let Some(c) = p.get("checkpoints").and_then(Value::as_array) {
@@ -424,10 +456,35 @@ impl ThreadView {
     }
 
     pub fn upsert(&mut self, item: TurnItem) {
-        match self.items.iter_mut().find(|i| i.id == item.id) {
+        let key = item.identity_key();
+        match self.items.iter_mut().find(|i| i.identity_key() == key) {
             Some(slot) => *slot = item,
             None => self.items.push(item),
         }
+        self.history_item_keys.insert(key);
+    }
+
+    /// Adds one T3 history page ahead of the current projection without replacing live updates.
+    pub fn prepend_history(&mut self, mut older: Vec<crate::t3::history::ProjectedTurnItem>) -> usize {
+        older.sort_by_key(|row| row.position);
+        let mut page = Vec::with_capacity(older.len());
+        let mut page_keys = HashSet::new();
+        for row in older {
+            let mut item = row.item;
+            item.source_thread_id = Some(row.source_thread_id);
+            item.source_item_id = Some(row.source_item_id);
+            let key = item.identity_key();
+            if !self.history_item_keys.contains(&key) && page_keys.insert(key.clone()) {
+                self.history_item_keys.insert(key);
+                page.push(item);
+            }
+        }
+        let count = page.len();
+        if count > 0 {
+            page.append(&mut self.items);
+            self.items = page;
+        }
+        count
     }
 }
 

@@ -13,7 +13,10 @@ it. The quick surface does not open a second RPC connection or poll the server. 
 versioned environment/thread cache record that keeps the projection and `snapshotSequence` together, then resumes with
 T3 `afterSequence`. Duplicate replay events are ignored, active turns are not written to disk, and live actions stay
 disabled until synchronization finishes. Corrupt and wrong-scope entries are discarded; unpair/removal clears them.
-Cache hit telemetry and large-history/poor-network profiling remain open.
+The full chat now renders the server's bounded thread window and loads older history pages as the user scrolls to the
+top (with a retry control), using T3's opaque history cursor. Older pages deduplicate by source thread/item identity
+and preserve the visible reading position. Pagination state is saved with the thread cache. Cache hit telemetry and
+large-history/poor-network profiling remain open.
 
 Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness (`dsh
 --profile default acp`) for execution on the paired T3 server. This uses T3's generic ACP path and keeps credentials on
@@ -34,19 +37,19 @@ Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob
 [T3 ACP providers](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-acp.md), [DeepSeek context cache](https://api-docs.deepseek.com/guides/kv_cache/),
 and [DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
 
-Validation: `cargo fmt -p claude-pantheon-rs --check`, strict release Clippy, and all 54 library tests passed for the
-thread-resume work, including cache scoping/corruption/size bounds, atomic record round trips, sequence monotonicity,
-and run-settle projection updates. The final sync gate keeps actions disabled until T3's `synchronized` marker, and
-the release build passes after that correction. Dock's full taskbar build and interaction probes passed in light and dark modes;
+Validation: the thread-resume work previously passed strict release Clippy and all 54 library tests, including cache
+scoping/corruption/size bounds, atomic record round trips, sequence monotonicity, and run-settle projection updates.
+The final sync gate keeps actions disabled until T3's `synchronized` marker. The cursor-pagination integration is
+formatted and release-built; library tests were not rerun for this slice. Dock's full taskbar build and interaction probes passed in light and dark modes;
 the 2026-10-22 install repeated the build and hover probe, then restarted the service into the private binary.
 `desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
 assembled in `/tmp/cpr-deb-build`. The user-local T3-R app was installed and its live status feed confirmed a connected
-environment and selected provider account; the in-progress thread-cache source update is not installed yet. A live
-quick-panel visual pass and system package installation remain open.
+environment and selected provider account; the in-progress thread-history source update is not installed over the
+running process. A live quick-panel visual pass and system package installation remain open.
 
-Next: finish the thread-resume validation, install through a supported package-manager path, and verify quick/full
-routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation and
-qualify reconnect on a high-latency link before claiming daily-use readiness.
+Next: install the current thread-history build after the active session is safe to restart, verify quick/full routing,
+selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation and qualify
+reconnect on a high-latency link before claiming daily-use readiness.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 
