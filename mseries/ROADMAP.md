@@ -4546,3 +4546,29 @@ all other component/image jobs are skipped. Do not dispatch duplicates. Local
 fresh full build remains separately live in session99907. Follow exact handles
 until terminal and inspect receipts. Snapshot:
 mseries/m4-mini/receipts/2026-10-22-mesa6-hosted-run.json.
+
+## Ethernet board path and latest public-source refresh — 2026-10-22
+
+The exact delivered kernel source and the compiled J773g DTB (SHA256
+0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67)
+now have a traced Ethernet path beyond AQTION configuration. Ethernet aliases
+/soc/pcie@1cb0000000/pci@2,0/ethernet@0,0; port02 is enabled on bus2.
+RID0x200 maps to enabled DART2 at /soc/iommu@492000000, stream1, with mask0xff00.
+The kernel PCIe driver matches the t6020 fallback and programs RID-to-SID entries
+from iommu-map. Atlantic's AQC113 family maps to hw_atl2, including candidate
+PCI ID1d6a:14c0 (AQC113C); this is not an observed owner-controller identity.
+
+The delivered bootloader source includes T8132 PCIe initialization and the ADT
+child target-link-speed override explicitly described for the 10Gb adapter.
+It also has Ethernet-alias MAC fixups. Separately, hw_atl2 obtains its permanent
+MAC from NIC firmware shared memory; the loader's generic MAC hook is not proof
+that this is the Atlantic MAC source. All eight reviewed source files match the
+already delivered/hashed corresponding-source archives. This is source/template
+plumbing, not measured firmware behavior, enumeration, DMA or traffic.
+
+Gravity kernel gravity-m4 remains4fc326f, Mesa main87ac51d and PR1head208d4a4.
+The current Omarchy MX hardware page still excludes M4; its supported-driver
+configuration does not qualify this board. Gravity's alpha page still reports
+HDMI/GPU support and developer-only limitations, without establishing the owner's
+exact10Gb/16GB/macOS27 configuration. No new NIC patch was justified by this
+review. Receipt: mseries/m4-mini/receipts/2026-10-22-ethernet-board-contract-review.json.

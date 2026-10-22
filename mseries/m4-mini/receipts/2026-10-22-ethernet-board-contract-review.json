@@ -1,0 +1,86 @@
+{
+  "observed_at_utc": "2026-10-22T07:26:26.094698+00:00",
+  "scope": "pinned source/compiled DTB Ethernet plumbing; no hardware enumeration, identity or traffic",
+  "source_files": {
+    "kernel/arch/arm64/boot/dts/apple/t8132-j773g.dts": {
+      "sha256": "f6ddc873d7b4493dba0071df0f4e58b8513d30b26dfc4aa240d0b0e6a4dd8540",
+      "matches_delivered_source_archive": true
+    },
+    "kernel/arch/arm64/boot/dts/apple/t8132.dtsi": {
+      "sha256": "9dd2e1a08962dfc7e09551a299412f0058e96cd33f5b049dabb1fb4aff7c7840",
+      "matches_delivered_source_archive": true
+    },
+    "kernel/drivers/pci/controller/pcie-apple.c": {
+      "sha256": "0e093800343e270b981d0cd52fb0b13d52727a865f5e7c9150f0a25a458a59f9",
+      "matches_delivered_source_archive": true
+    },
+    "kernel/drivers/net/ethernet/aquantia/atlantic/aq_pci_func.c": {
+      "sha256": "5c787a8d7e65130b7df67e97fb52aa46797e5abc6e133d7d0fc9c4cce2ef4ee3",
+      "matches_delivered_source_archive": true
+    },
+    "kernel/drivers/net/ethernet/aquantia/atlantic/aq_common.h": {
+      "sha256": "15611f4b753bc82bcb095800b0e7507b4b3e834481ced4f6d875c631fdebb9a6",
+      "matches_delivered_source_archive": true
+    },
+    "kernel/drivers/net/ethernet/aquantia/atlantic/hw_atl2/hw_atl2_utils_fw.c": {
+      "sha256": "f7d72b4da2e080bb7352b9956c0aa4c78f907ce6fd8be367e01433125c50a440",
+      "matches_delivered_source_archive": true
+    },
+    "bootloader/src/kboot.c": {
+      "sha256": "44c26d971d5ed3efbc86149854cf44ffd34ccefe867c0829aab66f0a7bb5154e",
+      "matches_delivered_source_archive": true
+    },
+    "bootloader/src/pcie.c": {
+      "sha256": "5c7d7300a3aa098e3f2ec562ac9b0ac1d58263a1c86fadadedac43aef7c0fb4d",
+      "matches_delivered_source_archive": true
+    }
+  },
+  "dtb_sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+  "compiled_contract": {
+    "ethernet_alias": "/soc/pcie@1cb0000000/pci@2,0/ethernet@0,0",
+    "port_enabled": true,
+    "bus_range": [
+      2,
+      2
+    ],
+    "host_compatible": [
+      "apple,t8132-pcie",
+      "apple,t6020-pcie"
+    ],
+    "iommu_map_mask": "ff00",
+    "ethernet_rid_base": "0x200",
+    "dart_path": "/soc/iommu@492000000",
+    "dart_enabled": true,
+    "stream_id": 1,
+    "rid_count": 1
+  },
+  "source_findings": {
+    "pcie_driver_matches_t6020_fallback": true,
+    "pcie_driver_programs_rid_to_sid_from_iommu_map": true,
+    "atlantic_aqc113c_id": "1d6a:14c0",
+    "atlantic_aqc113_family_uses_hw_atl2": true,
+    "atl2_mac_is_read_from_nic_firmware_shared_buffer": true,
+    "loader_supports_t8132_and_adt_target_link_speed_override": true,
+    "loader_ethernet_alias_mac_fixup_exists": true
+  },
+  "latest_remote_heads": {
+    "kernel": {
+      "refs/heads/gravity-m4": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    "mesa": {
+      "refs/heads/main": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "refs/pull/1/head": "208d4a484459a12c77bf073362613f842288c2e0"
+    }
+  },
+  "primary_sources": [
+    "https://gravitylinux.org/blog/early-alpha-m4-mac-mini/",
+    "https://omarchy-mx-mac.org/hardware/"
+  ],
+  "limitations": [
+    "Controller PCI identity on owner M4 is unknown; AQC113C is a supported candidate, not an observed owner component.",
+    "Source DTS and delivered DTB are pre-firmware templates; no measured ADT, firmware link speed or device enumeration.",
+    "No PCIe link, DART DMA, carrier, 10Gb negotiation, throughput or sustained load tested.",
+    "Omarchy MX current published catalog excludes M4."
+  ],
+  "hardware_validated": false
+}
