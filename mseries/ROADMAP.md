@@ -61,6 +61,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Pinned Aurora source fetch retries — 2026-10-22
+
+The #518 unified72 workflow failed at pinned-source preparation with HTTP 429, before kernel checks/build/package
+inspection. The downloader now applies at most four attempts to HTTP 429/transient 5xx, honors `Retry-After` within a
+30-second cap, and retains checksum verification and fail-closed handling. The 76-test Aurora suite passes using mocked
+responses; no real archive fetch or wip4 build is claimed. #518 remains conflicted with `dev`; rerun its source preparation
+after this retry change is reviewed, then record later build evidence separately.
+
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,

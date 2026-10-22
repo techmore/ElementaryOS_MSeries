@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare, test or build the separate Aurora enhancement candidate; never install."""
 import argparse
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import os
@@ -12,12 +13,52 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
 
 from release import HERE, PINS, asset, extract, sha256, validate_kernel
 
 ENHANCEMENTS = HERE / "enhancements"
 MANIFEST = ENHANCEMENTS / "series.json"
+SOURCE_DOWNLOAD_ATTEMPTS = 4
+MAX_SOURCE_RETRY_DELAY = 30
+
+
+def source_retry_delay(error, attempt):
+    """Return a bounded retry delay, or None when Retry-After exceeds our wait budget."""
+    retry_after = error.headers.get("Retry-After") if error.headers else None
+    if retry_after:
+        try:
+            delay = float(retry_after)
+        except ValueError:
+            try:
+                delay = parsedate_to_datetime(retry_after).timestamp() - time.time()
+            except (OverflowError, TypeError, ValueError):
+                delay = None
+        if delay is not None:
+            delay = max(0.0, delay)
+            return delay if delay <= MAX_SOURCE_RETRY_DELAY else None
+    return min(float(2 ** (attempt + 1)), float(MAX_SOURCE_RETRY_DELAY))
+
+
+def download_pinned_source(url, destination, *, attempts=SOURCE_DOWNLOAD_ATTEMPTS):
+    """Download an immutable source archive with bounded HTTP 429/5xx retries."""
+    if attempts < 1:
+        raise ValueError("source download attempts must be positive")
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=120) as source, Path(destination).open("wb") as target:
+                shutil.copyfileobj(source, target)
+            return
+        except urllib.error.HTTPError as error:
+            if error.code not in {429, 500, 502, 503, 504} or attempt + 1 >= attempts:
+                raise
+            delay = source_retry_delay(error, attempt)
+            if delay is None:
+                raise
+            print(f"Pinned source download returned HTTP {error.code}; retrying in {delay:g}s", flush=True)
+            time.sleep(delay)
 
 
 def run(*args, **kwargs):
@@ -120,8 +161,7 @@ def prepare(cache, output, profile, offline):
             path.parent.mkdir(parents=True, exist_ok=True)
             temporary = path.with_suffix(path.suffix + ".part")
             try:
-                with urllib.request.urlopen(source_pin["url"], timeout=120) as src, temporary.open("wb") as dst:
-                    shutil.copyfileobj(src, dst)
+                download_pinned_source(source_pin["url"], temporary)
                 if sha256(temporary) != source_pin["sha256"]:
                     raise ValueError("unified source checksum mismatch")
                 temporary.replace(path)

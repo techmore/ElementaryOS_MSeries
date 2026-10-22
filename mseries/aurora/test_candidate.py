@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Candidate admission checks: config resolution, input integrity and output isolation."""
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+import urllib.error
 from unittest import mock
 
 import candidate
@@ -97,6 +99,56 @@ class CandidateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "outside the prepared"):
                 candidate.fresh(root / "source/artifacts", outside=root)
             self.assertFalse((root / "source/artifacts").exists())
+
+    def test_pinned_source_download_retries_rate_limit_and_honors_retry_after(self):
+        url = "https://codeload.github.com/example/source.tar.gz"
+        limited = urllib.error.HTTPError(url, 429, "rate limited", {"Retry-After": "0"}, None)
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "source.tar.gz.part"
+            with mock.patch.object(candidate.urllib.request, "urlopen",
+                                   side_effect=[limited, io.BytesIO(b"archive")]) as urlopen, \
+                 mock.patch.object(candidate.time, "sleep") as sleep:
+                candidate.download_pinned_source(url, destination, attempts=2)
+            self.assertEqual(destination.read_bytes(), b"archive")
+            self.assertEqual(urlopen.call_count, 2)
+            sleep.assert_called_once_with(0.0)
+        limited.close()
+
+    def test_source_retry_after_http_date_is_parsed(self):
+        error = urllib.error.HTTPError("https://example.test/source", 503, "unavailable",
+                                       {"Retry-After": "Thu, 01 Jan 1970 00:00:10 GMT"}, None)
+        with mock.patch.object(candidate.time, "time", return_value=0):
+            self.assertEqual(candidate.source_retry_delay(error, 0), 10)
+        error.close()
+
+    def test_pinned_source_download_does_not_retry_permanent_http_errors(self):
+        url = "https://codeload.github.com/example/source.tar.gz"
+        missing = urllib.error.HTTPError(url, 404, "not found", {}, None)
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "source.tar.gz.part"
+            with mock.patch.object(candidate.urllib.request, "urlopen", side_effect=missing) as urlopen, \
+                 mock.patch.object(candidate.time, "sleep") as sleep:
+                with self.assertRaises(urllib.error.HTTPError):
+                    candidate.download_pinned_source(url, destination)
+            urlopen.assert_called_once_with(url, timeout=120)
+            sleep.assert_not_called()
+            self.assertFalse(destination.exists())
+        missing.close()
+
+    def test_pinned_source_download_has_a_bounded_attempt_count(self):
+        url = "https://codeload.github.com/example/source.tar.gz"
+        failures = [urllib.error.HTTPError(url, 503, "unavailable", {}, None) for _ in range(4)]
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "source.tar.gz.part"
+            with mock.patch.object(candidate.urllib.request, "urlopen", side_effect=failures) as urlopen, \
+                 mock.patch.object(candidate.time, "sleep") as sleep:
+                with self.assertRaises(urllib.error.HTTPError):
+                    candidate.download_pinned_source(url, destination)
+            self.assertEqual(urlopen.call_count, candidate.SOURCE_DOWNLOAD_ATTEMPTS)
+            self.assertEqual([call.args for call in sleep.call_args_list], [(2.0,), (4.0,), (8.0,)])
+            self.assertFalse(destination.exists())
+        for error in failures:
+            error.close()
 
 
 if __name__ == "__main__":
