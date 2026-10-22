@@ -1,3 +1,29 @@
+## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
+
+Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
+`lock-enabled` and `lock-delay`. **Installed nowhere, unqualified until the next login.**
+
+- **Root cause of "no keyboard feedback":** the lock screen is gtklock 4.0 (what `org.gnome.ScreenSaver.Lock` / Super+L
+  starts; it looks like a login screen). Frame callbacks were only ever sent to windows, never to `ext-session-lock`
+  surfaces, on both backends, so gtklock drew its first frame and then waited forever: keys reached it and Enter still
+  unlocked, but nothing on screen changed. Lock surfaces now get frame callbacks (`send_lock_surface_frames`). Nested
+  control run with the call disabled: 0 callbacks while typing; with it: 5.
+- **Pointer on the lock screen:** it was not drawn while locked; it is now (the volume/brightness OSD too; no snap preview).
+- **Lock on idle:** when the displays blank and the user has been idle for at least 5 s (gsd-power's idle blank, not a lid
+  or a manual switch-off), the compositor reads `org.gnome.desktop.screensaver lock-enabled` / `lock-delay` and
+  `org.gnome.desktop.lockdown disable-lock-screen`. Enabled: lock at once for delay 0 (the owner's setting), otherwise after
+  `lock-delay` seconds unless input comes first, as GNOME Shell does. It starts the same locker as Super+L.
+  **Off switch:** `Environment=PANTHEON_IDLE_LOCK=off` (a number overrides the delay).
+- **Verified:** strict clippy both ways, 175 tests (new: settings decision incl. lockdown and missing schema); idle probe
+  6/6 now with the real gtklock (`idle-probe/run.sh`): manual blank right after input does not lock, idle blank locks,
+  typing on the woken lock screen gets frame callbacks; activation probe 7/7. Both probes now find the binary in the
+  shared cargo target (`~/.cache/cargo-target`).
+- **Still not addressed:** gtklock looks nothing like elementary (stock theme, no wallpaper); lock before suspend
+  (logind `PrepareForSleep` / `Lock`) is not handled by the compositor.
+- **What to check at the next login:** Super+L, type: dots appear as you type; the pointer is visible; unlock works.
+  Then `gsettings set org.gnome.desktop.session idle-delay 60`, wait ~70 s: screen blanks, a key wakes it to the lock
+  screen. Restore `idle-delay 900`.
+
 ## Factory speaker safety package wiring — 2026-10-21
 
 Added Ubuntu Resolute `speakersafetyd` 1.1.2-4 to the ARM64 Apple Silicon
@@ -209,8 +235,7 @@ the next login**; the running compositor was not restarted.
   0, or any input, redraws in full and the next frame re-enables the CRTC. A session lock requested while blanked is
   confirmed at once (no frame would ever arrive). **Off switch:** drop-in `Environment=PANTHEON_DISABLE_POWER_SAVE=1`.
 - **Expected behaviour with the owner's settings:** `idle-delay` 900 s, so gsd-power blanks after 15 min idle; `idle-dim`
-  is off. Screen lock on idle is **not** added: in GNOME the shell locks, and this compositor does not, so blanking does not lock
-  (`lock-enabled` true / `lock-delay` 0 has no effect yet). Owner decision.
+  is off. Lock on idle was added the next day (entry above).
 - **Verified:** strict clippy (`native-drm`, all targets), 168 tests (new: watch semantics, cap, inhibition clock, power-save
   modes, off switch); new nested probe `pantheon-rust-compositor/idle-probe/run.sh` (private Xvfb + D-Bus, real
   `GnomeDesktop.IdleMonitor`): idle watch fired at 1.51 s for 1.5 s, user-active fired on input, GTK inhibitor held idle at 0
