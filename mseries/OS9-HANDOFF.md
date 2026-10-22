@@ -36,8 +36,15 @@ thin READMEs pointing here; every file moved with `git mv` (`git log --follow`).
   same client calls as before, exercised by the fixture tests); the Podman details window was built in the smoke test, not
   opened on the real container; the Wingpanel indicator is built, not installed; a full guest install and the Wayland
   keyboard path remain as before.
-- **Next.** Decide whether the Python `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console);
-  instance search in the sidebar if the palette is not enough.
+- **CI notes.** The `dev` branch protection requires a check named "Machine Lab build and logic tests (arm64)"; the
+  workflow keeps an alias job of that name (`needs: orchard-app`) until the protection list names "Orchard app build,
+  tests, metadata and Debian package (arm64)" instead. The Claude T3 client job now installs `libgtksourceview-5-dev`
+  (PR #500 added the crate without it). The capability ledger (`docs/capabilities.json`) is pinned to the merge commit
+  so its Orchard and Machine Lab paths resolve. Locally, `/virtio/download-failure` fails when `/tmp` (tmpfs) has under
+  ~2 GiB free, because the download's free-space check fires first; `TMPDIR` on disk passes 12/12.
+- **Next.** Update the `dev` branch protection to the new job name and drop the alias; decide whether the Python
+  `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console); instance search in the sidebar if
+  the palette is not enough.
 ## Public fixes and enhancements audit — 2026-10-21
 
 A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.

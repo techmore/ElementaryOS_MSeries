@@ -190,6 +190,15 @@ jobs:
           sudo apt-get install -y dpkg-dev
           ORCHARD_OUTPUT_DIR="$RUNNER_TEMP/orchard-deb" bash mseries/orchard/build-deb.sh
 
+  # The dev branch protection still requires a status check with Machine Lab's old job name; this
+  # alias satisfies it from the Orchard app job until the protection list names the new job.
+  machine-lab:
+    name: Machine Lab build and logic tests (arm64)
+    runs-on: ubuntu-26.04-arm
+    needs: orchard-app
+    steps:
+      - run: echo "Machine Lab is the Machines section of Orchard; see the Orchard app job."
+
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
     runs-on: ubuntu-26.04-arm
