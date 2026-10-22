@@ -118,6 +118,13 @@ session because `no_new_privileges` prevents `sudo`; the current panel keeps
 its previously loaded module until a privileged package install and later
 login. The exact-commit validation and package workflows are queued.
 
+Commit `2f400251` also invalidates outstanding config reload and scheduled-task
+rotation work when the active RPC disconnects. The 65 release library tests,
+strict release Clippy, formatting, and a release build passed locally. Its
+binary was rebuilt, atomically installed to `~/.local/bin/claude-pantheon-rs`,
+and relaunched as PID 636588; the fresh feed reports `eos` connected with Codex
+selected, no running or pending work. Exact-commit CI is still pending.
+
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
 Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
