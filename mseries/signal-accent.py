@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Recolour Signal Desktop's blue UI accent to the elementary OS accent colour.
+"""Recolour Signal Desktop's blue UI accent to the Pantheon-R accent palette.
 
 Signal has no accent setting: its blue ("ultramarine", #2c6bed and a few tints) is compiled into the
 stylesheets inside resources/app.asar. This rewrites that colour family in place. Every replacement has
 the same byte length, so file offsets stay put and only the per-file integrity hashes in the asar header
 change (recomputed here). Chat-colour and avatar palettes are left alone.
 
-  signal-accent.py                    apply the current system accent (AccountsService, then gsettings)
+  signal-accent.py                    apply the current accent (AccountsService, then gsettings)
   signal-accent.py --accent '#68b723' apply a specific colour (#rrggbb or an elementary accent name)
   signal-accent.py --sync             apply the system accent only when it changed
   signal-accent.py --restore          put the original app.asar back
@@ -28,15 +28,15 @@ import sys
 
 DEFAULT_APPDIR = os.path.expanduser("~/.local/lib/signal-desktop-beta")
 
-# elementary OS accents (Granite palette), indexed like io.elementary.pantheon.AccountsService PrefersAccentColor.
+# Pantheon-R accents, indexed like io.elementary.pantheon.AccountsService PrefersAccentColor.
 ACCENTS = {
     "red": "#c6262e", "orange": "#f37329", "yellow": "#d48e15", "green": "#68b723", "mint": "#28bca3",
-    "blue": "#3689e6", "purple": "#a56de2", "pink": "#de3e80", "brown": "#8a715e", "slate": "#667885",
+    "blue": "#9dbfe3", "purple": "#a56de2", "pink": "#de3e80", "brown": "#8a715e", "slate": "#667885",
 }
 ACCOUNTS_ORDER = [None, "red", "orange", "yellow", "green", "mint", "blue", "purple", "pink", "brown", "slate"]
 GNOME_NAMES = {"teal": "mint", "gray": "slate", "grey": "slate"}
 
-# Signal's ultramarine family -> elementary Blueberry-style ramp around the accent.
+# Signal's ultramarine family -> Pantheon-R ramp around the selected accent.
 # Each entry: Signal colour, lightness it should take relative to the accent (None = exactly the accent).
 REFERENCE = "#2c6bed"
 FAMILY = {
@@ -96,6 +96,7 @@ RAMPS = {
     "#c6262e": ("#ff8c82", "#ed5353", "#a10705"), "#f37329": ("#ffc27d", "#ffa154", "#cc3b02"),
     "#d48e15": ("#fff394", "#ffe16b", "#ad5f00"), "#68b723": ("#d1ff82", "#9bdb4d", "#3a9104"),
     "#28bca3": ("#89ffdd", "#43d6b5", "#0e9a83"), "#3689e6": ("#8cd5ff", "#64baff", "#0d52bf"),
+    "#9dbfe3": ("#bcd3ec", "#a9c8e8", "#7ba2cc"),
     "#a56de2": ("#e4c6fa", "#cd9ef7", "#7239b3"), "#de3e80": ("#fe9ab8", "#f4679d", "#bc245d"),
 }
 # Pale tints: how far the 100 stop is mixed toward white.

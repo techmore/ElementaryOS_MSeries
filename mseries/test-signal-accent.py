@@ -10,6 +10,14 @@ spec.loader.exec_module(accent)
 
 
 class PaletteTests(unittest.TestCase):
+    def test_default_blue_uses_the_pantheon_r_theme_ramp(self):
+        mapping = accent.build_map(accent.ACCENTS["blue"])
+        self.assertEqual(accent.ACCENTS["blue"], "#9dbfe3")
+        self.assertEqual(mapping["#2c6bed"], "#9dbfe3")
+        self.assertEqual(mapping["#3b45fd"], "#9dbfe3")
+        self.assertEqual(mapping["#1851b4"], "#7ba2cc")
+        self.assertEqual(mapping["#6191f3"], "#a9c8e8")
+
     def test_every_system_accent_covers_the_complete_signal_family(self):
         for name, value in accent.ACCENTS.items():
             with self.subTest(accent=name):

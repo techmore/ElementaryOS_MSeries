@@ -57,7 +57,7 @@ fi
 mv -f "$mode_file.tmp" "$mode_file"
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications"
 command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
-# Recolour Signal's blue to the elementary accent. The launcher refreshes this
+# Recolour Signal's blue to the Pantheon-R accent palette. The launcher refreshes this
 # mutable user install at the next open after the system accent changes. Atomic
 # releases stay immutable and retain their upstream colors.
 if [[ $atomic != 1 ]]; then
