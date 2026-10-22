@@ -135,7 +135,7 @@ Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
 supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to
-the Pantheon-R accent palette (system accent by default; `--accent`, `--check`, `--restore`).
+the elementary stylesheet palette (system accent by default; `--accent`, `--check`, `--restore`).
 The installed launcher checks the system accent each time Signal opens and
 reapplies it when needed. If Signal was already running when the preference
 changed, quit and reopen it to see the new colors. The optional `--atomic`
