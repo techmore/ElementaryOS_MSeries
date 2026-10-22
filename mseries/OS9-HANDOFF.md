@@ -32,6 +32,19 @@ and message bubbles use the formatter instead of showing raw ISO strings.
 verify same-day, previous-day and older-date labels on the owner session,
 including timestamps near a local timezone boundary.
 
+## Rust Messages body search parity — 2026-10-22
+
+The Rust conversation search now matches loaded message bodies as well as
+conversation names, recipients and the latest preview, matching the existing
+Python client. It searches only the bounded history BlueFerry returns and does
+not request more history or log query text.
+
+**Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml
+--package mseries-messages`, `cargo check --locked --manifest-path
+rust/Cargo.toml -p mseries-messages`, strict Clippy with warnings denied, and
+`git diff --check` passed. No test suite or GUI interaction was run for this
+change. Next: verify search navigation and clearing on the owner session.
+
 ## Disk Space SDK scaling pass — 2026-10-22
 
 Disk Space now uses SDK text-relative spacing and margins for persistent layout
