@@ -87,14 +87,14 @@ pub fn accent_for(provider: Option<&Provider>, driver: &str) -> String {
 /// A thread has activity the owner has not looked at: updated after the last visit.
 pub fn is_unread(t: &ThreadShell) -> bool {
     let visited = t.rest.get("lastVisitedAt").and_then(|v| v.as_str()).map(iso_to_unix).unwrap_or(0);
-    let latest = t
-        .rest
-        .get("latestRunCompletedAt")
-        .and_then(|v| v.as_str())
-        .map(iso_to_unix)
-        .filter(|&u| u > 0)
-        .unwrap_or_else(|| iso_to_unix(&t.updated_at));
-    latest > visited && t.rest.get("createdBy").and_then(|v| v.as_str()) != Some("system")
+    let completed = t.rest.get("latestRunCompletedAt").and_then(|v| v.as_str()).map(iso_to_unix).unwrap_or(0);
+    if completed > 0 {
+        return completed > visited;
+    }
+    if t.rest.get("createdBy").and_then(|v| v.as_str()) == Some("system") {
+        return false;
+    }
+    iso_to_unix(&t.updated_at) > visited
 }
 
 /// Repository display name provided by T3's resolved repository identity. Generic workspace
@@ -426,5 +426,101 @@ mod tests {
         };
         assert!(is_unread(&t));
         assert_eq!(accent_for(None, "codex"), "#10a37f");
+    }
+
+    #[test]
+    fn imported_system_threads_only_alert_for_new_completed_work() {
+        let imported = ThreadShell {
+            updated_at: "2026-10-22T11:00:00Z".into(),
+            rest: serde_json::json!({"createdBy": "system", "lastVisitedAt": null}),
+            ..Default::default()
+        };
+        assert!(!is_unread(&imported), "old imported activity is not new attention");
+
+        let completed = ThreadShell {
+            rest: serde_json::json!({
+                "createdBy": "system",
+                "lastVisitedAt": null,
+                "latestRunCompletedAt": "2026-10-22T11:30:00Z"
+            }),
+            ..imported
+        };
+        assert!(is_unread(&completed), "new work in an imported thread still reaches the attention view");
+    }
+
+    #[test]
+    fn repository_and_branch_context_is_optional() {
+        let project = Project {
+            title: "Workspace".into(),
+            repository_identity: Some(serde_json::json!({
+                "canonicalKey": "github.com/techmore/example",
+                "displayName": "techmore/example",
+                "owner": "techmore",
+                "name": "example"
+            })),
+            ..Default::default()
+        };
+        let thread = ThreadShell { rest: serde_json::json!({"branch": "feature/sidebar"}), ..Default::default() };
+        assert_eq!(repository_label(&project).as_deref(), Some("techmore/example"));
+        assert_eq!(thread_context_label(&project, &thread).as_deref(), Some("techmore/example · feature/sidebar"));
+
+        let generic = Project { title: "Notes".into(), ..Default::default() };
+        assert_eq!(thread_context_label(&generic, &thread).as_deref(), Some("Branch · feature/sidebar"));
+        assert_eq!(thread_context_label(&generic, &ThreadShell::default()), None);
+    }
+
+    #[test]
+    fn attention_includes_singular_and_plural_runtime_requests() {
+        let singular = ThreadShell {
+            updated_at: "2026-10-22T10:00:00Z".into(),
+            rest: serde_json::json!({
+                "pendingRuntimeRequest": {"createdAt": "2026-10-22T10:20:00Z"},
+                "lastVisitedAt": "2026-10-22T10:10:00Z",
+                "createdBy": "user"
+            }),
+            ..Default::default()
+        };
+        assert_eq!(singular.pending_requests(), 1);
+        assert!(needs_attention(&singular));
+        assert_eq!(attention_timestamp(&singular), iso_to_unix("2026-10-22T10:20:00Z"));
+
+        let plural = ThreadShell {
+            rest: serde_json::json!({
+                "pendingRuntimeRequests": [
+                    {"createdAt": "2026-10-22T10:10:00Z"},
+                    {"createdAt": "2026-10-22T10:30:00Z"}
+                ]
+            }),
+            ..Default::default()
+        };
+        assert_eq!(plural.pending_requests(), 2);
+        assert!(needs_attention(&plural));
+        assert_eq!(attention_timestamp(&plural), iso_to_unix("2026-10-22T10:30:00Z"));
+    }
+
+    #[test]
+    fn failures_need_attention_until_they_are_visited() {
+        let failed = ThreadShell {
+            updated_at: "2026-10-22T10:30:00Z".into(),
+            rest: serde_json::json!({
+                "status": "failed",
+                "lastError": {"message": "provider exited"},
+                "lastVisitedAt": "2026-10-22T10:00:00Z",
+                "createdBy": "user"
+            }),
+            ..Default::default()
+        };
+        assert!(needs_attention(&failed));
+
+        let visited = ThreadShell {
+            rest: serde_json::json!({
+                "status": "failed",
+                "lastError": {"message": "provider exited"},
+                "lastVisitedAt": "2026-10-22T10:30:00Z",
+                "createdBy": "user"
+            }),
+            ..failed.clone()
+        };
+        assert!(!needs_attention(&visited));
     }
 }
