@@ -1,0 +1,15 @@
+{
+  "scope": "disposable GPT/FAT regular-image fixture; not complete factory output",
+  "bundle_sha256": "00be0b4fe11fff44c68247e6484b747ee1b0ac91ce9078b084e8a7e6d235f808",
+  "image_bytes": 100663296,
+  "esp_offset_bytes": 1048576,
+  "esp_bytes": 67108864,
+  "path": "/m1n1/boot.bin",
+  "matching_payload": "PASS: ESP m1n1/boot.bin matches 00be0b4fe11fff44c68247e6484b747ee1b0ac91ce9078b084e8a7e6d235f808 (1516584 bytes; partition offset 1048576)",
+  "corrupted_payload_rejected": true,
+  "temporary_image_removed": true,
+  "block_devices_opened": false,
+  "host_esp_modified": false,
+  "hardware_validated": false,
+  "complete_factory_image_built": false
+}

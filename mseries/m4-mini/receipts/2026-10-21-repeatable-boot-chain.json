@@ -1,0 +1,39 @@
+{
+  "scope": "pinned J773g boot-chain byte assembly and readback only",
+  "format_reference": "GravityLinux/scripts@12418e50125a72749a75917db578db55ea42704c:update-m1n1",
+  "inputs": {
+    "stage1": {
+      "sha256": "69aa13d28160821b78870a883500d744e97d10922b05287121288c41bf607acf",
+      "bytes": 1179648
+    },
+    "stage2": {
+      "sha256": "33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4",
+      "bytes": 1146880
+    },
+    "dtb": {
+      "sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+      "bytes": 60000
+    },
+    "u-boot": {
+      "sha256": "6ccd431a73b85c51cdbbb22ce0532577ab0aaa4f5c54c6093dfef201d5320edb",
+      "bytes": 657256
+    }
+  },
+  "boot_bin_sha256": "00be0b4fe11fff44c68247e6484b747ee1b0ac91ce9078b084e8a7e6d235f808",
+  "boot_bin_bytes": 1516584,
+  "offsets": {
+    "stage2": 0,
+    "j773g_dtb": 1146880,
+    "gzip_uboot": 1206880
+  },
+  "component_readback": "exact stage2/DTB bytes and decompressed U-Boot match",
+  "configuration": "NO_DISPLAY; no appended config overrides",
+  "stage1": "separate artifact; not concatenated or authorized",
+  "source_dtb": "loader fixups still required; not an observed firmware/memory map",
+  "factory_promotion": false,
+  "installer_admission": false,
+  "esp_written": false,
+  "hardware_validated": false,
+  "uboot_build_reference": "2026-10-21-gravity-uboot-wrapper.json",
+  "repeatability_reference": "2026-10-21-uboot-repeatability.json"
+}

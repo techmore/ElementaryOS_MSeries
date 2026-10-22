@@ -1,0 +1,15 @@
+{
+  "scope": "two independent clean native builds in the same toolchain/environment",
+  "commit": "a2f6913694ff26908c16948af3f8372429782263",
+  "archive_sha256": "6adaf60d20f5f53792eefeaf662dbbd481d7d225d5938c80f6379800b685fd6c",
+  "source_date_epoch": 1789776862,
+  "artifacts": {
+    "u-boot-nodtb.bin": "6ccd431a73b85c51cdbbb22ce0532577ab0aaa4f5c54c6093dfef201d5320edb",
+    "u-boot.bin": "6ccd431a73b85c51cdbbb22ce0532577ab0aaa4f5c54c6093dfef201d5320edb",
+    ".config": "e93e0b7cda7efedc1bb76863041a00e08798192ce8723c75377fbce32faea6b7"
+  },
+  "matching_runs": 2,
+  "compiler": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "cross_toolchain_reproducibility": false,
+  "hardware_validated": false
+}

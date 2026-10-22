@@ -26,7 +26,7 @@ def main():
     args = parser.parse_args()
     if args.receipt.exists():
         raise ValueError('new receipt required')
-    expected = json.loads((HERE / 'receipts/2026-10-21-research-boot-chain.json').read_text())['boot_bin_sha256']
+    expected = json.loads((HERE / 'receipts/2026-10-21-repeatable-boot-chain.json').read_text())['boot_bin_sha256']
     if hashlib.sha256(args.bundle.read_bytes()).hexdigest() != expected:
         raise ValueError('verified M4 boot bundle required')
     for command in ['sgdisk', 'mkfs.vfat', 'mmd', 'mcopy', 'sfdisk']:

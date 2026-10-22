@@ -31,7 +31,7 @@ def main():
     if args.output.exists():
         raise ValueError('new output directory required')
     loader = json.loads((HERE / 'receipts/2026-10-21-gravity-bootloader-nodisplay.json').read_text())
-    uboot = json.loads((HERE / 'receipts/2026-10-21-gravity-uboot.json').read_text())
+    uboot = json.loads((HERE / 'receipts/2026-10-21-gravity-uboot-wrapper.json').read_text())
     kernel = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
     inputs = {
         'stage1': (args.bootloader / 'm1n1-stage1.bin', loader['artifacts']['m1n1-stage1.bin']),

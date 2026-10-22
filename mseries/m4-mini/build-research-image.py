@@ -61,7 +61,7 @@ def main():
     for name, expected in inputs_module.SOURCE_ARCHIVES.values():
         if digest(inputs / name) != expected:
             raise ValueError('required corresponding source changed')
-    expected_boot = json.loads((HERE / 'receipts/2026-10-21-research-boot-chain.json').read_text())['boot_bin_sha256']
+    expected_boot = json.loads((HERE / 'receipts/2026-10-21-repeatable-boot-chain.json').read_text())['boot_bin_sha256']
     if digest(args.boot_bundle) != expected_boot:
         raise ValueError('verified J773g boot bundle required')
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()

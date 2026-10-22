@@ -787,3 +787,21 @@ the earlier verified U-Boot bytes; no golden references, ESP or boot settings
 were changed. A separately validated candidate bundle is required before using
 new U-Boot bytes in an image.
 [Wrapper build receipt](receipts/2026-10-21-gravity-uboot-wrapper.json).
+
+### Repeatable U-Boot and updated research boot reference
+
+Two independent clean runs of the new U-Boot wrapper produced identical
+`u-boot.bin`, `u-boot-nodtb.bin` and `.config` with the same compiler/environment.
+This establishes local repeatability only, not cross-toolchain reproducibility.
+[Two-build receipt](receipts/2026-10-21-uboot-repeatability.json).
+
+The research assembler now selects that wrapper-built U-Boot. Its new bundle
+SHA-256 is `00be0b4fe11fff44c68247e6484b747ee1b0ac91ce9078b084e8a7e6d235f808`.
+The M4-only image hash hook and image-driver/ESP-fixture references now select
+this explicit research revision; the rebuilt bytes are staged in this worktree.
+Older manually timed U-Boot/bundle receipts remain historical. Existing
+installer/hardware flags remain false; this is not release promotion or a
+physical deployment. Complete mkosi profile isolation checks pass. The actual
+new bundle also passes disposable GPT/FAT readback and corrupt-file rejection.
+[New bundle](receipts/2026-10-21-repeatable-boot-chain.json),
+[new ESP fixture](receipts/2026-10-21-repeatable-boot-esp.json).

@@ -3899,3 +3899,9 @@ M4 source-pinned U-Boot wrapper passes full native apple_m1 build with source
 timestamp/explicit version suffix. ARM64/Apple/EFI and AArch64 ELF checked;
 .config byte-identical to earlier build. New artifact hashes remain separate;
 existing boot bundle unchanged. Invalid archive rejected before output.
+
+M4 U-Boot wrapper repeatability: two independent clean builds match all binary/
+config hashes within same toolchain. Research bundle now00be0b4f (explicit new
+U-Boot build); assembler, image hash hook, driver and ESP fixture updated together.
+New bundle FAT readback/corruption rejection and mkosi profile isolation pass.
+No physical deployment/installer admission. Previous receipts kept as history.
