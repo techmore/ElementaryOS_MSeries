@@ -278,11 +278,20 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         bool live = application_running && connected && !stale;
         string server = feed.get_string_member_with_default ("server", "");
         string selected_id = feed.get_string_member_with_default ("selectedProviderId", "");
+        string selected_provider = feed.get_string_member_with_default ("selectedProvider", "");
         string updated = feed.get_string_member_with_default (connected ? "updatedAt" : "writtenAt", "");
 
-        account.label = server.length > 0 ? server : "No T3 account";
-        connection.label = live ? "Connected · live status" : server.length > 0
-            ? "Offline · showing last synced status" : "Pair with a T3 server in Settings";
+        string account_name = selected_provider.length > 0 ? selected_provider : server;
+        account.label = account_name.length > 0 ? account_name : "No T3 account";
+        string connection_status;
+        if (live) {
+            connection_status = server.length > 0 ? "Connected to %s · live status".printf (server) : "Connected · live status";
+        } else if (server.length > 0) {
+            connection_status = "Offline · last synced from %s".printf (server);
+        } else {
+            connection_status = "Pair with a T3 server in Settings";
+        }
+        connection.label = connection_status;
         connection.remove_css_class ("connected");
         connection.remove_css_class ("stale");
         connection.add_css_class (live ? "connected" : "stale");

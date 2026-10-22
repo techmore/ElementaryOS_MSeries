@@ -25,6 +25,7 @@ struct Feed {
     stale: bool,
     server: String,
     selected_provider_id: String,
+    selected_provider: String,
     written_at: String,
     updated_at: String,
     running: Vec<Thread>,
@@ -261,15 +262,26 @@ impl QuickPanel {
     }
 
     fn render(&self, feed: Feed) {
-        let has_account = !feed.server.trim().is_empty();
-        self.account.set_text(if has_account { &feed.server } else { "No T3 account" });
-        self.connection.set_text(if feed.connected {
-            "Connected · live status"
+        let account_name =
+            if feed.selected_provider.trim().is_empty() { &feed.server } else { &feed.selected_provider };
+        let has_account = !account_name.trim().is_empty();
+        self.account.set_text(if has_account { account_name } else { "No T3 account" });
+        let connection = if feed.connected {
+            if feed.server.trim().is_empty() {
+                "Connected · live status".to_string()
+            } else {
+                format!("Connected to {} · live status", feed.server)
+            }
         } else if has_account {
-            "Offline · showing last synced status"
+            if feed.server.trim().is_empty() {
+                "Offline · showing last synced status".to_string()
+            } else {
+                format!("Offline · last synced from {}", feed.server)
+            }
         } else {
-            "Pair with a T3 server in Settings"
-        });
+            "Pair with a T3 server in Settings".to_string()
+        };
+        self.connection.set_text(&connection);
         self.connection.remove_css_class("connected");
         self.connection.remove_css_class("stale");
         self.connection.add_css_class(if feed.connected { "connected" } else { "stale" });

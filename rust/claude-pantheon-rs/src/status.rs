@@ -54,6 +54,11 @@ pub fn build(
         .collect();
     let next =
         crate::t3::model::pick_provider(providers).map(|(p, reason)| json!({"provider": p.name(), "reason": reason}));
+    let selected_provider = providers
+        .iter()
+        .find(|provider| provider.instance_id == selected_provider_id)
+        .map(Provider::name)
+        .unwrap_or_default();
     json!({
         "schemaVersion": 1,
         "writtenAt": now,
@@ -62,6 +67,7 @@ pub fn build(
         "stale": !connected,
         "server": label,
         "selectedProviderId": selected_provider_id,
+        "selectedProvider": selected_provider,
         "running": running,
         "pendingPrompts": pending,
         "windows": windows,
@@ -131,7 +137,16 @@ fn preserve_last_known(previous: &Value, disconnected: &Value) -> Value {
 
 fn preserve_last_known_at(previous: &Value, disconnected: &Value, now: &str) -> Value {
     let mut next = disconnected.clone();
-    for key in ["server", "selectedProviderId", "running", "pendingPrompts", "windows", "nextTask", "writtenAt"] {
+    for key in [
+        "server",
+        "selectedProviderId",
+        "selectedProvider",
+        "running",
+        "pendingPrompts",
+        "windows",
+        "nextTask",
+        "writtenAt",
+    ] {
         if let Some(value) = previous.get(key) {
             next[key] = value.clone();
         }
@@ -209,6 +224,7 @@ mod tests {
 
         assert_eq!(v["running"].as_array().unwrap().len(), 1);
         assert_eq!(v["running"][0]["provider"], "ChatGPT Work");
+        assert_eq!(v["selectedProvider"], "ChatGPT Work");
         assert_eq!(v["pendingPrompts"].as_array().unwrap().len(), 1);
     }
 
@@ -220,6 +236,7 @@ mod tests {
             "connected": true,
             "stale": false,
             "server": "workstation",
+            "selectedProvider": "ChatGPT Work",
             "running": [{"id": "thread-1"}],
             "pendingPrompts": [{"id": "thread-2", "count": 1}],
             "windows": [{"provider": "Codex", "usedPercent": 48.0}],
@@ -230,6 +247,7 @@ mod tests {
         assert_eq!(offline["connected"], false);
         assert_eq!(offline["stale"], true);
         assert_eq!(offline["server"], "workstation");
+        assert_eq!(offline["selectedProvider"], "ChatGPT Work");
         assert_eq!(offline["writtenAt"], "2026-10-22T12:00:00Z");
         assert_eq!(offline["updatedAt"], "2026-10-22T12:30:00Z");
         assert_eq!(offline["running"][0]["id"], "thread-1");
