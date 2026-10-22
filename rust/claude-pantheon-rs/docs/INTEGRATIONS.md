@@ -70,6 +70,14 @@ Settings can search T3's ACP Registry or add a local ACP command for execution o
 supported way to register DeepSeek Harness with `dsh --profile acp`, when the paired server has the CLI. That is the
 shipped ACP profile invocation in [DeepSeek Harness's CLI help](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cli-help.md).
 DeepSeek's prefix cache is server-side; retain stable prefixes and report cache-hit data only when T3 returns it.
+The official [DeepSeek Harness session cache](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-projection-cache/README.md)
+offers a separate client-history lesson: the event log stays authoritative, versioned projection checkpoints may lag but never
+lead committed events, and turn completion is a mandatory checkpoint. Its [session query backend](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/session-query-sqlite/README.md)
+keeps full-text search in a separate derived SQLite FTS5 index, reconciles new log revisions in order, bounds read and result
+pages, and invalidates cursors when the indexed corpus changes. T3-R follows the same log/cursor ownership rule in its atomic
+projection-plus-sequence record; a separate SQLite search index is a later option if cross-thread history search needs it.
+These host caches are distinct from DeepSeek's inference KV cache (for example, [FlashMLA](https://github.com/deepseek-ai/FlashMLA)),
+which is inside the model-serving stack and cannot be enabled by this client.
 
 Settled thread views now use a separate environment/thread-scoped cache record containing the bounded projection,
 history marker and T3 `snapshotSequence`. The record is versioned, atomically replaced, mode `0600`, capped at 8 MiB
