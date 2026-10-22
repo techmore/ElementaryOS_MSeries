@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "audited_on": "2026-10-21",
-  "source_revision": "6f716799fcbef277ac24031bf9242e20f5a2415f",
+  "source_revision": "d10f7eb7a948e925ed3834a3373b60f232304998",
   "title": "Fixes & enhancements",
   "entries": [
     {
@@ -1209,20 +1209,22 @@
       "stage": "Limited qualification",
       "provided": "Provides native Incus instance/resource management, conflict-aware edits, snapshots/backups, logs, panel controls and optional model endpoint/sandbox UI. A merged Podman page manages existing rootless containers/images/volumes through JSON CLI calls, with details/live counters and guarded removal.",
       "verification": "The upstream-parity report classifies 131 capability rows with explicit adaptations/incompatibilities; native/private runtime and soak evidence is retained. Podman additions are separately documented and do not change the Incus parity count.",
-      "limitation": "This is not identical upstream Orchard or a container engine. Incus 6.0.5’s OCI limitations remain; Podman uses the separately installed engine. Sandbox settings are not a security guarantee. Unified Machine Lab/Orchard PR #491 is outside this snapshot.",
-      "next_step": "Complete remaining manual Incus/Podman operations and absence/error/counter checks; keep the unification candidate separate.",
+      "limitation": "This is not identical upstream Orchard or a container engine. Incus 6.0.5’s OCI limitations remain; Podman uses the separately installed engine. Sandbox settings are not a security guarantee. Machine Lab and Orchard for Incus are one app since PR #491 (`mseries/orchard`); the instance list’s search/filter/sort and bulk actions were not carried over.",
+      "next_step": "Complete remaining manual Incus/Podman operations and absence/error/counter checks in the merged app.",
       "priority": "P2",
       "delivery": "Optional native client for an existing Incus daemon",
       "source": [
-        "mseries/orchard-incus-native/src",
-        "mseries/orchard-incus-native/NOTICE.md"
+        "mseries/orchard/src",
+        "mseries/orchard/NOTICE.md"
       ],
       "checks": [
-        "mseries/orchard-incus-native/tests"
+        "mseries/orchard/tests"
       ],
       "evidence": [
-        "mseries/orchard-incus-native/README.md",
-        "mseries/orchard-incus-native/docs/UPSTREAM-PARITY.md",
+        "mseries/orchard/README.md",
+        "mseries/orchard/docs/ORCHARD-FOR-INCUS-README.md",
+        "mseries/orchard/docs/UPSTREAM-PARITY.md",
+        "mseries/orchard/docs/PERFORMANCE.md",
         "docs/orchard-incus.html"
       ]
     },
@@ -1233,22 +1235,23 @@
       "kind": "Enhancement",
       "origin": "Custom implementation",
       "stage": "Limited qualification",
-      "provided": "Adds a QEMU/KVM manager, VM inventory/lifecycle, QMP pause/resume and display, image/snapshot support, optional Windows driver media and Incus views.",
+      "provided": "Adds a QEMU/KVM manager (the Machines section of Orchard since PR #491), VM inventory/lifecycle, QMP pause/resume and display, image/snapshot support and optional Windows driver media.",
       "verification": "The README records headless-QEMU pause/resume and GTK Broadway display/input checks. Separate VM tools retain elementary/Omarchy boot observations.",
       "limitation": "A complete automatic new guest install, native Wayland keyboard path and unattended Windows setup are not all qualified. Experimental macOS collection is not a supported Linux macOS guest.",
       "next_step": "Complete one fresh guest install end to end and qualify native display/input and shutdown recovery.",
       "priority": "P2",
       "delivery": "Optional native manager and VM CLI",
       "source": [
-        "mseries/machine-lab/src",
+        "mseries/orchard/src",
         "mseries/vms/mseries-vm"
       ],
       "checks": [
-        "mseries/machine-lab/tests",
+        "mseries/orchard/tests",
         "mseries/vms/test-mseries-vm.sh"
       ],
       "evidence": [
-        "mseries/machine-lab/README.md",
+        "mseries/orchard/README.md",
+        "mseries/orchard/docs/USER-GUIDE.md",
         "mseries/vms/README.md"
       ]
     },
