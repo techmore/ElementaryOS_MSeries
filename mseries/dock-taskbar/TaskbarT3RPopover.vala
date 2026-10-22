@@ -282,7 +282,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         string selected_provider = feed.get_string_member_with_default ("selectedProvider", "");
         string updated = feed.get_string_member_with_default (connected ? "updatedAt" : "writtenAt", "");
 
-        string account_name = selected_provider.length > 0 ? selected_provider : selected_id;
+        string account_name = selected_id.length > 0
+            ? selected_provider.length > 0 ? selected_provider : selected_id
+            : "";
         account.label = account_name.length > 0 ? account_name : "No provider selected";
         string connection_status;
         if (live) {

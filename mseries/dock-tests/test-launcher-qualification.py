@@ -152,6 +152,7 @@ def inside(binary, output, theme):
         temporary.replace(status_file)
         waitfor(lambda: state()['t3_account'] == 'codex')
         assert state()['t3_account'] != 'fixture-eos'
+        feed['selectedProvider'] = 'ChatGPT Work'
         feed.pop('selectedProviderId', None)
         temporary.write_text(json.dumps(feed))
         temporary.replace(status_file)
