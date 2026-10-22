@@ -10,7 +10,7 @@ index 8efd72d..0e7d3a6 100644
 +.taskbar-codexbar-button { padding: 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
 +.taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
 +/* The readout size follows the dock's icon size (TaskbarRepoBar.vala), so it changes with the mode and text step. */
-+.taskbar-repobar-popup { font-size: 1.4em; }
++.taskbar-repobar-popup { font-size: 1.25em; }
  .taskbar-codexbar-separator { opacity: 0.35; }
  
  /* Windows 11 Start appearance, owner requested 2026-10-20.

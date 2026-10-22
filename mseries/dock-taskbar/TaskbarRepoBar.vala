@@ -94,7 +94,7 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         indicator.opened ();
         popup.popup ();
     }
-    /* The readout is two stacked rows, so its text is half the icon size in points (48 px icons -> 24pt, 72 px -> 36pt)
+    /* The readout is two stacked rows, so its text is 11/24 of the icon size in points (48 px icons -> 22pt, 72 px -> 33pt)
      * and fits the bar at every size-system step. Coalesced so a mode change resizes everything in one frame. */
     private void queue_scale () {
         if (scale_idle != 0) return;
@@ -108,7 +108,7 @@ public class Dock.TaskbarRepoBar : Gtk.Box {
         var icon_size = ItemManager.get_icon_size ();
         if (icon_size == applied_icon_size) return;
         applied_icon_size = icon_size;
-        var points = icon_size / 2;
+        var points = (int) Math.round (icon_size * 11 / 24.0);
         scale_style.load_from_string (".taskbar-repobar-button .seg-value, .taskbar-repobar-button .seg-alert { font-size: %dpt; }".printf (points));
         Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), scale_style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         enlarge_marks (readout, icon_size / 48.0);
