@@ -10989,3 +10989,15 @@ aliasing, cancellation and full g16-enabled compilation still require review.
 All modified test source files were restored. Full image replay 39714779495
 uses source 0b2afea8 and the reviewed baseline r2 components; it is separate
 from initialization-fixed r3 kernel build 39709872273.
+
+Six-case NoDevice retention diagnostic: completion during the timeout callback
+and unfinished-job teardown/late parent signalling both pass, along with the
+previous four cases, on generic 2-vCPU ARM64 QEMU. See
+`mseries/m4-mini/receipts/2026-10-21-scheduler-nodevice-boundaries.json`.
+An unpromoted production-API candidate is staged in `gravity/experimental`: a
+default-false JobImpl opt-in enables retention specifically for M4 SubmissionJob.
+Actual Rust core, M4 driver and C scheduler object compilation is running in a
+separate local source/output tree. No installed kernel or normal build manifest
+is changed by this candidate; allocation-owner and callback-aliasing review
+remain open. Image replay 39714779495 has passed the fixture/input steps and
+is executing the full mkosi graph. Kernel r3 run 39709872273 is still compiling.

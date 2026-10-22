@@ -34,3 +34,9 @@ after the normal test patch (do not also apply nodevice-diagnostic.patch).
 It adapts Aurora 0f89327 C retention and opts the test Rust backend in. Four
 QEMU cases pass; production ownership/aliasing review and full GPU build remain
 open. Neither diagnostic is selected by a build manifest.
+
+`nodevice-retention-boundaries.patch` supersedes the four-case diagnostic as an
+optional combined experiment after the normal test patch. It adds completion
+inside the timeout callback and unfinished-job teardown followed by a late
+parent signal. All six cases pass on 2-vCPU generic ARM64 QEMU. The test source
+was restored. This does not prove mutable callback aliasing or allocation lifetime.

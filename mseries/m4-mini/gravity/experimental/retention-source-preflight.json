@@ -1,0 +1,12 @@
+{
+  "source": "GravityLinux/linux@4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "scope": "unpromoted M4 backend opt-in candidate; compilation pending",
+  "patch_sha256": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b",
+  "resulting_files": {
+    "drivers/gpu/drm/scheduler/sched_main.c": "5b66ccc25769f6adbff3659644081cc42c478e369a68b2028cd433dd1e4e6701",
+    "include/drm/gpu_scheduler.h": "60f2106b322a1b7c25e085e84b9426d7bbde9f25ab3c94d70d1bc5f3d5ddc596",
+    "rust/kernel/drm/sched.rs": "630def6fec55f4ac2626c5a7ce80b42c957cd0f016824279dc7c70359a0d3c6f",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "d1dae5065a076e4efc1be5db0e0413b22673d6b35043f11dfeb9328b3d6df259"
+  },
+  "hardware_validated": false
+}

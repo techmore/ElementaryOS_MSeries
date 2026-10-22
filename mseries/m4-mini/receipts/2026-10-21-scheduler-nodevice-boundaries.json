@@ -1,0 +1,75 @@
+{
+  "scope": "experimental retention with completion during timeout and unfinished teardown; generic ARM64 QEMU, not M4 GPU",
+  "exit": 0,
+  "sources_restored": true,
+  "patch_sha256": "25fb9733b347973fe5c3e3586acb7a34ed804cd356a9b773b159c6f825b0abdd",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "nodevice_completion_during_timeout_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_unfinished_job_is_reachable_at_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 6,
+          "passed": 6,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false,
+  "aliasing_review_complete": false,
+  "allocation_lifetime_review_complete": false
+}
