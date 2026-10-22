@@ -45,10 +45,17 @@ class Popups:
                 background-color: rgba(255, 255, 255, 0.12); box-shadow: none;
                 text-shadow: none; border-color: rgba(32, 36, 42, 0.3); }
             .mseries-notification button:hover { background-color: rgba(255,255,255,0.25); }
-            .mseries-notification .notification-body,
-            .mseries-notification .notification-close { background: none; border: none;
+            .mseries-notification .notification-body { background: none; border: none;
                 padding: 0; box-shadow: none; }
-            .mseries-notification .notification-close { min-height: 18px; min-width: 18px; }
+            .mseries-notification .traffic { min-height: 12px; min-width: 12px; padding: 0;
+                border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.2); }
+            .mseries-notification .traffic label { color: transparent; font-size: 9px;
+                font-weight: 800; }
+            .mseries-notification .traffic-lights:hover .traffic label { color: rgba(0, 0, 0, 0.6); }
+            .mseries-notification .traffic.close { background-color: #ff5f57; }
+            .mseries-notification .traffic.close:hover { background-color: #ff453a; }
+            .mseries-notification .traffic.minimize { background-color: #febc2e; }
+            .mseries-notification .traffic.minimize:hover { background-color: #f5ad0a; }
             .mseries-notification .notification-title { font-weight: bold; }
         ''')
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css,
@@ -172,20 +179,29 @@ class Popups:
         box.set_margin_start(0)
         box.set_margin_end(0)
         header = Gtk.Box(spacing=8)
-        header.set_margin_start(8)
+        header.set_margin_start(10)
         header.set_margin_end(6)
         header.set_margin_top(4)
         box.pack_start(header, False, False, 0)
+        lights = Gtk.Box(spacing=7)
+        lights.get_style_context().add_class('traffic-lights')
+        lights.set_valign(Gtk.Align.CENTER)
+        for kind, glyph, name, reason in (('close', '\u00d7', 'Dismiss notification', 2),
+                                          ('minimize', '\u2212', 'Minimize notification', 4)):
+            light = Gtk.Button()
+            light.add(Gtk.Label(label=glyph))
+            light.set_relief(Gtk.ReliefStyle.NONE)
+            light.set_can_focus(False)
+            light.get_style_context().add_class('traffic')
+            light.get_style_context().add_class(kind)
+            light.set_tooltip_text(name)
+            light.get_accessible().set_name(name)
+            light.connect('clicked', lambda _b, r=reason: self.store.close(notice.id, r))
+            lights.pack_start(light, False, False, 0)
+        header.pack_start(lights, False, False, 0)
         label = Gtk.Label(label=notice.app or 'Notification', xalign=0)
         label.set_ellipsize(Pango.EllipsizeMode.END)
         header.pack_start(label, True, True, 0)
-        close = Gtk.Button.new_from_icon_name('window-close-symbolic', Gtk.IconSize.MENU)
-        close.set_relief(Gtk.ReliefStyle.NONE)
-        close.get_style_context().add_class('notification-close')
-        close.set_tooltip_text('Dismiss notification')
-        close.get_accessible().set_name('Dismiss notification')
-        close.connect('clicked', lambda *_a: self.store.close(notice.id, 2))
-        header.pack_end(close, False, False, 0)
         row = Gtk.Box(spacing=8)
         row.set_margin_start(8)
         row.set_margin_end(8)
