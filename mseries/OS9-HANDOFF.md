@@ -10796,6 +10796,11 @@ when the photo revision changes. It does not change the opt-in or write photos
 to disk. ARM64 package CI passes. These are source/build receipts; live UI,
 private GUI and iPhone delivery still need acceptance.
 
+Imported Apple pins remain blocked on BlueFerry exposing a stable opaque
+per-phone profile identifier through its supported status contract. The Python
+client derives the keyring scope from BlueFerry's private configuration; the
+Rust app will wait for the public service field instead of reading that file.
+
 Signal remains on the signed official client. The Rust app needs an
 upstream-supported API/integration and security boundary before replacing it;
 libsignal says external client use is unsupported. Do not inspect Signal's

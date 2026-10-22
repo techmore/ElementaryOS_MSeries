@@ -76,7 +76,12 @@ The project-wide inventory, scaling policy and staged migration order are in
 [Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
 
 Messages is still an optional API v2 prototype beside the qualified Python
-client; feature parity and owner phone acceptance remain open. Torrential is
+client; its typed BlueFerry D-Bus client and response models now live in the
+shared SDK, with opt-in contact photos decoded to bounded in-memory avatars.
+Imported Apple pins need an opaque per-phone identifier in BlueFerry's public
+status API before the Rust client can scope keyring data without reading
+service configuration. Feature parity and owner phone acceptance remain open.
+Torrential is
 already Rust/GTK4/Granite and now consumes the SDK from its private `mseries-native`
 branch; continue its UI/accessibility migration and keep it private until its
 license permits redistribution. Orchard and the other Vala/Python apps need
