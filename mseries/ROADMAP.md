@@ -3871,3 +3871,8 @@ and verifies its hash before repart. Binary rebuilt/staged locally and ignored
 by Git; fresh image checkouts must explicitly stage it or fail. Profile isolation
 and valid/corrupt/missing/symlink hook cases pass. Full-image ESP readback and
 stage1/native handoff remain unverified; installer admission remains false.
+
+M4 boot bundle placed/read back successfully in disposable 96 MiB GPT/FAT
+fixture via existing ESP verifier; deliberately corrupted payload rejected.
+Temporary image removed, tools extracted work-locally, no real disks/mounts.
+This is fixture mechanics only; actual factory ESP/EFI/native boot still pending.

@@ -670,3 +670,19 @@ all four cases: verified bytes accepted; corrupted, missing and symlinked inputs
 rejected. This is profile/hook validation, not complete factory image assembly,
 ESP readback or authorized stage-1/native boot. The installer remains unsupported.
 [Overlay receipt](receipts/2026-10-21-image-boot-overlay.json).
+
+### Disposable GPT/FAT boot-file readback
+
+`check-boot-esp-fixture.py --bundle VERIFIED_BOOT_BIN --receipt NEW_JSON`
+creates only a temporary 96 MiB regular image with a 64 MiB FAT32 ESP. It
+places the verified M4 bundle at `/m1n1/boot.bin`, then uses the existing ESP
+readback verifier to locate the GPT ESP and check the extracted file hash.
+A deliberately corrupted replacement must fail the same verifier. Both cases
+pass; the temporary image is removed. No loop device, mount, real disk or boot
+authorization is involved. Required tools are `sgdisk`, `mkfs.vfat`, `mmd`,
+`mcopy`, and `sfdisk`; this run extracted mtools/fdisk work-locally without
+installing packages on the host.
+
+This verifies FAT/GPT mechanics with the actual bundle, not full mkosi output,
+EFI executable discovery, firmware handoff or native boot. Those gates remain
+open. [Fixture receipt](receipts/2026-10-21-boot-esp-fixture.json).
