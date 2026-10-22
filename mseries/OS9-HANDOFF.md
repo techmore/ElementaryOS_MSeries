@@ -10934,3 +10934,8 @@ Scheduler follow-up: source evidence identifies older job-allocation lifetime,
 whole-job mutable timeout aliasing and M4 NoDevice retention differences. These
 need a matched C/Rust/cancellation review and adversarial tests; r3 initialization
 build does not close them. Retained source hashes and upstream references.
+
+Separate scheduler KUnit sources prepared; native session17232 compiling in
+work/m4-scheduler-kunit. Three adapted upstream cases; TCG/no network/storage.
+Test patch is excluded from production kernel manifest. No test result yet;
+follow live session rather than restarting. Both hosted builds also remain active.

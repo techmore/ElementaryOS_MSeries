@@ -1,0 +1,31 @@
+{
+  "scope": "separate KUnit source preparation and native build dispatch; no test result yet",
+  "source_preparation": {
+    "scope": "KUnit test-source preparation only; no compile/run/hardware result",
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "test_patches": {
+      "0001-scheduler-kunit.patch": "73ce33c6a683f1e35c0ccf6776a33305f0c8fda6e7ac0372aadeb7bf798b0bdc"
+    },
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4"
+    },
+    "scheduler_test_source_sha256": "be2eeb714d04df1fbadfe61f39521653511491fdec3257aa1129a23a558177d7",
+    "normal_kernel_package_modified": false,
+    "hardware_validated": false
+  },
+  "current_kunit_config_sha256": "128c528c0bf285fe32b12aa3e59a11944c4aadd1e19348cb8e1140e5e033eaae",
+  "test_patch_sha256": "73ce33c6a683f1e35c0ccf6776a33305f0c8fda6e7ac0372aadeb7bf798b0bdc",
+  "test_count_intended": 3,
+  "source_origin": "aurora-silicon/linux@0d1871c3cfde9cc45b8bc244dde4775dbf4e05c6",
+  "test_api_adaptation": "older JobImpl signatures, test-only NO_HANG status, constructor storage injection",
+  "native_build_state": "confirmed live session17232; 53 object files observed",
+  "initial_failures": [
+    "unknown FAUX_BUS/hidden DRM_SCHED configuration corrected with DRM_SCHED_KUNIT_TEST",
+    "rust-src not installed in rustup sysroot; matched work-local rust-src selected"
+  ],
+  "qemu_mode": "ARM64 TCG, network disabled, no storage device",
+  "production_package_test_patch_applied": false,
+  "kunit_passed": false,
+  "hardware_validated": false
+}

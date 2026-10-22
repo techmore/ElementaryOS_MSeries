@@ -981,3 +981,20 @@ cannot close deferred dependency teardown, aliasing, late completion and
 NoDevice retention gates. No scheduler-wide safety qualification is claimed.
 The exact source hashes, upstream commit references and required follow-up
 cases are retained in the [review receipt](receipts/2026-10-21-scheduler-lifetime-review.json).
+
+### Separate kernel scheduler KUnit candidate
+
+The older kernel provides Rust KUnit and faux-device support. A test-only patch
+now adapts Aurora's three poisoned-storage/delayed-fence cases to its older
+JobImpl API and exposes constructor allocation injection. This test patch is
+kept outside the normal kernel package manifest. It does not change production
+M4 timeout behavior or imply that the remaining lifetime protocol is ported.
+
+`prepare-scheduler-kunit.py` verifies/extracts the pinned kernel, applies the
+reviewed production patches and then the separately hashed test patch into
+a new source tree. The ARM64 KUnit runner is compiling it natively with
+Clang 21 and matching work-local Rust 1.99 sources; QEMU uses TCG with networking
+disabled and no storage device. No TAP/test result exists yet. Initial Kconfig
+and rust-src location setup failures are retained. Source preparation and a
+live compile are not scheduler or hardware test passes.
+[Preparation record](receipts/2026-10-21-scheduler-kunit-preparation.json).
