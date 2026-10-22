@@ -843,3 +843,5 @@ The FAT fixture can consume the resulting trusted candidate assembly receipt.
 Local fresh-receipt assembly/readback/corruption checks pass; a wrong-source
 receipt is rejected before output. No fresh candidate is a factory promotion.
 [Failure, component records and corrective checks](receipts/2026-10-21-hosted-boot-failure-1.json).
+
+Corrected boot-chain run [39706878433](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706878433) dispatched at `5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c`. Result pending. [Dispatch snapshot](receipts/2026-10-21-hosted-boot-retry-2.json).

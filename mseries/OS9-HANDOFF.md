@@ -10891,3 +10891,6 @@ M4 boot39706164509 compiled components then hit raw HTTP429. Fixed to pinned
 full-archive DT capture (same DTB hash), retaining corresponding source. Fresh
 paired boot receipts enforce source/config plus byte hashes across environments;
 default golden mode retained. Local assembly/FAT and wrong-source rejection pass.
+
+M4 corrected boot replay39706878433 dispatched at5527c5d5. Mesa success retained;
+original kernel39698975678 active. No complete image or native qualification.

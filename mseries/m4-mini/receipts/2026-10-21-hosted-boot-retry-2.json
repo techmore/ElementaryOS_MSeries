@@ -1,0 +1,9 @@
+{
+  "run_id": 39706878433,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39706878433",
+  "source_head": "5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c",
+  "status_at_capture": "queued",
+  "scope": "corrected hosted boot-chain replay; pinned archive capture and explicit fresh component receipts",
+  "hardware_validated": false,
+  "factory_promotion": false
+}
