@@ -42,7 +42,7 @@ pub fn read_framebuffer<R: ExportMem>(
     if TextureMapping::format(&mapping) != Fourcc::Abgr8888 || mapping.size() != size {
         return Err("Screenshot renderer returned an unexpected pixel format or size".into());
     }
-    let bottom_up = !mapping.flipped();
+    let bottom_up = mapping.flipped();
     let bytes = renderer
         .map_texture(&mapping)
         .map_err(|error| format!("Could not map screenshot pixels: {error}"))?;
