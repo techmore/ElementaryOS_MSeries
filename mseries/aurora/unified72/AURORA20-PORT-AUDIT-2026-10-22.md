@@ -27,6 +27,6 @@ GitHub state was read directly on 2026-10-22: #158 is still open at the pinned s
 - **Potentially generic:** udmabuf/system heap support and optional SMC gauge discovery. These add no claimed performance or battery-life improvement.
 - **Other hardware:** M3 Air thermal and J613/T8122 camera support are not J314S features. The thermal policy is present but inactive while M3 startup is refused; the camera patches remain firmware-scoped and require their stated companion support.
 - **Optional experiment:** eGPU modules are isolated to a separately named profile/package. It is not enabled in the owner’s normal wip4 profile.
-- **Still open:** ARM64 kernel build, KUnit for the DCP route logic, an attended wip4 boot, WD22TB4 HDMI retry/recovery, camera/SMC hardware checks on matching devices, eGPU hardware checks, suspend/recovery and 64-fix semantic parity.
+- **Passed in CI:** ARM64 candidate, normal wip4 and opt-in eGPU Image/modules/DTB builds and package inspection ([run 39854228647](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647)). **Still open:** DCP KUnit, an attended wip4 boot, WD22TB4 HDMI retry/recovery, camera/SMC hardware checks on matching devices, eGPU hardware checks, suspend/recovery and 64-fix semantic parity.
 
 The matching DT/m1n1, initramfs, boot entry and rollback have not been reviewed or staged for this revision. The existing wip3 trial and `.20` default are untouched.
