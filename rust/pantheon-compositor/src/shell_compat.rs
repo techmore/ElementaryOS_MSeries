@@ -26,6 +26,8 @@ const SCREENSAVER_INTERFACE: &str = "org.gnome.ScreenSaver";
 enum ShellEvent {
     AcceleratorActivated(u32),
     ActiveChanged(bool),
+    /// Start the configured locker, as `org.gnome.ScreenSaver.Lock` does.
+    Lock,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -143,6 +145,11 @@ impl ShellCompatHandle {
         true
     }
 
+    /// Lock the session with the configured locker (idle lock).
+    pub fn request_lock(&self) {
+        let _ = self.events.send(ShellEvent::Lock);
+    }
+
     pub fn set_locked(&self, locked: bool) {
         let previous = self.active.swap(locked, Ordering::AcqRel);
         if previous == locked {
@@ -161,6 +168,7 @@ struct ShellKeyGrabber {
     next_id: u32,
 }
 
+#[derive(Clone)]
 struct ScreenSaverCompat {
     wayland_display: OsString,
     lock_command: OsString,
@@ -367,16 +375,18 @@ fn serve_shell_compat(context: ShellCompatContext) {
     let lock_command =
         std::env::var_os("PANTHEON_LOCK_COMMAND").unwrap_or_else(|| OsString::from("gtklock"));
     let lock_running = Arc::new(Mutex::new(false));
-    if let Err(error) = connection.object_server().at(
-        SCREENSAVER_OBJECT_PATH,
-        ScreenSaverCompat {
-            wayland_display,
-            lock_command,
-            active,
-            active_since,
-            lock_running,
-        },
-    ) {
+    let screensaver = ScreenSaverCompat {
+        wayland_display,
+        lock_command,
+        active,
+        active_since,
+        lock_running,
+    };
+    let idle_locker = screensaver.clone();
+    if let Err(error) = connection
+        .object_server()
+        .at(SCREENSAVER_OBJECT_PATH, screensaver)
+    {
         tracing::warn!(%error, "cannot register the ScreenSaver compatibility interface");
         return;
     }
@@ -398,6 +408,11 @@ fn serve_shell_compat(context: ShellCompatContext) {
                     &(action, parameters),
                 ) {
                     tracing::warn!(%error, "could not emit AcceleratorActivated");
+                }
+            }
+            Ok(ShellEvent::Lock) => {
+                if let Err(error) = idle_locker.lock() {
+                    tracing::warn!(%error, "could not start the session locker");
                 }
             }
             Ok(ShellEvent::ActiveChanged(active)) => {

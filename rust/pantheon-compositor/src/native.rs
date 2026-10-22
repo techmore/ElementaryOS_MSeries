@@ -2299,6 +2299,9 @@ fn update_primary_scanout_outputs(
 fn send_frame_callbacks(state: &PantheonCompositor, output: &Output) {
     use smithay::wayland::compositor::SurfaceAttributes;
     let time = state.start_time.elapsed();
+    // The lock screen is not a window: without this it draws one frame and
+    // then never again (typing on it showed nothing).
+    state.send_lock_surface_frames(output, time);
     if legacy_frame_callbacks() {
         for window in state.gesture_frame_windows() {
             window.send_frame(output, time, Some(Duration::ZERO), |_, _| {
