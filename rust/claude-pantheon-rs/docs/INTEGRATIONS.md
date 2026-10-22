@@ -75,7 +75,9 @@ Settled thread views now use a separate environment/thread-scoped cache record c
 history marker and T3 `snapshotSequence`. The record is versioned, atomically replaced, mode `0600`, capped at 8 MiB
 per thread and 64 MiB / 32 entries per environment. Active turns remain in memory until they settle; reopening renders
 the cached view and resumes with `afterSequence`, ignores duplicate events, and blocks live actions until the server's
-completion marker. Corrupt or mismatched records are discarded and explicit environment removal/unpair clears them.
+completion marker. Unchanged sequence/cursor/revision markers skip redundant full-record writes; projection or history
+changes still replace the paired cache record. Corrupt or mismatched records are discarded and explicit environment
+removal/unpair clears them.
 
 The cache write-regression research remains relevant: this client avoids full serialization on each streamed update,
 but it has not yet been profiled against a very large live conversation or verified on a poor network. Tracked in
