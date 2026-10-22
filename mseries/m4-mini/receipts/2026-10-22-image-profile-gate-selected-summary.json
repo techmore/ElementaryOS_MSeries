@@ -1,0 +1,40 @@
+{
+  "scope": "full M4 mkosi graph summary",
+  "source_commit": "9b4a4d91b8f4a619edbad725035ea1ee7785df40",
+  "driver_sha256": "151005de486f00954197912544d764a1eb7e3cb1a92c86678a043edaab0ab70c",
+  "image_version": "20261022074000",
+  "images": [
+    "apple-silicon",
+    "base",
+    "default-initrd",
+    "driver-nvidia",
+    "driver-nvidia-addon",
+    "ext-sdk",
+    "ext-virt",
+    "liveiso",
+    "main",
+    "modules-db",
+    "sysupdate"
+  ],
+  "commands": [],
+  "candidate_package_versions": {
+    "kernel": "7.1.13+elementary.m4.gravity1-5",
+    "mesa": "26.3.0~devel+gravity.87ac51d-4",
+    "policy": "20261021-2"
+  },
+  "candidate_package_hashes": {
+    "kernel": "522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628",
+    "mesa": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "policy": "1d526e82f1f9504f7ae4996c832855eecbc8957b8dea89d586c57f421d0350a0"
+  },
+  "boot_bundle_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+  "candidate_boot_hash_patch_applied_in_clone": true,
+  "candidate_hash_patch_applied_in_clone": true,
+  "summary_only": true,
+  "execution_identity": "mapped namespace",
+  "mkosi_build_passed": false,
+  "iso_assembled": false,
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false
+}

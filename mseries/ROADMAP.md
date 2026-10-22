@@ -4611,3 +4611,10 @@ Hosted run39739936855 remains live; await that exact artifact and independent
 validation before selecting Mesa6 and updating the profile coherently. Full
 image/ISO, EGL import/YUV/synchronization, kernel worker unload and native owner
 Mac/Recovery dual-boot gates remain open.
+
+The profile-version guard's actual positive path also passes: freshly prepared
+selected R5/Mesa4/policy inputs resolve all eleven images with the current driver
+at9b4a4d91. The summary receipt explicitly records all three package versions and
+hashes. This is summary-only; no new raw/ISO or Mesa6 image is claimed. Retained
+mkosi section-deprecation warnings are unchanged and did not prevent resolution.
+Receipt: mseries/m4-mini/receipts/2026-10-22-image-profile-gate-selected-summary.json.
