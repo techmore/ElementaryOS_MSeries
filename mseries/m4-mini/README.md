@@ -11,14 +11,21 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The initialization-only revision-3 kernel full build and downloaded package checks now pass.
-Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
-Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
-pass. Full revision-4 Image/modules/DTBs/package compilation is now running;
-no scheduler-fixed package has replaced the reviewed baseline image inputs.
-The combined revision-5 research recipe now selects all six reviewed scheduler
-fixes. Actual M4/legacy objects compile and twelve QEMU cases pass; full r5
-compilation and actual module unload remain open. Native M4 is unqualified.
+These image results belong to the revision-2 baseline. The selected revision-5
+research image rebuild is pending.
+
+The full revision-5 kernel build and independent downloaded package/source checks
+now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
+All six reviewed scheduler fixes are included. The opt-in profile and reviewed
+hosted kernel input now select revision 5. Its DTB still matches the reviewed
+boot bundle. Input preparation with the existing Mesa/policy also passes.
+[Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
+
+The corrected Mesa candidate passes a full driver build, five AGX groups, seven
+actual-NIR cases and isolated software rendering. Its versioned source recipe
+replays exact tested hashes; default builder/package integration remains pending.
+Selected Mesa stays revision 4. Full desktop ISO, native GPU/unload, installer and
+owner dual-boot acceptance remain unqualified.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the

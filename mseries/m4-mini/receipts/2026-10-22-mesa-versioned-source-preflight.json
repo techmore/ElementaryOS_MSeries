@@ -1,0 +1,15 @@
+{
+  "observed_at_utc": "2026-10-22T06:20:35.294556+00:00",
+  "scope": "standalone versioned source recipe preparation, not yet default builder/package integration",
+  "manifest_sha256": "1c7376eca226f5a2f006f5069bcb78dff02494e204a1433e4426e148ff9630a5",
+  "module_sha256": "6ed60bbc8b8789237274595232a4077420e791c516ec90d8dd9d35355d1903c1",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "fresh_archive_selected_paths_replayed": 10,
+  "exact_compiled_followup_paths_matched": 6,
+  "patch_phases": 3,
+  "zero_fuzz": true,
+  "version_boundary_tests": 4,
+  "version_boundary_tests_passed": true,
+  "default_build_recipe_changed": false,
+  "hardware_validated": false
+}

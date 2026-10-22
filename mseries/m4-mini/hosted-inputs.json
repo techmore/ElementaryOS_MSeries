@@ -2,8 +2,17 @@
   "schema": 1,
   "scope": "reviewed successful research component builds; no installer admission",
   "components": {
-    "kernel": {"run": 39698975678, "source": "2798237ed0b3cd386385e8ec0d92a10fb0987db7"},
-    "mesa": {"run": 39704499140, "source": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a"},
-    "boot": {"run": 39706878433, "source": "5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c"}
+    "kernel": {
+      "run": 39721608135,
+      "source": "ab32b7f0748f2898b5e19f4f60d5032917d93051"
+    },
+    "mesa": {
+      "run": 39704499140,
+      "source": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a"
+    },
+    "boot": {
+      "run": 39706878433,
+      "source": "5527c5d52bb92fbd8505a6b83c72d5a4c2ea606c"
+    }
   }
 }

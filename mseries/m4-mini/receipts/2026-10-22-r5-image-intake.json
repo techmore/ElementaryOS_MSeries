@@ -1,0 +1,42 @@
+{
+  "observed_at_utc": "2026-10-22T06:22:10.825009+00:00",
+  "scope": "actual downloaded revision-5 kernel with reviewed Mesa4/policy, full prepare-image-inputs semantic staging; no full image rebuild",
+  "kernel_run": 39721608135,
+  "kernel_source": "ab32b7f0748f2898b5e19f4f60d5032917d93051",
+  "exit_code": 0,
+  "candidate": {
+    "schema": 1,
+    "scope": "validated research image inputs; source checkout and factory pins untouched",
+    "preparer_sha256": "144d6eb32d495e0b960e7cc71f07b8dbc1c6b4321c8bfe5af8c4b265526263e7",
+    "recipe_commit": "20be0fbe26966f6acbe788b8e1ffc479171db7da",
+    "components": {
+      "kernel": {
+        "file": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-5_arm64.deb",
+        "sha256": "522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628",
+        "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8"
+      },
+      "mesa": {
+        "file": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb",
+        "sha256": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+        "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e"
+      },
+      "policy": {
+        "file": "elementary-m4-gravity-policy_20261021-2_arm64.deb",
+        "sha256": "29e752eb837cefd7524dd9570965955c06e55c0d3453964c8f659c4920b3a57b"
+      }
+    },
+    "live_hook_patch_required": true,
+    "live_hook_patch_sha256": "1a09a14738c3091d224876846dfa59ca2aeb02fabc74a1e28f5590db99ccad3a",
+    "kernel_image_sha256": "2817fd298819a1d9e4c12e7ac0bffc7636915c26a0a9b95212c939d4ce2e8f42",
+    "kernel_config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+    "factory_promotion": false,
+    "installer_admission": false,
+    "hardware_validated": false
+  },
+  "dtb_matches_reviewed_boot_bundle": true,
+  "profile_selects_kernel_revision": 5,
+  "mesa_selected_revision": 4,
+  "image_rebuild_passed": false,
+  "factory_promotion": false,
+  "hardware_validated": false
+}

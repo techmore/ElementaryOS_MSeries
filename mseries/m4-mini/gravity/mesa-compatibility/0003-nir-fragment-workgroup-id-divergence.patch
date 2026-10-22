@@ -1,0 +1,175 @@
+# SPDX-License-Identifier: MIT
+# Applies after Gravity Mesa PR1 at 208d4a484459a12c77bf073362613f842288c2e0.
+--- a/src/compiler/nir/nir_shader_compiler_options.h
++++ b/src/compiler/nir/nir_shader_compiler_options.h
+@@ -100,6 +100,12 @@
+ 
+    /* Whether InvocationID in TCS is considered uniform */
+    nir_divergence_tcs_invocation_id_uniform = (1 << 14),
++
++   /* A driver-generated fragment tile helper may read a workgroup ID that
++    * is uniform across its hardware subgroup. This does not make other
++    * fragment inputs uniform or permit shared/workgroup-index intrinsics.
++    */
++   nir_divergence_fragment_workgroup_id_uniform = (1 << 15),
+ } nir_divergence_options;
+ 
+ /** An instruction filtering callback
+--- a/src/compiler/nir/nir_divergence_analysis.c
++++ b/src/compiler/nir/nir_divergence_analysis.c
+@@ -608,7 +608,11 @@
+    case nir_intrinsic_load_shared_base_ptr:
+    case nir_intrinsic_load_workgroup_index:
+    case nir_intrinsic_load_workgroup_id:
+-      assert(mesa_shader_stage_uses_workgroup(stage) || stage == MESA_SHADER_TESS_CTRL);
++      assert(mesa_shader_stage_uses_workgroup(stage) ||
++             stage == MESA_SHADER_TESS_CTRL ||
++             (stage == MESA_SHADER_FRAGMENT &&
++              instr->intrinsic == nir_intrinsic_load_workgroup_id &&
++              (options & nir_divergence_fragment_workgroup_id_uniform)));
+       if (stage == MESA_SHADER_COMPUTE)
+          is_divergent |= (options & nir_divergence_multiple_workgroup_per_compute_subgroup);
+       break;
+--- a/src/asahi/compiler/agx_compile.c
++++ b/src/asahi/compiler/agx_compile.c
+@@ -2873,17 +2873,9 @@
+    return false;
+ }
+ 
+-static bool
+-agx_mark_def_uniform(nir_def *def, void *state)
+-{
+-   def->divergent = false;
+-   return true;
+-}
+-
+ static void
+ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
+-                 uint8_t *ts_count, uint8_t *ss_count,
+-                 bool allow_workgroup_intrinsics)
++                 uint8_t *ts_count, uint8_t *ss_count)
+ {
+    /* This runs only once up front since other optimizations don't affect it */
+    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
+@@ -2927,26 +2919,8 @@
+       .lower_subgroup_masks = true,
+    };
+ 
+-   if (allow_workgroup_intrinsics) {
+-      /* Driver-internal helpers may read tile/workgroup system registers from a
+-       * non-workgroup stage. NIR's divergence analysis rejects that, and these
+-       * helpers contain no atomics or subgroup operations, so the uniform
+-       * passes below have nothing to do. Mark the divergence metadata valid by
+-       * treating every value as uniform, which is correct for these shaders.
+-       */
+-      nir_foreach_function_impl(impl, nir) {
+-         nir_metadata_require(impl, nir_metadata_instr_index);
+-         nir_foreach_block(block, impl) {
+-            nir_foreach_instr(instr, block) {
+-               nir_foreach_def(instr, agx_mark_def_uniform, NULL);
+-            }
+-         }
+-         impl->valid_metadata |= nir_metadata_divergence;
+-      }
+-   } else {
+-      nir_divergence_analysis(nir);
+-      NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
+-   }
++   nir_divergence_analysis(nir);
++   NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
+ 
+    /* Lower addressing modes. The sooner we do this, the sooner we get rid of
+     * amul/aadd instructions and can let nir_opt_algebraic do its job. But we
+@@ -2955,11 +2929,9 @@
+     */
+    NIR_PASS(_, nir, agx_nir_lower_address);
+ 
+-   if (!allow_workgroup_intrinsics) {
+-      NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
+-      if (progress) {
+-         NIR_PASS(_, nir, agx_nir_lower_subgroups);
+-      }
++   NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
++   if (progress) {
++      NIR_PASS(_, nir, agx_nir_lower_subgroups);
+    }
+ 
+    /* The above create operations that need lowering/optimizing */
+@@ -3747,6 +3719,19 @@
+ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
+                        struct agx_shader_part *out)
+ {
++   /* Preserve ordinary NIR divergence analysis for tile helpers. Scope the
++    * opt-in options to this compile; the caller's options never change.
++    */
++   const nir_shader_compiler_options *original_options = nir->options;
++   nir_shader_compiler_options helper_options;
++   if (key->allow_workgroup_intrinsics) {
++      assert(nir->info.stage == MESA_SHADER_FRAGMENT);
++      helper_options = *original_options;
++      helper_options.divergence_analysis_options |=
++         nir_divergence_fragment_workgroup_id_uniform;
++      nir->options = &helper_options;
++   }
++
+    /*
+     * Apple9 is a distinct ISA from Apple8.  The general Apple9 backend is not
+     * implemented here yet.  G16/G17 direct-render bring-up currently reaches
+@@ -3828,8 +3813,7 @@
+       (key->secondary || !key->promote_textures) ? NULL
+                                                  : &info->texture_state_count,
+       (key->secondary || !key->promote_textures) ? NULL
+-                                                 : &info->sampler_state_count,
+-      key->allow_workgroup_intrinsics);
++                                                 : &info->sampler_state_count);
+ 
+    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+       info->varyings.fs.nr_cf = key->fs.cf_base;
+@@ -3914,4 +3898,5 @@
+ 
+    out->binary = binary.data;
+    info->binary_size = binary.size;
+-}
++   nir->options = original_options;
++}
+--- a/src/gallium/drivers/asahi/agx_state.c
++++ b/src/gallium/drivers/asahi/agx_state.c
+@@ -1460,8 +1460,6 @@
+                continue;
+             switch (nir_instr_as_intrinsic(instr)->intrinsic) {
+             case nir_intrinsic_load_workgroup_id:
+-            case nir_intrinsic_load_workgroup_index:
+-            case nir_intrinsic_load_shared_base_ptr:
+                return true;
+             default:
+                break;
+@@ -1502,11 +1500,10 @@
+ 
+    /* The Apple9 color tile helpers are fragment programs that read the tile
+     * coordinate through a workgroup system register. NIR's divergence analysis
+-    * rejects workgroup intrinsics outside workgroup stages, so flag these to
+-    * bypass it.
++    * normally rejects that stage combination. Opt in only this uniform
++    * system-register read, preserving analysis of all other shader values.
+     */
+-   if (!mesa_shader_stage_uses_workgroup(nir->info.stage) &&
+-       nir->info.stage != MESA_SHADER_TESS_CTRL &&
++   if (nir->info.stage == MESA_SHADER_FRAGMENT &&
+        agx_nir_uses_workgroup_intrinsics(nir))
+       key.allow_workgroup_intrinsics = true;
+ 
+--- a/src/asahi/compiler/agx_compile.h
++++ b/src/asahi/compiler/agx_compile.h
+@@ -388,9 +388,9 @@
+     */
+    bool is_helper;
+ 
+-   /* Set for driver-internal helpers that read tile/workgroup system registers
+-    * from a non-workgroup stage. NIR's divergence analysis only permits
+-    * workgroup intrinsics in workgroup stages, so such helpers must skip it.
++   /* Fragment tile helpers may read a uniform workgroup ID. Opt in to that
++    * system-register read while preserving normal divergence analysis of
++    * layer ID and every other value. Other workgroup intrinsics stay invalid.
+     */
+    bool allow_workgroup_intrinsics;
+ 

@@ -4419,3 +4419,28 @@ include the exact patches in corresponding-source/reproduction artifacts, build
 and check a fresh research package, then update image inputs only after successful
 hosted component verification. Native full tile-pipeline rendering, compositor
 DMA-BUF imports and hardware remain unqualified. R5 kernel 39721608135 is live.
+
+Revision-5 hosted kernel run 39721608135 now SUCCEEDED. Its exact ab32b7f source,
+repository/head-repository/workflow/event/component job/artifact and all payload
+hashes validate. Downloaded package independently passes full Image/config/J773g/
+16 KiB/vermagic/dependency/no-hooks checks (1,598 modules), including all SIX
+scheduler compatibility fixes. Package SHA256 is
+522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628.
+The J773g DTB equals the reviewed boot-bundle contract. ZIP digest was not
+independently retained/checked; payload hashes were. No boot/hardware claim.
+
+hosted-inputs.json and the opt-in base profile now select verified kernel r5.
+Actual isolated r5/Mesa4/policy image-input preparation passes all semantic,
+retention/software and source checks. Full image/ISO rebuild is pending; the
+previous raw artifact remains baseline r2. Selected Mesa remains revision 4.
+Kernel and preparation receipts are 2026-10-22-hosted-kernel-r5-success.json and
+2026-10-22-r5-image-intake.json under mseries/m4-mini/receipts.
+
+Mesa's standalone versioned compatibility module/source manifest now records
+three immutable phases (eight public commits plus two corrected follow-ups),
+exactly ten final source hashes and historical v4 metadata. Fresh archive replay
+and all six actual compiled follow-up hashes match; four version-boundary tests
+pass and are added to CI. Builder/package/checker/source-bundle integration is
+next; the standalone module does not silently change the default Mesa recipe.
+Source preflight receipt: 2026-10-22-mesa-versioned-source-preflight.json.
+No local native build session remains live from the completed Mesa trials.

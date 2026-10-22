@@ -11,14 +11,21 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The initialization-only revision-3 kernel full build and downloaded package checks now pass.
-Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
-Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
-pass. Full revision-4 Image/modules/DTBs/package compilation is now running;
-no scheduler-fixed package has replaced the reviewed baseline image inputs.
-The combined revision-5 research recipe now selects all six reviewed scheduler
-fixes. Actual M4/legacy objects compile and twelve QEMU cases pass; full r5
-compilation and actual module unload remain open. Native M4 is unqualified.
+These image results belong to the revision-2 baseline. The selected revision-5
+research image rebuild is pending.
+
+The full revision-5 kernel build and independent downloaded package/source checks
+now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
+All six reviewed scheduler fixes are included. The opt-in profile and reviewed
+hosted kernel input now select revision 5. Its DTB still matches the reviewed
+boot bundle. Input preparation with the existing Mesa/policy also passes.
+[Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
+
+The corrected Mesa candidate passes a full driver build, five AGX groups, seven
+actual-NIR cases and isolated software rendering. Its versioned source recipe
+replays exact tested hashes; default builder/package integration remains pending.
+Selected Mesa stays revision 4. Full desktop ISO, native GPU/unload, installer and
+owner dual-boot acceptance remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
@@ -26,9 +33,9 @@ public stack found in this audit. It does not establish that elementary OS or th
 owner's 16 GB / 1 TB / 10 Gb Ethernet / macOS 27 / HDMI configuration is qualified.
 
 Current elementary preparation: the opt-in M4 profile selects the matched
-kernel, Mesa revision 4 and temporary policy. A 1,626-package research desktop
-root passes package, library, schema, software-rendering and Casper initramfs
-checks. LightDM selects Pantheon Wayland; unqualified graphical installer
+kernel, Mesa revision 4 and temporary policy. The hosted baseline
+passes 1,650-package base and 1,741-package live-root checks, desktop libraries/
+schemas, software rendering and Casper initramfs checks. LightDM selects Pantheon Wayland; unqualified graphical installer
 packages are omitted. The full baseline mkosi graph now builds and its raw artifact passes local verification.
 ISO assembly, graphical login, native M4 operation and dual boot remain unqualified.
 
@@ -1489,3 +1496,28 @@ include the exact patches in corresponding-source/reproduction artifacts, build
 and check a fresh research package, then update image inputs only after successful
 hosted component verification. Native full tile-pipeline rendering, compositor
 DMA-BUF imports and hardware remain unqualified. R5 kernel 39721608135 is live.
+
+Revision-5 hosted kernel run 39721608135 now SUCCEEDED. Its exact ab32b7f source,
+repository/head-repository/workflow/event/component job/artifact and all payload
+hashes validate. Downloaded package independently passes full Image/config/J773g/
+16 KiB/vermagic/dependency/no-hooks checks (1,598 modules), including all SIX
+scheduler compatibility fixes. Package SHA256 is
+522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628.
+The J773g DTB equals the reviewed boot-bundle contract. ZIP digest was not
+independently retained/checked; payload hashes were. No boot/hardware claim.
+
+hosted-inputs.json and the opt-in base profile now select verified kernel r5.
+Actual isolated r5/Mesa4/policy image-input preparation passes all semantic,
+retention/software and source checks. Full image/ISO rebuild is pending; the
+previous raw artifact remains baseline r2. Selected Mesa remains revision 4.
+Kernel and preparation receipts are 2026-10-22-hosted-kernel-r5-success.json and
+2026-10-22-r5-image-intake.json under mseries/m4-mini/receipts.
+
+Mesa's standalone versioned compatibility module/source manifest now records
+three immutable phases (eight public commits plus two corrected follow-ups),
+exactly ten final source hashes and historical v4 metadata. Fresh archive replay
+and all six actual compiled follow-up hashes match; four version-boundary tests
+pass and are added to CI. Builder/package/checker/source-bundle integration is
+next; the standalone module does not silently change the default Mesa recipe.
+Source preflight receipt: 2026-10-22-mesa-versioned-source-preflight.json.
+No local native build session remains live from the completed Mesa trials.

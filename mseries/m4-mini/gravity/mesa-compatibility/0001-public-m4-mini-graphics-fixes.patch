@@ -1,0 +1,406 @@
+# SPDX-License-Identifier: MIT
+# GravityLinux/mesa PR1, eight linear commits ending at 208d4a484459a12c77bf073362613f842288c2e0.
+--- a/src/asahi/compiler/agx_compile.c
++++ b/src/asahi/compiler/agx_compile.c
+@@ -569,6 +569,14 @@
+    CASE(RG11B10F);
+    CASE(RGB9E5);
+ 
++   /* Multi-word raw tile accesses (Apple9 colour helpers) carry an integer
++    * format with 2-4 32-bit lanes. The lane count is passed separately as a
++    * component mask, so a 32-bit integer element format is correct here. */
++   if (format == PIPE_FORMAT_R32G32_UINT ||
++       format == PIPE_FORMAT_R32G32B32_UINT ||
++       format == PIPE_FORMAT_R32G32B32A32_UINT)
++      return AGX_FORMAT_I32;
++
+ #undef CASE
+    UNREACHABLE("Invalid format");
+ }
+@@ -2865,9 +2873,17 @@
+    return false;
+ }
+ 
++static bool
++agx_mark_def_uniform(nir_def *def, void *state)
++{
++   def->divergent = false;
++   return true;
++}
++
+ static void
+ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
+-                 uint8_t *ts_count, uint8_t *ss_count)
++                 uint8_t *ts_count, uint8_t *ss_count,
++                 bool allow_workgroup_intrinsics)
+ {
+    /* This runs only once up front since other optimizations don't affect it */
+    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
+@@ -2902,7 +2918,6 @@
+    NIR_PASS(_, nir, nir_lower_pack);
+    NIR_PASS(_, nir, nir_opt_algebraic);
+ 
+-   nir_divergence_analysis(nir);
+    bool progress = false;
+ 
+    static const nir_lower_subgroups_options subgroups_options = {
+@@ -2912,7 +2927,26 @@
+       .lower_subgroup_masks = true,
+    };
+ 
+-   NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
++   if (allow_workgroup_intrinsics) {
++      /* Driver-internal helpers may read tile/workgroup system registers from a
++       * non-workgroup stage. NIR's divergence analysis rejects that, and these
++       * helpers contain no atomics or subgroup operations, so the uniform
++       * passes below have nothing to do. Mark the divergence metadata valid by
++       * treating every value as uniform, which is correct for these shaders.
++       */
++      nir_foreach_function_impl(impl, nir) {
++         nir_metadata_require(impl, nir_metadata_instr_index);
++         nir_foreach_block(block, impl) {
++            nir_foreach_instr(instr, block) {
++               nir_foreach_def(instr, agx_mark_def_uniform, NULL);
++            }
++         }
++         impl->valid_metadata |= nir_metadata_divergence;
++      }
++   } else {
++      nir_divergence_analysis(nir);
++      NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
++   }
+ 
+    /* Lower addressing modes. The sooner we do this, the sooner we get rid of
+     * amul/aadd instructions and can let nir_opt_algebraic do its job. But we
+@@ -2921,9 +2955,11 @@
+     */
+    NIR_PASS(_, nir, agx_nir_lower_address);
+ 
+-   NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
+-   if (progress) {
+-      NIR_PASS(_, nir, agx_nir_lower_subgroups);
++   if (!allow_workgroup_intrinsics) {
++      NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
++      if (progress) {
++         NIR_PASS(_, nir, agx_nir_lower_subgroups);
++      }
+    }
+ 
+    /* The above create operations that need lowering/optimizing */
+@@ -3792,7 +3828,8 @@
+       (key->secondary || !key->promote_textures) ? NULL
+                                                  : &info->texture_state_count,
+       (key->secondary || !key->promote_textures) ? NULL
+-                                                 : &info->sampler_state_count);
++                                                 : &info->sampler_state_count,
++      key->allow_workgroup_intrinsics);
+ 
+    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+       info->varyings.fs.nr_cf = key->fs.cf_base;
+--- a/src/asahi/compiler/agx_compile.h
++++ b/src/asahi/compiler/agx_compile.h
+@@ -387,6 +387,12 @@
+     * This has special register allocation requirements.
+     */
+    bool is_helper;
++
++   /* Set for driver-internal helpers that read tile/workgroup system registers
++    * from a non-workgroup stage. NIR's divergence analysis only permits
++    * workgroup intrinsics in workgroup stages, so such helpers must skip it.
++    */
++   bool allow_workgroup_intrinsics;
+ 
+    /* Whether the driver supports uploading constants for this shader. If
+     * false, constants will not be promoted to uniforms.
+--- a/src/asahi/vulkan/hk_shader.c
++++ b/src/asahi/vulkan/hk_shader.c
+@@ -950,6 +950,19 @@
+       memcpy(agx_bo_map(shader->bo), shader->b.binary, size);
+       shader->preamble_addr =
+          shader->bo->va->addr + shader->b.info.preamble_offset;
++
++      /* The rodata referenced by the immediate uniform descriptors must live
++       * below the 40-bit USC address limit. shader->bo sits in the fixed 1-TiB
++       * USC aperture (>= 2^40) for execution, so keep a low mirror for the
++       * descriptor to reference. */
++      if (shader->b.info.rodata.size_16) {
++         shader->rodata_bo = agx_bo_create(
++            &dev->dev, size, 0, AGX_BO_WRITEBACK, "Shader rodata");
++         if (shader->rodata_bo) {
++            memcpy(agx_bo_map(shader->rodata_bo), shader->b.binary, size);
++            shader->rodata_addr = shader->rodata_bo->va->addr;
++         }
++      }
+    }
+ 
+    if (!shader->linked.ht) {
+@@ -1257,6 +1270,7 @@
+    free((void *)s->code_ptr);
+    free((void *)s->data_ptr);
+    agx_bo_unreference(&dev->dev, s->bo);
++   agx_bo_unreference(&dev->dev, s->rodata_bo);
+ 
+    simple_mtx_destroy(&s->linked.lock);
+ 
+@@ -1839,7 +1853,9 @@
+    struct agx_usc_builder b = agx_usc_builder(s->usc.data, sizeof(s->usc.data));
+ 
+    if (main && main->b.info.rodata.size_16) {
+-      agx_usc_immediates(&b, &main->b.info.rodata, main->bo->va->addr);
++      uint64_t rodata_base = main->rodata_bo ? main->rodata_addr
++                                             : main->bo->va->addr;
++      agx_usc_immediates(&b, &main->b.info.rodata, rodata_base);
+    }
+ 
+    if (s->b.uses_txf)
+--- a/src/asahi/vulkan/hk_shader.h
++++ b/src/asahi/vulkan/hk_shader.h
+@@ -146,6 +146,16 @@
+ 
+    /* BO for any uploaded shader part */
+    struct agx_bo *bo;
++
++   /* Low-address (non-USC-heap) copy of the shader rodata section. The
++    * immediate/rodata uniform descriptor is only 38 bits wide (a 40-bit
++    * address after the shift), while LOW_VA executable BOs live in the fixed
++    * 1-TiB USC aperture starting at 2^40. Pointing that descriptor at the exec
++    * BO overflows the field, is silently truncated in release builds, and
++    * wedges the Apple9 firmware. Mirror the rodata into an ordinary low BO.
++    */
++   struct agx_bo *rodata_bo;
++   uint64_t rodata_addr;
+ 
+    /* Cache of fast linked variants */
+    struct {
+--- a/src/gallium/drivers/asahi/agx_blit.c
++++ b/src/gallium/drivers/asahi/agx_blit.c
+@@ -585,7 +585,8 @@
+          return;
+       }
+    }
+-   if (apple9 && util_try_blit_via_copy_region(pipe, info, false))
++   if (apple9 && !ctx->apple9_copy_region_depth &&
++       util_try_blit_via_copy_region(pipe, info, false))
+       return;
+ 
+    if (!apple9 && asahi_compute_blit_supported(info)) {
+@@ -760,14 +761,21 @@
+       unsigned offset = 0;
+       for (unsigned rt = 0; rt < key->count; ++rt) {
+          if (key->mask & BITFIELD_BIT(rt)) {
++            /* store_block_agx takes the format of the local tile memory, which
++             * is the renderable (AIL ISA) format of the attachment. Passing
++             * the logical format here would leave the generic AGX emitter
++             * unable to decode it.
++             */
++            enum pipe_format tib_format =
++               ail_pixel_format[effective_format(key->formats[rt])].renderable;
+             nir_image_store_block_agx(
+-               &b, nir_imm_int(&b, rt), nir_imm_int(&b, offset),
++               &b, nir_imm_intN_t(&b, rt, 16), nir_imm_int(&b, offset),
+                key->layered
+                   ? nir_vec4(&b, nir_channel(&b, xy, 0), nir_channel(&b, xy, 1),
+                               nir_load_layer_id(&b), nir_imm_int(&b, 0))
+                   : nir_pad_vec4(&b, xy),
+                .image_array = key->layered,
+-               .format = agx_apple9_color_tile_format(key->formats[rt]),
++               .format = tib_format,
+                .image_dim = key->samples > 1 ? GLSL_SAMPLER_DIM_MS : GLSL_SAMPLER_DIM_2D);
+          }
+          offset += 4 * agx_apple9_color_words(key->formats[rt]);
+@@ -1543,8 +1551,16 @@
+                     asahi_copy_texture(pctx, dst, dst_level, dstx, dsty, dstz,
+                                        src, src_level, src_box))
+          return;
++      /* The CPU fallback maps the tiled resources, and any writeback on unmap
++       * blits through agx_blit(). Guard against the blit path re-entering this
++       * function via util_try_blit_via_copy_region(), which would recurse
++       * without bound.
++       */
++      struct agx_context *ctx = agx_context(pctx);
++      ctx->apple9_copy_region_depth++;
+       util_resource_copy_region(pctx, dst, dst_level, dstx, dsty, dstz, src,
+                                  src_level, src_box);
++      ctx->apple9_copy_region_depth--;
+       return;
+    }
+ 
+--- a/src/gallium/drivers/asahi/agx_pipe.c
++++ b/src/gallium/drivers/asahi/agx_pipe.c
+@@ -453,6 +453,16 @@
+       return false;
+    }
+ 
++   /* Apple9 direct render cannot sample a compressed layout, so buffers that
++    * may be read back as textures must stay uncompressed. Otherwise a producer
++    * such as GBM hands the compositor a compressed buffer it cannot draw.
++    */
++   if (agx_apple9_direct_render_enabled(agx_device(pres->base.screen)) &&
++       (pres->base.bind & PIPE_BIND_SAMPLER_VIEW)) {
++      rsrc_debug(pres, "No compression: Apple9 cannot sample compressed\n");
++      return false;
++   }
++
+    /* Limited to renderable */
+    if (pres->base.bind &
+        ~(PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_RENDER_TARGET |
+@@ -1200,6 +1210,12 @@
+        * when no draw has created one yet. */
+       if (!batch->apple9_render_initialized)
+          slowclear |= fastclear;
++      /* Color clears now execute as ordinary draws that write the color
++       * attachments, so record them as drawn. Otherwise the batch never
++       * accounts for the write and the consistency check at the end of this
++       * function fails on the next clear.
++       */
++      batch->draw |= color_fast;
+    }
+ 
+    assert(scissor_state == NULL &&
+@@ -2457,8 +2473,12 @@
+       caps->robust_buffer_access_behavior = false;
+       /* EGL robustness context creation requires a contract we cannot provide. */
+       caps->device_reset_status_query = false;
+-      /* The Apple9 texture compiler does not lower external sampler dimensions. */
+-      caps->texture_external = false;
++      /* Advertise external EGL images so compositors load
++       * glEGLImageTargetTexture2DOES and can import client DMA-BUF buffers as
++       * ordinary 2D textures. Sampling through an external-only sampler is
++       * still unsupported, and the importer keeps such buffers on the 2D path.
++       */
++      caps->texture_external = true;
+       /* Cull distances still need primitive rejection lowering. */
+       caps->cull_distance = false;
+       /* One RGBA8 tile-output slot per active color attachment. */
+@@ -2610,23 +2630,46 @@
+    return true;
+ }
+ 
++/* The compressed modifier is only usable where the driver can also sample the
++ * compressed layout. Apple9 direct render cannot, so buffer producers must be
++ * steered away from it to avoid allocating attachments the driver then refuses
++ * to sample.
++ */
++static unsigned
++agx_query_modifiers(struct pipe_screen *screen, uint64_t *out)
++{
++   struct agx_device *dev = agx_device(screen);
++   unsigned n = 0;
++
++   for (unsigned i = 0; i < ARRAY_SIZE(agx_best_modifiers); ++i) {
++      if (agx_apple9_direct_render_enabled(dev) &&
++          agx_best_modifiers[i] == DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED)
++         continue;
++      out[n++] = agx_best_modifiers[i];
++   }
++
++   return n;
++}
++
+ static void
+ agx_query_dmabuf_modifiers(struct pipe_screen *screen, enum pipe_format format,
+                            int max, uint64_t *modifiers,
+                            unsigned int *external_only, int *out_count)
+ {
++   uint64_t supported[ARRAY_SIZE(agx_best_modifiers)];
++   unsigned count = agx_query_modifiers(screen, supported);
+    int i;
+ 
+    if (max == 0) {
+-      *out_count = ARRAY_SIZE(agx_best_modifiers);
++      *out_count = count;
+       return;
+    }
+ 
+-   for (i = 0; i < ARRAY_SIZE(agx_best_modifiers) && i < max; i++) {
++   for (i = 0; i < count && i < max; i++) {
+       if (external_only)
+          external_only[i] = 0;
+ 
+-      modifiers[i] = agx_best_modifiers[i];
++      modifiers[i] = supported[i];
+    }
+ 
+    /* Return the number of modifiers copied */
+@@ -2637,11 +2680,14 @@
+ agx_is_dmabuf_modifier_supported(struct pipe_screen *screen, uint64_t modifier,
+                                  enum pipe_format format, bool *external_only)
+ {
++   uint64_t supported[ARRAY_SIZE(agx_best_modifiers)];
++   unsigned count = agx_query_modifiers(screen, supported);
++
+    if (external_only)
+       *external_only = false;
+ 
+-   for (unsigned i = 0; i < ARRAY_SIZE(agx_best_modifiers); ++i) {
+-      if (agx_best_modifiers[i] == modifier)
++   for (unsigned i = 0; i < count; ++i) {
++      if (supported[i] == modifier)
+          return true;
+    }
+ 
+--- a/src/gallium/drivers/asahi/agx_state.c
++++ b/src/gallium/drivers/asahi/agx_state.c
+@@ -1450,6 +1450,28 @@
+  * shader key should have already been applied. agx_compile_variant may call
+  * this multiple times if there are auxiliary shaders.
+  */
++static bool
++agx_nir_uses_workgroup_intrinsics(nir_shader *nir)
++{
++   nir_foreach_function_impl(impl, nir) {
++      nir_foreach_block(block, impl) {
++         nir_foreach_instr(instr, block) {
++            if (instr->type != nir_instr_type_intrinsic)
++               continue;
++            switch (nir_instr_as_intrinsic(instr)->intrinsic) {
++            case nir_intrinsic_load_workgroup_id:
++            case nir_intrinsic_load_workgroup_index:
++            case nir_intrinsic_load_shared_base_ptr:
++               return true;
++            default:
++               break;
++            }
++         }
++      }
++   }
++   return false;
++}
++
+ static struct agx_compiled_shader *
+ agx_compile_nir(struct agx_device *dev, nir_shader *nir,
+                 struct util_debug_callback *debug, mesa_shader_stage stage,
+@@ -1477,6 +1499,16 @@
+    if (nir->info.stage == MESA_SHADER_FRAGMENT &&
+        nir->info.fs.uses_sample_shading)
+       key.fs.inside_sample_loop = true;
++
++   /* The Apple9 color tile helpers are fragment programs that read the tile
++    * coordinate through a workgroup system register. NIR's divergence analysis
++    * rejects workgroup intrinsics outside workgroup stages, so flag these to
++    * bypass it.
++    */
++   if (!mesa_shader_stage_uses_workgroup(nir->info.stage) &&
++       nir->info.stage != MESA_SHADER_TESS_CTRL &&
++       agx_nir_uses_workgroup_intrinsics(nir))
++      key.allow_workgroup_intrinsics = true;
+ 
+    if (internal_kernel) {
+       key.reserved_preamble = 8;
+--- a/src/gallium/drivers/asahi/agx_state.h
++++ b/src/gallium/drivers/asahi/agx_state.h
+@@ -740,6 +740,14 @@
+    struct agx_color_reload *color_reload;
+    struct asahi_blitter compute_blitter;
+ 
++   /* Non-zero while an Apple9 copy_region is in flight. That path may map and
++    * unmap tiled resources, and the unmap blits staging contents through
++    * agx_blit(). agx_blit() must not take the
++    * util_try_blit_via_copy_region() shortcut while this is set, otherwise it
++    * re-enters resource_copy_region and recurses without bound.
++    */
++   unsigned apple9_copy_region_depth;
++
+    /* Map of GEM handle to (batch index + 1) that (conservatively) writes that
+     * BO, or 0 if no writer.
+     */

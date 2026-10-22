@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "base_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "current_research_version": "26.3.0~devel+gravity.87ac51d-5",
+  "baseline_sources_sha256": {
+    "src/asahi/compiler/agx_compile.c": "081c50afc88b9a08df30af7f8e4004925c1355b303483418789189ce1cc6a221",
+    "src/asahi/compiler/agx_compile.h": "0f9c051e68bc8a3d10b0f65822c8cef9e08e8cdfd3270939d5c555d33bf58a13",
+    "src/asahi/vulkan/hk_shader.c": "3b69a8431db1b4ddc2a381aedb860e1ae5c07842131ac399352690f982e9a14f",
+    "src/asahi/vulkan/hk_shader.h": "00431adc9662fe58570d6a5661b02940bbc51e68fb4991325c76066f5c2ce8d2",
+    "src/compiler/nir/nir_divergence_analysis.c": "76c2cce0098e9a3ea5a193d6949fc198e2ddebf2c986fea5e43c1e3d0e920cb5",
+    "src/compiler/nir/nir_shader_compiler_options.h": "75579647a881da667a316423a19b4f46106ec5f0570a70a7857013c59f12a038",
+    "src/gallium/drivers/asahi/agx_blit.c": "371fb07affff7892687bf7a6aff3203ad3704e8ed52763816ed1fe1f95ccf02e",
+    "src/gallium/drivers/asahi/agx_pipe.c": "d997f41b1a48922b3042a08a9dffd56d9e720d46e68d3d7470b52f42776ec539",
+    "src/gallium/drivers/asahi/agx_state.c": "13ae520cf2a063266247350c35c6914311e29093a91918432631bf745fee18e6",
+    "src/gallium/drivers/asahi/agx_state.h": "ad8e31d0db554bdf435326b2e6b34854e420375b0571a3e74e9c451591ff7b5e"
+  },
+  "phases": [
+    {
+      "file": "0001-public-m4-mini-graphics-fixes.patch",
+      "before": {
+        "src/asahi/compiler/agx_compile.c": "081c50afc88b9a08df30af7f8e4004925c1355b303483418789189ce1cc6a221",
+        "src/asahi/compiler/agx_compile.h": "0f9c051e68bc8a3d10b0f65822c8cef9e08e8cdfd3270939d5c555d33bf58a13",
+        "src/asahi/vulkan/hk_shader.c": "3b69a8431db1b4ddc2a381aedb860e1ae5c07842131ac399352690f982e9a14f",
+        "src/asahi/vulkan/hk_shader.h": "00431adc9662fe58570d6a5661b02940bbc51e68fb4991325c76066f5c2ce8d2",
+        "src/gallium/drivers/asahi/agx_blit.c": "371fb07affff7892687bf7a6aff3203ad3704e8ed52763816ed1fe1f95ccf02e",
+        "src/gallium/drivers/asahi/agx_pipe.c": "d997f41b1a48922b3042a08a9dffd56d9e720d46e68d3d7470b52f42776ec539",
+        "src/gallium/drivers/asahi/agx_state.c": "13ae520cf2a063266247350c35c6914311e29093a91918432631bf745fee18e6",
+        "src/gallium/drivers/asahi/agx_state.h": "ad8e31d0db554bdf435326b2e6b34854e420375b0571a3e74e9c451591ff7b5e"
+      },
+      "after": {
+        "src/asahi/compiler/agx_compile.c": "1cd92edb03545bc8b98abbaf7171d6f2cdbc6c49a7b955fd5b95f7ab2615c791",
+        "src/asahi/compiler/agx_compile.h": "16f5897db754856d4841475716fb4cd795055690f13e5f9c356a1d2739dfb31f",
+        "src/asahi/vulkan/hk_shader.c": "9ded99ac5a7ea268ac382362c31d8dc32c3b00e9cf72b0108e3269cde34a0cfb",
+        "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+        "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+        "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+        "src/gallium/drivers/asahi/agx_state.c": "a752fbcea5e2d58b892df57c9eb290555ddd5a3883a1dde618fc5eb9be54a115",
+        "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e"
+      },
+      "provenance": "https://github.com/GravityLinux/mesa/pull/1",
+      "head": "208d4a484459a12c77bf073362613f842288c2e0",
+      "sha256": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3"
+    },
+    {
+      "file": "0002-hk-rodata-upload-errors.patch",
+      "before": {
+        "src/asahi/vulkan/hk_shader.c": "9ded99ac5a7ea268ac382362c31d8dc32c3b00e9cf72b0108e3269cde34a0cfb"
+      },
+      "after": {
+        "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc"
+      },
+      "provenance": "local MIT follow-up, compiled/fault-injected receipts",
+      "sha256": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155"
+    },
+    {
+      "file": "0003-nir-fragment-workgroup-id-divergence.patch",
+      "before": {
+        "src/compiler/nir/nir_shader_compiler_options.h": "75579647a881da667a316423a19b4f46106ec5f0570a70a7857013c59f12a038",
+        "src/compiler/nir/nir_divergence_analysis.c": "76c2cce0098e9a3ea5a193d6949fc198e2ddebf2c986fea5e43c1e3d0e920cb5",
+        "src/asahi/compiler/agx_compile.c": "1cd92edb03545bc8b98abbaf7171d6f2cdbc6c49a7b955fd5b95f7ab2615c791",
+        "src/gallium/drivers/asahi/agx_state.c": "a752fbcea5e2d58b892df57c9eb290555ddd5a3883a1dde618fc5eb9be54a115",
+        "src/asahi/compiler/agx_compile.h": "16f5897db754856d4841475716fb4cd795055690f13e5f9c356a1d2739dfb31f"
+      },
+      "after": {
+        "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+        "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+        "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+        "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+        "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad"
+      },
+      "provenance": "local MIT follow-up, actual-NIR/reference/candidate receipts",
+      "sha256": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6"
+    }
+  ],
+  "versions": {
+    "26.3.0~devel+gravity.87ac51d-4": {
+      "patches": {},
+      "patched_sources_sha256": {},
+      "supplemental_tests": {}
+    },
+    "26.3.0~devel+gravity.87ac51d-5": {
+      "patches": {
+        "0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+        "0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+        "0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6"
+      },
+      "patched_sources_sha256": {
+        "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+        "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+        "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+        "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+        "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+        "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+        "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+        "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+        "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+        "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e"
+      },
+      "supplemental_tests": {
+        "rodata_cases": 8,
+        "rodata_negative_detected": true,
+        "divergence_cases": 7
+      }
+    }
+  },
+  "scope": "versioned research source recipe; package/image selection and hardware remain separate gates"
+}
