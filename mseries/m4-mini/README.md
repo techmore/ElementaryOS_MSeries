@@ -528,3 +528,8 @@ GPU operation, Vulkan conformance or factory promotion. Hosted dispatch/result
 remains separate from this preflight.
 
 [Hosted Mesa preflight](receipts/2026-10-21-hosted-mesa-preflight.json).
+
+Hosted Mesa-only run [39700250329](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39700250329)
+is active at source `eece8d5f`; its image/kernel/Fairydust jobs are skipped.
+Kernel run `39698975678` remains active independently. No hosted Mesa result
+is claimed yet. [Dispatch snapshot](receipts/2026-10-21-hosted-mesa-run.json).

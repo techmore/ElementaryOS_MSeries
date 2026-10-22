@@ -1,0 +1,43 @@
+{
+  "run_id": 39700250329,
+  "job_id": 119567475670,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39700250329",
+  "source_head": "eece8d5fa212446af7dc2197f54bfe033a91f2ca",
+  "status_at_capture": "in_progress",
+  "jobs_at_capture": [
+    {
+      "active_steps": [
+        "Free disposable runner build space"
+      ],
+      "conclusion": null,
+      "id": 119567475670,
+      "name": "build-m4-userspace",
+      "status": "in_progress"
+    },
+    {
+      "active_steps": [],
+      "conclusion": "skipped",
+      "id": 119567477013,
+      "name": "build-m4-kernel",
+      "status": "completed"
+    },
+    {
+      "active_steps": [],
+      "conclusion": "skipped",
+      "id": 119567477088,
+      "name": "build-kernel",
+      "status": "completed"
+    },
+    {
+      "active_steps": [],
+      "conclusion": "skipped",
+      "id": 119567477944,
+      "name": "build",
+      "status": "completed"
+    }
+  ],
+  "scope": "hosted Mesa build/five test groups/software check/package only; no image or native GPU test",
+  "kernel_run_still_active": 39698975678,
+  "factory_promotion": false,
+  "hardware_validated": false
+}

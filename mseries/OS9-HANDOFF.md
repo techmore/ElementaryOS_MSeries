@@ -1,3 +1,20 @@
+## M4 mini: hosted Mesa build is live alongside kernel — 2026-10-21
+
+Dispatched Mesa-only mode once: run 39700250329 at source eece8d5fa212446af7dc2197f54bfe033a91f2ca,
+job 119567475670 (build-m4-userspace) is in_progress, preparing runner space.
+M4 kernel, Fairydust kernel and ordinary image jobs in that run are all skipped.
+Independent kernel run 39698975678 remains in_progress at source 2798237e;
+the Mesa concurrency group did not replace it. No hosted Mesa compile/package
+result yet. Follow these exact run/job IDs; do not duplicate live builds.
+
+On terminal status, retain build records and candidates, inspect any errors,
+and verify fresh receipts before considering factory integration. Current local
+package/Image pins are unchanged. This is software build/inspection evidence;
+no GPU/KMS/Vulkan or native M4 acceptance. Full image assembly, boot/firmware,
+partition metadata import and owner macOS/Recovery qualification remain open.
+[Run](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39700250329),
+[snapshot](m4-mini/receipts/2026-10-21-hosted-mesa-run.json).
+
 ## M4 mini: independent hosted Mesa build prepared — 2026-10-21
 
 Added m4_userspace_only input/job to the existing artifact-only workflow. It
