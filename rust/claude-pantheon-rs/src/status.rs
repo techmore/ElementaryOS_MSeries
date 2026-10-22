@@ -21,23 +21,18 @@ pub fn build(
     let running: Vec<Value> = threads
         .iter()
         .filter(|t| t.is_running() && t.pending_requests() == 0)
-        .map(|t| {
-            let provider = providers
-                .iter()
-                .find(|p| p.instance_id == t.provider_instance_id)
-                .map(Provider::name)
-                .unwrap_or_else(|| t.provider_instance_id.clone());
-            json!({"id": t.id, "title": t.title, "provider": provider})
-        })
+        .map(|t| json!({"id": t.id, "title": t.title}))
         .collect();
     let pending: Vec<Value> = threads
         .iter()
         .filter(|t| t.pending_requests() > 0)
         .map(|t| json!({"id": t.id, "title": t.title, "count": t.pending_requests()}))
         .collect();
+    // The compact surfaces are bound to the provider selected in the full client. Keeping other
+    // accounts out of the feed avoids exposing private display names in cached status files too.
     let windows: Vec<Value> = providers
         .iter()
-        .filter(|p| p.ready())
+        .filter(|p| p.ready() && p.instance_id == selected_provider_id)
         .flat_map(|p| {
             let name = p.name();
             p.usage_limits
@@ -52,8 +47,6 @@ pub fn build(
                 .collect::<Vec<_>>()
         })
         .collect();
-    let next =
-        crate::t3::model::pick_provider(providers).map(|(p, reason)| json!({"provider": p.name(), "reason": reason}));
     let selected_provider = providers
         .iter()
         .find(|provider| provider.instance_id == selected_provider_id)
@@ -71,7 +64,6 @@ pub fn build(
         "running": running,
         "pendingPrompts": pending,
         "windows": windows,
-        "nextTask": next,
     })
 }
 
@@ -137,19 +129,35 @@ fn preserve_last_known(previous: &Value, disconnected: &Value) -> Value {
 
 fn preserve_last_known_at(previous: &Value, disconnected: &Value, now: &str) -> Value {
     let mut next = disconnected.clone();
-    for key in [
-        "server",
-        "selectedProviderId",
-        "selectedProvider",
-        "running",
-        "pendingPrompts",
-        "windows",
-        "nextTask",
-        "writtenAt",
-    ] {
+    for key in ["server", "selectedProviderId", "selectedProvider", "running", "pendingPrompts", "windows", "writtenAt"]
+    {
         if let Some(value) = previous.get(key) {
             next[key] = value.clone();
         }
+    }
+    let selected_id = next.get("selectedProviderId").and_then(Value::as_str).unwrap_or("");
+    if let Some(windows) = previous.get("windows").and_then(Value::as_array) {
+        next["windows"] = Value::Array(
+            windows
+                .iter()
+                .filter(|window| window.get("instanceId").and_then(Value::as_str) == Some(selected_id))
+                .cloned()
+                .collect(),
+        );
+    }
+    if let Some(running) = previous.get("running").and_then(Value::as_array) {
+        next["running"] = Value::Array(
+            running
+                .iter()
+                .map(|thread| {
+                    let mut thread = thread.clone();
+                    if let Some(fields) = thread.as_object_mut() {
+                        fields.remove("provider");
+                    }
+                    thread
+                })
+                .collect(),
+        );
     }
     next["connected"] = Value::Bool(false);
     next["stale"] = Value::Bool(true);
@@ -194,37 +202,52 @@ mod tests {
     }
 
     #[test]
-    fn feed_names_running_provider_and_keeps_approval_rows_distinct() {
-        let provider: Provider = serde_json::from_value(json!({
+    fn compact_feed_shows_one_selected_account_without_running_account_labels() {
+        let selected_provider: Provider = serde_json::from_value(json!({
             "instanceId": "codex-work",
             "driver": "codex",
             "displayName": "ChatGPT Work",
             "enabled": true,
             "installed": true,
-            "auth": "ready"
+            "auth": "ready",
+            "usageLimits": {"windows": [{"kind": "session", "label": "Session", "usedPercent": 24.0}]}
+        }))
+        .unwrap();
+        let other_provider: Provider = serde_json::from_value(json!({
+            "instanceId": "claude-private",
+            "driver": "claudeAgent",
+            "displayName": "PRIVATE RUNNING ACCOUNT LABEL",
+            "enabled": true,
+            "installed": true,
+            "auth": "ready",
+            "usageLimits": {"windows": [{"kind": "session", "label": "PRIVATE RUNNING ACCOUNT LABEL", "usedPercent": 12.0}]}
         }))
         .unwrap();
         let threads = vec![
             ThreadShell {
                 id: "running".into(),
                 title: "Build".into(),
-                provider_instance_id: "codex-work".into(),
+                provider_instance_id: "claude-private".into(),
                 rest: json!({"activeRunId": "run-1"}),
                 ..Default::default()
             },
             ThreadShell {
                 id: "approval".into(),
                 title: "Review".into(),
-                provider_instance_id: "codex-work".into(),
+                provider_instance_id: "claude-private".into(),
                 rest: json!({"activeRunId": "run-2", "pendingRuntimeRequestCount": 1}),
                 ..Default::default()
             },
         ];
-        let v = build(true, "eos", "codex-work", &[provider], &threads);
+        let v = build(true, "eos", "codex-work", &[selected_provider, other_provider], &threads);
 
         assert_eq!(v["running"].as_array().unwrap().len(), 1);
-        assert_eq!(v["running"][0]["provider"], "ChatGPT Work");
+        assert!(v["running"][0].get("provider").is_none());
+        assert!(!v.to_string().contains("PRIVATE RUNNING ACCOUNT LABEL"));
         assert_eq!(v["selectedProvider"], "ChatGPT Work");
+        assert_eq!(v["windows"].as_array().unwrap().len(), 1);
+        assert_eq!(v["windows"][0]["provider"], "ChatGPT Work");
+        assert_eq!(v["windows"][0]["label"], "Session");
         assert_eq!(v["pendingPrompts"].as_array().unwrap().len(), 1);
     }
 
@@ -236,11 +259,15 @@ mod tests {
             "connected": true,
             "stale": false,
             "server": "workstation",
+            "selectedProviderId": "codex-work",
             "selectedProvider": "ChatGPT Work",
-            "running": [{"id": "thread-1"}],
+            "running": [{"id": "thread-1", "provider": "PRIVATE RUNNING ACCOUNT LABEL"}],
             "pendingPrompts": [{"id": "thread-2", "count": 1}],
-            "windows": [{"provider": "Codex", "usedPercent": 48.0}],
-            "nextTask": {"provider": "Codex", "reason": "ready"}
+            "windows": [
+                {"instanceId": "codex-work", "provider": "Codex", "usedPercent": 48.0},
+                {"instanceId": "claude-private", "provider": "PRIVATE RUNNING ACCOUNT LABEL", "usedPercent": 12.0}
+            ],
+            "nextTask": {"provider": "PRIVATE RUNNING ACCOUNT LABEL", "reason": "ready"}
         });
         let offline = stale_after_shutdown(&previous, "2026-10-22T12:30:00Z");
 
@@ -251,7 +278,11 @@ mod tests {
         assert_eq!(offline["writtenAt"], "2026-10-22T12:00:00Z");
         assert_eq!(offline["updatedAt"], "2026-10-22T12:30:00Z");
         assert_eq!(offline["running"][0]["id"], "thread-1");
+        assert!(offline["running"][0].get("provider").is_none());
         assert_eq!(offline["pendingPrompts"][0]["count"], 1);
+        assert_eq!(offline["windows"].as_array().unwrap().len(), 1);
         assert_eq!(offline["windows"][0]["provider"], "Codex");
+        assert!(!offline.to_string().contains("PRIVATE RUNNING ACCOUNT LABEL"));
+        assert!(offline.get("nextTask").is_none());
     }
 }

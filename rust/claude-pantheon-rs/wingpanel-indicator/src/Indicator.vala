@@ -21,7 +21,6 @@ public class ClaudePantheon.Feed : Object {
     public Gee.ArrayList<Window> windows = new Gee.ArrayList<Window> ();
     public Gee.ArrayList<Thread> running = new Gee.ArrayList<Thread> ();
     public Gee.ArrayList<Thread> pending = new Gee.ArrayList<Thread> ();
-    public string next_task = "";
 
     public class Window : Object {
         public string instance_id = "";
@@ -35,7 +34,6 @@ public class ClaudePantheon.Feed : Object {
     public class Thread : Object {
         public string id = "";
         public string title = "";
-        public string provider = "";
         public int count = 0;
     }
 
@@ -82,13 +80,9 @@ public class ClaudePantheon.Feed : Object {
                 var thread = new Thread ();
                 thread.id = t.get_string_member ("id");
                 thread.title = t.get_string_member ("title");
-                thread.provider = t.has_member ("provider") ? t.get_string_member ("provider") : "";
                 thread.count = t.has_member ("count") ? (int) t.get_int_member ("count") : 0;
                 (key == "running" ? feed.running : feed.pending).add (thread);
             }
-        }
-        if (o.has_member ("nextTask") && !o.get_null_member ("nextTask")) {
-            feed.next_task = o.get_object_member ("nextTask").get_string_member ("reason");
         }
         return feed;
     }
@@ -331,7 +325,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         foreach (var t in feed.running) {
             var b = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
             b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var label = live ? "▶ %s · %s".printf (t.title, t.provider) : "Last known · %s · %s".printf (t.title, t.provider);
+            var label = live ? "▶ %s".printf (t.title) : "Last known · %s".printf (t.title);
             var l = new Gtk.Label (label) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             b.child = l;
             var id = t.id;

@@ -88,7 +88,7 @@ int main (string[] args) {
             return 1;
         }
     }
-    foreach (var hidden in new string[] { "Claude session", "Grok · Weekly", "next task" }) {
+    foreach (var hidden in new string[] { "Claude session", "Grok · Weekly", "PRIVATE RUNNING ACCOUNT LABEL", "next task" }) {
         foreach (var t in texts) {
             if (t.contains (hidden)) {
                 stderr.printf ("FAIL: selected-provider panel leaked '%s' in %s\n", hidden, string.joinv (" | ", texts.to_array ()));

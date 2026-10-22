@@ -193,6 +193,7 @@ def inside(binary, output, theme):
         assert 'Needs approval' not in labels and 'Live T3 work' not in labels, labels
         command('xdotool', 'key', 'F6')
         waitfor(lambda: 'Needs approval' in state()['t3_text'] and 'Live T3 work' in state()['t3_text'])
+        assert 'PRIVATE RUNNING ACCOUNT LABEL' not in state()['t3_text'], state()['t3_text']
         command('xdotool', 'mousemove', '1270', '890')
         move('t3r')
         waitfor(lambda: state().get('t3_popup'))
@@ -308,7 +309,7 @@ Exec=fixture-action settings
                     {'instanceId': 'claude', 'provider': 'Claude', 'label': '5-hour', 'usedPercent': 7},
                 ],
                 'pendingPrompts': [{'id': 'pending-1', 'title': 'Needs approval', 'count': 2}],
-                'running': [{'id': 'fixture-thread', 'title': 'Live T3 work', 'provider': 'codex'}],
+                'running': [{'id': 'fixture-thread', 'title': 'Live T3 work', 'provider': 'PRIVATE RUNNING ACCOUNT LABEL'}],
             }))
             (home/'schema-free-data').mkdir()
             runtime = home/'runtime'
