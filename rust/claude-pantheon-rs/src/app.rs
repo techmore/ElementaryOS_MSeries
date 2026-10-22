@@ -109,6 +109,8 @@ struct Live {
     base_subtitle: String,
     sub_id: Option<String>,
     sequence: Option<u64>,
+    cache_revision: u64,
+    persisted_cache_marker: Option<CacheMarker>,
     stale: bool,
     history_cursor: Option<String>,
     has_more_history: bool,
@@ -119,6 +121,23 @@ struct Live {
     /// Item id → widget currently in the chat column.
     widgets: HashMap<String, gtk::Widget>,
     running: bool,
+}
+
+/// Cache identity for the projection currently represented on disk.
+///
+/// T3 guarantees that a projection at the same `snapshotSequence` is identical. History paging is
+/// tracked separately because it can change the visible projection without advancing that stream
+/// sequence.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct CacheMarker {
+    sequence: u64,
+    history_cursor: Option<String>,
+    has_more_history: bool,
+    revision: u64,
+}
+
+fn cache_write_needed(current: &CacheMarker, persisted: Option<&CacheMarker>) -> bool {
+    persisted != Some(current)
 }
 
 /// A new thread being composed before its first message.
@@ -2648,9 +2667,9 @@ impl App {
             self.terminal_pane.detach();
         }
         let taken = self.live.borrow_mut().take();
-        if let Some(live) = taken {
+        if let Some(mut live) = taken {
             if !live.running {
-                self.persist_thread_cache(&live);
+                self.persist_thread_cache(&mut live);
             }
             if let Some(sub_id) = live.sub_id
                 && let Some(c) = self.conn.borrow().as_ref()
@@ -2811,8 +2830,14 @@ impl App {
         };
         let generation = self.generation.get() + 1;
         self.generation.set(generation);
-        let cached = in_memory
-            .or_else(|| environment_id.as_deref().and_then(|environment| thread_cache::load(environment, &thread.id)));
+        let disk_cached = environment_id.as_deref().and_then(|environment| thread_cache::load(environment, &thread.id));
+        let persisted_cache_marker = disk_cached.as_ref().map(|record| CacheMarker {
+            sequence: record.sequence,
+            history_cursor: record.history_cursor.clone(),
+            has_more_history: record.has_more_history,
+            revision: 0,
+        });
+        let cached = in_memory.or_else(|| disk_cached.clone());
         let base_subtitle = self.thread_subtitle(&thread);
         let view = cached.as_ref().map(|record| record.view.clone()).unwrap_or_default();
         let sequence = cached.as_ref().map(|record| record.sequence);
@@ -2863,6 +2888,8 @@ impl App {
             base_subtitle,
             sub_id: Some(sub_id),
             sequence,
+            cache_revision: 0,
+            persisted_cache_marker,
             stale: true,
             history_cursor,
             has_more_history,
@@ -2923,11 +2950,21 @@ impl App {
         format!("{provider} · {model} · {mode} · {project}")
     }
 
-    fn persist_thread_cache(&self, live: &Live) {
+    fn persist_thread_cache(&self, live: &mut Live) {
         if live.running {
             return;
         }
         let (Some(environment_id), Some(sequence)) = (live.environment_id.as_deref(), live.sequence) else { return };
+        let marker = CacheMarker {
+            sequence,
+            history_cursor: live.history_cursor.clone(),
+            has_more_history: live.has_more_history,
+            revision: live.cache_revision,
+        };
+        if !cache_write_needed(&marker, live.persisted_cache_marker.as_ref()) {
+            thread_cache::note_skipped_write();
+            return;
+        }
         let record = thread_cache::CachedThread::new(
             environment_id,
             &live.thread_id,
@@ -2936,10 +2973,13 @@ impl App {
             live.history_cursor.as_deref(),
             live.has_more_history,
         );
-        if let Err(error) = thread_cache::save(&record) {
-            // Oversized histories remain usable online; they simply do not replace the last good cache.
-            if !error.contains("exceeds") {
-                eprintln!("could not save the T3 thread cache: {error}");
+        match thread_cache::save(&record) {
+            Ok(()) => live.persisted_cache_marker = Some(marker),
+            Err(error) => {
+                // Oversized histories remain usable online; they simply do not replace the last good cache.
+                if !error.contains("exceeds") {
+                    eprintln!("could not save the T3 thread cache: {error}");
+                }
             }
         }
     }
@@ -2984,15 +3024,23 @@ impl App {
                 }
                 let view = ThreadView::from_projection(&v["projection"]);
                 let running = view.is_running();
+                let history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
+                let has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
                 if let Some(live) = self.live.borrow_mut().as_mut() {
+                    if live.sequence != sequence
+                        || live.history_cursor != history_cursor
+                        || live.has_more_history != has_more_history
+                    {
+                        live.cache_revision = live.cache_revision.wrapping_add(1);
+                    }
                     live.view = view;
                     live.running = running;
                     live.sequence = sequence;
                     // The snapshot is only the replay base. Keep actions disabled until the
                     // subscription confirms that catch-up has reached the live edge.
                     live.stale = true;
-                    live.history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
-                    live.has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
+                    live.history_cursor = history_cursor;
+                    live.has_more_history = has_more_history;
                     live.history_loading = false;
                     live.history_error = None;
                     self.subtitle.set_text(&format!("{} · syncing", live.base_subtitle));
@@ -3012,10 +3060,12 @@ impl App {
                 let etype = event.get("type").and_then(Value::as_str).unwrap_or("");
                 let payload = &event["payload"];
                 let mut finished = false;
+                let mut cache_changed = false;
                 match etype {
                     "turn-item.updated" => {
                         if let Ok(item) = serde_json::from_value::<TurnItem>(payload.clone()) {
                             self.update_item(item);
+                            cache_changed = true;
                         }
                     }
                     "run.created" | "run.updated" => {
@@ -3024,12 +3074,14 @@ impl App {
                             live.view.upsert_run(payload.clone());
                             live.running = live.view.is_running();
                             finished = was_running && !live.running;
+                            cache_changed = true;
                         }
                         self.stop_btn.set_visible(self.live.borrow().as_ref().is_some_and(|live| live.running));
                     }
                     "checkpoint.captured" => {
                         if let Some(live) = self.live.borrow_mut().as_mut() {
                             live.view.checkpoints.push(payload.clone());
+                            cache_changed = true;
                         }
                     }
                     "thread.updated" | "thread.created" => {
@@ -3041,9 +3093,14 @@ impl App {
                 }
                 if let Some(live) = self.live.borrow_mut().as_mut() {
                     live.sequence = sequence.or(live.sequence);
+                    if cache_changed {
+                        live.cache_revision = live.cache_revision.wrapping_add(1);
+                    }
                 }
                 if finished {
                     self.run_finished();
+                }
+                if cache_changed && self.live.borrow().as_ref().is_some_and(|live| !live.running) {
                     self.persist_current_thread_cache();
                 }
             }
@@ -3061,7 +3118,7 @@ impl App {
     }
 
     fn persist_current_thread_cache(&self) {
-        if let Some(live) = self.live.borrow().as_ref() {
+        if let Some(live) = self.live.borrow_mut().as_mut() {
             self.persist_thread_cache(live);
         }
     }
@@ -3218,6 +3275,7 @@ impl App {
                     let added = live.view.prepend_history(page.items);
                     live.history_cursor = page.next_cursor;
                     live.has_more_history = page.has_more_history && live.history_cursor.is_some();
+                    live.cache_revision = live.cache_revision.wrapping_add(1);
                     live.history_loading = false;
                     live.history_error = None;
                     if added == 0 && live.has_more_history && live.history_cursor.as_deref() == Some(cursor.as_str()) {
@@ -4118,5 +4176,22 @@ mod reconnect_tests {
         assert!(gate.is_current(next_environment));
         assert!(gate.release(next_environment));
         assert!(gate.reserve().is_some(), "the next failure may schedule its own retry");
+    }
+
+    #[test]
+    fn unchanged_cache_marker_skips_rewrites_but_cursor_and_projection_revisions_write() {
+        let persisted =
+            CacheMarker { sequence: 12, history_cursor: Some("page-a".into()), has_more_history: true, revision: 3 };
+        assert!(!cache_write_needed(&persisted, Some(&persisted)));
+        assert!(cache_write_needed(&persisted, None));
+
+        let changed_cursor = CacheMarker { history_cursor: Some("page-b".into()), ..persisted.clone() };
+        assert!(cache_write_needed(&changed_cursor, Some(&persisted)));
+
+        let changed_projection = CacheMarker { revision: 4, ..persisted.clone() };
+        assert!(cache_write_needed(&changed_projection, Some(&persisted)));
+
+        let advanced_sequence = CacheMarker { sequence: 13, ..persisted.clone() };
+        assert!(cache_write_needed(&advanced_sequence, Some(&persisted)));
     }
 }

@@ -55,6 +55,11 @@ pub fn stats() -> CacheStats {
     }
 }
 
+/// Records an unchanged projection that did not need another full cache write.
+pub fn note_skipped_write() {
+    CACHE_SKIPPED_WRITES.fetch_add(1, Ordering::Relaxed);
+}
+
 /// A replay event is applied only once and only when it advances the paired projection cursor.
 pub fn event_is_new(current_sequence: Option<u64>, incoming_sequence: u64) -> bool {
     current_sequence.is_none_or(|current| incoming_sequence > current)
