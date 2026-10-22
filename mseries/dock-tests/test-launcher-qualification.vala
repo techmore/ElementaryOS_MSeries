@@ -80,6 +80,14 @@ void collect_text (Gtk.Widget w, StringBuilder text) {
     if (w is Gtk.Label) text.append (((Gtk.Label) w).label + " ");
     for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) collect_text(c,text);
 }
+string label_with_class (Gtk.Widget w, string css_class) {
+    if (w is Gtk.Label && w.has_css_class (css_class)) return ((Gtk.Label) w).label;
+    for (var c=w.get_first_child();c!=null;c=c.get_next_sibling()) {
+        var found = label_with_class (c, css_class);
+        if (found.length > 0) return found;
+    }
+    return "";
+}
 Dock.Window make_window (uint64 uid, string id, bool focused=false) {
     var w = new Dock.Window (uid);
     var p = new HashTable<string,Variant> (str_hash,str_equal);
@@ -156,6 +164,7 @@ void show_fixture (bool dark) {
         data.set_member_name("menus");data.begin_array();foreach(var l in launchers)data.add_boolean_value(popup_mapped(l));data.end_array();
         data.set_member_name("t3_popup");data.add_boolean_value(t3_popup_mapped(launchers[4]));
         data.set_member_name("t3_competing_popup");data.add_boolean_value(competing_popup_mapped(launchers[4]));
+        data.set_member_name("t3_account");data.add_string_value(label_with_class(launchers[4], "taskbar-t3r-account"));
         var t3_text=new StringBuilder (); collect_text (launchers[4], t3_text);
         data.set_member_name("t3_text");data.add_string_value (t3_text.str);
         data.set_member_name("markers");data.begin_array();

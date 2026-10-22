@@ -68,6 +68,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         };
         account.add_css_class ("caption");
         account.add_css_class ("dim-label");
+        account.add_css_class ("taskbar-t3r-account");
         title_block.append (title);
         title_block.append (account);
         heading.append (mark);
@@ -281,8 +282,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         string selected_provider = feed.get_string_member_with_default ("selectedProvider", "");
         string updated = feed.get_string_member_with_default (connected ? "updatedAt" : "writtenAt", "");
 
-        string account_name = selected_provider.length > 0 ? selected_provider : server;
-        account.label = account_name.length > 0 ? account_name : "No T3 account";
+        string account_name = selected_provider.length > 0 ? selected_provider : selected_id;
+        account.label = account_name.length > 0 ? account_name : "No provider selected";
         string connection_status;
         if (live) {
             connection_status = server.length > 0 ? "Connected to %s · live status".printf (server) : "Connected · live status";

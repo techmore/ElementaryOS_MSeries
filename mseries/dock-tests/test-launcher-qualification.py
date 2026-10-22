@@ -138,8 +138,32 @@ def inside(binary, output, theme):
         assert state()['focused_entry'], 'T3 hover popup stole typing focus'
         labels = state()['t3_text']
         assert 'fixture-eos' in labels and 'Codex' in labels and '42% used' in labels, labels
+        assert state()['t3_account'] == 'ChatGPT Work', state()
         assert 'Claude' not in labels, 'popover showed a provider account other than the selected account: ' + labels
         assert 'Needs approval' in labels and 'Live T3 work' in labels, labels
+
+        # Older status snapshots can contain a selected account ID without its display name,
+        # or no selection at all. The Dock keeps the account label distinct from the T3 server.
+        status_file = Path(os.environ['XDG_CACHE_HOME'])/'claude-pantheon-rs'/'status.json'
+        feed = json.loads(status_file.read_text())
+        feed.pop('selectedProvider', None)
+        temporary = status_file.with_suffix('.json.tmp')
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'codex')
+        assert state()['t3_account'] != 'fixture-eos'
+        feed.pop('selectedProviderId', None)
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'No provider selected')
+        assert 'fixture-eos' in state()['t3_text'], 'the paired server should remain in connection status'
+        assert 'No usage window reported' in state()['t3_text'], 'unknown provider selection must hide account usage'
+        feed['selectedProviderId'] = 'codex'
+        feed['selectedProvider'] = 'ChatGPT Work'
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'ChatGPT Work')
+
         command('ffmpeg', '-nostdin', '-loglevel', 'error', '-f', 'x11grab', '-video_size', origin['WIDTH']+'x'+origin['HEIGHT'],
                 '-i', os.environ['DISPLAY']+'+'+origin['X']+','+origin['Y'], '-frames:v', '1', '-update', '1', '-y', str(output/(theme+'-t3r-hover.png')))
         command('xdotool', 'key', 'F8')  # activate the live-thread row without relying on popup-surface coordinates
@@ -277,7 +301,7 @@ Exec=fixture-action settings
             status_dir.mkdir(parents=True)
             (status_dir/'status.json').write_text(json.dumps({
                 'schemaVersion': 1, 'connected': True, 'stale': False, 'server': 'fixture-eos',
-                'selectedProviderId': 'codex', 'updatedAt': '2026-10-22T12:00:00Z',
+                'selectedProviderId': 'codex', 'selectedProvider': 'ChatGPT Work', 'updatedAt': '2026-10-22T12:00:00Z',
                 'windows': [
                     {'instanceId': 'codex', 'provider': 'Codex', 'label': '5-hour', 'usedPercent': 42},
                     {'instanceId': 'claude', 'provider': 'Claude', 'label': '5-hour', 'usedPercent': 7},
