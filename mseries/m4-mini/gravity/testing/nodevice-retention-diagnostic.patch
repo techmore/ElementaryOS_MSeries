@@ -1,9 +1,6 @@
 --- a/drivers/gpu/drm/scheduler/sched_main.c
 +++ b/drivers/gpu/drm/scheduler/sched_main.c
-@@ -566,10 +566,17 @@
- 		if (sched->free_guilty) {
- 			job->sched->ops->free_job(job);
- 			sched->free_guilty = false;
+@@ -568,0 +569,10 @@
 +		} else if (status == DRM_GPU_SCHED_STAT_NO_HANG) {
 +			drm_sched_job_reinsert_on_false_timeout(sched, job);
 +		} else if (status == DRM_GPU_SCHED_STAT_ENODEV &&
@@ -14,74 +11,34 @@
 +				list_add(&job->list, &sched->pending_list);
 +			drm_sched_run_free_queue(sched);
 +			spin_unlock(&sched->job_list_lock);
- 		}
+@@ -570,3 +579,0 @@
 -
 -		if (status == DRM_GPU_SCHED_STAT_NO_HANG)
 -			drm_sched_job_reinsert_on_false_timeout(sched, job);
- 	} else {
- 		spin_unlock(&sched->job_list_lock);
- 	}
 --- a/include/drm/gpu_scheduler.h
 +++ b/include/drm/gpu_scheduler.h
-@@ -538,6 +538,9 @@
- 	 * drm_sched_backend_ops.free_job.
- 	 */
- 	void (*cancel_job)(struct drm_sched_job *sched_job);
+@@ -540,0 +541,3 @@
 +
 +	/* Diagnostic adaptation of Aurora 0f89327 opt-in retention. */
 +	bool retain_job_on_enodev;
- };
-
- /**
 --- a/rust/kernel/drm/sched.rs
 +++ b/rust/kernel/drm/sched.rs
-@@ -346,6 +346,8 @@
-         timedout_job: Some(timedout_job_cb::<T>),
-         free_job: Some(free_job_cb::<T>),
-         cancel_job: Some(cancel_job_cb::<T>),
+@@ -348,0 +349,2 @@
 +        // Diagnostic only: no production package applies this patch.
 +        retain_job_on_enodev: true,
-     };
-     /// Creates a new DRM Scheduler object
-     // TODO: Shared timeout workqueues & scores
-@@ -441,6 +443,7 @@
-     }
-
-     struct TestJob {
+@@ -443,0 +446 @@
 +        no_device: bool,
-         hw: Fence,
-         counters: Arc<Counters>,
-     }
-@@ -461,7 +464,7 @@
-             // Like G17, keep the job and its parent callback. The hardware
-             // result still arrives later through the parent fence.
-             data.counters.timeouts.fetch_add(1, SeqCst);
+@@ -464 +467 @@
 -            Status::NoHang
 +            if data.no_device { Status::NoDevice } else { Status::NoHang }
-         }
-
-         fn cancel(job: &mut Job<Self>) {
-@@ -510,11 +513,16 @@
-
-     impl Pending {
-         fn new(entity: &mut Entity<TestJob>, contexts: &FenceContexts) -> Result<Self> {
+@@ -512,0 +516,4 @@
 +            Self::with_status(entity, contexts, false)
 +        }
 +
 +        fn with_status(entity: &mut Entity<TestJob>, contexts: &FenceContexts, no_device: bool) -> Result<Self> {
-             let hw: UserFence<HwFence> = contexts.new_fence(0, HwFence)?.into();
-             let counters = Arc::new(Counters::default(), GFP_KERNEL)?;
-             let job = entity.new_job(
-                 1,
-                 TestJob {
+@@ -517,0 +525 @@
 +                    no_device,
-                     hw: Fence::from_fence(&hw),
-                     counters: counters.clone(),
-                 },
-@@ -535,6 +543,29 @@
-             self.hw.signal();
-             true
-         }
+@@ -537,0 +546,23 @@
 +    }
 +
 +    #[test]
@@ -105,6 +62,3 @@
 +        assert!(released);
 +        assert_eq!(counters.freed.load(SeqCst), 1);
 +        Ok(())
-     }
-
-     #[test]

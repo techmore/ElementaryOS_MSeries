@@ -63,12 +63,13 @@
     "git_branch": "kselftest"
   },
   "hardware_validated": false,
-  "archived_patch_sha256": "5987e1067e3ee2c2e822b57905e5bbfa1f2134561cd69a60aa40f5681d54a71b",
+  "archived_patch_sha256": "2165cba132a90632cee23786e75f31870752f67d6cd4bf09aa78af77f7703818",
   "normal_kernel_builder_applies_patch": false,
   "limitations": [
     "diagnostic sets retention for the test Rust backend; production requires explicit backend contract",
     "does not resolve scheduler allocation lifetime or mutable timeout aliasing",
     "does not exercise M4 GPU firmware or native teardown",
     "full g16-enabled kernel build with this adaptation has not run"
-  ]
+  ],
+  "patch_format_note": "zero context avoids whitespace warnings from C tab context; source delta unchanged"
 }
