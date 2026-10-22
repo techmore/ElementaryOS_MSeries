@@ -9,6 +9,9 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$here/../.." && pwd)"
 out="${CLAUDE_PANTHEON_OUTPUT_DIR:-$repo_root/build/claude-pantheon-rs-deb}"
+if [[ "$out" != /* ]]; then
+  out="$repo_root/$out"
+fi
 stage="$out/package"
 id=io.github.techmore.ClaudePantheonRs
 
