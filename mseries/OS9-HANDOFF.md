@@ -50,12 +50,14 @@ message) and Escape (clear focused search or return to the compact conversation
 list). Search, conversation list, favorite control and composer have SDK
 accessible names. The conversation header can explicitly copy recipient
 addresses to the clipboard. Sending still requires the explicit Send button.
+The startup error screen also has a Retry action that closes the placeholder and
+reactivates Messages, so an unavailable BlueFerry API can be retried in place.
 
 **Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml --package mseries-messages`,
 `cargo check --locked --manifest-path rust/Cargo.toml -p mseries-messages`, and
 `git diff --check` passed. No Messages test suite or GUI probe was run for this
-keyboard and clipboard-action change. Full interaction and assistive-technology
-review remains open.
+keyboard, clipboard-action and retry change. Full interaction and
+assistive-technology review remains open.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
