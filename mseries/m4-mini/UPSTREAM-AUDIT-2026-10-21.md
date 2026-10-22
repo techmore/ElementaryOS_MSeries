@@ -581,3 +581,15 @@ upstream tests were disabled. The original kernel build remains separate.
 
 [Image-input preflight](receipts/2026-10-21-image-inputs-preflight.json),
 [second setup failure](receipts/2026-10-21-hosted-mesa-failure-2.json).
+
+### Corrected hosted Mesa retry
+
+Run [39702973626](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39702973626)
+uses source `77f9561ce40e0e1d59b03d720a3c4efddf856441`, including the complete
+captured development dependency list. Its dispatch snapshot is retained in
+[the retry receipt](receipts/2026-10-21-hosted-mesa-retry-3.json). The dependency
+regression and three image-input patch tests pass locally. The earlier kernel
+run `39698975678` remains independently active at this snapshot. Neither run
+has a successful hosted result yet. Owner hardware is unavailable; continue
+public-source preparation without claiming HDMI, 10 Gb traffic, or dual-boot
+qualification.

@@ -3838,3 +3838,8 @@ M4 audit correction: Gravity Linux publishes a developer alpha with reported
 J773g HDMI/DCP and GPU. The earlier Asahi-only unsupported summary was incomplete.
 Its full stack is now pinned in m4-mini/research.json and its board DT compiles;
 see m4-mini/GRAVITY-INTEGRATION.md for elementary integration gaps and alpha limits.
+
+M4 hosted Mesa retry 39702973626 dispatched at 77f9561c with all 18 captured
+development prerequisites; dependency regression and three candidate patch tests
+pass. Original kernel run 39698975678 remains active. Hardware is unavailable;
+continue public-source work. No hosted success or hardware qualification claimed.

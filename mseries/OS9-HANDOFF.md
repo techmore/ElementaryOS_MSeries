@@ -10805,3 +10805,8 @@ Secondary Asahi baseline build was stopped at low shared disk space; verified
 its whole owned process subtree exited, retained config/source/logs and removed
 only regenerable object cache. Full baseline build is explicitly uncompleted.
 Primary Gravity kernel handle 81046 remains running with required NIC config.
+
+M4 hosted Mesa retry 39702973626 dispatched at 77f9561c with all 18 captured
+development prerequisites; dependency regression and three candidate patch tests
+pass. Original kernel run 39698975678 remains active. Hardware is unavailable;
+continue public-source work. No hosted success or hardware qualification claimed.
