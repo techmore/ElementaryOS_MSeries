@@ -46,3 +46,10 @@ source lane and must not be layered on the current r4 recipe, which already
 contains retention. The normal three-case testing manifest still applies after
 r4. Six-case associated-constant API evidence is retained in the API receipt;
 a current-recipe six-case test patch is a follow-up.
+
+Current recipe update: `0002-nodevice-retention-cases.patch` is now selected
+after test 0001 on revision-4 compatibility. It adds the three NoDevice cases
+and opts the fake backend in through the same default-false trait constant.
+The exact current recipe passes all six cases on generic ARM64 QEMU, with
+source and manifest hashes in the r4 KUnit receipt. Historical optional combined
+patches above remain excluded and must not be applied on top of this recipe.

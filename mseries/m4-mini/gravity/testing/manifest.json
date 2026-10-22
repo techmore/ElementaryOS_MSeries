@@ -1,3 +1,4 @@
 {
-  "0001-scheduler-kunit.patch": "d5eeb7b5680408a6ce070b2173b3cc1d02c08abd8a81cb334cc036c3fd580d83"
+  "0001-scheduler-kunit.patch": "d5eeb7b5680408a6ce070b2173b3cc1d02c08abd8a81cb334cc036c3fd580d83",
+  "0002-nodevice-retention-cases.patch": "31800db0a5c2f642a0999552f0541b5be9486b98ac2886d1a1292ce4353c55df"
 }

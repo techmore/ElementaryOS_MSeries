@@ -1,0 +1,86 @@
+{
+  "scope": "current revision-4 production compatibility plus two normal test-manifest patches; six generic ARM64 QEMU tests, not M4 GPU runtime",
+  "exit": 0,
+  "historical_source_restored": true,
+  "tested_source_hashes": {
+    "drivers/gpu/drm/scheduler/sched_main.c": "5b66ccc25769f6adbff3659644081cc42c478e369a68b2028cd433dd1e4e6701",
+    "include/drm/gpu_scheduler.h": "60f2106b322a1b7c25e085e84b9426d7bbde9f25ab3c94d70d1bc5f3d5ddc596",
+    "rust/kernel/drm/sched.rs": "2c6550f685302090d3dffc887984487c7b52362ab5eb74ef86ee0d9f6ffc82ef",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "d1dae5065a076e4efc1be5db0e0413b22673d6b35043f11dfeb9328b3d6df259"
+  },
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "nodevice_completion_during_timeout_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_unfinished_job_is_reachable_at_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 6,
+          "passed": 6,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false,
+  "compatibility_patches": {
+    "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+    "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+  },
+  "test_patches": {
+    "0001-scheduler-kunit.patch": "d5eeb7b5680408a6ce070b2173b3cc1d02c08abd8a81cb334cc036c3fd580d83",
+    "0002-nodevice-retention-cases.patch": "31800db0a5c2f642a0999552f0541b5be9486b98ac2886d1a1292ce4353c55df"
+  }
+}

@@ -11013,3 +11013,12 @@ Full r4 Image/modules/DTBs/package compilation is required before changing
 reviewed image inputs. The earlier production-API prototype is now selected
 by the r4 recipe; no kernel has been installed. Shared allocation-owner and
 mutable timeout-aliasing reviews remain open.
+
+The current revision-4 compatibility and normal testing manifests now replay
+without fuzz and pass all six ARM64 QEMU cases; see
+`mseries/m4-mini/receipts/2026-10-21-scheduler-r4-kunit.json`. Full hosted
+revision-4 build 39715540751 is pending behind live initialization-only r3 run
+39709872273; source is 25504a70b0df4df52654974de9df5e3074ab4973. Baseline
+image replay 39714779495 remains live in full graph assembly. Preserve these
+run identities; do not restart them on an observation timeout. Neither full
+r4 compilation nor image completion is claimed. Hardware remains unavailable.
