@@ -4088,3 +4088,14 @@ All 12 tracked upstream heads were rechecked; none changed from the previous
 observation (upstream-head-refresh-2 receipt). Normal manifests remain revision
 4; mutable callback aliasing remains open. Image 39714779495 and r3 kernel
 39709872273 remain live; r4 kernel 39715540751 is pending.
+
+Initialization-only kernel revision 3 completed successfully in hosted run
+39709872273. The downloaded package and source archive pass complete payload
+checksum checks, own-repository/workflow/source provenance checks and current
+version-specific package validation (1,598 modules, 16 KiB Image, J773g DTB,
+module identity/dependencies, no hooks). Package SHA256 is
+60ff6803c34f01c733950cf13ddeec785047e638809fd6338c6fdccbbe801a5c.
+Its receipt contains initialization only: it is not credited with r4 retention
+or the unpromoted owner/module candidates. Full r4 run 39715540751 is now
+in progress. Baseline image run 39714779495 remains live, using reviewed r2
+inputs; no complete image or hardware result is claimed. See hosted-kernel-r3-success.
