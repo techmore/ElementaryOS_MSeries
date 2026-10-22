@@ -8,6 +8,23 @@ or deleted. Current scope includes T3, Messages, Disk Space, Software Updates,
 Torrential SDK adoption and the System Monitor preview. The updater service and
 privileged helper remain OS-owned behind a typed versioned app contract.
 
+### Torrential SDK adoption — 2026-10-22
+
+The private `torrential` fork on `mseries-native` now applies the pinned
+`mseries-pantheon-kit` layout helpers to the main content, status bar, magnet
+dialog and preferences window. Torrent search narrows at the compact breakpoint;
+header, entry, row action and progress widgets receive localized accessible
+names. Torrent row labels are cached and refreshed only when the torrent name
+or state changes, avoiding repeated accessible-property writes during updates.
+`cargo check --locked` and `git diff --check` pass in the private checkout.
+The workspace-wide `cargo fmt --all --check` still reports existing formatting
+drift across legacy code; no broad reformat was applied. Existing GTK/Granite
+deprecation warnings remain. No GUI, accessibility, real daemon or transfer
+acceptance was run, and the fork remains private pending upstream license
+resolution. Next: review the rendered compact/regular layouts and keyboard/
+screen-reader labels, then measure update cost while a populated torrent list
+refreshes.
+
 Rust Messages continues to use BlueFerry as the sole MAP client and history
 owner. On top of the existing API v2 client, the app now has contact lookup,
 favorite and phone-scoped pin flows, keyboard shortcuts, shared Enter-to-send

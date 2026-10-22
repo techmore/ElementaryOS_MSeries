@@ -2959,8 +2959,11 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 9. **Torrential ARM64 native app port and optimization.** Native GTK/Granite
     package installed on the desktop; official Ubuntu torrent data transfer
     and full-ISO SHA-256 verified; RPC pause/resume checks passed. UI interaction,
-    close/reopen state restoration, and measured optimization remain. Upstream source and packages stay local pending a
-    license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
+    close/reopen state restoration, and measured optimization remain. The private
+    Rust/Relm4 `mseries-native` fork now consumes the shared SDK layout and
+    accessibility helpers and passes `cargo check --locked`; GUI and populated-
+    list performance acceptance remain. Upstream source and packages stay local
+    pending a license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 10. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
