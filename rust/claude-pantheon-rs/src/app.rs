@@ -312,7 +312,12 @@ impl App {
         chat.set_margin_end(24);
         let chat_scroll = gtk::ScrolledWindow::builder()
             .child(&chat)
+            // Keep the transcript in the window's allocated viewport. Its natural height is the
+            // full conversation, so propagating that request would push the composer off-screen.
             .hscrollbar_policy(gtk::PolicyType::Never)
+            .vscrollbar_policy(gtk::PolicyType::Automatic)
+            .propagate_natural_height(false)
+            .min_content_height(0)
             .vexpand(true)
             .hexpand(true)
             .build();
@@ -363,6 +368,7 @@ impl App {
         chat_page.append(&chat_scroll);
         chat_page.append(&terminal_revealer);
         chat_page.append(&composer);
+        chat_page.set_vexpand(true);
 
         // ---- other pages ---------------------------------------------------------------------
         let empty = granite::Placeholder::new("T3-R Pantheon");
@@ -424,6 +430,7 @@ impl App {
         let toast = granite::Toast::new("");
         let overlay = gtk::Overlay::new();
         overlay.set_child(Some(&stack));
+        overlay.set_vexpand(true);
         overlay.add_overlay(&toast);
 
         let main = gtk::Box::new(gtk::Orientation::Vertical, 0);

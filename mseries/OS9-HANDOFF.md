@@ -14,9 +14,11 @@ versioned environment/thread cache record that keeps the projection and `snapsho
 T3 `afterSequence`. Duplicate replay events are ignored, active turns are not written to disk, and live actions stay
 disabled until synchronization finishes. Corrupt and wrong-scope entries are discarded; unpair/removal clears them.
 The full chat now renders the server's bounded thread window and loads older history pages as the user scrolls to the
-top (with a retry control), using T3's opaque history cursor. Older pages deduplicate by source thread/item identity
-and preserve the visible reading position. Pagination state is saved with the thread cache. Cache hit telemetry and
-large-history/poor-network profiling remain open. Cache records retain all loaded messages until the 8 MiB record cap;
+top (with a retry control), using T3's opaque history cursor. The GTK transcript scroller is constrained to the
+window's available height and does not propagate the full transcript's natural height, keeping the composer beneath
+the scrolling viewport. Older pages deduplicate by source thread/item identity and preserve the visible reading
+position. Pagination state is saved with the thread cache. Cache hit telemetry and large-history/poor-network profiling
+remain open. Cache records retain all loaded messages until the 8 MiB record cap;
 they no longer advance the history cursor past rows dropped from a 500-item cache slice. Older cache schema versions are
 discarded so any intermediate cursor-gap cache cannot be reused.
 
@@ -58,6 +60,10 @@ provider account. The provider-settings DeepSeek shortcut was formatted, release
 tests were not rerun. The installed binary matches that release build. PID 3666742 was stopped after confirming no
 running work, pending prompts, or saved drafts; D-Bus activation launched PID 3789459 from the installed release binary.
 The full window launched and its fresh status feed reported connected to `eos`, Codex selected, running 0, pending 0.
+The follow-up that constrains transcript height passed `cargo fmt --check` and a release build, was installed to the same
+user-local binary, and D-Bus activation relaunched it as PID 3819605. Its fresh status feed remains connected to `eos`,
+Codex selected, running 0, pending 0. This confirms source/build/install and process activation; actual scroll input and
+visual anchoring of the composer still need a desktop interaction pass.
 The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. A live
 quick-panel visual pass, DeepSeek provider setup, scroll interaction, large-thread history, and high-latency reconnect
 qualification remain open.
