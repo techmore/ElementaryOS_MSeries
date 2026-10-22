@@ -76,6 +76,13 @@ enabled at boot; it does not advertise. The installer persists this setup, and
 the AirDrop panel explains that a radio-only blocker will be recovered when the
 user turns receiving on. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
 
+The native receive-notification fallback is installed and pushed in PR #529;
+its click action still needs a live transfer check. There is no general preview
+pane in the current source (the screenshot shelf handles screenshots only), so
+AirDrop files in Downloads are not previewed there. Track the Files-integrated
+Preview panel and metadata fallback in [#530](https://github.com/techmore/ElementaryOS_MSeries/issues/530),
+and right-click conversions in [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531).
+
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,

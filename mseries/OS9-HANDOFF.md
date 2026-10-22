@@ -31,6 +31,18 @@ senders; Codex did not issue an `omdrop on` command. Repository tests and probes
 were not run. Native visual acceptance and an actual file transfer remain
 unconfirmed.
 
+Follow-up: the receiver helper now falls back to `notify-send` on ElementaryOS,
+with an Open action, when the Omarchy notification command is absent. Installed
+from this checkout at commit `2043aadc`; `bash -n` and `git diff --check`
+passed. A live receive notification and its click action have not been verified.
+The delivered photos were converted locally through the installed GdkPixbuf
+HEIF loader; no converter package was installed. The repository has no general
+file preview panel: the screenshot shelf only previews screenshots. Follow-up
+requests are tracked in [#530](https://github.com/techmore/ElementaryOS_MSeries/issues/530)
+for a Files-integrated Preview panel with MIME/details fallback and drag-and-drop,
+and [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531) for
+right-click image-conversion Quick Actions.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
