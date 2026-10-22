@@ -10861,3 +10861,8 @@ M4 native full-profile genkey succeeds in disposable source clone: matching
 key/certificate, self-verification and private-key0600 checked; only public
 metadata retained. No enrollment/image result. Driver patch now derives from
 selected Git commit rather than working copy. Three patch regressions pass.
+
+M4 source-pinned U-Boot wrapper passes full native apple_m1 build with source
+timestamp/explicit version suffix. ARM64/Apple/EFI and AArch64 ELF checked;
+.config byte-identical to earlier build. New artifact hashes remain separate;
+existing boot bundle unchanged. Invalid archive rejected before output.

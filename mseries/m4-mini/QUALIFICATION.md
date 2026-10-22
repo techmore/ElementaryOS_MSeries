@@ -11,7 +11,7 @@ repeatedly request an inventory until availability changes.
 | --- | --- | --- |
 | Current source selection | Gravity kernel/Mesa heads rechecked; selected mainline/Aurora comparisons retained | Track future changes as separate candidates; do not mix firmware contracts |
 | Kernel | Full Image/modules/DTBs pass; 16 KiB header, J773g DT, module inventory/vermagic checked | Final-DT RAM/ramoops checker passes synthetic tests; actual 16 GB map and runtime stability still needed |
-| Boot chain | Both raw bootloader stages and matching U-Boot compile | Native handoff with required GPU/DCP firmware and owner OS authorization |
+| Boot chain | Both NO_DISPLAY bootloader stages compile; selected U-Boot wrapper passes with matching config; bundle and synthetic ESP readback pass | Native handoff with required GPU/DCP firmware and owner OS authorization |
 | Userspace | 1,626-package research desktop root configured; package/library/schema/session-file checks, Mesa software rendering and real Casper pass | Native M4 GPU/KMS, graphical login and applications |
 | Initramfs/EFI | Archive/early modules and real Casper live-hook replay pass; exact research EFI payloads and repeatability checked | Actual root identity and boot on mini; test label is not an owner partition |
 | 10 Gb Ethernet | AQTION module, AQC113C PCI alias and dependency resolution verified | Read controller ID; test negotiated speed, traffic, reconnect and error counters |

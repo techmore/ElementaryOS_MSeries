@@ -277,3 +277,22 @@ all four cases: verified bytes accepted; corrupted, missing and symlinked inputs
 rejected. This is profile/hook validation, not complete factory image assembly,
 ESP readback or authorized stage-1/native boot. The installer remains unsupported.
 [Overlay receipt](receipts/2026-10-21-image-boot-overlay.json).
+
+### Source-pinned U-Boot wrapper
+
+`build-uboot.py --archive PINNED_CODELOAD_ARCHIVE --output NEW_DIRECTORY
+--jobs 2` now replays the selected Gravity `a2f6913` M4 branch as a separate
+candidate. It verifies the public archive SHA-256, uses the archive's source
+timestamp through SOURCE_DATE_EPOCH and UTC, and supplies an explicit
+`-gravity-a2f6913` version suffix. Source and build directories remain separate;
+required ARM64/Apple/EFI settings and AArch64 ELF output are checked.
+
+The complete native wrapper passes. Its resolved `.config` is byte-identical
+to the earlier successful U-Boot configuration. Invalid source is rejected
+before creating output. This is not a bit-for-bit reproduction claim: the
+manual build embedded its wall-clock timestamp, and the new candidate has its
+own retained artifact hashes. The reviewed assembled boot bundle still uses
+the earlier verified U-Boot bytes; no golden references, ESP or boot settings
+were changed. A separately validated candidate bundle is required before using
+new U-Boot bytes in an image.
+[Wrapper build receipt](receipts/2026-10-21-gravity-uboot-wrapper.json).

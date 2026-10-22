@@ -1,0 +1,39 @@
+{
+  "repository": "GravityLinux/u-boot",
+  "branch": "gravity-alpha-20260925",
+  "commit": "a2f6913694ff26908c16948af3f8372429782263",
+  "archive_sha256": "6adaf60d20f5f53792eefeaf662dbbd481d7d225d5938c80f6379800b685fd6c",
+  "source_date_epoch": 1789776862,
+  "configuration": "apple_m1_defconfig",
+  "localversion": "-gravity-a2f6913",
+  "commands": [
+    [
+      "make",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-uboot-wrapper-build/u-boot-a2f6913694ff26908c16948af3f8372429782263",
+      "O=/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-uboot-wrapper-build/build",
+      "apple_m1_defconfig"
+    ],
+    [
+      "make",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-uboot-wrapper-build/u-boot-a2f6913694ff26908c16948af3f8372429782263",
+      "O=/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-uboot-wrapper-build/build",
+      "LOCALVERSION=-gravity-a2f6913",
+      "-j2"
+    ]
+  ],
+  "artifacts": {
+    "u-boot-nodtb.bin": "6ccd431a73b85c51cdbbb22ce0532577ab0aaa4f5c54c6093dfef201d5320edb",
+    "u-boot.bin": "6ccd431a73b85c51cdbbb22ce0532577ab0aaa4f5c54c6093dfef201d5320edb",
+    ".config": "e93e0b7cda7efedc1bb76863041a00e08798192ce8723c75377fbce32faea6b7"
+  },
+  "elf_machine": "AArch64",
+  "compiler": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "scope": "pinned-source candidate compilation/configuration only; no firmware handoff",
+  "factory_promotion": false,
+  "hardware_validated": false,
+  "previous_configuration_byte_equal": true,
+  "invalid_source_rejected_before_output": true,
+  "golden_bundle_unchanged": true
+}
