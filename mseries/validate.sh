@@ -271,6 +271,8 @@ check local-ai 'local-ai unit tests' "python3 -m unittest discover -s mseries/lo
 check dictation 'dictation unit tests' "python3 -m unittest discover -s mseries/dictation -p 'test_*.py'"
 
 # -- docs: the build-status pages under docs/ ---------------------------------
+check docs 'capability audit ledger and pinned evidence' 'python3 mseries/render-capability-audit.py --check'
+check docs 'capability search and filters' 'node mseries/test-capability-audit.cjs'
 check docs 'test-build-status.mjs' 'node mseries/test-build-status.mjs'
 check docs 'test-local-build-status.mjs' 'node mseries/test-local-build-status.mjs'
 
