@@ -277,7 +277,15 @@ connected/fresh at 22:24:54 UTC with `eos`, Codex selected, and zero running or
 pending work. No model turn or tool action was sent. This verifies automatic
 reattachment after a local T3 process restart while idle; it does not cover a
 restart mid-stream or prolonged network loss. The live smoke used the installed
-mseries5 client; the reconnect-backoff source fix has not been installed yet.
+mseries5 client. Afterwards, the release binary from code commit `00693a74` was
+built and atomically installed to `~/.local/bin/claude-pantheon-rs`; the prior
+binary is retained at `/tmp/claude-pantheon-rs-before-00693a74`. D-Bus launched
+the updated app as PID 1047208, and its SHA-256
+`83aefbd97d3258411dd7a8147c80fb7c4b975e288be02338aa8d80f7cb387700` matches
+the release build. Its fresh feed reports connected to `eos`, Codex selected,
+and zero running/pending work. A read-only `server.getConfig` check after the
+T3 restart found all four cloud providers and the MSeries Assistant ACP agent
+ready. The Dock was not restarted because the launcher icon did not change.
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
