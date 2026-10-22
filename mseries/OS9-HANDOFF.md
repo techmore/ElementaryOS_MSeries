@@ -88,6 +88,15 @@ Next: inspect pending, transferred, echoed, failed and unknown-outcome states in
 a private UI fixture, then repeat with a paired iPhone. Delivery receipt claims
 remain unsupported by MAP.
 
+## Rust Messages keyboard navigation parity — 2026-10-22
+
+Added an accessible application menu with a keyboard-shortcuts sheet, F5
+refresh, and Alt+Left back navigation. The compact Back button and Escape now
+clear the selected conversation while retaining its draft; Ctrl+F still opens
+the conversation list without discarding the current selection. Local locked
+compile and strict Clippy checks are recorded with the follow-up commit. GUI and
+keyboard interaction acceptance remain open.
+
 ## Disk Space SDK scaling pass — 2026-10-22
 
 Disk Space now uses SDK text-relative spacing and margins for persistent layout

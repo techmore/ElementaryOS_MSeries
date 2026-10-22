@@ -92,9 +92,10 @@ Ctrl+Enter send with plain Enter reserved for newlines, locally formatted
 timestamps, a retry action for startup failure, and SDK-driven message grouping
 with sender labels and date/time headings. Outgoing messages appear immediately
 and remain visible until BlueFerry history confirms the echo; uncertain sends
-keep the draft and are labeled as unknown. These
-source/build changes still need private GUI, accessibility, phone and owner
-acceptance.
+keep the draft and are labeled as unknown. A keyboard-shortcuts sheet now lists
+the app's shortcuts; F5 and Alt+Left match the existing client, and Back/Escape
+clear the selected conversation while preserving its draft. These source/build
+changes still need private GUI, accessibility, phone and owner acceptance.
 Imported Apple pins need a stable opaque phone ID in BlueFerry's `GetStatus`
 contract. The pinned API permits this as an additive status key; BlueFerry must
 own and publish it, and the Rust SDK will not derive it from private
