@@ -43,13 +43,14 @@ The final sync gate keeps actions disabled until T3's `synchronized` marker. The
 formatted and release-built; library tests were not rerun for this slice. Dock's full taskbar build and interaction probes passed in light and dark modes;
 the 2026-10-22 install repeated the build and hover probe, then restarted the service into the private binary.
 `desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
-assembled in `/tmp/cpr-deb-build`. The user-local T3-R app was installed and its live status feed confirmed a connected
-environment and selected provider account; the in-progress thread-history source update is not installed over the
-running process. A live quick-panel visual pass and system package installation remain open.
+assembled in `/tmp/cpr-deb-build`. The user-local T3-R app's status feed confirmed a connected environment and selected
+provider account. `~/.local/bin/claude-pantheon-rs` now contains the new release binary; PID 3666742 retains the old
+mapped executable and was not interrupted. The next app launch will load scroll pagination. A live quick-panel visual
+pass and system package installation remain open.
 
-Next: install the current thread-history build after the active session is safe to restart, verify quick/full routing,
-selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation and qualify
-reconnect on a high-latency link before claiming daily-use readiness.
+Next: after the active process exits, launch the installed thread-history build and review scroll behavior, then verify
+quick/full routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation
+and qualify reconnect on a high-latency link before claiming daily-use readiness.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 
