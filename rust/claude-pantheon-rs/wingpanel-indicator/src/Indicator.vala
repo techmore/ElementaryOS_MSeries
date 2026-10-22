@@ -169,10 +169,10 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         if (popover_widget == null) {
             popover_widget = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { width_request = 340 };
             headline = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            headline.add_css_class (Granite.STYLE_CLASS_H3_LABEL);
+            headline.add_css_class ("title-3");
             headline_detail = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             headline_detail.add_css_class ("caption");
-            headline_detail.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+            headline_detail.add_css_class (Granite.CssClass.DIM);
             windows_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
             next_label = new Gtk.Label ("") { xalign = 0, wrap = true };
             next_label.add_css_class ("caption");
@@ -180,7 +180,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             threads_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
             freshness = new Gtk.Label ("") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             freshness.add_css_class ("caption");
-            freshness.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+            freshness.add_css_class (Granite.CssClass.DIM);
             var open = new Gtk.Button.with_label ("Open Full Chat") { halign = Gtk.Align.END };
             open.clicked.connect (() => {
                 launch (null);
@@ -303,7 +303,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         }
         if (feed.running.size == 0 && feed.pending.size == 0) {
             var l = new Gtk.Label ("Nothing running") { xalign = 0, margin_start = 6 };
-            l.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+            l.add_css_class (Granite.CssClass.DIM);
             threads_box.append (l);
         }
         string when = "";
@@ -311,7 +311,8 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             var written = new DateTime.from_iso8601 (feed.written_at, new TimeZone.utc ());
             if (written != null) {
                 var age = now.difference (written) / TimeSpan.SECOND;
-                when = age < 60 ? "updated just now" : age < 3600 ? "updated %lld min ago".printf (age / 60) : "updated %s".printf (written.to_local ().format ("%H:%M"));
+                var minutes = (int) (age / 60);
+                when = age < 60 ? "updated just now" : age < 3600 ? "updated %d min ago".printf (minutes) : "updated %s".printf (written.to_local ().format ("%H:%M"));
             }
         }
         freshness.label = feed.present
