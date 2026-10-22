@@ -89,8 +89,8 @@ owner acceptance.
 
 At startup, the keyboard now loads the user's XKB model, active XKB layout,
 options, and repeat settings from GNOME GSettings. This applies the M-series
-`ctrl:swap_lwin_lctl` Command/Ctrl mapping. The compositor polls settings
-once per second and applies layout, option, and repeat changes live; this path
+`ctrl:swap_lwin_lctl` and `ctrl:swap_rwin_rctl` Command/Ctrl mappings. The compositor
+polls settings once per second and applies layout, option, and repeat changes live; this path
 is build-checked but not runtime-qualified. The current source is US;
 `mozc-jp` is installed but inactive. F5 dictation is an active IBus workflow
 and inserts committed Unicode into focused fields. The Rust compositor's

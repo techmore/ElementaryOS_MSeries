@@ -9,8 +9,19 @@ repo = Path(__file__).resolve().parents[1]
 home = Path.home()
 settings = Gio.Settings.new("org.gnome.desktop.input-sources")
 options = settings.get_strv("xkb-options")
-if "ctrl:swap_lwin_lctl" not in options:
-    settings.set_strv("xkb-options", options + ["ctrl:swap_lwin_lctl"])
+for option in ("ctrl:swap_lwin_lctl", "ctrl:swap_rwin_rctl"):
+    if option not in options:
+        options.append(option)
+settings.set_strv("xkb-options", options)
+Gio.Settings.sync()
+# Pantheon's media-key schema is blank on this keyboard. Restore the standard
+# F10/F11/F12 actions without replacing any working user binding.
+media_keys = Gio.Settings.new("org.gnome.settings-daemon.plugins.media-keys")
+for action, binding in (("volume-mute", "XF86AudioMute"),
+                        ("volume-down", "XF86AudioLowerVolume"),
+                        ("volume-up", "XF86AudioRaiseVolume")):
+    if not any(value for value in media_keys.get_strv(action)):
+        media_keys.set_strv(action, [binding])
 Gio.Settings.sync()
 keys = Gio.Settings.new("io.elementary.desktop.wm.keybindings")
 for action, binding in [("screenshot", "<Control><Shift>3"), ("area-screenshot", "<Control><Shift>4")]:
@@ -21,8 +32,8 @@ Gio.Settings.sync()
 # Mac-like inverted scrolling with a mouse.
 Gio.Settings.new("org.gnome.desktop.peripherals.mouse").set_boolean("natural-scroll", True)
 Gio.Settings.sync()
-# Command+Space launcher. mseries-launcher-keys binds <Control>space (Command is Ctrl here)
-# and <Super>space (right Command), frees Super+Space from the input-source switch, and
+# Command+Space launcher. mseries-launcher-keys binds <Control>space (both Command keys are Ctrl)
+# and <Super>space (both physical Ctrl keys), frees Super+Space from the input-source switch, and
 # re-binds at every login because the shortcut list was once found emptied after a reboot.
 launcher = home / ".local/bin/mseries-launcher"
 launcher.parent.mkdir(parents=True, exist_ok=True)
@@ -72,5 +83,5 @@ autostart = home / ".config/autostart/mseries-brightness.desktop"
 autostart.parent.mkdir(parents=True, exist_ok=True)
 autostart.write_text("[Desktop Entry]\nType=Application\nName=M-series brightness keys\n"
     f'Exec="{helper}"\nOnlyShowIn=Pantheon;\nNoDisplay=true\n')
-print("Command acts as Ctrl; physical left Ctrl acts as Super. Command+Space opens the launcher. Brightness keys start at next login.")
+print("Both Command keys act as Ctrl; both physical Ctrl keys act as Super. Media keys control mute/volume. Command+Space opens the launcher. Brightness keys start at next login.")
 print(f"To start now: {helper}")

@@ -1,3 +1,14 @@
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The media-key handler had no `volume-mute`, `volume-down` or `volume-up`
+bindings, so the Mac function-row audio keys were ignored. `apply-desktop-settings.py`
+now fills those only when blank, and maps both Command keys to Ctrl with the
+matching right and left XKB swaps. Quick Settings mute now uses the fresh
+PipeWire state and an explicit set-mute value; pending slider writes finish
+before the mute action. Full pinned Quick Settings build succeeds. Live settings
+were applied and the default sink is currently muted; hardware key presses and
+loading the new panel module remain to be confirmed.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed

@@ -1,3 +1,23 @@
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The live `org.gnome.settings-daemon.plugins.media-keys` settings had empty
+`volume-mute`, `volume-down` and `volume-up` bindings. Filled them with the
+standard XF86 mute/lower/raise keys and added the right-side XKB Command/Ctrl
+swap alongside the existing left-side swap. The desktop setup script now makes
+those changes idempotently while preserving custom key bindings. Updated the
+launcher notes for symmetric Command mapping.
+
+Quick Settings volume mute now reads the current PipeWire state and writes an
+explicit mute value instead of issuing a blind toggle. It serializes mute clicks
+after pending slider writes, follows the actual state, and exposes Mute/Unmute
+as the icon button's accessible name. The pinned Quick Settings 1.4.0 source
+build passes. Applied the keyboard/media-key settings live and muted the current
+default sink with `wpctl set-mute @DEFAULT_AUDIO_SINK@ 1`; readback is
+`Volume: 0.63 [MUTED]`. No audio service, Wingpanel, or compositor was restarted.
+Physical key presses and the rebuilt panel module on the live desktop remain
+unverified; the source fix is staged for the next Quick Settings installation.
+Feature branch: `codex/audio-mute-keyboard-20261022`.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
