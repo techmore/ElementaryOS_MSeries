@@ -1,0 +1,24 @@
+{
+  "observed_at_utc": "2026-10-22T05:14:01.062960+00:00",
+  "source": "Gravity Linux 4fc326f plus revision-5 compatibility recipe; source-only observation",
+  "files": {
+    "rust/kernel/driver.rs": "5644b30999cec4c88faada143db4f093dc2b3f7f0d08b23fa0c54850440a093d",
+    "rust/kernel/platform.rs": "5d1abaaaed09475d811489d2c457cd0ef46823243d45f6dbd09e74c153daa085",
+    "rust/kernel/drm/driver.rs": "70e8531882929833ba0af490f3dcd709917ea2e8c443f061cc1d8274d60cf4d8",
+    "rust/kernel/drm/device.rs": "716824518bbb481905145fe917a852d492549721755d0eac76551ec4f7411a36",
+    "rust/kernel/workqueue.rs": "f5320cf7052ca4e96f1e3eb0122dfe9dd66747410af9c84e0bd0d5c73b992bba",
+    "drivers/gpu/drm/asahi/asahi_m4.rs": "83121b03dbdb164c793b4da092a39f7eeeacbddef22bfe2596f6abb0032307c4",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "ea399e483c9b7372725b6888a68a58e77092101e6f8c85324a0e1cf28f353ecf"
+  },
+  "observations": [
+    "M4Gpu holds an optional ARef<drm::Device<Driver>>; DRM registration is foreign-owned devres.",
+    "Platform unregister calls platform_driver_unregister; post_unbind drops private data after remove/devres.",
+    "DRM Registration Drop invokes drm_dev_unregister; no M4 Execution WorkItem join is present in that Rust entry point. C DRM unregister internals remain to trace.",
+    "Generic Arc WorkItem trampoline reconstructs the Arc and calls T::run; it contains no explicit module pin in this reviewed implementation.",
+    "DRM Device release intentionally leaves drop_in_place disabled, with an upstream HACK comment about uninitialized data. The stored data includes scheduler/RTKit state. Therefore eventual ARef release must not be treated as proof that data destructors execute.",
+    "M4 Execution completion fences precede the end of the worker callback. Existing generic scheduler module fixture does not qualify that pump or release path."
+  ],
+  "next": "Trace C DRM unregister/file release and RTKit notification lifetime; compare initialized-device ownership with upstream cleanup APIs before choosing a minimal safe worker-join/resource-release fix. Do not enable generic drop_in_place blindly.",
+  "hardware_validated": false,
+  "native_failure_reproduced": false
+}

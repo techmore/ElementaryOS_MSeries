@@ -11162,3 +11162,30 @@ base or transplanting DT data. The earlier selected Asahi integration head
 remains unchanged; these staging branches require a separate applicability pass.
 
 Revision-4 research kernel run [39715540751](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39715540751) succeeded. The downloaded package independently passes Image/config/J773g/16 KiB/module checks (1,598 modules), with initialization and M4 terminal-retention fixes. Combined revision 5 run 39721608135 is building; neither result qualifies native hardware. Evidence: `mseries/m4-mini/receipts/2026-10-22-hosted-kernel-r4-success.json`.
+
+Public staging-source comparison now covers pinned Asahi dt-7.4, drivers-7.4,
+and wip-7.2 paths, beyond filename inventory. The reviewed J773g trees retain a
+loader framebuffer, but lack Gravity's native T8132 GPU/DCP/NVMe/PCIe nodes.
+Their reviewed NVMe match tables lack the T8132-specific hardware descriptor;
+wip-7.2 Asahi DRM depends on BROKEN and lacks Gravity's g16 implementation.
+Gravity's UAPI also adds fragment-barrier flags absent from these Asahi headers.
+Retain the complete Gravity stack; newer branch numbers do not establish an
+M4 desktop replacement. See receipts/2026-10-22-asahi-staging-contract-comparison.json
+under mseries/m4-mini (source paths/hashes and explicit scope).
+
+All 31 files of pinned Gravity scripts 12418e5 were reviewed for idle/WFxT flag
+literals; none were found. This does not cover external GRUB defaults or prove
+an idle workaround necessary. Exact pinned bootloader chickens.c matches the
+local source (SHA256 757971865794c78e605082de1dda00a52b43bfc117df57affdfe5bdd1c39adbb):
+M4 features omit apple_sysregs_unlocked and select SLEEP_NONE, so the guarded
+WFI-retention register code must not be claimed as an M4 setup guarantee.
+No speculative idle flags/assembly change is selected.
+
+Worker follow-up traces foreign devres DRM registration and platform post-unbind
+private-data release. Generic Arc workqueue dispatch does not explicitly pin
+module code. More importantly, reviewed DRM Device::release intentionally does
+not drop its data, citing possible uninitialized storage. ARef release therefore
+is not proof that scheduler/RTKit destructors run. Trace C unregister, file release,
+and RTKit callbacks before choosing an M4 worker join/resource fix; do not simply
+enable the commented destructor. Source evidence is retained in
+mseries/m4-mini/receipts/2026-10-22-m4-registration-worker-follow-up.json.

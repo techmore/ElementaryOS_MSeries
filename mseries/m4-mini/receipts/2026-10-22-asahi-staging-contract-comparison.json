@@ -1,0 +1,315 @@
+{
+  "observed_at_utc": "2026-10-22T05:12:47.001135+00:00",
+  "refs": {
+    "dt74": "a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+    "wip72": "236788cd2602a24c703fe7bdaddaf73ef77d2027",
+    "drivers74": "4edbfa916dbfba44af3ef2378cae2b2653c96058",
+    "gravity": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+  },
+  "files": [
+    {
+      "ref": "dt74",
+      "path": "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "sha256": "5af837ce0721857b96d4dad34fc6e06fb4f2b0300415b037a958f181b182956e",
+      "bytes": 455,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    },
+    {
+      "ref": "dt74",
+      "path": "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "sha256": "3f041c0301ee91e247069baa48a16cc375fb41db2b3ec80f7c5d1141646abc9f",
+      "bytes": 961,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi"
+    },
+    {
+      "ref": "dt74",
+      "path": "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "sha256": "4fbf32e2cd7ee25a4680e88ffe35e060a59c748ffb41b80e94091ebfdf39376c",
+      "bytes": 11648,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/arch/arm64/boot/dts/apple/t8132.dtsi"
+    },
+    {
+      "ref": "dt74",
+      "path": "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "sha256": "9d842990d9344dc1d4acf8c52d696aea4420d14e01dd0285ad746f00a4e0baea",
+      "bytes": 29643,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/arch/arm64/boot/dts/apple/t8132-pmgr.dtsi"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/nvme/host/apple.c",
+      "sha256": "dea5f7c8a074e0967144041928eef5b1b233a6b4b5502d8c74ecf1b4958d383d",
+      "bytes": 46222,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/nvme/host/apple.c"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/gpu/drm/asahi/Kconfig",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/gpu/drm/asahi/Kconfig"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/gpu/drm/asahi/g16_drm.rs",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/gpu/drm/asahi/g16_drm.rs"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/gpu/drm/apple/Kconfig",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/gpu/drm/apple/Kconfig"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/gpu/drm/apple/dcp.c",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/gpu/drm/apple/dcp.c"
+    },
+    {
+      "ref": "dt74",
+      "path": "drivers/pci/controller/pcie-apple.c",
+      "sha256": "416dce904eabc6859f36a051cf9ce0d77473634b3f1526587a9d58870b70898c",
+      "bytes": 24051,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/drivers/pci/controller/pcie-apple.c"
+    },
+    {
+      "ref": "dt74",
+      "path": "include/uapi/drm/asahi_drm.h",
+      "sha256": "69fe416b7294dfec4794217bd11379effd53caff4e86010bb803f1b34bdf5e89",
+      "bytes": 35836,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/a8ac6027e82415f431bbba49ab535c44f2edaf4d/include/uapi/drm/asahi_drm.h"
+    },
+    {
+      "ref": "wip72",
+      "path": "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "sha256": "927f0ce98b7fb0e31f4c5d5596c82411233d6bda3396bcb66a8857d75eb099df",
+      "bytes": 456,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    },
+    {
+      "ref": "wip72",
+      "path": "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "sha256": "f74640b52f1c6b55bdbd584c353dddc9c6eaa44c0325c3f72b8e150e49e15272",
+      "bytes": 962,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi"
+    },
+    {
+      "ref": "wip72",
+      "path": "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "sha256": "4bcfc07b11c957a5525ddb4606559cd481525365baf9c4f84694d144966bf0bf",
+      "bytes": 11089,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/arch/arm64/boot/dts/apple/t8132.dtsi"
+    },
+    {
+      "ref": "wip72",
+      "path": "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "sha256": "17c4fd5a7ec04af6796803cf900f8bfcc5844935a471aa7e6def17f85f6000f0",
+      "bytes": 29464,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/arch/arm64/boot/dts/apple/t8132-pmgr.dtsi"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/nvme/host/apple.c",
+      "sha256": "bbbb297851663ce720ea9315c5e257c24d042e570c7eb2f1dff073caa7493c54",
+      "bytes": 47705,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/nvme/host/apple.c"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/gpu/drm/asahi/Kconfig",
+      "sha256": "10ee8a76faa49d231c00288034a7391a305249faf15b55506ee66f4ff8d9ad2e",
+      "bytes": 1014,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/gpu/drm/asahi/Kconfig"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/gpu/drm/asahi/g16_drm.rs",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/gpu/drm/asahi/g16_drm.rs"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/gpu/drm/apple/Kconfig",
+      "sha256": "082271cd63af9701a3fcae28dc8b56cb01896e28b2dc8877238f6e6db9fa14e2",
+      "bytes": 784,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/gpu/drm/apple/Kconfig"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/gpu/drm/apple/dcp.c",
+      "sha256": "4d5337c865aaf4c709f5feab81b1a3fa5a7df36582db09ae6d0681cf537c0c57",
+      "bytes": 37679,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/gpu/drm/apple/dcp.c"
+    },
+    {
+      "ref": "wip72",
+      "path": "drivers/pci/controller/pcie-apple.c",
+      "sha256": "c21bd367b9866b611187f5a71aef7241c20754d33fe3797c8c62c400371e37ee",
+      "bytes": 27190,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/drivers/pci/controller/pcie-apple.c"
+    },
+    {
+      "ref": "wip72",
+      "path": "include/uapi/drm/asahi_drm.h",
+      "sha256": "69fe416b7294dfec4794217bd11379effd53caff4e86010bb803f1b34bdf5e89",
+      "bytes": 35836,
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/236788cd2602a24c703fe7bdaddaf73ef77d2027/include/uapi/drm/asahi_drm.h"
+    },
+    {
+      "ref": "gravity",
+      "path": "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "sha256": "f6ddc873d7b4493dba0071df0f4e58b8513d30b26dfc4aa240d0b0e6a4dd8540",
+      "bytes": 4868,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    },
+    {
+      "ref": "gravity",
+      "path": "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "sha256": "f473fc6ec19acd08637f58560bba8e0a179b180a730259dd102ed9e257895df1",
+      "bytes": 4835,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi"
+    },
+    {
+      "ref": "gravity",
+      "path": "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "sha256": "9dd2e1a08962dfc7e09551a299412f0058e96cd33f5b049dabb1fb4aff7c7840",
+      "bytes": 41315,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/arch/arm64/boot/dts/apple/t8132.dtsi"
+    },
+    {
+      "ref": "gravity",
+      "path": "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "sha256": "785644ad35f8156f41e389b22a76142625d02b37d1d7a85b2e5c949e7bfc141d",
+      "bytes": 31023,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/arch/arm64/boot/dts/apple/t8132-pmgr.dtsi"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/nvme/host/apple.c",
+      "sha256": "4919e6d2556e1340191a18014b266ec6404b6541bad6bfeaed4cffe01b81bd76",
+      "bytes": 48699,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/nvme/host/apple.c"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/gpu/drm/asahi/Kconfig",
+      "sha256": "d266f29834e5dab7504c75473cc40322c6937d0546874f5cddc876d049270e0a",
+      "bytes": 1539,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/gpu/drm/asahi/Kconfig"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/gpu/drm/asahi/g16_drm.rs",
+      "sha256": "630f320e9759364ec3fef7314d2cee6d39be30e5f8680fdd6a0fc1b2c8b4202e",
+      "bytes": 69450,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/gpu/drm/asahi/g16_drm.rs"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/gpu/drm/apple/Kconfig",
+      "sha256": "aec30621081103149876f9059a3f2ca29603d126515fb2155ec28df96eefaf23",
+      "bytes": 820,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/gpu/drm/apple/Kconfig"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/gpu/drm/apple/dcp.c",
+      "sha256": "dd6391dca62fb8bcdb8845f5aa7630370da0093f1446b6a011a47f054223779a",
+      "bytes": 58849,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/gpu/drm/apple/dcp.c"
+    },
+    {
+      "ref": "gravity",
+      "path": "drivers/pci/controller/pcie-apple.c",
+      "sha256": "0e093800343e270b981d0cd52fb0b13d52727a865f5e7c9150f0a25a458a59f9",
+      "bytes": 27775,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/drivers/pci/controller/pcie-apple.c"
+    },
+    {
+      "ref": "gravity",
+      "path": "include/uapi/drm/asahi_drm.h",
+      "sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+      "bytes": 36599,
+      "url": "https://raw.githubusercontent.com/GravityLinux/linux/4fc326f6c25ccceb7515e2635c22e01fde5d3bac/include/uapi/drm/asahi_drm.h"
+    },
+    {
+      "ref": "drivers74",
+      "path": "arch/arm64/boot/dts/apple/t8132-j773g.dts",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/arch/arm64/boot/dts/apple/t8132-j773g.dts"
+    },
+    {
+      "ref": "drivers74",
+      "path": "arch/arm64/boot/dts/apple/t8132-jxxx.dtsi",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/arch/arm64/boot/dts/apple/t8132-jxxx.dtsi"
+    },
+    {
+      "ref": "drivers74",
+      "path": "arch/arm64/boot/dts/apple/t8132-pmgr.dtsi",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/arch/arm64/boot/dts/apple/t8132-pmgr.dtsi"
+    },
+    {
+      "ref": "drivers74",
+      "path": "arch/arm64/boot/dts/apple/t8132.dtsi",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/arch/arm64/boot/dts/apple/t8132.dtsi"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/gpu/drm/apple/Kconfig",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/gpu/drm/apple/Kconfig"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/gpu/drm/apple/dcp.c",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/gpu/drm/apple/dcp.c"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/gpu/drm/asahi/Kconfig",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/gpu/drm/asahi/Kconfig"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/gpu/drm/asahi/g16_drm.rs",
+      "error": "HTTP Error 404: Not Found",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/gpu/drm/asahi/g16_drm.rs"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/nvme/host/apple.c",
+      "bytes": 46222,
+      "sha256": "dea5f7c8a074e0967144041928eef5b1b233a6b4b5502d8c74ecf1b4958d383d",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/nvme/host/apple.c"
+    },
+    {
+      "ref": "drivers74",
+      "path": "drivers/pci/controller/pcie-apple.c",
+      "bytes": 24051,
+      "sha256": "416dce904eabc6859f36a051cf9ce0d77473634b3f1526587a9d58870b70898c",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/drivers/pci/controller/pcie-apple.c"
+    },
+    {
+      "ref": "drivers74",
+      "path": "include/uapi/drm/asahi_drm.h",
+      "bytes": 35836,
+      "sha256": "69fe416b7294dfec4794217bd11379effd53caff4e86010bb803f1b34bdf5e89",
+      "url": "https://raw.githubusercontent.com/AsahiLinux/linux/4edbfa916dbfba44af3ef2378cae2b2653c96058/include/uapi/drm/asahi_drm.h"
+    }
+  ],
+  "findings": {
+    "dt74_and_wip72_j773g": "Small board files retain bootloader framebuffer power domains; shared board file enables serial0. Reviewed T8132 SoC files contain no GPU/DCP/NVMe/PCIe controller nodes. Framebuffer properties and memory remain loader fixups.",
+    "nvme": "dt74/wip72/drivers74 reviewed match tables lack apple,t8132-nvme-ans2 and Gravity-specific t8132 hardware descriptor. Generic ANS2 presence is not proof of T8132 operation.",
+    "gpu": "wip72 DRM_ASAHI depends on BROKEN; no reviewed g16_drm.rs. dt74/drivers74 return 404 for reviewed Asahi/DCP paths. Gravity includes M4 implementation.",
+    "uapi": "All three Asahi reviewed headers are identical; Gravity adds fragment-barrier feature/command flags required to assess its selected Mesa contract.",
+    "selection": "Retain complete pinned Gravity M4 stack plus reviewed compatibility fixes. No wholesale newer branch substitution or DT transplant."
+  },
+  "scope": "Pinned source-path/DT/match-table/UAPI comparison; not every branch/driver, build or native qualification",
+  "hardware_validated": false
+}
