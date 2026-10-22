@@ -120,7 +120,10 @@ supervised Qwen3.5 4B endpoint, called the real MCP `add_minutes` tool for
 fresh ACP 0.3.0 thread then used the same tool for 12:15 + 45 minutes and
 returned `13:00`; both projections completed, and both temporary verification
 threads were archived. These are two end-to-end turns, not general
-model-quality or daily-use qualification.
+model-quality or daily-use qualification. A separate same-thread follow-up
+also recalled a synthetic token correctly across two T3 turns. ACP
+`session/load` after an agent-process restart remains unqualified through live
+T3.
 
 The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
 GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights

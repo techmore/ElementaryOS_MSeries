@@ -117,7 +117,9 @@ characters (about 4K ordinary tokens) and has boundary tests. A fresh ACP 0.3.0
 thread then used the same tool to return `13:00` for 12:15 + 45 minutes. Both
 T3 projections completed and both temporary threads were archived. This proves
 two local T3-to-model-to-tool turns. It does not qualify broad answer quality,
-multi-turn restoration or daily use. The Liquid 24B model remains unloaded
+session restoration after an ACP process restart or daily use. A separate
+same-thread, two-turn context check recalled its synthetic token correctly. The
+Liquid 24B model remains unloaded
 because its weights plus runtime do not fit the host's memory budget with the
 six-GiB desktop reserve. A live preflight with Qwen3.5 4B active measured
 10.56 GiB available; the 13.6 GB weights plus reserve need at least 18.67 GiB

@@ -92,8 +92,11 @@ to the supervised local Qwen3.5 4B endpoint. The model invoked the real MCP
 the tool call and `12:00` answer. A fresh ACP 0.3.0 thread then called the same
 tool for 12:15 + 45 minutes and T3 completed with `13:00`. Both temporary
 verification threads were archived. These two T3-to-local-model-to-MCP turns
-do not qualify broader answer quality, multi-turn recovery, or daily-use
-reliability.
+do not qualify broader answer quality or daily-use reliability. A separate
+two-turn T3 thread also passed a synthetic context-carryover check: after the
+first turn stored a token in the conversation, the second turn recalled it.
+Agent-process restart and ACP `session/load` recovery still need a live T3
+qualification.
 
 The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
 (`acp-mseries-assistant`); its live config reports `installed=true` and
