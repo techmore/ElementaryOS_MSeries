@@ -67,7 +67,8 @@ cache without a second connection or polling, and labels retained data stale aft
 switches clear it.
 
 Settings can search T3's ACP Registry or add a local ACP command for execution on the paired server. This gives users a
-supported way to register DeepSeek Harness, for example `dsh --profile default acp`, when the paired server has the CLI.
+supported way to register DeepSeek Harness with `dsh --profile acp`, when the paired server has the CLI. That is the
+shipped ACP profile invocation in [DeepSeek Harness's CLI help](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cli-help.md).
 DeepSeek's prefix cache is server-side; retain stable prefixes and report cache-hit data only when T3 returns it.
 
 Settled thread views now use a separate environment/thread-scoped cache record containing the bounded projection,
