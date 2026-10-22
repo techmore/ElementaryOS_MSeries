@@ -93,9 +93,9 @@ still need hardware visual qualification; see the system-level issue in
 `BUG-FIX-ROADMAP.md`.
 
 The SDK rollout includes the existing Rust Software Updates app and its typed
-`mseries-update-core` OS contract; privileged transaction policy remains in
-the OS, while shared UI, scaling and future client adapters belong in the Apps SDK. A
-new System Monitor preview uses SDK CPU/memory polling and embeds btop through
+`mseries-update-core` OS contract; the app-facing CLI adapter now lives in the
+Apps SDK, while privileged transaction policy remains in the OS. A new System
+Monitor preview uses SDK CPU/memory polling and embeds btop through
 VTE; compositor counters await a versioned OS API. Apps can release
 independently after native acceptance, with SDK/API compatibility and pinned
 artifacts recorded by the project hub. The staged Kernel, OS and Apps
