@@ -608,8 +608,15 @@ impl ReposPage {
         status.set_xalign(0.0);
         root.append(&status);
 
-        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let actions = gtk::FlowBox::new();
+        actions.set_selection_mode(gtk::SelectionMode::None);
+        actions.set_row_spacing(8);
+        actions.set_column_spacing(8);
+        actions.set_min_children_per_line(1);
+        actions.set_max_children_per_line(5);
+        actions.set_homogeneous(false);
         actions.set_halign(gtk::Align::End);
+        actions.update_property(&[gtk::accessible::Property::Label("Issue actions")]);
         let cancel = gtk::Button::with_label("Close");
         let save = gtk::Button::with_label("Save draft");
         let local_refine = gtk::Button::with_label("Refine locally");

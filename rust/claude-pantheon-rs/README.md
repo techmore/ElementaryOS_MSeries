@@ -130,7 +130,8 @@ constraints, then explicit GitHub filing. When MSeries Assistant is ready on the
 to another connected T3 provider in the same composer for research and refinement. The local prompt
 is capped at 16,000 characters and asks for a compact brief; its underlying model is managed by the
 paired server and checked when you send. Issue labels and
-readiness control the repo workflow; provider selection remains a separate T3 decision. Chats can be
+readiness control the repo workflow; provider selection remains a separate T3 decision. Draft fields
+scroll within the window, and the action buttons wrap on narrow layouts. Chats can be
 grouped beneath open issues and return to the repo chat list when an issue closes.
 
 ## Composer
