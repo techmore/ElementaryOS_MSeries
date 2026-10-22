@@ -106,6 +106,14 @@ the Neural Engine driver as out of tree. The installed ANE-backed Parakeet path
 remains speech transcription. Neither it nor the experimental Qwen path is
 qualified as the daily T3 assistant yet.
 
+A fresh read-only supervisor preflight on October 22 measured 9.17 GiB
+available, with a 2510 RPM maximum fan sample and 44.42 C maximum temperature
+sample. The 12.67 GiB checkpoint plus the six-GiB reserve needs at least 18.67
+GiB before runtime/context memory, so admission was refused again and no model
+service was started. The retained ANE Parakeet result is speech-only evidence;
+T3-R's own voice button currently uses Whisper. The separate global F5 listener
+is inactive and configured for its Nemotron CPU engine.
+
 ### MSeries ACP live T3 check — October 22
 
 After the supervised Qwen3.5 4B everyday profile passed its existing admission
@@ -129,9 +137,16 @@ six-GiB desktop reserve. A live preflight with Qwen3.5 4B active measured
 before runtime/context overhead, and the supervisor refused admission. No
 experimental ANE conversation service was started.
 
+A synthetic local task request also reached T3's pending permission flow.
+Declining it completed the thread, and a scoped Assistant Tasks read confirmed
+the unique test task was not written.
+
 The live T3 config also reports Codex, Claude, Grok, OpenCode and MSeries
 Assistant ACP installed, enabled and ready. Provider authentication remains
 server-owned; this read does not display account identities or credentials.
+Each cloud provider also returned one minimal exact-response smoke through T3,
+and all temporary threads were archived. This verifies provider routing, not
+broader model quality or every account workflow.
 
 Hermes has been retired from the maintained assistant setup. New installs no longer fetch its source or create its launcher. Existing Hermes checkout, virtual environment, configuration, and state in a user's home are retained. On the next assistant configuration, the setup removes only its exact, unmodified generated Hermes desktop entry; a customized entry is preserved. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
 

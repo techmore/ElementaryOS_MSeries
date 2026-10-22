@@ -124,7 +124,12 @@ model-quality or daily-use qualification. A separate same-thread follow-up
 also recalled a synthetic token correctly across two T3 turns. A separate
 real-model bridge test saved a turn, exited the first ACP process, loaded the
 session in a fresh process, and recalled its token. The production T3 path also
-completed a read-only `system_status` call. T3 server restart and reattachment
+completed a read-only `system_status` call. Codex, Claude, Grok and OpenCode
+each returned a minimal exact-response smoke in a completed T3 thread; all
+temporary provider threads were archived. This verifies the four provider
+routes, not their broader workflows. A synthetic `create_assistant_task`
+permission request was declined in T3; the thread completed, and a scoped task
+read confirmed no test task was written. T3 server restart and reattachment
 remain unqualified.
 
 The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
@@ -140,6 +145,11 @@ service on this M1 Pro/T6000; its raw bring-up path remains outside the safe
 desktop trial. The ANE-backed Parakeet path is speech transcription, not
 conversational inference. See `local-ai/README.md` and
 `local-ai/APP-INTEGRATION.md` for source links and remaining gates.
+
+A fresh read-only preflight on October 22 measured 9.17 GiB available; the
+existing supervisor again refused the 24B Liquid checkpoint against the
+six-GiB reserve. The completed ANE Parakeet result is speech recognition only;
+T3-R voice input still uses Whisper, and the global F5 listener is inactive.
 
 Next: qualify T3 server restart and reattachment plus more representative
 assistant workflows before claiming daily use. Recheck the memory admission

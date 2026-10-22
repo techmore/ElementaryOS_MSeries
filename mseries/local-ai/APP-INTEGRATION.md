@@ -99,7 +99,10 @@ Another completed T3 thread invoked the production read-only `system_status`
 tool. The installed bridge then passed a real-model process-restart check in
 isolated temporary state: process one saved a turn, process two loaded the
 same ACP session and recalled its token. This verifies bridge `session/load`
-after process exit; T3's own server restart and reattachment flow remains open.
+after process exit. A synthetic `create_assistant_task` request then reached a
+pending T3 permission; declining it completed the thread, and a scoped
+Assistant Tasks read confirmed the task was not created. T3's own server
+restart and reattachment flow remains open.
 
 The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
 (`acp-mseries-assistant`); its live config reports `installed=true` and
@@ -109,7 +112,10 @@ states when this entry was added. A fresh live config read reports Codex,
 Claude, Grok, OpenCode, and MSeries Assistant installed, enabled and ready.
 The local provider has completed two real model/tool turns plus a read-only
 system-status turn. The earlier synthetic tool-call receipt remains an adapter
-check; these short local turns do not establish broad model quality.
+check; these short local turns do not establish broad model quality. Each
+authenticated cloud provider also returned a minimal exact-response smoke
+through T3 (Codex, Claude, Grok and OpenCode); the four temporary threads were
+archived. This verifies provider routing, not each feature-specific workflow.
 
 Pantheon's provider setup source now recognizes ACP readiness from the
 T3-reported session status instead of requiring OAuth auth state, and offers
@@ -149,6 +155,15 @@ service for it. The repository's bring-up guide warns raw device operations can
 hard-reset the machine, so its scripts are not a safe desktop trial. Both
 candidates need a separate, supervisor-managed path before the local assistant
 can claim model-quality or daily-use qualification.
+
+A fresh read-only admission check on October 22 measured 9.17 GiB available,
+with a 2510 RPM maximum fan sample and 44.42 C maximum temperature sample. The
+Liquid checkpoint alone is about 12.67 GiB; with the six-GiB desktop reserve,
+the supervisor refuses it at this snapshot (18.67 GiB minimum before runtime
+and context memory). No service was started. The existing ANE Parakeet speech
+trial is a separate retained F5 qualification; T3-R's built-in voice button
+currently uses Whisper and does not make ANE Parakeet a chat model. The F5
+listener is currently inactive and configured for the Nemotron CPU engine.
 
 The default worker also recovers abandoned upstream CLI reservations when **both** the recorded process and process group are absent, using the pinned upstream owner-checked API. Live, paired or unknown leases remain. Six stale pre-reboot leases were recovered on this host without lowering the reserve.
 

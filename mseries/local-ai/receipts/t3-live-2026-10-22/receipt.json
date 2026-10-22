@@ -40,12 +40,37 @@
     "states": "all enabled, installed, ready",
     "account_identity_or_credentials_recorded": false
   },
+  "live_cloud_provider_smokes": {
+    "providers": ["codex", "claudeAgent", "grok", "opencode"],
+    "result": "all completed with the expected exact response through T3",
+    "temporary_threads_archived": true,
+    "scope_note": "Minimal non-sensitive response checks; not feature-specific workflow qualification."
+  },
+  "live_t3_permission_denial": {
+    "tool": "create_assistant_task",
+    "pending_t3_permission_observed": true,
+    "decision": "decline",
+    "thread_completed": true,
+    "scoped_task_read_after_decline": "unique test task absent",
+    "temporary_thread_archived": true
+  },
   "scope_note": "Two real local-model tool round trips; not a broad quality or daily-use qualification.",
   "liquid_24b_preflight": {
     "available_gib": 10.56,
     "minimum_weights_plus_desktop_reserve_gib": 18.67,
     "supervisor_gate": "refused: desktop memory reserve would be crossed",
     "weights_downloaded_or_loaded": false
+  },
+  "liquid_24b_current_read_only_preflight": {
+    "available_gib": 9.17,
+    "checkpoint_gib": 12.67,
+    "desktop_reserve_gib": 6,
+    "minimum_available_gib_before_runtime": 18.67,
+    "maximum_fan_rpm": 2510,
+    "maximum_temperature_c": 44.42,
+    "admitted": false,
+    "reason": "desktop memory reserve would be crossed",
+    "model_service_started": false
   },
   "ane_conversation_trial": "not run; no qualified supervised T3-compatible endpoint"
 }
