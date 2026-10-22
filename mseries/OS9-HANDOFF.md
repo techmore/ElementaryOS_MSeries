@@ -29,8 +29,7 @@ so rebuilt views do not leave per-widget handlers attached to global settings.
 The Rust Messages menu and unavailable-backend state restore Connect iPhone
 and Advanced BlueFerry launch actions from the qualified Python client. An
 isolated Xvfb/private-D-Bus probe opens a 1040×730 Messages window; this checks
-activation only, not the rendered screen or accessibility. GitHub checks for
-this head are queued or in progress, with no failures reported. Live phone
+activation only, not the rendered screen or accessibility. Live phone
 catch-up, read-failure feedback, pin/keyring operation, owner-session visual
 and keyboard/accessibility review remain open. BlueFerry
 PR [#277](https://github.com/erikwb/blueferry/pull/277) merged with a stable
@@ -42,13 +41,25 @@ waits for a release with that field.
 When BlueFerry cannot be reached, Rust Messages now replaces the generic empty
 conversation view with a connection-specific title and inline Connect iPhone,
 Advanced BlueFerry and Retry actions. Its compose icon now uses the elementary
-symbolic icon name. Local validation on top of PR #526: `cargo fmt --check`,
-locked Messages build, 25 SDK/Messages unit tests, strict Clippy with warnings
+symbolic icon name. Automatic refresh now restores its on/off choice from a
+separate owner-only `messages-rust.json` file, leaving the qualified Python
+client's settings contract untouched. The default remains on for parity with
+the current Rust behavior; turning it off stops the mapped-window poller and
+survives restart. Local validation on top of PR #526: `cargo fmt --check`,
+locked Messages build, 26 SDK/Messages unit tests, strict Clippy with warnings
 denied, and `git diff --check` pass. A private Xvfb session with an isolated
 D-Bus and controlled Pantheon color-scheme portal rendered and was visually
 inspected in light and dark modes. Clicking Retry kept the app open, and the
 private bus confirmed BlueFerry was not activated. This does not qualify a live
 phone, the owner session, assistive technology or narrow-window behavior.
+
+At PR head `668e136a`, Messages build/package, SDK/System Monitor, Disk Space
+render and all Apple pin-reader checks passed. Software Updates' real-updater
+contract test failed on CI with `Text file busy` while executing its temporary
+wrapper; the exact failing test passes on the MacBook host, so the CI failure is
+not yet explained. Plugin-package and M-series-wiring checks were still running
+at the last check. The three unrelated local edits in the updater worktree are
+preserved and excluded from this change.
 
 Signal remains the signed official ARM64 client with Pantheon launcher/tray
 integration and a reversible elementary-palette accent patch for mutable
@@ -69,8 +80,12 @@ and XWayland-to-Wayland drop acceptance remain open under #227. Keep the
 official Signal client until an upstream-supported secure messaging boundary
 exists. Do not treat `libsignal` as a supported third-party client API.
 
-The continuous-radius Gala patch remains provisional. Physical MacBook Pro
-panel matching is not qualified. A five-second Xvfb smoke launch accidentally
+The continuous-radius Gala patch remains provisional. The current host reports
+MacBookPro18,3, eDP-1 at 2419×1571 and 119.91 Hz over a 302×196 mm panel, the
+elementary Blueberry GTK theme, and text scale 0.85. Apple's [2021 14-inch
+MacBook Pro specifications](https://support.apple.com/en-sg/111902) say the
+display has rounded top corners but publish no numeric radius. Physical corner
+matching is not qualified. A five-second Xvfb smoke launch accidentally
 auto-activated a separate BlueFerry process through the session D-Bus; the
 timeout stopped it. No message was sent. The pre-existing BlueFerry process
 remained running. A follow-up probe used an isolated session bus with an empty
