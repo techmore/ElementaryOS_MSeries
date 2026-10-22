@@ -19,6 +19,32 @@ loader.exec_module(shelf)
 shelf.Gtk.init()
 
 
+class BackendTests(unittest.TestCase):
+    def test_native_capability_uses_existing_service_only(self):
+        bus = Mock()
+        bus.call_sync.return_value = shelf.GLib.Variant("(v)",
+            (shelf.GLib.Variant("u", 1),))
+        with patch.object(shelf.Gio, "bus_get_sync", return_value=bus):
+            self.assertTrue(shelf.pantheon_places_shelf())
+        self.assertEqual(bus.call_sync.call_args.args[6],
+                         shelf.Gio.DBusCallFlags.NO_AUTO_START)
+
+    def test_missing_or_invalid_capability_falls_back(self):
+        bus = Mock()
+        with patch.object(shelf.Gio, "bus_get_sync", return_value=bus):
+            for value in [0, "1", True]:
+                bus.call_sync.return_value.unpack.return_value = (value,)
+                self.assertFalse(shelf.pantheon_places_shelf())
+            bus.call_sync.side_effect = RuntimeError("old compositor")
+            self.assertFalse(shelf.pantheon_places_shelf())
+
+    def test_explicit_backend_override_wins(self):
+        with patch.dict(os.environ, {"MSERIES_SHELF_BACKEND": "x11"}):
+            with patch.object(shelf, "pantheon_places_shelf") as capability:
+                self.assertFalse(shelf.gala_places_shelf())
+                capability.assert_not_called()
+
+
 class RetentionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

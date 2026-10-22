@@ -194,6 +194,12 @@ impl DesktopIntegrationServer {
         1
     }
 
+    /// Native shelf placement without activation, keyed by its application ID.
+    #[zbus(property)]
+    fn screenshot_shelf_placement_version(&self) -> u32 {
+        1
+    }
+
     fn get_running_applications(&self) -> zbus::fdo::Result<Vec<RunningApplication>> {
         let snapshot = self
             .0

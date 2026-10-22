@@ -33,6 +33,25 @@ GALA_PREFIX = "/usr/local/lib/mseries/gala"
 GALA_MARKER = os.path.join(GALA_PREFIX, "share", "mseries-shelf-wayland")
 
 
+def pantheon_places_shelf():
+    """Query the running compositor; never activate a service to detect support."""
+    try:
+        import gi
+        from gi.repository import Gio, GLib
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        reply = bus.call_sync(
+            "org.pantheon.gala", "/org/pantheon/gala/DesktopInterface",
+            "org.freedesktop.DBus.Properties", "Get",
+            GLib.Variant("(ss)", ("org.pantheon.gala.DesktopIntegration",
+                                  "ScreenshotShelfPlacementVersion")),
+            GLib.VariantType.new("(v)"), Gio.DBusCallFlags.NO_AUTO_START,
+            500, None)
+        version = reply.unpack()[0]
+        return type(version) is int and version >= 1
+    except Exception:
+        return False
+
+
 def gala_places_shelf():
     """True when the running compositor is our patched Gala built with the shelf placement.
 
@@ -42,6 +61,8 @@ def gala_places_shelf():
     """
     if os.environ.get("MSERIES_SHELF_BACKEND"):
         return os.environ["MSERIES_SHELF_BACKEND"] == "wayland"
+    if pantheon_places_shelf():
+        return True
     try:
         marker = os.stat(GALA_MARKER).st_mtime
         for pid in filter(str.isdigit, os.listdir("/proc")):
