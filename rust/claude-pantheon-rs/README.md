@@ -184,7 +184,7 @@ feed without starting another connection.
 | `src/workflow.rs`, `repos.rs` | pinned repos, issue backlog via `gh api`, "Start on this", the runner as T3 scheduled tasks |
 | `src/handoff.rs` | "Hand Off to Repo": structured summary appended to the project's handoff doc, optional commit |
 | `src/changes.rs` | Changes page: file tree, inline/side-by-side diff in GtkSourceView, per-hunk copy, restore to checkpoint |
-| `src/diagnostics.rs` | the server's resource telemetry as sparklines |
+| `src/diagnostics.rs` | server resource telemetry as sparklines and process-local thread-cache hit/miss and disk-time totals |
 | `tests/render.rs` | drives the real window under Xvfb and writes the screenshots in `docs/` |
 | `bench.sh` | RSS and CPU of a process tree over 20 s, as a Markdown row |
 

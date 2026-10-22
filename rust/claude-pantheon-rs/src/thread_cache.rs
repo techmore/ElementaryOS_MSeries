@@ -9,12 +9,51 @@ use crate::t3::model::ThreadView;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
 
 const SCHEMA_VERSION: u32 = 3;
 const MAX_RECORD_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_ENV_ENTRIES: usize = 32;
 const MAX_ENV_BYTES: u64 = 64 * 1024 * 1024;
 static NEXT_TEMP: AtomicU64 = AtomicU64::new(1);
+static CACHE_READS: AtomicU64 = AtomicU64::new(0);
+static CACHE_HITS: AtomicU64 = AtomicU64::new(0);
+static CACHE_MISSES: AtomicU64 = AtomicU64::new(0);
+static CACHE_READ_MICROS: AtomicU64 = AtomicU64::new(0);
+static CACHE_SAVES: AtomicU64 = AtomicU64::new(0);
+static CACHE_WRITES: AtomicU64 = AtomicU64::new(0);
+static CACHE_SKIPPED_WRITES: AtomicU64 = AtomicU64::new(0);
+static CACHE_WRITE_FAILURES: AtomicU64 = AtomicU64::new(0);
+static CACHE_WRITE_MICROS: AtomicU64 = AtomicU64::new(0);
+
+/// Aggregate, process-local cache activity. These counters intentionally contain no thread ids or content.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CacheStats {
+    pub reads: u64,
+    pub hits: u64,
+    pub misses: u64,
+    pub read_micros: u64,
+    pub saves: u64,
+    pub writes: u64,
+    pub skipped_writes: u64,
+    pub write_failures: u64,
+    pub write_micros: u64,
+}
+
+/// Current-process aggregate cache metrics for the Diagnostics page.
+pub fn stats() -> CacheStats {
+    CacheStats {
+        reads: CACHE_READS.load(Ordering::Relaxed),
+        hits: CACHE_HITS.load(Ordering::Relaxed),
+        misses: CACHE_MISSES.load(Ordering::Relaxed),
+        read_micros: CACHE_READ_MICROS.load(Ordering::Relaxed),
+        saves: CACHE_SAVES.load(Ordering::Relaxed),
+        writes: CACHE_WRITES.load(Ordering::Relaxed),
+        skipped_writes: CACHE_SKIPPED_WRITES.load(Ordering::Relaxed),
+        write_failures: CACHE_WRITE_FAILURES.load(Ordering::Relaxed),
+        write_micros: CACHE_WRITE_MICROS.load(Ordering::Relaxed),
+    }
+}
 
 /// A replay event is applied only once and only when it advances the paired projection cursor.
 pub fn event_is_new(current_sequence: Option<u64>, incoming_sequence: u64) -> bool {
@@ -103,6 +142,19 @@ pub fn load(environment_id: &str, thread_id: &str) -> Option<CachedThread> {
 }
 
 fn load_from(root: &Path, environment_id: &str, thread_id: &str) -> Option<CachedThread> {
+    let started = Instant::now();
+    let result = read_from(root, environment_id, thread_id);
+    CACHE_READS.fetch_add(1, Ordering::Relaxed);
+    CACHE_READ_MICROS.fetch_add(elapsed_micros(started), Ordering::Relaxed);
+    if result.is_some() {
+        CACHE_HITS.fetch_add(1, Ordering::Relaxed);
+    } else {
+        CACHE_MISSES.fetch_add(1, Ordering::Relaxed);
+    }
+    result
+}
+
+fn read_from(root: &Path, environment_id: &str, thread_id: &str) -> Option<CachedThread> {
     let path = record_path(root, environment_id, thread_id)?;
     prune_environment(root, environment_id, &path);
     let metadata = std::fs::metadata(&path).ok()?;
@@ -122,10 +174,29 @@ fn load_from(root: &Path, environment_id: &str, thread_id: &str) -> Option<Cache
 }
 
 pub fn save(record: &CachedThread) -> Result<(), String> {
-    save_to(&root(), record)
+    save_from(&root(), record).map(|_| ())
 }
 
-fn save_to(root: &Path, record: &CachedThread) -> Result<(), String> {
+fn save_from(root: &Path, record: &CachedThread) -> Result<bool, String> {
+    let started = Instant::now();
+    let result = save_to(root, record);
+    CACHE_SAVES.fetch_add(1, Ordering::Relaxed);
+    CACHE_WRITE_MICROS.fetch_add(elapsed_micros(started), Ordering::Relaxed);
+    match &result {
+        Ok(true) => {
+            CACHE_WRITES.fetch_add(1, Ordering::Relaxed);
+        }
+        Ok(false) => {
+            CACHE_SKIPPED_WRITES.fetch_add(1, Ordering::Relaxed);
+        }
+        Err(_) => {
+            CACHE_WRITE_FAILURES.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+    result
+}
+
+fn save_to(root: &Path, record: &CachedThread) -> Result<bool, String> {
     if record.schema_version != SCHEMA_VERSION {
         return Err("invalid T3 thread cache scope".into());
     }
@@ -141,10 +212,10 @@ fn save_to(root: &Path, record: &CachedThread) -> Result<(), String> {
     }
 
     // Never replace a newer record with a delayed or stale writer.
-    if let Some(existing) = load_from(root, &record.environment_id, &record.thread_id)
+    if let Some(existing) = read_from(root, &record.environment_id, &record.thread_id)
         && existing.sequence > record.sequence
     {
-        return Ok(());
+        return Ok(false);
     }
 
     let tmp = path.with_extension(format!("tmp.{}.{}", std::process::id(), NEXT_TEMP.fetch_add(1, Ordering::Relaxed)));
@@ -165,7 +236,11 @@ fn save_to(root: &Path, record: &CachedThread) -> Result<(), String> {
         let _ = dir.sync_all();
     }
     prune_environment(root, &record.environment_id, &path);
-    Ok(())
+    Ok(true)
+}
+
+fn elapsed_micros(started: Instant) -> u64 {
+    started.elapsed().as_micros().min(u64::MAX as u128) as u64
 }
 
 fn prune_environment(root: &Path, environment_id: &str, keep: &Path) {
@@ -256,13 +331,13 @@ mod tests {
         let record = CachedThread::new("env-a", "thread-a", 42, &view, Some("opaque-page-cursor"), true);
         save_to(&root, &record).unwrap();
 
-        let loaded = load_from(&root, "env-a", "thread-a").unwrap();
+        let loaded = read_from(&root, "env-a", "thread-a").unwrap();
         assert_eq!(loaded.sequence, 42);
         assert_eq!(loaded.view.items[0].text, "cached reply");
         assert_eq!(loaded.history_cursor.as_deref(), Some("opaque-page-cursor"));
         assert!(loaded.has_more_history);
-        assert!(load_from(&root, "env-b", "thread-a").is_none());
-        assert!(load_from(&root, "env-a", "thread-b").is_none());
+        assert!(read_from(&root, "env-b", "thread-a").is_none());
+        assert!(read_from(&root, "env-a", "thread-b").is_none());
 
         #[cfg(unix)]
         {
@@ -280,16 +355,41 @@ mod tests {
         let dir = path.parent().unwrap();
         std::fs::create_dir_all(dir).unwrap();
         std::fs::write(&path, b"not-json").unwrap();
-        assert!(load_from(&root, "env-a", "thread-a").is_none());
+        assert!(read_from(&root, "env-a", "thread-a").is_none());
         assert!(!path.exists());
 
         let view = ThreadView::default();
         save_to(&root, &CachedThread::new("env-a", "thread-a", 42, &view, None, false)).unwrap();
         save_to(&root, &CachedThread::new("env-a", "thread-a", 40, &view, None, false)).unwrap();
-        assert_eq!(load_from(&root, "env-a", "thread-a").unwrap().sequence, 42);
+        assert_eq!(read_from(&root, "env-a", "thread-a").unwrap().sequence, 42);
 
         std::fs::write(&path, vec![b'x'; MAX_RECORD_BYTES as usize + 1]).unwrap();
+        assert!(read_from(&root, "env-a", "thread-a").is_none());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn reports_aggregate_cache_hits_misses_and_disk_timings() {
+        let root = temp_root();
+        let before = stats();
         assert!(load_from(&root, "env-a", "thread-a").is_none());
+        let record = CachedThread::new("env-a", "thread-a", 1, &ThreadView::default(), None, false);
+        assert!(save_from(&root, &record).unwrap());
+        assert!(load_from(&root, "env-a", "thread-a").is_some());
+        let older = CachedThread::new("env-a", "thread-a", 0, &ThreadView::default(), None, false);
+        assert!(!save_from(&root, &older).unwrap());
+        let mut invalid = record.clone();
+        invalid.schema_version = 0;
+        assert!(save_from(&root, &invalid).is_err());
+        let after = stats();
+
+        assert_eq!(after.reads - before.reads, 2);
+        assert_eq!(after.misses - before.misses, 1);
+        assert_eq!(after.hits - before.hits, 1);
+        assert_eq!(after.saves - before.saves, 3);
+        assert_eq!(after.writes - before.writes, 1);
+        assert_eq!(after.skipped_writes - before.skipped_writes, 1);
+        assert_eq!(after.write_failures - before.write_failures, 1);
         let _ = std::fs::remove_dir_all(root);
     }
 
