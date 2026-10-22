@@ -1,19 +1,21 @@
-## AirDrop receive switch in Quick Settings — 2026-10-22 (Codex)
+## AirDrop controls across elementary and Windows Work Mode — 2026-10-22 (Codex)
 
-Moved the `Receive Files` switch into the collapsed AirDrop row in the Sharing
-card. The AirDrop row still expands for duration, audience, device name and
-received-file controls; its details button and switch have separate accessible
-names and keyboard targets. The switch stays disabled until status is available
-and while an on/off command is running. Backend state and the existing error
-handling remain authoritative.
+The Quick Settings AirDrop row now has a direct `Receive Files` switch while
+keeping duration, audience, device name and received-file controls expandable.
+Windows Work Mode hides the top panel, so the Windows taskbar status area now
+opens that same `MSeries.AirDropPanel` and `omdrop` backend from an AirDrop icon.
+The taskbar creates the panel on first open and it polls only while mapped.
 
-Validation: Vala compilation of `AirDropPanel.vala` and its probe source with
-GTK 4, Granite 7 and JSON-GLib succeeded (one existing experimental-local-
-function warning in the probe); `git diff --check` passed. The probe was not
-run. The plugin was not installed and Wingpanel was not reloaded; live layout
-and hardware toggling remain unverified. Next: stage through the normal Quick
-Settings installer, then inspect the live popover at the next approved session
-reload.
+Validation: `AirDropPanel.vala` compiled with GTK 4, Granite 7 and JSON-GLib.
+The complete pinned dock source prepared and linked successfully with
+`DockTaskbarAirDrop` and `MSeriesAirDropPanel`; `git diff --check` passed. The
+repository test suite and probe were not run. At the owner's request, the private
+dock binary was installed and restarted while Windows Work Mode was active. The
+active process is the new private binary. Native visual acceptance and a real
+AirDrop receive on this hardware have not yet been confirmed. The read-only
+backend status currently reports `no_awdl0`; `omdrop doctor` says the driver is
+installed but its Apple-compatible radio is not running, so receive is off until
+that radio comes up.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 

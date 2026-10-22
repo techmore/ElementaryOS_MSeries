@@ -9,6 +9,8 @@ for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codex
 done
 cp "$here/TaskbarNotifications.vala" "$source_dir/src/TaskbarNotifications.vala"
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
+cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
+cp "$here/TaskbarAirDrop.vala" "$source_dir/src/TaskbarAirDrop.vala"
 mkdir -p "$source_dir/src/codexbar"
 for source in Indicator JsonBoundary HelperProcess AccountDialog PanelPreferences RefreshPolicy QuotaEta Presentation; do
   cp "$repo/mseries/codexbar-wingpanel/$source.vala" "$source_dir/src/codexbar/"
@@ -26,7 +28,9 @@ open(sys.argv[2], 'w').write(text[:text.index(marker)] + '\n')
 PY
 # Tracking may change launcher matching/markers, never taskbar/Start/CodexBar.
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
-  "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" "$source_dir/src/TaskbarNotifications.vala" "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
+  "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" \
+  "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" \
+  "$source_dir/src/AirDropPanel.vala" "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
@@ -34,8 +38,10 @@ python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
-    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala'],
-    'src/Taskbar.vala': ['new TaskbarCodexBar', 'new TaskbarRepoBar', 'new TaskbarNotifications', 'end_box.append (status_box)'],
+    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala'],
+    'src/Taskbar.vala': ['new TaskbarCodexBar', 'new TaskbarRepoBar', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
+    'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
+    'src/AirDropPanel.vala': ['Receive Files'],
     'src/MainWindow.vala': ['taskbar-mode', 'TaskbarRow'],
     'data/dock.gschema.xml': ['taskbar-mode'],
 }.items():
