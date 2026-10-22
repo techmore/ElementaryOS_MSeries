@@ -65,7 +65,7 @@ pub struct ProviderUsage {
     pub kind: String,
     pub totals: UsageTotals,
     pub cost: f64,
-    pub savings: f64,
+    pub savings: Option<f64>,
     pub sessions: u64,
     pub models: BTreeMap<String, (UsageTotals, f64)>,
     /// Tokens per day, last 7 days, oldest first.
@@ -83,7 +83,9 @@ pub fn fold(summary: &UsageSummary, last_days: &[String]) -> Vec<ProviderUsage> 
         });
         e.totals.add(&b.totals);
         e.cost += b.cost_usd;
-        e.savings += b.cache_savings_usd;
+        if let Some(savings) = b.cache_savings_usd {
+            e.savings = Some(e.savings.unwrap_or_default() + savings);
+        }
         let m = e.models.entry(b.model.clone()).or_default();
         m.0.add(&b.totals);
         m.1 += b.cost_usd;
@@ -292,7 +294,7 @@ impl UsagePage {
         }
         let providers = fold(summary, last7);
         let total_cost: f64 = providers.iter().map(|p| p.cost).sum();
-        let total_savings: f64 = providers.iter().map(|p| p.savings).sum();
+        let total_savings = providers.iter().filter_map(|p| p.savings).reduce(|total, savings| total + savings);
         let mut total_tokens = UsageTotals::default();
         for p in &providers {
             total_tokens.add(&p.totals);
@@ -312,9 +314,13 @@ impl UsagePage {
         strip.add_css_class("usage-card");
         strip.append(&stat("tokens, 30 days", &tokens_text(total_tokens.total())));
         strip.append(&stat("output", &tokens_text(total_tokens.output)));
-        strip.append(&stat("cache reads", &tokens_text(total_tokens.cached_input)));
+        if let Some(cache_reads) = total_tokens.cached_input {
+            strip.append(&stat("cache reads", &tokens_text(cache_reads)));
+        }
         strip.append(&stat("API-equivalent cost", &usd(total_cost)));
-        strip.append(&stat("saved by caching", &usd(total_savings)));
+        if let Some(savings) = total_savings {
+            strip.append(&stat("saved by caching", &usd(savings)));
+        }
         self.content.append(&strip);
 
         for p in &providers {
@@ -341,26 +347,32 @@ impl UsagePage {
             row.append(&tokens);
             let bar = bar_row(&[
                 (p.totals.uncached_input as f64, "input"),
-                (p.totals.cache_creation as f64, "cache write"),
-                (p.totals.cached_input as f64, "cache read"),
+                (p.totals.cache_creation.unwrap_or_default() as f64, "cache write"),
+                (p.totals.cached_input.unwrap_or_default() as f64, "cache read"),
                 (p.totals.output as f64, "output"),
             ]);
             bar.set_valign(gtk::Align::Center);
             row.append(&bar);
-            let cost = label(&format!("{} · saved {}", usd(p.cost), usd(p.savings)), &["usage-cost"]);
+            let cost_text = p
+                .savings
+                .map(|savings| format!("{} · saved {}", usd(p.cost), usd(savings)))
+                .unwrap_or_else(|| usd(p.cost));
+            let cost = label(&cost_text, &["usage-cost"]);
             row.append(&cost);
             card.append(&row);
-            let legend = label(
-                &format!(
-                    "input {} · cache write {} · cache read {} · output {} ({} reasoning)",
-                    tokens_text(p.totals.uncached_input),
-                    tokens_text(p.totals.cache_creation),
-                    tokens_text(p.totals.cached_input),
-                    tokens_text(p.totals.output),
-                    tokens_text(p.totals.reasoning)
-                ),
-                &["caption", "dim-label"],
-            );
+            let mut legend_parts = vec![format!("input {}", tokens_text(p.totals.uncached_input))];
+            if let Some(cache_writes) = p.totals.cache_creation {
+                legend_parts.push(format!("cache write {}", tokens_text(cache_writes)));
+            }
+            if let Some(cache_reads) = p.totals.cached_input {
+                legend_parts.push(format!("cache read {}", tokens_text(cache_reads)));
+            }
+            legend_parts.push(format!(
+                "output {} ({} reasoning)",
+                tokens_text(p.totals.output),
+                tokens_text(p.totals.reasoning)
+            ));
+            let legend = label(&legend_parts.join(" · "), &["caption", "dim-label"]);
             card.append(&legend);
 
             // Model breakdown.
@@ -444,5 +456,50 @@ mod tests {
         assert_eq!(folded[0].kind, "codex", "Codex first, as CodexBar orders cards");
         assert_eq!(tokens_text(1_234_567), "1.2M");
         assert_eq!(usd(4.5), "$4.50");
+        assert!(claude.totals.cached_input.is_some(), "cache reads are available in the T3 fixture");
+        assert!(claude.savings.is_some(), "cache savings are available in the T3 fixture");
+    }
+
+    #[test]
+    fn absent_server_cache_metrics_remain_absent_after_folding() {
+        let summary: UsageSummary = serde_json::from_value(serde_json::json!({
+            "sinceDay": "2026-10-21",
+            "untilDay": "2026-10-21",
+            "buckets": [{
+                "provider": "codex",
+                "model": "fixture-model",
+                "day": "2026-10-21",
+                "totals": {"uncachedInputTokens": 10, "outputTokens": 4},
+                "costUsd": 0.01
+            }],
+            "sources": []
+        }))
+        .unwrap();
+
+        let folded = fold(&summary, &["2026-10-21".to_string()]);
+        let codex = folded.iter().find(|provider| provider.kind == "codex").unwrap();
+        assert_eq!(codex.totals.total(), 14, "missing cache fields do not change token totals");
+        assert_eq!(codex.totals.cached_input, None);
+        assert_eq!(codex.totals.cache_creation, None);
+        assert_eq!(codex.savings, None);
+    }
+
+    #[test]
+    fn explicit_zero_cache_metrics_are_still_available() {
+        let summary: UsageSummary = serde_json::from_value(serde_json::json!({
+            "buckets": [{
+                "provider": "claude",
+                "model": "fixture-model",
+                "totals": {"cachedInputTokens": 0, "cacheCreationTokens": 0},
+                "cacheSavingsUsd": 0.0
+            }]
+        }))
+        .unwrap();
+
+        let folded = fold(&summary, &[]);
+        let claude = folded.iter().find(|provider| provider.kind == "claude").unwrap();
+        assert_eq!(claude.totals.cached_input, Some(0));
+        assert_eq!(claude.totals.cache_creation, Some(0));
+        assert_eq!(claude.savings, Some(0.0));
     }
 }

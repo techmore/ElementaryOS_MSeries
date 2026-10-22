@@ -138,9 +138,10 @@ and saved accounts advertised by the server. The T3 Code server owns provider cr
 sends only the responses needed to complete the current sign-in flow. Providers must be installed and
 enabled on the server before they can be connected here.
 
-The same page can search the ACP Registry or add a local ACP command. **DeepSeek Harness…** opens a prefilled setup
-for `dsh --profile acp`; this requires `dsh` to already be installed and a DeepSeek API key configured in Harness on the
-paired T3 server. Harness is experimental and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
+The same page can search the ACP Registry or add a local ACP command. The provider rows reflect only agents returned
+by the paired server; the **DeepSeek Harness…** button is a setup form, not a claim that Harness is installed or
+connected. It prefills `dsh --profile acp`; this requires `dsh` to already be installed and a DeepSeek API key configured
+in Harness on the paired T3 server. Harness is experimental and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
 before enabling it. The server runs the agent against the workspace T3 exposes. DeepSeek API context caching is
 automatic and server-side, so the client does not duplicate it with a disk cache. DeepSeek Harness ACP keeps KV reuse
 append-only while the selected route and assembled prefix stay stable; keep provider, model and tool configuration
@@ -160,8 +161,9 @@ the Liquid/ANE candidate limits.
 
 The chat client includes the CodexBar-style usage view, so provider usage lives beside the threads that
 use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windows with reset times and
-the next-provider capacity decision, then shows 30-day tokens, output, cache reads, API-equivalent cost,
-cache savings, model breakdowns and a 7-day activity chart for Claude, Codex, OpenCode and Grok. The
+the next-provider capacity decision, then shows 30-day tokens, output, API-equivalent cost, model breakdowns
+and a 7-day activity chart for Claude, Codex, OpenCode and Grok. Cache reads, cache writes and savings appear only
+when the corresponding fields are present in T3's usage summary; missing server metrics are not shown as zero. The
 optional legacy Wingpanel 9 indicator shows the selected chat provider's quota and activity summary
 on hover; clicking it opens quota gauges, running threads and permission prompts, with thread links
 that open in this client. Other provider accounts remain in Settings. The Dock popover is a separate

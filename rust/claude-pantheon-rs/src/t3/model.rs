@@ -506,9 +506,9 @@ pub struct UsageTotals {
     #[serde(rename = "uncachedInputTokens")]
     pub uncached_input: u64,
     #[serde(rename = "cachedInputTokens")]
-    pub cached_input: u64,
+    pub cached_input: Option<u64>,
     #[serde(rename = "cacheCreationTokens")]
-    pub cache_creation: u64,
+    pub cache_creation: Option<u64>,
     #[serde(rename = "outputTokens")]
     pub output: u64,
     #[serde(rename = "reasoningTokens")]
@@ -518,16 +518,22 @@ pub struct UsageTotals {
 impl UsageTotals {
     pub fn add(&mut self, o: &UsageTotals) {
         self.uncached_input += o.uncached_input;
-        self.cached_input += o.cached_input;
-        self.cache_creation += o.cache_creation;
+        add_optional(&mut self.cached_input, o.cached_input);
+        add_optional(&mut self.cache_creation, o.cache_creation);
         self.output += o.output;
         self.reasoning += o.reasoning;
     }
     pub fn input(&self) -> u64 {
-        self.uncached_input + self.cached_input + self.cache_creation
+        self.uncached_input + self.cached_input.unwrap_or_default() + self.cache_creation.unwrap_or_default()
     }
     pub fn total(&self) -> u64 {
         self.input() + self.output
+    }
+}
+
+fn add_optional(total: &mut Option<u64>, value: Option<u64>) {
+    if let Some(value) = value {
+        *total = Some(total.unwrap_or_default() + value);
     }
 }
 
@@ -541,7 +547,7 @@ pub struct UsageBucket {
     #[serde(rename = "costUsd")]
     pub cost_usd: f64,
     #[serde(rename = "cacheSavingsUsd")]
-    pub cache_savings_usd: f64,
+    pub cache_savings_usd: Option<f64>,
     #[serde(rename = "costSource")]
     pub cost_source: String,
     pub records: u64,
