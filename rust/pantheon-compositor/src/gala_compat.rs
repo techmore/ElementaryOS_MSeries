@@ -23,6 +23,8 @@ pub(crate) struct GalaWindow {
     pub app_id: String,
     pub title: String,
     pub has_focus: bool,
+    /// Asked to be raised and was not; cleared when the window gets focus.
+    pub demands_attention: bool,
     pub workspace_index: i32,
     pub time_appeared_on_workspace: i64,
 }
@@ -123,6 +125,28 @@ impl GalaCompatHandle {
     }
 }
 
+/// The `a{sv}` Gala's `GetWindows` returns for one window. Keys beyond Gala's
+/// own (`demands-attention`) are ignored by stock clients.
+fn window_properties(window: &GalaWindow) -> zbus::fdo::Result<HashMap<String, OwnedValue>> {
+    let mut properties = HashMap::new();
+    properties.insert("app-id".into(), string_value(&window.app_id)?);
+    properties.insert("title".into(), string_value(&window.title)?);
+    properties.insert("has-focus".into(), OwnedValue::from(window.has_focus));
+    properties.insert(
+        "demands-attention".into(),
+        OwnedValue::from(window.demands_attention),
+    );
+    properties.insert(
+        "workspace-index".into(),
+        OwnedValue::from(window.workspace_index),
+    );
+    properties.insert(
+        "time-appeared-on-workspace".into(),
+        OwnedValue::from(window.time_appeared_on_workspace),
+    );
+    Ok(properties)
+}
+
 struct GalaRootServer(mpsc::Sender<GalaActionRequest>);
 
 #[interface(name = "org.pantheon.gala")]
@@ -192,21 +216,7 @@ impl DesktopIntegrationServer {
         snapshot
             .windows
             .iter()
-            .map(|window| {
-                let mut properties = HashMap::new();
-                properties.insert("app-id".into(), string_value(&window.app_id)?);
-                properties.insert("title".into(), string_value(&window.title)?);
-                properties.insert("has-focus".into(), OwnedValue::from(window.has_focus));
-                properties.insert(
-                    "workspace-index".into(),
-                    OwnedValue::from(window.workspace_index),
-                );
-                properties.insert(
-                    "time-appeared-on-workspace".into(),
-                    OwnedValue::from(window.time_appeared_on_workspace),
-                );
-                Ok((window.uid, properties))
-            })
+            .map(|window| Ok((window.uid, window_properties(window)?)))
             .collect()
     }
 
@@ -356,5 +366,60 @@ fn serve_gala_compat(
         if let Err(error) = result {
             tracing::warn!(%error, "could not emit a Pantheon desktop integration signal");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn handle() -> (GalaCompatHandle, mpsc::Receiver<GalaSignal>) {
+        let (signals, receiver) = mpsc::channel();
+        let snapshot = Arc::new(Mutex::new(DesktopSnapshot::default()));
+        (GalaCompatHandle { snapshot, signals }, receiver)
+    }
+
+    fn window(demands_attention: bool) -> GalaWindow {
+        GalaWindow {
+            uid: 4,
+            app_id: "org.example.App".into(),
+            title: "Example".into(),
+            demands_attention,
+            ..GalaWindow::default()
+        }
+    }
+
+    #[test]
+    fn get_windows_exports_demands_attention() {
+        let properties = window_properties(&window(true)).unwrap();
+        assert!(bool::try_from(properties["demands-attention"].try_clone().unwrap()).unwrap());
+        let properties = window_properties(&window(false)).unwrap();
+        assert!(!bool::try_from(properties["demands-attention"].try_clone().unwrap()).unwrap());
+    }
+
+    #[test]
+    fn an_attention_change_alone_emits_windows_changed() {
+        let (handle, signals) = handle();
+        let snapshot = |demands| DesktopSnapshot {
+            windows: vec![window(demands)],
+            active_workspace: 0,
+            workspace_count: 2,
+        };
+        handle.update(snapshot(false));
+        while signals.try_recv().is_ok() {}
+
+        handle.update(snapshot(true));
+        let emitted = signals.try_iter().collect::<Vec<_>>();
+        assert!(
+            emitted
+                .iter()
+                .any(|signal| matches!(signal, GalaSignal::Windows))
+        );
+        assert!(
+            !emitted
+                .iter()
+                .any(|signal| matches!(signal, GalaSignal::RunningApplications)),
+            "the app list did not change"
+        );
     }
 }

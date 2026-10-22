@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Prepare the pinned J314S wip2 trial offline; never install, arm or reboot."""
+"""Prepare the pinned unified72 J314S trial offline; never install, arm or reboot.
+
+The release identity, trial slug and native-build receipt come from series.json, so the
+same script prepares wip2 (revision 3) or wip3 (revision 4)."""
 import argparse
 import gzip
 import hashlib
@@ -16,7 +19,14 @@ import tarfile
 
 HERE = Path(__file__).resolve().parent
 BASE = "7.1.12-elementary-aurora20-enh1"
-NEW = "7.2.10-elementary-aurora72-wip2"
+SERIES = json.loads((HERE / "series.json").read_text())
+NEW = SERIES["kernel_release"]["unified72"]
+SLUG = NEW.split("elementary-", 1)[1]          # e.g. aurora72-wip3
+TRIAL_ENTRY = f"elementary-{SLUG}-trial"
+# The audited-build receipt is named for the trial (wip3 onward); wip2 kept the date-only name.
+NATIVE_RECEIPT = next((path for path in (HERE / f"native-build-{SLUG.split('-')[1]}-2026-10-21.json",
+                                         HERE / "native-build-2026-10-21.json") if path.exists()),
+                      HERE / f"native-build-{SLUG.split('-')[1]}-2026-10-21.json")
 BASE_SHA = "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa"
 BOOT_SHA = "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f"
 TRANSITIONS = {
@@ -44,7 +54,7 @@ def prepare(args):
         raise ValueError("choose a fresh private work directory outside live system paths")
     if args.root_cipher != "aes-xts-plain64":
         raise ValueError("this transition policy only covers an observed AES-XTS root")
-    native = json.loads((HERE / "native-build-2026-10-21.json").read_text())
+    native = json.loads(NATIVE_RECEIPT.read_text())
     provenance = native["provenance"]
     if provenance["kernel_release"] != NEW or digest(args.package.read_bytes()) != provenance["package_sha256"]:
         raise ValueError("candidate package identity differs from the independently audited artifact")
@@ -53,7 +63,7 @@ def prepare(args):
     if digest(baseline) != BASE_SHA or digest(boot) != BOOT_SHA:
         raise ValueError("working initramfs/shared boot payload changed; review this preparation again")
     modules = args.module_root.resolve() / "lib/modules" / NEW
-    config = (args.module_root / "share/doc/linux-image-elementary-aurora72-wip2/build.config").read_bytes()
+    config = (args.module_root / f"share/doc/linux-image-elementary-{SLUG}/build.config").read_bytes()
     if digest(config) != provenance["resolved_config_sha256"]:
         raise ValueError("resolved candidate config changed")
     for key, value in {"CRYPTO_AES": "y", "CRYPTO_XTS": "y", "CRYPTO_SHA256": "y",
@@ -105,18 +115,18 @@ def prepare(args):
     image = modules / "vmlinuz"
     if digest(image.read_bytes()) != native["package"]["image_sha256"]:
         raise ValueError("candidate Image differs from audited artifact")
-    shutil.copy2(image, output / "vmlinuz-aurora72-wip2")
+    shutil.copy2(image, output / f"vmlinuz-{SLUG}")
     (output / "boot.bin.rollback").write_bytes(boot)
     original_grub = args.custom_grub.read_text()
     match = re.search(r"^menuentry '[^']*DEV: Aurora \.20-enh1[^']*' --id elementary-aurora20-enh1 \{\n.*?^\}", original_grub, re.M | re.S)
-    if not match or "elementary-aurora72-wip2-trial" in original_grub:
+    if not match or TRIAL_ENTRY in original_grub:
         raise ValueError("expected current DEV entry not found or trial already exists")
-    block = match.group().replace(match.group().splitlines()[0], "menuentry 'elementary OS - TRIAL: Aurora 7.2 wip2' --id elementary-aurora72-wip2-trial {")
-    block = block.replace("/vmlinuz-aurora20-enh1", "/vmlinuz-aurora72-wip2").replace("/initrd.img-" + BASE, "/initrd.img-" + NEW)
+    block = match.group().replace(match.group().splitlines()[0], f"menuentry 'elementary OS - TRIAL: Aurora 7.2 {SLUG.split('-')[1]}' --id {TRIAL_ENTRY} {{")
+    block = block.replace("/vmlinuz-aurora20-enh1", f"/vmlinuz-{SLUG}").replace("/initrd.img-" + BASE, "/initrd.img-" + NEW)
     proposed = original_grub.rstrip() + "\n\n" + block + "\n"
     (output / "custom.cfg.proposed").write_text(proposed)
     subprocess.run(["grub-script-check", str(output / "custom.cfg.proposed")], check=True)
-    result.update(kind="offline-j314s-wip2-boot-preparation", package_sha256=provenance["package_sha256"],
+    result.update(kind=f"offline-j314s-{SLUG.split('-')[1]}-boot-preparation", package_sha256=provenance["package_sha256"],
                   candidate_image_sha256=native["package"]["image_sha256"],
                   resolved_config_sha256=provenance["resolved_config_sha256"],
                   root_cipher=args.root_cipher, original_baseline_sha256=BASE_SHA,
@@ -125,7 +135,7 @@ def prepare(args):
                   shared_boot_change_required=False, shared_boot_policy="Retain exact current 7.1 DTB/m1n1/U-Boot payload; legacy DART source checks are separate evidence.",
                   original_custom_grub_sha256=digest(original_grub.encode()),
                   proposed_custom_grub_sha256=digest(proposed.encode()),
-                  persistent_default="elementary-aurora20", trial_entry="elementary-aurora72-wip2-trial",
+                  persistent_default="elementary-aurora20", trial_entry=TRIAL_ENTRY,
                   installed=False, armed=False, rebooted=False,
                   status="prepared offline and original-unlock/module-package audit passed; no hardware boot qualification")
     (output / "preparation.json").write_text(json.dumps(result, indent=2) + "\n")

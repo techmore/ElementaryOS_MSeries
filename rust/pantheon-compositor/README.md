@@ -104,6 +104,70 @@ call `present()` while a different client has focus. Expected output:
     idle    raise   focused=A after ~100 ms
     typing  strict  never raised
     typing  raise   focused=A only after typing stopped, all keystrokes delivered
+    popup   raise   keys reached A, menu closed, A active
+    orcard  raise   A kept the keyboard and stayed active, card got the click, no ChangeProperty BadWindow
+    attention strict  A marked demands-attention, cleared on focus; same for X11 urgency
+
+## Menus, X11 popups and attention
+
+- **Open menus never block a focus change.** While an xdg_popup grab is live,
+  Smithay ignores every `keyboard.set_focus` except to the menu, so a raise from
+  the dock, an activation, a workspace switch, the overview or a polkit prompt
+  used to leave the keys in the old menu. `end_popup_grab_unless(root)`
+  (`handlers/xdg_shell.rs`) dismisses the menus and drops the popup keyboard
+  and pointer grabs first. It runs from `focus_window_keyboard`, X11 focus,
+  top-panel focus, workspace switch, overview, lock, and when the menu's own
+  window is minimized, moved to another workspace or destroyed.
+- **Refused grabs send `popup_done`** (locked session, root not mapped, invalid
+  grab, input already grabbed), so a client never keeps a menu nothing can close.
+- **Override-redirect and no-input X11 windows are raised, never activated or
+  focused.** That covers the notification cards from
+  `mseries/desktop-notifications/popup.py`, tooltips and X11 menus
+  (`xwayland::x11_accepts_focus`). Mapping one used to deactivate the focused app,
+  and clicking one left the keyboard with nobody.
+- **Focus sends the activated state at once.** `focus_window_keyboard` now sends
+  the pending configure, so a window focused over D-Bus no longer draws itself
+  inactive.
+- **Demands attention.** A window is marked when an activation request is refused
+  (`Verdict::Ignore`), when a deferred activation gives up because the user kept
+  typing, on X11 `_NET_WM_STATE_DEMANDS_ATTENTION` and on `WM_HINTS` urgency.
+  The mark clears when the window gets keyboard focus (or is destroyed) and is
+  exported as `demands-attention` (boolean) in `GetWindows`; a change emits
+  `WindowsChanged`. Every activation token is now kept under both policies so a
+  refusal can be attributed to its window; `strict` still never raises without
+  a trusted serial. The dock does not show the mark yet.
+
+## Monitoring
+
+Every 30 s the compositor logs (target `pantheon_metrics`, nothing when idle):
+
+- `compositor stats`: client `commits` split into `shm_commits`/`dmabuf_commits`,
+  damaged megapixels, frame callbacks requested, `redraw_requests` (before
+  coalescing), `render_passes` (after), `vblanks`, `frames_queued`/`frames_empty`,
+  and the five busiest clients as `name(pid)=commits/shm|dmabuf`. X11 windows
+  are named by their own `_NET_WM_PID`, not as Xwayland or the compositor.
+- `output frame stats` per output: `fps`, `late` (flip more than 1.5 refresh
+  periods after queueing), `skipped_vblanks`, `empty_pct`, and p50/p95/p99 µs of
+  `render_us` (compositor-thread CPU per frame), `queue_flip_us` and
+  `dirty_flip_us` (first commit or input to the kernel's flip timestamp).
+
+```sh
+journalctl --user -u pantheon-rust-compositor@wayland -g 'compositor stats|output frame stats'
+```
+
+Under systemd (`JOURNAL_STREAM` naming stderr) lines carry no ANSI colour or
+second timestamp and start with an sd-daemon `<N>` prefix, so
+`journalctl -p warning` works. Without `RUST_LOG` the filter is
+`info,smithay::xwayland::xwm=warn`. Routine 30 s safety reconciles of the
+opt-in display trace log at DEBUG unless they find a change.
+
+Frame callbacks go only to surfaces whose primary scanout output is the one
+that flipped (so a second monitor no longer doubles every client's rate);
+surfaces shown nowhere (fully occluded, behind the lock screen) get one per
+second. An empty frame (a commit with no visible change) still
+gets its callbacks at the estimated next vblank. Set
+`PANTHEON_FRAME_CALLBACKS=all` on the service to restore the old
+every-window-every-flip behaviour without rebuilding.
 
 ## Current limits
 

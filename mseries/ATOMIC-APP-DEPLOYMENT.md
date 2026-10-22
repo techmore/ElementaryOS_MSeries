@@ -14,6 +14,9 @@ Stage durations and refresh durations are logged. Behavior is covered by
 stubbed package-command tests; real M1 Pro performance measurements and backend
 selection remain pending.
 
+Base and Pantheon package updates for customers (the `mseries-*` .debs, #52) are a separate mechanism with
+its own journal, health check and rollback: [UPDATER-DESIGN.md](UPDATER-DESIGN.md).
+
 ## Opt-in Signal prototype
 
 `bash mseries/install-signal.sh --atomic` downloads the upstream ARM64 beta,

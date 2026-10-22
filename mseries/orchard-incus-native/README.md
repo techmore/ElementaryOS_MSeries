@@ -44,6 +44,20 @@ The CSV, source-view inventory and service-symbol index accompany the report.
   disabled and its DNS listener disabled. It describes observed configuration,
   not a security guarantee. Host services must listen on the chosen bridge
   gateway; desktop API keys are never injected into guests.
+- Podman page: the user's rootless Podman containers, images and volumes in one
+  list with search. Containers can be started, stopped, restarted and removed;
+  images and volumes can be removed. Removal is never forced: running containers,
+  images used by a container and volumes in use are refused. Orchard runs the
+  `podman` CLI with JSON output, so no socket service needs enabling, and the page
+  shows an install hint when Podman is absent. Image sizes are shown per image
+  and never summed, because images share layers. Running containers show live
+  CPU, memory and PID counts from `podman stats` in the list; each container has
+  a details window (image, state, command, published ports, networks, mounts,
+  limits, live counters with CPU/memory graphs, and the raw `podman inspect`
+  document) with start/stop/restart. Counters are shown only for running
+  containers and are never presented as zero when Podman does not report them.
+  `orchard://podman` opens the page. See `docs/screenshot-podman.png` and
+  `docs/screenshot-podman-details.png`.
 - Ctrl+K command palette, fuzzy search, `orchard:` navigation links, preferences,
   server diagnostics and explicitly confirmed host daemon controls.
 - Wingpanel tree icon and running-instance badge (including zero). CPU/memory
@@ -56,7 +70,7 @@ The CSV, source-view inventory and service-symbol index accompany the report.
 The verified target is **Incus 6.0.5** on aarch64 elementary OS. OCI application
 containers arrived in Incus 6.3, so the current OCI limitations are version- and
 implementation-specific. This work does not upgrade Incus or install another
-engine. Dockerfiles/BuildKit, Compose, Apple's container/Kubernetes plugins,
+engine; the Podman page only manages a Podman the user already has. Dockerfiles/BuildKit, Compose, Apple's container/Kubernetes plugins,
 macOS MLX runtime supervision, Apple signing/updating and host DNS-resolver
 integration are documented as incompatible with this target. Native system
 images and externally managed compatible model servers provide the stated
@@ -86,7 +100,8 @@ the manager leaves the panel companion running.
 
 Preferences live under `$XDG_CONFIG_HOME/orchard-incus`, metric history under
 `$XDG_STATE_HOME/orchard-incus/metrics`; the defaults are `~/.config` and
-`~/.local/state`. `INCUS_SOCKET` overrides the saved socket preference. API keys
+`~/.local/state`. `INCUS_SOCKET` overrides the saved socket preference and
+`ORCHARD_PODMAN` overrides the `podman` binary the Podman page runs. API keys
 use Secret Service, not preferences files. `orchard:` links require registering
 the installed desktop entry as the scheme handler.
 

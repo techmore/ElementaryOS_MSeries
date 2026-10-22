@@ -1,7 +1,7 @@
 use smithay::{
     desktop::{
-        PopupKeyboardGrab, PopupKind, PopupPointerGrab, PopupUngrabStrategy, Window,
-        find_popup_root_surface, get_popup_toplevel_coords,
+        PopupGrabError, PopupKeyboardGrab, PopupKind, PopupPointerGrab, PopupUngrabStrategy,
+        Window, find_popup_root_surface, get_popup_toplevel_coords,
     },
     input::{
         Seat,
@@ -24,10 +24,7 @@ use smithay::{
     },
 };
 
-use crate::{
-    PantheonCompositor,
-    grabs::{MoveSurfaceGrab, ResizeSurfaceGrab},
-};
+use crate::{PantheonCompositor, grabs::ResizeSurfaceGrab, tiling::ModeRequest};
 
 impl XdgShellHandler for PantheonCompositor {
     fn xdg_shell_state(&mut self) -> &mut XdgShellState {
@@ -39,6 +36,14 @@ impl XdgShellHandler for PantheonCompositor {
         self.space.map_element(window.clone(), (0, 0), false);
         self.workspace_manager
             .add_window(window, Point::from((0, 0)));
+    }
+
+    fn title_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
+    }
+
+    fn app_id_changed(&mut self, _surface: ToplevelSurface) {
+        self.note_title_changed();
     }
 
     fn new_popup(&mut self, surface: PopupSurface, _positioner: PositionerState) {
@@ -67,30 +72,11 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
-            self.clear_tiling_for_surface(wl_surface);
-            self.move_grab_active = true;
-            self.corner_snap_cancelled = false;
-            self.corner_snap_preview = None;
             let pointer = seat.get_pointer().unwrap();
-
-            let window = self
-                .space
-                .elements()
-                .find(|w| {
-                    w.toplevel()
-                        .is_some_and(|top| top.wl_surface() == wl_surface)
-                })
-                .unwrap()
-                .clone();
-            let initial_window_location = self.space.element_location(&window).unwrap();
-
-            let grab = MoveSurfaceGrab {
-                start_data,
-                window,
-                initial_window_location,
+            let Some(window) = self.find_window_for_surface(wl_surface) else {
+                return;
             };
-
-            pointer.set_grab(self, grab, serial, Focus::Clear);
+            self.start_move_grab(&pointer, start_data, window, serial);
         }
     }
 
@@ -106,7 +92,6 @@ impl XdgShellHandler for PantheonCompositor {
         let wl_surface = surface.wl_surface();
 
         if let Some(start_data) = check_grab(&seat, wl_surface, serial) {
-            self.clear_tiling_for_surface(wl_surface);
             let pointer = seat.get_pointer().unwrap();
 
             let window = self
@@ -118,6 +103,17 @@ impl XdgShellHandler for PantheonCompositor {
                 })
                 .unwrap()
                 .clone();
+            // The shared edge of a snap group resizes both members.
+            if self.try_start_split_resize(
+                &pointer,
+                start_data.clone(),
+                &window,
+                edges.into(),
+                serial,
+            ) {
+                return;
+            }
+            self.float_in_place(&window);
             let initial_window_location = self.space.element_location(&window).unwrap();
             let initial_window_size = window.geometry().size;
 
@@ -139,11 +135,11 @@ impl XdgShellHandler for PantheonCompositor {
     }
 
     fn maximize_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, true, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Maximize);
     }
 
     fn unmaximize_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, false, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Unmaximize);
     }
 
     fn fullscreen_request(
@@ -151,11 +147,11 @@ impl XdgShellHandler for PantheonCompositor {
         surface: ToplevelSurface,
         _output: Option<smithay::reexports::wayland_server::protocol::wl_output::WlOutput>,
     ) {
-        self.configure_window_mode(surface, false, true);
+        self.request_toplevel_mode(&surface, ModeRequest::Fullscreen);
     }
 
     fn unfullscreen_request(&mut self, surface: ToplevelSurface) {
-        self.configure_window_mode(surface, false, false);
+        self.request_toplevel_mode(&surface, ModeRequest::Unfullscreen);
     }
 
     fn minimize_request(&mut self, surface: ToplevelSurface) {
@@ -182,11 +178,8 @@ impl XdgShellHandler for PantheonCompositor {
             return;
         };
         let id = wl_surface.id();
-        let was_focused = self
-            .seat
-            .get_keyboard()
-            .and_then(|keyboard| keyboard.current_focus())
-            .is_some_and(|focused| surface_has_root(&focused, wl_surface));
+        let was_focused = self.keyboard_focus_is_in(wl_surface);
+        self.end_popup_grab_of(wl_surface);
         self.workspace_manager.set_location(window.id(), location);
         self.space.unmap_elem(&window);
         self.minimized_windows.insert(id, (window, location));
@@ -201,15 +194,12 @@ impl XdgShellHandler for PantheonCompositor {
     fn toplevel_destroyed(&mut self, surface: ToplevelSurface) {
         let wl_surface = surface.wl_surface();
         let id = wl_surface.id();
-        let was_focused = self
-            .seat
-            .get_keyboard()
-            .and_then(|keyboard| keyboard.current_focus())
-            .is_some_and(|focused| surface_has_root(&focused, wl_surface));
+        let was_focused = self.keyboard_focus_is_in(wl_surface);
+        self.end_popup_grab_of(wl_surface);
         self.initially_positioned.remove(&id);
-        self.managed_windows.remove(&id);
-        self.tiled_windows.remove(&id);
-        self.minimized_windows.remove(&id);
+        if let Some((window, _)) = self.minimized_windows.remove(&id) {
+            self.forget_window_placement(window.id());
+        }
 
         let window = self
             .space
@@ -232,6 +222,8 @@ impl XdgShellHandler for PantheonCompositor {
                     .map(|(window, _, _)| window)
             });
         if let Some(window) = window {
+            self.attention.clear(window.id());
+            self.forget_window_placement(window.id());
             self.space.unmap_elem(&window);
             self.workspace_manager.remove_window(window.id());
         }
@@ -242,11 +234,14 @@ impl XdgShellHandler for PantheonCompositor {
     }
 
     fn grab(&mut self, surface: PopupSurface, seat_resource: wl_seat::WlSeat, serial: Serial) {
+        // Every refusal below dismisses the popup. Without popup_done the client
+        // keeps a menu on screen that nothing can close.
         if self.session_locked {
+            surface.send_popup_done();
             return;
         }
         let seat = Seat::from_resource(&seat_resource).unwrap();
-        let kind = PopupKind::Xdg(surface);
+        let kind = PopupKind::Xdg(surface.clone());
         let Ok(root_surface) = find_popup_root_surface(&kind) else {
             return;
         };
@@ -256,34 +251,24 @@ impl XdgShellHandler for PantheonCompositor {
                 .filter(|toplevel| toplevel.wl_surface() == &root_surface)
                 .map(|toplevel| toplevel.wl_surface().clone())
         }) else {
+            surface.send_popup_done();
             return;
         };
 
         // A popup from another window (or a client that died mid-grab) may still
         // hold the seat's grab. Smithay answers a grab on top of it with a fatal
         // NotTheTopmostPopup error, which disconnected the dock's Start menu.
-        if let Some((old_root, mut old)) = self.active_popup_grab.take() {
-            if !old.has_ended() && old_root != root {
-                old.ungrab(PopupUngrabStrategy::All);
-                if let Some(pointer) = seat.get_pointer()
-                    && pointer.is_grabbed()
-                    && !pointer.has_grab(serial)
-                {
-                    pointer.unset_grab(self, serial, smithay::backend::input::InputTime::now());
-                }
-                if let Some(keyboard) = seat.get_keyboard()
-                    && keyboard.is_grabbed()
-                    && !keyboard.has_grab(serial)
-                {
-                    keyboard.unset_grab(self);
-                }
-            } else if !old.has_ended() {
-                self.active_popup_grab = Some((old_root, old));
-            }
-        }
+        self.end_popup_grab_unless(Some(&root));
 
-        let Ok(mut grab) = self.popups.grab_popup(root.clone(), kind, &seat, serial) else {
-            return;
+        let mut grab = match self.popups.grab_popup(root.clone(), kind, &seat, serial) {
+            Ok(grab) => grab,
+            Err(PopupGrabError::InvalidGrab) => {
+                surface.send_popup_done();
+                return;
+            }
+            // ParentDismissed: Smithay dismissed it. NotTheTopmostPopup: Smithay
+            // posted a protocol error. DeadResource: nobody to tell.
+            Err(_) => return,
         };
         self.active_popup_grab = Some((root, grab.clone()));
 
@@ -323,9 +308,7 @@ impl PantheonCompositor {
             .elements()
             .rev()
             .find(|window| {
-                window
-                    .x11_surface()
-                    .is_none_or(|surface| !surface.is_override_redirect())
+                crate::xwayland::window_accepts_focus(window)
                     && window
                         .toplevel()
                         .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
@@ -341,6 +324,7 @@ impl PantheonCompositor {
                 }
             });
         } else {
+            self.end_popup_grab_unless(None);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             self.set_x11_keyboard_focus(None, serial);
             self.seat
@@ -349,6 +333,79 @@ impl PantheonCompositor {
                 .set_focus(self, None, serial);
         }
         self.refresh_panel_visibility();
+    }
+}
+
+impl PantheonCompositor {
+    /// End the seat's popup grab unless it belongs to the toplevel `keep`.
+    ///
+    /// While a popup grab is live, Smithay's `PopupKeyboardGrab::set_focus`
+    /// ignores every focus change except to the grabbed popup, so a
+    /// compositor-driven focus change (activation, workspace switch, overview,
+    /// a panel or polkit prompt) raised the new window while the keys kept
+    /// going to the old menu. Call this before any such change: it dismisses
+    /// the menus (popup_done) and drops the keyboard and pointer popup grabs.
+    pub(crate) fn end_popup_grab_unless(&mut self, keep: Option<&WlSurface>) {
+        let Some((root, mut grab)) = self.active_popup_grab.take() else {
+            return;
+        };
+        let ended = grab.has_ended();
+        if !ended && keep == Some(&root) {
+            self.active_popup_grab = Some((root, grab));
+            return;
+        }
+        if !ended {
+            grab.ungrab(PopupUngrabStrategy::All);
+        }
+        if let Some(keyboard) = self.seat.get_keyboard()
+            && keyboard
+                .with_grab(|_, grab| grab.is::<PopupKeyboardGrab<Self>>())
+                .unwrap_or(false)
+        {
+            keyboard.unset_grab(self);
+        }
+        if let Some(pointer) = self.seat.get_pointer()
+            && pointer
+                .with_grab(|_, grab| grab.is::<PopupPointerGrab<Self>>())
+                .unwrap_or(false)
+        {
+            pointer.unset_grab(
+                self,
+                smithay::utils::SERIAL_COUNTER.next_serial(),
+                smithay::backend::input::InputTime::now(),
+            );
+        }
+    }
+
+    /// End the popup grab if `root` owns it (the window is going away).
+    pub(crate) fn end_popup_grab_of(&mut self, root: &WlSurface) {
+        if self
+            .active_popup_grab
+            .as_ref()
+            .is_some_and(|(grab_root, _)| grab_root == root)
+        {
+            self.end_popup_grab_unless(None);
+        }
+    }
+
+    /// Keyboard focus is on `root`, one of its subsurfaces, or one of its
+    /// popups (a popup has no wl_subsurface parent, so `get_parent` alone
+    /// misses an open menu).
+    pub(crate) fn keyboard_focus_is_in(&self, root: &WlSurface) -> bool {
+        let Some(focused) = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus())
+        else {
+            return false;
+        };
+        if surface_has_root(&focused, root) {
+            return true;
+        }
+        self.popups
+            .find_popup(&focused)
+            .and_then(|popup| find_popup_root_surface(&popup).ok())
+            .is_some_and(|popup_root| popup_root == *root)
     }
 }
 
@@ -430,7 +487,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                     focused
                 })
                 .and_then(|focused| state.find_window_for_surface(&focused))
-                .and_then(|focused| state.space.outputs_for_element(&focused).first().cloned());
+                .and_then(|focused| state.primary_output_for(&focused));
             let pointer_location = state
                 .seat
                 .get_pointer()

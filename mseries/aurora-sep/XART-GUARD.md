@@ -45,6 +45,18 @@ Sources: [aurora-silicon/linux#361](https://github.com/aurora-silicon/linux/pull
   asks for the kind-4 rewrite, the guard refuses it, and the enrolment fails closed.
 - Turning the guard back on later does not list records written while it was off.
 
+## What the maintainers already said (omacom PR #139, 2026-10-19)
+
+The review thread of [omacom/linux-aurora#139](https://github.com/omacom/linux-aurora/pull/139), the merge our kernel is built from,
+covers this. RyanTheTide's reply (item 2, "xART guard guidance") says: restore works under `xart_guard=1`; **use** works only for
+records Linux created while the guard was on; **setup** on cold-boot Macs (T8103, T6000/T6001) rewrites a pre-Linux record and needs
+`xart_guard=0`, **and the matches that follow need it too**. On an M1 Pro one verify rewrote two session records and both shared
+roots. A later comment says the reference M1 Pro (J316s) runs this kernel as its daily with `xart_guard=0` and `matching=usable`,
+while a base-M2 on guard level 1 reads `unverified`. The same thread tracks the "M1 Pro Touch ID first-attempt rate" (intermittent
+sensor registration failures) as accepted for the edge branch with an instrumented soak as follow-up. So what we hit is known and
+intended upstream: with the default guard, a cold-boot M1 Pro cannot use Touch ID, and the maintainers' own M1 Pro runs with it off.
+What upstream has not published is the enrol-only measurement below.
+
 ## Options (owner decision)
 
 1. **Leave the guard on.** Nothing about other OSes' records is at risk. Touch ID stays unusable here.
@@ -57,6 +69,22 @@ Sources: [aurora-silicon/linux#361](https://github.com/aurora-silicon/linux/pull
 
 The `.20` kernel (`7.1.12-2-20261017.20`) was built the day before the guard merged. Its matching behaviour
 has not been tested, and earlier Touch ID probes on `.19`/`.20` hung the machine (`AURORA-SECOND-BOOT.md`).
+
+## Guard-off trial entries (added 2026-10-21, owner-approved, not booted)
+
+Two separate GRUB entries boot the same kernel and initramfs as their guard-on twins with `apple_sep.xart_guard=0` added to the kernel
+line: **TRIAL: Aurora 7.2 wip2, xART guard off** (`elementary-aurora72-wip2-xartguard-off-trial`) and **TRIAL: Aurora 7.2 wip3, xART guard
+off** (`elementary-aurora72-wip3-xartguard-off-trial`, to test Touch ID and the dock in one boot; backup
+`/var/lib/mseries-kernel-tests/staging/20261021T195041Z-wip3-xartguard-off-entry`). The existing wip2 entry stays guard-on, the persistent
+default is still `.20`, nothing is armed, and `next_entry` is empty. It is scoped to one entry on purpose: a global
+`options apple_sep xart_guard=0` in `/etc/modprobe.d/` would be an unknown parameter on the `.20` kernels (their `apple-sep.ko` predates
+`xart_guard`) and stop the module loading there. Only `custom.cfg` changed; backup in
+`/var/lib/mseries-kernel-tests/staging/20261021T192355Z-wip2-xartguard-off-entry`.
+
+To use it, pick the entry at GRUB. Expect `diag/matching` to read `usable` and `xart_guard` `0`. Then enrol once, `fprintd-verify`, and
+wire sudo only, with the password as the fallback; later boot macOS and check Touch ID. An identity from the earlier refused enrolment
+already sits in the enclave; whether re-enrolling that finger reports a duplicate is untested. To remove the entry, restore `custom.cfg`
+from the backup or delete the entry's block.
 
 ## A correction
 

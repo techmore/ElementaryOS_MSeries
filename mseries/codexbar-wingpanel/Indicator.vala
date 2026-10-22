@@ -54,6 +54,8 @@ namespace MSeries {
         private bool opencode_local_in_flight = false;
         private int64 opencode_local_fetched_us = 0;
         private Json.Array? opencode_accounts = null;
+        // Account legend ("accountLegend" preference): distinct emails, signed-in ones first.
+        private string[] legend = {};
         private bool opencode_accounts_in_flight = false;
         private bool opencode_force_pending = false;
         private int64 opencode_accounts_fetched_us = 0;
@@ -90,9 +92,9 @@ namespace MSeries {
                 margin_bottom = 10,
                 margin_start = 10,
                 margin_end = 10,
-                // Keep the quick-switch popover compact. GTK treats width_request as a minimum;
+                // The popover runs at double text size (see install_style). GTK treats width_request as a minimum;
                 // the child rows below also ellipsize/wrap their dynamic labels to fit.
-                width_request = 240
+                width_request = 480
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
@@ -107,7 +109,7 @@ namespace MSeries {
             chip_label.add_css_class ("chip");
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 36 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
@@ -140,8 +142,8 @@ namespace MSeries {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
-                min_content_height = 150,
-                max_content_height = 300
+                min_content_height = 300,
+                max_content_height = 600
             };
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
@@ -223,10 +225,24 @@ namespace MSeries {
             }
         }
 
+        /* One class per legend hue: the badge fill, the account row's left edge and the legend row. */
+        private static string account_hue_css () {
+            var css = new StringBuilder ();
+            for (int i = 0; i < Presentation.ACCOUNT_HUES.length; i++) {
+                var hue = Presentation.ACCOUNT_HUES[i];
+                css.append (".mseries-codexbar .acct-badge.acct-%d { background: %s; } ".printf (i + 1, hue));
+                css.append (".mseries-codexbar .account-line.acct-%d { box-shadow: inset 3px 0 %s; background: alpha(%s, 0.07); } "
+                    .printf (i + 1, hue, hue));
+                css.append (".mseries-codexbar .acct-legend.acct-%d { box-shadow: inset 3px 0 %s; background: alpha(%s, 0.09); } "
+                    .printf (i + 1, hue, hue));
+            }
+            return css.str;
+        }
+
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-codexbar { font-size: 1em; } " +
+                ".mseries-codexbar { font-size: 2em; } " +
                 ".mseries-codexbar .caption { font-size: 0.9em; } " +
                 ".mseries-codexbar .provider-title { font-weight: 700; font-size: 1.05em; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
@@ -236,7 +252,7 @@ namespace MSeries {
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
                 ".mseries-codexbar .plan { padding: 0 7px; border-radius: 99px; font-size: 0.9em; background: alpha(currentColor, 0.1); } " +
-                ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 6px; border-radius: 3px; } " +
+                ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 12px; border-radius: 6px; } " +
                 ".mseries-codexbar progressbar.level-ok progress { background: @success_color; } " +
                 ".mseries-codexbar progressbar.level-low progress { background: @warning_color; } " +
                 ".mseries-codexbar progressbar.level-critical progress { background: @error_color; } " +
@@ -263,21 +279,27 @@ namespace MSeries {
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 5px 6px; } " +
-                ".mseries-codexbar-bar label { font-size: 7.5pt; font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar-bar label { font-size: 0.833em; font-feature-settings: \"tnum\"; } " +
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
-                ".mseries-codexbar-bar .seg-reset { font-size: 6.5pt; opacity: 0.7; } " +
-                ".mseries-codexbar-bar .seg-secondary { font-size: 6.5pt; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 0.8em; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 0.8em; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
                 ".mseries-codexbar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
-                ".mseries-codexbar-bar .stale { opacity: 0.55; }");
+                ".mseries-codexbar-bar .stale { opacity: 0.55; } " +
+                ".mseries-codexbar .acct-badge { min-width: 1.35em; padding: 0 4px; border-radius: 99px; " +
+                "  font-size: 0.85em; font-weight: 800; color: white; } " +
+                ".mseries-codexbar .acct-legend { padding: 3px 8px; border-radius: 8px; background: alpha(currentColor, 0.045); } " +
+                ".mseries-codexbar .acct-legend label.acct-email { font-size: 0.9em; } " +
+                ".mseries-codexbar .account-line.acct-tinted { padding: 2px 0 2px 6px; border-radius: 4px; } " +
+                account_hue_css ());
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
         private Gtk.Button make_dock_button (string label, string icon_name, string action) {
             var button = new Gtk.Button () {
-                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 },
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 36 },
                 tooltip_text = label
             };
             button.add_css_class ("flat");
@@ -1483,6 +1505,7 @@ namespace MSeries {
                     + "\n\nMiddle-click to refresh"
                 : "Usage unavailable");
 
+            if (legend_mode ()) rebuild_legend ();
             var digest = new StringBuilder ();
             digest.append (hints_digest);
             foreach (var provider in TOKEN_PROVIDERS)
@@ -1629,6 +1652,14 @@ namespace MSeries {
             var weekly_shown = false;
             if (details_on_top && stale) heading.add_css_class ("stale");
             heading.append (mark);
+            var active_number = legend_mode () ? account_number (active_account_email (provider)) : 0;
+            if (active_number > 0) {
+                var number = new Gtk.Label (null) { valign = Gtk.Align.CENTER };
+                number.set_markup ("<span foreground=\"%s\" weight=\"heavy\">%d</span>".printf (
+                    Presentation.account_hue (active_number), active_number));
+                number.set_tooltip_text ("Account %d · %s".printf (active_number, active_account_email (provider)));
+                heading.append (number);
+            }
             if (display_preferences.get_bool ("showHints")) heading.append (build_hint_badges (provider, true));
             if (details_on_top) {
                 if (local_tokens.length > 0) {
@@ -1687,7 +1718,8 @@ namespace MSeries {
                 if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
                 if (markup.len > 0) markup.append ("  ");
                 var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
-                markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), JsonBoundary.integer (account, "number", i + 1),
+                markup.append ("%s%s: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""),
+                    bar_account_number (account, i),
                     windows == null || windows.get_length () == 0 ? "—"
                         : panel_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
             }
@@ -1700,6 +1732,14 @@ namespace MSeries {
             }
             stack.set_tooltip_text (alternate_account_tooltip (provider));
             return stack;
+        }
+
+        /* The provider's own account number, or in legend mode the global one in its hue. */
+        private string bar_account_number (Json.Object account, uint index, bool markup = true) {
+            var number = legend_mode () ? account_number (JsonBoundary.text (account, "email", "")) : 0;
+            if (number == 0) return JsonBoundary.integer (account, "number", index + 1).to_string ();
+            if (!markup) return number.to_string ();
+            return "<span foreground=\"%s\" weight=\"heavy\">%d</span>".printf (Presentation.account_hue (number), number);
         }
 
         private Json.Array? provider_accounts (string provider) {
@@ -1715,7 +1755,7 @@ namespace MSeries {
                 if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
                 var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 if (text.len > 0) text.append ("  ");
-                text.append ("%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
+                text.append ("%s: %s".printf (bar_account_number (account, i, false),
                     windows != null && windows.get_length () > 0 ? Presentation.account_quota (windows, now_unix) : "—"));
             }
             return text.str;
@@ -1727,7 +1767,7 @@ namespace MSeries {
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
                 if (JsonBoundary.flag (account, "panelActive", JsonBoundary.flag (account, "active", false))) continue;
-                text.append ("\n%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
+                text.append ("\n%s: %s".printf (bar_account_number (account, i, false),
                     JsonBoundary.text (account, "email", "Saved account")));
                 var windows = JsonBoundary.array (account, "windows");
                 if (windows != null) text.append (" · " + Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()));
@@ -1751,6 +1791,11 @@ namespace MSeries {
             account_quota_labels = {};
             account_quota_windows = {};
             clear (quota_box);
+            var legend_on = legend_mode ();
+            if (legend_on) {
+                rebuild_legend ();
+                if (legend.length > 0) quota_box.append (build_legend_row (0, 1));
+            }
             // Match the panel order, including Claude's locally supplied accounts card.
             for (int rank = 0; rank <= LAST_PROVIDER_RANK; rank++) {
                 if (rank == provider_rank ("claude") && claude_data != null) {
@@ -1764,6 +1809,76 @@ namespace MSeries {
                     }
                 }
             }
+            // Cards may have added an address the legend had not seen; it is numbered in order.
+            if (legend_on && legend.length > 1) quota_box.append (build_legend_row (1, legend.length));
+        }
+
+        // ---- Account legend (opt-in) ----------------------------------------------------
+
+        private bool legend_mode () {
+            return display_preferences.get_bool ("accountLegend");
+        }
+
+        private static int hue_slot (int number) {
+            return (number - 1) % Presentation.ACCOUNT_HUES.length + 1;
+        }
+
+        /* Signed-in accounts first, in provider order, then every saved account. */
+        private void rebuild_legend () {
+            string[] emails = {};
+            foreach (var provider in TOKEN_PROVIDERS) emails += active_account_email (provider);
+            foreach (var provider in TOKEN_PROVIDERS) {
+                var accounts = provider_accounts (provider);
+                for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                    emails += JsonBoundary.text (accounts.get_object_element (i), "email", "");
+                }
+            }
+            legend = Presentation.account_legend (emails);
+        }
+
+        private int account_number (string email) {
+            var number = Presentation.legend_number (legend, email);
+            if (number > 0) return number;
+            string[] one = { email };
+            if (Presentation.account_legend (one).length == 0) return 0;
+            legend += email.strip ();
+            return legend.length;
+        }
+
+        private string active_account_email (string provider) {
+            if (provider == "claude") {
+                return claude_data == null ? ""
+                    : JsonBoundary.text (claude_data, "displayEmail", JsonBoundary.text (claude_data, "activeEmail", ""));
+            }
+            return account_email_for (provider, new Json.Object ());
+        }
+
+        private Gtk.Label build_account_badge (string email) {
+            var number = account_number (email);
+            var badge = new Gtk.Label (number.to_string ()) { valign = Gtk.Align.CENTER };
+            badge.add_css_class ("acct-badge");
+            badge.add_css_class ("acct-%d".printf (hue_slot (number)));
+            badge.add_css_class ("numeric");
+            badge.set_tooltip_text ("Account %d · %s".printf (number, email));
+            badge.update_property (Gtk.AccessibleProperty.LABEL, "Account %d, %s".printf (number, email), -1);
+            return badge;
+        }
+
+        /* Legend rows for accounts [from, to): the first account sits above the cards, the rest below. */
+        private Gtk.Widget build_legend_row (int from, int to) {
+            var rows = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
+            for (int i = from; i < to && i < legend.length; i++) {
+                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+                row.add_css_class ("acct-legend");
+                row.add_css_class ("acct-%d".printf (hue_slot (i + 1)));
+                row.append (build_account_badge (legend[i]));
+                var address = new Gtk.Label (legend[i]) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
+                address.add_css_class ("acct-email");
+                address.set_tooltip_text (legend[i]);
+                row.append (address);
+                rows.append (row);
+            }
+            return rows;
         }
 
         private void append_weekly_tokens (Gtk.Box card, string provider) {
@@ -1973,7 +2088,7 @@ namespace MSeries {
                 text.add_css_class ("provider-title");
                 return text;
             }
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 36 };
             icon.add_css_class ("provider-mark");
             icon.add_css_class ("mark-" + provider);
             icon.set_tooltip_text (title_text);
@@ -1994,9 +2109,16 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_identity (string email, string plan = "") {
+            if (legend_mode () && account_number (email) > 0) {
+                // The legend at the top/bottom of the page names the account; the card keeps only its badge.
+                var compact = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
+                compact.append (build_account_badge (email));
+                compact.append (build_plan_badge (email, plan));
+                return compact;
+            }
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
             identity.add_css_class ("account-row");
-            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 24 };
             icon.add_css_class ("dim-label");
             identity.append (icon);
             var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
@@ -2014,7 +2136,7 @@ namespace MSeries {
         /* The "+" sits at the card's top right: no "Accounts" label row, the saved accounts speak for themselves. */
         private Gtk.Widget build_add_account_button (string tooltip, owned ActionFunc on_add) {
             var add = new Gtk.Button () {
-                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 },
+                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 24 },
                 tooltip_text = tooltip, valign = Gtk.Align.CENTER, halign = Gtk.Align.END
             };
             add.add_css_class ("flat");
@@ -2042,7 +2164,24 @@ namespace MSeries {
             name.width_chars = 8;
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { hexpand = true };
             identity.append (build_hint_badges (candidate_id));
-            identity.append (name);
+            // Legend mode: "1"/"2" badges replace the address, and the quota moves up onto the same row.
+            var parts = email.split (" · ", 2);
+            var dense = legend_mode () && account_number (parts[0]) > 0;
+            if (dense) {
+                var number = account_number (parts[0]);
+                identity.hexpand = false;
+                identity.append (build_account_badge (parts[0]));
+                if (parts.length > 1) {
+                    var workspace = new Gtk.Label (parts[1]) { ellipsize = Pango.EllipsizeMode.END, max_width_chars = 10 };
+                    workspace.add_css_class ("caption");
+                    workspace.add_css_class ("dim-label");
+                    identity.append (workspace);
+                }
+                line.add_css_class ("acct-tinted");
+                line.add_css_class ("acct-%d".printf (hue_slot (number)));
+            } else {
+                identity.append (name);
+            }
             // Retain the plan in the tooltip so the compact identity row stays uncluttered.
             var plan_text = Presentation.plan_label (plan);
             name.set_tooltip_text (plan_text.length > 0 ? "%s · %s".printf (email, plan_text) : email);
@@ -2063,7 +2202,12 @@ namespace MSeries {
             if (!has_quota) meta.add_css_class ("dim-label");
             else meta.set_markup (colored_account_quota (meta, windows, new DateTime.now_utc ().to_unix ()));
             meta.add_css_class ("numeric");
-            line.append (meta);
+            if (dense) {
+                meta.hexpand = true;
+                heading.append (meta);
+            } else {
+                line.append (meta);
+            }
             if (has_quota) {
                 account_quota_labels += meta;
                 account_quota_windows += windows;
@@ -2177,13 +2321,13 @@ namespace MSeries {
             progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
 
             var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
-                xalign = 1, width_request = 58
+                xalign = 1, width_request = 116
             };
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
             if (display_preferences.get_bool ("showPercent")) row.append (percent);
-            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
+            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 92 };
             reset_label.add_css_class ("caption");
             reset_label.add_css_class ("dim-label");
             reset_label.add_css_class ("numeric");
@@ -2322,7 +2466,7 @@ namespace MSeries {
             var state = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
                 halign = Gtk.Align.CENTER, margin_top = 14, margin_bottom = 14
             };
-            state.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 32, opacity = 0.6 });
+            state.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 64, opacity = 0.6 });
             var title = new Gtk.Label (headline) { justify = Gtk.Justification.CENTER };
             title.add_css_class ("state-title");
             state.append (title);

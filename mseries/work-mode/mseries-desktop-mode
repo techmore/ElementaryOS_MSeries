@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# One-step switch between the native elementary desktop and Windows Work Mode
+# (full-width taskbar, Start menu, work wallpaper). Takes effect immediately and
+# never logs out or restarts apps: it flips the Work Mode switch and applies it.
+#   mseries-desktop-mode windows | elementary | toggle | status
+set -euo pipefail
+schema=io.elementary.mseries.work-mode
+helper="${MSERIES_WORK_MODE_HELPER:-$HOME/.local/bin/mseries-work-mode}"
+current() { [ "$(gsettings get "$schema" enabled)" = true ] && echo windows || echo elementary; }
+case ${1:-status} in
+  windows|work) gsettings set "$schema" enabled true ;;
+  elementary|native) gsettings set "$schema" enabled false ;;
+  toggle) if [ "$(current)" = windows ]; then gsettings set "$schema" enabled false; else gsettings set "$schema" enabled true; fi ;;
+  status) echo "Desktop mode: $(current)"; "$helper" --status; exit 0 ;;
+  *) echo 'Usage: mseries-desktop-mode windows|elementary|toggle|status' >&2; exit 2 ;;
+esac
+"$helper" --tick
+echo "Desktop mode: $(current)"
+"$helper" --status

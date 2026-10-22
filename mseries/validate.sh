@@ -237,6 +237,16 @@ check desktop 'brightness unit tests' "python3 -m unittest discover -s mseries/b
 check desktop 'keyboard-backlight unit tests' "python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'"
 check desktop 'audio unit tests' "python3 -m unittest discover -s mseries/audio -p 'test_*.py'"
 check desktop 'airplay unit tests' "python3 -m unittest discover -s mseries/airplay -p 'test_*.py'"
+
+# -- updater: staged, rollback-safe M-series updates (mseries/UPDATER-DESIGN.md) ----
+# test_real_tools.py drives the real apt-get/dpkg against a scratch root and skips itself
+# when dpkg-dev is missing; CI installs it so the skip never hides a regression there.
+check updater 'unit, fault-injection and real apt/dpkg tests' "python3 -B -m unittest discover -s mseries/update -p 'test_*.py'"
+check updater 'install script (bash -n, shellcheck)' 'bash -n mseries/update/install.sh && shellcheck -S warning mseries/update/install.sh'
+check updates-app 'install and test scripts (bash -n, shellcheck)' 'bash -n mseries/updates-app/install.sh mseries/updates-app/test.sh && shellcheck -S warning mseries/updates-app/install.sh mseries/updates-app/test.sh'
+check updates-app 'polkit policy and launcher parse' 'python3 -c "import xml.etree.ElementTree as ET; ET.parse(\"rust/mseries-updates/data/org.techmore.mseries.update.policy.in\")" && grep -q ^Exec=mseries-updates rust/mseries-updates/data/org.techmore.mseries.Updates.desktop'
+check diskspace-app 'install and test scripts (bash -n, shellcheck)' 'bash -n mseries/diskspace-app/install.sh mseries/diskspace-app/test.sh && shellcheck -S warning mseries/diskspace-app/install.sh mseries/diskspace-app/test.sh'
+check diskspace-app 'launcher matches the binary and application id' 'grep -q ^Exec=mseries-diskspace$ rust/mseries-diskspace/data/org.techmore.mseries.DiskSpace.desktop && grep -q "org.techmore.mseries.DiskSpace" rust/mseries-diskspace/src/main.rs'
 check desktop 'video-decode/test-brave-factory.py' 'python3 mseries/video-decode/test-brave-factory.py'
 check desktop 'video-decode/test-youtube-launch.py' 'python3 mseries/video-decode/test-youtube-launch.py'
 check desktop 'pantheon-rust-compositor metrics' \
@@ -268,7 +278,7 @@ check docs 'test-local-build-status.mjs' 'node mseries/test-local-build-status.m
 
 # -- debs: style checks for the plugin packaging (mseries-debs.yml) ----------
 check debs 'packaging scripts (bash -n, shellcheck)' \
-  'bash -n mseries/debs/build.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh && shellcheck -S warning mseries/debs/build.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh'
+  'bash -n mseries/debs/build.sh mseries/release/assemble-apt.sh mseries/release/test-assemble.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh && shellcheck -S warning mseries/debs/build.sh mseries/release/assemble-apt.sh mseries/release/test-assemble.sh mseries/debs/test-divert.sh mseries/quick-settings/prepare-source.sh mseries/calendar/test-agenda.sh'
 check debs 'calendar data bundled in the patch' 'python3 mseries/calendar/check-bundled-data.py'
 check debs 'panel-factory-pins.json parses' 'python3 -c "import json,sys; json.load(open(\"mseries/panel-factory-pins.json\"))"'
 

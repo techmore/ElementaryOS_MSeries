@@ -9,7 +9,8 @@ made-up monitors (no changes are applied); --screenshot PATH renders the window 
 import importlib.machinery, importlib.util, os, sys, json
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, Gio
+gi.require_version("PangoCairo", "1.0")
+from gi.repository import Gtk, Gdk, GLib, Gio, Pango, PangoCairo
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
@@ -123,6 +124,11 @@ class Canvas(Gtk.DrawingArea):
     def __init__(self, app):
         super().__init__()
         self.app, self.drag = app, None
+        self.set_can_focus(True)
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self.on_tooltip)
+        self.connect("key-press-event", self.on_key)
+        self.get_accessible().set_name("Display arrangement")
         self.set_size_request(480, 260)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
         self.connect("draw", self.on_draw)
@@ -168,14 +174,65 @@ class Canvas(Gtk.DrawingArea):
             cr.rectangle(x + 2, y + 2, w - 4, h - 4)
             cr.clip()
             cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
-            cr.select_font_face("Sans")
-            cr.set_font_size(13)
-            m = o.mode
-            for i, t in enumerate((o.label + (" (primary)" if o.primary else ""), f"{m['w']}×{m['h']} @ {m['rate']:.0f} Hz" if m else "")):
-                cr.move_to(x + 10, y + 22 + i * 18)
-                cr.show_text(t)
+            top = y + 10
+            for text in self.monitor_lines(o):
+                layout = self.label_layout(text, w - 20)
+                _width, height = layout.get_pixel_size()
+                if top + height > y + h - 4:
+                    break
+                cr.move_to(x + 10, top)
+                PangoCairo.show_layout(cr, layout)
+                top += height + 4
             cr.restore()
+        if self.has_focus():
+            area = self.get_allocation()
+            Gtk.render_focus(sc, cr, 1, 1, max(1, area.width - 2), max(1, area.height - 2))
         return False
+
+    def monitor_lines(self, output):
+        mode = output.mode
+        return (output.label + (" (primary)" if output.primary else ""),
+                f"{mode['w']}×{mode['h']} @ {mode['rate']:.0f} Hz" if mode else "No available mode")
+
+    def label_layout(self, text, width):
+        # Inherit GTK's font and text scaling; never crop a raw Cairo string.
+        layout = self.create_pango_layout(text)
+        layout.set_width(max(1, int(width)) * Pango.SCALE)
+        layout.set_single_paragraph_mode(True)
+        layout.set_ellipsize(Pango.EllipsizeMode.END)
+        return layout
+
+    def describe(self, output):
+        return "\n".join((*self.monitor_lines(output), output.name,
+                          f"Position: {output.x:.0f}, {output.y:.0f}"))
+
+    def update_accessible(self):
+        descriptions = [self.describe(o) for o in self.app.outs.values() if o.enabled]
+        selected = self.app.sel
+        self.get_accessible().set_name("Display arrangement" + (f": {selected.label}" if selected else ""))
+        self.get_accessible().set_description(
+            "Use Left and Right to select a display, then Tab to its settings.\n" + "\n\n".join(descriptions))
+
+    def on_tooltip(self, _widget, x, y, keyboard, tooltip):
+        output = self.app.sel if keyboard else self.hit(x, y)
+        if output is None:
+            return False
+        tooltip.set_text(self.describe(output))
+        return True
+
+    def on_key(self, _widget, event):
+        outputs = [o for o in self.app.outs.values() if o.enabled]
+        if not outputs or event.keyval not in (Gdk.KEY_Left, Gdk.KEY_Right, Gdk.KEY_Home, Gdk.KEY_End):
+            return False
+        index = outputs.index(self.app.sel) if self.app.sel in outputs else 0
+        if event.keyval == Gdk.KEY_Home:
+            index = 0
+        elif event.keyval == Gdk.KEY_End:
+            index = len(outputs) - 1
+        else:
+            index = (index + (-1 if event.keyval == Gdk.KEY_Left else 1)) % len(outputs)
+        self.app.select(outputs[index])
+        return True
 
     def hit(self, ex, ey):
         for o in self.app.outs.values():
@@ -187,6 +244,7 @@ class Canvas(Gtk.DrawingArea):
     def on_press(self, _w, e):
         o = self.hit(e.x, e.y)
         if o:
+            self.grab_focus()
             self.app.select(o)
             self.drag = (o, e.x, e.y, o.x, o.y)
         return True
@@ -205,6 +263,7 @@ class Canvas(Gtk.DrawingArea):
             snap(self.app.outs, o)
             self.drag = None
             self.app.dirty()
+            self.update_accessible()
             self.queue_draw()
         return True
 
@@ -251,11 +310,12 @@ class App(Gtk.Window):
         fr = Gtk.Frame()
         fr.add(self.canvas)
         left.pack_start(fr, True, True, 0)
-        hint = Gtk.Label(label="Drag a screen to move it. Screens snap edge to edge.", xalign=0)
+        hint = Gtk.Label(label="Drag screens to arrange them. Use Left and Right to select one.", xalign=0, wrap=True)
         hint.get_style_context().add_class("dim-label")
         left.pack_start(hint, False, False, 0)
         pf = Gtk.Box(spacing=6)
         self.prof_entry = Gtk.Entry(placeholder_text="Profile name, e.g. Home desk")
+        self.prof_entry.get_accessible().set_name("Profile name")
         sv = Gtk.Button(label="Save layout as profile")
         sv.connect("clicked", self.on_save_profile)
         ap = Gtk.Button(label="Apply matching profile")
@@ -275,7 +335,10 @@ class App(Gtk.Window):
         self.res_c, self.hz_c, self.scale_c, self.rot_c = (Gtk.ComboBoxText() for _ in range(4))
         for i, (t, w) in enumerate((("Resolution", self.res_c), ("Refresh rate", self.hz_c),
                                     ("Scale", self.scale_c), ("Rotation", self.rot_c))):
-            grid.attach(Gtk.Label(label=t, xalign=0), 0, i, 1, 1)
+            label = Gtk.Label(label=t, xalign=0)
+            label.set_mnemonic_widget(w)
+            w.get_accessible().set_name(t)
+            grid.attach(label, 0, i, 1, 1)
             w.set_hexpand(True)
             grid.attach(w, 1, i, 1, 1)
         for t, c in (("Normal", self.rot_c),):
@@ -332,6 +395,7 @@ class App(Gtk.Window):
                 f"{m['w']}×{m['h']} @ {m['rate']:.2f} Hz" + ("   ← preferred" if m["preferred"] else "")
                 + ("   (in use)" if m["id"] == o.mode_id else "") for m in o.modes))
         self.updating = False
+        self.canvas.update_accessible()
         self.canvas.queue_draw()
         self.refresh_profiles()
 

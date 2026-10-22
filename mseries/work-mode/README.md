@@ -99,3 +99,7 @@ bash mseries/install-work-mode-icons.sh --uninstall
 The current `org.gnome.desktop.interface icon-theme` is snapshotted when the mode applies the theme
 and restored when the mode ends or on `--restore`. If the named theme is not installed, the icon theme
 is left alone.
+
+## Desktop mode switch
+
+`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout.

@@ -60,8 +60,8 @@ class GaugeTests(unittest.TestCase):
             gauge = self.ui.BatteryGauge(pct, False)
             gauge.draw(gauge, self.ui.cairo.Context(surface), 40, 64)
             data, stride = surface.get_data(), surface.get_stride()
-            return sum(1 for y in range(64) if data[y * stride + 20 * 4 + 3] > 200
-                       and data[y * stride + 20 * 4 + 1] > 120)  # opaque green-ish pixels in the middle column
+            return sum(1 for y in range(64) if data[y * stride + 10 * 4 + 3] > 200
+                       and data[y * stride + 10 * 4 + 1] > 120)  # opaque green-ish pixels beside the digits
 
         self.assertEqual(filled_rows(0), 0)
         self.assertLess(filled_rows(25), filled_rows(50))
