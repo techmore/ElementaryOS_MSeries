@@ -1,0 +1,34 @@
+{
+  "prerequisite_head": "208d4a484459a12c77bf073362613f842288c2e0",
+  "files": {
+    "src/compiler/nir/nir_shader_compiler_options.h": {
+      "before_sha256": "75579647a881da667a316423a19b4f46106ec5f0570a70a7857013c59f12a038",
+      "after_sha256": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b"
+    },
+    "src/compiler/nir/nir_divergence_analysis.c": {
+      "before_sha256": "76c2cce0098e9a3ea5a193d6949fc198e2ddebf2c986fea5e43c1e3d0e920cb5",
+      "after_sha256": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8"
+    },
+    "src/asahi/compiler/agx_compile.c": {
+      "before_sha256": "1cd92edb03545bc8b98abbaf7171d6f2cdbc6c49a7b955fd5b95f7ab2615c791",
+      "after_sha256": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0"
+    },
+    "src/gallium/drivers/asahi/agx_state.c": {
+      "before_sha256": "a752fbcea5e2d58b892df57c9eb290555ddd5a3883a1dde618fc5eb9be54a115",
+      "after_sha256": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b"
+    },
+    "src/asahi/compiler/agx_compile.h": {
+      "before_sha256": "16f5897db754856d4841475716fb4cd795055690f13e5f9c356a1d2739dfb31f",
+      "after_sha256": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad"
+    },
+    "src/asahi/vulkan/hk_shader.c": {
+      "before_sha256": "9ded99ac5a7ea268ac382362c31d8dc32c3b00e9cf72b0108e3269cde34a0cfb",
+      "after_sha256": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc"
+    }
+  },
+  "divergence_patch_sha256": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
+  "scope": "combined unselected source candidate; full build and seven actual-NIR cases currently running",
+  "divergence_patch": "0001-nir-fragment-workgroup-id-divergence.patch",
+  "requires_rodata_candidate": "../rodata-errors/manifest.json",
+  "selected_by_default": false
+}

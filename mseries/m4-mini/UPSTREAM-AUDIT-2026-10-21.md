@@ -1432,3 +1432,25 @@ compositor/GPU coverage. Reproduce with testing/mesa/check-helper-divergence.py;
 receipt 2026-10-22-mesa-helper-divergence-finding.json retains source/object hashes.
 Selected Mesa package/image inputs remain unchanged. R5 kernel 39721608135 remains
 live; kernel download/validation and coherent updated image/ISO build are next.
+
+A combined unselected Mesa candidate replaces PR1's blanket uniform marker with
+a scoped NIR compiler option for the known fragment tile-helper workgroup-ID
+read. Normal layer/input divergence and uniform optimization passes remain active;
+shared-base/workgroup-index fragment reads are still rejected. The option is
+scoped to one compiler invocation and its original pointer is restored at return.
+The five-file divergence patch plus separately tested rodata patch bind six
+source files. Exact before/after hash and zero-fuzz reverse/forward replay pass.
+Public candidate: gravity/mesa-candidates/helper-divergence under mseries/m4-mini.
+
+Full combined build is live in work/m4-mesa-divergence-candidate/compile.py,
+terminal session 37929. It temporarily installs SIX candidate source files in
+work/m4-mesa-pr1-build; its finally block restores all PR1 originals. Do not modify
+these sources or restart on observation timeout. After build it will run five
+AGX groups, seven actual-NIR semantic/assertion cases, staging and llvmpipe.
+Those outcomes are pending, not passes. Source/header compiler units have begun
+rebuilding without a terminal failure. The new test runner is
+mseries/m4-mini/testing/mesa/test-helper-divergence.py; three negative guards run
+as user processes with core dumps disabled, never as kernel/hardware faults.
+Source receipt: 2026-10-22-mesa-helper-divergence-source-preflight.json.
+R5 kernel run 39721608135 is also still live. No selected image/package inputs
+or native hardware/installer flags changed.
