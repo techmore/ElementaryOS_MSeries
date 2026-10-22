@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "scope": "actual local r2/r4 component rehearsal; not fresh hosted candidate acceptance",
+  "preparer_sha256": "144d6eb32d495e0b960e7cc71f07b8dbc1c6b4321c8bfe5af8c4b265526263e7",
+  "recipe_commit": "bb7f2b3a68e680e445e1cfe18abfcb16592b995b",
+  "components": {
+    "kernel": {
+      "file": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-2_arm64.deb",
+      "sha256": "9241b96c69c8394732f7158d824313186f1eb4dd8018309e84f209c465f15936",
+      "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8"
+    },
+    "mesa": {
+      "file": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb",
+      "sha256": "89950d877d41272106ee878572cf705b1c3e07f98a865df6dced881a41ddea5b",
+      "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e"
+    },
+    "policy": {
+      "file": "elementary-m4-gravity-policy_20261021-2_arm64.deb",
+      "sha256": "0fbfcd8ddffe04b9ae26a3c6fe8c2df89d89752e9a677a616706e6765a9a245c"
+    }
+  },
+  "live_hook_patch_required": false,
+  "live_hook_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "kernel_image_sha256": "db3833e9ae2073c5063d733254561bb4bebaed0ee6091f9aadf32dee16f7803b",
+  "kernel_config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "patch_tests": "3 pass: no-op same hashes, differing hash fixture preserves checksum checks and git apply --check, unknown baseline rejection",
+  "captured_hosted_dependencies": "all 18 captured local development packages are now explicit; regression check passes",
+  "hosted_mesa_run2": {
+    "id": 39701539756,
+    "conclusion": "failure",
+    "phase": "meson setup",
+    "cause": "missing libxxf86vm-dev after Wayland backend resolved",
+    "fix": "add libxxf86vm-dev and explicitly include libxcb1-dev; compare all captured prerequisites"
+  },
+  "next": "corrected hosted Mesa-only dispatch, followed by fresh candidate intake when both builds pass"
+}

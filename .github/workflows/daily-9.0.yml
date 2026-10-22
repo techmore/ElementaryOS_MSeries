@@ -223,7 +223,7 @@ jobs:
             python3-mako python3-ply python3-yaml python3-packaging python3-pycparser \
             libdrm-dev libdisplay-info-dev libgbm-dev libexpat1-dev libudev-dev libelf-dev libunwind-dev libzstd-dev zlib1g-dev \
             libwayland-dev libwayland-egl-backend-dev wayland-protocols libx11-dev libx11-xcb-dev libxext-dev \
-            libxfixes-dev libxdamage-dev libxrandr-dev libxshmfence-dev libxcb-dri2-0-dev \
+            libxfixes-dev libxdamage-dev libxrandr-dev libxshmfence-dev libxxf86vm-dev libxcb1-dev libxcb-dri2-0-dev \
             libxcb-dri3-dev libxcb-glx0-dev libxcb-present-dev libxcb-randr0-dev \
             libxcb-shm0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-render0-dev libxcb-shape0-dev libegl-dev libgl-dev libvulkan-dev
       - name: Select research Rust and LLVM tools

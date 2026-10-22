@@ -1,0 +1,12 @@
+{
+  "run_id": 39701539756,
+  "source_head": "bb7f2b3a68e680e445e1cfe18abfcb16592b995b",
+  "terminal_status": "completed",
+  "conclusion": "failure",
+  "phase": "meson setup",
+  "cause": "missing libxxf86vm-dev; Wayland backend now resolves",
+  "log_sha256": "1947bafca01bdbbf5baf45a6d6e8ab325b883a5232726fcc4516028d2a01131c",
+  "fix": "explicit libxxf86vm-dev and libxcb1-dev; all 18 captured prerequisites now checked by regression",
+  "kernel_run_unchanged": 39698975678,
+  "hardware_validated": false
+}

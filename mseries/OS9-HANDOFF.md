@@ -1,3 +1,28 @@
+## M4 mini: full captured Mesa prerequisites and candidate image inputs — 2026-10-21
+
+Mesa retry 39701539756 is terminal configure failure: Wayland backend resolves,
+but xxf86vm.pc is missing. Added libxxf86vm-dev plus explicit libxcb1-dev and
+reconciled every one of the 18 development packages in the successful local
+capture. New test_hosted_workflow.py enforces that independent dependency set;
+it passes and is wired into hardware-support CI with explicit python3-yaml.
+Source/options/tests are unchanged. A corrected Mesa-only dispatch is next;
+original kernel run 39698975678 remains active and must not be duplicated.
+
+Added prepare-image-inputs.py for trusted build artifacts. It runs both current
+package checkers, retains and rehashes corresponding source/package copies,
+builds temporary M4 policy and creates a candidate.json plus optional live-hook
+hash patch. It never applies that patch or changes checked-in factory pins.
+The patch preserves checksum enforcement and updates only validated Image/
+config hashes for an explicitly selected disposable candidate build.
+
+Actual local r2/r4 rehearsal passes (work/m4-image-inputs-rehearsal-3); no patch
+is needed for those original hashes. Three patch-format tests pass, including
+a differing-hash fixture checked by git apply --check without source edits and
+unknown-baseline rejection. Fresh hosted candidate intake and actual image
+assembly still need completed hosted builds. No hardware/installer promotion.
+[Input preflight](m4-mini/receipts/2026-10-21-image-inputs-preflight.json),
+[second configure failure](m4-mini/receipts/2026-10-21-hosted-mesa-failure-2.json).
+
 ## M4 mini: hosted Mesa configure failure diagnosed — 2026-10-21
 
 Run 39700250329 is terminal failure. Downloaded its m4-mesa-record artifact to

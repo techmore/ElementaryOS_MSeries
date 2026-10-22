@@ -554,6 +554,30 @@ remains separate from this preflight.
 [Hosted Mesa preflight](receipts/2026-10-21-hosted-mesa-preflight.json).
 
 Hosted Mesa-only run [39700250329](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39700250329)
-is active at source `eece8d5f`; its image/kernel/Fairydust jobs are skipped.
-Kernel run `39698975678` remains active independently. No hosted Mesa result
-is claimed yet. [Dispatch snapshot](receipts/2026-10-21-hosted-mesa-run.json).
+was dispatched at source `eece8d5f`; it later failed during setup. Its
+image/kernel/Fairydust jobs were skipped.
+Kernel run `39698975678` remains active independently. No hosted Mesa compilation result is claimed; corrected setup is described below. [Dispatch snapshot](receipts/2026-10-21-hosted-mesa-run.json).
+
+## Candidate image inputs and Mesa setup correction
+
+`prepare-image-inputs.py` accepts trusted kernel/Mesa packages with their build
+and packaging receipts plus the compiled software test. It invokes the current
+package checkers, retains matching source archives and receipts, builds the
+temporary M4 policy, and rechecks copied bytes. Its output contains `packages/`,
+`records/`, `candidate.json` and a candidate-only live-kernel hash patch. It does
+not apply that patch or alter the checked-in factory package/hash references.
+The patch keeps checksum validation and changes only hashes to a validated
+component. Use it only in an explicitly selected disposable candidate build.
+
+The actual local r2/r4 rehearsal passes; its hashes need no patch. Three
+patch-format checks pass for no-op, differing-hash fixture and unknown baseline.
+This is not acceptance of fresh hosted candidates or a completed image.
+
+The first two hosted Mesa attempts stopped in setup for omitted split Wayland
+backend and X11 VidMode development packages. The corrected hosted dependency
+list now explicitly covers all 18 packages in the independent successful local
+capture, enforced by a regression test. No source, driver/platform selection or
+upstream tests were disabled. The original kernel build remains separate.
+
+[Image-input preflight](receipts/2026-10-21-image-inputs-preflight.json),
+[second setup failure](receipts/2026-10-21-hosted-mesa-failure-2.json).
