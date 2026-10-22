@@ -1,3 +1,17 @@
+## Screenshot shortcut gap and shelf repair — 2026-10-22
+
+Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
++3 full-screen capture with camera sound and a three-second bottom-right shelf;
++4 crosshair drag selection, plus window hover/Space blue highlight and capture.
+The running session is pantheon-compositor, not Gala; the audited branch has no
+screenshot/screencopy path. Capture remains unimplemented/unqualified here.
+The shelf default now matches three seconds, and its installer stops only exact
+shelf argv matches instead of killing parent shells mentioning the path. All ten
+retention tests and shell syntax pass. The helper alone was deployed, source and
+installed hashes match, and a new process is running. The compositor/panel were
+not restarted; no live screenshot or message was taken/sent. Next: implement
+native compositor capture, selection and keybindings before attachment acceptance.
+
 ## Signal system accent refresh and Messages local favorites — 2026-10-22
 
 Signal's installed launcher now checks the active elementary accent each time

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Screenshot shelf: show recent screenshots in one thumbnail card for 4 seconds.
+"""Screenshot shelf: show recent screenshots in one thumbnail card for 3 seconds.
 
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
 watches that folder and shows the newest shot in a draggable thumbnail, like macOS.
@@ -95,7 +95,7 @@ STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
 EXPORT_GRACE_SECONDS = 120  # transient drag copy/export lifetime after the card closes; originals never expire
-SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "4"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
+SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "3"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
 MAX_DRAG_FILES = 12       # bound one compose drop and the number of portal exports it can create
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180

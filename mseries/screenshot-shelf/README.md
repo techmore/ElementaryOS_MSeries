@@ -1,3 +1,17 @@
+## Screenshot shortcut gap and shelf repair — 2026-10-22
+
+Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
++3 full-screen capture with camera sound and a three-second bottom-right shelf;
++4 crosshair drag selection, plus window hover/Space blue highlight and capture.
+The running session is pantheon-compositor, not Gala; the audited branch has no
+screenshot/screencopy path. Capture remains unimplemented/unqualified here.
+The shelf default now matches three seconds, and its installer stops only exact
+shelf argv matches instead of killing parent shells mentioning the path. All ten
+retention tests and shell syntax pass. The helper alone was deployed, source and
+installed hashes match, and a new process is running. The compositor/panel were
+not restarted; no live screenshot or message was taken/sent. Next: implement
+native compositor capture, selection and keybindings before attachment acceptance.
+
 # Screenshot shelf and Markup
 
 **Command+Shift+4** (Command is Ctrl on this keyboard) opens the selector: drag to capture an area, or press **Space** to switch to window mode (the window under the pointer is highlighted blue; click to capture it, Space again goes back to dragging) (needs the patched Gala from `install-gala-screen-corners.sh`, active after next login; stock Gala ignores Space). Command+Shift+3 captures the screen.
