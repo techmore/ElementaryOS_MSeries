@@ -19,6 +19,7 @@ the interface. Real file transfer acceptance remains open.
 | Visibility window | PASS on 2026-10-18: the 120-second window reached `visible=true`; the data-path gate needed three attempts (20/20 transmit completions on attempt 3). Wi-Fi stayed connected; latency rose while AWDL channel-hopped. |
 | Receiver prerequisites | Current preflight passes, including `python3-libarchive-c`, `keyutils` and polkit. An actual transfer has not been tested. |
 | Reboot availability | On 2026-10-22 the user systemd service was found disabled. `systemctl enable --now awdl0.service` restored persistent idle setup; service is active/exited, `awdl0` exists and NetworkManager marks it unmanaged. `omdrop doctor --json` now reports ready. |
+| Latest receive window | A later read-only status query reported `receiving=true`, `visible=true`, `rx_proven=true`, `visibility=everyone`, with no senders and no transfer recorded. Codex did not issue `omdrop on`; the owner may have toggled the panel while validating it. |
 
 ## Not validated (needs the owner and a phone)
 

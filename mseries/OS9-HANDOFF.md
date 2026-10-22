@@ -25,8 +25,11 @@ Validation: complete pinned dock source prepared and linked with
 `DockTaskbarAirDrop` and `MSeriesAirDropPanel`; installed private dock is active
 in Windows Work Mode. `systemctl` reports `awdl0.service` enabled and active/exited;
 `awdl0` exists and is unmanaged; `omdrop doctor --json` reports ready and the
-receiver remains off. Repository tests and probes were not run. Native visual
-acceptance and a real AirDrop receive remain unconfirmed.
+receiver remains off. A later read-only status check reports receiving and
+visibility on for Everyone with about 9:54 remaining, `rx_proven=true`, and no
+senders; Codex did not issue an `omdrop on` command. Repository tests and probes
+were not run. Native visual acceptance and an actual file transfer remain
+unconfirmed.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
