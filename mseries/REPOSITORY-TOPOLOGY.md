@@ -47,9 +47,11 @@ being validated.
 
 - App frontends depend on versioned OS service APIs and package interfaces,
   not filesystem paths into the OS repository.
-- The OS repository owns the service provider and the compatibility contract;
-  the Apps repository owns typed SDK clients and shared UI patterns. The two
-  are released against an explicit API version range. For example, the OS
+- The OS repository owns the service provider, policy, permissions, and
+  compatibility contract; the Apps repository owns the app-level Rust SDK,
+  typed clients, and shared UI patterns. The SDK is a library used by
+  applications, not an OS service or a direct link to OS implementation code.
+  The two are released against an explicit API version range. For example, the OS
   owns update policy and privileged staging/rollback, while Software Updates
   uses the SDK's typed contract and owns the confirmation and status UI.
 - Extract contracts from implementations when the repositories split. The
