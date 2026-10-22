@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "rust/claude-pantheon-rs/**"
       - "Justfile"
       - "assemble-iso.sh"
       - "mkosi.conf"
@@ -20,6 +21,7 @@ on:
       - "bin/**"
       - "mseries/**"
       - "docs/build-status.*"
+      - "docs/capabilities.*"
       - "docs/local-build-status.html"
       - ".github/workflows/**"
 
@@ -122,9 +124,10 @@ jobs:
 
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
-      - name: Build and test native Orchard windows and dropdown
+      - name: Build and test Orchard (machines, Incus, Podman) with the Wingpanel indicator
         run: |
-          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          sudo apt-get install -y qemu-utils genisoimage curl
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard -Dwingpanel=enabled
           meson compile -C "$RUNNER_TEMP/orchard-native"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
 
@@ -165,28 +168,30 @@ jobs:
       - name: Verify exact-kernel boot profile and rollback
         run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
 
-  machine-lab:
-    name: Machine Lab build and logic tests (arm64)
+  orchard-app:
+    name: Orchard app build, tests, metadata and Debian package (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth genisoimage curl
-      - name: Build and run the logic tests (persistence, discovery, QMP transport)
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev python3 appstream desktop-file-utils xvfb xauth dbus-x11 genisoimage curl qemu-utils
+      - name: Build and run the tests (machines, QMP, clipboard, display, Incus, Podman, window)
         run: |
-          meson setup build-ml mseries/machine-lab
-          meson compile -C build-ml
-          xvfb-run -a meson test -C build-ml --print-errorlogs
+          meson setup build-orchard mseries/orchard -Dwingpanel=disabled
+          meson compile -C build-orchard
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C build-orchard --print-errorlogs
       - name: Check the version flag and desktop metadata
         run: |
-          xvfb-run -a build-ml/machine-lab --version
-          desktop-file-validate mseries/machine-lab/data/io.github.mseries.MachineLab.desktop
-          appstreamcli validate --no-net mseries/machine-lab/data/io.github.mseries.MachineLab.metainfo.xml
+          xvfb-run -a build-orchard/orchard --version
+          desktop-file-validate mseries/orchard/data/com.github.techmore.orchard.desktop
+          appstreamcli validate --no-net mseries/orchard/data/com.github.techmore.orchard.metainfo.xml
       - name: Build the Debian package
         run: |
           sudo apt-get install -y dpkg-dev
-          MACHINE_LAB_OUTPUT_DIR="$RUNNER_TEMP/ml-deb" bash mseries/machine-lab/build-deb.sh
+          ORCHARD_OUTPUT_DIR="$RUNNER_TEMP/orchard-deb" bash mseries/orchard/build-deb.sh
 
+  # The dev branch protection still requires a status check with Machine Lab's old job name; this
+  # alias satisfies it from the Orchard app job until the protection list names the new job.
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
     runs-on: ubuntu-26.04-arm
@@ -241,6 +246,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Fetch the immutable capability audit source
+        run: |
+          audit_revision=$(python3 -c 'import json; print(json.load(open("docs/capabilities.json"))["source_revision"])')
+          [[ "$audit_revision" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags --depth=1 origin "$audit_revision"
 
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
@@ -304,3 +315,79 @@ jobs:
           python3 mseries/test-omdrop-installer.py
           python3 -m unittest discover -s mseries/omdrop-awdl/tests
           python3 -m unittest discover -s mseries/omdrop/tests
+
+  claude-pantheon-rs:
+    name: Claude (T3 client) build, tests, desktop metadata and .deb (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      # The crate pins gtk4 0.11 (v4_20) and granite-rs 3.3 (v7_8); Ubuntu's libgranite-7-dev is 7.8, enough
+      # for the bindings, so no PPA is needed here (RUST-UPSTREAM-MAINTENANCE.md). The indicator needs the
+      # wingpanel-9 API, which the daily PPA ships.
+      - name: Add elementary daily PPA (wingpanel-9 for the indicator)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
+      - name: Install build dependencies
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
+              cargo rustc rustfmt rust-clippy pkg-config libgtk-4-dev libgranite-7-dev \
+              meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
+              libgtksourceview-5-dev libvte-2.91-gtk4-dev libwebkitgtk-6.0-dev \
+              librsvg2-bin dpkg-dev appstream desktop-file-utils xvfb xauth dbus-x11; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          exit 1
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: claude-pantheon-rs-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: claude-pantheon-rs-${{ runner.arch }}-
+      - name: Formatting and lints (cargo fmt --check, clippy -D warnings)
+        run: |
+          cd rust
+          cargo fmt -p claude-pantheon-rs --check
+          cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings
+      - name: Build and run the protocol and model tests (recorded frames)
+        run: |
+          cd rust
+          cargo build --release -p claude-pantheon-rs
+          cargo test --release -p claude-pantheon-rs --lib
+      # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
+      - name: Contracts drift against pingdotgg/t3code main (advisory)
+        continue-on-error: true
+        run: |
+          cd rust/claude-pantheon-rs
+          if ! T3_CONTRACTS_REPO="$RUNNER_TEMP/t3code" ./scripts/refresh-contracts.sh --check; then
+            echo "::warning title=T3 contracts drift::contracts/ no longer matches t3code main; run rust/claude-pantheon-rs/scripts/refresh-contracts.sh"
+            exit 1
+          fi
+      - name: Check the desktop entry and the AppStream metainfo
+        run: |
+          desktop-file-validate rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.desktop
+          appstreamcli validate --no-net rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.metainfo.xml
+      - name: Indicator probe (headless)
+        run: |
+          meson setup "$RUNNER_TEMP/indicator" rust/claude-pantheon-rs/wingpanel-indicator
+          meson compile -C "$RUNNER_TEMP/indicator"
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/indicator" --print-errorlogs
+      - name: Build the Debian package
+        run: CLAUDE_PANTHEON_OUTPUT_DIR="$RUNNER_TEMP/cpr-deb" bash rust/claude-pantheon-rs/build-deb.sh
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-pantheon-rs-deb-${{ github.run_id }}
+          path: ${{ runner.temp }}/cpr-deb/*.deb
+          retention-days: 14

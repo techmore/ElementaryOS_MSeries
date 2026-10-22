@@ -18,6 +18,153 @@
 - **Not verified:** the traffic-light dots visually (the X capture came back empty) and the dense table in dark mode. Installed to
   `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` and Wingpanel restarted by hand; previous library kept in the session scratchpad.
 
+## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
+
+`mseries/orchard/` is the one app: Machine Lab's window, sidebar, pages and `style.css` with Orchard's name, icon
+(`com.github.techmore.orchard`), clients and tests. The user's direction: "machine lab is beautiful, orchard isn't really yet,
+so we can copy that style over and orchard is the menu icon." `mseries/machine-lab/` and `mseries/orchard-incus-native/` are
+thin READMEs pointing here; every file moved with `git mv` (`git log --follow`).
+
+- **Layout.** Sidebar sections YOUR MACHINES / NEW — NOT INSTALLED (Machine Lab, unchanged behaviour), INCUS (home row:
+  dashboard, statistics, tools; then one row per instance) and PODMAN (one row, one page). `src/main.vala` is the
+  application and window (`orchard://` links, Ctrl+K palette dispatch, preferences), `src/sidebar.vala` the row types,
+  `src/incus-page.vala` the Incus home page, the instance page (Overview / Statistics / Configuration / Logs / Snapshots,
+  More menu: Clone, Export Backup, Mount Folder, Publish Port, Attach Network, Connect Local Model) and the New Instance
+  dialog; `src/PodmanPage.vala` and `PodmanDetails.vala` restyled with the `ml-` cards. Dropped: Machine Lab's CLI
+  `incus-model.vala`/`incus-ui.vala`, Orchard's `MainWindow.vala`, `Application.vala`, `InstanceDetails.vala`.
+  `ResourceBrowser`, `SandboxesWindow` and `MountsWindow` now signal the window instead of casting to `MainWindow`.
+  Not carried over: the instance list's search/filter/sort/group-by-label and bulk actions.
+- **Build and tests.** `meson setup build && ninja -C build`; `meson test`: 12/12 (Machine Lab's five, Orchard's five, the
+  rewritten `native-windows` smoke that builds the whole window against the fake Incus socket and fake podman and opens
+  every secondary window, and `panel-count` for the indicator, which builds here but installs under `/usr/lib`, so
+  `install-orchard.sh` passes `-Dwingpanel=disabled`). `build-deb.sh` builds `orchard_1.0.0-1~mseries1_arm64.deb` (ran).
+  CI: the `orchard` job builds `mseries/orchard` with the indicator; the `machine-lab` job is now `orchard-app`.
+- **Idle CPU, measured** (`docs/PERFORMANCE.md`, `bench.sh`): installed Machine Lab 37.6 % of a core and 281 MB RSS over
+  20 s with the window open and nothing running; Orchard launched with `gio launch` on its desktop file 0.3 % and 82 MB.
+  Cause: `.ml-dot.running` had an infinite CSS pulse animation, which keeps GTK's frame clock running for every running
+  row (three Incus containers), so the window repainted at the display rate forever. Also applied: cairo renderer
+  (`ORCHARD_RENDERER` overrides), 1 px CSD outline, cursor blink off, per-page timers only while mapped, hidden pages
+  defer widget updates, no sidebar re-sort per poll, content stack not vertically homogeneous.
+- **Installed and launched** on the j314s: `bash mseries/install-orchard.sh` (removes the `io.github.mseries.MachineLab`,
+  `com.github.techmore.orchard-incus` and `io.github.techmore.OrchardIncus` entries and launchers, moves the dock pin,
+  restarts `pantheon-dock`), `gio launch ~/.local/share/applications/com.github.techmore.orchard.desktop`. Seen: deb-test,
+  orchard-test, rupert-dev (Incus), bzc and mseries-icloud-anisette (Podman), elementary OS, Omarchy and Windows 11
+  (`~/vms`). Captures (GSK self-render via `ORCHARD_SCREENSHOT`/`ORCHARD_SCREENSHOT_PAGE`): `docs/screenshot-machines.png`,
+  `docs/screenshot-incus.png`, `docs/screenshot-incus-instance.png`, `docs/screenshot-podman.png`. The old Orchard for
+  Incus process that was running since the morning was left running; its binary is gone.
+- **Not verified.** Incus actions were not clicked against the real containers (start/stop/snapshot/config apply are the
+  same client calls as before, exercised by the fixture tests); the Podman details window was built in the smoke test, not
+  opened on the real container; the Wingpanel indicator is built, not installed; a full guest install and the Wayland
+  keyboard path remain as before.
+- **CI notes.** The `dev` branch protection requires a check named "Machine Lab build and logic tests (arm64)"; the
+  workflow keeps an alias job of that name (`needs: orchard-app`) until the protection list names "Orchard app build,
+  tests, metadata and Debian package (arm64)" instead. The Claude T3 client job now installs `libgtksourceview-5-dev`
+  (PR #500 added the crate without it). The capability ledger (`docs/capabilities.json`) is pinned to the merge commit
+  so its Orchard and Machine Lab paths resolve. Locally, `/virtio/download-failure` fails when `/tmp` (tmpfs) has under
+  ~2 GiB free, because the download's free-space check fires first; `TMPDIR` on disk passes 12/12.
+- **Next.** Update the `dev` branch protection to the new job name and drop the alias; decide whether the Python
+  `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console); instance search in the sidebar if
+  the palette is not enough.
+## Public fixes and enhancements audit — 2026-10-21
+
+A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.
+
+Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
+
+## Repository housekeeping and Desktop Mode source merge — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) merged to `dev` as
+`6f716799fcbef277ac24031bf9242e20f5a2415f`. It adds the `mseries-desktop-mode`
+command/launcher for toggling Windows Work Mode immediately, installs those files
+through `install-work-mode.sh`, and adjusts the Start menu power-button colors.
+The PR head was `2afd98edc921daa48c45b376cdd195ddd43abf7c`; all 14 required
+checks passed on that head (workflow run
+[39676407155](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39676407155));
+the two skipped CI jobs were URL-comment and reusable-build jobs. Reviewed the
+six-file diff and clean merge against refreshed `origin/dev` `81c5d94a` immediately
+before merging. The PR's own verification used in-memory GSettings and a fake
+helper. This merge did not install the new command/launcher, change live mode or
+saved settings, or restart the dock, panel, compositor, kernel or audio stack.
+Live mode-switch acceptance remains open until separately authorized installation.
+
+Repository pass: refreshed `origin/dev`; the starting checkout was clean but 345
+commits behind before merge and remains intentionally untouched. No tracked build
+directories or `.deb`/`.iso`/`.img` artifacts were found in the `dev` tree. The
+existing six-hour `.github/workflows/upstream-watch.yml`, dashboard and retained
+audit receipts were reused; this pass did not launch a duplicate watcher or claim
+a new upstream observation. Other open PRs remain pending: #491 lacks real
+Incus-action acceptance and its installer restarts the dock; #460, #440 and #390
+conflict with current `dev`; #460 also lacks dark-mode/notification visual review
+and is subject to the CodexBar deploy gate. Drafts #444, #272, #248 and #185 retain
+their stated research/handoff/qualification gates. Existing owner worktrees and
+prunable registrations were left untouched because branch ownership/activity was
+not established as inactive.
+
+Next: after owner authorization, install Work Mode using its documented installer
+and verify one reversible switch in the live session; do not infer installation
+or loaded state from this source merge.
+
+## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
+
+`rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the
+T3 Code server (`t3 serve`, here the user service `t3code.service` on 127.0.0.1:3773) so one window drives Claude Code,
+Codex, OpenCode and Grok, with the local `~/.claude/projects/*/*.jsonl` transcripts as the offline view. Imported from a
+standalone repo (commits 35d6947 … 9a896de); design notes `docs/T3-SPIKE.md`, `docs/INTEGRATIONS.md`, `docs/WORKFLOW.md`.
+
+- **What it does.** Pairing page (`t3 pair` token → `/oauth/token` bearer session in the keyring via `secret-tool`, else
+  `~/.config/claude-pantheon-rs` 0600; WebSocket tickets; the server's 426 update message shown on mismatch). Sidebar of
+  the server's projects and threads plus the offline JSONL group, linked by uuid (`import:claudeAgent:<uuid>`). Provider,
+  model and permission-mode pickers from `server.getConfig` (four instances authenticated here: Codex, Claude, Grok,
+  OpenCode; supervised mode is the default, full access a per-thread choice). Composer launches or continues a thread;
+  turn items stream (assistant text, commands, diffs, approval prompts with Allow/Deny through `runtime-request.respond`);
+  Stop; import of Claude Code and Codex sessions (`agentSessions.scan/import`); "Hand Off to Repo" (structured summary
+  appended to `*HANDOFF*.md`/`AGENTS.md`/`docs/HANDOFF.md`, optional commit). Usage page in the CodexBar card style with
+  plan windows as gauges and the rotation decision; Repos/Issues pages (`gh api`, lanes/priorities/agent labels, "Start on
+  this", runner as a T3 scheduled task every 5 min on the emptiest provider); Changes page (`getFullThreadDiff`);
+  Diagnostics page (`subscribeResourceTelemetry`). On loopback it points the server's Claude provider at the Claude Code
+  CLI bundled with the desktop app.
+- **Protocol.** `src/t3/`: RFC 6455 and HTTP/1.1 on `gio::SocketClient`, Effect-RPC JSON envelopes
+  (Request/Chunk/Exit/Ack/Interrupt/Ping), orchestration protocol 2, everything on the GLib loop; 26 unit tests against
+  frames recorded from the live server (`tests/fixtures`). Build: `cargo build --release -p claude-pantheon-rs` from `rust/`.
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): client 58–60 MB RSS, 0.0 % CPU idle with a thread open; client +
+  server ≈ 300 MB and ≈ 1 % of a core; Electron claude-desktop 1.66 GB and 112 % in the same run. Start-up 184–213 ms to
+  the first frame (`--quit-after-frame`). The Vala twin's three GTK findings are built in (cairo renderer by default,
+  1 px CSD outline, cursor blink off).
+- **Captures.** `docs/screenshot-m1.png` (offline transcript), `screenshot-m2.png` (live thread, four providers),
+  `screenshot-m3.png` (usage with plan windows), `screenshot-diagnostics.png`, `screenshot-repos.png`; all GSK
+  self-renders from `tests/render.rs` under Xvfb against the real server and transcripts (a real "pong" round trip ran).
+- **Not verified / not built.** Permission prompts and Stop were exercised only by code paths, not by a live prompt
+  (the test thread ran in full access); "Start on this" and "Install runner" not clicked against GitHub (labels would be
+  created on the repo); the Wingpanel indicator (`wingpanel-indicator/`, Vala) is written but not compiled
+  (`libwingpanel-dev` not installed); vte4 terminal and WebKitGTK visual replies not built (crates not in the offline
+  cache); SnapShot helper not built (compositor has no screenshot D-Bus; plan in `docs/INTEGRATIONS.md`); environments
+  switcher not built; webhook runner tasks need a reachable endpoint. Not installed system-wide.
+- **Next.** Install `libwingpanel-dev` and build the indicator; add `vte4`/`webkit6` crates (crates.io is reachable);
+  SnapShot via the portal plus AT-SPI; a compositor-side `ScreenshotWindow` D-Bus method; per-run provider rotation
+  needs a server-side hook or a small scheduler.
+
+## Native Claude client (Vala/GTK4/Granite) — 2026-10-21 (Claude Code)
+
+`mseries/claude-pantheon-native/`: a native Pantheon client for Claude Code, built to replace the Electron desktop app
+(19 processes, 2.4 GB RSS, 1.08 cores idle on the j314s; `BASELINE.md`). Imported from a standalone repo
+(commits 13476f6, 7b572d2, 44f322c).
+
+- **What it does.** Sidebar of every `~/.claude/projects/*/*.jsonl` session grouped by real project path with search;
+  transcripts rendered as chat (markdown, fenced code, collapsed tool rows); live chat through the bundled `claude` CLI
+  (`-p --output-format stream-json`, resume, new session, permission-mode menu, Stop). Build: `meson setup build &&
+  ninja -C build`; `meson test` passes (parser smoke on a committed sample).
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): 69–83 MB RSS, 0–0.9 % CPU idle, 132–152 ms to mapped window.
+  Three GTK findings on this Mesa/Asahi stack, reusable by every GTK app here: GL renderer costs ~180 MB shader heap
+  (app forces cairo, `CLAUDE_PANTHEON_RENDERER` overrides); the default blurred CSD shadow re-blurs every frame
+  (52 ms → 6 ms with a 1 px outline); cursor blink keeps the window repainting 10 s after focus (off).
+- **Captures.** `docs/screenshot-m1.png`, `screenshot-m2.png`, `screenshot-light.png` (GSK self-render via
+  `CLAUDE_PANTHEON_SCREENSHOT=<path>`; no screenshot tool on this host).
+- **Not verified.** Stop button and tool-row expansion not clicked interactively; composer is single-line; images and
+  thinking blocks are placeholders. Not installed system-wide yet.
+- **Next.** The Rust twin (`claude-pantheon-rs`, gtk4-rs + granite-rs) is being built as a client of the T3 Code server
+  for Claude, Codex, OpenCode and Grok, and lands in `rust/` the same way; its `docs/WORKFLOW.md` and
+  `docs/INTEGRATIONS.md` carry the plan.
+
 ## Orchard: Podman container details, live counters, local install — 2026-10-21 (Claude Code)
 
 Follows the Podman page (`mseries/orchard-incus-native`, containers/images/volumes with start/stop/restart/remove).
