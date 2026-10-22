@@ -1,0 +1,66 @@
+{
+  "scope": "real baseline signed active usr/hash/signature payload relocation into synthetic reserved slots on a regular-image COPY; no native installation or hardware",
+  "template_sha256": "891ebed19b7cbe47e6fe447d159fd9a8d5ede51c946a3f840b81fb7865632ca1",
+  "output_sha256": "fca97c39ab0faf61e84e68f78a3d5a7db8d586d388356cc49753dc573a81d6f6",
+  "source_image_sha256": "f8eb8865bba9afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152",
+  "disk_guid_preserved": "d3c1e13f-1025-4f53-9200-55cb12be60af",
+  "mapping": [
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      5
+    ]
+  ],
+  "unselected_bytes_sha256": "350731699094431527848ef2b02686cd81da08a51b663a19cb24d99c7ebd0a75",
+  "unselected_bytes_preserved": true,
+  "metadata_and_payload_readback": true,
+  "template_unchanged": true,
+  "importer_sha256": "42ffc51896a6b655960dbed8146f5dcc995075018c433d2f248a977296778564",
+  "installer_admission": false,
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T05:34:28.507261+00:00",
+  "source_run": 39714779495,
+  "baseline_kernel_revision": 2,
+  "independent_sgdisk_metadata_and_crc_check": true,
+  "source_verity_receipt": "2026-10-22-hosted-image-local-validation.json",
+  "source_verity_and_cms_reverified_in_this_trial": false,
+  "signature_data_hash_bytes_identical_to_previously_verified_export": true,
+  "actual_apfs_filesystem_present": false,
+  "native_apple_gpt_transaction": false,
+  "setup": {
+    "template_size": 9663676416,
+    "mapping": [
+      {
+        "source": 2,
+        "destination": 3,
+        "first_lba": 268288,
+        "last_lba": 268319,
+        "payload_sha256": "72707a25d1ff4b5e11f8681c2f66ab73702dd3ebf3d6b9c557bcc0ed0053d492"
+      },
+      {
+        "source": 3,
+        "destination": 4,
+        "first_lba": 270336,
+        "last_lba": 1089535,
+        "payload_sha256": "d5a836a22de34b417222aab84aadd42a1adf066cf8b9a1ce999d0414cf285915"
+      },
+      {
+        "source": 4,
+        "destination": 5,
+        "first_lba": 1089536,
+        "last_lba": 15769599,
+        "payload_sha256": "835ea2729e2952e5e3604cae423463acfc49fb59b7c5fe66bce03f10b408fd87"
+      }
+    ],
+    "source_image_sha256": "f8eb8865bba9afad8064ec27ddeaa69e561e8ab560d9db7850daadb489b2f152",
+    "scope": "actual baseline active payloads to synthetic reserved slots, no APFS filesystem"
+  },
+  "independent_sgdisk_log_sha256": "380f643ec1cd357c7f1f4877259787f68f86a3dcb498abc646f19c78b68191d3"
+}

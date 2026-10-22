@@ -1359,3 +1359,33 @@ result is not yet claimed. Receipt: mseries/m4-mini/receipts/2026-10-22-regular-
 Native allocation, GPT update/recovery semantics, real APFS preservation, ESP handoff,
 writable root, signature trust and macOS Recovery acceptance remain open. R5 run
 39721608135 was rechecked live while this work proceeded; no duplicate was started.
+
+Actual baseline-image active payload import now passes, beyond tiny fixtures:
+signature (16 KiB), hash (400 MiB) and usr (7 GiB) from image run 39714779495
+were relocated into different slots/LBAs in a new 9 GiB regular-image copy.
+All selected source metadata/payload hashes match; destination disk identity,
+unselected entries/bytes and original template remain unchanged. Independent
+sgdisk metadata/CRC checks pass. Source payload bytes equal the previously
+verity/CMS-verified export; cryptographic tools were not rerun in this copy trial.
+The template has simulated macOS/Recovery byte ranges, not actual APFS filesystems;
+this is baseline r2 payload evidence, not r5, native allocation or installation.
+Receipt: mseries/m4-mini/receipts/2026-10-22-real-active-partition-import.json.
+
+Open proposal intake found Gravity Mesa PR1 at immutable 208d4a4, eight linear
+commits directly atop selected 87ac51d. Claims include Sway/zathura/mpv fixes,
+Apple9 blit recursion, tile helper formats, clear accounting, modifier/external
+image capabilities and Honeykrisp rodata placement. Exact changed Git blobs,
+before/after hashes, commit chain and unchanged UAPI are recorded. A separate
+native full build is now running under work/m4-mesa-pr1-build (resume.py, terminal
+session 79442). An initial missing wayland-egl-backend configuration dependency
+was resolved with the existing work-local pkg-config path; failure log retained.
+Do not restart on observation timeout. No selected Mesa package/hash changed.
+Review remains open for blanket uniform metadata on helper shaders, compositor
+imports and low-rodata allocation failure (the proposal falls back to the old
+USC address if allocation fails). Compile/software tests cannot qualify these
+M4 GPU behaviors. Source intake receipt records the scope and concerns.
+
+Gravity Linux PR3 (BCM4387 suspend) and PR4 (M5 J704) are additionally inventoried.
+M1 author-reported suspend tests do not enable M4 sleep; M5 inventory does not
+qualify the plain M4 mini. These proposals are unselected. R5 kernel run
+39721608135 remains live; existing job is retained, without duplicate dispatch.

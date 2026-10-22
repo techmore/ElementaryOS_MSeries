@@ -1,0 +1,20 @@
+{
+  "observed_at_utc": "2026-10-22T05:36:35.819045+00:00",
+  "open_gravity_kernel_proposals": [
+    {
+      "number": 3,
+      "head": "0adcd9fc872a84e485d1ea1a053e389e294edc38",
+      "url": "https://github.com/GravityLinux/linux/pull/3",
+      "scope": "Broadcom BCM4387 suspend coordination, author reports M1 tests; not M4 suspend qualification. Selected M4 image still disables unsupported sleep.",
+      "selected": false
+    },
+    {
+      "number": 4,
+      "head": "3517b4d57abf487fcaca3bc4d5ad390bf7459095",
+      "url": "https://github.com/GravityLinux/linux/pull/4",
+      "scope": "Proposal titled initial MacBook Pro M5 J704 support; inventory only, not a qualified plain-M4-mini replacement.",
+      "selected": false
+    }
+  ],
+  "hardware_validated": false
+}

@@ -1,0 +1,78 @@
+{
+  "base": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "base_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+  "proposal": "https://github.com/GravityLinux/mesa/pull/1",
+  "head": "208d4a484459a12c77bf073362613f842288c2e0",
+  "linear_commits": [
+    "4d8d377c3ab7b28b6a372d476556d0cfe0a9acf1",
+    "3dc9db9833aab8ec654c510a7e93d78b6d581af8",
+    "a426856775c07274c712e7daf4b9f45375ee0ac5",
+    "b7dab65214671f6b8fefc79385b01d90148446d8",
+    "c64b307a8ee1cf4f18f7c2185f03a5189b0cab93",
+    "731185465740fab8aae68600ad54f7252dd447bc",
+    "146b8a7f84262f77b03838807439fb3f2f5e5985",
+    "208d4a484459a12c77bf073362613f842288c2e0"
+  ],
+  "files": {
+    "src/asahi/compiler/agx_compile.c": {
+      "before_sha256": "081c50afc88b9a08df30af7f8e4004925c1355b303483418789189ce1cc6a221",
+      "after_sha256": "1cd92edb03545bc8b98abbaf7171d6f2cdbc6c49a7b955fd5b95f7ab2615c791",
+      "git_blob": "6c1fc85ed77a776ffef14d3c414381bc6e597864",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/asahi/compiler/agx_compile.c"
+    },
+    "src/asahi/compiler/agx_compile.h": {
+      "before_sha256": "0f9c051e68bc8a3d10b0f65822c8cef9e08e8cdfd3270939d5c555d33bf58a13",
+      "after_sha256": "16f5897db754856d4841475716fb4cd795055690f13e5f9c356a1d2739dfb31f",
+      "git_blob": "8106925fa2faeb253de6200ee2cf261bf0b9b74f",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/asahi/compiler/agx_compile.h"
+    },
+    "src/asahi/vulkan/hk_shader.c": {
+      "before_sha256": "3b69a8431db1b4ddc2a381aedb860e1ae5c07842131ac399352690f982e9a14f",
+      "after_sha256": "9ded99ac5a7ea268ac382362c31d8dc32c3b00e9cf72b0108e3269cde34a0cfb",
+      "git_blob": "aa35641e631df2925b124d2b9e22a8a99f2230b5",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/asahi/vulkan/hk_shader.c"
+    },
+    "src/asahi/vulkan/hk_shader.h": {
+      "before_sha256": "00431adc9662fe58570d6a5661b02940bbc51e68fb4991325c76066f5c2ce8d2",
+      "after_sha256": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+      "git_blob": "5825d1213f1709dcfd5a6a050e8b464d7b939bcc",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/asahi/vulkan/hk_shader.h"
+    },
+    "src/gallium/drivers/asahi/agx_blit.c": {
+      "before_sha256": "371fb07affff7892687bf7a6aff3203ad3704e8ed52763816ed1fe1f95ccf02e",
+      "after_sha256": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+      "git_blob": "7e9fc716cb12768781b5673d064fbcc21b56cf5e",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/gallium/drivers/asahi/agx_blit.c"
+    },
+    "src/gallium/drivers/asahi/agx_pipe.c": {
+      "before_sha256": "d997f41b1a48922b3042a08a9dffd56d9e720d46e68d3d7470b52f42776ec539",
+      "after_sha256": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+      "git_blob": "50ed38806d03ddc3950d81e65820a0739023afbc",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/gallium/drivers/asahi/agx_pipe.c"
+    },
+    "src/gallium/drivers/asahi/agx_state.c": {
+      "before_sha256": "13ae520cf2a063266247350c35c6914311e29093a91918432631bf745fee18e6",
+      "after_sha256": "a752fbcea5e2d58b892df57c9eb290555ddd5a3883a1dde618fc5eb9be54a115",
+      "git_blob": "f3083b0cb621c59a30b6494c82e4c457b94fac94",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/gallium/drivers/asahi/agx_state.c"
+    },
+    "src/gallium/drivers/asahi/agx_state.h": {
+      "before_sha256": "ad8e31d0db554bdf435326b2e6b34854e420375b0571a3e74e9c451591ff7b5e",
+      "after_sha256": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e",
+      "git_blob": "85d1641cba4980c793f1e644f1169845a97c82de",
+      "url": "https://raw.githubusercontent.com/sithglan/mesa/208d4a484459a12c77bf073362613f842288c2e0/src/gallium/drivers/asahi/agx_state.h"
+    }
+  },
+  "uapi_sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+  "scope": "unmerged proposal source intake only; no promotion or native qualification",
+  "observed_at_utc": "2026-10-22T05:36:35.818855+00:00",
+  "state": "open, unmerged",
+  "default_stack_changed": false,
+  "build_state": "running native isolated build after resolving missing wayland-egl-backend pkg-config metadata with existing work-local dependencies; first configure failure retained",
+  "review_open": [
+    "Compiler path marks all helper shader defs uniform and bypasses selected divergence/uniform optimizations; validate semantic eligibility, not just compilation.",
+    "External image capability/modifier filtering needs compositor DMA-BUF coverage on hardware.",
+    "Honeykrisp low-address rodata allocation failure currently falls back to the original high USC BO address in hk_fast_link; validate allocation failure propagation before selecting this change."
+  ],
+  "hardware_validated": false
+}
