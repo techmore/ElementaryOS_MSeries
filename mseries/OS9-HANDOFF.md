@@ -11351,3 +11351,19 @@ as user processes with core dumps disabled, never as kernel/hardware faults.
 Source receipt: 2026-10-22-mesa-helper-divergence-source-preflight.json.
 R5 kernel run 39721608135 is also still live. No selected image/package inputs
 or native hardware/installer flags changed.
+
+Hosted image intake now resolves package filenames from the already verified
+artifact receipt instead of hardcoding revision 2 in the workflow. A new wrapper
+requires one correct-component ARM64 basename, regular package and matching hash,
+then delegates to the unchanged full semantic/version/source checkers. It does
+not choose a run or relax provenance/version gates. Four boundary tests and two
+existing workflow tests pass. Actual downloaded r2/r4 kernel and Mesa names/hashes
+were checked, and a full isolated r4/Mesa preparation rehearsal passes existing
+kernel/Mesa/retention/software checks and policy staging. Selected component runs
+and base profile version remain unchanged until r5 succeeds and is independently
+validated. Receipt: 2026-10-22-hosted-name-intake-rehearsal.json under
+mseries/m4-mini/receipts. Both modified workflow YAML files parse successfully.
+
+Combined Mesa compiler candidate session 37929 remains live, rebuilding the
+actual compiler/NIR libraries and dependent tests. Seven NIR cases are still
+pending. The remote r5 kernel 39721608135 is also live; neither build was restarted.

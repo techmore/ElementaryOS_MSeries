@@ -555,14 +555,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          kernel="$RUNNER_TEMP/retrieved/kernel"
-          mesa="$RUNNER_TEMP/retrieved/mesa"
-          python3 mseries/m4-mini/prepare-image-inputs.py \
-            --kernel "$kernel/linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-2_arm64.deb" \
-            --kernel-package-receipt "$kernel/receipt.json" --kernel-build-receipt "$kernel/build-receipt.json" \
-            --mesa "$mesa/elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb" \
-            --mesa-package-receipt "$mesa/receipt.json" --mesa-build-receipt "$mesa/build-receipt.json" \
-            --smoke "$mesa/mesa-software" --output "$RUNNER_TEMP/image-inputs"
+          python3 mseries/m4-mini/prepare-hosted-image-inputs.py \
+            --retrieved "$RUNNER_TEMP/retrieved" --output "$RUNNER_TEMP/image-inputs"
           cp "$RUNNER_TEMP/image-inputs/candidate.json" image-record/
           cp -a "$RUNNER_TEMP/image-inputs/records" image-record/input-records
       - name: Select pinned mkosi and execute complete image graph

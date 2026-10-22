@@ -1,0 +1,48 @@
+{
+  "observed_at_utc": "2026-10-22T06:08:14.058124+00:00",
+  "scope": "receipt-selected filename wrapper, four intake tests and actual r4 kernel/baseline Mesa preparation through existing semantic checkers; no image rebuild or installation",
+  "wrapper_sha256": "37da5d169d7aaefdb8c6a560b55f2b69f8ec4b1d2288779bd52fed1a38341346",
+  "tests": {
+    "filename_intake_cases": 4,
+    "passed": true,
+    "existing_workflow_cases": 2
+  },
+  "actual_semantic_rehearsal": {
+    "exit_code": 0,
+    "kernel_version": "7.1.13+elementary.m4.gravity1-4",
+    "candidate": {
+      "schema": 1,
+      "scope": "validated research image inputs; source checkout and factory pins untouched",
+      "preparer_sha256": "144d6eb32d495e0b960e7cc71f07b8dbc1c6b4321c8bfe5af8c4b265526263e7",
+      "recipe_commit": "f7014682fb8f4c9e600e127f32ebac3dd74fc1d1",
+      "components": {
+        "kernel": {
+          "file": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-4_arm64.deb",
+          "sha256": "bb6b68fb1568ab1a079e3cf64650c095c204fd948bf41d7e4797ece3cace845b",
+          "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8"
+        },
+        "mesa": {
+          "file": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb",
+          "sha256": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+          "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e"
+        },
+        "policy": {
+          "file": "elementary-m4-gravity-policy_20261021-2_arm64.deb",
+          "sha256": "bc05064ce1799874e3d162ce5fb14e174ef46917aef84516ff2490c5a6613940"
+        }
+      },
+      "live_hook_patch_required": true,
+      "live_hook_patch_sha256": "ea639a032c42028d2780a34ab8cf0048c3d3e04ec9c2852596847eec163ea6d8",
+      "kernel_image_sha256": "80e6c04702c8966cae6c8bc315cf60c8e9ef11e9d2c68a0ef1b977cbafd62306",
+      "kernel_config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+      "factory_promotion": false,
+      "installer_admission": false,
+      "hardware_validated": false
+    },
+    "log_sha256": "41808896848dba3c03af402f74fd604e2a66d9258a8d5dfefeb91521841b9288"
+  },
+  "selected_component_runs_changed": false,
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false
+}
