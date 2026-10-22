@@ -499,7 +499,7 @@ public class MachinePage : Gtk.Box {
         var recheck_btn = new Gtk.Button.from_icon_name ("view-refresh-symbolic");
         recheck_btn.valign = Gtk.Align.CENTER;
         recheck_btn.add_css_class ("flat");
-        recheck_btn.tooltip_markup = Granite.markup_accel_tooltip ({ "F5", "<Control>r" }, "Check disk space and requirements again");
+        Orchard.accel_tooltip (recheck_btn, { "F5", "<Control>r" }, "Check disk space and requirements again");
         recheck_btn.clicked.connect (() => recheck ());
         ready_card.append (recheck_btn);
         clamp.append (ready_card);

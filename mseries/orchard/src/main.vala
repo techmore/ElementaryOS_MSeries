@@ -85,6 +85,19 @@ public class Orchard : Gtk.Application {
     private PodmanRow podman_row;
     private PodmanPage podman_page;
 
+    /* AccountsService is reachable, so Granite's desktop integration (init, colour scheme, accel
+     * tooltips, which call Granite.init) is safe to use. False in CI and bare sessions. */
+    public static bool desktop_session = false;
+
+    /* Granite.markup_accel_tooltip calls Granite.init, so it is only used in a desktop session. */
+    public static void accel_tooltip (Gtk.Widget widget, string[] accels, string description) {
+        if (desktop_session) {
+            widget.tooltip_markup = Granite.markup_accel_tooltip (accels, description);
+        } else {
+            widget.tooltip_text = description;
+        }
+    }
+
     /* The window, once activate () has built it (tests and the screenshot path look at it). */
     public Gtk.ApplicationWindow? main_window { get { return window; } }
 
@@ -109,8 +122,8 @@ public class Orchard : Gtk.Application {
         // Granite.init () and Granite.Settings read the colour-scheme preference through
         // AccountsService; without the service (CI, a bare session) Granite logs a critical,
         // so both are skipped there and GTK's defaults apply.
-        bool desktop = accounts_service_available ();
-        if (desktop) {
+        desktop_session = accounts_service_available ();
+        if (desktop_session) {
             Granite.init ();
         }
 
@@ -118,7 +131,7 @@ public class Orchard : Gtk.Application {
         // GTK animates the text cursor's fade with a frame-clock tick for ten seconds after every
         // keystroke, which repaints the window continuously. A steady cursor keeps idle at 0 % CPU.
         gtk_settings.gtk_cursor_blink = false;
-        if (desktop) {
+        if (desktop_session) {
             var granite_settings = Granite.Settings.get_default ();
             gtk_settings.gtk_application_prefer_dark_theme =
                 granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
@@ -694,7 +707,7 @@ public class Orchard : Gtk.Application {
         add.margin_end = 6;
         add.halign = Gtk.Align.START;
         add.direction = Gtk.ArrowType.UP;
-        add.tooltip_markup = Granite.markup_accel_tooltip ({ "<Control>n" }, "Create a new machine");
+        accel_tooltip (add, { "<Control>n" }, "Create a new machine");
         var pop = new Gtk.Popover ();
         var pbox = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
         pbox.margin_top = 6;
