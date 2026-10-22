@@ -88,11 +88,12 @@ changed phone IDs clear the old view state, and stale asynchronous pin loads are
 ignored. A direct jump to Rust before the Python migration can require
 re-importing the snapshot.
 
-BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) remains open at
-`d85819f`; no checks have been reported. It adds the optional UUID without
-changing Messages API v2. Older installed BlueFerry versions omit the UUID
-until the change is merged and released, so import actions explain that
-BlueFerry must be updated.
+BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) merged on
+2026-10-22 at `ff418298e3e9b71b650e0d72b4b1ba61576cf29f`. It adds the optional
+UUID without changing Messages API v2. The latest public release is still
+v0.8.1 from 2026-09-15, before the merge, so released packages still omit the
+UUID. Both clients keep pin import unavailable until BlueFerry publishes a
+release/package with the field; then repeat live phone/keyring acceptance.
 Code commit `b3ed900b` is on [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
 The checks at that revision passed: Rust Messages formatting/lint, ARM64 build
 and package, desktop metadata, SDK/System Monitor, Software Updates, Disk Space,
@@ -101,6 +102,32 @@ packages. An earlier commit failed strict Clippy; `b3ed900b` fixes those three
 findings. Local formatting, compile, strict Clippy, Python syntax compilation
 and `git diff --check` also passed. No local test suite or GUI was run. Live
 keyring/UI behavior and owner-phone acceptance remain open. The PR stays draft.
+
+## Rust Messages recent inbox parity — 2026-10-22
+
+The Rust shared BlueFerry client now calls the released API v2
+`Messages1.ListRecent` with a 200-message cap. Messages fetches on startup,
+manual refresh, reconnect and resume, then at five-minute intervals while
+connected. Polling uses the existing switch-controlled 30-second status timer;
+disabling that switch stops its periodic checks. A failed inbox call retains the last
+successful snapshot and displays a warning while the conversation snapshot
+continues to refresh.
+
+The SDK merge matches a snapshot sender to one direct thread only, accounts for
+North American 10/11-digit twins, never attaches a direct text to a group, and
+keeps ambiguous senders in a phone-only local conversation. Handles deduplicate
+across the BlueFerry thread list and inbox snapshot. Invalid raw sender strings
+are dropped; optional alphanumeric sender metadata disables replying. Existing
+local phone-only snapshot messages and drafts are retained when a unique direct
+BlueFerry thread appears. No private BlueFerry database or second MAP session
+is used.
+
+**Validation:** SDK/Messages formatting and locked compile pass. The two Rust
+packages have 25 passing unit tests, including snapshot merge, deduplication,
+ambiguous/group routing, unread state, alphanumeric read-only senders and the
+five-minute/reconnect scheduling policy. Formatting, locked compile, strict
+Clippy and `git diff --check` pass. Live catch-up, stale-cache warning and dock
+badge behavior still need owner-session phone interaction review.
 
 ## Rust Messages local timestamp parity — 2026-10-22
 

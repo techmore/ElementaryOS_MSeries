@@ -103,13 +103,20 @@ the app's shortcuts; F5 and Alt+Left match the existing client, and Back/Escape
 clear the selected conversation while preserving its draft. These source/build
 changes start with no conversation selected, avoiding an automatic open/read on
 refresh. They still need private GUI, accessibility, phone and owner acceptance.
+The shared SDK now calls BlueFerry's released API v2 `Messages1.ListRecent` for
+the bounded phone inbox: startup, manual refresh, reconnect and resume trigger
+catch-up; ordinary connected polling checks it at five-minute intervals. The
+merge deduplicates handles, avoids ambiguous direct matches and groups, and
+retains the last successful snapshot on read errors. Owner-session inbox
+interaction acceptance remains open.
 Imported Apple pin review now uses BlueFerry's optional stable phone UUID and
 the shared Secret Service item in both Rust and Python clients. BlueFerry PR
-[#277](https://github.com/erikwb/blueferry/pull/277) remains open; older
-BlueFerry versions omit the field and cannot enable pin import. The Python
-client can migrate its prior keyring item after the API release; a direct
-switch to Rust may require re-importing the snapshot. Feature parity and owner
-phone acceptance remain open. Signal's selected official-client path
+[#277](https://github.com/erikwb/blueferry/pull/277) merged on 2026-10-22, but
+the latest public release remains v0.8.1 from 2026-09-15 and omits the field.
+Pin import stays unavailable until a release/package containing the merged API
+is available. The Python client can migrate its prior keyring item after that
+release; a direct switch to Rust may require re-importing the snapshot. Feature
+parity and owner phone acceptance remain open. Signal's selected official-client path
 is tracked in ready PR [#525](https://github.com/techmore/ElementaryOS_MSeries/pull/525);
 the screenshot shelf-to-compose acceptance remains open in
 [issue #227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
