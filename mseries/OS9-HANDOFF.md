@@ -11041,3 +11041,18 @@ rust/Cargo.toml --package mseries-pantheon-kit --package mseries-messages
 strict Clippy with warnings denied, and `git diff --check` passed. No test suite,
 dock GUI acceptance or desktop-session signal observation was performed. The
 unrelated local Software Updates edits remain untouched.
+
+## Rust Messages send-path regressions — 2026-10-22
+
+Added app-level Rust tests for phone/email recipient normalization and the
+optimistic outbox's history-echo rule. Incoming text and an identical outgoing
+message already present before send cannot clear a pending send; a normalized
+outgoing echo after the captured baseline does. The Messages CI workflow now
+runs the locked crate tests after formatting and strict Clippy.
+
+**Validation:** `cargo test --manifest-path rust/Cargo.toml -p
+mseries-pantheon-kit -p mseries-messages --locked` passed (10 tests),
+`cargo fmt --check`, strict Messages Clippy, and `git diff --check` passed.
+The isolated screenshot-shelf retention suite also passed 7 tests using a
+private Xvfb/D-Bus session and synthetic images. No Signal or Messages GUI,
+phone delivery, screenshot drag/drop, or owner desktop acceptance was run.
