@@ -236,6 +236,18 @@ not registered system-wide. Interactive sign-in/out remains untested because all
 have active server-owned auth; those sessions and credentials were left intact. Next: register the Wingpanel
 module through the host package manager when root install is available and qualify a fresh auth flow.
 
+The current mseries5 app build incrementally inserts older-history rows while
+preserving the visible reading position. Formatting, release build, 68 library
+tests, strict release Clippy, and a 36.5 MB offline transcript scrolling probe
+passed. The combined ARM64 package is
+`/tmp/t3r-mseries5-deb/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`
+(SHA-256 `6812dd0396978189264be45612952f0685f23ea8c01e4a3252f91301a9344f8b`).
+The matching binary is installed in `~/.local/bin/claude-pantheon-rs` and
+running as PID 956860; its fresh feed reports `eos`, Codex selected, and no
+activity. The system package remains mseries2, so the system Wingpanel module
+is still old. Exact-head validation for `f7397cda` was dispatched as run
+39863027201 and is queued.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring
