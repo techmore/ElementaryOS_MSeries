@@ -1,3 +1,10 @@
+Current integration: this exact source correction is the fourth phase of the
+verified hosted Mesa6 recipe, now selected for opt-in research image inputs.
+The standalone candidate directory remains historical and is not applied directly.
+EGL image import, GPU output and owner hardware acceptance remain unqualified.
+
+Earlier targeted-candidate record follows.
+
 This candidate is unselected. The source file is unchanged by the three-phase
 corrected Mesa5 recipe, but that complete recipe is the tested prerequisite.
 Do not rewrite the immutable revision-5 snapshot or promote its package based

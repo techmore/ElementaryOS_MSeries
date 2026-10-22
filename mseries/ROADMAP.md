@@ -4643,3 +4643,22 @@ The next full-image workflow runs the reusable positive/negative EFI fixtures
 before the mkosi graph and retains their logs/receipts/init source. QEMU ARM64
 firmware/emulator tools are added only to ephemeral CI dependencies. This new
 workflow path has not yet run hosted; the local exact reusable tool passed.
+
+## M4 mini: hosted Mesa6 verified and selected for research image — 2026-10-22
+
+Run39739936855 succeeded at18d6f0198417fd2dcb9efd64a3bf0e5713b018b8.
+Independent run/repository/head/workflow/job/artifact checks and downloaded payload
+hashes pass. The fresh package, both base/compatibility source archives, embedded
+source bundle, all ARM64 libraries, GLVND/retention/no-hooks and extracted-package
+llvmpipe checks pass. All five AGX groups and supplemental7 NIR/8 helper/24+4
+external cases passed hosted. Mesa6 package SHA256:
+a240a2f2037c4f8f21b1c8a98da61c8299af5f42dc524e3484a69c127f4e6eb2.
+ZIP digest is metadata only, not independently checked; every payload hash is.
+
+hosted-inputs.json and the opt-in base profile now coherently select verified
+Mesa6 alongside kernel R5 and the existing matched boot bundle. Historical v4/v5
+snapshots remain intact. This is research component selection, not an image or
+hardware result. Fresh intake/eleven-image summary and full image/ISO are next.
+Receipt: mseries/m4-mini/receipts/2026-10-22-hosted-mesa6-success.json.
+The owner's M4 remains unavailable; native memory/firmware/HDMI/10Gb/GPU/audio,
+unload/installer and macOS-Recovery dual-boot gates remain open.

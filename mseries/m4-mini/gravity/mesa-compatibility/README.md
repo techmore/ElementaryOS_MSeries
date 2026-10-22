@@ -1,6 +1,7 @@
-Revision 6 is the default research build/package recipe; selected image Mesa
-remains verified revision 4 pending fresh revision-6 package checks. Revision 5
-has passed hosted build/download checks and retains its immutable snapshot.
+Revision 6 is the default research build/package recipe and selected image
+component after fresh local/hosted builds and independent downloaded package/
+source checks. Kernel remains revision5. The updated image/ISO build is pending.
+Revision5 retains its immutable three-phase snapshot and validation support.
 
 The base is Gravity Mesa 87ac51d with the original archive and matched kernel
 UAPI. Four exact phases apply public PR1, rodata error handling, scoped NIR
@@ -20,7 +21,7 @@ The corresponding-source bundle retains exact patches, full build/package/check
 recipes, all supplemental test sources and MIT/GPL licenses. Source bundle
 creation explicitly selects the version; old v5 artifacts remain verifiable.
 Fresh replay and v5/v6 bundle roundtrips pass. Fresh local revision-6 full
-build/package and extracted-package checks now pass. Hosted artifact validation,
+build/package and extracted-package checks now pass. Hosted artifact validation also passes;
 native compositor, YUV, synchronization and GPU tests remain open.
 
 Public PR1 ends at 208d4a484459a12c77bf073362613f842288c2e0. Intake records

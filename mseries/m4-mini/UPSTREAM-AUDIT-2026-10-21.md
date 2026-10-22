@@ -21,20 +21,14 @@ hosted kernel input now select revision 5. Its DTB still matches the reviewed
 boot bundle. Input preparation with the existing Mesa/policy also passes.
 [Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
 
-Mesa revision 5 has succeeded in hosted build and independent downloaded
-package/source checks. A further review found an external-sampler compiler gap.
-The normalization candidate now passes 24 constant/dynamic binary-and-binding
-comparisons across both fragment paths, plus four invalid array/shadow controls;
-the original compiler rejects 20 positive cases. Revision 6 integrates this fix,
-its tests and complete corresponding sources while preserving revision 5.
-Fresh local full revision-6 build, five AGX groups, all supplemental tests,
-packaging and extracted-package checks now pass. Fresh hosted validation is
-pending. [Local evidence](receipts/2026-10-22-mesa6-native-full-success.json).
-Selected image Mesa
-stays revision 4. Native EGL import/YUV, GPU/unload, ISO, installer and owner
-hardware dual-boot acceptance remain unqualified.
-[Compiler evidence](receipts/2026-10-22-mesa-external-dynamic-matrix.json),
-[recipe preflight](receipts/2026-10-22-mesa6-integration-preflight.json).
+Mesa revision 6 now passes fresh local and hosted full builds, five AGX groups,
+seven NIR cases, eight allocation-helper cases, the integrated 24+4 external
+sampler matrix, packaging and independent downloaded package/source checks.
+It includes the four reviewed source phases and all eleven final source hashes.
+[Hosted Mesa6](receipts/2026-10-22-hosted-mesa6-success.json).
+The opt-in research profile and hosted inputs now select Mesa6 with kernel R5.
+Fresh input preparation and an updated full image/ISO remain pending. Native EGL
+import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
@@ -42,7 +36,7 @@ public stack found in this audit. It does not establish that elementary OS or th
 owner's 16 GB / 1 TB / 10 Gb Ethernet / macOS 27 / HDMI configuration is qualified.
 
 Current elementary preparation: the opt-in M4 profile selects the matched
-kernel, Mesa revision 4 and temporary policy. The hosted baseline
+kernel revision 5, Mesa revision 6 and temporary policy. The hosted baseline
 passes 1,650-package base and 1,741-package live-root checks, desktop libraries/
 schemas, software rendering and Casper initramfs checks. LightDM selects Pantheon Wayland; unqualified graphical installer
 packages are omitted. The full baseline mkosi graph now builds and its raw artifact passes local verification.
