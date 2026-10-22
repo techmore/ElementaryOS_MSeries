@@ -1,3 +1,20 @@
+## AirDrop receive switch in Quick Settings — 2026-10-22 (Codex)
+
+Moved the `Receive Files` switch into the collapsed AirDrop row in the Sharing
+card. The AirDrop row still expands for duration, audience, device name and
+received-file controls; its details button and switch have separate accessible
+names and keyboard targets. The switch stays disabled until status is available
+and while an on/off command is running. Backend state and the existing error
+handling remain authoritative.
+
+Validation: Vala compilation of `AirDropPanel.vala` and its probe source with
+GTK 4, Granite 7 and JSON-GLib succeeded (one existing experimental-local-
+function warning in the probe); `git diff --check` passed. The probe was not
+run. The plugin was not installed and Wingpanel was not reloaded; live layout
+and hardware toggling remain unverified. Next: stage through the normal Quick
+Settings installer, then inspect the live popover at the next approved session
+reload.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring

@@ -1,9 +1,10 @@
 /* AirDrop section for the Quick Settings popover (top-right menu).
  *
- * Collapsed to one row (icon, "AirDrop" and a one-line status). Receiving, who may send and incoming
- * files stay out of sight until that row is clicked. All state lives in the vendored `omdrop` command
- * (mseries/omdrop); this widget only runs `omdrop status --json` and `omdrop on|off|visibility|dir`, and only
- * while the popover is open. OMDROP_CLI overrides the command path (tests point it at a stub backend). */
+ * Collapsed to one row (icon, "AirDrop", a one-line status and a direct receive switch). Who may send
+ * and incoming files stay out of sight until the details button is clicked. All state lives in the
+ * vendored `omdrop` command (mseries/omdrop); this widget only runs `omdrop status --json` and
+ * `omdrop on|off|visibility|dir`, and only while the popover is open. OMDROP_CLI overrides the
+ * command path (tests point it at a stub backend). */
 using Gtk;
 
 namespace MSeries {
@@ -14,7 +15,7 @@ namespace MSeries {
         private Gtk.Revealer revealer;
         private Gtk.Image chevron;
         private Gtk.Label caption;
-        public Granite.SwitchModelButton receive_switch { get; private set; }
+        public Gtk.Switch receive_switch { get; private set; }
         private Gtk.DropDown window_pick;
         private Gtk.DropDown audience_pick;
         private Gtk.Label problem;
@@ -45,16 +46,20 @@ namespace MSeries {
             row.append (text);
             chevron = new Gtk.Image.from_icon_name ("pan-end-symbolic") { pixel_size = 16 };
             row.append (chevron);
-            var toggle = new Gtk.Button () { child = row, margin_start = 6, margin_end = 6, tooltip_text = "Show AirDrop controls" };
-            toggle.add_css_class ("flat");
-            toggle.update_property (Gtk.AccessibleProperty.LABEL, "AirDrop", -1);
-            append (toggle);
+            var details_button = new Gtk.Button () { child = row, margin_start = 6, margin_end = 0, hexpand = true, tooltip_text = "Show AirDrop controls" };
+            details_button.add_css_class ("flat");
+            details_button.update_property (Gtk.AccessibleProperty.LABEL, "AirDrop details", -1);
+
+            receive_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER, margin_start = 6, margin_end = 6, sensitive = false, tooltip_text = "Receive files with AirDrop" };
+            receive_switch.update_property (Gtk.AccessibleProperty.LABEL, "Receive Files", -1);
+            receive_switch.notify["active"].connect (on_receive_toggled);
+
+            var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+            header.append (details_button);
+            header.append (receive_switch);
+            append (header);
 
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            receive_switch = new Granite.SwitchModelButton ("Receive Files");
-            receive_switch.notify["active"].connect (on_receive_toggled);
-            box.append (receive_switch);
-
             problem = new Gtk.Label ("") { wrap = true, xalign = 0, margin_start = 12, margin_end = 12, margin_bottom = 6, visible = false };
             problem.add_css_class (Granite.CssClass.DIM);
             problem.add_css_class ("caption");
@@ -89,10 +94,10 @@ namespace MSeries {
             revealer = new Gtk.Revealer () { child = box, reveal_child = false, transition_type = Gtk.RevealerTransitionType.SLIDE_DOWN };
             append (revealer);
 
-            toggle.clicked.connect (() => {
+            details_button.clicked.connect (() => {
                 revealer.reveal_child = !revealer.reveal_child;
                 chevron.icon_name = revealer.reveal_child ? "pan-down-symbolic" : "pan-end-symbolic";
-                toggle.tooltip_text = revealer.reveal_child ? "Hide AirDrop controls" : "Show AirDrop controls";
+                details_button.tooltip_text = revealer.reveal_child ? "Hide AirDrop controls" : "Show AirDrop controls";
             });
 
             // Nothing runs while the popover is closed; the section re-collapses so received files stay out of sight.
@@ -226,6 +231,7 @@ namespace MSeries {
             if (updating || busy) return;
             bool want = receive_switch.active;
             busy = true;
+            receive_switch.sensitive = false;
             caption.label = want ? "Turning on…" : "Turning off…";
             string[] args = want ? new string[] { "on", WINDOW_ARGS[window_pick.selected] } : new string[] { "off" };
             run.begin (args, (o, r) => {
