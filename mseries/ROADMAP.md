@@ -1,3 +1,12 @@
+## Desktop Mode switcher source merged — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) adds a
+command and launcher to toggle Windows Work Mode immediately. Its head passed
+the required CI checks and merged to `dev` as `6f716799`. The installer change is
+source only; no desktop install, live mode switch or service restart was performed
+in this maintenance run. Live interaction remains to be accepted after separately
+authorized installation. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Compositor snapping phase 1 — 2026-10-21
 
 Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together

@@ -1,3 +1,36 @@
+## Repository housekeeping and Desktop Mode source merge — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) merged to `dev` as
+`6f716799fcbef277ac24031bf9242e20f5a2415f`. It adds the `mseries-desktop-mode`
+command/launcher for toggling Windows Work Mode immediately, installs those files
+through `install-work-mode.sh`, and adjusts the Start menu power-button colors.
+The PR head was `2afd98edc921daa48c45b376cdd195ddd43abf7c`; all 14 required
+checks passed on that head (workflow run
+[39676407155](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39676407155));
+the two skipped CI jobs were URL-comment and reusable-build jobs. Reviewed the
+six-file diff and clean merge against refreshed `origin/dev` `81c5d94a` immediately
+before merging. The PR's own verification used in-memory GSettings and a fake
+helper. This merge did not install the new command/launcher, change live mode or
+saved settings, or restart the dock, panel, compositor, kernel or audio stack.
+Live mode-switch acceptance remains open until separately authorized installation.
+
+Repository pass: refreshed `origin/dev`; the starting checkout was clean but 345
+commits behind before merge and remains intentionally untouched. No tracked build
+directories or `.deb`/`.iso`/`.img` artifacts were found in the `dev` tree. The
+existing six-hour `.github/workflows/upstream-watch.yml`, dashboard and retained
+audit receipts were reused; this pass did not launch a duplicate watcher or claim
+a new upstream observation. Other open PRs remain pending: #491 lacks real
+Incus-action acceptance and its installer restarts the dock; #460, #440 and #390
+conflict with current `dev`; #460 also lacks dark-mode/notification visual review
+and is subject to the CodexBar deploy gate. Drafts #444, #272, #248 and #185 retain
+their stated research/handoff/qualification gates. Existing owner worktrees and
+prunable registrations were left untouched because branch ownership/activity was
+not established as inactive.
+
+Next: after owner authorization, install Work Mode using its documented installer
+and verify one reversible switch in the live session; do not infer installation
+or loaded state from this source merge.
+
 ## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
 
 `rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the
