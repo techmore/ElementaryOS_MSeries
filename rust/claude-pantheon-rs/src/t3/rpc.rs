@@ -466,7 +466,9 @@ mod tests {
                         9 => {
                             pings += 1;
                             if pings == 1 {
-                                // One pong proves that receiving a frame resets the deadline.
+                                // A delayed pong within the timeout proves that incoming activity
+                                // resets the deadline instead of counting from the initial connect.
+                                thread::sleep(Duration::from_millis(80));
                                 stream.write_all(&[0x8a, payload.len() as u8]).unwrap();
                                 stream.write_all(&payload).unwrap();
                             }
@@ -486,9 +488,10 @@ mod tests {
         let context = gtk::glib::MainContext::new();
         let rpc = context.block_on(async {
             let ws = WebSocket::connect(&format!("ws://{address}/ws")).await.unwrap();
+            let started = Instant::now();
             let rpc = Rpc::start_with_ping_timing(ws, Duration::from_millis(20), Duration::from_millis(180));
             rpc.on_close(move |reason| {
-                let _ = closed_tx.send(reason);
+                let _ = closed_tx.send((reason, started.elapsed()));
             });
             for _ in 0..100 {
                 if rpc.is_closed() {
@@ -499,8 +502,9 @@ mod tests {
             assert!(rpc.is_closed(), "the missed pong must close the RPC session");
             rpc
         });
-        let reason = closed_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        let (reason, elapsed) = closed_rx.recv_timeout(Duration::from_secs(1)).unwrap();
         assert!(reason.contains("server stopped responding"), "unexpected close reason: {reason}");
+        assert!(elapsed >= Duration::from_millis(250), "the delayed Pong must reset the deadline ({elapsed:?})");
         assert!(server.join().unwrap() >= 2, "the heartbeat sent repeated WebSocket Ping frames");
         drop(rpc);
     }
