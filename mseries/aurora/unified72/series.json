@@ -5,6 +5,8 @@
   "source": {
     "repository": "aurora-silicon/linux",
     "commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+    "git_url": "https://github.com/omacom/linux-aurora.git",
+    "git_tree_sha1": "a305f231d9137847c7f0ececca98e214cc30e792",
     "upstream_pr": "https://github.com/omacom/linux-aurora/pull/158",
     "name": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03.tar.gz",
     "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/bd526b3c11ccf8e91d6240261beb3219d8f17f03",
