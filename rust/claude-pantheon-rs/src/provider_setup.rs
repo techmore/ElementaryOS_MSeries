@@ -365,7 +365,7 @@ impl ProviderManager {
             .transient_for(&self.window)
             .modal(true)
             .default_width(500)
-            .default_height(360)
+            .default_height(if prefill_deepseek { 440 } else { 360 })
             .build();
         let header = gtk::HeaderBar::builder().show_title_buttons(true).build();
         header.add_css_class(granite::STYLE_CLASS_FLAT);
@@ -379,7 +379,8 @@ impl ProviderManager {
             concat!(
                 "DeepSeek Harness is experimental and has not been security-audited. ",
                 "It must already be installed on the paired T3 server and can run model-generated commands ",
-                "against the workspace T3 gives it. This fills in its shipped ACP command; it does not install the agent."
+                "against the workspace T3 gives it. Configure its DeepSeek API key in Harness Settings → Models ",
+                "before adding. This fills in the shipped ACP command; it does not install the agent."
             )
         } else {
             "The command runs directly on the paired T3 server. No shell expansion is used."
@@ -394,6 +395,12 @@ impl ProviderManager {
             );
             safety.set_halign(gtk::Align::Start);
             content.append(&safety);
+            let model_setup = gtk::LinkButton::with_label(
+                "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md",
+                "Configure a model credential in DeepSeek Harness",
+            );
+            model_setup.set_halign(gtk::Align::Start);
+            content.append(&model_setup);
         }
         let name = gtk::Entry::builder()
             .text(if prefill_deepseek { "DeepSeek Harness" } else { "" })

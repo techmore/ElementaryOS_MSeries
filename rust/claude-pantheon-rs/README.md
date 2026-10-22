@@ -133,9 +133,9 @@ sends only the responses needed to complete the current sign-in flow. Providers 
 enabled on the server before they can be connected here.
 
 The same page can search the ACP Registry or add a local ACP command. **DeepSeek Harness…** opens a prefilled setup
-for `dsh --profile acp`; this requires `dsh` to already be installed on the paired T3 server. Harness is experimental
-and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
-before enabling it. The server runs the agent against the workspace access T3 provides. DeepSeek API context caching is
+for `dsh --profile acp`; this requires `dsh` to already be installed and a DeepSeek API key configured in Harness on the
+paired T3 server. Harness is experimental and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
+before enabling it. The server runs the agent against the workspace T3 exposes. DeepSeek API context caching is
 automatic and server-side, so the client does not duplicate it with a disk cache. DeepSeek Harness ACP keeps KV reuse
 append-only while the selected route and assembled prefix stay stable; keep provider, model and tool configuration
 stable when possible.

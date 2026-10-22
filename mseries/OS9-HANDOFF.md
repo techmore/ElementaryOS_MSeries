@@ -22,7 +22,8 @@ discarded so any intermediate cursor-gap cache cannot be reused.
 
 Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness
 (`dsh --profile acp`) for execution on the paired T3 server. The DeepSeek Harness shortcut pre-fills that command,
-links its safety notice, and explains that `dsh` must already be installed on the T3 server. Harness is experimental
+links its safety notice and model-credential guide, and explains that `dsh` and a DeepSeek API key must already be
+configured on the T3 server. Harness is experimental
 and not security-audited; the agent can run model-generated commands against the workspace T3 exposes. DeepSeek's ACP
 implementation keeps its prompt append-only while the selected route and assembled prefix stay stable; its shipped ACP
 profile keeps that prefix stable for a fixed profile, provider, model, and tool roster. DeepSeek API disk context caching
