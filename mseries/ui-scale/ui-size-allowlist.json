@@ -219,14 +219,14 @@
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Dashboard.vala",
+      "file": "mseries/orchard/src/Dashboard.vala",
       "rule": "icon-px",
       "match": "pixel_size = 32",
       "count": 1,
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Indicator.vala",
+      "file": "mseries/orchard/src/Indicator.vala",
       "rule": "icon-px",
       "match": "pixel_size = 16",
       "count": 1,

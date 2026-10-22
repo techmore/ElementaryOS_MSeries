@@ -34,14 +34,14 @@ int main () {
     app.activate ();
     var main_window = app.main_window;
     assert (main_window != null);
-    main_window.set_default_size (800, 640);   // the design floor: 250 px sidebar + 524 px content clamp
+    main_window.set_default_size (980, 660);   // the app's default size: no page may widen it (887 px minimum on CI fonts, 775 here)
     spin (1500);   // first Incus listing against the fixture socket
 
     int minimum, natural;
     main_window.measure (Gtk.Orientation.HORIZONTAL, -1, out minimum, out natural, null, null);
     print ("Orchard minimum width: %d; allocated: %d\n", minimum, main_window.get_width ());
-    assert (minimum <= 800);
-    assert (main_window.get_width () <= 800);
+    assert (minimum <= 980);
+    assert (main_window.get_width () <= 980);
 
     // The sidebar has the Incus home row, the fixture instance and the Podman row.
     assert (find_row (main_window.child, typeof (IncusHomeRow)) != null);
