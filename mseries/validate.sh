@@ -160,6 +160,8 @@ check syntax 'mseries-brightness (py_compile)' \
   'python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness'
 check syntax 'assemble-iso.sh, local-build-worker.sh' \
   'bash -n assemble-iso.sh mseries/local-build-worker.sh'
+check syntax 'dev-clean/dev-clean.sh, dev-clean/install.sh (shellcheck)' \
+  'bash -n mseries/dev-clean/dev-clean.sh mseries/dev-clean/install.sh && shellcheck -S warning mseries/dev-clean/dev-clean.sh mseries/dev-clean/install.sh'
 check syntax 'transform/elementary-grow.sh, bin/elementary-mac-setup' \
   'bash -n transform/elementary-grow.sh bin/elementary-mac-setup'
 check syntax 'install-*.sh, lib-backup.sh, mkinitcpio-snippet, disable-notch' \

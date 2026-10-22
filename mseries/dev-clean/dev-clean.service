@@ -1,0 +1,8 @@
+[Unit]
+Description=Weekly developer cleanup (build output, caches, session scratch, dated Codex exports)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '%h/.local/bin/dev-clean >%h/.cache/dev-clean/last.log 2>&1'
+Nice=10
+IOSchedulingClass=idle
