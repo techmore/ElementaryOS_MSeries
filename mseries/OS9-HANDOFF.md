@@ -10777,6 +10777,13 @@ recipient/group safety and encrypted history. The Rust binary and Debian package
 are side-by-side previews; the qualified Python client and launcher are still
 the installed path until parity and owner phone acceptance.
 
+The Rust client now includes a native contact picker and direct-recipient sends
+through BlueFerry's supported API. It preserves local new-message drafts until
+the service reports the canonical thread, leaves composing available while
+offline, and adds Reply/Copy actions plus attachment and shortened-message
+indicators. ARM64 package CI passes. These are source/build receipts; live UI,
+private GUI and iPhone delivery still need acceptance.
+
 Signal remains on the signed official client. The Rust app needs an
 upstream-supported API/integration and security boundary before replacing it;
 libsignal says external client use is unsupported. Do not inspect Signal's
@@ -10784,8 +10791,9 @@ private profile/database or implement its protocol here. See
 `mseries/RUST-PANTHEON-CLIENTS.md`.
 
 Source/build checks only; no live GUI, phone, send, install, or desktop-session
-qualification was performed. Current Rust Messages gaps include new-message
-and contacts, imported pins, contact photos, link previews, full message actions,
+qualification was performed. Current Rust Messages gaps include imported pins,
+favorite layout, contact photos, safe link previews, Tapback/reaction folding,
+detailed delivery and retry feedback, remaining message actions,
 keyboard/accessibility parity, narrow layouts, localization and end-to-end
 owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
 warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
