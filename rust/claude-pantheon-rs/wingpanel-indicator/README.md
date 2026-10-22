@@ -17,8 +17,9 @@ indicator (only a phone widget), so this is the only one.
 ![indicator](../docs/screenshot-indicator.png)
 
 It reads `~/.cache/claude-pantheon-rs/status.json`, which the client writes whenever the shell or the
-provider snapshot changes (`src/status.rs`, schemaVersion 1), and watches it with a `FileMonitor`: no
-polling, no second connection to the server, nothing to do while the app is closed.
+provider snapshot changes (`src/status.rs`, schemaVersion 1), and watches it with a `FileMonitor`. A
+session D-Bus name watch marks the cached feed stale if the client exits before writing its shutdown
+snapshot. There is no polling or second connection to the server.
 
 ## Build, test, install
 

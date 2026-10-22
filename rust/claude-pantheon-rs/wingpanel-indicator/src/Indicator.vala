@@ -140,6 +140,8 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private Gtk.Box threads_box;
     private Gtk.Label freshness;
     private GLib.FileMonitor? monitor = null;
+    private uint app_watch_id = 0;
+    private bool application_running = false;
     private string status_path;
 
     public Indicator (string? path = null) {
@@ -151,6 +153,17 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             monitor.changed.connect (() => reload ());
         } catch (Error e) {
             warning ("status feed monitor: %s", e.message);
+        }
+        if (path == null) {
+            app_watch_id = GLib.Bus.watch_name (GLib.BusType.SESSION, APP_ID, GLib.BusNameWatcherFlags.NONE,
+                (connection, name, owner) => {
+                    application_running = true;
+                    reload ();
+                },
+                (connection, name) => {
+                    application_running = false;
+                    reload ();
+                });
         }
     }
 
@@ -230,15 +243,15 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
 
     public void reload () {
         var feed = Feed.load (status_path);
-        render (feed, new DateTime.now_utc ());
+        render (feed, new DateTime.now_utc (), application_running);
     }
 
     /** Fills every widget from a feed; separate from reload so the probe can render a fixture at a fixed time. */
-    public void render (Feed feed, DateTime now) {
-        bool live = feed.present && feed.connected && !feed.stale;
+    public void render (Feed feed, DateTime now, bool client_running = true) {
+        bool live = client_running && feed.present && feed.connected && !feed.stale;
         bool stale = feed.present && !live;
         int prompts = live ? feed.prompt_count () : 0;
-        string hover = hover_summary (feed, now);
+        string hover = hover_summary (feed, now, client_running);
         if (badge != null) {
             badge.label = prompts > 0 ? "%d".printf (prompts) : (live && feed.running.size > 0 ? "•" : "");
             icon.icon_name = prompts > 0 ? "dialog-question-symbolic" : APP_ID + "-symbolic";
@@ -329,10 +342,10 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             : "no status feed yet";
     }
 
-    private static string hover_summary (Feed feed, DateTime now) {
+    private static string hover_summary (Feed feed, DateTime now, bool client_running) {
         if (!feed.present) return "T3-R · Open the client to connect";
         var lines = new Gee.ArrayList<string> ();
-        bool live = feed.connected && !feed.stale;
+        bool live = client_running && feed.connected && !feed.stale;
         if (!live) {
             lines.add (feed.server == "" ? "T3-R · not connected" : "T3-R · %s · offline · last known status".printf (feed.server));
         }

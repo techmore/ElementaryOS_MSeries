@@ -5,11 +5,14 @@ using Gtk;
 using Json;
 
 public class Dock.TaskbarT3RPopover : GLib.Object {
+    private const string APP_ID = "io.github.techmore.ClaudePantheonRs";
     private Gtk.Popover popup;
     private Dock.App app;
     private GLib.Settings dock_settings = new GLib.Settings ("io.elementary.dock");
     private string status_path;
     private FileMonitor? monitor;
+    private uint app_watch_id = 0;
+    private bool application_running = false;
     private uint open_timer = 0;
     private uint close_timer = 0;
     private bool pinned = false;
@@ -184,6 +187,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             if (!enabled) popup.popdown ();
         });
 
+        app_watch_id = GLib.Bus.watch_name (GLib.BusType.SESSION, APP_ID, GLib.BusNameWatcherFlags.NONE,
+            (connection, name, owner) => {
+                application_running = true;
+                reload ();
+            },
+            (connection, name) => {
+                application_running = false;
+                reload ();
+            });
         watch_status ();
         reload ();
     }
@@ -263,18 +275,19 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         var feed = node.get_object ();
         bool connected = feed.has_member ("connected") && feed.get_boolean_member ("connected");
         bool stale = feed.has_member ("stale") && feed.get_boolean_member ("stale");
+        bool live = application_running && connected && !stale;
         string server = feed.get_string_member_with_default ("server", "");
         string selected_id = feed.get_string_member_with_default ("selectedProviderId", "");
         string updated = feed.get_string_member_with_default (connected ? "updatedAt" : "writtenAt", "");
 
         account.label = server.length > 0 ? server : "No T3 account";
-        connection.label = connected ? "Connected · live status" : server.length > 0
+        connection.label = live ? "Connected · live status" : server.length > 0
             ? "Offline · showing last synced status" : "Pair with a T3 server in Settings";
         connection.remove_css_class ("connected");
         connection.remove_css_class ("stale");
-        connection.add_css_class (connected ? "connected" : "stale");
-        render_usage (feed, selected_id, connected);
-        render_activity (feed, connected && !stale);
+        connection.add_css_class (live ? "connected" : "stale");
+        render_usage (feed, selected_id, live);
+        render_activity (feed, live);
         freshness.label = freshness_text (updated);
     }
 
@@ -290,7 +303,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         freshness.label = "No status snapshot yet";
     }
 
-    private void render_usage (Json.Object feed, string selected_id, bool connected) {
+    private void render_usage (Json.Object feed, string selected_id, bool live) {
         Json.Array? windows = null;
         if (feed.has_member ("windows") && feed.get_member ("windows").get_node_type () == Json.NodeType.ARRAY) {
             windows = feed.get_array_member ("windows");
@@ -310,7 +323,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         }
         if (selected == null) {
             usage_title.label = "No usage window reported";
-            usage_detail.label = connected ? "T3 has not reported a quota window yet." : "Usage appears after the first sync.";
+            usage_detail.label = live ? "T3 has not reported a quota window yet." : "Usage appears after the first sync.";
             usage_bar.visible = false;
             usage_reset.label = "";
             return;
@@ -318,8 +331,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         string provider = selected.get_string_member_with_default ("provider", "Provider");
         string label = selected.get_string_member_with_default ("label", "Usage");
         string reset = selected.get_string_member_with_default ("resetsAt", "");
-        usage_title.label = "%s · %s".printf (provider, label);
-        usage_detail.label = "%.0f%% used".printf (highest);
+        usage_title.label = live ? "%s · %s".printf (provider, label) : "Last known · %s · %s".printf (provider, label);
+        usage_detail.label = live ? "%.0f%% used".printf (highest) : "Last known · %.0f%% used".printf (highest);
         usage_bar.value = double.min (double.max (highest, 0.0), 100.0);
         usage_bar.visible = true;
         usage_reset.label = reset_summary (reset);
@@ -474,6 +487,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
 
     public override void dispose () {
         cancel_timers ();
+        if (app_watch_id != 0) {
+            GLib.Bus.unwatch_name (app_watch_id);
+            app_watch_id = 0;
+        }
         if (popup != null && popup.get_parent () != null) popup.unparent ();
         monitor = null;
         base.dispose ();
