@@ -133,6 +133,18 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && !state.session_locked && modifiers.logo && modifiers.shift
+                            && !modifiers.ctrl && !modifiers.alt
+                            && matches!(keysym.modified_sym().raw(),
+                                smithay::input::keyboard::xkb::keysyms::KEY_3 |
+                                smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
+                        {
+                            state.screenshot_requested.set(true);
+                            state.request_native_redraw();
+                            state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && state.gesture_animation.is_some()
                         {
                             state.cancel_active_gesture(time);

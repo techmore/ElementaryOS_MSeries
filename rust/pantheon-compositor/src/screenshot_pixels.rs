@@ -116,3 +116,73 @@ mod tests {
         assert!(rgba_image(1, 1, &[0; 3], false).is_err());
     }
 }
+
+/// Consume one explicit request; encoding and file I/O run off the render loop.
+pub fn process_request<R>(
+    renderer: &mut R,
+    state: &crate::PantheonCompositor,
+    outputs: &[smithay::output::Output],
+) where
+    R: smithay::backend::renderer::ImportAll
+        + smithay::backend::renderer::ImportMem
+        + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
+        + ExportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    use std::sync::atomic::Ordering;
+    if !state.screenshot_requested.replace(false) {
+        return;
+    }
+    if state.session_locked || state.screenshot_busy.swap(true, Ordering::AcqRel) {
+        return;
+    }
+    let Some(home) = std::env::var_os("HOME") else {
+        state.screenshot_busy.store(false, Ordering::Release);
+        tracing::warn!("Screenshot unavailable: HOME is unset");
+        return;
+    };
+    let directory = std::path::PathBuf::from(home).join("Downloads/Screenshots");
+    let mut images = Vec::new();
+    let mut pixels = 0_u64;
+    for output in outputs {
+        let result = compose_output(renderer, state, output);
+        match result {
+            Ok(image) => {
+                pixels += u64::from(image.width()) * u64::from(image.height());
+                if pixels > MAX_PIXELS as u64 {
+                    state.screenshot_busy.store(false, Ordering::Release);
+                    tracing::warn!("Screenshot desktop exceeds capture limit");
+                    return;
+                }
+                images.push(image);
+            }
+            Err(error) => {
+                state.screenshot_busy.store(false, Ordering::Release);
+                tracing::warn!(%error, "Screenshot composition failed");
+                return;
+            }
+        }
+    }
+    let busy = state.screenshot_busy.clone();
+    let worker = std::thread::Builder::new()
+        .name("screenshot-save".into())
+        .spawn(move || {
+            let mut saved = false;
+            for image in images {
+                match crate::screenshot_save::save_png(&directory, &image) {
+                    Ok(_) => saved = true,
+                    Err(error) => tracing::warn!(%error, "Screenshot save failed"),
+                }
+            }
+            if saved {
+                let _ = std::process::Command::new("canberra-gtk-play")
+                    .args(["-i", "camera-shutter"])
+                    .status();
+            }
+            busy.store(false, Ordering::Release);
+        });
+    if let Err(error) = worker {
+        state.screenshot_busy.store(false, Ordering::Release);
+        tracing::warn!(%error, "Could not start screenshot worker");
+    }
+}
