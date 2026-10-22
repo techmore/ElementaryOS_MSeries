@@ -1,0 +1,65 @@
+{
+  "scope": "r5 normal source/test recipe replay; scheduler matches twelve-case positive run; full r5 kernel build pending",
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "experimental_patches": {},
+  "test_patches": {
+    "0003-scheduler-lifetime-kunit.patch": "ff763d7c7855329bb9a6a0cbd8b7607efd4a61364cbd87a90d56c50573d2ecd5"
+  },
+  "kunit_config_sha256": "128c528c0bf285fe32b12aa3e59a11944c4aadd1e19348cb8e1140e5e033eaae",
+  "compatibility_patches": {
+    "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+    "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b",
+    "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
+    "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
+    "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
+    "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55"
+  },
+  "historical_compatibility_version": null,
+  "scheduler_test_source_sha256": "eba6579158cfd04a8c2a86d83ca86d2839c8f4c1a40996967a3077914758275a",
+  "normal_kernel_package_modified": false,
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T04:15:55.797441+00:00",
+  "package_version": "7.1.13+elementary.m4.gravity1-5",
+  "matches_twelve_case_test_source": true,
+  "historical_r3_r4_source_and_patch_gates_rechecked": true,
+  "normal_r5_source_gate_rechecked_after_reversing_only_test_patch": true,
+  "downloaded_r3_package_recheck": {
+    "source_commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "package_sha256": "60ff6803c34f01c733950cf13ddeec785047e638809fd6338c6fdccbbe801a5c",
+    "package_version": "7.1.13+elementary.m4.gravity1-3",
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4"
+    },
+    "module_count": 1598,
+    "checks": "Image/config/DTB hashes, 16 KiB header, J773g, ELF/vermagic, module dependencies, no package hooks",
+    "scope": "fresh candidate package inspection; no boot or hardware tests",
+    "factory_promotion": false,
+    "hardware_validated": false
+  },
+  "full_kernel_build_passed": false,
+  "historical_r4_plus_complete_stages_replay": {
+    "scope": "KUnit test-source preparation only; no compile/run/hardware result",
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "experimental_patches": {
+      "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
+      "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
+      "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
+      "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55"
+    },
+    "test_patches": {
+      "teardown-kunit.patch": "ff763d7c7855329bb9a6a0cbd8b7607efd4a61364cbd87a90d56c50573d2ecd5"
+    },
+    "kunit_config_sha256": "128c528c0bf285fe32b12aa3e59a11944c4aadd1e19348cb8e1140e5e033eaae",
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+      "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+    },
+    "historical_compatibility_version": "7.1.13+elementary.m4.gravity1-4",
+    "scheduler_test_source_sha256": "eba6579158cfd04a8c2a86d83ca86d2839c8f4c1a40996967a3077914758275a",
+    "normal_kernel_package_modified": false,
+    "hardware_validated": false
+  },
+  "historical_and_current_test_source_identical": true
+}

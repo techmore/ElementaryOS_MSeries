@@ -18,11 +18,13 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--archive', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 choice = parser.add_mutually_exclusive_group()
-choice.add_argument('--experimental-owner', action='store_true', help='unpromoted allocation-owner candidate and seven-case test recipe')
-choice.add_argument('--experimental-module', action='store_true', help='unpromoted owner plus callback module/work-drain candidate and eight-case test recipe')
-choice.add_argument('--experimental-alias', action='store_true', help='unpromoted owner/module/disjoint-timeout candidate and nine-case test recipe')
-choice.add_argument('--experimental-teardown', action='store_true', help='unpromoted owner/module/timeout/final-cancellation candidate and twelve-case test recipe')
+choice.add_argument('--experimental-owner', action='store_true', help='historical r4 plus allocation-owner seven-case recipe')
+choice.add_argument('--experimental-module', action='store_true', help='historical r4 plus owner/module eight-case recipe')
+choice.add_argument('--experimental-alias', action='store_true', help='historical r4 plus owner/module/timeout nine-case recipe')
+choice.add_argument('--experimental-teardown', action='store_true', help='historical r4 plus complete twelve-case scheduler recipe')
 args = parser.parse_args()
+historical_layer = any((args.experimental_owner, args.experimental_module, args.experimental_alias, args.experimental_teardown))
+compatibility_version = '7.1.13+elementary.m4.gravity1-4' if historical_layer else None
 if args.output.exists() or kernel.digest(args.archive) != kernel.ARCHIVE_SHA256:
     raise ValueError('new output and pinned kernel archive required')
 args.output.mkdir(parents=True)
@@ -33,10 +35,10 @@ with tarfile.open(args.archive) as archive:
         raise ValueError('unexpected kernel source root')
     archive.extractall(args.output, filter='data')
 source = (args.output / ('linux-' + kernel.COMMIT)).resolve()
-for directory, manifest in [kernel.packaging_patches(), kernel.compatibility_patches()]:
+for directory, manifest in [kernel.packaging_patches(), kernel.compatibility_patches(compatibility_version)]:
     for name in manifest:
         subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source), '-i', str(directory / name)], check=True)
-kernel.source_patch_gate(source)
+kernel.source_patch_gate(source, compatibility_version)
 directory = HERE / 'gravity/testing'
 manifest_name = 'manifest.json'
 experimental = {}
@@ -71,7 +73,7 @@ shutil.copy2(HERE / 'gravity/testing/kunit.config', args.output / 'kunit.config'
     'scope': 'KUnit test-source preparation only; no compile/run/hardware result',
     'commit': kernel.COMMIT, 'source_archive_sha256': kernel.ARCHIVE_SHA256,
     'experimental_patches': experimental,
-    'test_patches': manifest, 'kunit_config_sha256': kernel.digest(args.output / 'kunit.config'), 'compatibility_patches': kernel.compatibility_patches()[1],
+    'test_patches': manifest, 'kunit_config_sha256': kernel.digest(args.output / 'kunit.config'), 'compatibility_patches': kernel.compatibility_patches(compatibility_version)[1], 'historical_compatibility_version': compatibility_version,
     'scheduler_test_source_sha256': kernel.digest(source / 'rust/kernel/drm/sched.rs'),
     'normal_kernel_package_modified': False, 'hardware_validated': False,
 }, indent=2) + '\n')

@@ -1,0 +1,84 @@
+Subject: [PATCH] drm: retain callback module and permanently drain scheduler work
+Origin: https://github.com/aurora-silicon/linux/commit/c163a8df57f986f9cb2f3c3275a1dd2b627d7dba
+
+Port only shared scheduler/module and DRM fops ownership after the owner split.
+Gravity DRM PRIME copies the fops owner into dma_buf_export_info. M4 and legacy
+backends declare their module; G17 and its cleanup queue are not imported.
+
+--- a/drivers/gpu/drm/scheduler/sched_main.c
++++ b/drivers/gpu/drm/scheduler/sched_main.c
+@@ -1434,0 +1435,5 @@
++	/* Finalization cannot restart. Prevent completion callbacks from
++	 * queueing either work item after cancellation has returned.
++	 */
++	disable_work_sync(&sched->work_run_job);
++	disable_work_sync(&sched->work_free_job);
+--- a/drivers/gpu/drm/scheduler/sched_entity.c
++++ b/drivers/gpu/drm/scheduler/sched_entity.c
+@@ -26,0 +27 @@
++#include <linux/module.h>
+@@ -181,0 +183 @@
++	struct module *owner = job->sched->ops->owner;
+@@ -215,0 +218,2 @@
++	/* free_job may have released both job and scheduler allocation. */
++	module_put(owner);
+@@ -252,0 +257,3 @@
++
++		/* The caller still retains backend code across entity destruction. */
++		__module_get(job->sched->ops->owner);
+--- a/include/drm/gpu_scheduler.h
++++ b/include/drm/gpu_scheduler.h
+@@ -549,0 +550,6 @@
++
++	/**
++	 * @owner: Callback module, retained by the caller through entity
++	 * destruction. Detached kill work pins it until free_job returns.
++	 */
++	struct module *owner;
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -44,0 +45,3 @@
++    /// Callback module, held by the caller through entity destruction.
++    const MODULE: Option<&'static crate::ThisModule> = None;
++
+@@ -364,0 +368,4 @@
++        owner: match T::MODULE {
++            Some(module) => module.as_ptr(),
++            None => core::ptr::null_mut(),
++        },
+--- a/rust/kernel/drm/driver.rs
++++ b/rust/kernel/drm/driver.rs
+@@ -124,0 +125,3 @@
++    /// Module whose code is used by open DRM files and exported DMA buffers.
++    const MODULE: Option<&'static crate::ThisModule> = None;
++
+--- a/rust/kernel/drm/device.rs
++++ b/rust/kernel/drm/device.rs
+@@ -114 +114 @@
+-    const GEM_FOPS: bindings::file_operations = drm::gem::create_fops();
++    const GEM_FOPS: bindings::file_operations = drm::gem::create_fops(T::MODULE);
+--- a/rust/kernel/drm/gem/mod.rs
++++ b/rust/kernel/drm/gem/mod.rs
+@@ -472 +472 @@
+-pub(super) const fn create_fops() -> bindings::file_operations {
++pub(super) const fn create_fops(module: Option<&'static crate::ThisModule>) -> bindings::file_operations {
+@@ -477 +477,4 @@
+-    fops.owner = core::ptr::null_mut();
++    fops.owner = match module {
++        Some(module) => module.as_ptr(),
++        None => core::ptr::null_mut(),
++    };
+--- a/drivers/gpu/drm/asahi/g16_drm.rs
++++ b/drivers/gpu/drm/asahi/g16_drm.rs
+@@ -137,0 +138 @@
++    const MODULE: Option<&'static kernel::ThisModule> = Some(&crate::THIS_MODULE);
+@@ -1232,0 +1234 @@
++    const MODULE: Option<&'static kernel::ThisModule> = Some(&crate::THIS_MODULE);
+--- a/drivers/gpu/drm/asahi/queue/mod.rs
++++ b/drivers/gpu/drm/asahi/queue/mod.rs
+@@ -243,0 +244 @@
++    const MODULE: Option<&'static kernel::ThisModule> = Some(&crate::THIS_MODULE);
+--- a/drivers/gpu/drm/asahi/driver.rs
++++ b/drivers/gpu/drm/asahi/driver.rs
+@@ -69,0 +70 @@
++    const MODULE: Option<&'static kernel::ThisModule> = Some(&crate::THIS_MODULE);

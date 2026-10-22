@@ -1,5 +1,9 @@
 # Unpromoted scheduler allocation-owner candidate
 
+Current status: these changes are selected unchanged in the revision-5 research
+compatibility recipe. This directory reproduces the historical r4-base stage;
+the scoped results and qualification limits below describe that staged run.
+
 Derived from Aurora 7ba04b6 after the current revision-4 compatibility recipe.
 Scheduler handles and entities own finalization; each job retains only the
 allocation. This prevents deferred dependency cleanup from using freed scheduler
@@ -23,5 +27,5 @@ Rust 1.99 rust-src, clang 21, two QEMU vCPUs, no network/storage and rust_drm_sc
 filter. The optional negative patch is applied only for the one deferred-lifetime
 case in another test run. It is never selected automatically.
 
-Normal kernel/package and image manifests do not select this candidate.
+The directory is historical; its identical patch is now in r5 compatibility.
 Mutable callback aliasing and module callback/code lifetime remain open.

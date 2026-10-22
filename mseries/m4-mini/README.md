@@ -16,7 +16,9 @@ Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
 Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
 pass. Full revision-4 Image/modules/DTBs/package compilation is now running;
 no scheduler-fixed package has replaced the reviewed baseline image inputs.
-Allocation ownership, callback aliasing and native hardware remain unqualified.
+The combined revision-5 research recipe now selects all six reviewed scheduler
+fixes. Actual M4/legacy objects compile and twelve QEMU cases pass; full r5
+compilation and actual module unload remain open. Native M4 is unqualified.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the

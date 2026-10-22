@@ -1,0 +1,64 @@
+Subject: [PATCH] rust: drm: retain scheduler allocation for deferred jobs
+Origin: https://github.com/aurora-silicon/linux/commit/7ba04b60d2caf298bb9119b359629feedfec38c5
+
+Adapt allocation/owner separation to Gravity after revision-4 compatibility.
+Scheduler stop/fini order is preserved pending separate teardown review.
+
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -13,0 +14 @@
++    types::Opaque,
+@@ -131,0 +133,3 @@
++    // Deferred entity cleanup may still use job->sched after finalization.
++    // Jobs keep the allocation alive, but never keep its owner alive.
++    _scheduler: Arc<SchedulerInner<T>>,
+@@ -245 +249 @@
+-    sched: Arc<SchedulerInner<T>>,
++    sched: Arc<SchedulerOwner<T>>,
+@@ -271 +275 @@
+-        let mut sched_ptr = &sched.0.sched as *const _ as *mut _;
++        let mut sched_ptr = sched.0.allocation.sched.get();
+@@ -314,0 +319,5 @@
++        // SAFETY: The job allocation is writable and this initializes its reference.
++        unsafe {
++            addr_of_mut!((*job.as_mut_ptr())._scheduler).write(self.0.sched.allocation.clone())
++        };
++
+@@ -322 +331 @@
+-    sched: bindings::drm_gpu_scheduler,
++    sched: Opaque<bindings::drm_gpu_scheduler>,
+@@ -326 +335,6 @@
+-impl<T: JobImpl> Drop for SchedulerInner<T> {
++/// Scheduler handles/entities own finalization; jobs only own the allocation.
++struct SchedulerOwner<T: JobImpl> {
++    allocation: Arc<SchedulerInner<T>>,
++}
++
++impl<T: JobImpl> Drop for SchedulerOwner<T> {
+@@ -330,2 +344,2 @@
+-        unsafe { bindings::drm_sched_stop(&mut self.sched, core::ptr::null_mut()) };
+-        unsafe { bindings::drm_sched_fini(&mut self.sched) };
++        unsafe { bindings::drm_sched_stop(self.allocation.sched.get(), core::ptr::null_mut()) };
++        unsafe { bindings::drm_sched_fini(self.allocation.sched.get()) };
+@@ -341 +355 @@
+-pub struct Scheduler<T: JobImpl>(Arc<SchedulerInner<T>>);
++pub struct Scheduler<T: JobImpl>(Arc<SchedulerOwner<T>>);
+@@ -363,0 +378,4 @@
++        // Allocate before C initialization: nothing may fail after it succeeds.
++        let owner: UniqueArc<MaybeUninit<SchedulerOwner<T>>> = UniqueArc::new_uninit(GFP_KERNEL)?;
++        // SAFETY: sched uniquely owns writable, pinned storage.
++        let sched_ptr = Opaque::cast_into(unsafe { addr_of!((*sched.as_mut_ptr()).sched) });
+@@ -370 +388 @@
+-            core::ptr::write_bytes(addr_of_mut!((*sched.as_mut_ptr()).sched), 0, 1);
++            core::ptr::write_bytes(sched_ptr, 0, 1);
+@@ -390 +408 @@
+-                addr_of_mut!((*sched.as_mut_ptr()).sched),
++                sched_ptr,
+@@ -396,3 +414,4 @@
+-        Ok(Scheduler(unsafe { sched.assume_init() }.into()))
+-    }
+-}
++        let allocation = unsafe { sched.assume_init() }.into();
++        Ok(Scheduler(owner.write(SchedulerOwner { allocation }).into()))
++    }
++}

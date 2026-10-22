@@ -1,5 +1,9 @@
 # Unpromoted disjoint timeout/submission state candidate
 
+Current status: these changes are selected unchanged in the revision-5 research
+compatibility recipe. This directory reproduces the historical r4-base stage;
+the scoped results and qualification limits below describe that staged run.
+
 Derived from Aurora 0f89327 after revision-4 compatibility, owner and module
 candidates. Job stores independently owned inner and TimeoutData. Submission,
 prepare and cancellation borrow only inner; timeout borrows only TimeoutData.
@@ -23,6 +27,6 @@ network/storage. The earlier initialization, lifetime and work-disable negative
 controls remain separate evidence; no claim is made that older aliasing code
 must fail a functional test rather than violating a reference contract.
 
-Normal kernel/package/image manifests still select revision 4. Final teardown
+The staged run used revision 4; current research packaging selects revision 5. Final teardown
 cancellation/accounting and actual loadable-module lifetime need further review
 before the combined candidate becomes a packaged full kernel build.

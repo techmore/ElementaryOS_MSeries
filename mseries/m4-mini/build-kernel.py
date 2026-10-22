@@ -31,18 +31,22 @@ def packaging_patches():
 
 
 
-def compatibility_patches():
+def compatibility_patches(version=None):
     directory = HERE / 'gravity/compatibility'
-    manifest = json.loads((directory / 'manifest.json').read_text())
+    manifest = (json.loads((directory / 'manifest.json').read_text()) if version is None else
+                json.loads((directory / 'package-versions.json').read_text())[version])
     for name, expected in manifest.items():
         if Path(name).name != name or digest(directory / name) != expected:
             raise ValueError('elementary compatibility patch checksum mismatch')
     return directory, manifest
 
 
-def source_patch_gate(source):
+def source_patch_gate(source, compatibility_version=None):
     expected = json.loads((HERE / 'gravity/patches/resulting-files.json').read_text())
-    expected.update(json.loads((HERE / 'gravity/compatibility/resulting-files.json').read_text()))
+    directory = HERE / 'gravity/compatibility'
+    compatibility = (json.loads((directory / 'resulting-files.json').read_text()) if compatibility_version is None else
+                     json.loads((directory / 'resulting-files-by-version.json').read_text())[compatibility_version])
+    expected.update(compatibility)
     for name, value in expected.items():
         if digest(source / name) != value:
             raise ValueError('matched ARM64 packaging exports required: ' + name)

@@ -1,9 +1,17 @@
-# Scheduler integration provenance
+# Historical staged scheduler review recipes
 
-The retained 0002 prototype is byte-identical to the compatibility patch now
-selected for package revision 4. Actual M4 driver/Rust core/C scheduler objects
-compile and six associated-constant API tests pass on generic ARM64 QEMU.
-This replaces the prior pending status in retention-source-preflight.json,
-which is preserved as the historical source-preparation record.
-Full kernel/package build and hardware qualification remain separate gates.
-Allocation-owner and mutable timeout-aliasing reviews remain open.
+Owner, module, alias and teardown changes are now copied unchanged into r5
+compatibility. These directories preserve staged provenance and reproduction;
+they are not additional patches to apply on the r5 default.
+
+| Option / layer | Frozen base | QEMU cases |
+| --- | --- | --- |
+| --experimental-owner | r4 + owner | 7 |
+| --experimental-module | r4 + owner/module | 8 |
+| --experimental-alias | r4 + owner/module/alias | 9 |
+| --experimental-teardown | r4 + all four layers | 12 |
+
+Default preparation selects r5 and all twelve cases. Actual M4/legacy objects
+compile and source replay matches the tests. Full r5 packaging, actual module
+unload and native M4 remain open. The retained 0002 retention prototype is
+byte-identical to compatibility 0002.

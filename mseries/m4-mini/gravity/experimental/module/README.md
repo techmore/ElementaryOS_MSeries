@@ -1,5 +1,9 @@
 # Unpromoted callback module and work lifetime candidate
 
+Current status: these changes are selected unchanged in the revision-5 research
+compatibility recipe. This directory reproduces the historical r4-base stage;
+the scoped results and qualification limits below describe that staged run.
+
 Apply after revision-4 compatibility and the experimental owner split. This
 ports the shared parts of Aurora c163a8d: scheduler ops identify their callback
 module, entity-kill work pins it before leaving entity ownership and releases
@@ -29,5 +33,5 @@ matching Rust 1.99 rust-src/clang21, two QEMU vCPUs and no network/storage.
 The optional negative patch is selected manually for only the finalization
 state case; it never enters normal manifests.
 
-Normal kernel/package/image builds still select revision 4. Mutable callback
+The staged run used revision 4; current research packaging selects revision 5. Mutable callback
 aliasing, actual module unload and firmware/native teardown remain open.

@@ -1,19 +1,26 @@
 # Elementary M4 compatibility backports
 
-These adaptations are separate from the unchanged Gravity packaging exports.
-0001 ports scheduler initialization from Aurora 6c2d17f/0d1871c.
-0002 ports opt-in terminal-timeout retention from Aurora 0f89327. The Rust
-JobImpl contract defaults to false; only M4 SubmissionJob opts in. Its timeout
-marks failure and wakes cleanup without freeing the job. C/reset and legacy
-Rust backends retain their defaults. Reinsertion happens after timedout_job
-returns, queues completed jobs for cleanup and leaves unfinished jobs reachable
-by final cancellation without restarting the terminal watchdog.
+These public-source adaptations are separate from the unchanged Gravity ARM64
+packaging exports. The current research package is revision 5:
 
-The actual Rust core, C scheduler and M4 driver objects compile with 0002;
-six generic ARM64 QEMU cases pass through the associated-constant API. Package
-revision 4 selects both fixes; full Image/modules/DTBs build is still required.
-Revision 3 remains separately identified in package-versions.json, so its
-initialization-only receipt is never interpreted as containing retention.
+| Patch | Purpose / upstream |
+| --- | --- |
+| 0001 | Initialize scheduler storage; Aurora 6c2d17f / 0d1871c |
+| 0002 | Retain terminal-timeout M4 jobs; Aurora 0f89327 |
+| 0003 | Separate finalization owner from job-held allocation; Aurora 7ba04b6 |
+| 0004 | Pin callback modules, propagate DRM fops owner, permanently drain work; Aurora c163a8d |
+| 0005 | Independent timeout state and field-only callback borrows; Aurora 0f89327 |
+| 0006 | Parent-synchronized cancellation, exact accounting and paired stop removal; Aurora c9be905 / d1ebc54, current ed55042 callback |
 
-Newer allocation-owner and timeout-aliasing refactors remain separate open
-reviews. These changes do not establish native M4 GPU or firmware stability.
+Actual M4 and legacy Asahi driver objects, Rust core and both C scheduler
+objects compile with the combined recipe. Twelve generic ARM64 QEMU cases pass;
+expected-failure controls cover initialization, allocation reference, work disable
+and the old cancellation accounting. Fresh default KUnit preparation reproduces
+the tested scheduler source. Full r5 kernel building, real module lifetime and
+native M4 firmware/hardware qualification remain open.
+
+package-versions.json binds r3 (initialization), r4 (initialization/retention) and
+r5 (all six changes) to distinct immutable patch sets. resulting-files-by-version
+preserves historical source gates too. No older package is credited with newer
+fixes. Historical experimental recipes start from r4; normal preparation selects
+all six current patches and the twelve-case test recipe.

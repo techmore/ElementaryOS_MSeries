@@ -16,7 +16,9 @@ Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
 Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
 pass. Full revision-4 Image/modules/DTBs/package compilation is now running;
 no scheduler-fixed package has replaced the reviewed baseline image inputs.
-Allocation ownership, callback aliasing and native hardware remain unqualified.
+The combined revision-5 research recipe now selects all six reviewed scheduler
+fixes. Actual M4/legacy objects compile and twelve QEMU cases pass; full r5
+compilation and actual module unload remain open. Native M4 is unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
@@ -1208,3 +1210,17 @@ evidence. Fresh --experimental-teardown preparation matches the tested source.
 Normal manifests remain research kernel revision 4; a full combined candidate
 build and actual module-unload exercise remain open. Revision-4 full build
 39715540751 is still live. ISO, installer import and native M4 remain unqualified.
+
+2026-10-22 combined kernel recipe: revision 5 now selects initialization, M4
+retention, allocation owner, callback module/DRM fops ownership, permanent work
+drain, disjoint timeout state and matched final cancellation/accounting.
+The six patches are unchanged from the compiled/12-case-tested candidates.
+Fresh default preparation replays them without fuzz and reproduces the exact
+tested scheduler. Normal-source gates also pass with only the test patch
+reversed. Frozen r3/r4 source and patch gates pass, and the downloaded r3 package
+still validates against its own initialization-only manifest. Historical staged
+options explicitly use r4, avoiding duplicate application on the new default.
+Full r5 Image/modules/DTBs/package compilation is the next gate; r4 run
+39715540751 remains live. Reviewed image inputs stay r2 until a newer full
+package passes download checks. Module unload, ISO, installer import and native
+M4 remain unqualified. No installed host component changed.

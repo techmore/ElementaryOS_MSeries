@@ -1,5 +1,9 @@
 # Unpromoted matched final cancellation candidate
 
+Current status: these changes are selected unchanged in the revision-5 research
+compatibility recipe. This directory reproduces the historical r4-base stage;
+the scoped results and qualification limits below describe that staged run.
+
 After revision-4 compatibility and owner/module/disjoint-timeout layers, port
 Aurora c9be905 accounting and d1ebc54 stop removal, using the parent-synchronized
 field-only cancellation callback from ed55042. Removing a hardware parent
@@ -25,5 +29,5 @@ prepare-scheduler-kunit.py --experimental-teardown selects all four experimental
 layers and teardown-kunit.patch from a pinned archive. Its source is byte-identical
 to the twelve-case run. The optional negative patch is run only with filter
 rust_drm_sched.teardown_accounts_unfinished_parent_once, in a separate QEMU run.
-Normal kernel/package/image recipes remain revision 4. Actual module unload,
+The staged run used revision 4; current research packaging selects revision 5. Actual module unload,
 full combined Image/modules/DTBs/package compilation and native M4 remain open.
