@@ -17,13 +17,17 @@ window/display radius has not been matched to the physical panel; owner visual
 qualification remains open. See [Rust Pantheon SDK](RUST-PANTHEON-SDK.md) and
 [Repository Topology](REPOSITORY-TOPOLOGY.md).
 
-## T3 follows the active Pantheon theme — 2026-10-22
+## T3 theme integration and Pantheon-R audit status — 2026-10-22
 
 T3 visual replies now resolve their light/dark surface, foreground and accent
 from the active GTK theme when a WebView is opened. Unstyled page text uses the
 system UI font. The unread activity dot uses the existing GTK `@accent_color`
 style instead of a fixed blue. Provider identity dots retain their own colors.
 Theme lookup adds no polling and is paid only when opening a visual reply.
+Regular Pantheon/elementary defaults are the design reference; the Pantheon-R
+theme has not had a full parity audit. Reading current GTK settings respects
+user theme choices but does not establish that Pantheon-R itself matches those
+defaults. Light/dark and owner visual checks remain open.
 
 `cargo fmt --check --manifest-path rust/Cargo.toml -p claude-pantheon-rs`,
 `cargo clippy --locked --manifest-path rust/Cargo.toml -p claude-pantheon-rs
@@ -65,17 +69,18 @@ changed phone IDs clear the old view state, and stale asynchronous pin loads are
 ignored. A direct jump to Rust before the Python migration can require
 re-importing the snapshot.
 
-BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) is open and
-adds the optional UUID without changing Messages API v2. Its branch has no
-reported checks yet. Until that change is merged and released, older status
-replies omit the UUID and import actions explain that BlueFerry must be updated.
+BlueFerry [PR #277](https://github.com/erikwb/blueferry/pull/277) merged as
+`ca2cc6b` on 2026-10-19, adding the optional UUID without changing Messages API
+v2. Older installed BlueFerry versions still omit the UUID until a release
+containing the merged change is installed, so import actions explain that
+BlueFerry must be updated.
 Code commit `b3ed900b` is on [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
-Its current-head checks pass: Rust Messages formatting/lint, ARM64 build and
-package, desktop metadata, SDK/System Monitor, Software Updates, Disk Space,
+The checks at that revision passed: Rust Messages formatting/lint, ARM64 build
+and package, desktop metadata, SDK/System Monitor, Software Updates, Disk Space,
 native pin import/keyring, Apple pin readers, M-series wiring and plugin
 packages. An earlier commit failed strict Clippy; `b3ed900b` fixes those three
 findings. Local formatting, compile, strict Clippy, Python syntax compilation
-and `git diff --check` also pass. No local test suite or GUI was run. Live
+and `git diff --check` also passed. No local test suite or GUI was run. Live
 keyring/UI behavior and owner-phone acceptance remain open. The PR stays draft.
 
 ## Rust Messages local timestamp parity — 2026-10-22
