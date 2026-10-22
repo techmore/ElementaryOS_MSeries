@@ -112,13 +112,17 @@ public class Orchard : Gtk.Application {
         // GTK animates the text cursor's fade with a frame-clock tick for ten seconds after every
         // keystroke, which repaints the window continuously. A steady cursor keeps idle at 0 % CPU.
         gtk_settings.gtk_cursor_blink = false;
-        var granite_settings = Granite.Settings.get_default ();
-        gtk_settings.gtk_application_prefer_dark_theme =
-            granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
-        granite_settings.notify["prefers-color-scheme"].connect (() => {
+        // Granite.Settings reads the colour-scheme preference through AccountsService; without the
+        // service (CI, a bare session) it logs a critical, so the hookup is skipped there.
+        if (accounts_service_available ()) {
+            var granite_settings = Granite.Settings.get_default ();
             gtk_settings.gtk_application_prefer_dark_theme =
                 granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
-        });
+            granite_settings.notify["prefers-color-scheme"].connect (() => {
+                gtk_settings.gtk_application_prefer_dark_theme =
+                    granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+            });
+        }
 
         var provider = new Gtk.CssProvider ();
         provider.load_from_resource ("/com/github/techmore/orchard/style.css");
@@ -163,6 +167,26 @@ public class Orchard : Gtk.Application {
         var quit = new SimpleAction ("quit", null);
         quit.activate.connect (() => window.close ());
         add_action (quit);
+    }
+
+    private static bool accounts_service_available () {
+        try {
+            var bus = Bus.get_sync (BusType.SYSTEM);
+            foreach (var method in new string[] { "NameHasOwner", "ListActivatableNames" }) {
+                var reply = bus.call_sync ("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", method,
+                    method == "NameHasOwner" ? new Variant ("(s)", "org.freedesktop.Accounts") : null, null, DBusCallFlags.NONE, 1000);
+                if (method == "NameHasOwner") {
+                    bool owned;
+                    reply.get ("(b)", out owned);
+                    if (owned) return true;
+                } else {
+                    foreach (var name in (string[]) reply.get_child_value (0)) if (name == "org.freedesktop.Accounts") return true;
+                }
+            }
+        } catch (Error e) {
+            // no system bus at all
+        }
+        return false;
     }
 
     protected override void activate () {
