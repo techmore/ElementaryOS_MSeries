@@ -28,8 +28,8 @@ eight allocation-helper cases and isolated software rendering.
 Selected Mesa stays revision 4: a further diagnostic finds that the advertised
 external sampler is rejected by the native Apple9 compiler while its matching
 2D reference compiles. An unselected normalization candidate produces identical
-basic-sample machine code, but query/fetch/projective, full-driver and EGL import
-validation remain open. [Finding](receipts/2026-10-22-mesa-external-sampler-finding.json),
+machine code for six constant-coordinate operations including query/fetch/projective.
+Dynamic inputs, malformed controls, full-driver and EGL import validation remain open. [Finding](receipts/2026-10-22-mesa-external-sampler-finding.json),
 [basic candidate](receipts/2026-10-22-mesa-external-basic-candidate.json).
 Full desktop ISO, native GPU/unload, installer and owner dual-boot acceptance
 remain unqualified.

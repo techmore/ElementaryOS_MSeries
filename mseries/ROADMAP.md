@@ -4502,3 +4502,14 @@ and 2026-10-22-mesa-external-basic-candidate.json in mseries/m4-mini/receipts.
 The owner's M4 is unavailable; public-source preparation continues. Native 10Gb,
 HDMI, macOS27/Recovery and dual boot remain unvalidated. Kernel R5 stays selected;
 the last complete raw image still contains kernel R2 and Mesa4.
+
+Follow-up: six constant-coordinate actual compiler comparisons now pass for the
+unselected external-sampler candidate: nearest, linear, bias, projective, texel
+fetch and size query. External and matching 2D binaries are identical in each
+case (282 bytes sampling, 114 fetch, 150 query). A reproducible runner/fixture and
+2026-10-22-mesa-external-six-operation-matrix.json retain commands and hashes.
+The runner requires an explicitly supplied candidate native object and does not
+build/authenticate it; the receipt binds the tested object separately from the
+restored source tree. Dynamic coordinates, malformed controls, full-driver build,
+new immutable package revision and EGL/GPU qualification remain open. Mesa5 is
+still not selected for image inputs.

@@ -25,8 +25,12 @@ files were restored; no cached compiler object or full driver was replaced.
 
 This is not complete external-image support. The ESSL3 contract includes ordinary
 and projective sampling, textureSize and texelFetch, with nearest/linear filtering
-and the API's external-sampler restrictions. The complete operation matrix,
-malformed-input controls, full driver rebuild, versioned recipe/package and native
+and the API's external-sampler restrictions. Six constant-coordinate compiler comparisons now pass for nearest, linear, bias,
+projective sampling, texel fetch and size query, with exact external/2D binary
+equality. Run testing/mesa/test-external-sampler-matrix.py with --mesa-workspace,
+--native-object (the separately compiled candidate object) and --output. This
+runner does not build or authenticate that supplied object; its receipt hashes it.
+Dynamic inputs, malformed-input controls, full driver rebuild, versioned recipe/package and native
 EGL/DRM import, YUV, synchronization and GPU output remain open. Do not substitute
 only the passing basic sample for those requirements.
 
