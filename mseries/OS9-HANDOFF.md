@@ -2477,6 +2477,21 @@ receipt predates this change; it does not validate speaker protection. Next:
 fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
 payloads, then install and boot that exact image in an isolated VM. Physical
 Apple boot and speaker acceptance remain open.
+## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
+
+Owner plugged the WD22TB4 on the running wip3 trial kernel; no picture. Dock USB/Thunderbolt fine; `28cc00000` (dcpext1) never
+answered `validate DPTX target` (six attempts), its release then timed out too, and replugging the same port failed again
+(`DP tunnel setup failed: -110`). Moving the dock to another USB-C port routed it to `289c00000` and gave 1080p/60 at once.
+Full timeline, what is and is not shown: `mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md`.
+
+- **Cause (partly shown).** The pinned source keeps a Thunderbolt route owned when its release is refused; a timeout is
+  treated as a refusal, so the port stays on the dead pipeline. Why `28cc00000` was picked first and why it went silent: not shown.
+- **Draft.** wip4 candidate (`unified72/series.json` revision 5, `patches/0002-...`). Build-only: patch applies on the pinned
+  files, routing logic exercised in userspace; kernel build, KUnit and every boot are open. wip3 untouched, nothing staged.
+- **Workaround on wip3.** Use a different USB-C port; reboot clears a pinned port.
+- **Side note.** Audio blips on dock plug/unplug coincide with `mseries-power` re-applying the CPU profile on each AC flip; one logged
+  ALSA underrun at the first plug. Not investigated further.
+- **Next.** CI native build of the PR, then owner decides on unarmed staging; design the same-plug re-request on the Thunderbolt side.
 
 ## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
 
