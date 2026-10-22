@@ -22,16 +22,17 @@ be replied to. Connect iPhone and Advanced BlueFerry remain available from the
 Rust app menu and its backend-unavailable screen. Changes are in draft
 [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
 
-At `e15f9272`, local formatting, locked compile, 25 SDK/Messages unit tests,
+At `28dda253`, local formatting, locked build, 25 SDK/Messages unit tests,
 strict Clippy and `git diff --check` pass. SDK text scaling now shares its two
 GTK settings subscriptions across live widgets and prunes dropped callbacks,
 so rebuilt views do not leave per-widget handlers attached to global settings.
-The Rust Messages menu and unavailable-backend state now restore Connect iPhone
-and Advanced BlueFerry launch actions from the qualified Python client. The
-updated app compiles, and the same 25 SDK/Messages tests plus strict Clippy pass.
-GitHub Actions are running or queued; no failures were reported in the latest
-snapshot. Live phone catch-up, read-failure feedback, pin/keyring operation,
-owner-session visual and keyboard/accessibility review remain open. BlueFerry
+The Rust Messages menu and unavailable-backend state restore Connect iPhone
+and Advanced BlueFerry launch actions from the qualified Python client. An
+isolated Xvfb/private-D-Bus probe opens a 1040×730 Messages window; this checks
+activation only, not the rendered screen or accessibility. GitHub checks for
+this head are queued or in progress, with no failures reported. Live phone
+catch-up, read-failure feedback, pin/keyring operation, owner-session visual
+and keyboard/accessibility review remain open. BlueFerry
 PR [#277](https://github.com/erikwb/blueferry/pull/277) merged with a stable
 phone UUID, but public v0.8.1 packages predate it, so phone-scoped pin import
 waits for a release with that field.
@@ -42,10 +43,18 @@ installs; atomic releases remain unchanged. The screenshot shelf batches up to
 12 captures, but actual multi-image compose preview, paste fallback and the
 XWayland-to-Wayland path still need owner-session acceptance under issue #227.
 Latest code is on [PR #525](https://github.com/techmore/ElementaryOS_MSeries/pull/525).
-Its prior checks passed; the handoff/palette wording correction is now pushed
-and fresh checks are pending. Keep the official Signal client until an
-upstream-supported secure messaging boundary exists. Do not treat `libsignal`
-as a supported third-party client API.
+All applicable checks for current PR head `b6ca6d24` pass. On the installed
+Signal Desktop `8.32.0-beta.1` archive, read-only `signal-accent.py --check`
+reports 201 replacements across four assets to the Pantheon Blueberry accent
+`#3689e6`; no installed bytes were changed. A patched hard-linked app copy with
+a throwaway profile, blocked name resolution and private D-Bus opened the
+onboarding screen in Xvfb in both light and dark modes. This does not verify
+the conversation composer. The palette/archive suite passes six tests; the
+screenshot-shelf suite passes ten private-display tests and captures six
+light/dark widget states. Actual multi-image compose preview, paste fallback
+and XWayland-to-Wayland drop acceptance remain open under #227. Keep the
+official Signal client until an upstream-supported secure messaging boundary
+exists. Do not treat `libsignal` as a supported third-party client API.
 
 The continuous-radius Gala patch remains provisional. Physical MacBook Pro
 panel matching is not qualified. A five-second Xvfb smoke launch accidentally
