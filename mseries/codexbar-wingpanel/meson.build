@@ -1,3 +1,4 @@
+# GTK on this Mac: renderer, CSD shadow, cursor blink and animation rules in ../GTK-PERFORMANCE-ASAHI.md
 project('codexbar-wingpanel', 'vala', version: '0.1.0', meson_version: '>= 0.59.0')
 
 libwingpanel_dep = dependency('wingpanel-9')
@@ -140,6 +141,12 @@ python = find_program('python3')
 test('generated-c-temporaries', python,
   args: [join_paths(meson.current_source_dir(), 'probe/check-generated-c.py'), meson.current_build_dir()],
   depends: [libcodexbar, codexbar_settings], timeout: 30)
+
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  test('account-legend', find_program('bash'),
+    args: [join_paths(meson.current_source_dir(), 'probe/run-legend-probe.sh'), meson.current_build_dir()],
+    depends: render_probe, timeout: 30)
+endif
 
 if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
   test('grok-panel', find_program('bash'),

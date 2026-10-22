@@ -1,0 +1,352 @@
+{
+ "area": [
+  0,
+  0,
+  1280,
+  800
+ ],
+ "floating": [
+  290,
+  175,
+  700,
+  450
+ ],
+ "steps": [
+  {
+   "step": "fixture floats",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    290,
+    175,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "Super+Left tiles the left half",
+   "ok": true,
+   "placement": "tiled-left",
+   "rect": [
+    0,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledLeft",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "S8 tiled states on work-area edges only",
+   "ok": true,
+   "placement": "tiled-left",
+   "rect": [
+    0,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledLeft",
+    "TiledTop"
+   ],
+   "detail": "TiledBottom TiledLeft TiledTop"
+  },
+  {
+   "step": "Super+Left again restores the pre-snap rect (S1 toggle)",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    290,
+    175,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "Super+Right tiles the right half",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    640,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledRight",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "Super+Up maximizes and remembers the tile",
+   "ok": true,
+   "placement": "maximized(tiled-right)",
+   "rect": [
+    0,
+    0,
+    1280,
+    800
+   ],
+   "states": [
+    "Maximized"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "Super+Down returns to the tile (S2)",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    640,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledRight",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "Super+Down again restores the floating rect",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    290,
+    175,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "client maximize from floating",
+   "ok": true,
+   "placement": "maximized(floating)",
+   "rect": [
+    0,
+    0,
+    1280,
+    800
+   ],
+   "states": [
+    "Maximized"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "client unmaximize restores the floating rect",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    290,
+    175,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "a click-sized drag leaves the tile alone",
+   "ok": true,
+   "placement": "tiled-left",
+   "rect": [
+    0,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledLeft",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "drag-out restores the floating size (S1)",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    181,
+    162,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "drag-out keeps the grab point under the pointer",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    181,
+    162,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": "fraction=0.284 want=0.284 below=30 want=30"
+  },
+  {
+   "step": "release without a zone stays floating where dropped",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    181,
+    162,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "dragging to the right edge shows a preview",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    1217,
+    388,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "release at the edge snaps right (S6 rect recomputed)",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    640,
+    0,
+    640,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledRight",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "Super+Down after a drag-snap restores the dropped floating rect",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    181,
+    162,
+    700,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "S5 oversized right tile grows inward, not off-screen",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    480,
+    0,
+    800,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledRight",
+    "TiledTop"
+   ],
+   "detail": "min_width=800"
+  },
+  {
+   "step": "Super+Left on a right tile restores it",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    240,
+    175,
+    800,
+    450
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "S5 oversized left tile stays anchored left",
+   "ok": true,
+   "placement": "tiled-left",
+   "rect": [
+    0,
+    0,
+    800,
+    800
+   ],
+   "states": [
+    "TiledBottom",
+    "TiledLeft",
+    "TiledTop"
+   ],
+   "detail": ""
+  },
+  {
+   "step": "X11 Super+Right tiles the right half",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    640,
+    0,
+    640,
+    800
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "S7 X11 self-resize is answered with the tile rect",
+   "ok": true,
+   "placement": "tiled-right",
+   "rect": [
+    640,
+    0,
+    640,
+    800
+   ],
+   "states": [],
+   "detail": ""
+  },
+  {
+   "step": "X11 Super+Down restores the pre-snap rect",
+   "ok": true,
+   "placement": "floating",
+   "rect": [
+    320,
+    190,
+    640,
+    420
+   ],
+   "states": [],
+   "detail": ""
+  }
+ ],
+ "failures": []
+}

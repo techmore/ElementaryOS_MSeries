@@ -68,3 +68,24 @@ recognizes the private taskbar schema and preserves the owner's taskbar size,
 visibility and pins during reapplication. Isolated tests build the actual payload
 in a temporary root and exercise both taskbar preservation and floating-profile
 apply/revert. Reboot configuration checks do not claim a physical reboot test.
+
+## Notification bell
+
+The bell uses a 30-pixel icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History and
+context menus follow native theme colors and controls, with compact Open/Reply
+actions and bounded previews.
+
+`TaskbarNotifications.vala` is added by the canonical source stack and sits next
+to the clock. It reads the desktop notification service's bounded user-session
+API asynchronously. Click for history/Open/Reply; right-click for local Mark all
+as read and the saved elementary Do Not Disturb setting. Unknown service state
+remains visible; a failed setting write does not falsely move the switch.
+
+`bash mseries/dock-taskbar/notifications-probe/run.sh` runs synthetic native UI
+checks on a private bus/display with temporary HOME and memory settings. The
+fixture refuses direct startup without its private-test flag. Full builds require
+the TaskbarNotifications linked type so partial taskbar builds are rejected.
+See `../desktop-notifications/README.md` for protocol, insets and history limits.
+
+GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).

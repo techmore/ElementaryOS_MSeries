@@ -1,3 +1,51 @@
+## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
+
+One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
+with `mseries/install-orchard.sh`. Idle CPU of the installed app 37.6 % → 0.3 % of a core, RSS 281 → 82 MB (the running-dot
+CSS animation kept the frame clock running; cairo renderer, 1 px outline, steady cursor, timers only while mapped).
+`meson test` 12/12; captures in `mseries/orchard/docs/`. Not carried over: list search/filter/sort and bulk actions.
+## Public fixes and enhancements audit — 2026-10-21
+
+A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.
+
+Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
+
+## Desktop Mode switcher source merged — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) adds a
+command and launcher to toggle Windows Work Mode immediately. Its head passed
+the required CI checks and merged to `dev` as `6f716799`. The installer change is
+source only; no desktop install, live mode switch or service restart was performed
+in this maintenance run. Live interaction remains to be accepted after separately
+authorized installation. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
+## Compositor snapping phase 1 — 2026-10-21
+
+Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together
+from their shared edge (`src/snap_group.rs`, `src/snap_assist.rs`). Nested regression 34/34; native and multi-monitor acceptance
+open. Next: phase 2 (split-on-drop for a third and fourth app, templates, titles).
+
+## Compositor snapping phase 0 — 2026-10-21
+
+One placement per window (`src/placement.rs`), restore after snap/maximize, Super+Up/Down, toggling Super+Left/Right,
+ack-gated moves, min-size-aware zones, deterministic output choice and `Tiled*` states (S1–S8, S12–S14, S17 of the
+[investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md)). Unit tests plus a nested
+[snap regression](pantheon-rust-compositor/snap-tests/README.md); native, multi-monitor acceptance is open. This also
+addresses the "snap geometry discrepancy" noted on October 20 (wrong-output choice), pending owner confirmation. Next: Snap
+Assist for halves and two-member snap groups (phase 1).
+
+## Rust compositor next-generation investigation — 2026-10-21
+
+Read-only audit of popups/attention, snapping, performance/battery and monitoring:
+[pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md).
+Top items: popup grabs block compositor focus changes (D1); X11 notification cards steal
+activation (D2); no demands-attention channel to the dock (D3); snapped windows lose their
+floating size and maximize/snap erase each other (S1, S2); linux-dmabuf is off on native so
+Electron/Chromium render in software (P1); every window gets frame callbacks every flip (P2);
+no idle/DPMS (P3); no frame timing or watchdog. Next: metrics first, then D1/D2, then P2/P1/P3,
+then snapping phase 0 and Snap Assist for halves. D1, D2, D3 and D8 are since fixed (entry below);
+the rest is not implemented yet.
+
 ## Development website publishing — 2026-10-21
 
 Public Pages documentation follows `dev/docs` by owner choice; `main` remains the frozen stable OS line. Keep site claims tied to dated receipts and verify Pages after merged documentation updates. The October 21 reconciliation covers wip2 dock tests, Touch ID blocking, Messages and screenshot retention without claiming stable/hardware/power qualification beyond the receipts.
@@ -12,6 +60,34 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+## Rust compositor: menus, notification cards, attention — 2026-10-21
+
+D1, D2, D3 and D8 from the next-gen investigation fixed: an open menu no longer keeps the keyboard when
+the compositor focuses another window, refused menus get `popup_done`, X11 notification cards and menus
+never take activation or focus, and windows that are refused activation (or set X11 urgency) are
+exported as `demands-attention` in `GetWindows`. Nested probe 7/7. Loads at next login. Next: dock
+patch to show `demands-attention`, then D4-D6 (activation trust, new-window focus, modals).
+
+## Compositor monitoring and battery (phase 0–1, P2/P7/P8) — 2026-10-21
+
+Frame timing per output (render CPU, queue→flip, dirty→flip, late frames), per-client commits with shm/dmabuf split and correct
+X11 attribution, journal priorities, frame callbacks only for surfaces on the flipped output, and the small CPU fixes. Loads at
+next login; after-numbers still to collect. Next: P1 dmabuf trial login, P3 idle/DPMS, then the D-Bus `Stats` interface and CLI.
+[Handoff](OS9-HANDOFF.md).
+
+## Release pipeline for the customer updater — 2026-10-21
+
+One workflow builds the plugin debs and `mseries-update` and publishes a signed `dev` suite (merge to `dev`) and `stable` suite (merge to `main`);
+deterministic debs, fails closed without `MSERIES_APT_KEY`. Not published or run in CI yet (PPA outage, no key). Next: owner creates the key
+([runbook](release/KEY-RUNBOOK.md)) and picks how `gh-pages` is served (Pages source is `dev:/docs`), then first publish, `run_module` .deb-first (#52),
+Rust compositor into the suites after its health check. [Details and Nix measurements](RELEASE-PIPELINE.md).
+
+## Software Updates app — 2026-10-21
+
+Rust + Granite 7 window over `mseries-update status --json` with a polkit-authorised helper; tests and CI render every state headless.
+Not run on the M1 or against a real repository yet. Next: package it into the `dev`/`stable` suites, a Switchboard pane, translations, an
+update notification. [Details](updates-app/README.md).
 
 ## Customer update mechanism (first slice) — 2026-10-21
 
@@ -89,6 +165,20 @@ Next: owner/Claude-coordinated attended one-shot boot, actual Mesa/display/unloc
 acceptance and return-to-.20 recovery. Full semantic parity, suspend and power
 qualification remain open; no measured power win.
 [First-boot plan](aurora/unified72/BOOT-TRIAL.md).
+
+## October 21 maintenance checkpoint: kernel application next
+
+*Superseded:* the Aurora 7.2 wip2 staging, one-shot and first-boot entries above record what happened next.
+
+Kernel and power maintenance prompts were manually trialed, evidence-audited and
+refined; all eight recurring tasks remain paused. No measured optimization or
+new kernel adoption follows. **Next:** identify the owner's intended kernel
+candidate and prepare its pinned source/config/build change before continuing
+with package task 03. Reconcile #139's merged upstream state, avoid a direct #163
+backport, and retain exact boot/recovery qualification gates. Power tooling also
+needs capability-aware display capture without silently accepting missing DPMS.
+See [the handoff and retained evidence](maintenance/2026-10-21/README.md).
+
 
 ## Native Messages experience landed — 2026-10-20
 
@@ -226,34 +316,54 @@ snapshot/stale/unavailable from live sync, and resolve groups using verified
 identity rather than names. No Mac export or phone pin access is qualified yet.
 See [source review and implementation gates](phone-setup/PIN-SYNC-RESEARCH.md).
 
-## Desktop message notification popups — 2026-10-20
+## Desktop notifications and taskbar bell — 2026-10-20
 
-Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
-The user-local service is enabled/active as `mseries-desktop-notifications.service`,
-using GTK3/Xwayland override-redirect popups for placement without a compositor
-or Wingpanel restart. It implements the freedesktop notification interface,
-shows up to three bottom-right cards, preserves focus, and dispatches supplied
-Open/Reply actions. It retains no history; no notification center, inline reply,
-images, sound, or native Wayland placement is claimed. Existing DND is respected;
-per-app elementary notification preferences and full accessibility qualification
-remain open. The installer stages by default; `--activate` enables/restarts only
-this service. BlueFerry uses the existing separate version-matched backend overlay
-at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
-as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
-(https://github.com/erikwb/blueferry); this repository does not redistribute its
-full source. Rebase the backend overlay after package upgrades.
+PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
+popups to Apple-style upper-right placement, newest first, with a dock-gray
+360x72 layout, reduced padding, rounded RGBA/X Shape silhouette and one explicit
+Reply button. Known Reply/inline-reply aliases are deduplicated. Notification
+preview text remains plain and is exposed accessibly. Asynchronous, bounded
+metadata probes inspect only known Wingpanel/Dock first frames; existing workarea
+reservations are not subtracted twice. This desktop measured Wingpanel=124 and
+dock=72 logical pixels, with declared fallback insets. A live popup measured
+360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
+from the right. No compositor or Wingpanel restart was required.
 
-Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
-Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
-replacement, expiry, close and DND were checked using synthetic content only.
-Retained screenshots are fixtures. Live synthetic notification geometry was
-360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
-and bottom. The service remains active/enabled and BlueFerry remains active.
-BlueFerry notification tests (92) and combined overlay tests (201) passed; its
-Reply action opens the existing conversation through opaque-handle activation.
-No real phone messages were sent or deliberately marked read by these checks.
-Actual phone-notification click-to-app focus and next-login startup remain
-unverified. This is transformed-desktop work, not factory-image qualification.
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
+secondary click offers Mark all as read and Do Not Disturb. The service retains
+up to 100 memory-only notification records, resets history on service restart,
+and exposes a content-free Changed signal plus bounded user-session snapshots.
+The taskbar requests 50 records and reports unavailable state explicitly.
+Mark all as read changes only local notification history; reason-4 toast cleanup
+does not write iPhone read state. DND uses elementary's saved preference.
+Historical trusted BlueFerry entries reopen via a fixed installed helper and
+validated opaque handle; notification argv is never executed. Other supplied
+valid desktop IDs can open installed applications on explicit click.
+
+A real incoming phone notification's single Reply button was clicked. The GTK
+client received the same opaque handle, displayed the matching reply destination,
+and had compositor focus. A scoped bridge only raises one matching BlueFerry GTK
+window after an explicit action from its backend owner. No message was sent.
+32 isolated backend/model/provenance tests passed, plus private Xvfb/D-Bus popup
+and actual history/MarkAllRead/DND API checks using memory settings. Native bell
+probes cover service absence, history, Open/Reply, local read controls, rejected
+DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
+
+Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
+TaskbarNotifications and AppResolver. The private dock build was installed and
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
+mode, auto-hide setting, icon size and ordered launcher pins compared identical
+before/after. Rollback binary/wrapper and preference receipt are private under
+~/.local/state/mseries-notifications. Live bell/history opening is verified;
+the owner confirmed both right-click controls appear. Notification,
+dock and BlueFerry services remain active. Full accessibility qualification,
+physical next-login recovery and factory-image qualification remain open.
 
 ## Working iPhone messages and native Messages app — 2026-10-20
 

@@ -1,6 +1,7 @@
 #![allow(irrefutable_let_patterns)]
 
 mod activation;
+mod attention;
 mod cursor;
 mod cursor_theme;
 mod display_config;
@@ -19,26 +20,32 @@ mod grabs;
 mod handlers;
 #[cfg(feature = "native-drm")]
 mod hotplug;
+mod idle;
 mod input;
 #[cfg(feature = "native-drm")]
 mod kms_props;
 #[cfg(feature = "native-drm")]
 mod link_status;
+mod logging;
+mod metrics;
 #[cfg(feature = "native-drm")]
 pub mod native;
 mod overview;
 mod pantheon_shell;
+mod placement;
 mod popup_stack;
 #[cfg(feature = "native-drm")]
 mod prewarm;
 mod protocols;
-mod redraw_stats;
 mod shell_compat;
+mod snap_assist;
+mod snap_group;
 mod state;
 mod tiling;
 mod touchpad;
 mod wakeups;
 mod wallpaper;
+mod watchdog;
 mod winit;
 mod workspace;
 mod xwayland;
@@ -115,18 +122,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Log filter when `RUST_LOG` is unset. Smithay's XWM logs every X11
+/// `BadWindow` from short-lived Chromium windows at INFO; those are routine.
+const DEFAULT_LOG_FILTER: &str = "info,smithay::xwayland::xwm=warn";
+
 fn init_logging() {
-    if let Ok(env_filter) = tracing_subscriber::EnvFilter::try_from_default_env() {
-        tracing_subscriber::fmt().with_env_filter(env_filter).init();
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(DEFAULT_LOG_FILTER));
+    if stderr_is_journal() {
+        // journald adds its own timestamp and does not render ANSI codes; a
+        // `<N>` prefix sets each line's PRIORITY so `journalctl -p err` works.
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .with_ansi(false)
+            .event_format(logging::JournalFormat::new())
+            .init();
     } else {
-        tracing_subscriber::fmt().init();
+        tracing_subscriber::fmt().with_env_filter(env_filter).init();
     }
+}
+
+/// Whether stderr is the journal stream systemd set up for this service
+/// (`JOURNAL_STREAM=<dev>:<inode>` naming our fd 2), not just inherited.
+fn stderr_is_journal() -> bool {
+    use std::os::unix::fs::MetadataExt;
+    let Some(stream) = std::env::var_os("JOURNAL_STREAM") else {
+        return false;
+    };
+    let Ok(stderr) = std::fs::metadata("/proc/self/fd/2") else {
+        return false;
+    };
+    logging::journal_stream_matches(&stream.to_string_lossy(), stderr.dev(), stderr.ino())
 }
 
 /// Tell a systemd user service that the compositor has initialized its
 /// Wayland socket and selected backend. Native startup only reaches this point
 /// after the renderer and connected KMS outputs have been initialized.
 pub(crate) fn notify_systemd_ready() -> io::Result<()> {
+    notify_systemd("READY=1\nSTATUS=Wayland socket and compositor backend initialized")
+}
+
+/// Send one sd_notify message (`KEY=value` lines) to `NOTIFY_SOCKET`.
+pub(crate) fn notify_systemd(message: &str) -> io::Result<()> {
     let socket = std::env::var_os("NOTIFY_SOCKET")
         .ok_or_else(|| io::Error::other("--notify-systemd requires NOTIFY_SOCKET"))?;
     let encoded_socket = socket.as_encoded_bytes();
@@ -138,7 +175,7 @@ pub(crate) fn notify_systemd_ready() -> io::Result<()> {
 
     let notification = UnixDatagram::unbound()?;
     notification.connect_addr(&address)?;
-    notification.send(b"READY=1\nSTATUS=Wayland socket and compositor backend initialized")?;
+    notification.send(message.as_bytes())?;
     Ok(())
 }
 

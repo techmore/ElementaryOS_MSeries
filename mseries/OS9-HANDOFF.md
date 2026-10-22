@@ -1,3 +1,516 @@
+## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
+
+`mseries/orchard/` is the one app: Machine Lab's window, sidebar, pages and `style.css` with Orchard's name, icon
+(`com.github.techmore.orchard`), clients and tests. The user's direction: "machine lab is beautiful, orchard isn't really yet,
+so we can copy that style over and orchard is the menu icon." `mseries/machine-lab/` and `mseries/orchard-incus-native/` are
+thin READMEs pointing here; every file moved with `git mv` (`git log --follow`).
+
+- **Layout.** Sidebar sections YOUR MACHINES / NEW — NOT INSTALLED (Machine Lab, unchanged behaviour), INCUS (home row:
+  dashboard, statistics, tools; then one row per instance) and PODMAN (one row, one page). `src/main.vala` is the
+  application and window (`orchard://` links, Ctrl+K palette dispatch, preferences), `src/sidebar.vala` the row types,
+  `src/incus-page.vala` the Incus home page, the instance page (Overview / Statistics / Configuration / Logs / Snapshots,
+  More menu: Clone, Export Backup, Mount Folder, Publish Port, Attach Network, Connect Local Model) and the New Instance
+  dialog; `src/PodmanPage.vala` and `PodmanDetails.vala` restyled with the `ml-` cards. Dropped: Machine Lab's CLI
+  `incus-model.vala`/`incus-ui.vala`, Orchard's `MainWindow.vala`, `Application.vala`, `InstanceDetails.vala`.
+  `ResourceBrowser`, `SandboxesWindow` and `MountsWindow` now signal the window instead of casting to `MainWindow`.
+  Not carried over: the instance list's search/filter/sort/group-by-label and bulk actions.
+- **Build and tests.** `meson setup build && ninja -C build`; `meson test`: 12/12 (Machine Lab's five, Orchard's five, the
+  rewritten `native-windows` smoke that builds the whole window against the fake Incus socket and fake podman and opens
+  every secondary window, and `panel-count` for the indicator, which builds here but installs under `/usr/lib`, so
+  `install-orchard.sh` passes `-Dwingpanel=disabled`). `build-deb.sh` builds `orchard_1.0.0-1~mseries1_arm64.deb` (ran).
+  CI: the `orchard` job builds `mseries/orchard` with the indicator; the `machine-lab` job is now `orchard-app`.
+- **Idle CPU, measured** (`docs/PERFORMANCE.md`, `bench.sh`): installed Machine Lab 37.6 % of a core and 281 MB RSS over
+  20 s with the window open and nothing running; Orchard launched with `gio launch` on its desktop file 0.3 % and 82 MB.
+  Cause: `.ml-dot.running` had an infinite CSS pulse animation, which keeps GTK's frame clock running for every running
+  row (three Incus containers), so the window repainted at the display rate forever. Also applied: cairo renderer
+  (`ORCHARD_RENDERER` overrides), 1 px CSD outline, cursor blink off, per-page timers only while mapped, hidden pages
+  defer widget updates, no sidebar re-sort per poll, content stack not vertically homogeneous.
+- **Installed and launched** on the j314s: `bash mseries/install-orchard.sh` (removes the `io.github.mseries.MachineLab`,
+  `com.github.techmore.orchard-incus` and `io.github.techmore.OrchardIncus` entries and launchers, moves the dock pin,
+  restarts `pantheon-dock`), `gio launch ~/.local/share/applications/com.github.techmore.orchard.desktop`. Seen: deb-test,
+  orchard-test, rupert-dev (Incus), bzc and mseries-icloud-anisette (Podman), elementary OS, Omarchy and Windows 11
+  (`~/vms`). Captures (GSK self-render via `ORCHARD_SCREENSHOT`/`ORCHARD_SCREENSHOT_PAGE`): `docs/screenshot-machines.png`,
+  `docs/screenshot-incus.png`, `docs/screenshot-incus-instance.png`, `docs/screenshot-podman.png`. The old Orchard for
+  Incus process that was running since the morning was left running; its binary is gone.
+- **Not verified.** Incus actions were not clicked against the real containers (start/stop/snapshot/config apply are the
+  same client calls as before, exercised by the fixture tests); the Podman details window was built in the smoke test, not
+  opened on the real container; the Wingpanel indicator is built, not installed; a full guest install and the Wayland
+  keyboard path remain as before.
+- **CI notes.** The `dev` branch protection requires a check named "Machine Lab build and logic tests (arm64)"; the
+  workflow keeps an alias job of that name (`needs: orchard-app`) until the protection list names "Orchard app build,
+  tests, metadata and Debian package (arm64)" instead. The Claude T3 client job now installs `libgtksourceview-5-dev`
+  (PR #500 added the crate without it). The capability ledger (`docs/capabilities.json`) is pinned to the merge commit
+  so its Orchard and Machine Lab paths resolve. Locally, `/virtio/download-failure` fails when `/tmp` (tmpfs) has under
+  ~2 GiB free, because the download's free-space check fires first; `TMPDIR` on disk passes 12/12.
+- **Next.** Update the `dev` branch protection to the new job name and drop the alias; decide whether the Python
+  `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console); instance search in the sidebar if
+  the palette is not enough.
+## Public fixes and enhancements audit — 2026-10-21
+
+A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.
+
+Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
+
+## Repository housekeeping and Desktop Mode source merge — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) merged to `dev` as
+`6f716799fcbef277ac24031bf9242e20f5a2415f`. It adds the `mseries-desktop-mode`
+command/launcher for toggling Windows Work Mode immediately, installs those files
+through `install-work-mode.sh`, and adjusts the Start menu power-button colors.
+The PR head was `2afd98edc921daa48c45b376cdd195ddd43abf7c`; all 14 required
+checks passed on that head (workflow run
+[39676407155](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39676407155));
+the two skipped CI jobs were URL-comment and reusable-build jobs. Reviewed the
+six-file diff and clean merge against refreshed `origin/dev` `81c5d94a` immediately
+before merging. The PR's own verification used in-memory GSettings and a fake
+helper. This merge did not install the new command/launcher, change live mode or
+saved settings, or restart the dock, panel, compositor, kernel or audio stack.
+Live mode-switch acceptance remains open until separately authorized installation.
+
+Repository pass: refreshed `origin/dev`; the starting checkout was clean but 345
+commits behind before merge and remains intentionally untouched. No tracked build
+directories or `.deb`/`.iso`/`.img` artifacts were found in the `dev` tree. The
+existing six-hour `.github/workflows/upstream-watch.yml`, dashboard and retained
+audit receipts were reused; this pass did not launch a duplicate watcher or claim
+a new upstream observation. Other open PRs remain pending: #491 lacks real
+Incus-action acceptance and its installer restarts the dock; #460, #440 and #390
+conflict with current `dev`; #460 also lacks dark-mode/notification visual review
+and is subject to the CodexBar deploy gate. Drafts #444, #272, #248 and #185 retain
+their stated research/handoff/qualification gates. Existing owner worktrees and
+prunable registrations were left untouched because branch ownership/activity was
+not established as inactive.
+
+Next: after owner authorization, install Work Mode using its documented installer
+and verify one reversible switch in the live session; do not infer installation
+or loaded state from this source merge.
+
+## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
+
+`rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the
+T3 Code server (`t3 serve`, here the user service `t3code.service` on 127.0.0.1:3773) so one window drives Claude Code,
+Codex, OpenCode and Grok, with the local `~/.claude/projects/*/*.jsonl` transcripts as the offline view. Imported from a
+standalone repo (commits 35d6947 … 9a896de); design notes `docs/T3-SPIKE.md`, `docs/INTEGRATIONS.md`, `docs/WORKFLOW.md`.
+
+- **What it does.** Pairing page (`t3 pair` token → `/oauth/token` bearer session in the keyring via `secret-tool`, else
+  `~/.config/claude-pantheon-rs` 0600; WebSocket tickets; the server's 426 update message shown on mismatch). Sidebar of
+  the server's projects and threads plus the offline JSONL group, linked by uuid (`import:claudeAgent:<uuid>`). Provider,
+  model and permission-mode pickers from `server.getConfig` (four instances authenticated here: Codex, Claude, Grok,
+  OpenCode; supervised mode is the default, full access a per-thread choice). Composer launches or continues a thread;
+  turn items stream (assistant text, commands, diffs, approval prompts with Allow/Deny through `runtime-request.respond`);
+  Stop; import of Claude Code and Codex sessions (`agentSessions.scan/import`); "Hand Off to Repo" (structured summary
+  appended to `*HANDOFF*.md`/`AGENTS.md`/`docs/HANDOFF.md`, optional commit). Usage page in the CodexBar card style with
+  plan windows as gauges and the rotation decision; Repos/Issues pages (`gh api`, lanes/priorities/agent labels, "Start on
+  this", runner as a T3 scheduled task every 5 min on the emptiest provider); Changes page (`getFullThreadDiff`);
+  Diagnostics page (`subscribeResourceTelemetry`). On loopback it points the server's Claude provider at the Claude Code
+  CLI bundled with the desktop app.
+- **Protocol.** `src/t3/`: RFC 6455 and HTTP/1.1 on `gio::SocketClient`, Effect-RPC JSON envelopes
+  (Request/Chunk/Exit/Ack/Interrupt/Ping), orchestration protocol 2, everything on the GLib loop; 26 unit tests against
+  frames recorded from the live server (`tests/fixtures`). Build: `cargo build --release -p claude-pantheon-rs` from `rust/`.
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): client 58–60 MB RSS, 0.0 % CPU idle with a thread open; client +
+  server ≈ 300 MB and ≈ 1 % of a core; Electron claude-desktop 1.66 GB and 112 % in the same run. Start-up 184–213 ms to
+  the first frame (`--quit-after-frame`). The Vala twin's three GTK findings are built in (cairo renderer by default,
+  1 px CSD outline, cursor blink off).
+- **Captures.** `docs/screenshot-m1.png` (offline transcript), `screenshot-m2.png` (live thread, four providers),
+  `screenshot-m3.png` (usage with plan windows), `screenshot-diagnostics.png`, `screenshot-repos.png`; all GSK
+  self-renders from `tests/render.rs` under Xvfb against the real server and transcripts (a real "pong" round trip ran).
+- **Not verified / not built.** Permission prompts and Stop were exercised only by code paths, not by a live prompt
+  (the test thread ran in full access); "Start on this" and "Install runner" not clicked against GitHub (labels would be
+  created on the repo); the Wingpanel indicator (`wingpanel-indicator/`, Vala) is written but not compiled
+  (`libwingpanel-dev` not installed); vte4 terminal and WebKitGTK visual replies not built (crates not in the offline
+  cache); SnapShot helper not built (compositor has no screenshot D-Bus; plan in `docs/INTEGRATIONS.md`); environments
+  switcher not built; webhook runner tasks need a reachable endpoint. Not installed system-wide.
+- **Next.** Install `libwingpanel-dev` and build the indicator; add `vte4`/`webkit6` crates (crates.io is reachable);
+  SnapShot via the portal plus AT-SPI; a compositor-side `ScreenshotWindow` D-Bus method; per-run provider rotation
+  needs a server-side hook or a small scheduler.
+
+## Native Claude client (Vala/GTK4/Granite) — 2026-10-21 (Claude Code)
+
+`mseries/claude-pantheon-native/`: a native Pantheon client for Claude Code, built to replace the Electron desktop app
+(19 processes, 2.4 GB RSS, 1.08 cores idle on the j314s; `BASELINE.md`). Imported from a standalone repo
+(commits 13476f6, 7b572d2, 44f322c).
+
+- **What it does.** Sidebar of every `~/.claude/projects/*/*.jsonl` session grouped by real project path with search;
+  transcripts rendered as chat (markdown, fenced code, collapsed tool rows); live chat through the bundled `claude` CLI
+  (`-p --output-format stream-json`, resume, new session, permission-mode menu, Stop). Build: `meson setup build &&
+  ninja -C build`; `meson test` passes (parser smoke on a committed sample).
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): 69–83 MB RSS, 0–0.9 % CPU idle, 132–152 ms to mapped window.
+  Three GTK findings on this Mesa/Asahi stack, reusable by every GTK app here: GL renderer costs ~180 MB shader heap
+  (app forces cairo, `CLAUDE_PANTHEON_RENDERER` overrides); the default blurred CSD shadow re-blurs every frame
+  (52 ms → 6 ms with a 1 px outline); cursor blink keeps the window repainting 10 s after focus (off).
+- **Captures.** `docs/screenshot-m1.png`, `screenshot-m2.png`, `screenshot-light.png` (GSK self-render via
+  `CLAUDE_PANTHEON_SCREENSHOT=<path>`; no screenshot tool on this host).
+- **Not verified.** Stop button and tool-row expansion not clicked interactively; composer is single-line; images and
+  thinking blocks are placeholders. Not installed system-wide yet.
+- **Next.** The Rust twin (`claude-pantheon-rs`, gtk4-rs + granite-rs) is being built as a client of the T3 Code server
+  for Claude, Codex, OpenCode and Grok, and lands in `rust/` the same way; its `docs/WORKFLOW.md` and
+  `docs/INTEGRATIONS.md` carry the plan.
+
+## Orchard: Podman container details, live counters, local install — 2026-10-21 (Claude Code)
+
+Follows the Podman page (`mseries/orchard-incus-native`, containers/images/volumes with start/stop/restart/remove).
+
+- **Live counters.** `PodmanClient.list_stats()` runs `podman stats --no-stream --format json`; running rows show
+  CPU %, memory and PID count, written into existing rows on every 5 s poll (no list rebuild, so focus and buttons stay put).
+  Stopped containers show no counters; a stats failure leaves rows blank rather than zero.
+- **Details window.** `PodmanDetails` (new, modelled on `InstanceDetails`): image/ID/state/PID, created/started, command,
+  restart policy, environment count, published ports and networks, mounts (volume/bind, rw/ro), memory/CPU limits, counters
+  refreshed every 3 s with CPU/memory sparklines, and the raw `podman inspect` document under an Inspect tab. Header has
+  Start/Stop/Restart; the page reloads after an action. Row list no longer scrolls horizontally; long image digests wrap.
+  `orchard://podman` opens the page.
+- **Tests.** Fixture `tests/fake-podman.py` now answers `stats` and `inspect`; `podman-smoke` covers stats/inspect parsing,
+  byte/percent parsing and the unknown-container error; `test-ui.py` runs the smoke a second time on the Podman page and
+  builds the details window. `meson test`: 5/5 with the indicator disabled; 6/6 earlier with it enabled.
+- **Installed** on the j314s under `~/.local` (`meson setup build --prefix=$HOME/.local -Dwingpanel=disabled`, `ninja -C build
+  install`): binary, `.desktop`, icons. The Wingpanel indicator's install dir is `/usr/lib` (root) and was not touched; the
+  root-installed indicator from 2026-10-18 has no Podman code and is unaffected. Captures with 11 real rootless containers:
+  `docs/screenshot-podman.png`, `docs/screenshot-podman-details.png` (GTK render of the smoke window; no screenshot tool on
+  this host).
+- **Not verified.** Pause/unpause (client supports it, no button), pods, dark mode review, podman socket API (not used).
+## Compositor: idle monitor, idle inhibit and screen blanking (P3) — 2026-10-21 (Claude Code)
+
+From the [next-generation investigation](pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md) (P3): the screen
+never blanked because gsd-power had no idle source and no way to turn the panel off. **Installed nowhere, unqualified until
+the next login**; the running compositor was not restarted.
+
+- **`org.gnome.Mutter.IdleMonitor`** (`src/idle.rs`): ObjectManager at `/org/gnome/Mutter/IdleMonitor`, object `.../Core`
+  with `GetIdletime`, `AddIdleWatch`, `AddUserActiveWatch`, `RemoveWatch`, `ResetIdletime`, signal `WatchFired`, the contract
+  libgnome-desktop-4's `GnomeIdleMonitor` (gsd-power 50, gnome-session) uses. The input path does one atomic store per event
+  and messages the D-Bus thread only after ≥1 s without input or while a user-active watch waits; the thread sleeps until the
+  next watch deadline (no polling).
+- **Wayland idle protocols:** `ext-idle-notify-v1` and `zwp_idle_inhibit_v1`. A live inhibitor (e.g. GTK
+  `inhibit(IDLE)`, browsers playing video) holds idle time at 0 for both, as Mutter does.
+- **`PowerSaveMode` on `org.gnome.Mutter.DisplayConfig`** (read/write, `PropertiesChanged` after it is applied): 1–3 stop
+  rendering and clear every CRTC (`DrmCompositor::clear()`, as niri does; no flip stays pending, so the watchdog is quiet);
+  0, or any input, redraws in full and the next frame re-enables the CRTC. A session lock requested while blanked is
+  confirmed at once (no frame would ever arrive). **Off switch:** drop-in `Environment=PANTHEON_DISABLE_POWER_SAVE=1`.
+- **Expected behaviour with the owner's settings:** `idle-delay` 900 s, so gsd-power blanks after 15 min idle; `idle-dim`
+  is off. Screen lock on idle is **not** added: in GNOME the shell locks, and this compositor does not, so blanking does not lock
+  (`lock-enabled` true / `lock-delay` 0 has no effect yet). Owner decision.
+- **Verified:** strict clippy (`native-drm`, all targets), 168 tests (new: watch semantics, cap, inhibition clock, power-save
+  modes, off switch); new nested probe `pantheon-rust-compositor/idle-probe/run.sh` (private Xvfb + D-Bus, real
+  `GnomeDesktop.IdleMonitor`): idle watch fired at 1.51 s for 1.5 s, user-active fired on input, GTK inhibitor held idle at 0
+  and the watch fired after uninhibit, `PowerSaveMode` 3 → 0 on input with both signals. Activation probe 4/4 unchanged.
+  **Not verified on hardware:** the apple-drm/DCP CRTC off/on cycle.
+- **What to check at the next login:**
+  1. `gdbus call --session -d org.gnome.Mutter.IdleMonitor -o /org/gnome/Mutter/IdleMonitor/Core -m org.gnome.Mutter.IdleMonitor.GetIdletime` counts up while idle.
+  2. Temporarily `gsettings set org.gnome.desktop.session idle-delay 60`, leave the Mac for ~70 s: the panel goes dark; a key or
+     trackpad touch brings it back within about a second with windows intact. Restore `idle-delay 900`.
+  3. Same with the external dock display connected.
+  4. Play a video in Brave: the screen must not blank.
+  If the panel does not come back: press a key again, then add the `PANTHEON_DISABLE_POWER_SAVE=1` drop-in and log in again.
+
+## Rust compositor: menus, notification cards and attention (D1, D2, D3, D8) — 2026-10-21 (Claude Code)
+
+Fixes the popup/attention defects from section 1 of
+`mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`. Details:
+`rust/pantheon-compositor/README.md` ("Menus, X11 popups and attention").
+
+- **D1, open menu blocked focus changes.** New `end_popup_grab_unless(root)` /
+  `end_popup_grab_of(root)` (`handlers/xdg_shell.rs`) dismiss the menus and drop the popup
+  keyboard/pointer grabs. Called from `focus_window_keyboard` (activation, D-Bus FocusWindow,
+  overview exit, polkit/modal focus, new windows), X11 focus, top-panel focus, workspace switch,
+  overview entry, lock, and when the menu's own window is minimized, moved to another workspace
+  or destroyed. Focus in a window's menu now counts as focus in that window
+  (`keyboard_focus_is_in`), so minimizing it from its menu focuses the next window.
+- **D8.** Refused grabs (locked, root not mapped, invalid grab) send `popup_done`; refusals after
+  the grab already dismissed through `ungrab`.
+- **D2, notification cards and X11 menus.** Override-redirect and ICCCM no-input windows are
+  mapped and raised with `activate=false` and never get keyboard focus
+  (`xwayland::x11_accepts_focus`, applied in `raise_window`, `focus_window_keyboard`, managed
+  map, `focus_next_window`, workspace switch). Clicking a card keeps the app's keyboard focus
+  and active state and still delivers the click.
+- **Found while testing:** `focus_window_keyboard` set the activated state but never sent the
+  configure, so a window focused over D-Bus (dock, overview, workspace switch) drew itself
+  inactive. It now sends the pending configure.
+- **D3, attention channel.** New `src/attention.rs`. Marked on a refused activation
+  (`Verdict::Ignore`), the 8 s deferred-activation give-up, X11 `_NET_WM_STATE_DEMANDS_ATTENTION`
+  (mirrored back into `_NET_WM_STATE`) and `WM_HINTS` urgency; cleared on keyboard focus
+  (`SeatHandler::focus_changed` and X11 focus) or destroy; windows that have never mapped are not
+  marked. Exported as `demands-attention` in `GetWindows`, and a change emits `WindowsChanged`.
+  Behaviour change: activation tokens are now kept under `strict` too, so the refusal reaches the
+  policy and can be attributed; `strict` still never raises without a trusted serial.
+- **Verified.** `cargo test -p pantheon-compositor` 53 pass (new: 3 attention, 2 Gala export;
+  1 activation test rewritten); `cargo clippy --all-targets -- -D warnings` clean with default and all features
+  (also fixed 4 pre-existing `needless_borrow` errors); `cargo fmt --check` clean. Nested probe
+  `mseries/pantheon-rust-compositor/activation-probe/run.sh`, new `focus-probe.py` scenarios, 7/7
+  pass on this branch. The same scenarios against the installed `/usr/bin/pantheon-compositor`
+  reproduce the bugs: the menu stays open and takes `xyz` while A gets nothing; clicking a card
+  leaves A inactive with no keyboard; no attention key exists.
+- **BadWindow bursts: reduced, not gone.** Counting xwm ChangeProperty BadWindow errors from
+  80 short-lived cards with focus changes during the burst: 124-129 before (3-4 errors on many
+  cards, 14-19 beyond 2 per card), 89-96 after (about 2 per card, 0-3 beyond, the same as with no
+  focus changes at all). The
+  activation-driven writes are gone; the remaining 2 per card come from Smithay's own X11 map
+  path for windows destroyed while mapping and were not attributed further.
+- **Not verified.** The live session: nothing installed and nothing restarted; loads at next login
+  after the compositor package is installed. Real Electron/Chromium/Firefox menus, a real polkit
+  prompt, and the dock showing attention.
+- **After merging dev (snapping #449/#453, metrics #452, dmabuf/watchdog #456).** Snap Assist
+  closes any open menu when it opens (it takes keys and clicks), and its choice goes through
+  `focus_window_keyboard`; group raises already pass `activate=false`. The Gala snapshot cache key
+  now includes an attention generation, so a mark is published at once instead of within 1 s. The
+  two X11 `property_notify` handlers are one. #452's default `smithay::xwayland::xwm=warn` filter
+  hides the INFO-level BadWindow lines, so `run.sh` now starts the nested compositor with
+  `RUST_LOG=info`. Re-verified on the merge: 118 tests, strict clippy (default and all features),
+  fmt, nested probe 7/7, BadWindow about 2 per card, 3 beyond. The earlier CI `build` failure was a
+  Launchpad PPA 503 during package download, not this change.
+- **Follow-ups.** Dock patch: read `demands-attention` from `GetWindows` in the patched dock's
+  window model and drive the app icon's urgent/bounce state (no dock change in this PR). D4-D9
+  remain open (D9 in part: `has-focus` is still false while a window's menu is open). Smithay's
+  remaining per-card ChangeProperty errors need a Smithay-side look if the log noise matters.
+
+## Compositor: linux-dmabuf on by default (P1) and systemd watchdog — 2026-10-21 (Claude Code)
+
+Owner approved both ("approved please continue"). **Installed nowhere, unqualified until the next login**, which is the trial;
+the running compositor was not restarted.
+
+- **linux-dmabuf ON by default on native.** `zwp_linux_dmabuf_v1` v4 with the render-node feedback. Each output also builds a
+  scanout feedback (scanout tranche on the apple-drm device, primary + overlay plane formats ∩ GPU-sampleable formats) that is
+  sent only to surfaces presented zero-copy, as Anvil does. Nothing is scanned out directly yet (P6), so every client gets the
+  render feedback and no app is steered to a scanout-only (e.g. linear) layout. **Off switch:** drop-in
+  `[Service]` / `Environment=PANTHEON_DISABLE_DMABUF=1` (or `PANTHEON_ENABLE_DMABUF=0`) via
+  `systemctl --user edit pantheon-rust-compositor@wayland.service`, then log in again.
+- **Watchdog.** `WatchdogSec=30s` in `pantheon-rust-compositor@.service`; the compositor pings `WATCHDOG=1` every 10 s from an
+  event-loop timer, with `STATUS=` such as `58 flips/s, 114 commits/s, busiest brave(1234)`. A page flip pending over 1 s is
+  logged (`page flip has not completed`) and appended to STATUS, but pings continue. A hung loop is killed after 30 s and
+  restarted (`Restart=on-failure`), which ends every Wayland client.
+- **Verified:** 142 compositor tests (new: dmabuf switch, watchdog interval/`WATCHDOG_PID`, status line, busiest client), strict
+  clippy with and without `native-drm`, fmt, `test-session-units.sh`.
+- **What to check at the next login:**
+  1. Brave, Claude and ChatGPT windows draw (not blank or black); `journalctl --user -u pantheon-rust-compositor@wayland -g
+     'linux-dmabuf'` shows `advertising linux-dmabuf v4 on the native renderer`.
+  2. Claude's GPU process no longer runs with `--use-gl=disabled` (`ps -eo args | grep -- --type=gpu-process`).
+  3. `compositor stats`: `dmabuf_commits` > 0 and `top=` entries marked `/dmabuf`; compositor CPU and `output frame stats`
+     `fps`/`render_us` against the before numbers in the entry below.
+  4. `systemctl --user status pantheon-rust-compositor@wayland` shows the STATUS line; `systemctl --user show -p WatchdogUSec pantheon-rust-compositor@wayland` is 30s.
+  If apps go blank: add the `PANTHEON_DISABLE_DMABUF=1` drop-in and log in again.
+- **Not in scope here:** idle/DPMS (P3), taken by the investigation session.
+
+## CodexBar dropdown at double text size — 2026-10-21 (Claude Code)
+
+- **What:** owner asked for the CodexBar Wingpanel dropdown to be twice as large. `.mseries-codexbar` now sets `font-size: 2em`
+  (`mseries/codexbar-wingpanel/Indicator.vala`, `install_style`); the popover's fixed metrics scale with it: minimum width 240 → 480,
+  scroll area 150–300 → 300–600 px, quota bars 6 → 12 px, dropdown icons (provider marks, refresh, dock buttons, avatar, add, empty-state)
+  doubled, and the fixed-width percent/reset labels 58/46 → 116/92. The top-bar segments (`.mseries-codexbar-bar`) are unchanged.
+- **Probes:** the heavier first layout raced the probes' fixed timers under a parallel `meson test`. `test-switch` and `test-ingestion`
+  now poll for their first render (5–7 s cap) and `run-legend-probe.sh` captures after 6 s. `meson test`: 18/18, three consecutive runs.
+- **Verified:** render probe PNGs for healthy (light + dark) and shared-accounts at 1×; the popover measures 571×746 and 1117×804 logical px.
+- **Not verified:** on the live panel. Deployed with `deploy-codexbar.sh` (no restart); the module loads at next login or an explicit `--restart`.
+
+## Compositor snapping phase 1: Snap Assist and two-member snap groups — 2026-10-21 (Claude Code)
+
+Phase 1 of section 2 of `NEXT-GEN-INVESTIGATION-2026-10-21.md`, on top of phase 0 (#449).
+
+- **Snap Assist.** Snapping a half (keys or drag) when the other half is empty shows live, scaled thumbnails of the other windows
+  on that output and workspace in the empty half, on light plates over a dimmed backdrop; the selection has an elementary-accent
+  ring. Arrows/Tab, Return/space or a click choose; hover selects; Escape or any other key (passed through) dismisses; drags,
+  workspace switches, the overview and mode changes close it. Rendered in the shared native/nested scene by rescaling the
+  windows' own surfaces (the gesture-preview technique), so clients are never resized. No titles yet (no text rendering).
+- **Snap groups.** `src/snap_group.rs` (new, pure): `SnapNode` split tree, `SnapGroup`, `layout()` with minimum sizes and a
+  240 px floor, ratio clamping. Choosing in Assist, or snapping beside a window already on the other half, forms a horizontal
+  pair. Members raise together; resizing from the shared edge (xdg or X11) starts `SplitResizeGrab`, which moves the split and
+  reconfigures both (ack-gated, `Resizing` state set); maximize/fullscreen keep membership; un-snap, close, move to another
+  output or workspace dissolves the group and the other member returns to its plain half. Phase-2 shapes (quarters, 1+2,
+  thirds) already lay out in the solver but are not formed yet.
+- **Verified.** fmt; strict clippy (`--release --features native-drm --all-targets` and `--features gesture-probe`);
+  `cargo test --release --features native-drm` 113 + 19; nested `snap-tests/run-snap.sh` 34/34 (11 new), receipts and a
+  screenshot in `snap-tests/receipts/2026-10-21-phase1/`. An X11 restore check was hardened to wait for XWayland's geometry
+  update (it once read the old height).
+- **Not verified.** Native input/trackpad, multiple monitors, the dock work area, Electron/Chromium, real border-drag cursor
+  feedback on the shared edge. Nothing installed or restarted.
+- **Next (phase 2).** Split-on-drop to add a third/fourth app, layout templates/picker, titles in Assist (needs text rendering),
+  rounded plates, hotplug survival.
+
+## Compositor: frame metrics, targeted frame callbacks, battery P7/P8 — 2026-10-21 (Claude Code)
+
+Implements monitoring phase 0–1 and the low-risk battery items from `NEXT-GEN-INVESTIGATION-2026-10-21.md` (§3, §4) in
+`rust/pantheon-compositor`. Loads at the next login; nothing was installed or restarted.
+
+- **Metrics** (`src/metrics/`): fixed 84-bucket log histogram (1 µs–4 s, ≤25% error); per output render CPU, queue→flip and
+  dirty→flip p50/p95/p99 from the kernel's vblank timestamp and sequence (previously discarded), late frames, skipped vblanks,
+  empty ratio; per client commits, shm vs dmabuf, damaged pixels and frame callbacks. The 30 s `redraw stats` line is replaced by
+  structured `compositor stats` and `output frame stats` events (target `pantheon_metrics`). Read with
+  `journalctl --user -u pantheon-rust-compositor@wayland -g 'compositor stats|output frame stats'`.
+- **Attribution:** the client pid is read once at connect and cached with an `Arc<ClientStats>` in `ClientState` (no per-commit
+  `SO_PEERCRED` syscall or global mutex). Xwayland commits are attributed to the X11 window's `_NET_WM_PID`, cached per surface,
+  so ChatGPT (X11) no longer shows up as `pantheon-compos`.
+- **Journal:** under systemd no ANSI codes or second timestamp, and an sd-daemon `<N>` prefix sets PRIORITY (`journalctl -p err`
+  now sees errors). Default filter `info,smithay::xwayland::xwm=warn` (drops the routine X11 `BadWindow` INFO lines). Unchanged
+  30 s safety reconciles of the display trace log at DEBUG.
+- **P2 frame callbacks:** only surfaces whose primary scanout output flipped get a callback; surfaces shown nowhere get one per
+  second (with a sweep timer so they are served on an idle desktop too); empty frames send callbacks at the estimated next vblank
+  instead of none. Escape hatch: `PANTHEON_FRAME_CALLBACKS=all` restores the old behaviour without a rebuild.
+- **P7:** wallpaper pre-scaled to each output's pixel size on a helper thread (about 0.5 s per size under load) and marked
+  opaque; full-size copy released once every output has its own. Snap preview and OSD keep their `SolidColorBuffer`s. Fractional
+  scale preferences only re-sent when the window→output layout changes. Redraw requests coalesce through a calloop `Ping` plus a
+  pending flag (one render pass per dispatch instead of one per request). The Gala snapshot is rebuilt only when workspaces,
+  focus, titles or panels changed (at most 1 s stale otherwise).
+- **P8:** `[profile.release]` with `lto = "thin"`, `codegen-units = 1` in `rust/Cargo.toml` (workspace-wide). Measured here under load average
+  25–30 from other builds: a full release build of the compositor took 4 m 27 s (about 4 m 38 s before, same conditions); a
+  compositor-only rebuild went from 32 s to 1 m 46 s; the binary shrank from 22.8 MB to 18.0 MB. No runtime
+  speed measured yet. `target-cpu` deliberately not set (one package for every M-series machine).
+- **Also:** four pre-existing `clippy::needless_borrow` errors on `dev` (`place_window(&window, ..)`) fixed so strict clippy passes.
+- **Before (live session, pid 1934, 30 min on mains, `redraw stats`):** averages over 60 windows (21:05–21:35 UTC):
+  114 commits/s, 191 redraw requests/s, 58.6 vblanks/s = frames queued (peaks of 119/s), 0.9 empty frames/s. Top committers
+  claude-desktop 40/s, brave 37/s and "pantheon-compos(1934)" 34/s, which is really Xwayland/ChatGPT. Each of the 191 requests/s
+  was its own channel message and render pass (most skipped as frame-pending after recomputing fractional scales), so about
+  130 passes/s did no rendering; with the `Ping` they coalesce to at most one per dispatch.
+- **Verified:** `cargo test -p pantheon-compositor --features native-drm` (102 passed, 27 new), strict clippy with and without
+  `native-drm`, fmt. Unit tests cover histogram percentiles, output timing (late/skipped/idle), the X11 attribution decision,
+  registry reset/cleanup, damage clipping, journal line format and wallpaper crop/scale.
+- **Not verified:** any of this on the live session (needs the package installed and a new login): the after numbers, frame
+  pacing with targeted callbacks, the scaled wallpaper on the DCP, the Gala snapshot on a long session.
+- **Not done (needs owner approval):** linux-dmabuf by default (P1, trial login with `PANTHEON_ENABLE_DMABUF=1` first) and
+  `WatchdogSec=` (a watchdog restart kills every Wayland client). Output damage % is not exposed by Smithay's `DrmCompositor`;
+  per-client damaged pixels stand in. Lock-screen surfaces still get no frame callbacks (pre-existing).
+- **Next:** install at next login, compare `output frame stats`/`compositor stats` with the before numbers above, then the P1
+  dmabuf trial.
+
+## Disk Space app: cards and circle disk usage analyzer — 2026-10-21 (Claude Code)
+
+- **What:** `rust/mseries-diskspace` (GTK 4 + Granite 7, granite-rs), launcher `org.techmore.mseries.DiskSpace`, `mseries/diskspace-app/`
+  (install, test, README), CI `mseries-diskspace-app.yml`. Filesystems on the left, a treemap of cards or a sunburst of the current folder in
+  the middle, a sortable contents list with Copy path / Show in Files / Move to Trash / Delete… on the right. Parallel scanner (rayon) counting
+  allocated blocks, hard links once, one filesystem by default. Details and limits: `mseries/diskspace-app/README.md`.
+- **Verified (no hardware):** `bash mseries/diskspace-app/test.sh`: 18 unit tests (scanner, squarify, sunburst, deletion guards), scan totals equal
+  `du -sx --block-size=1` on three real trees, scanning `/` here in 0.3 s, headless Xvfb render in light and dark that clicks cards and the circle
+  centre, then trashes one folder and permanently deletes another and checks list, totals and disk.
+- **Not verified:** a run in the owner's Pantheon session, big or slow disks, network shares, a screen reader. **Not built:** translations, search
+  or type filters, live scan preview, an apt package. The `/` scan skips `/home` (a separate Btrfs subvolume); the status bar says so.
+  Nothing was installed or restarted on this machine.
+- **Next:** try it from the launcher on the M1, scan `/home` and System, and record anything that looks wrong here.
+
+## Compositor snapping phase 0: one placement per window — 2026-10-21 (Claude Code)
+
+Phase 0 of section 2 of `mseries/pantheon-rust-compositor/NEXT-GEN-INVESTIGATION-2026-10-21.md`, in `rust/pantheon-compositor`.
+
+- **Model (S2).** `src/placement.rs` (new, pure): one `WindowRecord { placement, floating, pending }` per `Window::id()` with
+  `Placement::{Floating, Tiled, Maximized{prior}, Fullscreen{prior}}`. Replaces `tiled_windows`, `managed_windows` and
+  `x11_managed_windows`; maximize remembers a tile and un-maximize returns to it.
+- **Fixed.** S1 pre-snap rect stored; drag-out (after 8 px) restores the floating size with the grabbed title-bar point under the
+  pointer; Super+Down restores. S3 `primary_output_for` (largest geometry overlap, then pointer, then primary) replaces
+  `outputs_for_element().first()` in tiling, maximize, keep-clear, X11, fractional scale, overview and new-window placement
+  (popup constraint left for the D7 work). S4 Wayland placements move only after the client acks the serial (400 ms fallback);
+  keep-clear and floating clamps skip windows that are pending or managed. S5 preview and configure use the client's min/max
+  size; a larger window stays snapped and grows inward from the screen edge. S6 zone recomputed at release. S7 snapped X11
+  windows that resize themselves get their rect again. S8 `Tiled*` states on work-area edges (inner edge stays resizable).
+  S12 `width.max(1)`. Also S13 (keyed by `Window::id()`, no wl_surface needed), S14 (Super+Shift moves a maximized window and
+  its remembered tile), S17 (restored minimized windows re-fit). Tiles keep their output name, so an unplugged monitor's tiles
+  fall back to the current output and return on re-plug (part of S10, not hardware-tested).
+- **Keys.** Super+Up maximize; Super+Down steps back (maximized → prior → floating); Super+Left/Right toggle (same or opposite
+  half restores, quarters slide or grow); quarter chords toggle. New `maximize`/`restore` keys in
+  `org.techmore.mseries.snapping` (built-in defaults apply until the schema is installed).
+- **Found by the nested test.** Updating panel visibility from inside the move grab reads the pointer and deadlocks on
+  Smithay's pointer lock; that work now runs from an idle callback.
+- **Verified.** `cargo fmt --check`; `cargo clippy --release --features native-drm --all-targets -- -D warnings` and the same
+  with `--features gesture-probe`; `cargo test --release -p pantheon-compositor --features native-drm` (99 + 19 tests, 22 new in `placement.rs`).
+  New nested regression `mseries/pantheon-rust-compositor/snap-tests/run-snap.sh` (Xvfb, GTK 4 and GTK 3/XWayland fixtures,
+  real move grab through the probe): 23/23 checks pass; receipts in `snap-tests/receipts/2026-10-21/`.
+- **Not verified.** Native input on the M1 Pro, multiple monitors and hotplug, panels/dock work areas in the nested run, the
+  ack-timeout path, Electron/Chromium clients. Nothing installed or restarted; it loads with the next compositor package and login.
+- **Next.** Phase 1: Snap Assist for halves and a two-member snap group with shared-edge resize (`SnapNode`/`SnapGroup`).
+
+## Release pipeline: dev and stable apt suites from one workflow — 2026-10-21 (Claude Code)
+
+- **What:** `.github/workflows/mseries-debs.yml` now builds and tests the three plugin debs plus `mseries-update` once per push/PR, and publishes
+  the `dev` suite on push to `dev` and the `stable` suite on push to `main` (a merged release PR) through `mseries/release/assemble-apt.sh`
+  (separate pools, per-suite `InRelease`, other suite untouched). Dev versions are `...~dev<commit time>.<sha>`; stable has no `~`. The compositor deb
+  builds as an artifact only. Owner decisions applied: GitHub Pages/`gh-pages`, offline key + signing subkey in `MSERIES_APT_KEY`, plugins and
+  updater first. Details and the Nix measurements: `mseries/RELEASE-PIPELINE.md`; key steps: `mseries/release/KEY-RUNBOOK.md`.
+- **Verified (no hardware):** `mseries/release/test-assemble.sh` in an Ubuntu 24.04 container: fail-closed with no/garbage key, both suites coexist with
+  stable byte-identical after a dev publish, signatures verify and tampering is rejected, real `apt-get update` + `apt-cache policy` accept both signed
+  suites with no warnings, dev retention, version ordering. `build.sh` debs are now byte-identical across rebuilds (`SOURCE_DATE_EPOCH`); the old script's were not.
+  Compositor deb builds here (116 s cold).
+- **Not verified:** the workflow in CI (the elementary daily PPA returned 503), a real signature or publish (no key), the gh-pages creation/push path,
+  hosted HTTPS use by `mseries-update`, anything on the M1. **Open for the owner:** the repo's Pages source is `dev:/docs`, so `gh-pages` is not served by
+  Pages; see the options in `RELEASE-PIPELINE.md`. Create the key (KEY-RUNBOOK) and set `MSERIES_APT_KEY` to start publishing.
+- **Nix:** measured, not adopted. A flake would pin Vala/Meson and sources, but the plugin must link the Ubuntu/elementary libraries it loads into; the
+  aarch64 `vmTools` images do not exist. Details in `RELEASE-PIPELINE.md`.
+
+## CodexBar: account legend (dense accounts view, opt-in) — 2026-10-21
+
+Owner asked to test a denser Quota page that stops repeating long emails. Each distinct sign-in email
+across Codex, Claude, OpenCode and Grok now gets a number and a hue: account 1 in a tinted legend row
+above the cards, the others below. Cards keep only the numbered badge next to the plan; alternate
+accounts become one tinted row (badge, quota, Switch). The bar shows the signed-in account's number
+after each company mark and numbers alternates with the same global, hue-colored numbers. Opt-in via
+`accountLegend` (Settings > Display > Wingpanel > Account legend); details in `CODEXBAR-PORT.md`.
+
+- **Verified.** `meson test` 18/18, including the new `account-legend` probe (named once with the
+  legend on, repeated with it off, bar hue matches) and `presentation` unit tests for numbering and hues.
+  Rendered light/dark with the new `shared-accounts` fixture.
+- **Not verified.** The live panel with the owner's real accounts until Wingpanel loads the new module.
+
+## Dock & Taskbar page in System Settings — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/dock-switcher/` (Vala Switchboard plug, **Settings → Personal → Dock & Taskbar**) switches the patched dock between the
+  Windows 11 taskbar and the elementary dock by writing `io.elementary.dock` `taskbar-mode` (the dock reads it live), plus the dock's
+  Hide automatically setting. Read-back confirmation, Undo toast, follows external changes, honest stock-dock / opted-out / not-installed
+  states. Installer: `bash mseries/install-dock-switcher.sh` (plug only; restarts nothing). Details: `mseries/dock-switcher/README.md`.
+- **Verified:** build, 7 unit tests, plug loaded and constructed through `get_plug`, screenshots (light/dark/disabled/1.5x text, headless).
+- **Not verified:** inside a live System Settings window, a real switch against the running dock, screen-reader use.
+- **Not installed:** the plug is merged but not installed on the owner's machine until `install-dock-switcher.sh` is run.
+
+## Typing stutter: interactive CPU weights for the session — 2026-10-21 (Claude Code)
+
+- **Cause found:** the stutter coincides with CPU saturation by nice-0 batch work. On a fresh boot with a `llama-bench -t 8` run, parallel
+  Rails test workers in rootless podman and a `db:schema:load` running, load average reached 29-58 on 10 cores and CPU pressure
+  (`/proc/pressure/cpu` `some`) reached 60-80%. Per-thread run-queue wait (`/proc/<pid>/task/*/schedstat`) showed a Claude Desktop
+  renderer waiting 54-93% of each interval and the compositor 15%. Memory, swap and I/O were not under pressure.
+- **Change:** `CPUWeight=500` on `session.slice` (compositor, panel), `CPUWeight=400` on `pantheon-dock.service` (apps launched from the
+  dock) and `CPUWeight=20` on the user manager's `user.slice` (rootless podman containers). Shipped in the session package; checked by
+  `mseries/pantheon-rust-compositor/test-session-units.sh`.
+- **Verified:** static unit checks pass. Applying the same weights at runtime with `systemctl --user set-property --runtime` and
+  alternating twice against the defaults on the same PIDs gave renderer+compositor run-queue wait of 30% -> 18% and 16% -> 13% under load.
+  That is directionally better but noisy; one load profile, not a controlled benchmark.
+- **Not verified:** the installed package (nothing installed; weights take effect at next login after the package is installed), subjective
+  typing feel, and the benchmark/test workloads launched from Claude Desktop itself: they share `app.slice` with other apps, so slice
+  weights do not separate them. Start such runs with `nice -n 19` or `systemd-run --user -p CPUWeight=20`.
+- **Next:** install the package, repeat the load test, and consider asking Aurora for `CONFIG_SCHED_CLASS_EXT` (see
+  `PERFORMANCE-PORT-CANDIDATES-2026-10-18.md`).
+
+## Apple/Logitech peripherals: `mseries-peripherals` — 2026-10-21 (Claude Code)
+
+- **What:** `mseries/hardware/peripherals.py` (installs as `/usr/bin/mseries-peripherals`) with `status`, `pair` and a `watch` user service
+  (`mseries-peripherals.service`, wanted by `graphical-session.target`). One battery reading per accessory (BlueZ's real percent over the
+  HID++ "Normal" level UPower turns into 55%), plug-in matching of a cabled Magic/Logitech device to its paired Bluetooth twin, a Pair
+  offer when none is paired, reconnect on unplug, one low-battery notice. `check-kernel-config.py --peripherals` gates the HID/Bluetooth
+  options. Design and limits: `mseries/PERIPHERALS.md`.
+- **Verified:** MX Vertical on this M1 Pro (`status` 100%, UPower 55%); watcher smoke run; 25 new tests plus install and kernel-gate tests;
+  running 7.2.11-wip3 config and both preserved configs pass `--peripherals`.
+- **Not verified:** every Apple accessory (none on hand), the notification Pair action, MX Vertical cable use, behaviour across suspend.
+  Installed to the image only; nothing was installed on this host and no service restarted.
+- **Next:** try a real Magic Keyboard/Trackpad on a cable and over Bluetooth, then record the result here.
+
+## Software Updates app: Rust + Granite 7 front end for mseries-update — 2026-10-21 (Claude Code)
+
+- **What:** `rust/mseries-updates` (window), `rust/mseries-update-core` (status model, closed command set, root helper), polkit action
+  `org.techmore.mseries.update` (admin password, no terminal), launcher `org.techmore.mseries.Updates`. Reads `mseries-update status --json`
+  and offers Check, Install at Next Restart, Roll Back… and the channel (Advanced); no update logic in the UI. Details: `mseries/updates-app/README.md`.
+- **Verified (no hardware):** `bash mseries/updates-app/test.sh` and the new CI workflow `mseries-updates-app.yml`: unit tests (model, allowlist, exit codes),
+  helper refuses everything off the allowlist, the real `mseries-update.py status --json` parsed by the Rust side, headless render under Xvfb of every state
+  (light and dark, narrow window) with each button sending exactly one command and failures/cancel/busy handled, staged install, polkit policy checked
+  with `pkaction` in CI. Also run in a clean Ubuntu 26.04 container.
+- **Not verified:** a real password prompt in the Pantheon session, `pkexec` through to the real updater, an update actually staging/applying, any
+  run on the M1, a screen reader. **Not built:** Switchboard pane or Wingpanel entry, translations, a package in the apt suites, update notifications.
+  Nothing was installed or restarted on this machine.
+
+## Touch ID sheet: place-finger prompt and prints instead of hands — 2026-10-21
+
+Owner feedback after the first real enrolment: people click Add with a pointer, so the sheet cannot assume a finger is already on the sensor, and
+fingerprints read better than the hand diagram. The sheet now says "Getting the sensor ready…" then **"Place your finger on the sensor now"**
+(ripple invite, 15 s nudge) and follows fprintd's `finger-present`/`finger-needed` live when the driver reports them, with the timed cue as the
+fallback; the hero shows three prints (own ridge pattern per finger, empty slots dim) and the hand widget is removed. UI tests 18/18 against the
+fake fprintd (which can now report finger events). **Not verified:** whether the Secure Enclave driver reports `finger-present`/`finger-needed`
+(unknown until a real enrolment is watched with `busctl monitor`), and on the real sensor.
+
+## Compositor: snapped windows no longer cover newer windows — 2026-10-21
+
+Owner reported that windows cannot register over a snapped window and the Touch ID sheet could not be used or dragged. Cause and fix in
+`mseries/pantheon-rust-compositor/STACKING-FIX-2026-10-21.md`: re-applying tiles and work-area limits used `Space::map_element`, which lifts
+an already-mapped window to the top; they now use `relocate_element` via `place_window`. Four regression tests, 48/48 pass. **Not deployed, not
+verified on the live desktop**: needs `mseries/install-pantheon-rust-compositor.sh` and a session restart, which the owner must approve.
+
 ## Customer update mechanism: first slice (`mseries-update`) — 2026-10-21 (Claude Code)
 
 - **What:** `mseries/update/mseries-update.py` (installs as `/usr/sbin/mseries-update`, also built as the `mseries-update` .deb by
@@ -14,6 +527,7 @@
   compositor restart was performed; nothing was installed on this machine.
 - **Next (owner):** hosting (recommend GitHub Pages), signing-key custody (recommend offline key plus signing subkey in the secret), which components ship first
   (recommend the three plugin debs), then publish `dev`/`stable` suites.
+
 ## Touch ID: guard-off trial entries added (wip2 and wip3) — 2026-10-21
 
 Owner approved separate GRUB entries **TRIAL: Aurora 7.2 wip2, xART guard off** and **TRIAL: Aurora 7.2 wip3, xART guard off** (same kernels + `apple_sep.xart_guard=0`), added beside the
@@ -24,6 +538,7 @@ confirm `matching: usable`, enrol once, verify, sudo only, then check macOS Touc
 ## GitHub Pages development documentation — 2026-10-21
 
 Owner selected `dev/docs` as the GitHub Pages source, replacing frozen `main/docs`. The website refresh reconciles wip2 boot/all-port dock evidence, Touch ID xART guard blocking, working Messages, screenshot retention and optional Apple Passwords. Historical benchmark dates and outstanding hardware/recovery gates remain explicit. The removed October 13 installer is no longer advertised as available. Source links and live build/validation/Pages queries follow `dev`. Publish only after website checks; verify the exact deployed revision and live bytes. No OS release or host deployment is part of this change.
+
 ## wip3 staged unarmed — 2026-10-21
 
 Owner-approved unarmed staging of `7.2.11-elementary-aurora72-wip3` (upstream #158 + #157, build-only PR #413, native CI build audited).
@@ -50,6 +565,7 @@ changed among protected files (receipt `mseries/aurora/unified72/boot-preflight-
   0 times (1 when on). **Not verified:** a second real GitHub account (only `techmore` is signed in here), the taskbar
   binding on a running desktop, and a live Wingpanel load (routine deploy installs without restarting; the module loads at
   next login). Next: sign a second account in with `gh auth login` and confirm **Read as** switches the dashboard.
+
 ## RepoBar resolved-account cache fix — 2026-10-21
 
 Follow-up to #414: follow-CLI mode resolves and pins the active stored CLI account
@@ -77,6 +593,7 @@ by hand.** Corrects an earlier theory that the refused record was Linux's own. A
 was deleted at the owner's request; reports belong on omacom/linux-aurora as a per-Mac issue. Nothing is posted; a redrafted report is pending the owner.
 Stale Touch ID claims in `BUG-FIX-ROADMAP.md` and `ROADMAP.md` were updated. Verified: `validate.sh` 76/76, aurora unit tests 72, Touch ID UI tests 14/14,
 PAM helper test. Not verified: matching on this Mac, `.20` behaviour, any change to the guard.
+
 ## Kernel wip3 candidate prepared (build-only) — 2026-10-21
 
 Owner asked to coordinate the next kernel part (USB4/HDMI display work). Chosen scope: upstream #158 (Asahi 7.2.11 base)
@@ -776,6 +1293,37 @@ input method, only its observable effect (composed text arriving instead of a ne
 
 Next: live check of media links; compositor `present()` raise is its own PR (#362).
 
+## Resumed kernel review: merged 7.2 source — 2026-10-21
+
+Owner returned. Focused immutable inspection of merged upstream #139
+`644133b7799f` confirms the older GPU command-tail, SEP autoload and SEP
+capture-drain gaps are addressed in the selected source paths. Five original
+GPU-reader host tests pass with the existing Result/EINVAL-only fixture boundary;
+stock-bindgen opt-in policy is already carried. Full 64-fix parity/config/ARM64
+build and J314S recovery/hardware acceptance remain open. Shared-DTB fallback
+compatibility and upstream M1-family Touch ID regressions need explicit review.
+Only about 4.9 GB local free space: use artifact-only ARM64 CI for a full build.
+Exact intended kernel change is still awaiting owner clarification; no build pin
+or host state changed. [Review receipt](maintenance/2026-10-21/kernel-resume-review.json).
+
+
+## Maintenance trials and kernel application handoff — 2026-10-21
+
+Saved eight paused on-demand maintenance tasks, then manually trialed/audited
+kernel and power in order and refined their prompts. Scheduler/model execution
+was not tested; task 03 has not run. Current observation is `.20-enh1` with the
+Rust compositor; no kernel, boot, display, audio or service changes were made.
+Aurora discovery found 59 branches/23 open PRs. #139 is merged while our 7.2
+snapshot is older; #163 cannot be blindly backported across .20's EBUSY/ENOSPC
+contract. Uncontrolled power medians 17.303 W and 41.203 W prove no saving.
+
+Owner is returning later and wants a kernel change applied next. Exact candidate
+is unspecified: resume with that selection and a pinned isolated source/build
+change, preserving hardware/rollback gates. Full findings, portable receipts,
+refined prompts and the display-capture tooling issue are in
+[the October 21 checkpoint](maintenance/2026-10-21/README.md).
+
+
 ## Rupert on SER8: updated to main, auto-deployer installed — 2026-10-20
 
 Rupert (`techmore/rupert`) runs in the `rupert` Incus container on SER8
@@ -1037,34 +1585,54 @@ Nothing was deployed or changed on the phone during this investigation. The
 working text session remains intact. Verification-code assistance is separate
 unfinished work and remains uninstalled.
 
-## Desktop message notification popups — 2026-10-20
+## Desktop notifications and taskbar bell — 2026-10-20
 
-Added `mseries/desktop-notifications/` and `mseries/install-desktop-notifications.sh`.
-The user-local service is enabled/active as `mseries-desktop-notifications.service`,
-using GTK3/Xwayland override-redirect popups for placement without a compositor
-or Wingpanel restart. It implements the freedesktop notification interface,
-shows up to three bottom-right cards, preserves focus, and dispatches supplied
-Open/Reply actions. It retains no history; no notification center, inline reply,
-images, sound, or native Wayland placement is claimed. Existing DND is respected;
-per-app elementary notification preferences and full accessibility qualification
-remain open. The installer stages by default; `--activate` enables/restarts only
-this service. BlueFerry uses the existing separate version-matched backend overlay
-at `~/.local/share/blueferry-unread-fix`; its Reply action patch is retained here
-as `blueferry-reply.patch`. That patch derives from GPL-2.0-or-later BlueFerry
-(https://github.com/erikwb/blueferry); this repository does not redistribute its
-full source. Rebase the backend overlay after package upgrades.
+PR #347 merged into `dev` at `4cf7a902`. Follow-up owner feedback changed
+popups to Apple-style upper-right placement, newest first, with a dock-gray
+360x72 layout, reduced padding, rounded RGBA/X Shape silhouette and one explicit
+Reply button. Known Reply/inline-reply aliases are deduplicated. Notification
+preview text remains plain and is exposed accessibly. Asynchronous, bounded
+metadata probes inspect only known Wingpanel/Dock first frames; existing workarea
+reservations are not subtracted twice. This desktop measured Wingpanel=124 and
+dock=72 logical pixels, with declared fallback insets. A live popup measured
+360x72 at (2043,140) on a 2419x1571 monitor, 16 pixels below the top panel and
+from the right. No compositor or Wingpanel restart was required.
 
-Validation: 9 model/dispatch tests and private Xvfb/D-Bus smoke runs in light and
-Adwaita dark passed. Actual pointer Reply/default actions, bus-owner refusal,
-replacement, expiry, close and DND were checked using synthetic content only.
-Retained screenshots are fixtures. Live synthetic notification geometry was
-360x180 at (2043,1375) on workarea (0,0,2419,1571), exactly 16 pixels from right
-and bottom. The service remains active/enabled and BlueFerry remains active.
-BlueFerry notification tests (92) and combined overlay tests (201) passed; its
-Reply action opens the existing conversation through opaque-handle activation.
-No real phone messages were sent or deliberately marked read by these checks.
-Actual phone-notification click-to-app focus and next-login startup remain
-unverified. This is transformed-desktop work, not factory-image qualification.
+The native taskbar bell is beside the clock. The bell now uses a 30-pixel
+icon without an outer border. The unread count sits inside the bell
+as larger 14-pixel plain text without a badge background or accent. History uses native typography, app/time
+metadata, bounded previews and compact Open/Reply actions; context controls use
+flat native menu rows. Upper-right popup styling remains unchanged. Primary click opens recent history;
+secondary click offers Mark all as read and Do Not Disturb. The service retains
+up to 100 memory-only notification records, resets history on service restart,
+and exposes a content-free Changed signal plus bounded user-session snapshots.
+The taskbar requests 50 records and reports unavailable state explicitly.
+Mark all as read changes only local notification history; reason-4 toast cleanup
+does not write iPhone read state. DND uses elementary's saved preference.
+Historical trusted BlueFerry entries reopen via a fixed installed helper and
+validated opaque handle; notification argv is never executed. Other supplied
+valid desktop IDs can open installed applications on explicit click.
+
+A real incoming phone notification's single Reply button was clicked. The GTK
+client received the same opaque handle, displayed the matching reply destination,
+and had compositor focus. A scoped bridge only raises one matching BlueFerry GTK
+window after an explicit action from its backend owner. No message was sent.
+32 isolated backend/model/provenance tests passed, plus private Xvfb/D-Bus popup
+and actual history/MarkAllRead/DND API checks using memory settings. Native bell
+probes cover service absence, history, Open/Reply, local read controls, rejected
+DND saves and visible recovery. Light/dark synthetic screenshots were reviewed.
+
+Canonical full-stack builds retain TaskbarRow, StartMenu, TaskbarCodexBar,
+TaskbarNotifications and AppResolver. The private dock build was installed and
+pantheon-dock.service reloaded for the owner-requested bell and again for its
+requested native styling. Light/dark synthetic history, menu, empty and error
+screenshots and interaction probes passed after restyling. Saved taskbar
+mode, auto-hide setting, icon size and ordered launcher pins compared identical
+before/after. Rollback binary/wrapper and preference receipt are private under
+~/.local/state/mseries-notifications. Live bell/history opening is verified;
+the owner confirmed both right-click controls appear. Notification,
+dock and BlueFerry services remain active. Full accessibility qualification,
+physical next-login recovery and factory-image qualification remain open.
 
 ## Working iPhone messages and native Messages app — 2026-10-20
 
@@ -1299,6 +1867,7 @@ Firefox/GTK. The new binary is not installed; that needs a package build and a
 compositor restart, which ends the owner's session. Next: finger-following
 (1:1) workspace and overview animations, and a pinch-out action (show
 desktop) once the compositor has that action.
+
 ## Dropdown and Orchard visual polish — 2026-10-20
 
 Branch `codex/panel-ui-polish` applies the UI specialist skill to CodexBar, Quick
@@ -1318,6 +1887,7 @@ for details and limitations. No panel reload; Quick Settings/Power/Orchard are
 built but not installed. CodexBar post-push staging passed all 17 tests, and the panel/daemon PID lists
 were unchanged. Its module loads at next login; native Settings takes effect
 on next launch. Receipt: `receipts/panel-ui-codexbar-stage-2026-10-20.json`.
+
 ## Top bar increased to 130% and managed service restored — 2026-10-20
 
 Owner reported that 115% was not visibly larger and confirmed the target is
@@ -1373,6 +1943,7 @@ persistence/default-off and recursive live hover enable/disable checks;
 `bash mseries/check-codexbar-port.sh` passed. Pointer behavior on the physical
 desktop has not been visually inspected. Next: owner can enable the toggle to
 restore hover details if desired.
+
 ## Microsoft Teams web desktop integration — 2026-10-20
 
 No prior Teams native port was found in the repository or remote branches. Per
@@ -1415,6 +1986,7 @@ logger, panel, account, VM or wallpaper was restarted/changed. Reopen Orchard fo
 Incus, Battery and Apple Passwords (Experimental) to load the fixes. Live user
 interaction and hardware theme switching remain to be tried. File hashes and
 backup location: `mseries/receipts/ui-consistency-install-2026-10-20.json`.
+
 ## Permanent Pantheon dock and floating-window clearance — 2026-10-20
 
 Owner visually confirmed the native Pantheon dock, then explicitly requested
@@ -2210,6 +2782,7 @@ not visually checked. The dock stays at 24; revert it if only the menu was wante
 Follow-up: the same patch now also makes the grid page 7x4 (28 apps, was 5x3 = 15), label width
 12 chars, row spacing 12, to roughly keep the popover footprint. Rebuilt, installed and Wingpanel
 reloaded; layout not visually checked.
+
 ## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
 
 PR #271 (production hardening: the valac nested-ternary use-after-free behind the
@@ -2847,6 +3420,7 @@ Headless probe: `mseries/repobar-wingpanel/probe/run-probe.sh BUILD OUT [light|d
 light/dark, healthy/empty/error, expanded details, and the owner's real cached snapshot. New
 `mseries/deploy-repobar.sh` installed `librepobar.so` without restarting Wingpanel (`--restart` reloads the panel).
 **Unverified:** the new module on the owner's live panel (loads at next login or a panel reload); clicks by real input.
+
 ## Battery condition, daily usage, diagnostics — 2026-10-18 (Claude Code)
 
 Condition label, 10-day usage list, Diagnostics page, `mseries-battery diagnose|daily`, diagnostics report export. Real data
@@ -3482,6 +4056,7 @@ that stays until the x, a drag-and-drop or the next shot (no 7 s expiry; Markup 
 shelf installed and running; card renders at identical size for wide and tall images (headless snapshot).
 **Not verified:** the click-to-capture on the real session (needs re-login), card position and drag-out on the
 real screen (no test window was put on the owner's display). Next: re-login, press Command+Shift+4, click a window.
+
 ## Battery panel in first boot — 2026-10-18 (Claude Code)
 
 `install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
@@ -3584,6 +4159,7 @@ on the owner's screen). Next: owner logs in; test a call.
 - Claude transcripts: per-file size/mtime index, only changed files are parsed.
 - Verified: all helper suites and the new `test-codexbar-cache.py` pass; Wingpanel module builds. Not measured: real
   request counts before/after, and the dialogs on screen.
+
 ## CodexBar: Codex reset credits per account — 2026-10-18
 
 - Panel shows available rate-limit resets for the active Codex account (from the snapshot's `resetCredits`) and for each saved account (`codexbar-accounts.py usage` now returns `resetCredits`), with when the first one expires; red inside the last 24h. Merged in PR 117 and deployed with `deploy-codexbar.sh`.
@@ -4528,6 +5104,7 @@ buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
   the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
   width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
   at 240 px.
+
 ## Orchard for Incus charts — 2026-10-17
 
 `mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
@@ -4541,6 +5118,7 @@ Small sidebar/dashboard sparklines stay unlabelled. Logic in
   shoot.py pages (collecting state) and a synthetic full-history render, dark.
 - Installed with `./install.sh`. Not verified: light theme with full history,
   real Wayland/elementary stylesheet, narrow 760 px.
+
 ## Orchard for Incus UI/UX pass — 2026-10-17
 
 Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
@@ -4563,6 +5141,7 @@ Changes, all in `mseries/orchard-incus/`:
   actions (nothing was started, stopped or deleted); narrow 760 px layout; the
   More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
   empty-history look of the charts are still open.
+
 ## Orchard for Incus (Python) audit and fixes — 2026-10-17
 
 Audit of `mseries/orchard-incus/` (installed copy was identical to source):
@@ -6996,6 +7575,7 @@ Owner: "we are going to need a Siri-like, Whisper-like speech to text, universal
 
 `mseries/apply-pending.sh` (run as your normal user): `--dry-run` prints every command and changes nothing; `--only wifi,power,polkit,greeter`; `--list`. Steps: install the fixed Wi-Fi resume script and load `brcmfmac` if missing, replace the `mseries-power` unit (drops the old multi-user link), install the DNS-logger polkit rule, install the greeter obex drop-in. Backs up any file it replaces to `<file>.pre-mseries`; never touches bootloader, kernel, initramfs or audio. Dry run checked on the live Mac; real run is the owner's.
 Facts checked for the speech-to-text request: the session is Wayland (Pantheon), IBus 1.5.34 is installed (so an IBus engine is viable), and ALSA lists a capture device `MacBook Pro J314 High-Power Audio Interface [aop_audio]`; whether it records usable speech is not yet tested. `pactl` is not installed here.
+
 ## Atomic app prototype — 2026-10-14
 
 Added `atomic-app.py` with per-app writer locking, prepared release staging,
@@ -7807,6 +8387,7 @@ Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harne
 Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
 
 Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
+
 ## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
 
 The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
@@ -8198,6 +8779,7 @@ Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the laz
 ### brave-youtube DRM movie result — 2026-10-18
 
 Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
+
 ## Dictation: ANE rolling streaming, press-once toggle, typing fallback — 2026-10-18
 
 Live F5 service (not the repo default) now runs `STREAM_ENGINE=ane STREAM_MODE=toggle STREAM_POPUP=0` from `~/.config/systemd/user/mseries-stream-dictate.service.d/50-ane.conf`. F5 sends one clean KEY_F14 (captured raw); the earlier "pulse" was the refusal notification, not a volume key. Apps with no accessible field (Electron) now type through ydotool (`STREAM_UNVERIFIED_FALLBACK=0` restores strict refusal; sensitive/non-editable stay refused). The ANE worker warms while recording; every 0.6 s the segment is re-decoded and agreed words are typed (append-only), tail 0.6 s after the second F5. Owner's first live dictation worked (56 chars, about 2.8 s wait, cold). Not measured: warm live latency, words-per-second feel, thermals of repeated passes, mic accuracy (hiss/sensitivity blocker unchanged), a WER set. Omarchy Mac (omacom/omarchy-mac-pkgs) has no mic/F5 dictation key handling to borrow. Next: owner trial of rolling mode, then read the `ane dictated` log lines.
@@ -9073,6 +9655,7 @@ native session behavior remain open. All temporary compositor, Xvfb, Zenity,
 IBus and Mozc processes were cleaned up; the host IBus engine remains
 `xkb:us::eng`. Next: qualify more GTK/Qt clients and the F5 app workflow, then
 the Dock only through the approved local GUI policy.
+
 ## Calendar + tab: Verse of the Day — 2026-10-18
 
 Added a third **+** tab (icon `list-add-symbolic`, title "Verse of the Day") to
@@ -9302,6 +9885,7 @@ DCP/dptx log over 10 min on enh1; test SEP probe on enh1; compare #139 `100-sep`
 New `mseries/patches/panel-power-battery-menu.patch`, wired into `install-battery-eta.sh`; details in `mseries/BATTERY-ETA.md`. Builds clean; visual check and live install pending. Next: run the installer, restart the panel, owner reviews the look.
 Installed live 2026-10-19 with `bash mseries/install-battery-eta.sh`; Wingpanel restarted and stayed running. Owner visual review of the new battery menu still pending.
 Follow-up 2026-10-19: rendered the menu headlessly (Xvfb, elementary theme) and fixed wrapped toggle labels, an empty "Display" heading, and the raised power-mode buttons; reinstalled. The harness lacks the panel's power-mode icons, so those were not seen rendered.
+
 ## 2026-10-19: elementary OS ARM64 install test in Machine Lab's VM
 
 Booted the CI ISO `elementaryos-9.0-daily-arm64.20261013230825.iso` (SHA-256 verified) in QEMU/KVM, headless, and drove the
@@ -9458,6 +10042,7 @@ installing the .deb. Apt publishing still waits on the signing key (#52).
 - Follow-up: `launcher/run-vm.sh` with `MACHINE_ARCH=x86_64` (Machine Lab's own x86 path, q35 + OVMF, virtio-vga) booted the same ISO to the login prompt within 45 s; a QMP `screendump` over `qmp-view.sock` showed the console. Throwaway VM removed.
 - GUI check (headless Broadway, isolated XDG dirs): an x86 machine entry showed the emulation banner, Start Installer launched QEMU, and the Display tab showed the Alpine login. Found and fixed: the install via `install-machine-lab.sh` from a stale checkout had left an old launcher in `~/.local/bin`; always run it from a current `dev` checkout. Overview footer no longer asks emulated machines for /dev/kvm.
 - Not yet verified: timing versus ARM64 KVM; keyboard input on x86 in a real Wayland window.
+
 ## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
 
 The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
@@ -9705,6 +10290,7 @@ All 28 integration groups also passed on the final source. GitHub live reads
 returned both outcomes (five/six gates) and current exact-commit CI; this does
 not establish deployment readiness for either app. Live calendar activation
 and end-to-end link opening remain unverified until the next login.
+
 ## Claude account/quota identity fix — 2026-10-20
 
 - Upstream remains pinned to v0.78.0. The app and CLI were signed into different

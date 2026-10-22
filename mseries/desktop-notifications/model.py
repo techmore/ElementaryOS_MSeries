@@ -21,6 +21,16 @@ def actions_from(values):
         key, label = str(values[index]), str(values[index + 1])
         if not key or len(key) > 128 or key in seen:
             continue
+        # These two known reply aliases can arrive together with the same
+        # Reply label. Prefer the explicit reply action, preserving its exact key.
+        if key in ('reply', 'inline-reply') and label.strip().casefold() == 'reply':
+            duplicate = next((i for i, (k, title) in enumerate(selected)
+                              if k in ('reply', 'inline-reply') and title.strip().casefold() == 'reply'), None)
+            if duplicate is not None:
+                if key == 'reply':
+                    selected[duplicate] = (key, text(label, 48))
+                seen.add(key)
+                continue
         if key != 'default' and sum(k != 'default' for k, _ in selected) >= MAX_ACTIONS:
             continue
         seen.add(key)
@@ -110,13 +120,13 @@ class Store:
             self.close(nid, 4)
 
 
-def positions(area, count, width=360, height=180, margin=16, gap=12):
-    """Logical X11 coordinates, newest at the bottom, no workarea overflow."""
+def positions(area, count, width=360, height=72, margin=16, gap=12):
+    """Logical X11 coordinates, newest at the top, no workarea overflow."""
     x, y, w, h = area
     width = max(1, min(width, w - 2 * margin))
     height = max(1, min(height, h - 2 * margin))
     capacity = max(1, min(MAX_VISIBLE, (max(1, h - 2 * margin) + gap) // (height + gap)))
     count = min(count, capacity)
     right = x + max(0, w - margin - width)
-    bottom = y + max(0, h - margin - height)
-    return [(right, bottom - i * (height + gap), width, height) for i in range(count)]
+    top = y + min(margin, max(0, h - height))
+    return [(right, top + i * (height + gap), width, height) for i in range(count)]

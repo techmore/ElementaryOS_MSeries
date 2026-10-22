@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Benchmark suite for elementary OS on Apple Silicon (MacBook Pro 14" M1 Pro and friends).
 
-  python3 mseries/benchmarks/run.py [--quick] [--skip gpu,disk,...]
+  python3 mseries/benchmarks/run.py [--quick] [--skip gpu,disk,...] [--only power]
 
 Writes mseries/benchmarks/results/<date>-<model>.json. Run on AC power with the machine otherwise idle; the
 script refuses to run on battery (the on-battery CPU cap would skew results) unless --allow-battery is given.
@@ -179,14 +179,39 @@ def bench_boot(quick):
             'note': 'includes the time spent typing the NVMe passphrase, so compare userspace only'}
 
 
+def bench_power(quick):
+    """Idle whole-system power plus compositor CPU/wakeups. Opt-in (--only power): it needs a quiet machine.
+
+    For A/B trials of a compositor or kernel change use power_scenarios.py directly with --label and compare.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import power_scenarios
+    target = Path(tempfile.mkdtemp(prefix='bench-power-')) / 'power.json'
+    try:
+        power_scenarios.main(['run', '--label', 'run.py', '--scenarios', 'idle', '--out', str(target),
+                              '--minutes', '1' if quick else '5', '--warmup', '15' if quick else '60'])
+    except SystemExit as refusal:  # busy machine or no power sensor: record why instead of aborting run.py
+        shutil.rmtree(target.parent, ignore_errors=True)
+        return {'skipped': str(refusal.code)}
+    data = json.loads(target.read_text())
+    shutil.rmtree(target.parent, ignore_errors=True)
+    idle = data['scenarios']['idle']
+    return {'qualified': data['qualified'], 'source': data['context']['power_source'],
+            'backlight_pct': (data['context']['backlight'] or {}).get('pct'),
+            'idle_watts': idle['watts'], 'idle_cpu_busy_pct': idle['cpu_busy_pct'],
+            'idle_processes': idle['processes'], 'idle_mailbox_irq_per_s': idle['mailbox_irq_per_s']}
+
+
 SUITES = {'cpu': bench_cpu, 'memory': bench_memory, 'disk': bench_disk, 'sustained': bench_sustained,
-          'gpu': bench_gpu, 'startup': bench_startup, 'boot': bench_boot}
+          'gpu': bench_gpu, 'startup': bench_startup, 'boot': bench_boot, 'power': bench_power}
+OPT_IN = {'power'}  # only with --only; it refuses to run on a busy machine
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--quick', action='store_true', help='shorter runs (smoke test, not for publishing)')
     parser.add_argument('--skip', default='', help='comma separated suites to skip: ' + ','.join(SUITES))
+    parser.add_argument('--only', default='', help='comma separated suites to run (includes opt-in: power)')
     parser.add_argument('--allow-battery', action='store_true')
     parser.add_argument('--out')
     args = parser.parse_args()
@@ -195,9 +220,10 @@ def main():
     if not info['on_ac'] and not args.allow_battery:
         sys.exit('Plug in the charger first (on battery the CPU is capped), or pass --allow-battery.')
     skip = set(filter(None, args.skip.split(',')))
+    only = set(filter(None, args.only.split(',')))
     results = {}
     for name, suite in SUITES.items():
-        if name in skip:
+        if name in skip or (only and name not in only) or (not only and name in OPT_IN):
             continue
         print(f'== {name}', flush=True)
         started = time.time()

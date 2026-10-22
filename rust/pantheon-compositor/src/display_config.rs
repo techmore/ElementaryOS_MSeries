@@ -2,7 +2,11 @@ use std::{
     collections::HashMap,
     fs, io,
     path::PathBuf,
-    sync::{Arc, Mutex, mpsc},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicI32, Ordering},
+        mpsc,
+    },
     thread,
     time::Duration,
 };
@@ -207,18 +211,39 @@ enum DisplayConfigUpdate {
     Upsert(OutputSnapshot),
     UpsertMany(Vec<OutputSnapshot>),
     Remove(String),
+    PowerSaveMode(i32),
+}
+
+/// Mutter's `PowerSaveMode` values. gsd-power writes `OFF` to blank the
+/// screen when the session goes idle and `ON` when the user returns.
+pub const POWER_SAVE_ON: i32 = 0;
+pub const POWER_SAVE_OFF: i32 = 3;
+
+/// Whether a requested `PowerSaveMode` turns the displays off (standby,
+/// suspend and off all do; this compositor has only on and off).
+pub fn power_save_mode_turns_off(mode: i32) -> Option<bool> {
+    match mode {
+        POWER_SAVE_ON => Some(false),
+        1..=POWER_SAVE_OFF => Some(true),
+        _ => None,
+    }
 }
 
 impl DisplayConfigHandle {
-    pub fn start() -> (Self, mpsc::Receiver<ApplyRequest>) {
+    pub fn start() -> (Self, mpsc::Receiver<ApplyRequest>, mpsc::Receiver<i32>) {
         let (updates, receiver) = mpsc::channel();
         let (apply_requests, apply_receiver) = mpsc::channel();
-        let apply_requests_for_service = apply_requests.clone();
+        let (power_requests, power_receiver) = mpsc::channel();
         thread::Builder::new()
             .name("pantheon-display-config-dbus".into())
-            .spawn(move || serve_display_config(receiver, apply_requests_for_service))
+            .spawn(move || serve_display_config(receiver, apply_requests, power_requests))
             .expect("failed to start display config D-Bus thread");
-        (Self { updates }, apply_receiver)
+        (Self { updates }, apply_receiver, power_receiver)
+    }
+
+    /// Publish the power save mode the compositor actually applied.
+    pub fn set_power_save_mode(&self, mode: i32) {
+        let _ = self.updates.send(DisplayConfigUpdate::PowerSaveMode(mode));
     }
 
     pub fn update(&self, snapshot: OutputSnapshot) {
@@ -251,6 +276,8 @@ pub type ApplyLogicalMonitor = (i32, i32, f64, u32, bool, Vec<ApplyMonitor>, Pro
 struct DisplayConfigServer(
     Arc<Mutex<(u32, HashMap<String, OutputSnapshot>)>>,
     mpsc::Sender<ApplyRequest>,
+    Arc<AtomicI32>,
+    mpsc::Sender<i32>,
 );
 
 #[interface(name = "org.gnome.Mutter.DisplayConfig")]
@@ -385,6 +412,25 @@ impl DisplayConfigServer {
         true
     }
 
+    /// 0 on, 1 standby, 2 suspend, 3 off. The change signal is emitted once
+    /// the compositor has applied it (see `DisplayConfigUpdate::PowerSaveMode`).
+    #[zbus(property(emits_changed_signal = "false"))]
+    fn power_save_mode(&self) -> i32 {
+        self.2.load(Ordering::Acquire)
+    }
+
+    #[zbus(property)]
+    fn set_power_save_mode(&mut self, mode: i32) -> zbus::fdo::Result<()> {
+        if power_save_mode_turns_off(mode).is_none() {
+            return Err(zbus::fdo::Error::InvalidArgs(format!(
+                "unknown power save mode {mode}"
+            )));
+        }
+        self.3
+            .send(mode)
+            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+    }
+
     #[zbus(signal)]
     async fn monitors_changed(emitter: &SignalEmitter<'_>) -> zbus::Result<()>;
 }
@@ -392,6 +438,7 @@ impl DisplayConfigServer {
 fn serve_display_config(
     receiver: mpsc::Receiver<DisplayConfigUpdate>,
     apply_requests: mpsc::Sender<ApplyRequest>,
+    power_requests: mpsc::Sender<i32>,
 ) {
     let connection = match Connection::session() {
         Ok(connection) => connection,
@@ -405,9 +452,15 @@ fn serve_display_config(
     // fabricated Winit monitor when native DRM is selected.
     let initial = HashMap::new();
     let snapshot = Arc::new(Mutex::new((1, initial)));
+    let power_save = Arc::new(AtomicI32::new(POWER_SAVE_ON));
     if let Err(error) = connection.object_server().at(
         OBJECT_PATH,
-        DisplayConfigServer(snapshot.clone(), apply_requests),
+        DisplayConfigServer(
+            snapshot.clone(),
+            apply_requests,
+            power_save.clone(),
+            power_requests,
+        ),
     ) {
         tracing::warn!(%error, "cannot register the display config compatibility interface");
         return;
@@ -421,6 +474,21 @@ fn serve_display_config(
     tracing::info!("serving Mutter display configuration queries and apply requests");
     loop {
         match receiver.recv() {
+            Ok(DisplayConfigUpdate::PowerSaveMode(mode)) => {
+                if power_save.swap(mode, Ordering::AcqRel) == mode {
+                    continue;
+                }
+                let changed = HashMap::from([("PowerSaveMode", zbus::zvariant::Value::from(mode))]);
+                if let Err(error) = connection.emit_signal(
+                    None::<&str>,
+                    OBJECT_PATH,
+                    "org.freedesktop.DBus.Properties",
+                    "PropertiesChanged",
+                    &(INTERFACE, changed, Vec::<&str>::new()),
+                ) {
+                    tracing::warn!(%error, "could not announce the power save mode");
+                }
+            }
             Ok(update) => {
                 let mut state = snapshot.lock().expect("display config lock poisoned");
                 match update {
@@ -445,6 +513,7 @@ fn serve_display_config(
                     DisplayConfigUpdate::Remove(connector) => {
                         state.1.remove(&connector);
                     }
+                    DisplayConfigUpdate::PowerSaveMode(_) => unreachable!("handled above"),
                 }
                 state.0 = state.0.wrapping_add(1).max(1);
                 drop(state);

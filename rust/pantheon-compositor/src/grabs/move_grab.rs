@@ -13,13 +13,43 @@ use smithay::{
         MotionEvent, PointerGrab, PointerInnerHandle, RelativeMotionEvent,
     },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
-    utils::{Logical, Point},
+    utils::{Logical, Point, Rectangle},
 };
 
+/// Pointer travel before a snapped or maximized window un-snaps, so a click
+/// on its title bar never moves it.
+const DETACH_DISTANCE: f64 = 8.0;
+
 pub struct MoveSurfaceGrab {
-    pub start_data: PointerGrabStartData<PantheonCompositor>,
-    pub window: Window,
-    pub initial_window_location: Point<i32, Logical>,
+    start_data: PointerGrabStartData<PantheonCompositor>,
+    window: Window,
+    /// Window location minus pointer location; constant while dragging.
+    offset: Point<f64, Logical>,
+    /// The window is snapped or maximized and has not been pulled out yet.
+    pending_detach: bool,
+    detached: bool,
+    /// Floating rect to return to if the drag ends in a snap.
+    restore: Option<Rectangle<i32, Logical>>,
+}
+
+impl MoveSurfaceGrab {
+    pub fn new(
+        start_data: PointerGrabStartData<PantheonCompositor>,
+        window: Window,
+        initial_window_location: Point<i32, Logical>,
+        detach: bool,
+        restore: Option<Rectangle<i32, Logical>>,
+    ) -> Self {
+        let offset = initial_window_location.to_f64() - start_data.location;
+        Self {
+            start_data,
+            window,
+            offset,
+            pending_detach: detach,
+            detached: false,
+            restore,
+        }
+    }
 }
 
 impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
@@ -33,8 +63,19 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         // While the grab is active, no client has pointer focus
         handle.motion(data, None, event);
 
-        let delta = event.location - self.start_data.location;
-        let new_location = self.initial_window_location.to_f64() + delta;
+        if self.pending_detach {
+            let travel = event.location - self.start_data.location;
+            if travel.x.hypot(travel.y) < DETACH_DISTANCE {
+                return;
+            }
+            self.pending_detach = false;
+            // Restore the floating size under the pointer (S1).
+            if let Some(location) = data.detach_for_drag(&self.window, event.location) {
+                self.offset = location.to_f64() - event.location;
+                self.detached = true;
+            }
+        }
+        let new_location = event.location + self.offset;
         data.space
             .map_element(self.window.clone(), new_location.to_i32_round(), true);
         // Hard stop at the top of the taskbar.
@@ -69,12 +110,14 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
                 .then(|| data.corner_snap_preview.clone())
                 .flatten();
             let window = self.window.clone();
+            let (detached, restore) = (self.detached, self.restore);
             // No more buttons are pressed, release the grab.
             handle.unset_grab(self, data, event.serial, event.time, true);
             data.finish_move_snap();
-            if let Some(snap) = snap {
-                data.commit_move_snap(&window, snap);
-            }
+            // Snapping reads the pointer (panel visibility), which is locked
+            // while this grab runs.
+            data.loop_handle
+                .insert_idle(move |state| state.end_move(&window, snap, detached, restore));
         }
     }
 

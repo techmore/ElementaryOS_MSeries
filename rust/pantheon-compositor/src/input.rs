@@ -107,6 +107,12 @@ pub(crate) fn xkb_config(config: &StartupKeyboardConfig) -> XkbConfig<'_> {
 
 impl PantheonCompositor {
     pub fn process_input_event<I: InputBackend>(&mut self, event: InputEvent<I>) {
+        if !matches!(
+            event,
+            InputEvent::DeviceAdded { .. } | InputEvent::DeviceRemoved { .. }
+        ) {
+            self.note_user_activity();
+        }
         match event {
             InputEvent::Keyboard { event, .. } => {
                 let serial = SERIAL_COUNTER.next_serial();
@@ -138,6 +144,11 @@ impl PantheonCompositor {
                             && keysym.modified_sym()
                                 == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
                             && state.handle_overview_key()
+                        {
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.handle_snap_assist_key(keysym.modified_sym(), modifiers)
                         {
                             return FilterResult::Intercept(());
                         }
@@ -211,6 +222,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.snap_assist_hover(new_location);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -246,6 +258,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.snap_assist_hover(pos);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -260,6 +273,14 @@ impl PantheonCompositor {
                 let button_state = event.state();
                 if button_state == ButtonState::Pressed {
                     self.cancel_active_gesture(event.time());
+                }
+
+                if !self.session_locked
+                    && ButtonState::Pressed == button_state
+                    && self.handle_snap_assist_click(pointer.current_location())
+                {
+                    pointer.frame(self);
+                    return;
                 }
 
                 if !self.session_locked
@@ -290,6 +311,7 @@ impl PantheonCompositor {
                             }
                         });
                     } else {
+                        self.end_popup_grab_unless(None);
                         self.set_x11_keyboard_focus(None, serial);
                         self.space.elements().for_each(|window| {
                             window.set_activated(false);

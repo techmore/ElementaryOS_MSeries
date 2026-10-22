@@ -8,20 +8,22 @@ in `aurora-sep/` for day-to-day use.
 
 | | |
 |---|---|
-| ![Page: hero, hands, finger tiles](docs/page-light.png) | ![Matching blocked on this Mac](docs/page-blocked-light.png) |
-| ![Add Fingerprint in progress](docs/sheet-progress-light.png) | ![Fingerprint added, dark](docs/sheet-done-dark.png) |
+| ![Page: hero, prints, finger tiles](docs/page-light.png) | ![Add Fingerprint: place your finger now](docs/sheet-ready-light.png) |
 
 ## What it does
 
-- **Hero:** one glance at where Touch ID stands (Ready, Not set up, Needs attention, or "Can't unlock yet"), a pair of
-  hands with the enrolled fingertips lit, and the single call to action when nothing is enrolled.
+- **Hero:** one glance at where Touch ID stands (Ready, Not set up, Needs attention, or "Can't unlock yet"), a row of
+  three prints (each enrolled finger has its own ridge pattern, empty slots are dim), and the single call to action when
+  nothing is enrolled.
 - **Driver status:** reads the Secure Enclave driver's `diag/` attributes. A banner and the hero say plainly when the
   sensor is not ready or when matching is blocked (the xART guard on this Mac), and a Details section lists every attribute.
-- **Add Fingerprint sheet** (an `Adw.Dialog`): the finger to use pulses on the hands, the print breathes while waiting,
-  a Place / Lift cue cycles, each accepted touch ripples and fills the print, and success turns it into a green seal with a
-  check. Cancel, Escape and closing all stop the enrolment and release the sensor. The fill is an estimate: the sensor
-  reports 37 stages but a real enrolment finished in about eight touches.
-
+- **Add Fingerprint sheet** (an `Adw.Dialog`): people click Add with a pointer, so it does not assume a finger is
+  already on the sensor. It says "Getting the sensor ready…", then, once the sensor is listening, **"Place your finger
+  on the sensor now"** with a ripple that invites the first touch and a nudge if nothing arrives for 15 seconds. If fprintd
+  reports `finger-present` / `finger-needed` the sheet follows them live ("Hold still", "Lift, then place it again");
+  otherwise a timed Place / Lift cue stands in. Each accepted touch ripples and fills the print; success becomes a green
+  seal with a check. Cancel, Escape and closing all stop the enrolment and release the sensor. The fill is an estimate:
+  the sensor reports 37 stages but a real enrolment finished in about eight touches.
 - **Fingerprints:** tiles for what fprintd has for you, and a dashed Add tile. Up to three fingers; the next free
   finger is chosen for you. **Remove** asks first.
 - **Terminal Commands / System Authorization:** add or remove `pam_fprintd` for `sudo`

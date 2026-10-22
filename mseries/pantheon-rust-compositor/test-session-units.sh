@@ -14,9 +14,13 @@ done
 check pantheon-dock.service 'pantheon-wingpanel.service'
 check pantheon-dock.service 'user-disabled'
 check 'pantheon-rust-compositor@.service' 'Type=notify'
+check 'pantheon-rust-compositor@.service' 'WatchdogSec=30s'
 check 'pantheon-rust-compositor@.service' 'dbus-update-activation-environment --systemd WAYLAND_DISPLAY'
 check 'gnome-session@pantheon-rust-wayland.target.d/session.conf' 'Wants=pantheon-wingpanel.service'
 check 'gnome-session@pantheon-rust-wayland.target.d/session.conf' 'Wants=pantheon-dock.service'
+check pantheon-dock.service 'CPUWeight=400'
+check session.slice.d/50-mseries-latency.conf 'CPUWeight=500'
+check user.slice.d/50-mseries-batch.conf 'CPUWeight=20'
 if command -v systemd-analyze >/dev/null 2>&1; then
     systemd-analyze --user verify "$d"/pantheon-wingpanel.service "$d"/pantheon-dock.service 2>&1 \
         | grep -v -E 'Failed to (prepare|load)|not found|Command .* is not executable|No such file' || true

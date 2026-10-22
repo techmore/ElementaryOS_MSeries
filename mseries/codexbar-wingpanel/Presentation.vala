@@ -47,6 +47,38 @@ namespace MSeries {
             return label;
         }
 
+        /* Account legend: every distinct sign-in email gets one number and one hue across all
+         * providers, so the dropdown and the bar can show "1", "2"... instead of repeating addresses.
+         * The order is the caller's (signed-in accounts first); duplicates differ only in case. */
+        public static string[] account_legend (string[] emails) {
+            string[] legend = {};
+            var seen = new GenericSet<string> (str_hash, str_equal);
+            foreach (var email in emails) {
+                var key = email.strip ().down ();
+                if (key.length == 0 || !key.contains ("@") || seen.contains (key)) continue;
+                seen.add (key);
+                legend += email.strip ();
+            }
+            return legend;
+        }
+
+        /* 1-based position of `email` in `legend`, or 0 when it is not there. */
+        public static int legend_number (string[] legend, string email) {
+            var key = email.strip ().down ();
+            for (int i = 0; i < legend.length; i++) {
+                if (legend[i].down () == key) return i + 1;
+            }
+            return 0;
+        }
+
+        /* elementary palette hues, readable as a filled badge with white text in light and dark styles. */
+        public const string[] ACCOUNT_HUES = { "#3689e6", "#f37329", "#a56de2", "#28bca3", "#de3e80", "#7e5e3b" };
+
+        public static string account_hue (int number) {
+            if (number < 1) return "";
+            return ACCOUNT_HUES[(number - 1) % ACCOUNT_HUES.length];
+        }
+
         public static string plan_label (string plan) {
             var value = plan.strip ();
             if (value.length == 0 || value.down () == "unknown") return "";
