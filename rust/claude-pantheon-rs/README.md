@@ -62,22 +62,22 @@ The same actions sit in the app menu (header bar, right) with their accelerator 
 and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
 Forget Pairing and About (version, server, providers ready).
 
-## Dock popover and compact status window
+## Wingpanel indicator and compact status window
 
-In taskbar mode, the T3-R launcher icon opens a native GTK popover attached to that Dock icon using CodexBar's 250 ms
-hover-open, 450 ms leave grace, click-to-pin and Escape-dismiss behavior. Click **Open full chat** to show the complete
-desktop client with all T3 integrations. New chat, Usage, Settings and live activity rows route to the matching full
-window destination. The popover shows the paired T3 environment, freshness, usage for only the provider selected in
-full chat, and live running or approval-waiting threads. Other provider accounts are managed in Settings → Providers.
-Offline activity is marked stale and cannot be opened as a live thread. Outside taskbar mode, the launcher opens the full
-client directly. `--quick` remains available for the separate compact status window.
+The real hover popover is the optional native Wingpanel indicator (`wingpanel-indicator/`). It appears in the system
+panel, shows only the provider selected in the full chat, badges pending approvals or running work, and opens a compact
+usage/activity view on hover. Clicking **Open Full Chat** or a live activity row opens the full T3-R desktop client at
+the matching destination. Other provider accounts remain in Settings → Providers. When T3 is offline, cached activity
+is labeled last known and its thread rows are disabled. The normal Dock launcher opens the full desktop client;
+`--quick` opens a separate compact status window for explicit use and is not attached to the Dock icon.
 
-The Dock popover reads the local versioned `status.json` snapshot through a file monitor; it does not open another RPC
-socket or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
-normal application shutdown also marks the snapshot stale. Both status surfaces watch the client session D-Bus name, so
-an unclean process exit marks cached activity stale even when the client cannot write a shutdown snapshot. The Wingpanel
-view labels stale usage and activity as last known, disables stale activity rows, and never badges old approval prompts
-as live. Unpairing or switching environments clears the cache.
+Both compact surfaces read the local versioned `status.json` snapshot through a file monitor; they do not open another
+RPC socket or poll. Writes use an atomic rename and mode `0600`. On disconnect the feed keeps the last successful snapshot
+as stale; normal application shutdown also marks it stale. The Wingpanel indicator additionally watches the client
+session D-Bus name, so an unclean process exit marks cached activity stale even when the client cannot write a shutdown
+snapshot. Unpairing or switching environments clears the cache. The Wingpanel module is included in the Debian package
+when built with `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`; install it with `bash mseries/install-claude-pantheon-indicator.sh`
+if only the app package is installed.
 
 ## Thread resume cache
 
@@ -178,10 +178,9 @@ use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windo
 the next-provider capacity decision, then shows 30-day tokens, output, API-equivalent cost, model breakdowns
 and a 7-day activity chart for Claude, Codex, OpenCode and Grok. Cache reads, cache writes and savings appear only
 when the corresponding fields are present in T3's usage summary; missing server metrics are not shown as zero. The
-optional legacy Wingpanel 9 indicator shows the selected chat provider's quota and activity summary
-on hover; clicking it opens quota gauges, running threads and permission prompts, with thread links
-that open in this client. Other provider accounts remain in Settings. The Dock popover is a separate
-CodexBar-style hover surface that opens the full desktop chat on demand. Both read the local status
+optional Wingpanel indicator shows the selected chat provider's quota and activity summary on hover; clicking it opens
+quota gauges, running threads and permission prompts, with thread links that open in this client. Other provider
+accounts remain in Settings. The app's `--quick` window is a separate compact status window. Both read the local status
 feed without starting another connection.
 
 ## What is where

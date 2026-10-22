@@ -1,4 +1,4 @@
-//! Compact Dock launch surface. It reads the app's local status snapshot and routes actions back
+//! Compact status window for explicit quick launch. It reads the app's local status snapshot and routes actions back
 //! through the same App instance, so opening it never creates another T3 connection.
 
 use gtk::{gio, glib, pango, prelude::*};

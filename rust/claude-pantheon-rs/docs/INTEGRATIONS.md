@@ -44,7 +44,7 @@ Each step: commit, screenshot in `docs/`, PERFORMANCE.md re-run so idle RSS is t
 | 4b terminal (vte4) | Done: `src/terminal.rs`, a VTE pane under the chat (Ctrl+Shift+T) attached over `terminal.attach` (history replay, live output), keystrokes through `terminal.write`, size through `terminal.resize`, 512 KiB client cap, elementary Terminal palette; no local PTY. |
 | 4c changes | Partial: Changes page from `orchestration.getFullThreadDiff`, one collapsed diff per file. Branch comparison and PR actions (`pullRequests.*`) not built. |
 | 4d environments | Not built; one direct environment (loopback) only. |
-| 4e Wingpanel indicator | Optional legacy surface: `wingpanel-indicator/` (Vala, Wingpanel 9 API) reads the client's `status.json` feed with a FileMonitor (live prompts as the badge, selected-provider usage gauges, and thread actions). Disconnect and normal client shutdown preserve an explicitly stale last-known snapshot; offline activity is labeled and disabled. Live and stale headless probes cover both states. The app-only Debian package omits it by default. |
+| 4e Wingpanel indicator | Optional native panel surface: `wingpanel-indicator/` (Vala, Wingpanel 9 API) reads the client's `status.json` feed with a FileMonitor (live prompts as the badge, selected-provider usage gauges, and thread actions). Disconnect and normal client shutdown preserve an explicitly stale last-known snapshot; offline activity is labeled and disabled. Live and stale headless probes cover both states. The app-only Debian package omits it by default. |
 | 4f visual replies (WebKitGTK 6) | Not built: `webkit6` crate not in the offline cache. |
 | 4g diagnostics | Done: `src/diagnostics.rs`, `subscribeResourceTelemetry` only while the page is open. |
 | 5 workflow | Done except the webhook task (needs a reachable webhook endpoint through T3 Connect or Tailscale) and automatic per-run rotation (the server has no per-run hook; the client re-picks the provider when the runner is re-installed). |
@@ -58,18 +58,24 @@ ChatGPT via Codex, OpenCode and Grok Build; the T3 server remains the credential
 instances for built-in drivers still need to be installed and enabled on the server. The Rust release
 target compiles; a live sign-in flow and an interactive Pantheon session have not yet been qualified.
 
-## Dock quick surface and ACP agents — 2026-10-22
+## Wingpanel indicator and ACP agents — 2026-10-22
 
-Default Dock launch now opens `src/quick.rs`; **Open full chat** shows the complete `App` window and all its integrations.
-Quick actions route to that same app instance. The surface shows the paired T3 environment and usage only for the
-provider selected in full chat, plus active work and pending approvals. It listens to the atomic, versioned `status.json`
-cache without a second connection or polling, and labels retained data stale after disconnect. Unpair and environment
-switches clear it.
+The normal Dock launcher opens the full `App` window. The optional Wingpanel indicator is the actual system-panel hover
+popover; it shows the paired T3 environment and usage only for the provider selected in full chat, plus active work and
+pending approvals. The `--quick` command opens a separate compact status window. Both read the atomic, versioned
+`status.json` cache without a second connection or polling, and the indicator labels retained data stale after
+disconnect. Unpair and environment switches clear the feed.
 
 Settings can search T3's ACP Registry or add a local ACP command for execution on the paired server. This gives users a
 supported way to register DeepSeek Harness with `dsh --profile acp`, when the paired server has the CLI. That is the
 shipped ACP profile invocation in [DeepSeek Harness's CLI help](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cli-help.md).
-DeepSeek's prefix cache is server-side; retain stable prefixes and report cache-hit data only when T3 returns it.
+DeepSeek's [API context cache](https://api-docs.deepseek.com/guides/kv_cache/) is automatic and server-side. It is
+best-effort: a hit needs a complete prefix unit already persisted, so retaining a stable prompt/history prefix helps,
+but rewriting a request or changing its route can lower reuse. The API exposes `prompt_cache_hit_tokens` and
+`prompt_cache_miss_tokens`; DeepSeek Harness maps hits to `cacheReadTokens` and reports no cache-write metric in its
+[adapter](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-deepseek/README.md). T3-R reports
+cache figures only when the paired server returns corresponding usage fields. No client-owned disk cache can enable or
+replace inference KV reuse.
 The official [DeepSeek Harness session cache](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-projection-cache/README.md)
 offers a separate client-history lesson: the event log stays authoritative, versioned projection checkpoints may lag but never
 lead committed events, and turn completion is a mandatory checkpoint. Its [session query backend](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/session-query-sqlite/README.md)
@@ -78,6 +84,14 @@ pages, and invalidates cursors when the indexed corpus changes. T3-R follows the
 projection-plus-sequence record; a separate SQLite search index is a later option if cross-thread history search needs it.
 These host caches are distinct from DeepSeek's inference KV cache (for example, [FlashMLA](https://github.com/deepseek-ai/FlashMLA)),
 which is inside the model-serving stack and cannot be enabled by this client.
+
+The upstream [T3 Code architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md) confirms the
+same client boundary: the workspace-owning server keeps provider processes and files, while a client subscribes only to
+state needed for its current view. T3-R therefore keeps the server authoritative, resumes threads from
+`snapshotSequence`/`afterSequence`, and caches only a bounded local projection for fast reopen. Issue routing (repo,
+labels, priority and readiness) stays independent from T3's provider/account and usage-capacity selection. The
+large-conversation write and poor-network profiling work remains tracked in
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523).
 
 Settled thread views now use a separate environment/thread-scoped cache record containing the bounded projection,
 history marker and T3 `snapshotSequence`. The record is versioned, atomically replaced, mode `0600`, capped at 8 MiB

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=T3-R Pantheon
 GenericName=AI coding agents
-Comment=A compact Dock panel and full desktop chat for your paired T3 Code server
+Comment=Native desktop chat for AI coding agents connected through T3 Code
 Exec=claude-pantheon-rs
 Icon=io.github.techmore.ClaudePantheonRs
 Terminal=false

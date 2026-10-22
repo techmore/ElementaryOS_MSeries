@@ -1,5 +1,5 @@
-//! The local, at-a-glance cache shared by the Dock quick surface and optional Wingpanel indicator:
-//! running threads, pending permission prompts, and provider usage windows. The quick surface reads
+//! The local, at-a-glance cache shared by the compact status window and optional Wingpanel indicator:
+//! running threads, pending permission prompts, and provider usage windows. Compact surfaces read
 //! this file with a file monitor; it never opens a second T3 connection or polls the server.
 
 use crate::t3::model::{Provider, ThreadShell};
