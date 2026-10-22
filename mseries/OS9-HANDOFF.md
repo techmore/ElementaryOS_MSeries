@@ -7,9 +7,10 @@ prompts, sign-in method/account selection, sign-out confirmation, cancellation a
 secrets remain server-owned; auth request and response bodies are redacted from debug logging. Providers
 still need to be installed and enabled on the T3 Code server.
 
-Validation: `cargo fmt --manifest-path rust/claude-pantheon-rs/Cargo.toml`,
-`cargo check --manifest-path rust/claude-pantheon-rs/Cargo.toml --release`, and `git diff --check`.
-No tests were run. This stays a native GTK/Granite Rust app using standard GTK Wayland support, but
+Validation: `cargo fmt -p claude-pantheon-rs --check`,
+`cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings`,
+`cargo build --release -p claude-pantheon-rs`, and `git diff --check`.
+No tests were run locally. This stays a native GTK/Granite Rust app using standard GTK Wayland support, but
 it has not been installed or exercised in a live Pantheon Rust compositor session; the release build
 does not establish that runtime qualification. Next: run the client and a provider sign-in flow in a
 Pantheon session when available, and record any UI or server compatibility fixes.

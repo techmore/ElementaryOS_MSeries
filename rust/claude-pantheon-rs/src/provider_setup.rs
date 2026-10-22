@@ -588,7 +588,7 @@ impl AuthWindow {
         if let Some(flow_id) = state.flow_id.as_deref() {
             *self.flow_id.borrow_mut() = Some(flow_id.to_string());
         }
-        let label_text = state.message.as_deref().unwrap_or_else(|| match state.phase.as_str() {
+        let label_text = state.message.as_deref().unwrap_or(match state.phase.as_str() {
             "starting" => "Starting sign-in…",
             "waiting" => "Complete the sign-in step to continue.",
             "verifying" => "Checking provider sign-in…",
