@@ -98,6 +98,10 @@ chmod 0755 "$stage/DEBIAN/postinst" "$stage/DEBIAN/postrm"
 
 pkg="$out/claude-pantheon-rs_${debver}_${arch}.deb"
 dpkg-deb --root-owner-group --build "$stage" "$pkg" >/dev/null
+if ((with_indicator)) && ! dpkg-deb --contents "$pkg" | grep -F 'libclaude-pantheon.so' >/dev/null; then
+  echo "The package is missing its requested Wingpanel indicator." >&2
+  exit 1
+fi
 echo "Built $pkg"
 dpkg-deb --info "$pkg" | sed -n '1,12p'
 dpkg-deb --contents "$pkg" | awk '{print $1, $3, $6}'
