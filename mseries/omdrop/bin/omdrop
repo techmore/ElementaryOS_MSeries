@@ -3049,14 +3049,18 @@ heif_to_jpeg() {
 }
 
 act_notify() {
-  local f=$1 args=()
+  local f=$1 args=() image=
   copy_to_clipboard "$f"
   # Only images get a thumbnail, the way a screenshot notification does.
   case "${f,,}" in
-    *.png|*.jpg|*.jpeg|*.gif|*.webp) args+=(--image "$f") ;;
+    *.png|*.jpg|*.jpeg|*.gif|*.webp) image=$f; args+=(--image "$f") ;;
     *.heic|*.heif|*.avif)
+      image=$f
       local preview; preview=$(heic_preview "$f")
-      [[ -n "$preview" ]] && args+=(--image "$preview") ;;
+      if [[ -n "$preview" ]]; then
+        image=$preview
+        args+=(--image "$preview")
+      fi ;;
   esac
   # Same shape as omarchy-capture-screenshot: clipboard plus file, a thumbnail,
   # and the whole toast clickable. The notification service honours exactly one
@@ -3073,9 +3077,27 @@ act_notify() {
   # claiming the urgency of one.
   local what="Saved to $(tildify "$(dirname "$f")")/"
   command -v wl-copy >/dev/null 2>&1 && what="Copied to clipboard, saved to $(tildify "$(dirname "$f")")/"
-  omarchy-notification-send -t 8000 "$(basename "$f")" "$what (or click this)" \
-    "${args[@]}" --exec "$SELF" act open "$f" >/dev/null \
-    || echo "omdrop: notification failed for $f" >&2
+  if command -v omarchy-notification-send >/dev/null 2>&1; then
+    omarchy-notification-send -t 8000 "$(basename "$f")" "$what (or click this)" \
+      "${args[@]}" --exec "$SELF" act open "$f" >/dev/null \
+      || echo "omdrop: notification failed for $f" >&2
+  elif command -v notify-send >/dev/null 2>&1; then
+    # ElementaryOS_MSeries uses the standard desktop notification service.
+    # Keep the action attached to this transient handler so a click can reveal
+    # the received file even when no HEIC viewer is registered.
+    local notify_args=(--app-name=AirDrop --expire-time=8000 --action=default=Open)
+    [[ -n "$image" ]] && notify_args+=(--icon "$image")
+    local action
+    if action=$(notify-send "${notify_args[@]}" "$(basename "$f")" "$what"); then
+      if [[ "$action" == default ]]; then
+        "$SELF" act open "$f"
+      fi
+    else
+      echo "omdrop: notification failed for $f" >&2
+    fi
+  else
+    echo "omdrop: no desktop notification command is available for $f" >&2
+  fi
 }
 
 # What to do with a file once the user has asked for it: `act open` is what the
