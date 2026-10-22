@@ -3426,7 +3426,8 @@ exports expire, two minutes after closing a card that offered a drag. Seven priv
 D-Bus/Xvfb GTK regressions pass; no live account, panel or desktop state changed.
 See `screenshot-shelf/README.md`. Actual Signal compose-preview/content and display
 boundary acceptance plus native Signal UI work remain open; do not close #227
-from source tests alone.
+from source tests alone. The maintainable integration boundary and port limits
+are recorded in [SIGNAL-PANTHEON-DESIGN.md](SIGNAL-PANTHEON-DESIGN.md).
 
 ## Screenshot shelf drag into Signal (Flatpak) — 2026-10-18 (Claude Code)
 

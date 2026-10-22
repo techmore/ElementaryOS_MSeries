@@ -142,7 +142,9 @@ changed, quit and reopen it to see the new colors. The optional `--atomic`
 release mode keeps its verified app tree immutable, so it retains Signal's
 upstream colors. This is the official Electron client with Pantheon integration,
 not a GTK or Granite replacement. Phone linking remains a user step: open Signal,
-then scan its QR code from Signal on your phone.
+then scan its QR code from Signal on your phone. The [Signal on Pantheon design
+note](SIGNAL-PANTHEON-DESIGN.md) records the maintainable integration boundary
+and remaining acceptance gates.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
 **Moving from the Flatpak.** `bash mseries/migrate-signal-flatpak.sh` copies the Flatpak account

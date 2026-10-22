@@ -4,7 +4,9 @@ Signal's installed launcher now checks the active elementary accent each time
 the official ARM64 Electron client opens and refreshes its user-level `app.asar`
 patch when the preference changed. The opt-in atomic installer keeps its signed
 release tree immutable and therefore retains upstream colors. Signal remains an
-Electron integration, not a GTK/Granite port. The actual shelf-to-compose drop
+Electron integration, not a GTK/Granite port. The [implementation boundary and
+maintenance approach](SIGNAL-PANTHEON-DESIGN.md) distinguish this intermediate
+integration from a separate native-client proposal. The actual shelf-to-compose drop
 preview, logged-in Signal appearance and owner desktop acceptance still need a
 real-session check; issue #227 remains open.
 
