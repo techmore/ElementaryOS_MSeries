@@ -1,6 +1,6 @@
 # Unified Aurora 7.2.11 build candidate
 
-## wip4 candidate — October 22, 2026 (build-only, not booted)
+## wip4 candidate — October 22, 2026 (built, not booted)
 
 **Revision 6 pins `7.2.11-elementary-aurora72-wip4`:** unmerged upstream #158 plus #157, the local J314S dock
 recovery patch, and all six requested Aurora20 enhancements. The six ports apply in order to the exact pinned source.
@@ -13,8 +13,10 @@ The local DCP patch addresses the first wip3 dock plug of a boot (2026-10-22), w
 answered the DisplayPort validate call and its port stayed pinned until reboot. A DCP whose DPTX call times out is
 passed over for 300 s, and a timed-out release is completed instead of kept owned. It does not move a tunnel already
 attached to the silent pipeline during that same plug. Evidence: [wip3 DPTX stall report](../hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
-The source is prepared and the patch series is checked; no wip4 kernel build, KUnit run or hardware boot is established.
-wip3 remains installed and running; nothing is staged or armed for wip4. See [review receipt](review-wip4-2026-10-22.json).
+The [ARM64 workflow](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647) passed the candidate,
+normal wip4 and wip4-eGPU kernel/module/DTB builds plus package inspection. The Python admission suite passed 83/83;
+production host controls and the MacSMC ASan/UBSan helper passed for both wip4 profiles. DCP KUnit and hardware boot
+remain open. wip3 remains installed and running; nothing is staged or armed for wip4. See [review receipt](review-wip4-2026-10-22.json).
 
 ## wip3 candidate — October 21, 2026 (build-only, not booted)
 

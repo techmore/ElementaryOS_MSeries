@@ -101,7 +101,7 @@
     "tools/asahi/pmp-power-tests.rs",
     "tools/asahi/m3-runtime-tests.rs"
   ],
-  "qualification": "Build candidate only. All six Aurora20 enhancements were checked against the exact #158 tree and are included in the wip4 source series. Five apply to normal unified72; AMD/Nouveau are opt-in in a separately named eGPU package profile. The M3 thermal safe-cap policy is ported as dormant tested policy code because the #158 M3 backend refuses runtime startup. J613/T8122 camera patches remain firmware/m1n1 scoped. No kernel build, KUnit, J314S boot, dock/recovery, or eGPU/camera hardware qualification is established by source preparation.",
+  "qualification": "Build only; not booted. All six Aurora20 enhancements were checked against the exact #158 tree and are included in the wip4 source series. Five apply to normal unified72; AMD/Nouveau are opt-in in a separately named eGPU package profile. The M3 thermal safe-cap policy is ported as dormant tested policy code because the #158 M3 backend refuses runtime startup. J613/T8122 camera patches remain firmware/m1n1 scoped. ARM64 candidate, unified72 and unified72-egpu kernel/module/DTB builds plus package inspection passed in run 39854228647. DCP KUnit, J314S boot, dock/recovery, and eGPU/camera hardware qualification remain open.",
   "superseded_patches": [
     {
       "file": "0001-stock-bindgen-layout-policy.patch",

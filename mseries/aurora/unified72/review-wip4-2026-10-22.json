@@ -141,7 +141,6 @@
     "eGPU": "Only enabled in separately named unified72-egpu profile; hardware unqualified."
   },
   "not_rerun": [
-    "native ARM64 kernel/Image/modules/DTB build and package inspection; requires CI",
     "KUnit execution of the DCP fabric timeout test",
     "J314S wip4 boot or WD22TB4 first-plug/retry/recovery test",
     "matching-device camera, SMC telemetry or eGPU hardware qualification",
@@ -162,5 +161,52 @@
     "archive_root": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03",
     "git_commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
     "git_tree_sha1": "a305f231d9137847c7f0ececca98e214cc30e792"
+  },
+  "build_evidence": {
+    "workflow_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647",
+    "commit": "6588da01",
+    "started_at": "2026-10-22T21:04:22Z",
+    "completed_at": "2026-10-22T21:48:30Z",
+    "conclusion": "success",
+    "jobs": {
+      "candidate": {
+        "job_id": 120088108657,
+        "conclusion": "success",
+        "duration": "39m29s"
+      },
+      "unified72": {
+        "job_id": 120088108693,
+        "conclusion": "success",
+        "duration": "40m50s"
+      },
+      "unified72-egpu": {
+        "job_id": 120088108282,
+        "conclusion": "success",
+        "duration": "44m03s"
+      }
+    },
+    "package_inspection": "passed in each build job; artifacts contain payload-only packages, source, provenance and checksums",
+    "artifacts": [
+      {
+        "name": "elementary-aurora-enhancements-candidate-39854228647",
+        "size_in_bytes": 308074425,
+        "sha256": "0fcfc2847fadd1ed1baa33a50c3b352459939ebdfc5ee159f1928f25c2930295"
+      },
+      {
+        "name": "elementary-aurora-enhancements-unified72-39854228647",
+        "size_in_bytes": 311760182,
+        "sha256": "e0f18bd6e5e98ebab39d67eeba42335dce2a34b99bc13638fe8664985afd6740"
+      },
+      {
+        "name": "elementary-aurora-enhancements-unified72-egpu-39854228647",
+        "size_in_bytes": 316136851,
+        "sha256": "816ba3b599f41a8ec24052293201073cd41b962fbacef20707c61fd09020581a"
+      }
+    ],
+    "pull_request_checks": {
+      "passed": 19,
+      "skipped": 2,
+      "failed": 0
+    }
   }
 }

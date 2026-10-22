@@ -13,11 +13,13 @@ AMDGPU/Nouveau disabled; `unified72-egpu` is a distinct optional profile/package
 - Owner relevance: the sRGB/DCP changes target the WD22TB4 display path. udmabuf and optional SMC-property discovery
   are generic/conditional. M3 thermal, J613/T8122 cameras and eGPU are not J314S-qualified; camera firmware/m1n1
   prerequisites are recorded in `aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md`.
-- **Still not built or booted.** ARM64 Image/modules/DTBs and package inspection require CI; DCP KUnit and all hardware
-  checks remain open. wip3 stays installed and running, `.20` remains the persistent default, and no boot payload was
-  staged or armed.
+- **Built, not booted.** ARM64 candidate, normal wip4 and wip4-eGPU Image/modules/DTBs builds and package-boundary
+  inspections passed in [run 39854228647](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647).
+  DCP KUnit and hardware checks remain open. wip3 stays installed and running, `.20` remains the persistent default,
+  and no boot payload was staged or armed.
 - Upstream #158/#157 and Aurora #135/#134/#119 remain open; #67 is an open draft. Heads and local hashes are recorded
-  in the audit/series manifests. Branch/PR publication and CI result are the next gates.
+  in the audit/series manifests. The review branch is [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533).
+  Next hardware gate is a separate attended wip4 trial with matched boot-chain/rollback review.
 
 ## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
 
