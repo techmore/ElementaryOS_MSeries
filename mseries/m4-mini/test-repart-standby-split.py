@@ -27,7 +27,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repart', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--hosted-root', action='store_true', help='root on an ephemeral GitHub runner only')
     args = parser.parse_args()
+    if args.hosted_root and (os.geteuid() != 0 or os.environ.get('GITHUB_ACTIONS') != 'true'):
+        raise ValueError('hosted-root mode requires root on the explicit GitHub runner')
     if args.output.exists():
         raise ValueError('new fixture directory required')
     args.output.mkdir(mode=0o700, parents=True)
@@ -57,7 +60,8 @@ def main():
                     text += 'SplitName=-\n'
             (definitions / file.name).write_text(text)
         image = root / (case + '.raw')
-        command = ['unshare', '--user', '--map-root-user', str(args.repart.resolve()),
+        prefix = [] if args.hosted_root else ['unshare', '--user', '--map-root-user']
+        command = prefix + [str(args.repart.resolve()),
                    '--empty=create', '--size=auto', '--dry-run=no', '--offline=yes', '--split=no',
                    '--seed=8a0e9ade-383d-4c42-b412-ad6fe4a2b3ba', '--root=' + str(tree),
                    '--definitions=' + str(definitions), '--certificate=' + str(certificate),
@@ -107,6 +111,7 @@ def main():
     if verity.returncode:
         raise ValueError('active data/hash verification failed: ' + verity.stderr)
     (root / 'receipt.json').write_text(json.dumps({
+        'execution_mode': 'hosted-root' if args.hosted_root else 'synthetic-single-id',
         'scope': 'small GPT/erofs/verity regular-file fixture; no full image or hardware result',
         'repart_version': run([str(args.repart.resolve()), '--version']).stdout.splitlines()[0],
         'case_exit_codes': results, 'gpt_metadata_identical': True,

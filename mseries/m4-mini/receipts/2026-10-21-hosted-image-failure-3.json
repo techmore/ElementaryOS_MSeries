@@ -1,0 +1,9 @@
+{
+  "run": 39713917690,
+  "source": "cc10d6ef85fa4111ef0ed207979e24084d4bfb64",
+  "conclusion": "failure",
+  "stage": "synthetic repart fixture creation, before component retrieval or image build",
+  "diagnostic": "unshare: write failed /proc/self/uid_map: Operation not permitted",
+  "change": "guarded ephemeral CI root fixture execution; no runner security change",
+  "hardware_validated": false
+}
