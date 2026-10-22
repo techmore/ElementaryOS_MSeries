@@ -131,7 +131,8 @@ production read-only `system_status` tool also completed through a T3 thread.
 The local model also read a synthetic Assistant Workspace note through T3's
 `workspace_read_file` tool and returned the exact marker; the note and temporary
 thread were removed, and a fresh status read confirmed zero running and pending
-work.
+work. One authorized `workspace_write_note` request then passed T3's one-time
+approval flow; exact file bytes were verified and the note was deleted.
 An isolated real-model bridge restart check saved a prompt in one ACP process,
 loaded it in a fresh process, and recalled the token; T3 server restart and
 reattachment still need verification. The Liquid 24B model remains unloaded
@@ -140,6 +141,16 @@ six-GiB desktop reserve. A live preflight with Qwen3.5 4B active measured
 10.56 GiB available; the 13.6 GB weights plus reserve need at least 18.67 GiB
 before runtime/context overhead, and the supervisor refused admission. No
 experimental ANE conversation service was started.
+
+A smaller official [LiquidAI LFM2.5-2.6B GGUF](https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/tree/e7caca5d835a3901a8e0d63e94009429bafafdfc)
+passed one real T3 `add_minutes` turn at 8K context: 09:45 + 135 minutes
+returned `12:00` in 32.1 seconds. At 4K, T3's 4,555-token composed request
+exceeded the model context and failed before inference. The 8B candidate was
+refused by the unchanged memory gate (12.18 GiB available versus 12.5 GiB
+required); its temporary download was removed. Qwen3.5 4B remains the default
+profile, but its service could not restart at 12.21 GiB available. The
+supervised 2.6B Liquid profile currently serves port 8766 for this session;
+its systemd unit remains disabled for autostart. See the [live T3 receipt](receipts/t3-live-2026-10-22/receipt.json) for the checkpoint hash and memory measurements.
 
 A synthetic local task request also reached T3's pending permission flow.
 Declining it completed the thread, and a scoped Assistant Tasks read confirmed

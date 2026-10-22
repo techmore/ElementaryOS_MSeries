@@ -114,8 +114,12 @@ The local provider has completed two real model/tool turns plus a read-only
 system-status turn and a real T3 read of one synthetic Assistant Workspace
 note through `workspace_read_file`; the model returned its exact marker and the
 note and temporary thread were removed. A fresh status read confirmed zero
-running and pending work. The earlier synthetic tool-call receipt remains an
-adapter check; these short local turns do not establish broad model quality.
+running and pending work. One explicitly authorized `workspace_write_note`
+call also reached a pending T3 approval, was accepted once, and completed; the
+exact note bytes were verified and the note, newly created empty workspace
+directory, and temporary thread were removed. The earlier synthetic tool-call
+receipt remains an adapter check; these short local turns do not establish
+broad model quality.
 Each authenticated cloud provider also returned a minimal exact-response smoke
 through T3 (Codex, Claude, Grok and OpenCode); the four temporary threads were
 archived. This verifies provider routing, not each feature-specific workflow.
@@ -146,18 +150,38 @@ published M5 Max speed result, but the host's October 22 snapshot had 15.5 GiB
 available, leaving 9.5 GiB after the six-GiB desktop reserve. The vendor's
 published 4-bit MLX checkpoint is 13.6 GB (12.7 GiB) before runtime/context
 memory, so the existing supervisor admission gate still blocks this trial; no
-large Liquid weights were downloaded or loaded. A live preflight while the
+24B weights were downloaded or loaded. A live preflight while the
 Qwen3.5 4B worker was active measured 10.56 GiB available; the 13.6 GB
 checkpoint alone plus the six-GiB desktop reserve needs at least 18.67 GiB
 before runtime/context memory, so the existing gate refused admission. The
 successful T3 turns used the already-qualified Qwen3.5 4B worker.
+
+On October 22, a smaller official [LiquidAI LFM2.5-2.6B GGUF](https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/tree/e7caca5d835a3901a8e0d63e94009429bafafdfc)
+was pinned at revision `e7caca5d835a3901a8e0d63e94009429bafafdfc`, file
+`LFM2.5-2.6B-Q4_K_M.gguf`, SHA-256
+`02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed`. The
+supervised llama.cpp profile passed admission with a four-GiB model budget plus
+the unchanged six-GiB desktop reserve; available memory measured 12.89 GiB
+before load and 11.12 GiB afterward. At 4K context, T3's composed request was
+4,555 tokens and failed before inference. At 8K, a real T3 `add_minutes` turn
+returned `12:00` for 09:45 + 135 minutes in 32.1 seconds. This is one working
+tool turn, not a broad speed or quality qualification. The official 8B Q4_K_M
+candidate was refused at 12.18 GiB available against its 12.5-GiB admission
+threshold; its temporary download was removed without running inference.
+
+After the trial, the default Qwen3.5 4B profile remained unchanged, but its
+6.5-GiB admission plus six-GiB reserve was refused at 12.21 GiB available. The
+supervised 2.6B Liquid profile is currently serving the local ACP endpoint on
+port 8766 so T3 remains usable in this session. Its systemd unit remains
+disabled for autostart; no reserve or admission threshold was lowered.
+
 The current [ANE Qwen experiment](https://github.com/joshuaswarren/ane-linux-experiments)
 records 8.23 tok/s on an original M1 and exact 100-token output; that result is
 not measured on this M1 Pro/T6000, and there is no supervised T3-compatible
 service for it. The repository's bring-up guide warns raw device operations can
-hard-reset the machine, so its scripts are not a safe desktop trial. Both
-candidates need a separate, supervisor-managed path before the local assistant
-can claim model-quality or daily-use qualification.
+hard-reset the machine, so its scripts are not a safe desktop trial. The ANE
+path and 24B Liquid checkpoint still need a separate, supervisor-managed path
+before the local assistant can claim model-quality or daily-use qualification.
 
 A fresh read-only admission check on October 22 measured 9.17 GiB available,
 with a 2510 RPM maximum fan sample and 44.42 C maximum temperature sample. The

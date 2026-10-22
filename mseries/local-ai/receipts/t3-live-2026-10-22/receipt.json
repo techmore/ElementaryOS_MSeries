@@ -36,12 +36,23 @@
     "post_restart_model_recall": "passed"
   },
   "live_provider_readiness": {
-    "providers": ["codex", "claudeAgent", "grok", "opencode", "acp-mseries-assistant"],
+    "providers": [
+      "codex",
+      "claudeAgent",
+      "grok",
+      "opencode",
+      "acp-mseries-assistant"
+    ],
     "states": "all enabled, installed, ready",
     "account_identity_or_credentials_recorded": false
   },
   "live_cloud_provider_smokes": {
-    "providers": ["codex", "claudeAgent", "grok", "opencode"],
+    "providers": [
+      "codex",
+      "claudeAgent",
+      "grok",
+      "opencode"
+    ],
     "result": "all completed with the expected exact response through T3",
     "temporary_threads_archived": true,
     "scope_note": "Minimal non-sensitive response checks; not feature-specific workflow qualification."
@@ -86,5 +97,77 @@
     "reason": "desktop memory reserve would be crossed",
     "model_service_started": false
   },
-  "ane_conversation_trial": "not run; no qualified supervised T3-compatible endpoint"
+  "ane_conversation_trial": "not run; no qualified supervised T3-compatible endpoint",
+  "liquid_2_6b_t3_trial": {
+    "repository": "LiquidAI/LFM2.5-2.6B-GGUF",
+    "revision": "e7caca5d835a3901a8e0d63e94009429bafafdfc",
+    "file": "LFM2.5-2.6B-Q4_K_M.gguf",
+    "bytes": 1674455040,
+    "sha256": "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
+    "checkpoint_retained": true,
+    "supervisor": {
+      "context": 8192,
+      "admission_gib": 4.0,
+      "desktop_reserve_gib": 6.0,
+      "preload_available_gib": 12.89,
+      "postload_available_gib": 11.12
+    },
+    "initial_context_attempt": {
+      "context": 4096,
+      "t3_composed_prompt_tokens": 4555,
+      "result": "Rejected before inference because prompt exceeded context"
+    },
+    "successful_t3_turn": {
+      "tool": "add_minutes",
+      "input": "09:45 + 135 minutes",
+      "expected_answer": "12:00",
+      "observed_answer": "12:00",
+      "projection_status": "completed",
+      "elapsed_seconds": 32.137,
+      "temporary_thread_archived": true
+    },
+    "current_session_runtime": {
+      "model": "LFM2.5-2.6B-Q4_K_M",
+      "endpoint": "127.0.0.1:8766",
+      "service": "mseries-ai-liquid.service",
+      "systemd_enabled": false,
+      "available_gib_after_load": 10.26,
+      "reason": "Keeps the T3 local endpoint available after the Qwen everyday service was refused by its existing memory gate; no admission or reserve was lowered."
+    }
+  },
+  "liquid_8b_memory_gate_trial": {
+    "repository": "LiquidAI/LFM2.5-8B-A1B-GGUF",
+    "revision": "49c14831707011e64d70b2ebd8462ba08d608434",
+    "file": "LFM2.5-8B-A1B-Q4_K_M.gguf",
+    "bytes": 5155564768,
+    "sha256": "4923ec14f06b968b74d663e5949867d2d9c3bf13a20b8be1a9f9af39989b2bb0",
+    "preflight_available_gib": 12.18,
+    "admission_gib": 6.5,
+    "desktop_reserve_gib": 6.0,
+    "minimum_available_gib": 12.5,
+    "inference_started": false,
+    "temporary_download_removed": true
+  },
+  "qwen_everyday_restore_after_trial": {
+    "profile_unchanged": true,
+    "admission_gib": 6.5,
+    "desktop_reserve_gib": 6.0,
+    "preflight_available_gib": 12.21,
+    "service_start_result": "refused by existing memory gate; required 12.5 GiB",
+    "reserve_lowered": false
+  },
+  "live_t3_approved_disposable_workspace_write": {
+    "tool": "workspace_write_note",
+    "synthetic_filename": "codex-t3-one-shot-20261022.md",
+    "request_reached_pending_t3_approval": true,
+    "decision": "accept once",
+    "observed_tool_text": "Temporary T3 write approval verification.",
+    "completed": true,
+    "exact_file_bytes_verified": true,
+    "note_removed": true,
+    "workspace_directory_absent_before": true,
+    "new_empty_workspace_directory_removed": true,
+    "temporary_thread_archived": true,
+    "additional_mutating_tool_calls": 0
+  }
 }
