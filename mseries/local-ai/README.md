@@ -37,8 +37,16 @@ local endpoint is unavailable.
 
 The ACP bridge bounds prompts, retained history and tool results for the
 default 8K context. Long individual results and aggregate tool output in a turn
-are truncated before they return to the model. History stays in the running ACP
-session and is not copied to Newelle's summary memory.
+are truncated before they return to the model. Completed turns are kept in a
+bounded ACP context cache under `$XDG_STATE_HOME/mseries-ai/acp-sessions` (or
+`~/.local/state/mseries-ai/acp-sessions`): at most 24 messages / 12,000
+characters per thread and 512 threads. Snapshot writes are atomic, with a
+private directory and owner-only files. ACP `session/load` restores context
+after a T3 or agent restart; `session/close` frees its MCP process but retains
+the snapshot. The current Newelle summary is loaded again on resume. These
+snapshots are chat context, not model KV state; the bridge keeps using the
+supervised llama.cpp worker's single prompt-cache slot and stable system/tool
+prefix.
 
 The initial setup downloads pinned Qwen3.5 4B and 9B weights (roughly 9 GB combined), Newelle's ARM64 Flatpak/runtime, and the pinned clients. Model weights and personal state stay in the user's home. Factory images stage the offline runtime and compute ICD under `/usr/lib/omarchy-mlx`, llama.cpp under `/usr/lib/mseries-ai/llama`, and user setup under `/usr/share/elementary-mac`. First-user setup uses those runtimes without apt writes to immutable `/usr`. Factory runtime staging and pruning pass; a full image build and hardware boot with this AI layer remain separate qualification steps.
 
@@ -77,16 +85,26 @@ quality check. Our prior LFM2.5 1.2B trial reached 63.59 estimated tok/s but
 passed only 3/9 tool workflows, so it is not a quality or
 speed proxy for this larger checkpoint.
 
-The current M1 Pro snapshot reports 9.5 GiB available, below the model weights
-plus the existing 6 GiB desktop reserve; no download, service start or inference
-was attempted. Recheck the existing supervisor admission gate before a later
-trial, then qualify the GGUF's actual tool-call formatting and the same six
-synthetic app workflows before considering it for daily use. The ANE kernel
-driver is loaded and its retained 20/20 arithmetic smoke proves the device
-executes a small program, not an LLM. [Asahi's feature table](https://asahilinux.org/docs/platform/feature-support/m1/)
-still lists the Neural Engine driver as out of tree. The installed ANE-backed
-Parakeet path is speech transcription; there is no qualified conversational ANE
-model or assistant inference endpoint in this Linux setup.
+The latest M1 Pro snapshot (October 22) reports 15.5 GiB available, with fans
+at 2503 RPM and maximum sampled temperature 49.3 C. After the six-GiB desktop
+reserve, only 9.5 GiB remains. Liquid AI's published 4-bit MLX checkpoint is
+13.6 GB (12.7 GiB) before runtime and context memory; this host still fails the
+supervisor admission gate. The GGUF is not downloaded, and no service start or
+inference was attempted. Recheck the existing supervisor admission gate before
+a later trial, then qualify the GGUF's actual tool-call formatting and the same
+six synthetic app workflows before considering it for daily use. The experimental
+[Linux Qwen-on-ANE repo](https://github.com/joshuaswarren/ane-linux-experiments)
+reports a staged Qwen 2B decode at 8.23 tok/s on an M1, with 100/100 tokens
+exact; its end-to-end timing was 0.69x the paired macOS result. That is a more
+promising research candidate than the earlier arithmetic-only evidence, but
+the repo targets an original M1 and has no measurement for this M1 Pro/T6000 or
+supervised OpenAI-compatible assistant service. Its bring-up guide warns that
+raw device operations can hard-reset the machine, so those scripts are not a
+safe desktop inference trial. This host's custom kernel does have a bound ANE
+driver (`modinfo` reports `intree=Y`); Asahi's feature table still classifies
+the Neural Engine driver as out of tree. The installed ANE-backed Parakeet path
+remains speech transcription. Neither it nor the experimental Qwen path is
+qualified as the daily T3 assistant yet.
 
 Hermes has been retired from the maintained assistant setup. New installs no longer fetch its source or create its launcher. Existing Hermes checkout, virtual environment, configuration, and state in a user's home are retained. On the next assistant configuration, the setup removes only its exact, unmodified generated Hermes desktop entry; a customized entry is preserved. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
 

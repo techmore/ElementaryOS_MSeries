@@ -60,15 +60,20 @@ The installed Newelle profile discovers exactly sixteen tools. The refresh comma
 `acp-agent.py` exposes those same sixteen scoped tools through T3's local ACP
 command. The bridge talks only to a loopback OpenAI-compatible model endpoint
 and starts the existing `os-mcp.py`; it never starts or changes a model worker.
-It adds no transcript or KV disk cache and uses the active model server's
-existing prompt-cache behavior and profile settings.
+It persists only a bounded local transcript context snapshot for ACP
+`session/load`: 24 messages / 12,000 characters per thread, capped at 512
+threads, with atomic writes and owner-only directory/file permissions. It does
+not persist model KV tensors; requests reuse the supervised model server's
+existing one-slot prompt cache and stable system/tool prefix. A fresh ACP
+session reloads the currently opted-in Newelle summary.
 Read-only tools run directly; writes request an ACP one-time permission before
 dispatch. Shell, arbitrary-file, broad browser-control and remote-network tools
 are not exposed. A `--install-acp` setup mode installs only the agent and user
 launcher, leaving Newelle preferences and model services untouched. An explicit
 `--endpoint` argument can point at another already-running loopback profile.
 
-The bridge's provider contract and tool-call path pass isolated Python tests.
+The bridge's provider contract, tool-call path, bounded context snapshot, and
+ACP session load/close lifecycle pass isolated Python tests.
 The ACP-only installer was run; the installed launcher returned successful
 ACP `initialize` and `session/new` responses against the real MCP service. A
 synthetic OpenAI-compatible server then drove the real MCP `add_minutes` tool
@@ -84,6 +89,40 @@ The four existing authenticated providers retained their enabled/installed/auth
 states when this entry was added. Actual model inference remains unqualified
 because the supervised model endpoint was offline; the successful synthetic
 tool-call receipt is an adapter check, not model-quality evidence.
+
+Pantheon's provider setup source now recognizes ACP readiness from the
+T3-reported session status instead of requiring OAuth auth state, and offers
+server-side agent removal instead of sign-in/sign-out. On the next app launch,
+the live `ready` ACP entry will be selectable and described as an agent whose
+local model is checked when a turn is sent. Provider readiness is not evidence
+that the local inference endpoint is online.
+
+### Cache and local-model fit
+
+The local worker already launches llama.cpp with one prompt-cache slot. The ACP
+bridge now keeps its system/tool prefix stable and persists bounded text context
+so T3 can reopen a session; it does not duplicate KV tensors to disk. This
+matches the useful DeepSeek API pattern of reusing stable request prefixes, but
+DeepSeek's [disk context cache](https://api-docs.deepseek.com/guides/kv_cache/)
+is server-side and cannot be applied to the local llama.cpp worker. The official
+[DeepInfer repository](https://github.com/deepseek-ai/DeepInfer) is a
+large-scale GPU inference stack (its published serving benchmark uses 4 SM100
+GPUs for prefill and 64 for decode), so its cache engine is a design reference,
+not a runtime fit for this M1 Pro. DeepSeek models are already listed by the
+connected OpenCode provider; no separate account or unsynced provider is added.
+
+Liquid AI's LFM2.5-24B-A2B has official llama.cpp GGUF support and a strong
+published M5 Max speed result, but the host's October 22 snapshot had 15.5 GiB
+available, leaving 9.5 GiB after the six-GiB desktop reserve. The vendor's
+published 4-bit MLX checkpoint is 13.6 GB (12.7 GiB) before runtime/context
+memory, so the existing supervisor admission gate still blocks this trial.
+The current [ANE Qwen experiment](https://github.com/joshuaswarren/ane-linux-experiments)
+records 8.23 tok/s on an original M1 and exact 100-token output; that result is
+not measured on this M1 Pro/T6000, and there is no supervised T3-compatible
+service for it. The repository's bring-up guide warns raw device operations can
+hard-reset the machine, so its scripts are not a safe desktop trial. Both
+candidates need a separate, supervisor-managed path before the local assistant
+can claim model-quality or daily-use qualification.
 
 The default worker also recovers abandoned upstream CLI reservations when **both** the recorded process and process group are absent, using the pinned upstream owner-checked API. Live, paired or unknown leases remain. Six stale pre-reboot leases were recovered on this host without lowering the reserve.
 

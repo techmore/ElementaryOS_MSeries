@@ -646,13 +646,24 @@ impl ProviderManager {
         }
         card.append(&copy);
 
-        let action_label = if provider.ready() { "Sign out…" } else { "Sign in…" };
+        let is_acp = provider.is_acp_agent();
+        let action_label = if is_acp {
+            "Remove…"
+        } else if provider.ready() {
+            "Sign out…"
+        } else {
+            "Sign in…"
+        };
         let action = gtk::Button::with_label(action_label);
         action.set_valign(gtk::Align::Center);
-        action.set_sensitive(
-            provider.enabled && provider.installed && provider.availability.as_deref() != Some("unavailable"),
-        );
-        action.set_tooltip_text(Some(if provider.ready() {
+        action.set_sensitive(if is_acp {
+            !provider.instance_id.is_empty()
+        } else {
+            provider.enabled && provider.installed && provider.availability.as_deref() != Some("unavailable")
+        });
+        action.set_tooltip_text(Some(if is_acp {
+            "Remove this agent configuration from the T3 Code server"
+        } else if provider.ready() {
             "Sign out on the T3 Code server"
         } else {
             "Start provider sign-in on the T3 Code server"
@@ -661,7 +672,9 @@ impl ProviderManager {
         let provider = provider.clone();
         action.connect_clicked(move |_| {
             if let Some(manager) = weak.upgrade() {
-                if provider.ready() {
+                if provider.is_acp_agent() {
+                    manager.confirm_remove(provider.clone());
+                } else if provider.ready() {
                     manager.confirm_sign_out(provider.clone());
                 } else {
                     manager.start_sign_in(provider.clone());
@@ -755,11 +768,69 @@ impl ProviderManager {
         );
         *self.auth_window.borrow_mut() = Some(auth);
     }
+
+    fn confirm_remove(self: &Rc<Self>, provider: Provider) {
+        let dialog = gtk::AlertDialog::builder()
+            .message(format!("Remove {} from T3 Code?", provider.name()))
+            .detail(
+                "This removes the agent configuration from the T3 Code server. Managed agent files may remain cached.",
+            )
+            .buttons(["Cancel", "Remove"])
+            .default_button(1)
+            .cancel_button(0)
+            .build();
+        let weak = Rc::downgrade(self);
+        dialog.choose(Some(&self.window), gio::Cancellable::NONE, move |response| {
+            if response != Ok(1) {
+                return;
+            }
+            if let Some(manager) = weak.upgrade() {
+                manager.remove_provider(provider.clone());
+            }
+        });
+    }
+
+    fn remove_provider(self: &Rc<Self>, provider: Provider) {
+        self.status.set_text(&format!("Removing {}…", provider.name()));
+        let manager = self.clone();
+        glib::spawn_future_local(async move {
+            match manager
+                .rpc
+                .call(
+                    "server.updateSettings",
+                    json!({
+                        "providerInstanceMutation": {
+                            "operation": "remove",
+                            "instanceId": provider.instance_id
+                        }
+                    }),
+                )
+                .await
+            {
+                Ok(_) => manager.refresh(),
+                Err(error) => manager.status.set_text(&format!("Could not remove agent: {error}")),
+            }
+        });
+    }
 }
 
 fn provider_state(provider: &Provider) -> String {
     if provider.ready() {
-        "Connected".into()
+        if provider.is_acp_agent() { "Agent ready · model checked when you send".into() } else { "Connected".into() }
+    } else if provider.is_acp_agent() {
+        if !provider.enabled {
+            "Agent disabled on the T3 Code server".into()
+        } else if !provider.installed {
+            "Agent not installed on the T3 Code server".into()
+        } else if provider.availability.as_deref() == Some("unavailable") {
+            "Agent unavailable on the T3 Code server".into()
+        } else {
+            match provider.status_text().as_str() {
+                "starting" => "Agent starting".into(),
+                "error" | "failed" => "Agent startup needs attention".into(),
+                _ => "Agent not ready".into(),
+            }
+        }
     } else if !provider.enabled {
         "Disabled on the T3 Code server".into()
     } else if !provider.installed {

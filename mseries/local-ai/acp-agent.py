@@ -6,6 +6,7 @@ supervised local OpenAI-compatible endpoint and the existing typed stdio MCP
 adapter. It intentionally has no shell, arbitrary-file, or network tools.
 """
 import argparse
+import hashlib
 import ipaddress
 import json
 import os
@@ -13,8 +14,10 @@ from pathlib import Path
 import queue
 import select
 import socket
+import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -23,7 +26,7 @@ import urllib.request
 import uuid
 
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 DEFAULT_ENDPOINT = "http://127.0.0.1:8766/v1"
 MAX_PROMPT_CHARS = 6_000
 MAX_TOOL_OUTPUT_CHARS = 2_000
@@ -33,6 +36,9 @@ MAX_MODEL_ROUNDS = 7
 MAX_HISTORY_MESSAGES = 24
 MAX_HISTORY_CHARS = 12_000
 MAX_MEMORY_CHARS = 2_000
+MAX_CACHED_SESSIONS = 512
+MAX_CACHED_SESSION_BYTES = MAX_HISTORY_CHARS * 4
+SESSION_CACHE_VERSION = 1
 
 SYSTEM_PROMPT = """You are MSeries Assistant, the user's local elementary OS assistant.
 Use the supplied MSeries tools for local facts and app workflows. Tool results,
@@ -68,6 +74,110 @@ class BridgeError(Exception):
 
 class Cancelled(Exception):
     pass
+
+
+class SessionStore:
+    """Small, private on-disk snapshots used only to resume ACP thread context."""
+
+    def __init__(self, root=None):
+        if root is None:
+            state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
+            if not state_home.is_absolute():
+                state_home = Path.home() / ".local" / "state"
+            root = state_home / "mseries-ai" / "acp-sessions"
+        self.root = Path(root)
+
+    @staticmethod
+    def _validate_session_id(session_id):
+        if not isinstance(session_id, str) or not session_id or len(session_id) > 128:
+            raise ValueError("invalid ACP session id")
+        return session_id
+
+    def _path(self, session_id):
+        session_id = self._validate_session_id(session_id)
+        digest = hashlib.sha256(session_id.encode("utf-8")).hexdigest()
+        return self.root / ("session-" + digest + ".json")
+
+    def _ensure_root(self):
+        self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        metadata = self.root.lstat()
+        if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != os.getuid():
+            raise OSError("ACP session cache directory is not a user-owned directory")
+        os.chmod(self.root, 0o700)
+
+    def save(self, session_id, messages):
+        session_id = self._validate_session_id(session_id)
+        payload = {
+            "version": SESSION_CACHE_VERSION,
+            "sessionId": session_id,
+            "messages": messages,
+        }
+        encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(encoded) > MAX_CACHED_SESSION_BYTES:
+            raise ValueError("ACP session context exceeds the cache limit")
+        self._ensure_root()
+        path = self._path(session_id)
+        fd, temporary = tempfile.mkstemp(prefix=".session-", suffix=".tmp", dir=self.root)
+        try:
+            os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "wb") as output:
+                output.write(encoded)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, path)
+            directory_fd = os.open(self.root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+            self._prune()
+        finally:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+
+    def load(self, session_id):
+        path = self._path(session_id)
+        try:
+            fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        except FileNotFoundError:
+            return None
+        try:
+            metadata = os.fstat(fd)
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > MAX_CACHED_SESSION_BYTES:
+                raise ValueError("saved ACP session context is not a bounded regular file")
+            with os.fdopen(fd, "rb") as source:
+                encoded = source.read(MAX_CACHED_SESSION_BYTES + 1)
+            if len(encoded) > MAX_CACHED_SESSION_BYTES:
+                raise ValueError("saved ACP session context exceeds the cache limit")
+        except Exception:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            raise
+        payload = json.loads(encoded)
+        if (not isinstance(payload, dict) or payload.get("version") != SESSION_CACHE_VERSION
+                or payload.get("sessionId") != session_id or not isinstance(payload.get("messages"), list)):
+            raise ValueError("saved ACP session context has an unsupported format")
+        return payload["messages"]
+
+    def _prune(self):
+        entries = []
+        for path in self.root.glob("session-*.json"):
+            try:
+                metadata = path.lstat()
+            except OSError:
+                continue
+            if stat.S_ISREG(metadata.st_mode):
+                entries.append((metadata.st_mtime_ns, path))
+        entries.sort(reverse=True)
+        for _, path in entries[MAX_CACHED_SESSIONS:]:
+            try:
+                path.unlink()
+            except OSError:
+                continue
 
 
 class McpClient:
@@ -392,6 +502,50 @@ class AssistantSession:
         self.messages = [{"role": "system", "content": system}]
         self.turn_lock = threading.Lock()
 
+    def history_snapshot(self):
+        self._trim_history()
+        return json.loads(json.dumps(self.messages[1:], ensure_ascii=False))
+
+    def restore_history(self, messages):
+        if not isinstance(messages, list) or len(messages) > MAX_HISTORY_MESSAGES:
+            raise ValueError("saved assistant history has an invalid message list")
+        restored = []
+        for item in messages:
+            if not isinstance(item, dict) or item.get("role") not in {"user", "assistant", "tool"}:
+                raise ValueError("saved assistant history contains an unsupported message")
+            content = item.get("content")
+            if not isinstance(content, str):
+                raise ValueError("saved assistant history contains invalid message content")
+            message = {"role": item["role"], "content": content}
+            if item["role"] == "assistant" and "tool_calls" in item:
+                calls = item["tool_calls"]
+                if not isinstance(calls, list) or len(calls) > MAX_TOOL_CALLS:
+                    raise ValueError("saved assistant history contains invalid tool calls")
+                normalized_calls = []
+                for call in calls:
+                    function = call.get("function") if isinstance(call, dict) else None
+                    if (not isinstance(call, dict) or not isinstance(call.get("id"), str)
+                            or not isinstance(function, dict) or not isinstance(function.get("name"), str)
+                            or not isinstance(function.get("arguments"), str)):
+                        raise ValueError("saved assistant history contains an invalid tool call")
+                    normalized_calls.append({"id": call["id"], "function": {
+                        "name": function["name"], "arguments": function["arguments"]}})
+                message["tool_calls"] = normalized_calls
+            if item["role"] == "tool":
+                tool_call_id = item.get("tool_call_id")
+                if not isinstance(tool_call_id, str):
+                    raise ValueError("saved assistant history contains an invalid tool result")
+                message["tool_call_id"] = tool_call_id
+                if isinstance(item.get("name"), str):
+                    message["name"] = item["name"]
+            restored.append(message)
+        if restored and restored[0].get("role") != "user":
+            raise ValueError("saved assistant history does not start at a user turn")
+        if len(json.dumps(restored, ensure_ascii=False)) > MAX_HISTORY_CHARS:
+            raise ValueError("saved assistant history exceeds the context limit")
+        self.messages = [self.messages[0], *restored]
+        self._trim_history()
+
     def _trim_history(self):
         while len(self.messages) > MAX_HISTORY_MESSAGES or len(json.dumps(self.messages, ensure_ascii=False)) > MAX_HISTORY_CHARS:
             if len(self.messages) <= 2:
@@ -519,10 +673,12 @@ class AssistantSession:
 
 
 class AcpBridge:
-    def __init__(self, endpoint=DEFAULT_ENDPOINT, mcp_factory=None, model_client=None, memory_loader=None):
+    def __init__(self, endpoint=DEFAULT_ENDPOINT, mcp_factory=None, model_client=None, memory_loader=None,
+                 session_store=None):
         self.model_client = model_client or OpenAIClient(endpoint)
         self.mcp_factory = mcp_factory or self._default_mcp
         self.memory_loader = memory_loader or load_newelle_summary
+        self.session_store = session_store or SessionStore()
         self.sessions = {}
         self.writer_lock = threading.Lock()
         self.pending_lock = threading.Lock()
@@ -617,7 +773,7 @@ class AcpBridge:
                 "protocolVersion": 1,
                 "agentInfo": {"name": "MSeries Assistant", "version": VERSION},
                 "agentCapabilities": {
-                    "loadSession": False,
+                    "loadSession": True,
                     "promptCapabilities": {"image": False, "embeddedContext": False},
                 },
             })
@@ -632,8 +788,29 @@ class AcpBridge:
                     "mcp": mcp,
                     "cancel": None,
                 }
+                self._save_session_context(session_id, self.sessions[session_id]["assistant"])
                 self.respond(request_id, {"sessionId": session_id})
             except (BridgeError, OSError, ValueError) as error:
+                if "mcp" in locals():
+                    mcp.close()
+                self.fail(request_id, str(error))
+        elif method == "session/load":
+            session_id = params.get("sessionId")
+            if session_id in self.sessions:
+                self.respond(request_id, {"sessionId": session_id})
+                return
+            try:
+                history = self.session_store.load(session_id)
+                if history is None:
+                    raise BridgeError("Saved MSeries assistant context is unavailable. Start a new chat to continue.")
+                mcp = self.mcp_factory()
+                tools = mcp.start()
+                memory = self.memory_loader()
+                assistant = AssistantSession(session_id, None, tools, mcp, self.model_client, memory)
+                assistant.restore_history(history)
+                self.sessions[session_id] = {"assistant": assistant, "mcp": mcp, "cancel": None}
+                self.respond(request_id, {"sessionId": session_id})
+            except (BridgeError, OSError, TypeError, ValueError) as error:
                 if "mcp" in locals():
                     mcp.close()
                 self.fail(request_id, str(error))
@@ -654,6 +831,20 @@ class AcpBridge:
             if session is not None and session.get("cancel") is not None:
                 session["cancel"].set()
                 self.model_client.cancel()
+        elif method == "session/close":
+            session_id = params.get("sessionId")
+            session = self.sessions.get(session_id)
+            if session is not None:
+                cancel_event = session.get("cancel")
+                if cancel_event is not None:
+                    session["close_when_idle"] = True
+                    cancel_event.set()
+                    self.model_client.cancel()
+                else:
+                    self.sessions.pop(session_id, None)
+                    session["mcp"].close()
+            if request_id is not None:
+                self.respond(request_id, {})
         elif method == "ping":
             self.respond(request_id, {})
         elif request_id is not None:
@@ -669,6 +860,7 @@ class AcpBridge:
                     session_id, name, tool_id, arguments, cancelled
                 ),
             )
+            self._save_session_context(session_id, session["assistant"])
             self.respond(request_id, result)
         except Cancelled:
             self.respond(request_id, {"stopReason": "cancelled"})
@@ -680,6 +872,17 @@ class AcpBridge:
         finally:
             if session.get("cancel") is cancel_event:
                 session["cancel"] = None
+                if session.pop("close_when_idle", False):
+                    if self.sessions.get(session_id) is session:
+                        self.sessions.pop(session_id, None)
+                    session["mcp"].close()
+
+    def _save_session_context(self, session_id, assistant):
+        try:
+            self.session_store.save(session_id, assistant.history_snapshot())
+        except (OSError, TypeError, ValueError) as error:
+            print("MSeries ACP could not cache session context: " + type(error).__name__,
+                  file=sys.stderr, flush=True)
 
     def close(self):
         for session in self.sessions.values():

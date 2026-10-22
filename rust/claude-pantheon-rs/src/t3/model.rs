@@ -170,13 +170,23 @@ impl Provider {
         }
     }
 
-    /// Authenticated and usable now.
+    pub fn is_acp_agent(&self) -> bool {
+        self.driver == "acpRegistry"
+    }
+
+    /// Authenticated and usable now. ACP agents report readiness from their
+    /// successful session handshake rather than an OAuth auth state.
     pub fn ready(&self) -> bool {
         let auth = self.auth_text();
-        self.enabled
-            && self.installed
-            && self.availability.as_deref() != Some("unavailable")
-            && (auth == "authenticated" || auth == "ready" || auth == "ok" || auth == "signed-in")
+        if !self.enabled || !self.installed || self.availability.as_deref() == Some("unavailable") {
+            return false;
+        }
+
+        if self.is_acp_agent() {
+            return self.status_text() == "ready";
+        }
+
+        auth == "authenticated" || auth == "ready" || auth == "ok" || auth == "signed-in"
     }
 }
 
@@ -586,6 +596,34 @@ mod tests {
         assert_eq!(p.name(), "Claude");
         assert_eq!(p.models[0].display(), "Opus");
         assert_eq!(p.models[0].key(), "opus");
+    }
+
+    #[test]
+    fn acp_agent_readiness_uses_session_status_not_oauth_auth() {
+        let mut agent: Provider = serde_json::from_value(serde_json::json!({
+            "instanceId": "acp-mseries-assistant",
+            "driver": "acpRegistry",
+            "displayName": "MSeries Assistant",
+            "enabled": true,
+            "installed": true,
+            "status": "ready",
+            "auth": "unknown"
+        }))
+        .unwrap();
+        assert!(agent.is_acp_agent());
+        assert!(agent.ready());
+
+        agent.status = serde_json::json!("starting");
+        assert!(!agent.ready());
+        agent.status = serde_json::json!("ready");
+        agent.enabled = false;
+        assert!(!agent.ready());
+        agent.enabled = true;
+        agent.installed = false;
+        assert!(!agent.ready());
+        agent.installed = true;
+        agent.availability = Some("unavailable".into());
+        assert!(!agent.ready());
     }
 
     #[test]
