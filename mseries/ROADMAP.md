@@ -4469,3 +4469,13 @@ validation still passes. The delivered bundle's extracted module independently
 replays all ten corrected source files from the pinned base archive. Receipts:
 2026-10-22-mesa5-recipe-integration-preflight.json under mseries/m4-mini/receipts.
 No fresh Mesa5 package or updated full image/ISO is claimed yet.
+
+Fresh integrated Mesa5 workflow dispatched once: run 39735310671 at immutable
+c6e561160331e01b593c45809da5bee48efc466b, confirmed in progress. It owns full
+source replay/build, all supplemental tests, packaging/source bundle and package
+inspection. Do not restart on timeout or dispatch duplicates. Kernel r5 is already
+successful/verified; no native build session remains active locally. Mesa image
+selection stays v4 until a fresh v5 artifact is independently inspected. Before
+promotion, also finish source review of PR1's external-image/compositor capability
+contract; software rendering does not validate native DMA-BUF/YUV/compositor use.
+Receipt: mseries/m4-mini/receipts/2026-10-22-mesa5-hosted-run.json.
