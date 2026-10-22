@@ -1,3 +1,29 @@
+## M4 mini: GPT metadata/payload exporter prepared — 2026-10-21
+
+Added export-partitions.py for Linux-side regular image files. It validates
+protective MBR, primary/backup GPT CRCs and agreement, usable ranges, UUID
+uniqueness and overlap; exports original header/table bytes and typed GUID,
+label/attribute metadata; optionally extracts indexed payloads with hashes.
+O_PATH inspects inode type before a data descriptor is opened. It rejects
+nonregular inputs and never imports or rewrites GPTs. Installer-ready and
+hardware flags remain false.
+
+Six regression tests pass: independent sgdisk 512-byte fixture, converted
+synthetic 4096-byte layout, source/payload/metadata integrity, both GPT copies'
+corruption, valid-CRC overlap and invalid input/index rejection. Wired into
+hardware-support CI with gdisk; no remote CI success claimed. No complete M4
+raw artifact is available, so this remains fixture-qualified export preparation.
+The source GPT's absolute ranges/disk GUID are provenance, not a target restore
+plan: importing its whole table would conflict with preserving existing macOS.
+
+Mapping preflight still fails newuidmap with Operation not permitted and
+NoNewPrivs=1. This build prerequisite has remained unavailable across three
+goal turns. No builds/tests are live. Required next verification is actual
+live/sysupdate assembly, then export/import of its real DPS/verity artifacts;
+do not replace correct UID/GID ownership with a single-ID build. Owner M4 is
+unavailable, so native firmware/Recovery/HDMI/10 Gb acceptance also stays open.
+[Receipt](m4-mini/receipts/2026-10-21-partition-export.json).
+
 ## M4 mini: pinned installer GPT contract gap demonstrated — 2026-10-21
 
 Added audit-installer-contract.py, which extracts only the checksum-pinned

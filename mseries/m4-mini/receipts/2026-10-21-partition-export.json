@@ -1,0 +1,24 @@
+{
+  "scope": "Linux build-side export preparation, synthetic regular-file fixtures; no real M4 sysupdate image available",
+  "exporter_sha256": "fbfaf6fd07082a45a9189da974d41bc2bfd7322fff92c2ef508b6b0c7df790ce",
+  "tests_sha256": "ea5a5fcfc12e8985935907211df7b0f7ce760d8b36ef3b0155663dc6afa7ea3d",
+  "test_log_sha256": "89021f759ad87cfbc403d6b7be4edf098b69cf67efcfdafe7a0991823a8459e4",
+  "test_count": 6,
+  "result": "passed",
+  "fixture_producer": "GPT fdisk (sgdisk) version 1.0.10",
+  "fixtures": "sgdisk-produced 512-byte GPT with payload marker and attributes; separately converted synthetic 4096-byte layout",
+  "checked": [
+    "type/unique GUIDs, label and attribute bits retained",
+    "both GPT headers and complete entry array retained with hashes",
+    "selected payload bytes/size/hash and unchanged source hash",
+    "primary/backup header and entry CRC corruption rejected",
+    "overlap with recomputed valid CRCs rejected",
+    "symlink/character-device and missing partition index rejected before output",
+    "512 and 4096 logical-sector handling"
+  ],
+  "ci": "hardware-support job installs gdisk and runs the regression suite; remote CI success not claimed",
+  "installer_import_implemented": false,
+  "real_m4_image_tested": false,
+  "hardware_validated": false,
+  "remaining": "Real live/sysupdate artifact, real export and metadata-preserving import; local ID mapping unavailable, hosted artifact-only workflow path under review"
+}

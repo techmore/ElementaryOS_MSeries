@@ -461,3 +461,28 @@ artifacts, ESP handoff and native macOS/Recovery acceptance remain required.
 Gravity, Asahi, Aurora and mainline heads were rechecked and remain unchanged.
 
 [Partition-contract receipt](receipts/2026-10-21-installer-partition-contract.json).
+
+## Metadata-preserving export preparation
+
+On Linux, run `python3 mseries/m4-mini/export-partitions.py --image IMAGE.raw
+--output NEW_DIRECTORY` to export validated source GPT metadata. Repeated
+`--extract INDEX` options additionally extract selected partition payloads.
+The input must be a regular file, not a symlink or device. Both GPT copies and
+their CRCs/ranges must agree; duplicate UUIDs and overlapping entries are
+rejected. The manifest retains exact type/unique GUIDs, labels, all attribute
+bits, geometry and hashes, alongside original header/table bytes.
+
+These are **source-image** metadata, not a destination disk restore plan. An
+Apple dual-boot importer must allocate authorized new ranges while preserving
+existing macOS entries. It must not overwrite the Mac's whole GPT with these
+headers. Destination geometry/disk identity require separate validation.
+
+Six tests pass on sgdisk-produced 512-byte and converted synthetic 4096-byte
+fixtures, payload/source integrity, corruption/overlap and input rejection.
+The suite is wired into hardware-support CI; remote CI success is not claimed.
+No complete M4 sysupdate image was available for a real export. This tool does
+not implement native import or make a bundle installable. Full assembly still
+requires subordinate-ID mapping, currently blocked by the execution runner's
+NoNewPrivs setting. Physical M4/Recovery/HDMI/10 Gb checks remain open.
+
+[Exporter receipt](receipts/2026-10-21-partition-export.json).

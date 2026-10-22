@@ -285,13 +285,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install offline test tools
-        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk gdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
         run: |
           set -euo pipefail
           python3 -m unittest discover -s mseries/aurora-sep -p 'test_touchid*.py'
           python3 -m unittest discover -s mseries/power -p 'test_diagnostics.py'
           python3 mseries/m4-mini/test_firmware.py
+          python3 -m unittest discover -s mseries/m4-mini -p 'test_partition_export.py'
           MSERIES_REQUIRE_ESP_TOOLS=1 python3 -m unittest discover -s mseries/hardware -p 'test_*.py'
           bash mseries/hardware/test-bluetooth.sh
           shellcheck -S warning mseries/install-hardware-support.sh mseries/hardware/bluetooth-resume-fix mseries/hardware/bluetooth-supported mseries/power/mseries-sleep-cost-hook
