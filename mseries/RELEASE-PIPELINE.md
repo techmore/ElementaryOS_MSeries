@@ -25,6 +25,11 @@ Packages in both suites today: `mseries-wingpanel-network`, `mseries-quick-setti
 `pantheon-rust-compositor` is built by the `compositor` job and uploaded as a workflow artifact only; it joins
 the suites once the health check covers its recovery path (LightDM session choice).
 
+`claude-pantheon-rs` (Claude for elementary OS, the native T3 client, with its Wingpanel indicator) is built by the
+`claude-pantheon-rs` job of the same workflow with `rust/claude-pantheon-rs/build-deb.sh` and uploaded as an artifact
+only, on every push to dev/main and on PRs touching `rust/**`; `validate-mseries.yml` builds and tests it on PRs touching
+`rust/claude-pantheon-rs/**`. It joins the suites once it has an installed-and-launched check like the plugins.
+
 ## Version rules
 
 `stable` is `<upstream gate>-0mseries<N>` (for example `1.4.0-0mseries3`); `dev` appends
