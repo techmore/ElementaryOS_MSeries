@@ -10753,23 +10753,37 @@ accessibility names and content-surface geometry. Apple HIG is the usability
 baseline, translated through GTK/Granite patterns.
 
 The SDK now owns the typed BlueFerry Messages API v2 D-Bus client and the shared
-status, thread and contact models used by Rust Messages. BlueFerry remains the
+status, thread and contact models used by Rust Messages. Tapbacks fold onto
+their quoted messages, unread state is retained, and uncertain MAP transfer
+errors are kept distinct so the app asks the user to check the iPhone before
+retrying. BlueFerry remains the
 service owner for MAP, history, recipient checks and contact-photo policy. The
 SDK's avatar decoder validates bounded JPEG/PNG headers and only retains small
 in-memory images; the app preserves the user's existing photo opt-in.
 
-MacBook Pro corner defaults are now consistent in source: app content surfaces
-use 12 logical px; GTK3/GTK4 CSD, Gala window clipping and the built-in display
-mask use a provisional 20 logical px, independent of text scale. The previous
-recorded live mask was 14 px. This is not yet hardware-verified as an exact
-panel match; normal, maximized, fullscreen, dialog, popover and external-screen
-corners still need visual qualification. See `mseries/RUST-PANTHEON-SDK.md` and
-the corner calibration row in `mseries/BUG-FIX-ROADMAP.md`.
+The SDK now also owns the Software Updates app's unprivileged CLI adapter for
+the typed `mseries-update-core` contract. The app reads status and requests only
+its closed command set; the OS updater and polkit helper retain package and
+privileged policy.
 
-Torrential's private `mseries-native` branch is at `09deaa8` and pins the SDK at
-public revision `409b8d262f2a662b9f3e33acb98e15472c0d9f06`; it installs the
-shared stylesheet and uses the shared responsive row class. `cargo check --locked`
-passes against the updated pin. Existing source still emits Granite/GTK deprecation warnings; its
+MacBook Pro corner radii now match in source and the user-session override:
+app content surfaces use 12 logical px; GTK CSD, Gala window clipping and the
+built-in display mask use 20 logical px, independent of text scale. On
+2026-10-22, the user-session override was changed from a 12 px Gala window clip
+to 20 px to match its 20 px display mask and GTK theme; the systemd user manager
+was reloaded without restarting the desktop. It takes effect at the next Gala
+session. The running Gala was not available in this shell, and no live
+screenshot review was possible. The source still uses circular corners, and
+the 20 px curve has not been visually calibrated against the physical panel.
+Normal, maximized, fullscreen, dialog, popover and external-screen corners still
+need qualification. See `mseries/RUST-PANTHEON-SDK.md` and the corner
+calibration row in `mseries/BUG-FIX-ROADMAP.md`.
+
+Torrential's private `mseries-native` branch is at `bb1ec24` and pins the SDK at
+public revision `cbc530ba10e87f220b746e06eb72618f40dc7f54`; it installs the
+shared stylesheet, uses the shared responsive row class, and resolves the
+shared update-core dependency. `cargo check --locked` passes against the updated
+pin. Existing source still emits Granite/GTK deprecation warnings; its
 repository-wide rustfmt check also reports pre-existing formatting differences.
 Torrential remains private because its upstream license does not grant
 redistribution rights.
@@ -10809,10 +10823,12 @@ private profile/database or implement its protocol here. See
 
 Source/build checks only; no live GUI, phone, send, install, or desktop-session
 qualification was performed. Current Rust Messages gaps include imported pins,
-bounded link/image previews, Tapback/reaction folding, detailed
-delivery and retry feedback, remaining message actions,
+bounded link/image previews, delivery receipts (not exposed by the MAP transfer
+API), remaining message actions,
 keyboard/accessibility parity, narrow layouts, localization and end-to-end
 owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
 warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
-This continuation separately passed `cargo fmt --check`, `cargo check --locked`
-and Clippy with `-D warnings` for the SDK and Messages. No test suites were run.
+This continuation separately passed formatting, locked compile checks and
+Clippy with `-D warnings` for the SDK, Messages and Software Updates adapter.
+No local test suites were run. GitHub Actions for the latest PR revision are
+queued; they have not passed yet.
