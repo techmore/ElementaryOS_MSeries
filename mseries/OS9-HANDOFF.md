@@ -10856,3 +10856,8 @@ M4 full-image driver stages trusted inputs/boot bundle in a disposable clone
 and retains the full mkosi graph without dependency overrides. Actual summary
 passes all 11 images; execution probe rejects blocked subordinate-ID setup
 before output creation. No full build/ISO result. Hosted kernel/Mesa still active.
+
+M4 native full-profile genkey succeeds in disposable source clone: matching
+key/certificate, self-verification and private-key0600 checked; only public
+metadata retained. No enrollment/image result. Driver patch now derives from
+selected Git commit rather than working copy. Three patch regressions pass.

@@ -1,0 +1,17 @@
+{
+  "scope": "native mkosi genkey in disposable full-graph source clone; no image build or key enrollment",
+  "mkosi_exit": 0,
+  "public_certificate": [
+    "sha256 Fingerprint=EB:8D:D7:80:23:97:FF:2C:61:EE:88:1E:84:CB:B4:19:6E:BE:1D:24:3B:7E:AB:90:62:27:AE:40:B3:F0:52:3D",
+    "notBefore=Oct 22 01:21:23 2026 GMT",
+    "notAfter=Oct 21 01:21:23 2028 GMT"
+  ],
+  "public_key_sha256": "4e61942e8d23aef6e5e246398a8e6f1b2a28b14ac036e64327a88060fe7d950e",
+  "key_certificate_pair_match": true,
+  "private_key_mode": "0600",
+  "self_signed_verification": "passed",
+  "private_key_published": false,
+  "keys_enrolled": false,
+  "hardware_validated": false,
+  "complete_factory_image_built": false
+}

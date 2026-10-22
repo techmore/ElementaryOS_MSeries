@@ -68,7 +68,8 @@ def main():
     subprocess.run(['git', 'merge-base', '--is-ancestor', candidate['recipe_commit'], revision], cwd=REPO, check=True)
     baseline = json.loads((HERE / 'receipts/2026-10-21-gravity-kernel-build.json').read_text())
     build = json.loads((inputs / 'records/kernel-build.json').read_text())
-    original = (REPO / inputs_module.HOOK).read_text()
+    original = subprocess.check_output(['git', 'show', revision + ':' + inputs_module.HOOK],
+                                       cwd=REPO, text=True)
     patch = inputs_module.live_hook_patch(original, baseline, build)
     if (inputs / 'candidate-live-kernel.patch').read_text() != patch or digest(inputs / 'candidate-live-kernel.patch') != candidate['live_hook_patch_sha256']:
         raise ValueError('only the reviewed candidate kernel hash patch is permitted')

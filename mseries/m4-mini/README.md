@@ -729,3 +729,18 @@ blocked newuidmap operation before creating an output workspace or starting
 mkosi. Thus no full-image build result is claimed. ISO assembly, output/ESP
 content checks, install adapter and native qualification remain separate work.
 [Driver preflight](receipts/2026-10-21-full-image-driver-preflight.json).
+
+### Disposable image-key generation
+
+The full-profile native `mkosi genkey` command succeeds in the disposable
+source clone. The generated public certificate matches its private key;
+self-signed certificate verification passes and private-key permissions are
+0600. Only public certificate metadata and public-key digest are recorded;
+private keys remain work-local and were not enrolled. This verifies the key
+preparation step, not verity-image creation, Secure Boot, macOS authorization,
+or native boot. [Key-generation receipt](receipts/2026-10-21-image-keygen.json).
+
+The image driver now derives its permitted kernel patch from `git show` at the
+selected source commit, matching the clone snapshot rather than unrelated
+working-copy edits. Three existing kernel-patch regressions pass. Full build
+execution remains subject to the documented subordinate-ID restriction.
