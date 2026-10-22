@@ -1,0 +1,31 @@
+diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
+index b65f8ac..5323139 100644
+--- a/src/AppSystem/Launcher.vala
++++ b/src/AppSystem/Launcher.vala
+@@ -51,2 +50,0 @@ public class Dock.Launcher : BaseItem {
+-    private Binding current_count_binding;
+-
+@@ -264,13 +262 @@ public class Dock.Launcher : BaseItem {
+-        current_count_binding = app.bind_property ("current_count", badge, "label", SYNC_CREATE,
+-            (binding, srcval, ref targetval) => {
+-                var src = (int64) srcval;
+-
+-                if (src > 0) {
+-                    targetval.set_string ("%lld".printf (src));
+-                } else {
+-                    targetval.set_string ("!");
+-                }
+-
+-                return true;
+-            }, null
+-        );
++        app.bind_property ("current_count", badge, "label", SYNC_CREATE, app_badge_count_to_badge_string);
+@@ -317 +302,0 @@ public class Dock.Launcher : BaseItem {
+-        current_count_binding.unbind ();
+@@ -505,0 +491,6 @@ public class Dock.Launcher : BaseItem {
++
++    private static bool app_badge_count_to_badge_string (Binding binding, Value from_value, ref Value to_value) {
++        var src = from_value.get_int64 ();
++        to_value.set_string (src > 0 ? "%lld".printf (src) : "!");
++        return true;
++    }
