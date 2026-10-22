@@ -114,9 +114,12 @@ impl ProviderManager {
         let registry_query = gtk::SearchEntry::builder().placeholder_text("Search ACP Registry").hexpand(true).build();
         let registry_search = gtk::Button::with_label("Search");
         let local_acp = gtk::Button::with_label("Add local command…");
+        let deepseek_acp = gtk::Button::with_label("DeepSeek Harness…");
+        deepseek_acp.set_tooltip_text(Some("Add DeepSeek Harness as a local ACP command on the T3 server"));
         registry_controls.append(&registry_query);
         registry_controls.append(&registry_search);
         registry_controls.append(&local_acp);
+        registry_controls.append(&deepseek_acp);
         registry_content.append(&registry_controls);
         let registry_status = label("Expand to browse available ACP agents.", &["caption", "dim-label"]);
         registry_status.set_wrap(true);
@@ -188,7 +191,13 @@ impl ProviderManager {
         let weak = Rc::downgrade(&manager);
         local_acp.connect_clicked(move |_| {
             if let Some(manager) = weak.upgrade() {
-                manager.add_local_acp_dialog();
+                manager.add_local_acp_dialog(false);
+            }
+        });
+        let weak = Rc::downgrade(&manager);
+        deepseek_acp.connect_clicked(move |_| {
+            if let Some(manager) = weak.upgrade() {
+                manager.add_local_acp_dialog(true);
             }
         });
         let weak = Rc::downgrade(&manager);
@@ -350,7 +359,7 @@ impl ProviderManager {
         format!("acp-{}", crate::app::new_id().chars().take(16).collect::<String>())
     }
 
-    fn add_local_acp_dialog(self: &Rc<Self>) {
+    fn add_local_acp_dialog(self: &Rc<Self>, prefill_deepseek: bool) {
         let dialog = gtk::Window::builder()
             .title("Add Local ACP Command")
             .transient_for(&self.window)
@@ -366,17 +375,40 @@ impl ProviderManager {
         content.set_margin_bottom(18);
         content.set_margin_start(20);
         content.set_margin_end(20);
-        let intro = label(
-            "The command runs directly on the paired T3 server. No shell expansion is used.",
-            &["caption", "dim-label"],
-        );
+        let intro_text = if prefill_deepseek {
+            concat!(
+                "DeepSeek Harness is experimental and has not been security-audited. ",
+                "It must already be installed on the paired T3 server and can run model-generated commands ",
+                "against the workspace T3 gives it. This fills in its shipped ACP command; it does not install the agent."
+            )
+        } else {
+            "The command runs directly on the paired T3 server. No shell expansion is used."
+        };
+        let intro = label(intro_text, &["caption", "dim-label"]);
         intro.set_wrap(true);
         content.append(&intro);
-        let name = gtk::Entry::builder().placeholder_text("Provider name, e.g. DeepSeek Harness").build();
+        if prefill_deepseek {
+            let safety = gtk::LinkButton::with_label(
+                "https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md",
+                "Read the DeepSeek Harness safety notice",
+            );
+            safety.set_halign(gtk::Align::Start);
+            content.append(&safety);
+        }
+        let name = gtk::Entry::builder()
+            .text(if prefill_deepseek { "DeepSeek Harness" } else { "" })
+            .placeholder_text("Provider name, e.g. DeepSeek Harness")
+            .build();
         name.update_property(&[gtk::accessible::Property::Label("Provider name")]);
-        let command = gtk::Entry::builder().placeholder_text("Command, e.g. dsh").build();
+        let command = gtk::Entry::builder()
+            .text(if prefill_deepseek { "dsh" } else { "" })
+            .placeholder_text("Command, e.g. dsh")
+            .build();
         command.update_property(&[gtk::accessible::Property::Label("ACP command")]);
-        let arguments = gtk::Entry::builder().placeholder_text("Arguments, e.g. --profile default acp").build();
+        let arguments = gtk::Entry::builder()
+            .text(if prefill_deepseek { "--profile acp" } else { "" })
+            .placeholder_text("Arguments, e.g. --profile acp")
+            .build();
         arguments.update_property(&[gtk::accessible::Property::Label("ACP command arguments")]);
         content.append(&form_row("Name", &name));
         content.append(&form_row("Command", &command));

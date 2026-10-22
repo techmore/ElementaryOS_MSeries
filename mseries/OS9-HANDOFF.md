@@ -20,10 +20,15 @@ large-history/poor-network profiling remain open. Cache records retain all loade
 they no longer advance the history cursor past rows dropped from a 500-item cache slice. Older cache schema versions are
 discarded so any intermediate cursor-gap cache cannot be reused.
 
-Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness (`dsh
---profile default acp`) for execution on the paired T3 server. This uses T3's generic ACP path and keeps credentials on
-the server. DeepSeek API prefix caching is server-side and automatic; the client does not add a competing cache layer.
-Keep prompts and tool schemas stable where T3 permits, and expose hit/miss counts only if the server reports them.
+Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness
+(`dsh --profile acp`) for execution on the paired T3 server. The DeepSeek Harness shortcut pre-fills that command,
+links its safety notice, and explains that `dsh` must already be installed on the T3 server. Harness is experimental
+and not security-audited; the agent can run model-generated commands against the workspace T3 exposes. DeepSeek's ACP
+implementation keeps its prompt append-only while the selected route and assembled prefix stay stable; its shipped ACP
+profile keeps that prefix stable for a fixed profile, provider, model, and tool roster. DeepSeek API disk context caching
+is enabled server-side by default, so the
+Pantheon client does not add a competing disk cache layer. Keep prompts and tool schemas stable where T3 permits, and
+expose hit/miss counts only if the server reports them.
 
 Taskbar mode in the Dock patch renders launcher glyphs at 90% and trims spacing: the unmanaged 48 px fallback renders at
 43 px, while an adopted 40 px token renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px. Other
@@ -37,7 +42,9 @@ size token and applies the 90% factor only to launcher rendering/layout.
 Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob/main/docs/internals/connection-runtime.md),
 [T3 architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md), [T3 cache write issue #4005](https://github.com/pingdotgg/t3code/issues/4005),
 [T3 ACP providers](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-acp.md), [DeepSeek context cache](https://api-docs.deepseek.com/guides/kv_cache/),
-and [DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
+[DeepSeek Harness ACP cache behavior](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/acp/acp/README.md),
+[DeepSeek Harness ACP profile](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/acp-app/README.md), and
+[DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
 
 Validation: the thread-resume work previously passed strict release Clippy and all 54 library tests, including cache
 scoping/corruption/size bounds, atomic record round trips, sequence monotonicity, and run-settle projection updates.
@@ -46,9 +53,12 @@ formatted and release-built; library tests were not rerun for this slice. Dock's
 the 2026-10-22 install repeated the build and hover probe, then restarted the service into the private binary.
 `desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
 assembled in `/tmp/cpr-deb-build`. The user-local T3-R app's status feed confirmed a connected environment and selected
-provider account. `~/.local/bin/claude-pantheon-rs` now contains the new release binary; PID 3666742 retains the old
-mapped executable and was not interrupted. The next app launch will load scroll pagination. A live quick-panel visual
-pass and system package installation remain open.
+provider account. The provider-settings DeepSeek shortcut was formatted, release-built, and passed strict release Clippy;
+tests were not rerun. The installed binary matches that release build, but PID 3666742 retains the previous executable
+mapping and was not interrupted. The next app launch will load the history pagination and DeepSeek setup shortcut. The
+paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. A live
+quick-panel visual pass, DeepSeek provider setup, scroll interaction, large-thread history, and high-latency reconnect
+qualification remain open.
 
 Next: after the active process exits, launch the installed thread-history build and review scroll behavior, then verify
 quick/full routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session. Profile a large conversation

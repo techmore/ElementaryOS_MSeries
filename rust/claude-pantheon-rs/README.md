@@ -132,9 +132,13 @@ and saved accounts advertised by the server. The T3 Code server owns provider cr
 sends only the responses needed to complete the current sign-in flow. Providers must be installed and
 enabled on the server before they can be connected here.
 
-The same page can search the ACP Registry or add a local ACP command. For example, register `dsh --profile default acp`
-to use DeepSeek Harness when that CLI is installed on the paired T3 server. The server runs the agent and owns its
-credentials. DeepSeek's API prefix cache is server-side and automatic; the client does not implement a duplicate cache.
+The same page can search the ACP Registry or add a local ACP command. **DeepSeek Harness…** opens a prefilled setup
+for `dsh --profile acp`; this requires `dsh` to already be installed on the paired T3 server. Harness is experimental
+and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
+before enabling it. The server runs the agent against the workspace access T3 provides. DeepSeek API context caching is
+automatic and server-side, so the client does not duplicate it with a disk cache. DeepSeek Harness ACP keeps KV reuse
+append-only while the selected route and assembled prefix stay stable; keep provider, model and tool configuration
+stable when possible.
 
 ## Usage and status (CodexBar-style)
 
