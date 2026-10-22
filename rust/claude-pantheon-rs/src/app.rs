@@ -1782,12 +1782,15 @@ impl App {
     fn reconnect_current(self: &Rc<Self>) {
         self.reconnect_gate.borrow_mut().cancel();
         self.reconnect_attempt.set(0);
-        self.begin_connection_attempt();
+        let connection_generation = self.begin_connection_attempt();
         let app = self.clone();
         glib::spawn_future_local(async move {
             let taken = app.conn.borrow_mut().take();
             if let Some(c) = taken {
                 c.rpc.close().await;
+            }
+            if !app.connection_attempt_is_current(connection_generation) {
+                return;
             }
             app.tunnel.borrow_mut().take();
             *app.live.borrow_mut() = None;
@@ -1932,6 +1935,9 @@ impl App {
         };
         let app = self.clone();
         rpc.on_close(move |reason| {
+            if !app.connection_attempt_is_current(connection_generation) {
+                return;
+            }
             *app.conn.borrow_mut() = None;
             if let Some(live) = app.live.borrow_mut().as_mut() {
                 live.sub_id = None;
@@ -1960,7 +1966,7 @@ impl App {
             self.show_page("empty");
         }
         self.offer_local_claude();
-        self.subscribe_shell();
+        self.subscribe_shell(connection_generation);
         // Plan windows move; re-read the provider snapshot every five minutes (one small RPC).
         let app = self.clone();
         glib::timeout_add_local(std::time::Duration::from_secs(300), move || {
@@ -2059,7 +2065,7 @@ impl App {
         }
     }
 
-    fn subscribe_shell(self: &Rc<Self>) {
+    fn subscribe_shell(self: &Rc<Self>, connection_generation: u64) {
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => return,
@@ -2071,6 +2077,9 @@ impl App {
         let app = self.clone();
         glib::spawn_future_local(async move {
             while let Some(item) = stream.next().await {
+                if !app.connection_attempt_is_current(connection_generation) {
+                    break;
+                }
                 match item {
                     Ok(v) => app.shell_event(&v),
                     Err(e) => {
