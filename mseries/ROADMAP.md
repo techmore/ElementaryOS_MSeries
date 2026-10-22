@@ -66,12 +66,14 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 Started `rust/mseries-pantheon-kit`, a shared Rust GTK 4 / Granite SDK modeled
 on T3. T3, Messages, Disk Space, and Software Updates now depend on it. Shared
 text-line-relative spacing, responsive width observation, accessibility names,
-and a shared 12 logical-pixel content-surface radius. GTK CSD and Gala window
-frames use a separate provisional 20 logical-pixel radius aligned with the
-display-mask source default, independent of text scaling. Initial window sizes
-remain logical app choices. The 20-pixel target has not yet been visually
-measured against the panel; the recorded live mask was 14 pixels. The SDK
-contract adopts Apple HIG usability principles through native Pantheon patterns.
+and a shared 12 logical-pixel content-surface radius are in place. The current
+GTK CSD, Gala clip source and display-mask target use a separate provisional 20
+logical-pixel radius, independent of text scale. A per-user Gala override was
+changed to 20 pixels for the next Gala session; the currently running Gala was
+not reloaded. The value and superellipse curve still need visual calibration
+against the physical panel, so they are not yet qualified as MacBook-matched.
+Initial window sizes remain logical app choices. The SDK contract adopts Apple
+HIG usability principles through native Pantheon patterns.
 The project-wide inventory, scaling policy and staged migration order are in
 [Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
 
@@ -83,7 +85,11 @@ remain open for a later interaction pass.
 Messages is still an optional API v2 prototype beside the qualified Python
 client; its typed BlueFerry D-Bus client and response models now live in the
 shared SDK, with opt-in contact photos decoded to bounded in-memory avatars
-and text-form Tapbacks folded onto the messages they quote.
+and text-form Tapbacks folded onto the messages they quote. The Rust preview
+also has a contact picker, explicit recipient copy, conversation-list quick
+actions, search/refresh/new-message shortcuts, and a retry action for startup
+failure. These source/build changes still need private GUI, accessibility,
+phone and owner acceptance.
 Imported Apple pins need an opaque per-phone identifier in BlueFerry's public
 status API before the Rust client can scope keyring data without reading
 service configuration. Feature parity and owner phone acceptance remain open.

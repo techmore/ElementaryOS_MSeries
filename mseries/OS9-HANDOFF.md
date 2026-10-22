@@ -10871,8 +10871,23 @@ actions, keyboard/accessibility parity, narrow layouts, localization and
 end-to-end owner qualification. Rust workspace `cargo fmt`, `cargo check` and
 Clippy with warnings denied pass for the SDK, T3, Messages, Disk Space and
 Software Updates.
-This continuation separately passed formatting, locked compile checks and
-Clippy with `-D warnings` for the SDK, Messages and Software Updates adapter.
-The Disk Space follow-up separately passed rustfmt check and locked crate
-compilation. No local test suites were run. GitHub Actions for current PR head
-`3825ebcc` are in progress; they have not all passed yet.
+At that checkpoint, formatting, locked compile checks and Clippy with `-D
+warnings` passed for the SDK, Messages and Software Updates adapter. The Disk
+Space follow-up separately passed rustfmt check and locked crate compilation.
+No local test suites were run.
+
+## Messages conversation-list quick actions — 2026-10-22
+
+Rust Messages conversation rows now have right-click and long-press menus for
+marking unread conversations as read and copying one or more recipient
+addresses. The list rows expose an accessible name including the conversation
+and its recipients. Read state continues through BlueFerry's supported
+`MarkThreadRead` API; the UI does not modify BlueFerry data directly.
+
+**Source/build validation:** `cargo fmt --manifest-path rust/Cargo.toml
+--package mseries-messages`, `cargo check --locked --manifest-path
+rust/Cargo.toml -p mseries-messages`, and `git diff --check` passed. No
+interaction test, accessibility inspection or GUI render was run. GitHub
+Actions for draft PR #526 are pending on the new head; do not treat the
+previous-head checks as current. The three unrelated local Software Updates
+files remain uncommitted and untouched.
