@@ -147,6 +147,30 @@ fn bar_row(parts: &[(f64, &str)]) -> gtk::DrawingArea {
     area
 }
 
+fn token_bar_parts(totals: &UsageTotals) -> Vec<(f64, &'static str)> {
+    let mut parts = vec![(totals.uncached_input as f64, "input")];
+    if let Some(cache_writes) = totals.cache_creation {
+        parts.push((cache_writes as f64, "cache write"));
+    }
+    if let Some(cache_reads) = totals.cached_input {
+        parts.push((cache_reads as f64, "cache read"));
+    }
+    parts.push((totals.output as f64, "output"));
+    parts
+}
+
+fn token_legend(totals: &UsageTotals) -> String {
+    let mut parts = vec![format!("input {}", tokens_text(totals.uncached_input))];
+    if let Some(cache_writes) = totals.cache_creation {
+        parts.push(format!("cache write {}", tokens_text(cache_writes)));
+    }
+    if let Some(cache_reads) = totals.cached_input {
+        parts.push(format!("cache read {}", tokens_text(cache_reads)));
+    }
+    parts.push(format!("output {} ({} reasoning)", tokens_text(totals.output), tokens_text(totals.reasoning)));
+    parts.join(" · ")
+}
+
 fn stat(title: &str, value: &str) -> gtk::Box {
     let b = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let v = label(value, &["usage-value"]);
@@ -345,12 +369,7 @@ impl UsagePage {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
             let tokens = label(&format!("{} tokens", tokens_text(p.totals.total())), &["usage-tokens"]);
             row.append(&tokens);
-            let bar = bar_row(&[
-                (p.totals.uncached_input as f64, "input"),
-                (p.totals.cache_creation.unwrap_or_default() as f64, "cache write"),
-                (p.totals.cached_input.unwrap_or_default() as f64, "cache read"),
-                (p.totals.output as f64, "output"),
-            ]);
+            let bar = bar_row(&token_bar_parts(&p.totals));
             bar.set_valign(gtk::Align::Center);
             row.append(&bar);
             let cost_text = p
@@ -360,19 +379,7 @@ impl UsagePage {
             let cost = label(&cost_text, &["usage-cost"]);
             row.append(&cost);
             card.append(&row);
-            let mut legend_parts = vec![format!("input {}", tokens_text(p.totals.uncached_input))];
-            if let Some(cache_writes) = p.totals.cache_creation {
-                legend_parts.push(format!("cache write {}", tokens_text(cache_writes)));
-            }
-            if let Some(cache_reads) = p.totals.cached_input {
-                legend_parts.push(format!("cache read {}", tokens_text(cache_reads)));
-            }
-            legend_parts.push(format!(
-                "output {} ({} reasoning)",
-                tokens_text(p.totals.output),
-                tokens_text(p.totals.reasoning)
-            ));
-            let legend = label(&legend_parts.join(" · "), &["caption", "dim-label"]);
+            let legend = label(&token_legend(&p.totals), &["caption", "dim-label"]);
             card.append(&legend);
 
             // Model breakdown.
@@ -482,6 +489,8 @@ mod tests {
         assert_eq!(codex.totals.cached_input, None);
         assert_eq!(codex.totals.cache_creation, None);
         assert_eq!(codex.savings, None);
+        assert!(!token_legend(&codex.totals).contains("cache"));
+        assert!(token_bar_parts(&codex.totals).iter().all(|(_, name)| !name.starts_with("cache")));
     }
 
     #[test]
@@ -501,5 +510,8 @@ mod tests {
         assert_eq!(claude.totals.cached_input, Some(0));
         assert_eq!(claude.totals.cache_creation, Some(0));
         assert_eq!(claude.savings, Some(0.0));
+        assert!(token_legend(&claude.totals).contains("cache read 0"));
+        assert!(token_legend(&claude.totals).contains("cache write 0"));
+        assert!(token_bar_parts(&claude.totals).iter().any(|(_, name)| *name == "cache read"));
     }
 }
