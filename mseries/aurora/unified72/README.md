@@ -1,5 +1,18 @@
 # Unified Aurora 7.2.10 build candidate
 
+## wip4 candidate — October 22, 2026 (build-only, not booted)
+
+**Revision 5 pins `7.2.11-elementary-aurora72-wip4`:** the same #158 source and #157 patch as wip3, plus one local
+patch, `patches/0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch`. It answers the first wip3 dock plug of
+a boot (2026-10-22), where `dcpext1` (`28cc00000`) never answered the DisplayPort validate call and its port stayed
+pinned to it until reboot. A DCP whose DPTX call times out is passed over for 300 s, and a timed-out release is
+completed instead of kept owned. Evidence, the reasoning, and what it does **not** fix (a tunnel already attached to
+the silent pipeline is not moved within that plug):
+[2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md](../hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
+Receipt: [review-wip4-2026-10-22.json](review-wip4-2026-10-22.json). Checked: patch applies on the exact pinned
+files; the routing change ran in userspace against the real `dcp-fabric-core.c`. **Not done:** kernel build, KUnit,
+any boot. wip3 stays installed and is the running trial kernel; nothing is staged or armed for wip4.
+
 ## wip3 candidate — October 21, 2026 (build-only, not booted)
 
 **Revision 4 pins `7.2.11-elementary-aurora72-wip3`:** unmerged upstream
