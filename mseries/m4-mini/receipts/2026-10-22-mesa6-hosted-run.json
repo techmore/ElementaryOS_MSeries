@@ -1,0 +1,143 @@
+{
+  "observed_at_utc": "2026-10-22T07:23:57.478515+00:00",
+  "run": {
+    "conclusion": "",
+    "databaseId": 39739936855,
+    "event": "workflow_dispatch",
+    "headSha": "18d6f0198417fd2dcb9efd64a3bf0e5713b018b8",
+    "jobs": [
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 119694449194,
+        "name": "build-m4-userspace",
+        "startedAt": "2026-10-22T07:21:40Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v7",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Validate Mesa-only research selection",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Free disposable runner build space",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "Install Mesa build and software-test dependencies",
+            "number": 5,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "Select research Rust and LLVM tools",
+            "number": 6,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Build, test, package and inspect matched Gravity Mesa",
+            "number": 7,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Collect Mesa research diagnostics",
+            "number": 8,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Preserve Mesa research records",
+            "number": 9,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Preserve unpromoted Mesa candidate and corresponding source",
+            "number": 10,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v7",
+            "number": 20,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694449194"
+      },
+      {
+        "completedAt": "2026-10-22T07:21:35Z",
+        "conclusion": "skipped",
+        "databaseId": 119694450676,
+        "name": "build-kernel",
+        "startedAt": "2026-10-22T07:21:36Z",
+        "status": "completed",
+        "steps": [],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694450676"
+      },
+      {
+        "completedAt": "2026-10-22T07:21:35Z",
+        "conclusion": "skipped",
+        "databaseId": 119694450929,
+        "name": "build-m4-boot",
+        "startedAt": "2026-10-22T07:21:36Z",
+        "status": "completed",
+        "steps": [],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694450929"
+      },
+      {
+        "completedAt": "2026-10-22T07:21:35Z",
+        "conclusion": "skipped",
+        "databaseId": 119694451030,
+        "name": "build-m4-kernel",
+        "startedAt": "2026-10-22T07:21:36Z",
+        "status": "completed",
+        "steps": [],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694451030"
+      },
+      {
+        "completedAt": "2026-10-22T07:21:35Z",
+        "conclusion": "skipped",
+        "databaseId": 119694451150,
+        "name": "build-m4-image",
+        "startedAt": "2026-10-22T07:21:36Z",
+        "status": "completed",
+        "steps": [],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694451150"
+      },
+      {
+        "completedAt": "2026-10-22T07:21:35Z",
+        "conclusion": "skipped",
+        "databaseId": 119694452018,
+        "name": "build",
+        "startedAt": "2026-10-22T07:21:36Z",
+        "status": "completed",
+        "steps": [],
+        "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855/job/119694452018"
+      }
+    ],
+    "status": "in_progress",
+    "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39739936855",
+    "workflowName": "OS 9 M-series experimental build"
+  },
+  "scope": "fresh Mesa6 build/package; not image selection or hardware validation",
+  "hardware_validated": false
+}

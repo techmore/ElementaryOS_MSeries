@@ -11506,3 +11506,10 @@ or image success is claimed yet. Selected image Mesa remains4; kernel remainsR5.
 Receipts: 2026-10-22-mesa-external-dynamic-matrix.json,
 2026-10-22-mesa6-source-replay.json and 2026-10-22-mesa6-integration-preflight.json
 under mseries/m4-mini/receipts. Owner hardware remains unavailable.
+
+Fresh Mesa6 hosted run 39739936855 is confirmed in_progress at committed
+18d6f0198417fd2dcb9efd64a3bf0e5713b018b8; only build-m4-userspace is active,
+all other component/image jobs are skipped. Do not dispatch duplicates. Local
+fresh full build remains separately live in session99907. Follow exact handles
+until terminal and inspect receipts. Snapshot:
+mseries/m4-mini/receipts/2026-10-22-mesa6-hosted-run.json.
