@@ -132,7 +132,14 @@ artifact still omitted the module: that workflow passed a relative
 Commit `943ab94f` normalizes relative package output paths before Meson runs.
 A local build with the same relative path now places the module in the `.deb`
 at the expected Wingpanel location, and both indicator fixture probes pass.
-The fixed package workflow still needs an exact-commit ARM64 run.
+The exact `d266decd` ARM64 package job passed on [run 39851141119](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39851141119).
+The downloaded `claude-pantheon-rs_0.1.0-1~mseries1_arm64.deb` is arm64 and
+contains `/usr/lib/aarch64-linux-gnu/wingpanel-9/libclaude-pantheon.so`
+(SHA-256 `f88eec7725f179d711869409f84038d906ae133dc0598e9f33705fe67bd030ec`).
+System installation remains blocked in this session by `no_new_privileges`;
+the user-local chat and Dock popover stay active, while Wingpanel still has its
+previously loaded module. The exact-commit validation run passed the T3 client
+job but failed an unrelated native UI asynchronous-backends fixture.
 
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
