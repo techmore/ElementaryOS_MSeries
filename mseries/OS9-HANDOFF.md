@@ -11629,3 +11629,12 @@ hardware result. Fresh intake/eleven-image summary and full image/ISO are next.
 Receipt: mseries/m4-mini/receipts/2026-10-22-hosted-mesa6-success.json.
 The owner's M4 remains unavailable; native memory/firmware/HDMI/10Gb/GPU/audio,
 unload/installer and macOS-Recovery dual-boot gates remain open.
+
+Fresh actual hosted R5/Mesa6/policy intake passes and retains the compatibility
+archive81196596... alongside the base source. A new committed f62754fa graph
+summary resolves all eleven images with Mesa6's exact hosted package hash/version,
+R5 kernel and reviewed6ac901... boot bundle. Both are preflights, not a new image
+or ISO. Receipts: 2026-10-22-r5-hosted-mesa6-image-intake.json and
+2026-10-22-r5-mesa6-full-graph-summary.json under mseries/m4-mini/receipts.
+Next: dispatch the full research-image workflow once at this reviewed branch,
+including the fresh EFI positive/negative fixtures and full ISO readback path.

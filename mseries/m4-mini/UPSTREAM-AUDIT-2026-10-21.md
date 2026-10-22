@@ -11,8 +11,8 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-These image results belong to the revision-2 baseline. The selected revision-5
-research image rebuild is pending.
+These image results belong to the revision-2 baseline. The selected kernel-R5/
+Mesa6 research image rebuild is pending.
 
 The full revision-5 kernel build and independent downloaded package/source checks
 now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
@@ -27,7 +27,12 @@ sampler matrix, packaging and independent downloaded package/source checks.
 It includes the four reviewed source phases and all eleven final source hashes.
 [Hosted Mesa6](receipts/2026-10-22-hosted-mesa6-success.json).
 The opt-in research profile and hosted inputs now select Mesa6 with kernel R5.
-Fresh input preparation and an updated full image/ISO remain pending. Native EGL
+Fresh hosted-input preparation and the exact eleven-image graph summary pass.
+[Input/graph evidence](receipts/2026-10-22-r5-mesa6-full-graph-summary.json).
+The packaged R5 Image also reaches a minimal PID1 through ARM64 UEFI/GRUB under
+QEMU; this is a small fixture, not the desktop ISO or Apple firmware.
+[EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
+An updated full image/ISO remains pending. Native EGL
 import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with

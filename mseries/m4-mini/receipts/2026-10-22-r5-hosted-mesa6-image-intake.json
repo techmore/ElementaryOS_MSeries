@@ -1,0 +1,37 @@
+{
+  "observed_at_utc": "2026-10-22T08:02:43.414133+00:00",
+  "scope": "actual verified hosted R5/Mesa6 packages and policy intake; no image build",
+  "input_candidate": {
+    "schema": 1,
+    "scope": "validated research image inputs; source checkout and factory pins untouched",
+    "preparer_sha256": "746870ddcb8b85fe51313f8c889955c9c6a4a835616497b37de7072d47407591",
+    "recipe_commit": "f62754fa8ce4c75e36a8f65d56f6eba6a924ebb5",
+    "components": {
+      "kernel": {
+        "file": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-5_arm64.deb",
+        "sha256": "522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628",
+        "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8"
+      },
+      "mesa": {
+        "file": "elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-6_arm64.deb",
+        "sha256": "a240a2f2037c4f8f21b1c8a98da61c8299af5f42dc524e3484a69c127f4e6eb2",
+        "source_archive_sha256": "1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e",
+        "additional_source_archives": {
+          "gravity-mesa-compatibility-source.tar.gz": "8119659658912d9f2c3d6a954f279516dc642c51bee2014d9bb431c8bf5a7170"
+        }
+      },
+      "policy": {
+        "file": "elementary-m4-gravity-policy_20261021-2_arm64.deb",
+        "sha256": "c125094fa9755bc1dae8db58758f0bdca43aeb5735ddea7ac4fd089589497e77"
+      }
+    },
+    "live_hook_patch_required": true,
+    "live_hook_patch_sha256": "1a09a14738c3091d224876846dfa59ca2aeb02fabc74a1e28f5590db99ccad3a",
+    "kernel_image_sha256": "2817fd298819a1d9e4c12e7ac0bffc7636915c26a0a9b95212c939d4ce2e8f42",
+    "kernel_config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+    "factory_promotion": false,
+    "installer_admission": false,
+    "hardware_validated": false
+  },
+  "hardware_validated": false
+}
