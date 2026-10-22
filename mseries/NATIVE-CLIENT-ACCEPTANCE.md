@@ -7,13 +7,13 @@ acceptance gate. It supersedes subjective percentage estimates.
 | Gate | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Shared Rust/GTK/Granite SDK use | Messages uses mseries-pantheon-kit; combined 30 library tests passed | SDK v1 stability audit remains issue #535 |
-| Messages package | ARM64 Debian build passed; runtime minima match GTK 4.20/Granite 7.8 | Rebuild/package latest release, install and launcher handoff |
+| Messages package | Latest keyboard-fix ARM64 Debian build passed; runtime minima match GTK 4.20/Granite 7.8 | Install and launcher handoff |
 | Messages recovery and API errors | Private GTK/D-Bus test passes unavailable service, Retry, v99 rejection and v2 recovery | Actual owner service/session |
 | Messages compose/outbox | Synthetic confirmed, failed and unknown send outcomes pass through actual GTK app | Owner-approved live phone sends; no fixture result proves delivery |
 | Phone isolation | A/B/A drafts, mixed-refresh rejection and delayed old-phone response tests pass | Live phone switching; backend atomic snapshot identity contract |
 | Messages navigation/scaling | Actual 520/1040 resize, Back/reselect and enlarged-font transitions pass | Broader scales, long-content bounds and hardware layout |
 | Messages light/dark | Explicit io.elementary.stylesheet.blueberry and :dark GTK runs pass; four captures reviewed in /tmp/messages-review-{light,dark} | Long-name/unbroken-body light/dark review passed after wrapping fix; broader error/selection states and contrast/accessibility review remain |
-| Keyboard/assistive technology | Accessible names and shortcut source exist; selected GTK navigation tests pass | Complete keyboard focus/order and screen-reader interaction |
+| Keyboard/assistive technology | Actual Ctrl+F focus and Escape clear-search regression passes after child-focus fix; selected GTK navigation tests pass | Complete keyboard focus/order and screen-reader interaction |
 | Feature parity/localization | Migration inventory in RUST-PANTHEON-CLIENTS.md | Explicit Python-client parity review and localization |
 | Phone pins | Validated UUID/keyring/import source and tests | BlueFerry release with merged phone ID field, then live acceptance (latest public v0.8.1 lacks it) |
 | Signal client boundary | Official signed client with Pantheon overlay/tray/launcher; PR #525 | Owner-session theme/tray/update/rollback acceptance; not a Rust Signal UI |
