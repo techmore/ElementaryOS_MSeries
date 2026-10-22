@@ -16,7 +16,12 @@ reported Claude, Codex, OpenCode and Grok installed, enabled and authenticated. 
 rendered in an isolated GTK preview using that server config; its connected and disabled states displayed
 correctly without changing credentials. Interactive sign-in, package CI, and installation for daily launch
 remain open. The app stays native GTK/Granite and standard GTK Wayland; no GNOME Shell API is required.
-Next: finish package CI, then qualify interactive sign-in in the live session before installing for daily use.
+The arm64 PR workflow passed Rust formatting/Clippy, build and tests, T3 contract validation, desktop/AppStream
+checks, the headless Wingpanel probe, and Debian package assembly. The 1.2 MB package contains the app and
+Wingpanel module; a local `apt-get -s install` resolved on this arm64 host with no additional dependencies.
+It has not been installed. Interactive sign-in/out still needs a live account flow; all four providers are
+already authenticated on the configured server, so this pass left those credentials and active sessions alone.
+Next: after review, install the package and qualify normal launch and provider sign-in in the live Pantheon session.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
