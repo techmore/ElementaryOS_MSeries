@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Package validated private-prefix Gravity Mesa; never activate or install it."""
 import argparse
+import importlib.util
 import hashlib
 import json
 from pathlib import Path
@@ -9,8 +10,13 @@ import shutil
 import subprocess
 import tempfile
 
+HERE = Path(__file__).resolve().parent
+spec = importlib.util.spec_from_file_location('mesa_compatibility', HERE / 'mesa-compatibility.py')
+compatibility = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(compatibility)
+
 NAME = 'elementary-m4-gravity-mesa1'
-VERSION = '26.3.0~devel+gravity.87ac51d-4'
+VERSION = compatibility.CURRENT_VERSION
 COMMIT = '87ac51d411f0e58a9433567ec2666f457be89e1d'
 ARCHIVE_SHA = '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e'
 
@@ -27,10 +33,14 @@ def main():
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--validation', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--compatibility-version', default=VERSION)
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError('new output directory required')
     validation = json.loads(args.validation.read_text())
+    version = args.compatibility_version
+    selected = compatibility.metadata(version, validation)
+    compatibility.source_gate(args.source, version)
     if (validation['commit'] != COMMIT or validation['build'] != 'passed' or
             validation['tests']['failed_groups'] != 0 or validation['tests']['meson_groups'] != 5):
         raise ValueError('matching successful Mesa validation required')
@@ -47,6 +57,7 @@ def main():
         if digest(prefix / path) != expected:
             raise ValueError('staged library hash mismatch: ' + path)
     args.output.mkdir(parents=True)
+    bundle = compatibility.source_bundle(args.output / compatibility.BUNDLE_NAME, args.source) if selected['patches'] else None
     with tempfile.TemporaryDirectory(prefix='m4-mesa-package-') as temp:
         root = Path(temp)
         payload = root / 'debian' / NAME
@@ -69,10 +80,21 @@ def main():
         shutil.copytree(args.source / 'licenses', docs / 'licenses')
         shutil.copy2(args.source / 'docs/license.rst', docs / 'license.rst')
         shutil.copy2(args.validation, docs / 'validation.json')
+        if bundle:
+            shutil.copy2(args.output / bundle['file'], docs / bundle['file'])
+            supplemental = docs / 'supplemental-tests'
+            supplemental.mkdir()
+            if set(validation['supplemental_test_receipts']) != {'helper-divergence', 'rodata-upload'}:
+                raise ValueError('both supplemental test receipts required')
+            for name, expected in validation['supplemental_test_receipts'].items():
+                receipt = args.validation.parent / (name + '-tests') / 'receipt.json'
+                if digest(receipt) != expected:
+                    raise ValueError('supplemental test receipt changed')
+                shutil.copy2(receipt, supplemental / (name + '.json'))
         (docs / 'README').write_text('Experimental private-prefix Mesa. No global activation or boot hooks.\nRequires matched M4 kernel/firmware. Software tests are not M4 GPU qualification.\n')
         debian = root / 'debian'
         debian.mkdir(exist_ok=True)
-        control = (f'Package: {NAME}\nVersion: {VERSION}\nArchitecture: arm64\n'
+        control = (f'Package: {NAME}\nVersion: {version}\nArchitecture: arm64\n'
                    'Maintainer: ElementaryOS MSeries contributors <builder@localhost>\n'
                    'Section: graphics\nPriority: optional\n'
                    'Description: Experimental M4 private-prefix graphics libraries\n'
@@ -89,12 +111,15 @@ def main():
                             if line.startswith('shlibs:Depends='))
         (payload / 'DEBIAN').mkdir()
         (payload / 'DEBIAN/control').write_text(control + 'Depends: ' + dependencies + '\n')
-        package = args.output / f'{NAME}_{VERSION}_arm64.deb'
+        package = args.output / f'{NAME}_{version}_arm64.deb'
         subprocess.run(['dpkg-deb', '-Zzstd', '-z3', '--threads-max=2', '--root-owner-group',
                         '--build', str(payload), str(package)], check=True)
     shutil.copy2(args.archive, args.output / 'gravity-mesa-corresponding-source.tar.gz')
     (args.output / 'receipt.json').write_text(json.dumps({
         'commit': COMMIT, 'package': package.name, 'package_sha256': digest(package),
+        'package_version': version, 'compatibility_patches': selected['patches'],
+        'patched_sources_sha256': selected['patched_sources_sha256'], 'supplemental_tests': selected['supplemental_tests'],
+        'compatibility_source_archive': bundle,
         'source_archive_sha256': ARCHIVE_SHA, 'dependencies': dependencies,
         'status': 'private-prefix payload packaged; no installation, activation or M4 GPU qualification',
     }, indent=2) + '\n')

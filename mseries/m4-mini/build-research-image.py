@@ -94,6 +94,13 @@ def main():
     for name, expected in inputs_module.SOURCE_ARCHIVES.values():
         if digest(inputs / name) != expected:
             raise ValueError('required corresponding source changed')
+    additional_sources = {}
+    for kind, component in candidate['components'].items():
+        for name, expected in component.get('additional_source_archives', {}).items():
+            if (kind != 'mesa' or name != 'gravity-mesa-compatibility-source.tar.gz' or
+                    name in additional_sources or digest(inputs / name) != expected):
+                raise ValueError('invalid additional corresponding source')
+            additional_sources[name] = expected
     expected_boot = json.loads((HERE / 'receipts/2026-10-21-repeatable-boot-chain.json').read_text())['boot_bin_sha256']
     baseline_boot = expected_boot
     if args.boot_bundle_receipt:
@@ -136,6 +143,10 @@ def main():
         shutil.copy2(inputs / archive, output / archive)
         if digest(output / archive) != expected:
             raise ValueError('copied corresponding source mismatch')
+    for archive, expected in additional_sources.items():
+        shutil.copy2(inputs / archive, output / archive)
+        if digest(output / archive) != expected:
+            raise ValueError('copied additional corresponding source mismatch')
     shutil.copytree(inputs / 'records', output / 'input-records')
     shutil.copy2(inputs / 'candidate.json', output / 'input-candidate.json')
     if patch:

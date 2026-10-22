@@ -72,3 +72,84 @@ def apply(source, log, version=CURRENT_VERSION):
             raise ValueError('Mesa compatibility patch did not apply: ' + phase['file'])
         check_files(source, phase['after'])
     return source_gate(source, version)
+
+
+BUNDLE_NAME = 'gravity-mesa-compatibility-source.tar.gz'
+BUNDLE_ROOT = 'm4-mesa-reproduction'
+
+
+def source_bundle(output, source):
+    """Ship the base-archive patches and build/test recipes without binary data."""
+    import gzip
+    import io
+    import tarfile
+    files = {}
+    for name in ['build-mesa.py', 'package-mesa.py', 'check-mesa-package.py',
+                 'run-mesa.py', 'mesa-compatibility.py', 'test-mesa-software.c',
+                 'testing/mesa/test-helper-divergence.py', 'testing/mesa/test-rodata-upload.py']:
+        files[name] = (HERE / name).read_bytes()
+    for p in DIRECTORY.iterdir():
+        if p.is_file():
+            files['gravity/mesa-compatibility/' + p.name] = p.read_bytes()
+    license_path = HERE.parents[1] / 'LICENSE'
+    if not license_path.is_file():
+        license_path = HERE / 'COPYING'
+    files['COPYING'] = license_path.read_bytes()
+    files['LICENSE-MIT'] = (source / 'licenses/MIT').read_bytes()
+    files['SOURCE-SHA256SUMS'] = ''.join(
+        hashlib.sha256(data).hexdigest() + '  ' + name + '\n'
+        for name, data in sorted(files.items())).encode()
+    with output.open('xb') as raw:
+        with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=0) as zipped:
+            with tarfile.open(fileobj=zipped, mode='w', format=tarfile.PAX_FORMAT) as archive:
+                for name, data in sorted(files.items()):
+                    info = tarfile.TarInfo(BUNDLE_ROOT + '/' + name)
+                    info.size = len(data)
+                    info.mode = 0o644
+                    archive.addfile(info, io.BytesIO(data))
+    verify_source_bundle(output, CURRENT_VERSION)
+    return {'file': BUNDLE_NAME, 'sha256': digest(output)}
+
+
+def verify_source_bundle(path, version):
+    """Read only: validate source bundle boundaries, index and frozen patch set."""
+    import tarfile
+    selected = snapshot(version)
+    with tarfile.open(path) as archive:
+        data = {}
+        total = 0
+        for member in archive:
+            p = Path(member.name)
+            total += member.size
+            if (not member.isfile() or len(p.parts) < 2 or p.parts[0] != BUNDLE_ROOT or
+                    p.is_absolute() or '..' in p.parts or '\\' in member.name or
+                    member.size < 0 or len(data) >= 100 or total > 20 * 1024**2):
+                raise ValueError('unsafe compatibility source bundle')
+            name = str(p.relative_to(BUNDLE_ROOT))
+            if name in data:
+                raise ValueError('duplicate source bundle member')
+            data[name] = archive.extractfile(member).read()
+    required = {'build-mesa.py', 'package-mesa.py', 'check-mesa-package.py', 'run-mesa.py',
+                'mesa-compatibility.py', 'test-mesa-software.c', 'COPYING', 'LICENSE-MIT',
+                'testing/mesa/test-helper-divergence.py', 'testing/mesa/test-rodata-upload.py',
+                'gravity/mesa-compatibility/manifest.json',
+                'gravity/mesa-compatibility/test-sources.json', 'SOURCE-SHA256SUMS'}
+    if not required <= data.keys():
+        raise ValueError('incomplete compatibility source bundle')
+    index = {}
+    for line in data['SOURCE-SHA256SUMS'].decode().splitlines():
+        value, name = line.split('  ', 1)
+        if name in index or len(value) != 64:
+            raise ValueError('invalid source checksum index')
+        index[name] = value
+    actual = {name: hashlib.sha256(body).hexdigest() for name, body in data.items()
+              if name != 'SOURCE-SHA256SUMS'}
+    if actual != index:
+        raise ValueError('source bundle checksum index mismatch')
+    bundled = json.loads(data['gravity/mesa-compatibility/manifest.json'])
+    if bundled['base_commit'] != MANIFEST['base_commit'] or bundled['versions'][version] != selected:
+        raise ValueError('source bundle version differs from frozen contract')
+    for name, expected in selected['patches'].items():
+        if actual.get('gravity/mesa-compatibility/' + name) != expected:
+            raise ValueError('source bundle patch mismatch: ' + name)
+    return actual

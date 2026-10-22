@@ -4451,3 +4451,21 @@ summary-only, not an image rebuild or ISO. Receipt:
 mseries/m4-mini/receipts/2026-10-22-r5-full-graph-summary.json. Gravity's selected
 kernel and Mesa default heads were rechecked unchanged; Mesa PR1 is still open,
 unmerged at 208d4a4. No native kernel, graphics or boot software was installed.
+
+The corrected Mesa revision-5 recipe is now integrated into the builder, packager
+and checker, retaining explicit historical v4 validation. It applies three exact
+source phases, checks final sources before/after build, runs the five AGX groups,
+seven real-NIR cases and eight allocation-helper cases, then stages/software-tests.
+Fresh hosted package validation remains pending; image selection stays Mesa4.
+
+A bounded read-only source-bundle verifier checks paths/types/checksums, exact
+frozen patch/version content, required recipes/tests and licenses. The source-only
+archive ships inside the .deb and beside its base archive. Image intake and the
+full-graph driver retain this additional archive; existing prepared workspaces
+must be regenerated because prepare-image-inputs.py changed. The workflow also
+preserves a complete reproduction tree. Six bundle/version tests, three image
+hash-patch tests and two workflow tests pass; actual historical Mesa4 package
+validation still passes. The delivered bundle's extracted module independently
+replays all ten corrected source files from the pinned base archive. Receipts:
+2026-10-22-mesa5-recipe-integration-preflight.json under mseries/m4-mini/receipts.
+No fresh Mesa5 package or updated full image/ISO is claimed yet.

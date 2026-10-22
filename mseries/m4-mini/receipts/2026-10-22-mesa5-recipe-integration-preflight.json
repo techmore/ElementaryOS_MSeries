@@ -1,0 +1,66 @@
+{
+  "observed_at_utc": "2026-10-22T06:38:32.994253+00:00",
+  "scope": "integrated Mesa5 builder/package/checker/source retention preflight; fresh hosted package build not yet run",
+  "source_sha256": {
+    "build-mesa.py": "b3c21b097f02101c4901750fc90099f8c6fb63ddc3c1c15ac6b62bf9e557f770",
+    "package-mesa.py": "08b7a6b4956d1a3dc627f5f1937e7de04466668f32905a0ad7d9d1d5ecf62301",
+    "check-mesa-package.py": "612f0fe62481e34b25f926c36f95ab881f46dc6274e03cec68f75d000c5f677f",
+    "mesa-compatibility.py": "4803211e25285f51145953e506d6066dde0aa3ff39097da065857076af9b4d58",
+    "prepare-image-inputs.py": "746870ddcb8b85fe51313f8c889955c9c6a4a835616497b37de7072d47407591",
+    "build-research-image.py": "49f8c886b557a186ae28134f69a20f0c18582da8a6910adb5eda8f724cf7cc3d"
+  },
+  "tests": {
+    "mesa_compatibility_and_bundle_cases": 6,
+    "image_hash_patch_cases": 3,
+    "hosted_workflow_cases": 2,
+    "passed": true
+  },
+  "historical_v4_package_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "package_version": "26.3.0~devel+gravity.87ac51d-4",
+    "compatibility_patches": {},
+    "patched_sources_sha256": {},
+    "corresponding_compatibility_source": null,
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "delivered_source_bundle_preflight": {
+    "scope": "actual delivered source bundle with MIT/GPL licenses and build/test recipes; extracted module replays original source into all ten tested final files",
+    "bundle": {
+      "file": "gravity-mesa-compatibility-source.tar.gz",
+      "sha256": "497a6a91479708b339451ad519c5d303140a67588e1053eb734428b77fe717ee"
+    },
+    "members_sha256": {
+      "COPYING": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "LICENSE-MIT": "323c587d0ccf10e376f8bf9a7f31fb4ca6078105194b42e0b1e0ee2bc9bde71f",
+      "build-mesa.py": "b3c21b097f02101c4901750fc90099f8c6fb63ddc3c1c15ac6b62bf9e557f770",
+      "check-mesa-package.py": "612f0fe62481e34b25f926c36f95ab881f46dc6274e03cec68f75d000c5f677f",
+      "gravity/mesa-compatibility/0001-public-m4-mini-graphics-fixes.patch": "9779f90cbe747cbdaa80d314c9d00030d19ad1ec73ce66001570318f5d969bb3",
+      "gravity/mesa-compatibility/0002-hk-rodata-upload-errors.patch": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+      "gravity/mesa-compatibility/0003-nir-fragment-workgroup-id-divergence.patch": "5746319f36a8c6b312e6a8a6e3f125fa8a4df461b47b416de427f7183d6dc4b6",
+      "gravity/mesa-compatibility/README.md": "1a9bd981edeb1117af748a70914f16d79bd62346b92d33c582e1642078a3058a",
+      "gravity/mesa-compatibility/manifest.json": "1c7376eca226f5a2f006f5069bcb78dff02494e204a1433e4426e148ff9630a5",
+      "gravity/mesa-compatibility/test-sources.json": "608b596e52c92560fa843e733da5d474cc11631d98507d480d1b0e332631413f",
+      "mesa-compatibility.py": "4803211e25285f51145953e506d6066dde0aa3ff39097da065857076af9b4d58",
+      "package-mesa.py": "08b7a6b4956d1a3dc627f5f1937e7de04466668f32905a0ad7d9d1d5ecf62301",
+      "run-mesa.py": "508c8636a0651a2f267a0e009ad9e15f1c7e1ea839b81a7311a96f76d12603b7",
+      "test-mesa-software.c": "2287a2919a9a01b0614cc06b30d785c5d4b990f8d080b7a714c1ece966570bac",
+      "testing/mesa/test-helper-divergence.py": "5f6feabb6f997a232bb6cdf374b7f791fcad1d4aa23cdd3567d1683db76cfd4a",
+      "testing/mesa/test-rodata-upload.py": "70d6c51a84528140b223d80b19acba3bb2e01733ebac5746040003fc7fa2fe41"
+    },
+    "ten_source_files_reproduced": true,
+    "package_built": false,
+    "hardware_validated": false
+  },
+  "selected_image_mesa_version": 4,
+  "research_build_recipe_version": 5,
+  "fresh_package_validated": false,
+  "hardware_validated": false
+}

@@ -1,6 +1,6 @@
-Versioned source gates for the next M4 research Mesa package. The standalone
-compatibility module is prepared; integration into the default builder, packager
-and checker is still pending. Current image/component selection is unchanged.
+Versioned source gates for the next M4 research Mesa package. The builder, packager and checker now use revision 5 by default, with explicit
+historical revision-4 support. Image/component selection stays on verified Mesa4
+until a fresh hosted Mesa5 package passes.
 
 The base is Gravity Mesa 87ac51d, with its existing pinned archive and kernel UAPI.
 Three immutable phases apply the eight public PR1 commits, the allocation/error
@@ -17,7 +17,10 @@ metadata issue must remain corrected by the later phase.
 
 Full combined driver build, five AGX groups, seven actual-NIR cases, eight
 allocation-helper cases and isolated llvmpipe have passed in separate native
-receipts. Packaging/reproduction integration, a fresh hosted package and native
+receipts. The compatibility source bundle contains exact patches, recipes, tests and
+MIT/GPL licenses, ships inside the package and beside the base source archive,
+and is retained through image intake. Its extracted module independently replays
+all ten source hashes. A fresh hosted package and native
 compositor/full tile-pipeline/GPU tests remain open. Future revisions must retain
 these snapshots and patch bytes so historical artifacts remain checkable.
 

@@ -23,7 +23,8 @@ boot bundle. Input preparation with the existing Mesa/policy also passes.
 
 The corrected Mesa candidate passes a full driver build, five AGX groups, seven
 actual-NIR cases and isolated software rendering. Its versioned source recipe
-replays exact tested hashes; default builder/package integration remains pending.
+replays exact tested hashes; builder/package/checker and corresponding-source
+integration are prepared for a fresh hosted revision-5 package.
 Selected Mesa stays revision 4. Full desktop ISO, native GPU/unload, installer and
 owner dual-boot acceptance remain unqualified.
 

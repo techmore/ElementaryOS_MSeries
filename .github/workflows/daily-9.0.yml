@@ -263,12 +263,16 @@ jobs:
             --stage "$RUNNER_TEMP/m4-mesa/stage" --validation "$RUNNER_TEMP/m4-mesa/receipt.json" \
             --output mkosi.packages-m4-mesa-research
           python3 mseries/m4-mini/check-mesa-package.py \
-            --package mkosi.packages-m4-mesa-research/elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb \
+            --package mkosi.packages-m4-mesa-research/elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-5_arm64.deb \
             --package-receipt mkosi.packages-m4-mesa-research/receipt.json \
             --build-receipt "$RUNNER_TEMP/m4-mesa/receipt.json" --smoke "$RUNNER_TEMP/m4-mesa/mesa-software" \
             --receipt build-record/package-check.json
           mkdir -p mkosi.packages-m4-mesa-research/reproduction
-          cp mseries/m4-mini/{build-mesa,package-mesa,check-mesa-package,run-mesa}.py mkosi.packages-m4-mesa-research/reproduction/
+          cp mseries/m4-mini/{build-mesa,package-mesa,check-mesa-package,run-mesa,mesa-compatibility}.py mkosi.packages-m4-mesa-research/reproduction/
+          mkdir -p mkosi.packages-m4-mesa-research/reproduction/{gravity,testing/mesa}
+          cp -a mseries/m4-mini/gravity/mesa-compatibility mkosi.packages-m4-mesa-research/reproduction/gravity/
+          cp mseries/m4-mini/testing/mesa/{test-helper-divergence,test-rodata-upload}.py mkosi.packages-m4-mesa-research/reproduction/testing/mesa/
+          cp LICENSE mkosi.packages-m4-mesa-research/reproduction/COPYING
           cp mseries/m4-mini/test-mesa-software.c mkosi.packages-m4-mesa-research/reproduction/
           cp "$RUNNER_TEMP/m4-mesa/receipt.json" mkosi.packages-m4-mesa-research/build-receipt.json
           cp "$RUNNER_TEMP/m4-mesa/mesa-software" mkosi.packages-m4-mesa-research/

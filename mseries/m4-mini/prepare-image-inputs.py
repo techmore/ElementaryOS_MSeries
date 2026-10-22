@@ -98,6 +98,15 @@ def main():
             raise ValueError('copied source checksum mismatch: ' + name)
         components[name] = {'file': package.name, 'sha256': digest(packages / package.name),
                             'source_archive_sha256': archive_sha}
+        extra = recorded.get('compatibility_source_archive')
+        if extra is not None:
+            if name != 'mesa' or extra['file'] != 'gravity-mesa-compatibility-source.tar.gz':
+                raise ValueError('unexpected additional corresponding source')
+            archive = package.parent / extra['file']
+            if digest(archive) != extra['sha256']:
+                raise ValueError('additional corresponding source changed')
+            shutil.copy2(archive, args.output / extra['file'])
+            components[name]['additional_source_archives'] = {extra['file']: extra['sha256']}
     policy_package = args.output / 'policy-build' / policy['package']
     shutil.copy2(policy_package, packages / policy_package.name)
     if digest(packages / policy_package.name) != policy['package_sha256']:

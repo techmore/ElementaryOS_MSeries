@@ -5,6 +5,9 @@ import copy
 import hashlib
 import importlib.util
 import json
+import io
+import tarfile
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -49,6 +52,52 @@ class MesaCompatibilityTests(unittest.TestCase):
         compiled = json.loads((HERE / 'receipts/2026-10-22-mesa-combined-candidate-build.json').read_text())
         for name, record in compiled['candidate_sources'].items():
             self.assertEqual(final[name], record['after_sha256'])
+
+    def test_source_bundle_roundtrip_and_frozen_patch_rejection(self):
+        with tempfile.TemporaryDirectory(prefix='m4-mesa-bundle-') as temp:
+            root = Path(temp)
+            source = root / 'source'
+            (source / 'licenses').mkdir(parents=True)
+            (source / 'licenses/MIT').write_text('Unit fixture license placeholder, not a release source tree.')
+            bundle = root / module.BUNDLE_NAME
+            record = module.source_bundle(bundle, source)
+            self.assertEqual(record['sha256'], hashlib.sha256(bundle.read_bytes()).hexdigest())
+            module.verify_source_bundle(bundle, module.CURRENT_VERSION)
+            with tarfile.open(bundle) as archive:
+                files = {m.name: archive.extractfile(m).read() for m in archive}
+            patch = module.BUNDLE_ROOT + '/gravity/mesa-compatibility/' + next(iter(module.snapshot(module.CURRENT_VERSION)['patches']))
+            files[patch] += b'\ncorrupt source patch\n'
+            index = module.BUNDLE_ROOT + '/SOURCE-SHA256SUMS'
+            files[index] = ''.join(hashlib.sha256(data).hexdigest() + '  ' +
+                str(Path(name).relative_to(module.BUNDLE_ROOT)) + '\n'
+                for name, data in sorted(files.items()) if name != index).encode()
+            changed = root / 'changed.tar.gz'
+            with tarfile.open(changed, 'w:gz') as archive:
+                for name, data in files.items():
+                    info = tarfile.TarInfo(name)
+                    info.size = len(data)
+                    archive.addfile(info, io.BytesIO(data))
+            with self.assertRaisesRegex(ValueError, 'patch mismatch'):
+                module.verify_source_bundle(changed, module.CURRENT_VERSION)
+
+    def test_source_bundle_rejects_unsafe_and_incomplete_members(self):
+        with tempfile.TemporaryDirectory(prefix='m4-mesa-bad-bundle-') as temp:
+            root = Path(temp)
+            for index, name in enumerate([module.BUNDLE_ROOT + '/../outside', module.BUNDLE_ROOT + '/link']):
+                bundle = root / str(index)
+                with tarfile.open(bundle, 'w:gz') as archive:
+                    info = tarfile.TarInfo(name)
+                    if index:
+                        info.type = tarfile.SYMTYPE
+                        info.linkname = '/outside'
+                    archive.addfile(info)
+                with self.assertRaisesRegex(ValueError, 'unsafe'):
+                    module.verify_source_bundle(bundle, module.CURRENT_VERSION)
+            empty = root / 'empty'
+            with tarfile.open(empty, 'w:gz'):
+                pass
+            with self.assertRaisesRegex(ValueError, 'incomplete'):
+                module.verify_source_bundle(empty, module.CURRENT_VERSION)
 
     def test_unknown_versions_rejected(self):
         with self.assertRaises(ValueError):
