@@ -40,6 +40,18 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Factory speaker protection wired into ARM64 images — 2026-10-21
+
+Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,
+live installer and sysupdate package set, with its `multi-user.target` link
+preserved through pruning. DSP remains excluded pending first-boot volume
+qualification. Seven image-wiring tests and Python compilation pass; no image
+has yet been built from this change. The October 18 generic ARM64 installed-VM
+receipt is prior evidence and does not include it. Next: artifact-only image
+build, verify package/version/link in both payloads, then isolated VM
+installation/boot. Physical Apple audio and boot remain open.
+[Audit and provenance](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+
 ## Rust compositor: menus, notification cards, attention — 2026-10-21
 
 D1, D2, D3 and D8 from the next-gen investigation fixed: an open menu no longer keeps the keyboard when

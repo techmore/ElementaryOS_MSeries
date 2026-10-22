@@ -1,3 +1,21 @@
+## Factory speaker safety package wiring — 2026-10-21
+
+Added Ubuntu Resolute `speakersafetyd` 1.1.2-4 to the ARM64 Apple Silicon
+overlay and both liveiso/sysupdate package consumers. The immutable overlay
+retains the package unit's `multi-user.target` enablement link through pruning.
+The DSP chain remains excluded until fresh-image volume behavior is qualified.
+Source version, upstream tag/commit, MIT provenance, review scope, test results
+and qualification limits: [factory audit](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+
+Validation: `python3 mseries/test-image-wiring.py` (7 tests),
+`python3 -m py_compile mseries/test-image-wiring.py`, `git diff --check`. No
+build, package fetch, install, host service change or hardware test has occurred
+yet. The October 18 blank-disk/installed ARM64 VM receipt predates this source
+change; it does not validate speaker protection. Next: artifact-only generic
+ARM64 build, then verify the package and service link in built live/sysupdate
+payloads before another isolated VM install/boot check. Physical Apple boot and
+speaker acceptance remain open.
+
 ## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
 
 `rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the
