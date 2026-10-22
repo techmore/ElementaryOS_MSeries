@@ -1,3 +1,4 @@
+# GTK on this Mac: renderer, CSD shadow, cursor blink and animation rules in ../GTK-PERFORMANCE-ASAHI.md
 project('orchard', ['vala', 'c'],
   version: '1.0.0',
   meson_version: '>= 1.0.0',

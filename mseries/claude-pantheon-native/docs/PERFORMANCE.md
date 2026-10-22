@@ -49,25 +49,10 @@ idle batches of 40 turns so the window never blocks.
 
 ## What it took
 
-Three things stood between a plain GTK4 app and those numbers, all found by
-measuring rather than guessing:
-
-1. **Renderer.** With the session's default `GSK_RENDERER=gl` (or `ngl`,
-   `vulkan`) Mesa on Asahi loads LLVM and allocates about 180 MB of heap for
-   shaders before a single widget is drawn: 240 – 290 MB RSS. The cairo
-   renderer draws the same window in 70 MB, so `Application.main` forces
-   `GSK_RENDERER=cairo` (override with `CLAUDE_PANTHEON_RENDERER`).
-2. **Window shadow.** GTK's default client-side decoration is a blurred
-   `box-shadow`. The cairo renderer re-blurs it over the whole window on every
-   frame, which made each repaint cost ~52 ms at 2x; replacing it with a 1 px
-   outline in the app's CSS brought a full repaint down to ~6 ms. (GL paints in
-   ~3 ms but costs the memory above.)
-3. **Cursor blink.** GTK fades the text cursor with a frame-clock tick for ten
-   seconds after each keystroke. With the composer focused that kept the window
-   repainting continuously, 14 – 19 % of a core "idle". The app sets
-   `gtk-cursor-blink = false`; the cursor is steady and idle CPU is 0.0 %.
-
-Everything else is ordinary care: parsing off the main thread, rendering turns
-in idle batches, creating tool-result widgets only when a row is expanded,
-and indexing sidebar titles from the head and tail of each file with a cache in
-`~/.cache/claude-pantheon`.
+The three findings (cairo renderer forced in `Application.main` with `CLAUDE_PANTHEON_RENDERER` to
+override, a 1 px outline instead of the blurred CSD shadow, `gtk-cursor-blink = false`) and the
+ones the Rust twin added later are kept in one place for every GTK app here:
+[`mseries/GTK-PERFORMANCE-ASAHI.md`](../../GTK-PERFORMANCE-ASAHI.md). Specific to this client:
+parsing off the main thread, turns rendered in idle batches of 40, tool-result widgets created only
+when a row is expanded, and sidebar titles indexed from the head and tail of each file with a cache
+in `~/.cache/claude-pantheon`.
