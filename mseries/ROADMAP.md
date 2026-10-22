@@ -4,6 +4,15 @@ A structured public capability ledger (`docs/capabilities.json`) now covers 65 s
 
 Maintenance: edit the JSON, retain/review the relevant evidence, set a newly reviewed immutable source revision when appropriate, then run `python3 mseries/render-capability-audit.py` and `bash mseries/validate.sh --only docs`. The renderer validates paths in the pinned tree and detects stale HTML; CI fetches that exact tree before offline checks. Search/filters are progressive enhancement; all entries remain in static HTML. Site links and selected legacy claims were reconciled. Desktop/mobile interaction checks and CI/publication identity belong to this PR’s verification record. Next: finish the P1 acceptance gates rather than relabeling source/fixture success as complete runtime support.
 
+## Desktop Mode switcher source merged — 2026-10-22
+
+PR [#445](https://github.com/techmore/ElementaryOS_MSeries/pull/445) adds a
+command and launcher to toggle Windows Work Mode immediately. Its head passed
+the required CI checks and merged to `dev` as `6f716799`. The installer change is
+source only; no desktop install, live mode switch or service restart was performed
+in this maintenance run. Live interaction remains to be accepted after separately
+authorized installation. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Compositor snapping phase 1 — 2026-10-21
 
 Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together
