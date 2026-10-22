@@ -38,6 +38,7 @@ mod popup_stack;
 mod prewarm;
 mod protocols;
 mod screen_corners;
+pub mod screenshot;
 mod shell_compat;
 mod snap_assist;
 mod snap_group;
