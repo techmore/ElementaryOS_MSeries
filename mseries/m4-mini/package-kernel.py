@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location('m4_kernel', HERE / 'build-kernel.
 kernel = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(kernel)
 NAME = 'linux-image-elementary-m4-gravity1'
-VERSION = '7.1.13+elementary.m4.gravity1-3'
+VERSION = '7.1.13+elementary.m4.gravity1-4'
 
 
 def check(build, archive):

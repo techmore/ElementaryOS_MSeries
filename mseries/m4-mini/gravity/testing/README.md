@@ -40,3 +40,9 @@ optional combined experiment after the normal test patch. It adds completion
 inside the timeout callback and unfinished-job teardown followed by a late
 parent signal. All six cases pass on 2-vCPU generic ARM64 QEMU. The test source
 was restored. This does not prove mutable callback aliasing or allocation lifetime.
+
+The optional NoDevice diagnostic patches above describe the historical r3
+source lane and must not be layered on the current r4 recipe, which already
+contains retention. The normal three-case testing manifest still applies after
+r4. Six-case associated-constant API evidence is retained in the API receipt;
+a current-recipe six-case test patch is a follow-up.

@@ -11001,3 +11001,15 @@ separate local source/output tree. No installed kernel or normal build manifest
 is changed by this candidate; allocation-owner and callback-aliasing review
 remain open. Image replay 39714779495 has passed the fixture/input steps and
 is executing the full mkosi graph. Kernel r3 run 39709872273 is still compiling.
+
+Revision-4 kernel recipe now includes the default-false terminal-timeout
+retention contract, with only M4 SubmissionJob opting in. Actual M4 driver,
+Rust core and C scheduler objects compile using the full M4 configuration;
+all six cases also pass through the associated-constant API on generic ARM64
+QEMU. Source/config/hash gates pass. The package validator now binds r3 and r4
+to distinct exact compatibility manifests, preserving the initialization-only
+r3 identity. The existing downloaded baseline r2 package still validates.
+Full r4 Image/modules/DTBs/package compilation is required before changing
+reviewed image inputs. The earlier production-API prototype is now selected
+by the r4 recipe; no kernel has been installed. Shared allocation-owner and
+mutable timeout-aliasing reviews remain open.

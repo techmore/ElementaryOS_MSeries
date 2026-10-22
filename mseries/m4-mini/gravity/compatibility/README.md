@@ -1,10 +1,19 @@
 # Elementary M4 compatibility backports
 
-These are elementary adaptations, separate from the unchanged Gravity packaging
-exports in ../patches. The scheduler patch derives from Aurora commits 6c2d17f
-and 0d1871c, preserving both source links in its header. Gravity uses the same
-uninitialized C scheduler storage, including the M4 g16_drm constructor.
+These adaptations are separate from the unchanged Gravity packaging exports.
+0001 ports scheduler initialization from Aurora 6c2d17f/0d1871c.
+0002 ports opt-in terminal-timeout retention from Aurora 0f89327. The Rust
+JobImpl contract defaults to false; only M4 SubmissionJob opts in. Its timeout
+marks failure and wakes cleanup without freeing the job. C/reset and legacy
+Rust backends retain their defaults. Reinsertion happens after timedout_job
+returns, queues completed jobs for cleanup and leaves unfinished jobs reachable
+by final cancellation without restarting the terminal watchdog.
 
-Only the initialization changes are ported to the older API. Aurora's newer
-owner/lifetime refactor and KUnit suite require separate review; no G17 test or
-native M4 runtime success is claimed. Hash gates bind the patch and result.
+The actual Rust core, C scheduler and M4 driver objects compile with 0002;
+six generic ARM64 QEMU cases pass through the associated-constant API. Package
+revision 4 selects both fixes; full Image/modules/DTBs build is still required.
+Revision 3 remains separately identified in package-versions.json, so its
+initialization-only receipt is never interpreted as containing retention.
+
+Newer allocation-owner and timeout-aliasing refactors remain separate open
+reviews. These changes do not establish native M4 GPU or firmware stability.

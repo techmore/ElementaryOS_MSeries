@@ -9,8 +9,12 @@ M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The newly identified scheduler initialization backport is revision 3 and is
-not included in those baseline results. Its full compile is pending below.
+The initialization-only scheduler package is revision 3 (full build still running).
+Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
+Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
+pass. Full revision-4 Image/modules/DTBs/package compilation is the next gate;
+no scheduler-fixed package has replaced the reviewed baseline image inputs.
+Allocation ownership, callback aliasing and native hardware remain unqualified.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the

@@ -1,0 +1,26 @@
+{
+  "scope": "native ARM64 targeted object compile using actual M4 driver and full preserved M4 configuration; not full Image/modules/package or runtime",
+  "compile_exit": 0,
+  "compiler": "clang 21 / Rust 1.99.0 / matching rust-src",
+  "source_preflight": {
+    "source": "GravityLinux/linux@4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "scope": "unpromoted M4 backend opt-in candidate; compilation pending",
+    "patch_sha256": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b",
+    "resulting_files": {
+      "drivers/gpu/drm/scheduler/sched_main.c": "5b66ccc25769f6adbff3659644081cc42c478e369a68b2028cd433dd1e4e6701",
+      "include/drm/gpu_scheduler.h": "60f2106b322a1b7c25e085e84b9426d7bbde9f25ab3c94d70d1bc5f3d5ddc596",
+      "rust/kernel/drm/sched.rs": "630def6fec55f4ac2626c5a7ce80b42c957cd0f016824279dc7c70359a0d3c6f",
+      "drivers/gpu/drm/asahi/g16_drm.rs": "d1dae5065a076e4efc1be5db0e0413b22673d6b35043f11dfeb9328b3d6df259"
+    },
+    "hardware_validated": false
+  },
+  "config_sha256": "4f88633c7f4547674cff6210cf1fbea6f39139d071269d97ba437f216a865d0a",
+  "objects": {
+    "rust/kernel.o": "dc63d7e41002745874017ecef0ecfb2c80941f6990da5fbff9ebc5452848c00e",
+    "drivers/gpu/drm/asahi/asahi_m4.o": "023530f608b94bf035ad80c6b61560eef68dac910f51e037206865a2110678f7",
+    "drivers/gpu/drm/scheduler/sched_main.o": "5739ce32dc9a262bf5564199b794bf0f5d3e109c9ab715385b2a3816517212b8"
+  },
+  "hardware_validated": false,
+  "full_kernel_build_passed": false,
+  "next_package_version": "7.1.13+elementary.m4.gravity1-4"
+}

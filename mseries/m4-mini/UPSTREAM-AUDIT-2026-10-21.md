@@ -9,8 +9,12 @@ M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The newly identified scheduler initialization backport is revision 3 and is
-not included in those baseline results. Its full compile is pending below.
+The initialization-only scheduler package is revision 3 (full build still running).
+Revision 4 now adds M4-specific terminal-timeout retention: actual M4 driver,
+Rust core and C scheduler object compilation and six generic ARM64 QEMU cases
+pass. Full revision-4 Image/modules/DTBs/package compilation is the next gate;
+no scheduler-fixed package has replaced the reviewed baseline image inputs.
+Allocation ownership, callback aliasing and native hardware remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
@@ -1096,3 +1100,15 @@ separate local source/output tree. No installed kernel or normal build manifest
 is changed by this candidate; allocation-owner and callback-aliasing review
 remain open. Image replay 39714779495 has passed the fixture/input steps and
 is executing the full mkosi graph. Kernel r3 run 39709872273 is still compiling.
+
+Revision-4 kernel recipe now includes the default-false terminal-timeout
+retention contract, with only M4 SubmissionJob opting in. Actual M4 driver,
+Rust core and C scheduler objects compile using the full M4 configuration;
+all six cases also pass through the associated-constant API on generic ARM64
+QEMU. Source/config/hash gates pass. The package validator now binds r3 and r4
+to distinct exact compatibility manifests, preserving the initialization-only
+r3 identity. The existing downloaded baseline r2 package still validates.
+Full r4 Image/modules/DTBs/package compilation is required before changing
+reviewed image inputs. The earlier production-API prototype is now selected
+by the r4 recipe; no kernel has been installed. Shared allocation-owner and
+mutable timeout-aliasing reviews remain open.
