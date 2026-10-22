@@ -1,8 +1,8 @@
 //! `claude-pantheon-rs`: T3-R Pantheon.
 //!
-//!   claude-pantheon-rs                      open the Dock quick panel
+//!   claude-pantheon-rs                      open the full desktop chat window
 //!   claude-pantheon-rs --full               open the full desktop chat window
-//!   claude-pantheon-rs --quick              open the Dock quick panel
+//!   claude-pantheon-rs --quick              open the compact status window
 //!   claude-pantheon-rs --new-thread         open (or raise) the window on a new thread; also the .desktop action
 //!   claude-pantheon-rs --usage              open on the Usage page
 //!   claude-pantheon-rs --thread ID          open (or raise) the window on that thread
@@ -39,7 +39,7 @@ fn main() -> gtk::glib::ExitCode {
     // Desktop actions and a second launch reach the running instance through GApplication's command line.
     let mut forwarded: Vec<String> = args
         .iter()
-        .filter(|a| matches!(a.as_str(), "--full" | "--quick" | "--new-thread" | "--usage"))
+        .filter(|a| matches!(a.as_str(), "--full" | "--quick" | "--new-thread" | "--usage" | "--settings"))
         .cloned()
         .collect();
     if let Some(i) = args.iter().position(|a| a == "--thread")
@@ -71,7 +71,7 @@ fn main() -> gtk::glib::ExitCode {
     });
     let current: Rc<RefCell<Option<Rc<app::App>>>> = Rc::new(RefCell::new(None));
     let slot = current.clone();
-    let prefer_full = args.iter().any(|a| a == "--full") || quit_after_frame;
+    let prefer_full = args.iter().any(|a| a == "--full") || !args.iter().any(|a| a == "--quick") || quit_after_frame;
     application.connect_activate(move |application| {
         if let Some(existing) = slot.borrow().as_ref() {
             if prefer_full {
@@ -91,6 +91,7 @@ fn main() -> gtk::glib::ExitCode {
     for (name, present) in [
         ("open-full", Box::new(|a: &Rc<app::App>| a.present_full()) as Box<dyn Fn(&Rc<app::App>)>),
         ("open-quick", Box::new(|a: &Rc<app::App>| a.present_quick())),
+        ("settings", Box::new(|a: &Rc<app::App>| a.settings())),
     ] {
         let action = gtk::gio::SimpleAction::new(name, None);
         let slot = current.clone();
@@ -135,6 +136,7 @@ fn main() -> gtk::glib::ExitCode {
                 Some("--usage") => application.activate_action("usage", None),
                 Some("--full") => application.activate_action("open-full", None),
                 Some("--quick") => application.activate_action("open-quick", None),
+                Some("--settings") => application.activate_action("settings", None),
                 Some("--thread") => {
                     if let Some(id) = args.get(i + 1).and_then(|s| s.to_str()) {
                         application.activate_action("open-thread", Some(&id.to_variant()));

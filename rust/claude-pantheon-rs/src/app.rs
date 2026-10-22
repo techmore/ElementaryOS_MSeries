@@ -171,8 +171,8 @@ impl App {
         Self::build_with_dock_surface(application, started, quit_after_frame, false)
     }
 
-    /// The Dock launch path: create the full app and its compact status surface, then show the
-    /// compact surface first. Both windows share this App and its single T3 connection.
+    /// A standalone compact-status launch path. The Dock taskbar's T3-R launcher has its own
+    /// attached popover; this optional window still shares the app's single T3 connection.
     pub fn build_quick(application: &gtk::Application, started: Instant, quit_after_frame: bool) -> Rc<App> {
         Self::build_with_dock_surface(application, started, quit_after_frame, true)
     }
@@ -980,7 +980,7 @@ impl App {
     }
 
     /// Ctrl+,: the settings window.
-    fn settings(self: &Rc<Self>) {
+    pub fn settings(self: &Rc<Self>) {
         self.present_full();
         let providers: Vec<(String, String)> =
             self.providers.borrow().iter().filter(|p| p.ready()).map(|p| (p.instance_id.clone(), p.name())).collect();

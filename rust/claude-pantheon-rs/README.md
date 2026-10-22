@@ -15,8 +15,8 @@ the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
 ```sh
 cargo build --release
-./target/release/claude-pantheon-rs            # opens the Dock quick surface
-./target/release/claude-pantheon-rs --full     # opens the full desktop chat
+./target/release/claude-pantheon-rs            # opens the full desktop chat
+./target/release/claude-pantheon-rs --quick    # opens the compact status window
 # or, with the shared target dir in ~/.cargo/config.toml:
 ~/.cache/cargo-target/release/claude-pantheon-rs
 ```
@@ -27,8 +27,8 @@ Other entry points:
 
 | Command | What |
 |---|---|
-| `claude-pantheon-rs` or `--quick` | open the compact Dock quick surface |
-| `claude-pantheon-rs --full` | open the full desktop client |
+| `claude-pantheon-rs` or `--full` | open the full desktop client |
+| `claude-pantheon-rs --quick` | open the compact status window |
 | `claude-pantheon-rs --new-thread`, `--usage`, `--thread ID` | open the full client at that destination |
 | `claude-pantheon-rs --index` | list the offline sessions the sidebar shows, with timing |
 | `claude-pantheon-rs --quit-after-frame` | draw one frame, print the start-up time, exit (benchmarks) |
@@ -62,15 +62,18 @@ The same actions sit in the app menu (header bar, right) with their accelerator 
 and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
 Forget Pairing and About (version, server, providers ready).
 
-## Dock quick surface
+## Dock popover and compact status window
 
-The default Dock launch opens a compact GTK surface over the same app instance and T3 connection. It shows the paired
-T3 environment, freshness, usage for only the provider selected in full chat, and live running or approval-waiting
-threads. New chat, Usage, Settings and **Open full chat** route to the full desktop window. Other provider accounts are
-managed in Settings → Providers. Offline activity is marked stale and cannot be opened as a live thread.
+In taskbar mode, the T3-R launcher icon opens a native GTK popover attached to that Dock icon using CodexBar's 250 ms
+hover-open, 450 ms leave grace, click-to-pin and Escape-dismiss behavior. Click **Open full chat** to show the complete
+desktop client with all T3 integrations. New chat, Usage, Settings and live activity rows route to the matching full
+window destination. The popover shows the paired T3 environment, freshness, usage for only the provider selected in
+full chat, and live running or approval-waiting threads. Other provider accounts are managed in Settings → Providers.
+Offline activity is marked stale and cannot be opened as a live thread. Outside taskbar mode, the launcher opens the full
+client directly. `--quick` remains available for the separate compact status window.
 
-The panel reads the local versioned `status.json` snapshot through a file monitor; it does not open another RPC socket
-or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
+The Dock popover reads the local versioned `status.json` snapshot through a file monitor; it does not open another RPC
+socket or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
 unpairing or switching environments clears the cache.
 
 ## Thread resume cache
@@ -147,8 +150,8 @@ use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windo
 the next-provider capacity decision, then shows 30-day tokens, output, cache reads, API-equivalent cost,
 cache savings, model breakdowns and a 7-day activity chart for Claude, Codex, OpenCode and Grok. The
 optional legacy Wingpanel 9 indicator brings status to the desktop panel: quota gauges, running
-threads and permission prompts, with thread links that open in this client. The Dock quick surface is
-the default compact status view. Both read the local status feed without starting another connection.
+threads and permission prompts, with thread links that open in this client. The Dock popover is the compact status view.
+Both read the local status feed without starting another connection.
 
 ## What is where
 

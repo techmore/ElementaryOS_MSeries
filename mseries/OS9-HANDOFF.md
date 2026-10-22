@@ -1,15 +1,17 @@
 ## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
 
 Continued the native GTK 4 + Granite T3 client in `rust/claude-pantheon-rs` and recorded the larger roadmap in
-[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). Dock launch now opens a compact quick
-surface; **Open full chat** presents the existing desktop client. Both surfaces share one `App` and one T3 connection.
-New Chat, Usage, Settings, and active-thread rows route into that full window. The compact surface shows the paired T3
-environment and quota for only the provider selected in full chat; additional provider accounts remain in Settings.
-Offline activity is clearly marked stale and cannot open a live thread.
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). In taskbar mode, the T3-R application
+launcher now owns a native GTK popover attached to the Dock icon: hover opens after 250 ms, pointer leave has a 450 ms
+grace period, click pins/toggles, and Escape or outside click dismisses the pinned popup. **Open full chat** presents
+the complete desktop client; New chat, Usage, Settings, and live thread rows route to its matching destination. Outside
+taskbar mode, the launcher opens the full client directly; `--quick` remains an optional standalone status window.
+The popover shows the paired T3 environment and quota for only the provider selected in full chat; other provider
+accounts remain in Settings. Offline activity is marked stale and cannot open a live thread.
 
-The local status snapshot is schema-versioned, written atomically with mode `0600`, monitored by the quick surface, and
+The local status snapshot is schema-versioned, written atomically with mode `0600`, monitored by the Dock popover, and
 retains the last successful snapshot as stale when the connection drops. Explicit unpair and environment changes clear
-it. The quick surface does not open a second RPC connection or poll the server. Settled thread views now use a bounded,
+it. The Dock popover does not open a second RPC connection or poll the server. Settled thread views now use a bounded,
 versioned environment/thread cache record that keeps the projection and `snapshotSequence` together, then resumes with
 T3 `afterSequence`. Duplicate replay events are ignored, active turns are not written to disk, and live actions stay
 disabled until synchronization finishes. Corrupt and wrong-scope entries are discarded; unpair/removal clears them.
@@ -61,16 +63,20 @@ tests were not rerun. The installed binary matches that release build. PID 36667
 running work, pending prompts, or saved drafts; D-Bus activation launched PID 3789459 from the installed release binary.
 The full window launched and its fresh status feed reported connected to `eos`, Codex selected, running 0, pending 0.
 The follow-up that constrains transcript height passed `cargo fmt --check` and a release build, was installed to the same
-user-local binary, and D-Bus activation relaunched it as PID 3819605. Its fresh status feed remains connected to `eos`,
-Codex selected, running 0, pending 0. This confirms source/build/install and process activation; actual scroll input and
-visual anchoring of the composer still need a desktop interaction pass.
-The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. A live
-quick-panel visual pass, DeepSeek provider setup, scroll interaction, large-thread history, and high-latency reconnect
-qualification remain open.
+user-local binary, and D-Bus activation relaunched it as PID 3819605. Its fresh status feed remained connected to `eos`,
+Codex selected, running 0, pending 0. The CodexBar-style Dock popover change then passed a clean pinned Dock 8.3.3 build,
+linked-type checks, existing Dock hover/pin/focus probes, Rust release build and strict release Clippy, desktop-file and
+AppStream validation. The patched Dock was installed under `~/.local/lib/mseries/dock`; `pantheon-dock.service` is now
+running PID 3856628 with `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The updated T3-R binary was installed
+and launched as PID 3857527; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
+running 0, pending 0. The build confirms the new popover class is linked into the installed Dock, but a real pointer pass
+over the T3-R icon and direct scroll/composer interaction still need visual confirmation.
+The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. DeepSeek
+provider setup, scroll interaction, large-thread history, and high-latency reconnect qualification remain open.
 
-Next: review live scrolling and the DeepSeek setup flow in the running window, then qualify quick/full routing and
-selected-provider usage. Profile a large conversation and reconnect on a high-latency link before claiming daily-use
-readiness.
+Next: visually qualify hover/click/dismiss on the T3-R Dock icon and scroll the full chat while checking the composer stays
+anchored. Then review DeepSeek setup, profile a large conversation, and reconnect on a high-latency link before claiming
+daily-use readiness.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 

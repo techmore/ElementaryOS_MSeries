@@ -4,7 +4,11 @@
 It applies the pinned upstream dock, drawers, startup, **Windows taskbar**, then
 CodexBar/Start-menu integration and app-tracking patches. It copies the CodexBar indicator sources
 from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
-`TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
+`TaskbarCodexBar.vala` is the CodexBar taskbar anchor; it does not replace the launcher model.
+The T3-R app's own launcher gets an anchored status popover in taskbar mode, using the same 250 ms hover open,
+450 ms leave grace, click-to-pin and Escape behavior as CodexBar. It reads the app's private status snapshot,
+shows only the selected provider account, and sends full chat/new thread/usage/settings/thread actions back through
+the installed T3-R app. The ordinary launcher opens the full chat; the popover does not create another T3 connection.
 
 ## Taskbar launcher sizing
 
