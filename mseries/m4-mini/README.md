@@ -908,3 +908,5 @@ after assembly. Six desktop-wiring tests, one boundary group covering all three
 root-mode programs and two candidate-boot groups pass. Workflow syntax passes.
 Hosted root execution and complete image acceptance remain pending replay.
 [Failure and correction receipt](receipts/2026-10-21-hosted-image-failure-1.json).
+
+Corrected full-image replay [39708881382](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708881382) dispatched at `1aafd4fd781da36712c15d69eedcfb11cbcc1a25`. Hosted execution and acceptance results pending. [Dispatch snapshot](receipts/2026-10-21-hosted-image-retry-2.json).

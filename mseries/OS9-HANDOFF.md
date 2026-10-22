@@ -10916,3 +10916,7 @@ propagation denied. Prior artifact/package/input/summary gates passed. Added
 explicit root mode on ephemeral CI (guarded, no security-setting changes), plus
 existing desktop payload and base/live/Mesa retention acceptance checks. Six
 wiring, one root-boundary and two boot-boundary groups pass; hosted replay next.
+
+Corrected full M4 image run39708881382 dispatched at1aafd4fd with explicit
+hosted root and full desktop acceptance. Follow exact run; first39708207843
+is terminal failure, not active. No complete image result yet.

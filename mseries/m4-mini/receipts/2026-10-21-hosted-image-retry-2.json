@@ -1,0 +1,10 @@
+{
+  "run_id": 39708881382,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708881382",
+  "source_head": "1aafd4fd781da36712c15d69eedcfb11cbcc1a25",
+  "status_at_capture": "in_progress",
+  "scope": "explicit hosted root complete-graph build; desktop/root/retention and raw ESP/GPT gates",
+  "complete_factory_image_built": false,
+  "hardware_validated": false,
+  "installer_admission": false
+}
