@@ -15,7 +15,7 @@ SHA256 = '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e'
 UAPI_SHA256 = 'eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015'
 OPTIONS = ['--prefix=/opt/elementary-m4-gravity1', '--libdir=lib',
            '-Dplatforms=x11,wayland', '-Dgallium-drivers=asahi,llvmpipe',
-           '-Dvulkan-drivers=asahi', '-Dllvm=enabled', '-Dbuild-tests=true']
+           '-Dvulkan-drivers=asahi', '-Dllvm=enabled', '-Dbuild-tests=true', '-Dglvnd=enabled']
 
 
 def main():

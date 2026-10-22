@@ -1,0 +1,23 @@
+{
+  "run_id": 39702973626,
+  "source_head": "77f9561ce40e0e1d59b03d720a3c4efddf856441",
+  "status": "completed",
+  "conclusion": "failure",
+  "build": "compiled and staged",
+  "upstream_test_groups": {
+    "passed": 5,
+    "failed": 0
+  },
+  "software_smoke": "llvmpipe LLVM21 Mesa26.3 passed; standalone EGL layout, not intended vendor layout",
+  "failure": "receipt creation expected libEGL_mesa.so.0.0.0 but auto GLVND disabled without libglvnd-dev",
+  "fix": "install libglvnd-dev and require -Dglvnd=enabled",
+  "logs_sha256": {
+    "0.log": "01c0c5fda860fc49894ea2c6aef0df048b3c8dd03b22fa69640ab59db386d13f",
+    "1.log": "8832b0cce76f4cf90fd3be9bc4e8d2af177e6eae9e8852d77e7108c13cbdcd4c",
+    "2.log": "ecb164522ca0ddb7b5bcc242c627d996a5124950c6829196c1a3b68053906394",
+    "3.log": "242195b60d0b82703e8c7716494b3f16cbd2f7d3bbe39522cb3845b6a55061a9",
+    "software-smoke.log": "fefdae8aa51994a75dbb20daf900ef829ed2e802c0901a50f3adcbfa1725b8e8"
+  },
+  "package_created": false,
+  "hardware_validated": false
+}

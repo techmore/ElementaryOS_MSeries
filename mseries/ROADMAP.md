@@ -3876,3 +3876,8 @@ M4 boot bundle placed/read back successfully in disposable 96 MiB GPT/FAT
 fixture via existing ESP verifier; deliberately corrupted payload rejected.
 Temporary image removed, tools extracted work-locally, no real disks/mounts.
 This is fixture mechanics only; actual factory ESP/EFI/native boot still pending.
+
+M4 hosted Mesa run39702973626 compiled and passed five AGX groups/software smoke,
+then failed receipt hashing: auto GLVND disabled without libglvnd-dev, producing
+standalone EGL layout. Added dependency and explicit -Dglvnd=enabled; two workflow
+regressions pass. No package success. Replay next; original kernel still active.

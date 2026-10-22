@@ -686,3 +686,16 @@ installing packages on the host.
 This verifies FAT/GPT mechanics with the actual bundle, not full mkosi output,
 EFI executable discovery, firmware handoff or native boot. Those gates remain
 open. [Fixture receipt](receipts/2026-10-21-boot-esp-fixture.json).
+
+### Third hosted Mesa result and GLVND correction
+
+Run `39702973626` compiled/staged Mesa, passed all five selected AGX groups,
+and passed the llvmpipe EGL rendering check. It then failed receipt creation:
+missing GLVND development files made Mesa's automatic selection produce
+standalone EGL/GLX instead of the vendor libraries required by packaging.
+This is not package success. The hosted dependency list now includes
+`libglvnd-dev`, and the build wrapper explicitly requires `-Dglvnd=enabled`
+to fail during setup if the intended layout is unavailable. Two workflow
+regressions verify prerequisites and the explicit option. Prior local vendor
+library tests remain historical evidence; corrected hosted replay is pending.
+[Failure and successful substeps](receipts/2026-10-21-hosted-mesa-failure-3.json).
