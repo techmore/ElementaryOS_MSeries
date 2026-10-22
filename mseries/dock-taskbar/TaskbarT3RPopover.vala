@@ -249,6 +249,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
                 min-height: 10px;
                 border-radius: 5px;
             }
+            .taskbar-t3r-popup .taskbar-t3r-gauge block.filled.low { background-color: @success_color; }
+            .taskbar-t3r-popup .taskbar-t3r-gauge block.filled.high { background-color: @warning_color; }
+            .taskbar-t3r-popup .taskbar-t3r-gauge block.filled.full { background-color: @error_color; }
             .taskbar-t3r-popup button.flat {
                 padding: 6px 8px;
                 border-radius: 6px;

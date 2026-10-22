@@ -143,9 +143,11 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private uint app_watch_id = 0;
     private bool application_running = false;
     private string status_path;
+    private static bool style_installed = false;
 
     public Indicator (string? path = null) {
         Object (code_name: "claude-pantheon");
+        install_style ();
         status_path = path ?? Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
         visible = true;
         try {
@@ -165,6 +167,21 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
                     reload ();
                 });
         }
+    }
+
+    private static void install_style () {
+        if (style_installed) return;
+        var style = new Gtk.CssProvider ();
+        style.load_from_string ("""
+            levelbar.t3r-usage-gauge trough { min-height: 6px; border-radius: 3px; }
+            levelbar.t3r-usage-gauge block { min-height: 6px; border-radius: 3px; }
+            levelbar.t3r-usage-gauge block.filled.low { background-color: @success_color; }
+            levelbar.t3r-usage-gauge block.filled.high { background-color: @warning_color; }
+            levelbar.t3r-usage-gauge block.filled.full { background-color: @error_color; }
+        """);
+        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        style_installed = true;
     }
 
     public override Gtk.Widget get_display_widget () {
@@ -282,6 +299,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             bar.add_offset_value ("low", 60);
             bar.add_offset_value ("high", 90);
             bar.add_offset_value ("full", 100);
+            bar.add_css_class ("t3r-usage-gauge");
             bar.value = w.used_percent;
             var pct = new Gtk.Label ("%.0f%%".printf (w.used_percent)) { xalign = 1, width_chars = 4 };
             pct.add_css_class ("caption");

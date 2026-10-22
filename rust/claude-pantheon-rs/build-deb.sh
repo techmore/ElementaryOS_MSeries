@@ -28,7 +28,7 @@ fi
 
 version="$(grep -m1 -oP '^version = "\K[0-9.]+' "$here/Cargo.toml")"
 arch="$(dpkg --print-architecture)"
-debver="${version}-1~mseries3"
+debver="${version}-1~mseries4"
 
 rm -rf "$out"
 mkdir -p "$stage"

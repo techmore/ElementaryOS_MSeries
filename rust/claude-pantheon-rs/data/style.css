@@ -23,9 +23,9 @@ window.t3-quick-window { background-color: transparent; }
 .t3-quick-connection.stale { color: @warning_color; }
 .t3-quick-card { padding: 10px; border-radius: 8px; background-color: alpha(currentColor, 0.035); }
 .t3-quick-gauge trough, .t3-quick-gauge block { min-height: 7px; border-radius: 4px; }
-.t3-quick-gauge block.low { background: @success_color; }
-.t3-quick-gauge block.high { background: @warning_color; }
-.t3-quick-gauge block.full { background: @error_color; }
+.t3-quick-gauge block.filled.low { background: @success_color; }
+.t3-quick-gauge block.filled.high { background: @warning_color; }
+.t3-quick-gauge block.filled.full { background: @error_color; }
 .t3-quick-thread { padding: 5px 7px; }
 .t3-quick-thread-title { font-weight: 500; }
 
@@ -105,9 +105,9 @@ window.t3-quick-window { background-color: transparent; }
 .usage-provider { font-weight: 600; min-width: 80px; }
 levelbar.usage-gauge trough { min-height: 8px; border-radius: 4px; }
 levelbar.usage-gauge block { min-height: 8px; border-radius: 4px; }
-levelbar.usage-gauge block.low { background: @success_color; }
-levelbar.usage-gauge block.high { background: @warning_color; }
-levelbar.usage-gauge block.full { background: @error_color; }
+levelbar.usage-gauge block.filled.low { background: @success_color; }
+levelbar.usage-gauge block.filled.high { background: @warning_color; }
+levelbar.usage-gauge block.filled.full { background: @error_color; }
 
 /* Repos and issues */
 .repo-card { padding: 10px 14px; }
