@@ -1,0 +1,36 @@
+Subject: [PATCH] drm/sched: initialize C scheduler state before Rust use
+Origin: https://github.com/aurora-silicon/linux/commit/6c2d17ff40796899d7190580cabaeea749c73d0a
+Origin: https://github.com/aurora-silicon/linux/commit/0d1871c3cfde9cc45b8bc244dde4775dbf4e05c6
+
+Backport the two initialization changes to Gravity 4fc326f's older scheduler
+wrapper. The newer owner refactor and Aurora KUnit suite are not copied across
+kernel APIs. M4 g16_drm uses this shared wrapper. Native runtime remains untested.
+
+--- a/drivers/gpu/drm/scheduler/sched_main.c
++++ b/drivers/gpu/drm/scheduler/sched_main.c
+@@ -1375,6 +1375,7 @@
+ 	atomic_set(&sched->_score, 0);
+ 	atomic64_set(&sched->job_id_count, 0);
+ 	sched->pause_submit = false;
++	sched->free_guilty = false;
+ 
+ 	sched->ready = true;
+ 	return 0;
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -357,10 +357,12 @@
+         let mut sched: UniqueArc<MaybeUninit<SchedulerInner<T>>> =
+             UniqueArc::new_uninit(GFP_KERNEL)?;
+ 
+-        // SAFETY: zero sched->sched_rq as drm_sched_init() uses it to exit early withoput initialisation
+-        // TODO: allocate sched zzeroed instead
++        // drm_sched_init() expects zeroed C scheduler storage. In particular,
++        // sched_rq must start NULL and free_guilty must not inherit stale bytes.
++        // SAFETY: sched uniquely owns writable storage for one drm_gpu_scheduler;
++        // all-zero bytes are valid before the C initializer runs.
+         unsafe {
+-            (*sched.as_mut_ptr()).sched.sched_rq = core::ptr::null_mut();
++            core::ptr::write_bytes(addr_of_mut!((*sched.as_mut_ptr()).sched), 0, 1);
+         };
+ 
+         let init_ops = bindings::drm_sched_init_args {

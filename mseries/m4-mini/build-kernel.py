@@ -30,8 +30,19 @@ def packaging_patches():
     return directory, manifest
 
 
+
+def compatibility_patches():
+    directory = HERE / 'gravity/compatibility'
+    manifest = json.loads((directory / 'manifest.json').read_text())
+    for name, expected in manifest.items():
+        if Path(name).name != name or digest(directory / name) != expected:
+            raise ValueError('elementary compatibility patch checksum mismatch')
+    return directory, manifest
+
+
 def source_patch_gate(source):
     expected = json.loads((HERE / 'gravity/patches/resulting-files.json').read_text())
+    expected.update(json.loads((HERE / 'gravity/compatibility/resulting-files.json').read_text()))
     for name, value in expected.items():
         if digest(source / name) != value:
             raise ValueError('matched ARM64 packaging exports required: ' + name)
@@ -72,6 +83,10 @@ def main():
     for name in patches:
         subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source),
                         '-i', str(patch_directory / name)], check=True)
+    compatibility_directory, compatibility = compatibility_patches()
+    for name in compatibility:
+        subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source),
+                        '-i', str(compatibility_directory / name)], check=True)
     source_patch_gate(source)
     build.mkdir()
     env = dict(os.environ, RUST_LIB_SRC=str(args.rust_library.resolve()))
@@ -98,7 +113,7 @@ def main():
     receipt = {'repository': 'GravityLinux/linux', 'commit': COMMIT,
                'source_archive_sha256': ARCHIVE_SHA256, 'kernel_release': RELEASE,
                'config_sha256': digest(build / '.config'), 'artifacts': hashes,
-               'packaging_patches': patches,
+               'packaging_patches': patches, 'compatibility_patches': compatibility,
                'status': 'source build only; no installation or J773g hardware qualification'}
     (root / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
 

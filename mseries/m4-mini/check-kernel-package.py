@@ -37,9 +37,15 @@ def main():
     if digest(args.package) != package['package_sha256']:
         raise ValueError('package differs from packaging receipt')
     fields = subprocess.check_output(['dpkg-deb', '-f', str(args.package), 'Package', 'Version', 'Architecture'], text=True)
-    if fields.splitlines() != ['Package: linux-image-elementary-m4-gravity1',
-                               'Version: 7.1.13+elementary.m4.gravity1-2', 'Architecture: arm64']:
+    rows = fields.splitlines()
+    if (len(rows) != 3 or rows[0] != 'Package: linux-image-elementary-m4-gravity1'
+            or rows[2] != 'Architecture: arm64' or rows[1] not in [
+                'Version: 7.1.13+elementary.m4.gravity1-2', 'Version: 7.1.13+elementary.m4.gravity1-3']):
         raise ValueError('unexpected package identity')
+    if rows[1].endswith('-3'):
+        manifest = json.loads((Path(__file__).parent / 'gravity/compatibility/manifest.json').read_text())
+        if build.get('compatibility_patches') != manifest:
+            raise ValueError('revision 3 requires the reviewed scheduler compatibility backport')
     with tempfile.TemporaryDirectory(prefix='m4-kernel-check-', dir=args.package.resolve().parent) as temp:
         root = Path(temp)
         subprocess.run(['dpkg-deb', '--extract', str(args.package), str(root)], check=True)
@@ -81,6 +87,8 @@ def main():
             raise ValueError('research kernel must have no maintainer scripts or triggers')
     args.receipt.write_text(json.dumps({
         'source_commit': COMMIT, 'package_sha256': package['package_sha256'],
+        'package_version': rows[1].removeprefix('Version: '),
+        'compatibility_patches': build.get('compatibility_patches', {}),
         'module_count': count, 'checks': 'Image/config/DTB hashes, 16 KiB header, J773g, ELF/vermagic, module dependencies, no package hooks',
         'scope': 'fresh candidate package inspection; no boot or hardware tests',
         'factory_promotion': False, 'hardware_validated': False,

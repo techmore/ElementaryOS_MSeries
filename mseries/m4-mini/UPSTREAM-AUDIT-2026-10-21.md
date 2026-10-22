@@ -934,3 +934,26 @@ Hosted root execution and complete image acceptance remain pending replay.
 [Failure and correction receipt](receipts/2026-10-21-hosted-image-failure-1.json).
 
 Corrected full-image replay [39708881382](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708881382) dispatched at `1aafd4fd781da36712c15d69eedcfb11cbcc1a25`. Hosted execution and acceptance results pending. [Dispatch snapshot](receipts/2026-10-21-hosted-image-retry-2.json).
+
+### New Aurora scheduler fix applies to the M4 candidate
+
+A fresh head check found Gravity, Asahi, mainline and Omarchy MX unchanged,
+while Aurora advanced to `ed55042c712afb987608e3633cb926116ca1962e`. Its three-commit
+delta includes C scheduler `free_guilty` initialization and zeroing the C storage
+in the Rust wrapper (origins `6c2d17f`, `0d1871c`). Gravity has both affected
+patterns, and M4 `g16_drm` constructs this shared scheduler. The G17 timeout
+scenario itself has not been reproduced on M4.
+
+An elementary compatibility patch ports only the two initialization changes
+to Gravity's older API, separate from the unchanged Gravity ARM64 packaging
+exports. It applies without fuzz to exact pinned archive files; source-result
+hash gates pass. The build/package wrapper stages revision 3 with this patch
+and retains its provenance. Revision 3 validation requires the recorded
+compatibility manifest. Compilation and runtime validation are pending; the
+newer Aurora owner/lifetime refactor and KUnit suite are not implicitly ported.
+
+The active full-image run still uses revision 2 and is baseline assembly
+evidence only. Its completion cannot prove this newly discovered issue fixed.
+No reference image/package promotion has occurred; a validated revision-3
+kernel and matched image replay are needed before accepting the updated stack.
+[Head observations and backport preflight](receipts/2026-10-21-scheduler-backport-preflight.json).

@@ -1,0 +1,130 @@
+{
+  "observed_at_utc": "2026-10-22T02:09:37.699803+00:00",
+  "heads": [
+    {
+      "repository": "GravityLinux/linux",
+      "branch": "gravity-m4",
+      "reviewed": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "observed": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "unchanged": true,
+      "date": "2026-10-09T23:49:19Z",
+      "url": "https://github.com/GravityLinux/linux/commit/4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "branch": "main",
+      "reviewed": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "observed": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "unchanged": true,
+      "date": "2026-09-22T03:15:21Z",
+      "url": "https://github.com/GravityLinux/mesa/commit/87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    {
+      "repository": "GravityLinux/bootloader",
+      "branch": "main",
+      "reviewed": "f02d4a52017915febb222539636b5b025a70407a",
+      "observed": "f02d4a52017915febb222539636b5b025a70407a",
+      "unchanged": true,
+      "date": "2026-10-21T07:50:53Z",
+      "url": "https://github.com/GravityLinux/bootloader/commit/f02d4a52017915febb222539636b5b025a70407a"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "branch": "gravity-alpha-20260925",
+      "reviewed": "a2f6913694ff26908c16948af3f8372429782263",
+      "observed": "a2f6913694ff26908c16948af3f8372429782263",
+      "unchanged": true,
+      "date": "2026-09-19T00:14:22Z",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a2f6913694ff26908c16948af3f8372429782263"
+    },
+    {
+      "repository": "GravityLinux/packages",
+      "branch": "main",
+      "reviewed": "711c2a110416d28010ccdd118b83111776bff207",
+      "observed": "711c2a110416d28010ccdd118b83111776bff207",
+      "unchanged": true,
+      "date": "2026-09-27T22:01:49Z",
+      "url": "https://github.com/GravityLinux/packages/commit/711c2a110416d28010ccdd118b83111776bff207"
+    },
+    {
+      "repository": "GravityLinux/installer",
+      "branch": "main",
+      "reviewed": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "observed": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "unchanged": true,
+      "date": "2026-09-20T04:57:19Z",
+      "url": "https://github.com/GravityLinux/installer/commit/6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "branch": "main",
+      "reviewed": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "observed": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "unchanged": true,
+      "date": "2026-09-20T02:18:51Z",
+      "url": "https://github.com/GravityLinux/kiwi-descriptions/commit/07bf52cb2866069c072eb03a8f23af9839d0397c"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "branch": "asahi",
+      "reviewed": "94fb23346d522edf53722357c426a3e58030beea",
+      "observed": "94fb23346d522edf53722357c426a3e58030beea",
+      "unchanged": true,
+      "date": "2026-09-12T09:57:34Z",
+      "url": "https://github.com/AsahiLinux/linux/commit/94fb23346d522edf53722357c426a3e58030beea"
+    },
+    {
+      "repository": "aurora-silicon/linux",
+      "branch": "integration/aurora",
+      "reviewed": "6210b28b00369a4b3bbb769dc3e8c5a1e31d2e87",
+      "observed": "ed55042c712afb987608e3633cb926116ca1962e",
+      "unchanged": false,
+      "date": "2026-10-22T01:09:47Z",
+      "url": "https://github.com/aurora-silicon/linux/commit/ed55042c712afb987608e3633cb926116ca1962e"
+    },
+    {
+      "repository": "torvalds/linux",
+      "branch": "master",
+      "reviewed": "4403278e4ea2f654f8130a5c03eb8b4516a0f201",
+      "observed": "4403278e4ea2f654f8130a5c03eb8b4516a0f201",
+      "unchanged": true,
+      "date": "2026-10-22T00:38:01Z",
+      "url": "https://github.com/torvalds/linux/commit/4403278e4ea2f654f8130a5c03eb8b4516a0f201"
+    },
+    {
+      "repository": "maralcbr/omarchy-mx-mac",
+      "branch": "HEAD",
+      "reviewed": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "observed": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "unchanged": true,
+      "date": "2026-10-18T22:22:11Z",
+      "url": "https://github.com/maralcbr/omarchy-mx-mac/commit/72f1906722fd042a54f1e1973610f62dd019531f"
+    },
+    {
+      "repository": "maralcbr/omarchy-pkgs",
+      "branch": "HEAD",
+      "reviewed": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "observed": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "unchanged": true,
+      "date": "2026-09-24T14:37:02Z",
+      "url": "https://github.com/maralcbr/omarchy-pkgs/commit/7e2f6cfec1b3e412ad4fd6ed9611be275a246b30"
+    }
+  ],
+  "aurora_new_head": "ed55042c712afb987608e3633cb926116ca1962e",
+  "delta_commits": [
+    "6c2d17ff40796899d7190580cabaeea749c73d0a",
+    "0d1871c3cfde9cc45b8bc244dde4775dbf4e05c6",
+    "ed55042c712afb987608e3633cb926116ca1962e"
+  ],
+  "delta_files": [
+    "drivers/gpu/drm/scheduler/sched_main.c",
+    "rust/kernel/drm/sched.rs"
+  ],
+  "gravity_applicability": "same uninitialized scheduler C storage/free_guilty; g16_drm uses Scheduler::new; exact G17 timeout scenario not asserted on M4",
+  "backport": "initialization changes only, adapted to older Gravity API; not the newer owner refactor/KUnit suite",
+  "preflight": "applies without fuzz to exact archive source; resulting C/Rust hash gates pass",
+  "candidate_package_version": "7.1.13+elementary.m4.gravity1-3",
+  "baseline_package_check": "revision2 still identifiable/inspectable; not evidence of the new fix",
+  "full_candidate_compile": "pending hosted replay",
+  "hardware_validated": false
+}
