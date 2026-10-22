@@ -240,6 +240,56 @@ jobs:
           path: out/compositor/pantheon-rust-compositor_*.deb
           retention-days: 14
 
+  # Claude for elementary OS (the native T3 client) and its Wingpanel indicator: built here on every push
+  # to dev/main so a release cannot break them unnoticed; an artifact only, not yet in the apt suites.
+  claude-pantheon-rs:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Add elementary daily PPA (wingpanel-9 for the indicator)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
+
+      - name: Install build dependencies
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
+              cargo rustc pkg-config libgtk-4-dev libgranite-7-dev \
+              meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
+              librsvg2-bin dpkg-dev; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          exit 1
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: claude-pantheon-rs-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: claude-pantheon-rs-${{ runner.arch }}-
+
+      - name: Build the Claude package (app and indicator)
+        run: CLAUDE_PANTHEON_OUTPUT_DIR=out/claude-pantheon-rs bash rust/claude-pantheon-rs/build-deb.sh
+
+      - name: Upload the Claude package
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-pantheon-rs-deb-${{ github.run_id }}
+          path: out/claude-pantheon-rs/claude-pantheon-rs_*.deb
+          retention-days: 14
+
   publish:
     needs: build
     # Never on a pull request. A manual run publishes only when asked; the ref picks the suite.
