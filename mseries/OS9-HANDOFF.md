@@ -10891,3 +10891,16 @@ interaction test, accessibility inspection or GUI render was run. GitHub
 Actions for draft PR #526 are pending on the new head; do not treat the
 previous-head checks as current. The three unrelated local Software Updates
 files remain uncommitted and untouched.
+
+## Messages composer keyboard send — 2026-10-22
+
+Ctrl+Enter now sends from the focused composer when the Send button is enabled;
+plain Enter remains a newline. The Send button tooltip advertises the shortcut
+and its accessible name is explicit. This preserves multiline editing and gives
+keyboard users a direct send action.
+
+**Source/build validation:** `cargo fmt --check --manifest-path
+rust/Cargo.toml --package mseries-messages`, `cargo check --locked
+--manifest-path rust/Cargo.toml -p mseries-messages`, and `git diff --check`
+passed. No GUI or keyboard interaction run has been performed yet. Keep full
+keyboard/accessibility qualification open.

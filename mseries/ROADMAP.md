@@ -87,9 +87,10 @@ client; its typed BlueFerry D-Bus client and response models now live in the
 shared SDK, with opt-in contact photos decoded to bounded in-memory avatars
 and text-form Tapbacks folded onto the messages they quote. The Rust preview
 also has a contact picker, explicit recipient copy, conversation-list quick
-actions, search/refresh/new-message shortcuts, and a retry action for startup
-failure. These source/build changes still need private GUI, accessibility,
-phone and owner acceptance.
+actions, search/refresh/new-message shortcuts, Ctrl+Enter send with plain Enter
+reserved for newlines, and a retry action for startup failure. These
+source/build changes still need private GUI, accessibility, phone and owner
+acceptance.
 Imported Apple pins need an opaque per-phone identifier in BlueFerry's public
 status API before the Rust client can scope keyring data without reading
 service configuration. Feature parity and owner phone acceptance remain open.
