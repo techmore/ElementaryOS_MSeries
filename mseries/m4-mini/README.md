@@ -437,3 +437,27 @@ still required. No macOS disk write or Recovery check was performed.
 
 [Factory base receipt](receipts/2026-10-21-factory-base.json),
 [installer offline receipt](receipts/2026-10-21-installer-offline.json).
+
+## Installer partition metadata contract
+
+`audit-installer-contract.py --archive PINNED_TAR --receipt NEW_JSON` exercises
+the pinned Gravity code with mocked disk methods and in-memory ZIP fixtures.
+It verifies exact ARM64 `/usr`/verity type selection, partition chaining and
+expansion, and rejection of unaligned/oversized raw images before device open.
+No native disk command runs. Actual macOS reporting of the custom GUIDs remains
+unmeasured; the fixtures deliberately model exact GUID strings.
+
+The audit also demonstrates a remaining adapter gap: this partition path sends
+only type, `%noformat%` label and size to diskutil. It does not restore exported
+GPT labels, unique partition UUIDs or attributes. This matters to the current
+elementary label filters and verity/spare-slot layout. The DPS specifies UUID
+relationships for verity discovery and a no-auto flag for excluded partitions.
+[Discoverable Partitions Specification](https://uapi-group.org/specifications/specs/discoverable_partitions_specification/).
+
+A direct raw-image reuse therefore has no verified path to satisfy the complete
+elementary GPT contract. The audit reports support/admission **false**; it is
+not an installer or owner disk plan. A metadata-preserving adapter, real split
+artifacts, ESP handoff and native macOS/Recovery acceptance remain required.
+Gravity, Asahi, Aurora and mainline heads were rechecked and remain unchanged.
+
+[Partition-contract receipt](receipts/2026-10-21-installer-partition-contract.json).

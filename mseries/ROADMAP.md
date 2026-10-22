@@ -1,3 +1,28 @@
+## M4 mini: pinned installer GPT contract gap demonstrated — 2026-10-21
+
+Added audit-installer-contract.py, which extracts only the checksum-pinned
+Gravity installer archive and exercises real code with mocked disk methods
+and in-memory ZIPs. Three exact ARM64 usr/verity GUID fixtures select the new
+UUID correctly despite an inserted Apple_Boot helper; chain/expansion and both
+raw-image size guards pass without opening any device. Actual macOS Content
+spelling remains unmeasured.
+
+The same audit confirms the adapter gap: partition_disk sends only type,
+%noformat% label and size to diskutil. It does not restore source GPT labels,
+unique partition UUIDs or attribute flags. Synthetic active/spare usr metadata
+is lost. These are relevant to elementary's configured image label filters,
+verity pairing and no-auto spare slots. This is a preparation finding, not an
+upstream claim of elementary support or a demonstrated native boot failure.
+The audit explicitly reports roundtrip_supported=false and installer admission
+false. No macOS GPT mutation commands were invented or run.
+
+Rechecked Gravity, Asahi, Aurora and torvalds heads: unchanged from the audited
+pins. Full-ID build mapping still unavailable (NoNewPrivs=1); no build is live.
+Next: export real DPS metadata and partition payloads when full sysupdate
+assembly is possible, then implement and validate metadata-preserving import.
+Owner identity/free-space/firmware and native acceptance remain open.
+[Receipt](m4-mini/receipts/2026-10-21-installer-partition-contract.json).
+
 ## M4 mini: actual factory base build passed — 2026-10-21
 
 Factory session 27312 terminated: mkosi exit 0. Its 6.6G base_20261021 output

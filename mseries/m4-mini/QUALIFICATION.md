@@ -19,7 +19,7 @@ repeatedly request an inventory until availability changes.
 | Radio/USB | J773g Wi-Fi mapping tests pass; early input modules present | Owner firmware/calibration, USB topology and wired/Bluetooth input |
 | Audio | Kernel protection source reviewed; electrical assumptions remain explicit | Actual routing and measured protection; no speaker safety qualification |
 | Factory image | Actual 6.6G factory base build passes; 1,650 packages, kernel/module hashes and Mesa retention checked | Complete image assembly, actual graphical session and Apple installer integration |
-| Dual boot | Full pinned installer has 26 passing fixture/mock tests; synthetic macOS 27 selects separate IPSW; M4 command-line installer refuses generic disk erase; graphical installer omitted | Owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
+| Dual boot | Full pinned installer has 26 passing fixture/mock tests; synthetic macOS 27 selects separate IPSW; M4 command-line installer refuses generic disk erase; graphical installer omitted | Metadata-preserving GPT/verity import, owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
 | Lifecycle | Gravity reports flaky shutdown/reboot and unsupported sleep; sleep policy packaged | Physical restart/shutdown behavior; do not enable sleep based on assembly |
 
 For host facts, run `bash macos-inventory.sh` on the mini in macOS. The script
