@@ -77,8 +77,9 @@ The project-wide inventory, scaling policy and staged migration order are in
 
 Messages is still an optional API v2 prototype beside the qualified Python
 client; feature parity and owner phone acceptance remain open. Torrential is
-already Rust/GTK4/Granite and will consume the SDK while remaining private until
-its license permits redistribution. Orchard and the other Vala/Python apps need
+already Rust/GTK4/Granite and now consumes the SDK from its private `mseries-native`
+branch; continue its UI/accessibility migration and keep it private until its
+license permits redistribution. Orchard and the other Vala/Python apps need
 bounded ports against their current backend contracts. Signal remains on its
 signed official client until an upstream-supported backend/API exists;
 `libsignal` does not support external client use. The shared radius defaults

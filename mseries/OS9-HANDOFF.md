@@ -10741,6 +10741,14 @@ panel match; normal, maximized, fullscreen, dialog, popover and external-screen
 corners still need visual qualification. See `mseries/RUST-PANTHEON-SDK.md` and
 the corner calibration row in `mseries/BUG-FIX-ROADMAP.md`.
 
+Torrential's private `mseries-native` branch is at `fc0ac9e` and pins the SDK at
+public revision `4b685768dd37988258e6e5202b0de5b10026614f`; it installs the
+shared stylesheet and uses the shared responsive row class. `cargo check`
+passes. Existing source still emits Granite/GTK deprecation warnings; its
+repository-wide rustfmt check also reports pre-existing formatting differences.
+Torrential remains private because its upstream license does not grant
+redistribution rights.
+
 Added `rust/mseries-messages`, a first Rust client of BlueFerry Messages API v2.
 It reads status/history, searches conversations, renders text safely, keeps
 per-thread in-memory drafts, updates favorites/read state, sends checked replies
