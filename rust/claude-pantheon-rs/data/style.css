@@ -31,6 +31,7 @@ window.t3-quick-window { background-color: transparent; }
 
 .sb-row { padding: 4px 2px; }
 .sb-title { font-weight: 500; }
+.sb-context { opacity: 0.76; }
 .sb-header { padding: 6px 0 0 0; }
 
 .chat { }

@@ -206,6 +206,8 @@ pub struct Project {
     pub title: String,
     #[serde(rename = "workspaceRoot")]
     pub workspace_root: String,
+    #[serde(rename = "repositoryIdentity")]
+    pub repository_identity: Option<Value>,
     #[serde(rename = "deletedAt")]
     pub deleted_at: Option<String>,
     #[serde(rename = "defaultModelSelection")]
@@ -253,8 +255,10 @@ impl ThreadShell {
     pub fn pending_requests(&self) -> u64 {
         let r = &self.rest;
         r.get("pendingRuntimeRequests")
+            .filter(|v| !v.is_null())
             .map(|v| v.as_array().map_or(v.as_u64().unwrap_or(0), |a| a.len() as u64))
             .or_else(|| r.get("pendingRuntimeRequestCount").and_then(Value::as_u64))
+            .or_else(|| r.get("pendingRuntimeRequest").filter(|v| !v.is_null()).map(|_| 1))
             .unwrap_or(0)
     }
 

@@ -168,6 +168,8 @@ pub struct App {
     toast_retry_cb: RefCell<Option<Retry>>,
     rows: RefCell<Vec<Option<Row>>>,
     search: gtk::SearchEntry,
+    attention_button: gtk::ToggleButton,
+    attention_count: gtk::Label,
     status: gtk::Label,
     status_box: gtk::Box,
     // main
@@ -265,6 +267,7 @@ impl App {
         show_quick: bool,
     ) -> Rc<App> {
         load_css();
+        let sidebar_cfg = sidebar::SidebarConfig::load();
 
         // ---- sidebar -------------------------------------------------------------------------
         let side_header = header_bar();
@@ -272,8 +275,22 @@ impl App {
         side_header.set_title_widget(Some(&label("", &[])));
         let search = gtk::SearchEntry::builder().placeholder_text("Search chats").hexpand(true).build();
         search.set_margin_start(12);
-        search.set_margin_end(12);
         search.set_margin_bottom(6);
+        let attention_icon = gtk::Image::from_icon_name("notifications-symbolic");
+        let attention_count = label("", &["caption"]);
+        attention_count.set_visible(false);
+        let attention_child = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        attention_child.append(&attention_icon);
+        attention_child.append(&attention_count);
+        let attention_button = gtk::ToggleButton::builder().child(&attention_child).has_frame(false).build();
+        attention_button.set_active(sidebar_cfg.attention_only);
+        attention_button.set_tooltip_text(Some("Show chats needing attention"));
+        attention_button.update_property(&[gtk::accessible::Property::Label("Show chats needing attention")]);
+        attention_button.set_margin_end(8);
+        attention_button.set_margin_bottom(6);
+        let search_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        search_row.append(&search);
+        search_row.append(&attention_button);
         let list = gtk::ListBox::builder()
             .css_classes(["navigation-sidebar"])
             .selection_mode(gtk::SelectionMode::Single)
@@ -318,7 +335,7 @@ impl App {
         side.add_css_class(granite::STYLE_CLASS_SIDEBAR);
         side.set_width_request(260);
         side.append(&side_header);
-        side.append(&search);
+        side.append(&search_row);
         side.append(&list_scroll);
         side.append(&status_box);
 
@@ -566,6 +583,8 @@ impl App {
             toast_retry_cb: RefCell::new(None),
             rows: RefCell::new(Vec::new()),
             search,
+            attention_button,
+            attention_count,
             status,
             status_box,
             stack,
@@ -621,7 +640,7 @@ impl App {
             voice_rec: RefCell::new(None),
             voice_draft: RefCell::new(None),
             palette: RefCell::new(None),
-            sidebar_cfg: RefCell::new(sidebar::SidebarConfig::load()),
+            sidebar_cfg: RefCell::new(sidebar_cfg),
             provider_manager: RefCell::new(None),
             quick_panel: RefCell::new(None),
             settings: Rc::new(RefCell::new(settings::Settings::load())),
@@ -767,6 +786,15 @@ impl App {
         });
         let a = self.clone();
         self.search.connect_search_changed(move |_| a.rebuild_list());
+        let a = self.clone();
+        self.attention_button.connect_toggled(move |button| {
+            {
+                let mut cfg = a.sidebar_cfg.borrow_mut();
+                cfg.attention_only = button.is_active();
+                cfg.save();
+            }
+            a.rebuild_list();
+        });
         let a = self.clone();
         new_chat.connect_clicked(move |_| a.new_chat());
         let a = self.clone();
@@ -2293,6 +2321,22 @@ impl App {
         let cfg = self.sidebar_cfg.borrow().clone();
         let searching = !needle.is_empty();
 
+        let attention_total = self
+            .conn
+            .borrow()
+            .as_ref()
+            .map(|c| c.shell.threads.iter().filter(|t| t.archived_at.is_none() && sidebar::needs_attention(t)).count())
+            .unwrap_or(0);
+        self.attention_count.set_text(&if attention_total > 99 { "99+".into() } else { attention_total.to_string() });
+        self.attention_count.set_visible(attention_total > 0);
+        let attention_hint = if cfg.attention_only {
+            format!("Show all chats ({attention_total} need attention)")
+        } else {
+            format!("Show chats needing attention ({attention_total})")
+        };
+        self.attention_button.set_tooltip_text(Some(&attention_hint));
+        self.attention_button.update_property(&[gtk::accessible::Property::Label(&attention_hint)]);
+
         // Server threads grouped by project: the owner's order first, then newest project first;
         // pinned threads lead each section.
         if let Some(c) = self.conn.borrow().as_ref() {
@@ -2300,19 +2344,21 @@ impl App {
             let mut order: Vec<usize> = (0..c.shell.threads.len()).collect();
             order.sort_by(|&a, &b| {
                 let (ta, tb) = (&c.shell.threads[a], &c.shell.threads[b]);
-                sidebar::is_pinned(tb).cmp(&sidebar::is_pinned(ta)).then_with(|| tb.updated_at.cmp(&ta.updated_at))
+                if cfg.attention_only {
+                    sidebar::attention_timestamp(tb).cmp(&sidebar::attention_timestamp(ta))
+                } else {
+                    tb.updated_at.cmp(&ta.updated_at)
+                }
             });
             for i in order {
                 let t = &c.shell.threads[i];
-                if t.archived_at.is_some() {
+                if t.archived_at.is_some() || (cfg.attention_only && !sidebar::needs_attention(t)) {
                     continue;
                 }
-                let name = c
-                    .shell
-                    .projects
-                    .iter()
-                    .find(|p| p.id == t.project_id)
-                    .map(|p| p.title.clone())
+                let project = c.shell.projects.iter().find(|p| p.id == t.project_id);
+                let name = project
+                    .and_then(sidebar::repository_label)
+                    .or_else(|| project.map(|p| p.title.clone()))
                     .unwrap_or_else(|| "Project".into());
                 if !matches(&t.title, &name) {
                     continue;
@@ -2321,6 +2367,18 @@ impl App {
                     Some((_, _, v)) => v.push(i),
                     None => groups.push((t.project_id.clone(), name, vec![i])),
                 }
+            }
+            for (_, _, members) in &mut groups {
+                members.sort_by(|&a, &b| {
+                    let (ta, tb) = (&c.shell.threads[a], &c.shell.threads[b]);
+                    sidebar::is_pinned(tb).cmp(&sidebar::is_pinned(ta)).then_with(|| {
+                        if cfg.attention_only {
+                            sidebar::attention_timestamp(tb).cmp(&sidebar::attention_timestamp(ta))
+                        } else {
+                            tb.updated_at.cmp(&ta.updated_at)
+                        }
+                    })
+                });
             }
             let ordered = cfg.order_projects(groups.iter().map(|(id, _, _)| id.clone()).collect());
             groups.sort_by_key(|(id, _, _)| ordered.iter().position(|o| o == id).unwrap_or(usize::MAX));
@@ -2347,7 +2405,9 @@ impl App {
                     let accent = sidebar::accent_for(provider, &driver);
                     let clean = crate::transcript::title_from_prompt(&t.title);
                     let title = clean.as_deref().unwrap_or("Untitled thread");
-                    let row = sidebar::thread_row(t, title, &accent, now);
+                    let project = c.shell.projects.iter().find(|p| p.id == *pid);
+                    let context = project.and_then(|p| sidebar::thread_context_label(p, t));
+                    let row = sidebar::thread_row(t, title, context.as_deref(), &accent, now);
                     sidebar::attach_menu(&row, sidebar::thread_menu(&t.id, sidebar::is_pinned(t)));
                     self.list.append(&row);
                     if selected_thread.as_deref() == Some(t.id.as_str()) {
@@ -2358,9 +2418,9 @@ impl App {
             }
         }
 
-        // Offline transcripts: everything Claude Code wrote, grouped by project folder.
+        // Offline transcripts have no server-side attention state; keep them out of the attention view.
         let imported = self.imported_uuids();
-        {
+        if !cfg.attention_only {
             let sessions = self.sessions.borrow();
             let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
             for (i, s) in sessions.iter().enumerate() {

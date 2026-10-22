@@ -106,12 +106,21 @@ place rather than advancing its cursor past unsaved history.
 
 ## Sidebar
 
-Threads sit under their project with the provider's accent dot, a spinner while a turn runs, a
-"?" badge when a prompt waits and a blue dot for activity since the last visit (the server's
-`lastVisitedAt`; opening a thread records a visit). Pinned threads lead their section. Right-click or
-long-press a thread for Pin, Rename, Hand Off to Repo, Copy Link (a `claude-pantheon-rs --thread <id>`
-command) and Archive. Section headers collapse on click and project headers can be dragged into the
-order you want; both persist in `~/.config/claude-pantheon-rs/sidebar.json`.
+Threads sit in project/repository groups ordered by recent activity, with pinned chats leading each
+group. A chat row shows T3's repository identity and saved thread branch when those fields exist;
+generic workspaces and chats without Git context remain visible without a made-up repository label.
+The bell filters to unanswered prompts, unseen completed work and unseen failures, sorted by most
+recent attention. Its badge shows the number of matching chats. The sidebar uses repository and
+branch metadata already present in the T3 shell snapshot, avoiding a Git/status request for every row.
+That keeps list rendering light; if an agent switches worktrees outside T3's tracked branch update,
+the displayed branch may lag until T3 refreshes the thread metadata.
+
+Rows also show the provider accent, a spinner while a turn runs, a "?" badge when a prompt waits and
+a blue dot for activity since the last visit (the server's `lastVisitedAt`; opening a thread records a
+visit). Right-click or long-press a thread for Pin, Rename, Hand Off to Repo, Copy Link (a
+`claude-pantheon-rs --thread <id>` command) and Archive. Section headers collapse on click and project
+headers can be dragged into the order you want; the filter and order persist in
+`~/.config/claude-pantheon-rs/sidebar.json`.
 
 ## Composer
 
