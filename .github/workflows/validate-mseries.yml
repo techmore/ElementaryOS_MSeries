@@ -124,9 +124,10 @@ jobs:
 
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
-      - name: Build and test native Orchard windows and dropdown
+      - name: Build and test Orchard (machines, Incus, Podman) with the Wingpanel indicator
         run: |
-          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          sudo apt-get install -y qemu-utils genisoimage curl
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard -Dwingpanel=enabled
           meson compile -C "$RUNNER_TEMP/orchard-native"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
 
@@ -167,27 +168,36 @@ jobs:
       - name: Verify exact-kernel boot profile and rollback
         run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
 
-  machine-lab:
-    name: Machine Lab build and logic tests (arm64)
+  orchard-app:
+    name: Orchard app build, tests, metadata and Debian package (arm64)
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth genisoimage curl
-      - name: Build and run the logic tests (persistence, discovery, QMP transport)
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev python3 appstream desktop-file-utils xvfb xauth dbus-x11 genisoimage curl qemu-utils
+      - name: Build and run the tests (machines, QMP, clipboard, display, Incus, Podman, window)
         run: |
-          meson setup build-ml mseries/machine-lab
-          meson compile -C build-ml
-          xvfb-run -a meson test -C build-ml --print-errorlogs
+          meson setup build-orchard mseries/orchard -Dwingpanel=disabled
+          meson compile -C build-orchard
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C build-orchard --print-errorlogs
       - name: Check the version flag and desktop metadata
         run: |
-          xvfb-run -a build-ml/machine-lab --version
-          desktop-file-validate mseries/machine-lab/data/io.github.mseries.MachineLab.desktop
-          appstreamcli validate --no-net mseries/machine-lab/data/io.github.mseries.MachineLab.metainfo.xml
+          xvfb-run -a build-orchard/orchard --version
+          desktop-file-validate mseries/orchard/data/com.github.techmore.orchard.desktop
+          appstreamcli validate --no-net mseries/orchard/data/com.github.techmore.orchard.metainfo.xml
       - name: Build the Debian package
         run: |
           sudo apt-get install -y dpkg-dev
-          MACHINE_LAB_OUTPUT_DIR="$RUNNER_TEMP/ml-deb" bash mseries/machine-lab/build-deb.sh
+          ORCHARD_OUTPUT_DIR="$RUNNER_TEMP/orchard-deb" bash mseries/orchard/build-deb.sh
+
+  # The dev branch protection still requires a status check with Machine Lab's old job name; this
+  # alias satisfies it from the Orchard app job until the protection list names the new job.
+  machine-lab:
+    name: Machine Lab build and logic tests (arm64)
+    runs-on: ubuntu-26.04-arm
+    needs: orchard-app
+    steps:
+      - run: echo "Machine Lab is the Machines section of Orchard; see the Orchard app job."
 
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
@@ -337,7 +347,7 @@ jobs:
             if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
               cargo rustc rustfmt rust-clippy pkg-config libgtk-4-dev libgranite-7-dev \
               meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
-              librsvg2-bin dpkg-dev appstream desktop-file-utils xvfb xauth dbus-x11; then exit 0; fi
+              libgtksourceview-5-dev librsvg2-bin dpkg-dev appstream desktop-file-utils xvfb xauth dbus-x11; then exit 0; fi
             echo "attempt $attempt failed; retrying" >&2
             sudo apt-get update || true
             sleep $((attempt * 30))
