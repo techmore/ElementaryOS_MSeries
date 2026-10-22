@@ -58,6 +58,36 @@ fn shown(app: &App) -> Vec<String> {
     out
 }
 
+fn widget_with_css(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
+    if widget.has_css_class(class) {
+        return Some(widget.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(found) = widget_with_css(&c, class) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
+fn chat_scroller(widget: &gtk::Widget) -> Option<gtk::ScrolledWindow> {
+    if let Some(scroller) = widget.downcast_ref::<gtk::ScrolledWindow>()
+        && widget_with_css(scroller.upcast_ref(), "chat").is_some()
+    {
+        return Some(scroller.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(found) = chat_scroller(&c) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
 fn save_png(window: &gtk::ApplicationWindow, path: &Path) {
     let mut node = None;
     for _ in 0..100 {
@@ -123,6 +153,39 @@ fn main() {
         "tool rows show"
     );
     println!("opened offline '{}' ({} bytes)", pick.title, pick.size);
+    // Qualify the long-history layout with the largest local transcript. The full thread must scroll
+    // inside its viewport while the composer stays at the bottom of the window.
+    let largest = sessions.iter().max_by_key(|s| s.size).expect("a local transcript");
+    if largest.id != pick.id {
+        assert!(app.select_id(&largest.id), "the largest transcript row exists");
+        assert!(pump_until("the largest transcript", 60, || !app.is_busy()));
+        pump(250);
+    }
+    let root = app.window().upcast_ref::<gtk::Widget>();
+    let transcript = chat_scroller(root).expect("the transcript owns a scrolled viewport");
+    let composer = widget_with_css(root, "composer").expect("the composer remains in the chat page");
+    let adjustment = transcript.vadjustment();
+    let lower = adjustment.lower();
+    let bottom = (adjustment.upper() - adjustment.page_size()).max(lower);
+    assert!(adjustment.page_size() > 0.0, "the transcript viewport has an allocated height");
+    assert!(bottom - lower > 150.0, "the largest transcript extends beyond its viewport");
+    let composer_y = composer.compute_bounds(app.window()).expect("composer bounds in the window").y();
+    adjustment.set_value(bottom);
+    pump(120);
+    assert!((adjustment.value() - bottom).abs() < 1.0, "the transcript reaches its lower end");
+    let scrolled_composer_y = composer.compute_bounds(app.window()).expect("composer bounds after scrolling").y();
+    assert!(
+        (scrolled_composer_y - composer_y).abs() < 1.0,
+        "scrolling the conversation does not move the composer ({composer_y} -> {scrolled_composer_y})"
+    );
+    adjustment.set_value(lower);
+    pump(120);
+    println!("long transcript scrolls within its viewport; composer remains anchored");
+    if largest.id != pick.id {
+        assert!(app.select_id(&pick.id), "the baseline transcript row exists");
+        assert!(pump_until("the baseline transcript again", 60, || !app.is_busy()));
+        pump(250);
+    }
     // Fenced code blocks render in GtkSourceView (the transcript has plenty).
     fn has_type(widget: &gtk::Widget, name: &str) -> bool {
         if widget.type_().name() == name {

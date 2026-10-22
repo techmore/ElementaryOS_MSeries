@@ -69,13 +69,13 @@ linked-type checks, existing Dock hover/pin/focus probes, Rust release build and
 AppStream validation. The patched Dock was installed under `~/.local/lib/mseries/dock`; `pantheon-dock.service` is now
 running PID 3856628 with `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The updated T3-R binary was installed
 and D-Bus activation launched the current full window as PID 3871272; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
-running 0, pending 0. The new popover class is linked into the installed Dock, and the dedicated GTK/Xvfb fixture exercises the T3-R icon hover, selected-account content, full-chat/thread actions, click pin, outside dismissal and Escape in both themes. A real desktop pointer pass and direct scroll/composer interaction still need visual confirmation.
-The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. DeepSeek
-provider setup, scroll interaction, large-thread history, and high-latency reconnect qualification remain open.
+running 0, pending 0. The new popover class is linked into the installed Dock, and the dedicated GTK/Xvfb fixture exercises the T3-R icon hover, selected-account content, full-chat/thread actions, click pin, outside dismissal and Escape in both themes. The T3-R desktop entry was missing from the user's pinned launcher list; it has now been appended while preserving the existing launcher order, so the popup icon stays available when the full chat is closed. The native computer-use tools are unavailable in this session, so a live pointer pass is still pending.
+The GTK render harness now opens the largest local offline conversation (27 MB), verifies the transcript's vertical adjustment reaches both ends, and checks that scrolling leaves the composer's window position unchanged. The full Xvfb render harness passed with no saved T3 credentials in its isolated XDG configuration; live-server checks were skipped in that run.
+The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. Older-history paging on a large live thread and high-latency reconnect qualification remain open.
 
-Next: visually qualify hover/click/dismiss on the T3-R Dock icon and scroll the full chat while checking the composer stays
-anchored. Then review DeepSeek setup, profile a large conversation, and reconnect on a high-latency link before claiming
-daily-use readiness.
+Next: visually qualify hover/click/dismiss on the now-pinned T3-R Dock icon. Then profile a large live conversation,
+exercise older-history paging, and reconnect on a high-latency link before claiming daily-use readiness. Review DeepSeek
+setup when the paired server advertises it.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 
