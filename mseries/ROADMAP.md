@@ -4319,3 +4319,23 @@ Gravity Linux PR3 (BCM4387 suspend) and PR4 (M5 J704) are additionally inventori
 M1 author-reported suspend tests do not enable M4 sleep; M5 inventory does not
 qualify the plain M4 mini. These proposals are unselected. R5 kernel run
 39721608135 remains live; existing job is retained, without duplicate dispatch.
+
+A separate unselected Mesa follow-up candidate now handles the PR1 rodata
+allocation boundary. It factors upload allocation, checks executable/mirror BO
+allocation and the mirror's entire extent below 2^40, propagates errors through
+both compile/deserialization callers, and removes the high-USC fallback from fast
+linking. Source review confirms both API error callers destroy partial shaders
+and unreference both BOs; actual Vulkan API fault injection remains untested.
+Candidate path: mseries/m4-mini/gravity/mesa-candidates/rodata-errors, requiring
+exact PR1 head 208d4a4 and manifest before/after/patch hashes. Zero-fuzz replay
+matches the candidate source without altering the still-running PR build.
+
+Eight verbatim upload-helper cases pass native ASan/UBSan with mock allocation:
+normal/no-rodata, each allocation failure, address/extent limits, the last fitting
+extent and UINT64_MAX. A false-success negative fails the rodata allocation
+assertion as expected. This is helper code execution, not a DRM device, Vulkan
+API destructor test, GPU firmware test or full-driver compile. Full real-driver
+compile must follow terminal completion of the unmodified PR1 build before any
+selection/package change. Receipt: mseries/m4-mini/receipts/2026-10-22-mesa-rodata-helper-tests.json.
+The PR's helper-uniformity/compositor behavior remains separately under review.
+R5 kernel 39721608135 and isolated Mesa session 79442 were both revalidated live.

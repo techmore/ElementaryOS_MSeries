@@ -1,0 +1,49 @@
+{
+  "scope": "verbatim candidate helper with mock BO allocation/address inputs; no DRM/Vulkan device or API destructor execution",
+  "source_sha256": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+  "helper_sha256": "6e38f5fc42f88030701e3fe97fc994d661a5fc4e56ef4d73cedcd8dbc2419122",
+  "cases": 8,
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "results": {
+    "positive": {
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "compiler_command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "../m4-mesa-rodata-candidate/helper-tests/positive.c",
+        "-o",
+        "../m4-mesa-rodata-candidate/helper-tests/positive"
+      ]
+    },
+    "negative-false-success": {
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "compiler_command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "../m4-mesa-rodata-candidate/helper-tests/negative-false-success.c",
+        "-o",
+        "../m4-mesa-rodata-candidate/helper-tests/negative-false-success"
+      ]
+    }
+  },
+  "full_driver_compiled": false,
+  "factory_promotion": false,
+  "hardware_validated": false,
+  "test_runner_sha256": "70d6c51a84528140b223d80b19acba3bb2e01733ebac5746040003fc7fa2fe41",
+  "candidate_manifest": "gravity/mesa-candidates/rodata-errors/manifest.json"
+}
