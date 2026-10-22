@@ -1,0 +1,31 @@
+{
+  "observed_at_utc": "2026-10-22T05:29:32.536825+00:00",
+  "command": "python3 mseries/m4-mini/test_partition_import_regular.py",
+  "exit_code": 0,
+  "tests": 10,
+  "elapsed_seconds": 28.777,
+  "source_sha256": {
+    "import-partitions-regular.py": "42ffc51896a6b655960dbed8146f5dcc995075018c433d2f248a977296778564",
+    "test_partition_import_regular.py": "0bcec18cbd48298d587540d02a1cb10c9c4dff5aa7fe16047166b8ab986b4375"
+  },
+  "scope": "sgdisk-generated regular-file fixtures plus synthetic 4096-byte destination; original template/unselected OS bytes/GPT identity retained; no actual APFS filesystem or native installer",
+  "cases": [
+    "relocated active/spare-style payloads and exact GUID/Unicode label/all attribute bits",
+    "existing simulated macOS and Recovery entry/payload preservation",
+    "nonzero destination slot rejection",
+    "mapped OS partition rejection",
+    "duplicate mapping rejection",
+    "payload corruption rejection",
+    "manifest vs raw GPT disagreement rejection",
+    "GUID collision rejection",
+    "device and symlink rejection",
+    "destination size mismatch rejection",
+    "512-byte source to synthetic 4096-byte destination metadata/payload mapping"
+  ],
+  "workflow_tests": {
+    "tests": 2,
+    "passed": true
+  },
+  "installer_admission": false,
+  "hardware_validated": false
+}

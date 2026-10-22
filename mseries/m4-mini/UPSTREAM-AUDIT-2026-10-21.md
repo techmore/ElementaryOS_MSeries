@@ -1339,3 +1339,23 @@ which synchronously disables work_free_job. A final device reference released
 from that callback must not synchronously destroy its own scheduler. This is a
 reason to retain explicit producer joins/deferred destruction in any candidate,
 not a native failure claim or justification for the existing resource leak.
+
+A regular-file-only partition import prototype now closes the metadata-copy
+algorithm gap in isolation. import-partitions-regular.py creates a NEW copy of
+a GPT template, requires explicit exact-size/all-zero/reserved-type/empty-label
+slots, revalidates exported binary metadata against its manifest, and transfers
+all selected GUIDs/labels/attributes/payloads while preserving destination geometry,
+disk identity and every byte outside allowed writes. Both GPT copies/CRCs and
+payloads are checked after import; incomplete outputs remain marked. Original
+template/device/symlink/occupied-slot handling is fail-closed. This is not wired
+to macOS or installer admission, and does not constitute a live-GPT transaction.
+
+Ten independent regular-file tests pass (28.777s), using sgdisk fixtures, existing
+simulated macOS/Recovery entries/data, active/spare-style payloads, Unicode labels,
+all attribute bits, corruption/collision/size/occupied-slot/device rejection, and
+512-byte source to synthetic 4096-byte destination geometry. Two hosted-workflow
+tests pass too; the importer suite is added to hardware-support CI, whose remote
+result is not yet claimed. Receipt: mseries/m4-mini/receipts/2026-10-22-regular-partition-import-tests.json.
+Native allocation, GPT update/recovery semantics, real APFS preservation, ESP handoff,
+writable root, signature trust and macOS Recovery acceptance remain open. R5 run
+39721608135 was rechecked live while this work proceeded; no duplicate was started.

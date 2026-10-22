@@ -1037,3 +1037,40 @@ by restoring and retesting the positive sources.
 [Positive KUnit result](receipts/2026-10-21-scheduler-kunit-positive.json).
 
 Standby-split-corrected image replay [39713917690](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39713917690) dispatched at `cc10d6ef85fa4111ef0ed207979e24084d4bfb64`. This remains the revision-2 baseline image; fixed scheduler kernel compilation is separate. [Dispatch snapshot](receipts/2026-10-21-hosted-image-retry-3.json).
+
+## Copy-only partition import prototype
+
+`import-partitions-regular.py` exercises the missing metadata translation against
+regular GPT images on Linux. It creates a **new copy** of a preallocated template;
+it does not update the original template, a disk device, or macOS partitions.
+This is not connected to the Apple installer and does not enable installation.
+
+Each explicit `--map SOURCE_INDEX:DESTINATION_INDEX` requires an exact-size,
+all-zero destination slot with Linux-reserved type
+`8da63339-0007-60c0-c436-083ac8230908`, label
+`elementary_m4_import_empty` and zero attributes. These are deliberately created
+regular-file fixture slots, not permission to reuse an existing partition.
+The exported source partition must have its payload present and hash-checked.
+No automatic partition selection, resizing or erasure is implemented.
+
+The prototype reconstructs source GPT metadata in an anonymous sparse file and
+checks CRCs, mirrored tables and manifest agreement. It retains destination disk
+identity and geometry while transferring source type/unique GUID, UTF-16 label
+and every attribute bit. It recalculates both GPT copies, reads back metadata
+and payloads, and compares every byte outside the permitted write ranges.
+Unselected entries and payloads, including simulated APFS/Recovery, must remain
+unchanged; GUID collisions and occupied slots are rejected. Failed outputs keep
+an `INCOMPLETE` marker. Symlinks and device inputs are rejected before an input
+can be reopened for reading.
+
+Export hashes alone do not authenticate a release or authorize a signer.
+Use the separate component-provenance and verity/signature checks before any
+future installer intake. Native macOS allocation/GPT transactions, Recovery
+preservation, ESP handoff, writable-root creation, power-loss recovery and owner
+hardware acceptance remain separate requirements. The regular-file tests do
+not establish those properties or prove APFS filesystem validity.
+
+Run `python3 mseries/m4-mini/test_partition_import_regular.py` for independent
+sgdisk-produced fixtures, including relocated active/spare-style payloads,
+Unicode labels, read-only/no-auto/growfs/other bits, preserved simulated OS
+partitions, corrupt-input rejection and synthetic 4 KiB destination geometry.
