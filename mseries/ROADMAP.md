@@ -1,3 +1,11 @@
+## Screenshot shelf capability detection — 2026-10-22
+
+The shelf queries the running compositor's ScreenshotShelfPlacementVersion
+property without D-Bus activation. Pantheon-R support selects native Wayland;
+older sessions retain Gala/XWayland detection and explicit override behavior.
+All 13 private shelf tests pass. Matching compositor source is PR #526; older
+installed binaries lack the property. Live attachment acceptance is still open.
+
 ## Screenshot shortcut gap and shelf repair — 2026-10-22
 
 Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
