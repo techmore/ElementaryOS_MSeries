@@ -3981,3 +3981,9 @@ Image39708881382 terminal failure: reached sysupdate UKI/ESP then repart split
 failed empty verity signature (tools259.9). Final desktop/output checks did not
 run. Trace active/spare signature handling; do not drop verification. Kernel r3
 and native KUnit session92953 remain active separately.
+
+Repart259.9 fixture reproduces empty standby signature export. SplitName=- on
+three bside definitions fixes it with identical GPT metadata and active signature/
+verity verification intact; CI now runs fixture. Three scheduler KUnit cases
+PASS on QEMU virt. Accelerator not separately logged; do not assert forcedTCG.
+Negative-control/restoration native session26302 active. Full image replay next.

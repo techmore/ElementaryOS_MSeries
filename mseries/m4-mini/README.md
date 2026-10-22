@@ -997,3 +997,33 @@ The active/spare signature handling must be traced before another image replay;
 signature policy must not be disabled to obtain a build. Scheduler-fixed r3
 compilation and the isolated KUnit build continue independently.
 [Second image failure](receipts/2026-10-21-hosted-image-failure-2.json).
+
+### Standby split export fix verified with active verity intact
+
+The empty-signature failure is reproduced with the exact Ubuntu systemd-repart
+259.9 tool version in a small file-backed fixture. Repart defaults SplitName
+to the partition type, so even empty standby slots were exported. The three
+standby definitions now set `SplitName=-`; their GPT reservations, labels,
+UUIDs, sizes and attributes are retained. Active data/hash/signature exports
+and signature policy remain enabled.
+
+The corrected fixture succeeds, has byte-equivalent parsed GPT metadata to
+the failing case, emits no empty standby exports, and passes both OpenSSL
+certificate/signature verification and veritysetup data/hash verification.
+The full-image job now runs this fixture before assembly and preserves its
+logs. Default/M4/Fairydust profile resolution still passes. This is not yet a
+full-image success. [Fixture and tool hashes](receipts/2026-10-21-repart-standby-fix.json).
+The [upstream repart definition](https://github.com/systemd/systemd/blob/v259/man/repart.d.xml)
+documents the SplitName default and `-` opt-out.
+
+### Kernel scheduler KUnit positive result
+
+All three adapted upstream cases pass in a real ARM64 QEMU kernel: dirty
+storage starts clean, late completion after repeated timeouts, and repeated
+timeouts with out-of-order completions/teardown. This is a generic virt machine
+with fake fences, not an M4 GPU/firmware/display test. The emitted runner uses
+an accelerator fallback list; earlier planned TCG wording is not proof of
+the actual selected backend. Broader lifetime/aliasing/NoDevice gates remain
+open. A dirty-storage-only negative control is running separately, followed
+by restoring and retesting the positive sources.
+[Positive KUnit result](receipts/2026-10-21-scheduler-kunit-positive.json).

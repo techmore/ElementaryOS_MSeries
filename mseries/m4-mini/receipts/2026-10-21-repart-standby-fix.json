@@ -1,0 +1,123 @@
+{
+  "scope": "small GPT/erofs/verity regular-file fixture; no full image or hardware result",
+  "repart_version": "systemd 259 (259.9-0ubuntu0.1)",
+  "case_exit_codes": {
+    "default-spares": 1,
+    "no-spare-splits": 0
+  },
+  "gpt_metadata_identical": true,
+  "partitions": [
+    {
+      "index": 1,
+      "type_guid": "c12a7328-f81f-11d2-ba4b-00a0c93ec93b",
+      "unique_guid": "d9e2bade-a859-4726-8801-dd30d3ab78b6",
+      "first_lba": 2048,
+      "last_lba": 534527,
+      "offset_bytes": 1048576,
+      "size_bytes": 272629760,
+      "label": "elementary_arm64_boot",
+      "attributes_hex": "0x0000000000000000",
+      "no_auto": false,
+      "read_only": false,
+      "growfs": false
+    },
+    {
+      "index": 2,
+      "type_guid": "c23ce4ff-44bd-4b00-b2d4-b41b3419e02a",
+      "unique_guid": "201f9738-9c72-4598-be1f-174bd2d66a39",
+      "first_lba": 534528,
+      "last_lba": 534559,
+      "offset_bytes": 273678336,
+      "size_bytes": 16384,
+      "label": "usr-arm64-verity-sig",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 3,
+      "type_guid": "6e11a4e7-fbca-4ded-b9e9-e1a512bb664e",
+      "unique_guid": "d8fed60c-5e79-36f9-7183-85e3ad4fb330",
+      "first_lba": 534560,
+      "last_lba": 542751,
+      "offset_bytes": 273694720,
+      "size_bytes": 4194304,
+      "label": "usr-arm64-verity",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 4,
+      "type_guid": "b0e01050-ee5f-4390-949a-9101b17104e9",
+      "unique_guid": "48aeb54d-bb15-cf74-d128-a7e92c7b7db3",
+      "first_lba": 542752,
+      "last_lba": 608287,
+      "offset_bytes": 277889024,
+      "size_bytes": 33554432,
+      "label": "usr-arm64",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 5,
+      "type_guid": "c23ce4ff-44bd-4b00-b2d4-b41b3419e02a",
+      "unique_guid": "18d07a48-ce14-45b7-8edb-8d8f63d4df54",
+      "first_lba": 608288,
+      "last_lba": 608319,
+      "offset_bytes": 311443456,
+      "size_bytes": 16384,
+      "label": "_empty",
+      "attributes_hex": "0x1000000000000000",
+      "no_auto": false,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 6,
+      "type_guid": "6e11a4e7-fbca-4ded-b9e9-e1a512bb664e",
+      "unique_guid": "6ed666ab-d2a3-49cf-a8e0-966026649d3c",
+      "first_lba": 608320,
+      "last_lba": 616511,
+      "offset_bytes": 311459840,
+      "size_bytes": 4194304,
+      "label": "_empty",
+      "attributes_hex": "0x9000000000000000",
+      "no_auto": true,
+      "read_only": true,
+      "growfs": false
+    },
+    {
+      "index": 7,
+      "type_guid": "b0e01050-ee5f-4390-949a-9101b17104e9",
+      "unique_guid": "ca77bf65-4e25-49b8-9b51-eae8850fbf50",
+      "first_lba": 616512,
+      "last_lba": 682047,
+      "offset_bytes": 315654144,
+      "size_bytes": 33554432,
+      "label": "_empty",
+      "attributes_hex": "0x8800000000000000",
+      "no_auto": true,
+      "read_only": false,
+      "growfs": true
+    }
+  ],
+  "active_signature_verified": true,
+  "active_data_hash_verified": true,
+  "standby_slots_retained": true,
+  "standby_split_exports_disabled": true,
+  "root_hash": "48aeb54dbb15cf74d128a7e92c7b7db3d8fed60c5e7936f9718385e3ad4fb330",
+  "hardware_validated": false,
+  "tool_package_sha256": {
+    "erofs-utils_1.9.1-1_arm64.deb": "6f810b2b557a2cf72a4abd20c05386fcf925671294f0e2f0c279b73b865fedb3",
+    "libsystemd-shared_259.9-0ubuntu0.1_arm64.deb": "73383a4bd8ded47137e6593656bf19c6b65ca170f94c481d1bf8bcfb74fb5d71",
+    "libsystemd0_259.9-0ubuntu0.1_arm64.deb": "78c330e490c74b890057d13094eee72fa5b32ea127fcc4331673b9980e0a29b3",
+    "systemd-repart_259.9-0ubuntu0.1_arm64.deb": "b1f40c7f169adffc99ad56b0149d7d0ea6aea81bfc03796ec1f0200d7c7a69dc"
+  },
+  "primary_documentation": "https://github.com/systemd/systemd/blob/v259/man/repart.d.xml",
+  "fixture_only_single_id_mapping": "all synthetic files are root-owned; not a full-image package-ownership substitute"
+}

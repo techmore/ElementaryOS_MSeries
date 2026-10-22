@@ -10,8 +10,9 @@ not changed by this test patch.
 This directory is not applied by build-kernel.py or included as an active
 production compatibility patch. prepare-scheduler-kunit.py creates a distinct
 source tree with the reviewed production patches followed by this test patch.
-Use the normal ARM64 KUnit QEMU runner with software TCG, no network/storage,
-and matching compiler/rust-src. The DRM scheduler's KUnit selector is needed
+Use the normal ARM64 KUnit QEMU runner with no network/storage,
+and matching compiler/rust-src. Record actual acceleration separately; KUnit
+provides a default backend fallback list. The DRM scheduler's KUnit selector is needed
 because DRM_SCHED is hidden Kconfig state.
 
 Test intent: dirty scheduler flags, repeated timeout with late completion,

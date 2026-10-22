@@ -527,6 +527,13 @@ jobs:
             libegl1 libgl1 libvulkan1 libgbm1 libdrm2 libllvm21 \
             libwayland-client0 libwayland-server0 libxcb-dri3-0 libxcb-present0 \
             libxcb-xfixes0 libxshmfence1 libxxf86vm1
+      - name: Check signed active-slot export and reserved standby slots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 mseries/m4-mini/test-repart-standby-split.py \
+            --repart "$(command -v systemd-repart)" --output "$RUNNER_TEMP/repart-fixture"
+          cp "$RUNNER_TEMP/repart-fixture/receipt.json" image-record/repart-fixture.json
       - name: Retrieve successful reviewed hosted components
         env:
           GH_TOKEN: ${{ github.token }}
@@ -619,6 +626,12 @@ jobs:
           for file in "$RUNNER_TEMP/full-image/"*.log "$RUNNER_TEMP/full-image/"*.json "$RUNNER_TEMP/full-image/"*.patch; do
             [[ ! -f "$file" ]] || cp "$file" image-record/
           done
+          if [[ -d "$RUNNER_TEMP/repart-fixture" ]]; then
+            mkdir -p image-record/repart-fixture
+            for file in "$RUNNER_TEMP/repart-fixture/"*.log; do
+              [[ ! -f "$file" ]] || cp "$file" image-record/repart-fixture/
+            done
+          fi
           df -h > image-record/final-disk-space.txt
       - name: Preserve full-image research records
         if: always()

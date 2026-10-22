@@ -1,0 +1,67 @@
+{
+  "scope": "real kernel KUnit on ARM64 QEMU generic virt; not M4 GPU/display runtime",
+  "result": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 3,
+          "passed": 3,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "run_log_sha256": "229fdbdf4d48f4b496b6fe7785bcdb234b240097dc565ca32731715a6d126841",
+  "tap_log_sha256": "89f6f177a0a50faff9949dc9feb80e6c9e336fa8d4540c60055c23d2882464d3",
+  "test_patch_sha256": "d5eeb7b5680408a6ce070b2173b3cc1d02c08abd8a81cb334cc036c3fd580d83",
+  "acceleration_note": "KUnit emitted its default accelerator fallback list plus requested tcg; the selected backend was not separately logged. Report QEMU rather than forced TCG.",
+  "initial_vcpus": 1,
+  "network_device": false,
+  "storage_device": false,
+  "scope_limit": "does not close deferred queued-job ownership, whole-job timeout aliasing, NoDevice retention or native firmware/hardware gates",
+  "negative_control_state": "running separately as native session26302; positive sources restored before follow-up suite",
+  "hardware_validated": false
+}
