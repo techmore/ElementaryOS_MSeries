@@ -26,9 +26,15 @@ style instead of a fixed blue. Provider identity dots retain their own colors.
 Theme lookup adds no polling and is paid only when opening a visual reply.
 
 `cargo fmt --check --manifest-path rust/Cargo.toml -p claude-pantheon-rs`,
-`cargo check --locked --manifest-path rust/Cargo.toml -p claude-pantheon-rs`, and
-`git diff --check` pass. No tests or GUI theme interaction were run. Visual
-checks in both Pantheon light and dark modes remain open; GTK 4.10 deprecated
+`cargo clippy --locked --manifest-path rust/Cargo.toml -p claude-pantheon-rs
+--all-targets -- -D warnings`, `cargo test --locked --manifest-path
+rust/Cargo.toml -p claude-pantheon-rs` (41 unit tests), and
+`tests/run-render-sandbox.sh` pass. The render harness now uses a checked-in
+offline transcript under temporary HOME/XDG paths and a private session bus;
+plain `cargo test` skips the GTK render binary unless that sandbox is explicitly
+enabled. Live profile/server access, message sending, microphone capture and
+runner rotation each require explicit opt-in. Visual checks of the injected
+WebView palette in Pantheon light and dark modes remain open. GTK 4.10 deprecated
 named-color lookup without a replacement, so that lookup is narrowly scoped
 and will need revisiting if the app moves to GTK 5.
 
