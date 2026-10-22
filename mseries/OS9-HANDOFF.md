@@ -18,14 +18,19 @@ fetches the bounded phone inbox through the released
 five-minute checks while auto-refresh is enabled. Failed reads keep the last
 successful snapshot. Handles deduplicate, ambiguous sender identities remain
 phone-only, group routes are never guessed, and alphanumeric sender IDs cannot
-be replied to. Changes are in draft [PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
+be replied to. Connect iPhone and Advanced BlueFerry remain available from the
+Rust app menu and its backend-unavailable screen. Changes are in draft
+[PR #526](https://github.com/techmore/ElementaryOS_MSeries/pull/526).
 
 At `e15f9272`, local formatting, locked compile, 25 SDK/Messages unit tests,
 strict Clippy and `git diff --check` pass. SDK text scaling now shares its two
 GTK settings subscriptions across live widgets and prunes dropped callbacks,
 so rebuilt views do not leave per-widget handlers attached to global settings.
-GitHub Actions for the pushed revisions are running or queued; no failures
-were reported in the last snapshot. Live phone catch-up, read-failure feedback, pin/keyring operation,
+The Rust Messages menu and unavailable-backend state now restore Connect iPhone
+and Advanced BlueFerry launch actions from the qualified Python client. The
+updated app compiles, and the same 25 SDK/Messages tests plus strict Clippy pass.
+GitHub Actions are running or queued; no failures were reported in the latest
+snapshot. Live phone catch-up, read-failure feedback, pin/keyring operation,
 owner-session visual and keyboard/accessibility review remain open. BlueFerry
 PR [#277](https://github.com/erikwb/blueferry/pull/277) merged with a stable
 phone UUID, but public v0.8.1 packages predate it, so phone-scoped pin import
@@ -43,8 +48,14 @@ upstream-supported secure messaging boundary exists. Do not treat `libsignal`
 as a supported third-party client API.
 
 The continuous-radius Gala patch remains provisional. Physical MacBook Pro
-panel matching is not qualified. No Signal account, Messages phone, desktop
-installation or running session was changed in this work.
+panel matching is not qualified. A five-second Xvfb smoke launch accidentally
+auto-activated a separate BlueFerry process through the session D-Bus; the
+timeout stopped it. No message was sent. The pre-existing BlueFerry process
+remained running. A follow-up probe used an isolated session bus with an empty
+service directory and confirmed that Messages opens a 1040×730 window. This
+checks activation only, not the rendered screen or accessibility. Avoid normal
+`dbus-run-session` for no-service probes; its service directory can auto-start
+BlueFerry.
 
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
