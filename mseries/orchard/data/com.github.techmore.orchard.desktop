@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Orchard
+GenericName=Machines and Containers
+Comment=Run other Linux machines, Incus containers and Podman pods on this Mac
+Exec=orchard %U
+Icon=com.github.techmore.orchard
+Terminal=false
+Type=Application
+Categories=System;Emulator;
+Keywords=virtual;machine;vm;qemu;incus;lxc;container;podman;orchard;
+MimeType=x-scheme-handler/orchard;
+StartupWMClass=com.github.techmore.orchard
+StartupNotify=true

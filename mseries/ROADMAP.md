@@ -1,3 +1,9 @@
+## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
+
+One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
+with `mseries/install-orchard.sh`. Idle CPU of the installed app 37.6 % → 0.3 % of a core, RSS 281 → 82 MB (the running-dot
+CSS animation kept the frame clock running; cairo renderer, 1 px outline, steady cursor, timers only while mapped).
+`meson test` 12/12; captures in `mseries/orchard/docs/`. Not carried over: list search/filter/sort and bulk actions.
 ## Public fixes and enhancements audit — 2026-10-21
 
 A structured public capability ledger (`docs/capabilities.json`) now covers 65 scoped areas at immutable source 6f716799fcbef277ac24031bf9242e20f5a2415f. The generated `docs/capabilities.html` separates custom source, patches, ports and integrations; dated outcomes, staged builds, blockers and qualification limits; and a prioritized next iteration per entry. Nine claim/data-quality findings include the intentionally omitted microphone stereo mapper, physical ChatGPT F5 failure, compositor load boundaries, AirDrop transport limits, network README drift, historical wip3 staging prose, Torrential redistribution limits and synthetic performance numbers. Merged notification history/account legend and newer updater/native-client/compositor work are reconciled; still-open remote-desktop/unified-Orchard/later-CodexBar PRs stay separate. Read-only uname/package-label observations find wip3 running despite the historical unbooted staging note; they do not qualify its hashes or hardware. No host state, accounts, services or model queues changed.
