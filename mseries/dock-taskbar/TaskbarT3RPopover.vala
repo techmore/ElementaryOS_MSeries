@@ -52,7 +52,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
 
         var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         var mark = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs") {
-            pixel_size = 28
+            // Keep the existing 28 px size at the 48 px default, then follow the shared dock token.
+            pixel_size = ItemManager.get_icon_size () * 7 / 12
         };
         var title_block = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true };
         var title = new Gtk.Label ("T3-R Pantheon") { xalign = 0 };
