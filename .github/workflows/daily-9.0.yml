@@ -523,7 +523,7 @@ jobs:
             systemd-repart systemd-ukify systemd-container cryptsetup-bin \
             python3-packaging python3-pefile python3-cryptography \
             openssl rsync zstd cpio kmod fdisk gdisk dosfstools mtools erofs-utils \
-            squashfs-tools xorriso device-tree-compiler \
+            squashfs-tools xorriso grub-common grub-efi-arm64-bin initramfs-tools-core device-tree-compiler \
             libegl1 libgl1 libvulkan1 libgbm1 libdrm2 libllvm21 \
             libwayland-client0 libwayland-server0 libxcb-dri3-0 libxcb-present0 \
             libxcb-xfixes0 libxshmfence1 libxxf86vm1
@@ -598,6 +598,16 @@ jobs:
             --root "$output/liveiso_${version}" --receipt image-record/live-root-check.json
           sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/test-factory-retention.py --id-map=host-root --root "$output/liveiso_${version}" \
             --smoke "$RUNNER_TEMP/retrieved/mesa/mesa-software" | tee image-record/live-mesa-retention.txt
+      - name: Assemble and read back unpromoted ARM64 research ISO
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/assemble-research-iso.py \
+            --hosted-root --workspace "$RUNNER_TEMP/full-image" --output "$RUNNER_TEMP/research-iso"
+          cp "$RUNNER_TEMP/research-iso/receipt.json" image-record/iso-assembly.json
+          mkdir -p research-iso
+          sudo cp "$RUNNER_TEMP/research-iso/"*.iso research-iso/
+          (cd research-iso && sha256sum *.iso > SHA256SUMS)
       - name: Verify actual sysupdate ESP and compress research images
         shell: bash
         run: |
@@ -644,6 +654,11 @@ jobs:
             cp "$RUNNER_TEMP/image-verity-check/commands.log" image-record/actual-verity-commands.log
           fi
           df -h > image-record/final-disk-space.txt
+          if [[ -d "$RUNNER_TEMP/research-iso" ]]; then
+            mkdir -p image-record/iso-logs
+            sudo find "$RUNNER_TEMP/research-iso" -maxdepth 1 -type f \( -name '*.log' -o -name '*.json' -o -name INCOMPLETE \) \
+              -exec cp -t image-record/iso-logs {} +
+          fi
       - name: Preserve full-image research records
         if: always()
         uses: actions/upload-artifact@v7
@@ -656,6 +671,14 @@ jobs:
         with:
           name: m4-image-candidate-${{ github.run_id }}
           path: research-images/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
+      - name: Preserve unpromoted ARM64 research ISO
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-iso-candidate-${{ github.run_id }}
+          path: research-iso/
           if-no-files-found: error
           compression-level: 0
           retention-days: 2

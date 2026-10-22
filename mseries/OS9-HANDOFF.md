@@ -11202,3 +11202,19 @@ RTKit destructor, mailbox stop and workqueue destruction precede callback-data
 free; the leak means that boundary cannot currently be assumed to run.
 No speculative global-workqueue flush or destructor patch is selected. Evidence:
 mseries/m4-mini/receipts/2026-10-22-m4-drm-rtkit-release-order.json.
+
+The next hosted image workflow now assembles a distinct unpromoted ARM64 UEFI
+research ISO from the full checked live root and raw image, using a hosted-root-only
+assembler. It requires the exact reviewed kernel, one module tree, early NVMe/PCIe
+modules and the unchanged research installer guard; preserves source root ownership;
+checks UEFI boot-catalog presence; reads the ISO back and hashes kernel/initrd/both
+squashfs payloads; and decompresses the embedded raw image to compare its full hash.
+The generic installer remains unavailable. It uses native runner GRUB/xorriso,
+without changing owner-host boot software. Diagnostics survive failed assembly.
+Preflight passed Python/YAML parsing, small regular-file raw/live squashfs readback,
+exclusion of the ISO staging template from the live filesystem and rejection of
+non-hosted execution before output creation. This is not a successful full ISO;
+that requires a new hosted graph build with retained live root. Wait for r5 kernel
+success/download validation, update image inputs coherently, then run the combined
+image/ISO workflow once. Evidence: receipts/2026-10-22-iso-assembly-preflight.json
+under mseries/m4-mini.

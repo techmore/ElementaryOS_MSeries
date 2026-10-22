@@ -1,0 +1,40 @@
+{
+  "scope": "native small regular-file squashfs roundtrip and live-template exclusion; assembler rejects non-hosted execution before reading workspace; not full ISO assembly or hardware",
+  "commands": [
+    [
+      "mksquashfs",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-assembly-preflight/tmpnoi18twk/live",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-assembly-preflight/tmpnoi18twk/live.squashfs",
+      "-noappend",
+      "-comp",
+      "zstd",
+      "-Xcompression-level",
+      "3",
+      "-processors",
+      "2",
+      "-e",
+      "iso_root"
+    ],
+    [
+      "mksquashfs",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-assembly-preflight/tmpnoi18twk/elementary_fixture.raw",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-assembly-preflight/tmpnoi18twk/raw.squashfs",
+      "-noappend",
+      "-comp",
+      "zstd",
+      "-Xcompression-level",
+      "3",
+      "-processors",
+      "2"
+    ]
+  ],
+  "raw_roundtrip": true,
+  "live_roundtrip": true,
+  "iso_template_excluded": true,
+  "non_hosted_rejected_without_output": true,
+  "full_iso_assembled": false,
+  "hardware_validated": false,
+  "assembler_sha256": "8860a85bdf4c510c71e7088f14bc2a0c12c1c760be9ac4fab940e5e61f0a30f5",
+  "python_syntax": "passed",
+  "workflow_yaml_parse": "passed"
+}
