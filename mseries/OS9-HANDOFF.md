@@ -16,7 +16,9 @@ disabled until synchronization finishes. Corrupt and wrong-scope entries are dis
 The full chat now renders the server's bounded thread window and loads older history pages as the user scrolls to the
 top (with a retry control), using T3's opaque history cursor. Older pages deduplicate by source thread/item identity
 and preserve the visible reading position. Pagination state is saved with the thread cache. Cache hit telemetry and
-large-history/poor-network profiling remain open.
+large-history/poor-network profiling remain open. Cache records retain all loaded messages until the 8 MiB record cap;
+they no longer advance the history cursor past rows dropped from a 500-item cache slice. Older cache schema versions are
+discarded so any intermediate cursor-gap cache cannot be reused.
 
 Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness (`dsh
 --profile default acp`) for execution on the paired T3 server. This uses T3's generic ACP path and keeps credentials on

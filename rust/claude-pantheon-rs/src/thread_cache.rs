@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-const SCHEMA_VERSION: u32 = 2;
+const SCHEMA_VERSION: u32 = 3;
 const MAX_RECORD_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_ENV_ENTRIES: usize = 32;
 const MAX_ENV_BYTES: u64 = 64 * 1024 * 1024;
@@ -47,15 +47,14 @@ impl CachedThread {
         history_cursor: Option<&str>,
         has_more_history: bool,
     ) -> Self {
-        let truncated = view.items.len() > 500;
         Self {
             schema_version: SCHEMA_VERSION,
             environment_id: environment_id.to_string(),
             thread_id: thread_id.to_string(),
             sequence,
-            view: bounded_view(view),
-            history_cursor: history_cursor.filter(|cursor| cursor.len() <= 512).map(str::to_string),
-            has_more_history: has_more_history || truncated,
+            view: cache_view(view),
+            history_cursor: history_cursor.map(str::to_string),
+            has_more_history,
         }
     }
 
@@ -64,11 +63,10 @@ impl CachedThread {
     }
 }
 
-fn bounded_view(view: &ThreadView) -> ThreadView {
-    let first_item = view.items.len().saturating_sub(500);
+fn cache_view(view: &ThreadView) -> ThreadView {
     let first_run = view.runs.len().saturating_sub(100);
     let first_checkpoint = view.checkpoints.len().saturating_sub(100);
-    let items = view.items[first_item..].to_vec();
+    let items = view.items.clone();
     let history_item_keys = items.iter().map(|item| item.identity_key()).collect();
     ThreadView {
         items,
@@ -296,19 +294,20 @@ mod tests {
     }
 
     #[test]
-    fn cached_history_has_a_fixed_item_run_and_checkpoint_bound() {
+    fn cached_history_keeps_items_and_bounds_runs_and_checkpoints() {
         let view = ThreadView {
             items: (0..501).map(|i| TurnItem { id: format!("item-{i}"), ..Default::default() }).collect(),
             runs: (0..101).map(|i| serde_json::json!({"id": i})).collect(),
             checkpoints: (0..101).map(|i| serde_json::json!({"id": i})).collect(),
             ..Default::default()
         };
-        let cached = CachedThread::new("env-a", "thread-a", 1, &view, None, false);
-        assert_eq!(cached.view.items.len(), 500);
-        assert_eq!(cached.view.items[0].id, "item-1");
+        let cached = CachedThread::new("env-a", "thread-a", 1, &view, Some("cursor"), true);
+        assert_eq!(cached.view.items.len(), 501);
+        assert_eq!(cached.view.items[0].id, "item-0");
         assert_eq!(cached.view.runs.len(), 100);
         assert_eq!(cached.view.checkpoints.len(), 100);
         assert!(cached.has_more_history);
+        assert_eq!(cached.history_cursor.as_deref(), Some("cursor"));
     }
 
     #[test]
