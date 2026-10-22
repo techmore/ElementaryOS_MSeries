@@ -49,6 +49,54 @@ pub fn read_framebuffer<R: ExportMem>(
     rgba_image(size.w as u32, size.h as u32, bytes, bottom_up)
 }
 
+/// Compose an output into an owned texture rather than reading a scanout plane.
+/// This is invoked only for an explicit capture request; it does no idle work.
+pub fn compose_output<R>(
+    renderer: &mut R,
+    state: &crate::PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Result<image::RgbaImage, String>
+where
+    R: smithay::backend::renderer::ImportAll
+        + smithay::backend::renderer::ImportMem
+        + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
+        + ExportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    if state.session_locked {
+        return Err("Screenshot capture is unavailable while the session is locked".into());
+    }
+    let mode = output
+        .current_mode()
+        .ok_or("Screenshot output has no active mode")?;
+    let size: Size<i32, Buffer> = (mode.size.w, mode.size.h).into();
+    if size.w <= 0 || size.h <= 0 || i64::from(size.w) * i64::from(size.h) > MAX_PIXELS as i64 {
+        return Err("Screenshot dimensions exceed the capture limit".into());
+    }
+    let elements = crate::cursor::render_desktop_elements(renderer, state, output)
+        .map_err(|error| format!("Could not collect screenshot surfaces: {error}"))?;
+    let mut target = renderer
+        .create_buffer(Fourcc::Abgr8888, size)
+        .map_err(|error| format!("Could not allocate screenshot texture: {error}"))?;
+    let mut framebuffer = renderer
+        .bind(&mut target)
+        .map_err(|error| format!("Could not bind screenshot texture: {error}"))?;
+    let mut damage = smithay::backend::renderer::damage::OutputDamageTracker::from_output(output);
+    let rendered = damage
+        .render_output(
+            renderer,
+            &mut framebuffer,
+            0,
+            &elements,
+            [0.1, 0.1, 0.1, 1.0],
+        )
+        .map_err(|error| format!("Could not render screenshot: {error}"))?;
+    renderer
+        .wait(&rendered.sync)
+        .map_err(|error| format!("Could not finish screenshot rendering: {error}"))?;
+    read_framebuffer(renderer, &framebuffer, size)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
