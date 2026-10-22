@@ -8,13 +8,20 @@ Source version, upstream tag/commit, MIT provenance, review scope, test results
 and qualification limits: [factory audit](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
 
 Validation: `python3 mseries/test-image-wiring.py` (7 tests),
-`python3 -m py_compile mseries/test-image-wiring.py`, `git diff --check`. No
-build, package fetch, install, host service change or hardware test has occurred
-yet. The October 18 blank-disk/installed ARM64 VM receipt predates this source
-change; it does not validate speaker protection. Next: artifact-only generic
-ARM64 build, then verify the package and service link in built live/sysupdate
-payloads before another isolated VM install/boot check. Physical Apple boot and
-speaker acceptance remain open.
+`python3 -m py_compile mseries/test-image-wiring.py`, `git diff --check`, and
+PR CI passed. Artifact-only workflow run [39712066587](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39712066587)
+resolved and installed ARM64 `speakersafetyd` 1.1.2-4 from Resolute universe;
+the generated liveiso payload check passed and confirmed the package-owned
+service link. Final image assembly failed in sysupdate `systemd-repart` with
+`Verity signature partition is empty`; no ISO/checksum was produced. The
+retained build logs are in artifact
+`os9-mseries-build-record-39712066587`. `just do-daily` masked the mkosi error
+until the later checksum step, so the repart failure and recipe error
+propagation need a follow-up. The October 18 blank-disk/installed ARM64 VM
+receipt predates this change; it does not validate speaker protection. Next:
+fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
+payloads, then install and boot that exact image in an isolated VM. Physical
+Apple boot and speaker acceptance remain open.
 
 ## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
 

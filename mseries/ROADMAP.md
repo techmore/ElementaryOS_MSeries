@@ -45,11 +45,15 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,
 live installer and sysupdate package set, with its `multi-user.target` link
 preserved through pruning. DSP remains excluded pending first-boot volume
-qualification. Seven image-wiring tests and Python compilation pass; no image
-has yet been built from this change. The October 18 generic ARM64 installed-VM
-receipt is prior evidence and does not include it. Next: artifact-only image
-build, verify package/version/link in both payloads, then isolated VM
-installation/boot. Physical Apple audio and boot remain open.
+qualification. Seven image-wiring tests and Python compilation pass.
+Artifact-only run [39712066587](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39712066587)
+installed the pinned package in the build and passed the liveiso payload check,
+but sysupdate assembly failed in `systemd-repart` (`Verity signature partition
+is empty`); no complete ISO was produced. The recipe also masked mkosi's error
+until checksum generation. Next: fix the repart failure and error propagation,
+rebuild, inspect both payloads, then install/boot that exact ISO in an isolated
+ARM64 VM. The October 18 VM receipt is prior evidence. Physical Apple audio and
+boot remain open.
 [Audit and provenance](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
 
 ## Rust compositor: menus, notification cards, attention — 2026-10-21

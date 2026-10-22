@@ -45,6 +45,11 @@ qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
    filter plugin, which does not qualify factory-image audio. `avd-fw` and
    `libva-v4l2_request-avd` still need a confirmed Ubuntu source (see
    `packages.arm64`). [Focused receipt](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+   The October 21 artifact-only run resolved `speakersafetyd` 1.1.2-4 and
+   passed the liveiso payload check, but failed later in sysupdate repart
+   (`Verity signature partition is empty`); it did not produce a complete ISO.
+   The release recipe masked the mkosi failure until checksum generation. Fix
+   that build path before claiming a completed artifact.
 4. **Bootloader on real hardware.** Apple Silicon boots via m1n1/u-boot;
    verify grub-efi-arm64 + shim path works from USB on a test machine, or
    document the Asahi-installer + chroot route as the interim install path.
