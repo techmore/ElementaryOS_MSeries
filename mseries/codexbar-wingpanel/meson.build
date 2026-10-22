@@ -1,3 +1,4 @@
+# GTK on this Mac: renderer, CSD shadow, cursor blink and animation rules in ../GTK-PERFORMANCE-ASAHI.md
 project('codexbar-wingpanel', 'vala', version: '0.1.0', meson_version: '>= 0.59.0')
 
 libwingpanel_dep = dependency('wingpanel-9')
