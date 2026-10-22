@@ -1,3 +1,24 @@
+## Signal accent-on-launch and Messages local favorites — 2026-10-22
+
+The official ARM64 Signal Electron client now refreshes its system-accent patch
+when the installed launcher opens it. A mutable user install is recolored only
+when the current accent differs from the saved accent; the original `app.asar`
+remains the restore source. Atomic releases are intentionally left unchanged so
+their content hash stays intact. This provides Pantheon color integration, not a
+native GTK/Granite Signal UI. The real shelf-to-compose attachment preview,
+logged-in appearance and display-session boundary still require owner-session
+acceptance; keep issue #227 open.
+
+Messages adds local Add/Remove from Favorites actions to conversation menus.
+Favorites are stored in the desktop keyring per connected phone, direct chats
+follow a unique normalized address across inbox promotion, and imported Mac pin
+order remains a separate read-only snapshot. No phone, account, installation or
+running session was changed. Shell syntax and Python byte-compilation pass; the
+Wingpanel Vala module builds against GTK 4.22 and Wingpanel 8.0.4, with two
+existing `Gdk.Texture.for_pixbuf` deprecation warnings. The Messages app was not
+opened and its test suite was not run. Next: owner-session visual and
+keyboard/accessibility acceptance, plus Signal attachment-preview acceptance.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring

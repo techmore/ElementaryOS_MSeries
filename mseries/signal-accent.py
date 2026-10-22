@@ -8,6 +8,7 @@ change (recomputed here). Chat-colour and avatar palettes are left alone.
 
   signal-accent.py                    apply the current system accent (AccountsService, then gsettings)
   signal-accent.py --accent '#68b723' apply a specific colour (#rrggbb or an elementary accent name)
+  signal-accent.py --sync             apply the system accent only when it changed
   signal-accent.py --restore          put the original app.asar back
   signal-accent.py --check            report what would change, write nothing
 
@@ -197,27 +198,44 @@ def main():
     parser.add_argument("--accent", help="#rrggbb or an elementary accent name (default: the system accent)")
     parser.add_argument("--restore", action="store_true")
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--sync", action="store_true", help="apply the system accent only when it changed")
     args = parser.parse_args()
 
     asar = os.path.join(args.appdir, "resources", "app.asar")
     original = asar + ".orig"
+    stamp_path = os.path.join(args.appdir, "resources", ".mseries-accent")
     if not os.path.isfile(asar):
         raise SystemExit(f"no Signal install at {args.appdir}")
     if args.restore:
         if os.path.isfile(original):
             os.replace(original, asar)
+            try:
+                os.unlink(stamp_path)
+            except FileNotFoundError:
+                pass
             log("restored the original Signal colours")
         return
+    if args.sync and args.check:
+        raise SystemExit("--sync and --check cannot be used together")
     if not os.path.isfile(original) and not args.check:
         shutil.copy2(asar, original)
     accent = parse_colour(args.accent) if args.accent else system_accent()
+    if args.sync:
+        try:
+            with open(stamp_path, encoding="ascii") as stamp:
+                if stamp.read().strip() == accent:
+                    log(f"Signal already uses the system accent {accent}")
+                    return
+        except OSError:
+            pass
     mapping, changed = patch(original if os.path.isfile(original) else asar, asar, accent, write=not args.check)
     for source, target in mapping.items():
         log(f"  {source} -> {target}")
     log(f"{'would recolour' if args.check else 'recoloured'} {sum(changed.values())} uses in {len(changed)} files "
         f"to accent {accent}")
-    with open(os.path.join(args.appdir, "resources", ".mseries-accent"), "w") if not args.check else open(os.devnull, "w") as stamp:
-        stamp.write(accent + "\n")
+    if not args.check:
+        with open(stamp_path, "w", encoding="ascii") as stamp:
+            stamp.write(accent + "\n")
 
 
 if __name__ == "__main__":

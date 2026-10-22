@@ -9,13 +9,13 @@ if [[ -z ${MSERIES_SIGNAL_APPDIR:-} && -f $mode_file && $(cat "$mode_file") == a
   atomic=1
 fi
 app="$appdir/AppRun"
-launcher="\"$app\" --use-tray-icon %U"
-if [[ $atomic == 1 ]]; then
-  launcher="/usr/bin/python3 \"$HOME/.local/libexec/mseries-atomic-app\" --app signal-desktop-beta run -- --use-tray-icon %U"
-fi
 test -x "$app" || { echo 'Install Signal with mseries/install-signal.sh first.' >&2; exit 1; }
 icon="$appdir/usr/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
 test -s "$icon"
+install -d "$HOME/.local/libexec"
+install -m755 "$(dirname "${BASH_SOURCE[0]}")/signal-launcher.sh" "$HOME/.local/libexec/mseries-signal-launcher"
+install -m644 "$(dirname "${BASH_SOURCE[0]}")/signal-accent.py" "$HOME/.local/libexec/mseries-signal-accent.py"
+launcher="$HOME/.local/libexec/mseries-signal-launcher %U"
 icon_destination="$HOME/.local/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
 install -d "$(dirname "$icon_destination")"
 # The icon follows the selected release too, including after rollback.
@@ -57,9 +57,10 @@ fi
 mv -f "$mode_file.tmp" "$mode_file"
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications"
 command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
-# Recolour Signal's blue to the elementary accent (re-applied after every Signal update).
-# Skipped for atomic releases: patching app.asar there would break the release hash.
+# Recolour Signal's blue to the elementary accent. The launcher refreshes this
+# mutable user install at the next open after the system accent changes. Atomic
+# releases stay immutable and retain their upstream colors.
 if [[ $atomic != 1 ]]; then
-  python3 "$(dirname "${BASH_SOURCE[0]}")/signal-accent.py" --appdir "$appdir" || echo 'Signal accent recolour skipped' >&2
+  python3 "$HOME/.local/libexec/mseries-signal-accent.py" --appdir "$appdir" || echo 'Signal accent recolour skipped' >&2
 fi
-echo 'Repaired Signal Beta icon and desktop identity; no app restart or sign-in required.'
+echo 'Repaired Signal Beta desktop identity. The system accent refreshes when Signal next opens.'

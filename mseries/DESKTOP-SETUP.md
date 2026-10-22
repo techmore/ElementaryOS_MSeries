@@ -134,10 +134,14 @@ Signal's unread badge and activates the app when clicked. Install the optional
 Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
-supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to the
-elementary accent (system accent by default; `--accent`, `--check`, `--restore`); the integration
-step runs it, so a Signal update plus `install-signal-integration.sh` re-applies it. Restart
-Signal to see a change. Not applied to `--atomic` releases. Phone linking remains a user step: open Signal,
+supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to
+the elementary accent (system accent by default; `--accent`, `--check`, `--restore`).
+The installed launcher checks the system accent each time Signal opens and
+reapplies it when needed. If Signal was already running when the preference
+changed, quit and reopen it to see the new colors. The optional `--atomic`
+release mode keeps its verified app tree immutable, so it retains Signal's
+upstream colors. This is the official Electron client with Pantheon integration,
+not a GTK or Granite replacement. Phone linking remains a user step: open Signal,
 then scan its QR code from Signal on your phone.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
