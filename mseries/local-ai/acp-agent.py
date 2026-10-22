@@ -26,9 +26,9 @@ import urllib.request
 import uuid
 
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 DEFAULT_ENDPOINT = "http://127.0.0.1:8766/v1"
-MAX_PROMPT_CHARS = 6_000
+MAX_PROMPT_CHARS = 16_000
 MAX_TOOL_OUTPUT_CHARS = 2_000
 MAX_TURN_TOOL_OUTPUT_CHARS = 6_000
 MAX_TOOL_CALLS = 6
@@ -559,7 +559,7 @@ class AssistantSession:
         if not text.strip():
             return {"stopReason": "end_turn"}
         if len(text) > MAX_PROMPT_CHARS:
-            raise BridgeError("This message is too long for the local assistant. Please shorten it and retry.")
+            raise BridgeError("This message exceeds the local assistant's 16,000-character limit. Please shorten it.")
         if not self.turn_lock.acquire(blocking=False):
             raise BridgeError("This MSeries assistant thread already has a turn running.")
         try:

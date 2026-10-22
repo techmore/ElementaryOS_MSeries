@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-22",
+  "bridge_version": "0.3.0",
+  "provider_instance": "acp-mseries-assistant",
+  "launch_path": "T3 orchestration.launchThread",
+  "local_profile": "supervised Qwen3.5 4B everyday",
+  "endpoint_scope": "loopback",
+  "result": "passed",
+  "successful_end_to_end_turns": 2,
+  "workflows": [
+    {
+      "tool": "add_minutes",
+      "input": "09:45 + 135 minutes",
+      "expected_answer": "12:00",
+      "observed_answer": "12:00",
+      "t3_projection_status": "completed"
+    },
+    {
+      "tool": "add_minutes",
+      "input": "12:15 + 45 minutes",
+      "expected_answer": "13:00",
+      "observed_answer": "13:00",
+      "t3_projection_status": "completed",
+      "bridge_version": "0.3.0"
+    }
+  ],
+  "bridge_limit_chars": 16000,
+  "prompt_limit_regression": "The first real T3 launch exceeded the former 6000-character cap and was rejected before inference. The limit was raised and the end-to-end launch then passed.",
+  "isolated_acp_tests": 12,
+  "temporary_test_threads_archived": true,
+  "scope_note": "Two real local-model tool round trips; not a broad quality or daily-use qualification.",
+  "liquid_24b_preflight": {
+    "available_gib": 10.56,
+    "minimum_weights_plus_desktop_reserve_gib": 18.67,
+    "supervisor_gate": "refused: desktop memory reserve would be crossed",
+    "weights_downloaded_or_loaded": false
+  },
+  "ane_conversation_trial": "not run; no qualified supervised T3-compatible endpoint"
+}

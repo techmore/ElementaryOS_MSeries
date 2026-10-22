@@ -138,6 +138,25 @@ class AssistantSessionTests(unittest.TestCase):
             {"type": "text", "text": "Hello"},
         ]), "Hello")
 
+    def test_prompt_accepts_t3_runtime_context_at_the_configured_limit(self):
+        model = FakeModel([{"content": "Ready.", "tool_calls": []}])
+        session = agent.AssistantSession("s-limit", "local-model", [write_tool()], FakeMcp(), model)
+
+        session.prompt("x" * agent.MAX_PROMPT_CHARS, threading.Event(), lambda _update: None,
+                       lambda *_args: False)
+
+        self.assertEqual(len(model.calls), 1)
+
+    def test_prompt_rejects_only_context_above_the_configured_limit_before_inference(self):
+        model = FakeModel([])
+        session = agent.AssistantSession("s-over-limit", "local-model", [write_tool()], FakeMcp(), model)
+
+        with self.assertRaisesRegex(agent.BridgeError, "16,000-character limit"):
+            session.prompt("x" * (agent.MAX_PROMPT_CHARS + 1), threading.Event(), lambda _update: None,
+                           lambda *_args: False)
+
+        self.assertEqual(model.calls, [])
+
     def test_session_can_start_without_loading_or_starting_a_model(self):
         with tempfile.TemporaryDirectory() as root:
             bridge = agent.AcpBridge(mcp_factory=FakeMcp, model_client=OfflineModel(),

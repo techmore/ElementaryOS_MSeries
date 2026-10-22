@@ -93,11 +93,11 @@ The T3 transport now sends serialized WebSocket Ping frames every 5 seconds and 
 
 The owner confirms that T3-R is pinned in the Dock and hovering its Dock icon opens the popup on the live Wayland desktop. Live click/pin/outside-dismiss behavior remains open; the Xvfb fixture covers those actions. The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. Older-history paging on a large live thread and high-latency/poor-network profiling remain open.
 
-The owner next requested that the existing MSeries assistant capability be brought into T3-R and that a fast larger Liquid AI model or an ANE-backed option be explored. The existing assistant is Newelle plus a local stdio MCP server with sixteen typed tools; its measured default is Qwen3.5 4B. The previously tested Liquid LFM2.5 1.2B reached 63.59 output tokens/s in one local cohort but passed only 3/9 corrected tool workflows, so it is not a qualified default ([local benchmark and workflow receipts](../local-ai/receipts/2026-10-16.md)). Liquid AI now lists [LFM2.5-24B-A2B](https://www.liquid.ai/models) (24B total, 2B active); its published [184 tokens/s result](https://www.liquid.ai/blog/lfm2-5-24b-a2b) is on an M5 Max and is not evidence for this M1 Pro. The official [MLX 4-bit checkpoint](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit/tree/667408d) is 13.6 GB at revision `667408d`, before runtime/context memory. It is not installed; the current host failed the existing local-model admission check, so no weight download or inference run was started. The current Linux/Asahi assistant path has no qualified ANE inference backend. The bridge now reuses the existing sixteen-tool MCP service and supervised loopback model endpoint; the paired server has an enabled `MSeries Assistant` ACP provider (`acp-mseries-assistant`) reporting `installed=true`, `status=ready`. The installed helper completed ACP initialization and a real-MCP `session/new`; a synthetic OpenAI-compatible server exercised `add_minutes` end to end. These checks do not qualify actual model inference or answer quality. Provider credentials remain on the paired server, and both Dock and Wingpanel quota summaries now follow the provider selected in full chat.
+The owner requested that the existing MSeries assistant capability be brought into T3-R and that a fast larger Liquid AI model or an ANE-backed option be explored. The existing assistant is Newelle plus a local stdio MCP server with sixteen typed tools; its measured default is Qwen3.5 4B. The previously tested Liquid LFM2.5 1.2B reached 63.59 output tokens/s in one local cohort but passed only 3/9 corrected tool workflows, so it is not a qualified default ([local benchmark and workflow receipts](../local-ai/receipts/2026-10-16.md)). Liquid AI now lists [LFM2.5-24B-A2B](https://www.liquid.ai/models) (24B total, 2B active); its published [184 tokens/s result](https://www.liquid.ai/blog/lfm2-5-24b-a2b) is on an M5 Max and is not evidence for this M1 Pro. The official [MLX 4-bit checkpoint](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit/tree/667408d) is 13.6 GB at revision `667408d`, before runtime/context memory. It remains unloaded because the host fails the supervisor memory admission gate. The current Linux/Asahi assistant path has no qualified ANE inference backend. The bridge now reuses the existing sixteen-tool MCP service and supervised loopback model endpoint; the paired server has an enabled `MSeries Assistant` ACP provider (`acp-mseries-assistant`) reporting `installed=true`, `status=ready`. After fixing T3's composed prompt size limit, two real T3 launches reached the active supervised Qwen3.5 4B endpoint, called `add_minutes`, and returned the expected `12:00` and `13:00` answers in completed projections. Both temporary threads were archived. This proves two real model turns, not broad model quality or daily-use reliability. Provider credentials remain on the paired server, and both Dock and Wingpanel quota summaries follow the provider selected in full chat.
 
 The current Rust release binary was copied to `~/.local/bin/claude-pantheon-rs` and its SHA-256 matches the release build. The already-running app process (PID 4004838, started 11:47) was left intact to preserve its window state; it still has the prior build mapped until the next app launch. Read-only `server.getConfig` verification after registration shows Codex, Claude, Grok and OpenCode still authenticated/ready, the selected provider is Codex, and the new MSeries ACP provider is installed/ready.
 
-Next: exercise one read-only MSeries assistant conversation through T3-R when the existing model endpoint is online and memory admission permits. Do not download the 24B Liquid checkpoint until available RAM exceeds the six-GiB reserve plus the checkpoint/runtime budget. Qualify any ANE conversational model separately; the prior driver smoke is arithmetic-only. Older-history paging on a large live conversation and poor-network fault injection remain open. Review DeepSeek setup when the paired server advertises it.
+Next: qualify multi-turn session restoration and more representative assistant workflows. Do not download the 24B Liquid checkpoint until the supervisor admission gate permits weights, runtime and the six-GiB desktop reserve. Qualify any ANE conversational model separately through a supervised service; raw experimental bring-up remains outside the safe desktop trial. Older-history paging on a large live conversation and poor-network fault injection remain open. Review DeepSeek setup when the paired server advertises it.
 
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
@@ -110,27 +110,36 @@ profile. `configure-assistants.py --install-acp` installs only the bridge and
 launcher, leaving Newelle settings, model profiles and services intact. Prompts,
 history and tool output are bounded for the default 8K context.
 
-Seven isolated Python bridge tests pass. The ACP-only installer was run; the
-installed launcher returned successful ACP `initialize` and `session/new`
-responses against the real MCP service. A synthetic OpenAI-compatible server
-drove the actual MCP `add_minutes` tool and returned `12:00`; no real model
-inference or quality claim is included. Current managed model units were
-inactive at inspection. The host had 9.5 GiB available,
-below LFM2.5-24B-A2B's 13.6 GB Q4_0 GGUF weights plus the existing 6 GiB
-desktop reserve. The installed llama.cpp build `7182ef7` contains the `lfm2moe`
-model loader, but the checkpoint remains unloaded; upstream has a report of
-some LFM2.5-24B turns returning tool syntax as plain text, so the candidate
-needs a tool-call quality gate. Do not remove the supervisor gate to force a
-trial. The existing ANE receipt proves a loaded driver can execute its arithmetic smoke;
-the ANE-backed Parakeet path is speech transcription, not conversational LLM
-inference. See `local-ai/README.md` and `local-ai/APP-INTEGRATION.md` for scope
-and source links.
+Twelve isolated Python bridge tests pass. The first real T3 launch exposed that
+T3's composed ACP prompt exceeded the bridge's old 6,000-character limit; the
+bridge now accepts up to 16,000 characters, bounded below the default 8K model
+context. After reinstalling only the ACP helper, a real
+`orchestration.launchThread` through `acp-mseries-assistant` reached the active
+supervised Qwen3.5 4B endpoint, called the real MCP `add_minutes` tool for
+09:45 + 135 minutes, and returned `12:00` in a completed T3 projection. A
+fresh ACP 0.3.0 thread then used the same tool for 12:15 + 45 minutes and
+returned `13:00`; both projections completed, and both temporary verification
+threads were archived. These are two end-to-end turns, not general
+model-quality or daily-use qualification.
 
-The ACP launcher is installed locally, but the native client changes are not
-installed and no real model has been validated through ACP. Next: connect
-MSeries Assistant in T3-R and do a read-only live conversation when the
-supervised endpoint is admitted. Qualify the Liquid GGUF's tool calls and the
-existing app workflow set before considering it for daily use.
+The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
+GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights
+plus the six-GiB desktop reserve need at least 18.67 GiB before runtime/context
+memory. The supervisor refused admission; no 24B weights were downloaded or
+loaded. The installed llama.cpp build `7182ef7` includes the `lfm2moe`
+model loader, but upstream has a report of some LFM2.5-24B turns returning
+tool syntax as plain text, so a future trial needs a tool-call quality gate.
+Do not remove the supervisor gate to force a trial. The current ANE Qwen repo
+reports 8.23 tok/s on an original M1 but has no supervised T3-compatible
+service on this M1 Pro/T6000; its raw bring-up path remains outside the safe
+desktop trial. The ANE-backed Parakeet path is speech transcription, not
+conversational inference. See `local-ai/README.md` and
+`local-ai/APP-INTEGRATION.md` for source links and remaining gates.
+
+Next: qualify multi-turn session restoration and more representative assistant
+workflows before claiming daily use. Recheck the memory admission gate before
+any Liquid 24B trial, and qualify ANE inference only through a supervised local
+endpoint.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 

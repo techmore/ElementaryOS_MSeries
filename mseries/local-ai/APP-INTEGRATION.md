@@ -77,10 +77,23 @@ ACP session load/close lifecycle pass isolated Python tests.
 The ACP-only installer was run; the installed launcher returned successful
 ACP `initialize` and `session/new` responses against the real MCP service. A
 synthetic OpenAI-compatible server then drove the real MCP `add_minutes` tool
-and returned `12:00`. No real model inference or quality claim is included.
-At the October 22 snapshot, all managed model services were inactive and the
-large Liquid trial was blocked by host memory; see the candidate note in
-`README.md`.
+and returned `12:00`.
+
+### Live T3 model turn — October 22
+
+The first actual T3 launch exposed a 6,000-character bridge limit: T3's
+composed ACP prompt was rejected before inference. The bridge now accepts up
+to 16,000 characters (about 4K tokens for ordinary English), still below the
+default 8K model context. Twelve isolated ACP tests cover the exact limit and
+the over-limit rejection. After reinstalling only the ACP helper, a real T3
+`orchestration.launchThread` call dispatched through `acp-mseries-assistant`
+to the supervised local Qwen3.5 4B endpoint. The model invoked the real MCP
+`add_minutes` tool for 09:45 + 135 minutes, T3's completed projection showed
+the tool call and `12:00` answer. A fresh ACP 0.3.0 thread then called the same
+tool for 12:15 + 45 minutes and T3 completed with `13:00`. Both temporary
+verification threads were archived. These two T3-to-local-model-to-MCP turns
+do not qualify broader answer quality, multi-turn recovery, or daily-use
+reliability.
 
 The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
 (`acp-mseries-assistant`); its live config reports `installed=true` and
@@ -115,7 +128,12 @@ Liquid AI's LFM2.5-24B-A2B has official llama.cpp GGUF support and a strong
 published M5 Max speed result, but the host's October 22 snapshot had 15.5 GiB
 available, leaving 9.5 GiB after the six-GiB desktop reserve. The vendor's
 published 4-bit MLX checkpoint is 13.6 GB (12.7 GiB) before runtime/context
-memory, so the existing supervisor admission gate still blocks this trial.
+memory, so the existing supervisor admission gate still blocks this trial; no
+large Liquid weights were downloaded or loaded. A live preflight while the
+Qwen3.5 4B worker was active measured 10.56 GiB available; the 13.6 GB
+checkpoint alone plus the six-GiB desktop reserve needs at least 18.67 GiB
+before runtime/context memory, so the existing gate refused admission. The
+successful T3 turns used the already-qualified Qwen3.5 4B worker.
 The current [ANE Qwen experiment](https://github.com/joshuaswarren/ane-linux-experiments)
 records 8.23 tok/s on an original M1 and exact 100-token output; that result is
 not measured on this M1 Pro/T6000, and there is no supervised T3-compatible

@@ -106,6 +106,24 @@ the Neural Engine driver as out of tree. The installed ANE-backed Parakeet path
 remains speech transcription. Neither it nor the experimental Qwen path is
 qualified as the daily T3 assistant yet.
 
+### MSeries ACP live T3 check — October 22
+
+After the supervised Qwen3.5 4B everyday profile passed its existing admission
+check, a real T3 `orchestration.launchThread` reached the local ACP provider,
+called the production MCP `add_minutes` tool for 09:45 + 135 minutes, and
+returned `12:00` in a completed T3 projection. The first T3 attempt exposed a
+6,000-character bridge prompt cap; bridge version 0.3.0 now allows 16,000
+characters (about 4K ordinary tokens) and has boundary tests. A fresh ACP 0.3.0
+thread then used the same tool to return `13:00` for 12:15 + 45 minutes. Both
+T3 projections completed and both temporary threads were archived. This proves
+two local T3-to-model-to-tool turns. It does not qualify broad answer quality,
+multi-turn restoration or daily use. The Liquid 24B model remains unloaded
+because its weights plus runtime do not fit the host's memory budget with the
+six-GiB desktop reserve. A live preflight with Qwen3.5 4B active measured
+10.56 GiB available; the 13.6 GB weights plus reserve need at least 18.67 GiB
+before runtime/context overhead, and the supervisor refused admission. No
+experimental ANE conversation service was started.
+
 Hermes has been retired from the maintained assistant setup. New installs no longer fetch its source or create its launcher. Existing Hermes checkout, virtual environment, configuration, and state in a user's home are retained. On the next assistant configuration, the setup removes only its exact, unmodified generated Hermes desktop entry; a customized entry is preserved. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
 
 ## MCP app coverage
