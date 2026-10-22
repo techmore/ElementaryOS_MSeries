@@ -4,7 +4,8 @@
 
 Consumes trusted prepare-image-inputs.py output and the verified research boot
 bundle. Summary-only resolves the actual graph without building. Full execution
-requires proper subordinate IDs; it never substitutes a single-ID build.
+uses proper subordinate IDs or explicit hosted root; it never substitutes a
+single-ID build.
 ISO assembly, installation and native hardware acceptance are separate gates.
 """
 import argparse
@@ -67,7 +68,10 @@ def main():
     parser.add_argument('--image-version', required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--summary-only', action='store_true')
+    parser.add_argument('--hosted-root', action='store_true', help='explicit root execution on an ephemeral GitHub runner')
     args = parser.parse_args()
+    if args.hosted_root and (os.geteuid() != 0 or os.environ.get('GITHUB_ACTIONS') != 'true'):
+        raise ValueError('hosted-root mode requires root on the explicit GitHub runner')
     if not re.fullmatch(r'[0-9]{14}', args.image_version):
         raise ValueError('explicit 14-digit research image version required')
     output = args.output.resolve()
@@ -110,7 +114,7 @@ def main():
         raise ValueError('only the reviewed candidate kernel hash patch is permitted')
     boot_original = subprocess.check_output(['git', 'show', revision + ':' + BOOT_HOOK], cwd=REPO, text=True)
     boot_patch = boot_hash_patch(boot_original, baseline_boot, expected_boot)
-    if not args.summary_only:
+    if not args.summary_only and not args.hosted_root:
         # Fail before creating a workspace if correct package ownership cannot
         # be represented. No privilege or UID-mapping fallback is attempted.
         subprocess.run(['unshare', '--user', '--map-auto', '--map-root-user', 'true'], check=True)
@@ -163,7 +167,7 @@ def main():
         raise ValueError('complete M4 desktop/boot graph must be retained')
     commands = []
     if not args.summary_only:
-        prefix = ['unshare', '--user', '--map-auto', '--map-root-user', '--mount', '--pid', '--fork', sys.executable, '-m', 'mkosi']
+        prefix = ([] if args.hosted_root else ['unshare', '--user', '--map-auto', '--map-root-user', '--mount', '--pid', '--fork']) + [sys.executable, '-m', 'mkosi']
         for verb in ['genkey', 'build']:
             command = prefix + options + [verb]
             commands.append(command)
@@ -175,7 +179,7 @@ def main():
         'image_version': args.image_version, 'images': sorted(graph), 'commands': commands,
         'candidate_package_hashes': {name: item['sha256'] for name, item in candidate['components'].items()},
         'boot_bundle_sha256': expected_boot, 'candidate_boot_hash_patch_applied_in_clone': bool(boot_patch), 'candidate_hash_patch_applied_in_clone': bool(patch),
-        'summary_only': args.summary_only, 'mkosi_build_passed': not args.summary_only,
+        'summary_only': args.summary_only, 'execution_identity': 'hosted root' if args.hosted_root else 'mapped namespace', 'mkosi_build_passed': not args.summary_only,
         'iso_assembled': False, 'factory_promotion': False, 'installer_admission': False,
         'hardware_validated': False}, indent=2) + '\n')
     marker.unlink()

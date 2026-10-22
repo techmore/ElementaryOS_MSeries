@@ -912,3 +912,23 @@ hosted execution is required before claiming any full-image result.
 [Preflight](receipts/2026-10-21-hosted-image-preflight.json).
 
 Full hosted image run [39708207843](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39708207843) dispatched at `2a61c2ac3ac52feafef4dc1884eb6b8d6d970b55`. Completion and output validation are pending. [Dispatch snapshot](receipts/2026-10-21-hosted-image-run.json).
+
+### First full-image attempt and runner execution correction
+
+Run `39708207843` passed artifact provenance/checksums, kernel/Mesa package
+checks, matched input preparation, mkosi checksum and full-graph resolution.
+It failed before key generation: UID mapping worked but unprivileged mount
+namespace propagation was denied. No image build completed.
+
+The image job now explicitly invokes the build as root on the ephemeral GitHub
+runner; the driver requires both root identity and the explicit CI environment.
+It does not alter runner security settings or the local NoNewPrivs restriction.
+Hosted-root inspections retain private mount/PID namespaces and preserve real
+package ownership. Normal local mapping behavior remains unchanged.
+
+The job also now requires the project's existing built-desktop payload check,
+base/live package/library/schema/session validation and live Mesa retention
+after assembly. Six desktop-wiring tests, one boundary group covering all three
+root-mode programs and two candidate-boot groups pass. Workflow syntax passes.
+Hosted root execution and complete image acceptance remain pending replay.
+[Failure and correction receipt](receipts/2026-10-21-hosted-image-failure-1.json).

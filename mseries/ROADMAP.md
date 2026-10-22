@@ -3943,3 +3943,9 @@ next; no complete image/ISO/installer/native result yet.
 Full M4 hosted image run39708207843 dispatched at2a61c2ac. Follow this exact
 handle; do not duplicate on timeout. No full-image result until completion and
 actual artifact checks. Component source runs remain successful.
+
+Full M4 image39708207843 failed before genkey: UID mapping succeeded, mount
+propagation denied. Prior artifact/package/input/summary gates passed. Added
+explicit root mode on ephemeral CI (guarded, no security-setting changes), plus
+existing desktop payload and base/live/Mesa retention acceptance checks. Six
+wiring, one root-boundary and two boot-boundary groups pass; hosted replay next.

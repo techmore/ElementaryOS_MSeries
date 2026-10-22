@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Check a configured elementary candidate root; does not start its desktop."""
 import argparse
+import os
 import json
 from pathlib import Path
 import subprocess
@@ -10,9 +11,11 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--root', type=Path, required=True)
 parser.add_argument('--receipt', type=Path, required=True)
 parser.add_argument('--kind', choices=['research-live', 'factory-base'], default='research-live')
-parser.add_argument('--id-map', choices=['auto', 'single'], default='auto',
+parser.add_argument('--id-map', choices=['auto', 'single', 'host-root'], default='auto',
                     help='single checks existing roots without subordinate-ID helper privileges')
 args = parser.parse_args()
+if args.id_map == 'host-root' and (os.geteuid() != 0 or os.environ.get('GITHUB_ACTIONS') != 'true'):
+    raise ValueError('host-root inspection requires root on the explicit GitHub runner')
 root = args.root.resolve()
 if root == Path('/') or args.receipt.exists():
     raise ValueError('isolated root and new receipt required')
@@ -20,8 +23,7 @@ if root == Path('/') or args.receipt.exists():
 
 def inside(*command):
     return subprocess.check_output([
-        'unshare', '--user', *(['--map-auto'] if args.id_map == 'auto' else []),
-        '--map-root-user', '--mount', '--pid', '--fork',
+        'unshare', *([] if args.id_map == 'host-root' else ['--user', *(['--map-auto'] if args.id_map == 'auto' else []), '--map-root-user']), '--mount', '--pid', '--fork',
         '/bin/sh', '-c', 'mount -t tmpfs -o size=1M,nosuid tmpfs "$1/dev" && '
         'touch "$1/dev/null" && mount --bind /dev/null "$1/dev/null" && '
         'mount -t proc -o ro,nosuid,nodev,noexec proc "$1/proc" && '

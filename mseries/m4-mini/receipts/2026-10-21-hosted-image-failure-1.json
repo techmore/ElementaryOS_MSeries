@@ -1,0 +1,35 @@
+{
+  "run_id": 39708207843,
+  "source_head": "2a61c2ac3ac52feafef4dc1884eb6b8d6d970b55",
+  "status": "completed",
+  "conclusion": "failure",
+  "phase": "namespace setup before key generation",
+  "cause": "user namespace UID mapping succeeds; mount propagation change denied",
+  "successful_prior_steps": [
+    "all three artifact provenance/checksum sets",
+    "kernel and Mesa package checks",
+    "matched image input preparation",
+    "pinned mkosi hash",
+    "complete graph summary"
+  ],
+  "keygen_started": false,
+  "image_build_started": false,
+  "correction": "explicit ephemeral GitHub runner root build; root inspections retain private mount/PID namespaces; no local restriction or runner security setting changed",
+  "added_acceptance": [
+    "existing built desktop payload checker",
+    "base and live package/library/schema/session checks",
+    "live Mesa retention/software rendering"
+  ],
+  "local_checks": {
+    "desktop_wiring_tests": 6,
+    "hosted_root_boundary_tests": 1,
+    "boundary_programs": 3,
+    "candidate_boot_tests": 2
+  },
+  "logs_sha256": {
+    "driver.log": "e6b418ec6997721bb24cf4143acea8b9b3ae56369803995cd6072057018765f8",
+    "genkey.log": "e0f84fd025357672c3a13678305b74a15bcfdd67f33512f0288b3e0649d0f68c"
+  },
+  "complete_factory_image_built": false,
+  "hardware_validated": false
+}

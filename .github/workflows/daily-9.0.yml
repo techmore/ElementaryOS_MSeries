@@ -365,7 +365,7 @@ jobs:
           else
             just do-daily 2>&1 | tee build-record/build.log
           fi
-          python3 mseries/test-image-wiring.py --image-output mkosi.output | tee build-record/image-content.log
+          sudo python3 mseries/test-image-wiring.py --image-output mkosi.output | tee build-record/image-content.log
       - name: Checksum installer
         run: |
           cd mkosi.output
@@ -567,31 +567,45 @@ jobs:
             --output "$RUNNER_TEMP/mkosi.tar.gz"
           echo 'ed3ed857f768fb85139517eec4ea673f25d1a597e87ab7a59420c4c0accce3b5  '"$RUNNER_TEMP/mkosi.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/mkosi.tar.gz" -C "$RUNNER_TEMP"
-          { df -h; unshare --user --map-auto --map-root-user id; } > image-record/environment.txt
+          { df -h; sudo id; } > image-record/environment.txt
           version=$(date -u +%Y%m%d%H%M%S)
           printf '%s\n' "$version" > image-record/image-version.txt
-          python3 mseries/m4-mini/build-research-image.py \
+          sudo env GITHUB_ACTIONS=true GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$GITHUB_WORKSPACE" \
+            python3 mseries/m4-mini/build-research-image.py --hosted-root \
             --inputs "$RUNNER_TEMP/image-inputs" \
             --boot-bundle "$RUNNER_TEMP/retrieved/boot/boot.bin" \
             --boot-bundle-receipt "$RUNNER_TEMP/retrieved/boot/receipt.json" \
             --mkosi-source "$RUNNER_TEMP/mkosi-f7e32882d26e2c5f3daba48e1aff5b411e6b4d92" \
             --image-version "$version" --output "$RUNNER_TEMP/full-image" \
             2>&1 | tee image-record/driver.log
+      - name: Verify complete desktop payload and configured candidate roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(cat image-record/image-version.txt)
+          output="$RUNNER_TEMP/full-image/images"
+          sudo python3 mseries/test-image-wiring.py --image-output "$output" | tee image-record/desktop-payload-check.txt
+          sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/check-desktop-root.py --id-map=host-root --kind=factory-base \
+            --root "$output/base_${version}" --receipt image-record/base-root-check.json
+          sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/check-desktop-root.py --id-map=host-root --kind=research-live \
+            --root "$output/liveiso_${version}" --receipt image-record/live-root-check.json
+          sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/test-factory-retention.py --id-map=host-root --root "$output/liveiso_${version}" \
+            --smoke "$RUNNER_TEMP/retrieved/mesa/mesa-software" | tee image-record/live-mesa-retention.txt
       - name: Verify actual sysupdate ESP and compress research images
         shell: bash
         run: |
           set -euo pipefail
           version=$(cat image-record/image-version.txt)
           raw="$RUNNER_TEMP/full-image/images/elementary_${version}.raw"
-          python3 mseries/fairydust/debian/verify-m1n1-esp.py \
+          sudo python3 mseries/fairydust/debian/verify-m1n1-esp.py \
             --image "$raw" --expected "$RUNNER_TEMP/retrieved/boot/boot.bin" \
             | tee image-record/actual-esp-check.txt
-          python3 mseries/m4-mini/export-partitions.py --image "$raw" \
+          sudo python3 mseries/m4-mini/export-partitions.py --image "$raw" \
             --output "$RUNNER_TEMP/image-gpt-record"
           cp "$RUNNER_TEMP/image-gpt-record/manifest.json" image-record/gpt-manifest.json
           mkdir -p research-images
           for image in "$RUNNER_TEMP/full-image/images/"*.raw; do
-            [[ ! -f "$image" ]] || zstd -T2 -3 -c "$image" > "research-images/$(basename "$image").zst"
+            [[ ! -f "$image" ]] || sudo zstd -T2 -3 -c "$image" > "research-images/$(basename "$image").zst"
           done
           (cd research-images && sha256sum *.raw.zst > SHA256SUMS)
           cp "$RUNNER_TEMP/retrieved/boot/"*.tar.gz research-images/

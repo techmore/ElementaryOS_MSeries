@@ -6,6 +6,7 @@ Requires an isolated, configured ARM64 candidate root and compiled
  test-mesa-software.c binary. Does not boot an image or test M4 hardware.
 """
 import argparse
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,9 +15,11 @@ import tempfile
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--root', type=Path, required=True)
 parser.add_argument('--smoke', type=Path, required=True)
-parser.add_argument('--id-map', choices=['auto', 'single'], default='auto',
+parser.add_argument('--id-map', choices=['auto', 'single', 'host-root'], default='auto',
                     help='single checks existing roots without subordinate-ID helper privileges')
 args = parser.parse_args()
+if args.id_map == 'host-root' and (os.geteuid() != 0 or os.environ.get('GITHUB_ACTIONS') != 'true'):
+    raise ValueError('host-root inspection requires root on the explicit GitHub runner')
 root = args.root.resolve()
 if root == Path('/') or not (root / 'usr/lib/elementary-m4-gravity1/lib/libEGL_mesa.so.0').is_file():
     raise ValueError('isolated candidate root with persistent Mesa required')
@@ -51,8 +54,7 @@ test "$(chroot "$1" readlink /opt/elementary-m4-gravity1)" = /usr/lib/elementary
 chroot "$1" /usr/bin/env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LC_ALL=C LIBGL_ALWAYS_SOFTWARE=1 MESA_SHADER_CACHE_DISABLE=true "$2"
 chroot "$1" /usr/bin/env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LC_ALL=C MESA_SHADER_CACHE_DISABLE=true /opt/elementary-m4-gravity1/bin/run-mesa --software -- "$2"
 """
-    result = subprocess.run(['unshare', '--user', *(['--map-auto'] if args.id_map == 'auto' else []),
-                             '--map-root-user', '--mount', '--pid', '--fork',
+    result = subprocess.run(['unshare', *([] if args.id_map == 'host-root' else ['--user', *(['--map-auto'] if args.id_map == 'auto' else []), '--map-root-user']), '--mount', '--pid', '--fork',
                              '/bin/sh', '-c', script, 'm4-retention', str(root), inside, inside_hook],
                    check=True, capture_output=True, text=True)
     print(result.stdout, end='')
