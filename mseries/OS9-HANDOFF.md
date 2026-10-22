@@ -11066,3 +11066,21 @@ Its receipt contains initialization only: it is not credited with r4 retention
 or the unpromoted owner/module candidates. Full r4 run 39715540751 is now
 in progress. Baseline image run 39714779495 remains live, using reviewed r2
 inputs; no complete image or hardware result is claimed. See hosted-kernel-r3-success.
+
+The complete baseline r2 mkosi image graph succeeded in run 39714779495
+(source 0b2afea8). Hosted checks cover the 1,650-package base and 1,741-package
+live roots, desktop libraries/schemas/dependencies, Mesa software rendering
+and /usr retention, actual sysupdate ESP bundle bytes and valid GPT export.
+The raw image is 17,482,960,896 bytes; the 8.16 GB research artifact is still
+downloading in native session 57043. Local raw verification is not yet claimed.
+This is not ISO assembly, graphical login, installer import, native boot or
+scheduler-fixed image qualification: reviewed image inputs remain r2.
+
+The unpromoted alias candidate adapts Aurora 0f89327's independent TimeoutData
+contract after owner/module layers. Actual M4 and legacy driver/Rust/C objects
+compile, and nine generic ARM64 QEMU cases pass, including a timeout callback
+forced to execute while run still mutates submission state. Fresh source replay
+is byte-identical to the tested scheduler. This is not exhaustive Rust memory-
+model or actual module-unload proof. See scheduler-alias receipts and
+--experimental-alias. Final cancellation/accounting review remains open.
+Revision-4 full kernel run 39715540751 remains live.

@@ -1,0 +1,5 @@
+{
+  "rust/kernel/drm/sched.rs": "0248b13fcf26d972fa574bd6270cc4e1e70f192f156bea02fb45bdf0ca314349",
+  "drivers/gpu/drm/asahi/g16_drm.rs": "ea399e483c9b7372725b6888a68a58e77092101e6f8c85324a0e1cf28f353ecf",
+  "drivers/gpu/drm/asahi/queue/mod.rs": "6ecf440b04c0c51fb050e7dbbdc3cdf4407bfaf347075d880fa9d594a432d35d"
+}

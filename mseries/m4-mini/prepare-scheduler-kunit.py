@@ -20,6 +20,7 @@ parser.add_argument('--output', type=Path, required=True)
 choice = parser.add_mutually_exclusive_group()
 choice.add_argument('--experimental-owner', action='store_true', help='unpromoted allocation-owner candidate and seven-case test recipe')
 choice.add_argument('--experimental-module', action='store_true', help='unpromoted owner plus callback module/work-drain candidate and eight-case test recipe')
+choice.add_argument('--experimental-alias', action='store_true', help='unpromoted owner/module/disjoint-timeout candidate and nine-case test recipe')
 args = parser.parse_args()
 if args.output.exists() or kernel.digest(args.archive) != kernel.ARCHIVE_SHA256:
     raise ValueError('new output and pinned kernel archive required')
@@ -38,27 +39,24 @@ kernel.source_patch_gate(source)
 directory = HERE / 'gravity/testing'
 manifest_name = 'manifest.json'
 experimental = {}
-if args.experimental_owner or args.experimental_module:
-    directory = HERE / 'gravity/experimental/owner'
-    experimental = json.loads((directory / 'manifest.json').read_text())
-    for name, expected in experimental.items():
+layers = []
+if args.experimental_owner or args.experimental_module or args.experimental_alias:
+    layers.append('owner')
+if args.experimental_module or args.experimental_alias:
+    layers.append('module')
+if args.experimental_alias:
+    layers.append('alias')
+for layer in layers:
+    directory = HERE / 'gravity/experimental' / layer
+    layer_patches = json.loads((directory / 'manifest.json').read_text())
+    for name, expected in layer_patches.items():
         if Path(name).name != name or kernel.digest(directory / name) != expected:
-            raise ValueError('experimental owner patch mismatch')
+            raise ValueError('experimental ' + layer + ' patch mismatch')
         subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source), '-i', str(directory / name)], check=True)
+    experimental.update(layer_patches)
     for name, expected in json.loads((directory / 'resulting-files.json').read_text()).items():
         if kernel.digest(source / name) != expected:
-            raise ValueError('experimental owner source mismatch')
-    if args.experimental_module:
-        directory = HERE / 'gravity/experimental/module'
-        module_patches = json.loads((directory / 'manifest.json').read_text())
-        for name, expected in module_patches.items():
-            if Path(name).name != name or kernel.digest(directory / name) != expected:
-                raise ValueError('experimental module patch mismatch')
-            subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(source), '-i', str(directory / name)], check=True)
-        experimental.update(module_patches)
-        for name, expected in json.loads((directory / 'resulting-files.json').read_text()).items():
-            if kernel.digest(source / name) != expected:
-                raise ValueError('experimental module source mismatch')
+            raise ValueError('experimental ' + layer + ' source mismatch')
     manifest_name = 'test-manifest.json'
 manifest = json.loads((directory / manifest_name).read_text())
 for name, expected in manifest.items():

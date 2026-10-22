@@ -1,0 +1,22 @@
+{
+  "scope": "fresh pinned archive/current compatibility/owner/module/alias/test replay; source byte-identical to nine-case positive run",
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "experimental_patches": {
+    "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
+    "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
+    "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940"
+  },
+  "test_patches": {
+    "alias-kunit.patch": "11962cfe412af027c814635bc48643a96b56bc2674e5a3e2c235b162173a5791"
+  },
+  "kunit_config_sha256": "128c528c0bf285fe32b12aa3e59a11944c4aadd1e19348cb8e1140e5e033eaae",
+  "compatibility_patches": {
+    "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+    "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+  },
+  "scheduler_test_source_sha256": "6121fe2806fc85b7e38ca5a9f77617e96a16e0bf5e9c595b49e0c4410f1caad1",
+  "normal_kernel_package_modified": false,
+  "hardware_validated": false,
+  "matches_positive_run_source": true
+}
