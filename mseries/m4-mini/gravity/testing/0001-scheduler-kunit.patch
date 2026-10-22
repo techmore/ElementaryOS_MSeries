@@ -323,12 +323,8 @@ This patch is not part of the normal kernel package patch set.
 +}
 --- a/rust/kernel/iosys_map.rs
 +++ b/rust/kernel/iosys_map.rs
-@@ -545,7 +545,7 @@
-         }
- 
+@@ -547,3 +547,3 @@
          /// Assert whether or not the contents of this struct match src.
 -        pub fn assert_eq(&self, src: &[T]) {
 +        pub fn assert_eq(&self, src: &[T]) where T: core::fmt::Debug {
              assert_eq!(*self.vec.as_ref(), *src)
-         }
-     }
