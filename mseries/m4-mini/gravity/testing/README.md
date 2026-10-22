@@ -24,3 +24,7 @@ The older faux registration exposes Device<Normal>; tests use that actual type.
 The test patch also adds the missing Debug bound to the existing KUnit-only
 iosys_map assertion helper so the full Rust KUnit library can compile.
 No assertion or runtime check is removed.
+
+`nodevice-diagnostic.patch` is an additional opt-in diagnostic after the normal
+test patch. It is not selected by the testing manifest or production builder.
+It reproduces the missing NoDevice cleanup with the initialization fix present.

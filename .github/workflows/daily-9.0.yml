@@ -533,7 +533,7 @@ jobs:
           set -euo pipefail
           sudo env GITHUB_ACTIONS=true python3 mseries/m4-mini/test-repart-standby-split.py --hosted-root \
             --repart "$(command -v systemd-repart)" --output "$RUNNER_TEMP/repart-fixture"
-          cp "$RUNNER_TEMP/repart-fixture/receipt.json" image-record/repart-fixture.json
+          sudo install -m 0644 "$RUNNER_TEMP/repart-fixture/receipt.json" image-record/repart-fixture.json
       - name: Retrieve successful reviewed hosted components
         env:
           GH_TOKEN: ${{ github.token }}
@@ -628,8 +628,12 @@ jobs:
           done
           if [[ -d "$RUNNER_TEMP/repart-fixture" ]]; then
             mkdir -p image-record/repart-fixture
-            for file in "$RUNNER_TEMP/repart-fixture/"*.log; do
-              [[ ! -f "$file" ]] || cp "$file" image-record/repart-fixture/
+            # Export only public diagnostics; the root-owned fixture key stays private.
+            for name in default-spares.log no-spare-splits.log; do
+              file="$RUNNER_TEMP/repart-fixture/$name"
+              if sudo test -f "$file"; then
+                sudo install -m 0644 "$file" "image-record/repart-fixture/$name"
+              fi
             done
           fi
           df -h > image-record/final-disk-space.txt

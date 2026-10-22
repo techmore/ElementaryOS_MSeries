@@ -18,6 +18,8 @@ class HostedRootBoundaryTests(unittest.TestCase):
             root = Path(directory)
             output = root / 'must-not-exist'
             cases = [
+                ('test-repart-standby-split.py', ['--hosted-root', '--repart', '/missing',
+                 '--output', str(output)], 'hosted-root mode requires'),
                 ('build-research-image.py', ['--hosted-root', '--summary-only', '--inputs', str(root),
                  '--boot-bundle', str(root / 'missing.bin'), '--mkosi-source', str(root),
                  '--image-version', '20261022020000', '--output', str(output)], 'hosted-root mode requires'),

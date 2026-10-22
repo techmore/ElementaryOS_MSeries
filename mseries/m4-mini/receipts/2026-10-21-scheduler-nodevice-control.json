@@ -1,0 +1,55 @@
+{
+  "scope": "generic ARM64 QEMU NoDevice completion cleanup diagnostic, not physical M4 GPU",
+  "exit": 1,
+  "production_source_restored": true,
+  "test_patch_sha256": "5cfa409ed5ed46cfd5682362ef13e9f2097aeb38e3032e5fbbfa4b4cf7e36f2e",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "FAIL"
+          }
+        ],
+        "misc": {
+          "tests": 1,
+          "passed": 0,
+          "failed": 1,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false,
+  "archived_test_patch_sha256": "481c89d60d143beeeebf6a7361fcf30287397058514968c4416de220c44d1989",
+  "patch_format_note": "empty context lines normalized; source delta unchanged"
+}

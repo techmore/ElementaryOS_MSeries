@@ -1,0 +1,66 @@
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -441,6 +441,7 @@
+     }
+
+     struct TestJob {
++        no_device: bool,
+         hw: Fence,
+         counters: Arc<Counters>,
+     }
+@@ -461,7 +462,7 @@
+             // Like G17, keep the job and its parent callback. The hardware
+             // result still arrives later through the parent fence.
+             data.counters.timeouts.fetch_add(1, SeqCst);
+-            Status::NoHang
++            if data.no_device { Status::NoDevice } else { Status::NoHang }
+         }
+
+         fn cancel(job: &mut Job<Self>) {
+@@ -510,11 +511,16 @@
+
+     impl Pending {
+         fn new(entity: &mut Entity<TestJob>, contexts: &FenceContexts) -> Result<Self> {
++            Self::with_status(entity, contexts, false)
++        }
++
++        fn with_status(entity: &mut Entity<TestJob>, contexts: &FenceContexts, no_device: bool) -> Result<Self> {
+             let hw: UserFence<HwFence> = contexts.new_fence(0, HwFence)?.into();
+             let counters = Arc::new(Counters::default(), GFP_KERNEL)?;
+             let job = entity.new_job(
+                 1,
+                 TestJob {
++                    no_device,
+                     hw: Fence::from_fence(&hw),
+                     counters: counters.clone(),
+                 },
+@@ -535,6 +541,29 @@
+             self.hw.signal();
+             true
+         }
++    }
++
++    #[test]
++    fn nodevice_completion_releases_job() -> Result {
++        let reg = faux::Registration::new(c"rust-drm-sched-nodevice", None)?;
++        let dev: &device::Device = reg.as_ref().as_ref();
++        let contexts = FenceContexts::new(1, c"rust_drm_sched_kunit", FENCE_KEY)?;
++        let sched = dirty_scheduler(dev, 1)?;
++        let mut entity = Entity::new(&sched, Priority::Kernel)?;
++        let pending = Pending::with_status(&mut entity, &contexts, true)?;
++        let counters = pending.counters.clone();
++        let timed_out = wait_for(|| counters.timeouts.load(SeqCst) >= 1);
++        // Signal while the scheduler allocation is still alive. Do not deliver
++        // any late callback after teardown in this diagnostic.
++        let completed = pending.complete();
++        let released = completed && wait_for(|| counters.freed.load(SeqCst) == 1);
++        drop(entity);
++        drop(sched);
++        assert!(timed_out);
++        assert!(completed);
++        assert!(released);
++        assert_eq!(counters.freed.load(SeqCst), 1);
++        Ok(())
+     }
+
+     #[test]

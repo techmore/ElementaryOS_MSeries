@@ -4001,3 +4001,14 @@ user-ID namespace was denied by CI. The fixture now supports the same explicit
 root-plus-GITHUB_ACTIONS guard as the image builder; local non-CI use is rejected
 before creating output. Runner security settings remain unchanged. The scheduler
 fixed kernel build 39709872273 remains in progress. Hardware remains unavailable.
+
+The added NoDevice diagnostic reproduces an unreleased job after terminal timeout
+and hardware-fence completion on generic ARM64 QEMU. This is stronger than the
+earlier source-only finding; it does not measure an M4 GPU failure rate. See
+`mseries/m4-mini/receipts/2026-10-21-scheduler-nodevice-control.json`.
+The diagnostic patch is excluded from both production compatibility and normal
+KUnit manifests. An opt-in retention adaptation is being tested separately.
+Image replay 39714367674 passed signed active-slot/identical-GPT fixture checks,
+then failed copying the receipt from the private root-owned fixture directory.
+The workflow now exports only named public diagnostics using `sudo install`;
+the signing key remains private. Full image assembly did not start in this run.

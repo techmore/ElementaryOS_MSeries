@@ -1,0 +1,10 @@
+{
+  "run": 39714367674,
+  "source": "e926089b1cc1e75c70c338393d9c8a83ed1cd230",
+  "conclusion": "failure",
+  "fixture_crypto_and_gpt_checks": "passed in job log",
+  "failure": "unprivileged cp could not traverse root-owned private fixture directory",
+  "image_assembly_started": false,
+  "fix": "sudo install only named public receipt and two logs as mode0644; do not expose private key",
+  "hardware_validated": false
+}
