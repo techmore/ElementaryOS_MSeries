@@ -1,3 +1,24 @@
+## wip4 finalized with Aurora20 ports — 2026-10-22 (Codex)
+
+Owner requested the six Aurora20 enhancements be ported into wip4 and asked for an upstream audit relative to the
+J314S/M1 Pro + WD22TB4 HDMI setup. The integration branch pins the same unmerged Aurora 7.2.11 #158 tree and #157
+display patch, retains the local DCP timeout recovery patch, and adds the six Aurora20 ports. Normal wip4 keeps
+AMDGPU/Nouveau disabled; `unified72-egpu` is a distinct optional profile/package. The M3 thermal fallback is a
+7.2.11-adapted policy helper and host control only: the M3 backend still refuses runtime startup.
+
+- Exact-source `prepare` succeeded for `unified72` and `unified72-egpu`; all selected patches applied in manifest
+  order. `candidate.py check` passed 9 PMP bootargs, 3 PMP power and 20 M3 runtime/thermal policy host controls for
+  each profile, plus the MacSMC production discovery harness (all-readable and 65 failure cases under ASan/UBSan).
+  Aurora Python admission suite passed 83/83.
+- Owner relevance: the sRGB/DCP changes target the WD22TB4 display path. udmabuf and optional SMC-property discovery
+  are generic/conditional. M3 thermal, J613/T8122 cameras and eGPU are not J314S-qualified; camera firmware/m1n1
+  prerequisites are recorded in `aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md`.
+- **Still not built or booted.** ARM64 Image/modules/DTBs and package inspection require CI; DCP KUnit and all hardware
+  checks remain open. wip3 stays installed and running, `.20` remains the persistent default, and no boot payload was
+  staged or armed.
+- Upstream #158/#157 and Aurora #135/#134/#119 remain open; #67 is an open draft. Heads and local hashes are recorded
+  in the audit/series manifests. Branch/PR publication and CI result are the next gates.
+
 ## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
 
 Owner plugged the WD22TB4 on the running wip3 trial kernel; no picture. Dock USB/Thunderbolt fine; `28cc00000` (dcpext1) never

@@ -1,3 +1,12 @@
+## Aurora 7.2.11 wip4 port set finalized for CI — 2026-10-22
+
+Wip4 revision 6 now carries the J314S-targeted external-display/DCP series plus all six requested Aurora20
+enhancements, checked in order against the exact pinned #158 source. The eGPU modules are limited to a separately
+named opt-in profile; the M3 thermal policy port is dormant while M3 runtime startup is refused. Exact upstream states,
+firmware scope and J314S relevance are in [the port audit](aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md).
+Both normal and eGPU source preparation and all production host controls pass; the 83 Aurora admission tests pass.
+ARM64 kernel build, package inspection, DCP KUnit and hardware acceptance remain open. Nothing was installed or staged.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed

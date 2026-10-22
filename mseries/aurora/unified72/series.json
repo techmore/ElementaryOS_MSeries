@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
-  "revision": 5,
+  "revision": 6,
   "source": {
     "repository": "aurora-silicon/linux",
     "commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
@@ -14,7 +14,8 @@
     "sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957"
   },
   "kernel_release": {
-    "unified72": "7.2.11-elementary-aurora72-wip4"
+    "unified72": "7.2.11-elementary-aurora72-wip4",
+    "unified72-egpu": "7.2.11-elementary-aurora72-wip4-egpu"
   },
   "debian_package": "linux-image-elementary-aurora72-wip4",
   "debian_version": "7.2.11+elementary.aurora72.wip4-1",
@@ -34,6 +35,54 @@
       "head": null,
       "profile": "candidate",
       "note": "drm/apple: local, not upstream. A DCP whose DPTX RemotePort times out is passed over for 300 s, and a timed-out release no longer pins the port's DP tunnel route to it. Applies after 0001 to the #158 source (checked against the exact files; full-tree apply is checked by candidate.py prepare and CI). Never built or booted."
+    },
+    {
+      "file": "0003-udmabuf.patch",
+      "sha256": "980e441601ce890741a2bf9c741556e299e5c1ac8f05000991f333fcacbacc6e",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+      "head": "6984b8c07e84b0cf528243db1838dade971ff513",
+      "profile": "candidate",
+      "note": "Unmodified upstream config patch; full recipe config is also checked by the build gate."
+    },
+    {
+      "file": "0004-m3-thermal-fallback.patch",
+      "sha256": "acbb4af3e55004c3695b673b2e324e3af3e0db6d58bf2f4be7a939ee3b3a515c",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/135",
+      "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+      "profile": "candidate",
+      "note": "Local 7.2.11 port of PR #135 policy/tests. Dormant: this source has a compile-only M3 backend and refuses runtime startup; no thermal behavior is enabled."
+    },
+    {
+      "file": "0005-j613-camera-147.patch",
+      "sha256": "5d868e19e9b0edbac4ce19d4954558f471800925937347bc902bd362a706ede0",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/134",
+      "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+      "profile": "candidate",
+      "note": "Unmodified PR #134 patch; applies only to matching J613/T8122 firmware. Not relevant to the owner\u2019s J314S."
+    },
+    {
+      "file": "0006-t8122-camera-2662.patch",
+      "sha256": "d8938f63279a913640d7af6abf00932298828f8968eba8c97e1ed311d9e7e310",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/119",
+      "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+      "profile": "candidate",
+      "note": "Unmodified PR #119 patch; requires matching m1n1 ISP-heap support and compatible device firmware. Not qualified on the owner\u2019s J314S."
+    },
+    {
+      "file": "0007-macsmc-optional-properties.patch",
+      "sha256": "5b4f9ba92b99bf388be2c8a3ed11a8fb6caa760632e363aba3e53e5a6a66e5fe",
+      "upstream": "https://github.com/omacom/linux-aurora/commit/4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+      "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+      "profile": "candidate",
+      "note": "Upstream optional-property change, rebased for 7.2.11; retains charge and critical-battery behavior. Hardware telemetry remains unqualified here."
+    },
+    {
+      "file": "0008-egpu-config.patch",
+      "sha256": "e9e6ed734d2ffa8f569f8983c24952ccb0ffc3c3f384fa95a2da3d7436610c5b",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+      "head": "d10d360a96f406f3b953eceb6e44e7be3f4c7c24",
+      "profile": "egpu",
+      "note": "Unmodified PR #67 module config. Applied only by --profile unified72-egpu; no card, display output, BAR or compute qualification."
     }
   ],
   "config": {
@@ -41,13 +90,18 @@
       "UDMABUF": "y",
       "DMABUF_HEAPS": "y",
       "DMABUF_HEAPS_SYSTEM": "y"
+    },
+    "egpu": {
+      "DRM_AMDGPU": "m",
+      "DRM_NOUVEAU": "m"
     }
   },
   "host_tests": [
     "tools/asahi/pmp-bootargs-tests.rs",
-    "tools/asahi/pmp-power-tests.rs"
+    "tools/asahi/pmp-power-tests.rs",
+    "tools/asahi/m3-runtime-tests.rs"
   ],
-  "qualification": "Same unmerged #158 source (head bd526b3c) and #157 patch as wip3, plus one local patch for the dcpext1 DPTX stall seen on the first wip3 dock plug (2026-10-22). Build-only candidate: patch application is checked on the exact source files and the pure routing logic was exercised in userspace; kernel build, KUnit, J314S boot, dock and recovery are NOT established. Replaces the wip3 pin in this file; wip3 stays installed and is the running trial kernel.",
+  "qualification": "Build candidate only. All six Aurora20 enhancements were checked against the exact #158 tree and are included in the wip4 source series. Five apply to normal unified72; AMD/Nouveau are opt-in in a separately named eGPU package profile. The M3 thermal safe-cap policy is ported as dormant tested policy code because the #158 M3 backend refuses runtime startup. J613/T8122 camera patches remain firmware/m1n1 scoped. No kernel build, KUnit, J314S boot, dock/recovery, or eGPU/camera hardware qualification is established by source preparation.",
   "superseded_patches": [
     {
       "file": "0001-stock-bindgen-layout-policy.patch",
@@ -58,5 +112,11 @@
       "note": "Historical local port for wip1; corresponding stock-bindgen default and BINDGEN_LAYOUT_TESTS opt-in are now carried in merged upstream source. Retained for provenance; not applied to wip2."
     }
   ],
-  "review_receipt": "review-wip4-2026-10-22.json"
+  "review_receipt": "review-wip4-2026-10-22.json",
+  "debian_packages": {
+    "unified72-egpu": "linux-image-elementary-aurora72-wip4-egpu"
+  },
+  "debian_versions": {
+    "unified72-egpu": "7.2.11+elementary.aurora72.wip4.egpu-1"
+  }
 }

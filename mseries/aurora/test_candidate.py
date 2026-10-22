@@ -47,6 +47,11 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(values["LOCALVERSION"], '""')
         egpu = candidate.configure(original, candidate.settings(data, "egpu"))
         self.assertEqual(candidate.config_values(egpu)["DRM_AMDGPU"], "m")
+        unified72_egpu = candidate.configure(original, candidate.settings(candidate.series("unified72-egpu"), "unified72-egpu"))
+        self.assertEqual(candidate.config_values(unified72_egpu)["DRM_AMDGPU"], "m")
+        self.assertEqual(candidate.config_values(unified72_egpu)["DRM_NOUVEAU"], "m")
+        self.assertEqual(candidate.series("unified72-egpu")["kernel_release"]["unified72-egpu"],
+                         "7.2.11-elementary-aurora72-wip4-egpu")
 
     def test_kconfig_silently_disabling_rust_or_an_enhancement_is_rejected(self):
         data = candidate.series()

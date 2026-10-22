@@ -224,12 +224,16 @@ class QualificationTests(unittest.TestCase):
         self.assertRegex(data["source"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.11-"))
         lane = candidate.HERE / "unified72"
-        # wip4 carries the reviewed #157 display patch, then one local DPTX-stall patch.
+        # wip4 carries the display/DPTX series followed by the six Aurora20 ports.
         self.assertEqual([patch["file"] for patch in data["patches"]],
                          ["0001-drm-apple-srgb-external-display-colour.patch",
-                          "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch"])
+                          "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
+                          "0003-udmabuf.patch", "0004-m3-thermal-fallback.patch",
+                          "0005-j613-camera-147.patch", "0006-t8122-camera-2662.patch",
+                          "0007-macsmc-optional-properties.patch", "0008-egpu-config.patch"])
+        self.assertEqual([entry["profile"] for entry in data["patches"]],
+                         ["candidate"] * 7 + ["egpu"])
         for entry in data["patches"]:
-            self.assertEqual(entry["profile"], "candidate")
             self.assertEqual(candidate.sha256(lane / "patches" / entry["file"]), entry["sha256"])
         patch = data["patches"][0]
         self.assertIsNone(data["patches"][1]["upstream"])
@@ -251,9 +255,10 @@ class QualificationTests(unittest.TestCase):
                          data["source"]["archive_root"])
         self.assertEqual(receipt["patches"][0]["head"], patch["head"])
         self.assertEqual([entry["file"] for entry in receipt["patches"]],
-                         [entry["file"] for entry in data["patches"]])
+                         [entry["file"] for entry in data["patches"][:7]])
         self.assertIn("not_rerun", receipt)
         self.assertEqual(candidate.settings(data, "unified72")["DRM_AMDGPU"], "n")
+        self.assertEqual(candidate.settings(data, "unified72-egpu")["DRM_AMDGPU"], "m")
 
 
 if __name__ == "__main__":

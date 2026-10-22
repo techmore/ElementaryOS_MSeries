@@ -145,7 +145,7 @@ def tree_digest(root):
 
 
 def manifest(profile):
-    return HERE / "unified72/series.json" if profile == "unified72" else MANIFEST
+    return HERE / "unified72/series.json" if profile in ("unified72", "unified72-egpu") else MANIFEST
 
 
 def series(profile="candidate"):
@@ -163,7 +163,7 @@ def settings(data, profile):
     result = dict(data["config"]["candidate"])
     # Explicitly retain the release's disabled eGPU drivers in the normal candidate.
     result.update(DRM_AMDGPU="n", DRM_NOUVEAU="n")
-    if profile == "egpu":
+    if profile in ("egpu", "unified72-egpu"):
         result.update(data["config"]["egpu"])
     result.update(LOCALVERSION='""', LOCALVERSION_AUTO="n")
     return result
@@ -239,7 +239,9 @@ def prepare(cache, output, profile, offline):
     extract(inputs["recipe"], recipe, ("config", "PKGBUILD", "rust-toolchain.toml", "linux-aurora-phram.conf"))
     if sha256(recipe / "config") != PINS["recipe_config_sha256"]:
         raise ValueError("upstream recipe config mismatch")
-    selected = [patch for patch in data["patches"] if patch["profile"] == "candidate" or profile == "egpu"]
+    egpu_profile = profile in ("egpu", "unified72-egpu")
+    selected = [patch for patch in data["patches"]
+                if patch["profile"] == "candidate" or (patch["profile"] == "egpu" and egpu_profile)]
     modified = set()
     for patch in selected:
         path = manifest(profile).parent / "patches" / patch["file"]
@@ -304,8 +306,7 @@ def check(root):
             binary = Path(temporary) / f"production-tests-{index}"
             run("rustc", "--edition=2021", "--test", "-D", "warnings", source / test, "-o", binary, cwd=root)
             run(binary)
-    if receipt["profile"] != "unified72":
-        run("python3", ENHANCEMENTS / "check-macsmc.py", source)
+    run("python3", ENHANCEMENTS / "check-macsmc.py", source)
 
 
 def build(root, output, jobs):
@@ -351,7 +352,9 @@ def build(root, output, jobs):
         validate_kernel(payload, actual)
         modprobe = payload / "usr/lib/modprobe.d"
         modprobe.mkdir(parents=True)
-        name = data.get("debian_package", "linux-image-elementary-aurora-enhancements" + ("-egpu" if receipt["profile"] == "egpu" else ""))
+        name = data.get("debian_packages", {}).get(receipt["profile"],
+                 data.get("debian_package", "linux-image-elementary-aurora-enhancements" +
+                          ("-egpu" if receipt["profile"] == "egpu" else "")))
         # A shared filename would make dpkg reject co-installation with .20
         # (or the other candidate profile), even when its content is identical.
         shutil.copy2(root / "recipe/linux-aurora-phram.conf", modprobe / f"{name}-phram.conf")
@@ -366,7 +369,8 @@ def build(root, output, jobs):
         (docs / "README").write_text("Experimental source-built kernel. No maintainer scripts or /boot files.\n"
                                     "Not supported by the fixed-release Aurora20 installer/stager.\n"
                                     "Hardware qualification and a matched boot-chain review are required.\n")
-        version = data.get("debian_version", "7.1.12+elementary.aurora20.enh1-1")
+        version = data.get("debian_versions", {}).get(receipt["profile"],
+                  data.get("debian_version", "7.1.12+elementary.aurora20.enh1-1"))
         size = sum(path.stat().st_size for path in payload.rglob("*") if path.is_file()) // 1024
         (control / "control").write_text(f"Package: {name}\nVersion: {version}\nArchitecture: arm64\n"
             "Maintainer: ElementaryOS MSeries contributors <builder@localhost>\n"
@@ -400,7 +404,7 @@ def main():
     prep = commands.add_parser("prepare")
     prep.add_argument("--cache", type=Path, required=True)
     prep.add_argument("--output", type=Path, required=True)
-    prep.add_argument("--profile", choices=("candidate", "egpu", "unified72"), default="candidate")
+    prep.add_argument("--profile", choices=("candidate", "egpu", "unified72", "unified72-egpu"), default="candidate")
     prep.add_argument("--offline", action="store_true")
     for command in ("check", "build"):
         sub = commands.add_parser(command)
