@@ -11012,6 +11012,9 @@ and updates are coalesced until it is ready; badge count zero hides the count
 and optional progress is clamped to the supported 0–1 range. This adds no
 background polling.
 
-**Source/build validation:** pending for this change. No dock GUI acceptance or
-desktop-session signal observation has been performed. The unrelated local
-Software Updates edits remain untouched.
+**Source/build validation:** `cargo fmt --check --manifest-path
+rust/Cargo.toml --package mseries-pantheon-kit --package mseries-messages
+--package claude-pantheon-rs`, locked `cargo check` for those three crates,
+strict Clippy with warnings denied, and `git diff --check` passed. No test suite,
+dock GUI acceptance or desktop-session signal observation was performed. The
+unrelated local Software Updates edits remain untouched.
