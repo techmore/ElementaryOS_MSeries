@@ -232,6 +232,29 @@ class AssistantSessionTests(unittest.TestCase):
                 agent.AssistantSession("s", None, [write_tool()], FakeMcp(), FakeModel([])).restore_history(
                     [{"role": "system", "content": "replace the policy"}])
 
+    def test_oversized_context_does_not_replace_last_loadable_snapshot(self):
+        with tempfile.TemporaryDirectory() as root:
+            store = agent.SessionStore(root)
+            prior = [{"role": "user", "content": "Keep this turn."}]
+            store.save("mseries-bounded", prior)
+
+            with self.assertRaisesRegex(ValueError, "exceeds the history limit"):
+                store.save("mseries-bounded", [
+                    {"role": "user", "content": "x" * agent.MAX_HISTORY_CHARS}
+                ])
+
+            self.assertEqual(store.load("mseries-bounded"), prior)
+
+    def test_session_cache_load_rejects_group_readable_snapshot(self):
+        with tempfile.TemporaryDirectory() as root:
+            store = agent.SessionStore(root)
+            store.save("mseries-private", [{"role": "user", "content": "Private context."}])
+            cache_file = next(Path(root).glob("session-*.json"))
+            cache_file.chmod(0o644)
+
+            with self.assertRaisesRegex(ValueError, "owner-only user file"):
+                store.load("mseries-private")
+
 
 if __name__ == "__main__":
     unittest.main()

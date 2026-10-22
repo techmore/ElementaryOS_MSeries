@@ -107,6 +107,12 @@ class SessionStore:
 
     def save(self, session_id, messages):
         session_id = self._validate_session_id(session_id)
+        if not isinstance(messages, list) or len(messages) > MAX_HISTORY_MESSAGES:
+            raise ValueError("ACP session context has an invalid message list")
+        if len(json.dumps(messages, ensure_ascii=False)) > MAX_HISTORY_CHARS:
+            # Keep the previous recoverable snapshot instead of replacing it with
+            # context that session/load will reject after an agent restart.
+            raise ValueError("ACP session context exceeds the history limit")
         payload = {
             "version": SESSION_CACHE_VERSION,
             "sessionId": session_id,
@@ -139,6 +145,7 @@ class SessionStore:
 
     def load(self, session_id):
         path = self._path(session_id)
+        self._ensure_root()
         try:
             fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
         except FileNotFoundError:
@@ -147,6 +154,8 @@ class SessionStore:
             metadata = os.fstat(fd)
             if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > MAX_CACHED_SESSION_BYTES:
                 raise ValueError("saved ACP session context is not a bounded regular file")
+            if metadata.st_uid != os.getuid() or stat.S_IMODE(metadata.st_mode) != 0o600:
+                raise ValueError("saved ACP session context is not an owner-only user file")
             with os.fdopen(fd, "rb") as source:
                 encoded = source.read(MAX_CACHED_SESSION_BYTES + 1)
             if len(encoded) > MAX_CACHED_SESSION_BYTES:

@@ -46,7 +46,10 @@ after a T3 or agent restart; `session/close` frees its MCP process but retains
 the snapshot. The current Newelle summary is loaded again on resume. These
 snapshots are chat context, not model KV state; the bridge keeps using the
 supervised llama.cpp worker's single prompt-cache slot and stable system/tool
-prefix.
+prefix. Each saved snapshot is checked against the same 12,000-character and
+24-message restore limits before replacing the prior checkpoint. If one
+completed turn exceeds those limits, the last recoverable checkpoint remains
+available after a restart; the oversized turn may need to be sent again.
 
 The initial setup downloads pinned Qwen3.5 4B and 9B weights (roughly 9 GB combined), Newelle's ARM64 Flatpak/runtime, and the pinned clients. Model weights and personal state stay in the user's home. Factory images stage the offline runtime and compute ICD under `/usr/lib/omarchy-mlx`, llama.cpp under `/usr/lib/mseries-ai/llama`, and user setup under `/usr/share/elementary-mac`. First-user setup uses those runtimes without apt writes to immutable `/usr`. Factory runtime staging and pruning pass; a full image build and hardware boot with this AI layer remain separate qualification steps.
 

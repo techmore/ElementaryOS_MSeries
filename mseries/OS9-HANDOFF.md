@@ -174,6 +174,14 @@ permission request was declined in T3; the thread completed, and a scoped task
 read confirmed no test task was written. T3 server restart and reattachment
 remain unqualified.
 
+The ACP session cache now validates its message and character bounds before
+replacing a checkpoint, so an oversized completed turn cannot make the prior
+recoverable session unloadable. Reads validate the cache directory and require
+an owner-only user file. `python3 mseries/local-ai/test_acp_agent.py` passes all
+14 bridge contracts, including oversized-snapshot preservation and file-mode
+rejection. If a single turn exceeds the retained-history limit, the last valid
+checkpoint stays available and that turn may need to be resent after restart.
+
 The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
 GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights
 plus the six-GiB desktop reserve need at least 18.67 GiB before runtime/context
