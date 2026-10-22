@@ -31,6 +31,20 @@ pub const DEFAULT_SERVER: &str = "http://127.0.0.1:3773";
 /// What a toast's Retry button runs.
 pub type Retry = Rc<dyn Fn(&Rc<App>)>;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ConnectOutcome {
+    Connected,
+    RetryableFailure,
+    NeedsUserAction,
+}
+
+fn retryable_ws_error(error: &WsError) -> bool {
+    match error {
+        WsError::Io(_) | WsError::Closed => true,
+        WsError::Refused { status, .. } => matches!(status, 408 | 429) || *status >= 500,
+    }
+}
+
 const RUNTIME_MODES: [(&str, &str); 4] = [
     ("approval-required", "Ask before actions"),
     ("auto-accept-edits", "Auto-accept edits"),
@@ -1419,10 +1433,13 @@ impl App {
             if app.connecting.replace(true) {
                 return;
             }
-            app.connect_with(cred).await;
-            if app.conn.borrow().is_none() {
-                app.schedule_reconnect();
-                return;
+            match app.connect_with(cred).await {
+                ConnectOutcome::RetryableFailure => {
+                    app.schedule_reconnect();
+                    return;
+                }
+                ConnectOutcome::NeedsUserAction => return,
+                ConnectOutcome::Connected => {}
             }
             // The shell subscription is asynchronous. Keep this request pending until its first
             // snapshot arrives instead of leaving the thread stranded on the pre-disconnect view.
@@ -1462,11 +1479,16 @@ impl App {
                 app.set_env_state(environments::State::Offline);
                 app.pair_status.set_text(&e);
                 app.show_page("pair");
+                app.schedule_reconnect();
                 return;
             }
             app.pair_server.set_text(&app.current_server());
             match auth::load_for(&server).await {
-                Some(cred) => app.connect_with(cred).await,
+                Some(cred) => {
+                    if app.connect_with(cred).await == ConnectOutcome::RetryableFailure {
+                        app.schedule_reconnect();
+                    }
+                }
                 None => {
                     app.connecting.set(false);
                     app.set_status("Not paired", false);
@@ -1742,7 +1764,9 @@ impl App {
                     app.pair_status.set_text(&format!("Paired with {}. Credential stored in the {at}.", cred.label));
                     app.pair_entry.set_text("");
                     app.connecting.set(true);
-                    app.connect_with(cred).await;
+                    if app.connect_with(cred).await == ConnectOutcome::RetryableFailure {
+                        app.schedule_reconnect();
+                    }
                 }
                 Err(e) => app.pair_status.set_text(&format!("Pairing failed: {e}")),
             }
@@ -1750,11 +1774,12 @@ impl App {
         });
     }
 
-    async fn connect_with(self: &Rc<Self>, cred: auth::Credential) {
+    async fn connect_with(self: &Rc<Self>, cred: auth::Credential) -> ConnectOutcome {
         self.set_status(&format!("Connecting to {}…", cred.server), false);
         let rpc = match t3::connect(&cred).await {
             Ok(r) => r,
             Err(e) => {
+                let retryable = retryable_ws_error(&e);
                 self.connecting.set(false);
                 let text = match &e {
                     WsError::Refused { status: 426, body } => format!(
@@ -1775,7 +1800,7 @@ impl App {
                 if !matches!(&e, WsError::Refused { .. }) {
                     self.toast_retry("Could not reach the server.", Rc::new(|a| a.connect_stored()));
                 }
-                return;
+                return if retryable { ConnectOutcome::RetryableFailure } else { ConnectOutcome::NeedsUserAction };
             }
         };
         let config: ServerConfig = match rpc.call("server.getConfig", json!({})).await {
@@ -1783,7 +1808,11 @@ impl App {
             Err(e) => {
                 self.connecting.set(false);
                 self.set_status(&format!("Config failed: {e}"), false);
-                return;
+                return if matches!(&e, t3::rpc::RpcError::Transport(_)) {
+                    ConnectOutcome::RetryableFailure
+                } else {
+                    ConnectOutcome::NeedsUserAction
+                };
             }
         };
         let app = self.clone();
@@ -1831,6 +1860,7 @@ impl App {
             });
             glib::ControlFlow::Continue
         });
+        ConnectOutcome::Connected
     }
 
     /// Writes the indicator feed (status.json) from what the window knows now.
@@ -3905,5 +3935,23 @@ fn load_css() {
     provider.load_from_string(include_str!("../data/style.css"));
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(&display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+}
+
+#[cfg(test)]
+mod reconnect_tests {
+    use super::*;
+
+    #[test]
+    fn retries_transient_websocket_failures_but_stops_for_pairing_and_version_errors() {
+        for error in [WsError::Io("network unavailable".into()), WsError::Closed] {
+            assert!(retryable_ws_error(&error));
+        }
+        for status in [408, 429, 500, 503] {
+            assert!(retryable_ws_error(&WsError::Refused { status, body: String::new() }));
+        }
+        for status in [400, 401, 403, 404, 426] {
+            assert!(!retryable_ws_error(&WsError::Refused { status, body: String::new() }));
+        }
     }
 }

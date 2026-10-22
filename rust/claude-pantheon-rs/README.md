@@ -240,7 +240,8 @@ own credential (keyed by server URL in the keyring or `credentials-<server>.json
 **SSH** (`ssh -N -L` kept open while the environment is current; the client talks to the local port) and **T3 Connect**
 (the relay environment a pairing URL names; the relay sign-in happens in the browser). Pasting a pairing URL for another
 server on the pairing page creates its environment. Switching drops the current connection and tunnel and reconnects;
-a dropped connection reconnects with the usual back-off.
+a dropped connection reconnects with the usual back-off. Retryable failures during the first connection or config read
+use that same supervisor; rejected credentials and protocol-version mismatches stop for user action.
 
 ## Empty, loading and error states
 
