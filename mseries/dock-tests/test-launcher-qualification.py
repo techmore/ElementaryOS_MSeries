@@ -162,7 +162,7 @@ def inside(binary, output, theme):
         move('t3r')
         waitfor(lambda: state().get('t3_popup'))
         command('xdotool', 'key', 'F6')
-        waitfor(lambda: 'Offline · showing last synced status' in state()['t3_text'])
+        waitfor(lambda: 'Offline · last synced from fixture-eos' in state()['t3_text'])
         labels = state()['t3_text']
         assert 'Last known · Codex · 5-hour' in labels and 'Last known · 42% used' in labels, labels
         assert 'Needs approval' not in labels and 'Live T3 work' not in labels, labels
