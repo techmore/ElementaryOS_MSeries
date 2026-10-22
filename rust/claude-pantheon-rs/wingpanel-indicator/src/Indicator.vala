@@ -68,9 +68,9 @@ public class ClaudePantheon.Feed : Object {
                 win.label = w.get_string_member ("label");
                 win.used_percent = w.get_double_member ("usedPercent");
                 win.resets_at = w.has_member ("resetsAt") && !w.get_null_member ("resetsAt") ? w.get_string_member ("resetsAt") : "";
-                // The panel follows the provider selected in full chat. Older schema-1 snapshots
-                // did not include a selection ID, so keep their previous all-window display.
-                if (feed.selected_provider_id == "" || win.instance_id == feed.selected_provider_id) {
+                // Never enumerate configured accounts in the panel. Older schema-1 snapshots
+                // without a selection ID cannot identify the active account, so show no windows.
+                if (feed.selected_provider_id != "" && win.instance_id == feed.selected_provider_id) {
                     feed.windows.add (win);
                 }
             }

@@ -22,3 +22,6 @@ test('indicator-probe', probe, args: [meson.current_source_dir() / 'probe/status
      env: ['GDK_BACKEND=x11', 'GSETTINGS_BACKEND=memory'], workdir: meson.current_source_dir())
 test('indicator-offline-probe', probe, args: [meson.current_source_dir() / 'probe/stale-status-fixture.json'],
      env: ['GDK_BACKEND=x11', 'GSETTINGS_BACKEND=memory'], workdir: meson.current_source_dir())
+test('indicator-unknown-selection-probe', probe,
+     args: [meson.current_source_dir() / 'probe/unknown-selection-status-fixture.json', 'unknown-selection'],
+     env: ['GDK_BACKEND=x11', 'GSETTINGS_BACKEND=memory'], workdir: meson.current_source_dir())

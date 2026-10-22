@@ -41,6 +41,7 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var fixture = args.length > 1 ? args[1] : "probe/status-fixture.json";
+    bool unknown_selection = args.length > 2 && args[2] == "unknown-selection";
     var indicator = new ClaudePantheon.Indicator (fixture);
     var panel = indicator.get_display_widget ();
     var popover = indicator.get_widget ();
@@ -53,6 +54,28 @@ int main (string[] args) {
     collect (popover, texts);
     collect (panel, texts);
     if (panel.tooltip_text != null) texts.add (panel.tooltip_text);
+    if (unknown_selection) {
+        if (feed.windows.size != 0) {
+            stderr.printf ("FAIL: unknown provider selection exposed %d account windows\n", feed.windows.size);
+            return 1;
+        }
+        foreach (var hidden in new string[] { "Codex", "Claude", "Grok" }) {
+            foreach (var text in texts) {
+                if (text.contains (hidden)) {
+                    stderr.printf ("FAIL: unknown provider selection leaked '%s' in %s\n", hidden, string.joinv (" | ", texts.to_array ()));
+                    return 1;
+                }
+            }
+        }
+        bool asks_to_select = false;
+        foreach (var text in texts) if (text.contains ("Select a provider in chat")) asks_to_select = true;
+        if (!asks_to_select) {
+            stderr.printf ("FAIL: unknown provider selection should direct the user to chat in %s\n", string.joinv (" | ", texts.to_array ()));
+            return 1;
+        }
+        stdout.printf ("PASS: unknown provider selection hides all account usage\n");
+        return 0;
+    }
     bool live = feed.connected && !feed.stale;
     string[] expect = live
         ? new string[] { "Codex session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "2", "permission prompt" }
