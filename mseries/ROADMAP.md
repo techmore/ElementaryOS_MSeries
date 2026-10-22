@@ -91,9 +91,14 @@ actions, search/refresh/new-message shortcuts, Ctrl+Enter send with plain Enter
 reserved for newlines, and a retry action for startup failure. These
 source/build changes still need private GUI, accessibility, phone and owner
 acceptance.
-Imported Apple pins need an opaque per-phone identifier in BlueFerry's public
-status API before the Rust client can scope keyring data without reading
-service configuration. Feature parity and owner phone acceptance remain open.
+Imported Apple pins need a stable opaque phone ID in BlueFerry's `GetStatus`
+contract. The pinned API permits this as an additive status key; BlueFerry must
+own and publish it, and the Rust SDK will not derive it from private
+configuration, a Bluetooth address, or conversation recipients. Feature parity
+and owner phone acceptance remain open. Signal's selected official-client path
+is tracked in ready PR [#525](https://github.com/techmore/ElementaryOS_MSeries/pull/525);
+the screenshot shelf-to-compose acceptance remains open in
+[issue #227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
 Torrential is
 already Rust/GTK4/Granite and now consumes the SDK from its private `mseries-native`
 branch; continue its UI/accessibility migration and keep it private until its

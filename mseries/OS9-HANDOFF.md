@@ -10904,3 +10904,18 @@ rust/Cargo.toml --package mseries-messages`, `cargo check --locked
 --manifest-path rust/Cargo.toml -p mseries-messages`, and `git diff --check`
 passed. No GUI or keyboard interaction run has been performed yet. Keep full
 keyboard/accessibility qualification open.
+
+## Signal integration and BlueFerry pin identity — 2026-10-22
+
+The selected Signal path is the signed official client with Pantheon launcher,
+accent and Wingpanel integration. PR [#525](https://github.com/techmore/ElementaryOS_MSeries/pull/525)
+is ready and its checks pass. It keeps the upstream Electron client. The real
+screenshot shelf-to-compose preview, multiple-image, paste fallback and
+XWayland-to-Wayland acceptance remain open in [#227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
+
+The pinned BlueFerry Messages API v2 status does not expose a stable phone
+profile ID. Its compatibility policy allows additive `GetStatus` keys without
+changing the API generation, so BlueFerry can add an opaque ID for the
+configured phone and the Rust SDK can use it for Secret Service scoping. The
+Rust client will not derive that identity from private config, Bluetooth MAC,
+or conversation recipients. See the [pinned API contract](https://github.com/erikwb/blueferry/blob/60fd7ef1abbd25947981f0cf27a521d82784a75f/docs/en/developer/dbus-api.md#compatibility).
