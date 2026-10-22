@@ -95,6 +95,16 @@ and saved accounts advertised by the server. The T3 Code server owns provider cr
 sends only the responses needed to complete the current sign-in flow. Providers must be installed and
 enabled on the server before they can be connected here.
 
+## Usage and status (CodexBar-style)
+
+The chat client includes the CodexBar-style usage view, so provider usage lives beside the threads that
+use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windows with reset times and
+the next-provider capacity decision, then shows 30-day tokens, output, cache reads, API-equivalent cost,
+cache savings, model breakdowns and a 7-day activity chart for Claude, Codex, OpenCode and Grok. The
+optional Wingpanel 9 indicator brings the same status to the desktop panel: quota gauges, running
+threads and permission prompts, with thread links that open in this client. The indicator reads the
+client's local status feed; it does not start a second server connection.
+
 ## What is where
 
 | Path | Role |

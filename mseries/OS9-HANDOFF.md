@@ -10,18 +10,22 @@ still need to be installed and enabled on the T3 Code server.
 Validation: `cargo fmt -p claude-pantheon-rs --check`,
 `cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings`,
 `cargo test --release -p claude-pantheon-rs --lib` (44/44), `cargo build --release -p claude-pantheon-rs`,
-and `git diff --check`. In the active Pantheon Wayland session, the offline GTK app drew its first frame
-in 195 ms using `GDK_BACKEND=wayland` and Cairo. A read-only `server.getConfig` call against T3 Code 0.1.1
-reported Claude, Codex, OpenCode and Grok installed, enabled and authenticated. The provider manager also
-rendered in an isolated GTK preview using that server config; its connected and disabled states displayed
-correctly without changing credentials. Interactive sign-in, package CI, and installation for daily launch
-remain open. The app stays native GTK/Granite and standard GTK Wayland; no GNOME Shell API is required.
-The arm64 PR workflow passed Rust formatting/Clippy, build and tests, T3 contract validation, desktop/AppStream
-checks, the headless Wingpanel probe, and Debian package assembly. The 1.2 MB package contains the app and
-Wingpanel module; a local `apt-get -s install` resolved on this arm64 host with no additional dependencies.
-It has not been installed. Interactive sign-in/out still needs a live account flow; all four providers are
-already authenticated on the configured server, so this pass left those credentials and active sessions alone.
-Next: after review, install the package and qualify normal launch and provider sign-in in the live Pantheon session.
+and `git diff --check`. The active Pantheon Wayland session runs the user-local install from
+`./install.sh --no-build`; it drew its first frame in 214 ms. A read-only `server.getConfig` call reports
+Claude, Codex, OpenCode and Grok installed, enabled and authenticated. The read-only 30-day usage summary
+contains 39 buckets across those four providers, and the app's status feed is connected with live plan
+windows. The provider manager also rendered in an isolated GTK preview; connected and disabled states are
+both clear. The app stays native GTK/Granite and standard GTK Wayland; no GNOME Shell API is required.
+
+The final arm64 T3 client CI job passed Rust formatting/Clippy, build and tests, T3 contract validation,
+desktop/AppStream checks, the headless Wingpanel probe, and Debian package assembly. The 1.2 MB package
+contains the app and Wingpanel module, and local apt simulation resolves without additional dependencies.
+System-wide package installation is blocked in this runtime by Linux `no_new_privileges`; the user-local
+installer successfully installed the app, desktop entry, D-Bus activation, metainfo and icons under
+`~/.local` and refreshed Pantheon Dock. The separate Wingpanel module remains built and packaged but is
+not registered system-wide. Interactive sign-in/out remains untested because all four providers already
+have active server-owned auth; those sessions and credentials were left intact. Next: register the Wingpanel
+module through the host package manager when root install is available and qualify a fresh auth flow.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
