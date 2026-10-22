@@ -18,9 +18,9 @@
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 24",
+      "match": "pixel_size = 18",
       "count": 2,
-      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "reason": "Dropdown icon glyph, one-and-a-half with the popover text (1.5em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
@@ -32,16 +32,16 @@
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 36",
-      "count": 3,
-      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "match": "pixel_size = 27",
+      "count": 2,
+      "reason": "Dropdown icon glyph, one-and-a-half with the popover text (1.5em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 64",
+      "match": "pixel_size = 48",
       "count": 1,
-      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "reason": "Dropdown icon glyph, one-and-a-half with the popover text (1.5em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/settings/SettingsApp.vala",
