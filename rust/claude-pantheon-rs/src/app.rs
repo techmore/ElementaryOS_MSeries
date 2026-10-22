@@ -1938,6 +1938,7 @@ impl App {
             if !app.connection_attempt_is_current(connection_generation) {
                 return;
             }
+            app.begin_connection_attempt();
             *app.conn.borrow_mut() = None;
             if let Some(live) = app.live.borrow_mut().as_mut() {
                 live.sub_id = None;
@@ -2048,11 +2049,16 @@ impl App {
     }
 
     async fn reload_config(&self) {
+        let connection_generation = self.connection_generation.get();
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => return,
         };
-        if let Ok(v) = rpc.call("server.getConfig", json!({})).await
+        let result = rpc.call("server.getConfig", json!({})).await;
+        if !self.connection_attempt_is_current(connection_generation) {
+            return;
+        }
+        if let Ok(v) = result
             && let Ok(config) = serde_json::from_value::<ServerConfig>(v)
         {
             *self.providers.borrow_mut() = config.providers.clone();
@@ -2061,7 +2067,7 @@ impl App {
             }
             self.fill_providers();
             self.refresh_status();
-            self.rotate_runners().await;
+            self.rotate_runners_for(connection_generation).await;
         }
     }
 
@@ -3922,17 +3928,36 @@ impl App {
     /// webhook tasks are re-pointed at the provider with the most capacity, so the next run, not
     /// only the install, uses it.
     pub async fn rotate_runners(&self) {
+        let connection_generation = self.connection_generation.get();
+        self.rotate_runners_for(connection_generation).await;
+    }
+
+    async fn rotate_runners_for(&self, connection_generation: u64) {
+        if !self.connection_attempt_is_current(connection_generation) {
+            return;
+        }
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => return,
         };
         let Ok(list) = rpc.call("scheduledTasks.list", json!({})).await else { return };
+        if !self.connection_attempt_is_current(connection_generation) {
+            return;
+        }
         let tasks: Vec<Value> = list.get("tasks").and_then(Value::as_array).cloned().unwrap_or_default();
         let moves = workflow::rotate_tasks(&tasks, &self.providers());
         for (title, payload, to) in moves {
+            if !self.connection_attempt_is_current(connection_generation) {
+                return;
+            }
             match rpc.call("scheduledTasks.upsert", payload).await {
-                Ok(_) => self.toast(&format!("{title} now runs on {to}")),
-                Err(e) => eprintln!("rotation of {title} failed: {}", e.message()),
+                Ok(_) if self.connection_attempt_is_current(connection_generation) => {
+                    self.toast(&format!("{title} now runs on {to}"));
+                }
+                Err(e) if self.connection_attempt_is_current(connection_generation) => {
+                    eprintln!("rotation of {title} failed: {}", e.message());
+                }
+                _ => return,
             }
         }
     }
