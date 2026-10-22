@@ -171,9 +171,14 @@ threshold; its temporary download was removed without running inference.
 
 After the trial, the default Qwen3.5 4B profile remained unchanged, but its
 6.5-GiB admission plus six-GiB reserve was refused at 12.21 GiB available. The
-supervised 2.6B Liquid profile is currently serving the local ACP endpoint on
-port 8766 so T3 remains usable in this session. Its systemd unit remains
-disabled for autostart; no reserve or admission threshold was lowered.
+supervised 2.6B Liquid profile served the local ACP endpoint on port 8766 during
+the initial T3 checks. The supervisor's quiet policy later stopped it at 15:21
+EDT because the desktop memory reserve would be crossed. At 16:56 EDT,
+`MemAvailable` was 7.4 GiB, below the Liquid profile's ten-GiB admission plus
+desktop-reserve threshold; `mseries-ai-liquid.service` is inactive and port 8766
+is closed. Leave the endpoint stopped until a fresh supervisor preflight admits
+it. The service remains disabled for autostart; no reserve or admission
+threshold was lowered.
 
 The current [ANE Qwen experiment](https://github.com/joshuaswarren/ane-linux-experiments)
 records 8.23 tok/s on an original M1 and exact 100-token output; that result is
