@@ -4572,3 +4572,12 @@ configuration does not qualify this board. Gravity's alpha page still reports
 HDMI/GPU support and developer-only limitations, without establishing the owner's
 exact10Gb/16GB/macOS27 configuration. No new NIC patch was justified by this
 review. Receipt: mseries/m4-mini/receipts/2026-10-22-ethernet-board-contract-review.json.
+
+The revision6 preflight source bundle was independently extracted; its own
+mesa-compatibility.py replays all eleven final hashes from the original archive.
+This is an emitted source-only preflight bundle, not yet a .deb or hosted
+artifact. Three image-input patch tests and six hosted-artifact selection tests
+also pass after integration. Receipt:
+mseries/m4-mini/receipts/2026-10-22-mesa6-delivered-source-replay.json.
+Local full build session99907 and hosted run39739936855 are still live; await
+terminal results without restarting them. No package/image promotion yet.

@@ -1,0 +1,19 @@
+{
+  "scope": "preflight source bundle emitted by current recipe, extracted-module replay of all eleven final source files; not a packaged or hosted artifact",
+  "bundle_sha256": "af5dfe83ee8005726185c908d09e1b1ad5aa8c227996889c0ae8066adebe3afa",
+  "final_source_hashes": {
+    "src/asahi/compiler/agx_compile.c": "82757affc7dc3bbb5920f22e6416b036db21dd41e607bd89d7fed2724d7aaab0",
+    "src/asahi/compiler/agx_compile.h": "cb037338f271a4684f3cf8da142ae8827cd1c39a8a7c9b759a6d119fe60d95ad",
+    "src/asahi/vulkan/hk_shader.c": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+    "src/asahi/vulkan/hk_shader.h": "99af20e531c3909b06cb7cdc69658ac235f803c61b7ea2a43da130dea28b1690",
+    "src/compiler/nir/nir_divergence_analysis.c": "c6210643411f63e783c8d3c837aadda15540fd658966f9a3d026acfcf32b76d8",
+    "src/compiler/nir/nir_shader_compiler_options.h": "1fad14e6d90c8d5df8e3224b65cc6d3823cb2a5ba67c830578a1296b0c8dc11b",
+    "src/gallium/drivers/asahi/agx_blit.c": "ab66c9f4b9267ce299b6891bd1a22dc72161fe885028b886754cb8797ef47c52",
+    "src/gallium/drivers/asahi/agx_pipe.c": "4759a67e2cb8b3163fd28df359e12d0b7286be4c0273c6a199a6bfb60490b014",
+    "src/gallium/drivers/asahi/agx_state.c": "b6e404a7a811868f3627b0ca87699965686ca1c0c5a51284c0e3ad86f7629b9b",
+    "src/gallium/drivers/asahi/agx_state.h": "f46445cd76308c7523aca458a0c672fdc96c1ed5b7c2caaf8f7701195bc5c57e",
+    "src/asahi/compiler/agx_compile_apple9.c": "3d69ee3c00444f621400ffc20ec91968c3deedaa5b1a11be963906e971bcf4fc"
+  },
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T07:29:36.150723+00:00"
+}
