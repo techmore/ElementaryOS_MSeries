@@ -1,0 +1,38 @@
+{
+  "scope": "pinned J773g boot-chain byte assembly and readback only",
+  "format_reference": "GravityLinux/scripts@12418e50125a72749a75917db578db55ea42704c:update-m1n1",
+  "inputs": {
+    "stage1": {
+      "sha256": "69aa13d28160821b78870a883500d744e97d10922b05287121288c41bf607acf",
+      "bytes": 1179648
+    },
+    "stage2": {
+      "sha256": "33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4",
+      "bytes": 1146880
+    },
+    "dtb": {
+      "sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+      "bytes": 60000
+    },
+    "u-boot": {
+      "sha256": "1ffe7269c8af7a485e7c22febbf86f0d2ac538251904d0de3fa732affa5aa639",
+      "bytes": 657248
+    }
+  },
+  "boot_bin_sha256": "304d55fb324865d9f2db056eb08cf2c8af204d952b337e757a6c8ad6401a1e22",
+  "boot_bin_bytes": 1516614,
+  "offsets": {
+    "stage2": 0,
+    "j773g_dtb": 1146880,
+    "gzip_uboot": 1206880
+  },
+  "component_readback": "exact stage2/DTB bytes and decompressed U-Boot match",
+  "configuration": "NO_DISPLAY; no appended config overrides",
+  "stage1": "separate artifact; not concatenated or authorized",
+  "source_dtb": "loader fixups still required; not an observed firmware/memory map",
+  "factory_promotion": false,
+  "installer_admission": false,
+  "esp_written": false,
+  "hardware_validated": false,
+  "old_no_display_missing_build_rejected_before_output": true
+}

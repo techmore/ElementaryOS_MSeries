@@ -652,3 +652,22 @@ These supersede the earlier raw-source binaries for M4 configuration purposes;
 the old receipts remain historical compile evidence. This is build parity with
 the reviewed bring-up setting, not a display or boot test. Neither stage was
 deployed or authorized. [Corrected build receipt](receipts/2026-10-21-gravity-bootloader-nodisplay.json).
+
+### Matched J773g boot-chain assembly
+
+`assemble-boot-chain.py --bootloader CORRECTED_STAGE_DIRECTORY --u-boot
+VERIFIED_NODTB_BINARY --dtb VERIFIED_J773G_DTB --output NEW_DIRECTORY`
+now verifies all inputs against the reviewed corrected stage/kernel/U-Boot
+receipts, confirms the exact J773g compatible list, and assembles stage 2 +
+board DTB + deterministic-metadata gzip(U-Boot). The ordering follows pinned
+Gravity scripts `12418e5:update-m1n1`. Stage 1 remains a separate artifact.
+No configuration overrides are appended.
+
+Actual assembly passes with a 1,516,614-byte `boot.bin`, SHA-256
+`304d55fb324865d9f2db056eb08cf2c8af204d952b337e757a6c8ad6401a1e22`.
+Readback checks component boundaries and decompressed U-Boot bytes. The older
+bootloader lacking NO_DISPLAY is rejected before output creation. This bundle
+is research-only: source DTB firmware/memory fixups, authorized stage-1 handoff,
+ESP placement/readback in the complete image and native boot remain unverified.
+No ESP or macOS configuration was written.
+[Assembly receipt](receipts/2026-10-21-research-boot-chain.json).

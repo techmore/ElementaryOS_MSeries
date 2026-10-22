@@ -10827,3 +10827,8 @@ Wrapper now uses supported NO_DISPLAY=1 for both stages and verifies generated
 NO_DISPLAY/CHAINLOADING headers. Both stages rebuilt successfully; new receipt
 2026-10-21-gravity-bootloader-nodisplay.json supersedes earlier binary hashes for
 M4 configuration. No bootloader installation, firmware or HDMI runtime claim.
+
+M4 matched research boot-chain now assembled: corrected stage2 + J773g DTB +
+gzip selected U-Boot, following pinned Gravity script. Exact component readback
+passes; older non-NO_DISPLAY stage rejected before output. Stage1 kept separate.
+No ESP writes/boot authorization. Full-image placement and native handoff pending.
