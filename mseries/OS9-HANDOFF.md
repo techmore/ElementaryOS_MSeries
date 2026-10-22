@@ -1,3 +1,44 @@
+## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
+
+`mseries/orchard/` is the one app: Machine Lab's window, sidebar, pages and `style.css` with Orchard's name, icon
+(`com.github.techmore.orchard`), clients and tests. The user's direction: "machine lab is beautiful, orchard isn't really yet,
+so we can copy that style over and orchard is the menu icon." `mseries/machine-lab/` and `mseries/orchard-incus-native/` are
+thin READMEs pointing here; every file moved with `git mv` (`git log --follow`).
+
+- **Layout.** Sidebar sections YOUR MACHINES / NEW — NOT INSTALLED (Machine Lab, unchanged behaviour), INCUS (home row:
+  dashboard, statistics, tools; then one row per instance) and PODMAN (one row, one page). `src/main.vala` is the
+  application and window (`orchard://` links, Ctrl+K palette dispatch, preferences), `src/sidebar.vala` the row types,
+  `src/incus-page.vala` the Incus home page, the instance page (Overview / Statistics / Configuration / Logs / Snapshots,
+  More menu: Clone, Export Backup, Mount Folder, Publish Port, Attach Network, Connect Local Model) and the New Instance
+  dialog; `src/PodmanPage.vala` and `PodmanDetails.vala` restyled with the `ml-` cards. Dropped: Machine Lab's CLI
+  `incus-model.vala`/`incus-ui.vala`, Orchard's `MainWindow.vala`, `Application.vala`, `InstanceDetails.vala`.
+  `ResourceBrowser`, `SandboxesWindow` and `MountsWindow` now signal the window instead of casting to `MainWindow`.
+  Not carried over: the instance list's search/filter/sort/group-by-label and bulk actions.
+- **Build and tests.** `meson setup build && ninja -C build`; `meson test`: 12/12 (Machine Lab's five, Orchard's five, the
+  rewritten `native-windows` smoke that builds the whole window against the fake Incus socket and fake podman and opens
+  every secondary window, and `panel-count` for the indicator, which builds here but installs under `/usr/lib`, so
+  `install-orchard.sh` passes `-Dwingpanel=disabled`). `build-deb.sh` builds `orchard_1.0.0-1~mseries1_arm64.deb` (ran).
+  CI: the `orchard` job builds `mseries/orchard` with the indicator; the `machine-lab` job is now `orchard-app`.
+- **Idle CPU, measured** (`docs/PERFORMANCE.md`, `bench.sh`): installed Machine Lab 37.6 % of a core and 281 MB RSS over
+  20 s with the window open and nothing running; Orchard launched with `gio launch` on its desktop file 0.3 % and 82 MB.
+  Cause: `.ml-dot.running` had an infinite CSS pulse animation, which keeps GTK's frame clock running for every running
+  row (three Incus containers), so the window repainted at the display rate forever. Also applied: cairo renderer
+  (`ORCHARD_RENDERER` overrides), 1 px CSD outline, cursor blink off, per-page timers only while mapped, hidden pages
+  defer widget updates, no sidebar re-sort per poll, content stack not vertically homogeneous.
+- **Installed and launched** on the j314s: `bash mseries/install-orchard.sh` (removes the `io.github.mseries.MachineLab`,
+  `com.github.techmore.orchard-incus` and `io.github.techmore.OrchardIncus` entries and launchers, moves the dock pin,
+  restarts `pantheon-dock`), `gio launch ~/.local/share/applications/com.github.techmore.orchard.desktop`. Seen: deb-test,
+  orchard-test, rupert-dev (Incus), bzc and mseries-icloud-anisette (Podman), elementary OS, Omarchy and Windows 11
+  (`~/vms`). Captures (GSK self-render via `ORCHARD_SCREENSHOT`/`ORCHARD_SCREENSHOT_PAGE`): `docs/screenshot-machines.png`,
+  `docs/screenshot-incus.png`, `docs/screenshot-incus-instance.png`, `docs/screenshot-podman.png`. The old Orchard for
+  Incus process that was running since the morning was left running; its binary is gone.
+- **Not verified.** Incus actions were not clicked against the real containers (start/stop/snapshot/config apply are the
+  same client calls as before, exercised by the fixture tests); the Podman details window was built in the smoke test, not
+  opened on the real container; the Wingpanel indicator is built, not installed; a full guest install and the Wayland
+  keyboard path remain as before.
+- **Next.** Decide whether the Python `mseries/orchard-incus/` stays; a Display tab for Incus VMs (SPICE/VGA console);
+  instance search in the sidebar if the palette is not enough.
+
 ## Native Claude client, Rust twin: T3 Code server client (gtk4-rs/granite-rs) — 2026-10-21 (Claude Code)
 
 `rust/claude-pantheon-rs/`: the Rust counterpart of `mseries/claude-pantheon-native`, built as a native client of the

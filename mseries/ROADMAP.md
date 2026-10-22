@@ -1,3 +1,10 @@
+## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
+
+One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
+with `mseries/install-orchard.sh`. Idle CPU of the installed app 37.6 % → 0.3 % of a core, RSS 281 → 82 MB (the running-dot
+CSS animation kept the frame clock running; cairo renderer, 1 px outline, steady cursor, timers only while mapped).
+`meson test` 12/12; captures in `mseries/orchard/docs/`. Not carried over: list search/filter/sort and bulk actions.
+
 ## Compositor snapping phase 1 — 2026-10-21
 
 Snap Assist for halves (live thumbnails in the empty half) and two-member snap groups that raise together and resize together
