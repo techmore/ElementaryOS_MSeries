@@ -1,3 +1,7 @@
+## T3-R Pantheon: assistant bridge and local model study — 2026-10-22
+
+The owner confirms the pinned T3-R Dock icon opens its status popover on hover. Next product slice: bring the existing MSeries assistant's scoped local tools into T3-R through a server-side ACP bridge, keeping provider credentials on the paired T3 environment and showing only its selected account in the Dock panel. Explore Liquid AI LFM2.5-24B-A2B separately under the existing model RAM/cooling gate; its vendor speed figure is from an M5 Max, and this host could not admit the model during this pass. Linux/Asahi has no qualified ANE inference path. Existing local Liquid 1.2B receipts do not support promoting it over Qwen3.5 4B. Track implementation and the live-history/network gates in [issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523) and [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
