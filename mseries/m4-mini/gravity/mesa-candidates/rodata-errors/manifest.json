@@ -3,9 +3,10 @@
   "before_sha256": "9ded99ac5a7ea268ac382362c31d8dc32c3b00e9cf72b0108e3269cde34a0cfb",
   "after_sha256": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
   "patch_sha256": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
-  "scope": "candidate only; real Mesa compile/runtime tests pending",
+  "scope": "candidate only; full real Mesa compile/selected tests/software smoke pass; no stack promotion",
   "patch": "0001-hk-rodata-upload-errors.patch",
   "file": "src/asahi/vulkan/hk_shader.c",
   "selected_by_default": false,
-  "tested_scope": "verbatim helper only, eight fault-injected cases with ASan/UBSan and expected-failure control; full Mesa compile pending"
+  "tested_scope": "full real Mesa build/stage, five AGX groups and llvmpipe; eight helper fault-injection cases with ASan/UBSan and false-success negative; no Vulkan API fault injection or M4 GPU",
+  "full_driver_compiled": true
 }

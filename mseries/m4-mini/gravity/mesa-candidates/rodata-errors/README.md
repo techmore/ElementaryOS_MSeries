@@ -28,7 +28,11 @@ Eight cases cover successful copying, no-rodata behavior, each allocation
 failure, the address boundary, extent overflow and the last fitting extent.
 A false-success negative is detected by the allocation-failure assertion.
 This does not exercise real DRM allocation, Vulkan API destruction, firmware,
-GPU rendering or an M4. Full-driver compilation and the proposal's helper
-uniformity/compositor semantics remain separate gates. No stack promotion is
+GPU rendering or an M4. Full-driver compilation, all five selected AGX test groups and isolated
+llvmpipe now pass; see receipts/2026-10-22-mesa-rodata-native-build.json under
+mseries/m4-mini. The separate real-NIR diagnostic confirms that the proposal's
+blanket marker erases layer-id divergence in the layered tile-store path, so the
+full PR remains unselected. Helper-uniformity/compositor semantics, Vulkan API
+fault injection and M4 GPU execution remain open. No stack promotion is
 implied by these helper tests. Mesa source licensing remains MIT; the testing
 harness is GPL-3.0-or-later.

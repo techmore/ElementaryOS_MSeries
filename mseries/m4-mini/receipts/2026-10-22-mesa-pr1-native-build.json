@@ -1,0 +1,66 @@
+{
+  "scope": "unmerged Gravity Mesa PR1 isolated full build, five AGX test groups and llvmpipe only; no M4 GPU/native verification or stack promotion",
+  "base": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+  "head": "208d4a484459a12c77bf073362613f842288c2e0",
+  "commands": [
+    [
+      "meson",
+      "setup",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/mesa-87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "--prefix=/opt/elementary-m4-gravity1",
+      "--libdir=lib",
+      "-Dplatforms=x11,wayland",
+      "-Dgallium-drivers=asahi,llvmpipe",
+      "-Dvulkan-drivers=asahi",
+      "-Dllvm=enabled",
+      "-Dbuild-tests=true",
+      "-Dglvnd=enabled"
+    ],
+    [
+      "meson",
+      "compile",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "-j",
+      "2"
+    ],
+    [
+      "meson",
+      "test",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "--no-rebuild",
+      "--print-errorlogs",
+      "agx_tests",
+      "agx_apple9_launcher_tests",
+      "agx_apple9_geometry_tests",
+      "agx2_disasm",
+      "agx2_python_disasm"
+    ],
+    [
+      "meson",
+      "install",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "--no-rebuild",
+      "--destdir",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/stage"
+    ]
+  ],
+  "tests": {
+    "groups": 5,
+    "failed": 0
+  },
+  "libraries": {
+    "lib/libvulkan_asahi.so": "99953c4440519fe0bfb272ddf2b64361ae9b261cd695356650a38ddb093e0873",
+    "lib/libgallium-26.3.0-devel.so": "bd85beac8203d89183897545c18ee55aedc85940e5c5652c761e1775dfeaa60c",
+    "lib/libEGL_mesa.so.0.0.0": "3278ed55491505d1eb4ce48ee301e719c75d85c034f057711a7755b264b4e44d",
+    "lib/libGLX_mesa.so.0.0.0": "48de59c4ae79eaff4138aa1f46b2c939df6436366584d9fd9e1556e9f301fcd5"
+  },
+  "testlog_sha256": "f2e47bd26ec21a7cd93127f23a1ee1ed7b62405e008799dd6e7a0c3929901d57",
+  "software_smoke": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested\n",
+  "factory_promotion": false,
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T05:54:07.692202+00:00"
+}

@@ -1,0 +1,54 @@
+{
+  "scope": "full real Mesa build and staging with PR1 plus rodata allocation-error candidate; five selected AGX groups and llvmpipe, no Vulkan API fault injection or M4 GPU runtime",
+  "pr1_head": "208d4a484459a12c77bf073362613f842288c2e0",
+  "candidate_source_sha256": "9397b20696ad3d9857f8ae41d11634cfb1900d08e239fc29b8c65991d3e3ddfc",
+  "patch_sha256": "1ef555154236e7896e7ae96234934cc0a88a78b91278ea7cd18e58de53432155",
+  "commands": [
+    [
+      "meson",
+      "compile",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "-j",
+      "2"
+    ],
+    [
+      "meson",
+      "test",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "--no-rebuild",
+      "--print-errorlogs",
+      "agx_tests",
+      "agx_apple9_launcher_tests",
+      "agx_apple9_geometry_tests",
+      "agx2_disasm",
+      "agx2_python_disasm"
+    ],
+    [
+      "meson",
+      "install",
+      "-C",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-pr1-build/build",
+      "--no-rebuild",
+      "--destdir",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-mesa-rodata-candidate/stage"
+    ]
+  ],
+  "tests": {
+    "groups": 5,
+    "failed": 0
+  },
+  "libraries": {
+    "lib/libvulkan_asahi.so": "3141a9c1a0699844e5bd98b923be76325cc5431ed3e09a85bb099b7dcc43ea81",
+    "lib/libgallium-26.3.0-devel.so": "bd85beac8203d89183897545c18ee55aedc85940e5c5652c761e1775dfeaa60c",
+    "lib/libEGL_mesa.so.0.0.0": "3278ed55491505d1eb4ce48ee301e719c75d85c034f057711a7755b264b4e44d",
+    "lib/libGLX_mesa.so.0.0.0": "48de59c4ae79eaff4138aa1f46b2c939df6436366584d9fd9e1556e9f301fcd5"
+  },
+  "testlog_sha256": "40432cf0c2f6b2f127f2c0ac0fe643eccc206620cb0e2522c485e24c7913e2b0",
+  "software_smoke": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested\n",
+  "pr1_source_restored": true,
+  "factory_promotion": false,
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T05:54:07.692766+00:00"
+}

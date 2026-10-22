@@ -4339,3 +4339,26 @@ compile must follow terminal completion of the unmodified PR1 build before any
 selection/package change. Receipt: mseries/m4-mini/receipts/2026-10-22-mesa-rodata-helper-tests.json.
 The PR's helper-uniformity/compositor behavior remains separately under review.
 R5 kernel 39721608135 and isolated Mesa session 79442 were both revalidated live.
+
+The full unmodified Mesa PR1 now builds and stages successfully; all five selected
+AGX groups and isolated llvmpipe pass. The rodata candidate also compiles against
+the real driver (both API error-return paths and Vulkan library), passes the same
+five groups/software smoke and retains its eight helper fault-injection cases.
+The original PR1 source was restored after the candidate build. Existing build
+outputs are last-candidate objects; do not reuse them as an unmodified PR1 result
+without rebuilding. Original PR1 stage/receipts remain preserved separately.
+Receipts: 2026-10-22-mesa-pr1-native-build.json and
+2026-10-22-mesa-rodata-native-build.json under mseries/m4-mini/receipts.
+
+A separate diagnostic links the actual built NIR library and runs PR1's verbatim
+uniform-marker function/block. Reference analysis classifies fragment layer-id
+as divergent; after adding the workgroup input selecting the helper path, PR1
+clears layer-id's divergence and labels the metadata valid. The actual layered
+store helper reads that intrinsic. This confirms a metadata inconsistency, not
+rendered corruption or a native crash. Ordinary Apple9 API bodies use a separate
+early-NIR native pipeline, so do not generalize this diagnostic to every shader.
+The full proposal stays unselected pending correct helper-specific handling and
+compositor/GPU coverage. Reproduce with testing/mesa/check-helper-divergence.py;
+receipt 2026-10-22-mesa-helper-divergence-finding.json retains source/object hashes.
+Selected Mesa package/image inputs remain unchanged. R5 kernel 39721608135 remains
+live; kernel download/validation and coherent updated image/ISO build are next.
