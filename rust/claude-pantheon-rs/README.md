@@ -86,6 +86,11 @@ and thread. Each atomic, mode-`0600` record keeps the bounded view, history mark
 environment directories use mode `0700`. The client reopens from that view and asks T3 for `afterSequence`, ignores
 duplicate replay events, and keeps send, stop and approval actions disabled until synchronization completes. Active
 turns stay in memory and are persisted only after they settle, so token-by-token updates do not rewrite the cache.
+If the thread stream ends while the main connection remains open, the last view is marked interrupted and live
+actions stay disabled until the user retries synchronization.
+Live item updates use a process-local identity index, rebuilt from the cached projection on demand, so replaying
+large histories does not scan the full item list for every event. Version-3 cache records are still readable; the next
+cache write upgrades them without dropping their history cursor.
 Records are capped at 8 MiB each and 64 MiB / 32 entries per environment. Corrupt, wrong-scope and old-schema files
 are discarded; forgetting or removing an environment clears its thread cache. A replay gap beyond the server's
 retention window still falls back to T3's current snapshot.

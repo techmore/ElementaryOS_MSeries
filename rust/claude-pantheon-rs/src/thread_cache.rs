@@ -11,7 +11,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-const SCHEMA_VERSION: u32 = 3;
+const SCHEMA_VERSION: u32 = 4;
+const PREVIOUS_SCHEMA_VERSION: u32 = 3;
 const MAX_RECORD_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_ENV_ENTRIES: usize = 32;
 const MAX_ENV_BYTES: u64 = 64 * 1024 * 1024;
@@ -103,7 +104,9 @@ impl CachedThread {
     }
 
     fn matches(&self, environment_id: &str, thread_id: &str) -> bool {
-        self.schema_version == SCHEMA_VERSION && self.environment_id == environment_id && self.thread_id == thread_id
+        matches!(self.schema_version, SCHEMA_VERSION | PREVIOUS_SCHEMA_VERSION)
+            && self.environment_id == environment_id
+            && self.thread_id == thread_id
     }
 }
 
@@ -111,14 +114,15 @@ fn cache_view(view: &ThreadView) -> ThreadView {
     let first_run = view.runs.len().saturating_sub(100);
     let first_checkpoint = view.checkpoints.len().saturating_sub(100);
     let items = view.items.clone();
-    let history_item_keys = items.iter().map(|item| item.identity_key()).collect();
-    ThreadView {
+    let mut cached = ThreadView {
         items,
         active_run_id: view.active_run_id.clone(),
         runs: view.runs[first_run..].to_vec(),
         checkpoints: view.checkpoints[first_checkpoint..].to_vec(),
-        history_item_keys,
-    }
+        item_positions: None,
+    };
+    cached.rebuild_item_positions();
+    cached
 }
 
 fn root() -> PathBuf {
@@ -370,6 +374,49 @@ mod tests {
 
         std::fs::write(&path, vec![b'x'; MAX_RECORD_BYTES as usize + 1]).unwrap();
         assert!(read_from(&root, "env-a", "thread-a").is_none());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn previous_schema_cache_preserves_projection_and_cursor_until_next_write() {
+        let root = temp_root();
+        let mut view = ThreadView::default();
+        view.items.push(TurnItem {
+            id: "item-1".into(),
+            kind: "assistant_message".into(),
+            text: "retained after upgrade".into(),
+            source_thread_id: Some("thread-a".into()),
+            source_item_id: Some("item-1".into()),
+            ..Default::default()
+        });
+        let mut previous = CachedThread::new("env-a", "thread-a", 42, &view, Some("opaque-cursor"), true);
+        previous.schema_version = PREVIOUS_SCHEMA_VERSION;
+        let mut legacy_json = serde_json::to_value(&previous).unwrap();
+        legacy_json["view"]["history_item_keys"] = serde_json::json!(["thread-a\0item-1"]);
+        let path = record_path(&root, "env-a", "thread-a").unwrap();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, serde_json::to_vec(&legacy_json).unwrap()).unwrap();
+
+        let loaded = read_from(&root, "env-a", "thread-a").unwrap();
+        assert_eq!(loaded.schema_version, PREVIOUS_SCHEMA_VERSION);
+        assert_eq!(loaded.view.items[0].text, "retained after upgrade");
+        assert_eq!(loaded.history_cursor.as_deref(), Some("opaque-cursor"));
+        assert!(loaded.has_more_history);
+        assert!(loaded.view.item_positions.is_none());
+
+        let upgraded = CachedThread::new(
+            "env-a",
+            "thread-a",
+            loaded.sequence,
+            &loaded.view,
+            loaded.history_cursor.as_deref(),
+            loaded.has_more_history,
+        );
+        assert!(save_to(&root, &upgraded).unwrap());
+        let reloaded = read_from(&root, "env-a", "thread-a").unwrap();
+        assert_eq!(reloaded.schema_version, SCHEMA_VERSION);
+        assert_eq!(reloaded.history_cursor.as_deref(), Some("opaque-cursor"));
+        assert_eq!(reloaded.view.items[0].text, "retained after upgrade");
         let _ = std::fs::remove_dir_all(root);
     }
 

@@ -2909,21 +2909,28 @@ impl App {
         self.stop_btn.set_visible(running);
         let app = self.clone();
         glib::spawn_future_local(async move {
-            while let Some(item) = stream.next().await {
-                if app.generation.get() != generation {
-                    break;
-                }
-                match item {
-                    Ok(v) => app.thread_event(&v),
-                    Err(e) => {
-                        let t = thread.clone();
-                        app.toast_retry(
-                            &format!("Thread stream ended: {e}"),
-                            Rc::new(move |a| a.open_thread(t.clone())),
-                        );
-                        break;
+            let failure = loop {
+                match stream.next().await {
+                    Some(Ok(v)) if app.generation.get() == generation => app.thread_event(&v),
+                    Some(Ok(_)) => break None,
+                    Some(Err(e)) if app.generation.get() == generation && !rpc.is_closed() => {
+                        break Some(format!("Thread stream ended: {e}"));
                     }
+                    Some(Err(_)) => break None,
+                    None if app.generation.get() == generation && !rpc.is_closed() => {
+                        break Some(
+                            "The thread update stream ended while the T3 connection is still open.".to_string(),
+                        );
+                    }
+                    None => break None,
                 }
+            };
+            if let Some(message) = failure
+                && !rpc.is_closed()
+            {
+                app.mark_thread_sync_interrupted();
+                let t = thread.clone();
+                app.toast_retry(&message, Rc::new(move |a| a.open_thread(t.clone())));
             }
         });
     }
@@ -2996,6 +3003,19 @@ impl App {
         self.composer_note.set_text("");
         self.send_btn.set_sensitive(true);
         self.stop_btn.set_sensitive(running);
+    }
+
+    fn mark_thread_sync_interrupted(&self) {
+        if let Some(live) = self.live.borrow_mut().as_mut() {
+            live.stale = true;
+            live.history_loading = false;
+            self.subtitle.set_text(&format!("{} · sync interrupted", live.base_subtitle));
+            self.update_history_control(live);
+        }
+        self.composer_note.set_text("Live updates stopped. Retry to sync before sending.");
+        self.send_btn.set_sensitive(false);
+        self.stop_btn.set_sensitive(false);
+        self.show_page("chat");
     }
 
     fn thread_event(self: &Rc<Self>, v: &Value) {

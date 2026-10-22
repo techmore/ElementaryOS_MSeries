@@ -77,7 +77,11 @@ per thread and 64 MiB / 32 entries per environment. Active turns remain in memor
 the cached view and resumes with `afterSequence`, ignores duplicate events, and blocks live actions until the server's
 completion marker. Unchanged sequence/cursor/revision markers skip redundant full-record writes; projection or history
 changes still replace the paired cache record. Corrupt or mismatched records are discarded and explicit environment
-removal/unpair clears them.
+removal/unpair clears them. If the thread subscription ends while the main RPC stays connected, the UI keeps the last
+view as interrupted, disables live actions, and offers a retry until a new synchronization marker arrives.
+The in-memory item identity index is rebuilt after cache deserialization, removing a full linear scan from each
+streamed item update without adding another serialized identity set to the cache. The cache reader migrates schema-3
+records in place on the next write, preserving the cursor and projection.
 
 The cache write-regression research remains relevant: this client avoids full serialization on each streamed update,
 but it has not yet been profiled against a very large live conversation or verified on a poor network. Tracked in

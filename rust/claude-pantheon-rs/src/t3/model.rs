@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 fn active_run_status(status: &str) -> bool {
     matches!(status, "preparing" | "queued" | "starting" | "running" | "waiting" | "pending")
@@ -385,8 +385,9 @@ pub struct ThreadView {
     pub runs: Vec<Value>,
     /// The thread's checkpoints (restore points), as the projection carries them.
     pub checkpoints: Vec<Value>,
-    #[serde(default, skip_serializing_if = "HashSet::is_empty")]
-    pub history_item_keys: HashSet<String>,
+    /// Rebuilt from `items`; avoids a second serialized copy of every item identity.
+    #[serde(skip)]
+    pub(crate) item_positions: Option<HashMap<String, usize>>,
 }
 
 impl ThreadView {
@@ -406,7 +407,6 @@ impl ThreadView {
                         .and_then(Value::as_str)
                         .map(str::to_string)
                         .or_else(|| Some(item.id.clone()));
-                    view.history_item_keys.insert(item.identity_key());
                     view.items.push(item);
                 }
             }
@@ -415,7 +415,6 @@ impl ThreadView {
                 if let Ok(mut item) = serde_json::from_value::<TurnItem>(row.clone()) {
                     item.source_thread_id = p.pointer("/thread/id").and_then(Value::as_str).map(str::to_string);
                     item.source_item_id = Some(item.id.clone());
-                    view.history_item_keys.insert(item.identity_key());
                     view.items.push(item);
                 }
             }
@@ -433,7 +432,22 @@ impl ThreadView {
                 .and_then(Value::as_str)
                 .map(str::to_string);
         }
+        view.rebuild_item_positions();
         view
+    }
+
+    pub(crate) fn rebuild_item_positions(&mut self) {
+        let mut positions = HashMap::with_capacity(self.items.len());
+        for (index, item) in self.items.iter().enumerate() {
+            positions.entry(item.identity_key()).or_insert(index);
+        }
+        self.item_positions = Some(positions);
+    }
+
+    fn ensure_item_positions(&mut self) {
+        if self.item_positions.is_none() {
+            self.rebuild_item_positions();
+        }
     }
 
     pub fn is_running(&self) -> bool {
@@ -467,15 +481,21 @@ impl ThreadView {
 
     pub fn upsert(&mut self, item: TurnItem) {
         let key = item.identity_key();
-        match self.items.iter_mut().find(|i| i.identity_key() == key) {
+        self.ensure_item_positions();
+        let position = self.item_positions.as_ref().and_then(|positions| positions.get(&key)).copied();
+        match position.and_then(|index| self.items.get_mut(index)) {
             Some(slot) => *slot = item,
-            None => self.items.push(item),
+            None => {
+                let index = self.items.len();
+                self.items.push(item);
+                self.item_positions.as_mut().expect("item index initialized").insert(key, index);
+            }
         }
-        self.history_item_keys.insert(key);
     }
 
     /// Adds one T3 history page ahead of the current projection without replacing live updates.
     pub fn prepend_history(&mut self, mut older: Vec<crate::t3::history::ProjectedTurnItem>) -> usize {
+        self.ensure_item_positions();
         older.sort_by_key(|row| row.position);
         let mut page = Vec::with_capacity(older.len());
         let mut page_keys = HashSet::new();
@@ -484,8 +504,8 @@ impl ThreadView {
             item.source_thread_id = Some(row.source_thread_id);
             item.source_item_id = Some(row.source_item_id);
             let key = item.identity_key();
-            if !self.history_item_keys.contains(&key) && page_keys.insert(key.clone()) {
-                self.history_item_keys.insert(key);
+            let exists = self.item_positions.as_ref().is_some_and(|positions| positions.contains_key(&key));
+            if !exists && page_keys.insert(key) {
                 page.push(item);
             }
         }
@@ -493,6 +513,7 @@ impl ThreadView {
         if count > 0 {
             page.append(&mut self.items);
             self.items = page;
+            self.rebuild_item_positions();
         }
         count
     }
@@ -692,6 +713,41 @@ mod tests {
         assert_eq!(added, 1);
         assert_eq!(view.items[0].source_item_id.as_deref(), Some("oldest"));
         assert_eq!(view.items.last().unwrap().text, "latest live text");
+    }
+
+    #[test]
+    fn large_thread_upserts_keep_identity_index_after_cache_round_trip() {
+        fn item(index: usize, text: &str) -> TurnItem {
+            TurnItem {
+                id: format!("item-{index}"),
+                kind: "assistant_message".into(),
+                text: text.into(),
+                source_thread_id: Some("thread-large".into()),
+                source_item_id: Some(format!("item-{index}")),
+                ..Default::default()
+            }
+        }
+
+        let mut view = ThreadView::default();
+        for index in 0..20_000 {
+            view.upsert(item(index, "initial"));
+        }
+        for index in (0..20_000).rev() {
+            view.upsert(item(index, "updated"));
+        }
+        assert_eq!(view.items.len(), 20_000);
+        assert_eq!(view.items[19_999].text, "updated");
+
+        let encoded = serde_json::to_value(&view).unwrap();
+        assert!(encoded.get("item_positions").is_none());
+        assert!(encoded.get("history_item_keys").is_none());
+        let mut legacy_encoded = encoded;
+        legacy_encoded["history_item_keys"] = serde_json::json!(["thread-large\0item-0"]);
+        let mut restored: ThreadView = serde_json::from_value(legacy_encoded).unwrap();
+        assert!(restored.item_positions.is_none(), "the non-serialized index is rebuilt lazily");
+        restored.upsert(item(19_999, "after cache"));
+        assert_eq!(restored.items.len(), 20_000);
+        assert_eq!(restored.items[19_999].text, "after cache");
     }
 }
 
