@@ -1,0 +1,42 @@
+{
+  "scope": "full M4 mkosi graph summary",
+  "source_commit": "e8591838ff2507dd9931ce7f7868c943d893a6a6",
+  "driver_sha256": "532eac34cd9ac1364982bd59c3ba0e79bd80519542608debfbf24f4e45267550",
+  "image_version": "20261022062308",
+  "images": [
+    "apple-silicon",
+    "base",
+    "default-initrd",
+    "driver-nvidia",
+    "driver-nvidia-addon",
+    "ext-sdk",
+    "ext-virt",
+    "liveiso",
+    "main",
+    "modules-db",
+    "sysupdate"
+  ],
+  "commands": [],
+  "candidate_package_hashes": {
+    "kernel": "522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628",
+    "mesa": "6c9b77f135a8d00ad31a68351d7f695aba6b0861e2e2e47a4d78834a26d11b2a",
+    "policy": "29e752eb837cefd7524dd9570965955c06e55c0d3453964c8f659c4920b3a57b"
+  },
+  "boot_bundle_sha256": "6ac901cac30be2ce2cbd75863f60c23820eaf560f962a0c01fbb2853158b41bb",
+  "candidate_boot_hash_patch_applied_in_clone": true,
+  "candidate_hash_patch_applied_in_clone": true,
+  "summary_only": true,
+  "execution_identity": "mapped namespace",
+  "mkosi_build_passed": false,
+  "iso_assembled": false,
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "observed_at_utc": "2026-10-22T06:24:17.634847+00:00",
+  "revision5_package_pin_resolved": true,
+  "public_source_refresh": {
+    "GravityLinux/linux:gravity-m4": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "GravityLinux/mesa:main": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "GravityLinux/mesa:PR1:open-unmerged": "208d4a484459a12c77bf073362613f842288c2e0"
+  }
+}

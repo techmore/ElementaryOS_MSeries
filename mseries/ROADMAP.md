@@ -4444,3 +4444,10 @@ pass and are added to CI. Builder/package/checker/source-bundle integration is
 next; the standalone module does not silently change the default Mesa recipe.
 Source preflight receipt: 2026-10-22-mesa-versioned-source-preflight.json.
 No local native build session remains live from the completed Mesa trials.
+
+A fresh disposable graph summary from committed e8591838 resolves ALL 11 images
+with the verified r5 kernel package pin/hash and reviewed boot bundle. This is
+summary-only, not an image rebuild or ISO. Receipt:
+mseries/m4-mini/receipts/2026-10-22-r5-full-graph-summary.json. Gravity's selected
+kernel and Mesa default heads were rechecked unchanged; Mesa PR1 is still open,
+unmerged at 208d4a4. No native kernel, graphics or boot software was installed.
