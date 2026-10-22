@@ -37,6 +37,7 @@ mod popup_stack;
 #[cfg(feature = "native-drm")]
 mod prewarm;
 mod protocols;
+mod screen_corners;
 mod shell_compat;
 mod snap_assist;
 mod snap_group;

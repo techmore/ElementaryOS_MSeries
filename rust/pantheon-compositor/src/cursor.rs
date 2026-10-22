@@ -396,22 +396,26 @@ where
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let output_name = output.name();
-    let Some(surface) = state.lock_surfaces.get(&output_name) else {
-        return Vec::new();
-    };
     let scale = Scale::from(output.current_scale().fractional_scale());
     // The pointer (and any volume/brightness OSD) above the lock surface.
-    let mut elements = render_cursor_elements(renderer, state, output);
-    elements.extend(
-        render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
-            renderer,
-            surface.wl_surface(),
-            (0, 0),
-            scale,
-            1.0,
-            Kind::Unspecified,
-        ),
+    let mut elements = state.screen_corners.elements(
+        renderer,
+        output,
+        state.space.output_geometry(output).map(|g| g.size),
     );
+    if let Some(surface) = state.lock_surfaces.get(&output_name) {
+        elements.extend(render_cursor_elements(renderer, state, output));
+        elements.extend(
+            render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
+                renderer,
+                surface.wl_surface(),
+                (0, 0),
+                scale,
+                1.0,
+                Kind::Unspecified,
+            ),
+        );
+    }
     elements
 }
 
@@ -521,7 +525,15 @@ where
         AsRenderElements,
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
-    let mut elements = render_cursor_elements(renderer, state, output);
+    let mut elements = state.screen_corners.elements(
+        renderer,
+        output,
+        state
+            .space
+            .output_geometry(output)
+            .map(|geometry| geometry.size),
+    );
+    elements.extend(render_cursor_elements(renderer, state, output));
     elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,

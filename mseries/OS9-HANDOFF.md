@@ -101,6 +101,26 @@ checks activation only, not the rendered screen or accessibility. Avoid normal
 `dbus-run-session` for no-service probes; its service directory can auto-start
 BlueFerry.
 
+### Rust compositor display-corner mask — 2026-10-22
+
+Added `rust/pantheon-compositor/src/screen_corners.rs`: a cached, 4×
+supersampled superellipse mask is assembled as four frontmost render elements
+for recognized built-in `eDP-*`, `LVDS-*` and `DSI-*` outputs. Both desktop and
+lock-surface passes use it. The radius is read once at compositor startup from
+`PANTHEON_SCREEN_CORNER_RADIUS` (logical pixels; default 20, `0` disables); no
+poller, timer or per-frame mask rasterization is added. External `HDMI-*`,
+`DP-*` and virtual outputs remain unmasked. The default follows the existing
+M-series Gala setting and remains provisional pending a visual check on the
+physical MacBook Pro. This only masks the display boundary; top-level window
+rounding still needs its own compositor/client-decoration qualification.
+
+Validation: two mask/connector tests pass within the 159-test native-feature
+compositor suite (and 19 DRM-probe tests); `cargo check --locked -p
+pantheon-compositor --features native-drm` and strict all-target native-feature
+Clippy pass. Nothing was installed and the running compositor was not restarted;
+the owner session continues using its current binary until a later package or
+session update.
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
