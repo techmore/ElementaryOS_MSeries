@@ -68,9 +68,8 @@ Codex selected, running 0, pending 0. The CodexBar-style Dock popover change the
 linked-type checks, existing Dock hover/pin/focus probes, Rust release build and strict release Clippy, desktop-file and
 AppStream validation. The patched Dock was installed under `~/.local/lib/mseries/dock`; `pantheon-dock.service` is now
 running PID 3856628 with `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The updated T3-R binary was installed
-and launched as PID 3857527; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
-running 0, pending 0. The build confirms the new popover class is linked into the installed Dock, but a real pointer pass
-over the T3-R icon and direct scroll/composer interaction still need visual confirmation.
+and D-Bus activation launched the current full window as PID 3871272; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
+running 0, pending 0. The new popover class is linked into the installed Dock, and the dedicated GTK/Xvfb fixture exercises the T3-R icon hover, selected-account content, full-chat/thread actions, click pin, outside dismissal and Escape in both themes. A real desktop pointer pass and direct scroll/composer interaction still need visual confirmation.
 The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. DeepSeek
 provider setup, scroll interaction, large-thread history, and high-latency reconnect qualification remain open.
 
