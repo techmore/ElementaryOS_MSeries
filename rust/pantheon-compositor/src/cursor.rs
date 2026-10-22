@@ -31,6 +31,7 @@ pub(crate) struct SolidBuffers(
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub(crate) enum SolidSlot {
     SnapPreview,
+    Screenshot(u8),
     /// The n-th rectangle of the shell OSD.
     Osd(u8),
 }
@@ -409,6 +410,7 @@ where
         state.space.output_geometry(output).map(|g| g.size),
     );
     if let Some(surface) = state.lock_surfaces.get(&output_name) {
+        elements.extend(render_screenshot_overlay(state, output));
         elements.extend(render_cursor_elements(renderer, state, output));
         elements.extend(
             render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
@@ -516,6 +518,86 @@ where
 
 /// Shared scene assembly for nested and native outputs. Preview transforms
 /// never remap windows, so keyboard/pointer focus and workspace order stay put.
+fn render_screenshot_overlay<R>(
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    if state.session_locked || !state.screenshot_selection.borrow().active() {
+        return Vec::new();
+    }
+    let Some(area) = state.space.output_geometry(output) else {
+        return Vec::new();
+    };
+    let pointer = state.seat.get_pointer().unwrap().current_location();
+    let selected = state.screenshot_selection.borrow().preview().or_else(|| {
+        let window = state.window_under(pointer)?;
+        let location = state.space.element_location(&window)?;
+        let size = window.geometry().size;
+        Some(crate::screenshot::Region {
+            x: location.x,
+            y: location.y,
+            width: size.w as u32,
+            height: size.h as u32,
+        })
+    });
+    let Some(region) = selected else {
+        return Vec::new();
+    };
+    let rect: Rectangle<i32, Logical> = Rectangle::new(
+        (region.x, region.y).into(),
+        (
+            region.width.min(i32::MAX as u32) as i32,
+            region.height.min(i32::MAX as u32) as i32,
+        )
+            .into(),
+    );
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    let mut elements = Vec::new();
+    for (index, border) in [
+        Rectangle::new(rect.loc, (rect.size.w, 3).into()),
+        Rectangle::new(
+            (rect.loc.x, rect.loc.y + rect.size.h - 3).into(),
+            (rect.size.w, 3).into(),
+        ),
+        Rectangle::new(rect.loc, (3, rect.size.h).into()),
+        Rectangle::new(
+            (rect.loc.x + rect.size.w - 3, rect.loc.y).into(),
+            (3, rect.size.h).into(),
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let Some(border) = border.intersection(area) else {
+            continue;
+        };
+        let buffer = state.solid_buffers.get(
+            &output.name(),
+            SolidSlot::Screenshot(index as u8),
+            border.size,
+            [0.21, 0.54, 0.9, 1.0],
+        );
+        elements.push(
+            SolidColorRenderElement::from_buffer(
+                &buffer,
+                (border.loc - area.loc)
+                    .to_f64()
+                    .to_physical(scale)
+                    .to_i32_round(),
+                scale,
+                1.0,
+                Kind::Unspecified,
+            )
+            .into(),
+        );
+    }
+    elements
+}
+
 pub fn render_desktop_elements<R>(
     renderer: &mut R,
     state: &PantheonCompositor,

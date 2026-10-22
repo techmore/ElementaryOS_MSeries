@@ -11,6 +11,7 @@ app = Gtk.Application(application_id="io.elementary.mseries.ScreenshotFixture")
 def activate(application):
     window = Gtk.ApplicationWindow(application=application, title="Screenshot Fixture")
     window.set_default_size(400, 300)
+    window.connect("notify::is-active", lambda current, _spec: Path(os.environ["CAPTURE_RECEIPT"], "fixture-active").write_text("1" if current.is_active() else "0"))
     drawing = Gtk.DrawingArea()
     def draw(_area, context, width, height):
         context.set_source_rgb(0.9, 0.1, 0.1)

@@ -164,6 +164,26 @@ impl PantheonCompositor {
                             state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
+                        if state.screenshot_selection.borrow().active() {
+                            if state.session_locked {
+                                state.screenshot_selection.borrow_mut().cancel();
+                            } else if key_state == smithay::backend::input::KeyState::Pressed
+                                && keysym.modified_sym().raw() == smithay::input::keyboard::xkb::keysyms::KEY_space
+                            {
+                                let pointer = state.seat.get_pointer().unwrap().current_location();
+                                let bounds = state.window_under(pointer).and_then(|window| {
+                                    let location = state.space.element_location(&window)?;
+                                    let size = window.geometry().size;
+                                    Some(crate::screenshot::Region { x: location.x, y: location.y, width: size.w as u32, height: size.h as u32 })
+                                });
+                                if let Some(crate::screenshot::CaptureTarget::Window(region)) = state.screenshot_selection.borrow_mut().capture_hovered_window(bounds) {
+                                    state.screenshot_region.set(Some(region));
+                                    state.screenshot_requested.set(true);
+                                }
+                                state.request_native_redraw(); state.request_winit_redraw();
+                            }
+                            return FilterResult::Intercept(());
+                        }
                         if key_state == smithay::backend::input::KeyState::Pressed
                             && state.gesture_animation.is_some()
                         {
@@ -402,6 +422,9 @@ impl PantheonCompositor {
                 pointer.frame(self);
             }
             InputEvent::PointerAxis { event, .. } => {
+                if self.screenshot_selection.borrow().active() {
+                    return;
+                }
                 let source = event.source();
 
                 let horizontal_amount = event.amount(Axis::Horizontal).unwrap_or_else(|| {
