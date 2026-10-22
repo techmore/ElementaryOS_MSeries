@@ -109,6 +109,15 @@ and [package](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/3984
 workflows. Live large-thread paging and deliberate high-latency reconnect
 qualification remain open.
 
+The ARM64 package workflows now set `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`,
+and validation checks that the `.deb` contains
+`/usr/lib/aarch64-linux-gnu/wingpanel-9/libclaude-pantheon.so`. A local
+combined ARM64 package built successfully with the expected Wingpanel and
+support-library dependencies. System installation is still blocked in this
+session because `no_new_privileges` prevents `sudo`; the current panel keeps
+its previously loaded module until a privileged package install and later
+login. The exact-commit validation and package workflows are queued.
+
 ## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
 
 Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
