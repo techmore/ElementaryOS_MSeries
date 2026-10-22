@@ -55,6 +55,36 @@ Open **Assistant Browser** from Applications and open pages you want to share th
 
 The installed Newelle profile discovers exactly sixteen tools. The refresh command installs only owned helpers/launchers, preserves model/memory/policy and other servers, and invalidates only the owned schema cache. GTK3 and WebSocket dependencies are present in the Apple Silicon overlay and both consumers that prune the overlay package list.
 
+## T3-R assistant bridge — October 22
+
+`acp-agent.py` exposes those same sixteen scoped tools through T3's local ACP
+command. The bridge talks only to a loopback OpenAI-compatible model endpoint
+and starts the existing `os-mcp.py`; it never starts or changes a model worker.
+It adds no transcript or KV disk cache and uses the active model server's
+existing prompt-cache behavior and profile settings.
+Read-only tools run directly; writes request an ACP one-time permission before
+dispatch. Shell, arbitrary-file, broad browser-control and remote-network tools
+are not exposed. A `--install-acp` setup mode installs only the agent and user
+launcher, leaving Newelle preferences and model services untouched. An explicit
+`--endpoint` argument can point at another already-running loopback profile.
+
+The bridge's provider contract and tool-call path pass isolated Python tests.
+The ACP-only installer was run; the installed launcher returned successful
+ACP `initialize` and `session/new` responses against the real MCP service. A
+synthetic OpenAI-compatible server then drove the real MCP `add_minutes` tool
+and returned `12:00`. No real model inference or quality claim is included.
+At the October 22 snapshot, all managed model services were inactive and the
+large Liquid trial was blocked by host memory; see the candidate note in
+`README.md`.
+
+The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
+(`acp-mseries-assistant`); its live config reports `installed=true` and
+`status=ready`, confirming that the server found and initialized the bridge.
+The four existing authenticated providers retained their enabled/installed/auth
+states when this entry was added. Actual model inference remains unqualified
+because the supervised model endpoint was offline; the successful synthetic
+tool-call receipt is an adapter check, not model-quality evidence.
+
 The default worker also recovers abandoned upstream CLI reservations when **both** the recorded process and process group are absent, using the pinned upstream owner-checked API. Live, paired or unknown leases remain. Six stale pre-reboot leases were recovered on this host without lowering the reserve.
 
 The [current sanitized checkpoint](receipts/app-integration-2026-10-18/) retains all six backend model passes: three browser→Calendar→Mail chains (347.37, 129.95 and 124.37 s) and three hostile-page rejections (12.85, 104.75 and 26.90 s). Independent EDS/draft matches and owned cleanup passed. Cooling pauses are reported separately; first positive min available RAM was 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C. These are sampled readings, not sound-pressure measurements. Connection-refused and timeout attempts remain unscored, with their original traces/cleanup retained. The terminal owned backend queue was verified before restoring the historical Tasks harness.

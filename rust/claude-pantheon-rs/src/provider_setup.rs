@@ -17,6 +17,13 @@ use std::rc::{Rc, Weak};
 const FEATURED: [(&str, &str); 4] =
     [("claudeAgent", "Claude Code"), ("codex", "ChatGPT via Codex"), ("opencode", "OpenCode"), ("grok", "Grok Build")];
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum LocalAcpPreset {
+    Generic,
+    DeepSeek,
+    MSeries,
+}
+
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 struct AcpRegistryAgent {
@@ -104,7 +111,7 @@ impl ProviderManager {
         let registry = gtk::Expander::new(Some("Add an ACP provider"));
         let registry_content = gtk::Box::new(gtk::Orientation::Vertical, 7);
         let registry_intro = label(
-            "Find an agent in the ACP Registry or connect a local ACP command such as DeepSeek Harness. Registry agents are third-party code; review their source and license. The T3 server runs the agent and keeps its credentials.",
+            "Find an agent in the ACP Registry or connect a local ACP command such as DeepSeek Harness or MSeries Assistant. Registry agents are third-party code; review their source and license. The T3 server runs the agent and keeps its credentials.",
             &["caption", "dim-label"],
         );
         registry_intro.set_wrap(true);
@@ -113,14 +120,20 @@ impl ProviderManager {
         let registry_controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         let registry_query = gtk::SearchEntry::builder().placeholder_text("Search ACP Registry").hexpand(true).build();
         let registry_search = gtk::Button::with_label("Search");
+        registry_controls.append(&registry_query);
+        registry_controls.append(&registry_search);
+        registry_content.append(&registry_controls);
+
+        let local_controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         let local_acp = gtk::Button::with_label("Add local command…");
         let deepseek_acp = gtk::Button::with_label("DeepSeek Harness…");
         deepseek_acp.set_tooltip_text(Some("Add DeepSeek Harness as a local ACP command on the T3 server"));
-        registry_controls.append(&registry_query);
-        registry_controls.append(&registry_search);
-        registry_controls.append(&local_acp);
-        registry_controls.append(&deepseek_acp);
-        registry_content.append(&registry_controls);
+        let mseries_acp = gtk::Button::with_label("MSeries Assistant…");
+        mseries_acp.set_tooltip_text(Some("Connect the paired server to its existing MSeries local assistant"));
+        local_controls.append(&local_acp);
+        local_controls.append(&deepseek_acp);
+        local_controls.append(&mseries_acp);
+        registry_content.append(&local_controls);
         let registry_status = label("Expand to browse available ACP agents.", &["caption", "dim-label"]);
         registry_status.set_wrap(true);
         registry_status.set_ellipsize(pango::EllipsizeMode::None);
@@ -191,13 +204,19 @@ impl ProviderManager {
         let weak = Rc::downgrade(&manager);
         local_acp.connect_clicked(move |_| {
             if let Some(manager) = weak.upgrade() {
-                manager.add_local_acp_dialog(false);
+                manager.add_local_acp_dialog(LocalAcpPreset::Generic);
             }
         });
         let weak = Rc::downgrade(&manager);
         deepseek_acp.connect_clicked(move |_| {
             if let Some(manager) = weak.upgrade() {
-                manager.add_local_acp_dialog(true);
+                manager.add_local_acp_dialog(LocalAcpPreset::DeepSeek);
+            }
+        });
+        let weak = Rc::downgrade(&manager);
+        mseries_acp.connect_clicked(move |_| {
+            if let Some(manager) = weak.upgrade() {
+                manager.add_local_acp_dialog(LocalAcpPreset::MSeries);
             }
         });
         let weak = Rc::downgrade(&manager);
@@ -359,13 +378,15 @@ impl ProviderManager {
         format!("acp-{}", crate::app::new_id().chars().take(16).collect::<String>())
     }
 
-    fn add_local_acp_dialog(self: &Rc<Self>, prefill_deepseek: bool) {
+    fn add_local_acp_dialog(self: &Rc<Self>, preset: LocalAcpPreset) {
+        let prefill_deepseek = preset == LocalAcpPreset::DeepSeek;
+        let prefill_mseries = preset == LocalAcpPreset::MSeries;
         let dialog = gtk::Window::builder()
             .title("Add Local ACP Command")
             .transient_for(&self.window)
             .modal(true)
             .default_width(500)
-            .default_height(if prefill_deepseek { 440 } else { 360 })
+            .default_height(if prefill_deepseek || prefill_mseries { 440 } else { 360 })
             .build();
         let header = gtk::HeaderBar::builder().show_title_buttons(true).build();
         header.add_css_class(granite::STYLE_CLASS_FLAT);
@@ -381,6 +402,12 @@ impl ProviderManager {
                 "It must already be installed on the paired T3 server and can run model-generated commands ",
                 "against the workspace T3 gives it. Configure its DeepSeek API key in Harness Settings → Models ",
                 "before adding. This fills in the shipped ACP command; it does not install the agent."
+            )
+        } else if prefill_mseries {
+            concat!(
+                "This connects the paired server to its existing MSeries local assistant. ",
+                "The MSeries assistant tools and supervised local model must already be installed on that server. ",
+                "It reuses the local model service, exposes only the scoped MSeries tools, and does not start another model."
             )
         } else {
             "The command runs directly on the paired T3 server. No shell expansion is used."
@@ -403,12 +430,24 @@ impl ProviderManager {
             content.append(&model_setup);
         }
         let name = gtk::Entry::builder()
-            .text(if prefill_deepseek { "DeepSeek Harness" } else { "" })
+            .text(if prefill_deepseek {
+                "DeepSeek Harness"
+            } else if prefill_mseries {
+                "MSeries Assistant"
+            } else {
+                ""
+            })
             .placeholder_text("Provider name, e.g. DeepSeek Harness")
             .build();
         name.update_property(&[gtk::accessible::Property::Label("Provider name")]);
         let command = gtk::Entry::builder()
-            .text(if prefill_deepseek { "dsh" } else { "" })
+            .text(if prefill_deepseek {
+                "dsh"
+            } else if prefill_mseries {
+                "mseries-assistant-acp"
+            } else {
+                ""
+            })
             .placeholder_text("Command, e.g. dsh")
             .build();
         command.update_property(&[gtk::accessible::Property::Label("ACP command")]);

@@ -4,13 +4,15 @@ The at-a-glance view of the T3 server on the panel. T3 Code itself has no deskto
 indicator (only a phone widget), so this is the only one.
 
 - **Panel:** the app's symbolic icon with a badge: the number of pending permission prompts, or a dot
-  while a thread runs (the icon turns into a question mark when something needs you).
-- **Popover:** the plan window nearest exhaustion with its reset countdown ("Claude session 59% ·
-  resets in 1 h 24 min (22:00)"), every window as a gauge (green under 60 %, amber under 90 %, red
-  above), the rotation decision for the next unattended task, then the threads: pending prompts
-  ("needs you") and running threads. Clicking a thread opens it in the app through
+  while a thread runs (the icon turns into a question mark when something needs you). Hovering shows
+  the selected chat provider's quota/reset summary and any waiting prompt or running-thread count.
+- **Popover:** only the provider selected in full chat, with the plan window nearest exhaustion and
+  its reset countdown ("Codex session 59% · resets in 1 h 24 min (22:00)") and that provider's
+  remaining windows as gauges (green under 60 %, amber under 90 %, red above). It then lists pending
+  prompts ("needs you") and running threads. Other provider accounts remain in Settings. Clicking a
+  thread opens it in the app through
   `gapplication action io.github.techmore.ClaudePantheonRs open-thread '<id>'`, where the prompt is
-  answered. A bottom bar shows the server and the feed's freshness, and an **Open Claude** button.
+  answered. A bottom bar shows the server and the feed's freshness, and an **Open Full Chat** button.
 
 ![indicator](../docs/screenshot-indicator.png)
 

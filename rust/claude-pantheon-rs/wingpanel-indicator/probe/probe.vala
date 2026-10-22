@@ -36,13 +36,22 @@ int main (string[] args) {
     var texts = new Gee.ArrayList<string> ();
     collect (popover, texts);
     collect (panel, texts);
-    string[] expect = { "Claude session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "next task", "2" };
+    if (panel.tooltip_text != null) texts.add (panel.tooltip_text);
+    string[] expect = { "Codex session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "2", "permission prompt" };
     foreach (var e in expect) {
         bool found = false;
         foreach (var t in texts) if (t.contains (e)) found = true;
         if (!found) {
             stderr.printf ("FAIL: expected '%s' in %s\n", e, string.joinv (" | ", texts.to_array ()));
             return 1;
+        }
+    }
+    foreach (var hidden in new string[] { "Claude session", "Grok · Weekly", "next task" }) {
+        foreach (var t in texts) {
+            if (t.contains (hidden)) {
+                stderr.printf ("FAIL: selected-provider panel leaked '%s' in %s\n", hidden, string.joinv (" | ", texts.to_array ()));
+                return 1;
+            }
         }
     }
     var shot = Environment.get_variable ("PROBE_SHOT");

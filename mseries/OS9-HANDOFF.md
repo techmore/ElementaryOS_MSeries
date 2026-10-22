@@ -26,6 +26,15 @@ remain open. Cache records retain all loaded messages until the 8 MiB record cap
 they no longer advance the history cursor past rows dropped from a 500-item cache slice. Older cache schema versions are
 discarded so any intermediate cursor-gap cache cannot be reused.
 
+The user clarified that the compact status should also be available from the System Tray/Wingpanel surface. Its icon now
+shows a hover summary for the provider selected in full chat, plus waiting-permission/running counts; clicking opens the
+detail popover. Quota rows are filtered by `selectedProviderId`, so other connected provider accounts stay in Settings.
+The Xvfb fixture checks selected-provider data and suppression of Claude/Grok rows. The pre-existing Wingpanel module
+was already installed and mapped into the current panel process. The updated source builds and passes its probe, but
+system installation was blocked because this execution environment sets `no_new_privileges` for `sudo`; the current
+panel still has the previous module mapped. No panel restart was attempted. Install/reload later from a privileged
+desktop session.
+
 Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness
 (`dsh --profile acp`) for execution on the paired T3 server. The DeepSeek Harness shortcut pre-fills that command,
 links its safety notice and model-credential guide, and explains that `dsh` and a DeepSeek API key must already be
@@ -84,9 +93,44 @@ The T3 transport now sends serialized WebSocket Ping frames every 5 seconds and 
 
 The owner confirms that T3-R is pinned in the Dock and hovering its Dock icon opens the popup on the live Wayland desktop. Live click/pin/outside-dismiss behavior remains open; the Xvfb fixture covers those actions. The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. Older-history paging on a large live thread and high-latency/poor-network profiling remain open.
 
-The owner next requested that the existing MSeries assistant capability be brought into T3-R and that a fast larger Liquid AI model or an ANE-backed option be explored. The existing assistant is Newelle plus a local stdio MCP server with sixteen typed tools; its measured default is Qwen3.5 4B. The previously tested Liquid LFM2.5 1.2B reached 63.59 output tokens/s in one local cohort but passed only 3/9 corrected tool workflows, so it is not a qualified default ([local benchmark and workflow receipts](../local-ai/receipts/2026-10-16.md)). Liquid AI now lists [LFM2.5-24B-A2B](https://www.liquid.ai/models) (24B total, 2B active); its published [184 tokens/s result](https://www.liquid.ai/blog/lfm2-5-24b-a2b) is on an M5 Max and is not evidence for this M1 Pro. The official [MLX 4-bit checkpoint](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit/tree/667408d) is 13.6 GB at revision `667408d`, before runtime/context memory. It is not installed; the current host failed the existing local-model admission check, so no weight download or inference run was started. The current Linux/Asahi assistant path has no qualified ANE inference backend. Explore a T3-server-side ACP bridge to the existing typed MCP tools and model worker; preserve provider credentials on the paired server and keep only the synced account visible in the Dock popup. Qualify the larger model separately under the existing RAM/cooling guard before recommending it.
+The owner next requested that the existing MSeries assistant capability be brought into T3-R and that a fast larger Liquid AI model or an ANE-backed option be explored. The existing assistant is Newelle plus a local stdio MCP server with sixteen typed tools; its measured default is Qwen3.5 4B. The previously tested Liquid LFM2.5 1.2B reached 63.59 output tokens/s in one local cohort but passed only 3/9 corrected tool workflows, so it is not a qualified default ([local benchmark and workflow receipts](../local-ai/receipts/2026-10-16.md)). Liquid AI now lists [LFM2.5-24B-A2B](https://www.liquid.ai/models) (24B total, 2B active); its published [184 tokens/s result](https://www.liquid.ai/blog/lfm2-5-24b-a2b) is on an M5 Max and is not evidence for this M1 Pro. The official [MLX 4-bit checkpoint](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit/tree/667408d) is 13.6 GB at revision `667408d`, before runtime/context memory. It is not installed; the current host failed the existing local-model admission check, so no weight download or inference run was started. The current Linux/Asahi assistant path has no qualified ANE inference backend. The bridge now reuses the existing sixteen-tool MCP service and supervised loopback model endpoint; the paired server has an enabled `MSeries Assistant` ACP provider (`acp-mseries-assistant`) reporting `installed=true`, `status=ready`. The installed helper completed ACP initialization and a real-MCP `session/new`; a synthetic OpenAI-compatible server exercised `add_minutes` end to end. These checks do not qualify actual model inference or answer quality. Provider credentials remain on the paired server, and both Dock and Wingpanel quota summaries now follow the provider selected in full chat.
 
-Next: exercise older-history paging on a large live conversation and inject poor-network conditions before claiming daily-use readiness. Then implement the scoped assistant bridge and schedule a guarded Liquid model trial when the model is available and admission permits. Review DeepSeek setup when the paired server advertises it.
+The current Rust release binary was copied to `~/.local/bin/claude-pantheon-rs` and its SHA-256 matches the release build. The already-running app process (PID 4004838, started 11:47) was left intact to preserve its window state; it still has the prior build mapped until the next app launch. Read-only `server.getConfig` verification after registration shows Codex, Claude, Grok and OpenCode still authenticated/ready, the selected provider is Codex, and the new MSeries ACP provider is installed/ready.
+
+Next: exercise one read-only MSeries assistant conversation through T3-R when the existing model endpoint is online and memory admission permits. Do not download the 24B Liquid checkpoint until available RAM exceeds the six-GiB reserve plus the checkpoint/runtime budget. Qualify any ANE conversational model separately; the prior driver smoke is arithmetic-only. Older-history paging on a large live conversation and poor-network fault injection remain open. Review DeepSeek setup when the paired server advertises it.
+
+## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
+
+Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
+sixteen-tool `os-mcp.py` and the already-supervised loopback OpenAI-compatible
+model endpoint. It never starts or switches model services, limits itself to
+existing scoped tools, and asks T3 for a one-time permission before a write. The
+optional `--endpoint` parameter selects another already-running loopback
+profile. `configure-assistants.py --install-acp` installs only the bridge and
+launcher, leaving Newelle settings, model profiles and services intact. Prompts,
+history and tool output are bounded for the default 8K context.
+
+Seven isolated Python bridge tests pass. The ACP-only installer was run; the
+installed launcher returned successful ACP `initialize` and `session/new`
+responses against the real MCP service. A synthetic OpenAI-compatible server
+drove the actual MCP `add_minutes` tool and returned `12:00`; no real model
+inference or quality claim is included. Current managed model units were
+inactive at inspection. The host had 9.5 GiB available,
+below LFM2.5-24B-A2B's 13.6 GB Q4_0 GGUF weights plus the existing 6 GiB
+desktop reserve. The installed llama.cpp build `7182ef7` contains the `lfm2moe`
+model loader, but the checkpoint remains unloaded; upstream has a report of
+some LFM2.5-24B turns returning tool syntax as plain text, so the candidate
+needs a tool-call quality gate. Do not remove the supervisor gate to force a
+trial. The existing ANE receipt proves a loaded driver can execute its arithmetic smoke;
+the ANE-backed Parakeet path is speech transcription, not conversational LLM
+inference. See `local-ai/README.md` and `local-ai/APP-INTEGRATION.md` for scope
+and source links.
+
+The ACP launcher is installed locally, but the native client changes are not
+installed and no real model has been validated through ACP. Next: connect
+MSeries Assistant in T3-R and do a read-only live conversation when the
+supervised endpoint is admitted. Qualify the Liquid GGUF's tool calls and the
+existing app workflow set before considering it for daily use.
 
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 

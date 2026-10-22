@@ -17,6 +17,29 @@ mseries-assistant --quality coding
 
 The Applications menu has Desktop Assistant, Personal Assistant and Coding Assistant. Desktop and Personal open Newelle, with a local user-summary memory that can be inspected and reset in Memory preferences. No embedding model is needed for this memory. Tasks, calendar components, workspace notes, system measurements and fault signatures are available through the local MCP adapter. Tool execution stays within the configured adapter surface. Broad Newelle shell, arbitrary-file, subagent, screenshot and network tools are hidden in the preconfigured profile. User-defined modes or later settings can expand that surface.
 
+## T3-R assistant provider
+
+The same local assistant can be added to T3-R as a server-side ACP command. On
+the paired T3 server, run `python3 mseries/local-ai/configure-assistants.py
+--install-acp`, then choose **Settings → Providers → Add an ACP provider →
+MSeries Assistant…** in T3-R. This installs only `mseries-assistant-acp`; it
+does not change Newelle settings, model profiles or running services. The bridge
+uses the already-supervised `127.0.0.1:8766` endpoint and existing sixteen-tool
+`os-mcp.py`; it does not start or switch a model, connect to a remote endpoint,
+or add shell/arbitrary-file tools. Each local write goes through T3's ACP
+permission policy. The opted-in Newelle user-summary memory is read at session
+start when Flatpak/Newelle is installed; T3 retains chat history, while edits to
+that summary still belong to Newelle. If another supervised MSeries profile is
+already running on port 8768, the ACP command can be given
+`--endpoint http://127.0.0.1:8768/v1`; the bridge still does not start or switch
+that profile. Start the supervised Desktop Assistant service if the default
+local endpoint is unavailable.
+
+The ACP bridge bounds prompts, retained history and tool results for the
+default 8K context. Long individual results and aggregate tool output in a turn
+are truncated before they return to the model. History stays in the running ACP
+session and is not copied to Newelle's summary memory.
+
 The initial setup downloads pinned Qwen3.5 4B and 9B weights (roughly 9 GB combined), Newelle's ARM64 Flatpak/runtime, and the pinned clients. Model weights and personal state stay in the user's home. Factory images stage the offline runtime and compute ICD under `/usr/lib/omarchy-mlx`, llama.cpp under `/usr/lib/mseries-ai/llama`, and user setup under `/usr/share/elementary-mac`. First-user setup uses those runtimes without apt writes to immutable `/usr`. Factory runtime staging and pruning pass; a full image build and hardware boot with this AI layer remain separate qualification steps.
 
 `install.sh` preserves a previous runtime and restores it on failed updates, refuses active MLX workers, pins both MLX and the private compute Mesa, and defaults to two build jobs. System Mesa, the bootloader, kernel and audio stack are preserved. Our private patch bounds prefill to 256 tokens and disables thinking by default; an API request may explicitly enable thinking. The compiled rsqrt/RMSNorm check covers the numerical fix in v0.7.33.
@@ -34,6 +57,36 @@ systemctl --user stop mseries-ai-everyday mseries-ai-quality mseries-ai-coder9 m
 ```
 
 Newelle uses the pinned Qwen3.5 4B on port 8766 with an 8K server cap. Crush uses the same weights on port 8768 with 16K: the initial full prompt exceeded 11K; disabling unused tools reduced the tested prompt to 7,720 tokens. Only one supervised model is resident at a time. `--quality` selects Qwen9 and a separate coding workspace; a refused switch attempts to restore the previous managed model. Older Qwen3 4B, 7B GGUF, Liquid and Bonsai profiles are optional comparisons. The uninstalled 30B plan budgets 21 GiB plus reserve and does not fit this retained app mix. No ANE or conversational voice stack is qualified. Native CPU Parakeet F5 dictation and its Dictation panel are installed, with an owner-reported speech-to-field pass; translation is still post-utterance. [Speech status and retained limits](SPEECH-INTEGRATION.md).
+
+### Liquid 24B and ANE candidate on Asahi — 2026-10-22
+
+Liquid AI publishes [LFM2.5-24B-A2B in GGUF for llama.cpp](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF)
+as well as [MLX for Apple Silicon](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit).
+The official model card reports 24B total / 2.45B active parameters; the
+published Q4_0 GGUF is about 13.6 GB and a
+[community Q4_K_M build](https://huggingface.co/m9ter1a/LFM2.5-24B-A2B-GGUF)
+is about 14.5–15.0 GB. Active-parameter count does not remove the need to load the full
+weights. Liquid's product page reports 184 tok/s on an Apple M5 Max; that is not
+an M1 Pro estimate. The installed llama.cpp is build `7182ef7`; its
+[pinned source](https://github.com/ggml-org/llama.cpp/blob/7182ef71e6d5dd0c8ea76486fac134fcd25025d4/src/llama-model.cpp#L303-L306)
+includes the `lfm2moe` model loader, so the architecture is present in
+this runtime. A current upstream [tool-call parsing report](https://github.com/ggml-org/llama.cpp/issues/30490)
+shows that some LFM2.5-24B turns can surface alternate tool syntax as plain
+text instead of structured function calls, so the tool workflow needs its own
+quality check. Our prior LFM2.5 1.2B trial reached 63.59 estimated tok/s but
+passed only 3/9 tool workflows, so it is not a quality or
+speed proxy for this larger checkpoint.
+
+The current M1 Pro snapshot reports 9.5 GiB available, below the model weights
+plus the existing 6 GiB desktop reserve; no download, service start or inference
+was attempted. Recheck the existing supervisor admission gate before a later
+trial, then qualify the GGUF's actual tool-call formatting and the same six
+synthetic app workflows before considering it for daily use. The ANE kernel
+driver is loaded and its retained 20/20 arithmetic smoke proves the device
+executes a small program, not an LLM. [Asahi's feature table](https://asahilinux.org/docs/platform/feature-support/m1/)
+still lists the Neural Engine driver as out of tree. The installed ANE-backed
+Parakeet path is speech transcription; there is no qualified conversational ANE
+model or assistant inference endpoint in this Linux setup.
 
 Hermes has been retired from the maintained assistant setup. New installs no longer fetch its source or create its launcher. Existing Hermes checkout, virtual environment, configuration, and state in a user's home are retained. On the next assistant configuration, the setup removes only its exact, unmodified generated Hermes desktop entry; a customized entry is preserved. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
 

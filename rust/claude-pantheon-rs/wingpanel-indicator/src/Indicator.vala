@@ -3,8 +3,8 @@
  *
  * T3 Code has no desktop tray or menubar indicator (only a phone widget), so this is the one
  * at-a-glance view of the server: a badge with the number of pending permission prompts (a dot while
- * a thread runs), and a popover with the plan window nearest exhaustion and its reset countdown, every
- * window as a gauge, the rotation decision, running threads and pending prompts (clicking one opens
+ * a thread runs), and a popover with the selected provider's plan window nearest exhaustion and reset
+ * countdown, that provider's windows as gauges, running threads and pending prompts (clicking one opens
  * that thread in the app, which answers it). It reads ~/.cache/claude-pantheon-rs/status.json, written
  * by the client whenever the shell or the provider snapshot changes (src/status.rs), watches it with a
  * FileMonitor, never polls and never talks to the server. Layout follows the CodexBar indicator in
@@ -15,6 +15,7 @@ public class ClaudePantheon.Feed : Object {
     public bool present = false;
     public bool connected = false;
     public string server = "";
+    public string selected_provider_id = "";
     public string written_at = "";
     public Gee.ArrayList<Window> windows = new Gee.ArrayList<Window> ();
     public Gee.ArrayList<Thread> running = new Gee.ArrayList<Thread> ();
@@ -22,6 +23,7 @@ public class ClaudePantheon.Feed : Object {
     public string next_task = "";
 
     public class Window : Object {
+        public string instance_id = "";
         public string provider = "";
         public string kind = "";
         public string label = "";
@@ -52,17 +54,23 @@ public class ClaudePantheon.Feed : Object {
         feed.present = true;
         feed.connected = o.has_member ("connected") && o.get_boolean_member ("connected");
         feed.server = o.has_member ("server") ? o.get_string_member ("server") : "";
+        feed.selected_provider_id = o.has_member ("selectedProviderId") ? o.get_string_member ("selectedProviderId") : "";
         feed.written_at = o.has_member ("writtenAt") ? o.get_string_member ("writtenAt") : "";
         if (o.has_member ("windows")) {
             foreach (var n in o.get_array_member ("windows").get_elements ()) {
                 var w = n.get_object ();
                 var win = new Window ();
+                win.instance_id = w.has_member ("instanceId") ? w.get_string_member ("instanceId") : "";
                 win.provider = w.get_string_member ("provider");
                 win.kind = w.get_string_member ("kind");
                 win.label = w.get_string_member ("label");
                 win.used_percent = w.get_double_member ("usedPercent");
                 win.resets_at = w.has_member ("resetsAt") && !w.get_null_member ("resetsAt") ? w.get_string_member ("resetsAt") : "";
-                feed.windows.add (win);
+                // The panel follows the provider selected in full chat. Older schema-1 snapshots
+                // did not include a selection ID, so keep their previous all-window display.
+                if (feed.selected_provider_id == "" || win.instance_id == feed.selected_provider_id) {
+                    feed.windows.add (win);
+                }
             }
         }
         foreach (var key in new string[] { "running", "pendingPrompts" }) {
@@ -226,15 +234,18 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     /** Fills every widget from a feed; separate from reload so the probe can render a fixture at a fixed time. */
     public void render (Feed feed, DateTime now) {
         int prompts = feed.prompt_count ();
+        string hover = hover_summary (feed, now);
         if (badge != null) {
             badge.label = prompts > 0 ? "%d".printf (prompts) : (feed.running.size > 0 ? "•" : "");
             icon.icon_name = prompts > 0 ? "dialog-question-symbolic" : APP_ID + "-symbolic";
+            icon.tooltip_text = hover;
+            display_widget.tooltip_text = hover;
         }
         if (popover_widget == null) return;
         var nearest = feed.nearest ();
         if (!feed.present) {
-            headline.label = "Claude is not running";
-            headline_detail.label = "Open the app to pair with the T3 server";
+            headline.label = "T3-R is not running";
+            headline_detail.label = "Open T3-R to pair with the server";
         } else if (nearest == null) {
             headline.label = feed.connected ? "No plan windows reported" : "Not connected";
             headline_detail.label = feed.connected ? feed.server : "Reconnecting from the app";
@@ -260,8 +271,10 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             row.append (pct);
             windows_box.append (row);
         }
-        next_label.label = feed.next_task != "" ? feed.next_task : (feed.windows.size > 0 ? "every window is full; the runner idles until the earliest reset" : "");
-        next_label.visible = next_label.label != "";
+        // Rotation can refer to other configured accounts. Keep those details in the full
+        // client; the compact panel is scoped to the provider selected in chat.
+        next_label.label = "";
+        next_label.visible = false;
         clear (threads_box);
         foreach (var t in feed.pending) {
             var b = new Gtk.Button () { halign = Gtk.Align.FILL };
@@ -304,6 +317,31 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         freshness.label = feed.present
             ? "%s · %s".printf (feed.connected ? feed.server : "not connected", when)
             : "no status feed yet";
+    }
+
+    private static string hover_summary (Feed feed, DateTime now) {
+        if (!feed.present) return "T3-R · Open the client to connect";
+        var lines = new Gee.ArrayList<string> ();
+        if (!feed.connected) {
+            lines.add ("T3-R · %s · not connected".printf (feed.server));
+        } else if (feed.windows.size > 0) {
+            foreach (var w in feed.windows) {
+                var reset = Feed.countdown (w.resets_at, now);
+                lines.add ("%s · %s %.0f%%%s".printf (
+                    w.provider, w.label, w.used_percent, reset != "" ? " · " + reset : ""));
+            }
+        } else if (feed.selected_provider_id == "") {
+            lines.add ("T3-R · Select a provider in chat");
+        } else {
+            lines.add ("T3-R · No usage windows reported for the selected provider");
+        }
+        int prompts = feed.prompt_count ();
+        if (prompts > 0) {
+            lines.add ("%d permission prompt%s waiting".printf (prompts, prompts == 1 ? "" : "s"));
+        } else if (feed.running.size > 0) {
+            lines.add ("%d thread%s running".printf (feed.running.size, feed.running.size == 1 ? "" : "s"));
+        }
+        return string.joinv ("\n", lines.to_array ());
     }
 }
 

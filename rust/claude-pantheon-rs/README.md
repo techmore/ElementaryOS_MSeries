@@ -143,15 +143,27 @@ automatic and server-side, so the client does not duplicate it with a disk cache
 append-only while the selected route and assembled prefix stay stable; keep provider, model and tool configuration
 stable when possible.
 
+**MSeries Assistant…** adds the paired server's existing local assistant as an
+ACP provider. Install the bridge on that server with
+`python3 mseries/local-ai/configure-assistants.py --install-acp`; this keeps the
+current Newelle and model settings intact. It reuses the supervised local model
+and the sixteen scoped MSeries tools, with T3 permission prompts for writes. It
+does not start or switch a model service. The optional `--endpoint` argument
+can select another already-running loopback profile. See
+[`mseries/local-ai/README.md`](../../mseries/local-ai/README.md) for setup and
+the Liquid/ANE candidate limits.
+
 ## Usage and status (CodexBar-style)
 
 The chat client includes the CodexBar-style usage view, so provider usage lives beside the threads that
 use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windows with reset times and
 the next-provider capacity decision, then shows 30-day tokens, output, cache reads, API-equivalent cost,
 cache savings, model breakdowns and a 7-day activity chart for Claude, Codex, OpenCode and Grok. The
-optional legacy Wingpanel 9 indicator brings status to the desktop panel: quota gauges, running
-threads and permission prompts, with thread links that open in this client. The Dock popover is the compact status view.
-Both read the local status feed without starting another connection.
+optional legacy Wingpanel 9 indicator shows the selected chat provider's quota and activity summary
+on hover; clicking it opens quota gauges, running threads and permission prompts, with thread links
+that open in this client. Other provider accounts remain in Settings. The Dock popover is a separate
+CodexBar-style hover surface that opens the full desktop chat on demand. Both read the local status
+feed without starting another connection.
 
 ## What is where
 
