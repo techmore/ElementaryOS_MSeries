@@ -77,7 +77,8 @@ The project-wide inventory, scaling policy and staged migration order are in
 
 Messages is still an optional API v2 prototype beside the qualified Python
 client; its typed BlueFerry D-Bus client and response models now live in the
-shared SDK, with opt-in contact photos decoded to bounded in-memory avatars.
+shared SDK, with opt-in contact photos decoded to bounded in-memory avatars
+and text-form Tapbacks folded onto the messages they quote.
 Imported Apple pins need an opaque per-phone identifier in BlueFerry's public
 status API before the Rust client can scope keyring data without reading
 service configuration. Feature parity and owner phone acceptance remain open.
