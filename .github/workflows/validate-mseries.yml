@@ -328,7 +328,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4 5; do
             if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
-              cargo rustc pkg-config libgtk-4-dev libgranite-7-dev \
+              cargo rustc rustfmt rust-clippy pkg-config libgtk-4-dev libgranite-7-dev \
               meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
               librsvg2-bin dpkg-dev appstream desktop-file-utils xvfb xauth dbus-x11; then exit 0; fi
             echo "attempt $attempt failed; retrying" >&2
@@ -344,6 +344,11 @@ jobs:
             rust/target
           key: claude-pantheon-rs-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
           restore-keys: claude-pantheon-rs-${{ runner.arch }}-
+      - name: Formatting and lints (cargo fmt --check, clippy -D warnings)
+        run: |
+          cd rust
+          cargo fmt -p claude-pantheon-rs --check
+          cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings
       - name: Build and run the protocol and model tests (recorded frames)
         run: |
           cd rust
