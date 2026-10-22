@@ -10821,3 +10821,9 @@ provenance, component job and unexpired artifact, safe ZIP paths and embedded
 source/package checksums before image preparation. Five test groups pass; live
 incomplete kernel run is rejected before download/workspace creation. Successful
 retrieval and full-image integration remain pending the same two live builds.
+
+M4 bootloader correction: raw-source builds omitted Gravity packaging NO_DISPLAY.
+Wrapper now uses supported NO_DISPLAY=1 for both stages and verifies generated
+NO_DISPLAY/CHAINLOADING headers. Both stages rebuilt successfully; new receipt
+2026-10-21-gravity-bootloader-nodisplay.json supersedes earlier binary hashes for
+M4 configuration. No bootloader installation, firmware or HDMI runtime claim.

@@ -33,23 +33,34 @@ def main():
     if args.output.exists() or args.jobs < 1:
         raise ValueError('new output and positive jobs required')
     args.output.mkdir(parents=True)
+    marker = args.output / 'INCOMPLETE'
+    marker.touch()
     env = dict(os.environ, CARGO_HOME=str(args.cargo_home.resolve()))
     artifacts = {}
     commands = []
     for stage, chainload in [(2, 0), (1, 1)]:
-        command = ['make', '-C', str(source), 'ARCH=', 'RELEASE=1', 'LOGO=',
+        command = ['make', '-C', str(source), 'ARCH=', 'RELEASE=1', 'LOGO=', 'NO_DISPLAY=1',
                    f'CHAINLOADING={chainload}', f'-j{args.jobs}']
         commands.append(command)
         with (args.output / f'stage{stage}.log').open('wb') as log:
             subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+        config = (source / 'build/build_cfg.h').read_text()
+        if '#define NO_DISPLAY' not in config.splitlines():
+            raise ValueError('M4 requires the packaged NO_DISPLAY bring-up configuration')
+        if ('#define CHAINLOADING' in config.splitlines()) != bool(chainload):
+            raise ValueError('boot stage configuration mismatch')
+        (args.output / f'stage{stage}-build_cfg.h').write_text(config)
         target = args.output / f'm1n1-stage{stage}.bin'
         shutil.copy2(source / 'build/m1n1.bin', target)
         artifacts[target.name] = hashlib.sha256(target.read_bytes()).hexdigest()
     (args.output / 'receipt.json').write_text(json.dumps({
         'repository': 'GravityLinux/bootloader', 'commit': COMMIT, 'artwork_commit': ARTWORK,
         'commands': commands, 'artifacts': artifacts, 'optional_logo': 'omitted; raw binary target',
+        'm4_bringup': 'NO_DISPLAY=1 for both stages; preserve firmware framebuffer',
+        'configuration_reference': 'GravityLinux/packages@711c2a110416d28010ccdd118b83111776bff207:gravity-bootloader/m1n1-no-display.patch',
         'status': 'source compilation only; no boot authorization, installation or J773g runtime test',
     }, indent=2) + '\n')
+    marker.unlink()
 
 
 if __name__ == '__main__':

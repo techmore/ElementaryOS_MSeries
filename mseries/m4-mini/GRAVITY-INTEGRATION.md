@@ -217,3 +217,21 @@ owner partition. No boot entry, EFI partition or installed loader changed.
 This unsigned artifact is not an installation image or boot qualification:
 matched firmware/loader handoff, actual root identity, full desktop support
 and M4/macOS/Recovery tests remain outstanding.
+
+### M4 bootloader packaging configuration correction
+
+The earlier raw-source stage builds omitted Gravity packaging's required
+`NO_DISPLAY` setting. Packaging `711c2a1` explicitly enables it in both stages
+to leave the firmware framebuffer in place. The pinned source already supports
+the equivalent `NO_DISPLAY=1` make option; `build-bootloader.py` now passes it,
+verifies the generated `NO_DISPLAY` and stage-specific `CHAINLOADING` definitions,
+and preserves those headers beside the binaries. A failed build leaves an
+`INCOMPLETE` marker. No driver or firmware gate was removed.
+
+Both stages rebuilt successfully. The revised stage-2 SHA-256 is
+`33681f104822aaac4c6b77fab74d0d9da6f25b158b17ed283d1d9f03721760a4`;
+stage 1 is `69aa13d28160821b78870a883500d744e97d10922b05287121288c41bf607acf`.
+These supersede the earlier raw-source binaries for M4 configuration purposes;
+the old receipts remain historical compile evidence. This is build parity with
+the reviewed bring-up setting, not a display or boot test. Neither stage was
+deployed or authorized. [Corrected build receipt](receipts/2026-10-21-gravity-bootloader-nodisplay.json).
