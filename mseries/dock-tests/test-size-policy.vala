@@ -32,7 +32,8 @@ void check_state (Dock.Launcher launcher, Dock.ItemGroup group, Gtk.Separator? s
                   Settings settings, int expected) {
     assert (settings.get_int ("icon-size") == 40);
     assert (launcher.icon_size == expected);
-    assert (group.width_request == expected + Dock.Launcher.PADDING * 2);
+    assert (group.width_request == expected + Dock.ItemManager.get_padding () * 2);
+    assert (Dock.ItemManager.get_padding () == 5);
     if (separator != null) assert (separator.height_request == expected);
 }
 int main () {
@@ -67,22 +68,22 @@ int main () {
     var window = new Gtk.Window () { child = box };
     window.present ();
     drain ();
-    check_state (launcher, group, separator, settings, 48);
+    check_state (launcher, group, separator, settings, 43);
     // No settings writes below: both adoption and unmanage must invalidate caches.
     write_policy ("[SizeSystem]\nversion=1\nmanaged=true\n");
-    check_state (launcher, group, separator, settings, 40);
+    check_state (launcher, group, separator, settings, 36);
     write_policy ("[SizeSystem]\nversion=1\nmanaged=false\n");
-    check_state (launcher, group, separator, settings, 48);
+    check_state (launcher, group, separator, settings, 43);
     write_policy ("[SizeSystem]\nversion=1\nmanaged=true\n");
-    check_state (launcher, group, separator, settings, 40);
+    check_state (launcher, group, separator, settings, 36);
     write_policy ("malformed");
-    check_state (launcher, group, separator, settings, 48);
+    check_state (launcher, group, separator, settings, 43);
     write_policy ("[SizeSystem]\nversion=1\nmanaged=true\n");
-    check_state (launcher, group, separator, settings, 40);
+    check_state (launcher, group, separator, settings, 36);
     assert (FileUtils.unlink (Path.build_filename (Environment.get_user_state_dir (),
         "mseries", "ui-scale-policy.ini")) == 0);
     drain ();
-    check_state (launcher, group, separator, settings, 48);
+    check_state (launcher, group, separator, settings, 43);
     window.destroy ();
     stdout.printf ("PASS: actual Launcher cache, ItemGroup relayout and separator update across atomic adoption/unmanage/malformed/delete without icon-size change (separator present:%s)\n",
         (separator != null).to_string ());

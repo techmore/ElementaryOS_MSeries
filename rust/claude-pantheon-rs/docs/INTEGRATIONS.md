@@ -28,7 +28,7 @@ Sparse source for everything below: `~/claude-work/repos/t3code`.
 | Devices (`docs/internals/devices.md`, expo-device-hub streams) | Out of scope for now (iOS/Android simulators). Show the panel entry only when the server advertises device hosts. |
 | Voice input (`docs/internals/voice-input.md`, draft-only, iOS-local today) | Optional: whisper.cpp local transcription into the composer draft, never auto-submit. Last priority. |
 | Keybindings, theme (`keybindings.ts`, `environmentTheme.ts`) | Honor the server's keybinding config; map theme defaults onto Granite light/dark. |
-| Wingpanel | Indicator like CodexBar: running threads, pending permission prompts (click to answer), today's usage. Separate `wingpanel-indicator` crate or Vala shim, like `orchard-incus-native`. |
+| Wingpanel | Optional legacy indicator like CodexBar: running threads, pending permission prompts (click to answer), today's usage. Separate `wingpanel-indicator` crate or Vala shim, like `orchard-incus-native`. |
 
 ## Order
 Milestone 2 (client) → 3 (usage) → 4a SnapShot → 4b terminal (vte4) → 4c changes/source control →
@@ -44,7 +44,7 @@ Each step: commit, screenshot in `docs/`, PERFORMANCE.md re-run so idle RSS is t
 | 4b terminal (vte4) | Done: `src/terminal.rs`, a VTE pane under the chat (Ctrl+Shift+T) attached over `terminal.attach` (history replay, live output), keystrokes through `terminal.write`, size through `terminal.resize`, 512 KiB client cap, elementary Terminal palette; no local PTY. |
 | 4c changes | Partial: Changes page from `orchestration.getFullThreadDiff`, one collapsed diff per file. Branch comparison and PR actions (`pullRequests.*`) not built. |
 | 4d environments | Not built; one direct environment (loopback) only. |
-| 4e Wingpanel indicator | Done: `wingpanel-indicator/` (Vala, Wingpanel 9 API) builds and installs into the system indicator dir; reads the client's `status.json` feed with a FileMonitor (pending prompts as the badge, nearest window with reset countdown, every window as a gauge, rotation line, clickable threads that open the app). Headless probe with a fixture renders `docs/screenshot-indicator.png`. |
+| 4e Wingpanel indicator | Optional legacy surface: `wingpanel-indicator/` (Vala, Wingpanel 9 API) reads the client's `status.json` feed with a FileMonitor (pending prompts as the badge, usage gauges, rotation line, clickable threads that open the app). Headless probe with a fixture renders `docs/screenshot-indicator.png`; app-only Debian packages omit it by default. |
 | 4f visual replies (WebKitGTK 6) | Not built: `webkit6` crate not in the offline cache. |
 | 4g diagnostics | Done: `src/diagnostics.rs`, `subscribeResourceTelemetry` only while the page is open. |
 | 5 workflow | Done except the webhook task (needs a reachable webhook endpoint through T3 Connect or Tailscale) and automatic per-run rotation (the server has no per-run hook; the client re-picks the provider when the runner is re-installed). |
@@ -55,5 +55,22 @@ Each step: commit, screenshot in `docs/`, PERFORMANCE.md re-run so idle RSS is t
 configured instances and supports T3 Code's browser, device-code, terminal and credentials sign-in
 interactions, sign-in method/account selection, plus sign-out. The featured entries are Claude Code,
 ChatGPT via Codex, OpenCode and Grok Build; the T3 server remains the credential owner. New provider
-instances still need to be installed and enabled on the server. The Rust release target compiles; a
-live sign-in flow and an interactive Pantheon session have not yet been qualified.
+instances for built-in drivers still need to be installed and enabled on the server. The Rust release
+target compiles; a live sign-in flow and an interactive Pantheon session have not yet been qualified.
+
+## Dock quick surface and ACP agents — 2026-10-22
+
+Default Dock launch now opens `src/quick.rs`; **Open full chat** shows the complete `App` window and all its integrations.
+Quick actions route to that same app instance. The surface shows the paired T3 environment and usage only for the
+provider selected in full chat, plus active work and pending approvals. It listens to the atomic, versioned `status.json`
+cache without a second connection or polling, and labels retained data stale after disconnect. Unpair and environment
+switches clear it.
+
+Settings can search T3's ACP Registry or add a local ACP command for execution on the paired server. This gives users a
+supported way to register DeepSeek Harness, for example `dsh --profile default acp`, when the paired server has the CLI.
+DeepSeek's prefix cache is server-side; retain stable prefixes and report cache-hit data only when T3 returns it.
+
+Tracked in [issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523), with T3 Code cache-runtime, cache
+write-regression, ACP Registry, DeepSeek API cache and Harness prompt-prefix research. The compact status path is built;
+the larger per-thread replay/cache contract and live ACP setup remain open. See `mseries/OS9-HANDOFF.md` for exact
+validation results and deployment limits.

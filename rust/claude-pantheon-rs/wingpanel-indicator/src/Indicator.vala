@@ -1,5 +1,5 @@
 /*
- * Claude for elementary OS: Wingpanel indicator.
+ * T3-R Pantheon: optional Wingpanel indicator.
  *
  * T3 Code has no desktop tray or menubar indicator (only a phone widget), so this is the one
  * at-a-glance view of the server: a badge with the number of pending permission prompts (a dot while
@@ -173,7 +173,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             freshness = new Gtk.Label ("") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             freshness.add_css_class ("caption");
             freshness.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
-            var open = new Gtk.Button.with_label ("Open Claude") { halign = Gtk.Align.END };
+            var open = new Gtk.Button.with_label ("Open Full Chat") { halign = Gtk.Align.END };
             open.clicked.connect (() => {
                 launch (null);
                 close ();
@@ -201,7 +201,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private void launch (string? thread_id) {
         try {
             string[] argv = thread_id == null
-                ? new string[] { "gapplication", "launch", APP_ID }
+                ? new string[] { "gapplication", "action", APP_ID, "open-full" }
                 : new string[] { "gapplication", "action", APP_ID, "open-thread", "'" + thread_id.replace ("'", "") + "'" };
             Process.spawn_async (null, argv, null, SpawnFlags.SEARCH_PATH, null, null);
         } catch (Error e) {

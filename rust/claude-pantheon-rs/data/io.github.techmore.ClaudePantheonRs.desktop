@@ -1,17 +1,21 @@
 [Desktop Entry]
-Name=Claude
+Name=T3-R Pantheon
 GenericName=AI coding agents
-Comment=Claude Code, Codex, OpenCode and Grok threads through the T3 Code server, with your Claude Code transcripts offline
+Comment=A compact Dock panel and full desktop chat for your paired T3 Code server
 Exec=claude-pantheon-rs
 Icon=io.github.techmore.ClaudePantheonRs
 Terminal=false
 Type=Application
 Categories=Development;GTK;
-Keywords=Claude;Codex;AI;agent;chat;T3;
+Keywords=Claude;Codex;OpenCode;Grok;AI;agent;chat;T3;
 StartupNotify=true
 DBusActivatable=true
 X-GNOME-UsesNotifications=true
-Actions=new-thread;usage;
+Actions=open-full;new-thread;usage;
+
+[Desktop Action open-full]
+Name=Open Full Chat
+Exec=claude-pantheon-rs --full
 
 [Desktop Action new-thread]
 Name=New Thread

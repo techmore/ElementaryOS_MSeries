@@ -1,4 +1,4 @@
-//! Claude for elementary OS: a native client of the T3 Code server (Claude Code, Codex, OpenCode, Grok,
+//! T3-R Pantheon: a native client of the T3 Code server (Claude Code, ChatGPT via Codex, OpenCode, Grok,
 //! Cursor…) with the local Claude Code JSONL transcripts as the offline view.
 //! The library exists so the render test can drive the real window; the app is `src/main.rs`.
 
@@ -17,6 +17,7 @@ pub mod notify;
 pub mod palette;
 pub mod probe;
 pub mod provider_setup;
+pub mod quick;
 pub mod render;
 pub mod repos;
 pub mod settings;

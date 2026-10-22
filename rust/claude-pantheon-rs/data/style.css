@@ -1,4 +1,4 @@
-/* Claude for elementary OS. Colours come from the elementary stylesheet; only the bubble is ours. */
+/* T3-R Pantheon. Colours come from the elementary stylesheet; only the bubble is ours. */
 
 /* The default client-side decoration is a blurred box-shadow that the cairo renderer re-blurs over the
    whole window on every frame (~52 ms a repaint at 2x). A 1 px outline paints in ~6 ms. */
@@ -8,6 +8,26 @@ window.csd.unified decoration {
   margin: 0;
 }
 window.csd:backdrop decoration { box-shadow: 0 0 0 1px alpha(black, 0.18); }
+
+/* Dock quick surface: compact, native and light enough to sit over the desktop. */
+window.t3-quick-window { background-color: transparent; }
+.t3-quick-surface {
+  background-color: @theme_bg_color;
+  border: 1px solid alpha(currentColor, 0.16);
+  border-radius: 12px;
+  padding: 12px;
+}
+.t3-quick-header { padding-bottom: 4px; }
+.t3-quick-connection { padding: 7px 9px; border-radius: 7px; background-color: alpha(currentColor, 0.05); }
+.t3-quick-connection.connected { color: @success_color; }
+.t3-quick-connection.stale { color: @warning_color; }
+.t3-quick-card { padding: 10px; border-radius: 8px; background-color: alpha(currentColor, 0.035); }
+.t3-quick-gauge trough, .t3-quick-gauge block { min-height: 7px; border-radius: 4px; }
+.t3-quick-gauge block.low { background: @success_color; }
+.t3-quick-gauge block.high { background: @warning_color; }
+.t3-quick-gauge block.full { background: @error_color; }
+.t3-quick-thread { padding: 5px 7px; }
+.t3-quick-thread-title { font-weight: 500; }
 
 .sb-row { padding: 4px 2px; }
 .sb-title { font-weight: 500; }

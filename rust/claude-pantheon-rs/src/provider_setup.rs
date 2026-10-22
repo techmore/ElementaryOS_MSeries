@@ -18,6 +18,18 @@ const FEATURED: [(&str, &str); 4] =
     [("claudeAgent", "Claude Code"), ("codex", "ChatGPT via Codex"), ("opencode", "OpenCode"), ("grok", "Grok Build")];
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct AcpRegistryAgent {
+    id: String,
+    name: String,
+    version: String,
+    description: String,
+    license: Option<String>,
+    website: Option<String>,
+    repository: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
 struct AuthState {
     phase: String,
@@ -44,6 +56,10 @@ pub struct ProviderManager {
     rows: gtk::Box,
     status: gtk::Label,
     refresh_button: gtk::Button,
+    registry_query: gtk::SearchEntry,
+    registry_results: gtk::Box,
+    registry_status: gtk::Label,
+    registry_loaded: Cell<bool>,
     rpc: Rpc,
     providers: Rc<RefCell<Vec<Provider>>>,
     on_changed: Rc<dyn Fn(Vec<Provider>)>,
@@ -85,6 +101,37 @@ impl ProviderManager {
         intro.set_ellipsize(pango::EllipsizeMode::None);
         root.append(&intro);
 
+        let registry = gtk::Expander::new(Some("Add an ACP provider"));
+        let registry_content = gtk::Box::new(gtk::Orientation::Vertical, 7);
+        let registry_intro = label(
+            "Find an agent in the ACP Registry or connect a local ACP command such as DeepSeek Harness. Registry agents are third-party code; review their source and license. The T3 server runs the agent and keeps its credentials.",
+            &["caption", "dim-label"],
+        );
+        registry_intro.set_wrap(true);
+        registry_intro.set_ellipsize(pango::EllipsizeMode::None);
+        registry_content.append(&registry_intro);
+        let registry_controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let registry_query = gtk::SearchEntry::builder().placeholder_text("Search ACP Registry").hexpand(true).build();
+        let registry_search = gtk::Button::with_label("Search");
+        let local_acp = gtk::Button::with_label("Add local command…");
+        registry_controls.append(&registry_query);
+        registry_controls.append(&registry_search);
+        registry_controls.append(&local_acp);
+        registry_content.append(&registry_controls);
+        let registry_status = label("Expand to browse available ACP agents.", &["caption", "dim-label"]);
+        registry_status.set_wrap(true);
+        registry_status.set_ellipsize(pango::EllipsizeMode::None);
+        registry_content.append(&registry_status);
+        let registry_results = gtk::Box::new(gtk::Orientation::Vertical, 5);
+        let registry_scroll = gtk::ScrolledWindow::builder()
+            .child(&registry_results)
+            .max_content_height(180)
+            .propagate_natural_height(true)
+            .build();
+        registry_content.append(&registry_scroll);
+        registry.set_child(Some(&registry_content));
+        root.append(&registry);
+
         let rows = gtk::Box::new(gtk::Orientation::Vertical, 8);
         let scroller = gtk::ScrolledWindow::builder().child(&rows).vexpand(true).build();
         root.append(&scroller);
@@ -100,6 +147,10 @@ impl ProviderManager {
             rows,
             status,
             refresh_button,
+            registry_query,
+            registry_results,
+            registry_status,
+            registry_loaded: Cell::new(false),
             rpc,
             providers: Rc::new(RefCell::new(providers)),
             on_changed,
@@ -114,6 +165,33 @@ impl ProviderManager {
             }
         });
         let weak = Rc::downgrade(&manager);
+        registry_search.connect_clicked(move |_| {
+            if let Some(manager) = weak.upgrade() {
+                manager.search_registry(manager.registry_query.text().to_string());
+            }
+        });
+        let weak = Rc::downgrade(&manager);
+        manager.registry_query.connect_activate(move |entry| {
+            if let Some(manager) = weak.upgrade() {
+                manager.search_registry(entry.text().to_string());
+            }
+        });
+        let weak = Rc::downgrade(&manager);
+        registry.connect_expanded_notify(move |expander| {
+            if expander.is_expanded()
+                && let Some(manager) = weak.upgrade()
+                && !manager.registry_loaded.get()
+            {
+                manager.search_registry(String::new());
+            }
+        });
+        let weak = Rc::downgrade(&manager);
+        local_acp.connect_clicked(move |_| {
+            if let Some(manager) = weak.upgrade() {
+                manager.add_local_acp_dialog();
+            }
+        });
+        let weak = Rc::downgrade(&manager);
         manager.window.connect_close_request(move |_| {
             if let Some(manager) = weak.upgrade() {
                 let auth = { manager.auth_window.borrow_mut().take() };
@@ -125,6 +203,275 @@ impl ProviderManager {
         });
         manager.window.present();
         manager
+    }
+
+    fn search_registry(self: &Rc<Self>, query: String) {
+        if query.trim().chars().count() > 120 {
+            self.registry_status.set_text("Search terms can be up to 120 characters.");
+            return;
+        }
+        self.registry_loaded.set(true);
+        self.registry_status.set_text("Searching the ACP Registry on the T3 server…");
+        clear_box(&self.registry_results);
+        let manager = self.clone();
+        glib::spawn_future_local(async move {
+            match manager.rpc.call("server.searchAcpRegistry", json!({"query": query.trim(), "limit": 128})).await {
+                Ok(value) => {
+                    let agents = value
+                        .get("agents")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|agent| serde_json::from_value::<AcpRegistryAgent>(agent.clone()).ok())
+                        .filter(|agent| !agent.id.is_empty() && !agent.name.is_empty())
+                        .collect::<Vec<_>>();
+                    let message = if agents.is_empty() {
+                        "No compatible ACP agents found. Try another search or add a local command.".into()
+                    } else {
+                        format!("{} compatible agent(s) found.", agents.len())
+                    };
+                    manager.registry_status.set_text(&message);
+                    for agent in agents {
+                        manager.render_registry_agent(agent);
+                    }
+                }
+                Err(error) => {
+                    manager.registry_status.set_text(&format!("ACP Registry search failed: {}", error.message()))
+                }
+            }
+        });
+    }
+
+    fn render_registry_agent(self: &Rc<Self>, agent: AcpRegistryAgent) {
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        row.add_css_class("provider-registry-row");
+        let copy = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        copy.set_hexpand(true);
+        let title = label(&agent.name, &[]);
+        title.set_xalign(0.0);
+        title.set_ellipsize(pango::EllipsizeMode::End);
+        let mut metadata = vec![format!("v{}", agent.version)];
+        if let Some(license) = agent.license.as_deref().filter(|value| !value.trim().is_empty()) {
+            metadata.push(license.to_string());
+        }
+        let metadata = metadata.join(" · ");
+        let detail = if agent.description.trim().is_empty() {
+            format!("ACP agent · {metadata}")
+        } else {
+            format!("{} · {metadata}", agent.description)
+        };
+        let description = label(&detail, &["caption", "dim-label"]);
+        description.set_xalign(0.0);
+        description.set_wrap(true);
+        description.set_ellipsize(pango::EllipsizeMode::End);
+        copy.append(&title);
+        copy.append(&description);
+        row.append(&copy);
+
+        let added = self.providers.borrow().iter().any(|provider| {
+            provider.driver == "acpRegistry"
+                && provider.display_name.as_deref().is_some_and(|name| name.eq_ignore_ascii_case(&agent.name))
+        });
+        let add = gtk::Button::with_label(if added { "Added" } else { "Add" });
+        add.set_sensitive(!added);
+        if let Some(url) = agent.website.as_ref().or(agent.repository.as_ref()) {
+            add.set_tooltip_text(Some(&format!("Add {} · {}", agent.name, url)));
+        }
+        if let Some(url) = agent.repository.as_ref().or(agent.website.as_ref()).filter(|url| safe_registry_url(url)) {
+            let source = gtk::LinkButton::with_label(url, "Source");
+            source.set_valign(gtk::Align::Center);
+            source.set_tooltip_text(Some("Review this third-party agent before adding it"));
+            row.append(&source);
+        }
+        let weak = Rc::downgrade(self);
+        add.connect_clicked(move |_| {
+            if let Some(manager) = weak.upgrade() {
+                manager.prepare_registry_agent(agent.clone());
+            }
+        });
+        row.append(&add);
+        self.registry_results.append(&row);
+    }
+
+    fn prepare_registry_agent(self: &Rc<Self>, agent: AcpRegistryAgent) {
+        self.registry_status.set_text(&format!("Preparing {} on the T3 server…", agent.name));
+        let instance_id = self.unique_acp_instance_id(&agent.id);
+        let manager = self.clone();
+        glib::spawn_future_local(async move {
+            if let Err(error) = manager.rpc.call("server.prepareAcpRegistryAgent", json!({"agentId": agent.id})).await {
+                manager.registry_status.set_text(&format!("Could not prepare {}: {}", agent.name, error.message()));
+                return;
+            }
+            let config = json!({"source": "registry", "agentId": agent.id, "distribution": "auto"});
+            let instance = json!({
+                "driver": "acpRegistry",
+                "enabled": true,
+                "displayName": agent.name,
+                "config": config
+            });
+            let payload = json!({
+                "patch": {},
+                "providerInstanceMutation": {
+                    "operation": "create",
+                    "instanceId": instance_id,
+                    "instance": instance
+                }
+            });
+            match manager.rpc.call("server.updateSettings", payload).await {
+                Ok(_) => {
+                    manager.registry_status.set_text(&format!("Added {}. Refreshing provider status…", agent.name));
+                    manager.refresh();
+                }
+                Err(error) => {
+                    manager.registry_status.set_text(&format!("Could not add {}: {}", agent.name, error.message()))
+                }
+            }
+        });
+    }
+
+    fn unique_acp_instance_id(&self, raw: &str) -> String {
+        let slug = raw
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+            .collect::<String>()
+            .split('-')
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("-");
+        let stem = format!("acp-{}", if slug.is_empty() { "agent" } else { &slug });
+        let providers = self.providers.borrow();
+        for suffix in 1..=999 {
+            let candidate = if suffix == 1 { stem.clone() } else { format!("{stem}-{suffix}") };
+            let candidate = candidate.chars().take(64).collect::<String>();
+            if !providers.iter().any(|provider| provider.instance_id == candidate) {
+                return candidate;
+            }
+        }
+        format!("acp-{}", crate::app::new_id().chars().take(16).collect::<String>())
+    }
+
+    fn add_local_acp_dialog(self: &Rc<Self>) {
+        let dialog = gtk::Window::builder()
+            .title("Add Local ACP Command")
+            .transient_for(&self.window)
+            .modal(true)
+            .default_width(500)
+            .default_height(360)
+            .build();
+        let header = gtk::HeaderBar::builder().show_title_buttons(true).build();
+        header.add_css_class(granite::STYLE_CLASS_FLAT);
+        dialog.set_titlebar(Some(&header));
+        let content = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        content.set_margin_top(18);
+        content.set_margin_bottom(18);
+        content.set_margin_start(20);
+        content.set_margin_end(20);
+        let intro = label(
+            "The command runs directly on the paired T3 server. No shell expansion is used.",
+            &["caption", "dim-label"],
+        );
+        intro.set_wrap(true);
+        content.append(&intro);
+        let name = gtk::Entry::builder().placeholder_text("Provider name, e.g. DeepSeek Harness").build();
+        name.update_property(&[gtk::accessible::Property::Label("Provider name")]);
+        let command = gtk::Entry::builder().placeholder_text("Command, e.g. dsh").build();
+        command.update_property(&[gtk::accessible::Property::Label("ACP command")]);
+        let arguments = gtk::Entry::builder().placeholder_text("Arguments, e.g. --profile default acp").build();
+        arguments.update_property(&[gtk::accessible::Property::Label("ACP command arguments")]);
+        content.append(&form_row("Name", &name));
+        content.append(&form_row("Command", &command));
+        content.append(&form_row("Arguments", &arguments));
+        let error = label("", &["caption", "error"]);
+        error.set_wrap(true);
+        content.append(&error);
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        actions.set_halign(gtk::Align::End);
+        let cancel = gtk::Button::with_label("Cancel");
+        let submit = gtk::Button::with_label("Add Provider");
+        submit.add_css_class("suggested-action");
+        actions.append(&cancel);
+        actions.append(&submit);
+        content.append(&actions);
+        dialog.set_child(Some(&content));
+        let dialog_for_cancel = dialog.downgrade();
+        cancel.connect_clicked(move |_| {
+            if let Some(dialog) = dialog_for_cancel.upgrade() {
+                dialog.close();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        let dialog_weak = dialog.downgrade();
+        let submit_weak = submit.downgrade();
+        submit.connect_clicked(move |_| {
+            let provider_name = name.text().trim().to_string();
+            let command_path = command.text().trim().to_string();
+            if provider_name.is_empty() || command_path.is_empty() {
+                error.set_text("Enter both a provider name and command.");
+                return;
+            }
+            let command_args = match glib::shell_parse_argv(arguments.text()) {
+                Ok(args) => args,
+                Err(parse_error) => {
+                    error.set_text(&format!("Arguments could not be parsed: {parse_error}"));
+                    return;
+                }
+            };
+            let Some(manager) = weak.upgrade() else {
+                if let Some(dialog) = dialog_weak.upgrade() {
+                    dialog.close();
+                }
+                return;
+            };
+            let instance_id = manager.unique_acp_instance_id(&provider_name);
+            let instance = json!({
+                "driver": "acpRegistry",
+                "enabled": true,
+                "displayName": provider_name,
+                "config": {"source": "local", "commandPath": command_path, "commandArgs": command_args}
+            });
+            let payload = json!({
+                "patch": {},
+                "providerInstanceMutation": {
+                    "operation": "create",
+                    "instanceId": instance_id,
+                    "instance": instance
+                }
+            });
+            let rpc = manager.rpc.clone();
+            let weak = Rc::downgrade(&manager);
+            if let Some(dialog) = dialog_weak.upgrade() {
+                dialog.set_sensitive(false);
+            }
+            if let Some(submit) = submit_weak.upgrade() {
+                submit.set_sensitive(false);
+            }
+            let dialog_weak = dialog_weak.clone();
+            let submit_weak = submit_weak.clone();
+            let error = error.clone();
+            glib::spawn_future_local(async move {
+                match rpc.call("server.updateSettings", payload).await {
+                    Ok(_) => {
+                        if let Some(dialog) = dialog_weak.upgrade() {
+                            dialog.close();
+                        }
+                        if let Some(manager) = weak.upgrade() {
+                            manager.registry_status.set_text("Local ACP provider added. Refreshing provider status…");
+                            manager.refresh();
+                        }
+                    }
+                    Err(failure) => {
+                        if let Some(dialog) = dialog_weak.upgrade() {
+                            dialog.set_sensitive(true);
+                        }
+                        if let Some(submit) = submit_weak.upgrade() {
+                            submit.set_sensitive(true);
+                        }
+                        error.set_text(&format!("Could not add provider: {}", failure.message()));
+                    }
+                }
+            });
+        });
+        dialog.present();
     }
 
     fn render(self: &Rc<Self>) {
@@ -885,9 +1232,45 @@ fn provider_title(provider: &Provider) -> String {
         .unwrap_or_else(|| provider.name())
 }
 
+fn clear_box(container: &gtk::Box) {
+    while let Some(child) = container.first_child() {
+        container.remove(&child);
+    }
+}
+
+fn form_row(title: &str, control: &impl IsA<gtk::Widget>) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    row.set_hexpand(true);
+    let title_label = label(title, &[]);
+    title_label.set_width_chars(12);
+    title_label.set_xalign(0.0);
+    title_label.set_mnemonic_widget(Some(control));
+    control.set_hexpand(true);
+    row.append(&title_label);
+    row.append(control);
+    row
+}
+
+fn safe_registry_url(url: &str) -> bool {
+    url.strip_prefix("https://").is_some_and(|authority_and_path| {
+        let authority = authority_and_path.split('/').next().unwrap_or_default();
+        !authority.is_empty()
+            && !authority.contains('@')
+            && !authority.chars().any(|character| character.is_whitespace() || character.is_control())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registry_source_links_require_https_and_a_safe_authority() {
+        assert!(safe_registry_url("https://github.com/agent/agent"));
+        assert!(!safe_registry_url("http://github.com/agent/agent"));
+        assert!(!safe_registry_url("javascript:alert(1)"));
+        assert!(!safe_registry_url("https://user@example.com/agent"));
+    }
 
     #[test]
     fn auth_state_decodes_server_advertised_account_methods() {

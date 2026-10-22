@@ -1,3 +1,40 @@
+## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
+
+Continued the native GTK 4 + Granite T3 client in `rust/claude-pantheon-rs` and recorded the larger roadmap in
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). Dock launch now opens a compact quick
+surface; **Open full chat** presents the existing desktop client. Both surfaces share one `App` and one T3 connection.
+New Chat, Usage, Settings, and active-thread rows route into that full window. The compact surface shows the paired T3
+environment and quota for only the provider selected in full chat; additional provider accounts remain in Settings.
+Offline activity is clearly marked stale and cannot open a live thread.
+
+The local status snapshot is schema-versioned, written atomically with mode `0600`, monitored by the quick surface, and
+retains the last successful snapshot as stale when the connection drops. Explicit unpair and environment changes clear
+it. The quick surface does not open a second RPC connection or poll the server. This completes the compact status path;
+it does **not** yet implement T3's larger per-thread replay cache/cursor contract or cache telemetry.
+
+Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness (`dsh
+--profile default acp`) for execution on the paired T3 server. This uses T3's generic ACP path and keeps credentials on
+the server. DeepSeek API prefix caching is server-side and automatic; the client does not add a competing cache layer.
+Keep prompts and tool schemas stable where T3 permits, and expose hit/miss counts only if the server reports them.
+
+Taskbar mode in the Dock patch scales launcher icons to 90% and trims spacing: the unmanaged 48 px base becomes 43 px,
+the managed 40 px size becomes 36 px, horizontal padding is 5 px, and the top inset is 10 px. Other Dock modes retain
+their configured icon size and padding. No live Dock deployment was done.
+
+Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob/main/docs/internals/connection-runtime.md),
+[T3 architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md), [T3 cache write issue #4005](https://github.com/pingdotgg/t3code/issues/4005),
+[T3 ACP providers](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-acp.md), [DeepSeek context cache](https://api-docs.deepseek.com/guides/kv_cache/),
+and [DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
+
+Validation: `cargo fmt -p claude-pantheon-rs --check`, strict release Clippy, and 49 library tests passed; Dock's full
+taskbar build and interaction probes passed in light and dark modes; `desktop-file-validate`, `appstreamcli validate
+--no-net`, and `git diff --check` passed; the app-only ARM64 `.deb` assembled in `/tmp/cpr-deb-build`. System package
+installation and a live quick-panel visual pass remain open. The pre-existing user-local app was not replaced, and the
+live Dock was not restarted.
+
+Next: finish and qualify the T3 replay/cache contract from issue #523, then install through a supported package-manager
+path and verify quick/full routing, selected-provider usage, and ACP agent setup in the Pantheon Rust session.
+
 ## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
 
 Continued `rust/claude-pantheon-rs`, the native Rust GTK 4 + Granite client for T3 Code. Settings now

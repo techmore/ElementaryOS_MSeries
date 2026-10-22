@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Build claude-pantheon-rs_<version>_<arch>.deb from this source tree: the app (binary, desktop entry with
-# actions, D-Bus service, metainfo, hicolor icons) and the Wingpanel indicator.
+# Build claude-pantheon-rs_<version>_<arch>.deb from this source tree: the app (binary, Dock quick panel,
+# desktop entry with actions, D-Bus service, metainfo, hicolor icons). The Wingpanel indicator is optional.
 #   bash rust/claude-pantheon-rs/build-deb.sh            # writes build/claude-pantheon-rs-deb/*.deb
-# Needs: cargo, libgtk-4-dev, libgranite-7-dev, meson, valac, libwingpanel-dev, libjson-glib-dev,
-# libgee-0.8-dev, librsvg2-bin, dpkg-deb. Set CLAUDE_PANTHEON_SKIP_INDICATOR=1 to package the app alone.
+# Needs: cargo, libgtk-4-dev, libgranite-7-dev, librsvg2-bin, dpkg-deb. Set
+# CLAUDE_PANTHEON_ENABLE_INDICATOR=1 to also package the legacy Wingpanel indicator.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,12 +15,11 @@ id=io.github.techmore.ClaudePantheonRs
 for tool in cargo dpkg-deb rsvg-convert; do
   command -v "$tool" >/dev/null || { echo "Missing build tool: $tool" >&2; exit 2; }
 done
-with_indicator=1
-if [[ ${CLAUDE_PANTHEON_SKIP_INDICATOR:-0} == 1 ]]; then
-  with_indicator=0
-else
+with_indicator=0
+if [[ ${CLAUDE_PANTHEON_ENABLE_INDICATOR:-0} == 1 && ${CLAUDE_PANTHEON_SKIP_INDICATOR:-0} != 1 ]]; then
+  with_indicator=1
   for tool in meson ninja valac; do
-    command -v "$tool" >/dev/null || { echo "Missing build tool: $tool (set CLAUDE_PANTHEON_SKIP_INDICATOR=1 to skip the indicator)" >&2; exit 2; }
+    command -v "$tool" >/dev/null || { echo "Missing build tool: $tool (or omit CLAUDE_PANTHEON_ENABLE_INDICATOR=1)" >&2; exit 2; }
   done
 fi
 
@@ -62,6 +61,9 @@ install -d "$stage/DEBIAN"
 depends="libgtk-4-1 (>= 4.12), libgranite-7-7 | libgranite7, libglib2.0-0, libgtksourceview-5-0, libvte-2.91-gtk4-0, libwebkitgtk-6.0-4, librsvg2-common, secret-tool | libsecret-tools, gh"
 if ((with_indicator)); then
   depends="$depends, libjson-glib-1.0-0, libgee-0.8-2, wingpanel | io.elementary.wingpanel"
+  description="Includes the optional Wingpanel indicator."
+else
+  description="The app includes its own Dock quick panel and full desktop chat window."
 fi
 cat >"$stage/DEBIAN/control" <<CONTROL
 Package: claude-pantheon-rs
@@ -74,11 +76,11 @@ Depends: $depends
 Recommends: xdg-desktop-portal
 Maintainer: elementaryos-mseries local build
 Homepage: https://github.com/techmore/ElementaryOS_MSeries
-Description: Native elementary OS client of the T3 Code server (Claude Code, Codex, OpenCode, Grok)
- One window drives Claude Code, Codex, OpenCode and Grok threads through the
- T3 Code server, with the local Claude Code transcripts as the offline view:
+Description: T3-R Pantheon, native elementary OS client of the T3 Code server
+ One window drives Claude Code, ChatGPT via Codex, OpenCode, Grok and ACP agents
+ through the T3 Code server, with local Claude Code transcripts as the offline view:
  pairing, streamed turns, permission prompts, usage with plan windows,
- repos and issues, diagnostics. Includes the Wingpanel indicator.
+ repos and issues, diagnostics. $description
 CONTROL
 
 cat >"$stage/DEBIAN/postinst" <<'POST'

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-only"
 publish = false
-description = "Claude for elementary OS: a native Pantheon client of the T3 Code server (Claude Code, Codex, OpenCode, Grok) with offline Claude Code transcripts"
+description = "T3-R Pantheon: a native Pantheon client of the T3 Code server (Claude Code, ChatGPT via Codex, OpenCode, Grok, ACP)"
 
 [dependencies]
 # Same GTK/Granite pins as mseries-diskspace (see mseries/RUST-UPSTREAM-MAINTENANCE.md).

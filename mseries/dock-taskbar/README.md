@@ -6,6 +6,15 @@ CodexBar/Start-menu integration and app-tracking patches. It copies the CodexBar
 from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 `TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
 
+## Taskbar launcher sizing
+
+Taskbar mode reduces launcher icons to 90% of the active size step and trims the item inset. The unmanaged 48 px
+baseline renders at 43 px; size-managed 40 px renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px.
+The helper is taskbar-scoped, so floating and classic Dock layouts keep their configured size and upstream padding.
+The linked sizing test checks the launcher, item-group width, and separator across size-policy changes. Run the full
+isolated build and interaction probes with `bash mseries/dock-taskbar/test-build.sh`; it does not install or restart
+the live Dock.
+
 CodexBar sits left of Wi-Fi with a divider and 12 logical pixels on each side.
 Popup text is another 25% larger (1.5625em total), with a 400-pixel minimum body width and a
 480-pixel scroll viewport so the larger rows remain usable.

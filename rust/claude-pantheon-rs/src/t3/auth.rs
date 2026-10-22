@@ -82,7 +82,7 @@ pub async fn pair(server: &str, token: &str) -> Result<Credential, WsError> {
         ("subject_token", token),
         ("subject_token_type", "urn:t3:params:oauth:token-type:environment-bootstrap"),
         ("requested_token_type", "urn:ietf:params:oauth:token-type:access_token"),
-        ("client_label", "Claude for elementary OS"),
+        ("client_label", "T3-R Pantheon"),
         ("client_device_type", "desktop"),
         ("client_os", "linux"),
     ]);
@@ -203,7 +203,7 @@ pub async fn load_for(server: &str) -> Option<Credential> {
 pub async fn store(cred: &Credential) -> &'static str {
     let json = serde_json::to_string(cred).unwrap_or_default();
     let attrs = secret_attrs(&cred.server);
-    let label = format!("--label=Claude for elementary OS (T3 session, {})", cred.server);
+    let label = format!("--label=T3-R Pantheon (T3 session, {})", cred.server);
     let mut argv: Vec<&str> = vec!["secret-tool", "store", &label];
     argv.extend(attrs.iter().map(String::as_str));
     let file = credentials_file_for(&cred.server);

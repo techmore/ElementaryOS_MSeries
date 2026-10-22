@@ -3,11 +3,11 @@
   <id>io.github.techmore.ClaudePantheonRs</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
-  <name>Claude</name>
-  <summary>Claude Code, Codex, OpenCode and Grok in one native window</summary>
+  <name>T3-R Pantheon</name>
+  <summary>A compact Dock panel and full native chat for T3 Code</summary>
   <description>
-    <p>A native elementary OS client of the T3 Code server: one window drives Claude Code, Codex, OpenCode and Grok threads, with your local Claude Code transcripts as the offline view.</p>
-    <p>Pair once with the server, pick a provider, model and permission mode, and watch turns stream in: assistant text, commands, diffs and permission prompts you answer inline. A Usage page shows every plan window with its reset countdown; Repos and Issues pages feed the unattended runner from a GitHub backlog. One process, about 60 MB, no CPU at idle.</p>
+    <p>A native elementary OS client of the T3 Code server. The Dock opens a compact status panel for the currently paired server, with quick access to active work, usage, new chats and Settings. Open the full desktop window for the complete chat experience across every provider connected to that server.</p>
+    <p>Connect additional provider instances from Settings. Choose a provider, model and permission mode, and watch turns stream in: assistant text, commands, diffs and permission prompts you answer inline. Usage, Repos, Issues, diagnostics and local Claude Code transcripts are available in the full app.</p>
   </description>
   <developer id="io.github.techmore">
     <name>techmore</name>
@@ -27,7 +27,7 @@
   <releases>
     <release version="0.1.0" date="2026-10-21">
       <description>
-        <p>First release: T3 Code client with pairing, threads, composer, permission prompts, usage, repos and diagnostics; offline Claude Code transcripts.</p>
+        <p>T3 Code client with a Dock quick panel, full chat window, pairing, providers, usage, repos and diagnostics; offline Claude Code transcripts.</p>
       </description>
     </release>
   </releases>

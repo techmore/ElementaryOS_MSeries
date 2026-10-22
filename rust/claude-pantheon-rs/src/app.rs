@@ -140,6 +140,7 @@ pub struct App {
     palette: RefCell<Option<Rc<palette::Palette>>>,
     sidebar_cfg: RefCell<sidebar::SidebarConfig>,
     provider_manager: RefCell<Option<Rc<provider_setup::ProviderManager>>>,
+    quick_panel: RefCell<Option<Rc<crate::quick::QuickPanel>>>,
     settings: Rc<RefCell<settings::Settings>>,
     started: Instant,
 }
@@ -156,6 +157,21 @@ pub fn new_id() -> String {
 
 impl App {
     pub fn build(application: &gtk::Application, started: Instant, quit_after_frame: bool) -> Rc<App> {
+        Self::build_with_dock_surface(application, started, quit_after_frame, false)
+    }
+
+    /// The Dock launch path: create the full app and its compact status surface, then show the
+    /// compact surface first. Both windows share this App and its single T3 connection.
+    pub fn build_quick(application: &gtk::Application, started: Instant, quit_after_frame: bool) -> Rc<App> {
+        Self::build_with_dock_surface(application, started, quit_after_frame, true)
+    }
+
+    fn build_with_dock_surface(
+        application: &gtk::Application,
+        started: Instant,
+        quit_after_frame: bool,
+        show_quick: bool,
+    ) -> Rc<App> {
         load_css();
 
         // ---- sidebar -------------------------------------------------------------------------
@@ -216,7 +232,7 @@ impl App {
 
         // ---- main header ---------------------------------------------------------------------
         let main_header = header_bar();
-        let title = label("Claude", &["title"]);
+        let title = label("T3-R Pantheon", &["title"]);
         let subtitle = label("", &["subtitle", "dim-label"]);
         subtitle.set_visible(false);
         let titles = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -269,7 +285,7 @@ impl App {
             None,
             &section(&[("Settings", "win.settings"), ("Reconnect", "win.reconnect"), ("Forget Pairing", "win.forget")]),
         );
-        menu_model.append_section(None, &section(&[("About Claude", "win.about"), ("Quit", "win.quit")]));
+        menu_model.append_section(None, &section(&[("About T3-R Pantheon", "win.about"), ("Quit", "win.quit")]));
         let menu =
             gtk::MenuButton::builder().icon_name("open-menu-symbolic").menu_model(&menu_model).primary(true).build();
         menu.set_tooltip_text(Some("Menu"));
@@ -338,7 +354,7 @@ impl App {
         chat_page.append(&composer);
 
         // ---- other pages ---------------------------------------------------------------------
-        let empty = granite::Placeholder::new("Claude for elementary OS");
+        let empty = granite::Placeholder::new("T3-R Pantheon");
         empty.set_description("Pick a thread on the left, or start a new one.");
         empty.set_icon(&gio::ThemedIcon::new("mail-read-symbolic"));
         let busy = skeleton::chat(4);
@@ -415,7 +431,7 @@ impl App {
 
         let window = gtk::ApplicationWindow::builder()
             .application(application)
-            .title("Claude")
+            .title("T3-R Pantheon")
             .default_width(1180)
             .default_height(760)
             .icon_name("io.github.techmore.ClaudePantheonRs")
@@ -504,6 +520,7 @@ impl App {
             palette: RefCell::new(None),
             sidebar_cfg: RefCell::new(sidebar::SidebarConfig::load()),
             provider_manager: RefCell::new(None),
+            quick_panel: RefCell::new(None),
             settings: Rc::new(RefCell::new(settings::Settings::load())),
             started,
         });
@@ -532,7 +549,54 @@ impl App {
         if (zoom - 1.0).abs() > f64::EPSILON {
             settings::apply_zoom(zoom);
         }
-        app.window.present();
+        if show_quick {
+            let weak = Rc::downgrade(&app);
+            let actions = crate::quick::Actions {
+                open_full: {
+                    let weak = weak.clone();
+                    Rc::new(move || {
+                        if let Some(app) = weak.upgrade() {
+                            app.present_full();
+                        }
+                    })
+                },
+                new_chat: {
+                    let weak = weak.clone();
+                    Rc::new(move || {
+                        if let Some(app) = weak.upgrade() {
+                            app.new_chat();
+                        }
+                    })
+                },
+                open_usage: {
+                    let weak = weak.clone();
+                    Rc::new(move || {
+                        if let Some(app) = weak.upgrade() {
+                            app.show_usage();
+                        }
+                    })
+                },
+                open_settings: {
+                    let weak = weak.clone();
+                    Rc::new(move || {
+                        if let Some(app) = weak.upgrade() {
+                            app.present_full();
+                            app.settings();
+                        }
+                    })
+                },
+                open_thread: Rc::new(move |id| {
+                    if let Some(app) = weak.upgrade() {
+                        app.open_by_id(&id);
+                    }
+                }),
+            };
+            let panel = crate::quick::QuickPanel::new(application, actions);
+            *app.quick_panel.borrow_mut() = Some(panel);
+            app.present_quick();
+        } else {
+            app.window.present();
+        }
         app.reindex();
         if std::env::var_os("CLAUDE_PANTHEON_OFFLINE").is_none() {
             app.connect_stored();
@@ -540,6 +604,21 @@ impl App {
             app.set_status("Offline mode", false);
         }
         app
+    }
+
+    pub fn present_full(&self) {
+        if let Some(panel) = self.quick_panel.borrow().as_ref() {
+            panel.window.set_visible(false);
+        }
+        self.window.present();
+    }
+
+    pub fn present_quick(&self) {
+        if let Some(panel) = self.quick_panel.borrow().as_ref() {
+            panel.present();
+        } else {
+            self.window.present();
+        }
     }
 
     fn wire(self: &Rc<Self>, new_chat: &gtk::Button) {
@@ -586,7 +665,10 @@ impl App {
         let a = self.clone();
         self.pair_entry.connect_activate(move |_| a.pair());
         let a = self.clone();
-        self.provider_dd.connect_selected_notify(move |_| a.fill_models());
+        self.provider_dd.connect_selected_notify(move |_| {
+            a.fill_models();
+            a.write_status_feed();
+        });
 
         // Window actions with their HIG accelerators; the menu shows the labels automatically.
         type Action = Box<dyn Fn(&Rc<App>)>;
@@ -731,7 +813,7 @@ impl App {
             ("Open offline twin", "offline"),
             ("Reconnect", "reconnect"),
             ("Close thread", "close-thread"),
-            ("About Claude", "about"),
+            ("About T3-R Pantheon", "about"),
         ] {
             out.push(Entry { title: title.into(), kind: "Action".into(), action: Action::WindowAction(action.into()) });
         }
@@ -836,8 +918,8 @@ impl App {
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
         self.list.unselect_all();
-        self.title.set_text("Claude");
-        self.window.set_title(Some("Claude"));
+        self.title.set_text("T3-R Pantheon");
+        self.window.set_title(Some("T3-R Pantheon"));
         self.subtitle.set_visible(false);
         self.show_page("empty");
     }
@@ -869,6 +951,7 @@ impl App {
 
     /// Ctrl+,: the settings window.
     fn settings(self: &Rc<Self>) {
+        self.present_full();
         let providers: Vec<(String, String)> =
             self.providers.borrow().iter().filter(|p| p.ready()).map(|p| (p.instance_id.clone(), p.name())).collect();
         let provider_summary = {
@@ -988,7 +1071,7 @@ impl App {
         let dialog = gtk::AboutDialog::builder()
             .transient_for(&self.window)
             .modal(true)
-            .program_name("Claude")
+            .program_name("T3-R Pantheon")
             .logo_icon_name("io.github.techmore.ClaudePantheonRs")
             .version(env!("CARGO_PKG_VERSION"))
             .comments(format!(
@@ -1510,6 +1593,7 @@ impl App {
         if switch && !is_current {
             self.switch_environment(&id);
         } else if is_current && route_changed {
+            crate::status::clear();
             self.reconnect_current();
         }
     }
@@ -1525,6 +1609,7 @@ impl App {
         self.env_states.borrow_mut().remove(id);
         self.refresh_environments();
         if was_current {
+            crate::status::clear();
             self.reconnect_current();
         }
     }
@@ -1540,6 +1625,7 @@ impl App {
             envs.current = Some(id.to_string());
             envs.save();
         }
+        crate::status::clear();
         self.reconnect_current();
     }
 
@@ -1701,10 +1787,18 @@ impl App {
     /// Writes the indicator feed (status.json) from what the window knows now.
     pub fn write_status_feed(&self) {
         let (connected, label_text, threads) = match self.conn.borrow().as_ref() {
-            Some(c) => (true, c.cred.label.clone(), c.shell.threads.clone()),
+            Some(c) => {
+                let account = if c.cred.label.trim().is_empty() { c.cred.server.clone() } else { c.cred.label.clone() };
+                (true, account, c.shell.threads.clone())
+            }
             None => (false, String::new(), Vec::new()),
         };
-        crate::status::write(&crate::status::build(connected, &label_text, &self.providers.borrow(), &threads));
+        let providers = self.providers.borrow();
+        let selected_provider_id = providers
+            .get(self.provider_dd.selected() as usize)
+            .map(|provider| provider.instance_id.as_str())
+            .unwrap_or_default();
+        crate::status::write(&crate::status::build(connected, &label_text, selected_provider_id, &providers, &threads));
     }
 
     fn refresh_status(&self) {
@@ -1816,7 +1910,7 @@ impl App {
                         let open = self.live.borrow().as_ref().is_some_and(|l| l.thread_id == t.id);
                         if open {
                             self.title.set_text(&t.title);
-                            self.window.set_title(Some(&format!("{} - Claude", t.title)));
+                            self.window.set_title(Some(&format!("{} - T3-R Pantheon", t.title)));
                         }
                         if v.get("location").and_then(Value::as_str) == Some("archive") {
                             c.shell.remove_thread(&t.id);
@@ -1895,6 +1989,7 @@ impl App {
                 c.rpc.close().await;
             }
             auth::forget_for(&app.current_server()).await;
+            crate::status::clear();
             app.set_status("Not paired", false);
             app.set_env_state(environments::State::Idle);
             app.show_page("pair");
@@ -2178,7 +2273,7 @@ impl App {
     /// Opens a thread or session by id from outside (the Wingpanel indicator's `open-thread` action);
     /// a thread that is not in the list yet is retried once the shell arrives.
     pub fn open_by_id(self: &Rc<Self>, id: &str) {
-        self.window.present();
+        self.present_full();
         if self.select_id(id) {
             return;
         }
@@ -2348,7 +2443,7 @@ impl App {
         self.generation.set(generation);
         *self.current_session.borrow_mut() = Some(session.clone());
         self.title.set_text(&session.title);
-        self.window.set_title(Some(&format!("{} - Claude", session.title)));
+        self.window.set_title(Some(&format!("{} - T3-R Pantheon", session.title)));
         self.subtitle.set_text(&format!("Offline transcript · {}", tilde(&session.cwd)));
         self.subtitle.set_visible(true);
         self.loading.set(true);
@@ -2477,7 +2572,7 @@ impl App {
         self.generation.set(generation);
         let title = if thread.title.trim().is_empty() { "Untitled thread".to_string() } else { thread.title.clone() };
         self.title.set_text(&title);
-        self.window.set_title(Some(&format!("{title} - Claude")));
+        self.window.set_title(Some(&format!("{title} - T3-R Pantheon")));
         self.subtitle.set_visible(true);
         self.subtitle.set_text(&self.thread_subtitle(&thread));
         self.show_page("busy");
@@ -2865,6 +2960,7 @@ impl App {
 
     /// A new thread in `project_id`, else in the project of what is open, else the first project.
     pub fn new_chat_in(self: &Rc<Self>, project_id: Option<String>) {
+        self.present_full();
         if self.conn.borrow().is_none() {
             self.toast("Connect to a T3 server to start a thread.");
             self.show_page("pair");
@@ -2909,7 +3005,7 @@ impl App {
         hint.set_vexpand(true);
         self.chat.append(&hint);
         self.title.set_text("New thread");
-        self.window.set_title(Some("New thread - Claude"));
+        self.window.set_title(Some("New thread - T3-R Pantheon"));
         self.subtitle.set_text(&tilde(&project.workspace_root));
         self.subtitle.set_visible(true);
         self.composer.set_visible(true);
@@ -3099,6 +3195,7 @@ impl App {
     }
 
     pub fn show_usage(self: &Rc<Self>) {
+        self.present_full();
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => {
@@ -3109,7 +3206,7 @@ impl App {
         self.leave_live();
         self.list.unselect_all();
         self.title.set_text("Usage");
-        self.window.set_title(Some("Usage - Claude"));
+        self.window.set_title(Some("Usage - T3-R Pantheon"));
         self.subtitle.set_text("Tokens and cost across providers, read by the server from local history");
         self.subtitle.set_visible(true);
         self.show_page("usage");
@@ -3122,7 +3219,7 @@ impl App {
         self.leave_live();
         self.list.unselect_all();
         self.title.set_text("Repos");
-        self.window.set_title(Some("Repos - Claude"));
+        self.window.set_title(Some("Repos - T3-R Pantheon"));
         self.subtitle.set_text("Pinned GitHub repos, their issue backlog, and the runner");
         self.subtitle.set_visible(true);
         self.show_page("repos");
@@ -3431,7 +3528,7 @@ impl App {
         self.leave_live();
         self.list.unselect_all();
         self.title.set_text("Diagnostics");
-        self.window.set_title(Some("Diagnostics - Claude"));
+        self.window.set_title(Some("Diagnostics - T3-R Pantheon"));
         self.subtitle.set_text("The server's resource telemetry: it samples only while this page is open");
         self.subtitle.set_visible(true);
         self.show_page("diagnostics");

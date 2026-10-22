@@ -1,10 +1,11 @@
-# Claude for elementary OS (Rust)
+# T3-R Pantheon
 
-A native Pantheon client for AI coding agents: Claude Code, Codex, OpenCode and Grok through the
+A native Pantheon client for AI coding agents: Claude Code, ChatGPT via Codex, OpenCode, Grok Build and ACP providers through the
 [T3 Code](https://github.com/pingdotgg/t3code) server, with your local Claude Code transcripts
-(`~/.claude/projects/*/*.jsonl`) as the offline view. gtk4-rs 0.11 + granite-rs 3.3, one process,
-~75 MB, no CPU at idle. Built to replace the Electron desktop app (19 processes, 2.4 GB) on an
-Apple Silicon Mac running elementary OS; numbers in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), the shared GTK-on-Asahi
+(`~/.claude/projects/*/*.jsonl`) as the offline view. gtk4-rs 0.11 + granite-rs 3.3, one process
+and one T3 connection for both surfaces. The measured full-client baseline is in
+[`docs/PERFORMANCE.md`](docs/PERFORMANCE.md); quick-panel memory has not yet been measured separately. Built to replace
+the Electron desktop app (19 processes, 2.4 GB) on an Apple Silicon Mac running elementary OS; the shared GTK-on-Asahi
 findings in [`mseries/GTK-PERFORMANCE-ASAHI.md`](../../mseries/GTK-PERFORMANCE-ASAHI.md). This directory is the source;
 the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
@@ -14,7 +15,9 @@ the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
 ```sh
 cargo build --release
-./target/release/claude-pantheon-rs            # or, with the shared target dir in ~/.cargo/config.toml:
+./target/release/claude-pantheon-rs            # opens the Dock quick surface
+./target/release/claude-pantheon-rs --full     # opens the full desktop chat
+# or, with the shared target dir in ~/.cargo/config.toml:
 ~/.cache/cargo-target/release/claude-pantheon-rs
 ```
 
@@ -24,6 +27,9 @@ Other entry points:
 
 | Command | What |
 |---|---|
+| `claude-pantheon-rs` or `--quick` | open the compact Dock quick surface |
+| `claude-pantheon-rs --full` | open the full desktop client |
+| `claude-pantheon-rs --new-thread`, `--usage`, `--thread ID` | open the full client at that destination |
 | `claude-pantheon-rs --index` | list the offline sessions the sidebar shows, with timing |
 | `claude-pantheon-rs --quit-after-frame` | draw one frame, print the start-up time, exit (benchmarks) |
 | `claude-pantheon-rs --t3-dump DIR [TOKEN]` | record the server's answers as JSON (fixtures); pairs first when a token is given |
@@ -55,6 +61,17 @@ Other entry points:
 The same actions sit in the app menu (header bar, right) with their accelerator labels, plus Repos
 and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
 Forget Pairing and About (version, server, providers ready).
+
+## Dock quick surface
+
+The default Dock launch opens a compact GTK surface over the same app instance and T3 connection. It shows the paired
+T3 environment, freshness, usage for only the provider selected in full chat, and live running or approval-waiting
+threads. New chat, Usage, Settings and **Open full chat** route to the full desktop window. Other provider accounts are
+managed in Settings → Providers. Offline activity is marked stale and cannot be opened as a live thread.
+
+The panel reads the local versioned `status.json` snapshot through a file monitor; it does not open another RPC socket
+or poll. Writes use an atomic rename and mode `0600`. On disconnect it keeps the last successful snapshot as stale;
+unpairing or switching environments clears the cache.
 
 ## Sidebar
 
@@ -95,15 +112,19 @@ and saved accounts advertised by the server. The T3 Code server owns provider cr
 sends only the responses needed to complete the current sign-in flow. Providers must be installed and
 enabled on the server before they can be connected here.
 
+The same page can search the ACP Registry or add a local ACP command. For example, register `dsh --profile default acp`
+to use DeepSeek Harness when that CLI is installed on the paired T3 server. The server runs the agent and owns its
+credentials. DeepSeek's API prefix cache is server-side and automatic; the client does not implement a duplicate cache.
+
 ## Usage and status (CodexBar-style)
 
 The chat client includes the CodexBar-style usage view, so provider usage lives beside the threads that
 use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windows with reset times and
 the next-provider capacity decision, then shows 30-day tokens, output, cache reads, API-equivalent cost,
 cache savings, model breakdowns and a 7-day activity chart for Claude, Codex, OpenCode and Grok. The
-optional Wingpanel 9 indicator brings the same status to the desktop panel: quota gauges, running
-threads and permission prompts, with thread links that open in this client. The indicator reads the
-client's local status feed; it does not start a second server connection.
+optional legacy Wingpanel 9 indicator brings status to the desktop panel: quota gauges, running
+threads and permission prompts, with thread links that open in this client. The Dock quick surface is
+the default compact status view. Both read the local status feed without starting another connection.
 
 ## What is where
 
