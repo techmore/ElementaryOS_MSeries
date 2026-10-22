@@ -615,7 +615,8 @@ impl ReposPage {
         actions.set_min_children_per_line(1);
         actions.set_max_children_per_line(5);
         actions.set_homogeneous(false);
-        actions.set_halign(gtk::Align::End);
+        actions.set_hexpand(true);
+        actions.set_halign(gtk::Align::Fill);
         actions.update_property(&[gtk::accessible::Property::Label("Issue actions")]);
         let cancel = gtk::Button::with_label("Close");
         let save = gtk::Button::with_label("Save draft");
