@@ -64,7 +64,8 @@ jobs:
             exit 0
           fi
 
-          mapfile -t changed_files < <(git diff --name-only "$BASE_SHA...$GITHUB_SHA")
+          changed_output="$(git diff --name-only "$BASE_SHA...$GITHUB_SHA")"
+          mapfile -t changed_files <<< "$changed_output"
           matches() {
             local path pattern
             for path in "${changed_files[@]}"; do
