@@ -26,11 +26,34 @@ contents list. No scanning, selection, Trash or permanent-delete behavior
 changed. Fixed three-pane minimum widths and compact-window navigation still
 need an interaction redesign and visual qualification.
 
-**Source validation only:** `git diff --check` passed. No app build, GUI probe or
-test suite was run after this change. The previous PR-head Disk Space CI job was
-still at dependency installation when inspected; a fresh CI run on the updated
-head is needed. Next: inspect light/dark and narrow-window rendering, then
-implement and qualify compact pane navigation.
+**Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml --package mseries-diskspace`,
+`cargo check --locked --manifest-path rust/Cargo.toml -p mseries-diskspace`, and
+`git diff --check` passed. No app test suite or GUI render was run after this
+change. As of 17:46 UTC, current-head Messages, SDK/System Monitor and Software
+Updates workflows had started; Disk Space and broad wiring runs were queued.
+No current-head app test result was complete. The prior Disk Space run was
+cancelled as the branch advanced. Next: inspect light/dark and narrow-window
+rendering, then implement and qualify compact pane navigation.
+
+## Rust Messages public link previews — 2026-10-22
+
+The preview now supports public HTTPS images, including GIF/WebP, and YouTube
+links. Incoming previews require an explicit Load Preview action; sent links
+can load automatically. Requests validate and pin public DNS addresses, bound
+response bytes, dimensions, animation frames and in-memory cache, and never
+write previews to disk or fetch MAP attachments. This closes the earlier
+bounded-preview implementation gap; phone, keyboard/accessibility and owner
+acceptance remain open.
+
+The main window also supports Ctrl+F (search), Ctrl+R (refresh), Ctrl+N (new
+message) and Escape (clear focused search or return to the compact conversation
+list). Search, conversation list, favorite control and composer have SDK
+accessible names. Sending still requires the explicit Send button.
+
+**Source/build validation:** `cargo fmt --check --manifest-path rust/Cargo.toml --package mseries-messages`,
+`cargo check --locked --manifest-path rust/Cargo.toml -p mseries-messages`, and
+`git diff --check` passed. No Messages test suite or GUI probe was run for this
+keyboard change. Full interaction and assistive-technology review remains open.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
@@ -10839,12 +10862,13 @@ private profile/database or implement its protocol here. See
 
 Source/build checks only; no live GUI, phone, send, install, or desktop-session
 qualification was performed. Current Rust Messages gaps include imported pins,
-bounded link/image previews, delivery receipts (not exposed by the MAP transfer
-API), remaining message actions,
-keyboard/accessibility parity, narrow layouts, localization and end-to-end
-owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
-warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
+delivery receipts (not exposed by the MAP transfer API), remaining message
+actions, keyboard/accessibility parity, narrow layouts, localization and
+end-to-end owner qualification. Rust workspace `cargo fmt`, `cargo check` and
+Clippy with warnings denied pass for the SDK, T3, Messages, Disk Space and
+Software Updates.
 This continuation separately passed formatting, locked compile checks and
 Clippy with `-D warnings` for the SDK, Messages and Software Updates adapter.
-No local test suites were run. GitHub Actions for the latest PR revision are
-queued; they have not passed yet.
+The Disk Space follow-up separately passed rustfmt check and locked crate
+compilation. No local test suites were run. GitHub Actions for current PR head
+`3825ebcc` are in progress; they have not all passed yet.
