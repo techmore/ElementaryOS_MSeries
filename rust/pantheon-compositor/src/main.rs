@@ -40,6 +40,7 @@ mod protocols;
 mod screen_corners;
 pub mod screenshot;
 pub mod screenshot_pixels;
+pub mod screenshot_save;
 mod shell_compat;
 mod snap_assist;
 mod snap_group;
