@@ -623,8 +623,8 @@ After both selected runs succeed, retrieve with:
 python3 mseries/m4-mini/fetch-hosted-candidates.py \
   --kernel-run 39698975678 \
   --kernel-source 2798237ed0b3cd386385e8ec0d92a10fb0987db7 \
-  --mesa-run 39702973626 \
-  --mesa-source 77f9561ce40e0e1d59b03d720a3c4efddf856441 \
+  --mesa-run 39704499140 \
+  --mesa-source 84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a \
   --output /path/to/new-candidate-download
 ```
 
@@ -723,3 +723,5 @@ to fail during setup if the intended layout is unavailable. Two workflow
 regressions verify prerequisites and the explicit option. Prior local vendor
 library tests remain historical evidence; corrected hosted replay is pending.
 [Failure and successful substeps](receipts/2026-10-21-hosted-mesa-failure-3.json).
+
+Corrected GLVND replay: [39704499140](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39704499140), source `84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a`. No completed result yet. [Dispatch snapshot](receipts/2026-10-21-hosted-mesa-retry-4.json).

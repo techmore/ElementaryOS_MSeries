@@ -1,0 +1,11 @@
+{
+  "run_id": 39704499140,
+  "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39704499140",
+  "source_head": "84bf7a7c2b75afc49ba7904a8e3abd728ec9f32a",
+  "status_at_capture": "in_progress",
+  "conclusion_at_capture": null,
+  "scope": "explicit GLVND Mesa build/test/package replay; no native GPU test",
+  "kernel_run": 39698975678,
+  "hardware_validated": false,
+  "factory_promotion": false
+}

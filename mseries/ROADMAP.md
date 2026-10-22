@@ -3881,3 +3881,6 @@ M4 hosted Mesa run39702973626 compiled and passed five AGX groups/software smoke
 then failed receipt hashing: auto GLVND disabled without libglvnd-dev, producing
 standalone EGL layout. Added dependency and explicit -Dglvnd=enabled; two workflow
 regressions pass. No package success. Replay next; original kernel still active.
+
+M4 explicit-GLVND Mesa replay dispatched:39704499140 at84bf7a7c; intake example
+now selects this run/source. No successful hosted candidate claimed yet.
