@@ -11218,3 +11218,21 @@ that requires a new hosted graph build with retained live root. Wait for r5 kern
 success/download validation, update image inputs coherently, then run the combined
 image/ISO workflow once. Evidence: receipts/2026-10-22-iso-assembly-preflight.json
 under mseries/m4-mini.
+
+An actual small synthetic ARM64 EFI ISO fixture now passes native GRUB assembly,
+xorriso UEFI catalog inspection and full ISO extraction; kernel-placeholder and
+compressed-raw payload hashes match, and embedded raw decompression roundtrips.
+The extracted EFI/BOOT/BOOTAA64.EFI is a valid AArch64 (0xaa64) PE executable.
+The placeholder kernel was never executed: this proves packaging/tool behavior,
+not boot or desktop qualification. A first isolated-tool attempt lacked mformat;
+existing isolated mtools corrected that PATH, and production now checks mformat/
+mcopy up front (hosted mtools was already installed). Production also verifies
+AArch64 EFI fallback readback. No owner-host packages or boot configuration were
+installed. Receipt: mseries/m4-mini/receipts/2026-10-22-iso-uefi-fixture.json.
+
+Additional teardown ordering concern remains source-only: normal C scheduler
+free_job executes on work_free_job, while SchedulerOwner destruction calls fini,
+which synchronously disables work_free_job. A final device reference released
+from that callback must not synchronously destroy its own scheduler. This is a
+reason to retain explicit producer joins/deferred destruction in any candidate,
+not a native failure claim or justification for the existing resource leak.

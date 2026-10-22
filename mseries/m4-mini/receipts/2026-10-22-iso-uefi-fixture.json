@@ -1,0 +1,52 @@
+{
+  "observed_at_utc": "2026-10-22T05:22:27.640544+00:00",
+  "scope": "small synthetic ARM64 EFI GRUB ISO assembly/catalog/readback, placeholder kernel never executed; not full desktop ISO or native boot",
+  "commands": [
+    [
+      "grub-mkrescue",
+      "--directory=/usr/lib/grub/arm64-efi",
+      "-o",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-fixture/fixture.iso",
+      "-iso-level",
+      "3",
+      "-volid",
+      "ELEMENTARY_M4_MINI_ARM64",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-fixture/iso_root"
+    ],
+    [
+      "xorriso",
+      "-indev",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-fixture/fixture.iso",
+      "-report_el_torito",
+      "plain"
+    ],
+    [
+      "xorriso",
+      "-osirrox",
+      "on",
+      "-indev",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-fixture/fixture.iso",
+      "-extract",
+      "/",
+      "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-iso-uefi-fixture/readback"
+    ]
+  ],
+  "iso_sha256": "5afa3d9717a356f4d694649ced53e138935372f55334df1877a59be99b512efd",
+  "uefi_catalog": true,
+  "payload_readback": true,
+  "embedded_raw_roundtrip": true,
+  "initial_attempt": "failed because isolated test PATH lacked mformat; hosted workflow already installs mtools; retried with existing isolated mtools",
+  "host_packages_installed": false,
+  "tools_debs": {
+    "libburn4t64_1.5.6-1.2build1_arm64.deb": "7d8818a059759258b579ea2b0976ff2a7d9ac9229de1693ba14c7f675232a102",
+    "libisoburn1t64_1%3a1.5.6-1.1ubuntu4_arm64.deb": "dd606e67fecaba4418ec7dee2d4911568badd94c88fffbc7df8620eeba5815e7",
+    "libisofs6t64_1.5.6.pl01-1.1ubuntu3_arm64.deb": "0999db2a2e63f3baec73a871cc275242286fb6c5decd6130de04d17d4817f037",
+    "xorriso_1%3a1.5.6-1.1ubuntu4_arm64.deb": "97d52f1ceb516df57b7a02f95f67143d0d941315f6380d9dec8afbe6e9a74b8b"
+  },
+  "kernel_booted": false,
+  "hardware_validated": false,
+  "efi_boot_path": "EFI/BOOT/BOOTAA64.EFI",
+  "efi_pe_machine": "0xaa64 AArch64",
+  "efi_sha256": "c046036adfa8161fa886efbda2067cd4a94c2def75f82ad555fd22ab8ebe5009",
+  "assembler_sha256": "d4ee1bd332afa0aeea039d6c2108dc63b2c83426c7ec5f5e8f62011ec68eefea"
+}

@@ -14,6 +14,7 @@ import platform
 import re
 import shlex
 import shutil
+import struct
 import subprocess
 
 
@@ -63,7 +64,8 @@ def main():
     output = args.output.resolve()
     if output.exists() or output == workspace or output.is_relative_to(live):
         raise ValueError('new output directory outside live root required')
-    for tool in ['mksquashfs', 'grub-mkrescue', 'xorriso', 'unsquashfs', 'lsinitramfs']:
+    for tool in ['mksquashfs', 'grub-mkrescue', 'xorriso', 'unsquashfs', 'lsinitramfs',
+                 'mformat', 'mcopy']:
         if not shutil.which(tool):
             raise ValueError('missing assembly tool: ' + tool)
     if not Path('/usr/lib/grub/arm64-efi/modinfo.sh').is_file():
@@ -126,6 +128,13 @@ def main():
         raise ValueError('ISO lacks a reported UEFI boot image')
     readback = output / 'readback'
     run(['xorriso', '-osirrox', 'on', '-indev', str(iso), '-extract', '/', str(readback)], 'iso-readback')
+    efi = output / 'bootaa64.efi'
+    run(['mcopy', '-i', str(readback / 'efi.img'), '::EFI/BOOT/BOOTAA64.EFI', str(efi)], 'efi-readback')
+    efi_bytes = efi.read_bytes()
+    pe = struct.unpack_from('<I', efi_bytes, 0x3c)[0]
+    if (efi_bytes[:2] != b'MZ' or efi_bytes[pe:pe + 4] != b'PE\0\0' or
+            struct.unpack_from('<H', efi_bytes, pe + 4)[0] != 0xaa64):
+        raise ValueError('ISO EFI fallback executable is not AArch64 PE')
     payloads = ['casper/vmlinuz', 'casper/initrd', 'casper/filesystem.squashfs',
                 'extra/' + embedded.name, 'boot/grub/grub.cfg']
     hashes = {name: digest(root / name) for name in payloads}
@@ -148,6 +157,8 @@ def main():
         'source_commit': record['source_commit'], 'image_version': version,
         'assembler_sha256': digest(Path(__file__)), 'kernel_release': release,
         'iso_file': iso.name, 'iso_sha256': digest(iso), 'payload_sha256': hashes,
+        'efi_boot_path': 'EFI/BOOT/BOOTAA64.EFI', 'efi_pe_machine': '0xaa64 AArch64',
+        'efi_sha256': digest(efi),
         'raw_image_sha256': digest(raw), 'commands': commands,
         'iso_assembled': True, 'iso_boot_tested': False, 'factory_promotion': False,
         'installer_admission': False, 'hardware_validated': False}, indent=2) + '\n')
