@@ -1,0 +1,35 @@
+{
+  "observed_at_utc": "2026-10-22T05:17:12.088093+00:00",
+  "gravity_source": "4fc326f plus r5 compatibility",
+  "gravity_files": {
+    "drivers/gpu/drm/drm_drv.c": "aefc9af7a9f8e6db0282ee4bc923e32b90842e6c2f2900d270e1bf498cb12c3c",
+    "drivers/gpu/drm/drm_file.c": "6c8f1dffcb976e640871f0fd324489bb64392207a3c2b87c2890b4f761eea186",
+    "rust/kernel/drm/device.rs": "716824518bbb481905145fe917a852d492549721755d0eac76551ec4f7411a36",
+    "drivers/soc/apple/rtkit.c": "4a3c96085d9157eab786cf5c40df9f96a9c64895d6e70f618eb7cd36cd11bba4",
+    "rust/kernel/soc/apple/rtkit.rs": "76d0c42d1aed5ed050fc986a08f408578e555830479de456f103bb03623d43a8",
+    "drivers/gpu/drm/asahi/g16.rs": "605f15066d3abb5e65da9fe9505e21d4e9e3725a342a7a8cd9fd61e3e1923677",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "ea399e483c9b7372725b6888a68a58e77092101e6f8c85324a0e1cf28f353ecf"
+  },
+  "aurora_commit": "ed55042c712afb987608e3633cb926116ca1962e",
+  "aurora_files": {
+    "rust/kernel/drm/device.rs": "ae1d23669b931ae98fdf9e5cc6feb634e6604788d5b8beb74a9d568d6496fb70",
+    "drivers/gpu/drm/asahi/cleanup.rs": "5459101d7ac67ed1a5a8536639f58c685133fe98e98e19976b39a87c128b3246"
+  },
+  "established": [
+    "drm_dev_unregister removes user-visible clients/minors and invokes unload only if provided. The reviewed Rust VTABLE provides no M4 pump-join hook.",
+    "File postclose is invoked by drm_file_free, while VFS file ownership remains held through release; that protects file callback code but completion fences do not prove pump callback return.",
+    "Gravity Device::new already allocates with release=None, performs fallible pinned data init, releases via temporary vtable on init error, and publishes full VTABLE only on success.",
+    "Aurora uses the corresponding temporary no-release constructor pattern and actual drop_in_place in initialized device release.",
+    "Gravity release still suppresses the destructor, so runtime RTKit destruction is not established by final device reference release.",
+    "Actual RtKit::drop calls apple_rtkit_free before freeing callback data; C free stops mailbox and destroys its workqueue before freeing buffers. This is a callback-join boundary only if the owning destructor actually executes.",
+    "Aurora cleanup queue ownership is outside platform registration; destructor runs after producer boundaries. Its assumptions cannot be copied without equivalent M4 joins."
+  ],
+  "open": [
+    "Trace last DeviceRef release contexts, especially canceled jobs and running pump callbacks, before enabling synchronous scheduler/RTKit destruction.",
+    "Establish unbind ordering before devres invalidates mapped I/O, prevent new producers, and join pump callbacks; do not use global system queue flush.",
+    "Retain firmware-visible pages on failed shutdown without retaining callable module callbacks after unload."
+  ],
+  "selected_new_runtime_patch": false,
+  "hardware_validated": false,
+  "native_failure_reproduced": false
+}

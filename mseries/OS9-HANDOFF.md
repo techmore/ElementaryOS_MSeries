@@ -11189,3 +11189,16 @@ is not proof that scheduler/RTKit destructors run. Trace C unregister, file rele
 and RTKit callbacks before choosing an M4 worker join/resource fix; do not simply
 enable the commented destructor. Source evidence is retained in
 mseries/m4-mini/receipts/2026-10-22-m4-registration-worker-follow-up.json.
+
+DRM/RTKit release-order follow-up now checks C internals. drm_dev_unregister
+has no generic pump join; the reviewed Rust VTABLE provides no M4 unload hook.
+Gravity Device::new already uses a temporary release=None vtable through fallible
+data initialization, then publishes its full vtable. Aurora ed55042 uses the
+corresponding constructor pattern with normal initialized-data destruction.
+Gravity's old release leak is therefore not justified solely by the constructor's
+current initialization path, but restoring synchronous Drop still needs final
+DeviceRef callback-context/deadlock and unbind-before-devres review. In the actual
+RTKit destructor, mailbox stop and workqueue destruction precede callback-data
+free; the leak means that boundary cannot currently be assumed to run.
+No speculative global-workqueue flush or destructor patch is selected. Evidence:
+mseries/m4-mini/receipts/2026-10-22-m4-drm-rtkit-release-order.json.
