@@ -510,3 +510,21 @@ was dispatched at source `2798237e`. The initial snapshot confirms the M4 job
 is active and ordinary/Fairydust jobs are skipped. No hosted compile/package
 result is claimed yet; follow the live run before retrying.
 [Dispatch snapshot](receipts/2026-10-21-hosted-kernel-run.json).
+
+## Hosted Mesa-only research build
+
+`m4_userspace_only=true` (other research/Fairydust flags false) selects a
+separate artifact-only hosted Mesa job. Its concurrency group allows the
+already-running kernel job to continue. It uses the pinned source, explicit
+Asahi/llvmpipe/OpenGL/Vulkan/X11/Wayland/LLVM options, five upstream test groups
+and software smoke. Source, recipes, toolchain/test records and unpromoted
+packages are retained as CI artifacts. No image or release is published.
+
+The builder checks the selected kernel/Mesa DRM UAPI hash.
+`check-mesa-package.py` ties fresh package/library bytes to their build receipts,
+checks persistent layout/no hooks, and runs the packaged private launcher with
+the software test. Local r4 passes. These checks do not establish native M4
+GPU operation, Vulkan conformance or factory promotion. Hosted dispatch/result
+remains separate from this preflight.
+
+[Hosted Mesa preflight](receipts/2026-10-21-hosted-mesa-preflight.json).

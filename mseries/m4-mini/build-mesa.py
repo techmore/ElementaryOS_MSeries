@@ -12,6 +12,7 @@ import tarfile
 
 COMMIT = '87ac51d411f0e58a9433567ec2666f457be89e1d'
 SHA256 = '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e'
+UAPI_SHA256 = 'eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015'
 OPTIONS = ['--prefix=/opt/elementary-m4-gravity1', '--libdir=lib',
            '-Dplatforms=x11,wayland', '-Dgallium-drivers=asahi,llvmpipe',
            '-Dvulkan-drivers=asahi', '-Dllvm=enabled', '-Dbuild-tests=true']
@@ -36,6 +37,8 @@ def main():
             raise ValueError('unexpected Mesa source root')
         archive.extractall(root, filter='data')
     source, build = root / ('mesa-' + COMMIT), root / 'build'
+    if hashlib.sha256((source / 'include/drm-uapi/asahi_drm.h').read_bytes()).hexdigest() != UAPI_SHA256:
+        raise ValueError('matched Gravity kernel/Mesa DRM UAPI required')
     env = dict(os.environ)
     if args.pkg_config_path:
         env['PKG_CONFIG_PATH'] = args.pkg_config_path
@@ -69,7 +72,7 @@ def main():
     artifacts = {name: hashlib.sha256((prefix / name).read_bytes()).hexdigest() for name in libraries}
     (root / 'receipt.json').write_text(json.dumps({
         'repository': 'GravityLinux/mesa', 'commit': COMMIT, 'archive_sha256': SHA256,
-        'options': OPTIONS, 'commands': commands, 'build': 'passed',
+        'uapi_sha256': UAPI_SHA256, 'options': OPTIONS, 'commands': commands, 'build': 'passed',
         'tests': {'meson_groups': len(test_results), 'failed_groups': 0}, 'artifacts': artifacts,
         'status': 'built, AGX tests and isolated software rendering passed, staged only; no M4 GPU runtime qualification',
     }, indent=2) + '\n')

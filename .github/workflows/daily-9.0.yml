@@ -19,17 +19,22 @@ on:
         type: boolean
         required: false
         default: false
+      m4_userspace_only:
+        description: Build and inspect pinned Gravity Mesa only (no image or promotion)
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: os9-mseries-${{ github.ref }}
+  group: os9-mseries-${{ github.ref }}${{ inputs.m4_userspace_only && '-m4-userspace' || '' }}
   cancel-in-progress: false
 
 jobs:
   build-kernel:
-    if: inputs.fairydust && !inputs.m4_kernel_only
+    if: inputs.fairydust && !inputs.m4_kernel_only && !inputs.m4_userspace_only
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -100,7 +105,7 @@ jobs:
       - name: Validate research-only selection
         run: |
           set -euo pipefail
-          [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true ]]
+          [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true && "${{ inputs.m4_userspace_only }}" != true ]]
           [[ "$(uname -m)" == aarch64 ]]
           mkdir -p build-record
           git rev-parse HEAD > build-record/source-commit.txt
@@ -182,9 +187,110 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
+  build-m4-userspace:
+    if: inputs.m4_userspace_only
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    env:
+      RUSTUP_TOOLCHAIN: 1.99.0
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate Mesa-only research selection
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.fairydust }}" != true && "${{ inputs.fairydust_tunnel }}" != true && "${{ inputs.m4_kernel_only }}" != true ]]
+          [[ "$(uname -m)" == aarch64 ]]
+          mkdir -p build-record
+          git rev-parse HEAD > build-record/source-commit.txt
+          printf '%s\n' 'M4 Mesa candidate only. No image, factory promotion, installation, GPU or Vulkan qualification.' > build-record/STATUS.txt
+      - name: Free disposable runner build space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - name: Install Mesa build and software-test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl meson ninja-build pkg-config dpkg-dev \
+            clang-21 libclang-21-dev llvm-21-dev libclc-21 libclc-21-dev libllvmspirvlib-21-dev \
+            spirv-tools spirv-tools-dev glslang-tools bindgen cbindgen bison flex \
+            python3-mako python3-ply python3-yaml python3-packaging python3-pycparser \
+            libdrm-dev libdisplay-info-dev libgbm-dev libexpat1-dev libudev-dev libelf-dev libunwind-dev libzstd-dev zlib1g-dev \
+            libwayland-dev wayland-protocols libx11-dev libx11-xcb-dev libxext-dev \
+            libxfixes-dev libxdamage-dev libxrandr-dev libxshmfence-dev libxcb-dri2-0-dev \
+            libxcb-dri3-dev libxcb-glx0-dev libxcb-present-dev libxcb-randr0-dev \
+            libxcb-shm0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-render0-dev libxcb-shape0-dev libegl-dev libgl-dev libvulkan-dev
+      - name: Select research Rust and LLVM tools
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.0 --profile minimal --component rust-src
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo '/usr/lib/llvm-21/bin' >> "$GITHUB_PATH"
+          echo 'LIBCLANG_PATH=/usr/lib/llvm-21/lib' >> "$GITHUB_ENV"
+      - name: Build, test, package and inspect matched Gravity Mesa
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/mesa-87ac51d.tar.gz"
+          curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/GravityLinux/mesa/tar.gz/87ac51d411f0e58a9433567ec2666f457be89e1d \
+            --output "$archive"
+          echo '1195f212bcf5816b8b893113b0b5dc578ce744d420856b6ad4f42008889e231e  '"$archive" | sha256sum --check
+          SOURCE_DATE_EPOCH=$(python3 -c 'import sys,tarfile; print(int(tarfile.open(sys.argv[1]).next().mtime))' "$archive")
+          export SOURCE_DATE_EPOCH
+          { rustc --version --verbose; cc --version; clang --version; llvm-config --version; bindgen --version; cbindgen --version; meson --version; pkg-config --modversion libdrm egl gl; df -h; } > build-record/toolchain.txt
+          python3 mseries/m4-mini/build-mesa.py --archive "$archive" --output "$RUNNER_TEMP/m4-mesa" --jobs 2
+          python3 mseries/m4-mini/package-mesa.py --archive "$archive" \
+            --source "$RUNNER_TEMP/m4-mesa/mesa-87ac51d411f0e58a9433567ec2666f457be89e1d" \
+            --stage "$RUNNER_TEMP/m4-mesa/stage" --validation "$RUNNER_TEMP/m4-mesa/receipt.json" \
+            --output mkosi.packages-m4-mesa-research
+          python3 mseries/m4-mini/check-mesa-package.py \
+            --package mkosi.packages-m4-mesa-research/elementary-m4-gravity-mesa1_26.3.0~devel+gravity.87ac51d-4_arm64.deb \
+            --package-receipt mkosi.packages-m4-mesa-research/receipt.json \
+            --build-receipt "$RUNNER_TEMP/m4-mesa/receipt.json" --smoke "$RUNNER_TEMP/m4-mesa/mesa-software" \
+            --receipt build-record/package-check.json
+          mkdir -p mkosi.packages-m4-mesa-research/reproduction
+          cp mseries/m4-mini/{build-mesa,package-mesa,check-mesa-package,run-mesa}.py mkosi.packages-m4-mesa-research/reproduction/
+          cp mseries/m4-mini/test-mesa-software.c mkosi.packages-m4-mesa-research/reproduction/
+          cp "$RUNNER_TEMP/m4-mesa/receipt.json" mkosi.packages-m4-mesa-research/build-receipt.json
+          cp "$RUNNER_TEMP/m4-mesa/mesa-software" mkosi.packages-m4-mesa-research/
+          cp build-record/{source-commit.txt,STATUS.txt,toolchain.txt,package-check.json} mkosi.packages-m4-mesa-research/
+          (cd mkosi.packages-m4-mesa-research && sha256sum *.deb *.tar.gz > SHA256SUMS)
+      - name: Collect Mesa research diagnostics
+        if: always()
+        run: |
+          mkdir -p build-record
+          for candidate in "$RUNNER_TEMP/m4-mesa/"*.log "$RUNNER_TEMP/m4-mesa/receipt.json"; do
+            if [[ -f "$candidate" ]]; then cp "$candidate" build-record/; fi
+          done
+          if [[ -d "$RUNNER_TEMP/m4-mesa/build/meson-logs" ]]; then
+            cp -a "$RUNNER_TEMP/m4-mesa/build/meson-logs" build-record/
+          fi
+      - name: Preserve Mesa research records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-mesa-record-${{ github.run_id }}
+          path: build-record/
+          retention-days: 7
+      - name: Preserve unpromoted Mesa candidate and corresponding source
+        uses: actions/upload-artifact@v7
+        with:
+          name: m4-mesa-candidate-${{ github.run_id }}
+          path: mkosi.packages-m4-mesa-research/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 2
+
   build:
     needs: build-kernel
-    if: always() && !inputs.m4_kernel_only && (!inputs.fairydust || needs.build-kernel.result == 'success')
+    if: always() && !inputs.m4_kernel_only && !inputs.m4_userspace_only && (!inputs.fairydust || needs.build-kernel.result == 'success')
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:

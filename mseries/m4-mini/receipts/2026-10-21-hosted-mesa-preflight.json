@@ -1,0 +1,24 @@
+{
+  "scope": "Mesa-only hosted research preflight, no hosted result yet",
+  "workflow_sha256": "1bd2038c629a855e658d7549da2f10be2dbdec19d0ec377fdf2f155a9ce6e81a",
+  "builder_sha256": "267e072a26685f7096ef48a794cda0a9d53d472d48885b50f6edd9a0ff5bcb35",
+  "checker_sha256": "cc4b5ee6eaaf9a01e5098d1b521c78bac5cf81cab363f4331c76d1a2e025f397",
+  "local_package_check": {
+    "source_commit": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+    "package_sha256": "89950d877d41272106ee878572cf705b1c3e07f98a865df6dced881a41ddea5b",
+    "libraries": "four hashes/ARM64 ELF checks pass",
+    "test_groups": 5,
+    "persistent_prefix": "usr payload, compatibility symlink and vendor tmpfiles verified",
+    "software_rendering": "Renderer: llvmpipe (LLVM 21.1.8, 128 bits)\nVersion: 4.6 (Compatibility Profile) Mesa 26.3.0-devel\nIsolated software-rendering userspace smoke test passed; M4 hardware untested",
+    "package_hooks": "absent",
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "vulkan_conformance_tested": false
+  },
+  "uapi_sha256": "eb9f39e87dfe448dc044f54ab2d11b7493bf1359faca8fb76ece5f3583469015",
+  "static_checks": "YAML, shell, mutually exclusive research modes, ordinary-job isolation, contents:read token and separate Mesa concurrency group checked",
+  "selected_input": "m4_userspace_only=true; kernel-only/Fairydust flags false",
+  "hosted_build_started": false,
+  "factory_promotion": false,
+  "hardware_validated": false
+}

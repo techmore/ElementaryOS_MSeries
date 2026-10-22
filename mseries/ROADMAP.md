@@ -1,3 +1,21 @@
+## M4 mini: independent hosted Mesa build prepared — 2026-10-21
+
+Added m4_userspace_only input/job to the existing artifact-only workflow. It
+excludes kernel, ordinary image and Fairydust jobs and has its own concurrency
+group, preserving the active kernel run. Same pinned Mesa/options/five upstream
+test groups/software smoke are used with Rust 1.99.0 and LLVM21. Artifacts retain
+corresponding source, recipes, test logs and toolchain/package records. No release
+publication or factory promotion.
+
+Builder now checks/records the exact DRM UAPI hash shared with the selected
+kernel. New check-mesa-package.py verifies fresh candidate receipts/library
+hashes, ARM64 ELF, persistent /usr layout, compatibility symlink/tmpfiles,
+absence of package hooks and actual packaged-launcher llvmpipe/Mesa26.3 smoke.
+It passes against local r4. YAML/mode/shell checks pass. Hosted dispatch next;
+no remote Mesa result claimed. Kernel run 39698975678 remains active at last
+check; do not duplicate it.
+[Preflight](m4-mini/receipts/2026-10-21-hosted-mesa-preflight.json).
+
 ## M4 mini: hosted source build is live — 2026-10-21
 
 Dispatched existing manual workflow once with m4_kernel_only=true and both
