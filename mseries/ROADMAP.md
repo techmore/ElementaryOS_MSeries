@@ -77,6 +77,12 @@ HIG usability principles through native Pantheon patterns.
 The project-wide inventory, scaling policy and staged migration order are in
 [Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
 
+The SDK now includes nonblocking Pantheon dock badges via LauncherEntry,
+including an optional progress indicator. Rust Messages reports the aggregate
+unread count, and T3 uses the same API for running-thread count/progress instead
+of keeping a private D-Bus implementation. The API coalesces state until the
+session bus connects and emits no background polling.
+
 Disk Space's first SDK consistency pass now scales persistent spacing and row
 padding with text metrics and names its icon-only actions for assistive
 technology. Its fixed three-pane minimum widths and compact-window navigation

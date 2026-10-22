@@ -11002,3 +11002,16 @@ changing the API generation, so BlueFerry can add an opaque ID for the
 configured phone and the Rust SDK can use it for Secret Service scoping. The
 Rust client will not derive that identity from private config, Bluetooth MAC,
 or conversation recipients. See the [pinned API contract](https://github.com/erikwb/blueferry/blob/60fd7ef1abbd25947981f0cf27a521d82784a75f/docs/en/developer/dbus-api.md#compatibility).
+
+## Shared Rust Pantheon dock badges — 2026-10-22
+
+Added `DockBadge` to `mseries-pantheon-kit` and migrated T3's existing
+LauncherEntry count/progress signal to the shared API. Rust Messages now sends
+its aggregate unread-message count. The session-bus connection is asynchronous,
+and updates are coalesced until it is ready; badge count zero hides the count
+and optional progress is clamped to the supported 0–1 range. This adds no
+background polling.
+
+**Source/build validation:** pending for this change. No dock GUI acceptance or
+desktop-session signal observation has been performed. The unrelated local
+Software Updates edits remain untouched.
