@@ -20,21 +20,28 @@ opened and its test suite was not run.
 
 Owner clarified the destination: first-party apps should follow the Rust GTK4 / Granite-rs pattern of `rust/claude-pantheon-rs` (the T3 Code client). Messages can move its UI to Rust over BlueFerry's existing versioned session-D-Bus API, keeping BlueFerry as the sole MAP client and encrypted-history owner. Signal remains gated on an officially supported secure client/backend boundary; do not treat `libsignal` alone as a stable external SDK or touch its private profile. Plan: [`SIGNAL-PANTHEON-DESIGN.md`](SIGNAL-PANTHEON-DESIGN.md). Next implementation slice: a Rust Messages client/adapter in the `rust/` workspace; retain the current launcher until feature parity and owner-session phone acceptance. The real Signal screenshot preview/appearance and Messages live visual/keyboard/accessibility gates also remain open.
 
-## Signal accent aligned with Pantheon-R — 2026-10-22
+## Signal accent follows the elementary palette — 2026-10-22
 
-The official mutable Signal Beta app now follows Pantheon-R's softened blueberry
-ramp: brand and primary accents `#9dbfe3`, pressed controls `#7ba2cc`, and dark
-variant `#a9c8e8`. The default AccountsService blue maps to this theme palette
-instead of elementary's more saturated `#3689e6`; other selected system accents
-remain supported. The desktop launcher refreshes the palette before each launch.
+Owner clarified that stock Pantheon/elementary defaults are the source-of-truth
+baseline; the custom Pantheon-R pastel palette needs a separate contrast audit. Signal now
+maps system accents to the published elementary palette stops. Blue uses
+`#3689e6` (500), `#8cd5ff` (100), `#64baff` (300), `#0d52bf` (700), and
+`#002e99` (900). Accent labels use dark/light stops for light/dark appearance;
+white-on-accent actions and outgoing message bubbles use the high-contrast 900
+stop. Other named accents now use the elementary stylesheet's matching 500 and
+100/300/700/900 stops as well. Palette source: elementary/stylesheet
+[`_palette.scss` at `64dea31`](https://github.com/elementary/stylesheet/blob/64dea31d6711bdd2f53903ec8441a5f89ac0edd0/src/gtk-4.0/_palette.scss).
 
-Applied through the existing Signal integration after confirming Signal Desktop
-was closed. The original `app.asar.orig` remains available for restore; 265 uses
-across 26 packaged assets now use the Pantheon-R palette and the bundle's
-internal integrity hashes were refreshed. No phone/account data was read or
-changed. Atomic deployments and the separate Flatpak remain unmodified. Check the
-appearance at the next Signal Beta launch; screenshot-shelf acceptance remains
-tracked separately under issue #227.
+The patcher edits only Signal's manifest and Tailwind stylesheets, startup-window
+accent, and embedded logo fills. It no longer scans arbitrary JavaScript, images, or fonts,
+so chat colors, avatars, QR artwork, and sticker palettes remain intact. The
+fixed-width archive entries retain their offsets and have refreshed integrity
+hashes. The latest local reapplication changes 201 uses in four packaged files.
+Unit coverage checks light/dark and high-contrast tokens, contrast for
+all named action fills, asset preservation, and archive hashes. No phone/account
+data was read or changed. Atomic deployments and the separate Flatpak remain
+unmodified. The Signal Beta system install uses the revised palette at the next
+launch. Screenshot-shelf acceptance remains tracked under issue #227.
 
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
