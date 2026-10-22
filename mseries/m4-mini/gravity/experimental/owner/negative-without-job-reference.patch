@@ -1,0 +1,12 @@
+Subject: [NEGATIVE TEST ONLY] omit job-held allocation reference
+
+--- a/rust/kernel/drm/sched.rs
++++ b/rust/kernel/drm/sched.rs
+@@ -138 +137,0 @@
+-    _scheduler: Arc<SchedulerInner<T>>,
+@@ -327,5 +325,0 @@
+-
+-        // SAFETY: The job allocation is writable and this initializes its reference.
+-        unsafe {
+-            addr_of_mut!((*job.as_mut_ptr())._scheduler).write(self.0.sched.allocation.clone())
+-        };

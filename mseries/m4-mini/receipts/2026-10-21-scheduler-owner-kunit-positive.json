@@ -1,0 +1,78 @@
+{
+  "scope": "unpromoted allocation-owner split plus instrumented deferred dependency lifetime and existing six generic ARM64 QEMU cases",
+  "exit": 0,
+  "historical_sources_restored": true,
+  "test_source_sha256": "c51645dbe9abbdee80b4d59e32947990343d67b8bae217cb02f6a6c0f8cb5ab1",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "deferred_dependency_keeps_allocation_after_owner_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_during_timeout_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_unfinished_job_is_reachable_at_teardown",
+            "status": "PASS"
+          },
+          {
+            "name": "nodevice_completion_releases_job",
+            "status": "PASS"
+          },
+          {
+            "name": "dirty_storage_starts_clean",
+            "status": "PASS"
+          },
+          {
+            "name": "late_completion_after_timeouts",
+            "status": "PASS"
+          },
+          {
+            "name": "repeated_timeouts_with_completions_in_flight",
+            "status": "PASS"
+          }
+        ],
+        "misc": {
+          "tests": 7,
+          "passed": 7,
+          "failed": 0,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false,
+  "aliasing_review_complete": false
+}

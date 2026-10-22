@@ -1,0 +1,12 @@
+{
+  "scope": "actual M4 driver/Rust core/C scheduler targeted compile; no full kernel/package or runtime",
+  "exit": 0,
+  "revision4_source_restored": true,
+  "source_sha256": "7d4d8e442eabe6a53e74a6f4f56dcb7df3fab493c5be2a3bbdc4eefc6a7d46b8",
+  "objects": {
+    "rust/kernel.o": "2b40568446ea3c5ddd0ddf1cc6e4c98de03c94dad0a7cacfa22c4702bd5f32c4",
+    "drivers/gpu/drm/asahi/asahi_m4.o": "bf03f44a0319b10882f2e604348ed12580c2df1212761363c14783159d7c058c",
+    "drivers/gpu/drm/scheduler/sched_main.o": "5739ce32dc9a262bf5564199b794bf0f5d3e109c9ab715385b2a3816517212b8"
+  },
+  "hardware_validated": false
+}

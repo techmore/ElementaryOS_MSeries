@@ -1,0 +1,53 @@
+{
+  "scope": "negative control removes only job-held allocation reference from owner candidate; generic ARM64 QEMU",
+  "exit": 1,
+  "sources_restored": true,
+  "negative_source_sha256": "b797712eff0c5f04027c2a4b7a584ec71b2acf7b4eb668822d0e3c8e65d15fbf",
+  "results": {
+    "name": "KUnit Test Group",
+    "sub_groups": [
+      {
+        "name": "rust_drm_sched",
+        "sub_groups": [],
+        "test_cases": [
+          {
+            "name": "deferred_dependency_keeps_allocation_after_owner_teardown",
+            "status": "FAIL"
+          }
+        ],
+        "misc": {
+          "tests": 1,
+          "passed": 0,
+          "failed": 1,
+          "crashed": 0,
+          "skipped": 0,
+          "errors": 0
+        },
+        "arch": "arm64",
+        "defconfig": "kunit_defconfig",
+        "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+        "lab_name": null,
+        "kernel": null,
+        "job": null,
+        "git_branch": "kselftest"
+      }
+    ],
+    "test_cases": [],
+    "misc": {
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "crashed": 0,
+      "skipped": 0,
+      "errors": 0
+    },
+    "arch": "arm64",
+    "defconfig": "kunit_defconfig",
+    "build_environment": "/home/sdolbec/Documents/Codex/2026-10-21/in-x20/work/m4-scheduler-kunit/build",
+    "lab_name": null,
+    "kernel": null,
+    "job": null,
+    "git_branch": "kselftest"
+  },
+  "hardware_validated": false
+}

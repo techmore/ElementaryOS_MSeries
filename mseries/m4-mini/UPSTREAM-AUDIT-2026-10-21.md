@@ -1121,3 +1121,19 @@ revision-4 build 39715540751 is pending behind live initialization-only r3 run
 image replay 39714779495 remains live in full graph assembly. Preserve these
 run identities; do not restart them on an observation timeout. Neither full
 r4 compilation nor image completion is claimed. Hardware remains unavailable.
+
+Unpromoted scheduler allocation-owner candidate: Aurora 7ba04b6 is adapted
+after revision-4 retention. Actual M4 driver/Rust core/C scheduler object
+compilation passes. Seven generic ARM64 QEMU cases pass, including a new forced
+entity-fini/deferred-dependency case that retains scheduler allocation after all
+entity/handle owners drop, then releases it after cleanup. Removing only the
+job-held allocation Arc fails the early-release assertion as expected.
+`prepare-scheduler-kunit.py --experimental-owner` replays the pinned archive,
+production compatibility, owner and test patches without fuzz; its scheduler
+source is byte-identical to the seven-case positive run. See the four
+`2026-10-21-scheduler-owner-*` receipts (object build, positive, negative, replay).
+The candidate is stored under `gravity/experimental/owner` and is not selected
+by normal kernel/package/image manifests. Module callback/code lifetime and
+mutable callback aliasing still require review. No installed host component
+changed. Baseline image run 39714779495 and initialization-only r3 kernel
+39709872273 remain live; r4 kernel 39715540751 remains pending.

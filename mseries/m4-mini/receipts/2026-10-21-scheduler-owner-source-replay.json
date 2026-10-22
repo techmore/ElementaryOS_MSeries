@@ -1,0 +1,20 @@
+{
+  "scope": "fresh pinned archive and explicit owner/test patch replay; scheduler source byte-identical to seven-case positive run",
+  "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+  "source_archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+  "experimental_owner_patches": {
+    "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42"
+  },
+  "test_patches": {
+    "owner-kunit.patch": "fd50d141efa36b160ff991b37b448cda24ffc555b8fe9199ab7f18796670f329"
+  },
+  "kunit_config_sha256": "128c528c0bf285fe32b12aa3e59a11944c4aadd1e19348cb8e1140e5e033eaae",
+  "compatibility_patches": {
+    "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+    "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b"
+  },
+  "scheduler_test_source_sha256": "c51645dbe9abbdee80b4d59e32947990343d67b8bae217cb02f6a6c0f8cb5ab1",
+  "normal_kernel_package_modified": false,
+  "hardware_validated": false,
+  "matches_positive_run_source": true
+}
