@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Claude
+Comment=Browse Claude Code chats and talk to Claude
+Exec=claude-pantheon
+Icon=io.github.techmore.ClaudePantheon
+Terminal=false
+Type=Application
+Categories=Development;Utility;
+Keywords=Claude;AI;Chat;Assistant;
+StartupNotify=true

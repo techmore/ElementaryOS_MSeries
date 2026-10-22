@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4b592"/>
+      <stop offset="1" stop-color="#d9733d"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)"/>
+  <rect x="4" y="4" width="56" height="28" rx="14" fill="url(#shine)"/>
+  <!-- starburst mark -->
+  <g fill="#fff8f2" transform="translate(32 32)">
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(45)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(90)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(135)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(180)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(225)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(270)"/>
+    <path d="M-2.2 -20 L2.2 -20 L1.2 -7 L-1.2 -7 Z" transform="rotate(315)"/>
+    <circle r="5.5"/>
+  </g>
+  <rect x="4.5" y="4.5" width="55" height="55" rx="13.5" fill="none" stroke="#000" stroke-opacity="0.12"/>
+</svg>

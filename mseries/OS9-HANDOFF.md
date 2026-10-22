@@ -1,3 +1,25 @@
+## Native Claude client (Vala/GTK4/Granite) — 2026-10-21 (Claude Code)
+
+`mseries/claude-pantheon-native/`: a native Pantheon client for Claude Code, built to replace the Electron desktop app
+(19 processes, 2.4 GB RSS, 1.08 cores idle on the j314s; `BASELINE.md`). Imported from a standalone repo
+(commits 13476f6, 7b572d2, 44f322c).
+
+- **What it does.** Sidebar of every `~/.claude/projects/*/*.jsonl` session grouped by real project path with search;
+  transcripts rendered as chat (markdown, fenced code, collapsed tool rows); live chat through the bundled `claude` CLI
+  (`-p --output-format stream-json`, resume, new session, permission-mode menu, Stop). Build: `meson setup build &&
+  ninja -C build`; `meson test` passes (parser smoke on a committed sample).
+- **Measured** (`bench.sh`, `docs/PERFORMANCE.md`): 69–83 MB RSS, 0–0.9 % CPU idle, 132–152 ms to mapped window.
+  Three GTK findings on this Mesa/Asahi stack, reusable by every GTK app here: GL renderer costs ~180 MB shader heap
+  (app forces cairo, `CLAUDE_PANTHEON_RENDERER` overrides); the default blurred CSD shadow re-blurs every frame
+  (52 ms → 6 ms with a 1 px outline); cursor blink keeps the window repainting 10 s after focus (off).
+- **Captures.** `docs/screenshot-m1.png`, `screenshot-m2.png`, `screenshot-light.png` (GSK self-render via
+  `CLAUDE_PANTHEON_SCREENSHOT=<path>`; no screenshot tool on this host).
+- **Not verified.** Stop button and tool-row expansion not clicked interactively; composer is single-line; images and
+  thinking blocks are placeholders. Not installed system-wide yet.
+- **Next.** The Rust twin (`claude-pantheon-rs`, gtk4-rs + granite-rs) is being built as a client of the T3 Code server
+  for Claude, Codex, OpenCode and Grok, and lands in `rust/` the same way; its `docs/WORKFLOW.md` and
+  `docs/INTEGRATIONS.md` carry the plan.
+
 ## Orchard: Podman container details, live counters, local install — 2026-10-21 (Claude Code)
 
 Follows the Podman page (`mseries/orchard-incus-native`, containers/images/volumes with start/stop/restart/remove).
