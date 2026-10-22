@@ -61,6 +61,30 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Rust Pantheon SDK and app migration — 2026-10-22
+
+Started `rust/mseries-pantheon-kit`, a shared Rust GTK 4 / Granite SDK modeled
+on T3. T3, Messages, Disk Space, and Software Updates now depend on it. Shared
+text-line-relative spacing, responsive width observation, accessibility names,
+and a shared 12 logical-pixel content-surface radius. GTK CSD and Gala window
+frames use a separate provisional 20 logical-pixel radius aligned with the
+display-mask source default, independent of text scaling. Initial window sizes
+remain logical app choices. The 20-pixel target has not yet been visually
+measured against the panel; the recorded live mask was 14 pixels. The SDK
+contract adopts Apple HIG usability principles through native Pantheon patterns.
+The project-wide inventory, scaling policy and staged migration order are in
+[Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
+
+Messages is still an optional API v2 prototype beside the qualified Python
+client; feature parity and owner phone acceptance remain open. Torrential is
+already Rust/GTK4/Granite and will consume the SDK while remaining private until
+its license permits redistribution. Orchard and the other Vala/Python apps need
+bounded ports against their current backend contracts. Signal remains on its
+signed official client until an upstream-supported backend/API exists;
+`libsignal` does not support external client use. The shared radius defaults
+still need hardware visual qualification; see the system-level issue in
+`BUG-FIX-ROADMAP.md`.
+
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
 Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,

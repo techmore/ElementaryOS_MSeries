@@ -435,8 +435,10 @@ the Compact model pair. See [local AI setup and verification](local-ai/README.md
 rounded corners that the Linux desktop ignores. This builds Gala (pinned to the commit matching the
 installed 8.6.2) with `mseries/patches/gala-screen-corners.patch`, which adds a click-through overlay that
 draws black rounded masks over the four corners of the *built-in* display only (external monitors are
-left square), above the top bar, dock, windows and lock screen. Default radius 10 logical px
-(`GALA_SCREEN_CORNER_RADIUS` in the drop-in; 0 hides it).
+left square), above the top bar, dock, windows and lock screen. The source default is 20 logical px
+(`GALA_SCREEN_CORNER_RADIUS`); the matching window clip and GTK CSD radius also default to 20 logical
+px. This is a shared starting value, not a measured hardware claim; confirm the curve against the panel
+after login. Set either environment value to 0 to disable its mask.
 
 Safety: the patched Gala lives in `/usr/local/lib/mseries/gala`; `/usr/bin/gala` and the login screen are
 untouched. Only your user session is pointed at it (systemd drop-in under `~/.config`). The launcher falls
@@ -450,8 +452,8 @@ so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h
 
 **Colours and window radius** (`bash mseries/install-theme-tweaks.sh`): user stylesheets
 (`mseries/theme/gtk-4.0.css`, `gtk-3.0.css`) override the theme's named colours `BLUEBERRY_*` and
-`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
-window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
+`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and use a
+20 logical-pixel CSD radius aligned with the Gala window clip. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
 restores backups.
 
 ## System audit, 2026-10-12: findings and fixes

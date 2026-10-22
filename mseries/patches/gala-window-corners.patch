@@ -99,11 +99,11 @@ index 00000000..76c4d60b
 + * actor's texture (which also contains the shadow), so the shader is told where the frame
 + * is and only the four corner squares are cut away. The shadow stays as mutter drew it.
 + *
-+ * Set GALA_WINDOW_CORNER_RADIUS to the radius in logical pixels (default 12; 0 disables).
++ * Set GALA_WINDOW_CORNER_RADIUS to the radius in logical pixels (default 20; 0 disables).
 + */
 +public class Gala.WindowCorners : Object {
 +    internal const string SHADER_RESOURCE = "/io/elementary/desktop/gala/shaders/window-corners.frag";
-+    private const double DEFAULT_RADIUS = 12.0;
++    private const double DEFAULT_RADIUS = 20.0;
 +
 +    private static WindowCorners? instance;
 +

@@ -10719,3 +10719,47 @@ unchanged. Current upstream has 51 commits beyond our recorded backend; a separa
 backend qualification is still needed before its sender detection/LE/media fixes
 can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
 features; those need native Incus design, not blind Swift feature parity claims.
+
+# Rust Pantheon client direction and Messages preview — 2026-10-22
+
+Owner clarified the app scope: Rust Pantheon for T3, Signal and Messages. T3 is
+the existing `rust/claude-pantheon-rs` app and serves as the GTK 4 / Granite
+reference. This app direction does not mean replacing Gala, Wingpanel or Dock.
+
+Started the shared `rust/mseries-pantheon-kit` SDK and connected T3, Messages,
+Disk Space and Software Updates. Text spacing and responsive thresholds follow
+Pango line height, while GTK keeps all measurements in logical coordinates;
+startup window sizes do not scale with font size. The kit provides shared
+accessibility names and content-surface geometry. Apple HIG is the usability
+baseline, translated through GTK/Granite patterns.
+
+MacBook Pro corner defaults are now consistent in source: app content surfaces
+use 12 logical px; GTK3/GTK4 CSD, Gala window clipping and the built-in display
+mask use a provisional 20 logical px, independent of text scale. The previous
+recorded live mask was 14 px. This is not yet hardware-verified as an exact
+panel match; normal, maximized, fullscreen, dialog, popover and external-screen
+corners still need visual qualification. See `mseries/RUST-PANTHEON-SDK.md` and
+the corner calibration row in `mseries/BUG-FIX-ROADMAP.md`.
+
+Added `rust/mseries-messages`, a first Rust client of BlueFerry Messages API v2.
+It reads status/history, searches conversations, renders text safely, keeps
+per-thread in-memory drafts, updates favorites/read state, sends checked replies
+only on an explicit Send action, asks the user to review group participants and
+refreshes from BlueFerry history invalidations. BlueFerry continues to own MAP,
+recipient/group safety and encrypted history. The Rust binary and Debian package
+are side-by-side previews; the qualified Python client and launcher are still
+the installed path until parity and owner phone acceptance.
+
+Signal remains on the signed official client. The Rust app needs an
+upstream-supported API/integration and security boundary before replacing it;
+libsignal says external client use is unsupported. Do not inspect Signal's
+private profile/database or implement its protocol here. See
+`mseries/RUST-PANTHEON-CLIENTS.md`.
+
+Source/build checks only; no live GUI, phone, send, install, or desktop-session
+qualification was performed. Current Rust Messages gaps include new-message
+and contacts, imported pins, contact photos, link previews, full message actions,
+keyboard/accessibility parity, narrow layouts, localization and end-to-end
+owner qualification. Rust workspace `cargo fmt`, `cargo check` and Clippy with
+warnings denied pass for the SDK, T3, Messages, Disk Space and Software Updates.
+No test suites were run in this continuation.
