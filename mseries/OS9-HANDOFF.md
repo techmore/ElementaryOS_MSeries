@@ -270,8 +270,14 @@ only merge conflict while retaining both T3 and Pantheon lock-screen handoff
 entries. A follow-up review corrected reconnect backoff: the client now retries
 after 2, 4, 8, 16, and 32 seconds, then once per minute. `cargo fmt --check`,
 the four focused reconnect tests, and strict release Clippy pass. The live T3
-service was not restarted; end-to-end server restart and reattachment remain
-unqualified.
+service restart smoke passed with zero running turns and pending approvals:
+`t3code.service` changed from PID 1357664 to 1036736, while the existing client
+stayed at PID 956860. Its feed became stale at 22:24:45 UTC and returned to
+connected/fresh at 22:24:54 UTC with `eos`, Codex selected, and zero running or
+pending work. No model turn or tool action was sent. This verifies automatic
+reattachment after a local T3 process restart while idle; it does not cover a
+restart mid-stream or prolonged network loss. The live smoke used the installed
+mseries5 client; the reconnect-backoff source fix has not been installed yet.
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
