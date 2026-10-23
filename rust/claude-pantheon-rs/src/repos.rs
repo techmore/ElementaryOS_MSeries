@@ -22,6 +22,7 @@ pub struct ReposPage {
     issues_box: gtk::Box,
     issues_title: gtk::Label,
     new_issue_button: gtk::Button,
+    issue_state_dd: gtk::DropDown,
     lane_dd: gtk::DropDown,
     prio_dd: gtk::DropDown,
     agent_dd: gtk::DropDown,
@@ -184,6 +185,8 @@ impl ReposPage {
 
         let issues_title = label("", &["title-4"]);
         issues_title.set_hexpand(true);
+        let issue_state_dd = gtk::DropDown::from_strings(&["Open issues", "Resolved issues", "All issues"]);
+        issue_state_dd.set_tooltip_text(Some("Resolved issues retain their organized chat history."));
         let lane_dd = gtk::DropDown::from_strings(&["All lanes", "build", "feature", "maintenance"]);
         let prio_dd = gtk::DropDown::from_strings(&["All priorities", "p0", "p1", "p2", "p3"]);
         let agent_dd = gtk::DropDown::from_strings(&["Any agent label", "ready", "running", "done", "blocked", "none"]);
@@ -199,7 +202,17 @@ impl ReposPage {
         heading.append(&issues_title);
         heading.append(&new_issue_button);
         filters.append(&heading);
-        let filter_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let filter_row = gtk::FlowBox::new();
+        filter_row.set_selection_mode(gtk::SelectionMode::None);
+        filter_row.set_row_spacing(6);
+        filter_row.set_column_spacing(6);
+        filter_row.set_min_children_per_line(1);
+        filter_row.set_max_children_per_line(4);
+        filter_row.set_homogeneous(false);
+        filter_row.set_hexpand(true);
+        filter_row.set_halign(gtk::Align::Fill);
+        filter_row.update_property(&[gtk::accessible::Property::Label("Issue filters")]);
+        filter_row.append(&issue_state_dd);
         filter_row.append(&lane_dd);
         filter_row.append(&prio_dd);
         filter_row.append(&agent_dd);
@@ -237,6 +250,7 @@ impl ReposPage {
             issues_box,
             issues_title,
             new_issue_button,
+            issue_state_dd,
             lane_dd,
             prio_dd,
             agent_dd,
@@ -280,7 +294,7 @@ impl ReposPage {
         self.config.borrow().started.get(key).cloned()
     }
 
-    /// All chats shown below an open issue; old installs inherit the client-started thread.
+    /// All chats shown below an issue; old installs inherit the client-started thread.
     pub fn chats_for_issue(&self, key: &str) -> Vec<String> {
         self.config.borrow().chats_for_issue(key)
     }
@@ -623,16 +637,17 @@ impl ReposPage {
             if pinned.iter().any(|p| p.repo == r.repo) {
                 match workflow::issues(&r.repo).await {
                     Ok(issues) => {
-                        let lane = |l: &str| issues.iter().filter(|i| i.lane() == Some(l)).count();
-                        let ready = issues.iter().filter(|i| i.agent() == Some("ready")).count();
-                        let running = issues.iter().filter(|i| i.agent() == Some("running")).count();
-                        let next = issues
+                        let open_issues: Vec<_> = issues.iter().filter(|i| i.state == "open").collect();
+                        let lane = |l: &str| open_issues.iter().filter(|i| i.lane() == Some(l)).count();
+                        let ready = open_issues.iter().filter(|i| i.agent() == Some("ready")).count();
+                        let running = open_issues.iter().filter(|i| i.agent() == Some("running")).count();
+                        let next = open_issues
                             .iter()
                             .find(|i| i.agent() == Some("ready"))
                             .map(|i| format!("next up: #{} {}", i.number, i.title));
                         counts.set_text(&format!(
                             "{} open · build {} · feature {} · maintenance {} · ready {} · running {}{}",
-                            issues.len(),
+                            open_issues.len(),
                             lane("build"),
                             lane("feature"),
                             lane("maintenance"),
@@ -692,7 +707,7 @@ impl ReposPage {
         if self.filters_wired.replace(true) {
             return;
         }
-        for dd in [&self.lane_dd, &self.prio_dd, &self.agent_dd] {
+        for dd in [&self.issue_state_dd, &self.lane_dd, &self.prio_dd, &self.agent_dd] {
             let a = app.clone();
             dd.connect_selected_notify(move |_| a.repos_page().render_issues(&a));
         }
@@ -1084,6 +1099,10 @@ impl ReposPage {
             self.issues_box.remove(&c);
         }
         let Some(repo) = self.current_repo.borrow().clone() else { return };
+        let issue_state = ["open", "closed", "all"]
+            .get(self.issue_state_dd.selected() as usize)
+            .copied()
+            .unwrap_or("all");
         let lane = ["", "build", "feature", "maintenance"][self.lane_dd.selected() as usize];
         let prio = ["", "p0", "p1", "p2", "p3"][self.prio_dd.selected() as usize];
         let agent = ["", "ready", "running", "done", "blocked", "none"][self.agent_dd.selected() as usize];
@@ -1091,6 +1110,7 @@ impl ReposPage {
         let issues = self.issues.borrow();
         let shown: Vec<&Issue> = issues
             .iter()
+            .filter(|i| issue_state == "all" || i.state == issue_state)
             .filter(|i| lane.is_empty() || i.lane() == Some(lane))
             .filter(|i| prio.is_empty() || i.priority() == Some(prio))
             .filter(|i| match agent {
@@ -1105,7 +1125,7 @@ impl ReposPage {
             self.issues_box.append(&skeleton::empty(
                 "edit-find-symbolic",
                 "No issues match",
-                "Label issues lane:*, p0–p3 and agent:ready to feed the runner, or widen the filters.",
+                "Try another issue state or widen the lane, priority, or agent filters.",
             ));
             return;
         }
@@ -1132,6 +1152,9 @@ impl ReposPage {
             }
             if let Some(a) = i.agent() {
                 row.append(&pill(&format!("agent:{a}"), "agent"));
+            }
+            if i.state == "closed" {
+                row.append(&pill("Resolved", "dim-label"));
             }
             row.append(&label(&relative_time(iso_to_unix(&i.updated_at), now), &["caption", "dim-label"]));
             let key = format!("{}#{}", repo.repo, i.number);
@@ -1276,8 +1299,7 @@ impl ReposPage {
         root.set_margin_end(18);
         root.set_margin_top(16);
         root.set_margin_bottom(16);
-        let intro =
-            label(&format!("Choose chats to group under #{} while this issue is open.", issue.number), &["dim-label"]);
+        let intro = label(&format!("Choose chats to keep with issue #{}.", issue.number), &["dim-label"]);
         wrap_label(&intro);
         root.append(&intro);
 

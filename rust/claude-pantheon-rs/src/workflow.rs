@@ -127,7 +127,7 @@ impl IssueDraft {
 }
 
 impl Config {
-    /// The chats shown beneath an open issue. Newer configs can explicitly replace or clear the
+    /// The chats shown beneath an issue. Newer configs can explicitly replace or clear the
     /// original one-thread association kept in `started` for issue comments and old installs.
     pub fn chats_for_issue(&self, key: &str) -> Vec<String> {
         self.issue_chats.get(key).cloned().unwrap_or_else(|| self.started.get(key).cloned().into_iter().collect())
@@ -170,6 +170,8 @@ pub struct Issue {
     pub title: String,
     pub body: String,
     pub url: String,
+    /// GitHub lifecycle state: `open` or `closed`.
+    pub state: String,
     pub labels: Vec<String>,
     pub updated_at: String,
     pub comments: u64,
@@ -206,6 +208,7 @@ pub fn parse_issues(v: &Value) -> Vec<Issue> {
             title: i.get("title").and_then(Value::as_str).unwrap_or("").to_string(),
             body: i.get("body").and_then(Value::as_str).unwrap_or("").to_string(),
             url: i.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(),
+            state: i.get("state").and_then(Value::as_str).unwrap_or("open").to_string(),
             labels: i
                 .get("labels")
                 .and_then(Value::as_array)
@@ -293,8 +296,15 @@ pub async fn gh_with_input(args: &[&str], input: Option<&str>) -> Result<Value, 
 }
 
 pub async fn issues(repo: &str) -> Result<Vec<Issue>, String> {
-    let v = gh(&[&format!("repos/{repo}/issues?state=open&per_page=100")]).await?;
-    Ok(parse_issues(&v))
+    let open_path = format!("repos/{repo}/issues?state=open&per_page=100");
+    let closed_path = format!("repos/{repo}/issues?state=closed&per_page=100");
+    let open_args = [open_path.as_str()];
+    let closed_args = [closed_path.as_str()];
+    let (open, closed) = futures_util::future::join(gh(&open_args), gh(&closed_args)).await;
+    let mut issues = parse_issues(&open?);
+    issues.extend(parse_issues(&closed?));
+    issues.sort_by_key(Issue::rank);
+    Ok(issues)
 }
 
 /// Files an owner-reviewed issue brief. The request creates an issue only; it does not start an
@@ -312,6 +322,7 @@ pub async fn create_issue(repo: &str, draft: &IssueDraft) -> Result<Issue, Strin
         title: response.get("title").and_then(Value::as_str).unwrap_or(&draft.title).to_string(),
         body: response.get("body").and_then(Value::as_str).unwrap_or("").to_string(),
         url: response.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(),
+        state: "open".into(),
         labels: draft.labels(),
         updated_at: response.get("updated_at").and_then(Value::as_str).unwrap_or("").to_string(),
         comments: 0,
