@@ -35,6 +35,10 @@ rules file allows by name. Terminals and password managers are always blocked, a
 group/other-writable file blocks everything. The model gets no tools and is told the conversation is data, not
 instructions. The `style` and `endpoint` keys of the old file are ignored: style and endpoint now come from `mseries-ai`.
 
+Chat bubbles in the accessibility tree are followed by a footer line (`09:14 · Delivered`, `09:13 · +1555… · Disappears in 3600 s`). The reader
+treats those as who-wrote-it markers, not as messages: a delivery status marks the message before it as yours, anything else as the
+contact's.
+
 ## Persona and what it knows about you
 
 Drafts are written by the owner's helpful chat assistant: it writes the message **you** would send, in your voice. To sound like
