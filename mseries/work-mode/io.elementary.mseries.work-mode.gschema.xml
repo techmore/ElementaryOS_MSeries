@@ -51,5 +51,14 @@
       <summary>Work icon theme</summary>
       <description>Icon theme used while Windows Work Mode is active, such as 'Win11-dark' from mseries/install-work-mode-icons.sh. Empty keeps the current icon theme. Ignored when the theme is not installed.</description>
     </key>
+    <key name="window-buttons" type="s">
+      <choices>
+        <choice value="windows"/>
+        <choice value="unchanged"/>
+      </choices>
+      <default>'windows'</default>
+      <summary>Window buttons</summary>
+      <description>'windows' puts minimize, maximize and close on the right of every window title bar while Windows Work Mode is active and restores your layout when it ends. 'unchanged' keeps your own layout.</description>
+    </key>
   </schema>
 </schemalist>

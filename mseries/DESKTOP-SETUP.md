@@ -138,11 +138,17 @@ Signal's unread badge and activates the app when clicked. Install the optional
 Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
-supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to the
-elementary accent (system accent by default; `--accent`, `--check`, `--restore`); the integration
-step runs it, so a Signal update plus `install-signal-integration.sh` re-applies it. Restart
-Signal to see a change. Not applied to `--atomic` releases. Phone linking remains a user step: open Signal,
-then scan its QR code from Signal on your phone.
+supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to
+the elementary stylesheet palette (system accent by default; `--accent`, `--check`, `--restore`).
+The installed launcher checks the system accent each time Signal opens and
+reapplies it when needed. If Signal was already running when the preference
+changed, quit and reopen it to see the new colors. The optional `--atomic`
+release mode keeps its verified app tree immutable, so it retains Signal's
+upstream colors. This is the official Electron client with Pantheon integration,
+not a GTK or Granite replacement. Phone linking remains a user step: open Signal,
+then scan its QR code from Signal on your phone. The [Signal on Pantheon design
+note](SIGNAL-PANTHEON-DESIGN.md) records the maintainable integration boundary
+and remaining acceptance gates.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
 **Moving from the Flatpak.** `bash mseries/migrate-signal-flatpak.sh` copies the Flatpak account
@@ -439,8 +445,10 @@ the Compact model pair. See [local AI setup and verification](local-ai/README.md
 rounded corners that the Linux desktop ignores. This builds Gala (pinned to the commit matching the
 installed 8.6.2) with `mseries/patches/gala-screen-corners.patch`, which adds a click-through overlay that
 draws black rounded masks over the four corners of the *built-in* display only (external monitors are
-left square), above the top bar, dock, windows and lock screen. Default radius 10 logical px
-(`GALA_SCREEN_CORNER_RADIUS` in the drop-in; 0 hides it).
+left square), above the top bar, dock, windows and lock screen. The source default is 20 logical px
+(`GALA_SCREEN_CORNER_RADIUS`); the matching window clip and GTK CSD radius also default to 20 logical
+px. This is a shared starting value, not a measured hardware claim; confirm the curve against the panel
+after login. Set either environment value to 0 to disable its mask.
 
 Safety: the patched Gala lives in `/usr/local/lib/mseries/gala`; `/usr/bin/gala` and the login screen are
 untouched. Only your user session is pointed at it (systemd drop-in under `~/.config`). The launcher falls
@@ -454,8 +462,8 @@ so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h
 
 **Colours and window radius** (`bash mseries/install-theme-tweaks.sh`): user stylesheets
 (`mseries/theme/gtk-4.0.css`, `gtk-3.0.css`) override the theme's named colours `BLUEBERRY_*` and
-`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
-window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
+`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and use a
+20 logical-pixel CSD radius aligned with the Gala window clip. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
 restores backups.
 
 ## System audit, 2026-10-12: findings and fixes

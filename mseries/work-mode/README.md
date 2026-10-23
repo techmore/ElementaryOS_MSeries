@@ -67,6 +67,14 @@ bash mseries/install-work-mode.sh --uninstall
 The GSettings values and original state snapshot are retained on uninstall. The
 bottom dock uses elementary's existing dock package and pinned launchers.
 
+## Window buttons
+
+*Window buttons* in the panel (`window-buttons` key) sets the title-bar buttons while the mode is on. **Windows (right side)**, the default, puts
+minimize, maximize and close on the right (`:minimize,maximize,close`) so every window has a visible close button. **Keep my layout** changes
+nothing. The previous `org.gnome.desktop.wm.preferences button-layout` is snapshotted the first time the mode applies it and restored when
+the mode ends, when you switch to *Keep my layout* while active, or with `mseries-work-mode --restore`. New windows follow the setting; windows
+that were already open may need to be reopened to redraw their buttons.
+
 ## Taskbar
 
 With the M-Series dock build (`mseries/patches/dock-taskbar.patch`), Windows Work Mode turns the dock

@@ -796,6 +796,15 @@ impl NativeKmsDevice {
         if state.displays_off {
             return Ok(0);
         }
+        if state.screenshot_requested.get() {
+            let outputs = self
+                .outputs
+                .iter()
+                .map(|output| output.output.clone())
+                .collect::<Vec<_>>();
+            let mut capture_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
+            crate::screenshot_pixels::process_request(&mut capture_renderer, state, &outputs);
+        }
         let dirty_at = state.dirty_since.get();
         let mut skipped_pending = false;
         let mut rendered = 0;
