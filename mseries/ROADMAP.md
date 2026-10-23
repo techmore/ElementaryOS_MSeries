@@ -4374,3 +4374,12 @@ See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
 ### SDK dock anchoring — 2026-10-23
 
 Pantheon panel protocol adapter implemented in msdk-gtk; dock builds with bottom anchor, size and hide mode. Next: live placement review and pin editing.
+
+### GitHub Pages current wip4 candidate status — 2026-10-23
+
+The public home and build monitor now point to PR #533 head
+`266d54af49ca6dede2492f11b4fe830cafa7228a` and successful same-head build/payload
+run `39944207967` and validation run `39944207727`. PR #533 is still open and
+conflicts with `dev`; refresh/review remains required. Wip4 hardware acceptance
+remains open. The current live site byte-matches `dev` `7053069f` from Pages run
+`39954620306`; this correction is prepared in a PR and awaits publication.
