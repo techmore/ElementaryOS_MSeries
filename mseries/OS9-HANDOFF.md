@@ -1,3 +1,12 @@
+## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
+
+Owner explicitly deferred both apps and rejected the current combined launcher
+experience. MESSAGING-STATUS.md is the authoritative current status on dev;
+AGENTS.md directs future agents to it. Older scoped successes and installed-client
+reports must not be interpreted as completion. Resume only on a new explicit
+owner request. Existing apps/data remain intact; no unfinished app code is merged
+by this documentation change.
+
 ## SDK app-building workflow published on dev — 2026-10-22
 
 Owner requested that future agents read the workflow correction from dev rather
