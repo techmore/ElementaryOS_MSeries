@@ -4,24 +4,23 @@ index b65f8ac..7261508 100644
 +++ b/src/AppSystem/Launcher.vala
 @@ -32,0 +33 @@ public class Dock.Launcher : BaseItem {
 +    private TaskbarT3RPopover? t3r_popup;
-@@ -96,0 +98,7 @@ public class Dock.Launcher : BaseItem {
+@@ -96,0 +98,6 @@ public class Dock.Launcher : BaseItem {
 +        var app_id = app.app_info.get_id ();
 +        if (app_id == "io.github.techmore.ClaudePantheonRs.desktop" ||
 +            app_id == "io.github.techmore.ClaudePantheonRs") {
 +            t3r_popup = new TaskbarT3RPopover (this, app);
-+            dock_settings.changed["taskbar-mode"].connect (() => update_tooltip ());
 +            update_tooltip ();
 +        }
 @@ -328 +336,5 @@ public class Dock.Launcher : BaseItem {
 -                app.launch (context);
-+                if (t3r_popup != null && t3r_popup.enabled) {
++                if (t3r_popup != null) {
 +                    t3r_popup.toggle_from_icon ();
 +                } else {
 +                    app.launch (context);
 +                }
 @@ -380,1 +392,5 @@ private void update_tooltip () {
      private void update_tooltip () {
-+        if (t3r_popup != null && t3r_popup.enabled) {
++        if (t3r_popup != null) {
 +            tooltip_text = null;
 +            return;
 +        }

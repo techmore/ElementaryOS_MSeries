@@ -64,11 +64,11 @@ Forget Pairing and About (version, server, providers ready).
 
 ## Dock popover, Wingpanel indicator, and quick window
 
-In taskbar mode, the T3-R Dock launcher owns an attached native GTK popover: hover opens after 250 ms, the pointer can
+In both the regular floating Dock and taskbar mode, the T3-R launcher owns an attached native GTK popover: hover opens after 250 ms, the pointer can
 cross to the popover during a 450 ms grace period, click pins or toggles it, and Escape or an outside click dismisses
 it. The popover shows the selected provider and paired T3 server separately, usage for that provider, and live activity.
 New chat, Usage, Settings, Open full chat, and live thread rows route to the matching destination in the full client.
-When taskbar mode is off, the launcher opens the full client directly.
+This behavior is scoped to the T3-R launcher and does not change the Dock's taskbar-mode setting.
 
 The optional native Wingpanel indicator (`wingpanel-indicator/`) is a separate system-panel surface with selected-provider
 usage and activity. `--quick` opens a separate compact status window for explicit use; it is not attached to the Dock icon.

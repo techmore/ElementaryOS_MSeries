@@ -8,7 +8,6 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private const string APP_ID = "io.github.techmore.ClaudePantheonRs";
     private Gtk.Popover popup;
     private Dock.App app;
-    private GLib.Settings dock_settings = new GLib.Settings ("io.elementary.dock");
     private string status_path;
     private FileMonitor? monitor;
     private uint app_watch_id = 0;
@@ -25,10 +24,6 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private Gtk.Box activity;
     private Gtk.Label freshness;
     private Gtk.Label error_label;
-
-    public bool enabled {
-        get { return dock_settings.get_boolean ("taskbar-mode"); }
-    }
 
     public TaskbarT3RPopover (Gtk.Widget anchor, Dock.App app) {
         this.app = app;
@@ -149,7 +144,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         var motion = new Gtk.EventControllerMotion ();
         motion.enter.connect (() => {
             cancel_close ();
-            if (enabled && open_timer == 0 && !popup.visible) {
+            if (open_timer == 0 && !popup.visible) {
                 open_timer = Timeout.add (250, () => {
                     open_timer = 0;
                     show_popup (false);
@@ -184,10 +179,6 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             cancel_close ();
             popup.popdown ();
         });
-        dock_settings.changed["taskbar-mode"].connect (() => {
-            if (!enabled) popup.popdown ();
-        });
-
         app_watch_id = GLib.Bus.watch_name (GLib.BusType.SESSION, APP_ID, GLib.BusNameWatcherFlags.NONE,
             (connection, name, owner) => {
                 application_running = true;
@@ -202,14 +193,12 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     public void toggle_from_icon () {
-        if (!enabled) return;
         cancel_open ();
         if (popup.visible && pinned) popup.popdown ();
         else show_popup (true);
     }
 
     private void show_popup (bool interactive) {
-        if (!enabled) return;
         cancel_close ();
         if (popup.visible && popup.autohide != interactive) popup.popdown ();
         pinned = interactive;
