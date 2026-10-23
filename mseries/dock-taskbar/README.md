@@ -34,6 +34,13 @@ Leaving gives 450 ms to cross into the popup; clicking pins/toggles the menu.
 The updated native Start menu and its scoped Windows 11 stylesheet are bundled
 with the taskbar, rather than depending on an untracked user CSS override.
 
+The status area also has an AirDrop button. It opens the same
+`MSeries.AirDropPanel` used by Quick Settings, including the receive switch and
+expanded visibility, duration and received-files controls. It uses the existing
+`omdrop` backend and polls only while the popover is open. Since Windows Work
+Mode hides the top panel, this taskbar button keeps AirDrop available in that
+desktop mode.
+
 Build without changing the desktop:
 
 ```sh
@@ -43,7 +50,7 @@ bash mseries/dock-taskbar/test-build.sh
 ```
 
 The clean-build check links the complete application and verifies the Windows
-TaskbarRow, StartMenu and TaskbarCodexBar types. The GTK probe uses a fake HOME,
+TaskbarRow, StartMenu, TaskbarCodexBar and AirDrop controls. The GTK probe uses a fake HOME,
 backend and in-memory settings; it checks hover, focus retention, leave, converting
 hover to a pinned menu and click dismissal. CI runs the same build/probe path.
 No test installs a binary or restarts a live desktop service.

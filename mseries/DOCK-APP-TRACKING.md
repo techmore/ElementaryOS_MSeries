@@ -1,11 +1,11 @@
 # Windows taskbar running indicators
 
 The canonical `dock-taskbar/prepare-source.sh` applies app tracking **after** the
-complete Windows taskbar, Start menu and CodexBar stack. SHA-256 comparisons reject
-a tracking patch that changes Taskbar.vala, StartMenu.vala, TaskbarCodexBar.vala or
-the shared CodexBar sources. The linked application must contain all customization
-types and AppResolver before installation. Build/test commands never reload the
-live desktop.
+complete Windows taskbar, Start menu, AirDrop controls and CodexBar stack. SHA-256
+comparisons reject a tracking patch that changes Taskbar.vala, StartMenu.vala,
+TaskbarCodexBar.vala, TaskbarAirDrop.vala, AirDropPanel.vala or the shared CodexBar
+sources. The linked application must contain all customization types and AppResolver
+before installation. Build/test commands never reload the live desktop.
 
 The compositor supplies window IDs, not always desktop filenames. AppResolver
 matches installed desktop IDs (with/without suffix), StartupWMClass, then unique

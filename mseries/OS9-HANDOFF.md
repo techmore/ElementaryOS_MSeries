@@ -1,3 +1,47 @@
+## AirDrop controls and idle-radio recovery — 2026-10-22 (Codex)
+
+The Quick Settings AirDrop row now has a direct `Receive Files` switch while
+keeping duration, audience, device name and received-file controls expandable.
+Windows Work Mode hides the top panel, so the Windows taskbar status area now
+opens that same `MSeries.AirDropPanel` and `omdrop` backend from an AirDrop icon.
+The taskbar creates the panel on first open and it polls only while mapped.
+
+The service had been installed but disabled, so a reboot removed `awdl0` and
+`omdrop doctor` reported it as not ready. The owner said AirDrop had worked
+before. Enabled `awdl0.service` persistently and started it; it creates the
+configured idle interface only. `omdrop doctor --json` now reports ready, while
+`omdrop status --json` confirms receiving and visibility remain off. The 2026-10-18
+hardware record confirms interface creation and a two-minute radio window passed;
+no file transfer is recorded.
+
+The M-Series radio installer now checks preflight, reloads NetworkManager's
+unmanaged-device rule and enables/starts the idle service. The shared panel treats
+a missing interface as recoverable when the only blocker is the radio: enabling
+receiving invokes the backend's existing on-demand radio-start hook, rather than
+claiming the Wi-Fi driver is missing. AWDL remains inactive until the user turns
+receiving on.
+
+Validation: complete pinned dock source prepared and linked with
+`DockTaskbarAirDrop` and `MSeriesAirDropPanel`; installed private dock is active
+in Windows Work Mode. `systemctl` reports `awdl0.service` enabled and active/exited;
+`awdl0` exists and is unmanaged; `omdrop doctor --json` reports ready and the
+receiver remains off. A later read-only status check reports receiving and
+visibility on for Everyone with about 9:54 remaining, `rx_proven=true`, and no
+senders; Codex did not issue an `omdrop on` command. Repository tests and probes
+were not run. Native visual acceptance and an actual file transfer remain
+unconfirmed.
+
+Follow-up: the receiver helper now falls back to `notify-send` on ElementaryOS,
+with an Open action, when the Omarchy notification command is absent. Installed
+from this checkout at commit `2043aadc`; `bash -n` and `git diff --check`
+passed. A live receive notification and its click action have not been verified.
+The delivered photos were converted locally through the installed GdkPixbuf
+HEIF loader; no converter package was installed. The repository has no general
+file preview panel: the screenshot shelf only previews screenshots. Follow-up
+requests are tracked in [#530](https://github.com/techmore/ElementaryOS_MSeries/issues/530)
+for a Files-integrated Preview panel with MIME/details fallback and drag-and-drop,
+and [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531) for
+right-click image-conversion Quick Actions.
 ## Audio mute and Mac keyboard mapping — 2026-10-22
 
 The live `org.gnome.settings-daemon.plugins.media-keys` settings had empty

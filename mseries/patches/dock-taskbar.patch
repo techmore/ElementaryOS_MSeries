@@ -1128,7 +1128,7 @@ new file mode 100644
 index 0000000..7e3a8a8
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,511 @@
+@@ -0,0 +1,512 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1288,6 +1288,7 @@ index 0000000..7e3a8a8
 +        };
 +        status_box.add_css_class ("taskbar-status");
 +        status_box.append (network_button);
++        status_box.append (new TaskbarAirDrop ());
 +        status_box.append (volume_button);
 +        status_box.append (battery_button);
 +
@@ -1672,12 +1673,14 @@ diff --git a/src/meson.build b/src/meson.build
 index 052d4a5..a77498c 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -8,6 +8,8 @@ sources = [
+@@ -8,6 +8,10 @@ sources = [
      'ItemGroup.vala',
      'ItemManager.vala',
      'MainWindow.vala',
 +    'StartMenu.vala',
 +    'Taskbar.vala',
++    'AirDropPanel.vala',
++    'TaskbarAirDrop.vala',
      'DisplayConfig.vala',
      'RenderNodeWalker.vala',
      'AppSystem' / 'App.vala',
