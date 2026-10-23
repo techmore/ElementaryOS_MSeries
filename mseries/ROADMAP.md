@@ -1,3 +1,13 @@
+## Inbox keyboard focus survives refresh — 2026-10-22
+
+Messages now retains the focused conversation row by thread identity when rebuilding
+the inbox, without moving focus out of search. The actual isolated GTK regression
+checks both cases; /tmp/messages-refresh-focus.log passes. Strict all-target Clippy
+and optimized ARM64 package build pass; package installed user-locally without
+restarting either client. Previous CI run 39878146738 completed successfully,
+including packaging. Latest-head checks still await execution. Live hardware,
+screenshot attachments, phone behavior and localization remain incomplete.
+
 ## Messages release-check coverage — 2026-10-22
 
 CI now checks formatting, all-target strict Clippy and unit tests for both Messages

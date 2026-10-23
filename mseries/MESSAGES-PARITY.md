@@ -17,7 +17,7 @@ This is an implementation inventory, not proof of live service behavior.
 | Media | Bounded public HTTPS image/GIF/WebP/YouTube previews; no private MAP attachment retrieval | Both clients depend on backend limits; live preview states |
 | Photos | Opt-in API, bounded decode, revision and phone cache invalidation | Live photos |
 | Pins | Stable UUID scope and shared Secret Service item | Released BlueFerry lacks merged UUID field |
-| Navigation | Compact/regular resize; search shortcuts; Back draft retention | Refresh preserves reading position, follows when near bottom and offers Latest Messages; isolated sidebar/viewport regression passes |
+| Navigation | Compact/regular resize; search shortcuts; Back draft retention | Refresh preserves focused inbox row by thread identity and reading position, follows when near bottom and offers Latest Messages; isolated sidebar/viewport regression passes |
 | Scaling/theme | Elementary light/dark, long-text and large-font isolated GTK passes | Hardware scales and assistive technology |
 | Localization | Rust UI strings currently English; timestamps use local calendar | Python uses gettext; Rust gettext/catalog integration remains incomplete |
 | Packaging | ARM64 package and user-level preview install | Full release CI and live acceptance; Python remains qualified |
