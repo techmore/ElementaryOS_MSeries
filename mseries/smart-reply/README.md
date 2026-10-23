@@ -2,7 +2,11 @@
 
 Click into a chat reply box and press **Ctrl+Alt+R** (physical Command+Option+R where Command is swapped with Ctrl). A
 local model drafts a reply from the visible conversation. A notification shows the draft; **Tab** inserts it into the
-field, **Esc** (or any other key, or switching focus, or 60 seconds) discards it. It never sends anything. Design and
+field, **Esc** (or any other key, or switching focus, or 60 seconds) discards it. It never sends anything.
+
+Feedback is in the message box itself, as underlined composing text: `Drafting… 3s` with a running timer while the model works, then the
+draft followed by `— Tab inserts, Esc discards`. Tab inserts only the draft. This is used for GTK and Qt apps; for Chromium and
+Electron apps (which confirm composing text when focus moves) the draft appears in a notification instead. Design and
 limits: [SMART-REPLY-DESIGN.md](../SMART-REPLY-DESIGN.md).
 
 The implementation is the Rust crate [`rust/mseries-reply`](../../rust/mseries-reply); this folder holds the systemd unit
