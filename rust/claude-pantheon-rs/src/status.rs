@@ -21,12 +21,12 @@ pub fn build(
     let running: Vec<Value> = threads
         .iter()
         .filter(|t| t.is_running() && t.pending_requests() == 0)
-        .map(|t| json!({"id": t.id, "title": t.title}))
+        .map(|thread| compact_thread(thread, false, selected_provider_id, providers))
         .collect();
     let pending: Vec<Value> = threads
         .iter()
         .filter(|t| t.pending_requests() > 0)
-        .map(|t| json!({"id": t.id, "title": t.title, "count": t.pending_requests()}))
+        .map(|thread| compact_thread(thread, true, selected_provider_id, providers))
         .collect();
     // The compact surfaces are bound to the provider selected in the full client. Keeping other
     // accounts out of the feed avoids exposing private display names in cached status files too.
@@ -65,6 +65,41 @@ pub fn build(
         "pendingPrompts": pending,
         "windows": windows,
     })
+}
+
+/// A compact surface may reveal the model only when the thread belongs to its selected account.
+/// This preserves the one-account status-feed boundary while making active work legible at a glance.
+fn compact_thread(thread: &ThreadShell, pending: bool, selected_provider_id: &str, providers: &[Provider]) -> Value {
+    let mut summary = if pending {
+        json!({"id": thread.id, "title": thread.title, "count": thread.pending_requests()})
+    } else {
+        json!({"id": thread.id, "title": thread.title})
+    };
+    if let Some(model) = selected_thread_model(thread, selected_provider_id, providers) {
+        summary["model"] = Value::String(model);
+    }
+    summary
+}
+
+fn selected_thread_model(thread: &ThreadShell, selected_provider_id: &str, providers: &[Provider]) -> Option<String> {
+    if selected_provider_id.is_empty() || thread.provider_instance_id != selected_provider_id {
+        return None;
+    }
+    let model_key = thread.model_selection.get("model").and_then(Value::as_str).filter(|key| !key.is_empty())?;
+    let provider = providers.iter().find(|provider| provider.instance_id == selected_provider_id)?;
+    Some(
+        provider
+            .models
+            .iter()
+            .find(|model| {
+                model.key() == model_key
+                    || model.aliases.as_ref().is_some_and(|aliases| aliases.iter().any(|a| a == model_key))
+            })
+            .map(|model| model.display())
+            .filter(|label| !label.is_empty())
+            .unwrap_or(model_key)
+            .to_string(),
+    )
 }
 
 pub fn write(v: &Value) {

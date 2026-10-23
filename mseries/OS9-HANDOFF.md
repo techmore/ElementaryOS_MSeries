@@ -10,6 +10,15 @@ only; no compiler, packaging or tests run for this change.
 
 ## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
 
+Compact activity now labels each running or approval-waiting thread with its model only when that thread belongs to the
+provider selected in the full client; other connected accounts remain out of the Dock feed. The quick window and
+Dock popover show the same model label. The main chat and quick window use 1.12× system typography, included in this
+ARM64 package: `/tmp/t3-model-label-package-20261023/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`. The package
+binary SHA-256 is `5572f72ba64beb91bf5213ea0086c32b59da37f3010f4dde7f327b6aa69f4561`; it matches the Cargo release
+binary and was installed under `~/.local`. The pinned Dock 8.3.3 source rebuilt and installed under
+`~/.local/lib/mseries/dock`; its install restarted `pantheon-dock`. The app was not running, so its next launch will
+use the installed binary. Native builds completed; no tests, probes, CI, or interactive UI checks were run.
+
 Large-history cache follow-up: thread snapshots now use schema-v5 LZ4 records, capped at 8 MiB on disk and 64 MiB
 decoded per thread, while preserving the projection and history cursor in one atomic record. Existing v3/v4 JSON
 records remain readable and migrate on their next save. If a thread still exceeds either cap, its prior valid cache is

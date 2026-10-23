@@ -38,7 +38,7 @@ struct Feed {
 struct Thread {
     id: String,
     title: String,
-    provider: String,
+    model: String,
     count: u32,
 }
 
@@ -364,13 +364,14 @@ fn append_message(box_: &gtk::Box, text: &str) {
 
 fn append_thread(box_: &gtk::Box, thread: &Thread, pending: bool, open_thread: Rc<dyn Fn(String)>) {
     let title = if thread.title.trim().is_empty() { "Untitled thread" } else { &thread.title };
-    let detail = if pending {
+    let mut detail = if pending {
         format!("Needs your approval · {} request(s)", thread.count.max(1))
-    } else if thread.provider.trim().is_empty() {
-        "Running".to_string()
     } else {
-        format!("Running · {}", thread.provider)
+        "Running".to_string()
     };
+    if !thread.model.trim().is_empty() {
+        detail.push_str(&format!(" · Model: {}", thread.model));
+    }
     let content = gtk::Box::new(gtk::Orientation::Vertical, 2);
     let primary = gtk::Label::new(Some(title));
     primary.set_xalign(0.0);

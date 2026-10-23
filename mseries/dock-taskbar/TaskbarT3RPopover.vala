@@ -374,9 +374,11 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private void append_thread (Json.Object item, bool pending, bool live) {
         string title = item.get_string_member_with_default ("title", "Untitled thread");
         string id = item.get_string_member_with_default ("id", "");
+        string model = item.get_string_member_with_default ("model", "");
         int64 requests = item.has_member ("count") ? int64.max (1, item.get_int_member ("count")) : 1;
-        string detail = pending ? "Needs approval · %lld request(s)".printf (requests) :
+        string detail = pending ? "Needs approval · %s request(s)".printf (requests.to_string ()) :
             "Running";
+        if (model.length > 0) detail += " · Model: %s".printf (model);
         var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
         var primary = new Gtk.Label (title) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
         var secondary = new Gtk.Label (detail) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
