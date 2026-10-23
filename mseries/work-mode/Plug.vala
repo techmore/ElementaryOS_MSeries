@@ -71,6 +71,17 @@ namespace MSeriesWorkMode {
                 wallpaper.add_suffix (browse);
                 mode_group.add (wallpaper);
 
+                var buttons = new Adw.ComboRow () {
+                    title = "Window buttons",
+                    subtitle = "Minimize, maximize and close, in Windows order, while the mode is on.",
+                    model = new Gtk.StringList ({ "Windows (right side)", "Keep my layout" })
+                };
+                buttons.selected = settings.get_string ("window-buttons") == "unchanged" ? 1 : 0;
+                buttons.notify["selected"].connect (() => {
+                    settings.set_string ("window-buttons", buttons.selected == 1 ? "unchanged" : "windows");
+                });
+                mode_group.add (buttons);
+
                 var schedule_group = new Adw.PreferencesGroup () {
                     title = "Schedule",
                     description = "Turn on automatically during your work hours."

@@ -188,6 +188,7 @@ def tick():
             if background_schema.has_key("picture-options"):
                 background.set_string("picture-options", "zoom")
             activate_icon_theme(mode, state)
+            activate_window_buttons(mode, state)
             activate_dock(state)
             # Idempotent; repeated each tick so a restarted compositor hides the bar again.
             set_top_panel_mode(1)
@@ -195,6 +196,7 @@ def tick():
         elif state.get("applied"):
             restore_background(background, state)
             restore_icon_theme(state)
+            restore_window_buttons(state)
             restore_dock(state)
             set_top_panel_mode(0)
             state.update({"original": None, "applied": False})
@@ -216,6 +218,7 @@ def restore():
         state = load_state()
         restore_background(background, state)
         restore_icon_theme(state)
+        restore_window_buttons(state)
         restore_dock(state)
         set_top_panel_mode(0)
         state.update({"original": None, "applied": False})
@@ -248,6 +251,48 @@ def activate_icon_theme(mode, state):
         state["icons"] = {"applied": True, "original": interface.get_string("icon-theme")}
     if interface.get_string("icon-theme") != wanted:
         interface.set_string("icon-theme", wanted)
+
+
+WINDOW_BUTTONS_SCHEMA = "org.gnome.desktop.wm.preferences"
+WINDOWS_BUTTON_LAYOUT = ":minimize,maximize,close"
+
+
+def window_buttons_settings():
+    """The window manager preferences, or None when the schema or key is missing."""
+    source = Gio.SettingsSchemaSource.get_default()
+    schema = source.lookup(WINDOW_BUTTONS_SCHEMA, True) if source else None
+    if schema is None or not schema.has_key("button-layout"):
+        return None
+    return Gio.Settings.new_full(schema, None, None)
+
+
+def activate_window_buttons(mode, state):
+    """Put minimize, maximize and close on the right, snapshotting the user's layout first."""
+    buttons = state.get("buttons")
+    applied = isinstance(buttons, dict) and buttons.get("applied")
+    if mode.get_string("window-buttons") != "windows":
+        # Choice changed to 'unchanged' while active: give the user's layout back.
+        if applied:
+            restore_window_buttons(state)
+        return
+    wm = window_buttons_settings()
+    if wm is None:
+        return
+    if not applied:
+        state["buttons"] = {"applied": True, "original": wm.get_string("button-layout")}
+    if wm.get_string("button-layout") != WINDOWS_BUTTON_LAYOUT:
+        wm.set_string("button-layout", WINDOWS_BUTTON_LAYOUT)
+
+
+def restore_window_buttons(state):
+    buttons = state.get("buttons")
+    if not isinstance(buttons, dict) or not buttons.get("applied"):
+        return
+    original = buttons.get("original")
+    wm = window_buttons_settings()
+    if wm is not None and isinstance(original, str):
+        wm.set_string("button-layout", original)
+    state["buttons"] = {"applied": False}
 
 
 def restore_icon_theme(state):
