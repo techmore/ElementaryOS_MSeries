@@ -14,8 +14,8 @@ use smithay::{
         pointer::{
             AxisFrame, ButtonEvent, GestureHoldBeginEvent, GestureHoldEndEvent,
             GesturePinchBeginEvent, GesturePinchEndEvent, GesturePinchUpdateEvent,
-            GestureSwipeBeginEvent, GestureSwipeEndEvent, GestureSwipeUpdateEvent, MotionEvent,
-            RelativeMotionEvent,
+            GestureSwipeBeginEvent, GestureSwipeEndEvent, GestureSwipeUpdateEvent,
+            GrabStartData as PointerGrabStartData, MotionEvent, RelativeMotionEvent,
         },
     },
     utils::{Logical, Point, SERIAL_COUNTER},
@@ -23,6 +23,9 @@ use smithay::{
 
 use crate::gestures::ActiveGesture;
 use crate::state::PantheonCompositor;
+
+/// BTN_LEFT from linux/input-event-codes.h.
+const SUPER_DRAG_BUTTON: u32 = 0x110;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct StartupKeyboardConfig {
@@ -396,6 +399,21 @@ impl PantheonCompositor {
                                 toplevel.send_pending_configure();
                             }
                         });
+                        // Super + left drag moves the window from anywhere on
+                        // it, so one whose title bar is off screen can still
+                        // be pulled back. The grab takes the click; the app
+                        // never sees it.
+                        if !panel_surface
+                            && button == SUPER_DRAG_BUTTON
+                            && keyboard.modifier_state().logo
+                        {
+                            let start_data = PointerGrabStartData {
+                                focus: None,
+                                button,
+                                location: pointer.current_location(),
+                            };
+                            self.start_move_grab(&pointer, start_data, window, serial);
+                        }
                     } else {
                         self.end_popup_grab_unless(None);
                         self.set_x11_keyboard_focus(None, serial);
