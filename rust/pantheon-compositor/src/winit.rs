@@ -145,6 +145,11 @@ pub fn init_winit(
                     {
                         backend.window().set_cursor_visible(false);
                         let (renderer, mut framebuffer) = backend.bind().unwrap();
+                        crate::screenshot_pixels::process_request(
+                            renderer,
+                            state,
+                            std::slice::from_ref(&output),
+                        );
                         if state.session_locked {
                             let elements = render_lock_surface_elements(renderer, state, &output);
                             damage_tracker

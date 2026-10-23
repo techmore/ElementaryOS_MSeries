@@ -355,7 +355,10 @@ impl PantheonCompositor {
     /// tiled window covers the whole work area under it.
     pub(crate) fn raise_window(&mut self, window: &Window, activate: bool) {
         // Override-redirect and no-input X11 windows are raised, never activated.
-        let activate = activate && crate::xwayland::window_accepts_focus(window);
+        let activate = activate
+            && crate::xwayland::window_accepts_focus(window)
+            && self.window_app_id(window).as_deref()
+                != Some("org.techmore.mseries.ScreenshotShelf");
         // Snap groups come forward together, the raised member on top.
         self.raise_group_siblings(window);
         self.space.raise_element(window, activate);
