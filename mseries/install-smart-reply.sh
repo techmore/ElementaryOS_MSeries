@@ -36,7 +36,8 @@ fi
 [[ -x $target/release/mseries-reply ]] || { echo "error: $target/release/mseries-reply is missing; build first" >&2; exit 1; }
 
 install -Dm0755 "$target/release/mseries-reply" "$bin/mseries-reply"
-# `mseries-smart-reply` kept as a thin alias for the old command (it was a Python script).
+# `mseries-smart-reply` is the command the shortcut runs. It must be a plain path with no arguments: with
+# `mseries-reply trigger` as the shortcut command the settings daemon never launched it.
 printf '#!/bin/sh\nexec "%s/mseries-reply" trigger "$@"\n' "$bin" > "$bin/mseries-smart-reply"
 chmod 0755 "$bin/mseries-smart-reply"
 install -Dm0644 "$src/mseries-smart-reply-input.service" "$units/mseries-smart-reply-input.service"
@@ -45,7 +46,7 @@ rm -rf "$old_share"   # the Python input service and core, now replaced
 # Writes the default rules file only if there is none, so an edited file is never touched.
 "$bin/mseries-reply" init-rules
 
-python3 - "$path" "$bin/mseries-reply trigger" <<'PY'
+python3 - "$path" "$bin/mseries-smart-reply" <<'PY'
 import sys
 from gi.repository import Gio
 MEDIA = "org.gnome.settings-daemon.plugins.media-keys"
