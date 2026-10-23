@@ -20,5 +20,6 @@ harness = false
 [dependencies]
 gtk = { package = "gtk4", version = "0.11", features = ["v4_20"] }
 granite = { package = "granite-rs", version = "3.3", features = ["v7_8", "gtk_v4_20"] }
+mseries-pantheon-kit = { git = "https://github.com/techmore/ElementaryOS_MSeries.git", rev = "e15f9272d9d466e078bef990da1cd462cfcb7f43" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

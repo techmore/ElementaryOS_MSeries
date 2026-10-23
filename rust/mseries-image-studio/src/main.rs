@@ -10,6 +10,9 @@ fn main() -> gtk::glib::ExitCode {
     let application = gtk::Application::builder().application_id(APP_ID).build();
     application.connect_startup(|app| {
         granite::init();
+        if let Some(display) = gtk::gdk::Display::default() {
+            mseries_pantheon_kit::install_css(&display);
+        }
         let quit = gtk::gio::SimpleAction::new("quit", None);
         let app_weak = app.downgrade();
         quit.connect_activate(move |_, _| {

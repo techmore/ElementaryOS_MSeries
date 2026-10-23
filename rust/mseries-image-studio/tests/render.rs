@@ -40,6 +40,20 @@ fn button(window: &gtk::ApplicationWindow, name: &str) -> gtk::Button {
     found.unwrap_or_else(|| panic!("missing button {name}"))
 }
 
+fn select_sidebar_page(window: &gtk::ApplicationWindow, index: i32) {
+    let mut navigation = None;
+    walk(window.upcast_ref(), &mut |widget| {
+        if let Some(list) = widget.downcast_ref::<gtk::ListBox>()
+            && list.has_css_class("navigation-sidebar")
+        {
+            navigation = Some(list.clone());
+        }
+    });
+    let navigation = navigation.expect("Pantheon navigation sidebar");
+    let row = navigation.row_at_index(index).expect("navigation row");
+    navigation.select_row(Some(&row));
+}
+
 fn mapped_text(window: &gtk::ApplicationWindow) -> Vec<String> {
     let mut values = vec![];
     walk(window.upcast_ref(), &mut |widget| {
@@ -105,6 +119,9 @@ fn main() {
 
     gtk::init().expect("GTK display; run under xvfb-run");
     granite::init();
+    if let Some(display) = gtk::gdk::Display::default() {
+        mseries_pantheon_kit::install_css(&display);
+    }
     let application = gtk::Application::builder()
         .application_id("org.elementary.mseries.ImageStudio.RenderTest")
         .build();
@@ -113,10 +130,22 @@ fn main() {
         .expect("register app");
     let ui = ImageStudioWindow::build(&application);
     let window = ui.window();
+    let compact = std::env::var_os("M_SERIES_IMAGE_STUDIO_TEST_COMPACT").is_some();
+    if compact {
+        window.set_default_size(900, 700);
+    }
     window.present();
     pump(Duration::from_millis(350));
+    assert_eq!(window.has_css_class("pantheon-compact"), compact);
     assert!(mapped_text(window).iter().any(|text| text == "Create"));
-    save_screenshot(window, "image-studio-create.png");
+    save_screenshot(
+        window,
+        if compact {
+            "image-studio-create-compact.png"
+        } else {
+            "image-studio-create.png"
+        },
+    );
 
     let recipes = RecipeStore::default_store().load_recent(10).unwrap();
     assert_eq!(recipes.len(), 1);
@@ -134,8 +163,8 @@ fn main() {
     assert!(recipes[0].prompt.contains("Alexandra Daddario"));
     assert!(recipes[0].prompt.contains("22-year-old adult"));
 
-    button(window, "Library").emit_clicked();
-    pump(Duration::from_millis(100));
+    select_sidebar_page(window, 1);
+    pump(Duration::from_millis(350));
     assert!(mapped_text(window).iter().any(|text| text == "Library"));
     let library_text = mapped_text(window);
     assert!(library_text.iter().any(|text| text == "Generated images"));
@@ -146,7 +175,7 @@ fn main() {
     );
     save_screenshot(window, "image-studio-library.png");
     button(window, "Load").emit_clicked();
-    pump(Duration::from_millis(100));
+    pump(Duration::from_millis(350));
     let visible = mapped_text(window);
     assert!(visible.iter().any(|text| text == "Create"));
     assert!(

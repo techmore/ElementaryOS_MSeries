@@ -1,24 +1,28 @@
 ## Native M-Series Image Studio: Pantheon Rust workspace — 2026-10-22
 
 The Image Studio is now a Rust GTK 4 + Granite 7 app in `rust/mseries-image-studio`, using this repo's
-`gtk4-rs 0.11` / `granite-rs 3.3` native Pantheon pattern. `mseries/image-studio/README.md` documents
-build and test commands. It opens on the requested adult Alexandra Daddario college-streamer series
-prompt. Model readiness, LoRA comparison, and prompt-type study presets set conservative repeatable
-values; prompt-type advice and prompt rewriting use only the already-running local assistant and show
-review-before-accept dialogs. Recipes store positive/negative prompts, model/LoRA notes and strength,
-dimensions, batch, seed, and tags. Library recipes load back into Create. PNG output storage writes a
-private JSON metadata sidecar; the Library renders saved outputs. Live host-memory/render-node status
-refreshes, with a protected 6 GiB desktop reserve.
+`gtk4-rs 0.11` / `granite-rs 3.3` and shared `mseries-pantheon-kit` SDK (pinned to repository revision
+`e15f9272` while the crate is being integrated into `dev`). The SDK supplies theme-neutral geometry,
+text-scaled spacing, accessible-label, and responsive-width helpers. The window uses an actual GTK
+titlebar, Granite navigation rows and section headings, and the SDK's inset/surface/row classes.
+`mseries/image-studio/README.md` documents build and test commands. It opens on the requested adult
+Alexandra Daddario college-streamer series prompt. Model readiness, LoRA comparison, and prompt-type
+study presets set conservative repeatable values; prompt-type advice and prompt rewriting use only the
+already-running local assistant and show review-before-accept dialogs. Recipes store positive/negative
+prompts, model/LoRA notes and strength, dimensions, batch, seed, and tags. Library recipes load back
+into Create. PNG output storage writes a private JSON metadata sidecar; the Library renders saved
+outputs. Live host-memory/render-node status refreshes, with a protected 6 GiB desktop reserve.
 
 Validation: Rust core tests 6/6; GTK render test under Xvfb drove the preset → save → Library → Load
-path; standalone Xvfb Create and Library screenshots rendered at 1380×900. Saved test recipe values
-were checked for the adult streamer subject, prompt type, 512×512, batch 1, seed 424242, and tags.
-These are UI/data checks, not an AI image generation run.
+path. Responsive checks pass at 1380×900 and 900×700. Rendered light and dark theme captures show the
+Create and Library pages without clipped sidebar or inspector content. Saved test recipe values were
+checked for the adult streamer subject, prompt type, 512×512, batch 1, seed 424242, and tags. These are
+UI/data checks, not an AI image generation run.
 
 Generation remains disabled because no image runtime/model is connected or qualified. The latest host
-check showed 6.1 GiB available (just above the 6 GiB reserve), `mseries-ai-everyday.service` still
-failed, no local image/text API listening, and only Qwen text weights in the cache. The prompt helper
-therefore has no running API to contact. No worker or image job was started, and no generated image exists.
+check showed 5.8 GiB available (below the 6 GiB reserve), `mseries-ai-everyday.service` still failed,
+no local image/text API listening, and only Qwen text weights in the cache. The prompt helper therefore
+has no running API to contact. No worker or image job was started, and no generated image exists.
 Next: select a still-image engine for the M-Series ARM64/Vulkan target, qualify the model/LoRA and
 measured peak-memory tuple, wire live preview and output delivery, then run the requested three-scene
 series. Details: [Image Studio README](image-studio/README.md).

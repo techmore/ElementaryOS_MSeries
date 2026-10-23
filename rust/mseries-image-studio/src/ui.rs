@@ -35,9 +35,8 @@ impl ImageStudioWindow {
         window.add_css_class("mseries-image-studio");
         install_css(&window);
 
-        let header = gtk::HeaderBar::new();
-        let controls = gtk::WindowControls::new(gtk::PackType::Start);
-        header.pack_start(&controls);
+        let header = gtk::HeaderBar::builder().show_title_buttons(true).build();
+        header.add_css_class(granite::STYLE_CLASS_FLAT);
         let title = gtk::Label::new(Some("Image Studio"));
         header.set_title_widget(Some(&title));
         let menu = gio::Menu::new();
@@ -79,10 +78,28 @@ impl ImageStudioWindow {
             .resize_start_child(false)
             .resize_end_child(true)
             .build();
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        root.append(&header);
-        root.append(&split);
-        window.set_child(Some(&root));
+        window.set_titlebar(Some(&header));
+        window.set_child(Some(&split));
+        mseries_pantheon_kit::watch_responsive_width(&window, 64.0, {
+            let split = split.clone();
+            let main_split = main_split.clone();
+            let sidebar = sidebar.clone();
+            let inspector = inspector.panel.clone();
+            move |class| {
+                let (sidebar_width, inspector_width) = match class {
+                    mseries_pantheon_kit::LayoutClass::Compact => (176, 260),
+                    mseries_pantheon_kit::LayoutClass::Regular => (216, 320),
+                };
+                sidebar.set_width_request(sidebar_width);
+                inspector.set_width_request(inspector_width);
+                if split.width() > 0 {
+                    split.set_position(sidebar_width);
+                }
+                if main_split.width() > 0 {
+                    main_split.set_position((main_split.width() - inspector_width).max(420));
+                }
+            }
+        });
 
         wire_actions(
             application,
@@ -166,12 +183,8 @@ fn install_css(window: &gtk::ApplicationWindow) {
     let css = gtk::CssProvider::new();
     css.load_from_string(
         ".mseries-image-studio .studio-sidebar { border-right: 1px solid alpha(currentColor, 0.10); }
-         .mseries-image-studio .section-heading { font-size: 0.78em; font-weight: 700; letter-spacing: 0.05em; opacity: 0.62; }
-         .mseries-image-studio .preview-stage { background: alpha(currentColor, 0.035); border-radius: 14px; }
-         .mseries-image-studio .status-card { padding: 12px; border-radius: 10px; background: alpha(currentColor, 0.04); }
-         .mseries-image-studio .small-copy { font-size: 0.9em; opacity: 0.74; }
-         .mseries-image-studio .prompt-editor { padding: 10px; border-radius: 8px; }
-         .mseries-image-studio .queue-row { padding: 8px 10px; border-radius: 8px; background: alpha(currentColor, 0.04); }",
+         .mseries-image-studio .preview-stage { background: @theme_base_color; border: 1px solid alpha(currentColor, 0.08); }
+         .mseries-image-studio .status-card, .mseries-image-studio .queue-row { background: @theme_base_color; }",
     );
     let display = gtk::prelude::RootExt::display(window);
     gtk::style_context_add_provider_for_display(
@@ -182,28 +195,50 @@ fn install_css(window: &gtk::ApplicationWindow) {
 }
 
 fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector) -> gtk::Widget {
-    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 0);
     sidebar.set_width_request(200);
-    sidebar.set_margin_top(16);
-    sidebar.set_margin_bottom(12);
-    sidebar.set_margin_start(12);
-    sidebar.set_margin_end(12);
     sidebar.add_css_class("studio-sidebar");
-    sidebar.append(&section_label("WORKSPACE"));
+    sidebar.add_css_class(granite::STYLE_CLASS_SIDEBAR);
+    sidebar.add_css_class("pantheon-inset");
+    mseries_pantheon_kit::set_box_spacing_text_units(&sidebar, 0.6);
+    sidebar.append(&section_label("Workspace"));
+    let navigation = gtk::ListBox::builder()
+        .css_classes(["navigation-sidebar"])
+        .selection_mode(gtk::SelectionMode::Single)
+        .activate_on_single_click(true)
+        .build();
+    mseries_pantheon_kit::set_accessible_label(&navigation, "Image Studio pages");
     for (label, page) in [("Create", "create"), ("Library", "library")] {
-        let button = gtk::Button::with_label(label);
-        button.add_css_class("flat");
-        button.update_property(&[gtk::accessible::Property::Label(if page == "create" {
-            "Create an image"
+        let row = gtk::ListBoxRow::new();
+        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        contents.add_css_class("pantheon-row");
+        contents.append(&gtk::Image::from_icon_name(if page == "create" {
+            "document-edit-symbolic"
         } else {
-            "Open image library"
-        })]);
-        let stack = stack.clone();
-        button.connect_clicked(move |_| stack.set_visible_child_name(page));
-        sidebar.append(&button);
+            "image-x-generic-symbolic"
+        }));
+        let row_label = gtk::Label::new(Some(label));
+        row_label.set_xalign(0.0);
+        row_label.set_hexpand(true);
+        contents.append(&row_label);
+        row.set_child(Some(&contents));
+        navigation.append(&row);
+        if page == "create" {
+            navigation.select_row(Some(&row));
+        }
     }
-    let workflows = section_label("GUIDED WORKFLOWS");
-    workflows.set_margin_top(20);
+    let stack_for_navigation = stack.clone();
+    navigation.connect_row_selected(move |_, row| {
+        if let Some(row) = row {
+            stack_for_navigation.set_visible_child_name(if row.index() == 0 {
+                "create"
+            } else {
+                "library"
+            });
+        }
+    });
+    sidebar.append(&navigation);
+    let workflows = section_label("Guided workflows");
     sidebar.append(&workflows);
     for (title, subtitle, workflow) in [
         (
@@ -246,14 +281,14 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);
     spacer.set_vexpand(true);
     sidebar.append(&spacer);
-    let device_header = section_label("THIS DEVICE");
+    let device_header = section_label("This device");
     sidebar.append(&device_header);
     let hardware = gtk::Label::new(None);
     hardware.set_xalign(0.0);
     hardware.set_wrap(true);
     hardware.set_margin_start(8);
     hardware.set_margin_end(8);
-    hardware.add_css_class("small-copy");
+    hardware.add_css_class("pantheon-caption");
     let host = HostCapabilities::capture();
     hardware.set_text(&format!(
         "{}\n6 GiB desktop reserve: {}\n{}",
@@ -277,11 +312,9 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
 }
 
 fn build_create_page() -> CreatePage {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    page.set_margin_top(18);
-    page.set_margin_bottom(18);
-    page.set_margin_start(18);
-    page.set_margin_end(18);
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    mseries_pantheon_kit::set_box_spacing_text_units(&page, 0.8);
+    page.add_css_class("pantheon-inset");
     let title = gtk::Label::new(Some("Create"));
     title.set_xalign(0.0);
     title.add_css_class("title-2");
@@ -289,6 +322,9 @@ fn build_create_page() -> CreatePage {
 
     let preview = gtk::Box::new(gtk::Orientation::Vertical, 10);
     preview.add_css_class("preview-stage");
+    preview.add_css_class("pantheon-surface");
+    preview.add_css_class("pantheon-inset");
+    mseries_pantheon_kit::set_box_spacing_text_units(&preview, 0.5);
     preview.set_size_request(-1, 220);
     preview.set_hexpand(true);
     preview.set_vexpand(true);
@@ -355,6 +391,7 @@ fn build_create_page() -> CreatePage {
         .hscrollbar_policy(gtk::PolicyType::Never)
         .build();
     prompt_scroll.add_css_class("card");
+    prompt_scroll.add_css_class("pantheon-surface");
     page.append(&prompt_scroll);
 
     let negative_title = gtk::Label::new(Some("Negative prompt (optional)"));
@@ -393,7 +430,7 @@ fn build_create_page() -> CreatePage {
     ));
     workflow_status.set_xalign(0.0);
     workflow_status.set_wrap(true);
-    workflow_status.add_css_class("small-copy");
+    workflow_status.add_css_class("pantheon-caption");
     page.append(&workflow_status);
 
     let queue_heading = gtk::Label::new(Some("Queue"));
@@ -401,11 +438,9 @@ fn build_create_page() -> CreatePage {
     queue_heading.add_css_class("title-4");
     page.append(&queue_heading);
     let queue_row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-    queue_row.set_margin_top(4);
-    queue_row.set_margin_bottom(4);
-    queue_row.set_margin_start(8);
-    queue_row.set_margin_end(8);
     queue_row.add_css_class("queue-row");
+    queue_row.add_css_class("pantheon-surface");
+    queue_row.add_css_class("pantheon-row");
     queue_row.append(&gtk::Image::from_icon_name("content-loading-symbolic"));
     let queue_status = gtk::Label::new(Some("No image jobs queued"));
     queue_status.set_xalign(0.0);
@@ -426,11 +461,9 @@ fn build_create_page() -> CreatePage {
 }
 
 fn build_library_page(store: &RecipeStore) -> LibraryPage {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 10);
-    page.set_margin_top(18);
-    page.set_margin_bottom(18);
-    page.set_margin_start(18);
-    page.set_margin_end(18);
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    mseries_pantheon_kit::set_box_spacing_text_units(&page, 0.75);
+    page.add_css_class("pantheon-inset");
     let title = gtk::Label::new(Some("Library"));
     title.set_xalign(0.0);
     title.add_css_class("title-2");
@@ -491,26 +524,19 @@ fn build_library_page(store: &RecipeStore) -> LibraryPage {
 }
 
 fn build_inspector() -> Inspector {
-    let panel = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    let panel = gtk::Box::new(gtk::Orientation::Vertical, 0);
     panel.set_width_request(270);
-    panel.set_margin_top(18);
-    panel.set_margin_bottom(18);
-    panel.set_margin_start(14);
-    panel.set_margin_end(14);
+    mseries_pantheon_kit::set_box_spacing_text_units(&panel, 0.65);
+    panel.add_css_class("pantheon-inset");
     let title = gtk::Label::new(Some("Generation settings"));
     title.set_xalign(0.0);
     title.add_css_class("title-3");
     panel.append(&title);
-    let device_card = gtk::Box::new(gtk::Orientation::Vertical, 5);
-    for (property, value) in [
-        ("margin-top", 4),
-        ("margin-bottom", 4),
-        ("margin-start", 8),
-        ("margin-end", 8),
-    ] {
-        device_card.set_property(property, value);
-    }
+    let device_card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    mseries_pantheon_kit::set_box_spacing_text_units(&device_card, 0.35);
     device_card.add_css_class("status-card");
+    device_card.add_css_class("pantheon-surface");
+    device_card.add_css_class("pantheon-inset");
     let device_title = gtk::Label::new(Some("M-Series device check"));
     device_title.set_xalign(0.0);
     device_title.add_css_class("heading");
@@ -519,14 +545,14 @@ fn build_inspector() -> Inspector {
     ));
     device_detail.set_xalign(0.0);
     device_detail.set_wrap(true);
-    device_detail.add_css_class("small-copy");
+    device_detail.add_css_class("pantheon-caption");
     device_card.append(&device_title);
     device_card.append(&device_detail);
     panel.append(&device_card);
     let hardware = gtk::Label::new(None);
     hardware.set_xalign(0.0);
     hardware.set_wrap(true);
-    hardware.add_css_class("small-copy");
+    hardware.add_css_class("pantheon-caption");
     panel.append(&hardware);
     let engine = gtk::Label::new(Some(
         "Image engine: not connected\nCompatibility: unverified",
@@ -534,16 +560,18 @@ fn build_inspector() -> Inspector {
     engine.set_xalign(0.0);
     engine.set_wrap(true);
     engine.add_css_class("status-card");
+    engine.add_css_class("pantheon-surface");
+    engine.add_css_class("pantheon-inset");
     panel.append(&engine);
 
-    panel.append(&section_label("MODEL"));
+    panel.append(&section_label("Model"));
     let model = gtk::Entry::new();
     model.set_placeholder_text(Some("Model name or checkpoint"));
     model.update_property(&[gtk::accessible::Property::Label(
         "Model name or checkpoint for recipe",
     )]);
     panel.append(&model);
-    panel.append(&section_label("LORA"));
+    panel.append(&section_label("LoRA"));
     let lora = gtk::Entry::new();
     lora.set_placeholder_text(Some("LoRA name (optional)"));
     lora.update_property(&[gtk::accessible::Property::Label("LoRA name for recipe")]);
@@ -562,7 +590,7 @@ fn build_inspector() -> Inspector {
     weight_row.append(&lora_weight);
     panel.append(&weight_row);
 
-    panel.append(&section_label("OUTPUT"));
+    panel.append(&section_label("Output"));
     let dimensions = gtk::DropDown::from_strings(&["512 × 512", "768 × 768", "1024 × 1024"]);
     dimensions.update_property(&[gtk::accessible::Property::Label(
         "Image dimensions for recipe",
@@ -580,7 +608,7 @@ fn build_inspector() -> Inspector {
     batch_row.append(&batch_title);
     batch_row.append(&batch);
     panel.append(&batch_row);
-    panel.append(&section_label("SEED"));
+    panel.append(&section_label("Seed"));
     let seed = gtk::SpinButton::with_range(-1.0, 2_147_483_647.0, 1.0);
     seed.set_numeric(true);
     seed.set_value(-1.0);
@@ -588,7 +616,7 @@ fn build_inspector() -> Inspector {
         "Seed, minus one means random",
     )]);
     panel.append(&seed);
-    panel.append(&section_label("TAGS"));
+    panel.append(&section_label("Tags"));
     let tags = gtk::Entry::new();
     tags.set_placeholder_text(Some("portrait, streamer, study"));
     tags.update_property(&[gtk::accessible::Property::Label(
@@ -639,12 +667,8 @@ fn build_inspector() -> Inspector {
     }
 }
 
-fn section_label(text: &str) -> gtk::Label {
-    let label = gtk::Label::new(Some(text));
-    label.set_xalign(0.0);
-    label.set_margin_start(8);
-    label.add_css_class("section-heading");
-    label
+fn section_label(text: &str) -> granite::HeaderLabel {
+    granite::HeaderLabel::new(text)
 }
 
 fn apply_workflow(workflow: &str, page: &CreatePage, settings: &Inspector) {

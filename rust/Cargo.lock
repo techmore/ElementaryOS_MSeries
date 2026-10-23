@@ -1609,6 +1609,21 @@ version = "0.1.0"
 dependencies = [
  "granite-rs",
  "gtk4",
+ "mseries-pantheon-kit",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mseries-pantheon-kit"
+version = "0.1.0"
+source = "git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43#e15f9272d9d466e078bef990da1cd462cfcb7f43"
+dependencies = [
+ "gdk-pixbuf",
+ "gio",
+ "granite-rs",
+ "gtk4",
+ "mseries-update-core 0.1.0 (git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43)",
  "serde",
  "serde_json",
 ]
@@ -1626,12 +1641,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mseries-update-core"
+version = "0.1.0"
+source = "git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43#e15f9272d9d466e078bef990da1cd462cfcb7f43"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "mseries-updates"
 version = "0.1.0"
 dependencies = [
  "granite-rs",
  "gtk4",
- "mseries-update-core",
+ "mseries-update-core 0.1.0",
 ]
 
 [[package]]

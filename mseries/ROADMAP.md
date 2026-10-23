@@ -1,15 +1,19 @@
 ## Native Image Studio: Pantheon Rust UI and recipe flow — 2026-10-22
 
-`rust/mseries-image-studio` is a Rust GTK 4 + Granite 7 app (`gtk4-rs` and
-`granite-rs`) with guided workflows, prompt-type selection, reviewable local
+`rust/mseries-image-studio` is a Rust GTK 4 + Granite 7 app (`gtk4-rs`,
+`granite-rs`, and the repository's `mseries-pantheon-kit` SDK, pinned to
+`e15f9272` while the shared crate is integrated into `dev`). The app now uses a
+native GTK titlebar, Granite navigation/section labels, theme-neutral SDK geometry,
+text-scaled spacing, and responsive sizing. It has guided workflows, prompt-type selection, reviewable local
 assistant suggestions, live memory/render-node reporting, editable generation
 settings, recipe restore, and PNG + JSON metadata storage. Six core tests pass;
-the Xvfb render interaction test covers preset → save → Library → Load. It opens
+the Xvfb render interaction test covers preset → save → Library → Load at regular
+and compact sizes. Light/dark screenshots of both pages were inspected. It opens
 with the requested adult streamer-series prompt.
 
 Image generation remains gated; there is no connected or qualified still-image
 runtime, no diffusion model in the cache, and `mseries-ai-everyday.service` is
-still failed. Available memory is 6.1 GiB, only just above the 6 GiB reserve, and
+still failed. Available memory is 5.8 GiB, below the 6 GiB reserve, and
 the prompt assistant API is not listening. No image job was started, so the
 requested generated series is still outstanding. Next:
 choose and qualify an ARM64/Vulkan-compatible runtime/model/LoRA, measure the
