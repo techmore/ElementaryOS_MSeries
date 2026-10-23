@@ -11775,3 +11775,12 @@ features; those need native Incus design, not blind Swift feature parity claims.
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
+
+## Smart Reply slice 1 core — 2026-10-23
+
+New crate `rust/mseries-reply` (workspace member) with the allow/block rules engine, chat-app marker (`X-MSeries-Chat`), the ordered
+context gate, a tool-free draft agent over `mseries-ai`, and a content-free audit record, plus fixtures and an `mseries-reply` CLI.
+23 unit tests pass and clippy is clean; the gates covered are in `SMART-REPLY-DESIGN.md` ("Slice 1 status"). One live fixture draft
+through the loaded local model (6.1 s, injection fixture, no secret in the answer). Not done: no app is marked yet, no AT-SPI reader,
+IBus lease/popup, Settings panel or hotkey; nothing is installed, so the running desktop is unchanged. Next: mark Rust Messages,
+Newelle and the T3 port, then the AT-SPI fallback reader and the IBus input client.

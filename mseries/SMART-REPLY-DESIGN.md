@@ -1,6 +1,6 @@
 # Smart Reply: a window-aware agent that drafts text for any app (design, 2026-10-23)
 
-**Status: design only. Nothing in this note is installed or built.** It records an owner idea so it is not lost, says which existing
+**Status: design, plus the first slice's core library (`rust/mseries-reply`, 2026-10-23: rules, chat marker, context gate, tool-free draft agent, audit; fixtures and a CLI only). Nothing is installed; there is no hotkey, popup, IBus lease or Settings panel yet.** It records an owner idea so it is not lost, says which existing
 pieces it would reuse, and scopes a first slice that can be built and judged without committing to the whole thing.
 
 ## Intent
@@ -236,3 +236,21 @@ drafting from the owner's past style, website rules, any change to Signal or Mes
 - Is the ask-first allow list the right default, rather than everywhere-except-blocked?
 - Is Signal acceptable as an AT-SPI-read, IME-insert target at all (section above), or should it stay on the deny list?
 - Popup via IBus (first slice) versus a compositor overlay later.
+
+## Slice 1 status — `rust/mseries-reply` (2026-10-23)
+
+Built and unit-tested against synthetic fixtures; no window is read by anything yet.
+
+| Design item | State |
+|---|---|
+| Chat marker (`X-MSeries-Chat`, optional `X-MSeries-Chat-Adapter`) | Parser and lookup done. **No desktop entry carries the key yet**, so every app is currently "unmarked" and gets nothing. Marking Rust Messages, Newelle and the T3 port is the next change. |
+| Rules engine (`rules.rs`) | Done: master switch off by default, ask-first default, app / field-kind / contact rules, contact > field kind > app, block beats allow at equal specificity, context caps and local-only that only tighten, built-in blocks (password, card, OTP and unknown fields; terminals, password managers, lock screen), a missing, malformed, unknown-key, newer-version or group/other-writable rules file blocks everything, hotkey collision check. |
+| Context gate (`context.rs`) | Done: reads in a fixed order (marker, then field role, then app decision, then header, then contact decision, then transcript). Tests count reads: an unmarked app, a sensitive field and a blocked app read nothing; a blocked contact reads only the header and discards it. The composer's current text (C1) is not read. |
+| Agent (`agent.rs`) | Done: no tools; conversation text only ever becomes message content; the answer is stripped of control and bidi characters and bounded. Calls the existing loopback-only `mseries-ai` client. |
+| Audit (`audit.rs`) | Done: tiers, sizes and outcome only; a refusal records its kind and the app id, never a contact, title or text. |
+| Live model | One fixture run on 2026-10-23: the injection fixture through the loaded local model took 6.1 s and returned a plain refusal with no secret. One sample is not the quality or injection gate. |
+| AT-SPI reader, IBus lease/popup, Tab/Esc, Settings panel, latency/RAM/thermal numbers, per-app pass/fail | **Not started.** Order steps 0, 4 and 5 and the Chromium focus-loss gate are all still open. |
+
+Choices taken without the owner's answers to the open questions: ask-first default policy, local-only model, popup via IBus (not built), `mseries-ai` used from its location on `dev`. The hotkey is a validated setting with no default.
+
+Try it: `cargo run -p mseries-reply -- packet rust/mseries-reply/fixtures/lunch.json --rules <rules.json>`.
