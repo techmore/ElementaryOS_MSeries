@@ -210,6 +210,20 @@ package build and private fake-client tab activation pass. The updated switcher
 is installed; actual owner-window focus remains unverified. The acceptance ledger
 now includes the switcher and current keyboard/reading-size evidence.
 
+## Pantheon local AI reply drafts — 2026-10-22
+
+Rust Messages now has a first on-demand local Qwen reply-draft integration
+through the shared `mseries-ai` crate. A universal owner-only SQLite store
+provides app preferences and explicit memory APIs; the Messages menu edits the
+local endpoint, writing style, shared-memory use, and shared/Messages-only
+memories. Raw conversation text and generated replies stay out of the database.
+The composer previews the draft and uses Tab to insert at the cursor without
+sending. Other app adapters and Messages live-model/keyboard/visual
+qualification remain open. A tabbed agent window is the next UI direction;
+Signal remains gated on an official supported compose/API boundary and will not
+use a clipboard-only bridge.
+See [`local-ai/PANTHEON-REPLY-DRAFTS.md`](local-ai/PANTHEON-REPLY-DRAFTS.md).
+
 ## Merged BlueFerry phone-ID build prepared — 2026-10-22
 
 Live public GetStatus reports API v2 with MAP available, but no phone_profile_id;

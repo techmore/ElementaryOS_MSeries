@@ -39,6 +39,14 @@ Hermes has been retired from the maintained assistant setup. New installs no lon
 
 ## MCP app coverage
 
+The shared `mseries-ai` crate now provides a local Qwen reply-draft client and
+an owner-only SQLite store for cross-app preferences and explicitly saved AI
+memories. Rust Messages is its first consumer. It sends a bounded conversation
+snapshot only to the loopback model endpoint after the user requests a draft;
+it does not save messages or generated drafts. The Messages menu exposes the
+local endpoint, writing-style, shared-memory, and saved-memory settings. See
+the [Pantheon reply-draft design and app boundary](PANTHEON-REPLY-DRAFTS.md).
+
 `os-mcp.py` is a stdio MCP server with sixteen typed tools. It has no generic shell tool. Workspace paths are relative to `~/Documents/Assistant Workspace`; reads reject traversal/symlink escapes and note creation refuses overwrites. OS measurements, app inventory and fault collection are read-only. Calendar recurrences are labeled, not expanded. Tasks and Calendar use Evolution Data Server. Task and event creation are restricted to dedicated local Assistant Tasks and Assistant Calendar sources; retries reuse a stable request ID and cannot overwrite existing objects. Events require explicit time-zone offsets and do not send invitations. `list_tasks` and `list_calendar_events` limit reads to those sources with `scope=assistant`. See [app integration coverage](APP-INTEGRATION.md) for qualification and limits. Energy uses the existing Energy Monitor cache and reports stale/missing data.
 
 The installed-app inventory identifies adapter coverage. It does not imply that every app can be controlled. Assistant Browser provides read-only tab titles and bounded page text from a separate Brave profile launched from the Applications menu. Only pages opened in that profile are shared; the normal Brave profile is untouched. Local unsent RFC822 drafts are stored under Assistant Workspace/Mail Drafts. Open Assistant Mail Drafts to preview a message and explicitly open its composer in Mail. Inbox reading, sending, attachments, general browser control, messaging and arbitrary window control remain outside this adapter. The capability matrix in the results records this boundary. This is the first MCP OS layer, not a claim of complete app automation.

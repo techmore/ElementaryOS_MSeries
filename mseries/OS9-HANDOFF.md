@@ -210,6 +210,28 @@ package build and private fake-client tab activation pass. The updated switcher
 is installed; actual owner-window focus remains unverified. The acceptance ledger
 now includes the switcher and current keyboard/reading-size evidence.
 
+## Shared local AI reply drafts — 2026-10-22
+
+Added the reusable `rust/mseries-ai` crate and wired Rust Messages as its first
+consumer. A user action asks the already-loaded local Qwen service on loopback
+for a bounded reply draft; a spinner shows “Thinking…”, and Tab or Insert adds
+the preview at the composer cursor. Insertion does not send. Thread changes
+invalidate pending or ready drafts. The shared SQLite database is owner-only,
+stores app preferences and explicitly saved memories, and does not store
+conversation text or generated drafts. It will be available to later app
+adapters. Signal's signed official client remains outside this feature until a
+supported compose/API boundary exists.
+
+Targeted `rustfmt --edition 2024` and `cargo check -p mseries-ai -p mseries-messages` passed.
+No tests, screenshots, live model requests, package install, or client restart
+were run. The Messages menu now provides the first settings surface for the
+loopback endpoint, per-app style, shared-memory consent, and shared or
+Messages-only memories. Next: exercise the local Qwen request and Tab insertion
+in an isolated GTK/model setup, inspect light/dark and narrow layouts, then add
+app adapters that reuse the shared database and build the requested tabbed agent
+window. Signal remains gated on an official supported API, without clipboard
+handoff.
+
 ## Merged BlueFerry phone-ID build prepared — 2026-10-22
 
 Live public GetStatus reports API v2 with MAP available, but no phone_profile_id;
