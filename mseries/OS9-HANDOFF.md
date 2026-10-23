@@ -43,6 +43,85 @@ for a Files-integrated Preview panel with MIME/details fallback and drag-and-dro
 and [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531) for
 right-click image-conversion Quick Actions.
 
+## Bounded Aurora CI dependency downloads — 2026-10-22
+
+The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
+mirror at 50.9 kB/s, before kernel compilation. Aurora CI now first uses the
+official HTTPS Ubuntu ports archive, then HTTPS Azure as a fallback. Metadata
+fetches are limited to 60 seconds and package downloads to 240 seconds per
+mirror. Packages retain normal Ubuntu signature verification. Installation
+starts only after a successful download and uses `--no-download`; the timeout
+does not interrupt dpkg to switch mirrors. Runner source files are not modified.
+Rustup has a five-minute bound and the dependency step a 20-minute bound.
+
+Validation: 17 CI regression tests passed, including slow/erroring mirrors,
+failed metadata, no installation after failed downloads, preserved signed
+sources, host execution refusal, and workflow wiring. Full GitHub kernel build
+and package inspection still need to pass on the updated PR head before merge.
+No desktop installation, kernel change or service restart.
+
+## Superseded PR CI cancellation — 2026-10-22
+
+Source-only: all ten PR workflows now group by workflow name plus PR number
+(with branch ref as the non-PR fallback), cancelling in-progress runs only for
+`pull_request` events. This prevents old revisions of one PR from accumulating
+runner jobs across the shared account, as happened while Rupert awaited deployment.
+Different PRs/workflows stay independent; pushes/manual runs are not preempted.
+The package publisher keeps its global `mseries-apt-publish` lock and release-only
+workflows retain their existing policy. A lightweight workflow checks the policy
+on every workflow change, including future PR workflows.
+
+Validation: nine regression tests passed, including removal/misconfiguration
+mutations for every PR workflow, duplicate workflow names, group isolation, and
+release/publisher lock preservation. No desktop install or service restart.
+Next: merge into dev after CI; existing branches need a new PR run using this
+policy. Already-running legacy checks are not retroactively cancelled. This
+removes superseded-run backlog, not contention from legitimate current builds.
+
+## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
+
+Owner explicitly deferred both apps and rejected the current combined launcher
+experience. MESSAGING-STATUS.md is the authoritative current status on dev;
+AGENTS.md directs future agents to it. Older scoped successes and installed-client
+reports must not be interpreted as completion. Resume only on a new explicit
+owner request. Existing apps/data remain intact; no unfinished app code is merged
+by this documentation change.
+
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
+## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
+
+Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
+unqualified until the session package is installed and the next login.**
+
+- **`/usr/bin/pantheon-lock`** (session package) runs gtklock with `usr/share/pantheon-rust-compositor/lock/layout.ui` and
+  `style.css`: the user's wallpaper (`picture-uri`, or `-dark` in dark mode), io.elementary.greeter's clock and date
+  styling (values from its `Application.css`), and a Granite-style card with an accent-coloured avatar initial (or the
+  AccountsService/`~/.face` picture), the user's name, and a password field with an accent arrow button. It follows the
+  12/24 h clock, the accent from `gtk-theme`, and `color-scheme` (GTK `:dark` variant). gtklock's widget ids and handlers
+  are kept, so PAM, Caps Lock and error messages still work. Any failure falls back to stock gtklock.
+- **Default locker:** the compositor uses `/usr/bin/pantheon-lock` when installed, else `gtklock`;
+  `PANTHEON_LOCK_COMMAND` still wins.
+- **Correction to the entry below:** the earlier idle probe never gave the nested window X keyboard focus, so it proved
+  frame callbacks, not that typing reached the lock screen. The probe now focuses the window and requires key events:
+  with the fix 12 key events and 9 frame callbacks while typing; the control build (no lock-surface callbacks) also gets
+  12 key events but 0 callbacks, and its screenshot shows the card frozen mid fade-in with no dots — the owner's
+  "no keyboard feedback". With the fix, dots appear as you type.
+- **Verified:** strict clippy both ways, 176 tests (new: default lock command); idle probe 6/6; screenshots with
+  `lock-probe/shoot.sh` in light (owner's settings) and dark: locked, revealed, typing, Caps Lock warning. No password was
+  submitted in any test.
+- **What to check at the next login (after installing the package):** Super+L shows your wallpaper, the big clock and the
+  card; typing shows dots; Caps Lock shows the warning; your password unlocks. If it misbehaves:
+  `Environment=PANTHEON_LOCK_COMMAND=gtklock` drop-in restores the stock look.
+
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 
 Owner: "the screen saved to login comes up … there is no keyboard feedback", and asked for lock on idle honouring

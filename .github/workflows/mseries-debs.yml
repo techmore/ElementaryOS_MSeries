@@ -61,8 +61,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: mseries-debs-${{ github.ref }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # stable for main and for a release PR into main; dev for everything else.

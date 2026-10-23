@@ -34,8 +34,17 @@ results = []
 loop = GLib.MainLoop()
 
 
+def focus_nested_window(env):
+    """Give the nested compositor's X window keyboard focus (Xvfb has no WM)."""
+    windows = subprocess.run(['xdotool', 'search', '--pid', os.environ['COMP_PID']],
+                             env=env, capture_output=True, text=True).stdout.split()
+    for window in windows:
+        subprocess.run(['xdotool', 'windowfocus', window], env=env, capture_output=True)
+
+
 def poke():
     env = dict(os.environ, DISPLAY=HOST_DISPLAY)
+    focus_nested_window(env)
     for x, y in ((300, 300), (320, 330), (350, 340)):
         subprocess.run(['xdotool', 'mousemove', str(x), str(y)], env=env, check=False)
 
@@ -71,7 +80,16 @@ def set_mode(bus, mode):
 
 def type_text(text):
     env = dict(os.environ, DISPLAY=HOST_DISPLAY)
+    focus_nested_window(env)
     subprocess.run(['xdotool', 'type', '--delay', '120', text], env=env, check=False)
+
+
+def key_events(log):
+    """wl_keyboard.key events the locker has received (WAYLAND_DEBUG=1 log)."""
+    try:
+        return len(re.findall(r'wl_keyboard#?@?\d+\.key\(', log.read_text(errors='replace')))
+    except OSError:
+        return 0
 
 
 def frame_dones(log):
@@ -160,12 +178,14 @@ def main():
     poke()
     woke = wait_until(lambda: get_mode() == 0, 3)
     wait_until(lambda: False, 1.5)
-    before = frame_dones(lock_log)
+    before, keys_before = frame_dones(lock_log), key_events(lock_log)
     type_text('abcdef')
     wait_until(lambda: False, 1.5)
-    after = frame_dones(lock_log)
-    result('idle-lock', locked and woke and after > before,
-           f'locked={locked} woke={woke} lock-screen frame callbacks while typing={after - before}')
+    after, keys_after = frame_dones(lock_log), key_events(lock_log)
+    keys = keys_after - keys_before
+    result('idle-lock', locked and woke and keys >= 12 and after > before,
+           f'locked={locked} woke={woke} key events reaching the lock screen={keys} '
+           f'frame callbacks while typing={after - before}')
 
     window.destroy()
     sys.exit(0 if all(results) else 1)
