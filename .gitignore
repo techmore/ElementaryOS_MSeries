@@ -31,6 +31,7 @@ mkosi.packages/
 rust/target/
 
 # Local scratch: build copies, external symlinks and agent worktrees
+/build/
 /work/
 /static
 /.claude/
