@@ -2,7 +2,7 @@
 
 use gtk::glib;
 use gtk::prelude::*;
-use mseries_image_studio::{RecipeStore, ui::ImageStudioWindow};
+use mseries_image_studio::{Recipe, RecipeStore, recipe::save_png, ui::ImageStudioWindow};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -95,6 +95,14 @@ fn main() {
         std::env::set_var("M_SERIES_IMAGE_STUDIO_TEST_SAVE_RECIPE", "1");
         std::env::remove_var("M_SERIES_IMAGE_STUDIO_TEST_PAGE");
     }
+    let mut generated = Recipe::default();
+    generated.prompt = "Test output image with recorded prompt metadata".into();
+    generated.intent = "Streamer scene".into();
+    generated.model_id = "fixture-model".into();
+    generated.tags = vec!["fixture".into(), "metadata".into()];
+    let images = data_home.join("mseries-image-studio").join("images");
+    save_png(include_bytes!("fixtures/tiny.png"), &mut generated, &images).unwrap();
+
     gtk::init().expect("GTK display; run under xvfb-run");
     granite::init();
     let application = gtk::Application::builder()
@@ -129,6 +137,13 @@ fn main() {
     button(window, "Library").emit_clicked();
     pump(Duration::from_millis(100));
     assert!(mapped_text(window).iter().any(|text| text == "Library"));
+    let library_text = mapped_text(window);
+    assert!(library_text.iter().any(|text| text == "Generated images"));
+    assert!(
+        library_text
+            .iter()
+            .any(|text| text.contains("Test output image with recorded prompt metadata"))
+    );
     save_screenshot(window, "image-studio-library.png");
     button(window, "Load").emit_clicked();
     pump(Duration::from_millis(100));
