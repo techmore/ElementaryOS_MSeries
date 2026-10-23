@@ -7,6 +7,18 @@ Owner confirms the M4 is currently unavailable for read-only checks and asks
 to continue public-source preparation. Hardware receipts remain open; do not
 repeatedly request an inventory until availability changes.
 
+## Preparation stop point
+
+This preparation phase ends after the selected R7 kernel and its matched full
+image/ISO are built, their artifact hashes and build records are checked into
+the repository, and the available ARM64 UEFI/QEMU boot paths have been tested
+and recorded. Keep the profile research-only, with installer admission and
+hardware qualification false. Stop there: do not write to the mini's internal
+SSD or change its APFS/GPT layout. The next phase requires the owner to run the
+read-only inventory on the actual mini, then qualify external-media boot and
+the native hardware checklist below. Internal dual-boot work can be considered
+only after those native checks, backup, and macOS/Recovery return paths pass.
+
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Current source selection | All 34 tracked refs refreshed; Aurora advanced 87 commits and mainline 45. The WFI ordering and two BCM4388 fixes are adopted in R7; T8132 split-channel ADMAC support is already present in Gravity. R6 includes the built-in Apple watchdog setting | Track future changes as separate candidates; do not mix firmware contracts |
