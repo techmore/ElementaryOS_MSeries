@@ -1,3 +1,16 @@
+## Messages gettext foundation — 2026-10-22
+
+Messages and its switcher now use an explicit app gettext domain for static
+controls/status text, retaining English fallback when catalogs are absent.
+The reproducible po/update.py extractor records 54 unique source strings and
+supports multiline calls; msgfmt --check-format validates the template. Empty
+labels remain untranslated to avoid gettext header lookup. Strict all-target
+Clippy, the isolated GTK scenario and ARM64 packaging pass; user preview updated
+without restarting clients. No reviewed translations ship yet. Dynamic messages,
+plural forms, accessible names and SDK strings remain to migrate; localization
+parity is not complete. Receipts: /tmp/messages-localization-{clippy-final,
+gui-final,package}.log. Catalog workflow is documented in rust/mseries-messages/po.
+
 ## Inbox keyboard focus survives refresh — 2026-10-22
 
 Messages now retains the focused conversation row by thread identity when rebuilding

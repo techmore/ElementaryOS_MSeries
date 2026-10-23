@@ -19,7 +19,7 @@ This is an implementation inventory, not proof of live service behavior.
 | Pins | Stable UUID scope and shared Secret Service item | Released BlueFerry lacks merged UUID field |
 | Navigation | Compact/regular resize; search shortcuts; Back draft retention | Refresh preserves focused inbox row by thread identity and reading position, follows when near bottom and offers Latest Messages; isolated sidebar/viewport regression passes |
 | Scaling/theme | Elementary light/dark, long-text and large-font isolated GTK passes | Hardware scales and assistive technology |
-| Localization | Rust UI strings currently English; timestamps use local calendar | Python uses gettext; Rust gettext/catalog integration remains incomplete |
+| Localization | App gettext domain, 54 static source strings extracted; English fallback and local calendar timestamps | Dynamic/plural/accessibility strings and reviewed translated catalogs remain; gettext/template foundation is installed |
 | Packaging | ARM64 package and user-level preview install | Full release CI and live acceptance; Python remains qualified |
 
 Do not replace the qualified launcher or mark parity complete based on this table.
