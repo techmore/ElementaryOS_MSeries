@@ -1,7 +1,7 @@
 # M4 Mac mini preparation
 
-**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded and its downloaded package passed independent checks, but the fresh source audit found that its Apple WFI selector initializes after the boot CPU may already idle. R6 is superseded; the attempted R6 full-image workflow [39887373141](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39887373141) was cancelled before completion. The current R7 patch set moves selection into `smp_prepare_boot_cpu()` and adds two BCM4388 fixes for shared calibration setup and Wi-Fi-before-Bluetooth probe order. Its source application and order gates pass locally. The R7 kernel build and matching image/ISO have not run yet; R5 remains the latest complete image. No native M4 or installation qualification has run.
-[Historical R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json); [fresh upstream refresh](receipts/2026-10-23-upstream-head-refresh-5.json).
+**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded and its downloaded package passed independent checks, but the fresh source audit found that its Apple WFI selector initializes after the boot CPU may already idle. R6 is superseded; the attempted R6 full-image workflow [39887373141](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39887373141) was cancelled before completion. The current R7 patch set moves selection into `smp_prepare_boot_cpu()` and adds two BCM4388 fixes for shared calibration setup and Wi-Fi-before-Bluetooth probe order. Its source application and order gates pass locally. Corrected R7 kernel run [39888416251](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39888416251) is compiling; its matching image/ISO has not run yet. R5 remains the latest complete image. No native M4 or installation qualification has run.
+[Historical R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json); [fresh semantic upstream refresh](receipts/2026-10-23-upstream-head-refresh-5.json); [final exact-ref recheck](receipts/2026-10-23-upstream-head-refresh-6.json).
 
 **Latest complete image (historical R5):** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the R5/Mesa6 image graph and ARM64 UEFI ISO. Its graph, desktop payload, selected EFI controls, GPT/ESP/verity checks and ISO payload readback passed. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU reached UEFI/GRUB but Casper could not find live media; the R5 kernel did not expose a usable optical device and could not mount the raw USB ISO. R7 keeps the ISO/CD driver fixes and is the next image candidate after its kernel build.
 [Historical R5 image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
@@ -77,7 +77,8 @@ The systemd v259 annotated tag is unchanged; a prior peeled-commit comparison
 was a false positive. Other T6040/T6041 and G17 changes remain outside this
 plain M4 candidate. Aurora m1n1 PR #35 and U-Boot PR #7 remain open at their
 pinned commits. The unpinned Gravity speaker-safety repository remains unavailable
-and is not used. See the [fresh semantic re-audit](receipts/2026-10-23-upstream-head-refresh-5.json)
+and is not used. See the [fresh semantic re-audit](receipts/2026-10-23-upstream-head-refresh-5.json),
+[final exact-ref recheck](receipts/2026-10-23-upstream-head-refresh-6.json) (all 34 refs were unchanged),
 and [previous exact-ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
 
 DTBs, raw bootloader stages, U-Boot and Mesa have built locally. Selected AGX

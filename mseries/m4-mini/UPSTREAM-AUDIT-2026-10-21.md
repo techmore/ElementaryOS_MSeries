@@ -1,7 +1,7 @@
 # M4 Mac mini: Gravity Linux and upstream audit
 
-**Current candidate status (2026-10-23):** Hosted R6 kernel run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) and independent package checks succeeded. A fresh Aurora review found that the R6 WFI selector ran too late to protect the boot CPU's first idle, so R6 is superseded and its full-image workflow [39887373141](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39887373141) was cancelled before completion. R7 carries the selector from `smp_prepare_boot_cpu()` and two BCM4388 Bluetooth fixes. Patch application and source-order gates pass locally; the R7 kernel build and matching full image/ISO remain pending. R5 is the latest complete image. No native boot or installation is qualified.
-[Superseded R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json); [fresh upstream refresh](receipts/2026-10-23-upstream-head-refresh-5.json).
+**Current candidate status (2026-10-23):** Hosted R6 kernel run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) and independent package checks succeeded. A fresh Aurora review found that the R6 WFI selector ran too late to protect the boot CPU's first idle, so R6 is superseded and its full-image workflow [39887373141](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39887373141) was cancelled before completion. R7 carries the selector from `smp_prepare_boot_cpu()` and two BCM4388 Bluetooth fixes. Patch application and source-order gates pass locally; corrected kernel run [39888416251](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39888416251) is compiling. Its matching full image/ISO remains pending; R5 is the latest complete image. No native boot or installation is qualified.
+[Superseded R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json); [fresh semantic upstream refresh](receipts/2026-10-23-upstream-head-refresh-5.json); [final exact-ref recheck](receipts/2026-10-23-upstream-head-refresh-6.json).
 
 **Latest complete image (R5/Mesa6):** hosted run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) passed the image graph, EFI controls, GPT/ESP/verity checks and ISO payload readback. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. Local QEMU reached UEFI and GRUB but Casper could not find live media. R6 added built-in ISO9660 and SCSI CD support; R7 retains it and will be the corrected image candidate.
 [Historical R5 image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
@@ -19,6 +19,7 @@ NVMe, Aquantia or tg3 paths. The systemd v259 tag object did not move; the prior
 peeled-commit comparison was a false positive. T6040/T6041-only and G17-specific
 changes remain outside the plain-M4 candidate. Full commit notes:
 [fresh semantic re-audit](receipts/2026-10-23-upstream-head-refresh-5.json) and
+[final exact-ref recheck](receipts/2026-10-23-upstream-head-refresh-6.json) (all 34 refs were unchanged) and
 [previous exact-ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
 
 **Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.

@@ -2,7 +2,7 @@
 
 Target: owner-reported plain M4 mini, 16 GB, 1 TB, 10 Gb Ethernet,
 macOS 27 and HDMI. Expected Mac16,10/J773g identity is not yet measured.
-The prepared artifacts do not establish that this machine is ready to install. R6 package checks passed but a fresh upstream audit exposed a WFI init-order bug, so R6 is superseded. R7 carries the early boot-CPU fix and BCM4388 fixes; its kernel build, matching full image/ISO and QEMU live-media test remain pending. Native M4 qualification has not started.
+The prepared artifacts do not establish that this machine is ready to install. R6 package checks passed but a fresh upstream audit exposed a WFI init-order bug, so R6 is superseded. R7 carries the early boot-CPU fix and BCM4388 fixes; kernel workflow [39888416251](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39888416251) is compiling. Its matching full image/ISO and QEMU live-media test remain pending. Native M4 qualification has not started.
 Owner confirms the M4 is currently unavailable for read-only checks and asks
 to continue public-source preparation. Hardware receipts remain open; do not
 repeatedly request an inventory until availability changes.
