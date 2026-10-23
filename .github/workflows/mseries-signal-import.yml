@@ -1,0 +1,49 @@
+name: Signal history import
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "rust/mseries-signal-import/**"
+      - ".github/workflows/mseries-signal-import.yml"
+  pull_request:
+    paths:
+      - "rust/mseries-signal-import/**"
+      - ".github/workflows/mseries-signal-import.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mseries-signal-import-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Importer tests (synthetic data only)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config cargo rustc libssl-dev libgtk-4-dev
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/mseries-signal-import/target
+          key: signal-import-${{ runner.arch }}-${{ hashFiles('rust/mseries-signal-import/Cargo.lock') }}
+          restore-keys: signal-import-${{ runner.arch }}-
+
+      - name: Format, lint and test
+        working-directory: rust/mseries-signal-import
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --locked -- -D warnings
+          cargo test --locked
+          cargo clippy --all-targets --locked --features gui -- -D warnings

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Rounded corners on the built-in display (like macOS), via a patched Gala:
-#  * rounded masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS),
-#  * rounded corners on every standard window (GALA_WINDOW_CORNER_RADIUS), and
+# Continuous superellipse corner approximations on the built-in display, via patched Gala:
+#  * masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS),
+#  * the same curve on every standard window (GALA_WINDOW_CORNER_RADIUS), and
 #  * a software dim layer below the panel's 2-nit backlight floor (mseries-brightness keys
 #    use it; patches/gala-screen-dim.patch).
 #
@@ -17,8 +17,9 @@
 #    starting, and stays on stock until you delete ~/.cache/mseries-gala-failed.
 #  * Takes effect at the next login (the compositor cannot be swapped inside a running session).
 #
-# Radii are in logical pixels. Screen corners default to 20 (0 hides the masks); window
-# corners default to 12 (0 leaves windows square). Change them later by editing
+# Radii are in logical pixels. The built-in screen mask and window clip share the same
+# provisional 20-pixel target (0 disables either mask). Confirm the exact panel match visually.
+# Change them later by editing
 # GALA_SCREEN_CORNER_RADIUS / GALA_WINDOW_CORNER_RADIUS in the drop-in below and logging out/in.
 #
 # It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
@@ -40,7 +41,7 @@ commit=f0791434ac40a50f2aec64700a47b3bb04145752   # elementary/gala matching gal
 dropin_dir=$HOME/.config/systemd/user/io.elementary.gala@wayland.service.d
 dropin=$dropin_dir/mseries-screen-corners.conf
 radius=20
-window_radius=12
+window_radius=20
 
 while [[ $# -gt 0 ]]; do
   case $1 in

@@ -15,14 +15,14 @@ new file mode 100644
 index 00000000..202abdc9
 --- /dev/null
 +++ b/data/shaders/window-corners.frag
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,63 @@
 +/*
 + * SPDX-License-Identifier: LGPL-3.0-or-later
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
 + *
-+ * Rounds the corners of a window's frame while leaving its shadow (and
-+ * everything on the straight edges) intact. The masks are the same four
-+ * corner squares macOS rounds.
++ * Clips the frame to a continuous superellipse approximation while leaving
++ * its shadow and straight edges intact. The corner exponent is shared with
++ * ScreenCorners; the OS still owns the logical-pixel radius.
 + *
 + * Derived from Gala's rounded-corners.frag, which is based on the shader in mutter.
 + */
@@ -56,21 +56,19 @@ index 00000000..202abdc9
 +  else
 +    return 1.0;
 +
-+  vec2 delta = p - vec2 (center_x, center_y);
-+  float dist_squared = dot (delta, delta);
++  // n=4 gives a continuous superellipse instead of a circular quarter arc.
++  const float exponent = 4.0;
++  vec2 normalized = abs (p - vec2 (center_x, center_y)) / clip_radius;
++  float value = pow (normalized.x, exponent) + pow (normalized.y, exponent);
++  vec2 gradient = exponent * pow (normalized, vec2 (exponent - 1.0)) / clip_radius;
++  float distance = (value - 1.0) / max (length (gradient), 0.00001);
 +
-+  // Fully outside the circle
-+  float outer_radius = clip_radius + 0.5;
-+  if (dist_squared > (outer_radius * outer_radius))
-+    return 0.0;
-+
-+  // Fully inside the circle
-+  float inner_radius = clip_radius - 0.5;
-+  if (dist_squared < (inner_radius * inner_radius))
++  // Convert the approximate signed distance to one-pixel antialiased coverage.
++  if (distance <= -0.5)
 +    return 1.0;
-+
-+  // Only pixels on the edge of the curve need expensive antialiasing
-+  return smoothstep (outer_radius, inner_radius, sqrt (dist_squared));
++  if (distance >= 0.5)
++    return 0.0;
++  return 1.0 - smoothstep (-0.5, 0.5, distance);
 +}
 +
 +void main () {
@@ -93,17 +91,17 @@ index 00000000..76c4d60b
 + */
 +
 +/**
-+ * Rounds the corners of every standard window, the way macOS does.
++ * Clips standard window frames to the shared continuous-corner approximation.
 + *
 + * The mask is painted from the window's own texture: the frame rectangle sits inside the
 + * actor's texture (which also contains the shadow), so the shader is told where the frame
 + * is and only the four corner squares are cut away. The shadow stays as mutter drew it.
 + *
-+ * Set GALA_WINDOW_CORNER_RADIUS to the radius in logical pixels (default 12; 0 disables).
++ * Set GALA_WINDOW_CORNER_RADIUS to the radius in logical pixels (default 20; 0 disables).
 + */
 +public class Gala.WindowCorners : Object {
 +    internal const string SHADER_RESOURCE = "/io/elementary/desktop/gala/shaders/window-corners.frag";
-+    private const double DEFAULT_RADIUS = 12.0;
++    private const double DEFAULT_RADIUS = 20.0;
 +
 +    private static WindowCorners? instance;
 +
@@ -183,7 +181,7 @@ index 00000000..76c4d60b
 +}
 +
 +/**
-+ * The Clutter effect that masks a window actor to a rounded frame rectangle.
++ * The Clutter effect that masks a window actor to a continuous-corner frame.
 + */
 +public class Gala.WindowCornersEffect : Clutter.ShaderEffect {
 +    private int clip_radius;

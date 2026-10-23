@@ -5,6 +5,12 @@ bagger: a Zebra ZTC 110Xi4-203dpi engine in a TI-1000Z inline frame, on USB. It 
 is plugged in, loads a label for a set number of bags, confirms the printer received it, then walks the
 operator through checking the bagger screen and one Manual Cycle.
 
+The printer picker also supports other ZPL-compatible USB printers and any ZPL-compatible network or
+shared printer already configured in CUPS. USB printers get separate private raw queues based on their
+serial numbers. The app remembers the selected queue and loaded-label state per printer, and polls USB
+connections so unplugging and reconnecting a device updates its status without restarting the app.
+Identical USB printers without serial numbers cannot be distinguished safely.
+
 Label sources: [techmore/thril](https://github.com/techmore/thril) `poly-bagger/UPC Labels`
 (site: https://techmore.github.io/thril/poly-bagger.html). Printer manual: Advanced Poly TI-1000Z
 inline thermal printer, "Printer Settings" and "Stored Labels", pp. 20–22.
@@ -13,7 +19,11 @@ inline thermal printer, "Printer Settings" and "Stored Labels", pp. 20–22.
 mseries/polybagger-print-manager/install.sh                          # launcher, app icon, offline label sync
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py # GUI
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --status
+python3 mseries/polybagger-print-manager/polybagger_print_manager.py --status --printer QUEUE_OR_SERIAL
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --send "<file>.zpl" --qty 1000
+python3 mseries/polybagger-print-manager/polybagger_print_manager.py --send "<file>.zpl" --printer QUEUE_OR_SERIAL --qty 1000
+python3 mseries/polybagger-print-manager/polybagger_print_manager.py --setup --printer USB_SERIAL
+python3 mseries/polybagger-print-manager/polybagger_print_manager.py --setup --printer USB_IDENTITY # serial-less device
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --cancel        # your stuck jobs
 python3 mseries/polybagger-print-manager/polybagger_print_manager.py --sync --pull   # refresh offline labels
 ```
@@ -42,10 +52,10 @@ ready light, a barcode label feeding out). `install.sh` installs it to `hicolor`
 PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it from the dock's context menu.
 
 ## The window
-- **Status bar** (top): a dot with **Ready** (green), **Confirm label / Ready, no label** (amber) or
-  **Not ready** (red), then what the computer sees: printer connected (serial), queue ready / stalled /
-  paused, the last known label on the printer (from the operator's answers; reset to unknown when the
-  printer drops off USB) and the last job.
+- **Printer picker** (status bar): choose among configured CUPS queues and detected USB printers. A detected
+  printer without a queue offers **Set Up Print Queue…**; network printers must first be added in System Settings.
+- **Status bar**: a dot with **Ready** (green), **Confirm label / Ready, no label** (amber) or **Not ready**
+  (red), then the selected printer's connection, queue state, loaded-label state and last job.
 - **Sidebar**: Favorites (star a label), Recent (last six sends) and All labels. Search filters the full
   library; Ctrl+F or just start typing.
 - **Print card**: label, preview, How many (with 1 / 100 / 500 / 1000 presets) and one button that says what
@@ -56,8 +66,16 @@ PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it 
 - **Help** (?): the machine flow and the known issues below.
 
 ## What the app checks
-- USB: Zebra vendor `0a5f` present (sysfs, polled every second, toast on plug/unplug).
-- CUPS: queue exists, is enabled, and no job is stuck "waiting for printer" (checked every 5 s).
+- USB: printer-class devices (plus Zebra vendor-specific devices) from sysfs, polled every second; individual
+  devices joining and leaving are detected, not just whether any printer is connected.
+- CUPS: all configured destinations are selectable. USB queues are matched to a connected device by serial,
+  or by a unique USB URI when the device has no serial;
+  the app will not substitute a different queue when the selected printer is unplugged. Queue state and
+  stalled jobs are checked every 5 s.
+- Setup: **Set Up Print Queue…** creates a private raw ZPL queue for the selected USB device, using its serial
+  and `printer-error-policy=retry-job`. Setup requires administrator authentication.
+- Network: select any network or shared CUPS queue configured outside the app. It must accept raw ZPL; the
+  app does not convert ZPL to another printer language.
 - File: `^XA`…`^XZ` present; warns on `^PON`/`^FWN`, which this printer rejects.
 - Delivery: `lp -n 1 -o raw`, then CUPS must report the job completed within 60 s. "Delivered" means the
   printer received the data, nothing more.
@@ -67,13 +85,17 @@ PNG 16–256) so it shows in the app grid and dock under any icon theme. Pin it 
 
 Data lives in `~/.local/share/polybagger-print-manager/`: `labels/` (offline copy of every `.zpl` plus
 `manifest.json` with sha256, refreshed from the local thril checkout on every start; the refresh button or
-`--sync --pull` also `git pull`s and fails quietly offline), `log.jsonl` (every job and answer) and
-`settings.json` (last quantity).
+`--sync --pull` also `git pull`s and fails quietly offline), `log.jsonl` (every job, selected queue and answer) and
+`settings.json` (last quantity, selected printer and per-printer label states).
 
 The preview is drawn from the file's `^GFA` bitmap and inverted 180° for auditing only. Labels are sent
 upside down on purpose. A recall file previews the stored copy it recalls.
 
-## Known issues (2026-10-21)
+## Known issues (2026-10-22)
+- Only printers that accept ZPL can print these labels. Adding an arbitrary CUPS printer to the picker does
+  not translate ZPL into another printer language.
+- USB printers without a serial can be matched when only one identical model is connected. Multiple
+  indistinguishable devices are left unavailable rather than risk sending to the wrong unit.
 - **Delivered is not printed.** CUPS "completed" only means the printer received the data. A label prints
   on a bag cycle, so confirm on the bagger screen.
 - **The printer stops taking data.** Jobs sat at "waiting for printer" for over 60 s while the printer still
@@ -83,9 +105,8 @@ upside down on purpose. A recall file previews the stored copy it recalls.
 - **CUPS paused the queue after a printer power cycle** (2026-10-21, job in flight), leaving Send disabled.
   **Resume Queue…** (admin password) clears your leftover jobs, re-enables the queue and sets
   `printer-error-policy=retry-job` so a power cycle no longer pauses it. Applied to `ZTC-110Xi4-203dpi-ZPL`.
-- **Wrong driver on the auto-created queue.** CUPS made `ZTC-110Xi4-203dpi-ZPL` with an "HP Designjet T920
-  PostScript" driver, shared. The app always sends raw, so ZPL is not converted, but a raw queue
-  (`--setup`, untested, needs admin) would be safer for other tools.
+- **Existing queues may use a vendor driver.** The app sends with CUPS raw mode. New USB queues created by
+  the app are private raw queues; setup still needs administrator authentication.
 - **Repeat sends.** Sending the same label twice re-loads it. With Reprint on it can keep printing every
   cycle. Use the quantity instead of re-sending.
 - **Flash overwrite during testing.** A test sent `CCSBLACK_store_flash.zpl` to printer `JJK245392`, which
@@ -95,9 +116,10 @@ upside down on purpose. A recall file previews the stored copy it recalls.
   [../../docs/polybagger-t1000-printer-link-troubleshooting.md](../../docs/polybagger-t1000-printer-link-troubleshooting.md).
 
 ## Not verified
-- A `--qty` above 1 on the machine (the `^PQ` edit is unit-checked; the printer behaviour is from the manual).
-- `--setup` and the plug/unplug toast. The GUI was checked by headless renders (light, dark, confirmation
-  card), not by clicking through a full send on the machine.
+- Multiple physical printers, USB unplug/replug behavior, and `--setup` on each supported printer model.
+- A `--qty` above 1 on the machine (printer behavior is from the manual).
+- A full GUI send on the machine. Earlier UI renders covered the single-printer version; they do not qualify
+  the new printer picker or hotplug flow.
 
 ## Development
 `PBPM_SHOT=/path.png` renders the window to a PNG and quits (`PBPM_SHOT_H` sets the height,
