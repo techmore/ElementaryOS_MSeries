@@ -1,6 +1,6 @@
 # M4 Mac mini preparation
 
-**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU boot diagnostics found that the R5 kernel recognizes a raw USB image as ISO9660 but cannot mount it (`No such device`); the R5 initramfs also did not expose the emulated optical drive as a block device. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. The resolved R6 config and source hash gates pass locally; hosted R6 build and corrected ISO boot remain pending. Nothing is qualified for installation or native M4 use.
+**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU boot diagnostics found that the R5 kernel recognizes a raw USB image as ISO9660 but cannot mount it (`No such device`); the R5 initramfs also did not expose the emulated optical drive as a block device. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. The resolved R6 config and source hash gates pass locally; hosted kernel run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) is compiling before the R6 full image and corrected ISO boot attempt. Nothing is qualified for installation or native M4 use.
 [Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
 
 **Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
@@ -15,7 +15,7 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
 The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
-assembled later; the current R6 kernel refresh is pending.
+assembled later; the R6 kernel refresh is building.
 
 The full revision-5 kernel build and independent downloaded package/source checks
 now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
@@ -78,8 +78,13 @@ new mainline commits. No mainline changes touched the reviewed Apple idle, J773g
 device-tree, Apple DRM/DCP, Apple DART/IOMMU, NVMe, Aquantia or tg3 paths. Aurora's
 new Apple-watchdog config change is adopted as built-in in R6; its later-firmware
 panel-property change does not apply to the selected 26.6.2 firmware contract.
-Gravity, Asahi, boot/installer, and M4 tester refs remained unchanged. See
-[source re-audit](receipts/2026-10-22-upstream-source-reaudit.json).
+Gravity, Asahi, boot/installer, and M4 tester refs remained unchanged. A later
+exact-ref refresh checked 34 kernel, graphics, boot, installer, partition,
+firmware and adjacent tester refs; all still match their reviewed pins.
+Aurora m1n1 PR #35 and U-Boot PR #7 remain open at their pinned commits. The
+un-pinned Gravity speaker-safety repository is not publicly reachable and is
+not used by this candidate. See the [source re-audit](receipts/2026-10-22-upstream-source-reaudit.json)
+and [latest ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
 
 DTBs, raw bootloader stages, U-Boot and Mesa have built locally. Selected AGX
 and software-rendering tests pass; the full kernel Image/modules/DTBs build now passes after the required

@@ -1,6 +1,6 @@
 # M4 Mac mini: Gravity Linux and upstream audit
 
-**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. A local QEMU attempt reached UEFI and GRUB but Casper could not find live media; the ISO was assembled, not boot-qualified. This image still uses kernel R5. A newer M4 WFI/WFxT backport is staged as kernel R6; its hosted package build and a refreshed image/ISO are pending. Nothing is qualified for installation or native M4 use.
+**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. A local QEMU attempt reached UEFI and GRUB but Casper could not find live media; the ISO was assembled, not boot-qualified. This image still uses kernel R5. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. Its hosted compile is running as [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230), before a refreshed full image/ISO. Nothing is qualified for installation or native M4 use.
 [Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
 
 **Public source refresh, October 22:** the live Gravity kernel/Mesa/boot/installer
@@ -12,8 +12,13 @@ Aurora change makes Apple watchdog support built in. Candidate R6 now sets
 `CONFIG_APPLE_WATCHDOG=y`, alongside the R5 ISO-driver fix and the M4 WFI/WFxT
 backport. Aurora's panel-property change is limited to firmware 14.7+, while the
 selected mini firmware contract is 26.6.2. The Omarchy M4 tester remains without
-a confirmed successful mini desktop/HDMI or 10 Gb result. Full ref and commit
-notes: [source re-audit](receipts/2026-10-22-upstream-source-reaudit.json).
+a confirmed successful mini desktop/HDMI or 10 Gb result. A subsequent exact-ref
+refresh checked 34 kernel, graphics, boot, installer, partition, firmware and
+adjacent tester refs; all still match their reviewed pins. Aurora m1n1 PR #35
+and U-Boot PR #7 remain open at their pinned commits. The unpinned Gravity
+speaker-safety repository is not publicly reachable and is not used by this
+candidate. Full commit notes: [source re-audit](receipts/2026-10-22-upstream-source-reaudit.json)
+and [latest ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
 
 **Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
@@ -27,7 +32,7 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
 The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
-assembled later; the current R6 kernel refresh is pending.
+assembled later; the R6 kernel refresh is building.
 
 The full revision-5 kernel build and independent downloaded package/source checks
 now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.

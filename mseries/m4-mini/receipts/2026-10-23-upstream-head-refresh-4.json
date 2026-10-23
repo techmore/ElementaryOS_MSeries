@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-23T00:46:31Z",
+  "scope": "Exact public Git ref refresh across tracked kernel, graphics, boot, install, partition, firmware and adjacent M4 tester sources after the October 22 semantic re-audit; checks commit movement, not hardware qualification.",
+  "previous_receipt": "2026-10-22-upstream-source-reaudit.json",
+  "method": "git ls-remote against each recorded branch, pull ref, tag, or default HEAD; each result matched the recorded immutable commit or selected pin. Aurora m1n1 PR #35 and U-Boot PR #7 are still open at their pinned heads. The 0xSero main branch equals its reviewed commit.",
+  "source_ref_count": 34,
+  "changed_ref_count": 0,
+  "new_commits_to_review": 0,
+  "hardware_validated": false,
+  "source_heads": [
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "gravity-m4",
+      "head": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "url": "https://github.com/GravityLinux/linux/commit/4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "master",
+      "head": "587858367581b9c55c3690f4e63382ad622719d4",
+      "url": "https://github.com/GravityLinux/linux/commit/587858367581b9c55c3690f4e63382ad622719d4",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "main",
+      "head": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "url": "https://github.com/GravityLinux/mesa/commit/87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "pull/1/head",
+      "head": "208d4a484459a12c77bf073362613f842288c2e0",
+      "url": "https://github.com/GravityLinux/mesa/commit/208d4a484459a12c77bf073362613f842288c2e0",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/bootloader",
+      "ref": "main",
+      "head": "f02d4a52017915febb222539636b5b025a70407a",
+      "url": "https://github.com/GravityLinux/bootloader/commit/f02d4a52017915febb222539636b5b025a70407a",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "gravity-alpha-20260925",
+      "head": "a2f6913694ff26908c16948af3f8372429782263",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a2f6913694ff26908c16948af3f8372429782263",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "main",
+      "head": "a44f46af0aa17e48572e0d46c0d082886ee353c3",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a44f46af0aa17e48572e0d46c0d082886ee353c3",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/packages",
+      "ref": "main",
+      "head": "711c2a110416d28010ccdd118b83111776bff207",
+      "url": "https://github.com/GravityLinux/packages/commit/711c2a110416d28010ccdd118b83111776bff207",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/installer",
+      "ref": "main",
+      "head": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "url": "https://github.com/GravityLinux/installer/commit/6420623289fe7544cb8589b658355e57f0290fcc",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "ref": "main",
+      "head": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "url": "https://github.com/GravityLinux/kiwi-descriptions/commit/07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "unchanged": true
+    },
+    {
+      "repository": "GravityLinux/scripts",
+      "ref": "main",
+      "head": "12418e50125a72749a75917db578db55ea42704c",
+      "url": "https://github.com/GravityLinux/scripts/commit/12418e50125a72749a75917db578db55ea42704c",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi",
+      "head": "94fb23346d522edf53722357c426a3e58030beea",
+      "url": "https://github.com/AsahiLinux/linux/commit/94fb23346d522edf53722357c426a3e58030beea",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.4",
+      "head": "a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+      "url": "https://github.com/AsahiLinux/linux/commit/a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.4",
+      "head": "4edbfa916dbfba44af3ef2378cae2b2653c96058",
+      "url": "https://github.com/AsahiLinux/linux/commit/4edbfa916dbfba44af3ef2378cae2b2653c96058",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi-wip-7.2",
+      "head": "236788cd2602a24c703fe7bdaddaf73ef77d2027",
+      "url": "https://github.com/AsahiLinux/linux/commit/236788cd2602a24c703fe7bdaddaf73ef77d2027",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/030-misc",
+      "head": "0003382398e6813b7288f9f60502f829ba41d484",
+      "url": "https://github.com/AsahiLinux/linux/commit/0003382398e6813b7288f9f60502f829ba41d484",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/210-gpu",
+      "head": "0ac1829d3f2048a6e57a0d508eb065e8c6729a16",
+      "url": "https://github.com/AsahiLinux/linux/commit/0ac1829d3f2048a6e57a0d508eb065e8c6729a16",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.3",
+      "head": "6e890bf6442553c7bf56867a91c2dbcc2c295900",
+      "url": "https://github.com/AsahiLinux/linux/commit/6e890bf6442553c7bf56867a91c2dbcc2c295900",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.3",
+      "head": "fef9350c314bf089a11a62858261e6576ada867b",
+      "url": "https://github.com/AsahiLinux/linux/commit/fef9350c314bf089a11a62858261e6576ada867b",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/200-dcp",
+      "head": "172fa9c2711c66d7ecd3c0c5232d86fc6de767cb",
+      "url": "https://github.com/AsahiLinux/linux/commit/172fa9c2711c66d7ecd3c0c5232d86fc6de767cb",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/docs",
+      "ref": "main",
+      "head": "0d1f8917fa88745d62a4c05d802c4a7298c8616b",
+      "url": "https://github.com/AsahiLinux/docs/commit/0d1f8917fa88745d62a4c05d802c4a7298c8616b",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/asahi-installer",
+      "ref": "main",
+      "head": "e93743d52178b3e26e428fa05174ef549abf30cb",
+      "url": "https://github.com/AsahiLinux/asahi-installer/commit/e93743d52178b3e26e428fa05174ef549abf30cb",
+      "unchanged": true
+    },
+    {
+      "repository": "AsahiLinux/m1n1",
+      "ref": "main",
+      "head": "7cde7d1a784d851ebfee5579fa363c38b14150c0",
+      "url": "https://github.com/AsahiLinux/m1n1/commit/7cde7d1a784d851ebfee5579fa363c38b14150c0",
+      "unchanged": true
+    },
+    {
+      "repository": "aurora-silicon/linux",
+      "ref": "integration/aurora",
+      "head": "1fb1fa964e312309659a793d4a16b014f6de86ee",
+      "url": "https://github.com/aurora-silicon/linux/commit/1fb1fa964e312309659a793d4a16b014f6de86ee",
+      "unchanged": true
+    },
+    {
+      "repository": "torvalds/linux",
+      "ref": "master",
+      "head": "3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75",
+      "url": "https://github.com/torvalds/linux/commit/3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75",
+      "unchanged": true
+    },
+    {
+      "repository": "maralcbr/omarchy-mx-mac",
+      "ref": "main",
+      "head": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "url": "https://github.com/maralcbr/omarchy-mx-mac/commit/72f1906722fd042a54f1e1973610f62dd019531f",
+      "unchanged": true
+    },
+    {
+      "repository": "maralcbr/omarchy-pkgs",
+      "ref": "asahi-quattro (default)",
+      "head": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "url": "https://github.com/maralcbr/omarchy-pkgs/commit/7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "unchanged": true
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "develop",
+      "head": "6c6d2e4dd48b6306416c28686b5212b6bc4f77dc",
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/commit/6c6d2e4dd48b6306416c28686b5212b6bc4f77dc",
+      "unchanged": true
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "v0.1.0-alpha.1-j773g-test.1",
+      "head": "df692997e5764efbcd0c44f7f92595bbe3783e1b",
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/releases/tag/v0.1.0-alpha.1-j773g-test.1",
+      "unchanged": true
+    },
+    {
+      "repository": "aurora-silicon/m1n1",
+      "ref": "pull/35/head",
+      "head": "cda8314d2121c0279e4ca811bc6c6293a663e5d0",
+      "url": "https://github.com/aurora-silicon/m1n1/pull/35",
+      "unchanged_since_selected_pin": true
+    },
+    {
+      "repository": "aurora-silicon/u-boot",
+      "ref": "pull/7/head",
+      "head": "cc47d3b7c86deb4094dc186d26799602272e37fb",
+      "url": "https://github.com/aurora-silicon/u-boot/pull/7",
+      "unchanged_since_selected_pin": true
+    },
+    {
+      "repository": "0xSero/mac-mini-m4-linux",
+      "ref": "main",
+      "head": "e0d67e3ff9d5595e17ae3833d2afd9fff150e51b",
+      "url": "https://github.com/0xSero/mac-mini-m4-linux/commit/e0d67e3ff9d5595e17ae3833d2afd9fff150e51b",
+      "unchanged_since_selected_pin": true
+    },
+    {
+      "repository": "GravityLinux/artwork",
+      "ref": "HEAD",
+      "head": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "url": "https://github.com/GravityLinux/artwork/commit/e613a87e526f8fec439c4129e69dd2821b38d258",
+      "unchanged_since_selected_pin": true
+    },
+    {
+      "repository": "systemd/systemd",
+      "ref": "v259",
+      "head": "b2a31f27d42a98086ef1945e7e136fc7cb908ad0",
+      "url": "https://github.com/systemd/systemd/tree/v259",
+      "unchanged_since_selected_pin": true
+    }
+  ],
+  "excluded_or_unresolved_sources": [
+    {
+      "repository": "GravityLinux/speakersafetyd",
+      "configured_ref": null,
+      "check": "GitHub repository is not publicly reachable (git ls-remote returns repository not found); source is explicitly unpinned and dropped from the candidate image. No evidence can be refreshed until its public source is identified."
+    }
+  ]
+}
