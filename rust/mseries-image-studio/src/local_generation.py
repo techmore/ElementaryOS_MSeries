@@ -1,5 +1,5 @@
 """Supervised single-image engine adapter, with genuine intermediate previews."""
-import json, sys, os, time, subprocess, resource, secrets, signal
+import json, sys, os, time, subprocess, resource, secrets, signal, hashlib, shutil
 from pathlib import Path
 os.umask(0o077)
 
@@ -13,6 +13,11 @@ def supervised_child():
 
 base = Path(sys.argv[1])
 recipe = json.loads(sys.argv[2])
+# A repeated recipe carries settings, never the previous run's measurements.
+for key in ('image_path', 'elapsed_seconds', 'peak_memory_mib', 'preview_count',
+            'time_to_first_preview_seconds', 'minimum_available_mib',
+            'engine_arguments', 'event_log_path', 'logging_finalization_error'):
+    recipe.pop(key, None)
 job, lock = base / 'current-job.json', base / 'generation.lock'
 started, preview_count, first_preview = time.monotonic(), 0, None
 proc, owned = None, False
@@ -23,6 +28,12 @@ output, metadata = images / (name + '.png'), images / (name + '.json')
 preview_dir = base / 'previews' / name
 preview_dir.mkdir(parents=True)
 cancel = base / 'cancel.request'
+import runpy, re
+logging_file=base/'runtime/run_logging.py'
+if not logging_file.exists() and '__file__' in globals():logging_file=Path(__file__).with_name('run_logging.py')
+RunLogger=runpy.run_path(str(logging_file))['RunLogger']
+logger=RunLogger(base,name)
+
 
 
 def available():
@@ -34,7 +45,7 @@ def publish(status, running, image='', **extra):
     data = dict(status=status, running=running,
                 engine='stable-diffusion.cpp · local Vulkan build · backend details in run log',
                 prompt=recipe['prompt'], image_path=str(image), recipe_path=str(metadata),
-                preview_count=preview_count, elapsed_seconds=round(time.monotonic()-started, 2), **extra)
+                event_log_path=str(logger.path), preview_count=preview_count, step=preview_count, steps=recipe.get('steps',20), model=str(recipe.get('model_id','')), sampler=recipe.get('sampler','euler'), scheduler=recipe.get('scheduler','discrete'), elapsed_seconds=round(time.monotonic()-started, 2), **extra)
     temp = job.with_suffix('.tmp')
     temp.write_text(json.dumps(data))
     os.replace(temp, job)
@@ -65,22 +76,55 @@ try:
         'stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf': 3.0,
         'stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf': 3.5,
         'sd_xl_turbo_1.0_fp16.safetensors': 6.0,
+        'Realistic_Vision_V6.0_NV_B1_fp16.safetensors': 4.0,
     }
     if model.name not in models or model.parent != (base/'models').resolve() or not model.is_file():
         raise RuntimeError('Choose an installed model from Models, then load its starter defaults.')
     if recipe.get('lora_id'):
         raise RuntimeError('LoRA rendering is not qualified yet. Clear the adapter for this run.')
-    if recipe['width'] != 512 or recipe['height'] != 512 or recipe['batch_size'] != 1:
-        raise RuntimeError('Current local calibration supports 512 × 512 and one image at a time. Use Compare for a sequential sweep.')
-    if recipe.get('sampler', 'euler') not in ('euler', 'euler_a'):
-        raise RuntimeError('Select Euler or Euler ancestral for this engine.')
+    if recipe['width'] not in (512,768,1024) or recipe['height'] not in (512,768,1024) or recipe['batch_size'] != 1:
+        raise RuntimeError('Use 512/768/1024 dimensions and one image at a time; Compare handles sequential batches.')
+    if recipe.get('sampler', 'euler') not in ('euler', 'euler_a', 'dpm++2m', 'dpm++2m_sde'):
+        raise RuntimeError('Select Euler, Euler ancestral, DPM++ 2M or DPM++ 2M SDE.')
     if not 1 <= recipe.get('steps', 20) <= 50 or not 0 <= recipe.get('cfg_scale', 7) <= 15:
         raise RuntimeError('Steps or guidance are outside the supported range.')
     if 'turbo' in model.name and (recipe.get('steps',20) > 4 or recipe.get('cfg_scale',7) != 1):
         raise RuntimeError('Load SDXL Turbo defaults: 1–4 steps, engine CFG 1, no negative prompt.')
-    required = (6 + models[model.name]) * 1024**3
+    reference = recipe.get('reference_image', '')
+    reference_weights = []
+    if reference:
+        if 'turbo' in model.name:
+            raise RuntimeError('This reference adapter supports SD 1.5 models, not SDXL Turbo.')
+        reference_path = Path(reference).expanduser().resolve()
+        if not reference_path.is_file() or reference_path.stat().st_size > 32*1024**2:
+            raise RuntimeError('Choose a reference image under 32 MiB.')
+        from PIL import Image
+        with Image.open(reference_path) as reference_pixels:
+            if reference_pixels.format not in ('PNG', 'JPEG') or max(reference_pixels.size)>8192:
+                raise RuntimeError('Reference must be a PNG or JPEG up to 8192 pixels per side.')
+            reference_pixels.verify()
+        digest = hashlib.sha256(reference_path.read_bytes()).hexdigest()
+        references = base/'references'; references.mkdir(exist_ok=True)
+        preserved = references/(digest+reference_path.suffix.lower())
+        if not preserved.exists():shutil.copyfile(reference_path,preserved)
+        recipe['reference_image'] = str(preserved)
+        recipe['reference_sha256'] = digest
+        strength = float(recipe.get('reference_strength',0.8))
+        if not 0 <= strength <= 1:raise RuntimeError('Reference strength must be between 0 and 1.')
+        reference_weights = [base/'models/clip-vision-h-f16.gguf',base/'models/ip-adapter-plus-face_sd15.safetensors']
+        if not all(p.is_file() for p in reference_weights):
+            raise RuntimeError('Install the SD 1.5 Plus Face reference bundle first.')
+        recipe['reference_receipts'] = [json.loads(p.with_suffix(p.suffix+'.json').read_text()) for p in reference_weights]
+    params_backend = recipe.get('params_backend','disk')
+    if params_backend not in ('disk','cpu','auto'):raise RuntimeError('Unsupported weight storage backend.')
+    vram_budget = float(recipe.get('max_vram_gib',3.0))
+    if not 2 <= vram_budget <= 8:raise RuntimeError('GPU budget must be between 2 and 8 GiB.')
+    # Disk-backed weights avoid retaining a second source copy on unified memory.
+    # This remains an estimate: the continuous reserve check is authoritative.
+    working = max(vram_budget,3.0) if params_backend=='disk' else models[model.name]
+    required = (6 + working + (0.5 if reference and params_backend=='disk' else 1.3 if reference else 0) + max(0,recipe['width']*recipe['height']/262144-1)*0.5) * 1024**3
     if available() < required:
-        raise RuntimeError(f'This calibration needs {6+models[model.name]:g} GiB available, including the 6 GiB desktop reserve.')
+        raise RuntimeError(f'This calibration needs {required/1024**3:g} GiB available, including the 6 GiB desktop reserve.')
     binary = base / 'engine/sd-cli'
     if not binary.is_file():
         raise RuntimeError('Install the local image engine using the documented engine setup.')
@@ -100,15 +144,41 @@ try:
                '-W', str(recipe['width']), '-H', str(recipe['height']), '--steps', str(recipe.get('steps',20)),
                '--cfg-scale', str(recipe.get('cfg_scale',7)), '--sampling-method', recipe.get('sampler','euler'),
                '--seed', str(recipe['seed']), '--preview', 'proj', '--preview-interval', '1',
-               '--preview-path', str(preview_dir/'frame-%03d.png'), '--clip-on-cpu', '--vae-on-cpu',
-               '-t', '2', '-o', str(output)]
+               '--preview-path', str(preview_dir/'frame-%03d.png'), '--clip-on-cpu',
+               '-t', str(recipe.get('cpu_threads',4)), '-o', str(output)]
+    if recipe.get('cpu_threads',4) not in (2,4,6,8):raise RuntimeError('Choose 2, 4, 6 or 8 CPU threads.')
+    if recipe.get('vae_on_cpu',True):command.append('--vae-on-cpu')
+    scheduler=recipe.get('scheduler','discrete')
+    if scheduler not in ('discrete','karras'):raise RuntimeError('Unsupported scheduler.')
+    tile = recipe.get('vae_tile_size',256)
+    if tile not in (128,256,384,512):raise RuntimeError('Unsupported decoder tile size.')
+    command += ['--scheduler',scheduler,'--vae-tiling','--vae-tile-size',str(tile)]
+    command += ['--max-vram',str(vram_budget)]
+    if params_backend != 'auto':command += ['--params-backend',params_backend]
+    if reference:
+        command += ['--clip_vision',str(reference_weights[0]),'--ip-adapter',str(reference_weights[1]),
+                    '--ip-adapter-image',recipe['reference_image'],'--ip-adapter-strength',str(strength),
+                    '--backend','te=cpu,clip_vision=cpu']
+    vae=recipe.get('vae_path','')
+    if vae:
+        vae_file=Path(vae).resolve()
+        if vae_file.parent!=(base/'models').resolve() or not vae_file.is_file():raise RuntimeError('Select an installed VAE.')
+        command += ['--vae',str(vae_file)]
+        receipt=vae_file.with_suffix(vae_file.suffix+'.json')
+        if receipt.is_file():recipe['vae_receipt']=json.loads(receipt.read_text())
+    if 'Realistic_Vision' in model.name and not vae:raise RuntimeError('Realistic Vision requires its separate VAE decoder.')
+    logger.snapshot(model=model,vae=recipe.get('vae_path') or None,engine=binary)
+    logger.launch(command)
+    recipe['event_log_path']=str(logger.path)
     recipe['engine_arguments'] = command
     metadata.write_text(json.dumps(recipe, indent=2))
     minimum_available = available()
     with (images/(name+'.log')).open('w') as log:
         proc = subprocess.Popen(command, stdout=log, stderr=log, start_new_session=True, preexec_fn=supervised_child)
         last = None
+        last_decode = None
         while proc.poll() is None:
+            logger.sample(proc.pid)
             free = available()
             minimum_available = min(minimum_available, free)
             if free < 6*1024**3:
@@ -123,10 +193,22 @@ try:
                 preview_count = len(frames)
                 if first_preview is None:
                     first_preview = round(time.monotonic()-started,3)
+                logger.event('preview',preview_count=preview_count,image_path=str(last))
                 publish('Rendering · preview '+str(preview_count), True, last)
             if time.monotonic()-started > 900:
                 stop_child()
                 raise RuntimeError('Render stopped after the 15 minute calibration limit.')
+            if preview_count >= recipe.get('steps',20):
+                try:
+                    with (images/(name+'.log')).open('rb') as progress_log:
+                        progress_log.seek(0,2); length=progress_log.tell(); progress_log.seek(max(0,length-4096))
+                        tail=progress_log.read().decode(errors='replace')
+                    matches=re.findall(r'(\d+)/(\d+).*?ETA (\d+:\d+)',tail)
+                    if matches and matches[-1]!=last_decode:
+                        last_decode=matches[-1];current,total,eta=last_decode
+                        publish(f'Decoding final image · tile {current}/{total} · engine ETA {eta}',True,last or '')
+                        logger.event('decode_progress',tile=int(current),tiles=int(total),engine_eta=eta)
+                except OSError:pass
             time.sleep(.25)
     if proc.returncode:
         raise RuntimeError('Image engine failed. Details: '+str(images/(name+'.log')))
@@ -138,8 +220,10 @@ try:
                   time_to_first_preview_seconds=first_preview,
                   minimum_available_mib=minimum_available//1048576)
     metadata.write_text(json.dumps(recipe, indent=2))
+    logger.finish('complete',output=str(output),preview_count=recipe['preview_count'])
     publish('Complete · local render', False, output)
 except Exception as error:
+    logger.finish('failed',error=str(error))
     stop_child()
     if owned:
         publish('Generation unavailable: '+str(error), False)

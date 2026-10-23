@@ -27,4 +27,6 @@ shutil.copy2(source/'org.elementary.mseries.ImageStudio.metainfo.xml',data/'meta
 for command,argument in [('update-desktop-database',data/'applications'),('gtk-update-icon-cache',data/'icons/hicolor')]:
     binary=shutil.which(command)
     if binary:subprocess.run([binary,str(argument)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
+runtime=data/'mseries-image-studio/runtime';runtime.mkdir(parents=True,exist_ok=True)
+shutil.copy2(repo/'rust/mseries-image-studio/src/run_logging.py',runtime/'run_logging.py')
 print('Installed Image Studio in Applications with its icon and D-Bus launcher.')

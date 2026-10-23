@@ -59,9 +59,110 @@ impl ImageStudioWindow {
         let create = build_create_page();
         let library = build_library_page(&recipe_store);
         stack.add_named(&create.page, Some("create"));
+        stack.add_named(
+            &crate::logs::page(glib::user_data_dir().join("mseries-image-studio")),
+            Some("logs"),
+        );
         stack.add_named(&library.page, Some("library"));
 
         let inspector = build_inspector();
+        let next_run = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        next_run.add_css_class("pantheon-surface");
+        next_run.add_css_class("pantheon-inset");
+        let next_title = gtk::Label::new(Some("Next run · Model and settings"));
+        next_title.set_xalign(0.0);
+        next_title.add_css_class("heading");
+        next_run.append(&next_title);
+        next_run.append(&inspector.model_picker);
+        let summary = gtk::Label::new(None);
+        summary.set_xalign(0.0);
+        summary.set_wrap(true);
+        summary.set_selectable(true);
+        next_run.append(&summary);
+        if let Some(page) = create.page.downcast_ref::<gtk::Box>() {
+            page.prepend(&next_run);
+        }
+        let settings = inspector.clone_refs();
+        let weak_summary = summary.downgrade();
+        glib::timeout_add_local(Duration::from_millis(250), move || {
+            let Some(summary) = weak_summary.upgrade() else {
+                return glib::ControlFlow::Break;
+            };
+            let sizes = [
+                "512 × 512",
+                "768 × 768",
+                "1024 × 1024",
+                "512 × 768",
+                "768 × 512",
+                "768 × 1024",
+                "1024 × 768",
+            ];
+            summary.set_text(&format!(
+                "{} · VAE: {}\n{} / {} · {} steps · CFG {:.1} · {} · Seed {}",
+                short_model_name(settings.model.text().as_str()),
+                format!(
+                    "{} ({})",
+                    short_model_name(settings.vae.text().as_str()),
+                    if settings.vae_on_cpu.is_active() {
+                        "CPU"
+                    } else {
+                        "GPU"
+                    }
+                ),
+                ["Euler", "Euler ancestral", "DPM++ 2M", "DPM++ 2M SDE"]
+                    .get(settings.sampler.selected() as usize)
+                    .unwrap_or(&"Unknown sampler"),
+                if settings.scheduler.selected() == 1 {
+                    "Karras"
+                } else {
+                    "Discrete"
+                },
+                settings.steps.value_as_int(),
+                settings.cfg.value(),
+                sizes
+                    .get(settings.dimensions.selected() as usize)
+                    .unwrap_or(&"Unknown size"),
+                if settings.seed.value_as_int() < 0 {
+                    "Random".into()
+                } else {
+                    settings.seed.value_as_int().to_string()
+                }
+            ));
+            let reference = settings.reference_image.text();
+            let reference_label = if reference.is_empty() {
+                "Reference: none · prompt only".into()
+            } else {
+                format!(
+                    "Reference: {} · strength {:.2}",
+                    Path::new(reference.as_str())
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy(),
+                    settings.reference_strength.value()
+                )
+            };
+            summary.set_text(&format!(
+                "{}\n{} · tiles {} · {} CPU threads",
+                summary.text(),
+                reference_label,
+                settings.vae_tile_size.value_as_int(),
+                settings.cpu_threads.value_as_int()
+            ));
+            summary.set_text(&format!(
+                "{} · weights {} · GPU budget {:.1} GiB",
+                summary.text(),
+                ["disk", "cpu", "auto"]
+                    .get(settings.params_backend.selected() as usize)
+                    .unwrap_or(&"disk"),
+                settings.max_vram_gib.value()
+            ));
+            summary.set_tooltip_text(Some(&format!(
+                "Model: {}\nVAE: {}",
+                settings.model.text(),
+                settings.vae.text()
+            )));
+            glib::ControlFlow::Continue
+        });
         let reuse: Rc<dyn Fn(&Recipe)> = {
             let create = create.clone_refs();
             let inspector = inspector.clone_refs();
@@ -96,6 +197,13 @@ impl ImageStudioWindow {
                 inspector.steps.set_value(if turbo { 4.0 } else { 20.0 });
                 inspector.cfg.set_value(if turbo { 1.0 } else { 7.0 });
                 inspector.sampler.set_selected(if turbo { 1 } else { 0 });
+                if path.contains("Realistic") {
+                    inspector.steps.set_value(30.0);
+                    inspector.cfg.set_value(5.0);
+                    inspector.dimensions.set_selected(3);
+                    inspector.sampler.set_selected(2);
+                    inspector.scheduler.set_selected(1);
+                }
                 if turbo {
                     set_text(&create.negative, "");
                 }
@@ -351,6 +459,7 @@ struct Inspector {
     hardware: gtk::Label,
     engine: gtk::Label,
     model: gtk::Entry,
+    model_picker: gtk::DropDown,
     lora: gtk::Entry,
     lora_weight: gtk::Scale,
     dimensions: gtk::DropDown,
@@ -359,16 +468,42 @@ struct Inspector {
     steps: gtk::SpinButton,
     cfg: gtk::SpinButton,
     sampler: gtk::DropDown,
+    vae: gtk::Entry,
+    vae_on_cpu: gtk::CheckButton,
+    reference_image: gtk::Entry,
+    reference_strength: gtk::SpinButton,
+    vae_tile_size: gtk::SpinButton,
+    cpu_threads: gtk::SpinButton,
+    params_backend: gtk::DropDown,
+    max_vram_gib: gtk::SpinButton,
+    scheduler: gtk::DropDown,
     tags: gtk::Entry,
     generate: gtk::Button,
     save: gtk::Button,
     recipe_status: gtk::Label,
 }
 
+fn short_model_name(value: &str) -> String {
+    if value.is_empty() {
+        return "Checkpoint default".into();
+    }
+    let file = Path::new(value)
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+    if file.contains("Realistic_Vision") {
+        "Realistic Vision 6.0 · FP16".into()
+    } else if file.contains("vae-ft-mse") {
+        "MSE 840000".into()
+    } else {
+        file.replace('_', " ")
+    }
+}
+
 fn install_css(window: &gtk::ApplicationWindow) {
     let css = gtk::CssProvider::new();
     css.load_from_string(
-        ".mseries-image-studio { font-size: 1.1em; }
+        ".mseries-image-studio { font-size: 1.15em; }
          .mseries-image-studio .preview-stage picture { min-height: 320px; }
          .mseries-image-studio.pantheon-compact .preview-stage picture { min-height: 220px; }
          .mseries-image-studio .studio-sidebar { border-right: 1px solid alpha(currentColor, 0.10); }
@@ -404,6 +539,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
         ("Model guide", "guide"),
         ("Compare", "compare"),
         ("Review", "review"),
+        ("Run logs", "logs"),
     ] {
         let row = gtk::ListBoxRow::new();
         let contents = gtk::Box::new(gtk::Orientation::Horizontal, 8);
@@ -414,6 +550,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
             "models" => "drive-harddisk-symbolic",
             "compare" => "view-grid-symbolic",
             "review" => "emblem-ok-symbolic",
+            "logs" => "utilities-terminal-symbolic",
             _ => "help-browser-symbolic",
         }));
         let row_label = gtk::Label::new(Some(label));
@@ -439,8 +576,10 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
                 "guide"
             } else if row.index() == 4 {
                 "compare"
-            } else {
+            } else if row.index() == 5 {
                 "review"
+            } else {
+                "logs"
             });
         }
     });
@@ -453,6 +592,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
                 Some("guide") => 3,
                 Some("compare") => 4,
                 Some("review") => 5,
+                Some("logs") => 6,
                 _ => 0,
             };
             navigation.select_row(navigation.row_at_index(index).as_ref());
@@ -538,7 +678,7 @@ fn build_create_page() -> CreatePage {
     let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
     mseries_pantheon_kit::set_box_spacing_text_units(&page, 0.8);
     page.add_css_class("pantheon-inset");
-    let title = gtk::Label::new(Some("Create"));
+    let title = gtk::Label::new(Some("Image workspace"));
     title.set_xalign(0.0);
     title.add_css_class("title-2");
     page.append(&title);
@@ -566,7 +706,7 @@ fn build_create_page() -> CreatePage {
     let preview_title = gtk::Label::new(Some("Your image preview will appear here"));
     preview_title.add_css_class("title-3");
     let preview_detail = gtk::Label::new(Some(
-        "Image generation is waiting for a model runtime qualified on this M-Series device.",
+        "Choose an installed model, describe your image, and press Run. Live denoising previews appear here.",
     ));
     preview_detail.set_wrap(true);
     preview_detail.set_justify(gtk::Justification::Center);
@@ -587,6 +727,16 @@ fn build_create_page() -> CreatePage {
     preview_center.append(&live_image);
     let spinner = gtk::Spinner::new();
     preview_center.append(&spinner);
+    let progress = gtk::ProgressBar::new();
+    progress.set_show_text(true);
+    progress.set_text(Some("Ready to generate"));
+    preview_center.append(&progress);
+    let run_details = gtk::Label::new(None);
+    run_details.set_xalign(0.0);
+    run_details.set_wrap(true);
+    run_details.set_selectable(true);
+    run_details.add_css_class("caption");
+    preview_center.append(&run_details);
     let job_path = gtk::glib::user_data_dir().join("mseries-image-studio/current-job.json");
     let mut last_job = String::new();
     let active_queue = queue_status.clone();
@@ -615,7 +765,39 @@ fn build_create_page() -> CreatePage {
                     } else {
                         live_image.set_visible(false);
                     }
-                    spinner.set_spinning(job["running"].as_bool().unwrap_or(false));
+                    let running = job["running"].as_bool().unwrap_or(false);
+                    spinner.set_spinning(running);
+                    let step = job["step"].as_f64().unwrap_or(0.0);
+                    let steps = job["steps"].as_f64().unwrap_or(0.0);
+                    if steps > 0.0 {
+                        progress.set_fraction((step / steps).clamp(0.0, 1.0));
+                    } else if running {
+                        progress.pulse();
+                    } else {
+                        progress.set_fraction(if path.is_empty() { 0.0 } else { 1.0 });
+                    }
+                    progress.set_text(Some(job["status"].as_str().unwrap_or("Ready")));
+                    let detail = [
+                        "model",
+                        "sampler",
+                        "scheduler",
+                        "elapsed_seconds",
+                        "preview_count",
+                    ]
+                    .iter()
+                    .filter_map(|key| {
+                        job.get(*key).map(|value| {
+                            let display = if *key == "model" {
+                                short_model_name(value.as_str().unwrap_or(""))
+                            } else {
+                                value.to_string()
+                            };
+                            format!("{}: {}", key.replace('_', " "), display)
+                        })
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" · ");
+                    run_details.set_text(&format!("Active / last image · {detail}"));
                     icon.set_visible(false);
                 }
                 last_job = raw;
@@ -805,7 +987,7 @@ fn build_library_page(store: &RecipeStore) -> LibraryPage {
 
 fn build_inspector() -> Inspector {
     let panel = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    panel.set_width_request(270);
+    panel.set_width_request(300);
     mseries_pantheon_kit::set_box_spacing_text_units(&panel, 0.65);
     panel.add_css_class("pantheon-inset");
     let title = gtk::Label::new(Some("Generation settings"));
@@ -855,7 +1037,161 @@ fn build_inspector() -> Inspector {
     if installed.is_file() {
         model.set_text(&installed.to_string_lossy());
     }
-    panel.append(&model);
+    let installed_models = gtk::DropDown::from_strings(&[]);
+    installed_models.set_hexpand(true);
+    installed_models.set_tooltip_text(Some(
+        "Installed image checkpoints. Full paths are available under Model file.",
+    ));
+    installed_models.update_property(&[gtk::accessible::Property::Label("Installed image model")]);
+    let directory = gtk::glib::user_data_dir().join("mseries-image-studio/models");
+    let mut files: Vec<_> = std::fs::read_dir(directory)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_lowercase();
+            path.is_file()
+                && (name.ends_with(".gguf") || name.ends_with(".safetensors"))
+                && !name.contains("qwen")
+                && !name.contains("mmproj")
+                && !name.starts_with("vae")
+        })
+        .collect();
+    files.sort_by_key(|path| (!path.to_string_lossy().contains("Realistic"), path.clone()));
+    let names: Vec<String> = files
+        .iter()
+        .map(|path| short_model_name(&path.to_string_lossy()))
+        .collect();
+    let labels: Vec<&str> = names.iter().map(String::as_str).collect();
+    installed_models.set_model(Some(&gtk::StringList::new(&labels)));
+    let files = Rc::new(files);
+    let paths = files.clone();
+    let current_model = model.clone();
+    installed_models.connect_selected_notify(move |choice| {
+        if let Some(path) = paths.get(choice.selected() as usize) {
+            if current_model.text().as_str() != path.to_string_lossy() {
+                current_model.set_text(&path.to_string_lossy());
+            }
+        }
+    });
+    let choices = installed_models.downgrade();
+    let paths = files.clone();
+    model.connect_changed(move |entry| {
+        if let Some(choices) = choices.upgrade() {
+            let index = paths
+                .iter()
+                .position(|path| path.to_string_lossy() == entry.text().as_str())
+                .map(|index| index as u32)
+                .unwrap_or(gtk::INVALID_LIST_POSITION);
+            if choices.selected() != index {
+                choices.set_selected(index);
+            }
+        }
+    });
+    if let Some(path) = files.first() {
+        model.set_text(&path.to_string_lossy());
+    }
+
+    let model_file = gtk::Expander::new(Some("Model file"));
+    model_file.set_child(Some(&model));
+    panel.append(&model_file);
+    panel.append(&section_label("VAE decoder"));
+    let vae = gtk::Entry::new();
+    vae.set_placeholder_text(Some("Built into checkpoint, or VAE file path"));
+    vae.update_property(&[gtk::accessible::Property::Label("VAE decoder file")]);
+    let installed_vae = gtk::glib::user_data_dir()
+        .join("mseries-image-studio/models/vae-ft-mse-840000-ema-pruned.safetensors");
+    if installed_vae.is_file() {
+        vae.set_text(&installed_vae.to_string_lossy());
+    }
+    let vae_file = gtk::Expander::new(Some("VAE file · advanced"));
+    let vae_settings = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    vae_settings.append(&vae);
+    let vae_on_cpu = gtk::CheckButton::with_label("Decode VAE on CPU (lower GPU use)");
+    vae_on_cpu.set_active(true);
+    vae_on_cpu.set_tooltip_text(Some("CPU decoding uses less GPU memory. Disable to try faster GPU decoding when memory allows. Saved with each recipe."));
+    vae_settings.append(&vae_on_cpu);
+    let vae_tile_size = gtk::SpinButton::with_range(64.0, 512.0, 64.0);
+    vae_tile_size.set_value(256.0);
+    let cpu_threads = gtk::SpinButton::with_range(1.0, 16.0, 1.0);
+    cpu_threads.set_value(4.0);
+    for (title, control) in [
+        ("Decoder tile size", &vae_tile_size),
+        ("CPU threads", &cpu_threads),
+    ] {
+        control.update_property(&[gtk::accessible::Property::Label(title)]);
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let label = gtk::Label::new(Some(title));
+        label.set_xalign(0.0);
+        label.set_hexpand(true);
+        row.append(&label);
+        row.append(control);
+        vae_settings.append(&row);
+    }
+    let params_backend =
+        gtk::DropDown::from_strings(&["Disk · lower memory", "CPU memory", "Automatic"]);
+    params_backend.update_property(&[gtk::accessible::Property::Label(
+        "Model weights storage backend",
+    )]);
+    vae_settings.append(&gtk::Label::new(Some("Model weights storage")));
+    vae_settings.append(&params_backend);
+    let max_vram_gib = gtk::SpinButton::with_range(2.0, 8.0, 0.5);
+    max_vram_gib.set_value(3.0);
+    max_vram_gib.update_property(&[gtk::accessible::Property::Label("GPU memory budget in GiB")]);
+    vae_settings.append(&gtk::Label::new(Some("GPU memory budget · GiB")));
+    vae_settings.append(&max_vram_gib);
+    vae_file.set_child(Some(&vae_settings));
+    panel.append(&vae_file);
+    panel.append(&section_label("Reference image"));
+    let reference_image = gtk::Entry::new();
+    reference_image.set_placeholder_text(Some("No reference · prompt only"));
+    reference_image.update_property(&[gtk::accessible::Property::Label("Reference image path")]);
+    let reference_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    let choose_reference = gtk::Button::with_label("Choose image…");
+    let clear_reference = gtk::Button::with_label("Clear");
+    reference_row.append(&choose_reference);
+    reference_row.append(&clear_reference);
+    let reference = reference_image.clone();
+    choose_reference.connect_clicked(move |button| {
+        let parent = button.root().and_downcast::<gtk::Window>();
+        let chooser = gtk::FileDialog::builder()
+            .title("Choose reference image")
+            .accept_label("Use reference")
+            .build();
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some("PNG and JPEG images"));
+        filter.add_mime_type("image/png");
+        filter.add_mime_type("image/jpeg");
+        let filters = gio::ListStore::new::<gtk::FileFilter>();
+        filters.append(&filter);
+        chooser.set_filters(Some(&filters));
+        let reference = reference.clone();
+        chooser.open(parent.as_ref(), None::<&gio::Cancellable>, move |result| {
+            if let Ok(file) = result {
+                if let Some(path) = file.path() {
+                    reference.set_text(&path.to_string_lossy());
+                }
+            }
+        });
+    });
+    let reference = reference_image.clone();
+    clear_reference.connect_clicked(move |_| reference.set_text(""));
+    panel.append(&reference_row);
+    let reference_path = gtk::Expander::new(Some("Reference file"));
+    reference_path.set_child(Some(&reference_image));
+    panel.append(&reference_path);
+    let reference_strength = gtk::SpinButton::with_range(0.0, 2.0, 0.05);
+    reference_strength.set_digits(2);
+    reference_strength.set_value(0.8);
+    reference_strength
+        .update_property(&[gtk::accessible::Property::Label("Reference image strength")]);
+    panel.append(&gtk::Label::new(Some("Reference strength")));
+    panel.append(&reference_strength);
     panel.append(&section_label("LoRA"));
     let lora = gtk::Entry::new();
     lora.set_placeholder_text(Some("LoRA name (optional)"));
@@ -876,7 +1212,15 @@ fn build_inspector() -> Inspector {
     panel.append(&weight_row);
 
     panel.append(&section_label("Output"));
-    let dimensions = gtk::DropDown::from_strings(&["512 × 512", "768 × 768", "1024 × 1024"]);
+    let dimensions = gtk::DropDown::from_strings(&[
+        "512 × 512 · square",
+        "768 × 768 · square",
+        "1024 × 1024 · square",
+        "512 × 768 · portrait",
+        "768 × 512 · landscape",
+        "768 × 1024 · portrait",
+        "1024 × 768 · landscape",
+    ]);
     dimensions.update_property(&[gtk::accessible::Property::Label(
         "Image dimensions for recipe",
     )]);
@@ -902,9 +1246,13 @@ fn build_inspector() -> Inspector {
     )]);
     panel.append(&seed);
     panel.append(&section_label("Sampling"));
-    let sampler = gtk::DropDown::from_strings(&["Euler", "Euler ancestral"]);
+    let sampler =
+        gtk::DropDown::from_strings(&["Euler", "Euler ancestral", "DPM++ 2M", "DPM++ 2M SDE"]);
     sampler.update_property(&[gtk::accessible::Property::Label("Sampler")]);
     panel.append(&sampler);
+    let scheduler = gtk::DropDown::from_strings(&["Discrete", "Karras"]);
+    scheduler.update_property(&[gtk::accessible::Property::Label("Noise scheduler")]);
+    panel.append(&scheduler);
     let steps = gtk::SpinButton::with_range(1.0, 50.0, 1.0);
     steps.set_value(20.0);
     steps.set_tooltip_text(Some("Denoising steps"));
@@ -934,8 +1282,15 @@ fn build_inspector() -> Inspector {
         "Comma-separated image tags",
     )]);
     panel.append(&tags);
+    if model.text().contains("Realistic") {
+        dimensions.set_selected(3);
+        steps.set_value(30.0);
+        cfg.set_value(5.0);
+        sampler.set_selected(2);
+        scheduler.set_selected(1);
+    }
     let note = gtk::Label::new(Some(
-        "These values are saved with the recipe. Model names are notes until a compatible image engine is connected.",
+        "Every run saves the prompt, model, seed and settings beside its image. Reload recipe restores an editable copy.",
     ));
     note.set_xalign(0.0);
     note.set_wrap(true);
@@ -944,15 +1299,13 @@ fn build_inspector() -> Inspector {
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);
     spacer.set_vexpand(true);
     panel.append(&spacer);
-    let generate = gtk::Button::with_label("Generate preview");
+    let generate = gtk::Button::with_label("Run image generation");
     generate.set_sensitive(false);
     generate.add_css_class("suggested-action");
     generate.set_tooltip_text(Some(
         "Generation is disabled until an image engine/model pair is calibrated on this device.",
     ));
-    generate.update_property(&[gtk::accessible::Property::Label(
-        "Generate preview, unavailable until engine qualification",
-    )]);
+    generate.update_property(&[gtk::accessible::Property::Label("Run image generation")]);
     panel.append(&generate);
     let save = gtk::Button::with_label("Save prompt recipe");
     panel.append(&save);
@@ -965,12 +1318,13 @@ fn build_inspector() -> Inspector {
         panel: gtk::ScrolledWindow::builder()
             .child(&panel)
             .hscrollbar_policy(gtk::PolicyType::Never)
-            .min_content_width(285)
+            .min_content_width(315)
             .build()
             .upcast(),
         hardware,
         engine,
         model,
+        model_picker: installed_models,
         lora,
         lora_weight,
         dimensions,
@@ -979,6 +1333,15 @@ fn build_inspector() -> Inspector {
         steps,
         cfg,
         sampler,
+        vae,
+        vae_on_cpu,
+        reference_image,
+        reference_strength,
+        vae_tile_size,
+        cpu_threads,
+        params_backend,
+        max_vram_gib,
+        scheduler,
         tags,
         generate,
         save,
@@ -1227,20 +1590,38 @@ fn current_recipe(page: &CreatePage, settings: &Inspector) -> Recipe {
     recipe.model_id = settings.model.text().to_string();
     recipe.steps = settings.steps.value_as_int() as u32;
     recipe.cfg_scale = settings.cfg.value();
-    recipe.sampler = if settings.sampler.selected() == 1 {
-        "euler_a"
+    recipe.sampler = ["euler", "euler_a", "dpm++2m", "dpm++2m_sde"]
+        .get(settings.sampler.selected() as usize)
+        .unwrap_or(&"euler")
+        .to_string();
+    recipe.vae_path = settings.vae.text().to_string();
+    recipe.vae_on_cpu = settings.vae_on_cpu.is_active();
+    recipe.reference_image = settings.reference_image.text().to_string();
+    recipe.reference_strength = settings.reference_strength.value();
+    recipe.vae_tile_size = settings.vae_tile_size.value_as_int() as u32;
+    recipe.cpu_threads = settings.cpu_threads.value_as_int() as u32;
+    recipe.params_backend = ["disk", "cpu", "auto"]
+        .get(settings.params_backend.selected() as usize)
+        .unwrap_or(&"disk")
+        .to_string();
+    recipe.max_vram_gib = settings.max_vram_gib.value();
+    recipe.scheduler = if settings.scheduler.selected() == 1 {
+        "karras"
     } else {
-        "euler"
+        "discrete"
     }
     .into();
     recipe.lora_id = settings.lora.text().to_string();
     recipe.lora_weight = settings.lora_weight.value();
-    recipe.width = match settings.dimensions.selected() {
-        1 => 768,
-        2 => 1024,
-        _ => 512,
+    (recipe.width, recipe.height) = match settings.dimensions.selected() {
+        1 => (768, 768),
+        2 => (1024, 1024),
+        3 => (512, 768),
+        4 => (768, 512),
+        5 => (768, 1024),
+        6 => (1024, 768),
+        _ => (512, 512),
     };
-    recipe.height = recipe.width;
     recipe.batch_size = settings.batch.value_as_int().clamp(1, 8) as u32;
     recipe.seed = settings.seed.value_as_int() as i64;
     recipe.tags = settings
@@ -1280,21 +1661,44 @@ fn load_recipe(recipe: &Recipe, page: &CreatePage, settings: &Inspector) {
     }
     settings.steps.set_value(recipe.steps as f64);
     settings.cfg.set_value(recipe.cfg_scale);
+    settings.sampler.set_selected(
+        ["euler", "euler_a", "dpm++2m", "dpm++2m_sde"]
+            .iter()
+            .position(|sampler| *sampler == recipe.sampler)
+            .unwrap_or(0) as u32,
+    );
+    settings.vae.set_text(&recipe.vae_path);
+    settings.vae_on_cpu.set_active(recipe.vae_on_cpu);
+    settings.reference_image.set_text(&recipe.reference_image);
     settings
-        .sampler
-        .set_selected(if recipe.sampler == "euler_a" { 1 } else { 0 });
+        .reference_strength
+        .set_value(recipe.reference_strength);
+    settings
+        .vae_tile_size
+        .set_value(recipe.vae_tile_size as f64);
+    settings.cpu_threads.set_value(recipe.cpu_threads as f64);
+    settings.params_backend.set_selected(
+        ["disk", "cpu", "auto"]
+            .iter()
+            .position(|backend| *backend == recipe.params_backend)
+            .unwrap_or(0) as u32,
+    );
+    settings.max_vram_gib.set_value(recipe.max_vram_gib);
+    settings
+        .scheduler
+        .set_selected(if recipe.scheduler == "karras" { 1 } else { 0 });
     settings.lora.set_text(&recipe.lora_id);
     settings.lora_weight.set_value(recipe.lora_weight);
     settings
         .dimensions
-        .set_selected(if recipe.engine_id.contains("hosted") {
-            0
-        } else if recipe.width >= 1024 {
-            2
-        } else if recipe.width >= 768 {
-            1
-        } else {
-            0
+        .set_selected(match (recipe.width, recipe.height) {
+            (512, 768) => 3,
+            (768, 512) => 4,
+            (768, 1024) => 5,
+            (1024, 768) => 6,
+            (768, 768) => 1,
+            (1024, 1024) => 2,
+            _ => 0,
         });
     settings
         .batch
@@ -1415,9 +1819,15 @@ fn load_generated_images(
         let model_note = if recipe.model_id.is_empty() {
             "Model not recorded".to_string()
         } else {
-            format!("Model: {}", recipe.model_id)
+            format!("Model: {}", short_model_name(&recipe.model_id))
         };
         detail.append(&gtk::Label::new(Some(&model_note)));
+        let notes = gtk::Expander::new(Some("My model notes and rating"));
+        notes.set_child(Some(&crate::model_notes::model_notes_editor(
+            gtk::glib::user_data_dir().join("mseries-image-studio"),
+            recipe.model_id.clone(),
+        )));
+        detail.append(&notes);
         if !recipe.lora_id.is_empty() {
             detail.append(&gtk::Label::new(Some(&format!(
                 "LoRA: {} · {:.2}",
@@ -1469,6 +1879,25 @@ fn load_generated_images(
         benchmark.set_xalign(0.0);
         benchmark.set_wrap(true);
         detail.append(&benchmark);
+        let conditioning = gtk::Label::new(Some(&format!(
+            "Reference: {} · strength {:.2} · VAE {} · tiles {} · {} CPU threads",
+            if recipe.reference_image.is_empty() {
+                "None".into()
+            } else {
+                Path::new(&recipe.reference_image)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string()
+            },
+            recipe.reference_strength,
+            if recipe.vae_on_cpu { "CPU" } else { "GPU" },
+            recipe.vae_tile_size,
+            recipe.cpu_threads
+        )));
+        conditioning.set_wrap(true);
+        conditioning.set_xalign(0.0);
+        detail.append(&conditioning);
         if !recipe.settings_note.is_empty() {
             let note = gtk::Label::new(Some(&recipe.settings_note));
             note.set_wrap(true);
@@ -1494,17 +1923,33 @@ fn load_generated_images(
             viewer.present();
         });
         detail.append(&view);
-        let reuse = gtk::Button::with_label("Use these settings");
-        reuse.set_halign(gtk::Align::Start);
-        let saved = recipe.clone();
-        let create = create.clone_refs();
-        let inspector = inspector.clone_refs();
-        let stack = stack.clone();
-        reuse.connect_clicked(move |_| {
-            load_recipe(&saved, &create, &inspector);
-            stack.set_visible_child_name("create");
-        });
-        detail.append(&reuse);
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        actions.set_homogeneous(false);
+        for (label, new_seed) in [("Repeat exactly", false), ("Try new seed", true)] {
+            let reuse = gtk::Button::with_label(label);
+            reuse.set_tooltip_text(Some(if new_seed {
+                "Load this recipe with a fresh random seed. Press Run when ready."
+            } else {
+                "Load this recipe and its saved seed. Press Run when ready."
+            }));
+            if !new_seed && recipe.engine_id.contains("hosted") {
+                reuse.set_sensitive(false);
+                reuse.set_tooltip_text(Some("Exact repeat is unavailable: the hosted provider did not expose its model and inference settings."));
+            }
+            let mut saved = recipe.clone();
+            if new_seed {
+                saved.seed = -1;
+            }
+            let create = create.clone_refs();
+            let inspector = inspector.clone_refs();
+            let stack = stack.clone();
+            reuse.connect_clicked(move |_| {
+                load_recipe(&saved, &create, &inspector);
+                stack.set_visible_child_name("create");
+            });
+            actions.append(&reuse);
+        }
+        detail.append(&actions);
         content.append(&picture);
         content.append(&detail);
         row.set_child(Some(&content));
@@ -1544,6 +1989,7 @@ fn refresh_hardware(
         "stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf" => 9.0,
         "stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf" => 9.5,
         "sd_xl_turbo_1.0_fp16.safetensors" => 12.0,
+        "Realistic_Vision_V6.0_NV_B1_fp16.safetensors" => 10.25,
         _ => f64::INFINITY,
     };
     let model = Path::new(&selected).is_file() && required.is_finite();
@@ -1775,6 +2221,7 @@ impl Inspector {
             hardware: self.hardware.clone(),
             engine: self.engine.clone(),
             model: self.model.clone(),
+            model_picker: self.model_picker.clone(),
             lora: self.lora.clone(),
             lora_weight: self.lora_weight.clone(),
             dimensions: self.dimensions.clone(),
@@ -1783,6 +2230,15 @@ impl Inspector {
             steps: self.steps.clone(),
             cfg: self.cfg.clone(),
             sampler: self.sampler.clone(),
+            vae: self.vae.clone(),
+            vae_on_cpu: self.vae_on_cpu.clone(),
+            reference_image: self.reference_image.clone(),
+            reference_strength: self.reference_strength.clone(),
+            vae_tile_size: self.vae_tile_size.clone(),
+            cpu_threads: self.cpu_threads.clone(),
+            params_backend: self.params_backend.clone(),
+            max_vram_gib: self.max_vram_gib.clone(),
+            scheduler: self.scheduler.clone(),
             tags: self.tags.clone(),
             generate: self.generate.clone(),
             save: self.save.clone(),
@@ -1818,6 +2274,12 @@ fn build_model_guide(
             "Best starting use",
             "Settings / dependencies",
             "App qualification",
+        ],
+        [
+            "Realistic Vision 6.0 FP16",
+            "Photographic portraits and fashion",
+            "512 × 768 · DPM++ 2M · Karras · 30 steps · CFG 5 · external vae-ft-mse-840000-ema-pruned",
+            "Installed; quality test pending",
         ],
         [
             "SD 1.5 Q4 / Q8",
@@ -1868,7 +2330,7 @@ fn build_model_guide(
     page.append(&grid);
     for (label, steps, cfg) in [
         ("Use portrait defaults · 20 steps", 20.0, 7.0),
-        ("Use preview sweep defaults · 8 steps", 8.0, 7.0),
+        ("Use speed test · 8 steps · reduced quality", 8.0, 7.0),
     ] {
         let button = gtk::Button::with_label(label);
         button.set_halign(gtk::Align::Start);

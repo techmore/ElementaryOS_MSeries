@@ -17,19 +17,23 @@ owned=False
 sweep_id='sweep-'+str(time.time_ns())
 folder=base/'sweeps';folder.mkdir(parents=True,exist_ok=True)
 manifest=folder/(sweep_id+'.json')
-state=dict(id=sweep_id,status='Preparing',created_at_unix=int(time.time()),kind=plan['kind'],base_recipe=recipe,runs=[])
+state=dict(id=sweep_id,status='Preparing',created_at_unix=int(time.time()),kind=plan['kind'],base_recipe=dict(recipe),plan=plan,runs=[])
 
 
 def save():
     temp=manifest.with_suffix('.tmp');temp.write_text(json.dumps(state,indent=2));os.replace(temp,manifest)
-    (base/'latest-sweep.txt').write_text(str(manifest))
+    pointer=base/'latest-sweep.tmp';pointer.write_text(str(manifest));os.replace(pointer,base/'latest-sweep.txt')
 
 
 try:
     fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);os.write(fd,sweep_id.encode());os.close(fd);owned=True
     if (base/'generation.lock').exists():raise RuntimeError('A generation or review is active; wait before starting a sweep.')
     (base/'batch.pid').write_text(str(os.getpid()))
-    if recipe['seed']<0:recipe['seed']=424242
+    if recipe['seed']<0:
+        import secrets
+        recipe['seed']=secrets.randbelow(2147483647)
+    state['effective_seed']=recipe['seed']
+    state['effective_base_recipe']=dict(recipe)
     variants=[]
     if plan['kind']=='lighting':
         for lighting in ['soft warm window light','dim amber fireplace light','warm desk lamp with subtle teal monitor light']:
@@ -53,7 +57,8 @@ try:
         state['runs'].append(row);save()
         result=subprocess.run([sys.executable,'-c',local_code,str(base),json.dumps(settings)],env=env,capture_output=True,text=True,preexec_fn=supervised_child)
         if result.returncode:
-            row.update(status='Stopped',error=result.stderr.strip()[-2000:]);state['status']='Stopped';save();break
+            stopped='Cancelled' if cancel.exists() else 'Failed'
+            row.update(status=stopped,error=result.stderr.strip()[-2000:],exit_code=result.returncode);state['status']=stopped;save();break
         job=json.loads((base/'current-job.json').read_text())
         metadata=Path(job['recipe_path']);output=json.loads(metadata.read_text())
         row.update(status='Complete',recipe_path=str(metadata),image_path=output['image_path'],elapsed_seconds=output.get('elapsed_seconds'),peak_memory_mib=output.get('peak_memory_mib'))
@@ -64,7 +69,7 @@ try:
             review_path=metadata.with_suffix('.review.json')
             if result.returncode or not review_path.exists():row.update(review_status='Unavailable',review_error=result.stderr.strip()[-1000:])
             else:
-                review=json.loads(review_path.read_text());row.update(review_status='Complete',review_path=str(review_path),overall_score=review['overall_score'])
+                review=json.loads(review_path.read_text());row.update(review_status='Complete',review_path=str(review_path),overall_score=review.get('overall_score'))
             save()
     else:state['status']='Complete'
     if cancel.exists():state['status']='Cancelled'

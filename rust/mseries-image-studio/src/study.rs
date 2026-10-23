@@ -331,7 +331,7 @@ pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
     page.append(&label("Run a small, sequential sweep using the recipe in Create. Keep the seed fixed and change one variable. Each result retains its exact prompt, model, steps, sampler, timing and optional vision review."));
     let mode = gtk::DropDown::from_strings(&[
         "Prompt sweep · three lighting variations",
-        "Step sweep · 8, 16, 24",
+        "Step sweep · 8 (speed test), 16, 24",
         "Model comparison · installed SD 1.5 Q4 and Q8",
     ]);
     page.append(&mode);
