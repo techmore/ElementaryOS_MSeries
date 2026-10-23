@@ -94,6 +94,8 @@ and thread. Each atomic, mode-`0600` record keeps the bounded view, history mark
 environment directories use mode `0700`. The client reopens from that view and asks T3 for `afterSequence`, ignores
 duplicate replay events, and keeps send, stop and approval actions disabled until synchronization completes. Active
 turns stay in memory and are persisted only after they settle, so token-by-token updates do not rewrite the cache.
+When the same open thread is re-subscribed after a disconnect, its previous reading position is restored unless the
+reader was already near the newest message.
 If the thread stream ends while the main connection remains open, the last view is marked interrupted and live
 actions stay disabled until the user retries synchronization.
 Live item updates use a process-local identity index, rebuilt from the cached projection on demand, so replaying

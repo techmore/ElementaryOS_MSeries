@@ -130,6 +130,8 @@ struct Live {
     history_task: Option<glib::JoinHandle<()>>,
     history_error: Option<String>,
     history_control: Option<gtk::Button>,
+    /// A reconnect snapshot should not jump away from the user's current reading position.
+    scroll_restore: Option<f64>,
     view: ThreadView,
     /// Item id → widget currently in the chat column.
     widgets: HashMap<String, gtk::Widget>,
@@ -2921,6 +2923,11 @@ impl App {
                     live.has_more_history,
                 ))
             });
+        let scroll_restore = in_memory.as_ref().and_then(|_| {
+            let adjustment = self.chat_scroll.vadjustment();
+            let at_bottom = adjustment.value() + adjustment.page_size() >= adjustment.upper() - 80.0;
+            (!at_bottom).then_some(adjustment.value())
+        });
         self.leave_live();
         *self.current_session.borrow_mut() = None;
         *self.transcript.borrow_mut() = None;
@@ -2999,6 +3006,7 @@ impl App {
             history_task: None,
             history_error: None,
             history_control: None,
+            scroll_restore,
             view,
             widgets: HashMap::new(),
             running,
@@ -3201,7 +3209,7 @@ impl App {
                 let running = view.is_running();
                 let history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
                 let has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
-                if let Some(live) = self.live.borrow_mut().as_mut() {
+                let scroll_restore = if let Some(live) = self.live.borrow_mut().as_mut() {
                     if live.history_loading && live.history_cursor != history_cursor {
                         abort_history_load(live);
                     }
@@ -3221,14 +3229,33 @@ impl App {
                     live.has_more_history = has_more_history;
                     live.history_error = None;
                     self.subtitle.set_text(&format!("{} · syncing", live.base_subtitle));
-                }
+                    live.scroll_restore.take()
+                } else {
+                    None
+                };
                 self.composer_note.set_text("Synchronizing with T3…");
                 self.send_btn.set_sensitive(false);
                 self.stop_btn.set_sensitive(false);
                 self.render_live();
                 self.show_page("chat");
                 self.stop_btn.set_visible(running);
-                self.scroll_to_end();
+                if let Some(value) = scroll_restore {
+                    let adjustment = self.chat_scroll.vadjustment();
+                    let weak_app = Rc::downgrade(self);
+                    glib::idle_add_local_once(move || {
+                        if let Some(app) = weak_app.upgrade() {
+                            app.history_scroll_suppressed.set(true);
+                        }
+                        let lower = adjustment.lower();
+                        let maximum = (adjustment.upper() - adjustment.page_size()).max(lower);
+                        adjustment.set_value(value.clamp(lower, maximum));
+                        if let Some(app) = weak_app.upgrade() {
+                            app.history_scroll_suppressed.set(false);
+                        }
+                    });
+                } else {
+                    self.scroll_to_end();
+                }
                 self.show_issue_comments();
                 self.persist_current_thread_cache();
             }
