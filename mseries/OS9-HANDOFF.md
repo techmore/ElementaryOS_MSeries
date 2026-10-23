@@ -1,3 +1,20 @@
+## Bounded Aurora CI dependency downloads — 2026-10-22
+
+The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
+mirror at 50.9 kB/s, before kernel compilation. Aurora CI now first uses the
+official HTTPS Ubuntu ports archive, then HTTPS Azure as a fallback. Metadata
+fetches are limited to 60 seconds and package downloads to 240 seconds per
+mirror. Packages retain normal Ubuntu signature verification. Installation
+starts only after a successful download and uses `--no-download`; the timeout
+does not interrupt dpkg to switch mirrors. Runner source files are not modified.
+Rustup has a five-minute bound and the dependency step a 20-minute bound.
+
+Validation: 17 CI regression tests passed, including slow/erroring mirrors,
+failed metadata, no installation after failed downloads, preserved signed
+sources, host execution refusal, and workflow wiring. Full GitHub kernel build
+and package inspection still need to pass on the updated PR head before merge.
+No desktop installation, kernel change or service restart.
+
 ## Superseded PR CI cancellation — 2026-10-22
 
 Source-only: all ten PR workflows now group by workflow name plus PR number

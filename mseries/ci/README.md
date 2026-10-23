@@ -34,3 +34,15 @@ can serve as the non-PR control: a PR push must not cancel it. Never enable
 publishing just to test cancellation. The regression suite separately checks
 that the publishing job excludes PR events and retains its non-cancelling global
 lock. Stop an unfinished synthetic manual control after recording the result.
+
+## Aurora dependency downloads
+
+`install_aurora_tools.py` runs only as root on an ephemeral Ubuntu ARM64 GitHub
+runner. It uses a temporary signed Ubuntu source configuration, trying the
+official HTTPS ports archive before HTTPS Azure. Existing runner sources and
+third-party repositories are untouched. Each mirror gets 60 seconds for metadata
+and 240 seconds for a download-only install, with connection timeouts and limited
+retries. Failure switches mirrors before dpkg begins. Once verified archives are
+ready, installation runs with `--no-download`. Both mirror failures stop CI.
+Normal Ubuntu archive signature verification remains enabled. Rustup and the
+overall workflow dependency step have separate time limits.
