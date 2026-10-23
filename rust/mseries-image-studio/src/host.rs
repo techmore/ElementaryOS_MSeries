@@ -86,3 +86,38 @@ mod tests {
         assert_eq!(parse_mem_available("MemTotal: 1000 kB\n"), 0);
     }
 }
+
+/// Recover only locks whose recorded worker PID is definitely no longer alive.
+pub fn recover_abandoned_workflows(base: &Path) {
+    for (lock_name, pid_name) in [
+        ("generation.lock", "generation.lock"),
+        ("batch.lock", "batch.pid"),
+    ] {
+        let lock = base.join(lock_name);
+        let pid = fs::read_to_string(base.join(pid_name))
+            .ok()
+            .and_then(|v| v.trim().parse::<u32>().ok());
+        if let Some(pid) = pid {
+            if pid > 0 && !Path::new("/proc").join(pid.to_string()).exists() {
+                let _ = fs::remove_file(&lock);
+                if lock_name != pid_name {
+                    let _ = fs::remove_file(base.join(pid_name));
+                }
+                for filename in ["current-job.json", "review-status.json"] {
+                    let path = base.join(filename);
+                    if let Ok(raw) = fs::read(&path) {
+                        if let Ok(mut job) = serde_json::from_slice::<serde_json::Value>(&raw) {
+                            if job["running"].as_bool() == Some(true) {
+                                job["running"] = false.into();
+                                job["status"] = "Interrupted · previous worker ended".into();
+                                if let Ok(raw) = serde_json::to_vec(&job) {
+                                    let _ = fs::write(path, raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

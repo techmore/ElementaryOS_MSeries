@@ -27,6 +27,16 @@ pub struct Recipe {
     pub elapsed_seconds: Option<f64>,
     pub peak_memory_mib: Option<u64>,
     pub settings_note: String,
+    pub steps: u32,
+    pub cfg_scale: f64,
+    pub sampler: String,
+    pub model_receipt: Option<serde_json::Value>,
+    pub engine_receipt: Option<serde_json::Value>,
+    pub preview_count: u32,
+    pub time_to_first_preview_seconds: Option<f64>,
+    pub minimum_available_mib: Option<u64>,
+    pub sweep_id: String,
+    pub sweep_variant: String,
 }
 
 impl Default for Recipe {
@@ -51,6 +61,16 @@ impl Default for Recipe {
             elapsed_seconds: None,
             peak_memory_mib: None,
             settings_note: String::new(),
+            steps: 20,
+            cfg_scale: 7.0,
+            sampler: "euler".into(),
+            model_receipt: None,
+            engine_receipt: None,
+            preview_count: 0,
+            time_to_first_preview_seconds: None,
+            minimum_available_mib: None,
+            sweep_id: String::new(),
+            sweep_variant: String::new(),
             app_version: env!("CARGO_PKG_VERSION").into(),
         }
     }
@@ -198,6 +218,9 @@ mod tests {
         recipe.height = 768;
         recipe.batch_size = 3;
         recipe.seed = 424242;
+        recipe.steps = 16;
+        recipe.cfg_scale = 5.5;
+        recipe.sampler = "euler_a".into();
         recipe.elapsed_seconds = Some(12.5);
         recipe.peak_memory_mib = Some(1024);
         recipe.settings_note = "Measured local test".into();

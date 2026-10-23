@@ -1,43 +1,35 @@
-## Image Studio result inspection and cozy fashion sample — 2026-10-22
+## Image Studio: native app, live local previews and vision review — 2026-10-22
 
-Library outputs now offer a native fitted image viewer and Use these settings, which restores the
-saved recipe into Create. Sidecars accept optional elapsed seconds, peak memory MiB and a provenance
-note; older recipes remain readable. Unknown measurements display Not measured. Two hosted sample
-projects are installed in the owner's app image library: the adult streamer triptych and a six-scene
-cozy campus fashion contact sheet. These are hosted outputs, not a local inference qualification.
-Validation: cargo build; six library tests, including benchmark-field recipe round trip; Xvfb render
-interaction test passed. New viewer/reuse controls have source/build validation; no new screenshot or
-keyboard review was completed. Local live generation/preview and actual inference benchmarking
-remain pending an engine adapter, checkpoint, and memory qualification. Existing generation gate remains.
+Installed as **Image Studio** in Applications with its SVG icon, stable user-local executable and D-Bus
+activation. The GTK 4 / Granite / Pantheon SDK window follows the desktop stylesheet and color/font
+preferences. Run, Stop and Reload recipe remain in the header. Compact windows move generation
+settings into a native popover. Library supports image viewing, settings inspection and recipe reuse.
+Models offers SD 1.5 Q4/Q8, SDXL Turbo FP16, and Qwen3-VL 2B plus its matching projector. Storage
+reports include image models, shared AI weights, images/previews, and the app-managed engine/source.
+Downloads resolve a revision, verify size/SHA-256 and retain receipts. Model guide distinguishes engine
+capabilities and author defaults from local qualification. Compare queues bounded sequential lighting,
+step or installed-model sweeps; optional CPU vision review runs after image generation unloads.
 
-## Native M-Series Image Studio: Pantheon Rust workspace — 2026-10-22
+Concrete hardware result: stable-diffusion.cpp `fd21ecfceef2665d2c5f2db8536e3202d864fd30`, Honeykrisp
+Apple M1 Pro, SD 1.5 Q4, Euler, 8 steps, CFG 7, seed 424242, 512×512, batch 1: **55.701 s**, first
+preview **4.021 s**, **8 genuine projected-latent previews**, peak child process RSS **1957 MiB**,
+minimum observed available host memory **7308 MiB**. GPU memory is not included in process RSS.
+The resulting PNG and recipe are in the owner's private Image Studio Library. This is a low-step
+baseline hardware trial, not portrait-quality or all-model qualification. A sequential Qwen3-VL 2B Q4
++ Q8 projector CPU review completed in **94.439 s**, advisory score **2.8/5**, with per-criterion
+explanations, image hash, exact rubric and an optional user-applied prompt suggestion saved beside it.
 
-The Image Studio is now a Rust GTK 4 + Granite 7 app in `rust/mseries-image-studio`, using this repo's
-`gtk4-rs 0.11` / `granite-rs 3.3` and shared `mseries-pantheon-kit` SDK (pinned to repository revision
-`e15f9272` while the crate is being integrated into `dev`). The SDK supplies theme-neutral geometry,
-text-scaled spacing, accessible-label, and responsive-width helpers. The window uses an actual GTK
-titlebar, Granite navigation rows and section headings, and the SDK's inset/surface/row classes.
-`mseries/image-studio/README.md` documents build and test commands. It opens on the requested adult
-Alexandra Daddario college-streamer series prompt. Model readiness, LoRA comparison, and prompt-type
-study presets set conservative repeatable values; prompt-type advice and prompt rewriting use only the
-already-running local assistant and show review-before-accept dialogs. Recipes store positive/negative
-prompts, model/LoRA notes and strength, dimensions, batch, seed, and tags. Library recipes load back
-into Create. PNG output storage writes a private JSON metadata sidecar; the Library renders saved
-outputs. Live host-memory/render-node status refreshes, with a protected 6 GiB desktop reserve.
+Checks: build and Python parsing; six Rust data tests; five offline adapter checks (integrity, memory
+admission, actual fixture subprocess/preview transport, and fixed-seed sweep persistence); GTK interaction
+coverage including frame replacement, model/guide/review/compare navigation, recipe reuse and header
+Run/Stop. Desktop dark and compact light renders inspected; compact settings popover opens/closes.
+Desktop launcher validation passed. No indicator, kernel, compositor or audio changes were made.
 
-Validation: Rust core tests 6/6; GTK render test under Xvfb drove the preset → save → Library → Load
-path. Responsive checks pass at 1380×900 and 900×700. Rendered light and dark theme captures show the
-Create and Library pages without clipped sidebar or inspector content. Saved test recipe values were
-checked for the adult streamer subject, prompt type, 512×512, batch 1, seed 424242, and tags. These are
-UI/data checks, not an AI image generation run.
-
-Generation remains disabled because no image runtime/model is connected or qualified. The latest host
-check showed 5.8 GiB available (below the 6 GiB reserve), `mseries-ai-everyday.service` still failed,
-no local image/text API listening, and only Qwen text weights in the cache. The prompt helper therefore
-has no running API to contact. No worker or image job was started, and no generated image exists.
-Next: select a still-image engine for the M-Series ARM64/Vulkan target, qualify the model/LoRA and
-measured peak-memory tuple, wire live preview and output delivery, then run the requested three-scene
-series. Details: [Image Studio README](image-studio/README.md).
+Local runs remain supervised calibration: estimated admission budgets plus a continuously sampled
+6 GiB desktop reserve, cancellation and a 15-minute image limit. LoRA/inpainting/reference-conditioned
+local generation remain unqualified and are labeled accordingly. Q8/Turbo inference and the accuracy
+of automated vision grades are not qualified by the single Q4 hardware run. Hosted samples retain
+unknown provider settings rather than fabricated values. See [app notes](image-studio/README.md).
 
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 

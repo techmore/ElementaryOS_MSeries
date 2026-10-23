@@ -10,6 +10,45 @@ fn main() -> gtk::glib::ExitCode {
     let application = gtk::Application::builder().application_id(APP_ID).build();
     application.connect_startup(|app| {
         granite::init();
+        gtk::Window::set_default_icon_name(APP_ID);
+        mseries_image_studio::host::recover_abandoned_workflows(
+            &gtk::glib::user_data_dir().join("mseries-image-studio"),
+        );
+        // Our Pantheon compositor may not expose XSettings. Read the desktop's
+        // own GTK theme and color preference instead of falling back to Adwaita.
+        if std::env::var_os("GTK_THEME").is_none() {
+            if let Some(schema) = gtk::gio::SettingsSchemaSource::default()
+                .and_then(|source| source.lookup("org.gnome.desktop.interface", true))
+            {
+                let desktop =
+                    gtk::gio::Settings::new_full(&schema, None::<&gtk::gio::SettingsBackend>, None);
+                if let Some(settings) = gtk::Settings::default() {
+                    let refresh = move || {
+                        let theme = desktop.string("gtk-theme");
+                        if settings.gtk_theme_name().as_deref() != Some(theme.as_str()) {
+                            settings.set_gtk_theme_name(Some(&theme));
+                        }
+                        let font = desktop.string("font-name");
+                        if settings.gtk_font_name().as_deref() != Some(font.as_str()) {
+                            settings.set_gtk_font_name(Some(&font));
+                        }
+                        let scheme = match desktop.string("color-scheme").as_str() {
+                            "prefer-dark" => gtk::InterfaceColorScheme::Dark,
+                            "prefer-light" => gtk::InterfaceColorScheme::Light,
+                            _ => gtk::InterfaceColorScheme::Default,
+                        };
+                        if settings.gtk_interface_color_scheme() != scheme {
+                            settings.set_gtk_interface_color_scheme(scheme);
+                        }
+                    };
+                    refresh();
+                    gtk::glib::timeout_add_seconds_local(5, move || {
+                        refresh();
+                        gtk::glib::ControlFlow::Continue
+                    });
+                }
+            }
+        }
         if let Some(display) = gtk::gdk::Display::default() {
             mseries_pantheon_kit::install_css(&display);
         }

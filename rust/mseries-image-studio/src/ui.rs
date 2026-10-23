@@ -1,5 +1,4 @@
 use crate::assistant;
-use crate::generation_block_reason;
 use crate::host::HostCapabilities;
 use crate::recipe::{Recipe, RecipeStore, load_outputs};
 use granite::prelude::PlaceholderExt;
@@ -52,6 +51,8 @@ impl ImageStudioWindow {
         let stack = gtk::Stack::builder()
             .hexpand(true)
             .vexpand(true)
+            .hhomogeneous(false)
+            .vhomogeneous(false)
             .transition_type(gtk::StackTransitionType::Crossfade)
             .build();
         let recipe_store = RecipeStore::default_store();
@@ -61,6 +62,111 @@ impl ImageStudioWindow {
         stack.add_named(&library.page, Some("library"));
 
         let inspector = build_inspector();
+        let reuse: Rc<dyn Fn(&Recipe)> = {
+            let create = create.clone_refs();
+            let inspector = inspector.clone_refs();
+            let stack = stack.clone();
+            Rc::new(move |recipe| {
+                load_recipe(recipe, &create, &inspector);
+                stack.set_visible_child_name("create");
+            })
+        };
+        let snapshot: Rc<dyn Fn() -> Recipe> = {
+            let create = create.clone_refs();
+            let inspector = inspector.clone_refs();
+            Rc::new(move || current_recipe(&create, &inspector))
+        };
+        stack.add_named(&crate::study::review(reuse.clone()), Some("review"));
+        stack.add_named(&crate::study::compare(snapshot, reuse), Some("compare"));
+        let select_model: Rc<dyn Fn(&str)> = {
+            let create = create.clone_refs();
+            let inspector = inspector.clone_refs();
+            let stack = stack.clone();
+            Rc::new(move |path| {
+                if path.contains("Qwen3VL") {
+                    stack.set_visible_child_name("review");
+                    return;
+                }
+                inspector.model.set_text(path);
+                inspector.dimensions.set_selected(0);
+                inspector.batch.set_value(1.0);
+                inspector.seed.set_value(424242.0);
+                inspector.lora.set_text("");
+                let turbo = path.contains("turbo");
+                inspector.steps.set_value(if turbo { 4.0 } else { 20.0 });
+                inspector.cfg.set_value(if turbo { 1.0 } else { 7.0 });
+                inspector.sampler.set_selected(if turbo { 1 } else { 0 });
+                if turbo {
+                    set_text(&create.negative, "");
+                }
+                inspector.recipe_status.set_text("Selected model and starter settings loaded. Local memory admission still applies.");
+                stack.set_visible_child_name("create");
+            })
+        };
+        stack.add_named(&crate::models::page(select_model), Some("models"));
+
+        stack.add_named(
+            &build_model_guide(&create, &inspector, &stack),
+            Some("guide"),
+        );
+        let reload = gtk::Button::with_label("Reload recipe");
+        reload.set_tooltip_text(Some(
+            "Load the active or last completed generation recipe into Create",
+        ));
+        let reload_create = create.clone_refs();
+        let reload_inspector = inspector.clone_refs();
+        let reload_stack = stack.clone();
+        reload.connect_clicked(move |_| {
+            let path = gtk::glib::user_data_dir().join("mseries-image-studio/current-job.json");
+            let result = std::fs::read(path)
+                .ok()
+                .and_then(|raw| serde_json::from_slice::<serde_json::Value>(&raw).ok())
+                .and_then(|job| job["recipe_path"].as_str().map(str::to_owned))
+                .and_then(|path| std::fs::read(path).ok())
+                .and_then(|raw| serde_json::from_slice::<Recipe>(&raw).ok());
+            if let Some(recipe) = result {
+                load_recipe(&recipe, &reload_create, &reload_inspector);
+                reload_stack.set_visible_child_name("create");
+            } else {
+                reload_inspector
+                    .recipe_status
+                    .set_text("No readable generation recipe is available yet.");
+            }
+        });
+        header.pack_start(&reload);
+        let run = gtk::Button::with_label("Run");
+        run.add_css_class("suggested-action");
+        run.set_tooltip_text(Some(
+            "Run the local image recipe; readiness or memory errors appear in the preview",
+        ));
+        let action = inspector.generate.clone();
+        let run_action = gio::SimpleAction::new("run", None);
+        run_action.connect_activate(move |_, _| action.emit_clicked());
+        application.add_action(&run_action);
+        application.set_accels_for_action("app.run", &["<Control>Return"]);
+        run.set_action_name(Some("app.run"));
+        header.pack_end(&run);
+        let stop = gtk::Button::with_label("Stop");
+        stop.set_tooltip_text(Some(
+            "Cancel the current image, review or remaining sweep queue",
+        ));
+        stop.connect_clicked(move |_| {
+            let base = glib::user_data_dir().join("mseries-image-studio");
+            let _ = std::fs::create_dir_all(&base);
+            if let Err(error) = std::fs::write(base.join("cancel.request"), "cancel") {
+                eprintln!("Could not request cancellation: {error}");
+            }
+        });
+        header.pack_end(&stop);
+        let settings_popover = gtk::Popover::new();
+        settings_popover.set_size_request(320, 520);
+        let settings_button = gtk::MenuButton::builder()
+            .label("Settings")
+            .popover(&settings_popover)
+            .build();
+        settings_button.set_visible(false);
+        settings_button.update_property(&[gtk::accessible::Property::Label("Generation settings")]);
+        header.pack_end(&settings_button);
         let main_split = gtk::Paned::builder()
             .orientation(gtk::Orientation::Horizontal)
             .start_child(&stack)
@@ -69,6 +175,19 @@ impl ImageStudioWindow {
             .resize_start_child(true)
             .resize_end_child(false)
             .build();
+        let visible_settings = inspector.panel.clone();
+        let compact_settings_button = settings_button.clone();
+        let settings_window = window.downgrade();
+        let header_run = run.clone();
+        stack.connect_visible_child_name_notify(move |stack| {
+            header_run.set_visible(stack.visible_child_name().as_deref() == Some("create"));
+            let compact = settings_window
+                .upgrade()
+                .is_some_and(|w| w.has_css_class("pantheon-compact"));
+            compact_settings_button
+                .set_visible(compact && stack.visible_child_name().as_deref() == Some("create"));
+            visible_settings.set_visible(stack.visible_child_name().as_deref() == Some("create"));
+        });
         let sidebar = build_sidebar(&stack, &create, &inspector);
         let split = gtk::Paned::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -85,11 +204,26 @@ impl ImageStudioWindow {
             let main_split = main_split.clone();
             let sidebar = sidebar.clone();
             let inspector = inspector.panel.clone();
+            let settings_button = settings_button.clone();
+            let settings_popover = settings_popover.clone();
+            let stack = stack.clone();
             move |class| {
                 let (sidebar_width, inspector_width) = match class {
-                    mseries_pantheon_kit::LayoutClass::Compact => (176, 260),
+                    mseries_pantheon_kit::LayoutClass::Compact => (216, 320),
                     mseries_pantheon_kit::LayoutClass::Regular => (216, 320),
                 };
+                let compact = matches!(class, mseries_pantheon_kit::LayoutClass::Compact);
+                if compact && main_split.end_child().is_some() {
+                    main_split.set_end_child(None::<&gtk::Widget>);
+                    settings_popover.set_child(Some(&inspector));
+                } else if !compact && main_split.end_child().is_none() {
+                    settings_popover.popdown();
+                    settings_popover.set_child(None::<&gtk::Widget>);
+                    main_split.set_end_child(Some(&inspector));
+                }
+                settings_button.set_visible(
+                    compact && stack.visible_child_name().as_deref() == Some("create"),
+                );
                 sidebar.set_width_request(sidebar_width);
                 inspector.set_width_request(inspector_width);
                 if split.width() > 0 {
@@ -110,12 +244,18 @@ impl ImageStudioWindow {
             &inspector,
             &recipe_store,
         );
-        refresh_hardware(&inspector.hardware, &inspector.engine, &inspector.generate);
+        refresh_hardware(
+            &inspector.hardware,
+            &inspector.engine,
+            &inspector.generate,
+            &inspector.model,
+        );
         let hardware = inspector.hardware.clone();
         let engine = inspector.engine.clone();
         let generate = inspector.generate.clone();
+        let selected_model = inspector.model.clone();
         glib::timeout_add_seconds_local(5, move || {
-            refresh_hardware(&hardware, &engine, &generate);
+            refresh_hardware(&hardware, &engine, &generate, &selected_model);
             glib::ControlFlow::Continue
         });
         load_recipes(&library.recipes, &create, &inspector, &stack, &recipe_store);
@@ -124,8 +264,50 @@ impl ImageStudioWindow {
             &library.placeholder,
             &library.outputs_heading,
             &library.output_scroll,
-            &create, &inspector, &stack,
+            &create,
+            &inspector,
+            &stack,
         );
+        let outputs = library.outputs.clone();
+        let placeholder = library.placeholder.clone();
+        let heading = library.outputs_heading.clone();
+        let scroll = library.output_scroll.clone();
+        let result_create = create.clone_refs();
+        let result_inspector = inspector.clone_refs();
+        let result_stack = stack.clone();
+        let mut previous_job = String::new();
+        glib::timeout_add_seconds_local(1, move || {
+            if outputs.root().is_none() {
+                return glib::ControlFlow::Break;
+            }
+            let path = glib::user_data_dir().join("mseries-image-studio/current-job.json");
+            if let Ok(raw) = std::fs::read_to_string(path) {
+                if raw != previous_job {
+                    if let Ok(job) = serde_json::from_str::<serde_json::Value>(&raw) {
+                        if job["running"].as_bool() == Some(false)
+                            && job["status"]
+                                .as_str()
+                                .is_some_and(|s| s.starts_with("Complete"))
+                        {
+                            load_generated_images(
+                                &outputs,
+                                &placeholder,
+                                &heading,
+                                &scroll,
+                                &result_create,
+                                &result_inspector,
+                                &result_stack,
+                            );
+                        }
+                    }
+                    previous_job = raw;
+                }
+            }
+            glib::ControlFlow::Continue
+        });
+        if std::env::var_os("M_SERIES_IMAGE_STUDIO_TEST_WORKFLOW").is_none() {
+            reload.emit_clicked();
+        }
         test_hooks(
             application,
             &window,
@@ -174,6 +356,9 @@ struct Inspector {
     dimensions: gtk::DropDown,
     batch: gtk::SpinButton,
     seed: gtk::SpinButton,
+    steps: gtk::SpinButton,
+    cfg: gtk::SpinButton,
+    sampler: gtk::DropDown,
     tags: gtk::Entry,
     generate: gtk::Button,
     save: gtk::Button,
@@ -183,7 +368,10 @@ struct Inspector {
 fn install_css(window: &gtk::ApplicationWindow) {
     let css = gtk::CssProvider::new();
     css.load_from_string(
-        ".mseries-image-studio .studio-sidebar { border-right: 1px solid alpha(currentColor, 0.10); }
+        ".mseries-image-studio { font-size: 1.1em; }
+         .mseries-image-studio .preview-stage picture { min-height: 320px; }
+         .mseries-image-studio.pantheon-compact .preview-stage picture { min-height: 220px; }
+         .mseries-image-studio .studio-sidebar { border-right: 1px solid alpha(currentColor, 0.10); }
          .mseries-image-studio .preview-stage { background: @theme_base_color; border: 1px solid alpha(currentColor, 0.08); }
          .mseries-image-studio .status-card, .mseries-image-studio .queue-row { background: @theme_base_color; }",
     );
@@ -209,14 +397,24 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
         .activate_on_single_click(true)
         .build();
     mseries_pantheon_kit::set_accessible_label(&navigation, "Image Studio pages");
-    for (label, page) in [("Create", "create"), ("Library", "library")] {
+    for (label, page) in [
+        ("Create", "create"),
+        ("Library", "library"),
+        ("Models", "models"),
+        ("Model guide", "guide"),
+        ("Compare", "compare"),
+        ("Review", "review"),
+    ] {
         let row = gtk::ListBoxRow::new();
         let contents = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         contents.add_css_class("pantheon-row");
-        contents.append(&gtk::Image::from_icon_name(if page == "create" {
-            "document-edit-symbolic"
-        } else {
-            "image-x-generic-symbolic"
+        contents.append(&gtk::Image::from_icon_name(match page {
+            "create" => "document-edit-symbolic",
+            "library" => "image-x-generic-symbolic",
+            "models" => "drive-harddisk-symbolic",
+            "compare" => "view-grid-symbolic",
+            "review" => "emblem-ok-symbolic",
+            _ => "help-browser-symbolic",
         }));
         let row_label = gtk::Label::new(Some(label));
         row_label.set_xalign(0.0);
@@ -233,12 +431,35 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
         if let Some(row) = row {
             stack_for_navigation.set_visible_child_name(if row.index() == 0 {
                 "create"
-            } else {
+            } else if row.index() == 1 {
                 "library"
+            } else if row.index() == 2 {
+                "models"
+            } else if row.index() == 3 {
+                "guide"
+            } else if row.index() == 4 {
+                "compare"
+            } else {
+                "review"
             });
         }
     });
+    let navigation_weak = navigation.downgrade();
+    stack.connect_visible_child_name_notify(move |stack| {
+        if let Some(navigation) = navigation_weak.upgrade() {
+            let index = match stack.visible_child_name().as_deref() {
+                Some("library") => 1,
+                Some("models") => 2,
+                Some("guide") => 3,
+                Some("compare") => 4,
+                Some("review") => 5,
+                _ => 0,
+            };
+            navigation.select_row(navigation.row_at_index(index).as_ref());
+        }
+    });
     sidebar.append(&navigation);
+    sidebar.append(&crate::models::storage_label());
     let workflows = section_label("Guided workflows");
     sidebar.append(&workflows);
     for (title, subtitle, workflow) in [
@@ -246,11 +467,6 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
             "Model readiness",
             "Check one conservative render",
             "Model readiness",
-        ),
-        (
-            "LoRA comparison",
-            "Compare weights with a fixed seed",
-            "LoRA comparison",
         ),
         (
             "Prompt type study",
@@ -309,10 +525,16 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
         glib::ControlFlow::Continue
     });
     sidebar.append(&hardware);
-    sidebar.upcast()
+    gtk::ScrolledWindow::builder()
+        .child(&sidebar)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .min_content_width(190)
+        .build()
+        .upcast()
 }
 
 fn build_create_page() -> CreatePage {
+    let queue_status = gtk::Label::new(Some("No local image jobs queued"));
     let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
     mseries_pantheon_kit::set_box_spacing_text_units(&page, 0.8);
     page.add_css_class("pantheon-inset");
@@ -330,7 +552,12 @@ fn build_create_page() -> CreatePage {
     preview.set_hexpand(true);
     preview.set_vexpand(true);
     let preview_center = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    preview_center.set_halign(gtk::Align::Center);
+    preview_center.set_halign(gtk::Align::Fill);
+    preview_center.set_hexpand(true);
+    preview_center.set_margin_start(16);
+    preview_center.set_margin_end(16);
+    preview_center.set_margin_top(16);
+    preview_center.set_margin_bottom(16);
     preview_center.set_valign(gtk::Align::Center);
     preview_center.set_vexpand(true);
     let icon = gtk::Image::from_icon_name("image-x-generic-symbolic");
@@ -344,10 +571,58 @@ fn build_create_page() -> CreatePage {
     preview_detail.set_wrap(true);
     preview_detail.set_justify(gtk::Justification::Center);
     preview_detail.set_max_width_chars(64);
+    preview_detail.set_lines(3);
+    preview_detail.set_ellipsize(gtk::pango::EllipsizeMode::End);
     preview_detail.add_css_class("dim-label");
     preview_center.append(&icon);
     preview_center.append(&preview_title);
     preview_center.append(&preview_detail);
+    let live_image = gtk::Picture::new();
+    live_image.set_content_fit(gtk::ContentFit::Contain);
+    live_image.set_can_shrink(true);
+    live_image.set_size_request(-1, 0);
+    live_image.set_hexpand(true);
+    live_image.set_vexpand(true);
+    live_image.set_visible(false);
+    preview_center.append(&live_image);
+    let spinner = gtk::Spinner::new();
+    preview_center.append(&spinner);
+    let job_path = gtk::glib::user_data_dir().join("mseries-image-studio/current-job.json");
+    let mut last_job = String::new();
+    let active_queue = queue_status.clone();
+    gtk::glib::timeout_add_seconds_local(1, move || {
+        if preview_title.root().is_none() {
+            return gtk::glib::ControlFlow::Break;
+        }
+        if let Ok(raw) = std::fs::read_to_string(&job_path) {
+            if raw != last_job {
+                if let Ok(job) = serde_json::from_str::<serde_json::Value>(&raw) {
+                    preview_title.set_text(
+                        job["status"]
+                            .as_str()
+                            .unwrap_or("Generation status unavailable"),
+                    );
+                    active_queue.set_text(job["status"].as_str().unwrap_or("Status unavailable"));
+                    preview_detail.set_text(&format!(
+                        "{}\n{}",
+                        job["engine"].as_str().unwrap_or("Engine unavailable"),
+                        job["prompt"].as_str().unwrap_or("")
+                    ));
+                    let path = job["image_path"].as_str().unwrap_or("");
+                    if !path.is_empty() {
+                        live_image.set_filename(Some(path));
+                        live_image.set_visible(true);
+                    } else {
+                        live_image.set_visible(false);
+                    }
+                    spinner.set_spinning(job["running"].as_bool().unwrap_or(false));
+                    icon.set_visible(false);
+                }
+                last_job = raw;
+            }
+        }
+        gtk::glib::ControlFlow::Continue
+    });
     preview.append(&preview_center);
     page.append(&preview);
 
@@ -443,14 +718,18 @@ fn build_create_page() -> CreatePage {
     queue_row.add_css_class("pantheon-surface");
     queue_row.add_css_class("pantheon-row");
     queue_row.append(&gtk::Image::from_icon_name("content-loading-symbolic"));
-    let queue_status = gtk::Label::new(Some("No image jobs queued"));
+
     queue_status.set_xalign(0.0);
     queue_status.set_hexpand(true);
     queue_row.append(&queue_status);
     page.append(&queue_row);
 
     CreatePage {
-        page: page.upcast(),
+        page: gtk::ScrolledWindow::builder()
+            .child(&page)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .build()
+            .upcast(),
         prompt,
         negative,
         intent,
@@ -571,6 +850,11 @@ fn build_inspector() -> Inspector {
     model.update_property(&[gtk::accessible::Property::Label(
         "Model name or checkpoint for recipe",
     )]);
+    let installed = gtk::glib::user_data_dir()
+        .join("mseries-image-studio/models/stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf");
+    if installed.is_file() {
+        model.set_text(&installed.to_string_lossy());
+    }
     panel.append(&model);
     panel.append(&section_label("LoRA"));
     let lora = gtk::Entry::new();
@@ -617,6 +901,32 @@ fn build_inspector() -> Inspector {
         "Seed, minus one means random",
     )]);
     panel.append(&seed);
+    panel.append(&section_label("Sampling"));
+    let sampler = gtk::DropDown::from_strings(&["Euler", "Euler ancestral"]);
+    sampler.update_property(&[gtk::accessible::Property::Label("Sampler")]);
+    panel.append(&sampler);
+    let steps = gtk::SpinButton::with_range(1.0, 50.0, 1.0);
+    steps.set_value(20.0);
+    steps.set_tooltip_text(Some("Denoising steps"));
+    steps.update_property(&[gtk::accessible::Property::Label("Denoising steps")]);
+    let steps_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let steps_label = gtk::Label::new(Some("Steps"));
+    steps_label.set_hexpand(true);
+    steps_label.set_xalign(0.0);
+    steps_row.append(&steps_label);
+    steps_row.append(&steps);
+    panel.append(&steps_row);
+    let cfg = gtk::SpinButton::with_range(0.0, 15.0, 0.5);
+    cfg.set_value(7.0);
+    cfg.set_tooltip_text(Some("Prompt guidance strength (CFG)"));
+    cfg.update_property(&[gtk::accessible::Property::Label("Prompt guidance CFG")]);
+    let cfg_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let cfg_label = gtk::Label::new(Some("Prompt guidance"));
+    cfg_label.set_hexpand(true);
+    cfg_label.set_xalign(0.0);
+    cfg_row.append(&cfg_label);
+    cfg_row.append(&cfg);
+    panel.append(&cfg_row);
     panel.append(&section_label("Tags"));
     let tags = gtk::Entry::new();
     tags.set_placeholder_text(Some("portrait, streamer, study"));
@@ -652,7 +962,12 @@ fn build_inspector() -> Inspector {
     recipe_status.add_css_class("dim-label");
     panel.append(&recipe_status);
     Inspector {
-        panel: panel.upcast(),
+        panel: gtk::ScrolledWindow::builder()
+            .child(&panel)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .min_content_width(285)
+            .build()
+            .upcast(),
         hardware,
         engine,
         model,
@@ -661,6 +976,9 @@ fn build_inspector() -> Inspector {
         dimensions,
         batch,
         seed,
+        steps,
+        cfg,
+        sampler,
         tags,
         generate,
         save,
@@ -674,6 +992,13 @@ fn section_label(text: &str) -> granite::HeaderLabel {
 
 fn apply_workflow(workflow: &str, page: &CreatePage, settings: &Inspector) {
     *page.workflow.borrow_mut() = workflow.into();
+    settings.steps.set_value(if workflow == "Model readiness" {
+        8.0
+    } else {
+        20.0
+    });
+    settings.cfg.set_value(7.0);
+    settings.sampler.set_selected(0);
     match workflow {
         "Model readiness" => {
             set_text(
@@ -730,6 +1055,34 @@ fn wire_actions(
     inspector: &Inspector,
     store: &RecipeStore,
 ) {
+    let generation_page = create.clone_refs();
+    let generation_settings = inspector.clone_refs();
+    inspector.generate.connect_clicked(move |_| {
+        let base = gtk::glib::user_data_dir().join("mseries-image-studio");
+        if base.join("batch.lock").exists() || base.join("generation.lock").exists() {
+            generation_settings.recipe_status.set_text(
+                "A local workflow is active. Stop it or wait before starting another run.",
+            );
+            return;
+        }
+        let recipe = current_recipe(&generation_page, &generation_settings);
+        let base = gtk::glib::user_data_dir().join("mseries-image-studio");
+        let _ = std::fs::remove_file(base.join("cancel.request"));
+        generation_settings
+            .recipe_status
+            .set_text("Submitting supervised local calibration…");
+        std::thread::spawn(move || {
+            let result = std::process::Command::new("python3")
+                .arg("-c")
+                .arg(include_str!("local_generation.py"))
+                .arg(base)
+                .arg(serde_json::to_string(&recipe).unwrap())
+                .output();
+            if let Err(error) = result {
+                eprintln!("Generation worker could not start: {error}");
+            }
+        });
+    });
     let page = create.clone_refs();
     let settings = inspector.clone_refs();
     let library_list = library.recipes.clone();
@@ -872,6 +1225,14 @@ fn current_recipe(page: &CreatePage, settings: &Inspector) -> Recipe {
         .into();
     recipe.workflow = page.workflow.borrow().clone();
     recipe.model_id = settings.model.text().to_string();
+    recipe.steps = settings.steps.value_as_int() as u32;
+    recipe.cfg_scale = settings.cfg.value();
+    recipe.sampler = if settings.sampler.selected() == 1 {
+        "euler_a"
+    } else {
+        "euler"
+    }
+    .into();
     recipe.lora_id = settings.lora.text().to_string();
     recipe.lora_weight = settings.lora_weight.value();
     recipe.width = match settings.dimensions.selected() {
@@ -910,16 +1271,31 @@ fn load_recipe(recipe: &Recipe, page: &CreatePage, settings: &Inspector) {
     if let Some(index) = INTENTS.iter().position(|intent| *intent == recipe.intent) {
         page.intent.set_selected(index as u32);
     }
-    settings.model.set_text(&recipe.model_id);
+    let installed = gtk::glib::user_data_dir()
+        .join("mseries-image-studio/models/stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf");
+    if recipe.engine_id.contains("hosted") && installed.is_file() {
+        settings.model.set_text(&installed.to_string_lossy());
+    } else {
+        settings.model.set_text(&recipe.model_id);
+    }
+    settings.steps.set_value(recipe.steps as f64);
+    settings.cfg.set_value(recipe.cfg_scale);
+    settings
+        .sampler
+        .set_selected(if recipe.sampler == "euler_a" { 1 } else { 0 });
     settings.lora.set_text(&recipe.lora_id);
     settings.lora_weight.set_value(recipe.lora_weight);
-    settings.dimensions.set_selected(if recipe.width >= 1024 {
-        2
-    } else if recipe.width >= 768 {
-        1
-    } else {
-        0
-    });
+    settings
+        .dimensions
+        .set_selected(if recipe.engine_id.contains("hosted") {
+            0
+        } else if recipe.width >= 1024 {
+            2
+        } else if recipe.width >= 768 {
+            1
+        } else {
+            0
+        });
     settings
         .batch
         .set_value(recipe.batch_size.clamp(1, 8) as f64);
@@ -1004,6 +1380,9 @@ fn load_generated_images(
     let directory = gtk::glib::user_data_dir()
         .join("mseries-image-studio")
         .join("images");
+    while let Some(child) = list.first_child() {
+        list.remove(&child);
+    }
     let outputs = load_outputs(&directory, 100).unwrap_or_else(|error| {
         eprintln!("Could not load image metadata: {error}");
         vec![]
@@ -1051,11 +1430,41 @@ fn load_generated_images(
                 recipe.tags.join(", ")
             ))));
         }
+        let settings_expander = gtk::Expander::new(Some("Generation settings"));
+        let settings_text = gtk::Label::new(Some(&format!(
+            "Sampler: {} · Steps: {} · Guidance: {:.1} · Seed: {}\nNegative prompt: {}\nFirst preview: {} · Preview frames: {}\n{}",
+            recipe.sampler,
+            recipe.steps,
+            recipe.cfg_scale,
+            recipe.seed,
+            recipe.negative_prompt,
+            recipe
+                .time_to_first_preview_seconds
+                .map(|v| format!("{v:.1} s"))
+                .unwrap_or_else(|| "Not measured".into()),
+            recipe.preview_count,
+            if recipe.engine_id.contains("hosted") {
+                "Hosted model and inference settings were not exposed; sampler and steps above are editable local starter defaults."
+            } else {
+                "Peak memory below reports process RSS, excluding GPU memory."
+            }
+        )));
+        settings_text.set_xalign(0.0);
+        settings_text.set_wrap(true);
+        settings_text.set_max_width_chars(64);
+        settings_expander.set_child(Some(&settings_text));
+        detail.append(&settings_expander);
         let benchmark = gtk::Label::new(Some(&format!(
             "Engine: {} · Time: {} · Peak memory: {}",
             recipe.engine_id,
-            recipe.elapsed_seconds.map(|v| format!("{v:.1} s")).unwrap_or_else(|| "Not measured".into()),
-            recipe.peak_memory_mib.map(|v| format!("{v} MiB")).unwrap_or_else(|| "Not measured".into())
+            recipe
+                .elapsed_seconds
+                .map(|v| format!("{v:.1} s"))
+                .unwrap_or_else(|| "Not measured".into()),
+            recipe
+                .peak_memory_mib
+                .map(|v| format!("{v} MiB"))
+                .unwrap_or_else(|| "Not measured".into())
         )));
         benchmark.set_xalign(0.0);
         benchmark.set_wrap(true);
@@ -1070,8 +1479,11 @@ fn load_generated_images(
         view.set_halign(gtk::Align::Start);
         let image_path = recipe.image_path.clone();
         view.connect_clicked(move |button| {
-            let viewer = gtk::Window::builder().title("Image Studio · Image")
-                .default_width(1100).default_height(760).build();
+            let viewer = gtk::Window::builder()
+                .title("Image Studio · Image")
+                .default_width(1100)
+                .default_height(760)
+                .build();
             if let Some(parent) = button.root().and_downcast::<gtk::Window>() {
                 viewer.set_transient_for(Some(&parent));
             }
@@ -1104,7 +1516,12 @@ fn load_generated_images(
     scroll.set_visible(has_outputs);
 }
 
-fn refresh_hardware(hardware: &gtk::Label, engine: &gtk::Label, generate: &gtk::Button) {
+fn refresh_hardware(
+    hardware: &gtk::Label,
+    engine: &gtk::Label,
+    generate: &gtk::Button,
+    selected_model: &gtk::Entry,
+) {
     let host = HostCapabilities::capture();
     hardware.set_text(&format!(
         "{}\n6 GiB desktop reserve: {}\n{}",
@@ -1116,12 +1533,33 @@ fn refresh_hardware(hardware: &gtk::Label, engine: &gtk::Label, generate: &gtk::
             "No render node detected"
         }
     ));
-    engine.set_text(&format!("Image engine: not connected\n{}\nStarter target: 512 × 512, batch 1, after model calibration.", host.accelerator_summary()));
-    generate.set_tooltip_text(Some(generation_block_reason(
-        false,
-        host.available_bytes,
-        0,
-    )));
+    let base = gtk::glib::user_data_dir().join("mseries-image-studio");
+    let connected = base.join("engine/sd-cli").is_file();
+    let selected = selected_model.text().to_string();
+    let name = Path::new(&selected)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+    let required = match name {
+        "stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf" => 9.0,
+        "stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf" => 9.5,
+        "sd_xl_turbo_1.0_fp16.safetensors" => 12.0,
+        _ => f64::INFINITY,
+    };
+    let model = Path::new(&selected).is_file() && required.is_finite();
+    let busy = base.join("generation.lock").exists() || base.join("batch.lock").exists();
+    engine.set_text(&if !connected { "Install the local image engine in Models. Hosted samples have no intermediate frames.".into() }
+        else if !model { "Local engine installed. Select a downloaded model in Models and load its starter settings.".into() }
+        else { format!("Local engine installed. Selected model needs {required:.1} GiB available, including the desktop reserve. Runs are supervised calibration until qualified.") });
+    generate.set_sensitive(connected && model && !busy && host.available_gib() >= required);
+    generate.set_label(if busy {
+        "Workflow active…"
+    } else {
+        "Render local preview"
+    });
+    generate.set_tooltip_text(Some(
+        "Run the selected local recipe. Memory or configuration errors appear in the preview.",
+    ));
 }
 
 fn show_intent_dialog(parent: &gtk::ApplicationWindow, dropdown: &gtk::DropDown, suggestion: &str) {
@@ -1342,10 +1780,133 @@ impl Inspector {
             dimensions: self.dimensions.clone(),
             batch: self.batch.clone(),
             seed: self.seed.clone(),
+            steps: self.steps.clone(),
+            cfg: self.cfg.clone(),
+            sampler: self.sampler.clone(),
             tags: self.tags.clone(),
             generate: self.generate.clone(),
             save: self.save.clone(),
             recipe_status: self.recipe_status.clone(),
         }
     }
+}
+
+fn build_model_guide(
+    create: &CreatePage,
+    inspector: &Inspector,
+    stack: &gtk::Stack,
+) -> gtk::Widget {
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 16);
+    page.add_css_class("pantheon-inset");
+    let title = gtk::Label::new(Some("Choose a model for your project"));
+    title.add_css_class("title-2");
+    title.set_xalign(0.0);
+    page.append(&title);
+    let intro = gtk::Label::new(Some(
+        "A short list for Apple Silicon running Linux. Download size is not inference memory. Author guidance and engine support are distinguished from local qualification.",
+    ));
+    intro.set_wrap(true);
+    intro.set_xalign(0.0);
+    page.append(&intro);
+    let grid = gtk::Grid::builder()
+        .column_spacing(16)
+        .row_spacing(12)
+        .build();
+    for (r, cells) in [
+        [
+            "Model",
+            "Best starting use",
+            "Settings / dependencies",
+            "App qualification",
+        ],
+        [
+            "SD 1.5 Q4 / Q8",
+            "Small portrait and fashion studies",
+            "512² · Euler · 20 steps · CFG 7 · seed 424242 · batch 1",
+            "Q4: supervised local calibration",
+        ],
+        [
+            "SDXL Turbo FP16",
+            "Fast composition experiments",
+            "512² · 1–4 steps · engine CFG 1 (Diffusers guidance 0); no negative prompt",
+            "Download candidate; local render not qualified",
+        ],
+        [
+            "Qwen3-VL 2B Q4",
+            "Review images against a rubric",
+            "Model + matching Q8 vision projector · run after generation unloads",
+            "CPU review adapter; download model + projector",
+        ],
+        [
+            "LoRA adapters",
+            "Style or subject conditioning",
+            "Must match base family; start weight 0.7; keep seed fixed",
+            "Not qualified in this app",
+        ],
+        [
+            "IP-Adapter / inpainting",
+            "Reference identity / masked edits",
+            "Matching vision encoder or inpainting checkpoint required",
+            "Engine capability; app controls pending",
+        ],
+    ]
+    .iter()
+    .enumerate()
+    {
+        for (c, text) in cells.iter().enumerate() {
+            let label = gtk::Label::new(Some(text));
+            label.set_wrap(true);
+            label.set_max_width_chars(25);
+            label.set_xalign(0.0);
+            label.set_valign(gtk::Align::Start);
+            if r == 0 {
+                label.add_css_class("heading");
+            }
+            grid.attach(&label, c as i32, r as i32, 1, 1);
+        }
+    }
+    page.append(&grid);
+    for (label, steps, cfg) in [
+        ("Use portrait defaults · 20 steps", 20.0, 7.0),
+        ("Use preview sweep defaults · 8 steps", 8.0, 7.0),
+    ] {
+        let button = gtk::Button::with_label(label);
+        button.set_halign(gtk::Align::Start);
+        let create = create.clone_refs();
+        let inspector = inspector.clone_refs();
+        let stack = stack.clone();
+        button.connect_clicked(move |_|{inspector.steps.set_value(steps);inspector.cfg.set_value(cfg);inspector.seed.set_value(424242.0);inspector.batch.set_value(1.0);inspector.dimensions.set_selected(0);inspector.lora.set_text("");inspector.model.set_text(&gtk::glib::user_data_dir().join("mseries-image-studio/models/stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf").to_string_lossy());create.workflow.replace("SD 1.5 starter".into());inspector.recipe_status.set_text("Starter defaults loaded. Local calibration and memory admission still apply.");stack.set_visible_child_name("create");});
+        page.append(&button);
+    }
+    let review = gtk::Label::new(Some(
+        "Compare fairly: keep seed, dimensions and steps fixed; change one prompt phrase or model at a time. A vision grade should store the rubric, evaluator identity, explanations and run settings. It is advisory, not a guarantee of likeness or commercial image quality.",
+    ));
+    review.set_wrap(true);
+    review.set_xalign(0.0);
+    page.append(&review);
+    for (label, url) in [
+        (
+            "SD 1.5 quantized model files and license",
+            "https://huggingface.co/second-state/stable-diffusion-v1-5-GGUF",
+        ),
+        (
+            "SDXL Turbo author settings and license",
+            "https://huggingface.co/stabilityai/sdxl-turbo",
+        ),
+        (
+            "Qwen3-VL model and projector instructions",
+            "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF",
+        ),
+        (
+            "Vulkan engine support",
+            "https://github.com/leejet/stable-diffusion.cpp",
+        ),
+    ] {
+        page.append(&gtk::LinkButton::with_label(url, label));
+    }
+    gtk::ScrolledWindow::builder()
+        .child(&page)
+        .hscrollbar_policy(gtk::PolicyType::Automatic)
+        .build()
+        .upcast()
 }

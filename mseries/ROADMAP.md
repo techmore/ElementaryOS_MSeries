@@ -1,25 +1,14 @@
-## Native Image Studio: Pantheon Rust UI and recipe flow — 2026-10-22
+## Image Studio: native app and local preview pipeline — 2026-10-22
 
-`rust/mseries-image-studio` is a Rust GTK 4 + Granite 7 app (`gtk4-rs`,
-`granite-rs`, and the repository's `mseries-pantheon-kit` SDK, pinned to
-`e15f9272` while the shared crate is integrated into `dev`). The app now uses a
-native GTK titlebar, Granite navigation/section labels, theme-neutral SDK geometry,
-text-scaled spacing, and responsive sizing. It has guided workflows, prompt-type selection, reviewable local
-assistant suggestions, live memory/render-node reporting, editable generation
-settings, recipe restore, and PNG + JSON metadata storage. Six core tests pass;
-the Xvfb render interaction test covers preset → save → Library → Load at regular
-and compact sizes. Light/dark screenshots of both pages were inspected. It opens
-with the requested adult streamer-series prompt.
+Applications launcher/icon installed. Native GTK/Granite/SDK layout now has visible Run/Stop, compact
+settings popover, live image stage, Library inspection/reuse, model download/storage management,
+model feature guide, sequential Compare sweeps and optional local Qwen vision review.
 
-Image generation remains gated; there is no connected or qualified still-image
-runtime, no diffusion model in the cache, and `mseries-ai-everyday.service` is
-still failed. Available memory is 5.8 GiB, below the 6 GiB reserve, and
-the prompt assistant API is not listening. No image job was started, so the
-requested generated series is still outstanding. Next:
-choose and qualify an ARM64/Vulkan-compatible runtime/model/LoRA, measure the
-peak budget while preserving the desktop reserve, then add real generation,
-live preview, and output delivery. See [handoff](OS9-HANDOFF.md) and [app
-notes](image-studio/README.md).
+One Honeykrisp/M1 Pro SD 1.5 Q4 512² Euler 8-step trial completed in 55.701 s with eight previews,
+first preview at 4.021 s, and the desktop reserve preserved. Qwen3-VL 2B CPU review completed with a
+retained advisory report. This does not qualify every model or guarantee grading accuracy. LoRA,
+inpainting, image-reference generation and Q8/Turbo hardware qualification remain next work.
+See [handoff](OS9-HANDOFF.md) and [app notes](image-studio/README.md).
 
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
@@ -3453,4 +3442,4 @@ Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
 
-- Image Studio: native saved-output viewer, recipe reuse and optional benchmark metadata implemented; hosted cozy fashion samples imported. Local inference and progressive preview remain pending qualification.
+
