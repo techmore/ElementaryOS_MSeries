@@ -39,7 +39,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: os9-mseries-${{ github.ref }}${{ inputs.m4_userspace_only && '-m4-userspace' || inputs.m4_boot_only && '-m4-boot' || inputs.m4_image_only && '-m4-image' || '' }}
+  group: os9-mseries-${{ github.ref }}${{ inputs.m4_kernel_only && '-m4-kernel' || inputs.m4_userspace_only && '-m4-userspace' || inputs.m4_boot_only && '-m4-boot' || inputs.m4_image_only && '-m4-image' || '' }}
   cancel-in-progress: false
 
 jobs:
