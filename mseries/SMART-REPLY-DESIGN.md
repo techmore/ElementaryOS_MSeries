@@ -1,6 +1,6 @@
 # Smart Reply: a window-aware agent that drafts text for any app (design, 2026-10-23)
 
-**Status: a first slice is built and installed in Python (see [smart-reply/README.md](smart-reply/README.md)): the Ctrl+Alt+R trigger (physical Command+Option+R on this keyboard), the allow/block rules file, the local-model draft and the Tab/Esc input service; Tab insertion in a running app is not yet verified. The owner prefers the **Rust** path for integration with the Rust Pantheon SDK: its core library is `rust/mseries-reply` (rules, chat marker, context gate, tool-free draft agent over `mseries-ai`, audit; fixtures and a CLI). The Rust crate has no AT-SPI reader, IBus input client, hotkey or Settings panel yet; the Python slice is the working bridge until it has them. There is no settings panel yet, nor screenshots, right-click expose or automatic suggestions.** It records an owner idea so it is not lost, says which existing
+**Status: the working path is Rust (2026-10-23): `rust/mseries-reply` holds the rules, chat marker, bounded AT-SPI reader, context gate, tool-free draft agent over `mseries-ai`, audit, the `trigger` command (focused window from the compositor's `org.pantheon.gala` `GetWindows`) and the IBus input service (Tab inserts, Esc or any other key or focus change discards, 60 s limit, previous input method restored, password and unknown fields refused with the dictation input's checks). `install-smart-reply.sh` installs it and replaces the first Python bridge in place (same unit, same Ctrl+Alt+R shortcut, same rules file). The popup is still a notification plus an IBus hint; there is no settings panel, screenshots, right-click expose or automatic suggestions, and a real chat-app trial of Tab has not been recorded (see [smart-reply/README.md](smart-reply/README.md)).** It records an owner idea so it is not lost, says which existing
 pieces it would reuse, and scopes a first slice that can be built and judged without committing to the whole thing.
 
 ## Intent
@@ -268,4 +268,15 @@ Built and unit-tested against synthetic fixtures; no window is read by anything 
 
 Choices taken without the owner's answers to the open questions: ask-first default policy, local-only model, popup via IBus (not built), `mseries-ai` used from its location on `dev`. The hotkey is a validated setting with no default.
 
-Try it: `cargo run -p mseries-reply -- packet rust/mseries-reply/fixtures/lunch.json --rules <rules.json>`.
+Try it (fixtures; no window is read): `cargo run -p mseries-reply -- packet rust/mseries-reply/fixtures/lunch.json --rules <rules.json>`.
+
+## Desktop path status — Rust replaces the Python bridge (2026-10-23)
+
+| Design item | State |
+|---|---|
+| AT-SPI reader (`tree.rs`, `a11y.rs`, `source.rs`) | Done. Same bounds as the Python bridge: 1.2 s, 2500 nodes, 200 children per node, 300 ms per call; the message box plus the text above it, newest kept. It reads roles and states first and only the newest few text nodes after the rules allowed the read; the box's own text is never read. Live: finds the composer in a GTK entry; reaches Brave (Teams) and Signal windows (counts probed with `mseries-reply probe`). |
+| Trigger (`trigger.rs`) | Done: `mseries-reply trigger [--in N] [--dry-run]`, exit codes as before. A chat app is one with `X-MSeries-Chat=true` **or** one the rules file allows by name (the Python bridge had only that list, and no desktop entry carries the marker yet). Search and address fields are refused as not a message box. |
+| IBus input service (`ibus.rs`, `held.rs`) | Done in Rust over zbus (no libibus): registers the component, serves the factory and engine, commits with `CommitText`, hints with auxiliary text, restores the previous engine (from the daemon, else the desktop input sources). Also refuses a field whose content type is password/PIN or private. |
+| Rules file | The first slice's `~/.config/mseries/smart-reply.json` loads unchanged (allow-list/block-list, `apps`, `contacts` matched as text in the window title); the newer `rules` list format works too. `style` and `endpoint` are ignored (they come from `mseries-ai`). |
+| Verified live (2026-10-23) | On the real ibus-daemon with a GTK entry and a test input context: Tab committed the draft once, Esc and another key committed nothing, the previous engine (`mseries-dictation`) was restored each time, a sensitive field was refused, and the draft was discarded when the window lost focus. The full chain (gala window, rules, AT-SPI read, local model about 4 s, hold, Tab) ran against that GTK test window. |
+| Not verified | A physical Command+Option+R press and Tab in the owner's chat apps (Teams in Brave, Signal, Newelle); Esc and focus-loss behaviour in Chromium; popup placement; RAM and thermal numbers; apps that expose no accessibility tree. |

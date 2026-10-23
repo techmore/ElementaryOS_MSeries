@@ -2,13 +2,16 @@
 Description=Smart Reply input method (holds one drafted reply; Tab inserts it)
 After=graphical-session.target
 PartOf=graphical-session.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=dbus
 BusName=org.techmore.SmartReplyInput
-ExecStart=/usr/bin/python3 %h/.local/share/mseries/smart-reply/smart-reply-input.py
+ExecStart=%h/.local/bin/mseries-reply input-service
 Restart=on-failure
 RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
 
 [Install]
 WantedBy=graphical-session.target
