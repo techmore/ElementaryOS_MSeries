@@ -32,6 +32,27 @@ if [ -d "$H/.cache/cargo-target" ] && [ -z "$(find "$H/.cache/cargo-target" -max
   run rm -rf "$H/.cache/cargo-target"
 fi
 
+# Inside the shared target dir rustc keeps one incremental folder per build configuration, so a crate that was
+# built with different flags or features many times leaves dozens (measured 2026-10-23: 235 folders, 3.4 GB, 276 MB
+# after keeping the newest per crate). Only the newest per crate is ever reused, so the rest goes at no rebuild cost.
+inc="$H/.cache/cargo-target/debug/incremental"
+if [ -d "$inc" ]; then
+  python3 - "$inc" "$DRY" <<'PY'
+import os, re, shutil, sys, collections
+root, dry = sys.argv[1], sys.argv[2] == "--dry-run"
+groups = collections.defaultdict(list)
+for d in os.listdir(root):
+    m = re.match(r"^(.*)-[a-z0-9]+$", d)
+    if m and os.path.isdir(os.path.join(root, d)):
+        groups[m.group(1)].append((os.path.getmtime(os.path.join(root, d)), d))
+stale = [d for items in groups.values() for _, d in sorted(items, reverse=True)[1:]]
+for d in stale:
+    if not dry:
+        shutil.rmtree(os.path.join(root, d), ignore_errors=True)
+print(f"  {'would remove' if dry else 'removed'} {len(stale)} stale incremental folders ({len(groups)} crates keep their newest)")
+PY
+fi
+
 say "== node_modules outside active repos =="
 find "$H/src" "$H/claude-work" -maxdepth 4 -type d -name node_modules -prune 2>/dev/null |
   while read -r n; do run rm -rf "$n"; done

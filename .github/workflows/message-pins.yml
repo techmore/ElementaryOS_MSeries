@@ -6,6 +6,11 @@ on:
       - mseries/phone-setup/**
       - mseries/install-phone-setup.sh
       - .github/workflows/message-pins.yml
+# New commits replace only checks for this workflow and PR. Publishing is not preempted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   linux-import:
     name: Native pin import and private keyring (Linux)

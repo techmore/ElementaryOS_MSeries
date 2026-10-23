@@ -49,8 +49,8 @@ def verify_image_output(output):
     verify_youtube_payload(roots[0])
     source = ROOT / 'mkosi.images/apple-silicon/mkosi.extra'
     required = [p.relative_to(source) for p in source.rglob('*')
-                if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
-    missing = [str(p) for p in required if not (roots[0] / p).is_file()]
+                if (p.is_file() or p.is_symlink()) and '__pycache__' not in p.parts and p.suffix != '.pyc']
+    missing = [str(p) for p in required if not (roots[0] / p).exists()]
     if missing:
         raise ValueError('Built live ISO is missing hardware payload: ' + ', '.join(missing))
 
@@ -69,7 +69,10 @@ class ImageWiringTests(unittest.TestCase):
     def test_built_live_image_requires_hardware_payload(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / 'liveiso_test'
-            shutil.copytree(ROOT / 'mkosi.images/apple-silicon/mkosi.extra', root)
+            shutil.copytree(ROOT / 'mkosi.images/apple-silicon/mkosi.extra', root, symlinks=True)
+            unit = root / 'usr/lib/systemd/system/speakersafetyd.service'
+            unit.parent.mkdir(parents=True, exist_ok=True)
+            unit.write_text('[Service]\nExecStart=/usr/bin/speakersafetyd\n')
             plugin = root / 'usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so'
             plugin.parent.mkdir(parents=True, exist_ok=True)
             plugin.write_bytes(b'patched network indicator: Show speed in menu bar')
@@ -90,7 +93,7 @@ class ImageWiringTests(unittest.TestCase):
         source = ROOT / 'mkosi.images/apple-silicon'
         with tempfile.TemporaryDirectory() as directory:
             image = Path(directory) / 'image'
-            shutil.copytree(source / 'mkosi.extra', image,
+            shutil.copytree(source / 'mkosi.extra', image, symlinks=True,
                             ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
             # The real build installs this compiled component before finalize.
             unit = image / 'usr/lib/systemd/system/touchegg.service'
@@ -113,7 +116,7 @@ class ImageWiringTests(unittest.TestCase):
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
-            expected = {p.relative_to(image) for p in image.rglob('*') if p.is_file()}
+            expected = {p.relative_to(image) for p in image.rglob('*') if p.is_file() or p.is_symlink()}
             payload = image / 'usr/bin/package-payload'
             payload.parent.mkdir(parents=True, exist_ok=True)
             payload.write_text('must be pruned')
@@ -127,7 +130,8 @@ class ImageWiringTests(unittest.TestCase):
                                 'PATH': str(tools) + os.pathsep + os.environ['PATH']}, check=True)
             for path in expected:
                 with self.subTest(path=str(path)):
-                    self.assertTrue((image / path).is_file())
+                    target = image / path
+                    self.assertTrue(target.is_symlink() if target.is_symlink() else target.is_file())
             verify_youtube_payload(image)
             icon = image / 'usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg'
             icon.unlink()
@@ -169,6 +173,9 @@ class ImageWiringTests(unittest.TestCase):
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
+        self.assertIn('speakersafetyd', overlay)
+        self.assertIn('speakersafetyd', packages('mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf'))
+        self.assertIn('speakersafetyd', packages('mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf'))
         runtime = overlay - {'initramfs-tools'}
         self.assertTrue(runtime)
         brave = json.loads((ROOT / 'mseries/video-decode/brave-factory.json').read_text())
@@ -187,6 +194,13 @@ class ImageWiringTests(unittest.TestCase):
             with self.subTest(consumer=consumer):
                 self.assertFalse(runtime - packages(consumer),
                                  f'{consumer} loses runtime dependencies after overlay pruning')
+
+    def test_factory_overlay_enables_speaker_safety_without_dsp(self):
+        source = ROOT / 'mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/multi-user.target.wants/speakersafetyd.service'
+        self.assertEqual('../speakersafetyd.service', os.readlink(source))
+        finalize = (ROOT / 'mkosi.images/apple-silicon/mkosi.finalize').read_text()
+        self.assertIn('multi-user.target.wants/speakersafetyd.service', finalize)
+        self.assertNotIn('asahi-audio', packages('mkosi.images/apple-silicon/mkosi.conf'))
 
 
 if __name__ == '__main__':

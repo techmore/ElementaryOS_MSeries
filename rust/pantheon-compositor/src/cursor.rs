@@ -182,6 +182,7 @@ where
     };
 
     if let Some(preview) = state.corner_snap_preview.as_ref()
+        && !state.session_locked
         && preview.output.name() == output.name()
     {
         let buffer = state.solid_buffers.get(
@@ -399,14 +400,19 @@ where
         return Vec::new();
     };
     let scale = Scale::from(output.current_scale().fractional_scale());
-    render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
-        renderer,
-        surface.wl_surface(),
-        (0, 0),
-        scale,
-        1.0,
-        Kind::Unspecified,
-    )
+    // The pointer (and any volume/brightness OSD) above the lock surface.
+    let mut elements = render_cursor_elements(renderer, state, output);
+    elements.extend(
+        render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
+            renderer,
+            surface.wl_surface(),
+            (0, 0),
+            scale,
+            1.0,
+            Kind::Unspecified,
+        ),
+    );
+    elements
 }
 
 /// Snap Assist: live, scaled thumbnails of the other windows in the empty

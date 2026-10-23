@@ -1,3 +1,57 @@
+## Bounded Aurora CI dependency downloads — 2026-10-22
+
+The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
+mirror at 50.9 kB/s, before kernel compilation. Aurora CI now first uses the
+official HTTPS Ubuntu ports archive, then HTTPS Azure as a fallback. Metadata
+fetches are limited to 60 seconds and package downloads to 240 seconds per
+mirror. Packages retain normal Ubuntu signature verification. Installation
+starts only after a successful download and uses `--no-download`; the timeout
+does not interrupt dpkg to switch mirrors. Runner source files are not modified.
+Rustup has a five-minute bound and the dependency step a 20-minute bound.
+
+Validation: 17 CI regression tests passed, including slow/erroring mirrors,
+failed metadata, no installation after failed downloads, preserved signed
+sources, host execution refusal, and workflow wiring. Full GitHub kernel build
+and package inspection still need to pass on the updated PR head before merge.
+No desktop installation, kernel change or service restart.
+
+## Superseded PR CI cancellation — 2026-10-22
+
+Source-only: all ten PR workflows now group by workflow name plus PR number
+(with branch ref as the non-PR fallback), cancelling in-progress runs only for
+`pull_request` events. This prevents old revisions of one PR from accumulating
+runner jobs across the shared account, as happened while Rupert awaited deployment.
+Different PRs/workflows stay independent; pushes/manual runs are not preempted.
+The package publisher keeps its global `mseries-apt-publish` lock and release-only
+workflows retain their existing policy. A lightweight workflow checks the policy
+on every workflow change, including future PR workflows.
+
+Validation: nine regression tests passed, including removal/misconfiguration
+mutations for every PR workflow, duplicate workflow names, group isolation, and
+release/publisher lock preservation. No desktop install or service restart.
+Next: merge into dev after CI; existing branches need a new PR run using this
+policy. Already-running legacy checks are not retroactively cancelled. This
+removes superseded-run backlog, not contention from legitimate current builds.
+
+## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
+
+Owner explicitly deferred both apps and rejected the current combined launcher
+experience. MESSAGING-STATUS.md is the authoritative current status on dev;
+AGENTS.md directs future agents to it. Older scoped successes and installed-client
+reports must not be interpreted as completion. Resume only on a new explicit
+owner request. Existing apps/data remain intact; no unfinished app code is merged
+by this documentation change.
+
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
@@ -60,6 +114,22 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+## Factory speaker protection wired into ARM64 images — 2026-10-21
+
+Ubuntu Resolute `speakersafetyd` 1.1.2-4 now ships in the Apple Silicon overlay,
+live installer and sysupdate package set, with its `multi-user.target` link
+preserved through pruning. DSP remains excluded pending first-boot volume
+qualification. Seven image-wiring tests and Python compilation pass.
+Artifact-only run [39712066587](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39712066587)
+installed the pinned package in the build and passed the liveiso payload check,
+but sysupdate assembly failed in `systemd-repart` (`Verity signature partition
+is empty`); no complete ISO was produced. The recipe also masked mkosi's error
+until checksum generation. Next: fix the repart failure and error propagation,
+rebuild, inspect both payloads, then install/boot that exact ISO in an isolated
+ARM64 VM. The October 18 VM receipt is prior evidence. Physical Apple audio and
+boot remain open.
+[Audit and provenance](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
 
 ## Rust compositor: menus, notification cards, attention — 2026-10-21
 
