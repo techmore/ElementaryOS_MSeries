@@ -11775,3 +11775,12 @@ features; those need native Incus design, not blind Swift feature parity claims.
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
+
+## Smart Reply chat-app markers — 2026-10-23
+
+`X-MSeries-Chat=true` added to the Rust Messages desktop entry (with `X-MSeries-Chat-Adapter=blueferry`) and the T3 port
+(`io.github.techmore.ClaudePantheonRs`). Newelle is a Flatpak, so `mseries/local-ai/mark-newelle-chat.py` (called from
+`install-assistants.sh`) writes a user-level copy of its exported entry with the marker; `--remove` deletes only its own copy. 4 unit
+tests pass, including one that the two repo entries carry the key. The key does nothing by itself: Smart Reply is off by default and
+its core (`rust/mseries-reply`) reads no window yet. Not installed on the running desktop, nothing restarted. The Messages & Signal
+launcher and Signal Desktop are not marked (deferred by the owner).
