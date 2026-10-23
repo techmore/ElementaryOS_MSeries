@@ -1,8 +1,8 @@
 //! The Settings window (issue #476): a Granite-style sidebar of pages with switches and dropdowns.
 //! Appearance (follow system / light / dark), Defaults (provider and permission mode, per project),
-//! Server (pairing state, pair/unpair, the MCP endpoint), Notifications, Advanced (renderer override,
-//! keyring status). Persisted in `~/.config/claude-pantheon-rs/settings.json`; the renderer choice is
-//! read by `main()` before GTK starts.
+//! Providers (T3 sign-in management), Server (pairing state, pair/unpair, the MCP endpoint),
+//! Notifications, Advanced (renderer override, keyring status). Persisted in
+//! `~/.config/claude-pantheon-rs/settings.json`; the renderer choice is read by `main()` before GTK starts.
 
 use crate::chat::label;
 use gtk::{gio, glib, pango, prelude::*};
@@ -158,10 +158,12 @@ impl Settings {
 /// What the window needs to show and act on; kept small so the settings module stays independent.
 pub struct Context {
     pub providers: Vec<(String, String)>, // (instance id, name)
-    pub projects: Vec<(String, String)>,  // (id, title)
+    pub provider_summary: String,
+    pub projects: Vec<(String, String)>, // (id, title)
     pub server: Option<String>,
     pub server_label: Option<String>,
     pub keyring: bool,
+    pub on_manage_providers: Rc<dyn Fn()>,
     pub on_pair: Rc<dyn Fn()>,
     pub on_unpair: Rc<dyn Fn()>,
 }
@@ -331,6 +333,26 @@ impl SettingsWindow {
             }
         }
         stack.add_titled(&defaults, Some("defaults"), "Defaults");
+
+        // ---- Providers ----------------------------------------------------------------------
+        let providers = page(
+            "Providers",
+            "Sign in to the coding assistants enabled on your T3 Code server. ChatGPT is provided through Codex.",
+        );
+        providers.append(&row(
+            "Provider status",
+            Some(&ctx.provider_summary),
+            &gtk::Box::new(gtk::Orientation::Horizontal, 0),
+        ));
+        let manage = gtk::Button::with_label("Manage providers…");
+        let on_manage = ctx.on_manage_providers.clone();
+        manage.connect_clicked(move |_| on_manage());
+        providers.append(&row(
+            "Sign-in and accounts",
+            Some("Connect, check status, or sign out of a provider."),
+            &manage,
+        ));
+        stack.add_titled(&providers, Some("providers"), "Providers");
 
         // ---- Server --------------------------------------------------------------------------
         let server = page(

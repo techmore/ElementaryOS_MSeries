@@ -1,6 +1,6 @@
-//! The Diagnostics page: the server's resource telemetry subscription (sampled by its native
-//! resource-monitor sidecar only while someone subscribes), shown as per-group CPU and RSS sparklines
-//! and a process table. The client runs no sampler of its own.
+//! The Diagnostics page: server resource telemetry (sampled by its native resource-monitor sidecar
+//! only while someone subscribes), aggregate local thread-cache metrics, per-group CPU/RSS sparklines
+//! and a process table. The client runs no resource sampler of its own.
 
 use crate::app::App;
 use crate::chat::label;
@@ -20,6 +20,7 @@ type History = VecDeque<(f64, f64)>;
 pub struct DiagnosticsPage {
     root: gtk::Box,
     status: gtk::Label,
+    cache_status: gtk::Label,
     groups: gtk::Box,
     processes: gtk::Box,
     /// group name → (cpu %, rss bytes) history, newest last.
@@ -40,6 +41,10 @@ fn mb(bytes: f64) -> String {
     } else {
         format!("{:.0} MB", bytes / 1024.0 / 1024.0)
     }
+}
+
+fn average_ms(total_micros: u64, samples: u64) -> String {
+    if samples == 0 { "—".into() } else { format!("{:.2} ms", total_micros as f64 / samples as f64 / 1000.0) }
 }
 
 fn sparkline(points: Vec<f64>, max_hint: f64) -> gtk::DrawingArea {
@@ -69,6 +74,12 @@ impl DiagnosticsPage {
         let status = label("", &["dim-label"]);
         status.set_margin_start(24);
         status.set_margin_top(12);
+        let cache_status = label("", &["caption", "dim-label"]);
+        cache_status.set_margin_start(24);
+        cache_status.set_margin_end(24);
+        cache_status.set_margin_top(4);
+        cache_status.set_wrap(true);
+        cache_status.set_xalign(0.0);
         let groups = gtk::Box::new(gtk::Orientation::Vertical, 8);
         groups.set_margin_start(24);
         groups.set_margin_end(24);
@@ -80,6 +91,7 @@ impl DiagnosticsPage {
         processes.set_margin_bottom(18);
         let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
         column.append(&status);
+        column.append(&cache_status);
         column.append(&groups);
         column.append(&processes);
         let scroll = gtk::ScrolledWindow::builder()
@@ -92,6 +104,7 @@ impl DiagnosticsPage {
         DiagnosticsPage {
             root,
             status,
+            cache_status,
             groups,
             processes,
             history: RefCell::new(Vec::new()),
@@ -112,6 +125,7 @@ impl DiagnosticsPage {
     pub fn start(&self, app: Rc<App>, rpc: Rpc) {
         self.stop(&rpc);
         self.status.set_text("Waiting for the first sample…");
+        self.update_cache_status();
         let (id, mut stream) = rpc.subscribe("subscribeResourceTelemetry", json!({}));
         *self.sub_id.borrow_mut() = Some(id);
         glib::spawn_future_local(async move {
@@ -135,6 +149,7 @@ impl DiagnosticsPage {
 
     fn apply(&self, v: &Value) {
         *self.samples.borrow_mut() += 1;
+        self.update_cache_status();
         let interval = v.get("sampleIntervalMs").and_then(Value::as_u64).unwrap_or(0);
         let health = &v["health"];
         self.status.set_text(&format!(
@@ -218,6 +233,20 @@ impl DiagnosticsPage {
                 self.processes.append(&l);
             }
         }
+    }
+
+    fn update_cache_status(&self) {
+        let stats = crate::thread_cache::stats();
+        self.cache_status.set_text(&format!(
+            "Local thread cache · {} hits / {} misses · {} writes · {} skipped · {} failed · avg read {} · avg write {} (this app session)",
+            stats.hits,
+            stats.misses,
+            stats.writes,
+            stats.skipped_writes,
+            stats.write_failures,
+            average_ms(stats.read_micros, stats.reads),
+            average_ms(stats.write_micros, stats.saves),
+        ));
     }
 }
 

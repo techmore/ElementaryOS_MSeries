@@ -1,10 +1,11 @@
-# Claude for elementary OS (Rust)
+# T3-R Pantheon
 
-A native Pantheon client for AI coding agents: Claude Code, Codex, OpenCode and Grok through the
+A native Pantheon client for AI coding agents: Claude Code, ChatGPT via Codex, OpenCode, Grok Build and ACP providers through the
 [T3 Code](https://github.com/pingdotgg/t3code) server, with your local Claude Code transcripts
-(`~/.claude/projects/*/*.jsonl`) as the offline view. gtk4-rs 0.11 + granite-rs 3.3, one process,
-~75 MB, no CPU at idle. Built to replace the Electron desktop app (19 processes, 2.4 GB) on an
-Apple Silicon Mac running elementary OS; numbers in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), the shared GTK-on-Asahi
+(`~/.claude/projects/*/*.jsonl`) as the offline view. gtk4-rs 0.11 + granite-rs 3.3, one process
+and one T3 connection for both surfaces. The measured full-client baseline is in
+[`docs/PERFORMANCE.md`](docs/PERFORMANCE.md); quick-panel memory has not yet been measured separately. Built to replace
+the Electron desktop app (19 processes, 2.4 GB) on an Apple Silicon Mac running elementary OS; the shared GTK-on-Asahi
 findings in [`mseries/GTK-PERFORMANCE-ASAHI.md`](../../mseries/GTK-PERFORMANCE-ASAHI.md). This directory is the source;
 the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
@@ -14,7 +15,9 @@ the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
 ```sh
 cargo build --release
-./target/release/claude-pantheon-rs            # or, with the shared target dir in ~/.cargo/config.toml:
+./target/release/claude-pantheon-rs            # opens the full desktop chat
+./target/release/claude-pantheon-rs --quick    # opens the compact status window
+# or, with the shared target dir in ~/.cargo/config.toml:
 ~/.cache/cargo-target/release/claude-pantheon-rs
 ```
 
@@ -24,6 +27,9 @@ Other entry points:
 
 | Command | What |
 |---|---|
+| `claude-pantheon-rs` or `--full` | open the full desktop client |
+| `claude-pantheon-rs --quick` | open the compact status window |
+| `claude-pantheon-rs --new-thread`, `--usage`, `--thread ID` | open the full client at that destination |
 | `claude-pantheon-rs --index` | list the offline sessions the sidebar shows, with timing |
 | `claude-pantheon-rs --quit-after-frame` | draw one frame, print the start-up time, exit (benchmarks) |
 | `claude-pantheon-rs --t3-dump DIR [TOKEN]` | record the server's answers as JSON (fixtures); pairs first when a token is given |
@@ -56,18 +62,100 @@ The same actions sit in the app menu (header bar, right) with their accelerator 
 and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
 Forget Pairing and About (version, server, providers ready).
 
+## Dock popover, Wingpanel indicator, and quick window
+
+In both the regular floating Dock and taskbar mode, the T3-R launcher owns an attached native GTK popover: hover opens after 250 ms, the pointer can
+cross to the popover during a 450 ms grace period, click pins or toggles it, and Escape or an outside click dismisses
+it. The popover shows the selected provider and paired T3 server separately, usage for that provider, and live activity.
+New chat, Usage, Settings, Open full chat, and live thread rows route to the matching destination in the full client.
+This behavior is scoped to the T3-R launcher and does not change the Dock's taskbar-mode setting.
+
+The optional native Wingpanel indicator (`wingpanel-indicator/`) is a separate system-panel surface with selected-provider
+usage and activity. `--quick` opens a separate compact status window for explicit use; it is not attached to the Dock icon.
+The Dock popover, Wingpanel indicator, and quick window read the local versioned `status.json` snapshot through file
+monitors; they do not open another RPC socket or poll. Writes use an atomic rename and mode `0600`. On disconnect the feed
+keeps the last successful snapshot as stale; normal application shutdown also marks it stale. The Wingpanel indicator
+additionally watches the client session D-Bus name, so an unclean process exit marks cached activity stale even when the
+client cannot write a shutdown snapshot. The Dock popover and quick window identify the selected provider separately
+from the paired T3 server; when no provider is selected, they say so instead of showing the server as an account. The
+Wingpanel summary scopes usage to the selected provider. Its activity rows show a thread's model on a separate
+caption line when it belongs to that provider, and the list scrolls within a bounded viewport. Other accounts' model
+names are omitted from the compact status feed. Stale status is treated
+as offline even if feed flags disagree, and stale activity cannot open a thread. Unpairing or switching environments
+clears the cache. The Wingpanel module is included in the Debian package by default. Set
+`CLAUDE_PANTHEON_ENABLE_INDICATOR=0` only for a non-Wingpanel build. Wingpanel loads modules from a system directory,
+so a user-local app install alone cannot add the tray entry; install the Debian package on the target desktop to
+install both surfaces.
+
+## Thread resume cache
+
+Settled T3 thread views are cached under `~/.cache/claude-pantheon-rs/threads/`, scoped to the selected environment
+and thread. Each atomic, mode-`0600` record keeps the bounded view, history marker and `snapshotSequence` together;
+environment directories use mode `0700`. The client reopens from that view and asks T3 for `afterSequence`, ignores
+duplicate replay events, and keeps send, stop and approval actions disabled until synchronization completes. Active
+turns stay in memory and are persisted only after they settle, so token-by-token updates do not rewrite the cache.
+When the same open thread is re-subscribed after a disconnect, its previous reading position is restored unless the
+reader was already near the newest message.
+If the thread stream ends while the main connection remains open, the last view is marked interrupted and live
+actions stay disabled until the user retries synchronization.
+Live item updates use a process-local identity index, rebuilt from the cached projection on demand, so replaying
+large histories does not scan the full item list for every event. Version-3 and version-4 JSON records remain readable;
+new version-5 records use LZ4 compression and preserve the same replay cursor.
+Compressed records are capped at 8 MiB each, with an uncompressed limit of 64 MiB per record and a 64 MiB / 32-entry
+disk budget per environment. This keeps large text histories available across restarts without unbounded cache growth.
+Corrupt, wrong-scope and old-schema files are discarded; forgetting or removing an environment clears its thread cache.
+A replay gap beyond the server's retention window still falls back to T3's current snapshot.
+
+## Reading older chat history
+
+The full chat starts with T3's bounded thread window. Scrolling to the top loads the next older page from T3 using its
+opaque history cursor; older messages are prepended without moving the part of the conversation already on screen.
+Rows deduplicate by source thread and item identity, including inherited rows. The Load earlier / Retry control stays
+at the top as a fallback and becomes Cancel while a page is in flight. Cancel, thread changes, cursor changes and
+disconnects abort the HTTP request without advancing the saved cursor. History pages can be fetched while connected;
+the offline cache compresses all loaded items together with their next cursor. If a record exceeds either its
+uncompressed or compressed size limit, the previous valid cache stays in place rather than advancing its cursor past
+unsaved history.
+
 ## Sidebar
 
-Threads sit under their project with the provider's accent dot, a spinner while a turn runs, a
-"?" badge when a prompt waits and a blue dot for activity since the last visit (the server's
-`lastVisitedAt`; opening a thread records a visit). Pinned threads lead their section. Right-click or
-long-press a thread for Pin, Rename, Hand Off to Repo, Copy Link (a `claude-pantheon-rs --thread <id>`
-command) and Archive. Section headers collapse on click and project headers can be dragged into the
-order you want; both persist in `~/.config/claude-pantheon-rs/sidebar.json`.
+Threads sit in project/repository groups ordered by recent activity, with pinned chats leading each
+group. A chat row shows T3's repository identity and saved thread branch when those fields exist;
+generic workspaces and chats without Git context remain visible without a made-up repository label.
+The bell filters to unanswered prompts, unseen completed work and unseen failures, sorted by most
+recent attention. Its badge shows the number of matching chats. The sidebar uses repository and
+branch metadata already present in the T3 shell snapshot, avoiding a Git/status request for every row.
+That keeps list rendering light; if an agent switches worktrees outside T3's tracked branch update,
+the displayed branch may lag until T3 refreshes the thread metadata.
+
+Rows also show the provider accent, a spinner while a turn runs, a "?" badge when a prompt waits and
+a blue dot for activity since the last visit (the server's `lastVisitedAt`; opening a thread records a
+visit). Right-click or long-press a thread for Pin, Rename, Hand Off to Repo, Copy Link (a
+`claude-pantheon-rs --thread <id>` command) and Archive. Section headers collapse on click and project
+headers can be dragged into the order you want; the filter and order persist in
+`~/.config/claude-pantheon-rs/sidebar.json`.
+
+## Repository issue workflow
+
+Repos → Issues supports local issue briefs with problem, research/context, success criteria and
+constraints, then explicit GitHub filing. When MSeries Assistant is ready on the paired server,
+**Refine locally** opens an unsent first-pass chat with that local provider selected. You can switch
+to another connected T3 provider in the same composer for research and refinement. The local prompt
+is capped at 16,000 characters and asks for a compact brief; its underlying model is managed by the
+paired server and checked when you send. Issue labels and
+readiness control the repo workflow; provider selection remains a separate T3 decision. Draft fields
+scroll within the window, and the action buttons wrap on narrow layouts. The issue list loads open and closed issues
+in pages of up to 100, with Open, Resolved and All filters. **Load more issues** advances the selected state, or both
+states in All. Chats grouped beneath an issue remain browsable after it closes; repo backlog and runner counts continue
+to include open issues only.
 
 ## Composer
 
-The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
+The composer keeps a **Next message · Provider · Model** summary above its controls. The thread header shows the
+provider's friendly model name, T3 repository identity and saved branch, project path, and the local checkout branch
+when that workspace is accessible. A differing checkout is shown alongside the saved T3 branch; the tooltip retains
+the full context if the header line is shortened. Long thread titles use middle ellipsis, with the complete title in
+the tooltip. The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
 them: each becomes a chip, uploaded through the server's `attachments.createUploadUrl` and sent with
 the message (10 attachments, 10 MB per image, 50 MB per file). Typing `@` opens a fuzzy picker over the
 thread's project (`projects.searchEntries`) and inserts `@path`. The draft is kept per thread in
@@ -86,6 +174,46 @@ On loopback the client also points the server's Claude provider at the Claude Co
 the desktop app (`~/.config/Claude/claude-code/<version>/<hash>/claude`) when the server cannot find
 `claude` on PATH.
 
+## Provider sign-in
+
+Open **Settings → Providers → Manage providers…** to see server-reported status and sign in or out of
+Claude Code, ChatGPT through Codex, OpenCode and Grok Build. The sign-in window handles browser and
+device-code steps, terminal prompts and credential forms, and lets you choose among sign-in methods
+and saved accounts advertised by the server. The T3 Code server owns provider credentials; the client
+sends only the responses needed to complete the current sign-in flow. Providers must be installed and
+enabled on the server before they can be connected here.
+
+The same page can search the ACP Registry or add a local ACP command. The provider rows reflect only agents returned
+by the paired server; the **DeepSeek Harness…** button is a setup form, not a claim that Harness is installed or
+connected. It prefills `dsh --profile acp`; this requires `dsh` to already be installed and a DeepSeek API key configured
+in Harness on the paired T3 server. Harness is experimental and not security-audited; review its [safety notice](https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md)
+before enabling it. The server runs the agent against the workspace T3 exposes. DeepSeek API context caching is
+automatic and server-side, so the client does not duplicate it with a disk cache. DeepSeek Harness ACP keeps KV reuse
+append-only while the selected route and assembled prefix stay stable; keep provider, model and tool configuration
+stable when possible.
+
+**MSeries Assistant…** adds the paired server's existing local assistant as an
+ACP provider. Install the bridge on that server with
+`python3 mseries/local-ai/configure-assistants.py --install-acp`; this keeps the
+current Newelle and model settings intact. It reuses the supervised local model
+and the sixteen scoped MSeries tools, with T3 permission prompts for writes. It
+does not start or switch a model service. The optional `--endpoint` argument
+can select another already-running loopback profile. See
+[`mseries/local-ai/README.md`](../../mseries/local-ai/README.md) for setup and
+the Liquid/ANE candidate limits.
+
+## Usage and status (CodexBar-style)
+
+The chat client includes the CodexBar-style usage view, so provider usage lives beside the threads that
+use it. **Usage** combines server-reported 5-hour, weekly and monthly plan windows with reset times and
+the next-provider capacity decision, then shows 30-day tokens, output, API-equivalent cost, model breakdowns
+and a 7-day activity chart for Claude, Codex, OpenCode and Grok. Cache reads, cache writes and savings appear only
+when the corresponding fields are present in T3's usage summary; missing server metrics are not shown as zero. The
+optional Wingpanel indicator shows the selected chat provider's quota and activity summary on hover; clicking it opens
+quota gauges, running threads and permission prompts, with thread links that open in this client. Other provider
+accounts remain in Settings. The app's `--quick` window is a separate compact status window. Both read the local status
+feed without starting another connection.
+
 ## What is where
 
 | Path | Role |
@@ -99,10 +227,10 @@ the desktop app (`~/.config/Claude/claude-code/<version>/<hash>/claude`) when th
 | `src/chat.rs` | message, tool-row, diff and permission-prompt widgets |
 | `src/render.rs` | Markdown (pulldown-cmark) as widgets; fenced code in GtkSourceView 5 with copy and wrap |
 | `src/usage.rs` | Usage page (CodexBar style) and plan-window gauges |
-| `src/workflow.rs`, `repos.rs` | pinned repos, issue backlog via `gh api`, "Start on this", the runner as T3 scheduled tasks |
+| `src/workflow.rs`, `repos.rs` | pinned repos, issue backlog and filing via `gh api`, local issue briefs, issue-organized chats, "Start on this", the runner as T3 scheduled tasks |
 | `src/handoff.rs` | "Hand Off to Repo": structured summary appended to the project's handoff doc, optional commit |
 | `src/changes.rs` | Changes page: file tree, inline/side-by-side diff in GtkSourceView, per-hunk copy, restore to checkpoint |
-| `src/diagnostics.rs` | the server's resource telemetry as sparklines |
+| `src/diagnostics.rs` | server resource telemetry as sparklines and process-local thread-cache hit/miss and disk-time totals |
 | `tests/render.rs` | drives the real window under Xvfb and writes the screenshots in `docs/` |
 | `bench.sh` | RSS and CPU of a process tree over 20 s, as a Markdown row |
 
@@ -159,7 +287,8 @@ own credential (keyed by server URL in the keyring or `credentials-<server>.json
 **SSH** (`ssh -N -L` kept open while the environment is current; the client talks to the local port) and **T3 Connect**
 (the relay environment a pairing URL names; the relay sign-in happens in the browser). Pasting a pairing URL for another
 server on the pairing page creates its environment. Switching drops the current connection and tunnel and reconnects;
-a dropped connection reconnects with the usual back-off.
+a dropped connection reconnects with the usual back-off. Retryable failures during the first connection or config read
+use that same supervisor; rejected credentials and protocol-version mismatches stop for user action.
 
 ## Empty, loading and error states
 

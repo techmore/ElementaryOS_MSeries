@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Production Dock.App/Launcher with a private, recording compositor service.
+const string T3_APP_ID = "io.github.techmore.ClaudePantheonRs";
+uint t3_name_owner = 0;
 [DBus (name="org.pantheon.gala.DesktopIntegration")]
 class QualificationService : Object {
     public uint version { get { return 1; } }
@@ -50,6 +52,42 @@ bool popup_mapped (Gtk.Widget w) {
     for(var c=w.get_first_child();c!=null;c=c.get_next_sibling()) if(popup_mapped(c)) return true;
     return false;
 }
+bool t3_popup_mapped (Gtk.Widget w) {
+    if (w.has_css_class ("taskbar-t3r-popup") && w.get_mapped ()) return true;
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (t3_popup_mapped(c)) return true;
+    return false;
+}
+bool competing_popup_mapped (Gtk.Widget w) {
+    if (w is Gtk.Popover && !(w is Gtk.PopoverMenu) && w.get_mapped () &&
+        !w.has_css_class ("taskbar-t3r-popup")) return true;
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (competing_popup_mapped(c)) return true;
+    return false;
+}
+bool subtree_has_label (Gtk.Widget w, string text) {
+    if (w is Gtk.Label && ((Gtk.Label) w).label == text) return true;
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) if (subtree_has_label(c,text)) return true;
+    return false;
+}
+Gtk.Widget? find_button_with_label (Gtk.Widget w, string text) {
+    if (w is Gtk.Button && subtree_has_label(w,text)) return w;
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) {
+        var found=find_button_with_label(c,text);
+        if (found!=null) return found;
+    }
+    return null;
+}
+void collect_text (Gtk.Widget w, StringBuilder text) {
+    if (w is Gtk.Label) text.append (((Gtk.Label) w).label + " ");
+    for (var c=w.get_first_child(); c!=null; c=c.get_next_sibling()) collect_text(c,text);
+}
+string label_with_class (Gtk.Widget w, string css_class) {
+    if (w is Gtk.Label && w.has_css_class (css_class)) return ((Gtk.Label) w).label;
+    for (var c=w.get_first_child();c!=null;c=c.get_next_sibling()) {
+        var found = label_with_class (c, css_class);
+        if (found.length > 0) return found;
+    }
+    return "";
+}
 Dock.Window make_window (uint64 uid, string id, bool focused=false) {
     var w = new Dock.Window (uid);
     var p = new HashTable<string,Variant> (str_hash,str_equal);
@@ -59,25 +97,30 @@ Dock.Window make_window (uint64 uid, string id, bool focused=false) {
 void show_fixture (bool dark) {
     Gtk.Settings.get_default ().gtk_application_prefer_dark_theme = dark;
     Gtk.Settings.get_default ().gtk_icon_theme_name = "elementary";
+    var dock_settings = new GLib.Settings ("io.elementary.dock");
+    dock_settings.set_boolean ("taskbar-mode", true);
     var css = new Gtk.CssProvider (); css.load_from_resource ("/io/elementary/dock/Application.css");
     Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (),css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-    var window = new QualificationWindow () { title="PR343 qualification", decorated=false, default_width=800, default_height=260 };
+    var window = new QualificationWindow () { title="PR343 qualification", decorated=false, default_width=800, default_height=700 };
     window.add_css_class ("taskbar"); if (dark) window.add_css_class ("dark");
     var box = new Gtk.Box (Gtk.Orientation.VERTICAL,20) { margin_top=24, margin_bottom=24, margin_start=24, margin_end=24 };
     var entry = new Gtk.Entry () { placeholder_text="Keyboard focus must survive hover" };
-    box.append (entry);
-    var row = new QualificationRow (); box.append (row); window.child=box;
-    string[] names={"teams","outlook","transient","closed"};
+    var spacer = new Gtk.Box (Gtk.Orientation.VERTICAL,0) { vexpand=true };
+    box.append (entry); box.append (spacer);
+    var row = new QualificationRow () { valign=Gtk.Align.END }; box.append (row); window.child=box;
+    string[] names={"teams","outlook","transient","closed","t3r"};
     Dock.Launcher[] launchers={};
-    for (int i=0; i<4; i++) {
-        string raw = i==0 ? "brave-teams.microsoft.com__v2_-Default" : i==1 ? "brave-outlook.office.com__mail_-Default" : i==2 ? "Uninstalled Qualification Utility" : "ClosedFixture";
+    for (int i=0; i<5; i++) {
+        string raw = i==0 ? "brave-teams.microsoft.com__v2_-Default" : i==1 ? "brave-outlook.office.com__mail_-Default" : i==2 ? "Uninstalled Qualification Utility" : i==3 ? "ClosedFixture" : "io.github.techmore.ClaudePantheonRs.desktop";
         var info=Dock.AppResolver.get_default ().resolve (raw); assert (info!=null);
         if (i<2) assert (info.get_id () == (i==0 ? "TeamsFixture.desktop" : "OutlookFixture.desktop"));
-        var app=new Dock.App (info, i!=2);
+        if (i==4) assert (info.get_id () == "io.github.techmore.ClaudePantheonRs.desktop");
+        var app=new Dock.App (info, i!=2 && i!=3);
         var wins=new GenericArray<Dock.Window> ();
         if (i==0) { wins.add(make_window(101,raw)); wins.add(make_window(102,"TeamsFixture.desktop")); }
         if (i==1) { wins.add(make_window(201,raw,true)); wins.add(make_window(202,raw)); }
         if (i==2) wins.add(make_window(301,raw));
+        if (i==4) wins.add(make_window(401,raw));
         app.update_windows(wins);
         var launcher=new Dock.Launcher(app); launchers+=launcher;
         row.append(launcher);
@@ -86,6 +129,24 @@ void show_fixture (bool dark) {
     }
 
     window.present ();
+    var t3_actions = new Gtk.EventControllerKey ();
+    t3_actions.key_pressed.connect ((key) => {
+        if (key == Gdk.Key.F6) {
+            if (t3_name_owner != 0) {
+                Bus.unown_name (t3_name_owner);
+                t3_name_owner = 0;
+            } else {
+                t3_name_owner = Bus.own_name (BusType.SESSION, T3_APP_ID, BusNameOwnerFlags.NONE);
+            }
+            return true;
+        }
+        Gtk.Widget? button = key == Gdk.Key.F7 ? find_button_with_label (launchers[4], "Open full chat") :
+            key == Gdk.Key.F8 ? find_button_with_label (launchers[4], "Live T3 work") : null;
+        if (button == null) return false;
+        button.activate ();
+        return true;
+    });
+    ((Gtk.Widget) window).add_controller (t3_actions);
     entry.changed.connect (()=>{try {FileUtils.set_contents(Environment.get_variable("QUAL_TYPED"),entry.text);}catch(Error e){error("%s",e.message);}});
     Timeout.add (250,()=>{entry.grab_focus();return Source.REMOVE;});
     Timeout.add (100,()=>{
@@ -93,14 +154,19 @@ void show_fixture (bool dark) {
         var data = new Json.Builder (); data.begin_object ();
         double sx,sy;window.get_surface_transform(out sx,out sy);
         data.set_member_name("surface_offset");data.begin_array();data.add_double_value(sx);data.add_double_value(sy);data.end_array();
-        Gtk.Widget[] widgets={entry,launchers[0],launchers[1],launchers[2],launchers[3]};
-        string[] keys={"entry","teams","outlook","transient","closed"};
+        Gtk.Widget[] widgets={entry,launchers[0],launchers[1],launchers[2],launchers[3],launchers[4]};
+        string[] keys={"entry","teams","outlook","transient","closed","t3r"};
         for(int i=0;i<widgets.length;i++) {
             Graphene.Rect rect; assert(widgets[i].compute_bounds(window,out rect));
             data.set_member_name(keys[i]);data.begin_array();data.add_double_value(rect.get_x());data.add_double_value(rect.get_y());data.add_double_value(rect.get_width());data.add_double_value(rect.get_height());data.end_array();
         }
         data.set_member_name("focused_entry");data.add_boolean_value(window.get_focus()!=null && (window.get_focus()==entry || window.get_focus().is_ancestor(entry)));
         data.set_member_name("menus");data.begin_array();foreach(var l in launchers)data.add_boolean_value(popup_mapped(l));data.end_array();
+        data.set_member_name("t3_popup");data.add_boolean_value(t3_popup_mapped(launchers[4]));
+        data.set_member_name("t3_competing_popup");data.add_boolean_value(competing_popup_mapped(launchers[4]));
+        data.set_member_name("t3_account");data.add_string_value(label_with_class(launchers[4], "taskbar-t3r-account"));
+        var t3_text=new StringBuilder (); collect_text (launchers[4], t3_text);
+        data.set_member_name("t3_text");data.add_string_value (t3_text.str);
         data.set_member_name("markers");data.begin_array();
         foreach(var launcher in launchers){var m=marker(launcher); assert(m!=null);var r=(Gtk.Revealer)m.get_ancestor(typeof(Gtk.Revealer)); data.begin_object();data.set_member_name("visible");data.add_boolean_value(r.reveal_child);data.set_member_name("focused");data.add_boolean_value(launcher.has_css_class("focused"));data.set_member_name("width");data.add_int_value(m.get_width());data.set_member_name("height");data.add_int_value(m.get_height());data.end_object();}
         data.end_array();data.end_object();var generator=new Json.Generator();generator.set_root(data.get_root());
@@ -111,8 +177,18 @@ void show_fixture (bool dark) {
 int main (string[] args) {
     Gtk.init ();
     var loop = new MainLoop ();
-    Bus.own_name (BusType.SESSION,"org.pantheon.gala",BusNameOwnerFlags.NONE,
-        (connection)=>{try {connection.register_object("/org/pantheon/gala/DesktopInterface",new QualificationService());}catch(Error e){error("%s",e.message);}},
-        ()=>show_fixture(args.length>1 && args[1]=="dark"));
+    t3_name_owner = Bus.own_name (BusType.SESSION, T3_APP_ID, BusNameOwnerFlags.NONE,
+        null,
+        () => Bus.own_name (BusType.SESSION, "org.pantheon.gala", BusNameOwnerFlags.NONE,
+            (connection) => {
+                try {
+                    connection.register_object ("/org/pantheon/gala/DesktopInterface", new QualificationService ());
+                } catch (Error e) {
+                    error ("%s", e.message);
+                }
+            },
+            () => show_fixture (args.length > 1 && args[1] == "dark"),
+            null),
+        null);
     loop.run (); return 0;
 }

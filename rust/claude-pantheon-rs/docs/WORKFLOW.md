@@ -15,6 +15,39 @@ plus `agent:ready` when it is specified well enough for an agent to take unatten
 thread links to it, the PR closes it, and the closing comment is the handoff summary
 (see "Hand off to repo" in INTEGRATIONS.md).
 
+### Issue intake and execution are separate stages
+The issue is the problem contract, not an implementation plan. **Draft issue** in the Repos → Issues
+view captures the problem, context/research, success criteria, and constraints/non-goals. Drafts
+stay on this device in `workflow.json` and save on close. Filing requires a title, problem statement,
+and success criteria. The filed issue describes what is wanted and how success can be recognized;
+the agent remains free to decide how to solve it, and its proposal is reviewed in the pull request.
+
+**Refine locally** is enabled when a ready MSeries Assistant provider is connected. It opens a repo
+chat with that local provider selected and a prefilled first-pass prompt; the request remains unsent
+until the owner reviews it. The prompt asks the assistant to separate facts from assumptions, identify
+scope questions, and keep implementation choices open. It does not edit files, file the issue, or start
+work. The owner can then switch to any connected T3 provider in the same composer for broader research
+and refinement. **Refine in T3 chat** opens the same reviewable flow with the project's normal provider
+selection. Accepted refinements are copied back into the brief before filing; neither assistant writes
+to the brief automatically. The local first-pass prompt is limited to 16,000 characters; an oversized
+draft is saved and the UI asks you to shorten it or use the normal T3 route rather than silently
+truncating context. The response is asked to stay within 220 words and avoid echoing clear input. T3
+currently exposes the ACP model as `Default`; the underlying local checkpoint is controlled by the
+paired server and is checked when you send, so ACP `ready` alone does not promise that the model worker
+can start under its memory guard.
+
+Issue preparation and work dispatch are separate routing decisions:
+- **Issue routing** decides which repo, lane, priority, and execution workflow fit the issue, and
+  whether it is ready for an unattended run. It does not choose an AI account based on token limits.
+- **Token/provider routing** chooses among the owner's connected T3 provider instances using their
+  authentication state and session/weekly capacity, while honoring the owner's provider policy. The
+  local first pass uses the explicitly configured MSeries Assistant; later research uses the provider
+  the owner chooses in the composer. Neither choice rewrites the issue's scope or acceptance criteria.
+
+The owner explicitly files the brief. `agent:ready` is off by default; choosing it adds that label
+for the repository workflow. The lane, priority, and readiness labels do not pick a provider. Once
+filed, execution dispatch and T3's authenticated-account/capacity routing remain separate decisions.
+
 ## The runner lives in the T3 server
 T3 already has the primitives (contracts in `~/claude-work/repos/t3code/packages/contracts/src`):
 - **Usage windows** (`providerUsageLimits.ts`): per provider instance, `windows[]` with
@@ -61,10 +94,21 @@ a webhook keeps its stored secret). The next run, not only the install, therefor
 with the most capacity.
 
 ## What the native client shows
-- **Repos** page: pinned repos, each with lane counts and the next issue up.
+- **Repos** page: pinned repos in saved order, followed by other repos sorted by recent chat activity. Each card
+  shows lane counts and the next issue up. Repo cards also show up to five
+  prioritized recent chats from matching T3 projects (pinned first, then chats needing attention, then latest
+  activity), with branch, activity state and age. Open a chat, pin/unpin it, or start a new chat in that checkout;
+  the checkout is added as a T3 project when needed. Repositories without chats remain visible, while generic
+  non-Git chats are not assigned to a repo. This list reuses the current T3 shell snapshot and does not poll Git
+  or open a second RPC connection for each row.
 - **Issues** panel per repo: live list (GitHub API through the server's token or `gh`),
   filters by lane/priority/agent label, "Start on this" which creates a thread with the chosen
-  provider and labels the issue; issue comments stream into the thread view.
+  provider and labels the issue; issue comments stream into the thread view. **Draft issue** saves
+  a problem brief locally, offers a user-reviewed intake chat, and files it only after the owner
+  clicks File issue. Each open issue can
+  also group multiple existing chats from that repo, with explicit links saved in the local app
+  workflow config. Closed issues leave the open-issue view, so their chats return to the ordinary
+  repo/chat list; reopening an issue restores its grouping. Grouping a chat never changes GitHub.
 - **Usage** page (milestone 3): the windows above as gauges with reset countdowns, per account,
   and the rotation decision ("next task → Codex, Claude at 94 % until 21:40").
 - **Wingpanel indicator**: running tasks, windows nearest exhaustion, pending permission prompts.

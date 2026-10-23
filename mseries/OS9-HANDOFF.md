@@ -17,6 +17,344 @@ cache preservation and evidence-based acceptance. No app implementation or draft
 SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
 only; no compiler, packaging or tests run for this change.
 
+## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
+
+Compact activity now labels each running or approval-waiting thread with its model only when that thread belongs to the
+provider selected in the full client; other connected accounts remain out of the Dock feed. The quick window and
+Dock popover show the same model label. The main chat and quick window use 1.12× system typography, included in this
+ARM64 package: `/tmp/t3-model-label-package-20261023/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`. The package
+binary SHA-256 is `5572f72ba64beb91bf5213ea0086c32b59da37f3010f4dde7f327b6aa69f4561`; it matches the Cargo release
+binary and was installed under `~/.local`. The pinned Dock 8.3.3 source rebuilt and installed under
+`~/.local/lib/mseries/dock`; its install restarted `pantheon-dock`. The app was not running, so its next launch will
+use the installed binary. Native builds completed; no tests, probes, CI, or interactive UI checks were run.
+
+The standard Debian package now includes the Wingpanel tray module by default; `CLAUDE_PANTHEON_ENABLE_INDICATOR=0` is an explicit non-Wingpanel opt-out. Built a combined ARM64 package at `/tmp/t3r-wingpanel-package-43615e1b/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb` (SHA-256 `96e113dd9675be378756ac0d869b6cd61575c29f01b122d23ebb4b68bc09823f`) and copied it to `~/Downloads/T3-R-Pantheon_0.1.0-arm64_20261022.deb`. The updated tray module now displays each selected-provider thread's model under its title and scrolls activity inside a 260-pixel viewport. Its combined package is `/home/sdolbec/Downloads/T3-R-Pantheon_0.1.0-arm64-model-tray-scroll_20261022.deb` (SHA-256 `8c8f87f9187961571c9a5c9bca4891610bef669dad7d22573a1e8c21fddf3ae6`). It is staged but not installed system-wide: the system still has the older `0.1.0-1~mseries2` package and its module is mapped in Wingpanel PID 1199376. PackageKit refused the mseries5 upgrade with “Failed to obtain authentication”; this session has `NoNewPrivs=1`, which blocks sudo as well. The user-local mseries5 client and Dock remain active. No probes or tests were run, and Wingpanel was not restarted.
+
+### Preserve chat reading position through reconnect — 2026-10-22
+
+When the currently open thread is resumed from its in-memory view after a disconnect, applying the server snapshot now restores the previous vertical offset unless the reader was already within 80 px of the bottom. New threads and disk-cache opens still start at the latest message. `cargo build --release` completed; the combined ARM64 package build also completed with the default Wingpanel module enabled. The refreshed package is `/home/sdolbec/Downloads/T3-R-Pantheon_0.1.0-arm64-mseries6_20261022.deb` (SHA-256 `3c27ce86c100ffdbb9b49a5700b667b34d3842df74379af29a08bff177990ae1`), version `0.1.0-1~mseries6`, so it upgrades the installed mseries5 package. The release binary was atomically installed under `~/.local/bin` and launched as PID 1883108; its process hash matches the installed file (`760fef507f74b00c12a07e9e29cc8f54c16544e81283ef4aaed1a9aeb7492d92`). The fresh feed is connected to `eos`, Codex selected, running 0, pending 0. The Dock stayed active without restart; the system package remains mseries5 because PackageKit could not obtain administrator authentication in this `no_new_privileges` session. Wingpanel was not restarted. No tests, probes or CI were run.
+
+Large-history cache follow-up: thread snapshots now use schema-v5 LZ4 records, capped at 8 MiB on disk and 64 MiB
+decoded per thread, while preserving the projection and history cursor in one atomic record. Existing v3/v4 JSON
+records remain readable and migrate on their next save. If a thread still exceeds either cap, its prior valid cache is
+kept. The optimized ARM64 package was built at `/tmp/t3-cache-package-20261022/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`
+and installed under `~/.local`; the Dock was restarted for its launcher refresh. The running app was left in place so
+any unsent composer draft is not disturbed at first. After confirming no saved drafts, active turns, or pending approvals,
+the app was relaunched through its desktop entry as PID 1798809. `/proc/1798809/exe` matches the installed binary
+(SHA-256 `b70d68e8a6f3ed96761a0973574081f9b82b134080a9e800a832ece8ffc7fdf3`); its fresh status feed is connected to
+`eos`, Codex selected, running 0, pending 0. `cargo check --release` and package compilation completed; no tests, CI,
+probes, or interactive UI checks were run.
+
+Issue intake now distinguishes **issue routing** (repo, lane, priority, readiness and acceptance criteria) from **provider/token routing** (the connected T3 account chosen for a model turn). Repos → Issues enables **Refine locally** when the ready `MSeries Assistant` ACP provider exists; it saves the local draft, opens an unsent intake prompt in a repo chat with that provider selected, and leaves filing/implementation to explicit later steps. The user can switch to another connected provider in the same composer for broader research. The intake asks for a concise problem, facts versus assumptions, observable success criteria, constraints/non-goals, and only material scope questions; it does not edit files, file the issue, or start implementation. The prompt caps input at 16,000 characters, saves rather than truncates an oversized draft, and asks for a maximum 220-word brief without repeating clear input. The composer label reports the ACP model alias (`MSeries Assistant · Default`) and says the underlying model is managed by the paired server and checked on Send. The draft fields scroll within the window and the five action buttons wrap at narrow widths. An isolated Xvfb GTK allocation at 360 px confirmed two action rows with no FlowBox child-width warnings after making the action container fill the available width. The standard **Refine in T3 chat** path remains available.
+
+The Repos page keeps repositories pinned in saved order and sorts the rest by latest chat activity. Each card shows up to five chats from matching T3 projects, sorted pinned-first, then by attention and recency. Rows include T3 branch, current checkout branch when readable, activity and age; they open the full thread and expose pin/unpin. A live-Git mismatch is labeled explicitly, while an unavailable checkout falls back to the T3 branch without claiming freshness. Branch probes run asynchronously once per project/pinned checkout during page load, not once per row. **New chat** targets that checkout and creates a T3 project if needed. The shell snapshot still supplies thread activity and repository identity.
+
+The Issues view loads GitHub issues in pages of up to 100 per state and has an **Open / Resolved / All** filter that wraps with the lane, priority and agent filters. **Load more issues** advances the visible state, or both cursors in All; loading preserves the current scroll offset. Issue cards retain their grouped chats when an issue closes, so resolved work stays browsable; repo backlog and runner counts still include open issues only. Compact repo counts mark a first-page total with `+`, label its breakdown partial, and avoid claiming a next-ready issue while older pages remain. The composer now shows a persistent **Next message · Provider · Model** summary and resolves thread model IDs to provider display names when available. The latest ARM64 release package is at `build/claude-pantheon-rs-deb/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`; its release binary compiled the paged issue view and was installed to `~/.local/bin/claude-pantheon-rs`. System-wide `dpkg` install was blocked by this session's `no_new_privileges`. No local test suite was started and the running app was not relaunched. PR pushes automatically started GitHub workflows: CI run 39880021046 completed, and cancellation requests were submitted for pending validation run 39880021049 and older in-progress run 39879607468. PR #521 remains open and mergeable with its latest source pushed on the existing branch.
+
+The full chat header also carries the T3 repository identity, saved T3 branch, project path, and local checkout branch when that workspace is accessible. A branch mismatch shows both values; the complete context remains available in the header tooltip when the visible line is shortened. Chats without a repository identity omit the repo label. Long live and imported chat titles now use middle ellipsis with their full text in the title tooltip.
+
+The first package containing the chat-header context was installed user-locally and has since been replaced by the follow-up build below. The live app process was left running because this session cannot inspect its window for unsaved composer text. No tests or CI were started for either change.
+
+Follow-up package: the standalone quick window now identifies the selected provider ID/name (or says **No provider selected**) separately from the T3 server, treats a stale feed as offline even if the feed's connected flag disagrees, and the full chat middle-ellipsizes long live/imported chat titles while exposing the complete title in a tooltip. `bash rust/claude-pantheon-rs/build-deb.sh` produced the ARM64 package at `build/claude-pantheon-rs-deb/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`; its binary was installed to `~/.local/bin/claude-pantheon-rs` (SHA-256 `f20cfa4579ebac2ceb0f7a4ea24694f910c244b072601ca523c8500b8ebfda99`). The client was relaunched through GApplication/D-Bus activation as PID 1716523; `/proc` reports the same executable hash, and the fresh feed is connected to `eos` with Codex selected, running 0 and pending 0. The window was not visually inspected in this session. No tests or CI were started for these follow-ups.
+
+History paging follow-up: a visible Cancel control now aborts an in-flight older-history HTTP request; switching threads/environments, losing the connection, or receiving a changed history cursor also cancels it. A canceled page does not advance the cursor. The latest ARM64 package was rebuilt and installed; GApplication relaunched PID 1731723 with executable SHA-256 `30a632d47372f23ae3c4b2558b86f33475902c7548e998ad08781fbd4f9cf12b`. Its fresh feed is connected to `eos` with Codex selected, running 0 and pending 0. No tests or CI were started; the app window was not visually inspected.
+
+Dock launcher completion: the active desktop was in the regular floating Dock layout (`taskbar-mode=false`), but the T3-R popover had been gated off in that layout. Removed the gate so this app's launcher uses the 250 ms hover, 450 ms leave grace, click-to-pin/toggle, Escape, and outside-dismiss behavior in either Dock layout; the desktop-wide taskbar setting remains unchanged. Built and installed the patched pinned Dock 8.3.3 source to `~/.local/lib/mseries/dock` without running probes or tests, then restarted `pantheon-dock.service` under its existing `KillMode=process`. Dock child PID 1743255 is running SHA-256 `1fbd1915417520e2b4f0633a501fe436f9a0e2002f085004ec41b219661c04c6`; T3-R PID 1731723 remained running with the installed app hash `30a632d47372f23ae3c4b2558b86f33475902c7548e998ad08781fbd4f9cf12b`. The feed remains fresh and connected to `eos`, Codex selected, running 0 and pending 0. No visual or live pointer interaction was performed.
+
+Dock sizing follow-up: the active settings were `icon-size=48` and `taskbar-mode=false`, so the existing 90% adjustment had not affected the regular Dock. Extended that adjustment to all Dock layouts: the saved 48 px setting now renders at 43 px, and floating-layout launcher padding drops from 6 to 5 logical pixels. The saved setting and Dock layout are unchanged. An incremental Dock rebuild/install was followed by a service restart under `KillMode=process`; child PID 1762327 runs binary SHA-256 `896077b0f18ea9b2566a189e7a797466ca6a76674318e2e93c017d6cd8f3e1c8`. T3-R stayed running as PID 1731723 and its feed remains fresh to `eos`, Codex selected, running 0 and pending 0. No probes, tests, or visual review were run.
+
+Before the issue-state and model-display edits, the branch-context slice passed package formatting, strict release Clippy, release build, all 80 library tests and `git diff --check`; its temp-Git and light/dark render fixtures showed saved and live branches separately. Those checks do not cover the current edits; the release package build compiled them. T3-R's main window and Dock quick window use 1.12× the system font size. The live Wayland pointer path remains unqualified. Earlier installed binaries include SHA `40e8c633d7d4fd3c7811f1d9e37d2e64940151922b5fb956298a2ee35117e85c`; the current user-local binary was replaced by the latest package build and awaits the next launch. CI run 39875516719 passed all six selected suites on commit `66aff6c9`; the later current-head run was canceled before completion.
+
+To shorten validation cycles, the M-series wiring workflow detects changed paths and starts only matching component jobs; manual dispatch still runs the full matrix. It now cancels a superseded run for the same PR/ref so a burst of commits does not leave obsolete suites occupying runners. The current PR selects six suites (UI scale, Dock startup, CodexBar/Dock, wiring, Assistant ACP, and the T3 client). The broad package-build workflow now runs on pull requests to `main`, matching its release-PR purpose; pushes to `dev` and `main` still build packages. The exact path filter was exercised against this PR, both workflow YAML files parse, and its shell passes ShellCheck. Current remaining qualification includes the unavailable local model service, live long-chat-title rows and branch freshness, large-history/high-latency behavior, and live Dock click/dismiss behavior.
+
+Context/caching remains layered: the client reuses its bounded, settled-thread projection cache and loads older T3 history only on demand; provider-side prefix/KV cache stays owned by T3 or the provider. Stable prompt/tool prefixes improve reuse, but the client does not add a competing API cache or claim hit savings that the server does not report. Earlier package-scoped format check, release build, strict release Clippy and all 78 library tests passed after compact-prompt and full-width wrapping-action updates. The installed binary SHA-256 was `2d488da84a03206b03d08a5b7c201365b8c1eee08fd1b5860ffd6a7cd07c337e`; D-Bus activation relaunched PID 1305110. A fresh feed then reported connected to `eos`, Codex selected, running 0, pending 0. T3 `server.getConfig` reports MSeries Assistant model alias `Default`, but the local model endpoint was unavailable because `mseries-ai-everyday.service` was refused by the desktop-memory-reserve check. No service was forced on. The PR's Assistant ACP contract check passed in an earlier run; the latest run's cancellation was requested by the owner. This blocks live local-intake verification on this machine until the supervisor admits a model; it does not block the ordinary authenticated T3 provider path.
+
+Continued the native GTK 4 + Granite T3 client in `rust/claude-pantheon-rs` and recorded the larger roadmap in
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). In both the regular floating Dock and
+taskbar mode, the T3-R application launcher owns a native GTK popover attached to the Dock icon: hover opens after
+250 ms, pointer leave has a 450 ms grace period, click pins/toggles, and Escape or outside click dismisses the pinned
+popup. The T3-R launcher suppresses its shorter tooltip so the two popovers do not compete; this per-app behavior does
+not change the Dock layout setting. **Open full chat** presents the complete desktop client; New chat, Usage, Settings,
+and live thread rows route to the matching destination. Launching from the app menu or a command opens the full client;
+`--quick` remains an optional standalone status window.
+The popover shows the paired T3 environment and quota for only the provider selected in full chat; other provider
+accounts remain in Settings. Offline activity is marked stale and cannot open a live thread.
+
+The local status snapshot is schema-versioned, written atomically with mode `0600`, monitored by the Dock popover, and
+retains the last successful snapshot as stale when the connection drops. Explicit unpair and environment changes clear
+it. The Dock popover does not open a second RPC connection or poll the server. Settled thread views now use a bounded,
+versioned environment/thread cache record that keeps the projection and `snapshotSequence` together, then resumes with
+T3 `afterSequence`. Duplicate replay events are ignored, active turns are not written to disk, and live actions stay
+disabled until synchronization finishes. Corrupt and wrong-scope entries are discarded; unpair/removal clears them.
+The full chat now renders the server's bounded thread window and loads older history pages as the user scrolls to the
+top (with a retry control), using T3's opaque history cursor. The GTK transcript scroller is constrained to the
+window's available height and does not propagate the full transcript's natural height, keeping the composer beneath
+the scrolling viewport. Older pages deduplicate by source thread/item identity and preserve the visible reading
+position. Pagination state is saved with the thread cache. Cache hit telemetry and large-history/poor-network profiling
+remain open. Schema-v5 LZ4 records retain all loaded messages and their cursor within the 8 MiB compressed and 64 MiB
+decoded limits; v3/v4 JSON records remain readable. Over-limit updates keep the last valid record and do not advance
+its saved cursor past uncached history.
+
+The user clarified that the compact status should also be available from the System Tray/Wingpanel surface. Its icon now
+shows a hover summary for the provider selected in full chat, plus waiting-permission/running counts; clicking opens the
+detail popover. Quota rows are filtered by `selectedProviderId`, so other connected provider accounts stay in Settings.
+The Xvfb fixture checks selected-provider data and suppression of Claude/Grok rows. The pre-existing Wingpanel module
+was already installed and mapped into the current panel process. The updated source builds and passes its probe, but
+system installation was blocked because this execution environment sets `no_new_privileges` for `sudo`; the current
+panel still has the previous module mapped. No panel restart was attempted. Install/reload later from a privileged
+desktop session.
+
+Settings can search T3's ACP Registry and add agents, or register a local ACP command such as DeepSeek Harness
+(`dsh --profile acp`) for execution on the paired T3 server. The DeepSeek Harness shortcut pre-fills that command,
+links its safety notice and model-credential guide, and explains that `dsh` and a DeepSeek API key must already be
+configured on the T3 server. Harness is experimental
+and not security-audited; the agent can run model-generated commands against the workspace T3 exposes. DeepSeek's ACP
+implementation keeps its prompt append-only while the selected route and assembled prefix stay stable; its shipped ACP
+profile keeps that prefix stable for a fixed profile, provider, model, and tool roster. DeepSeek API disk context caching
+is enabled server-side by default, so the
+Pantheon client does not add a competing disk cache layer. Keep prompts and tool schemas stable where T3 permits, and
+expose hit/miss counts only if the server reports them.
+
+Taskbar mode in the Dock patch renders launcher glyphs at 90% and trims spacing: the unmanaged 48 px fallback renders at
+43 px, while an adopted 40 px token renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px. Other
+Dock modes retain their configured icon size and padding. On 2026-10-22 at 10:05 EDT, `bash mseries/install-dock-drawers.sh`
+rebuilt and installed the private Dock; `pantheon-dock.service` restarted successfully (PID 3696072). The live settings
+are `taskbar-mode=true` and stored `icon-size=40`, but `ui-scale-policy.ini` is absent, so the dock is unmanaged and
+currently uses the 48 px fallback, rendering launcher glyphs at 43 px. Other size-aware taskbar elements still use the
+configured token when adopted. A CI size-system fixture exposed the distinction; the source now preserves the shared
+size token and applies the 90% factor only to launcher rendering/layout.
+
+Research links: [T3 connection runtime](https://github.com/pingdotgg/t3code/blob/main/docs/internals/connection-runtime.md),
+[T3 architecture](https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md), [T3 cache write issue #4005](https://github.com/pingdotgg/t3code/issues/4005),
+[T3 ACP providers](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-acp.md), [DeepSeek context cache](https://api-docs.deepseek.com/guides/kv_cache/),
+[DeepSeek Harness ACP cache behavior](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/acp/acp/README.md),
+[DeepSeek Harness ACP profile](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/acp-app/README.md), and
+[DeepSeek Harness prompt-prefix guidance](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.md).
+
+Validation: the thread-resume work previously passed strict release Clippy and all 54 library tests, including cache
+scoping/corruption/size bounds, atomic record round trips, sequence monotonicity, and run-settle projection updates.
+The final sync gate keeps actions disabled until T3's `synchronized` marker. The cursor-pagination integration is
+formatted and release-built; library tests were not rerun for this slice. Dock's full taskbar build and interaction probes passed in light and dark modes;
+the 2026-10-22 install repeated the build and hover probe, then restarted the service into the private binary.
+`desktop-file-validate`, `appstreamcli validate --no-net`, and `git diff --check` passed; the app-only ARM64 `.deb`
+assembled in `/tmp/cpr-deb-build`. The user-local T3-R app's status feed confirmed a connected environment and selected
+provider account. The provider-settings DeepSeek shortcut was formatted, release-built, and passed strict release Clippy;
+tests were not rerun. The installed binary matches that release build. PID 3666742 was stopped after confirming no
+running work, pending prompts, or saved drafts; D-Bus activation launched PID 3789459 from the installed release binary.
+The full window launched and its fresh status feed reported connected to `eos`, Codex selected, running 0, pending 0.
+The follow-up that constrains transcript height passed `cargo fmt --check` and a release build, was installed to the same
+user-local binary, and D-Bus activation relaunched it as PID 3819605. Its fresh status feed remained connected to `eos`,
+Codex selected, running 0, pending 0. The CodexBar-style Dock popover change then passed a clean pinned Dock 8.3.3 build,
+linked-type checks, existing Dock hover/pin/focus probes, Rust release build and strict release Clippy, desktop-file and
+AppStream validation. The patched Dock was installed under `~/.local/lib/mseries/dock`; `pantheon-dock.service` is now
+running PID 4027229 (wrapper PID 4027212) after restarting to load the T3-R popup tooltip fix, with binary SHA-256
+`131ddbd7a662c999a669c875173c1a787118d0bdaf9c07bec4ee48d12bf5e84e`, and the pinned T3-R launcher remains in place.
+Taskbar settings are `taskbar-mode=true`, `icon-size=40`, and `KillMode=process`. The popup header icon scales with the shared dock
+icon token at 7/12 of its configured size, keeping 28 px at the 48 px default and 23 px at the 40 px setting. The
+strict size-system unit suite passed all 35 tests, and the full pinned Dock build plus hover/pin/dismiss fixtures passed
+in light and dark themes after this change. The latest Dock qualification also confirms that no competing launcher
+tooltip is mapped while the T3-R panel is open; the refreshed light and dark captures show the panel attached to the icon.
+The updated T3-R binary was installed
+and D-Bus activation launched the current full window as PID 3871272; its hash matches the release build, and the fresh feed is connected to `eos`, Codex selected,
+running 0, pending 0. The new popover class is linked into the installed Dock, and the dedicated GTK/Xvfb fixture exercises the T3-R icon hover, selected-account content, full-chat/thread actions, click pin, outside dismissal and Escape in both themes. The fixture now captures the mapped T3-R panel during hover in light and dark themes (`light-t3r-hover.png`, `dark-t3r-hover.png` in the requested qualification output directory); the captured panel renders the selected account, quota, activity and full-chat action. Its X11 input and image capture do not qualify the live Wayland pointer path. The T3-R desktop entry was missing from the user's pinned launcher list; it has now been appended while preserving the existing launcher order, so the popup icon stays available when the full chat is closed.
+The GTK render harness now opens the largest local offline conversation (27 MB), verifies the transcript's vertical adjustment reaches both ends, and checks that scrolling leaves the composer's window position unchanged. The full Xvfb render harness passed with no saved T3 credentials in its isolated XDG configuration; live-server checks were skipped in that run.
+The T3 transport now sends serialized WebSocket Ping frames every 5 seconds and marks a connection lost after 15 seconds without any inbound frame, matching the upstream T3 client-runtime timeout. A local fake WebSocket test answers one Ping, then goes silent; it verifies the client resets liveness on Pong, sends repeated control frames and closes the RPC session after the missed-Pong deadline. A user-local release build was installed without restarting the Dock; D-Bus activation relaunched T3-R as PID 4004838. The installed binary matches the release build, and the status feed reconnected to `eos` with Codex selected, no active or pending work, and remained connected beyond one 15-second timeout window. The new history fixture delays a page response 350 ms and confirms the GTK main context remains responsive while the request is pending. Formatting, all 59 Rust library tests and strict release Clippy passed. End-to-end high-latency fault injection remains open.
+
+The owner confirms that T3-R is pinned in the Dock and hovering its Dock icon opens the popup on the live Wayland desktop. Live click/pin/outside-dismiss behavior remains open; the Xvfb fixture covers those actions. The paired server does not currently advertise/configure DeepSeek, and `dsh` is not on the current shell's PATH. Older-history paging on a large live thread and high-latency/poor-network profiling remain open.
+
+The owner requested that the existing MSeries assistant capability be brought into T3-R and that a fast larger Liquid AI model or an ANE-backed option be explored. The existing assistant is Newelle plus a local stdio MCP server with sixteen typed tools; its measured default is Qwen3.5 4B. The previously tested Liquid LFM2.5 1.2B reached 63.59 output tokens/s in one local cohort but passed only 3/9 corrected tool workflows, so it is not a qualified default ([local benchmark and workflow receipts](../local-ai/receipts/2026-10-16.md)). Liquid AI now lists [LFM2.5-24B-A2B](https://www.liquid.ai/models) (24B total, 2B active); its published [184 tokens/s result](https://www.liquid.ai/blog/lfm2-5-24b-a2b) is on an M5 Max and is not evidence for this M1 Pro. The official [MLX 4-bit checkpoint](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit/tree/667408d) is 13.6 GB at revision `667408d`, before runtime/context memory. It remains unloaded because the host fails the supervisor memory admission gate. The current Linux/Asahi assistant path has no qualified ANE inference backend. The bridge now reuses the existing sixteen-tool MCP service and supervised loopback model endpoint; the paired server has an enabled `MSeries Assistant` ACP provider (`acp-mseries-assistant`) reporting `installed=true`, `status=ready`. After fixing T3's composed prompt size limit, two real T3 launches reached the active supervised Qwen3.5 4B endpoint, called `add_minutes`, and returned the expected `12:00` and `13:00` answers in completed projections. Both temporary threads were archived. This proves two real model turns, not broad model quality or daily-use reliability. Provider credentials remain on the paired server, and both Dock and Wingpanel quota summaries follow the provider selected in full chat.
+
+The current Rust release binary was copied to `~/.local/bin/claude-pantheon-rs` and its SHA-256 matches the release build. The already-running app process (PID 4004838, started 11:47) was left intact to preserve its window state; it still has the prior build mapped until the next app launch. Read-only `server.getConfig` verification after registration shows Codex, Claude, Grok and OpenCode still authenticated/ready, the selected provider is Codex, and the new MSeries ACP provider is installed/ready.
+
+Next: qualify multi-turn session restoration and more representative assistant workflows. Do not download the 24B Liquid checkpoint until the supervisor admission gate permits weights, runtime and the six-GiB desktop reserve. Qualify any ANE conversational model separately through a supervised service; raw experimental bring-up remains outside the safe desktop trial. Older-history paging on a large live conversation and poor-network fault injection remain open. Review DeepSeek setup when the paired server advertises it.
+
+The T3 reconnect path now ignores close and shell-subscription callbacks from
+superseded connections, and environment-switch cleanup exits when a newer
+switch has already started. `a13acd12` passed local formatting, all 65 release
+library tests, strict release Clippy, and a release build. The refreshed
+user-local client is running and connected to `eos` with Codex selected; Dock
+remained active. CI for this commit is running in [validation](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39849512686)
+and [package](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39849512647)
+workflows. Live large-thread paging and deliberate high-latency reconnect
+qualification remain open.
+
+The ARM64 package workflows now set `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`,
+and validation checks that the `.deb` contains
+`/usr/lib/aarch64-linux-gnu/wingpanel-9/libclaude-pantheon.so`. A local
+combined ARM64 package built successfully with the expected Wingpanel and
+support-library dependencies. System installation is still blocked in this
+session because `no_new_privileges` prevents `sudo`; the current panel keeps
+its previously loaded module until a privileged package install and later
+login. The exact-commit validation and package workflows are queued.
+
+Commit `2f400251` also invalidates outstanding config reload and scheduled-task
+rotation work when the active RPC disconnects. The 65 release library tests,
+strict release Clippy, formatting, and a release build passed locally. Its
+binary was rebuilt, atomically installed to `~/.local/bin/claude-pantheon-rs`,
+and relaunched as PID 636588; the fresh feed reports `eos` connected with Codex
+selected, no running or pending work. Exact-commit CI is still pending.
+
+The `6bdb9f5c` validation package passed its module-path assertion because it
+used an absolute temporary output path, but the separate package-workflow
+artifact still omitted the module: that workflow passed a relative
+`out/claude-pantheon-rs` path, which Meson resolved under its build directory.
+Commit `943ab94f` normalizes relative package output paths before Meson runs.
+A local build with the same relative path now places the module in the `.deb`
+at the expected Wingpanel location, and both indicator fixture probes pass.
+The exact `d266decd` ARM64 package job passed on [run 39851141119](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39851141119).
+The downloaded `claude-pantheon-rs_0.1.0-1~mseries1_arm64.deb` is arm64 and
+contains `/usr/lib/aarch64-linux-gnu/wingpanel-9/libclaude-pantheon.so`
+(SHA-256 `f88eec7725f179d711869409f84038d906ae133dc0598e9f33705fe67bd030ec`).
+System installation remains blocked in this session by `no_new_privileges`;
+the user-local chat and Dock popover stay active, while Wingpanel still has its
+previously loaded module. The exact-commit validation run passed the T3 client
+job but failed an unrelated native UI asynchronous-backends fixture.
+
+## MSeries assistant ACP bridge and Liquid/ANE review — 2026-10-22
+
+Added `mseries/local-ai/acp-agent.py`, a T3 ACP agent that reuses the installed
+sixteen-tool `os-mcp.py` and the already-supervised loopback OpenAI-compatible
+model endpoint. It never starts or switches model services, limits itself to
+existing scoped tools, and asks T3 for a one-time permission before a write. The
+optional `--endpoint` parameter selects another already-running loopback
+profile. `configure-assistants.py --install-acp` installs only the bridge and
+launcher, leaving Newelle settings, model profiles and services intact. Prompts,
+history and tool output are bounded for the default 8K context.
+
+Twelve isolated Python bridge tests pass. The first real T3 launch exposed that
+T3's composed ACP prompt exceeded the bridge's old 6,000-character limit; the
+bridge now accepts up to 16,000 characters, bounded below the default 8K model
+context. After reinstalling only the ACP helper, a real
+`orchestration.launchThread` through `acp-mseries-assistant` reached the active
+supervised Qwen3.5 4B endpoint, called the real MCP `add_minutes` tool for
+09:45 + 135 minutes, and returned `12:00` in a completed T3 projection. A
+fresh ACP 0.3.0 thread then used the same tool for 12:15 + 45 minutes and
+returned `13:00`; both projections completed, and both temporary verification
+threads were archived. These are two end-to-end turns, not general
+model-quality or daily-use qualification. A separate same-thread follow-up
+also recalled a synthetic token correctly across two T3 turns. A separate
+real-model bridge test saved a turn, exited the first ACP process, loaded the
+session in a fresh process, and recalled its token. The production T3 path also
+completed a read-only `system_status` call. Codex, Claude, Grok and OpenCode
+each returned a minimal exact-response smoke in a completed T3 thread; all
+temporary provider threads were archived. This verifies the four provider
+routes, not their broader workflows. A synthetic `create_assistant_task`
+permission request was declined in T3; the thread completed, and a scoped task
+read confirmed no test task was written. T3 server restart and reattachment
+remain unqualified.
+
+The ACP session cache now validates its message and character bounds before
+replacing a checkpoint, so an oversized completed turn cannot make the prior
+recoverable session unloadable. Reads validate the cache directory and require
+an owner-only user file. `python3 mseries/local-ai/test_acp_agent.py` passes all
+14 bridge contracts, including oversized-snapshot preservation and file-mode
+rejection. The validation workflow now runs these model-free contracts on CI
+dispatch. If a single turn exceeds the retained-history limit, the last valid
+checkpoint stays available and that turn may need to be resent after restart.
+A deployment smoke then ran the installed helper in two fresh ACP processes,
+loaded a synthetic saved turn through `session/load`, and confirmed its token
+reached the second request. Both processes initialized the real MCP service;
+the inference endpoint was a temporary loopback fixture and no model inference
+or MCP tool action ran. This verifies helper-process recovery, not T3 server
+restart and reattachment.
+
+The host still does not admit LFM2.5-24B-A2B: a live preflight measured 10.56
+GiB available with the 4B worker active, while the 13.6 GB Q4_0 GGUF weights
+plus the six-GiB desktop reserve need at least 18.67 GiB before runtime/context
+memory. The supervisor refused admission; no 24B weights were downloaded or
+loaded. The installed llama.cpp build `7182ef7` includes the `lfm2moe`
+model loader, but upstream has a report of some LFM2.5-24B turns returning
+tool syntax as plain text, so a future trial needs a tool-call quality gate.
+Do not remove the supervisor gate to force a trial. The current ANE Qwen repo
+reports 8.23 tok/s on an original M1 but has no supervised T3-compatible
+service on this M1 Pro/T6000; its raw bring-up path remains outside the safe
+desktop trial. The ANE-backed Parakeet path is speech transcription, not
+conversational inference. See `local-ai/README.md` and
+`local-ai/APP-INTEGRATION.md` for source links and remaining gates.
+
+A fresh read-only preflight on October 22 measured 9.17 GiB available; the
+existing supervisor again refused the 24B Liquid checkpoint against the
+six-GiB reserve. The completed ANE Parakeet result is speech recognition only;
+T3-R voice input still uses Whisper, and the global F5 listener is inactive.
+
+Next: qualify T3 server restart and reattachment plus more representative
+assistant workflows before claiming daily use. Recheck the memory admission
+gate before any Liquid 24B trial, and qualify ANE inference only through a
+supervised local endpoint.
+
+## Native T3 client: provider sign-in from Settings — 2026-10-22 (Codex)
+
+Continued `rust/claude-pantheon-rs`, the native Rust GTK 4 + Granite client for T3 Code. Settings now
+has a Providers page and a provider manager for Claude Code, ChatGPT via Codex, OpenCode and Grok Build.
+It displays server-reported availability and supports T3's browser, device-code, terminal and credential
+prompts, sign-in method/account selection, sign-out confirmation, cancellation and refresh. Provider
+secrets remain server-owned; auth request and response bodies are redacted from debug logging. Providers
+still need to be installed and enabled on the T3 Code server.
+
+Validation: `cargo fmt -p claude-pantheon-rs --check`,
+`cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings`,
+`cargo test --release -p claude-pantheon-rs --lib` (44/44), `cargo build --release -p claude-pantheon-rs`,
+and `git diff --check`. The active Pantheon Wayland session runs the user-local install from
+`./install.sh --no-build`; it drew its first frame in 214 ms. A read-only `server.getConfig` call reports
+Claude, Codex, OpenCode and Grok installed, enabled and authenticated. The read-only 30-day usage summary
+contains 39 buckets across those four providers, and the app's status feed is connected with live plan
+windows. The provider manager also rendered in an isolated GTK preview; connected and disabled states are
+both clear. The app stays native GTK/Granite and standard GTK Wayland; no GNOME Shell API is required.
+
+The final arm64 T3 client CI job passed Rust formatting/Clippy, build and tests, T3 contract validation,
+desktop/AppStream checks, the headless Wingpanel probe, and Debian package assembly. The 1.2 MB package
+contains the app and Wingpanel module, and local apt simulation resolves without additional dependencies.
+System-wide package installation is blocked in this runtime by Linux `no_new_privileges`; the user-local
+installer successfully installed the app, desktop entry, D-Bus activation, metainfo and icons under
+`~/.local` and refreshed Pantheon Dock. The separate Wingpanel module remains built and packaged but is
+not registered system-wide. Interactive sign-in/out remains untested because all four providers already
+have active server-owned auth; those sessions and credentials were left intact. Next: register the Wingpanel
+module through the host package manager when root install is available and qualify a fresh auth flow.
+
+The current mseries5 app build incrementally inserts older-history rows while
+preserving the visible reading position. Formatting, release build, 68 library
+tests, strict release Clippy, and a 36.5 MB offline transcript scrolling probe
+passed. The combined ARM64 package is
+`/tmp/t3r-mseries5-deb/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`
+(SHA-256 `6812dd0396978189264be45612952f0685f23ea8c01e4a3252f91301a9344f8b`).
+The matching binary is installed in `~/.local/bin/claude-pantheon-rs` and
+running as PID 956860; its fresh feed reports `eos`, Codex selected, and no
+activity. Its process environment is `DESKTOP_SESSION=pantheon-rust-wayland`,
+`XDG_SESSION_TYPE=wayland`, and `WAYLAND_DISPLAY=wayland-0`; the private Dock
+and Wingpanel processes are active. This verifies the client launches and
+connects in the Pantheon Rust session; live pointer interactions remain open.
+The system package remains mseries2, so the system Wingpanel module is still
+old. Upstream Wingpanel's loader uses the build-time
+`Build.INDICATORS_DIR` constant generated from Meson's install prefix/libdir;
+the current binary has no runtime user-local indicator path. Validation run
+39863027201 for code commit `f7397cda` passed the ARM64 T3 client job and the
+isolated ACP contracts job. The T3 job passed formatting/Clippy, protocol and
+model tests, GTK rendering, contract checks, desktop metadata, the headless
+indicator build/probe, Debian package assembly, and verification that the
+package contains the Wingpanel module. Other unrelated M-series jobs in that
+workflow were still running at the last check.
+
+The PR was synchronized with current `dev` in commit `498dfba2`, resolving its
+only merge conflict while retaining both T3 and Pantheon lock-screen handoff
+entries. A follow-up review corrected reconnect backoff: the client now retries
+after 2, 4, 8, 16, and 32 seconds, then once per minute. `cargo fmt --check`,
+the four focused reconnect tests, and strict release Clippy pass. The live T3
+service restart smoke passed with zero running turns and pending approvals:
+`t3code.service` changed from PID 1357664 to 1036736, while the existing client
+stayed at PID 956860. Its feed became stale at 22:24:45 UTC and returned to
+connected/fresh at 22:24:54 UTC with `eos`, Codex selected, and zero running or
+pending work. No model turn or tool action was sent. This verifies automatic
+reattachment after a local T3 process restart while idle; it does not cover a
+restart mid-stream or prolonged network loss. The live smoke used the installed
+mseries5 client. Afterwards, the release binary from code commit `00693a74` was
+built and atomically installed to `~/.local/bin/claude-pantheon-rs`; the prior
+binary is retained at `/tmp/claude-pantheon-rs-before-00693a74`. D-Bus launched
+the updated app as PID 1047208, and its SHA-256
+`83aefbd97d3258411dd7a8147c80fb7c4b975e288be02338aa8d80f7cb387700` matches
+the release build. Its fresh feed reports connected to `eos`, Codex selected,
+and zero running/pending work. A read-only `server.getConfig` check after the
+T3 restart found all four cloud providers and the MSeries Assistant ACP agent
+ready. The Dock was not restarted because the launcher icon did not change.
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,

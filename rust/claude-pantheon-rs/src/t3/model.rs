@@ -1,8 +1,13 @@
 //! The parts of the T3 contracts this client reads, decoded leniently: unknown fields and variants are
 //! kept as `Value` or skipped so a newer server does not break the client.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
+
+fn active_run_status(status: &str) -> bool {
+    matches!(status, "preparing" | "queued" | "starting" | "running" | "waiting" | "pending")
+}
 
 #[derive(Deserialize, Default, Clone, Debug)]
 #[serde(default)]
@@ -165,13 +170,23 @@ impl Provider {
         }
     }
 
-    /// Authenticated and usable now.
+    pub fn is_acp_agent(&self) -> bool {
+        self.driver == "acpRegistry"
+    }
+
+    /// Authenticated and usable now. ACP agents report readiness from their
+    /// successful session handshake rather than an OAuth auth state.
     pub fn ready(&self) -> bool {
         let auth = self.auth_text();
-        self.enabled
-            && self.installed
-            && self.availability.as_deref() != Some("unavailable")
-            && (auth == "authenticated" || auth == "ready" || auth == "ok" || auth == "signed-in")
+        if !self.enabled || !self.installed || self.availability.as_deref() == Some("unavailable") {
+            return false;
+        }
+
+        if self.is_acp_agent() {
+            return self.status_text() == "ready";
+        }
+
+        auth == "authenticated" || auth == "ready" || auth == "ok" || auth == "signed-in"
     }
 }
 
@@ -191,6 +206,8 @@ pub struct Project {
     pub title: String,
     #[serde(rename = "workspaceRoot")]
     pub workspace_root: String,
+    #[serde(rename = "repositoryIdentity")]
+    pub repository_identity: Option<Value>,
     #[serde(rename = "deletedAt")]
     pub deleted_at: Option<String>,
     #[serde(rename = "defaultModelSelection")]
@@ -231,15 +248,17 @@ impl ThreadShell {
     pub fn is_running(&self) -> bool {
         let r = &self.rest;
         r.get("activeRunId").is_some_and(|v| !v.is_null())
-            || r.get("status").and_then(Value::as_str).is_some_and(|s| s == "running")
-            || r.get("latestRun").and_then(|v| v.get("status")).and_then(Value::as_str).is_some_and(|s| s == "running")
+            || r.get("status").and_then(Value::as_str).is_some_and(active_run_status)
+            || r.get("latestRun").and_then(|v| v.get("status")).and_then(Value::as_str).is_some_and(active_run_status)
     }
 
     pub fn pending_requests(&self) -> u64 {
         let r = &self.rest;
         r.get("pendingRuntimeRequests")
+            .filter(|v| !v.is_null())
             .map(|v| v.as_array().map_or(v.as_u64().unwrap_or(0), |a| a.len() as u64))
             .or_else(|| r.get("pendingRuntimeRequestCount").and_then(Value::as_u64))
+            .or_else(|| r.get("pendingRuntimeRequest").filter(|v| !v.is_null()).map(|_| 1))
             .unwrap_or(0)
     }
 
@@ -255,7 +274,7 @@ impl ThreadShell {
 }
 
 /// `ThreadId` → `ThreadShell` plus the projects, as the shell snapshot carries them.
-#[derive(Default, Debug, Clone)]
+#[derive(Deserialize, Default, Debug, Clone)]
 pub struct Shell {
     pub projects: Vec<Project>,
     pub threads: Vec<ThreadShell>,
@@ -308,7 +327,7 @@ impl Shell {
 }
 
 /// One visible item of a thread, flattened from `visibleTurnItems[].item`.
-#[derive(Deserialize, Default, Clone, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 #[serde(default)]
 pub struct TurnItem {
     pub id: String,
@@ -342,6 +361,10 @@ pub struct TurnItem {
     pub name: Option<String>,
     pub title: Option<String>,
     pub steps: Option<Vec<Value>>,
+    #[serde(rename = "sourceThreadId", skip_serializing_if = "Option::is_none")]
+    pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceItemId", skip_serializing_if = "Option::is_none")]
+    pub source_item_id: Option<String>,
     #[serde(flatten)]
     pub rest: Value,
 }
@@ -350,28 +373,54 @@ impl TurnItem {
     pub fn is_pending_request(&self) -> bool {
         self.kind == "approval_request" && self.status != "completed" && self.status != "cancelled"
     }
+
+    pub fn identity_key(&self) -> String {
+        match (&self.source_thread_id, &self.source_item_id) {
+            (Some(thread), Some(item)) => format!("{thread}\0{item}"),
+            _ => self.id.clone(),
+        }
+    }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Deserialize, Serialize, Default, Debug, Clone)]
 pub struct ThreadView {
     pub items: Vec<TurnItem>,
     pub active_run_id: Option<String>,
     pub runs: Vec<Value>,
     /// The thread's checkpoints (restore points), as the projection carries them.
     pub checkpoints: Vec<Value>,
+    /// Rebuilt from `items`; avoids a second serialized copy of every item identity.
+    #[serde(skip)]
+    pub(crate) item_positions: Option<HashMap<String, usize>>,
 }
 
 impl ThreadView {
     pub fn from_projection(p: &Value) -> ThreadView {
         let mut view = ThreadView::default();
         let visible = p.get("visibleTurnItems").and_then(Value::as_array);
-        let raw: Vec<&Value> = match visible {
-            Some(v) if !v.is_empty() => v.iter().map(|w| w.get("item").unwrap_or(w)).collect(),
-            _ => p.get("turnItems").and_then(Value::as_array).map(|a| a.iter().collect()).unwrap_or_default(),
-        };
-        for r in raw {
-            if let Ok(item) = serde_json::from_value::<TurnItem>(r.clone()) {
-                view.items.push(item);
+        if let Some(rows) = visible.filter(|rows| !rows.is_empty()) {
+            for row in rows {
+                if let Ok(mut item) = serde_json::from_value::<TurnItem>(row.get("item").unwrap_or(row).clone()) {
+                    item.source_thread_id = row
+                        .get("sourceThreadId")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .or_else(|| p.pointer("/thread/id").and_then(Value::as_str).map(str::to_string));
+                    item.source_item_id = row
+                        .get("sourceItemId")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .or_else(|| Some(item.id.clone()));
+                    view.items.push(item);
+                }
+            }
+        } else if let Some(raw) = p.get("turnItems").and_then(Value::as_array) {
+            for row in raw {
+                if let Ok(mut item) = serde_json::from_value::<TurnItem>(row.clone()) {
+                    item.source_thread_id = p.pointer("/thread/id").and_then(Value::as_str).map(str::to_string);
+                    item.source_item_id = Some(item.id.clone());
+                    view.items.push(item);
+                }
             }
         }
         if let Some(c) = p.get("checkpoints").and_then(Value::as_array) {
@@ -382,19 +431,95 @@ impl ThreadView {
             view.active_run_id = runs
                 .iter()
                 .rev()
-                .find(|r| r.get("status").and_then(Value::as_str).is_some_and(|s| s == "running" || s == "pending"))
+                .find(|r| r.get("status").and_then(Value::as_str).is_some_and(active_run_status))
                 .and_then(|r| r.get("id"))
                 .and_then(Value::as_str)
                 .map(str::to_string);
         }
+        view.rebuild_item_positions();
         view
     }
 
-    pub fn upsert(&mut self, item: TurnItem) {
-        match self.items.iter_mut().find(|i| i.id == item.id) {
-            Some(slot) => *slot = item,
-            None => self.items.push(item),
+    pub(crate) fn rebuild_item_positions(&mut self) {
+        let mut positions = HashMap::with_capacity(self.items.len());
+        for (index, item) in self.items.iter().enumerate() {
+            positions.entry(item.identity_key()).or_insert(index);
         }
+        self.item_positions = Some(positions);
+    }
+
+    fn ensure_item_positions(&mut self) {
+        if self.item_positions.is_none() {
+            self.rebuild_item_positions();
+        }
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.active_run_id.is_some()
+            || self.runs.iter().any(|run| run.get("status").and_then(Value::as_str).is_some_and(active_run_status))
+    }
+
+    /// Apply a run projection event while retaining fields omitted by compact updates.
+    pub fn upsert_run(&mut self, update: Value) {
+        let id = update.get("id").and_then(Value::as_str);
+        if let Some(id) = id {
+            if let Some(current) = self.runs.iter_mut().find(|run| run.get("id").and_then(Value::as_str) == Some(id)) {
+                if let (Some(current), Some(update)) = (current.as_object_mut(), update.as_object()) {
+                    current.extend(update.iter().map(|(key, value)| (key.clone(), value.clone())));
+                } else {
+                    *current = update;
+                }
+            } else {
+                self.runs.push(update);
+            }
+        }
+        self.active_run_id = self
+            .runs
+            .iter()
+            .rev()
+            .find(|run| run.get("status").and_then(Value::as_str).is_some_and(active_run_status))
+            .and_then(|run| run.get("id"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+    }
+
+    pub fn upsert(&mut self, item: TurnItem) {
+        let key = item.identity_key();
+        self.ensure_item_positions();
+        let position = self.item_positions.as_ref().and_then(|positions| positions.get(&key)).copied();
+        match position.and_then(|index| self.items.get_mut(index)) {
+            Some(slot) => *slot = item,
+            None => {
+                let index = self.items.len();
+                self.items.push(item);
+                self.item_positions.as_mut().expect("item index initialized").insert(key, index);
+            }
+        }
+    }
+
+    /// Adds one T3 history page ahead of the current projection without replacing live updates.
+    pub fn prepend_history(&mut self, mut older: Vec<crate::t3::history::ProjectedTurnItem>) -> usize {
+        self.ensure_item_positions();
+        older.sort_by_key(|row| row.position);
+        let mut page = Vec::with_capacity(older.len());
+        let mut page_keys = HashSet::new();
+        for row in older {
+            let mut item = row.item;
+            item.source_thread_id = Some(row.source_thread_id);
+            item.source_item_id = Some(row.source_item_id);
+            let key = item.identity_key();
+            let exists = self.item_positions.as_ref().is_some_and(|positions| positions.contains_key(&key));
+            if !exists && page_keys.insert(key) {
+                page.push(item);
+            }
+        }
+        let count = page.len();
+        if count > 0 {
+            page.append(&mut self.items);
+            self.items = page;
+            self.rebuild_item_positions();
+        }
+        count
     }
 }
 
@@ -406,9 +531,9 @@ pub struct UsageTotals {
     #[serde(rename = "uncachedInputTokens")]
     pub uncached_input: u64,
     #[serde(rename = "cachedInputTokens")]
-    pub cached_input: u64,
+    pub cached_input: Option<u64>,
     #[serde(rename = "cacheCreationTokens")]
-    pub cache_creation: u64,
+    pub cache_creation: Option<u64>,
     #[serde(rename = "outputTokens")]
     pub output: u64,
     #[serde(rename = "reasoningTokens")]
@@ -418,16 +543,22 @@ pub struct UsageTotals {
 impl UsageTotals {
     pub fn add(&mut self, o: &UsageTotals) {
         self.uncached_input += o.uncached_input;
-        self.cached_input += o.cached_input;
-        self.cache_creation += o.cache_creation;
+        add_optional(&mut self.cached_input, o.cached_input);
+        add_optional(&mut self.cache_creation, o.cache_creation);
         self.output += o.output;
         self.reasoning += o.reasoning;
     }
     pub fn input(&self) -> u64 {
-        self.uncached_input + self.cached_input + self.cache_creation
+        self.uncached_input + self.cached_input.unwrap_or_default() + self.cache_creation.unwrap_or_default()
     }
     pub fn total(&self) -> u64 {
         self.input() + self.output
+    }
+}
+
+fn add_optional(total: &mut Option<u64>, value: Option<u64>) {
+    if let Some(value) = value {
+        *total = Some(total.unwrap_or_default() + value);
     }
 }
 
@@ -441,7 +572,7 @@ pub struct UsageBucket {
     #[serde(rename = "costUsd")]
     pub cost_usd: f64,
     #[serde(rename = "cacheSavingsUsd")]
-    pub cache_savings_usd: f64,
+    pub cache_savings_usd: Option<f64>,
     #[serde(rename = "costSource")]
     pub cost_source: String,
     pub records: u64,
@@ -496,6 +627,131 @@ mod tests {
         assert_eq!(p.name(), "Claude");
         assert_eq!(p.models[0].display(), "Opus");
         assert_eq!(p.models[0].key(), "opus");
+    }
+
+    #[test]
+    fn acp_agent_readiness_uses_session_status_not_oauth_auth() {
+        let mut agent: Provider = serde_json::from_value(serde_json::json!({
+            "instanceId": "acp-mseries-assistant",
+            "driver": "acpRegistry",
+            "displayName": "MSeries Assistant",
+            "enabled": true,
+            "installed": true,
+            "status": "ready",
+            "auth": "unknown"
+        }))
+        .unwrap();
+        assert!(agent.is_acp_agent());
+        assert!(agent.ready());
+
+        agent.status = serde_json::json!("starting");
+        assert!(!agent.ready());
+        agent.status = serde_json::json!("ready");
+        agent.enabled = false;
+        assert!(!agent.ready());
+        agent.enabled = true;
+        agent.installed = false;
+        assert!(!agent.ready());
+        agent.installed = true;
+        agent.availability = Some("unavailable".into());
+        assert!(!agent.ready());
+    }
+
+    #[test]
+    fn run_updates_merge_projection_and_settle_cached_running_state() {
+        let mut view = ThreadView::from_projection(&serde_json::json!({
+            "runs": [{"id": "run-1", "status": "running", "provider": "codex"}]
+        }));
+        assert!(view.is_running());
+        view.upsert_run(serde_json::json!({"id": "run-1", "status": "completed"}));
+        assert!(!view.is_running());
+        assert_eq!(view.runs[0]["provider"], "codex");
+        assert_eq!(view.runs[0]["status"], "completed");
+
+        view.upsert_run(serde_json::json!({"id": "run-2", "status": "waiting"}));
+        assert!(view.is_running());
+        assert_eq!(view.active_run_id.as_deref(), Some("run-2"));
+    }
+
+    #[test]
+    fn history_pages_prepend_in_position_order_and_keep_live_overlap_once() {
+        use crate::t3::history::ProjectedTurnItem;
+
+        let projected = |position, source_item_id: &str, text: &str| ProjectedTurnItem {
+            position,
+            source_thread_id: "thread-a".into(),
+            source_item_id: source_item_id.into(),
+            item: TurnItem {
+                id: source_item_id.into(),
+                kind: "assistant_message".into(),
+                text: text.into(),
+                ..Default::default()
+            },
+        };
+        let mut view = ThreadView::default();
+        view.upsert(TurnItem {
+            id: "tail".into(),
+            kind: "assistant_message".into(),
+            text: "latest live text".into(),
+            source_thread_id: Some("thread-a".into()),
+            source_item_id: Some("tail".into()),
+            ..Default::default()
+        });
+
+        let added = view.prepend_history(vec![
+            projected(3, "older-3", "third"),
+            projected(1, "older-1", "first"),
+            projected(2, "older-2", "second"),
+            projected(2, "older-2", "duplicate within page"),
+            projected(4, "tail", "stale overlap"),
+        ]);
+        assert_eq!(added, 3);
+        assert_eq!(
+            view.items.iter().map(|item| item.source_item_id.as_deref().unwrap_or("")).collect::<Vec<_>>(),
+            ["older-1", "older-2", "older-3", "tail"]
+        );
+        assert_eq!(view.items[3].text, "latest live text", "history overlap cannot replace a live update");
+
+        let added = view
+            .prepend_history(vec![projected(2, "older-2", "duplicate across pages"), projected(0, "oldest", "oldest")]);
+        assert_eq!(added, 1);
+        assert_eq!(view.items[0].source_item_id.as_deref(), Some("oldest"));
+        assert_eq!(view.items.last().unwrap().text, "latest live text");
+    }
+
+    #[test]
+    fn large_thread_upserts_keep_identity_index_after_cache_round_trip() {
+        fn item(index: usize, text: &str) -> TurnItem {
+            TurnItem {
+                id: format!("item-{index}"),
+                kind: "assistant_message".into(),
+                text: text.into(),
+                source_thread_id: Some("thread-large".into()),
+                source_item_id: Some(format!("item-{index}")),
+                ..Default::default()
+            }
+        }
+
+        let mut view = ThreadView::default();
+        for index in 0..20_000 {
+            view.upsert(item(index, "initial"));
+        }
+        for index in (0..20_000).rev() {
+            view.upsert(item(index, "updated"));
+        }
+        assert_eq!(view.items.len(), 20_000);
+        assert_eq!(view.items[19_999].text, "updated");
+
+        let encoded = serde_json::to_value(&view).unwrap();
+        assert!(encoded.get("item_positions").is_none());
+        assert!(encoded.get("history_item_keys").is_none());
+        let mut legacy_encoded = encoded;
+        legacy_encoded["history_item_keys"] = serde_json::json!(["thread-large\0item-0"]);
+        let mut restored: ThreadView = serde_json::from_value(legacy_encoded).unwrap();
+        assert!(restored.item_positions.is_none(), "the non-serialized index is rebuilt lazily");
+        restored.upsert(item(19_999, "after cache"));
+        assert_eq!(restored.items.len(), 20_000);
+        assert_eq!(restored.items[19_999].text, "after cache");
     }
 }
 

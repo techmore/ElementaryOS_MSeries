@@ -34,7 +34,7 @@ index d97686d..2286e87 100644
 +dock-window.taskbar launcher,
 +dock-window.taskbar backgrounditem,
 +dock-window.taskbar icongroup {
-+    padding-top: 12px;
++    padding: 10px 5px 0;
 +}
 +
 +dock-window.taskbar bottom-margin {
@@ -310,16 +310,16 @@ index 0522be3..4b9c91a 100644
          bind_property ("tooltip-text", tooltip_label, "label");
  
 -        icon_size = dock_settings.get_int ("icon-size");
-+        icon_size = ItemManager.get_icon_size ();
++        icon_size = ItemManager.get_render_icon_size ();
          dock_settings.changed["icon-size"].connect (() => {
 -            icon_size = dock_settings.get_int ("icon-size");
-+            icon_size = ItemManager.get_icon_size ();
++            icon_size = ItemManager.get_render_icon_size ();
 +        });
 +        dock_settings.changed["taskbar-mode"].connect (() => {
-+            icon_size = ItemManager.get_icon_size ();
++            icon_size = ItemManager.get_render_icon_size ();
 +        });
 +        SizePolicy.get_default ().changed.connect (() => {
-+            icon_size = ItemManager.get_icon_size ();
++            icon_size = ItemManager.get_render_icon_size ();
          });
  
          fade = new Adw.TimedAnimation (
@@ -379,31 +379,44 @@ index 0377885..40f991f 100644
 +++ b/src/ItemManager.vala
 @@ -36,7 +36,10 @@
              valign = START,
-             margin_top = Launcher.PADDING,
+-            margin_top = Launcher.PADDING,
++            margin_top = get_padding (),
          };
 -        settings.bind ("icon-size", separator, "height-request", GET);
-+        separator.height_request = get_icon_size ();
-+        settings.changed["icon-size"].connect (() => separator.height_request = get_icon_size ());
-+        settings.changed["taskbar-mode"].connect (() => separator.height_request = get_icon_size ());
-+        SizePolicy.get_default ().changed.connect (() => separator.height_request = get_icon_size ());
++        separator.height_request = get_render_icon_size ();
++        settings.changed["icon-size"].connect (() => separator.height_request = get_render_icon_size ());
++        settings.changed["taskbar-mode"].connect (() => separator.height_request = get_render_icon_size ());
++        SizePolicy.get_default ().changed.connect (() => separator.height_request = get_render_icon_size ());
  #endif
  
          append (app_group);
-@@ -176,6 +178,57 @@
+@@ -176,6 +178,69 @@
      }
  
      public static int get_launcher_size () {
 -        return settings.get_int ("icon-size") + Launcher.PADDING * 2;
-+        return get_icon_size () + Launcher.PADDING * 2;
++        return get_render_icon_size () + get_padding () * 2;
 +    }
 +
-+    // Adopted size-system taskbar icons follow the same setting as native icons.
-+    // Legacy/unmanaged desktops keep their existing 48 px taskbar contract.
++    // Keep the shared size-system token intact; render Dock launchers slightly smaller.
 +    public static int get_icon_size () {
 +        if (settings == null) {
 +            settings = new Settings ("io.elementary.dock");
 +        }
-+        return settings.get_boolean ("taskbar-mode") && !SizePolicy.get_default ().managed ? 48 : settings.get_int ("icon-size");
++        int configured_size = settings.get_boolean ("taskbar-mode") && !SizePolicy.get_default ().managed ? 48 : settings.get_int ("icon-size");
++        return configured_size;
++    }
++
++    public static int get_render_icon_size () {
++        int configured_size = get_icon_size ();
++        return (int) Math.round (configured_size * 0.9);
++    }
++
++    public static int get_padding () {
++        if (settings == null) {
++            settings = new Settings ("io.elementary.dock");
++        }
++        return settings.get_boolean ("taskbar-mode") ? 5 : Launcher.PADDING - 1;
      }
  }
 +

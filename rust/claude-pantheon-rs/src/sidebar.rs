@@ -6,9 +6,10 @@
 
 use crate::chat::label;
 use crate::look::{iso_to_unix, relative_time};
-use crate::t3::model::{Provider, ThreadShell};
+use crate::t3::model::{Project, Provider, ThreadShell};
 use gtk::{gdk, gio, glib, pango, prelude::*};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -19,6 +20,9 @@ pub struct SidebarConfig {
     /// Project ids in the owner's order; projects not listed follow, newest first.
     #[serde(default)]
     pub project_order: Vec<String>,
+    /// Show only threads that need a reply, approval, or follow-up; newest attention first.
+    #[serde(default)]
+    pub attention_only: bool,
 }
 
 fn config_path() -> PathBuf {
@@ -83,14 +87,97 @@ pub fn accent_for(provider: Option<&Provider>, driver: &str) -> String {
 /// A thread has activity the owner has not looked at: updated after the last visit.
 pub fn is_unread(t: &ThreadShell) -> bool {
     let visited = t.rest.get("lastVisitedAt").and_then(|v| v.as_str()).map(iso_to_unix).unwrap_or(0);
-    let latest = t
-        .rest
-        .get("latestRunCompletedAt")
-        .and_then(|v| v.as_str())
-        .map(iso_to_unix)
-        .filter(|&u| u > 0)
-        .unwrap_or_else(|| iso_to_unix(&t.updated_at));
-    latest > visited && t.rest.get("createdBy").and_then(|v| v.as_str()) != Some("system")
+    let completed = t.rest.get("latestRunCompletedAt").and_then(|v| v.as_str()).map(iso_to_unix).unwrap_or(0);
+    if completed > 0 {
+        return completed > visited;
+    }
+    if t.rest.get("createdBy").and_then(|v| v.as_str()) == Some("system") {
+        return false;
+    }
+    iso_to_unix(&t.updated_at) > visited
+}
+
+/// Repository display name provided by T3's resolved repository identity. Generic workspace
+/// projects intentionally return None, so the sidebar never implies that a non-Git chat has a repo.
+fn nonempty_str(value: Option<&Value>) -> Option<&str> {
+    match value.and_then(Value::as_str) {
+        Some(text) if !text.trim().is_empty() => Some(text),
+        _ => None,
+    }
+}
+
+pub fn repository_label(project: &Project) -> Option<String> {
+    let identity = project.repository_identity.as_ref()?.as_object()?;
+    if let Some(name) = nonempty_str(identity.get("displayName")) {
+        return Some(name.to_string());
+    }
+    if let (Some(owner), Some(name)) = (nonempty_str(identity.get("owner")), nonempty_str(identity.get("name"))) {
+        return Some(format!("{owner}/{name}"));
+    }
+    if let Some(name) = nonempty_str(identity.get("name")) {
+        return Some(name.to_string());
+    }
+    nonempty_str(identity.get("canonicalKey")).map(|key| {
+        key.trim_start_matches("https://").trim_start_matches("http://").trim_end_matches(".git").to_string()
+    })
+}
+
+fn branch_name(t: &ThreadShell) -> Option<&str> {
+    t.rest.get("branch").and_then(Value::as_str).map(str::trim).filter(|branch| !branch.is_empty())
+}
+
+/// Concise per-chat repository context. A branch is still useful for a local-only Git checkout whose
+/// repository has no hosting identity; chats without either field simply omit this line.
+pub fn thread_context_label(project: &Project, t: &ThreadShell) -> Option<String> {
+    let repository = repository_label(project);
+    let branch = branch_name(t);
+    match (repository, branch) {
+        (Some(repository), Some(branch)) => Some(format!("{repository} · {branch}")),
+        (Some(repository), None) => Some(repository),
+        (None, Some(branch)) => Some(format!("Branch · {branch}")),
+        (None, None) => None,
+    }
+}
+
+fn timestamp(value: &Value, keys: &[&str]) -> i64 {
+    keys.iter().filter_map(|key| value.get(*key).and_then(Value::as_str)).map(iso_to_unix).max().unwrap_or(0)
+}
+
+fn pending_attention_time(t: &ThreadShell) -> i64 {
+    let r = &t.rest;
+    let mut latest = 0;
+    if let Some(request) = r.get("pendingRuntimeRequest").filter(|v| !v.is_null()) {
+        latest = latest.max(timestamp(request, &["createdAt", "requestedAt", "updatedAt", "at"]));
+    }
+    if let Some(requests) = r.get("pendingRuntimeRequests").and_then(Value::as_array) {
+        for request in requests {
+            latest = latest.max(timestamp(request, &["createdAt", "requestedAt", "updatedAt", "at"]));
+        }
+    }
+    latest
+}
+
+/// Includes unanswered prompts, new completed work, and failed/limited runs. Uses shell metadata
+/// already in the snapshot and does not start a Git or status poll for each sidebar row.
+pub fn needs_attention(t: &ThreadShell) -> bool {
+    if t.pending_requests() > 0 || is_unread(t) {
+        return true;
+    }
+    let failed = t.rest.get("lastError").is_some_and(|v| !v.is_null())
+        || matches!(t.rest.get("status").and_then(Value::as_str), Some("failed" | "error" | "limited"))
+        || matches!(
+            t.rest.get("latestRun").and_then(|v| v.get("status")).and_then(Value::as_str),
+            Some("failed" | "error" | "limited")
+        );
+    failed && attention_timestamp(t) > t.rest.get("lastVisitedAt").and_then(Value::as_str).map(iso_to_unix).unwrap_or(0)
+}
+
+/// Best available time for sorting attention: request time, then completion/error time, then shell update.
+pub fn attention_timestamp(t: &ThreadShell) -> i64 {
+    pending_attention_time(t)
+        .max(t.rest.get("latestRunCompletedAt").and_then(Value::as_str).map(iso_to_unix).unwrap_or(0))
+        .max(t.rest.get("updatedAt").and_then(Value::as_str).map(iso_to_unix).unwrap_or(0))
+        .max(iso_to_unix(&t.updated_at))
 }
 
 pub fn is_pinned(t: &ThreadShell) -> bool {
@@ -109,7 +196,7 @@ fn dot(color: &str) -> gtk::DrawingArea {
 }
 
 /// One thread row: accent dot, title, running spinner or unread badge, time, pin mark.
-pub fn thread_row(t: &ThreadShell, title: &str, accent: &str, now: i64) -> gtk::ListBoxRow {
+pub fn thread_row(t: &ThreadShell, title: &str, context: Option<&str>, accent: &str, now: i64) -> gtk::ListBoxRow {
     let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
     row_box.add_css_class("sb-row");
     let head = gtk::Box::new(gtk::Orientation::Horizontal, 6);
@@ -137,19 +224,33 @@ pub fn thread_row(t: &ThreadShell, title: &str, accent: &str, now: i64) -> gtk::
     }
     row_box.append(&head);
     let foot = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    if let Some(context) = context {
+        let context_label = label(context, &["caption", "dim-label", "sb-context"]);
+        context_label.set_ellipsize(pango::EllipsizeMode::End);
+        context_label.set_max_width_chars(30);
+        context_label.set_hexpand(true);
+        foot.append(&context_label);
+    }
     let when = label(&relative_time(iso_to_unix(&t.updated_at), now), &["caption", "dim-label"]);
-    when.set_margin_start(14);
+    when.set_xalign(1.0);
+    when.set_hexpand(context.is_none());
     foot.append(&when);
     row_box.append(&foot);
     let row = gtk::ListBoxRow::new();
     row.set_child(Some(&row_box));
-    row.set_tooltip_text(Some(&format!("{title}\n{}", t.id)));
-    row.update_property(&[gtk::accessible::Property::Label(&format!(
-        "{title}, {}{}{}",
+    let tooltip =
+        context.map_or_else(|| format!("{title}\n{}", t.id), |context| format!("{title}\n{context}\n{}", t.id));
+    row.set_tooltip_text(Some(&tooltip));
+    let accessible = format!(
+        "{title}{}{}, {}{}{}{}",
+        context.map(|value| format!(", {value}")).unwrap_or_default(),
+        if needs_attention(t) { ", needs attention" } else { "" },
         relative_time(iso_to_unix(&t.updated_at), now),
         if t.is_running() { ", running" } else { "" },
+        if t.pending_requests() > 0 { ", waiting for your answer" } else { "" },
         if is_pinned(t) { ", pinned" } else { "" }
-    ))]);
+    );
+    row.update_property(&[gtk::accessible::Property::Label(&accessible)]);
     row
 }
 
@@ -325,5 +426,101 @@ mod tests {
         };
         assert!(is_unread(&t));
         assert_eq!(accent_for(None, "codex"), "#10a37f");
+    }
+
+    #[test]
+    fn imported_system_threads_only_alert_for_new_completed_work() {
+        let imported = ThreadShell {
+            updated_at: "2026-10-22T11:00:00Z".into(),
+            rest: serde_json::json!({"createdBy": "system", "lastVisitedAt": null}),
+            ..Default::default()
+        };
+        assert!(!is_unread(&imported), "old imported activity is not new attention");
+
+        let completed = ThreadShell {
+            rest: serde_json::json!({
+                "createdBy": "system",
+                "lastVisitedAt": null,
+                "latestRunCompletedAt": "2026-10-22T11:30:00Z"
+            }),
+            ..imported
+        };
+        assert!(is_unread(&completed), "new work in an imported thread still reaches the attention view");
+    }
+
+    #[test]
+    fn repository_and_branch_context_is_optional() {
+        let project = Project {
+            title: "Workspace".into(),
+            repository_identity: Some(serde_json::json!({
+                "canonicalKey": "github.com/techmore/example",
+                "displayName": "techmore/example",
+                "owner": "techmore",
+                "name": "example"
+            })),
+            ..Default::default()
+        };
+        let thread = ThreadShell { rest: serde_json::json!({"branch": "feature/sidebar"}), ..Default::default() };
+        assert_eq!(repository_label(&project).as_deref(), Some("techmore/example"));
+        assert_eq!(thread_context_label(&project, &thread).as_deref(), Some("techmore/example · feature/sidebar"));
+
+        let generic = Project { title: "Notes".into(), ..Default::default() };
+        assert_eq!(thread_context_label(&generic, &thread).as_deref(), Some("Branch · feature/sidebar"));
+        assert_eq!(thread_context_label(&generic, &ThreadShell::default()), None);
+    }
+
+    #[test]
+    fn attention_includes_singular_and_plural_runtime_requests() {
+        let singular = ThreadShell {
+            updated_at: "2026-10-22T10:00:00Z".into(),
+            rest: serde_json::json!({
+                "pendingRuntimeRequest": {"createdAt": "2026-10-22T10:20:00Z"},
+                "lastVisitedAt": "2026-10-22T10:10:00Z",
+                "createdBy": "user"
+            }),
+            ..Default::default()
+        };
+        assert_eq!(singular.pending_requests(), 1);
+        assert!(needs_attention(&singular));
+        assert_eq!(attention_timestamp(&singular), iso_to_unix("2026-10-22T10:20:00Z"));
+
+        let plural = ThreadShell {
+            rest: serde_json::json!({
+                "pendingRuntimeRequests": [
+                    {"createdAt": "2026-10-22T10:10:00Z"},
+                    {"createdAt": "2026-10-22T10:30:00Z"}
+                ]
+            }),
+            ..Default::default()
+        };
+        assert_eq!(plural.pending_requests(), 2);
+        assert!(needs_attention(&plural));
+        assert_eq!(attention_timestamp(&plural), iso_to_unix("2026-10-22T10:30:00Z"));
+    }
+
+    #[test]
+    fn failures_need_attention_until_they_are_visited() {
+        let failed = ThreadShell {
+            updated_at: "2026-10-22T10:30:00Z".into(),
+            rest: serde_json::json!({
+                "status": "failed",
+                "lastError": {"message": "provider exited"},
+                "lastVisitedAt": "2026-10-22T10:00:00Z",
+                "createdBy": "user"
+            }),
+            ..Default::default()
+        };
+        assert!(needs_attention(&failed));
+
+        let visited = ThreadShell {
+            rest: serde_json::json!({
+                "status": "failed",
+                "lastError": {"message": "provider exited"},
+                "lastVisitedAt": "2026-10-22T10:30:00Z",
+                "createdBy": "user"
+            }),
+            ..failed.clone()
+        };
+        assert!(!needs_attention(&visited));
     }
 }

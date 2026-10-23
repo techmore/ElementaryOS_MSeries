@@ -39,6 +39,13 @@ def invalidate_mcp_cache():
             pass  # Newelle itself refetches unreadable schema caches.
 
 
+def install_acp_helper():
+    put(LIB / 'acp-agent.py', (HERE / 'acp-agent.py').read_text(), 0o755)
+    put(HOME / '.local/bin/mseries-assistant-acp',
+        '#!/usr/bin/python3\nimport os,sys\nscript = os.path.expanduser("~/.local/libexec/mseries-ai/acp-agent.py")\nos.execv("/usr/bin/python3", ["python3", script] + sys.argv[1:])\n',
+        0o755)
+
+
 def app_helpers():
     for name in ['app_adapters.py', 'mail-drafts-ui.py', 'runtime_recovery.py']:
         put(LIB / name, (HERE / name).read_text(), 0o755)
@@ -50,6 +57,7 @@ def app_helpers():
     for name, title in [('mseries-assistant-browser', 'Assistant Browser'), ('mseries-mail-drafts', 'Assistant Mail Drafts')]:
         put(HOME / '.local/share/applications' / (name + '.desktop'),
             f'[Desktop Entry]\nType=Application\nName={title}\nExec="{HOME}/.local/bin/{name}"\nIcon=applications-internet\nTerminal=false\nCategories=Network;\n', 0o644)
+    install_acp_helper()
     old_hermes_launcher = HOME / '.local/share/applications/mseries-hermes-assistant.desktop'
     expected_hermes_launcher = (
         f'[Desktop Entry]\nType=Application\nName=Hermes Assistant (Experimental)\n'
@@ -67,7 +75,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--adopt-compact-defaults', action='store_true', help='Adopt the measured 4B everyday/coding presets; retain policy and other profiles')
     parser.add_argument('--refresh-tools', action='store_true', help='Update MCP/app helpers and added tools; retain model, memory, policy and other settings')
+    parser.add_argument('--install-acp', action='store_true', help='Install only the T3 ACP bridge; leave Newelle settings and model services untouched')
     args = parser.parse_args()
+    if args.install_acp:
+        if args.adopt_compact_defaults or args.refresh_tools:
+            parser.error('--install-acp cannot be combined with other setup modes')
+        if not (LIB / 'os-mcp.py').is_file():
+            parser.error('--install-acp requires an existing MSeries assistant setup with os-mcp.py installed')
+        install_acp_helper()
+        print('Installed the T3 ACP bridge only; Newelle settings and model services were not changed.')
+        return
     if args.refresh_tools:
         if args.adopt_compact_defaults or not (LIB / 'os-mcp.py').exists():
             parser.error('--refresh-tools requires an existing installation and cannot adopt presets')

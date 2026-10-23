@@ -10,6 +10,9 @@
 //!   CLAUDE_PANTHEON_SHOT_M3=<file.png>   usage page (milestone 3)
 //!   CLAUDE_PANTHEON_SHOT_DIAG=<file.png> diagnostics page (milestone 4g)
 //!   CLAUDE_PANTHEON_SHOT_REPOS=<file.png> repos and issues (milestone 5), pinned repos from workflow.json
+//!   CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY=1 render isolated pinned repos and exit before live checks
+//!   CLAUDE_PANTHEON_SHOT_REPOS_LAYOUT=<file.png> screenshot for the isolated repo layout pass
+//!   CLAUDE_PANTHEON_EXPECT_REPO_THREAD_CONTEXT=<text> wait for and assert a synthetic T3 repo row
 //!   CLAUDE_PANTHEON_LIVE_SEND=1          start a real thread and wait for the answer (costs tokens)
 //!   CLAUDE_PANTHEON_DARK=1               dark style
 //! Plain `main`, not libtest: GTK must stay on one thread.
@@ -58,6 +61,52 @@ fn shown(app: &App) -> Vec<String> {
     out
 }
 
+fn widget_with_css(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
+    if widget.has_css_class(class) {
+        return Some(widget.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(found) = widget_with_css(&c, class) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
+fn button_with_label(widget: &gtk::Widget, label_text: &str) -> Option<gtk::Button> {
+    if let Some(button) = widget.downcast_ref::<gtk::Button>()
+        && button.label().is_some_and(|label| label == label_text)
+    {
+        return Some(button.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(button) = button_with_label(&c, label_text) {
+            return Some(button);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
+fn chat_scroller(widget: &gtk::Widget) -> Option<gtk::ScrolledWindow> {
+    if let Some(scroller) = widget.downcast_ref::<gtk::ScrolledWindow>()
+        && widget_with_css(scroller.upcast_ref(), "chat").is_some()
+    {
+        return Some(scroller.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(found) = chat_scroller(&c) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
 fn save_png(window: &gtk::ApplicationWindow, path: &Path) {
     let mut node = None;
     for _ in 0..100 {
@@ -99,6 +148,46 @@ fn main() {
         .set_gtk_application_prefer_dark_theme(env("CLAUDE_PANTHEON_DARK").is_some());
 
     let app = App::build(&application, Instant::now(), false);
+    if std::env::var_os("CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY").is_some() {
+        assert!(pump_until("the isolated app startup", 60, || !app.is_busy()));
+        let expected_thread_context = std::env::var("CLAUDE_PANTHEON_EXPECT_REPO_THREAD_CONTEXT").ok();
+        if expected_thread_context.is_some() {
+            assert!(pump_until("the synthetic T3 shell snapshot", 30, || {
+                !app.projects().is_empty() && !app.threads().is_empty()
+            }));
+        }
+        app.show_repos();
+        assert!(pump_until("the isolated repository cards", 30, || {
+            shown(&app).iter().filter(|text| text.starts_with("layout-owner/")).count() >= 10
+        }));
+        if let Some(expected) = expected_thread_context {
+            assert!(
+                pump_until("the T3 thread's saved and live branch labels", 30, || {
+                    shown(&app).iter().any(|text| text.contains(&expected))
+                }),
+                "the repo chat row shows `{expected}`"
+            );
+        }
+        pump(300);
+        let t = shown(&app);
+        for expected in ["Pinned", "Issues", "Install runner", "Webhook", "New chat"] {
+            assert!(t.iter().any(|text| text == expected), "repository card shows {expected}: {t:?}");
+        }
+        let repo_scroll = widget_with_css(app.window().upcast_ref(), "repo-page-scroll")
+            .expect("the repository page has its own scroll viewport")
+            .downcast::<gtk::ScrolledWindow>()
+            .expect("repository viewport is a scrolled window");
+        let adjustment = repo_scroll.vadjustment();
+        assert!(
+            adjustment.upper() > adjustment.page_size() + 100.0,
+            "ten repository cards remain inside the page's scroll viewport"
+        );
+        let path = env("CLAUDE_PANTHEON_SHOT_REPOS_LAYOUT").expect("set a path for the isolated repo screenshot");
+        save_png(app.window(), &path);
+        app.window().destroy();
+        println!("PASS: isolated repository card layout");
+        return;
+    }
     assert!(pump_until("the index and the connection attempt", 60, || !app.is_busy()));
     pump(200);
     let sessions = app.sessions();
@@ -123,6 +212,39 @@ fn main() {
         "tool rows show"
     );
     println!("opened offline '{}' ({} bytes)", pick.title, pick.size);
+    // Qualify the long-history layout with the largest local transcript. The full thread must scroll
+    // inside its viewport while the composer stays at the bottom of the window.
+    let largest = sessions.iter().max_by_key(|s| s.size).expect("a local transcript");
+    if largest.id != pick.id {
+        assert!(app.select_id(&largest.id), "the largest transcript row exists");
+        assert!(pump_until("the largest transcript", 60, || !app.is_busy()));
+        pump(250);
+    }
+    let root = app.window().upcast_ref::<gtk::Widget>();
+    let transcript = chat_scroller(root).expect("the transcript owns a scrolled viewport");
+    let composer = widget_with_css(root, "composer").expect("the composer remains in the chat page");
+    let adjustment = transcript.vadjustment();
+    let lower = adjustment.lower();
+    let bottom = (adjustment.upper() - adjustment.page_size()).max(lower);
+    assert!(adjustment.page_size() > 0.0, "the transcript viewport has an allocated height");
+    assert!(bottom - lower > 150.0, "the largest transcript extends beyond its viewport");
+    let composer_y = composer.compute_bounds(app.window()).expect("composer bounds in the window").y();
+    adjustment.set_value(bottom);
+    pump(120);
+    assert!((adjustment.value() - bottom).abs() < 1.0, "the transcript reaches its lower end");
+    let scrolled_composer_y = composer.compute_bounds(app.window()).expect("composer bounds after scrolling").y();
+    assert!(
+        (scrolled_composer_y - composer_y).abs() < 1.0,
+        "scrolling the conversation does not move the composer ({composer_y} -> {scrolled_composer_y})"
+    );
+    adjustment.set_value(lower);
+    pump(120);
+    println!("long transcript scrolls within its viewport; composer remains anchored");
+    if largest.id != pick.id {
+        assert!(app.select_id(&pick.id), "the baseline transcript row exists");
+        assert!(pump_until("the baseline transcript again", 60, || !app.is_busy()));
+        pump(250);
+    }
     // Fenced code blocks render in GtkSourceView (the transcript has plenty).
     fn has_type(widget: &gtk::Widget, name: &str) -> bool {
         if widget.type_().name() == name {
@@ -459,6 +581,38 @@ fn main() {
                 || shown(&app).iter().any(|x| x.contains("No issues match") || x.starts_with("GitHub:"))));
             pump(400);
             println!("issues for {}: {}", first.repo, app.repos_page().issue_count());
+
+            let drafts_before = app.repos_page().config().issue_drafts.len();
+            button_with_label(app.window().upcast_ref(), "Draft issue").expect("issue intake button").emit_clicked();
+            pump(150);
+            let draft_window = gtk::Window::list_toplevels()
+                .into_iter()
+                .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
+                .find(|window| window.title().is_some_and(|title| title.starts_with("Issue brief · ")))
+                .expect("issue brief window opens");
+            let mut draft_text = Vec::new();
+            texts(draft_window.upcast_ref(), &mut draft_text);
+            for expected in [
+                "Problem and desired outcome",
+                "Context and research",
+                "Success criteria",
+                "Constraints and non-goals",
+                "Refine in T3 chat",
+                "File issue",
+            ] {
+                assert!(
+                    draft_text.iter().any(|text| text.contains(expected)),
+                    "issue intake shows {expected}: {draft_text:?}"
+                );
+            }
+            button_with_label(draft_window.upcast_ref(), "Close").expect("close issue draft").emit_clicked();
+            pump(100);
+            assert_eq!(
+                app.repos_page().config().issue_drafts.len(),
+                drafts_before,
+                "closing an empty brief saves no noise"
+            );
+            println!("issue brief opens with problem, research and success fields; empty close leaves no draft");
         }
         if let Some(path) = env("CLAUDE_PANTHEON_SHOT_REPOS") {
             save_png(app.window(), &path);

@@ -98,8 +98,8 @@ def inside(binary, output, theme):
             move(name)
             command('xdotool', 'click', str(button))
         markers = state()['markers']
-        assert [m['visible'] for m in markers] == [True, True, True, False], markers
-        assert [m['focused'] for m in markers] == [False, True, False, False], markers
+        assert [m['visible'] for m in markers] == [True, True, True, False, True], markers
+        assert [m['focused'] for m in markers] == [False, True, False, False, False], markers
         # Cross into the actual launcher tooltip without taking keyboard focus.
         move('teams')
         time.sleep(.8)
@@ -132,6 +132,81 @@ def inside(binary, output, theme):
         command('xdotool', 'key', 'ctrl+a')
         command('xdotool', 'type', '--clearmodifiers', 'typing-after-menu-and-activation')
         waitfor(lambda: Path(os.environ['QUAL_TYPED']).read_text() == 'typing-after-menu-and-activation')
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        assert not state().get('t3_competing_popup'), 'the Dock tooltip competed with the T3-R quick panel'
+        assert state()['focused_entry'], 'T3 hover popup stole typing focus'
+        labels = state()['t3_text']
+        assert 'fixture-eos' in labels and 'Codex' in labels and '42% used' in labels, labels
+        assert state()['t3_account'] == 'ChatGPT Work', state()
+        assert 'Claude' not in labels, 'popover showed a provider account other than the selected account: ' + labels
+        assert 'Needs approval' in labels and 'Live T3 work' in labels, labels
+
+        # Older status snapshots can contain a selected account ID without its display name,
+        # or no selection at all. The Dock keeps the account label distinct from the T3 server.
+        status_file = Path(os.environ['XDG_CACHE_HOME'])/'claude-pantheon-rs'/'status.json'
+        feed = json.loads(status_file.read_text())
+        feed.pop('selectedProvider', None)
+        temporary = status_file.with_suffix('.json.tmp')
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'codex')
+        assert state()['t3_account'] != 'fixture-eos'
+        feed['selectedProvider'] = 'ChatGPT Work'
+        feed.pop('selectedProviderId', None)
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'No provider selected')
+        assert 'fixture-eos' in state()['t3_text'], 'the paired server should remain in connection status'
+        assert 'No usage window reported' in state()['t3_text'], 'unknown provider selection must hide account usage'
+        feed['selectedProviderId'] = 'codex'
+        feed['selectedProvider'] = 'ChatGPT Work'
+        temporary.write_text(json.dumps(feed))
+        temporary.replace(status_file)
+        waitfor(lambda: state()['t3_account'] == 'ChatGPT Work')
+
+        command('ffmpeg', '-nostdin', '-loglevel', 'error', '-f', 'x11grab', '-video_size', origin['WIDTH']+'x'+origin['HEIGHT'],
+                '-i', os.environ['DISPLAY']+'+'+origin['X']+','+origin['Y'], '-frames:v', '1', '-update', '1', '-y', str(output/(theme+'-t3r-hover.png')))
+        command('xdotool', 'key', 'F8')  # activate the live-thread row without relying on popup-surface coordinates
+        try:
+            waitfor(lambda: '--thread fixture-thread' in Path(os.environ['QUAL_EVENTS']).read_text())
+        except AssertionError:
+            print('T3 thread-action diagnostic:', json.dumps(state()),
+                  Path(os.environ['QUAL_EVENTS']).read_text() if Path(os.environ['QUAL_EVENTS']).exists() else '')
+            raise
+        waitfor(lambda: not state().get('t3_popup'))
+        command('xdotool', 'mousemove', '1270', '890')  # clear both launcher and popup hover regions
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        command('xdotool', 'key', 'F7')  # activate Open full chat through the real button signal
+        waitfor(lambda: 'open-full' in Path(os.environ['QUAL_EVENTS']).read_text())
+        waitfor(lambda: not state().get('t3_popup'))
+        # Drop the fake client's well-known name to model a crash before its
+        # shutdown callback writes a stale status snapshot.
+        command('xdotool', 'mousemove', '1270', '890')
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        command('xdotool', 'key', 'F6')
+        waitfor(lambda: 'Offline · last synced from fixture-eos' in state()['t3_text'])
+        labels = state()['t3_text']
+        assert 'Last known · Codex · 5-hour' in labels and 'Last known · 42% used' in labels, labels
+        assert 'Needs approval' not in labels and 'Live T3 work' not in labels, labels
+        command('xdotool', 'key', 'F6')
+        waitfor(lambda: 'Needs approval' in state()['t3_text'] and 'Live T3 work' in state()['t3_text'])
+        assert 'PRIVATE RUNNING ACCOUNT LABEL' not in state()['t3_text'], state()['t3_text']
+        command('xdotool', 'mousemove', '1270', '890')
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        click('t3r')  # pin the hover-open popup
+        waitfor(lambda: state().get('t3_popup'))
+        click('entry')  # outside click dismisses the pinned popup
+        waitfor(lambda: not state().get('t3_popup'))
+        move('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        click('t3r')
+        waitfor(lambda: state().get('t3_popup'))
+        command('xdotool', 'key', 'Escape')
+        waitfor(lambda: not state().get('t3_popup'))
         move('entry')
         time.sleep(.3)
         # Capture the actual fixture window, without resizing or editing pixels.
@@ -139,9 +214,12 @@ def inside(binary, output, theme):
                 '-i', os.environ['DISPLAY']+'+'+origin['X']+','+origin['Y'], '-frames:v', '1', '-update', '1', '-y', str(output/(theme+'.png')))
         report = {'theme': theme, 'markers': markers, 'events': events, 'pointer_hover_preserves_typing': True,
                   'mixed_alias_activation_focuses_window': True, 'homogeneous_alias_activation_uses_full_group': True,
-                  'transient_menu_hides_invalid_actions': True, 'native_context_menu_escape': True, 'typing_after_actions': True}
+                  'transient_menu_hides_invalid_actions': True, 'native_context_menu_escape': True, 'typing_after_actions': True,
+                  't3r_hover_selected_account_status': True, 't3r_thread_action': True, 't3r_open_full_action': True,
+                  't3r_crash_marks_cached_status_stale': True, 't3r_click_pin_outside_dismiss_escape': True}
         (output/(theme+'.json')).write_text(json.dumps(report, indent=2)+'\n')
         print('PASS production launcher pointer, activation, menus, Escape and typing:', theme)
+        print('PASS T3-R popover hover, selected account, thread/full chat routing, pin, outside click and Escape:', theme)
     finally:
         process.terminate()
         try:
@@ -184,18 +262,62 @@ def main():
             # Original fixture artwork: no downloaded/redistributed vendor logos.
             icons = home/'.local/share/icons/hicolor/scalable/apps'
             icons.mkdir(parents=True)
-            for name, color in [('teams', '#6264a7'), ('outlook', '#1676b7'), ('closed', '#399d72'), ('application-default-icon', '#737b83')]:
+            for name, color in [('teams', '#6264a7'), ('outlook', '#1676b7'), ('closed', '#399d72'),
+                                ('application-default-icon', '#737b83'),
+                                ('io.github.techmore.ClaudePantheonRs', '#485f9e')]:
                 (icons/(name+'.svg')).write_text('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect x="4" y="4" width="56" height="56" rx="10" fill="'+color+'"/><path d="M18 22h28v20H30l-8 6v-6h-4z" fill="white"/></svg>')
             for name, identity, icon in [('TeamsFixture','brave-teams.microsoft.com__v2_-Default','teams'),
                                          ('OutlookFixture','brave-outlook.office.com__mail_-Default','outlook'),
                                          ('ClosedFixture','ClosedFixture','closed')]:
                 (apps/(name+'.desktop')).write_text('[Desktop Entry]\nType=Application\nName='+name+'\nExec=/usr/bin/false\nIcon='+str(icons/(icon+'.svg'))+'\nStartupWMClass='+identity+'\n')
+            (apps/'io.github.techmore.ClaudePantheonRs.desktop').write_text('''[Desktop Entry]
+Type=Application
+Name=T3-R Pantheon fixture
+Exec=fixture-action launch
+Icon=io.github.techmore.ClaudePantheonRs
+Actions=open-full;new-thread;usage;settings;
+
+[Desktop Action open-full]
+Name=Open full chat
+Exec=fixture-action open-full
+
+[Desktop Action new-thread]
+Name=New chat
+Exec=fixture-action new-thread
+
+[Desktop Action usage]
+Name=Usage
+Exec=fixture-action usage
+
+[Desktop Action settings]
+Name=Settings
+Exec=fixture-action settings
+''')
+            fixture_action = tools/'fixture-action'
+            fixture_action.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$QUAL_EVENTS"\n')
+            fixture_action.chmod(0o755)
+            thread_runner = tools/'claude-pantheon-rs'
+            thread_runner.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$QUAL_EVENTS"\n')
+            thread_runner.chmod(0o755)
+            status_dir = home/'cache'/'claude-pantheon-rs'
+            status_dir.mkdir(parents=True)
+            (status_dir/'status.json').write_text(json.dumps({
+                'schemaVersion': 1, 'connected': True, 'stale': False, 'server': 'fixture-eos',
+                'selectedProviderId': 'codex', 'selectedProvider': 'ChatGPT Work', 'updatedAt': '2026-10-22T12:00:00Z',
+                'windows': [
+                    {'instanceId': 'codex', 'provider': 'Codex', 'label': '5-hour', 'usedPercent': 42},
+                    {'instanceId': 'claude', 'provider': 'Claude', 'label': '5-hour', 'usedPercent': 7},
+                ],
+                'pendingPrompts': [{'id': 'pending-1', 'title': 'Needs approval', 'count': 2}],
+                'running': [{'id': 'fixture-thread', 'title': 'Live T3 work', 'provider': 'PRIVATE RUNNING ACCOUNT LABEL'}],
+            }))
             (home/'schema-free-data').mkdir()
             runtime = home/'runtime'
             runtime.mkdir(mode=0o700)
             env = {**os.environ, 'HOME': str(home), 'XDG_CONFIG_HOME': str(home/'config'), 'XDG_CACHE_HOME': str(home/'cache'),
                    'XDG_DATA_HOME': str(home/'.local/share'), 'XDG_DATA_DIRS': str(home/'schema-free-data'), 'XDG_RUNTIME_DIR': str(runtime), 'GSETTINGS_BACKEND': 'memory', 'GIO_USE_VFS': 'local', 'GIO_USE_VOLUME_MONITOR': 'unix',
                    'GDK_BACKEND': 'x11', 'GSK_RENDERER': 'cairo', 'GTK_A11Y': 'none', 'GTK_USE_PORTAL': '0', 'LC_ALL': 'C.UTF-8',
+                   'PATH': str(tools)+os.pathsep+os.environ.get('PATH',''),
                    'QUAL_PRIVATE': '1', 'QUAL_PORTAL_READY': str(home/'portal-ready'), 'QUAL_OUT': str(output), 'QUAL_STATE': str(home/'state.json'), 'QUAL_TYPED': str(home/'typed'),
                    'QUAL_EVENTS': str(home/'events'), 'GTK_THEME': 'io.elementary.stylesheet.blueberry'+(':dark' if theme=='dark' else '')}
             for key in ['DISPLAY', 'WAYLAND_DISPLAY', 'WAYLAND_SOCKET', 'DBUS_SESSION_BUS_ADDRESS']:

@@ -1,10 +1,10 @@
 /*
- * Claude for elementary OS: Wingpanel indicator.
+ * T3-R Pantheon: optional Wingpanel indicator.
  *
  * T3 Code has no desktop tray or menubar indicator (only a phone widget), so this is the one
  * at-a-glance view of the server: a badge with the number of pending permission prompts (a dot while
- * a thread runs), and a popover with the plan window nearest exhaustion and its reset countdown, every
- * window as a gauge, the rotation decision, running threads and pending prompts (clicking one opens
+ * a thread runs), and a popover with the selected provider's plan window nearest exhaustion and reset
+ * countdown, that provider's windows as gauges, running threads and pending prompts (clicking one opens
  * that thread in the app, which answers it). It reads ~/.cache/claude-pantheon-rs/status.json, written
  * by the client whenever the shell or the provider snapshot changes (src/status.rs), watches it with a
  * FileMonitor, never polls and never talks to the server. Layout follows the CodexBar indicator in
@@ -14,14 +14,16 @@
 public class ClaudePantheon.Feed : Object {
     public bool present = false;
     public bool connected = false;
+    public bool stale = false;
     public string server = "";
+    public string selected_provider_id = "";
     public string written_at = "";
     public Gee.ArrayList<Window> windows = new Gee.ArrayList<Window> ();
     public Gee.ArrayList<Thread> running = new Gee.ArrayList<Thread> ();
     public Gee.ArrayList<Thread> pending = new Gee.ArrayList<Thread> ();
-    public string next_task = "";
 
     public class Window : Object {
+        public string instance_id = "";
         public string provider = "";
         public string kind = "";
         public string label = "";
@@ -32,7 +34,7 @@ public class ClaudePantheon.Feed : Object {
     public class Thread : Object {
         public string id = "";
         public string title = "";
-        public string provider = "";
+        public string model = "";
         public int count = 0;
     }
 
@@ -51,18 +53,25 @@ public class ClaudePantheon.Feed : Object {
         var o = root.get_object ();
         feed.present = true;
         feed.connected = o.has_member ("connected") && o.get_boolean_member ("connected");
+        feed.stale = !feed.connected || (o.has_member ("stale") && o.get_boolean_member ("stale"));
         feed.server = o.has_member ("server") ? o.get_string_member ("server") : "";
+        feed.selected_provider_id = o.has_member ("selectedProviderId") ? o.get_string_member ("selectedProviderId") : "";
         feed.written_at = o.has_member ("writtenAt") ? o.get_string_member ("writtenAt") : "";
         if (o.has_member ("windows")) {
             foreach (var n in o.get_array_member ("windows").get_elements ()) {
                 var w = n.get_object ();
                 var win = new Window ();
+                win.instance_id = w.has_member ("instanceId") ? w.get_string_member ("instanceId") : "";
                 win.provider = w.get_string_member ("provider");
                 win.kind = w.get_string_member ("kind");
                 win.label = w.get_string_member ("label");
                 win.used_percent = w.get_double_member ("usedPercent");
                 win.resets_at = w.has_member ("resetsAt") && !w.get_null_member ("resetsAt") ? w.get_string_member ("resetsAt") : "";
-                feed.windows.add (win);
+                // Never enumerate configured accounts in the panel. Older schema-1 snapshots
+                // without a selection ID cannot identify the active account, so show no windows.
+                if (feed.selected_provider_id != "" && win.instance_id == feed.selected_provider_id) {
+                    feed.windows.add (win);
+                }
             }
         }
         foreach (var key in new string[] { "running", "pendingPrompts" }) {
@@ -72,13 +81,11 @@ public class ClaudePantheon.Feed : Object {
                 var thread = new Thread ();
                 thread.id = t.get_string_member ("id");
                 thread.title = t.get_string_member ("title");
-                thread.provider = t.has_member ("provider") ? t.get_string_member ("provider") : "";
+                // The client writes this only for threads using the selected provider.
+                thread.model = t.has_member ("model") ? t.get_string_member ("model") : "";
                 thread.count = t.has_member ("count") ? (int) t.get_int_member ("count") : 0;
                 (key == "running" ? feed.running : feed.pending).add (thread);
             }
-        }
-        if (o.has_member ("nextTask") && !o.get_null_member ("nextTask")) {
-            feed.next_task = o.get_object_member ("nextTask").get_string_member ("reason");
         }
         return feed;
     }
@@ -128,12 +135,17 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private Gtk.Box windows_box;
     private Gtk.Label next_label;
     private Gtk.Box threads_box;
+    private Gtk.ScrolledWindow threads_scroll;
     private Gtk.Label freshness;
     private GLib.FileMonitor? monitor = null;
+    private uint app_watch_id = 0;
+    private bool application_running = false;
     private string status_path;
+    private static bool style_installed = false;
 
     public Indicator (string? path = null) {
         Object (code_name: "claude-pantheon");
+        install_style ();
         status_path = path ?? Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
         visible = true;
         try {
@@ -142,6 +154,32 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         } catch (Error e) {
             warning ("status feed monitor: %s", e.message);
         }
+        if (path == null) {
+            app_watch_id = GLib.Bus.watch_name (GLib.BusType.SESSION, APP_ID, GLib.BusNameWatcherFlags.NONE,
+                (connection, name, owner) => {
+                    application_running = true;
+                    reload ();
+                },
+                (connection, name) => {
+                    application_running = false;
+                    reload ();
+                });
+        }
+    }
+
+    private static void install_style () {
+        if (style_installed) return;
+        var style = new Gtk.CssProvider ();
+        style.load_from_string ("""
+            levelbar.t3r-usage-gauge trough { min-height: 6px; border-radius: 3px; }
+            levelbar.t3r-usage-gauge block { min-height: 6px; border-radius: 3px; }
+            levelbar.t3r-usage-gauge block.filled.low { background-color: @success_color; }
+            levelbar.t3r-usage-gauge block.filled.high { background-color: @warning_color; }
+            levelbar.t3r-usage-gauge block.filled.full { background-color: @error_color; }
+        """);
+        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        style_installed = true;
     }
 
     public override Gtk.Widget get_display_widget () {
@@ -161,19 +199,26 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         if (popover_widget == null) {
             popover_widget = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { width_request = 340 };
             headline = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            headline.add_css_class (Granite.STYLE_CLASS_H3_LABEL);
+            headline.add_css_class ("title-3");
             headline_detail = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             headline_detail.add_css_class ("caption");
-            headline_detail.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+            headline_detail.add_css_class (Granite.CssClass.DIM);
             windows_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
             next_label = new Gtk.Label ("") { xalign = 0, wrap = true };
             next_label.add_css_class ("caption");
             var threads_header = new Granite.HeaderLabel ("Threads");
             threads_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            threads_scroll = new Gtk.ScrolledWindow () {
+                hscrollbar_policy = Gtk.PolicyType.NEVER,
+                vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
+                max_content_height = 260,
+                propagate_natural_height = true,
+            };
+            threads_scroll.child = threads_box;
             freshness = new Gtk.Label ("") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             freshness.add_css_class ("caption");
-            freshness.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
-            var open = new Gtk.Button.with_label ("Open Claude") { halign = Gtk.Align.END };
+            freshness.add_css_class (Granite.CssClass.DIM);
+            var open = new Gtk.Button.with_label ("Open Full Chat") { halign = Gtk.Align.END };
             open.clicked.connect (() => {
                 launch (null);
                 close ();
@@ -181,7 +226,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             var bottom = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             bottom.append (freshness);
             bottom.append (open);
-            foreach (var w in new Gtk.Widget[] { headline, headline_detail, windows_box, next_label, threads_header, threads_box, bottom }) {
+            foreach (var w in new Gtk.Widget[] { headline, headline_detail, windows_box, next_label, threads_header, threads_scroll, bottom }) {
                 w.margin_start = 12;
                 w.margin_end = 12;
                 popover_widget.append (w);
@@ -201,7 +246,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private void launch (string? thread_id) {
         try {
             string[] argv = thread_id == null
-                ? new string[] { "gapplication", "launch", APP_ID }
+                ? new string[] { "gapplication", "action", APP_ID, "open-full" }
                 : new string[] { "gapplication", "action", APP_ID, "open-thread", "'" + thread_id.replace ("'", "") + "'" };
             Process.spawn_async (null, argv, null, SpawnFlags.SEARCH_PATH, null, null);
         } catch (Error e) {
@@ -218,26 +263,62 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         }
     }
 
+    private Gtk.Button activity_button (Feed.Thread thread, bool pending, bool live) {
+        var button = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
+        button.add_css_class (Granite.STYLE_CLASS_FLAT);
+        string title = pending
+            ? live ? "? %s needs you (%d)".printf (thread.title, thread.count)
+                : "Last known · %s · %d request(s) at last sync".printf (thread.title, thread.count)
+            : live ? "▶ %s".printf (thread.title) : "Last known · %s".printf (thread.title);
+        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+        var primary = new Gtk.Label (title) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+        content.append (primary);
+        if (thread.model != "") {
+            var model = new Gtk.Label ("Model: %s".printf (thread.model)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            model.add_css_class ("caption");
+            model.add_css_class (Granite.CssClass.DIM);
+            content.append (model);
+        }
+        button.child = content;
+        button.tooltip_text = live
+            ? pending ? "Open this thread to answer" : "Open this running thread"
+            : "Offline; this is last known activity";
+        string id = thread.id;
+        button.clicked.connect (() => {
+            launch (id);
+            close ();
+        });
+        return button;
+    }
+
     public void reload () {
         var feed = Feed.load (status_path);
-        render (feed, new DateTime.now_utc ());
+        render (feed, new DateTime.now_utc (), application_running);
     }
 
     /** Fills every widget from a feed; separate from reload so the probe can render a fixture at a fixed time. */
-    public void render (Feed feed, DateTime now) {
-        int prompts = feed.prompt_count ();
+    public void render (Feed feed, DateTime now, bool client_running = true) {
+        bool live = client_running && feed.present && feed.connected && !feed.stale;
+        bool stale = feed.present && !live;
+        int prompts = live ? feed.prompt_count () : 0;
+        string hover = hover_summary (feed, now, client_running);
         if (badge != null) {
-            badge.label = prompts > 0 ? "%d".printf (prompts) : (feed.running.size > 0 ? "•" : "");
+            badge.label = prompts > 0 ? "%d".printf (prompts) : (live && feed.running.size > 0 ? "•" : "");
             icon.icon_name = prompts > 0 ? "dialog-question-symbolic" : APP_ID + "-symbolic";
+            icon.tooltip_text = hover;
+            display_widget.tooltip_text = hover;
         }
         if (popover_widget == null) return;
         var nearest = feed.nearest ();
         if (!feed.present) {
-            headline.label = "Claude is not running";
-            headline_detail.label = "Open the app to pair with the T3 server";
+            headline.label = "T3-R is not running";
+            headline_detail.label = "Open T3-R to pair with the server";
+        } else if (stale) {
+            headline.label = nearest == null ? "Last known status" : "Last known · %s %s %.0f%%".printf (nearest.provider, nearest.label.down (), nearest.used_percent);
+            headline_detail.label = feed.server == "" ? "Not connected · open T3-R to reconnect" : "Offline · reconnect to refresh";
         } else if (nearest == null) {
-            headline.label = feed.connected ? "No plan windows reported" : "Not connected";
-            headline_detail.label = feed.connected ? feed.server : "Reconnecting from the app";
+            headline.label = "No plan windows reported";
+            headline_detail.label = feed.server;
         } else {
             headline.label = "%s %s %.0f%%".printf (nearest.provider, nearest.label.down (), nearest.used_percent);
             headline_detail.label = Feed.countdown (nearest.resets_at, now);
@@ -245,12 +326,13 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         clear (windows_box);
         foreach (var w in feed.windows) {
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            var name = new Gtk.Label ("%s · %s".printf (w.provider, w.label)) { xalign = 0, width_chars = 16, ellipsize = Pango.EllipsizeMode.END };
+            var name = new Gtk.Label (stale ? "Last known · %s · %s".printf (w.provider, w.label) : "%s · %s".printf (w.provider, w.label)) { xalign = 0, width_chars = 16, ellipsize = Pango.EllipsizeMode.END };
             name.add_css_class ("caption");
             var bar = new Gtk.LevelBar () { min_value = 0, max_value = 100, hexpand = true, valign = Gtk.Align.CENTER };
             bar.add_offset_value ("low", 60);
             bar.add_offset_value ("high", 90);
             bar.add_offset_value ("full", 100);
+            bar.add_css_class ("t3r-usage-gauge");
             bar.value = w.used_percent;
             var pct = new Gtk.Label ("%.0f%%".printf (w.used_percent)) { xalign = 1, width_chars = 4 };
             pct.add_css_class ("caption");
@@ -260,37 +342,20 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             row.append (pct);
             windows_box.append (row);
         }
-        next_label.label = feed.next_task != "" ? feed.next_task : (feed.windows.size > 0 ? "every window is full; the runner idles until the earliest reset" : "");
-        next_label.visible = next_label.label != "";
+        // Rotation can refer to other configured accounts. Keep those details in the full
+        // client; the compact panel is scoped to the provider selected in chat.
+        next_label.label = "";
+        next_label.visible = false;
         clear (threads_box);
         foreach (var t in feed.pending) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL };
-            b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var l = new Gtk.Label ("? %s needs you (%d)".printf (t.title, t.count)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            b.child = l;
-            b.tooltip_text = "Open this thread to answer";
-            var id = t.id;
-            b.clicked.connect (() => {
-                launch (id);
-                close ();
-            });
-            threads_box.append (b);
+            threads_box.append (activity_button (t, true, live));
         }
         foreach (var t in feed.running) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL };
-            b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var l = new Gtk.Label ("▶ %s · %s".printf (t.title, t.provider)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            b.child = l;
-            var id = t.id;
-            b.clicked.connect (() => {
-                launch (id);
-                close ();
-            });
-            threads_box.append (b);
+            threads_box.append (activity_button (t, false, live));
         }
         if (feed.running.size == 0 && feed.pending.size == 0) {
-            var l = new Gtk.Label ("Nothing running") { xalign = 0, margin_start = 6 };
-            l.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+            var l = new Gtk.Label (stale ? "No activity reported at last sync" : "Nothing running") { xalign = 0, margin_start = 6 };
+            l.add_css_class (Granite.CssClass.DIM);
             threads_box.append (l);
         }
         string when = "";
@@ -298,12 +363,42 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             var written = new DateTime.from_iso8601 (feed.written_at, new TimeZone.utc ());
             if (written != null) {
                 var age = now.difference (written) / TimeSpan.SECOND;
-                when = age < 60 ? "updated just now" : age < 3600 ? "updated %lld min ago".printf (age / 60) : "updated %s".printf (written.to_local ().format ("%H:%M"));
+                var minutes = (int) (age / 60);
+                when = age < 60 ? "updated just now" : age < 3600 ? "updated %d min ago".printf (minutes) : "updated %s".printf (written.to_local ().format ("%H:%M"));
             }
         }
         freshness.label = feed.present
-            ? "%s · %s".printf (feed.connected ? feed.server : "not connected", when)
+            ? "%s · %s".printf (live ? feed.server : feed.server != "" ? "offline · " + feed.server : "not connected", when)
             : "no status feed yet";
+    }
+
+    private static string hover_summary (Feed feed, DateTime now, bool client_running) {
+        if (!feed.present) return "T3-R · Open the client to connect";
+        var lines = new Gee.ArrayList<string> ();
+        bool live = client_running && feed.connected && !feed.stale;
+        if (!live) {
+            lines.add (feed.server == "" ? "T3-R · not connected" : "T3-R · %s · offline · last known status".printf (feed.server));
+        }
+        if (feed.windows.size > 0) {
+            foreach (var w in feed.windows) {
+                var reset = Feed.countdown (w.resets_at, now);
+                lines.add ("%s%s · %s %.0f%%%s".printf (
+                    live ? "" : "Last known · ", w.provider, w.label, w.used_percent, reset != "" ? " · " + reset : ""));
+            }
+        } else if (live && feed.selected_provider_id == "") {
+            lines.add ("T3-R · Select a provider in chat");
+        } else if (live) {
+            lines.add ("T3-R · No usage windows reported for the selected provider");
+        }
+        int prompts = live ? feed.prompt_count () : 0;
+        if (prompts > 0) {
+            lines.add ("%d permission prompt%s waiting".printf (prompts, prompts == 1 ? "" : "s"));
+        } else if (live && feed.running.size > 0) {
+            lines.add ("%d thread%s running".printf (feed.running.size, feed.running.size == 1 ? "" : "s"));
+        } else if (!live && feed.running.size + feed.pending.size > 0) {
+            lines.add ("Last sync showed %d active item(s)".printf (feed.running.size + feed.pending.size));
+        }
+        return string.joinv ("\n", lines.to_array ());
     }
 }
 

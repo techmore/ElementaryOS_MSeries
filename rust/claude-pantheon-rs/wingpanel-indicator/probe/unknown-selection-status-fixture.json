@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "writtenAt": "2026-10-22T00:35:10Z",
+  "connected": true,
+  "stale": false,
+  "server": "eos",
+  "running": [],
+  "pendingPrompts": [],
+  "windows": [
+    {"instanceId": "codex-work", "provider": "Codex", "kind": "session", "label": "Session", "usedPercent": 59},
+    {"instanceId": "claude-main", "provider": "Claude", "kind": "session", "label": "Session", "usedPercent": 31}
+  ]
+}

@@ -17,6 +17,40 @@ mseries-assistant --quality coding
 
 The Applications menu has Desktop Assistant, Personal Assistant and Coding Assistant. Desktop and Personal open Newelle, with a local user-summary memory that can be inspected and reset in Memory preferences. No embedding model is needed for this memory. Tasks, calendar components, workspace notes, system measurements and fault signatures are available through the local MCP adapter. Tool execution stays within the configured adapter surface. Broad Newelle shell, arbitrary-file, subagent, screenshot and network tools are hidden in the preconfigured profile. User-defined modes or later settings can expand that surface.
 
+## T3-R assistant provider
+
+The same local assistant can be added to T3-R as a server-side ACP command. On
+the paired T3 server, run `python3 mseries/local-ai/configure-assistants.py
+--install-acp`, then choose **Settings → Providers → Add an ACP provider →
+MSeries Assistant…** in T3-R. This installs only `mseries-assistant-acp`; it
+does not change Newelle settings, model profiles or running services. The bridge
+uses the already-supervised `127.0.0.1:8766` endpoint and existing sixteen-tool
+`os-mcp.py`; it does not start or switch a model, connect to a remote endpoint,
+or add shell/arbitrary-file tools. Each local write goes through T3's ACP
+permission policy. The opted-in Newelle user-summary memory is read at session
+start when Flatpak/Newelle is installed; T3 retains chat history, while edits to
+that summary still belong to Newelle. If another supervised MSeries profile is
+already running on port 8768, the ACP command can be given
+`--endpoint http://127.0.0.1:8768/v1`; the bridge still does not start or switch
+that profile. Start the supervised Desktop Assistant service if the default
+local endpoint is unavailable.
+
+The ACP bridge bounds prompts, retained history and tool results for the
+default 8K context. Long individual results and aggregate tool output in a turn
+are truncated before they return to the model. Completed turns are kept in a
+bounded ACP context cache under `$XDG_STATE_HOME/mseries-ai/acp-sessions` (or
+`~/.local/state/mseries-ai/acp-sessions`): at most 24 messages / 12,000
+characters per thread and 512 threads. Snapshot writes are atomic, with a
+private directory and owner-only files. ACP `session/load` restores context
+after a T3 or agent restart; `session/close` frees its MCP process but retains
+the snapshot. The current Newelle summary is loaded again on resume. These
+snapshots are chat context, not model KV state; the bridge keeps using the
+supervised llama.cpp worker's single prompt-cache slot and stable system/tool
+prefix. Each saved snapshot is checked against the same 12,000-character and
+24-message restore limits before replacing the prior checkpoint. If one
+completed turn exceeds those limits, the last recoverable checkpoint remains
+available after a restart; the oversized turn may need to be sent again.
+
 The initial setup downloads pinned Qwen3.5 4B and 9B weights (roughly 9 GB combined), Newelle's ARM64 Flatpak/runtime, and the pinned clients. Model weights and personal state stay in the user's home. Factory images stage the offline runtime and compute ICD under `/usr/lib/omarchy-mlx`, llama.cpp under `/usr/lib/mseries-ai/llama`, and user setup under `/usr/share/elementary-mac`. First-user setup uses those runtimes without apt writes to immutable `/usr`. Factory runtime staging and pruning pass; a full image build and hardware boot with this AI layer remain separate qualification steps.
 
 `install.sh` preserves a previous runtime and restores it on failed updates, refuses active MLX workers, pins both MLX and the private compute Mesa, and defaults to two build jobs. System Mesa, the bootloader, kernel and audio stack are preserved. Our private patch bounds prefill to 256 tokens and disables thinking by default; an API request may explicitly enable thinking. The compiled rsqrt/RMSNorm check covers the numerical fix in v0.7.33.
@@ -34,6 +68,103 @@ systemctl --user stop mseries-ai-everyday mseries-ai-quality mseries-ai-coder9 m
 ```
 
 Newelle uses the pinned Qwen3.5 4B on port 8766 with an 8K server cap. Crush uses the same weights on port 8768 with 16K: the initial full prompt exceeded 11K; disabling unused tools reduced the tested prompt to 7,720 tokens. Only one supervised model is resident at a time. `--quality` selects Qwen9 and a separate coding workspace; a refused switch attempts to restore the previous managed model. Older Qwen3 4B, 7B GGUF, Liquid and Bonsai profiles are optional comparisons. The uninstalled 30B plan budgets 21 GiB plus reserve and does not fit this retained app mix. No ANE or conversational voice stack is qualified. Native CPU Parakeet F5 dictation and its Dictation panel are installed, with an owner-reported speech-to-field pass; translation is still post-utterance. [Speech status and retained limits](SPEECH-INTEGRATION.md).
+
+### Liquid 24B and ANE candidate on Asahi — 2026-10-22
+
+Liquid AI publishes [LFM2.5-24B-A2B in GGUF for llama.cpp](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF)
+as well as [MLX for Apple Silicon](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-MLX-4bit).
+The official model card reports 24B total / 2.45B active parameters; the
+published Q4_0 GGUF is about 13.6 GB and a
+[community Q4_K_M build](https://huggingface.co/m9ter1a/LFM2.5-24B-A2B-GGUF)
+is about 14.5–15.0 GB. Active-parameter count does not remove the need to load the full
+weights. Liquid's product page reports 184 tok/s on an Apple M5 Max; that is not
+an M1 Pro estimate. The installed llama.cpp is build `7182ef7`; its
+[pinned source](https://github.com/ggml-org/llama.cpp/blob/7182ef71e6d5dd0c8ea76486fac134fcd25025d4/src/llama-model.cpp#L303-L306)
+includes the `lfm2moe` model loader, so the architecture is present in
+this runtime. A current upstream [tool-call parsing report](https://github.com/ggml-org/llama.cpp/issues/30490)
+shows that some LFM2.5-24B turns can surface alternate tool syntax as plain
+text instead of structured function calls, so the tool workflow needs its own
+quality check. Our prior LFM2.5 1.2B trial reached 63.59 estimated tok/s but
+passed only 3/9 tool workflows, so it is not a quality or
+speed proxy for this larger checkpoint.
+
+The latest M1 Pro snapshot (October 22) reports 15.5 GiB available, with fans
+at 2503 RPM and maximum sampled temperature 49.3 C. After the six-GiB desktop
+reserve, only 9.5 GiB remains. Liquid AI's published 4-bit MLX checkpoint is
+13.6 GB (12.7 GiB) before runtime and context memory; this host still fails the
+supervisor admission gate. The GGUF is not downloaded, and no service start or
+inference was attempted. Recheck the existing supervisor admission gate before
+a later trial, then qualify the GGUF's actual tool-call formatting and the same
+six synthetic app workflows before considering it for daily use. The experimental
+[Linux Qwen-on-ANE repo](https://github.com/joshuaswarren/ane-linux-experiments)
+reports a staged Qwen 2B decode at 8.23 tok/s on an M1, with 100/100 tokens
+exact; its end-to-end timing was 0.69x the paired macOS result. That is a more
+promising research candidate than the earlier arithmetic-only evidence, but
+the repo targets an original M1 and has no measurement for this M1 Pro/T6000 or
+supervised OpenAI-compatible assistant service. Its bring-up guide warns that
+raw device operations can hard-reset the machine, so those scripts are not a
+safe desktop inference trial. This host's custom kernel does have a bound ANE
+driver (`modinfo` reports `intree=Y`); Asahi's feature table still classifies
+the Neural Engine driver as out of tree. The installed ANE-backed Parakeet path
+remains speech transcription. Neither it nor the experimental Qwen path is
+qualified as the daily T3 assistant yet.
+
+A fresh read-only supervisor preflight on October 22 measured 9.17 GiB
+available, with a 2510 RPM maximum fan sample and 44.42 C maximum temperature
+sample. The 12.67 GiB checkpoint plus the six-GiB reserve needs at least 18.67
+GiB before runtime/context memory, so admission was refused again and no model
+service was started. The retained ANE Parakeet result is speech-only evidence;
+T3-R's own voice button currently uses Whisper. The separate global F5 listener
+is inactive and configured for its Nemotron CPU engine.
+
+### MSeries ACP live T3 check — October 22
+
+After the supervised Qwen3.5 4B everyday profile passed its existing admission
+check, a real T3 `orchestration.launchThread` reached the local ACP provider,
+called the production MCP `add_minutes` tool for 09:45 + 135 minutes, and
+returned `12:00` in a completed T3 projection. The first T3 attempt exposed a
+6,000-character bridge prompt cap; bridge version 0.3.0 now allows 16,000
+characters (about 4K ordinary tokens) and has boundary tests. A fresh ACP 0.3.0
+thread then used the same tool to return `13:00` for 12:15 + 45 minutes. Both
+T3 projections completed and both temporary threads were archived. This proves
+two local T3-to-model-to-tool turns. It does not qualify broad answer quality,
+T3 server restart/reattachment or daily use. A separate
+same-thread, two-turn context check recalled its synthetic token correctly. The
+production read-only `system_status` tool also completed through a T3 thread.
+The local model also read a synthetic Assistant Workspace note through T3's
+`workspace_read_file` tool and returned the exact marker; the note and temporary
+thread were removed, and a fresh status read confirmed zero running and pending
+work. One authorized `workspace_write_note` request then passed T3's one-time
+approval flow; exact file bytes were verified and the note was deleted.
+An isolated real-model bridge restart check saved a prompt in one ACP process,
+loaded it in a fresh process, and recalled the token; T3 server restart and
+reattachment still need verification. The Liquid 24B model remains unloaded
+because its weights plus runtime do not fit the host's memory budget with the
+six-GiB desktop reserve. A live preflight with Qwen3.5 4B active measured
+10.56 GiB available; the 13.6 GB weights plus reserve need at least 18.67 GiB
+before runtime/context overhead, and the supervisor refused admission. No
+experimental ANE conversation service was started.
+
+A smaller official [LiquidAI LFM2.5-2.6B GGUF](https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/tree/e7caca5d835a3901a8e0d63e94009429bafafdfc)
+passed one real T3 `add_minutes` turn at 8K context: 09:45 + 135 minutes
+returned `12:00` in 32.1 seconds. At 4K, T3's 4,555-token composed request
+exceeded the model context and failed before inference. The 8B candidate was
+refused by the unchanged memory gate (12.18 GiB available versus 12.5 GiB
+required); its temporary download was removed. Qwen3.5 4B remains the default
+profile, but its service could not restart at 12.21 GiB available. The
+supervised 2.6B Liquid profile currently serves port 8766 for this session;
+its systemd unit remains disabled for autostart. See the [live T3 receipt](receipts/t3-live-2026-10-22/receipt.json) for the checkpoint hash and memory measurements.
+
+A synthetic local task request also reached T3's pending permission flow.
+Declining it completed the thread, and a scoped Assistant Tasks read confirmed
+the unique test task was not written.
+
+The live T3 config also reports Codex, Claude, Grok, OpenCode and MSeries
+Assistant ACP installed, enabled and ready. Provider authentication remains
+server-owned; this read does not display account identities or credentials.
+Each cloud provider also returned one minimal exact-response smoke through T3,
+and all temporary threads were archived. This verifies provider routing, not
+broader model quality or every account workflow.
 
 Hermes has been retired from the maintained assistant setup. New installs no longer fetch its source or create its launcher. Existing Hermes checkout, virtual environment, configuration, and state in a user's home are retained. On the next assistant configuration, the setup removes only its exact, unmodified generated Hermes desktop entry; a customized entry is preserved. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
 

@@ -55,6 +55,148 @@ Open **Assistant Browser** from Applications and open pages you want to share th
 
 The installed Newelle profile discovers exactly sixteen tools. The refresh command installs only owned helpers/launchers, preserves model/memory/policy and other servers, and invalidates only the owned schema cache. GTK3 and WebSocket dependencies are present in the Apple Silicon overlay and both consumers that prune the overlay package list.
 
+## T3-R assistant bridge — October 22
+
+`acp-agent.py` exposes those same sixteen scoped tools through T3's local ACP
+command. The bridge talks only to a loopback OpenAI-compatible model endpoint
+and starts the existing `os-mcp.py`; it never starts or changes a model worker.
+It persists only a bounded local transcript context snapshot for ACP
+`session/load`: 24 messages / 12,000 characters per thread, capped at 512
+threads, with atomic writes and owner-only directory/file permissions. It does
+not persist model KV tensors; requests reuse the supervised model server's
+existing one-slot prompt cache and stable system/tool prefix. A fresh ACP
+session reloads the currently opted-in Newelle summary.
+Read-only tools run directly; writes request an ACP one-time permission before
+dispatch. Shell, arbitrary-file, broad browser-control and remote-network tools
+are not exposed. A `--install-acp` setup mode installs only the agent and user
+launcher, leaving Newelle preferences and model services untouched. An explicit
+`--endpoint` argument can point at another already-running loopback profile.
+
+The bridge's provider contract, tool-call path, bounded context snapshot, and
+ACP session load/close lifecycle pass isolated Python tests.
+The ACP-only installer was run; the installed launcher returned successful
+ACP `initialize` and `session/new` responses against the real MCP service. A
+synthetic OpenAI-compatible server then drove the real MCP `add_minutes` tool
+and returned `12:00`.
+
+### Live T3 model turn — October 22
+
+The first actual T3 launch exposed a 6,000-character bridge limit: T3's
+composed ACP prompt was rejected before inference. The bridge now accepts up
+to 16,000 characters (about 4K tokens for ordinary English), still below the
+default 8K model context. Twelve isolated ACP tests cover the exact limit and
+the over-limit rejection. After reinstalling only the ACP helper, a real T3
+`orchestration.launchThread` call dispatched through `acp-mseries-assistant`
+to the supervised local Qwen3.5 4B endpoint. The model invoked the real MCP
+`add_minutes` tool for 09:45 + 135 minutes, T3's completed projection showed
+the tool call and `12:00` answer. A fresh ACP 0.3.0 thread then called the same
+tool for 12:15 + 45 minutes and T3 completed with `13:00`. Both temporary
+verification threads were archived. These two T3-to-local-model-to-MCP turns
+do not qualify broader answer quality or daily-use reliability. A separate
+two-turn T3 thread also passed a synthetic context-carryover check: after the
+first turn stored a token in the conversation, the second turn recalled it.
+Another completed T3 thread invoked the production read-only `system_status`
+tool. The installed bridge then passed a real-model process-restart check in
+isolated temporary state: process one saved a turn, process two loaded the
+same ACP session and recalled its token. This verifies bridge `session/load`
+after process exit. A synthetic `create_assistant_task` request then reached a
+pending T3 permission; declining it completed the thread, and a scoped
+Assistant Tasks read confirmed the task was not created. T3's own server
+restart and reattachment flow remains open.
+
+The paired T3 server now has an enabled local `MSeries Assistant` ACP provider
+(`acp-mseries-assistant`); its live config reports `installed=true` and
+`status=ready`, confirming that the server found and initialized the bridge.
+The four existing authenticated providers retained their enabled/installed/auth
+states when this entry was added. A fresh live config read reports Codex,
+Claude, Grok, OpenCode, and MSeries Assistant installed, enabled and ready.
+The local provider has completed two real model/tool turns plus a read-only
+system-status turn and a real T3 read of one synthetic Assistant Workspace
+note through `workspace_read_file`; the model returned its exact marker and the
+note and temporary thread were removed. A fresh status read confirmed zero
+running and pending work. One explicitly authorized `workspace_write_note`
+call also reached a pending T3 approval, was accepted once, and completed; the
+exact note bytes were verified and the note, newly created empty workspace
+directory, and temporary thread were removed. The earlier synthetic tool-call
+receipt remains an adapter check; these short local turns do not establish
+broad model quality.
+Each authenticated cloud provider also returned a minimal exact-response smoke
+through T3 (Codex, Claude, Grok and OpenCode); the four temporary threads were
+archived. This verifies provider routing, not each feature-specific workflow.
+
+Pantheon's provider setup source now recognizes ACP readiness from the
+T3-reported session status instead of requiring OAuth auth state, and offers
+server-side agent removal instead of sign-in/sign-out. On the next app launch,
+the live `ready` ACP entry will be selectable and described as an agent whose
+local model is checked when a turn is sent. Provider readiness is not evidence
+that the local inference endpoint is online.
+
+### Cache and local-model fit
+
+The local worker already launches llama.cpp with one prompt-cache slot. The ACP
+bridge now keeps its system/tool prefix stable and persists bounded text context
+so T3 can reopen a session; it does not duplicate KV tensors to disk. This
+matches the useful DeepSeek API pattern of reusing stable request prefixes, but
+DeepSeek's [disk context cache](https://api-docs.deepseek.com/guides/kv_cache/)
+is server-side and cannot be applied to the local llama.cpp worker. The official
+[DeepInfer repository](https://github.com/deepseek-ai/DeepInfer) is a
+large-scale GPU inference stack (its published serving benchmark uses 4 SM100
+GPUs for prefill and 64 for decode), so its cache engine is a design reference,
+not a runtime fit for this M1 Pro. DeepSeek models are already listed by the
+connected OpenCode provider; no separate account or unsynced provider is added.
+
+Liquid AI's LFM2.5-24B-A2B has official llama.cpp GGUF support and a strong
+published M5 Max speed result, but the host's October 22 snapshot had 15.5 GiB
+available, leaving 9.5 GiB after the six-GiB desktop reserve. The vendor's
+published 4-bit MLX checkpoint is 13.6 GB (12.7 GiB) before runtime/context
+memory, so the existing supervisor admission gate still blocks this trial; no
+24B weights were downloaded or loaded. A live preflight while the
+Qwen3.5 4B worker was active measured 10.56 GiB available; the 13.6 GB
+checkpoint alone plus the six-GiB desktop reserve needs at least 18.67 GiB
+before runtime/context memory, so the existing gate refused admission. The
+successful T3 turns used the already-qualified Qwen3.5 4B worker.
+
+On October 22, a smaller official [LiquidAI LFM2.5-2.6B GGUF](https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/tree/e7caca5d835a3901a8e0d63e94009429bafafdfc)
+was pinned at revision `e7caca5d835a3901a8e0d63e94009429bafafdfc`, file
+`LFM2.5-2.6B-Q4_K_M.gguf`, SHA-256
+`02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed`. The
+supervised llama.cpp profile passed admission with a four-GiB model budget plus
+the unchanged six-GiB desktop reserve; available memory measured 12.89 GiB
+before load and 11.12 GiB afterward. At 4K context, T3's composed request was
+4,555 tokens and failed before inference. At 8K, a real T3 `add_minutes` turn
+returned `12:00` for 09:45 + 135 minutes in 32.1 seconds. This is one working
+tool turn, not a broad speed or quality qualification. The official 8B Q4_K_M
+candidate was refused at 12.18 GiB available against its 12.5-GiB admission
+threshold; its temporary download was removed without running inference.
+
+After the trial, the default Qwen3.5 4B profile remained unchanged, but its
+6.5-GiB admission plus six-GiB reserve was refused at 12.21 GiB available. The
+supervised 2.6B Liquid profile served the local ACP endpoint on port 8766 during
+the initial T3 checks. The supervisor's quiet policy later stopped it at 15:21
+EDT because the desktop memory reserve would be crossed. At 16:56 EDT,
+`MemAvailable` was 7.4 GiB, below the Liquid profile's ten-GiB admission plus
+desktop-reserve threshold; `mseries-ai-liquid.service` is inactive and port 8766
+is closed. Leave the endpoint stopped until a fresh supervisor preflight admits
+it. The service remains disabled for autostart; no reserve or admission
+threshold was lowered.
+
+The current [ANE Qwen experiment](https://github.com/joshuaswarren/ane-linux-experiments)
+records 8.23 tok/s on an original M1 and exact 100-token output; that result is
+not measured on this M1 Pro/T6000, and there is no supervised T3-compatible
+service for it. The repository's bring-up guide warns raw device operations can
+hard-reset the machine, so its scripts are not a safe desktop trial. The ANE
+path and 24B Liquid checkpoint still need a separate, supervisor-managed path
+before the local assistant can claim model-quality or daily-use qualification.
+
+A fresh read-only admission check on October 22 measured 9.17 GiB available,
+with a 2510 RPM maximum fan sample and 44.42 C maximum temperature sample. The
+Liquid checkpoint alone is about 12.67 GiB; with the six-GiB desktop reserve,
+the supervisor refuses it at this snapshot (18.67 GiB minimum before runtime
+and context memory). No service was started. The existing ANE Parakeet speech
+trial is a separate retained F5 qualification; T3-R's built-in voice button
+currently uses Whisper and does not make ANE Parakeet a chat model. The F5
+listener is currently inactive and configured for the Nemotron CPU engine.
+
 The default worker also recovers abandoned upstream CLI reservations when **both** the recorded process and process group are absent, using the pinned upstream owner-checked API. Live, paired or unknown leases remain. Six stale pre-reboot leases were recovered on this host without lowering the reserve.
 
 The [current sanitized checkpoint](receipts/app-integration-2026-10-18/) retains all six backend model passes: three browser→Calendar→Mail chains (347.37, 129.95 and 124.37 s) and three hostile-page rejections (12.85, 104.75 and 26.90 s). Independent EDS/draft matches and owned cleanup passed. Cooling pauses are reported separately; first positive min available RAM was 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C. These are sampled readings, not sound-pressure measurements. Connection-refused and timeout attempts remain unscored, with their original traces/cleanup retained. The terminal owned backend queue was verified before restoring the historical Tasks harness.

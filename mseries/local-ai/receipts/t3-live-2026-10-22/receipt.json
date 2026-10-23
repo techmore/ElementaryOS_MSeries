@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-22",
+  "bridge_version": "0.3.0",
+  "provider_instance": "acp-mseries-assistant",
+  "launch_path": "T3 orchestration.launchThread",
+  "local_profile": "supervised Qwen3.5 4B everyday",
+  "endpoint_scope": "loopback",
+  "result": "passed",
+  "successful_end_to_end_turns": 2,
+  "workflows": [
+    {
+      "tool": "add_minutes",
+      "input": "09:45 + 135 minutes",
+      "expected_answer": "12:00",
+      "observed_answer": "12:00",
+      "t3_projection_status": "completed"
+    },
+    {
+      "tool": "add_minutes",
+      "input": "12:15 + 45 minutes",
+      "expected_answer": "13:00",
+      "observed_answer": "13:00",
+      "t3_projection_status": "completed",
+      "bridge_version": "0.3.0"
+    }
+  ],
+  "bridge_limit_chars": 16000,
+  "prompt_limit_regression": "The first real T3 launch exceeded the former 6000-character cap and was rejected before inference. The limit was raised and the end-to-end launch then passed.",
+  "isolated_acp_tests": 12,
+  "temporary_test_threads_archived": true,
+  "same_thread_context_carryover": "passed; second T3 turn recalled a synthetic token from the first turn",
+  "read_only_t3_system_status_tool": "completed through the production MCP adapter",
+  "fresh_process_session_load": {
+    "first_process_real_model_turn": "completed and saved",
+    "second_process_session_load": "passed from an isolated temporary state directory",
+    "post_restart_model_recall": "passed"
+  },
+  "live_provider_readiness": {
+    "providers": [
+      "codex",
+      "claudeAgent",
+      "grok",
+      "opencode",
+      "acp-mseries-assistant"
+    ],
+    "states": "all enabled, installed, ready",
+    "account_identity_or_credentials_recorded": false
+  },
+  "live_cloud_provider_smokes": {
+    "providers": [
+      "codex",
+      "claudeAgent",
+      "grok",
+      "opencode"
+    ],
+    "result": "all completed with the expected exact response through T3",
+    "temporary_threads_archived": true,
+    "scope_note": "Minimal non-sensitive response checks; not feature-specific workflow qualification."
+  },
+  "live_t3_permission_denial": {
+    "tool": "create_assistant_task",
+    "pending_t3_permission_observed": true,
+    "decision": "decline",
+    "thread_completed": true,
+    "scoped_task_read_after_decline": "unique test task absent",
+    "temporary_thread_archived": true
+  },
+  "live_t3_read_only_workflow": {
+    "tool": "workspace_read_file",
+    "synthetic_fixture": true,
+    "result": "exact marker returned through the real T3 local ACP provider",
+    "temporary_thread_archived": true,
+    "fixture_removed": true,
+    "created_workspace_directory_removed": true,
+    "post_settle_status": {
+      "connected": true,
+      "running": 0,
+      "pending": 0
+    },
+    "status_note": "The first immediate status read lagged thread settlement; a subsequent read confirmed idle."
+  },
+  "scope_note": "Two real add_minutes turns plus real system_status and synthetic workspace_read_file turns; not a broad quality or daily-use qualification.",
+  "liquid_24b_preflight": {
+    "available_gib": 10.56,
+    "minimum_weights_plus_desktop_reserve_gib": 18.67,
+    "supervisor_gate": "refused: desktop memory reserve would be crossed",
+    "weights_downloaded_or_loaded": false
+  },
+  "liquid_24b_current_read_only_preflight": {
+    "available_gib": 9.17,
+    "checkpoint_gib": 12.67,
+    "desktop_reserve_gib": 6,
+    "minimum_available_gib_before_runtime": 18.67,
+    "maximum_fan_rpm": 2510,
+    "maximum_temperature_c": 44.42,
+    "admitted": false,
+    "reason": "desktop memory reserve would be crossed",
+    "model_service_started": false
+  },
+  "ane_conversation_trial": "not run; no qualified supervised T3-compatible endpoint",
+  "liquid_2_6b_t3_trial": {
+    "repository": "LiquidAI/LFM2.5-2.6B-GGUF",
+    "revision": "e7caca5d835a3901a8e0d63e94009429bafafdfc",
+    "file": "LFM2.5-2.6B-Q4_K_M.gguf",
+    "bytes": 1674455040,
+    "sha256": "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
+    "checkpoint_retained": true,
+    "supervisor": {
+      "context": 8192,
+      "admission_gib": 4.0,
+      "desktop_reserve_gib": 6.0,
+      "preload_available_gib": 12.89,
+      "postload_available_gib": 11.12
+    },
+    "initial_context_attempt": {
+      "context": 4096,
+      "t3_composed_prompt_tokens": 4555,
+      "result": "Rejected before inference because prompt exceeded context"
+    },
+    "successful_t3_turn": {
+      "tool": "add_minutes",
+      "input": "09:45 + 135 minutes",
+      "expected_answer": "12:00",
+      "observed_answer": "12:00",
+      "projection_status": "completed",
+      "elapsed_seconds": 32.137,
+      "temporary_thread_archived": true
+    },
+    "current_session_runtime": {
+      "model": "LFM2.5-2.6B-Q4_K_M",
+      "endpoint": "127.0.0.1:8766",
+      "service": "mseries-ai-liquid.service",
+      "systemd_enabled": false,
+      "available_gib_after_load": 10.26,
+      "reason": "Keeps the T3 local endpoint available after the Qwen everyday service was refused by its existing memory gate; no admission or reserve was lowered."
+    }
+  },
+  "liquid_8b_memory_gate_trial": {
+    "repository": "LiquidAI/LFM2.5-8B-A1B-GGUF",
+    "revision": "49c14831707011e64d70b2ebd8462ba08d608434",
+    "file": "LFM2.5-8B-A1B-Q4_K_M.gguf",
+    "bytes": 5155564768,
+    "sha256": "4923ec14f06b968b74d663e5949867d2d9c3bf13a20b8be1a9f9af39989b2bb0",
+    "preflight_available_gib": 12.18,
+    "admission_gib": 6.5,
+    "desktop_reserve_gib": 6.0,
+    "minimum_available_gib": 12.5,
+    "inference_started": false,
+    "temporary_download_removed": true
+  },
+  "qwen_everyday_restore_after_trial": {
+    "profile_unchanged": true,
+    "admission_gib": 6.5,
+    "desktop_reserve_gib": 6.0,
+    "preflight_available_gib": 12.21,
+    "service_start_result": "refused by existing memory gate; required 12.5 GiB",
+    "reserve_lowered": false
+  },
+  "live_t3_approved_disposable_workspace_write": {
+    "tool": "workspace_write_note",
+    "synthetic_filename": "codex-t3-one-shot-20261022.md",
+    "request_reached_pending_t3_approval": true,
+    "decision": "accept once",
+    "observed_tool_text": "Temporary T3 write approval verification.",
+    "completed": true,
+    "exact_file_bytes_verified": true,
+    "note_removed": true,
+    "workspace_directory_absent_before": true,
+    "new_empty_workspace_directory_removed": true,
+    "temporary_thread_archived": true,
+    "additional_mutating_tool_calls": 0
+  }
+}
