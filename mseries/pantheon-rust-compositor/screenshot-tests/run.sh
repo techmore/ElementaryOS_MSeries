@@ -119,7 +119,13 @@ assert sizes[2] == (400, 300), sizes
 print('PASS: region drag, hovered-window capture and Escape cancellation', sizes)
 REGION
 if [[ -n ${SCREENSHOT_TEST_SHELF:-} ]]; then
-  MSERIES_SHELF_BACKEND=wayland MSERIES_SHELF_SECONDS=3 \
+  env -u MSERIES_SHELF_BACKEND WAYLAND_DISPLAY=capture-test /usr/bin/python3 - <<'BACKEND'
+import os, runpy
+shelf = runpy.run_path(os.environ['SCREENSHOT_TEST_SHELF'], run_name='shelf_probe')
+assert shelf['WAYLAND'], 'running compositor must advertise native shelf placement'
+print('PASS: shelf automatically selected native Wayland from compositor capability')
+BACKEND
+  env -u MSERIES_SHELF_BACKEND MSERIES_SHELF_SECONDS=3 \
     MSERIES_SHELF_WATCH="$HOME/Downloads/Screenshots" \
     GDK_BACKEND=wayland WAYLAND_DISPLAY=capture-test GSK_RENDERER=cairo \
     /usr/bin/python3 "$SCREENSHOT_TEST_SHELF" >"$CAPTURE_RECEIPT/shelf-stderr.log" 2>&1 &

@@ -53,11 +53,11 @@ def pantheon_places_shelf():
 
 
 def gala_places_shelf():
-    """True when the running compositor is our patched Gala built with the shelf placement.
+    """True when the running compositor advertises native shelf placement.
 
     A Wayland window cannot choose its position, so the patched Gala puts it bottom-right (patches/
     gala-screenshot-shelf-placement.patch). Wayland is the only backend where drag and drop into native
-    Wayland apps such as Signal works; without that Gala the shelf falls back to XWayland and places itself.
+    Wayland apps such as Signal works; without compositor support the shelf falls back to XWayland.
     """
     if os.environ.get("MSERIES_SHELF_BACKEND"):
         return os.environ["MSERIES_SHELF_BACKEND"] == "wayland"
