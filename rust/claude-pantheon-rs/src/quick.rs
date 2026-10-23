@@ -98,7 +98,7 @@ impl QuickPanel {
         let brand = gtk::Label::new(Some("T3-R Pantheon"));
         brand.add_css_class("title-4");
         brand.set_xalign(0.0);
-        let account = gtk::Label::new(Some("No T3 account"));
+        let account = gtk::Label::new(Some("No provider selected"));
         account.add_css_class("caption");
         account.add_css_class("dim-label");
         account.set_xalign(0.0);
@@ -262,29 +262,30 @@ impl QuickPanel {
     }
 
     fn render(&self, feed: Feed) {
-        let account_name =
-            if feed.selected_provider.trim().is_empty() { &feed.server } else { &feed.selected_provider };
-        let has_account = !account_name.trim().is_empty();
-        self.account.set_text(if has_account { account_name } else { "No T3 account" });
-        let connection = if feed.connected {
-            if feed.server.trim().is_empty() {
+        let provider_id = feed.selected_provider_id.trim();
+        let provider_name = feed.selected_provider.trim();
+        let has_account = !provider_id.is_empty();
+        let account_name = if provider_name.is_empty() { provider_id } else { provider_name };
+        let server = feed.server.trim();
+        let live = feed.connected && !feed.stale;
+        self.account.set_text(if has_account { account_name } else { "No provider selected" });
+        let connection = if live {
+            if server.is_empty() {
                 "Connected · live status".to_string()
             } else {
-                format!("Connected to {} · live status", feed.server)
+                format!("Connected to {server} · live status")
             }
+        } else if !server.is_empty() {
+            format!("Offline · last synced from {server}")
         } else if has_account {
-            if feed.server.trim().is_empty() {
-                "Offline · showing last synced status".to_string()
-            } else {
-                format!("Offline · last synced from {}", feed.server)
-            }
+            "Offline · showing last synced status".to_string()
         } else {
             "Pair with a T3 server in Settings".to_string()
         };
         self.connection.set_text(&connection);
         self.connection.remove_css_class("connected");
         self.connection.remove_css_class("stale");
-        self.connection.add_css_class(if feed.connected { "connected" } else { "stale" });
+        self.connection.add_css_class(if live { "connected" } else { "stale" });
 
         let nearest = selected_window(&feed);
         match nearest {
@@ -298,7 +299,7 @@ impl QuickPanel {
             }
             None => {
                 self.usage_title.set_text("No usage windows reported");
-                self.usage_detail.set_text(if feed.connected {
+                self.usage_detail.set_text(if live {
                     "T3 has not reported a quota window yet."
                 } else {
                     "Usage appears after the first sync."
@@ -309,7 +310,7 @@ impl QuickPanel {
             }
         }
         clear(&self.activity);
-        if feed.stale || !feed.connected {
+        if !live {
             let known = feed.running.len() + feed.pending_prompts.len();
             let message = if known == 0 {
                 "No live activity is available while offline.".to_string()
@@ -331,7 +332,7 @@ impl QuickPanel {
             }
         }
 
-        let timestamp = if feed.connected { &feed.updated_at } else { &feed.written_at };
+        let timestamp = if live { &feed.updated_at } else { &feed.written_at };
         self.freshness.set_text(&freshness(timestamp));
         self.freshness.set_visible(!timestamp.is_empty());
     }

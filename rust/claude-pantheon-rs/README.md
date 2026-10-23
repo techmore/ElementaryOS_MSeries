@@ -62,22 +62,26 @@ The same actions sit in the app menu (header bar, right) with their accelerator 
 and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offline Twin, Reconnect,
 Forget Pairing and About (version, server, providers ready).
 
-## Wingpanel indicator and compact status window
+## Dock popover, Wingpanel indicator, and quick window
 
-The real hover popover is the optional native Wingpanel indicator (`wingpanel-indicator/`). It appears in the system
-panel, shows only the provider selected in the full chat, badges pending approvals or running work, and opens a compact
-usage/activity view on hover. Clicking **Open Full Chat** or a live activity row opens the full T3-R desktop client at
-the matching destination. Other provider accounts remain in Settings → Providers. When T3 is offline, cached activity
-is labeled last known and its thread rows are disabled. The normal Dock launcher opens the full desktop client;
-`--quick` opens a separate compact status window for explicit use and is not attached to the Dock icon.
+In taskbar mode, the T3-R Dock launcher owns an attached native GTK popover: hover opens after 250 ms, the pointer can
+cross to the popover during a 450 ms grace period, click pins or toggles it, and Escape or an outside click dismisses
+it. The popover shows the selected provider and paired T3 server separately, usage for that provider, and live activity.
+New chat, Usage, Settings, Open full chat, and live thread rows route to the matching destination in the full client.
+When taskbar mode is off, the launcher opens the full client directly.
 
-Both compact surfaces read the local versioned `status.json` snapshot through a file monitor; they do not open another
-RPC socket or poll. Writes use an atomic rename and mode `0600`. On disconnect the feed keeps the last successful snapshot
-as stale; normal application shutdown also marks it stale. The Wingpanel indicator additionally watches the client
-session D-Bus name, so an unclean process exit marks cached activity stale even when the client cannot write a shutdown
-snapshot. Unpairing or switching environments clears the cache. The Wingpanel module is included in the Debian package
-when built with `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`; install it with `bash mseries/install-claude-pantheon-indicator.sh`
-if only the app package is installed.
+The optional native Wingpanel indicator (`wingpanel-indicator/`) is a separate system-panel surface with selected-provider
+usage and activity. `--quick` opens a separate compact status window for explicit use; it is not attached to the Dock icon.
+The Dock popover, Wingpanel indicator, and quick window read the local versioned `status.json` snapshot through file
+monitors; they do not open another RPC socket or poll. Writes use an atomic rename and mode `0600`. On disconnect the feed
+keeps the last successful snapshot as stale; normal application shutdown also marks it stale. The Wingpanel indicator
+additionally watches the client session D-Bus name, so an unclean process exit marks cached activity stale even when the
+client cannot write a shutdown snapshot. The Dock popover and quick window identify the selected provider separately
+from the paired T3 server; when no provider is selected, they say so instead of showing the server as an account. The
+Wingpanel summary scopes usage to the selected provider. Stale status is treated as offline even if feed flags disagree,
+and stale activity cannot open a thread. Unpairing or switching environments clears the cache. The Wingpanel module is
+included in the Debian package when built with `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`;
+install it with `bash mseries/install-claude-pantheon-indicator.sh` if only the app package is installed.
 
 ## Thread resume cache
 
