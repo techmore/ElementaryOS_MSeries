@@ -1,3 +1,23 @@
+## Rust local favorites and strip parity — 2026-10-22
+
+The Rust header star and row menu now edit shared local pin preferences instead of
+BlueFerry's unordered server star API. The strip and row/header indicators use
+visible imported pins followed by local favorites, resolved against the complete
+inbox so filtering cannot make ambiguous addresses unique. SDK toggles preserve
+Apple snapshots, hide/restore imported pins, follow unique direct-address identity,
+remove duplicate imported/local sources together, and enforce the 64-local limit.
+
+Writes require loaded phone-scoped state, are serialized with import/loading, and
+check current backend UUID plus generation before applying results. Failed saves
+retain previous state/restore the star. Review dialogs reject stale phone generations.
+Failed keyring loads retry on refresh without changing message-operation generation.
+Private GTK checks cover strip/header state, unavailable-keyring rollback and retry;
+SDK toggle/identity/cap tests pass, plus light/dark GUI/badge checks and strict lint.
+Receipts: /tmp/messages-local-favorite-{model-final,ui,rollback,recovery,light,dark,
+clippy-final}.log. Successful private Rust keyring round-trip and live phone
+acceptance still remain; these failure/UI checks do not prove persistence success.
+Optimized ARM64 package rebuilt and installed; no client/session restart.
+
 ## Combined Signal/Messages branch and shared pin-state compatibility — 2026-10-22
 
 Merged Signal branch 59cacc64 into the Rust Messages candidate, bringing its
