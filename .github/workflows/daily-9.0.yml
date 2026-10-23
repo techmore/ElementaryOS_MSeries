@@ -133,8 +133,12 @@ jobs:
           swap-storage: false
       - name: Install native M4 build and inspection tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bc bison build-essential cpio curl dwarves flex \
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+            -o Acquire::Retries=3 -o Acquire::http::Timeout=120 -o Acquire::https::Timeout=120 \
+            -o DPkg::Lock::Timeout=300 update
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+            -o Acquire::Retries=3 -o Acquire::http::Timeout=120 -o Acquire::https::Timeout=120 \
+            -o DPkg::Lock::Timeout=300 install -y bc bison build-essential cpio curl dwarves flex \
             libdw-dev libelf-dev libncurses-dev libssl-dev clang-21 libclang-21-dev \
             llvm-21 pahole python3 rsync bindgen kmod device-tree-compiler zstd
       - name: Select matched Rust compiler and library sources
