@@ -1,3 +1,21 @@
+## Installer owner-bus fix and keyboard menus — 2026-10-22
+
+Owner installed native capture package 0.1.0+gitb2887485 successfully. Its binary
+SHA256 matches the qualified release (321a7371e6f72cc242f0634141f5e6439a1c3d914d5f60f28f58e7f11bfe571e).
+The sudo installer incorrectly addressed root's user manager after dpkg; fixed
+routing to SUDO_USER with the owner's runtime bus. An unavailable bus now warns
+without misreporting a successful package operation as failed. Owner daemon-reload
+completed without changing compositor PID 1934; it still loads the old executable.
+No reinstall needed; next login and physical capture acceptance remain pending.
+Read-only --status now reports known units and active owner compositor.
+
+Shared SDK attach_context_menu provides pointer, touch, Menu and Shift+F10 access.
+Messages conversation/message menus use it; Escape dismisses the popover without
+navigating Back. Light/dark real-input GTK scenarios, 30 library tests, strict
+Clippy and optimized ARM64 packaging pass. The updated user package is installed;
+no running clients were restarted. CI includes Python/libXtst for physical-key
+fixture input. Full live acceptance and screen-reader checks remain open.
+
 ## Native capture handoff and desktop activation — 2026-10-22
 
 Added mseries/stage-native-capture.sh and the user command
