@@ -16,10 +16,12 @@ use std::rc::Rc;
 
 pub struct ReposPage {
     root: gtk::Box,
+    page_scroll: gtk::ScrolledWindow,
     repo_list: gtk::Box,
     status: gtk::Label,
     drafts_box: gtk::Box,
     issues_box: gtk::Box,
+    load_more_button: gtk::Button,
     issues_title: gtk::Label,
     new_issue_button: gtk::Button,
     issue_state_dd: gtk::DropDown,
@@ -28,6 +30,12 @@ pub struct ReposPage {
     agent_dd: gtk::DropDown,
     config: RefCell<Config>,
     issues: RefCell<Vec<Issue>>,
+    issue_generation: Cell<u64>,
+    open_issue_page: Cell<u32>,
+    closed_issue_page: Cell<u32>,
+    open_issues_more: Cell<bool>,
+    closed_issues_more: Cell<bool>,
+    loading_more_issues: Cell<bool>,
     current_repo: RefCell<Option<PinnedRepo>>,
     load_generation: Cell<u64>,
     filters_wired: Cell<bool>,
@@ -227,6 +235,12 @@ impl ReposPage {
         issues_box.set_margin_end(24);
         issues_box.set_margin_top(8);
         issues_box.set_margin_bottom(18);
+        let load_more_button = gtk::Button::with_label("Load more issues");
+        load_more_button.set_halign(gtk::Align::Center);
+        load_more_button.set_margin_bottom(18);
+        load_more_button.set_visible(false);
+        load_more_button.set_tooltip_text(Some("Load the next GitHub issue page for the selected state."));
+        load_more_button.update_property(&[gtk::accessible::Property::Label("Load more issues")]);
 
         let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
         column.append(&status);
@@ -234,6 +248,7 @@ impl ReposPage {
         column.append(&filters);
         column.append(&drafts_box);
         column.append(&issues_box);
+        column.append(&load_more_button);
         let scroll = gtk::ScrolledWindow::builder()
             .child(&column)
             .hscrollbar_policy(gtk::PolicyType::Never)
@@ -244,10 +259,12 @@ impl ReposPage {
         root.append(&scroll);
         ReposPage {
             root,
+            page_scroll: scroll,
             repo_list,
             status,
             drafts_box,
             issues_box,
+            load_more_button,
             issues_title,
             new_issue_button,
             issue_state_dd,
@@ -256,6 +273,12 @@ impl ReposPage {
             agent_dd,
             config: RefCell::new(workflow::load_config()),
             issues: RefCell::new(Vec::new()),
+            issue_generation: Cell::new(0),
+            open_issue_page: Cell::new(1),
+            closed_issue_page: Cell::new(1),
+            open_issues_more: Cell::new(false),
+            closed_issues_more: Cell::new(false),
+            loading_more_issues: Cell::new(false),
             current_repo: RefCell::new(None),
             load_generation: Cell::new(0),
             filters_wired: Cell::new(false),
@@ -635,8 +658,8 @@ impl ReposPage {
             webhook.connect_clicked(move |_| a.install_webhook(rr.clone()));
 
             if pinned.iter().any(|p| p.repo == r.repo) {
-                match workflow::issues(&r.repo).await {
-                    Ok(issues) => {
+                match workflow::issue_page(&r.repo, "open", 1).await {
+                    Ok((issues, has_more)) => {
                         let open_issues: Vec<_> = issues.iter().filter(|i| i.state == "open").collect();
                         let lane = |l: &str| open_issues.iter().filter(|i| i.lane() == Some(l)).count();
                         let ready = open_issues.iter().filter(|i| i.agent() == Some("ready")).count();
@@ -646,8 +669,9 @@ impl ReposPage {
                             .find(|i| i.agent() == Some("ready"))
                             .map(|i| format!("next up: #{} {}", i.number, i.title));
                         counts.set_text(&format!(
-                            "{} open · build {} · feature {} · maintenance {} · ready {} · running {}{}",
+                            "{}{} open · build {} · feature {} · maintenance {} · ready {} · running {}{}",
                             open_issues.len(),
+                            if has_more { "+" } else { "" },
                             lane("build"),
                             lane("feature"),
                             lane("maintenance"),
@@ -664,6 +688,15 @@ impl ReposPage {
 
     pub fn show_issues(&self, app: &Rc<App>, repo: PinnedRepo) {
         *self.current_repo.borrow_mut() = Some(repo.clone());
+        let generation = self.issue_generation.get().wrapping_add(1);
+        self.issue_generation.set(generation);
+        self.issues.borrow_mut().clear();
+        self.open_issue_page.set(1);
+        self.closed_issue_page.set(1);
+        self.open_issues_more.set(false);
+        self.closed_issues_more.set(false);
+        self.loading_more_issues.set(false);
+        self.load_more_button.set_visible(false);
         self.new_issue_button.set_sensitive(true);
         self.issues_title.set_text(&format!("Issues in {}", repo.repo));
         self.render_drafts(app);
@@ -674,13 +707,27 @@ impl ReposPage {
         let app = app.clone();
         glib::spawn_future_local(async move {
             workflow::ensure_labels(&repo.repo).await;
-            match workflow::issues(&repo.repo).await {
-                Ok(issues) => {
-                    *app.repos_page().issues.borrow_mut() = issues;
+            let (open, closed) = futures_util::future::join(
+                workflow::issue_page(&repo.repo, "open", 1),
+                workflow::issue_page(&repo.repo, "closed", 1),
+            )
+            .await;
+            let page = app.repos_page_rc();
+            if page.issue_generation.get() != generation {
+                return;
+            }
+            match (open, closed) {
+                (Ok((mut open, open_more)), Ok((mut closed, closed_more))) => {
+                    open.append(&mut closed);
+                    open.sort_by_key(Issue::rank);
+                    *page.issues.borrow_mut() = open;
+                    page.open_issue_page.set(1);
+                    page.closed_issue_page.set(1);
+                    page.open_issues_more.set(open_more);
+                    page.closed_issues_more.set(closed_more);
                     app.repos_page().render_issues(&app);
                 }
-                Err(e) => {
-                    let page = app.repos_page();
+                (Err(e), _) | (_, Err(e)) => {
                     while let Some(c) = page.issues_box.first_child() {
                         page.issues_box.remove(&c);
                     }
@@ -693,6 +740,7 @@ impl ReposPage {
                         ph.append_button(&gio::ThemedIcon::new("view-refresh-symbolic"), "Retry", "Ask GitHub again");
                     retry.connect_clicked(move |_| a.repos_page().show_issues(&a, r.clone()));
                     page.issues_box.append(&ph);
+                    page.update_load_more_button();
                     let r = repo.clone();
                     app.toast_retry(
                         &format!("GitHub: {e}"),
@@ -711,6 +759,8 @@ impl ReposPage {
             let a = app.clone();
             dd.connect_selected_notify(move |_| a.repos_page().render_issues(&a));
         }
+        let a = app.clone();
+        self.load_more_button.connect_clicked(move |_| a.repos_page().load_more_issues(&a));
         let a = app;
         self.new_issue_button.connect_clicked(move |_| {
             let Some(repo) = a.repos_page().current_repo.borrow().clone() else {
@@ -1094,11 +1144,100 @@ impl ReposPage {
         window.present();
     }
 
+    fn update_load_more_button(&self) {
+        let selected = self.issue_state_dd.selected();
+        let has_more = match selected {
+            0 => self.open_issues_more.get(),
+            1 => self.closed_issues_more.get(),
+            _ => self.open_issues_more.get() || self.closed_issues_more.get(),
+        };
+        let loading = self.loading_more_issues.get();
+        self.load_more_button.set_label(if loading { "Loading issues…" } else { "Load more issues" });
+        self.load_more_button.set_sensitive(has_more && !loading);
+        self.load_more_button.set_visible(has_more || loading);
+    }
+
+    fn load_more_issues(&self, app: &Rc<App>) {
+        if self.loading_more_issues.replace(true) {
+            return;
+        }
+        let Some(repo) = self.current_repo.borrow().clone() else {
+            self.loading_more_issues.set(false);
+            return;
+        };
+        let generation = self.issue_generation.get();
+        let selected = self.issue_state_dd.selected();
+        let open_page = (selected != 1 && self.open_issues_more.get()).then(|| self.open_issue_page.get() + 1);
+        let closed_page = (selected != 0 && self.closed_issues_more.get()).then(|| self.closed_issue_page.get() + 1);
+        if open_page.is_none() && closed_page.is_none() {
+            self.loading_more_issues.set(false);
+            self.update_load_more_button();
+            return;
+        }
+        self.update_load_more_button();
+
+        let app = app.clone();
+        glib::spawn_future_local(async move {
+            let open_future = async {
+                match open_page {
+                    Some(page) => Some((page, workflow::issue_page(&repo.repo, "open", page).await)),
+                    None => None,
+                }
+            };
+            let closed_future = async {
+                match closed_page {
+                    Some(page) => Some((page, workflow::issue_page(&repo.repo, "closed", page).await)),
+                    None => None,
+                }
+            };
+            let (open, closed) = futures_util::future::join(open_future, closed_future).await;
+            let page = app.repos_page();
+            if page.issue_generation.get() != generation {
+                return;
+            }
+            page.loading_more_issues.set(false);
+            let error = open
+                .as_ref()
+                .and_then(|(_, result)| result.as_ref().err())
+                .or_else(|| closed.as_ref().and_then(|(_, result)| result.as_ref().err()))
+                .cloned();
+            if let Some(error) = error {
+                page.update_load_more_button();
+                app.toast(&format!("Could not load more issues: {error}"));
+                return;
+            }
+
+            let mut additional = Vec::new();
+            if let Some((number, Ok((mut issues, more)))) = open {
+                page.open_issue_page.set(number);
+                page.open_issues_more.set(more);
+                additional.append(&mut issues);
+            }
+            if let Some((number, Ok((mut issues, more)))) = closed {
+                page.closed_issue_page.set(number);
+                page.closed_issues_more.set(more);
+                additional.append(&mut issues);
+            }
+            {
+                let mut issues = page.issues.borrow_mut();
+                issues.extend(additional);
+                issues.sort_by_key(Issue::rank);
+            }
+            let adjustment = page.page_scroll.vadjustment();
+            let scroll_position = adjustment.value();
+            page.render_issues(&app);
+            glib::idle_add_local_once(move || adjustment.set_value(scroll_position));
+        });
+    }
+
     fn render_issues(&self, app: &Rc<App>) {
         while let Some(c) = self.issues_box.first_child() {
             self.issues_box.remove(&c);
         }
-        let Some(repo) = self.current_repo.borrow().clone() else { return };
+        let Some(repo) = self.current_repo.borrow().clone() else {
+            self.update_load_more_button();
+            return;
+        };
         let issue_state = ["open", "closed", "all"]
             .get(self.issue_state_dd.selected() as usize)
             .copied()
@@ -1127,6 +1266,7 @@ impl ReposPage {
                 "No issues match",
                 "Try another issue state or widen the lane, priority, or agent filters.",
             ));
+            self.update_load_more_button();
             return;
         }
         for i in shown {
@@ -1248,6 +1388,7 @@ impl ReposPage {
             }
             self.issues_box.append(&issue_card);
         }
+        self.update_load_more_button();
     }
 
     fn set_issue_chat_link(&self, key: &str, thread_id: &str, linked: bool) {

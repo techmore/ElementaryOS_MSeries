@@ -131,9 +131,10 @@ to another connected T3 provider in the same composer for research and refinemen
 is capped at 16,000 characters and asks for a compact brief; its underlying model is managed by the
 paired server and checked when you send. Issue labels and
 readiness control the repo workflow; provider selection remains a separate T3 decision. Draft fields
-scroll within the window, and the action buttons wrap on narrow layouts. The issue list includes up to 100 open and
-100 closed issues with Open, Resolved and All filters. Chats grouped beneath an issue remain browsable after it closes;
-repo backlog and runner counts continue to include open issues only.
+scroll within the window, and the action buttons wrap on narrow layouts. The issue list loads open and closed issues
+in pages of up to 100, with Open, Resolved and All filters. **Load more issues** advances the selected state, or both
+states in All. Chats grouped beneath an issue remain browsable after it closes; repo backlog and runner counts continue
+to include open issues only.
 
 ## Composer
 

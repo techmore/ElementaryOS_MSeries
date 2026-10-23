@@ -296,15 +296,19 @@ pub async fn gh_with_input(args: &[&str], input: Option<&str>) -> Result<Value, 
 }
 
 pub async fn issues(repo: &str) -> Result<Vec<Issue>, String> {
-    let open_path = format!("repos/{repo}/issues?state=open&per_page=100");
-    let closed_path = format!("repos/{repo}/issues?state=closed&per_page=100");
-    let open_args = [open_path.as_str()];
-    let closed_args = [closed_path.as_str()];
-    let (open, closed) = futures_util::future::join(gh(&open_args), gh(&closed_args)).await;
-    let mut issues = parse_issues(&open?);
-    issues.extend(parse_issues(&closed?));
-    issues.sort_by_key(Issue::rank);
-    Ok(issues)
+    issue_page(repo, "open", 1).await.map(|(issues, _)| issues)
+}
+
+/// Loads one bounded GitHub issue page. `has_more` is based on raw API rows so pages containing
+/// pull requests still advance even though `parse_issues` removes those rows.
+pub async fn issue_page(repo: &str, state: &str, page: u32) -> Result<(Vec<Issue>, bool), String> {
+    if !matches!(state, "open" | "closed") {
+        return Err("GitHub issue state must be open or closed.".into());
+    }
+    let endpoint = format!("repos/{repo}/issues?state={state}&per_page=100&page={}", page.max(1));
+    let response = gh(&[&endpoint]).await?;
+    let has_more = response.as_array().is_some_and(|rows| rows.len() == 100);
+    Ok((parse_issues(&response), has_more))
 }
 
 /// Files an owner-reviewed issue brief. The request creates an issue only; it does not start an
