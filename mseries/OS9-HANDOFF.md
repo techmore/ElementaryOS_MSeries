@@ -1,3 +1,13 @@
+## Dock launcher regression harness startup race — 2026-10-22
+
+PR #518's validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)
+exposed a test-only race: the SIGHUP case treated creation of the fake dock's PID file as proof that its contents had
+been written. The harness now waits for a numeric PID and stops waiting if the wrapper exits. The focused launcher suite
+passes 8/8 locally. No production launcher behavior, installed software, dock service, kernel, boot or hardware state
+changed. PR #518 remains blocked on its separate source-preparation failure and base-branch conflict; wip4 has not been
+built or staged. Next: land this harness fix after review, then refresh #518 against current `dev` and retry only when its
+pinned-source preparation is viable.
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
