@@ -1,3 +1,14 @@
+## Aurora 7.2.11 wip4 port set built — 2026-10-22
+
+Wip4 revision 6 now carries the J314S-targeted external-display/DCP series plus all six requested Aurora20
+enhancements, checked in order against the exact pinned #158 source. The eGPU modules are limited to a separately
+named opt-in profile; the M3 thermal policy port is dormant while M3 runtime startup is refused. Exact upstream states,
+firmware scope and J314S relevance are in [the port audit](aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md).
+Both normal and eGPU source preparation and all production host controls pass; the 83 Aurora admission tests pass.
+ARM64 candidate, unified72 and unified72-eGPU kernel/module/DTB builds and package inspections passed in
+[run 39854228647](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647). DCP KUnit and hardware
+acceptance remain open. Nothing was installed or staged. Review branch: [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533).
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
@@ -114,6 +125,17 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+
+## Pinned Aurora source fetch follow-up — 2026-10-22
+
+Both #518 run 39770268111 and #528 run 39836069576 received repeated HTTP 429 responses from the pinned codeload URL;
+the retry policy exhausted before unified72 source preparation. The candidate profile passed prep and entered its isolated
+CI build. The current follow-up retains archive SHA-256 verification, retries transient responses, then uses the exact
+Git URL, commit and tree SHA-1 pinned in `aurora/unified72/series.json` only after a retryable HTTP error. Mocked checks
+cover both paths, and the preparation receipt records the acquisition method and archive digest; the remote fallback and
+wip4 build still need CI evidence. No local source fetch or hardware/kernel
+installation occurred. #518 remains conflicted with `dev` and unreviewed; verify updated CI before considering its refresh.
 
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 

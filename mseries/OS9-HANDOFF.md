@@ -1,3 +1,42 @@
+## wip4 finalized with Aurora20 ports — 2026-10-22 (Codex)
+
+Owner requested the six Aurora20 enhancements be ported into wip4 and asked for an upstream audit relative to the
+J314S/M1 Pro + WD22TB4 HDMI setup. The integration branch pins the same unmerged Aurora 7.2.11 #158 tree and #157
+display patch, retains the local DCP timeout recovery patch, and adds the six Aurora20 ports. Normal wip4 keeps
+AMDGPU/Nouveau disabled; `unified72-egpu` is a distinct optional profile/package. The M3 thermal fallback is a
+7.2.11-adapted policy helper and host control only: the M3 backend still refuses runtime startup.
+
+- Exact-source `prepare` succeeded for `unified72` and `unified72-egpu`; all selected patches applied in manifest
+  order. `candidate.py check` passed 9 PMP bootargs, 3 PMP power and 20 M3 runtime/thermal policy host controls for
+  each profile, plus the MacSMC production discovery harness (all-readable and 65 failure cases under ASan/UBSan).
+  Aurora Python admission suite passed 83/83.
+- Owner relevance: the sRGB/DCP changes target the WD22TB4 display path. udmabuf and optional SMC-property discovery
+  are generic/conditional. M3 thermal, J613/T8122 cameras and eGPU are not J314S-qualified; camera firmware/m1n1
+  prerequisites are recorded in `aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md`.
+- **Built, not booted.** ARM64 candidate, normal wip4 and wip4-eGPU Image/modules/DTBs builds and package-boundary
+  inspections passed in [run 39854228647](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647).
+  DCP KUnit and hardware checks remain open. wip3 stays installed and running, `.20` remains the persistent default,
+  and no boot payload was staged or armed.
+- Upstream #158/#157 and Aurora #135/#134/#119 remain open; #67 is an open draft. Heads and local hashes are recorded
+  in the audit/series manifests. The review branch is [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533).
+  Next hardware gate is a separate attended wip4 trial with matched boot-chain/rollback review.
+
+## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
+
+Owner plugged the WD22TB4 on the running wip3 trial kernel; no picture. Dock USB/Thunderbolt fine; `28cc00000` (dcpext1) never
+answered `validate DPTX target` (six attempts), its release then timed out too, and replugging the same port failed again
+(`DP tunnel setup failed: -110`). Moving the dock to another USB-C port routed it to `289c00000` and gave 1080p/60 at once.
+Full timeline, what is and is not shown: `mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md`.
+
+- **Cause (partly shown).** The pinned source keeps a Thunderbolt route owned when its release is refused; a timeout is
+  treated as a refusal, so the port stays on the dead pipeline. Why `28cc00000` was picked first and why it went silent: not shown.
+- **Draft.** wip4 candidate (`unified72/series.json` revision 5, `patches/0002-...`). Build-only: patch applies on the pinned
+  files, routing logic exercised in userspace; kernel build, KUnit and every boot are open. wip3 untouched, nothing staged.
+- **Workaround on wip3.** Use a different USB-C port; reboot clears a pinned port.
+- **Side note.** Audio blips on dock plug/unplug coincide with `mseries-power` re-applying the CPU profile on each AC flip; one logged
+  ALSA underrun at the first plug. Not investigated further.
+- **Next.** CI native build of the PR, then owner decides on unarmed staging; design the same-plug re-request on the Thunderbolt side.
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
@@ -76,6 +115,20 @@ unqualified until the session package is installed and the next login.**
 - **What to check at the next login (after installing the package):** Super+L shows your wallpaper, the big clock and the
   card; typing shows dots; Caps Lock shows the warning; your password unlocks. If it misbehaves:
   `Environment=PANTHEON_LOCK_COMMAND=gtklock` drop-in restores the stock look.
+
+## Aurora pinned-source fetch follow-up — 2026-10-22
+
+PR #518's unified72 run [39770268111](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268111) and PR #528's
+first retry run [39836069576](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39836069576) both stopped at
+pinned-source preparation on repeated codeload HTTP 429 responses. The retry logic honored the bounded attempt/delay
+policy; the candidate profile passed source preparation and entered its isolated CI kernel build, while unified72 did
+not. This follow-up keeps the codeload checksum path, then falls back only for retryable HTTP errors to the explicitly
+pinned Git URL, commit and tree SHA-1 in `unified72/series.json`; it verifies both Git identities before archiving. Bad
+checksums and permanent HTTP errors still fail closed. The preparation receipt records the acquisition method and actual
+archive digest. Local tests cover retry and fallback behavior; they do not
+prove the remote Git fetch or a wip4 build. No source archive was fetched/prepared locally, and no hardware, installed
+kernel, boot payload or wip4 artifact was produced. PR #518 remains conflicted with `dev` and unreviewed. Next: let the
+updated CI validate the fallback and record candidate/unified72 build outcomes separately.
 
 ## Compositor: lock screen shows typing again; lock on idle — 2026-10-22 (Claude Code)
 

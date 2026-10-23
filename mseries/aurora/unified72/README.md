@@ -1,4 +1,22 @@
-# Unified Aurora 7.2.10 build candidate
+# Unified Aurora 7.2.11 build candidate
+
+## wip4 candidate — October 22, 2026 (built, not booted)
+
+**Revision 6 pins `7.2.11-elementary-aurora72-wip4`:** unmerged upstream #158 plus #157, the local J314S dock
+recovery patch, and all six requested Aurora20 enhancements. The six ports apply in order to the exact pinned source.
+The normal wip4 profile keeps AMD/Nouveau disabled; `unified72-egpu` builds a separately named, opt-in package.
+The M3 thermal fallback is carried as dormant policy code because this source's M3 backend still refuses runtime
+startup. Camera changes stay limited by their firmware/m1n1 requirements. Owner-machine applicability and current
+upstream states are in [the J314S audit](AURORA20-PORT-AUDIT-2026-10-22.md).
+
+The local DCP patch addresses the first wip3 dock plug of a boot (2026-10-22), where `dcpext1` (`28cc00000`) never
+answered the DisplayPort validate call and its port stayed pinned until reboot. A DCP whose DPTX call times out is
+passed over for 300 s, and a timed-out release is completed instead of kept owned. It does not move a tunnel already
+attached to the silent pipeline during that same plug. Evidence: [wip3 DPTX stall report](../hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
+The [ARM64 workflow](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647) passed the candidate,
+normal wip4 and wip4-eGPU kernel/module/DTB builds plus package inspection. The Python admission suite passed 83/83;
+production host controls and the MacSMC ASan/UBSan helper passed for both wip4 profiles. DCP KUnit and hardware boot
+remain open. wip3 remains installed and running; nothing is staged or armed for wip4. See [review receipt](review-wip4-2026-10-22.json).
 
 ## wip3 candidate — October 21, 2026 (build-only, not booted)
 
@@ -127,14 +145,16 @@ python3 mseries/aurora/candidate.py prepare --profile unified72 \
 python3 mseries/aurora/candidate.py check --prepared /absolute/work/unified72
 python3 mseries/aurora/candidate.py build --prepared /absolute/work/unified72 \
   --output /absolute/work/unified72-artifacts --jobs 4
+# Optional, unqualified AMD/Nouveau module profile; separate package and kernel release:
+python3 mseries/aurora/candidate.py prepare --profile unified72-egpu \
+  --cache /absolute/work/cache --output /absolute/work/unified72-egpu
 ```
 
 The builder uses the checksum-pinned `.20` **full recipe config** as its seed,
 resolves it with the pinned 7.2 source and enforces Apple/Rust/16K/USB4/memory
 requirements. It is not the contributor's Fedora config. eGPU drivers remain
-disabled in this profile. The separate `.20` M3 camera/thermal/SMC series is not
-silently layered onto this source. Preparation, build and package inspection
-fail on pin/config/identity errors; none installs a package.
+disabled in `unified72` and enabled only in `unified72-egpu`. Preparation, build
+and package inspection fail on pin/config/identity errors; none installs a package.
 
 ## Hardware and compatibility gates
 

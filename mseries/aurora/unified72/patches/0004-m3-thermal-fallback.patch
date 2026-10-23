@@ -1,0 +1,85 @@
+From: MSeries Aurora integration <builder@localhost>
+Subject: [PATCH] drm/asahi: port the T8122 thermal fallback policy to 7.2.11
+
+Port the pure fallback calculation and its policy controls from Aurora PR #135
+onto the 7.2.11 M3 thermal policy module. The 7.2.11 M3 backend is compile-only
+and refuses runtime startup, so this remains dormant policy code; it does not
+change the M1 Pro or enable T8122 GPU runtime.
+
+diff --git a/drivers/gpu/drm/asahi/m3/m3_thermal_policy.rs b/drivers/gpu/drm/asahi/m3/m3_thermal_policy.rs
+index 11901c9..e068916 100644
+--- a/drivers/gpu/drm/asahi/m3/m3_thermal_policy.rs
++++ b/drivers/gpu/drm/asahi/m3/m3_thermal_policy.rs
+@@ -6,6 +6,12 @@
+ //! Times are monotonic nanoseconds from any fixed origin, temperatures millidegrees Celsius, and
+ //! states indices of the published performance-state table.
+ 
++/// The T8122 Air thermal fallback stays at state two when an experimental ceiling is raised.
++/// Other SoCs retain their existing fallback, and lower requested ceilings remain respected.
++pub(crate) fn safe_cap(max: u32, t8122: bool, legacy_limit: u32) -> u32 {
++    max.min(if t8122 { 2 } else { legacy_limit })
++}
++
+ /// Required thermal-zone bits: SMC die (bit 0), PMP hotspot (bit 1).
+ /// A missing or malformed compatible list requires both zones.
+ pub(crate) fn required_zones(compatible: &[u8]) -> u32 {
+@@ -281,3 +287,59 @@ mod zone_tests {
+         assert_eq!(required_zones(b"apple,t81220\0"), 0);
+     }
+ }
++
++#[cfg(test)]
++mod fallback_tests {
++    use super::*;
++
++    fn temp(mc: i32, at: i64) -> Reading {
++        Reading::Temp { mc, at, zones: 1 }
++    }
++
++    #[test]
++    fn t8122_higher_ceilings_keep_state_two_fallback() {
++        for ceiling in 1..=5 {
++            assert_eq!(safe_cap(ceiling, true, 5), ceiling.min(2));
++            assert_eq!(safe_cap(ceiling, false, 5), ceiling);
++        }
++        assert_eq!(safe_cap(8, false, 5), 5);
++    }
++
++    #[test]
++    fn missing_or_hot_readings_return_to_t8122_state_two() {
++        for reading in [
++            temp(80_000, 3 * S),
++            temp(88_000, 3 * S),
++            Reading::None,
++            Reading::Failed { errno: -19, at: 3 * S },
++        ] {
++            let mut policy = Policy::new(true, safe_cap(3, true, 5), 3, 80_000);
++            assert_eq!(policy.cap(), 2);
++            let _ = policy.update(0, temp(50_000, 0));
++            assert_eq!(policy.cap(), 3);
++            let _ = policy.update(3 * S, reading);
++            assert_eq!(policy.cap(), 2);
++        }
++    }
++
++    #[test]
++    fn stale_or_stuck_sensor_returns_to_t8122_state_two() {
++        let mut policy = Policy::new(true, safe_cap(3, true, 5), 3, 80_000);
++        let _ = policy.update(0, temp(50_000, 0));
++        assert_eq!(policy.cap(), 3);
++        let _ = policy.update(4 * S, temp(50_000, 0));
++        assert_eq!(policy.cap(), 2);
++        let _ = policy.update(6 * S, temp(51_000, 6 * S));
++        assert_eq!(policy.cap(), 3);
++        let _ = policy.update(67 * S, temp(51_000, 67 * S));
++        assert_eq!(policy.cap(), 2);
++    }
++
++    #[test]
++    fn hold_keeps_t8122_at_state_two() {
++        let mut policy = Policy::new(false, safe_cap(3, true, 5), 3, 80_000);
++        let _ = policy.update(0, temp(50_000, 0));
++        let _ = policy.update(3 * S, temp(50_000, 3 * S));
++        assert_eq!(policy.cap(), 2);
++    }
++}

@@ -16,7 +16,7 @@ on:
       profile:
         description: Kernel profile (eGPU remains an unqualified experiment)
         type: choice
-        options: [candidate, egpu, unified72]
+        options: [candidate, egpu, unified72, unified72-egpu]
         default: candidate
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.profile)) || fromJSON('["candidate","unified72"]') }}
+        profile: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.profile)) || fromJSON('["candidate","unified72","unified72-egpu"]') }}
     steps:
       - uses: actions/checkout@v7
       - name: Install native build tools
