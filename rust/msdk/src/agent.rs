@@ -373,6 +373,9 @@ pub fn explain(code: &str) -> Option<&'static str> {
         "transcript-record-mismatch" => {
             "A Transcript needs a record type with id, kind and text, all text. kind selects how an entry is drawn: user, assistant, code, tool or permission."
         }
+        "stack-child-needs-id" => {
+            "A Stack shows the child whose id equals the bound text. Give each child an id (in text form: `.id(\"Chat\")` after it) and list the same names as the Tabs options."
+        }
         "unknown-feed" => {
             "Feeds are fixed names such as windows.list. `msdk describe windows.list` shows the record fields it needs."
         }

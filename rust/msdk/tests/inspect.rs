@@ -47,3 +47,19 @@ fn row_buttons_show_the_key_they_send() {
     let text = outline(&tree);
     assert!(text.contains("click: Launch(io.elementary.files.desktop)"), "{text}");
 }
+
+#[test]
+fn a_stack_shows_only_the_selected_page_and_tabs_report_their_value() {
+    let manifest: Value = serde_json::from_str(include_str!("../../claude-pantheon-rs/sdk/t3.services.json")).unwrap();
+    msdk::vocab::load_manifest(&manifest).unwrap();
+    let t3 = msdk::text::parse(include_str!("../../claude-pantheon-rs/sdk/t3.msdk")).unwrap().doc;
+    let chat = outline(&render(&t3, "main", None).unwrap());
+    assert!(
+        chat.contains("Tabs \"Pages\" value=Chat")
+            && chat.contains("Transcript")
+            && !chat.contains("Accounts and usage"),
+        "{chat}"
+    );
+    let usage = outline(&render(&t3, "main", Some(&store(json!({ "page": "Usage" })))).unwrap());
+    assert!(usage.contains("Accounts and usage") && !usage.contains("Transcript"), "{usage}");
+}

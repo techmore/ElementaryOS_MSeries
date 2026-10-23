@@ -204,6 +204,22 @@ fn check_app(app: Option<&Value>, cx: &mut Cx) {
             cx.err(&format!("/app/{k}"), "missing-property", format!("`app.{k}` must be a string"), None);
         }
     }
+    for k in app.keys() {
+        if !["id", "name", "icon", "version", "license", "website"].contains(&k.as_str()) {
+            let known = ["id", "name", "icon", "version", "license", "website"];
+            cx.err(
+                &format!("/app/{k}"),
+                "unknown-property",
+                format!("`app` has no property `{k}`"),
+                suggest(k, &known),
+            );
+        }
+    }
+    for k in ["version", "license", "website"] {
+        if app.get(k).is_some_and(|v| !v.is_string()) {
+            cx.err(&format!("/app/{k}"), "wrong-type", format!("`app.{k}` must be text"), None);
+        }
+    }
     if let Some(id) = app.get("id").and_then(Value::as_str) {
         let parts: Vec<&str> = id.split('.').collect();
         if parts.len() < 3
@@ -522,9 +538,16 @@ fn check_value(
         }
         Kind::Node => node(v, path, scope, depth + 1, cx),
         Kind::Nodes => match v.as_array() {
-            Some(items) => {
-                items.iter().enumerate().for_each(|(i, n)| node(n, &format!("{path}/{i}"), scope, depth + 1, cx))
-            }
+            Some(items) => items.iter().enumerate().for_each(|(i, n)| {
+                // Pages of a Stack are never visible together, so each page is its own scope for the primary-action rule.
+                let mut sc = scope.clone();
+                if owner == "Stack"
+                    && let Some(id) = n.get("id").and_then(Value::as_str)
+                {
+                    sc.vis = Some(format!("stack:{id}"));
+                }
+                node(n, &format!("{path}/{i}"), &sc, depth + 1, cx)
+            }),
             None => cx.err(path, "wrong-type", format!("`{}` must be an array of components", p.name), None),
         },
         Kind::Strs => {
@@ -680,6 +703,18 @@ fn node(v: &Value, path: &str, scope: &Scope, depth: usize, cx: &mut Cx) {
         let vp = format!("{path}/{}", p.name);
         let sc = if ty == "List" && p.name == "row" { &row_scope } else { scope };
         check_value(p, val, &vp, sc, depth, ty, item_type.as_deref(), cx);
+    }
+    if ty == "Stack" {
+        for (i, c) in obj.get("children").and_then(Value::as_array).into_iter().flatten().enumerate() {
+            if c.get("id").and_then(Value::as_str).is_none() {
+                cx.err(
+                    &format!("{path}/children/{i}"),
+                    "stack-child-needs-id",
+                    "every Stack child needs an `id`, the page name Tabs sets".into(),
+                    Some("add .id(\"Chat\") after the child".into()),
+                );
+            }
+        }
     }
     design_rules(ty, obj, path, scope, cx);
     if ty == "Transcript"

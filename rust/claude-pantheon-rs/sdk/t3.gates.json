@@ -4,7 +4,8 @@
    "name": "selecting a thread opens it on the chat page",
    "steps": [
     {
-     "send": "ShowUsage"
+     "send": "SetPage",
+     "payload": "Usage"
     },
     {
      "send": "SelectThread",
@@ -21,12 +22,8 @@
      "equals": true
     },
     {
-     "state": "page_chat",
-     "equals": true
-    },
-    {
-     "state": "page_usage",
-     "equals": false
+     "state": "page",
+     "equals": "Chat"
     },
     {
      "call": "t3.open"
@@ -164,20 +161,17 @@
    ]
   },
   {
-   "name": "pages switch one at a time",
+   "name": "the tabs switch pages",
    "steps": [
     {
-     "send": "ShowWork"
+     "send": "SetPage",
+     "payload": "Work"
     }
    ],
    "expect": [
     {
-     "state": "page_work",
-     "equals": true
-    },
-    {
-     "state": "page_chat",
-     "equals": false
+     "state": "page",
+     "equals": "Work"
     }
    ]
   },

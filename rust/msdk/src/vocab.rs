@@ -213,6 +213,21 @@ pub const COMPONENTS: &[Component] = &[
         ],
     },
     Component {
+        name: "Tabs",
+        about: "A segmented switcher for a few pages. Put it in a window's header to get tabs in the title bar; it shows `options` and sets the bound text state.",
+        props: &[
+            req("label", Kind::Str),
+            req("bind", Kind::Bind(Want::Text)),
+            req("options", Kind::Strs),
+            opt("on_change", Kind::Msg(Payload::Text)),
+        ],
+    },
+    Component {
+        name: "Stack",
+        about: "Pages: shows the child whose `id` equals the bound text state (pair it with Tabs). Every child needs an id.",
+        props: &[req("bind", Kind::Bind(Want::Text)), opt("children", Kind::Nodes)],
+    },
+    Component {
         name: "Card",
         about: "A grouped surface with an optional title.",
         props: &[opt("title", Kind::Template), opt("children", Kind::Nodes)],
@@ -245,7 +260,7 @@ pub const COMPONENTS: &[Component] = &[
     Component {
         name: "Split",
         about: "Sidebar and detail layout.",
-        props: &[req("sidebar", Kind::Node), req("content", Kind::Node)],
+        props: &[req("sidebar", Kind::Node), req("content", Kind::Node), opt("autohide", Kind::Bool)],
     },
     Component {
         name: "Custom",

@@ -190,6 +190,7 @@ impl Host {
         column.append(&holder);
         overlay.set_child(Some(&column));
         overlay.add_overlay(&toast);
+        window.add_css_class("msdk-app");
         window.set_child(Some(&overlay));
         let host = Rc::new(Host {
             store: RefCell::new(initial_store(&doc)),
@@ -305,15 +306,25 @@ impl Host {
         self.window.set_title(Some(title));
         match kind {
             "window" | "dialog" => {
+                // The standard chrome: a slightly toned silver band, window controls at the top left, an options
+                // menu beside them, the title in the middle and the app's own actions on the right.
                 let header = gtk::HeaderBar::new();
-                for n in surf["header"]
+                header.add_css_class("msdk-titlebar");
+                header.set_decoration_layout(Some("close,minimize,maximize:"));
+                header.pack_start(&self.options_button(&doc));
+                let items: Vec<&Value> = surf["header"]
                     .as_array()
                     .or(surf["actions"].as_array())
                     .into_iter()
                     .flatten()
-                {
+                    .collect();
+                for n in items.into_iter().rev() {
                     let b = render::build_node(n, &d);
-                    header.pack_start(&b.widget);
+                    if n["type"] == "Tabs" {
+                        header.set_title_widget(Some(&b.widget));
+                    } else {
+                        header.pack_end(&b.widget);
+                    }
                     refreshers.extend(b.refresh);
                 }
                 self.window.set_titlebar(Some(&header));
@@ -344,6 +355,16 @@ impl Host {
                 b.widget.add_css_class("msdk-card");
             }
             b.widget.set_vexpand(true);
+            if matches!(kind, "window" | "dialog") {
+                b.widget
+                    .set_margin_start(msdk::tokens::layout_px("content_padding_x"));
+                b.widget
+                    .set_margin_end(msdk::tokens::layout_px("content_padding_x"));
+                b.widget
+                    .set_margin_top(msdk::tokens::layout_px("content_padding_y"));
+                b.widget
+                    .set_margin_bottom(msdk::tokens::layout_px("content_padding_y"));
+            }
             self.holder.append(&b.widget);
             refreshers.extend(b.refresh);
         }
@@ -390,6 +411,89 @@ impl Host {
         }
         *self.doc.borrow_mut() = doc;
         self.rebuild();
+    }
+
+    /// The options menu beside the window controls: Settings (when the app has a `settings` dialog) and About.
+    fn options_button(&self, doc: &Value) -> gtk::MenuButton {
+        let button = gtk::MenuButton::builder()
+            .icon_name("open-menu-symbolic")
+            .build();
+        button.add_css_class("flat");
+        button.set_tooltip_text(Some("Options"));
+        button.update_property(&[gtk::accessible::Property::Label("Options")]);
+        let popover = gtk::Popover::new();
+        let column = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        let item = |label: &str| {
+            let b = gtk::Button::with_label(label);
+            b.add_css_class("flat");
+            b.set_halign(gtk::Align::Fill);
+            b
+        };
+        if doc["surfaces"]["settings"]["kind"] == "dialog" {
+            let b = item("Settings…");
+            let (weak, pop) = (self.me.borrow().clone(), popover.clone());
+            b.connect_clicked(move |_| {
+                pop.popdown();
+                if let Some(h) = weak.upgrade() {
+                    h.open_surface("settings");
+                }
+            });
+            column.append(&b);
+        }
+        let about = item("About");
+        let (weak, pop) = (self.me.borrow().clone(), popover.clone());
+        about.connect_clicked(move |_| {
+            pop.popdown();
+            if let Some(h) = weak.upgrade() {
+                h.show_about();
+            }
+        });
+        column.append(&about);
+        popover.set_child(Some(&column));
+        button.set_popover(Some(&popover));
+        button
+    }
+
+    fn show_about(&self) {
+        let doc = self.doc.borrow();
+        let app = &doc["app"];
+        let about = gtk::AboutDialog::builder()
+            .transient_for(&self.window)
+            .modal(true)
+            .program_name(app["name"].as_str().unwrap_or(""))
+            .logo_icon_name(app["icon"].as_str().unwrap_or("application-x-executable"))
+            .build();
+        if let Some(v) = app["version"].as_str() {
+            about.set_version(Some(v));
+        }
+        if let Some(w) = app["website"].as_str() {
+            about.set_website(Some(w));
+        }
+        if app["license"].is_string() {
+            about.set_license_type(gtk::License::Gpl30);
+        }
+        about.present();
+    }
+
+    /// Renders the window to a PNG (the `shot` call of the introspection API).
+    pub fn screenshot(&self, path: &Path) -> Result<(), String> {
+        let paintable = gtk::WidgetPaintable::new(Some(&self.window));
+        let (w, h) = (self.window.width(), self.window.height());
+        if w <= 0 || h <= 0 {
+            return Err("the window has no size yet".into());
+        }
+        let snapshot = gtk::Snapshot::new();
+        paintable.snapshot(snapshot.upcast_ref::<gdk::Snapshot>(), w as f64, h as f64);
+        let node = snapshot.to_node().ok_or("nothing to draw")?;
+        let renderer = self
+            .window
+            .native()
+            .and_then(|n| n.renderer())
+            .ok_or("no renderer")?;
+        renderer
+            .render_texture(&node, None)
+            .save_to_png(path)
+            .map_err(|e| e.to_string())
     }
 
     /// Opens a `dialog` or `popover` surface in its own window, transient for the main one. The store is shared.

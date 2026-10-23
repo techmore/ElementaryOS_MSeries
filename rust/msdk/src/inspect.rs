@@ -128,6 +128,23 @@ fn node(n: &Value, path: &str, store: &Store, row: Option<&Value>, key: Option<&
             o.insert("options".into(), n["options"].clone());
             act("choose", "on_change");
         }
+        "Tabs" => {
+            put(&mut o, "label", text("label"));
+            o.insert("value".into(), state(s(n, "bind").unwrap_or("")));
+            o.insert("options".into(), n["options"].clone());
+            act("choose", "on_change");
+        }
+        "Stack" => {
+            let page = state(s(n, "bind").unwrap_or("")).as_str().unwrap_or("").to_string();
+            o.insert("page".into(), json!(page));
+            for (i, c) in n.get("children").and_then(Value::as_array).into_iter().flatten().enumerate() {
+                if s(c, "id") == Some(page.as_str())
+                    && let Some(v) = node(c, &format!("{path}/children/{i}"), store, row, None)
+                {
+                    kids.push(v);
+                }
+            }
+        }
         "Progress" => {
             put(&mut o, "label", text("label"));
             o.insert("value".into(), state(s(n, "bind").unwrap_or("")));
@@ -154,6 +171,9 @@ fn node(n: &Value, path: &str, store: &Store, row: Option<&Value>, key: Option<&
             }
         }
         "Split" => {
+            if n.get("autohide").and_then(Value::as_bool) == Some(true) {
+                o.insert("autohide".into(), json!(true));
+            }
             for slot in ["sidebar", "content"] {
                 if let Some(c) = n.get(slot).and_then(|c| node(c, &format!("{path}/{slot}"), store, row, None)) {
                     kids.push(json!({ "slot": slot, "node": c }));
@@ -253,7 +273,7 @@ fn line(n: &Value, depth: usize, out: &mut String) {
             break;
         }
     }
-    for k in ["value", "state_text", "indicator", "badge"] {
+    for k in ["value", "page", "state_text", "indicator", "badge"] {
         if let Some(v) = n.get(k).filter(|v| !v.is_null()) {
             parts.push(format!("{k}={}", display(v)));
         }

@@ -19,7 +19,7 @@ fn main() -> gtk::glib::ExitCode {
                 .is_some_and(|i| i == 0 || args[i - 1] != "--surface")
     }) else {
         eprintln!(
-            "usage: msdk-run <app.ui.json|app.msdk> [--surface NAME] [--watch] [--services manifest.json] [--fixture data.json]"
+            "usage: msdk-run <app.ui.json|app.msdk> [--surface NAME] [--watch] [--services manifest.json] [--fixture data.json] [--screenshot out.png]"
         );
         return gtk::glib::ExitCode::from(2);
     };
@@ -82,6 +82,7 @@ fn main() -> gtk::glib::ExitCode {
         },
         None => None,
     };
+    let shot = opt("--screenshot");
     let keep = RefCell::new(None);
     app.connect_activate(move |app| {
         let doc = match msdk::text::load(&path) {
@@ -100,7 +101,22 @@ fn main() -> gtk::glib::ExitCode {
             services.clone(),
             watch,
         ) {
-            Some(h) => *keep.borrow_mut() = Some(h),
+            Some(h) => {
+                if let Some(out) = shot.clone() {
+                    let (h2, app2) = (h.clone(), app.clone());
+                    gtk::glib::timeout_add_local_once(
+                        std::time::Duration::from_millis(1800),
+                        move || {
+                            match h2.screenshot(std::path::Path::new(&out)) {
+                                Ok(()) => println!("wrote {out}"),
+                                Err(e) => eprintln!("screenshot: {e}"),
+                            }
+                            app2.quit();
+                        },
+                    );
+                }
+                *keep.borrow_mut() = Some(h);
+            }
             None => app.quit(),
         }
     });

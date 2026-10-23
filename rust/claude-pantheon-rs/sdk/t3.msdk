@@ -24,14 +24,11 @@ state {
   pending_issue: Text
   runner_on: Bool
   notifications_on: Bool
-  page_chat: Bool
-  page_usage: Bool
-  page_work: Bool
-  page_settings: Bool
+  page: Text
 }
 initial {
   provider: "auto"
-  page_chat: true
+  page: "Chat"
   notifications_on: true
 }
 persist provider, runner_on, notifications_on
@@ -44,7 +41,7 @@ feed status = t3.status
 
 message NewThread, ThreadCreated(Text), SelectThread(Text), EditDraft(Text), Send, Search(Text)
 message AllowOnce(Text), Deny(Text), AllowOldest(Text)
-message ShowChat, ShowUsage, ShowWork, ShowSettings, ShowTray
+message SetPage(Text), ShowTray
 message StartIssue(Text), Routed(Text), RouteFailed(Text), Started(Text), ToggleRunner(Bool)
 message SetProvider(Text), SetNotifications(Bool), Reconnect
 
@@ -54,19 +51,13 @@ on NewThread {
 on ThreadCreated {
   selected = $payload
   has_thread = true
-  page_chat = true
-  page_usage = false
-  page_work = false
-  page_settings = false
+  page = "Chat"
   call t3.open { thread: "{selected}" }
 }
 on SelectThread {
   selected = $payload
   has_thread = true
-  page_chat = true
-  page_usage = false
-  page_work = false
-  page_settings = false
+  page = "Chat"
   call t3.open { thread: $payload }
 }
 on EditDraft { draft = $payload }
@@ -81,30 +72,7 @@ on AllowOnce { call t3.answer { id: $payload, decision: "allow_once" } }
 on Deny { call t3.answer { id: $payload, decision: "deny" } }
 // The row id is the status row; the plug-in answers the oldest waiting prompt.
 on AllowOldest { call t3.answer { id: $payload, decision: "allow_once" } }
-on ShowChat {
-  page_chat = true
-  page_usage = false
-  page_work = false
-  page_settings = false
-}
-on ShowUsage {
-  page_chat = false
-  page_usage = true
-  page_work = false
-  page_settings = false
-}
-on ShowWork {
-  page_chat = false
-  page_usage = false
-  page_work = true
-  page_settings = false
-}
-on ShowSettings {
-  page_chat = false
-  page_usage = false
-  page_work = false
-  page_settings = true
-}
+on SetPage { page = $payload }
 on ShowTray { open tray }
 on StartIssue {
   pending_issue = $payload
@@ -122,8 +90,7 @@ on RouteFailed {
 on Started {
   selected = $payload
   has_thread = true
-  page_chat = true
-  page_work = false
+  page = "Chat"
   toast "Started"
 }
 on ToggleRunner {
@@ -136,11 +103,12 @@ on Reconnect { call t3.reconnect }
 
 window "Claude for elementary OS" {
   header {
-    Button("New thread", icon: "list-add", style: suggested, shortcut: "Ctrl+N") { NewThread }
+    Tabs("Pages", bind: page, options: ["Chat", "Usage", "Work", "Settings"], onChange: SetPage)
+    Button("New thread", icon: "list-add", shortcut: "Ctrl+N") { NewThread }
     Button("Reconnect", icon: "view-refresh", style: flat) { Reconnect }
     Button("Status", icon: "dialog-information", style: flat) { ShowTray }
   }
-  Split {
+  Split(autohide: true) {
     sidebar {
       VStack(spacing: small) {
         SearchField("Search threads", bind: search, onChange: Search)
@@ -154,16 +122,10 @@ window "Claude for elementary OS" {
           }
           empty { EmptyState("No threads yet", description: "Press Ctrl+N to start one.", icon: "mail-message-new") }
         }
-        HStack(spacing: small) {
-          Button("Chat", style: flat) { ShowChat }
-          Button("Usage", style: flat) { ShowUsage }
-          Button("Work", style: flat) { ShowWork }
-          Button("Settings", style: flat) { ShowSettings }
-        }
       }
     }
     content {
-      VStack(spacing: medium) {
+      Stack(bind: page) {
         VStack(spacing: small) {
           Transcript(lines, key: id, onAllow: AllowOnce, onDeny: Deny) {
             empty { EmptyState("Pick a thread", description: "Or start a new one.", icon: "mail-message-new") }
@@ -172,7 +134,7 @@ window "Claude for elementary OS" {
             TextEditor("Message", bind: draft, onChange: EditDraft, onSubmit: Send, enterSends: true)
             Button("Send", icon: "mail-send", style: suggested) { Send }
           }
-        }.visible(page_chat)
+        }.id("Chat")
         VStack(spacing: medium) {
           Text("Accounts and usage", style: title)
           List(accounts, key: id) {
@@ -185,7 +147,7 @@ window "Claude for elementary OS" {
             }
             empty { EmptyState("No accounts connected", description: "Pair the T3 server to see your providers.", icon: "avatar-default") }
           }
-        }.visible(page_usage)
+        }.id("Usage")
         VStack(spacing: medium) {
           Text("Work", style: title)
           Switch("Run issues automatically", bind: runner_on, onChange: ToggleRunner)
@@ -200,12 +162,12 @@ window "Claude for elementary OS" {
             }
             empty { EmptyState("No issues ready", description: "Label an issue agent:ready to see it here.", icon: "emblem-default") }
           }
-        }.visible(page_work)
+        }.id("Work")
         VStack(spacing: medium) {
           Text("Settings", style: title)
           Dropdown("Default provider", bind: provider, options: ["auto", "claude", "codex", "grok", "opencode"], onChange: SetProvider)
           Switch("Desktop notifications", bind: notifications_on, onChange: SetNotifications)
-        }.visible(page_settings)
+        }.id("Settings")
       }
     }
   }

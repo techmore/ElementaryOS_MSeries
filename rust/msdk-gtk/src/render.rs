@@ -99,6 +99,7 @@ fn build(node: &Value, d: &D, row: &Row) -> Built {
             content.append(&gtk::Label::new(s(node, "label")));
             b.set_child(Some(&content));
             style_button(&b, s(node, "button_style"));
+            b.set_valign(gtk::Align::Center);
             wire_click(&b, node, d, row);
             a11y(&b, s(node, "label"));
             b.upcast()
@@ -183,6 +184,81 @@ fn build(node: &Value, d: &D, row: &Row) -> Built {
         }
         "List" => list(node, d, row, &mut refresh),
         "Transcript" => transcript(node, d, row, &mut refresh),
+        "Tabs" => {
+            let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            row_box.add_css_class("linked");
+            let (bind, on) = (
+                s(node, "bind").unwrap_or("").to_string(),
+                s(node, "on_change").map(String::from),
+            );
+            let mut group: Option<gtk::ToggleButton> = None;
+            let mut buttons: Vec<(String, gtk::ToggleButton)> = Vec::new();
+            for opt in node
+                .get("options")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+            {
+                let b = gtk::ToggleButton::with_label(opt);
+                if let Some(g) = &group {
+                    b.set_group(Some(g));
+                } else {
+                    group = Some(b.clone());
+                }
+                let (dd, bk, name, on) = (d.clone(), bind.clone(), opt.to_string(), on.clone());
+                b.connect_toggled(move |w| {
+                    if !w.is_active()
+                        || dd
+                            .get(&bk)
+                            .and_then(|v| v.as_str().map(String::from))
+                            .as_deref()
+                            == Some(name.as_str())
+                    {
+                        return;
+                    }
+                    dd.set(&bk, json!(name));
+                    if let Some(m) = &on {
+                        dd.send(m, Some(json!(name)));
+                    }
+                });
+                row_box.append(&b);
+                buttons.push((opt.to_string(), b));
+            }
+            refresh.push(Rc::new(move |st| {
+                let cur = st.get(&bind).map(display).unwrap_or_default();
+                for (name, b) in &buttons {
+                    if *name == cur && !b.is_active() {
+                        b.set_active(true);
+                    }
+                }
+            }));
+            row_box.upcast()
+        }
+        "Stack" => {
+            let stack = gtk::Stack::new();
+            stack.set_transition_type(gtk::StackTransitionType::Crossfade);
+            stack.set_vexpand(true);
+            for c in node
+                .get("children")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                let ch = build(c, d, row);
+                refresh.extend(ch.refresh);
+                stack.add_named(&ch.widget, Some(s(c, "id").unwrap_or("")));
+            }
+            let bind = s(node, "bind").unwrap_or("").to_string();
+            let st2 = stack.clone();
+            refresh.push(Rc::new(move |st| {
+                let cur = st.get(&bind).map(display).unwrap_or_default();
+                if st2.child_by_name(&cur).is_some() {
+                    st2.set_visible_child_name(&cur);
+                }
+            }));
+            stack.upcast()
+        }
         "Card" => {
             let b = gtk::Box::new(gtk::Orientation::Vertical, 6);
             b.add_css_class("msdk-card");
@@ -278,23 +354,58 @@ fn build(node: &Value, d: &D, row: &Row) -> Built {
             b.upcast()
         }
         "Split" => {
-            let paned = gtk::Paned::new(gtk::Orientation::Horizontal);
+            // Panes run edge to edge; each carries its own padding. The sidebar is tinted and has a divider.
+            let (px, py) = (
+                msdk::tokens::layout_px("content_padding_x"),
+                msdk::tokens::layout_px("content_padding_y"),
+            );
+            let (mut side, mut main) = (None, None);
             for (slot, start) in [("sidebar", true), ("content", false)] {
                 if let Some(n) = node.get(slot) {
                     let ch = build(n, d, row);
                     refresh.extend(ch.refresh);
+                    let pane = gtk::Box::new(gtk::Orientation::Vertical, 0);
+                    ch.widget.set_margin_start(px);
+                    ch.widget.set_margin_end(px);
+                    ch.widget.set_margin_top(py);
+                    ch.widget.set_margin_bottom(py);
+                    ch.widget.set_vexpand(true);
+                    pane.append(&ch.widget);
+                    pane.set_size_request(
+                        if start {
+                            msdk::tokens::layout_px("sidebar_width") - 20
+                        } else {
+                            -1
+                        },
+                        -1,
+                    );
                     if start {
-                        paned.set_start_child(Some(&ch.widget));
-                        paned.set_resize_start_child(false);
-                        ch.widget.set_size_request(260, -1);
+                        pane.add_css_class("msdk-sidebar");
+                        side = Some(pane);
                     } else {
-                        paned.set_end_child(Some(&ch.widget));
-                        ch.widget.set_hexpand(true);
+                        pane.set_hexpand(true);
+                        main = Some(pane);
                     }
                 }
             }
-            paned.set_position(280);
-            paned.upcast()
+            match (side, main) {
+                (Some(side), Some(main))
+                    if node.get("autohide").and_then(Value::as_bool) == Some(true)
+                        && msdk::tokens::feature("sidebar_autohide") =>
+                {
+                    crate::autohide::build(&side, &main)
+                }
+                (Some(side), Some(main)) => {
+                    let paned = gtk::Paned::new(gtk::Orientation::Horizontal);
+                    paned.set_start_child(Some(&side));
+                    paned.set_resize_start_child(false);
+                    paned.set_shrink_start_child(false);
+                    paned.set_end_child(Some(&main));
+                    paned.set_position(msdk::tokens::layout_px("sidebar_width"));
+                    paned.upcast()
+                }
+                _ => gtk::Box::new(gtk::Orientation::Horizontal, 0).upcast(),
+            }
         }
         _ => {
             let l = gtk::Label::new(Some(&format!(
@@ -468,9 +579,13 @@ fn entry(node: &Value, d: &D, refresh: &mut Vec<Refresh>) -> gtk::Widget {
         }));
         let sw = gtk::ScrolledWindow::builder()
             .child(&view)
-            .vexpand(true)
+            .vexpand(false)
             .hexpand(true)
+            .min_content_height(72)
+            .max_content_height(190)
+            .propagate_natural_height(true)
             .build();
+        sw.add_css_class("msdk-editor");
         return sw.upcast();
     }
     let e: gtk::Entry = if kind == "search" {
@@ -622,8 +737,8 @@ fn list(node: &Value, d: &D, row: &Row, refresh: &mut Vec<Refresh>) -> gtk::Widg
 /// A conversation: each entry is drawn by its `kind`. Permission entries carry Allow and Deny buttons that send the entry id.
 fn transcript(node: &Value, d: &D, row: &Row, refresh: &mut Vec<Refresh>) -> gtk::Widget {
     let column = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    column.set_margin_start(12);
-    column.set_margin_end(12);
+    column.set_margin_start(msdk::tokens::layout_px("content_padding_x"));
+    column.set_margin_end(msdk::tokens::layout_px("content_padding_x"));
     column.set_margin_top(8);
     column.set_margin_bottom(8);
     let scroller = gtk::ScrolledWindow::builder()

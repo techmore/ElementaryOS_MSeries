@@ -63,6 +63,36 @@ Every app gets the same chrome without writing it, so a model never invents layo
   frames match (the "Mac curves" the owner mentioned belong here once the curves are defined: animation easing and pointer/scroll
   response would be tokens read by both the SDK and the compositor).
 
+### Built so far (2026-10-23)
+
+- **Standard window chrome:** a slightly toned silver title band, window controls at the top left (grey dots that colour on hover), an
+  options menu beside them (Settings when the app has a `settings` dialog, About from `app.version/license/website`), the title or a
+  `Tabs` switcher in the middle, and the app's own actions on the right. All from `msdk tokens`, so the compositor can match it.
+- **Layout standards as tokens:** base font 112 % of the system size, type scale caption 0.92 / body 1 / heading 1.18 / title 1.7,
+  spacing 6 / 10 / 16, control height 34, sidebar 224, pane padding 10. Panes run edge to edge, each with its own padding; the sidebar is
+  tinted with a divider.
+- **`Tabs` and `Stack`:** tabs in the title bar switch pages. **Optional auto-hide sidebar:** `Split(autohide: true)` slides the sidebar in
+  after 0.5 s of hover on the left edge (or keyboard focus) and away after the pointer leaves; one file, one token switch, and the
+  removal steps are written at the top of `autohide.rs`.
+- **`msdk-run --screenshot out.png`:** the `shot` call of the live API, so a design can be looked at, not guessed.
+
+### SDK shortfalls the T3 screenshot exposed (the work list)
+
+Found by looking at the T3 port rendered through the SDK, which is poor today. These are SDK gaps, not app gaps:
+
+1. **Layout control.** No alignment, grow or size props, so controls stretch by accident (the composer and Send button first filled
+   the window). Needs `align`, `grow`, `width` and `lines` and sensible non-stretching defaults.
+2. **Contrast was unchecked.** The user bubble was white on pale blue. The SDK needs a contrast gate (WCAG) over its tokens and the
+   theme's accent in light and dark; it is a natural `msdk gate` assertion.
+3. **Tabs do not look segmented**; the theme styles each toggle as a separate boxed button. Needs its own segmented style.
+4. **Icons are colourful.** A toolbar should use monochrome symbolic icons; the renderer should request `-symbolic` names.
+5. **No Markdown or highlighted code in the Transcript**, no avatars, provider dots, timestamps or thread status badges.
+6. **The sidebar is invisible at first sight** with auto-hide on; a first-run hint (or a pinned default) is needed if the feature stays.
+7. **Titlebar band is too subtle** to read as "silver"; tune `chrome.band_strength` against a real screenshot in both themes.
+8. **Pointer, scroll and animation curves** (the "Mac curves"): not defined anywhere yet. Belongs in tokens, shared with the compositor.
+9. **The libraries still to build** for the Rust Pantheon: the panel host (indicators, popovers), real services (T3 client, keyring,
+   notify, file chooser, HTTP/WebSocket), Markdown and code rendering, charts, a calendar grid, and the live introspection socket.
+
 ## 4. Building the SDK with the SDK
 
 The tools around the SDK can be SDK apps, and should be: **Studio** (editor with live preview and completion), **Inspector** (L3),
