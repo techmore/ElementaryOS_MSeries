@@ -1,5 +1,16 @@
 # Shared local AI reply drafts for Pantheon apps
 
+## Current delivery — October 22, 2026
+
+The Rust Messages draft composer and shared store are release-built and
+installed for this user. Focused tests cover the SQLite store, endpoint boundary,
+context limits, model selection, and Messages regressions. The configured Qwen
+service is not currently responding on loopback, so live generation and the
+Tab-to-insert interaction have not been exercised against a running model. The
+separate tabbed agent window is not delivered. Signal remains blocked on an
+official direct compose/API boundary; no clipboard bridge, private profile read,
+or protocol reimplementation is in scope.
+
 ## First consumer
 
 The Rust Messages app can request a reply draft from the existing local Qwen

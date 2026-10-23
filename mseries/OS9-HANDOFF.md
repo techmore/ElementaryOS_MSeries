@@ -222,15 +222,21 @@ conversation text or generated drafts. It will be available to later app
 adapters. Signal's signed official client remains outside this feature until a
 supported compose/API boundary exists.
 
-Targeted `rustfmt --edition 2024` and `cargo check -p mseries-ai -p mseries-messages` passed.
-No tests, screenshots, live model requests, package install, or client restart
-were run. The Messages menu now provides the first settings surface for the
-loopback endpoint, per-app style, shared-memory consent, and shared or
-Messages-only memories. Next: exercise the local Qwen request and Tab insertion
-in an isolated GTK/model setup, inspect light/dark and narrow layouts, then add
-app adapters that reuse the shared database and build the requested tabbed agent
-window. Signal remains gated on an official supported API, without clipboard
-handoff.
+The user-local ARM64 release package is built and installed at
+`~/.local/bin/mseries-messages-rs`. Focused tests pass:
+`cargo test --manifest-path rust/Cargo.toml --locked -p mseries-ai -p mseries-messages`
+reports six AI tests and 17 Messages tests passing; two existing GUI/keyring tests
+are intentionally ignored because they require isolated Xvfb/keyring setup.
+Those tests caught an invalid `app_preferences` SQLite constraint; the schema
+was fixed, the package rebuilt, and the installed binary matches the release
+artifact. `git diff --check` passes.
+
+The local Qwen endpoint on `127.0.0.1:8766` is not listening (the existing model
+worker was previously refused by its memory guard). No live model generation,
+visual review, or Tab insertion against Qwen was verified. This deploy is the
+Rust Messages preview only. The tabbed agent window and Signal adapter are not
+delivered; Signal remains gated on a supported official direct API, without
+clipboard handoff, private-profile access, or protocol reimplementation.
 
 ## Merged BlueFerry phone-ID build prepared — 2026-10-22
 
