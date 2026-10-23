@@ -1,6 +1,10 @@
 # Design language for the SDK: SwiftUI/QML-style text (proposal, 2026-10-23)
 
-Status: **proposal, not built.** The owner's direction: write apps in a concise, SwiftUI- or QML-like language that small models
+Status: **parser, printer and formatter built (2026-10-23).** `msdk fmt`, `msdk text`, `msdk json`, `msdk new <template> <dir> --text`, and `.msdk` files work with `check`, `gate`, `complete` and `msdk-run`. Every template and example round-trips JSON to text and back unchanged, and formatting is idempotent (tests in `rust/msdk/tests/text.rs`).
+
+The grammar as built differs from the sketch below in these ways: bindings are named arguments (`bind: query`), not `$query`; list rows use the same `"{title}"` templates as JSON (no `note in` closure yet); sections are `app`, `needs`, `logic`, `type`, `state`, `initial`, `persist`, `feed`, `message`, `on`, and the surfaces; state keys keep their snake_case names so the same gates work on both forms.
+
+Original status note: The owner's direction: write apps in a concise, SwiftUI- or QML-like language that small models
 already know, and still render through our Rust Pantheon stack. This note defines the shape so the choice can be made once and
 tested at the benchmark decision point.
 
