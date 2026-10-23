@@ -11772,6 +11772,25 @@ backend qualification is still needed before its sender detection/LE/media fixes
 can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
 features; those need native Incus design, not blind Swift feature parity claims.
 
+## Volume/media keys survive client restarts — 2026-10-23
+
+Cause: the compositor's `org.gnome.Shell` `GrabAccelerator(s)` shim (`rust/pantheon-compositor/src/shell_compat.rs`)
+never tied a grab to the D-Bus connection that made it, and refused any duplicate key with 0. A restarted
+`gsd-media-keys` (or any other grabber: `mseries-brightness`, test scripts) therefore found its keys still held by its
+dead predecessor, logged `Failed to grab accelerator for keybinding settings:volume-up`, and the volume keys stayed dead
+until the next login. Journal evidence: failed grabs on 2026-10-21 (`playback-repeat`, `hibernate`) and 2026-10-22 09:15
+(`volume-mute/up/down`), plus ~260 `Could not find accelerator for accel id N` lines from activations broadcast to every client.
+
+Fix (source only, not yet loaded into the running session): grabs are owned by the sender and dropped when it leaves the
+bus (`NameOwnerChanged`); a client re-grabbing its own key gets a fresh id so grab-before-ungrab cannot lock it out;
+`Ungrab*` only releases the caller's own grabs; `AcceleratorActivated` is sent only to the grabbing client; the compositor
+waits (max 5 s) for `org.gnome.Shell` to be owned before the session is announced ready, so `gsd-media-keys` never starts
+ahead of it. Verified: 4 new `grab_table_tests` and the 131-test compositor suite pass; on a private session bus with the
+nested compositor, a second client was refused while the first lived, got its keys after the first exited without
+ungrabbing, and a same-client regrab-then-release left the key held. Not verified: a physical key press end to end and the
+installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
+`Unable to get default sink` when pressed before PipeWire's default sink exists.
+
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
