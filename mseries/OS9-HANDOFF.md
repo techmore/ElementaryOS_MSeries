@@ -11784,3 +11784,11 @@ context gate, a tool-free draft agent over `mseries-ai`, and a content-free audi
 through the loaded local model (6.1 s, injection fixture, no secret in the answer). Not done: no app is marked yet, no AT-SPI reader,
 IBus lease/popup, Settings panel or hotkey; nothing is installed, so the running desktop is unchanged. Next: mark Rust Messages,
 Newelle and the T3 port, then the AT-SPI fallback reader and the IBus input client.
+
+## SDK agent surface design — 2026-10-23
+
+New design note `mseries/SDK-AGENT-SURFACE.md` joins the SDK and the Pantheon MCP broker the way Apple's App Intents, entitlements and
+TCC do: apps declare intents, entities, scopes and risk classes in the `.msdk` description; `msdk check` validates them,
+`msdk agent-manifest` generates the MCP manifest; the broker enforces owner grants bound to a manifest hash. Cross-links added to the MCP
+design, the introspection note and `DOCS.md`. Design only: no grammar, checker rule, generator, broker or settings page exists. Next:
+owner review of the vocabulary and open questions, then `msdk check` rules and a manifest for the T3 port.
