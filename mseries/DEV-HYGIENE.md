@@ -103,3 +103,7 @@ Existing incus containers: `deb-test`, `orchard-test`, `rupert-dev` (idle, nothi
 - 2.9 GB of repo clones sit in RAM at `/tmp/claude-1000/-home-sdolbec-Projects/b453e662-…/scratchpad` from a session idle since 18:31. Delete when that session is done.
 - The bakeoff llama model (2.6 GB) is also in `/tmp`. Move to disk when the bakeoff ends.
 - zram is capped at 8 GB with `vm.swappiness=100`. With the disk swap in place that is fine; raising the cap to 12 GB would trade ~2 GB RAM for less disk swapping.
+
+## Rust build leftovers (2026-10-23)
+
+The shared cargo target dir (`~/.cache/cargo-target`) grows inside a week, not only after it. rustc keeps one incremental folder per build configuration, so the same crate built with different flags leaves many: 235 folders and 3.4 GB measured, 276 MB after keeping the newest per crate. `dev-clean` now prunes those (newest per crate is kept, so nothing rebuilds). The 14 GB `debug/deps` is mostly live dependency artifacts and is left alone; the existing rule drops the whole dir after seven days without a build. `/tmp` is RAM-backed (16 GB): kernel and image work (`aurora-*`, `elementary-m4-*`) can sit there for days and is the kernel lane's to clear, so `dev-clean` leaves it.
