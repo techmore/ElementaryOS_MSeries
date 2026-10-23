@@ -74,6 +74,27 @@ local generation remain unqualified and are labeled accordingly. Q8/Turbo infere
 of automated vision grades are not qualified by the single Q4 hardware run. Hosted samples retain
 unknown provider settings rather than fabricated values. See [app notes](image-studio/README.md).
 
+## Image Studio: Draw Things-style native redesign — 2026-10-22 (Claude Code)
+
+Owner asked for Image Studio to look like a beautiful, native elementary OS app inspired by Draw Things.
+UI only: no generation, model, download or recipe logic changed, and no indicator, kernel, compositor or
+audio changes were made. One scoped stylesheet (`rust/mseries-image-studio/src/style.rs`) uses the
+elementary stylesheet's named colors. Create is now a dotted canvas with glass status/detail pills, a
+history filmstrip, a floating prompt dock with a pill Generate button, recipe chips and an inspector of
+collapsible cards with real sliders. Library is a gallery with a detail pane and a Recipes tab; Models,
+Model guide, Compare, Review and Run logs use the same card system. The header keeps Reload recipe and
+Stop; Run moved into the dock (Ctrl+Enter still works). The compact breakpoint is now 76 text units, and
+the regular layout's minimum width is asserted to stay below it. Built-in sample prompts now describe an
+original fictional adult character instead of a named real person.
+
+Checks: build; six Rust data tests; the Xvfb render test (updated for the new widgets) passed five
+consecutive regular runs plus the compact run, covering save/load, library selection and reuse, recipe
+load, model/guide/compare/review navigation and live preview frame replacement; dark and light renders
+were inspected from fictional fixtures (`tests/demo_data.py`, screenshots in `image-studio/docs/screenshots`);
+a smoke start against the real data dir exited cleanly. **Not verified:** keyboard tab order and screen
+reader behavior, a real generation run through the new Generate button, and Orca/high-contrast themes.
+Installed to `~/.local/libexec/mseries-image-studio`; a running instance keeps the old UI until reopened.
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,

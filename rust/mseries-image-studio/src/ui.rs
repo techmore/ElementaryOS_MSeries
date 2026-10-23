@@ -210,8 +210,11 @@ impl ImageStudioWindow {
         header.pack_end(&stop);
         let settings_popover = gtk::Popover::new();
         settings_popover.set_size_request(340, 560);
+        let settings_label = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        settings_label.append(&gtk::Image::from_icon_name("preferences-system-symbolic"));
+        settings_label.append(&gtk::Label::new(Some("Settings")));
         let settings_button = gtk::MenuButton::builder()
-            .icon_name("emblem-system-symbolic")
+            .child(&settings_label)
             .tooltip_text("Generation settings")
             .popover(&settings_popover)
             .build();
@@ -449,6 +452,7 @@ struct CreatePage {
     film_rail: gtk::Widget,
     dock_actions: gtk::Box,
     chips: gtk::FlowBox,
+    run_summary: gtk::Label,
 }
 
 #[derive(Clone)]
@@ -639,9 +643,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
         let mut child = navigation.first_child();
         while let Some(row) = child {
             if let Some(row) = row.downcast_ref::<gtk::ListBoxRow>() {
-                if row.is_selectable()
-                    && Some(row.widget_name()) == current.as_ref().map(|n| n.clone().into())
-                {
+                if row.is_selectable() && Some(row.widget_name()) == current {
                     navigation.select_row(Some(row));
                     break;
                 }
@@ -786,6 +788,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
 /// Live summary of the next run as chips, rebuilt only when it changes.
 fn install_recipe_chips(create: &CreatePage, settings: &Inspector) {
     let flow = create.chips.clone();
+    let run_summary = create.run_summary.clone();
     let settings = settings.clone_refs();
     let mut previous: Vec<(String, &'static str, Option<&'static str>)> = Vec::new();
     glib::timeout_add_local(Duration::from_millis(300), move || {
@@ -833,30 +836,19 @@ fn install_recipe_chips(create: &CreatePage, settings: &Inspector) {
                 None,
             ),
         ];
-        chips.push((
-            format!(
-                "VAE {} · {}px tiles",
-                if settings.vae_on_cpu.is_active() {
-                    "CPU"
-                } else {
-                    "GPU"
-                },
-                settings.vae_tile_size.value_as_int()
-            ),
-            "",
-            None,
-        ));
-        chips.push((
-            format!(
-                "Weights {} · GPU {:.1} GiB · preview /{}",
-                ["disk", "cpu", "auto"]
-                    .get(settings.params_backend.selected() as usize)
-                    .unwrap_or(&"disk"),
-                settings.max_vram_gib.value(),
-                settings.preview_interval.value_as_int()
-            ),
-            "",
-            None,
+        run_summary.set_text(&format!(
+            "VAE {} · {}px tiles · weights {} · GPU budget {:.1} GiB · preview every {} steps",
+            if settings.vae_on_cpu.is_active() {
+                "CPU"
+            } else {
+                "GPU"
+            },
+            settings.vae_tile_size.value_as_int(),
+            ["disk", "cpu", "auto"]
+                .get(settings.params_backend.selected() as usize)
+                .unwrap_or(&"disk"),
+            settings.max_vram_gib.value(),
+            settings.preview_interval.value_as_int()
         ));
         if settings.batch.value_as_int() > 1 {
             chips.push((
@@ -1104,7 +1096,7 @@ fn build_create_page() -> CreatePage {
     actions.append(&intent);
     // Secondary actions are icon-only so the dock stays compact; each has a tooltip
     // and an accessible name.
-    let suggest_type = gtk::Button::from_icon_name("view-refresh-symbolic");
+    let suggest_type = gtk::Button::from_icon_name("tag-new-symbolic");
     suggest_type.add_css_class("flat");
     suggest_type.add_css_class("is-pill");
     suggest_type.set_tooltip_text(Some(
@@ -1164,6 +1156,9 @@ fn build_create_page() -> CreatePage {
         "Settings for the next run",
     )]);
 
+    let run_summary = caption("");
+    run_summary.set_margin_start(6);
+
     let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
     page.set_margin_top(14);
     page.set_margin_bottom(16);
@@ -1172,6 +1167,7 @@ fn build_create_page() -> CreatePage {
     page.append(&stage_overlay);
     page.append(&dock);
     page.append(&chips);
+    page.append(&run_summary);
     page.append(&hints);
 
     CreatePage {
@@ -1193,6 +1189,7 @@ fn build_create_page() -> CreatePage {
         film_rail: film_rail.upcast(),
         dock_actions,
         chips,
+        run_summary,
     }
 }
 
@@ -1228,7 +1225,6 @@ fn install_job_watch(stage: &Stage) {
             ));
             let path = job["image_path"].as_str().unwrap_or("");
             let shown = !path.is_empty() && stage.show(path);
-            eprintln!("DBG sync status={status:?} path={path:?} shown={shown} exists={}", std::path::Path::new(path).exists());
             if !shown {
                 stage.clear();
             }
@@ -1676,7 +1672,13 @@ fn build_inspector() -> Inspector {
     if let Some(path) = files.first() {
         model.set_text(&path.to_string_lossy());
     }
-    model_body.append(&installed_models);
+    if files.is_empty() {
+        model_body.append(&caption(
+            "No image model is downloaded yet. Open Models in the sidebar to get one.",
+        ));
+    } else {
+        model_body.append(&installed_models);
+    }
     let model_file = gtk::Expander::new(Some("Model file"));
     model_file.set_child(Some(&model));
     model_body.append(&model_file);
@@ -2376,31 +2378,27 @@ fn show_library_detail(
         .build();
     content.append(&prompt);
 
-    let chips = gtk::FlowBox::new();
-    chips.set_selection_mode(gtk::SelectionMode::None);
-    chips.set_homogeneous(false);
-    chips.set_column_spacing(6);
-    chips.set_row_spacing(6);
-    chips.set_max_children_per_line(6);
-    chips.append(&chip(
-        &short_model_name(&recipe.model_id),
-        "is-accent",
-        Some("drive-harddisk-symbolic"),
-    ));
-    chips.append(&chip(&format!("{} steps", recipe.steps), "", None));
-    chips.append(&chip(&format!("CFG {:.1}", recipe.cfg_scale), "", None));
-    chips.append(&chip(&format!("Seed {}", recipe.seed), "", None));
+    let mut chips: Vec<(String, &str, Option<&str>)> = vec![
+        (
+            short_model_name(&recipe.model_id),
+            "is-accent",
+            Some("drive-harddisk-symbolic"),
+        ),
+        (format!("{} steps", recipe.steps), "", None),
+        (format!("CFG {:.1}", recipe.cfg_scale), "", None),
+        (format!("Seed {}", recipe.seed), "", None),
+    ];
     if !recipe.lora_id.is_empty() {
-        chips.append(&chip(
-            &format!("LoRA {} · {:.2}", recipe.lora_id, recipe.lora_weight),
+        chips.push((
+            format!("LoRA {} · {:.2}", recipe.lora_id, recipe.lora_weight),
             "",
             None,
         ));
     }
     for tag in &recipe.tags {
-        chips.append(&chip(tag, "", Some("tag-new-symbolic")));
+        chips.push((tag.clone(), "", Some("tag-new-symbolic")));
     }
-    content.append(&chips);
+    content.append(&style::chip_rows(&chips, 36));
 
     // Actions
     let actions = gtk::Box::new(gtk::Orientation::Vertical, 6);
@@ -2654,7 +2652,7 @@ fn load_generated_images(
     });
     refresh_filmstrip(create, &outputs);
     // Reopen on the latest image instead of an empty canvas.
-    if !create.stage.frame.is_visible() {
+    if !create.stage.frame.get_visible() {
         if let Some(latest) = outputs.first() {
             if create.stage.show(&latest.image_path) {
                 if let Some(first) = create.film.first_child() {
@@ -2908,6 +2906,7 @@ fn test_hooks(
             } else {
                 gtk::InterfaceColorScheme::Dark
             });
+            #[allow(deprecated)]
             settings.set_gtk_application_prefer_dark_theme(!light);
         });
     }

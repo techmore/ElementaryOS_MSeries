@@ -377,3 +377,26 @@ pub fn clear_box(container: &gtk::Box) {
         container.remove(&child);
     }
 }
+
+/// Lay chips out left to right, wrapping to a new row once `budget` characters are used.
+/// GTK's FlowBox aligns children in columns, which stretches short chips; this keeps
+/// each chip at its natural width.
+pub fn chip_rows(items: &[(String, &str, Option<&str>)], budget: usize) -> gtk::Box {
+    let rows = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    let mut row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    let mut used = 0;
+    for (text, tone, icon) in items {
+        let cost = text.chars().count() + if icon.is_some() { 3 } else { 0 } + 2;
+        if used > 0 && used + cost > budget {
+            rows.append(&row);
+            row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            used = 0;
+        }
+        row.append(&chip(text, tone, *icon));
+        used += cost;
+    }
+    if used > 0 {
+        rows.append(&row);
+    }
+    rows
+}

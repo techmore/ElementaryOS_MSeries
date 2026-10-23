@@ -79,6 +79,8 @@ fn main() -> gtk::glib::ExitCode {
                     .program_name("Image Studio")
                     .version(env!("CARGO_PKG_VERSION"))
                     .comments("A native Pantheon image creation workspace for M-Series.")
+                    .logo_icon_name(APP_ID)
+                    .license_type(gtk::License::Gpl30Only)
                     .build();
                 dialog.present();
             }

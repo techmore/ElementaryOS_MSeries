@@ -190,6 +190,11 @@ fn main() {
     // Generate is enabled only when an engine, model and enough memory exist on the host.
     assert!(button(window, "Generate").is_mapped());
     assert_eq!(window.has_css_class("pantheon-compact"), compact);
+    let (minimum_width, ..) = window.measure(gtk::Orientation::Horizontal, -1);
+    assert!(
+        compact || minimum_width < mseries_pantheon_kit::text_unit(window, 76.0),
+        "regular layout minimum width {minimum_width} must stay under the compact breakpoint"
+    );
     if compact {
         assert!(!button(window, "Save recipe").is_mapped());
         let mut settings_menu = None;
@@ -220,7 +225,9 @@ fn main() {
     assert!(
         mapped_text(window)
             .iter()
-            .any(|text| text.contains("Complete · sample preview"))
+            .any(|text| text.contains("Complete · sample preview")),
+        "canvas status not shown; visible text: {:?}",
+        mapped_text(window)
     );
     select_sidebar_page(window, "models");
     pump(Duration::from_millis(500));
