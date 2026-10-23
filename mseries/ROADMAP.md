@@ -1,3 +1,11 @@
+## PolyBagger multi-printer and USB reconnect support — 2026-10-22
+
+`mseries/polybagger-print-manager/` now supports multiple USB printer-class devices,
+per-device raw ZPL CUPS queues, selection among configured CUPS destinations, and USB
+unplug/reconnect status refresh with per-printer label state. Network/shared queues must
+accept raw ZPL. Source is on `codex/polybagger-multi-printer-hotplug`; additional printer
+and physical hotplug qualification remains open. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu

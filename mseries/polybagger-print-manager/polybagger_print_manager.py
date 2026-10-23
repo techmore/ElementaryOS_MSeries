@@ -7,15 +7,17 @@ the bagger cycles. Sending ZPL *loads* a label; the bagger's Printer Settings sc
 
 GUI (elementary OS, GTK 4 + Granite 7):   ./polybagger_print_manager.py
 Terminal:
-  ./polybagger_print_manager.py --status                       USB + CUPS state, exit 0 ready / 2 not ready
+  ./polybagger_print_manager.py --status                       all printer targets + selected CUPS state
   ./polybagger_print_manager.py --send FILE.zpl [--qty N] [--yes]  load a label for N bags (^PQ) and verify, exit 0/1/2
+  ./polybagger_print_manager.py --send FILE.zpl --printer QUEUE_OR_SERIAL
   ./polybagger_print_manager.py --watch                        print a line each time the printer is plugged/unplugged
   ./polybagger_print_manager.py --sync [--pull]                refresh the offline label store (works with no network)
   ./polybagger_print_manager.py --cancel                       cancel your stuck jobs
-  ./polybagger_print_manager.py --setup                        create the raw CUPS queue (asks for admin auth)
+  ./polybagger_print_manager.py --setup --printer SERIAL       create a per-device raw CUPS queue (asks for admin auth)
 Add --json to --status / --send for machine-readable output.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -27,8 +29,8 @@ import time
 import urllib.parse
 from pathlib import Path
 
-ZEBRA_VENDOR = "0a5f"
-QUEUE_NAME = "Zebra"
+USB_PRINTER_CLASS = "07"
+MANAGED_QUEUE_PREFIX = "PolyBagger"
 DATA_DIR = Path.home() / ".local/share/polybagger-print-manager"
 LOG_PATH = DATA_DIR / "log.jsonl"
 STORE = DATA_DIR / "labels"  # offline copy of the label library; printing never needs the network
@@ -51,38 +53,130 @@ def run(cmd, timeout=15):
 
 # ---------------------------------------------------------------- detection
 
-def usb_zebras():
-    """Zebra devices currently on the USB bus, read from sysfs (no lsusb needed)."""
+def usb_printers():
+    """USB printer-class devices currently on the bus, read from sysfs."""
     found = []
     for d in Path("/sys/bus/usb/devices").glob("*"):
         try:
-            if (d / "idVendor").read_text().strip().lower() != ZEBRA_VENDOR:
-                continue
             read = lambda n: (d / n).read_text().strip() if (d / n).exists() else ""
-            found.append({"bus": d.name, "product": read("product"),
-                          "serial": read("serial"), "manufacturer": read("manufacturer")})
+            vendor_id, product_id = read("idVendor").lower(), read("idProduct").lower()
+            if not vendor_id:
+                continue
+            interfaces = d.glob(f"{d.name}:*/bInterfaceClass")
+            printer_class = any(p.read_text().strip().lower() == USB_PRINTER_CLASS for p in interfaces)
+            # Some Zebra firmware exposes a vendor-specific class instead of the USB printer class.
+            if not printer_class and vendor_id != "0a5f":
+                continue
+            device = {"bus": d.name, "vendor_id": vendor_id, "product_id": product_id,
+                      "product": read("product") or "USB printer",
+                      "serial": read("serial"), "manufacturer": read("manufacturer")}
+            device["uri"] = usb_uri(device)
+            device["identity"] = ":".join((vendor_id, product_id, device["serial"] or d.name))
+            found.append(device)
         except OSError:
             pass
-    return found
+    return sorted(found, key=lambda d: (d["serial"], d["product"], d["bus"]))
 
 
 def usb_uri(dev):
     q = urllib.parse.quote
-    uri = f"usb://{q(dev['manufacturer'] or 'Zebra Technologies')}/{q(dev['product'])}"
+    uri = f"usb://{q(dev['manufacturer'] or 'USB Printer')}/{q(dev['product'])}"
     return uri + (f"?serial={q(dev['serial'])}" if dev["serial"] else "")
 
 
-def find_queue():
-    """Return (name, device_uri) of the CUPS queue to use, or (None, None)."""
+def cups_queues():
+    """Return every configured CUPS destination and its device URI."""
     _, out = run(["lpstat", "-v"])
-    queues = re.findall(r"^device for (\S+): (.+)$", out, re.M)
-    for name, uri in queues:
-        if name == QUEUE_NAME:
-            return name, uri
-    for name, uri in queues:
-        if re.search(r"zebra|ztc|zt\d", uri, re.I):
-            return name, uri
-    return None, None
+    return [{"name": name, "uri": uri} for name, uri in re.findall(r"^device for (\S+): (.+)$", out, re.M)]
+
+
+def matching_usb_device(uri, devices):
+    """Match a CUPS USB URI to one currently connected device; ambiguous matches fail closed."""
+    if not uri.lower().startswith("usb://"):
+        return None
+    parts = urllib.parse.urlsplit(uri)
+    query = urllib.parse.parse_qs(parts.query)
+    serial = query.get("serial", [""])[0]
+    if serial:
+        matches = [dev for dev in devices if dev.get("serial") == serial]
+        if len(matches) > 1:
+            uri_path = (urllib.parse.unquote(parts.netloc), urllib.parse.unquote(parts.path))
+            matches = [dev for dev in matches
+                       if (urllib.parse.unquote(urllib.parse.urlsplit(dev["uri"]).netloc),
+                           urllib.parse.unquote(urllib.parse.urlsplit(dev["uri"]).path)) == uri_path]
+    else:
+        uri_base = urllib.parse.unquote(uri).split("?", 1)[0].rstrip("/")
+        matches = [dev for dev in devices
+                   if urllib.parse.unquote(dev["uri"]).split("?", 1)[0].rstrip("/") == uri_base]
+    return matches[0] if len(matches) == 1 else None
+
+
+def printer_targets(devices=None, queues=None):
+    """Configured CUPS destinations plus detected USB printers that need a queue."""
+    devices = usb_printers() if devices is None else devices
+    queues = cups_queues() if queues is None else queues
+    targets = []
+    matched_ids = set()
+    for queue in queues:
+        uri = queue["uri"]
+        is_usb = uri.lower().startswith("usb://")
+        device = matching_usb_device(uri, devices) if is_usb else None
+        serial = urllib.parse.parse_qs(urllib.parse.urlsplit(uri).query).get("serial", [""])[0]
+        if device:
+            matched_ids.add(device["identity"])
+            detail = f"{device['product']} · {device['serial'] or device['bus']}"
+            display = f"{queue['name']} — {detail}"
+        elif is_usb:
+            model = urllib.parse.unquote(urllib.parse.urlsplit(uri).path.rsplit("/", 1)[-1])
+            detail = " · ".join(p for p in (model, urllib.parse.unquote(serial)) if p)
+            display = f"{queue['name']} — USB {detail}"
+        else:
+            display = f"{queue['name']} — Network / CUPS"
+        targets.append({"id": queue["name"], "queue": queue["name"], "uri": uri,
+                        "transport": "usb" if is_usb else "cups", "device": device,
+                        "connected": bool(device) if is_usb else True,
+                        "needs_setup": False, "display": display})
+    for device in devices:
+        if device["identity"] in matched_ids:
+            continue
+        targets.append({"id": f"usb:{device['identity']}", "queue": None, "uri": device["uri"],
+                        "transport": "usb", "device": device, "connected": True,
+                        "needs_setup": True,
+                        "display": f"{device['product']} · {device['serial'] or device['bus']} (Set up)"})
+    return targets
+
+
+def default_queue_name():
+    _, out = run(["lpstat", "-d"])
+    match = re.search(r"system default destination: (\S+)", out)
+    return match.group(1) if match else None
+
+
+def find_target(targets, preferred):
+    """Resolve a queue, target ID, USB identity, or unique device serial."""
+    exact = [t for t in targets if preferred in (t["id"], t.get("queue"))]
+    if len(exact) == 1:
+        return exact[0]
+    identities = [t for t in targets if t.get("device") and preferred == t["device"]["identity"]]
+    if len(identities) == 1:
+        return identities[0]
+    serials = [t for t in targets if t.get("device") and preferred == t["device"].get("serial")]
+    return serials[0] if len(serials) == 1 else None
+
+
+def choose_target(targets, preferred=None):
+    if preferred:
+        target = find_target(targets, preferred)
+        if target:
+            return target
+    connected_usb = [t for t in targets if t["transport"] == "usb" and t["connected"]]
+    if connected_usb:
+        return connected_usb[0]
+    default = default_queue_name()
+    for target in targets:
+        if target.get("queue") == default and target["connected"]:
+            return target
+    return targets[0] if targets else None
 
 
 def queue_state(name):
@@ -97,22 +191,51 @@ def queue_state(name):
     return state, reasons
 
 
-def status():
-    devs = usb_zebras()
-    name, uri = find_queue()
+def status(preferred=None):
+    devices = usb_printers()
+    targets = printer_targets(devices)
+    explicit = preferred is not None
+    preferred = preferred or load_settings().get("printer_target")
+    target = choose_target(targets, preferred)
+    if explicit and not find_target(targets, preferred):
+        target = None
+    name = target.get("queue") if target else None
+    uri = target.get("uri") if target else None
     qstate, reasons = queue_state(name) if name else ("missing", [])
-    uri_ok = True
-    if devs and uri and devs[0]["serial"]:
-        uri_ok = urllib.parse.quote(devs[0]["serial"]) in uri or devs[0]["serial"] in uri
-    ready = bool(devs) and bool(name) and qstate in ("idle", "processing") and not reasons and uri_ok
-    return {"usb": devs, "queue": name, "uri": uri, "queue_state": qstate,
+    connected = bool(target and target["connected"])
+    uri_ok = bool(target and (target["transport"] != "usb" or connected))
+    ready = bool(target and name and connected and qstate in ("idle", "processing") and not reasons)
+    return {"usb": devices, "targets": targets,
+            "selected_target": target["id"] if target else None, "target": target,
+            "device": target.get("device") if target else None, "connected": connected,
+            "queue": name, "uri": uri, "queue_state": qstate,
             "reasons": reasons, "uri_matches_device": uri_ok, "ready": ready}
 
 
+def managed_queue_name(dev):
+    identity = dev.get("serial") or f"{dev.get('vendor_id', 'usb')}-{dev.get('product_id', dev.get('bus', 'printer'))}-{dev.get('bus', '')}"
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", identity).strip("-.")[:72] or "USB"
+    name = f"{MANAGED_QUEUE_PREFIX}-{slug}"
+    for queue in cups_queues():
+        if queue["name"] == name and urllib.parse.unquote(queue["uri"]) != urllib.parse.unquote(usb_uri(dev)):
+            digest = hashlib.sha256(usb_uri(dev).encode()).hexdigest()[:8]
+            name = f"{name[:110]}-{digest}"
+            break
+    return name
+
+
 def setup_queue(dev):
-    cmd = ["pkexec", "lpadmin", "-p", QUEUE_NAME, "-E", "-v", usb_uri(dev), "-m", "raw",
-           "-o", "printer-is-shared=false"]
-    return run(cmd, timeout=120)
+    name = managed_queue_name(dev)
+    if not dev.get("serial"):
+        same_uri = [d for d in usb_printers()
+                    if urllib.parse.unquote(d["uri"]).split("?", 1)[0] ==
+                    urllib.parse.unquote(usb_uri(dev)).split("?", 1)[0]]
+        if len(same_uri) > 1:
+            return 1, "These identical USB printers have no serial number, so CUPS cannot route to one safely.", name
+    cmd = ["pkexec", "lpadmin", "-p", name, "-E", "-v", usb_uri(dev), "-m", "raw",
+           "-o", "printer-is-shared=false", "-o", "printer-error-policy=retry-job"]
+    rc, out = run(cmd, timeout=120)
+    return rc, out, name
 
 
 # ---------------------------------------------------------------- sending
@@ -127,12 +250,12 @@ def check_zpl(path):
     if "^XA" not in data or "^XZ" not in data:
         return False, ["not ZPL: missing ^XA ... ^XZ"]
     if re.search(r"\^PON|\^FWN", data):
-        warns.append("contains ^PON/^FWN, which this printer rejects ('Zebra is not ready'; see thril AGENTS.md)")
+        warns.append("contains ^PON/^FWN. The T-1000Z printer rejected these commands; verify support on the selected printer.")
     return True, warns
 
 
-STUCK_HINT = ("The printer is not taking data. On the bagger's Printer Settings screen check the printer is ON and in "
-              "Run mode (not Setup). If it stays stuck, power-cycle the printer, then cancel the stuck jobs.")
+STUCK_HINT = ("The printer is not taking data. Check that it is powered on and online; on a TI-1000Z, set Printer "
+              "to ON and Run mode (not Setup). If it stays stuck, reconnect or power-cycle it, then cancel stuck jobs.")
 
 MACHINE_FLOW = [
     "Printer Settings on the bagger: printer ON, Run mode (not Setup).",
@@ -145,14 +268,15 @@ MACHINE_FLOW = [
 ]
 
 KNOWN_ISSUES = [
-    "The library's label files carry no ^PQ, so the printer defaults to a quantity of 1 and clears after one bag. "
-    "Set Labels to print instead of re-sending the file for every bag.",
+    "The app sends raw ZPL. Select only a printer queue whose device supports ZPL; network printers must first be added in System Settings.",
+    "USB printer-class devices are discovered every second. Queues match by serial or a unique USB URI; identical devices without serials cannot be distinguished safely.",
+    "The library's label files carry no ^PQ. The app adds the chosen quantity to a temporary copy; printer support for ^PQ varies.",
     "CUPS \"completed\" means the printer received the data. It does not mean a label printed: that needs a bag cycle.",
     "The printer can stop taking data (jobs sit at \"waiting for printer\") or drop off USB. A printer reboot has cleared it.",
     "After a drop-off CUPS may disable the queue. Re-enabling needs admin: sudo cupsenable <queue>.",
     "Sending the same label twice can leave it printing on every cycle if Reprint is on. Check the bagger screen.",
     "Clear Labels on the bagger unloads the label. Stored flash formats (E:) are not erased by it, per the TI-1000Z manual.",
-    "The auto-created CUPS queue uses an HP driver and is shared. This app always sends raw, so ZPL is not converted.",
+    "Existing CUPS queues can use any driver, but this app sends raw ZPL and does not convert languages. New USB queues are private raw queues.",
     "The printer hardware has its own intermittent faults (see docs/polybagger-t1000-printer-link-troubleshooting.md).",
 ]
 
@@ -175,13 +299,13 @@ def kind_of(path):
 
 
 def expectation(path):
-    """(kind, what the operator should see on the bagger after the printer receives the job)."""
+    """(kind, what to verify at the printer after it receives the job)."""
     data = Path(path).read_text(errors="replace")
     if "^XF" in data:
-        return "recall", "Recalls the stored label. The bagger's Printer Settings screen should show StoredLabel."
+        return "recall", "Recalls the stored label format from printer flash."
     if "^DF" in data and "^PQ" not in data:
-        return "store", "Saves the label to printer flash. Nothing loads on the bagger: send the recall file next."
-    return "label", "Loads the label. The bagger's Printer Settings screen should show New Label."
+        return "store", "Saves the label to printer flash. No label prints; send its recall file next."
+    return "label", "Sends label data to the printer. Confirm it loaded or printed."
 
 
 def send_and_verify(path, queue, progress=lambda msg: None):
@@ -234,8 +358,10 @@ def with_quantity(path, qty):
 
 def resume_queue(queue):
     """Re-enable a paused queue and set it to retry (not pause) when the printer is power-cycled. Asks for admin auth."""
-    return run(["pkexec", "sh", "-c", f"cupsenable '{queue}' && lpadmin -p '{queue}' -o printer-error-policy=retry-job"],
-               timeout=180)
+    rc, out = run(["pkexec", "cupsenable", queue], timeout=180)
+    if rc:
+        return rc, out
+    return run(["pkexec", "lpadmin", "-p", queue, "-o", "printer-error-policy=retry-job"], timeout=180)
 
 
 def my_stuck_jobs(queue):
@@ -346,38 +472,67 @@ def label_preview(path):
 # ---------------------------------------------------------------- CLI
 
 def describe(st):
-    if not st["usb"]:
-        return "NOT DETECTED: no Zebra on USB (plug in / power on the printer, try another cable or port)"
-    d = st["usb"][0]
-    line = f"USB: {d['product']} serial {d['serial'] or '?'}"
-    if not st["queue"]:
-        return line + "\nCUPS: no queue. Run: ./polybagger_print_manager.py --setup"
-    line += f"\nCUPS: queue '{st['queue']}' is {st['queue_state']}" + (f", alerts: {' '.join(st['reasons'])}" if st["reasons"] else "")
-    if not st["uri_matches_device"]:
-        line += "\nWARNING: queue points at a different serial than the plugged-in printer"
-    return line + ("\nREADY" if st["ready"] else "\nNOT READY")
+    target = st.get("target")
+    if not target:
+        if st.get("targets"):
+            return "No matching printer selected. Available: " + "; ".join(t["display"] for t in st["targets"])
+        return "No CUPS printers or USB printers found. Connect a printer or add a CUPS queue.\nNOT READY"
+    else:
+        lines = [f"Selected: {target['display']}"]
+    others = [t["display"] for t in st.get("targets", []) if not target or t["id"] != target["id"]]
+    if others:
+        lines.append("Other printers: " + "; ".join(others))
+    if target["needs_setup"]:
+        serial = target["device"].get("serial") or target["device"]["identity"]
+        lines.append(f"CUPS: no queue. Run: ./polybagger_print_manager.py --setup --printer {serial}")
+    elif not st["connected"]:
+        lines.append(f"USB printer is disconnected; queue '{st['queue']}' is retained for replug.")
+    else:
+        lines.append(f"CUPS: queue '{st['queue']}' is {st['queue_state']}" +
+                     (f", alerts: {' '.join(st['reasons'])}" if st["reasons"] else ""))
+    return "\n".join(lines + (["READY"] if st["ready"] else ["NOT READY"]))
 
 
 def cli(args):
     if args.cancel:
-        st = status(); done, failed = cancel_jobs(st["queue"]) if st["queue"] else ([], [])
+        st = status(args.printer); done, failed = cancel_jobs(st["queue"]) if st["queue"] else ([], [])
         print(f"cancelled: {' '.join(done) or 'none'}" + (f"; failed: {' '.join(failed)}" if failed else "")); return 1 if failed else 0
     if args.setup:
-        st = status()
-        if not st["usb"]:
-            print("No Zebra on USB; plug it in first."); return 2
-        rc, out = setup_queue(st["usb"][0]); print(out or "queue created"); return 0 if rc == 0 else 1
+        devices = usb_printers()
+        st = status(args.printer)
+        target = st.get("target")
+        dev = target.get("device") if target else None
+        if not args.printer:
+            if len(devices) == 1:
+                dev = devices[0]
+            else:
+                print("Choose one connected USB printer with --printer SERIAL. Available: " +
+                      (", ".join(d.get("serial") or d["identity"] for d in devices) or "none"))
+                return 2
+        if not dev:
+            print("Select a connected USB printer by serial with --printer. Available: " +
+                  (", ".join(d.get("serial") or d["identity"] for d in devices) or "none"))
+            return 2
+        rc, out, name = setup_queue(dev)
+        print(out or f"CUPS queue {name} created for {dev['product']} ({dev.get('serial') or dev['bus']})")
+        return 0 if rc == 0 else 1
     if args.sync:
         c, n, note = sync_library(pull=args.pull); print(f"{n} labels in {STORE} ({c} updated) {note}".strip()); return 0
     if args.watch:
         prev = None
         while True:
-            cur = bool(usb_zebras())
+            cur = tuple(d["identity"] for d in usb_printers())
             if cur != prev:
-                print(time.strftime("%H:%M:%S"), "Zebra PLUGGED IN" if cur else "Zebra UNPLUGGED", flush=True)
+                before, after = set(prev or ()), set(cur)
+                by_id = {d["identity"]: d for d in usb_printers()}
+                for identity in sorted(after - before):
+                    d = by_id.get(identity, {})
+                    print(time.strftime("%H:%M:%S"), f"PRINTER PLUGGED IN · {d.get('product', identity)} · {d.get('serial') or identity}", flush=True)
+                for identity in sorted(before - after):
+                    print(time.strftime("%H:%M:%S"), f"PRINTER UNPLUGGED · {identity}", flush=True)
                 prev = cur
             time.sleep(1)
-    st = status()
+    st = status(args.printer)
     if args.status or not args.send:
         print(json.dumps(st, indent=2) if args.json else describe(st))
         return 0 if st["ready"] else 2
@@ -393,7 +548,7 @@ def cli(args):
         res = send_and_verify(job_path, st["queue"], progress=lambda m: print(" ", m, file=sys.stderr))
     finally:
         if temp: os.unlink(job_path)
-    res["quantity"] = args.qty
+    res.update(quantity=args.qty, queue=st["queue"], printer_target=st["selected_target"])
     kind, hint = expectation(args.send)
     res.update(file=str(args.send), expect=hint)
     if res["ok"] and kind != "store" and not args.yes and sys.stdin.isatty():
@@ -433,8 +588,8 @@ window.pbpm button.pbpm-preset { padding: 6px 14px; }
 window.pbpm .pbpm-sidebar-head { padding: 12px 14px 4px 14px; }
 """
 
-STEPS = [("usb", "Printer connected (USB)"), ("queue", "Print queue set up"), ("ready", "Printer taking jobs"),
-         ("file", "Label file valid"), ("sent", "Delivered to printer"), ("loaded", "Bagger shows the label loaded")]
+STEPS = [("usb", "Printer connected"), ("queue", "Print queue set up"), ("ready", "Printer taking jobs"),
+         ("file", "Label file valid"), ("sent", "Delivered to printer"), ("loaded", "Label confirmed")]
 PRESETS = (1, 100, 500, 1000)
 ICON = {"ok": "emblem-default", "bad": "dialog-error", "warn": "dialog-warning", "todo": "content-loading-symbolic"}
 
@@ -469,7 +624,11 @@ def gui():
         def __init__(self, app):
             super().__init__(application=app, default_width=1180, default_height=860, title="PolyBagger Print Manager")
             self.add_css_class("pbpm")
-            self.busy = False; self.last = None; self.recent = {}; self.was_plugged = None; self.st = None
+            self.busy = False; self.last = None; self.recent = {}; self.st = None
+            self.last_target_id = None; self.last_connected = None
+            self.usb_signature = tuple(d["identity"] for d in usb_printers())
+            self.refresh_generation = 0; self._printer_ids = []; self._printer_options = []
+            self._updating_printer_dropdown = False
             self.kinds = {}
 
             hb = Gtk.HeaderBar(); self.set_titlebar(hb)
@@ -533,7 +692,7 @@ def gui():
             row = Gtk.Box(spacing=8, margin_top=6)
             self.qty_lbl = lbl("How many")
             self.qty = Gtk.SpinButton.new_with_range(1, 10000, 1); self.qty.set_value(load_settings().get("qty", 1))
-            self.qty.set_tooltip_text("Labels to print: one per bag cycle, sent as ^PQ (the label Quantity)")
+            self.qty.set_tooltip_text("Label quantity sent as ^PQ; only use a printer that supports ZPL quantity")
             self.qty.update_property([Gtk.AccessibleProperty.LABEL], ["Labels to print"])
             self.qty.connect("value-changed", lambda w: (save_settings(qty=w.get_value_as_int()), self.update_send_label()))
             row.append(self.qty_lbl); row.append(self.qty)
@@ -601,6 +760,11 @@ def gui():
         def build_help(self):
             box = margins(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=460), 16)
             box.add_css_class("pbpm-help")
+            box.append(Granite.HeaderLabel(label="Choosing a printer"))
+            for t in ("Choose a configured CUPS printer from the Printer menu. Network printers must be added in System Settings first.",
+                      "A new USB printer gets its own raw ZPL queue named from its serial. The printer selection and loaded-label status are remembered separately for each queue.",
+                      "USB connection changes are detected automatically. Reconnect the same printer and its queue becomes available again."):
+                box.append(lbl(t, wrap=True))
             box.append(Granite.HeaderLabel(label="How the T-1000 printer prints"))
             for i, t in enumerate(MACHINE_FLOW, 1): box.append(lbl(f"{i}. {t}", wrap=True))
             box.append(Granite.HeaderLabel(label="Known issues"))
@@ -615,8 +779,16 @@ def gui():
             self.dot = Gtk.Box(valign=Gtk.Align.CENTER); self.dot.add_css_class("pbpm-dot")
             self.overall = lbl("", "pbpm-overall")
             overall.append(self.dot); overall.append(self.overall); bar.append(overall)
+            picker = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+            picker.append(lbl("Printer"))
+            self.printer_dropdown = Gtk.DropDown(model=Gtk.StringList.new(["Detecting printers…"]))
+            self.printer_dropdown.set_size_request(250, -1)
+            self.printer_dropdown.set_tooltip_text("Choose a configured ZPL printer or a USB printer to set up")
+            self.printer_dropdown.update_property([Gtk.AccessibleProperty.LABEL], ["Printer"])
+            self.printer_dropdown.connect("notify::selected", self.on_printer_changed)
+            picker.append(self.printer_dropdown); bar.append(picker)
             self.chips = {}
-            for key, tip in (("printer", "Printer connection seen by this computer"),
+            for key, tip in (("printer", "Selected printer connection or CUPS route"),
                              ("queue", "Print queue state"), ("label", "Label on the printer (last known)"),
                              ("job", "Last job")):
                 chip = Gtk.Box(spacing=6, tooltip_text=tip); chip.add_css_class("pbpm-chip")
@@ -627,10 +799,8 @@ def gui():
 
         def update_overall(self):
             st = self.st or {}
-            ls = (load_settings().get("label_state") or {}).get("state")
-            if not st.get("usb") or "waiting-for-printer" in st.get("reasons", []) or not st.get("queue"):
-                state, text = "stop", "Not ready"
-            elif not st.get("ready"):
+            ls = self.current_label_state().get("state")
+            if not st.get("ready"):
                 state, text = "stop", "Not ready"
             elif ls == "in":
                 state, text = "ready", "Ready"
@@ -646,7 +816,7 @@ def gui():
             img, l = self.chips[key]; img.set_from_icon_name(ICON[icon]); l.set_text(text)
 
         def show_label_state(self):
-            ls = load_settings().get("label_state") or {}
+            ls = self.current_label_state()
             name = Path(ls.get("file", "")).stem.replace("_", " ")
             at = f" · {ls['time'][11:16]}" if ls.get("time") else ""
             state = ls.get("state")
@@ -661,8 +831,59 @@ def gui():
             self.update_overall()
 
         def set_label_state(self, state, **kv):
-            save_settings(label_state={"state": state, "time": time.strftime("%Y-%m-%d %H:%M:%S"), **kv})
+            settings = load_settings()
+            target_id = (self.st or {}).get("selected_target")
+            if not target_id:
+                return
+            entry = {"state": state, "time": time.strftime("%Y-%m-%d %H:%M:%S"), **kv}
+            states = dict(settings.get("label_states", {}))
+            states[target_id] = entry
+            save_settings(printer_target=target_id, label_states=states, label_state=entry)
             self.show_label_state()
+
+        def current_label_state(self):
+            settings = load_settings()
+            target_id = (self.st or {}).get("selected_target")
+            states = settings.get("label_states", {})
+            if target_id and target_id in states:
+                return states[target_id]
+            if target_id and target_id == settings.get("printer_target"):
+                return settings.get("label_state") or {}
+            # Migrate the old single-printer state to the first selected target.
+            if target_id and not states and not settings.get("printer_target") and settings.get("label_state"):
+                legacy = settings["label_state"]
+                save_settings(printer_target=target_id, label_states={target_id: legacy})
+                return legacy
+            return {}
+
+        def update_printer_selector(self, st):
+            targets = st.get("targets", [])
+            options = [(t["id"], t["display"]) for t in targets] or [(None, "No printers found")]
+            selected_id = st.get("selected_target")
+            index = next((i for i, (identity, _) in enumerate(options) if identity == selected_id), 0)
+            if options != self._printer_options:
+                self._updating_printer_dropdown = True
+                self._printer_options = options
+                self._printer_ids = [identity for identity, _ in options]
+                self.printer_dropdown.set_model(Gtk.StringList.new([label for _, label in options]))
+                self.printer_dropdown.set_selected(index)
+                self._updating_printer_dropdown = False
+            elif self.printer_dropdown.get_selected() != index:
+                self._updating_printer_dropdown = True
+                self.printer_dropdown.set_selected(index)
+                self._updating_printer_dropdown = False
+            self.printer_dropdown.set_sensitive(bool(targets) and not self.busy)
+
+        def on_printer_changed(self, *_):
+            if self._updating_printer_dropdown:
+                return
+            index = self.printer_dropdown.get_selected()
+            if index >= len(self._printer_ids):
+                return
+            target_id = self._printer_ids[index]
+            if target_id and target_id != (self.st or {}).get("selected_target"):
+                save_settings(printer_target=target_id)
+                self.refresh()
 
         # -- label list: favorites, recents, then the whole library
         def rebuild_sidebar(self, select=None):
@@ -803,7 +1024,10 @@ def gui():
                 self.today.append(r)
 
         def poll(self):
-            if bool(usb_zebras()) != self.was_plugged and not self.busy: self.refresh()
+            signature = tuple(d["identity"] for d in usb_printers())
+            if signature != self.usb_signature:
+                self.usb_signature = signature
+                if not self.busy: self.refresh()
             return True
 
         def poll_queue(self):
@@ -811,37 +1035,64 @@ def gui():
             return True
 
         def refresh(self):
+            self.refresh_generation += 1
+            generation = self.refresh_generation
             def work():
-                st = status(); GLib.idle_add(self.apply_status, st)
+                st = status(); GLib.idle_add(self.apply_status, st, False, generation)
             threading.Thread(target=work, daemon=True).start()
 
-        def apply_status(self, st, first=False):
-            self.st = st; plugged = bool(st["usb"])
-            if not first and plugged != self.was_plugged:
-                self.notify("Printer plugged in" if plugged else "Printer unplugged")
-                if not plugged: self.set_label_state("unknown")  # a power cut or reboot drops the loaded label
-            self.was_plugged = plugged
+        def apply_status(self, st, first=False, generation=None):
+            if generation is not None and generation != self.refresh_generation:
+                return False
+            previous_target, previous_connected = self.last_target_id, self.last_connected
+            self.st = st
+            self.update_printer_selector(st)
+            target = st.get("target")
+            target_id = st.get("selected_target")
+            connected = bool(st.get("connected"))
+            if not first and target_id == previous_target and previous_connected is not None and connected != previous_connected:
+                if connected:
+                    self.notify("Printer reconnected")
+                else:
+                    self.notify("Printer unplugged")
+                    if target and target.get("transport") == "usb":
+                        self.set_label_state("unknown")  # a power cut or unplug drops the loaded label
+            self.last_target_id, self.last_connected = target_id, connected
             stuck = "waiting-for-printer" in st["reasons"]
-            d = st["usb"][0] if plugged else None
-            self.chip("printer", "ok" if plugged else "bad", f"Connected · {d['serial']}" if d else "Printer not connected")
+            d = st.get("device")
+            if connected and d:
+                ptext = f"Connected · {d['serial'] or d['product']}"
+            elif connected and target:
+                ptext = f"CUPS · {target['queue']}"
+            elif target:
+                ptext = f"Disconnected · {d['serial'] if d else target['queue']}"
+            else:
+                ptext = "No printer selected"
+            self.chip("printer", "ok" if connected else "bad", ptext)
             q = ("ok", "Queue ready") if st["ready"] else \
+                ("bad", "Queue needed") if target and target.get("needs_setup") else \
+                ("bad", "Printer unplugged") if target and not connected else \
                 ("bad", "Stalled: waiting for printer") if stuck else \
                 ("bad", "Queue paused") if st["queue_state"] == "disabled" else \
-                ("bad", "No print queue") if not st["queue"] else ("warn", f"Queue {st['queue_state']}")
+                ("bad", "No printer selected") if not target else ("warn", f"Queue {st['queue_state']}")
             self.chip("queue", *q)
             if first: self.chip("job", "todo", "No job yet this session")
             self.show_label_state()
-            self.mark("usb", "ok" if plugged else "bad", f"{d['product']} · {d['serial']}" if d else "not found")
-            self.mark("queue", "ok" if st["queue"] else ("bad" if plugged else "todo"), st["queue"] or "none")
-            self.mark("ready", "ok" if st["ready"] else ("bad" if st["queue"] else "todo"),
+            pdetail = f"{d['product']} · {d['serial'] or d['bus']}" if d else (f"CUPS · {st['queue']}" if st["queue"] else "not selected")
+            self.mark("usb", "ok" if connected else "bad", pdetail)
+            self.mark("queue", "ok" if st["queue"] else ("bad" if target and target.get("needs_setup") else "todo"),
+                      st["queue"] or ("set up this USB printer" if target else "none"))
+            self.mark("ready", "ok" if st["ready"] else ("bad" if target else "todo"),
                       "stuck: waiting for printer" if stuck else st["queue_state"] + (f" · {' '.join(st['reasons'])}" if st["reasons"] else ""))
             if self.busy: return False
             if st["ready"]:
-                icon, title, sub = "printer", "Printer ready", "Pick a label and send it. Then confirm on the bagger screen."
-            elif not plugged:
-                icon, title, sub = "printer-error", "No printer detected", "Plug in the USB cable and power the printer on. This window updates by itself."
-            elif not st["queue"]:
-                icon, title, sub = "printer-error", "Print queue missing", "Set up the print queue to continue."
+                icon, title, sub = "printer", "Printer ready", "Pick a label and send it. Confirm the label at the printer after delivery."
+            elif not target:
+                icon, title, sub = "printer-error", "No printers found", "Connect a USB printer or add a printer in System Settings."
+            elif target.get("needs_setup"):
+                icon, title, sub = "printer-error", "Print queue needed", "Set up a raw ZPL queue for this USB printer."
+            elif not connected:
+                icon, title, sub = "printer-error", "Printer unplugged", "Reconnect this printer. The app will detect it and restore its queue automatically."
             elif stuck:
                 icon, title, sub = "printer-error", "Printer not taking jobs", STUCK_HINT
             elif st["queue_state"] == "disabled":
@@ -850,10 +1101,11 @@ def gui():
             else:
                 icon, title, sub = "printer-error", "Printer not ready", "Check the printer alerts in the checks below."
             self.big.set_from_icon_name(icon); self.title.set_text(title); self.sub.set_text(sub)
-            self.setup_btn.set_visible(plugged and not st["queue"])
+            self.setup_btn.set_visible(bool(target and target.get("needs_setup")))
             self.cancel_btn.set_visible(stuck)
             self.resume_btn.set_visible(bool(st["queue"]) and st["queue_state"] == "disabled")
             self.send_btn.set_sensitive(st["ready"]); self.test_btn.set_sensitive(st["ready"])
+            self.printer_dropdown.set_sensitive(bool(st.get("targets")) and not self.busy)
             return False
 
         # -- actions
@@ -882,10 +1134,21 @@ def gui():
             threading.Thread(target=work, daemon=True).start()
 
         def on_setup(self, _):
+            target = (self.st or {}).get("target")
+            dev = target.get("device") if target else None
+            if not dev or not target.get("needs_setup"):
+                return
             self.say("Creating the print queue (admin password required)…")
             def work():
-                rc, out = setup_queue(self.st["usb"][0])
-                GLib.idle_add(lambda: (self.say("Queue created" if rc == 0 else f"Setup failed: {out}"), self.refresh()))
+                rc, out, queue = setup_queue(dev)
+                def done():
+                    if rc == 0:
+                        save_settings(printer_target=queue)
+                        self.say(f"Queue {queue} is ready")
+                    else:
+                        self.say(f"Setup failed: {out}")
+                    self.refresh()
+                GLib.idle_add(done)
             threading.Thread(target=work, daemon=True).start()
 
         def on_resume(self, _):
@@ -910,7 +1173,7 @@ def gui():
 
         def on_send(self, _):
             p = self.current_file()
-            if not p: return
+            if not p or not self.st or not self.st.get("ready"): return
             last = self.recent.get(str(p))
             if last and time.time() - last < 120:
                 dlg = Granite.MessageDialog.new_with_image_from_icon_name(
@@ -928,6 +1191,8 @@ def gui():
             self.start_send(p)
 
         def start_send(self, path, temp=False):
+            if not self.st or not self.st.get("ready") or not self.st.get("queue"):
+                return
             for k in ("file", "sent", "loaded"): self.mark(k, "todo")
             ok, warns = check_zpl(path)
             if not ok: self.mark("file", "bad", warns[0]); return
@@ -935,9 +1200,11 @@ def gui():
             self.mark("file", "warn" if warns else "ok", f"{path.stat().st_size // 1024} KB" + (" · see log" if warns else ""))
             for w in warns: self.say("WARNING: " + w)
             self.busy = True; self.send_btn.set_sensitive(False); self.test_btn.set_sensitive(False)
+            self.printer_dropdown.set_sensitive(False)
             self.ask.set_reveal_child(False); self.mark("sent", "work")
             self.title.set_text("Sending…"); self.sub.set_text(path.name)
             queue = self.st["queue"]
+            target_id = self.st["selected_target"]
             qty = 1 if temp else self.qty.get_value_as_int()
             def work():
                 job_path, job_temp = with_quantity(path, qty)
@@ -945,7 +1212,7 @@ def gui():
                     res = send_and_verify(job_path, queue, progress=lambda m: GLib.idle_add(self.say, m))
                 finally:
                     if job_temp: os.unlink(job_path)
-                res["quantity"] = qty
+                res.update(quantity=qty, queue=queue, printer_target=target_id)
                 GLib.idle_add(self.finish, path, res, temp)
             threading.Thread(target=work, daemon=True).start()
 
@@ -966,9 +1233,11 @@ def gui():
                     self.show_result("ok", f"Saved {name} to printer flash",
                                      "Nothing loads on the bagger from a store file. Print the recall file next.", [])
                 else:
-                    self.title.set_text("Printer has the label"); self.sub.set_text("It prints one per bag cycle.")
+                    self.title.set_text("Printer received the label data")
+                    self.sub.set_text("Confirm the label is ready at this printer.")
                     self.show_result("ok", f"Sent {name} × {res['quantity']:,}",
-                                     hint + " Does it?", [("Still No Label", "no"), ("Yes, Label Is In", "yes")])
+                                     hint + " Did it load or print the label?",
+                                     [("Not Ready Yet", "no"), ("Label Is Ready", "yes")])
             else:
                 self.mark("sent", "bad", res["stage"])
                 self.big.set_from_icon_name("printer-error")
@@ -997,19 +1266,19 @@ def gui():
                 self.on_send(None); return
             entry = {"job": self.last.get("job"), "file": self.last.get("file")}
             loaded = val == "yes"
-            log_result({**entry, "bagger_loaded": loaded})
+            log_result({**entry, "printer_confirmed": loaded})
             name = Path(entry["file"] or "").stem.replace("_", " ")
             qty = self.last.get("quantity", 1)
             if loaded:
                 self.set_label_state("in", file=entry["file"], qty=qty)
                 self.mark("loaded", "ok", "operator confirmed")
-                self.show_result("ok", f"Ready: {name} × {qty:,} on the bagger",
-                                 "Run the bagger. One label prints per bag; the label clears when the count is used up.", [])
+                self.show_result("ok", f"Ready: {name} × {qty:,} at the printer",
+                                 "The label is confirmed. Continue with the printer's normal run workflow.", [])
             else:
                 self.set_label_state("none"); self.mark("loaded", "bad", "still No Label")
-                self.show_result("bad", "The bagger did not load the label",
-                                 "Check the printer is ON and in Run mode on the bagger's Printer Settings screen, then try again. "
-                                 "If it repeats, power-cycle the printer.", [("Try Again", "retry")])
+                self.show_result("bad", "The label is not ready at the printer",
+                                 "Check that the printer is powered on and online. On a TI-1000Z, check Printer ON and Run mode, then try again.",
+                                 [("Try Again", "retry")])
 
         # -- dev aid: PBPM_SHOT=/path.png renders the window to a PNG, then quits
         def maybe_snapshot(self):
@@ -1058,6 +1327,7 @@ if __name__ == "__main__":
     ap.add_argument("--qty", type=int, default=1, metavar="N", help="with --send: labels to print (^PQ), default 1")
     ap.add_argument("--watch", action="store_true"); ap.add_argument("--setup", action="store_true")
     ap.add_argument("--sync", action="store_true", help="refresh the offline label store"); ap.add_argument("--pull", action="store_true", help="with --sync: git pull the thril repo first")
+    ap.add_argument("--printer", help="select a CUPS queue, USB serial, or USB identity")
     ap.add_argument("--json", action="store_true"); ap.add_argument("--yes", action="store_true", help="skip the 'did it print?' prompt")
     a = ap.parse_args()
     sys.exit(cli(a) if (a.status or a.send or a.watch or a.setup or a.sync or a.cancel) else gui())

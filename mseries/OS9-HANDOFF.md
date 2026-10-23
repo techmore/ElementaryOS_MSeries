@@ -2285,6 +2285,21 @@ label store. Tan industrial label-printer icon. Launcher installed from this che
   is gone after a printer power-off, so recall/send with the count again; `E:CCSBLACK.ZPL` should survive in flash.
 - **Not verified:** a full production run matching the count, `--setup`, a GUI click-through on the machine.
 
+## PolyBagger multi-printer and USB reconnect support — 2026-10-22
+
+Source update on branch `codex/polybagger-multi-printer-hotplug`: the GTK app and CLI now
+discover USB printer-class devices, show configured CUPS destinations in a printer picker,
+create a separate private raw-ZPL queue for each USB device, and route sends by selected
+queue/device serial. USB connection changes refresh the selected printer without restarting;
+loaded-label state is kept per printer. Network/shared destinations can also be selected
+when configured in CUPS and must accept raw ZPL.
+
+This is source work only: no additional physical printers were connected, no unplug/replug
+qualification or production label run was performed, and the installed app was not changed.
+`ast.parse` accepted the Python source; a private-D-Bus Xvfb GTK render was inspected with
+the current CUPS queue disconnected. No automated test suite was run. Printer-specific CUPS
+URI behavior, serial-less device limits, and ZPL compatibility still need hardware qualification.
+
 ## Rust compositor: GTK present() now raises the window — 2026-10-21
 
 Owner asked for `present()` to raise a window. Cause, proven with a probe app and
