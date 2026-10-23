@@ -664,14 +664,19 @@ impl ReposPage {
                         let lane = |l: &str| open_issues.iter().filter(|i| i.lane() == Some(l)).count();
                         let ready = open_issues.iter().filter(|i| i.agent() == Some("ready")).count();
                         let running = open_issues.iter().filter(|i| i.agent() == Some("running")).count();
-                        let next = open_issues
-                            .iter()
-                            .find(|i| i.agent() == Some("ready"))
-                            .map(|i| format!("next up: #{} {}", i.number, i.title));
+                        let next = if has_more {
+                            None
+                        } else {
+                            open_issues
+                                .iter()
+                                .find(|i| i.agent() == Some("ready"))
+                                .map(|i| format!("next up: #{} {}", i.number, i.title))
+                        };
                         counts.set_text(&format!(
-                            "{}{} open · build {} · feature {} · maintenance {} · ready {} · running {}{}",
+                            "{}{} open · {}build {} · feature {} · maintenance {} · ready {} · running {}{}",
                             open_issues.len(),
                             if has_more { "+" } else { "" },
+                            if has_more { "first page · " } else { "" },
                             lane("build"),
                             lane("feature"),
                             lane("maintenance"),
