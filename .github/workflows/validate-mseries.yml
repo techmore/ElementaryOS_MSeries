@@ -25,6 +25,10 @@ on:
       - "docs/local-build-status.html"
       - ".github/workflows/**"
 
+concurrency:
+  group: validate-mseries-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     name: Detect affected M-series components
