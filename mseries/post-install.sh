@@ -30,7 +30,7 @@ source "$here/lib-timing.sh" 2>/dev/null || { timing_begin() { :; }; timing_end(
 
 # name|kind|default|script|what
 STAGES=(
-  "settings|user|on|apply-desktop-settings.py|Command-as-Ctrl, launcher, title buttons, screenshots, brightness keys"
+  "settings|user|on|apply-desktop-settings.py|Mac Command/Ctrl mapping, media keys, launcher, title buttons, screenshots, brightness keys"
   "brightness|user|on|install-brightness-bridge.sh|brightness bridge for Pantheon"
   "kbd-backlight|user|on|install-keyboard-backlight.sh|keyboard backlight helper"
   "screenshots|user|on|install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
