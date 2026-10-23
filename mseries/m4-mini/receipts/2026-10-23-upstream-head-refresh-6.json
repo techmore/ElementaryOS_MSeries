@@ -1,0 +1,289 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-23T02:21:42Z",
+  "scope": "Final exact-ref recheck of all tracked upstream kernel, graphics, boot, installer, partition, firmware and adjacent M4 tester sources before the hosted R7 image build. No hardware validation.",
+  "previous_receipt": "2026-10-23-upstream-head-refresh-5.json",
+  "ref_method": "git ls-remote exact refs: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<number>/head, plus HEAD; default-branch annotation normalized to its exact branch. All 34 tracked refs resolved.",
+  "source_ref_count": 34,
+  "resolved_ref_count": 34,
+  "changed_ref_count": 0,
+  "new_commits_reviewed": 0,
+  "new_commits_requiring_unreviewed_m4_followup": 0,
+  "selected_gravity_pins_unchanged": true,
+  "hardware_validated": false,
+  "source_heads": [
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "gravity-m4",
+      "previous_head": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "head": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/linux/commit/4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "master",
+      "previous_head": "587858367581b9c55c3690f4e63382ad622719d4",
+      "head": "587858367581b9c55c3690f4e63382ad622719d4",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/linux/commit/587858367581b9c55c3690f4e63382ad622719d4"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "main",
+      "previous_head": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "head": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/mesa/commit/87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "pull/1/head",
+      "previous_head": "208d4a484459a12c77bf073362613f842288c2e0",
+      "head": "208d4a484459a12c77bf073362613f842288c2e0",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/mesa/commit/208d4a484459a12c77bf073362613f842288c2e0"
+    },
+    {
+      "repository": "GravityLinux/bootloader",
+      "ref": "main",
+      "previous_head": "f02d4a52017915febb222539636b5b025a70407a",
+      "head": "f02d4a52017915febb222539636b5b025a70407a",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/bootloader/commit/f02d4a52017915febb222539636b5b025a70407a"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "gravity-alpha-20260925",
+      "previous_head": "a2f6913694ff26908c16948af3f8372429782263",
+      "head": "a2f6913694ff26908c16948af3f8372429782263",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/u-boot/commit/a2f6913694ff26908c16948af3f8372429782263"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "main",
+      "previous_head": "a44f46af0aa17e48572e0d46c0d082886ee353c3",
+      "head": "a44f46af0aa17e48572e0d46c0d082886ee353c3",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/u-boot/commit/a44f46af0aa17e48572e0d46c0d082886ee353c3"
+    },
+    {
+      "repository": "GravityLinux/packages",
+      "ref": "main",
+      "previous_head": "711c2a110416d28010ccdd118b83111776bff207",
+      "head": "711c2a110416d28010ccdd118b83111776bff207",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/packages/commit/711c2a110416d28010ccdd118b83111776bff207"
+    },
+    {
+      "repository": "GravityLinux/installer",
+      "ref": "main",
+      "previous_head": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "head": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/installer/commit/6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "ref": "main",
+      "previous_head": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "head": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/kiwi-descriptions/commit/07bf52cb2866069c072eb03a8f23af9839d0397c"
+    },
+    {
+      "repository": "GravityLinux/scripts",
+      "ref": "main",
+      "previous_head": "12418e50125a72749a75917db578db55ea42704c",
+      "head": "12418e50125a72749a75917db578db55ea42704c",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/scripts/commit/12418e50125a72749a75917db578db55ea42704c"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi",
+      "previous_head": "94fb23346d522edf53722357c426a3e58030beea",
+      "head": "94fb23346d522edf53722357c426a3e58030beea",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/94fb23346d522edf53722357c426a3e58030beea"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.4",
+      "previous_head": "a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+      "head": "a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/a8ac6027e82415f431bbba49ab535c44f2edaf4d"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.4",
+      "previous_head": "4edbfa916dbfba44af3ef2378cae2b2653c96058",
+      "head": "4edbfa916dbfba44af3ef2378cae2b2653c96058",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/4edbfa916dbfba44af3ef2378cae2b2653c96058"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi-wip-7.2",
+      "previous_head": "236788cd2602a24c703fe7bdaddaf73ef77d2027",
+      "head": "236788cd2602a24c703fe7bdaddaf73ef77d2027",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/236788cd2602a24c703fe7bdaddaf73ef77d2027"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/030-misc",
+      "previous_head": "0003382398e6813b7288f9f60502f829ba41d484",
+      "head": "0003382398e6813b7288f9f60502f829ba41d484",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/0003382398e6813b7288f9f60502f829ba41d484"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/210-gpu",
+      "previous_head": "0ac1829d3f2048a6e57a0d508eb065e8c6729a16",
+      "head": "0ac1829d3f2048a6e57a0d508eb065e8c6729a16",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/0ac1829d3f2048a6e57a0d508eb065e8c6729a16"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.3",
+      "previous_head": "6e890bf6442553c7bf56867a91c2dbcc2c295900",
+      "head": "6e890bf6442553c7bf56867a91c2dbcc2c295900",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/6e890bf6442553c7bf56867a91c2dbcc2c295900"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.3",
+      "previous_head": "fef9350c314bf089a11a62858261e6576ada867b",
+      "head": "fef9350c314bf089a11a62858261e6576ada867b",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/fef9350c314bf089a11a62858261e6576ada867b"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/200-dcp",
+      "previous_head": "172fa9c2711c66d7ecd3c0c5232d86fc6de767cb",
+      "head": "172fa9c2711c66d7ecd3c0c5232d86fc6de767cb",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/linux/commit/172fa9c2711c66d7ecd3c0c5232d86fc6de767cb"
+    },
+    {
+      "repository": "AsahiLinux/docs",
+      "ref": "main",
+      "previous_head": "0d1f8917fa88745d62a4c05d802c4a7298c8616b",
+      "head": "0d1f8917fa88745d62a4c05d802c4a7298c8616b",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/docs/commit/0d1f8917fa88745d62a4c05d802c4a7298c8616b"
+    },
+    {
+      "repository": "AsahiLinux/asahi-installer",
+      "ref": "main",
+      "previous_head": "e93743d52178b3e26e428fa05174ef549abf30cb",
+      "head": "e93743d52178b3e26e428fa05174ef549abf30cb",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/asahi-installer/commit/e93743d52178b3e26e428fa05174ef549abf30cb"
+    },
+    {
+      "repository": "AsahiLinux/m1n1",
+      "ref": "main",
+      "previous_head": "7cde7d1a784d851ebfee5579fa363c38b14150c0",
+      "head": "7cde7d1a784d851ebfee5579fa363c38b14150c0",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/AsahiLinux/m1n1/commit/7cde7d1a784d851ebfee5579fa363c38b14150c0"
+    },
+    {
+      "repository": "aurora-silicon/linux",
+      "ref": "integration/aurora",
+      "previous_head": "8c2774e57ff499fe5c7e6b23ba0c8ba526a868f3",
+      "head": "8c2774e57ff499fe5c7e6b23ba0c8ba526a868f3",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/aurora-silicon/linux/commit/1fb1fa964e312309659a793d4a16b014f6de86ee"
+    },
+    {
+      "repository": "torvalds/linux",
+      "ref": "master",
+      "previous_head": "864c07de0c7dcbca58b61625dfa2e461ae63b242",
+      "head": "864c07de0c7dcbca58b61625dfa2e461ae63b242",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/torvalds/linux/commit/3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75"
+    },
+    {
+      "repository": "maralcbr/omarchy-mx-mac",
+      "ref": "main",
+      "previous_head": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "head": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/maralcbr/omarchy-mx-mac/commit/72f1906722fd042a54f1e1973610f62dd019531f"
+    },
+    {
+      "repository": "maralcbr/omarchy-pkgs",
+      "ref": "asahi-quattro (default)",
+      "previous_head": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "head": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/maralcbr/omarchy-pkgs/commit/7e2f6cfec1b3e412ad4fd6ed9611be275a246b30"
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "develop",
+      "previous_head": "6c6d2e4dd48b6306416c28686b5212b6bc4f77dc",
+      "head": "6c6d2e4dd48b6306416c28686b5212b6bc4f77dc",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/commit/6c6d2e4dd48b6306416c28686b5212b6bc4f77dc"
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "v0.1.0-alpha.1-j773g-test.1",
+      "previous_head": "df692997e5764efbcd0c44f7f92595bbe3783e1b",
+      "head": "df692997e5764efbcd0c44f7f92595bbe3783e1b",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/releases/tag/v0.1.0-alpha.1-j773g-test.1"
+    },
+    {
+      "repository": "aurora-silicon/m1n1",
+      "ref": "pull/35/head",
+      "previous_head": "cda8314d2121c0279e4ca811bc6c6293a663e5d0",
+      "head": "cda8314d2121c0279e4ca811bc6c6293a663e5d0",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/aurora-silicon/m1n1/pull/35"
+    },
+    {
+      "repository": "aurora-silicon/u-boot",
+      "ref": "pull/7/head",
+      "previous_head": "cc47d3b7c86deb4094dc186d26799602272e37fb",
+      "head": "cc47d3b7c86deb4094dc186d26799602272e37fb",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/aurora-silicon/u-boot/pull/7"
+    },
+    {
+      "repository": "0xSero/mac-mini-m4-linux",
+      "ref": "main",
+      "previous_head": "e0d67e3ff9d5595e17ae3833d2afd9fff150e51b",
+      "head": "e0d67e3ff9d5595e17ae3833d2afd9fff150e51b",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/0xSero/mac-mini-m4-linux/commit/e0d67e3ff9d5595e17ae3833d2afd9fff150e51b"
+    },
+    {
+      "repository": "GravityLinux/artwork",
+      "ref": "HEAD",
+      "previous_head": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "head": "e613a87e526f8fec439c4129e69dd2821b38d258",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/GravityLinux/artwork/commit/e613a87e526f8fec439c4129e69dd2821b38d258"
+    },
+    {
+      "repository": "systemd/systemd",
+      "ref": "v259",
+      "previous_head": "b2a31f27d42a98086ef1945e7e136fc7cb908ad0",
+      "head": "b2a31f27d42a98086ef1945e7e136fc7cb908ad0",
+      "changed_since_refresh_5": false,
+      "url": "https://github.com/systemd/systemd/tree/v259"
+    }
+  ],
+  "candidate_status": "R7 hosted kernel build in progress; no source changes since refresh 5."
+}
