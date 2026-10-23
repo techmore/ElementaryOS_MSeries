@@ -11811,3 +11811,11 @@ MCP tool list. The T3 port declares 9 scopes, 5 entities and 5 intents and delib
 switch. 56 `msdk` tests pass; `msdk-gtk`, `claude-pantheon-rs` and `mseries-greeter` tests pass; clippy clean. Findings recorded in
 `mseries/SDK-AGENT-SURFACE.md` section 7 (single-parameter limit, `show`, risk floors). Not built: the broker, grants and Settings page,
 manifests for other apps, structured payloads. Nothing installed; the running desktop is unchanged.
+
+## Agent broker core — 2026-10-23
+
+New library `rust/mseries-broker`: decides Run / Ask / Refuse for an agent call against an SDK manifest. Per-agent, per-app, per-scope grants
+bound to the manifest hash; per-action approvals for external and privileged intents bound to the arguments and the state the confirmation
+shows; remembered denials, immediate revocation, content-free audit, owner-only grants file. 14 tests against the real T3 manifest, clippy
+clean. Library only: no service, consent dialog, Settings page or app-side dispatcher; the caller's identity is not yet taken from a
+connection. See `SDK-AGENT-SURFACE.md` section 8. Nothing installed.
