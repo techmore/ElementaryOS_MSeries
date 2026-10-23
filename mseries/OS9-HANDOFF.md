@@ -11802,3 +11802,12 @@ TCC do: apps declare intents, entities, scopes and risk classes in the `.msdk` d
 `msdk agent-manifest` generates the MCP manifest; the broker enforces owner grants bound to a manifest hash. Cross-links added to the MCP
 design, the introspection note and `DOCS.md`. Design only: no grammar, checker rule, generator, broker or settings page exists. Next:
 owner review of the vocabulary and open questions, then `msdk check` rules and a manifest for the T3 port.
+
+## SDK agent surface slice 1 (grammar, checks, manifest) — 2026-10-23
+
+`msdk` now understands `scope`, `entity` and `intent` statements (`rust/msdk/src/intents.rs`; text parser/printer, checker rules `agent-*`,
+two built-in gates, JSON Schema). `msdk agent-manifest <file> [--mcp]` generates the scoped manifest (SHA-256 over canonical content) and the
+MCP tool list. The T3 port declares 9 scopes, 5 entities and 5 intents and deliberately hides its permission-prompt answers and runner
+switch. 56 `msdk` tests pass; `msdk-gtk`, `claude-pantheon-rs` and `mseries-greeter` tests pass; clippy clean. Findings recorded in
+`mseries/SDK-AGENT-SURFACE.md` section 7 (single-parameter limit, `show`, risk floors). Not built: the broker, grants and Settings page,
+manifests for other apps, structured payloads. Nothing installed; the running desktop is unchanged.
