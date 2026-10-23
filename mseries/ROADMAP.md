@@ -22,7 +22,7 @@ The standalone `--quick` window now keeps selected-provider identity separate fr
 
 The main chat and quick window use 1.12× system typography. Compact Dock activity identifies the model only for threads using the selected provider; it leaves other connected accounts out of the status feed. The ARM64 release package was built and installed under `~/.local`, and the updated pinned Dock 8.3.3 was installed and restarted. The app was not running during installation, so its next launch will load the new feed and quick-window code. Builds completed; no tests, probes, CI or interactive UI review were run. The live Dock pointer path and visible sizing remain unqualified.
 
-The standard Debian package now includes the Wingpanel tray module by default, with an explicit opt-out for non-Wingpanel builds. The combined ARM64 package is prepared at `/tmp/t3r-wingpanel-package-43615e1b/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`; the system module is not installed because this session has `NoNewPrivs=1`, which blocks privilege escalation. No probe or test was run, and Wingpanel was not restarted.
+The standard Debian package now includes the Wingpanel tray module by default, with an explicit opt-out for non-Wingpanel builds. The combined mseries5 ARM64 package is also in `~/Downloads`; the system still has the older mseries2 package, whose module is mapped in the running Wingpanel. PackageKit refused the upgrade because it could not obtain authentication, and this session has `NoNewPrivs=1`. No probe or test was run, and Wingpanel was not restarted.
 
 ### Faster T3-R validation cycles — 2026-10-22
 
