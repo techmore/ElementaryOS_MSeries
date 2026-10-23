@@ -346,8 +346,8 @@ pub struct Feed {
 pub const FEEDS: &[Feed] = &[Feed {
     name: "windows.list",
     capability: "windows",
-    fields: &[("id", "text"), ("app_id", "text"), ("title", "text"), ("focused", "bool"), ("minimized", "bool")],
-    about: "Open top-level windows, from the compositor.",
+    fields: &[("id", "text"), ("app_id", "text"), ("title", "text"), ("focused", "bool"), ("attention", "bool")],
+    about: "Open top-level windows, from the compositor (org.pantheon.gala.DesktopIntegration).",
 }];
 
 /// Action verbs of an `update` rule.
