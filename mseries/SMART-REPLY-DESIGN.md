@@ -1,6 +1,6 @@
 # Smart Reply: a window-aware agent that drafts text for any app (design, 2026-10-23)
 
-**Status: design only. Nothing in this note is installed or built.** It records an owner idea so it is not lost, says which existing
+**Status: a first slice is built and installed (see [smart-reply/README.md](smart-reply/README.md)): the Ctrl+Alt+R trigger, the allow/block rules file, the local-model draft and the Tab/Esc input service. Tab insertion in a running app is not yet verified; there is no settings panel yet, screenshots, right-click expose or automatic suggestions. The rest of this note is the design it follows.** It records an owner idea so it is not lost, says which existing
 pieces it would reuse, and scopes a first slice that can be built and judged without committing to the whole thing.
 
 ## Intent

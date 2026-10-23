@@ -1,0 +1,157 @@
+#!/usr/bin/python3
+"""Smart Reply trigger: draft a reply for the focused chat field; Tab inserts it, Esc discards it.
+
+Bind to a key (install-smart-reply.sh binds Ctrl+Alt+R). Nothing is read until this runs, nothing is
+sent anywhere but the model on this computer, and nothing is ever sent as a message.
+  mseries-smart-reply            draft for the focused field now
+  mseries-smart-reply --in 5     wait 5 seconds first (time to click into a field)
+  mseries-smart-reply --dry-run  print the decision and the context, no model, no insertion
+"""
+import argparse
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path.home() / '.local/share/mseries/smart-reply'))
+import smart_reply_core as core  # noqa: E402
+
+ROLES_OF_INTEREST = None  # filled once Atspi is imported
+
+
+def notify(title, body='', timeout=8000):
+    try:
+        subprocess.run(['notify-send', '-a', 'Smart Reply', '-t', str(timeout),
+                        '-h', 'string:x-canonical-private-synchronous:smart-reply', title, body[:900]],
+                       timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
+def focused_window():
+    """(app_id, title) of the focused window, from the compositor."""
+    from gi.repository import Gio, GLib
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    result = bus.call_sync('org.pantheon.gala', '/org/pantheon/gala/DesktopInterface',
+        'org.pantheon.gala.DesktopIntegration', 'GetWindows', None, GLib.VariantType('(a(ta{sv}))'),
+        Gio.DBusCallFlags.NONE, 2000, None)
+    for _uid, props in result.unpack()[0]:
+        if props.get('has-focus'):
+            return props.get('app-id', ''), props.get('title', '')
+    return '', ''
+
+
+class WindowReader:
+    """Bounded AT-SPI read of the active window: the composer and the text above it."""
+    def __init__(self):
+        import gi
+        gi.require_version('Atspi', '2.0')
+        from gi.repository import Atspi
+        self.api = Atspi
+        Atspi.set_timeout(200, 500)
+        names = ('LABEL', 'PARAGRAPH', 'STATIC', 'TEXT', 'LIST_ITEM', 'HEADING')
+        self.roles = {int(getattr(Atspi.Role, n)) for n in names}
+
+    def active_window(self):
+        desktop = self.api.get_desktop(0)
+        for i in range(min(desktop.get_child_count(), 128)):
+            app = desktop.get_child_at_index(i)
+            for j in range(min(app.get_child_count() if app else 0, 32)):
+                win = app.get_child_at_index(j)
+                if win is None:
+                    continue
+                win.clear_cache()
+                if win.get_state_set().contains(self.api.StateType.ACTIVE):
+                    return win
+        return None
+
+    def read(self, window, seconds=1.2, max_nodes=2500):
+        """(composer_text, composer_label, snippets). Document order, so snippets run oldest first."""
+        deadline = time.monotonic() + seconds
+        snippets, composer, label, visited = [], '', '', 0
+        stack = [window]
+        while stack and visited < max_nodes and time.monotonic() < deadline:
+            node = stack.pop()
+            visited += 1
+            try:
+                states = node.get_state_set()
+                role = int(node.get_role())
+                if states.contains(self.api.StateType.FOCUSED) and states.contains(self.api.StateType.EDITABLE):
+                    label = node.get_name() or ''
+                    composer = self.text_of(node)
+                elif role in self.roles and not states.contains(self.api.StateType.EDITABLE):
+                    text = self.text_of(node) if role in (61, 73) else (node.get_name() or '')
+                    if text:
+                        snippets.append(text)
+                count = min(node.get_child_count(), 200)
+                children = [node.get_child_at_index(k) for k in range(count)]
+                stack.extend(reversed([c for c in children if c is not None]))
+            except Exception:
+                continue
+        return composer, label, snippets
+
+    def text_of(self, node):
+        try:
+            iface = node.get_text_iface()
+            if iface is not None:
+                return iface.get_text(0, min(iface.get_character_count(), 4000))
+        except Exception:
+            pass
+        return node.get_name() or ''
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--in', dest='delay', type=float, default=0, help='seconds to wait before reading')
+    parser.add_argument('--dry-run', action='store_true')
+    args = parser.parse_args()
+    if args.delay:
+        time.sleep(min(args.delay, 60))
+
+    config = core.load_config()
+    app_id, title = focused_window()
+    allowed, reason = core.decide(config, app_id, title)
+    print('app=%s title=%r allowed=%s (%s)' % (app_id, title, allowed, reason), file=sys.stderr)
+    if not allowed:
+        notify('Smart Reply is not available here', reason)
+        return 3
+
+    reader = WindowReader()
+    window = reader.active_window()
+    if window is None:
+        notify('Smart Reply', 'No accessible window is active, so there is nothing to read.')
+        return 4
+    composer, label, snippets = reader.read(window)
+    if core.field_blocked(label):
+        notify('Smart Reply is not available here', 'This looks like a sensitive field (%s).' % label)
+        return 3
+    if args.dry_run:
+        print('composer label=%r typed=%r' % (label, composer))
+        print('\n'.join(core.clean_snippets(snippets)))
+        return 0
+
+    notify('Smart Reply', 'Drafting…', 4000)
+    try:
+        draft = core.ask_model(config, core.build_messages(app_id, title, snippets, composer, config.get('style', '')))
+    except (RuntimeError, ValueError) as error:
+        notify('Smart Reply could not draft', str(error))
+        return 5
+    if not draft:
+        notify('Smart Reply', 'The model returned nothing. Try again.')
+        return 5
+    try:
+        from gi.repository import Gio, GLib
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        bus.call_sync('org.techmore.SmartReplyInput', '/org/techmore/SmartReplyInput', 'org.techmore.SmartReplyInput',
+            'Offer', GLib.Variant('(s)', (draft,)), None, Gio.DBusCallFlags.NONE, 6000, None)
+    except GLib.Error as error:
+        notify('Smart Reply could not hold the draft', str(error).split(': ', 1)[-1])
+        return 6
+    notify('Smart Reply draft — Tab inserts, Esc discards', draft, 60000)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
