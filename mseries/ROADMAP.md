@@ -4370,3 +4370,7 @@ compatibility path before any service upgrade or hardware acceptance claim.
 Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
+
+### SDK dock anchoring — 2026-10-23
+
+Pantheon panel protocol adapter implemented in msdk-gtk; dock builds with bottom anchor, size and hide mode. Next: live placement review and pin editing.

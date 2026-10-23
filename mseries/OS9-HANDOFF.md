@@ -11771,3 +11771,7 @@ unchanged. Current upstream has 51 commits beyond our recorded backend; a separa
 backend qualification is still needed before its sender detection/LE/media fixes
 can be claimed installed. Orchard upstream 2.6.0 adds OCI commit and machine/cluster
 features; those need native Incus design, not blind Swift feature parity claims.
+
+## SDK dock panel protocol — 2026-10-23
+
+PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
