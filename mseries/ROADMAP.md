@@ -9,7 +9,7 @@ The package publisher keeps its global `mseries-apt-publish` lock and release-on
 workflows retain their existing policy. A lightweight workflow checks the policy
 on every workflow change, including future PR workflows.
 
-Validation: eight regression tests passed, including removal/misconfiguration
+Validation: nine regression tests passed, including removal/misconfiguration
 mutations for every PR workflow, duplicate workflow names, group isolation, and
 release/publisher lock preservation. No desktop install or service restart.
 Next: merge into dev after CI; existing branches need a new PR run using this

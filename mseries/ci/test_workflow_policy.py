@@ -62,6 +62,17 @@ class WorkflowCancellationTest(unittest.TestCase):
         self.assertEqual('false', workflows['.github/workflows/daily-9.0.yml']['concurrency']['cancel-in-progress'])
         self.assertEqual('false', workflows['.github/workflows/upstream-watch.yml']['concurrency']['cancel-in-progress'])
 
+    def test_ci_executes_policy_and_regressions_and_prs_cannot_publish(self):
+        workflows = dict(self.workflows)
+        guard = workflows['.github/workflows/workflow-policy.yml']
+        commands = '\n'.join(step.get('run', '') for step in guard['jobs']['policy']['steps'])
+        self.assertIn('python3 mseries/ci/workflow_policy.py', commands)
+        self.assertIn('unittest discover -s mseries/ci', commands)
+        self.assertIn('.github/workflows/**', guard['on']['pull_request']['paths'])
+        publisher = workflows['.github/workflows/mseries-debs.yml']['jobs']['publish']
+        self.assertEqual("github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)",
+                         ' '.join(publisher['if'].split()))
+
     def test_yaml_loader_preserves_on_and_boolean_scalars(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'sample.yml'
