@@ -33,6 +33,25 @@ Next: merge into dev after CI; existing branches need a new PR run using this
 policy. Already-running legacy checks are not retroactively cancelled. This
 removes superseded-run backlog, not contention from legitimate current builds.
 
+## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
+
+Owner explicitly deferred both apps and rejected the current combined launcher
+experience. MESSAGING-STATUS.md is the authoritative current status on dev;
+AGENTS.md directs future agents to it. Older scoped successes and installed-client
+reports must not be interpreted as completion. Resume only on a new explicit
+owner request. Existing apps/data remain intact; no unfinished app code is merged
+by this documentation change.
+
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
