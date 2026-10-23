@@ -14,7 +14,7 @@ acceptance gate. It supersedes subjective percentage estimates.
 | Messages navigation/scaling | Actual 520/1040 resize, Back/reselect and enlarged-font transitions pass | Broader scales, long-content bounds and hardware layout |
 | Messages light/dark | Explicit io.elementary.stylesheet.blueberry and :dark GTK runs pass; four captures reviewed in /tmp/messages-review-{light,dark} | Long-name/unbroken-body light/dark review passed after wrapping fix; broader error/selection states and contrast/accessibility review remain |
 | Keyboard/assistive technology | Actual Ctrl+F focus and Escape clear-search regression passes after child-focus fix; selected GTK navigation tests pass | Complete keyboard focus/order and screen-reader interaction |
-| Feature parity/localization | Migration inventory in RUST-PANTHEON-CLIENTS.md | Source comparison in MESSAGES-PARITY.md identifies remaining refresh/read/localization gaps; implement and qualify them |
+| Feature parity/localization | Migration inventory in RUST-PANTHEON-CLIENTS.md | Source comparison in MESSAGES-PARITY.md identifies implemented refresh viewport parity and active-window read guard; localization and live behavior remain |
 | Phone pins | Validated UUID/keyring/import source and tests | BlueFerry release with merged phone ID field, then live acceptance (latest public v0.8.1 lacks it) |
 | Signal client boundary | Official signed client with Pantheon overlay/tray/launcher; PR #525 | Owner-session theme/tray/update/rollback acceptance; not a Rust Signal UI |
 | Screenshot full workflow | Native release passes nested +3/+4, region/window, orientation, cancellation, saving, sound requests, shelf/expiry/retention | Privileged package installation, next login, native DRM/audio/input acceptance |
