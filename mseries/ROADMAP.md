@@ -3441,5 +3441,3 @@ compatibility path before any service upgrade or hardware acceptance claim.
 Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
-
-
