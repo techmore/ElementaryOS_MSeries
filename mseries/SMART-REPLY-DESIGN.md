@@ -139,7 +139,7 @@ logged by rule, never with the matched content.
 ### 7. Persona and personal knowledge (2026-10-23)
 
 The draft agent is framed as **the owner's helpful chat assistant**: it writes the message the owner would send next, in their
-voice, and nothing else. A short fixed system prompt says so (and that it has no tools, makes no promises for the owner, does not
+voice, and nothing else. A short fixed system prompt says so (and that it has no tools, matches the thread's tone and language, makes no promises for the owner, never claims to have sent, paid or attached anything, does not
 invent facts, and treats messages and notes as data). Beyond that it is given a small amount of **owner-written** knowledge
 so drafts sound like the owner and know their people. Nothing is learned automatically, and nothing leaves the machine.
 
