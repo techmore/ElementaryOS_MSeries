@@ -187,6 +187,7 @@ pub struct App {
     entry: Rc<composer::Composer>,
     send_btn: gtk::Button,
     stop_btn: gtk::Button,
+    selection_summary: gtk::Label,
     composer_note: gtk::Label,
     // pairing
     pair_entry: gtk::Entry,
@@ -428,6 +429,9 @@ impl App {
         let mode_dd = gtk::DropDown::from_strings(&modes);
         mode_dd.set_selected(0); // supervised by default; full access is an explicit per-thread choice
         mode_dd.set_tooltip_text(Some("Permission mode"));
+        let selection_summary = label("Next message · Choose a provider and model", &["caption", "dim-label"]);
+        selection_summary.set_hexpand(true);
+        selection_summary.set_tooltip_text(Some("The selected provider and model for your next message."));
         let pickers = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         pickers.append(&provider_dd);
         pickers.append(&model_dd);
@@ -452,6 +456,7 @@ impl App {
         entry_row.append(&send_btn);
         let composer = gtk::Box::new(gtk::Orientation::Vertical, 6);
         composer.add_css_class("composer");
+        composer.append(&selection_summary);
         composer.append(&pickers);
         composer.append(&entry_row);
 
@@ -600,6 +605,7 @@ impl App {
             entry,
             send_btn,
             stop_btn,
+            selection_summary,
             composer_note,
             pair_entry,
             pair_server,
@@ -810,6 +816,8 @@ impl App {
             a.fill_models();
             a.write_status_feed();
         });
+        let a = self.clone();
+        self.model_dd.connect_selected_notify(move |_| a.update_selection_summary());
 
         // Window actions with their HIG accelerators; the menu shows the labels automatically.
         type Action = Box<dyn Fn(&Rc<App>)>;
@@ -3009,12 +3017,18 @@ impl App {
 
     fn thread_subtitle(&self, thread: &ThreadShell) -> String {
         let providers = self.providers.borrow();
-        let provider = providers
-            .iter()
-            .find(|p| p.instance_id == thread.provider_instance_id)
-            .map(Provider::name)
-            .unwrap_or_else(|| thread.provider_instance_id.clone());
-        let model = thread.model_selection.get("model").and_then(Value::as_str).unwrap_or("");
+        let model_key = thread.model_selection.get("model").and_then(Value::as_str).unwrap_or("");
+        let provider = providers.iter().find(|p| p.instance_id == thread.provider_instance_id);
+        let provider_name = provider.map(Provider::name).unwrap_or_else(|| thread.provider_instance_id.clone());
+        let model = provider
+            .and_then(|p| {
+                p.models
+                    .iter()
+                    .find(|m| m.key() == model_key || m.aliases.as_ref().is_some_and(|a| a.iter().any(|x| x == model_key)))
+            })
+            .map(|m| m.display())
+            .filter(|model| !model.is_empty())
+            .unwrap_or(if model_key.is_empty() { "T3 default" } else { model_key });
         let mode = RUNTIME_MODES
             .iter()
             .find(|(k, _)| *k == thread.runtime_mode)
@@ -3026,7 +3040,7 @@ impl App {
             .as_ref()
             .and_then(|c| c.shell.projects.iter().find(|p| p.id == thread.project_id).map(|p| tilde(&p.workspace_root)))
             .unwrap_or_default();
-        format!("{provider} · {model} · {mode} · {project}")
+        format!("{provider_name} · Model: {model} · {mode} · {project}")
     }
 
     fn persist_thread_cache(&self, live: &mut Live) {
@@ -3576,6 +3590,7 @@ impl App {
         let providers = self.providers.borrow();
         let Some(p) = providers.get(self.provider_dd.selected() as usize) else {
             self.model_dd.set_model(Some(&gtk::StringList::new(&[])));
+            self.update_selection_summary();
             return;
         };
         let names: Vec<&str> = p.models.iter().map(|m| m.display()).collect();
@@ -3583,6 +3598,28 @@ impl App {
         if let Some(i) = p.models.iter().position(|m| m.is_default == Some(true)) {
             self.model_dd.set_selected(i as u32);
         }
+        drop(providers);
+        self.update_selection_summary();
+    }
+
+    fn update_selection_summary(&self) {
+        let summary = {
+            let providers = self.providers.borrow();
+            providers
+                .get(self.provider_dd.selected() as usize)
+                .map(|provider| {
+                    let model = provider
+                        .models
+                        .get(self.model_dd.selected() as usize)
+                        .map(|model| model.display())
+                        .filter(|model| !model.is_empty())
+                        .unwrap_or("T3 default");
+                    format!("Next message · {} · {model}", provider.name())
+                })
+                .unwrap_or_else(|| "Next message · Choose a provider and model".to_string())
+        };
+        self.selection_summary.set_text(&summary);
+        self.selection_summary.set_tooltip_text(Some(&summary));
     }
 
     fn select_provider(&self, instance_id: &str, model: Option<&str>) {
@@ -3600,6 +3637,7 @@ impl App {
                 self.model_dd.set_selected(mi as u32);
             }
         }
+        self.update_selection_summary();
     }
 
     fn select_mode(&self, mode: &str) {
