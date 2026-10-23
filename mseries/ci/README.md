@@ -25,3 +25,12 @@ cancel existing legacy runs retroactively or reserve runner capacity for Rupert;
 current builds still share the GitHub account's runner capacity. GitHub's
 [concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 describes the cancellation semantics used here.
+
+For a live cancellation check, record the current PR run IDs, then push a newer
+commit to the same PR. Confirm the older active runs finish as `cancelled` and
+replacement runs refer to the new head. Record another PR's run before and after
+to check isolation. A manual package run on the test branch with `publish=false`
+can serve as the non-PR control: a PR push must not cancel it. Never enable
+publishing just to test cancellation. The regression suite separately checks
+that the publishing job excludes PR events and retains its non-cancelling global
+lock. Stop an unfinished synthetic manual control after recording the result.
