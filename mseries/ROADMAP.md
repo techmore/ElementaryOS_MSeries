@@ -1,3 +1,38 @@
+## Bounded Aurora CI dependency downloads — 2026-10-22
+
+The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
+mirror at 50.9 kB/s, before kernel compilation. Aurora CI now first uses the
+official HTTPS Ubuntu ports archive, then HTTPS Azure as a fallback. Metadata
+fetches are limited to 60 seconds and package downloads to 240 seconds per
+mirror. Packages retain normal Ubuntu signature verification. Installation
+starts only after a successful download and uses `--no-download`; the timeout
+does not interrupt dpkg to switch mirrors. Runner source files are not modified.
+Rustup has a five-minute bound and the dependency step a 20-minute bound.
+
+Validation: 17 CI regression tests passed, including slow/erroring mirrors,
+failed metadata, no installation after failed downloads, preserved signed
+sources, host execution refusal, and workflow wiring. Full GitHub kernel build
+and package inspection still need to pass on the updated PR head before merge.
+No desktop installation, kernel change or service restart.
+
+## Superseded PR CI cancellation — 2026-10-22
+
+Source-only: all ten PR workflows now group by workflow name plus PR number
+(with branch ref as the non-PR fallback), cancelling in-progress runs only for
+`pull_request` events. This prevents old revisions of one PR from accumulating
+runner jobs across the shared account, as happened while Rupert awaited deployment.
+Different PRs/workflows stay independent; pushes/manual runs are not preempted.
+The package publisher keeps its global `mseries-apt-publish` lock and release-only
+workflows retain their existing policy. A lightweight workflow checks the policy
+on every workflow change, including future PR workflows.
+
+Validation: nine regression tests passed, including removal/misconfiguration
+mutations for every PR workflow, duplicate workflow names, group isolation, and
+release/publisher lock preservation. No desktop install or service restart.
+Next: merge into dev after CI; existing branches need a new PR run using this
+policy. Already-running legacy checks are not retroactively cancelled. This
+removes superseded-run backlog, not contention from legitimate current builds.
+
 ## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
 
 Owner explicitly deferred both apps and rejected the current combined launcher
