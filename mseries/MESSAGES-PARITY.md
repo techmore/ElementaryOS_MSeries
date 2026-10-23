@@ -11,7 +11,7 @@ This is an implementation inventory, not proof of live service behavior.
 | Search and contact picker | Unicode-folded conversation/body search; public FindContacts | Live contact matches and keyboard order |
 | Direct/group send | Checked Send, participant confirmation, bounded optimistic outbox | Owner-approved live send and group acceptance |
 | Drafts and phone changes | Per-phone in-memory draft/outbox states and generation guards; A/B/A regression | Live switch; unknown identity remains restricted |
-| Read/favorites | API calls, favorite strip and row actions | Sidebar refresh reselects the open conversation; automatic read now requires active window; live read state remains unqualified |
+| Read/favorites | API calls, favorite strip and row actions | Sidebar refresh reselects the open conversation; automatic read requires active window and coalesces per newest-message/read-count marker, with failed-request retry; live read state remains unqualified |
 | Reply/copy | Quoted reply state, cancellation, clipboard and recipient copying | Keyboard/screen-reader interaction |
 | Tapbacks | SDK folding and removal/change tests | Phone-specific examples |
 | Media | Bounded public HTTPS image/GIF/WebP/YouTube previews; no private MAP attachment retrieval | Both clients depend on backend limits; live preview states |

@@ -1,3 +1,16 @@
+## Automatic read-request parity — 2026-10-22
+
+Rust Messages now matches the qualified client's per-thread newest-message/read-count
+marker: repeated selection/refresh coalesces automatic MarkThreadRead requests.
+A new marker permits a new request. Failure releases only its own marker so retry
+works without erasing a newer request; existing phone-generation guards remain.
+Markers clear on phone changes and are pruned against refreshed threads. Explicit
+Mark as Read still permits an owner-requested retry. Active-window guard remains.
+The private D-Bus GTK regression counts actual calls for duplicate/new-message and
+failure/retry cases; all pass (/tmp/messages-read-dedup-retry.log). Strict all-target
+Clippy and optimized ARM64 packaging pass; user preview installed without client
+restart. This is fixture evidence, not live phone read-state qualification.
+
 ## Accessible strings and catalog release checks — 2026-10-22
 
 Messages now translates static accessible names and tooltips through its app
