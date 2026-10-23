@@ -124,6 +124,7 @@ impl ImageStudioWindow {
             &library.placeholder,
             &library.outputs_heading,
             &library.output_scroll,
+            &create, &inspector, &stack,
         );
         test_hooks(
             application,
@@ -996,6 +997,9 @@ fn load_generated_images(
     placeholder: &granite::Placeholder,
     heading: &gtk::Label,
     scroll: &gtk::ScrolledWindow,
+    create: &CreatePage,
+    inspector: &Inspector,
+    stack: &gtk::Stack,
 ) {
     let directory = gtk::glib::user_data_dir()
         .join("mseries-image-studio")
@@ -1047,6 +1051,48 @@ fn load_generated_images(
                 recipe.tags.join(", ")
             ))));
         }
+        let benchmark = gtk::Label::new(Some(&format!(
+            "Engine: {} · Time: {} · Peak memory: {}",
+            recipe.engine_id,
+            recipe.elapsed_seconds.map(|v| format!("{v:.1} s")).unwrap_or_else(|| "Not measured".into()),
+            recipe.peak_memory_mib.map(|v| format!("{v} MiB")).unwrap_or_else(|| "Not measured".into())
+        )));
+        benchmark.set_xalign(0.0);
+        benchmark.set_wrap(true);
+        detail.append(&benchmark);
+        if !recipe.settings_note.is_empty() {
+            let note = gtk::Label::new(Some(&recipe.settings_note));
+            note.set_wrap(true);
+            note.set_xalign(0.0);
+            detail.append(&note);
+        }
+        let view = gtk::Button::with_label("View image");
+        view.set_halign(gtk::Align::Start);
+        let image_path = recipe.image_path.clone();
+        view.connect_clicked(move |button| {
+            let viewer = gtk::Window::builder().title("Image Studio · Image")
+                .default_width(1100).default_height(760).build();
+            if let Some(parent) = button.root().and_downcast::<gtk::Window>() {
+                viewer.set_transient_for(Some(&parent));
+            }
+            let image = gtk::Picture::for_filename(&image_path);
+            image.set_content_fit(gtk::ContentFit::Contain);
+            image.set_can_shrink(true);
+            viewer.set_child(Some(&image));
+            viewer.present();
+        });
+        detail.append(&view);
+        let reuse = gtk::Button::with_label("Use these settings");
+        reuse.set_halign(gtk::Align::Start);
+        let saved = recipe.clone();
+        let create = create.clone_refs();
+        let inspector = inspector.clone_refs();
+        let stack = stack.clone();
+        reuse.connect_clicked(move |_| {
+            load_recipe(&saved, &create, &inspector);
+            stack.set_visible_child_name("create");
+        });
+        detail.append(&reuse);
         content.append(&picture);
         content.append(&detail);
         row.set_child(Some(&content));

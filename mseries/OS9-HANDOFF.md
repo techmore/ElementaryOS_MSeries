@@ -1,3 +1,15 @@
+## Image Studio result inspection and cozy fashion sample — 2026-10-22
+
+Library outputs now offer a native fitted image viewer and Use these settings, which restores the
+saved recipe into Create. Sidecars accept optional elapsed seconds, peak memory MiB and a provenance
+note; older recipes remain readable. Unknown measurements display Not measured. Two hosted sample
+projects are installed in the owner's app image library: the adult streamer triptych and a six-scene
+cozy campus fashion contact sheet. These are hosted outputs, not a local inference qualification.
+Validation: cargo build; six library tests, including benchmark-field recipe round trip; Xvfb render
+interaction test passed. New viewer/reuse controls have source/build validation; no new screenshot or
+keyboard review was completed. Local live generation/preview and actual inference benchmarking
+remain pending an engine adapter, checkpoint, and memory qualification. Existing generation gate remains.
+
 ## Native M-Series Image Studio: Pantheon Rust workspace — 2026-10-22
 
 The Image Studio is now a Rust GTK 4 + Granite 7 app in `rust/mseries-image-studio`, using this repo's

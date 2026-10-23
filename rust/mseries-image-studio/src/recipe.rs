@@ -24,6 +24,9 @@ pub struct Recipe {
     pub engine_id: String,
     pub image_path: String,
     pub app_version: String,
+    pub elapsed_seconds: Option<f64>,
+    pub peak_memory_mib: Option<u64>,
+    pub settings_note: String,
 }
 
 impl Default for Recipe {
@@ -45,6 +48,9 @@ impl Default for Recipe {
             tags: vec![],
             engine_id: "unconfigured".into(),
             image_path: String::new(),
+            elapsed_seconds: None,
+            peak_memory_mib: None,
+            settings_note: String::new(),
             app_version: env!("CARGO_PKG_VERSION").into(),
         }
     }
@@ -192,6 +198,9 @@ mod tests {
         recipe.height = 768;
         recipe.batch_size = 3;
         recipe.seed = 424242;
+        recipe.elapsed_seconds = Some(12.5);
+        recipe.peak_memory_mib = Some(1024);
+        recipe.settings_note = "Measured local test".into();
         recipe.tags = vec!["portrait".into(), "streamer".into()];
         let path = store.save(&recipe).unwrap();
         let loaded = store.load_recent(10).unwrap();

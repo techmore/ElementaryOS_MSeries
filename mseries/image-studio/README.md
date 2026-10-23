@@ -22,3 +22,7 @@ The window opens on the adult streamer-series prompt from the requested test cas
 The app currently has no qualified image runtime connected. Generation remains disabled until an engine/model/size tuple has a measured memory budget and is qualified on this device. It also never starts a model worker. Prompt help and prompt-type suggestions call only the already-running loopback assistant at `127.0.0.1:8766`, and pause while the 6 GiB desktop reserve is unmet.
 
 On this host, 5.8 GiB was available at the latest check (below the desktop reserve), `mseries-ai-everyday.service` was failed, no local image/text endpoint was listening, and the model cache contained Qwen text weights but no diffusion model. The UI/data path has been tested; no AI image was generated. See [OS9 handoff](../OS9-HANDOFF.md) and [roadmap](../ROADMAP.md) for the runtime qualification blocker.
+
+### Result inspection
+
+Library image rows offer **View image** and **Use these settings**. Reuse creates an editable copy in Create. Sidecars optionally record `elapsed_seconds`, `peak_memory_mib`, and `settings_note`; missing measurements are shown as unknown. Hosted sample model/seed/sampler values are unavailable and cannot be reproduced exactly. Imported contact-sheet dimensions map to the available local size presets when reused. Progressive previews and actual inference benchmarks require a connected, qualified engine.
