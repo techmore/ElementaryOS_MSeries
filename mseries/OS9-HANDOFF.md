@@ -33,13 +33,13 @@ To shorten validation cycles, the M-series wiring workflow detects changed paths
 Context/caching remains layered: the client reuses its bounded, settled-thread projection cache and loads older T3 history only on demand; provider-side prefix/KV cache stays owned by T3 or the provider. Stable prompt/tool prefixes improve reuse, but the client does not add a competing API cache or claim hit savings that the server does not report. Earlier package-scoped format check, release build, strict release Clippy and all 78 library tests passed after compact-prompt and full-width wrapping-action updates. The installed binary SHA-256 was `2d488da84a03206b03d08a5b7c201365b8c1eee08fd1b5860ffd6a7cd07c337e`; D-Bus activation relaunched PID 1305110. A fresh feed then reported connected to `eos`, Codex selected, running 0, pending 0. T3 `server.getConfig` reports MSeries Assistant model alias `Default`, but the local model endpoint was unavailable because `mseries-ai-everyday.service` was refused by the desktop-memory-reserve check. No service was forced on. The PR's Assistant ACP contract check passed in an earlier run; the latest run's cancellation was requested by the owner. This blocks live local-intake verification on this machine until the supervisor admits a model; it does not block the ordinary authenticated T3 provider path.
 
 Continued the native GTK 4 + Granite T3 client in `rust/claude-pantheon-rs` and recorded the larger roadmap in
-[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). In taskbar mode, the T3-R application
-launcher now owns a native GTK popover attached to the Dock icon: hover opens after 250 ms, pointer leave has a 450 ms
-grace period, click pins/toggles, and Escape or outside click dismisses the pinned popup. While taskbar mode is active,
-the T3-R panel suppresses the Dock's shorter launcher tooltip so two popovers do not compete; switching taskbar mode
-off restores the standard tooltip. **Open full chat** presents
-the complete desktop client; New chat, Usage, Settings, and live thread rows route to its matching destination. Outside
-taskbar mode, the launcher opens the full client directly; `--quick` remains an optional standalone status window.
+[issue #523](https://github.com/techmore/ElementaryOS_MSeries/issues/523). In both the regular floating Dock and
+taskbar mode, the T3-R application launcher owns a native GTK popover attached to the Dock icon: hover opens after
+250 ms, pointer leave has a 450 ms grace period, click pins/toggles, and Escape or outside click dismisses the pinned
+popup. The T3-R launcher suppresses its shorter tooltip so the two popovers do not compete; this per-app behavior does
+not change the Dock layout setting. **Open full chat** presents the complete desktop client; New chat, Usage, Settings,
+and live thread rows route to the matching destination. Launching from the app menu or a command opens the full client;
+`--quick` remains an optional standalone status window.
 The popover shows the paired T3 environment and quota for only the provider selected in full chat; other provider
 accounts remain in Settings. Offline activity is marked stale and cannot open a live thread.
 
