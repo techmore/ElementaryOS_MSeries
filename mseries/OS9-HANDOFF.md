@@ -1,3 +1,23 @@
+## Image Studio: Claude UI with decoder/reference backend — 2026-10-22
+
+Owner selected Claude's UI and prohibited further generations/benchmarks.
+Imported Claude's read-only `claude/image-studio-native-ui` working-tree snapshot;
+original worktree untouched. [Source hashes](image-studio/UI-PROVENANCE.json).
+
+Backend retains CPU/Vulkan tiled VAE, TAESD preview-only, disk-backed weights,
+GPU budget, SD1.5 Plus Face references with immutable hashes, saved settings and
+structured logs. Fixed UI/backend value ranges, stale metrics, frame-vs-step
+progress, Run readiness, auxiliary weights appearing as checkpoints, and image
+count dispatch through a sequential queue. Downloader conversion shares the
+workflow lock. Claude's canvas, gallery, filmstrip and stylesheet are retained.
+
+Validation: source review against pinned upstream CLI/docs, Python and embedded
+downloader syntax parsing, offline Rust compile check. No inference, benchmarks,
+model download/conversion, UI launch or runtime tests during this integration.
+No live app reinstall/restart or kernel/boot/Mesa changes. [Model/kernel decisions](image-studio/UPSTREAM-DIFFUSION.md)
+and [backend contract](image-studio/README.md). Deployment and runtime validation
+are not claimed by this source-only pass.
+
 ## Image Studio upstream diffusion audit — 2026-10-22
 
 Reviewed Aurora, Asahi/Honeykrisp, omarchy-mlx, its TensorFold workflow and

@@ -86,3 +86,36 @@ this stack based on its LLM speedups or claim it accelerates diffusion.
 No kernel, bootloader, audio-stack or global Mesa changes were made for this
 review. No upstream diffusion performance number establishes speed on this
 particular M1 Pro; use retained local measurements.
+
+## Port decisions from source review (no new runs)
+
+The backend uses the pinned engine's [module backend contract](https://github.com/leejet/stable-diffusion.cpp/blob/fd21ecfceef2665d2c5f2db8536e3202d864fd30/docs/backend.md):
+`diffusion=vulkan0,te=cpu,clip_vision=cpu,vae=cpu` (or `vae=vulkan0`), with
+explicit parameter storage and a managed GPU budget. This is the Linux Apple GPU
+path; macOS MPS/Metal install instructions are not used.
+
+| Component | Use in this port | Settings/dependencies |
+|---|---|---|
+| Realistic Vision V6 FP16 | Main photographic checkpoint | External MSE VAE; DPM++ 2M/Karras 30-step app preset is separate from the author's DPM++ SDE 25+ / 2M SDE 50+ recipe. |
+| SD 1.5 Q4/Q8 | Lower-storage alternative | Same SD 1.5 reference family; Euler 20/CFG7 starter, not the RV quality recipe. |
+| SDXL Turbo | Composition/speed option | Author 512-square, 1–4 steps, no CFG/negative conditioning; sd.cpp CFG1. SD 1.5 reference adapter rejected. |
+| IP-Adapter Plus Face SD 1.5 | Appearance consistency | Matching ViT-H encoder; strength0.6–0.8 upstream starting range. It is appearance conditioning, not an identity guarantee. |
+| TAESD SD 1.x | Live preview only | `--taesd-preview-only --preview tae`; saved final uses the selected full VAE. |
+| Qwen3-VL 2B + matching projector | Optional feedback | Separate CPU review after generation; never auto-started by the port. |
+
+The [SDXL Turbo author limitations](https://huggingface.co/stabilityai/sdxl-turbo/blob/main/README.md)
+explicitly include imperfect faces/photorealism; it is not the primary portrait recommendation.
+SDXL base and quantized FLUX remain researched candidates, not silently enabled choices.
+
+Kernel disposition: retain the installed Aurora/Asahi stack. DMA heap/udmabuf in
+[Aurora PR67](https://github.com/omacom/linux-aurora/pull/67) requires applications
+that use those allocation paths; this sd.cpp port does not, so enabling the config
+is not a diffusion acceleration patch. The M2 Max/G14X compute-preemption candidate
+is not an M1 Pro optimization (see the repository's existing
+`aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md`). Mesa PR6 remains experimental per its
+maintainer. No kernel/boot/Mesa mutation is required for decoder/reference support.
+
+Review limit: source compatibility, model cards, pinned CLI definitions and patch
+status establish what can be ported. They do not establish this host's speed or
+quality for an unrun model. No generations, benchmark suites or model conversions
+were executed during this source-integration pass.
