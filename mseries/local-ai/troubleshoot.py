@@ -319,31 +319,31 @@ def main():
     if args.collect_only:
         print(prompt)
         return
-    with analysis_session(args, endpoint):
-        stage("model-ready", "Checking the model served by the local endpoint…")
-        models = api(endpoint, '/v1/models')['data']
-        if not models:
-            raise ValueError('No model served')
-        model = served_model(models)
-        stage("analyzing", f"{model} is analyzing {len(logs.splitlines())} evidence lines on-device · this may take a few minutes…")
-        response = api(endpoint, '/v1/chat/completions', {
-            'model': model, 'messages': [{'role': 'system', 'content': SYSTEM},
-            {'role': 'user', 'content': prompt}], 'max_tokens': 768, 'temperature': 0.2,
-            'stream': False, 'chat_template_kwargs': {'enable_thinking': False}}, timeout=600)
-        answer = response['choices'][0]['message']['content']
-        if not isinstance(answer, str) or not answer.strip():
-            raise ValueError('Model returned no diagnosis')
-        if response['choices'][0].get('finish_reason') == 'length':
-            answer += '\n\n[Output reached the response limit; analysis may be incomplete.]'
-        stage("saving", "Saving the diagnosis and input evidence locally…")
-        directory = Path.home() / '.local/state/mseries-troubleshooter'
-        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        report = directory / (datetime.now().strftime('%Y%m%d-%H%M%S-%f') + '.md')
-        with open(report, 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as output:
-            output.write(f'# Local troubleshooting report\n\nModel: {model}\n\n{answer}\n\n## Input evidence\n\n```text\n{prompt}\n```\n')
-        stage("complete", "Analysis complete. Report saved locally.")
-        print(answer)
-        print(f'\nSaved locally: {report}')
+    # Keep this module's read-only helpers for brief/ask compatibility, but all
+    # dedicated CLI diagnosis now enters the qualified structured path. The old
+    # arbitrary served-model bypass could otherwise reuse excluded everyday4B.
+    if endpoint != DEFAULT_ENDPOINT:
+        raise ValueError('Use the dedicated qualified diagnostic endpoint through mseries-diagnose')
+    library = Path.home() / '.local/libexec/mseries-ai'
+    if library.is_dir():
+        sys.path.insert(0, str(library))
+    import diagnostic_agent
+    if args.performance:
+        bundle = diagnostic_agent.performance_bundle(redact(args.question)[:1000])
+    else:
+        lines = [re.sub(r'^\[L\d+\] ', '', line).strip() for line in logs.splitlines() if line.strip()]
+        bundle = diagnostic_agent.validate_bundle({
+            'schema_version': diagnostic_agent.BUNDLE_SCHEMA,
+            'bundle_id': 'legacy-' + str(time.time_ns()),
+            'question': redact(args.question)[:1000],
+            'evidence': [{'id': 'L' + str(i), 'kind': 'log',
+                          'time_scope': 'historical' if args.previous_boot else 'unknown',
+                          'text': line[:2000]} for i, line in enumerate(lines[:80], 1)]})
+    job = diagnostic_agent.run_job(bundle, exclusive=False)
+    if job['state'] != 'complete':
+        raise ValueError('Strong diagnosis ' + job['state'] + '. Evidence is retained. Open System Troubleshooter for the explicit idle-model switch.')
+    print(diagnostic_agent.render(job['result']['response']))
+    print('Job: ' + job['job_id'])
 
 
 if __name__ == '__main__':

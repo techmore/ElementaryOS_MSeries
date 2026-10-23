@@ -1,0 +1,68 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "mismatched-optimization-measurements",
+  "split": "core",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "mismatched-optimization-measurements",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "metric",
+        "time_scope": "historical",
+        "text": "Trial A: kernel build old; runtime old; cold cache; task input set A; duration=10 seconds."
+      },
+      {
+        "id": "L2",
+        "kind": "metric",
+        "time_scope": "historical",
+        "text": "Trial B: kernel build new; runtime new; warm cache; different task input set B; duration=4 seconds."
+      },
+      {
+        "id": "L3",
+        "kind": "status",
+        "time_scope": "unknown",
+        "text": "No matched baseline or current task/pressure measurements are available."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1",
+        "L2"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "measure_pressure": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "observe_recurrence": [
+        "L1",
+        "L2"
+      ]
+    },
+    "forbidden_assertion_patterns": [
+      "\\b(?:the new kernel|MLX)\\s+(?:is|was)\\s+(?:proven|definitely)\\s+faster\\b"
+    ],
+    "manual_review": [
+      "Record different observed durations but reject causal attribution or a comparable speedup claim.",
+      "Kernel, runtime, workload and cache are confounded.",
+      "Describe the needed matched comparison; do not install or roll back anything."
+    ]
+  }
+}

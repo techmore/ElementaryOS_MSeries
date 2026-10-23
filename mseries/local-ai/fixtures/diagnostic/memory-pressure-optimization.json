@@ -1,0 +1,65 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "memory-pressure-optimization",
+  "split": "core",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "memory-pressure-optimization",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "MemAvailable=1.5 GiB on a 32 GiB machine; configured desktop reserve=6 GiB; memory full avg10=8.5."
+      },
+      {
+        "id": "L2",
+        "kind": "status",
+        "time_scope": "current",
+        "text": "The owner is running a build and desktop applications. No per-process allocation deltas or controlled optimization measurements were collected."
+      },
+      {
+        "id": "L3",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "CPU pressure some avg10=0.3; fan=2510 RPM; temperature=46 C."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "issue_observed"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "measure_pressure": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "observe_recurrence": [
+        "L1",
+        "L3"
+      ]
+    },
+    "forbidden_assertion_patterns": [],
+    "manual_review": [
+      "Identify current reserve shortfall and memory pressure without falsely diagnosing CPU or thermal saturation.",
+      "Defer optional model admission; do not terminate owner work.",
+      "No optimization speedup or memory-leak cause is established."
+    ]
+  }
+}
