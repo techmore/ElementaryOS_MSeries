@@ -2,6 +2,8 @@
 
 mod activation;
 mod attention;
+mod corner_render;
+mod corners;
 mod cursor;
 mod cursor_theme;
 mod display_config;
