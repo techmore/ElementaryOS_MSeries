@@ -100,6 +100,9 @@ with tempfile.TemporaryDirectory(prefix="mseries-quick-") as d:
         IBus.init()
         bus = IBus.Bus.new()
         assert bus.is_connected()
+        # The panel that draws candidate windows (the desktop session runs its own; this one is private to the test).
+        procs.append(subprocess.Popen(["/usr/libexec/ibus-ui-gtk3"], env=env))
+        pump(1)
         procs.append(subprocess.Popen([BINARY, "input-service"], env=env, stderr=open(service_log, "w")))
         pump(1.5)
         app = subprocess.Popen([sys.executable, "-c", FIELD_APP, entry_text], env=env, stdout=subprocess.PIPE, text=True)
@@ -128,11 +131,11 @@ with tempfile.TemporaryDirectory(prefix="mseries-quick-") as d:
             call("Finish", GLib.Variant("(s)", (draft,)))
             return inline
 
-        def wait_for(needle, seconds=60):
+        def wait_for(needle, seconds=60, more_than=0):
             until = time.monotonic() + seconds
             while time.monotonic() < until:
                 pump(0.3)
-                if needle in read(service_log):
+                if read(service_log).count(needle) > more_than:
                     return True
             return False
 
@@ -206,6 +209,41 @@ with tempfile.TemporaryDirectory(prefix="mseries-quick-") as d:
         pump(0.5)
         key("Tab")
         check("a plain key abandons the draft and is typed", read(entry_text).startswith("r") and "Deli" not in read(entry_text), read(entry_text))
+
+        # 4b. The bar: the IBus panel draws the quick actions as clickable candidates; a click must run the action
+        # without moving keyboard focus (the draft stays held, then Tab inserts the new one).
+        clear()
+        hold("Deli works for me.")
+        pump(1.0)
+        shot("bar")
+        windows = subprocess.run(["xdotool", "search", "--onlyvisible", "--class", "ibus-ui-gtk3"], capture_output=True, text=True).stdout.split()
+        check("the panel shows the bar (a candidate window is visible)", bool(windows), str(windows))
+        if windows:
+            geometry = subprocess.run(["xdotool", "getwindowgeometry", "--shell", windows[0]], capture_output=True, text=True).stdout
+            g = dict(line.split("=") for line in geometry.split() if "=" in line)
+            x, y, w, h = int(g["X"]), int(g["Y"]), int(g["WIDTH"]), int(g["HEIGHT"])
+            done_before = read(service_log).count("quick action Reword done")
+            focused_before = subprocess.run(["xdotool", "getwindowfocus"], capture_output=True, text=True).stdout.strip()
+            # first button: a little in from the left edge, vertically centred
+            subprocess.run(["xdotool", "mousemove", str(x + 30), str(y + h // 2), "click", "1"], check=False)
+            check("clicking the first button runs Reword", wait_for("bar button 0 clicked", 5))
+            check("the click did not move keyboard focus", subprocess.run(["xdotool", "getwindowfocus"], capture_output=True, text=True).stdout.strip() == focused_before)
+            check("the bar's redraft finishes", wait_for("quick action Reword done", 90, done_before))
+            pump(0.5)
+            key("Tab")
+            check("Tab inserts the redrafted text after a click", bool(read(entry_text)) and read(entry_text) != "Deli works for me." and "Alt+" not in read(entry_text), read(entry_text))
+        else:
+            key("Escape")
+
+        # 4c. A refusal reason is shown in the field itself, and typing dismisses it.
+        clear()
+        shown = call("Say", GLib.Variant("(s)", ("There is no incoming message to reply to.",))).unpack()[0]
+        check("Say shows the reason in the field", shown)
+        pump(0.5)
+        shot("notice")
+        key("x")
+        pump(0.5)
+        check("typing dismisses the notice and is typed normally", read(entry_text) == "x", read(entry_text))
 
         # 5. Without a conversation the actions are not offered and Alt+R is the app's own key.
         clear()
