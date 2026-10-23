@@ -45,6 +45,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [GTK-PERFORMANCE-ASAHI.md](GTK-PERFORMANCE-ASAHI.md) | What keeps GTK4/Granite apps small and idle on Asahi (renderer, CSD shadow, cursor blink, animations, D-Bus), with every GTK app here listed |
 | [DEV-HYGIENE.md](DEV-HYGIENE.md) | Keeping the dev machine clean: the weekly `dev-clean` timer (build output, caches, session scratch, dated Codex exports), one shared cargo target dir, worktree discipline |
 | [SMART-REPLY-DESIGN.md](SMART-REPLY-DESIGN.md) | Design only: a window-aware agent that drafts replies in any app (Tab inserts, Esc discards), what it reuses from dictation and the SDK, safety rules, and a scoped first slice |
+| [SDK-AGENT-SURFACE.md](SDK-AGENT-SURFACE.md) | Design only: SDK apps declare intents, entities, scopes and risk classes (like Apple's App Intents and entitlements); `msdk` validates them and generates the MCP manifest; the broker enforces user grants |
 
 ## Kernel
 

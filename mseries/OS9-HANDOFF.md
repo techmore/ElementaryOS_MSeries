@@ -11775,3 +11775,11 @@ features; those need native Incus design, not blind Swift feature parity claims.
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
+
+## SDK agent surface design — 2026-10-23
+
+New design note `mseries/SDK-AGENT-SURFACE.md` joins the SDK and the Pantheon MCP broker the way Apple's App Intents, entitlements and
+TCC do: apps declare intents, entities, scopes and risk classes in the `.msdk` description; `msdk check` validates them,
+`msdk agent-manifest` generates the MCP manifest; the broker enforces owner grants bound to a manifest hash. Cross-links added to the MCP
+design, the introspection note and `DOCS.md`. Design only: no grammar, checker rule, generator, broker or settings page exists. Next:
+owner review of the vocabulary and open questions, then `msdk check` rules and a manifest for the T3 port.
