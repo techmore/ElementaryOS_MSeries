@@ -1,3 +1,16 @@
+## Accessible strings and catalog release checks — 2026-10-22
+
+Messages now translates static accessible names and tooltips through its app
+gettext domain. The template contains 78 unique source strings. The extractor
+rejects tr() calls it cannot parse rather than silently omitting them, supports
+multiline trailing commas, and produces a msgfmt-valid template. CI now regenerates
+and compares the template and validates its format. Strict all-target Clippy and
+the complete isolated GTK scenario pass (/tmp/messages-i18n-a11y-{clippy,gui}.log).
+ARM64 package rebuilt and installed user-locally without restarting clients.
+Reviewed translations, dynamic accessible names, plural forms and dynamic error
+messages remain incomplete. The compositor still reports PID 1934; the installed
+capture code still awaits a new login and physical acceptance.
+
 ## Messages gettext foundation — 2026-10-22
 
 Messages and its switcher now use an explicit app gettext domain for static
