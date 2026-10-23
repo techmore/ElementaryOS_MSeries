@@ -263,6 +263,20 @@ pub async fn remote_repo(path: &str) -> Option<String> {
     repo_from_remote(&out)
 }
 
+/// The current branch of a local checkout, with an explicit short revision for detached HEADs.
+pub async fn current_branch(path: &str) -> Option<String> {
+    let cwd = Some(Path::new(path));
+    if let Ok(branch) = run(&["git", "symbolic-ref", "--quiet", "--short", "HEAD"], cwd).await {
+        let branch = branch.trim();
+        if !branch.is_empty() {
+            return Some(branch.to_string());
+        }
+    }
+    let commit = run(&["git", "rev-parse", "--short", "HEAD"], cwd).await.ok()?;
+    let commit = commit.trim();
+    (!commit.is_empty()).then(|| format!("detached at {commit}"))
+}
+
 pub async fn gh(args: &[&str]) -> Result<Value, String> {
     gh_with_input(args, None).await
 }
@@ -576,6 +590,23 @@ mod tests {
         );
         assert_eq!(repo_from_remote("https://github.com/techmore/rupert").as_deref(), Some("techmore/rupert"));
         assert_eq!(repo_from_remote("https://gitlab.com/x/y"), None);
+    }
+
+    #[test]
+    fn current_branch_reads_the_live_git_head_without_a_shell() {
+        use std::process::Command;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let path = std::env::temp_dir().join(format!("t3r-current-branch-{}-{nonce}", std::process::id()));
+        std::fs::create_dir_all(&path).unwrap();
+        let init =
+            Command::new("git").args(["init", "-q", "-b", "fresh-checkout"]).current_dir(&path).status().unwrap();
+        assert!(init.success(), "git init should create the fixture repository");
+
+        let branch = glib::MainContext::new().block_on(current_branch(path.to_str().unwrap()));
+        assert_eq!(branch.as_deref(), Some("fresh-checkout"));
+        std::fs::remove_dir_all(path).unwrap();
     }
 
     #[test]

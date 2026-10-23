@@ -28,6 +28,7 @@ pub struct ReposPage {
     config: RefCell<Config>,
     issues: RefCell<Vec<Issue>>,
     current_repo: RefCell<Option<PinnedRepo>>,
+    load_generation: Cell<u64>,
     filters_wired: Cell<bool>,
 }
 
@@ -82,6 +83,18 @@ fn thread_title(thread: &crate::t3::model::ThreadShell) -> String {
         format!("Untitled chat ({})", thread.id.chars().take(8).collect::<String>())
     } else {
         thread.title.clone()
+    }
+}
+
+fn chat_branch_context(thread_branch: Option<&str>, checkout_branch: Option<&str>) -> Option<String> {
+    let thread_branch = thread_branch.map(str::trim).filter(|branch| !branch.is_empty());
+    let checkout_branch = checkout_branch.map(str::trim).filter(|branch| !branch.is_empty());
+    match (thread_branch, checkout_branch) {
+        (Some(thread), Some(checkout)) if thread == checkout => Some(format!("T3 branch {thread} · current")),
+        (Some(thread), Some(checkout)) => Some(format!("T3 branch {thread} · checkout now {checkout}")),
+        (Some(thread), None) => Some(format!("T3 branch {thread}")),
+        (None, Some(checkout)) => Some(format!("checkout branch {checkout}")),
+        (None, None) => None,
     }
 }
 
@@ -230,6 +243,7 @@ impl ReposPage {
             config: RefCell::new(workflow::load_config()),
             issues: RefCell::new(Vec::new()),
             current_repo: RefCell::new(None),
+            load_generation: Cell::new(0),
             filters_wired: Cell::new(false),
         }
     }
@@ -281,18 +295,51 @@ impl ReposPage {
         self.status.set_text("Reading repositories…");
         let projects = app.projects();
         let page = app.repos_page_rc();
+        let generation = page.load_generation.get().wrapping_add(1);
+        page.load_generation.set(generation);
+        let pinned_paths: HashSet<String> = page.config.borrow().repos.iter().map(|repo| repo.path.clone()).collect();
         glib::spawn_future_local(async move {
             let mut found: Vec<(String, String)> = Vec::new();
-            for p in &projects {
-                if let Some(repo) = workflow::remote_repo(&p.workspace_root).await {
-                    found.push((repo, p.workspace_root.clone()));
+            let project_results = futures_util::future::join_all(projects.iter().map(|project| async move {
+                let repo = workflow::remote_repo(&project.workspace_root).await;
+                let branch =
+                    if repo.is_some() { workflow::current_branch(&project.workspace_root).await } else { None };
+                (repo, project.workspace_root.clone(), branch)
+            }))
+            .await;
+            let mut checkout_branches = HashMap::new();
+            for (repo, path, branch) in project_results {
+                if let Some(repo) = repo {
+                    found.push((repo, path.clone()));
+                }
+                if let Some(branch) = branch {
+                    checkout_branches.insert(path, branch);
                 }
             }
-            page.render_repos(&app, found).await;
+            let pinned_paths: Vec<String> =
+                pinned_paths.into_iter().filter(|path| !checkout_branches.contains_key(path)).collect();
+            let pinned_branches = futures_util::future::join_all(
+                pinned_paths.iter().map(|path| async move { (path.clone(), workflow::current_branch(path).await) }),
+            )
+            .await;
+            for (path, branch) in pinned_branches {
+                if let Some(branch) = branch {
+                    checkout_branches.insert(path, branch);
+                }
+            }
+            if page.load_generation.get() != generation {
+                return;
+            }
+            page.render_repos(&app, found, checkout_branches).await;
         });
     }
 
-    async fn render_repos(&self, app: &Rc<App>, found: Vec<(String, String)>) {
+    async fn render_repos(
+        &self,
+        app: &Rc<App>,
+        found: Vec<(String, String)>,
+        checkout_branches: HashMap<String, String>,
+    ) {
         while let Some(c) = self.repo_list.first_child() {
             self.repo_list.remove(&c);
         }
@@ -405,6 +452,11 @@ impl ReposPage {
             let summary = label(&crate::look::tilde(&r.path), &["caption", "dim-label"]);
             wrap_label(&summary);
             card.append(&summary);
+            if let Some(branch) = checkout_branches.get(&r.path) {
+                let current_branch = label(&format!("Current checkout · {branch}"), &["caption", "dim-label"]);
+                wrap_label(&current_branch);
+                card.append(&current_branch);
+            }
 
             let repo_projects: Vec<_> = projects.iter().filter(|project| project_matches_repo(project, &r)).collect();
             let repo_project_ids: HashSet<&str> = repo_projects.iter().map(|project| project.id.as_str()).collect();
@@ -464,8 +516,13 @@ impl ReposPage {
                     title.set_max_width_chars(72);
                     details.append(&title);
 
-                    let branch =
+                    let thread_branch =
                         thread.rest.get("branch").and_then(Value::as_str).map(str::trim).filter(|v| !v.is_empty());
+                    let checkout_branch = repo_projects
+                        .iter()
+                        .find(|project| project.id == thread.project_id)
+                        .and_then(|project| checkout_branches.get(&project.workspace_root))
+                        .map(String::as_str);
                     let activity = if thread.pending_requests() > 0 {
                         "Waiting for you"
                     } else if thread.is_running() {
@@ -476,8 +533,8 @@ impl ReposPage {
                         "Updated"
                     };
                     let mut context = Vec::new();
-                    if let Some(branch) = branch {
-                        context.push(branch.to_string());
+                    if let Some(branch) = chat_branch_context(thread_branch, checkout_branch) {
+                        context.push(branch);
                     }
                     context.push(activity.to_string());
                     context.push(relative_time(iso_to_unix(&thread.updated_at), now_unix()));
@@ -1365,5 +1422,17 @@ mod tests {
 
         let deleted = Project { deleted_at: Some("2026-10-22T00:00:00Z".into()), ..checkout };
         assert!(!project_matches_repo(&deleted, &repo));
+    }
+
+    #[test]
+    fn chat_branch_context_distinguishes_the_saved_thread_from_the_live_checkout() {
+        assert_eq!(
+            chat_branch_context(Some("feature/work"), Some("main")).as_deref(),
+            Some("T3 branch feature/work · checkout now main")
+        );
+        assert_eq!(chat_branch_context(Some("main"), Some("main")).as_deref(), Some("T3 branch main · current"));
+        assert_eq!(chat_branch_context(Some("feature/work"), None).as_deref(), Some("T3 branch feature/work"));
+        assert_eq!(chat_branch_context(None, Some("main")).as_deref(), Some("checkout branch main"));
+        assert_eq!(chat_branch_context(None, None), None);
     }
 }
