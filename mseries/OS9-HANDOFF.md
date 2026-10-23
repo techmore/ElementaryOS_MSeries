@@ -11837,3 +11837,21 @@ bound to the manifest hash; per-action approvals for external and privileged int
 shows; remembered denials, immediate revocation, content-free audit, owner-only grants file. 14 tests against the real T3 manifest, clippy
 clean. Library only: no service, consent dialog, Settings page or app-side dispatcher; the caller's identity is not yet taken from a
 connection. See `SDK-AGENT-SURFACE.md` section 8. Nothing installed.
+
+## GitHub Pages wip4 candidate status refresh — 2026-10-23
+
+Updated `docs/index.html` and `docs/build-status.html` to link the current PR #533 head
+`266d54af49ca6dede2492f11b4fe830cafa7228a` and its successful ARM64 candidate,
+unified72 and eGPU build/payload run `39944207967`, plus M-series validation run
+`39944207727`. Both runs use that exact head. PR #533 remains open and conflicts
+with current `dev`; it must be refreshed before merge. Wip4 remains source/build
+evidence only: no package was installed or armed, and hardware/recovery/suspend
+acceptance is still open.
+
+The current `dev` Pages deployment `39954620306` succeeded for exact source
+`7053069f7502cbdd2390a5ece09d825c1c1b9dd6`. Live `index.html`,
+`build-status.html` and `build-status.js` returned HTTP 200 and each byte-matched
+that revision. This PR updates the candidate links/status; it is not published
+until merge and a new successful Pages deployment. No host, boot, panel, kernel,
+audio or power state changed. Next: merge after required review/current-head
+checks, then verify Pages deployment and live bytes for the merged revision.
