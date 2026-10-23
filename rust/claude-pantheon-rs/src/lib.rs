@@ -15,6 +15,7 @@ pub mod look;
 pub mod markdown;
 pub mod notify;
 pub mod palette;
+pub mod persistence;
 pub mod probe;
 pub mod provider_setup;
 pub mod quick;

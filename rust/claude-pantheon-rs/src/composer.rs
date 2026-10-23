@@ -530,10 +530,16 @@ impl Composer {
 
     fn save_drafts(&self) {
         let path = drafts_path();
-        if let Some(dir) = path.parent() {
-            let _ = std::fs::create_dir_all(dir);
+        let bytes = match serde_json::to_vec(&*self.drafts.borrow()) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.set_status(&format!("Draft could not be saved locally: {error}"));
+                return;
+            }
+        };
+        if let Err(error) = crate::persistence::atomic_write(&path, &bytes, 0o600) {
+            self.set_status(&format!("Draft could not be saved locally: {error}"));
         }
-        let _ = std::fs::write(&path, serde_json::to_vec(&*self.drafts.borrow()).unwrap_or_default());
     }
 
     pub fn draft_for(&self, key: &str) -> Option<String> {

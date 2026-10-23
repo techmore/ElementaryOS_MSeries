@@ -44,11 +44,8 @@ impl WindowState {
 
     pub fn save(&self) {
         let p = path();
-        if let Some(dir) = p.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
         if let Ok(bytes) = serde_json::to_vec_pretty(self) {
-            let _ = std::fs::write(p, bytes);
+            let _ = crate::persistence::atomic_write(&p, &bytes, 0o600);
         }
     }
 

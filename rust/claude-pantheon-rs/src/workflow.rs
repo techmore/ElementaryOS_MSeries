@@ -154,14 +154,10 @@ pub fn load_config() -> Config {
     std::fs::read(config_path()).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
 }
 
-pub fn save_config(c: &Config) {
+pub fn save_config(c: &Config) -> Result<(), String> {
     let path = config_path();
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    if let Ok(bytes) = serde_json::to_vec_pretty(c) {
-        let _ = std::fs::write(path, bytes);
-    }
+    let bytes = serde_json::to_vec_pretty(c).map_err(|error| error.to_string())?;
+    crate::persistence::atomic_write(&path, &bytes, 0o600).map_err(|error| error.to_string())
 }
 
 #[derive(Clone, Debug, Default)]

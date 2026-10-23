@@ -309,7 +309,9 @@ impl ReposPage {
     fn save(&self, f: impl FnOnce(&mut Config)) {
         let mut c = self.config.borrow_mut();
         f(&mut c);
-        workflow::save_config(&c);
+        if let Err(error) = workflow::save_config(&c) {
+            self.status.set_text(&format!("Could not save repository and issue organization: {error}"));
+        }
     }
 
     /// The thread started for an issue, if the client started one.

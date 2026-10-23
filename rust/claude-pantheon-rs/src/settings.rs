@@ -122,14 +122,10 @@ impl Settings {
         std::fs::read(path()).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
     }
 
-    pub fn save(&self) {
+    pub fn save(&self) -> Result<(), String> {
         let p = path();
-        if let Some(dir) = p.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Ok(bytes) = serde_json::to_vec_pretty(self) {
-            let _ = std::fs::write(p, bytes);
-        }
+        let bytes = serde_json::to_vec_pretty(self).map_err(|error| error.to_string())?;
+        crate::persistence::atomic_write(&p, &bytes, 0o600).map_err(|error| error.to_string())
     }
 
     /// Provider and mode for a project: its overrides, else the global defaults.
@@ -214,6 +210,19 @@ fn page(title: &str, description: &str) -> gtk::Box {
     p
 }
 
+fn report_save(notice: &gtk::Label, result: Result<(), String>) {
+    match result {
+        Ok(()) => {
+            notice.set_text("");
+            notice.set_visible(false);
+        }
+        Err(error) => {
+            notice.set_text(&format!("Settings could not be saved: {error}"));
+            notice.set_visible(true);
+        }
+    }
+}
+
 impl SettingsWindow {
     pub fn open(parent: &gtk::ApplicationWindow, settings: Rc<RefCell<Settings>>, ctx: Context) -> Rc<SettingsWindow> {
         let window = gtk::Window::builder()
@@ -225,6 +234,14 @@ impl SettingsWindow {
         let header = gtk::HeaderBar::builder().show_title_buttons(true).build();
         header.add_css_class(granite::STYLE_CLASS_FLAT);
         window.set_titlebar(Some(&header));
+        let save_notice = label("", &["caption", "error"]);
+        save_notice.set_margin_start(18);
+        save_notice.set_margin_end(18);
+        save_notice.set_margin_bottom(8);
+        save_notice.set_wrap(true);
+        save_notice.set_xalign(0.0);
+        save_notice.update_property(&[gtk::accessible::Property::Label("Settings save status")]);
+        save_notice.set_visible(false);
         let stack = gtk::Stack::new();
         stack.set_transition_type(gtk::StackTransitionType::Crossfade);
         let sidebar = gtk::StackSidebar::new();
@@ -236,10 +253,14 @@ impl SettingsWindow {
             .start_child(&sidebar)
             .end_child(&stack)
             .position(190)
+            .vexpand(true)
             .shrink_start_child(false)
             .resize_start_child(false)
             .build();
-        window.set_child(Some(&paned));
+        let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        content.append(&paned);
+        content.append(&save_notice);
+        window.set_child(Some(&content));
         let s = settings.clone();
 
         // ---- Appearance ----------------------------------------------------------------------
@@ -254,10 +275,11 @@ impl SettingsWindow {
             _ => 0,
         });
         let s2 = s.clone();
+        let notice = save_notice.clone();
         choices.connect_selected_notify(move |d| {
             let mut st = s2.borrow_mut();
             st.appearance = ["system", "light", "dark"][d.selected() as usize].into();
-            st.save();
+            report_save(&notice, st.save());
             st.apply_appearance();
         });
         appearance.append(&row("Style", Some("Which stylesheet variant the window uses"), &choices));
@@ -265,10 +287,11 @@ impl SettingsWindow {
         zoom.set_value((s.borrow().text_zoom * 100.0).round());
         zoom.update_property(&[gtk::accessible::Property::Label("Text zoom percent")]);
         let s3 = s.clone();
+        let notice = save_notice.clone();
         zoom.connect_value_changed(move |z| {
             let mut st = s3.borrow_mut();
             st.text_zoom = z.value() / 100.0;
-            st.save();
+            report_save(&notice, st.save());
             apply_zoom(st.text_zoom);
         });
         appearance.append(&row("Text zoom", Some("Ctrl+plus, Ctrl+minus and Ctrl+0 change it anywhere"), &zoom));
@@ -290,20 +313,22 @@ impl SettingsWindow {
         );
         let s2 = s.clone();
         let ids: Vec<String> = ctx.providers.iter().map(|(id, _)| id.clone()).collect();
+        let notice = save_notice.clone();
         provider_dd.connect_selected_notify(move |d| {
             let mut st = s2.borrow_mut();
             st.default_provider = if d.selected() == 0 { None } else { ids.get(d.selected() as usize - 1).cloned() };
-            st.save();
+            report_save(&notice, st.save());
         });
         defaults.append(&row("Default provider", None, &provider_dd));
         let mode_names: Vec<&str> = MODES.iter().map(|(_, l)| *l).collect();
         let mode_dd = gtk::DropDown::from_strings(&mode_names);
         mode_dd.set_selected(MODES.iter().position(|(k, _)| *k == s.borrow().default_runtime_mode).unwrap_or(0) as u32);
         let s2 = s.clone();
+        let notice = save_notice.clone();
         mode_dd.connect_selected_notify(move |d| {
             let mut st = s2.borrow_mut();
             st.default_runtime_mode = MODES[d.selected() as usize].0.into();
-            st.save();
+            report_save(&notice, st.save());
         });
         defaults.append(&row(
             "Default permission mode",
@@ -322,12 +347,13 @@ impl SettingsWindow {
                 );
                 let s2 = s.clone();
                 let pid2 = pid.clone();
+                let notice = save_notice.clone();
                 pm.connect_selected_notify(move |d| {
                     let mut st = s2.borrow_mut();
                     let entry = st.projects.entry(pid2.clone()).or_default();
                     entry.runtime_mode =
                         if d.selected() == 0 { None } else { Some(MODES[d.selected() as usize - 1].0.into()) };
-                    st.save();
+                    report_save(&notice, st.save());
                 });
                 defaults.append(&row(title, Some("Permission mode for new threads in this project"), &pm));
             }
@@ -357,7 +383,7 @@ impl SettingsWindow {
         // ---- Server --------------------------------------------------------------------------
         let server = page(
             "Server",
-            "The T3 Code server this window talks to. Pairing stores a session credential in the keyring.",
+            "The T3 Code server this window talks to. Pairing stores a private session credential in the keyring when available, otherwise in the app config directory.",
         );
         let state = match (&ctx.server, &ctx.server_label) {
             (Some(url), Some(l)) => format!("Paired with {l} at {url}"),
@@ -424,10 +450,11 @@ impl SettingsWindow {
         ] {
             let sw = gtk::Switch::builder().active(get(&s.borrow())).build();
             let s2 = s.clone();
+            let notice = save_notice.clone();
             sw.connect_state_set(move |_, v| {
                 let mut st = s2.borrow_mut();
                 set(&mut st, v);
-                st.save();
+                report_save(&notice, st.save());
                 glib::Propagation::Proceed
             });
             notes.append(&row(title, Some(sub), &sw));
@@ -443,10 +470,11 @@ impl SettingsWindow {
         let rd = gtk::DropDown::from_strings(&renderers);
         rd.set_selected(renderers.iter().position(|r| *r == s.borrow().renderer).unwrap_or(0) as u32);
         let s2 = s.clone();
+        let notice = save_notice.clone();
         rd.connect_selected_notify(move |d| {
             let mut st = s2.borrow_mut();
             st.renderer = renderers[d.selected() as usize].into();
-            st.save();
+            report_save(&notice, st.save());
         });
         advanced.append(&row(
             "Renderer",
@@ -475,10 +503,11 @@ impl SettingsWindow {
             .build();
         model.update_property(&[gtk::accessible::Property::Label("Whisper model path")]);
         let s4 = s.clone();
+        let notice = save_notice.clone();
         model.connect_changed(move |e| {
             let mut st = s4.borrow_mut();
             st.voice_model = e.text().trim().to_string();
-            st.save();
+            report_save(&notice, st.save());
         });
         let avail = crate::voice::Availability::probe(Some(&s.borrow().voice_model));
         let voice_note = if avail.ready() {
@@ -493,10 +522,11 @@ impl SettingsWindow {
         let lang = gtk::Entry::builder().text(&s.borrow().voice_language).width_chars(6).build();
         lang.update_property(&[gtk::accessible::Property::Label("Voice input language")]);
         let s5 = s.clone();
+        let notice = save_notice.clone();
         lang.connect_changed(move |e| {
             let mut st = s5.borrow_mut();
             st.voice_language = e.text().trim().to_string();
-            st.save();
+            report_save(&notice, st.save());
         });
         advanced.append(&row("Voice input language", Some("whisper language code; auto detects"), &lang));
         stack.add_titled(&advanced, Some("advanced"), "Advanced");

@@ -1,3 +1,13 @@
+## T3-R current client relaunched — 2026-10-23
+
+The previously recorded app process had exited and its feed was stale. The existing user-local executable was reopened with `gapplication action io.github.techmore.ClaudePantheonRs open-full`; process 1913415 now maps `/home/sdolbec/.local/bin/claude-pantheon-rs` (SHA-256 `760fef507f74b00c12a07e9e29cc8f54c16544e81283ef4aaed1a9aeb7492d92`). The fresh feed reports connected to `eos`, Codex selected, and zero running or pending items. No build, package install, test, probe, Dock restart, or Wingpanel restart was performed. The system package remains mseries5; Wingpanel still maps its prior deleted module inode and will load the on-disk module on the next login.
+
+## T3-R durable local state — 2026-10-22
+
+Added a shared private atomic-replacement helper for settings, environments, sidebar preferences, window state, issue workflow data, and composer drafts. It writes a unique same-directory temporary file, syncs it, applies owner-only permissions, renames it over the previous record, and syncs the containing directory. Settings save errors appear inline; environment and sidebar save errors appear as toasts; issue/workflow save errors appear in the Repos page; draft-save errors appear in the composer. Credential fallback storage returns an error instead of claiming success. A pairing that cannot persist its credential may connect for the current process, but the UI explains that reconnecting after quit will require pairing again. **Source-inspected only; no build, test, app launch, or package work was run.**
+
+The open PID 1913415 still runs the existing user-local binary with SHA-256 `760fef507f74b00c12a07e9e29cc8f54c16544e81283ef4aaed1a9aeb7492d92`; the installed package remains `0.1.0-1~mseries5`. Neither contains the source-only persistence changes above. The previously staged mseries6 package predates them as well.
+
 ## SDK app-building workflow published on dev — 2026-10-22
 
 Owner requested that future agents read the workflow correction from dev rather

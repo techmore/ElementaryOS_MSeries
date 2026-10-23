@@ -810,10 +810,13 @@ impl App {
         self.search.connect_search_changed(move |_| a.rebuild_list());
         let a = self.clone();
         self.attention_button.connect_toggled(move |button| {
-            {
+            let save_error = {
                 let mut cfg = a.sidebar_cfg.borrow_mut();
                 cfg.attention_only = button.is_active();
-                cfg.save();
+                cfg.save().err()
+            };
+            if let Some(error) = save_error {
+                a.toast(&format!("Attention filter changed for this session but could not be saved: {error}"));
             }
             a.rebuild_list();
         });
@@ -1097,13 +1100,18 @@ impl App {
 
     pub fn zoom_to(self: &Rc<Self>, zoom: f64) {
         let zoom = zoom.clamp(0.8, 2.0);
-        {
+        let save = {
             let mut s = self.settings.borrow_mut();
             s.text_zoom = zoom;
-            s.save();
-        }
+            s.save()
+        };
         settings::apply_zoom(zoom);
-        self.toast(&format!("Text zoom {} %", (zoom * 100.0).round() as i32));
+        match save {
+            Ok(()) => self.toast(&format!("Text zoom {} %", (zoom * 100.0).round() as i32)),
+            Err(error) => self.toast(&format!(
+                "Text zoom applied for this session but could not be saved: {error}"
+            )),
+        }
     }
 
     pub fn text_zoom(&self) -> f64 {
@@ -1809,14 +1817,16 @@ impl App {
     /// Saves (and with `switch` makes current) an environment from the dialog or a test.
     pub fn save_environment(self: &Rc<Self>, env: environments::Environment, switch: bool) {
         let id = env.id.clone();
-        let route_changed = {
+        let (route_changed, save_error) = {
             let mut envs = self.environments.borrow_mut();
             let before = envs.list.iter().find(|e| e.id == id).map(|e| e.route.clone());
             let changed = before.as_ref() != Some(&env.route);
             envs.upsert(env);
-            envs.save();
-            changed
+            (changed, envs.save().err())
         };
+        if let Some(error) = save_error {
+            self.toast(&format!("Environment is active but could not be saved: {error}"));
+        }
         if route_changed {
             thread_cache::clear_environment(&id);
         }
@@ -1831,13 +1841,15 @@ impl App {
     }
 
     pub fn remove_environment(self: &Rc<Self>, id: &str) {
-        let was_current = {
+        let (was_current, save_error) = {
             let mut envs = self.environments.borrow_mut();
             let was = envs.current.as_deref() == Some(id);
             envs.remove(id);
-            envs.save();
-            was
+            (was, envs.save().err())
         };
+        if let Some(error) = save_error {
+            self.toast(&format!("Environment was removed for this session but could not be saved: {error}"));
+        }
         thread_cache::clear_environment(id);
         self.env_states.borrow_mut().remove(id);
         self.refresh_environments();
@@ -1850,13 +1862,16 @@ impl App {
     /// Makes another saved environment current: the connection and tunnel of the old one are
     /// dropped, the new one's credential is loaded (or its pairing page shown).
     pub fn switch_environment(self: &Rc<Self>, id: &str) {
-        {
+        let save_error = {
             let mut envs = self.environments.borrow_mut();
             if envs.current.as_deref() == Some(id) || !envs.list.iter().any(|e| e.id == id) {
                 return;
             }
             envs.current = Some(id.to_string());
-            envs.save();
+            envs.save().err()
+        };
+        if let Some(error) = save_error {
+            self.toast(&format!("Environment switch is active but could not be saved: {error}"));
         }
         crate::status::clear();
         self.reconnect_current();
@@ -1927,11 +1942,14 @@ impl App {
             } else {
                 environments::Route::Direct { url: server.clone() }
             };
-            {
+            let save_error = {
                 let mut envs = self.environments.borrow_mut();
                 envs.upsert(environments::Environment { id: id.clone(), name, route: kind });
                 envs.current = Some(id);
-                envs.save();
+                envs.save().err()
+            };
+            if let Some(error) = save_error {
+                self.toast(&format!("Server environment could not be saved: {error}"));
             }
             self.refresh_environments();
         }
@@ -1946,7 +1964,16 @@ impl App {
                         app.pair_button.set_sensitive(true);
                         return;
                     }
-                    app.pair_status.set_text(&format!("Paired with {}. Credential stored in the {at}.", cred.label));
+                    match &at {
+                        Ok(location) => app.pair_status.set_text(&format!(
+                            "Paired with {}. Credential stored in the {location}.",
+                            cred.label
+                        )),
+                        Err(error) => app.pair_status.set_text(&format!(
+                            "Paired with {}, but the credential was not saved. You may need to pair again after restarting the app: {error}",
+                            cred.label
+                        )),
+                    }
                     app.pair_entry.set_text("");
                     app.connecting.set(true);
                     if app.connect_with(cred, connection_generation).await == ConnectOutcome::RetryableFailure {
@@ -2525,18 +2552,21 @@ impl App {
     }
 
     fn toggle_section(self: &Rc<Self>, key: &str) {
-        {
+        let save_error = {
             let mut cfg = self.sidebar_cfg.borrow_mut();
             if !cfg.collapsed.remove(key) {
                 cfg.collapsed.insert(key.to_string());
             }
-            cfg.save();
+            cfg.save().err()
+        };
+        if let Some(error) = save_error {
+            self.toast(&format!("Section state changed for this session but could not be saved: {error}"));
         }
         self.rebuild_list();
     }
 
     fn reorder_project(self: &Rc<Self>, moved: &str, before: &str) {
-        {
+        let save_error = {
             let current: Vec<String> = self
                 .conn
                 .borrow()
@@ -2546,7 +2576,10 @@ impl App {
             let mut cfg = self.sidebar_cfg.borrow_mut();
             let ordered = cfg.order_projects(current);
             cfg.move_project(ordered, moved, Some(before));
-            cfg.save();
+            cfg.save().err()
+        };
+        if let Some(error) = save_error {
+            self.toast(&format!("Repository order changed for this session but could not be saved: {error}"));
         }
         self.rebuild_list();
     }

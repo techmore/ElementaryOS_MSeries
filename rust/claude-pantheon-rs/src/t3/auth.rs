@@ -199,9 +199,10 @@ pub async fn load_for(server: &str) -> Option<Credential> {
     serde_json::from_slice(&bytes).ok()
 }
 
-/// Stores the credential under its server, preferring the keyring. Returns where it went.
-pub async fn store(cred: &Credential) -> &'static str {
-    let json = serde_json::to_string(cred).unwrap_or_default();
+/// Stores the credential under its server, preferring the keyring. Returns where it went, or a
+/// clear error so callers never tell the user that a credential was saved when it was not.
+pub async fn store(cred: &Credential) -> Result<&'static str, String> {
+    let json = serde_json::to_string(cred).map_err(|error| format!("could not encode the T3 credential: {error}"))?;
     let attrs = secret_attrs(&cred.server);
     let label = format!("--label=T3-R Pantheon (T3 session, {})", cred.server);
     let mut argv: Vec<&str> = vec!["secret-tool", "store", &label];
@@ -209,16 +210,11 @@ pub async fn store(cred: &Credential) -> &'static str {
     let file = credentials_file_for(&cred.server);
     if let Some((0, _)) = run(&argv, Some(&json)).await {
         let _ = std::fs::remove_file(file);
-        return "keyring";
+        return Ok("keyring");
     }
-    let dir = config_dir();
-    let _ = std::fs::create_dir_all(&dir);
-    use std::os::unix::fs::PermissionsExt;
-    let _ = std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700));
-    if std::fs::write(&file, json).is_ok() {
-        let _ = std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600));
-    }
-    "config file"
+    crate::persistence::atomic_write(&file, json.as_bytes(), 0o600)
+        .map(|()| "config file")
+        .map_err(|error| format!("could not save the T3 credential to the config file: {error}"))
 }
 
 pub async fn forget() {

@@ -37,14 +37,10 @@ impl SidebarConfig {
         std::fs::read(config_path()).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
     }
 
-    pub fn save(&self) {
+    pub fn save(&self) -> Result<(), String> {
         let p = config_path();
-        if let Some(dir) = p.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Ok(bytes) = serde_json::to_vec_pretty(self) {
-            let _ = std::fs::write(p, bytes);
-        }
+        let bytes = serde_json::to_vec_pretty(self).map_err(|error| error.to_string())?;
+        crate::persistence::atomic_write(&p, &bytes, 0o600).map_err(|error| error.to_string())
     }
 
     /// Sorts project ids by the saved order; unknown ones keep their incoming order after the known ones.

@@ -62,14 +62,10 @@ impl Environments {
         e
     }
 
-    pub fn save(&self) {
+    pub fn save(&self) -> Result<(), String> {
         let p = path();
-        if let Some(dir) = p.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Ok(bytes) = serde_json::to_vec_pretty(self) {
-            let _ = std::fs::write(p, bytes);
-        }
+        let bytes = serde_json::to_vec_pretty(self).map_err(|error| error.to_string())?;
+        crate::persistence::atomic_write(&p, &bytes, 0o600).map_err(|error| error.to_string())
     }
 
     pub fn current(&self) -> Option<&Environment> {

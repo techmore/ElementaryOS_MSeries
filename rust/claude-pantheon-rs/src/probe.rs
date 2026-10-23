@@ -78,7 +78,13 @@ pub fn dump(dir: Option<String>, pairing: Option<String>) -> glib::ExitCode {
                 let (server, token) = auth::parse_pairing(&p, DEFAULT_SERVER);
                 match auth::pair(&server, &token).await {
                     Ok(c) => {
-                        let at = auth::store(&c).await;
+                        let at = match auth::store(&c).await {
+                            Ok(at) => at,
+                            Err(error) => {
+                                eprintln!("paired with {} but could not save the credential: {error}", c.server);
+                                return glib::ExitCode::FAILURE;
+                            }
+                        };
                         eprintln!("paired with {} ({}), credential stored in the {at}", c.server, c.label);
                         c
                     }
