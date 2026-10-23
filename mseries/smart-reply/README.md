@@ -5,8 +5,26 @@ local model drafts a reply from the visible conversation. A notification shows t
 field, **Esc** (or any other key, or switching focus, or 60 seconds) discards it. It never sends anything.
 
 Feedback is in the message box itself, as underlined composing text: `Drafting… 3s` with a running timer while the model works, then the
-draft followed by `— Tab inserts, Esc discards`. Tab inserts only the draft. This is used for GTK and Qt apps; for Chromium and
-Electron apps (which confirm composing text when focus moves) the draft appears in a notification instead. Design and
+draft followed by the keys: `Tab insert · Alt+R reword · Alt+P polite · Alt+C concise · Alt+= more context · Esc discard`. Tab (or
+Enter) inserts only the draft. This is used for GTK and Qt apps; for Chromium and Electron apps (which confirm composing text when
+focus moves) the draft appears in a notification instead, with the keys in its title.
+
+**Quick actions** change the draft that is being held, without leaving the message box. They are Alt chords, so they never collide with
+typing (the engine only sees keys while a draft is held, and any plain key still abandons the draft):
+
+| Keys | What it asks the model |
+| --- | --- |
+| Alt+R | Reword: the same thing in different words |
+| Alt+P | More polite: warmer, not stiffer or longer |
+| Alt+C | More concise: shorter and more direct |
+| Alt+= (or Alt++) | More context: the field shows `Extra context (Enter redrafts · Esc back):` and you type a few words (up to 300 characters; Backspace edits, Esc goes back to the draft); Enter redrafts with them |
+
+Each action shows `Drafting… Ns` again and replaces the draft; if the model fails the old draft comes back with a notification saying
+why. The instruction sent is one fixed sentence per action (`mseries_ai::Instruction`), never conversation text; your extra context
+is added as your own words. The note you type is a line the input service draws as composing text, so nothing is typed into the app
+and nothing needs reading back or cleaning up (no paste or caret movement in it). The input service keeps the conversation lines the
+draft answered only while the draft is held (the trigger hands them over with `SetContext`) and forgets them with it. A draft
+handed over without a conversation (`Offer`) does not advertise the actions. Design and
 limits: [SMART-REPLY-DESIGN.md](../SMART-REPLY-DESIGN.md).
 
 The implementation is the Rust crate [`rust/mseries-reply`](../../rust/mseries-reply); this folder holds the systemd unit
@@ -34,9 +52,13 @@ rules file allows by name. Terminals and password managers are always blocked, a
 group/other-writable file blocks everything. The model gets no tools and is told the conversation is data, not
 instructions. The `style` and `endpoint` keys of the old file are ignored: style and endpoint now come from `mseries-ai`.
 
-**Verified:** unit tests (rules, legacy file, bounded walker, gate order with read counts, Tab/Esc state machine, IBus wire
-shapes); the reader on live Brave (Teams) and Signal windows; the input service on the real ibus-daemon with a test input
+**Verified:** unit tests (rules, legacy file, bounded walker, gate order with read counts, Tab/Esc state machine, Alt-chord and
+note-entry key classification, the fixed instruction list, a fixture run of every action, IBus wire shapes);
+`quick-actions-smoke.py` (a private session with its own ibus-daemon, AT-SPI bus and input service, one real GTK 4 entry with
+`GTK_IM_MODULE=ibus`, real X key presses: Alt+R/P/C redraft with the local model and Tab inserts the result, Alt+= takes a note and
+redrafts with it, Esc in the note keeps the draft, a plain `r` abandons it and is typed, no conversation means no actions); the reader on live Brave (Teams) and Signal windows; the input service on the real ibus-daemon with a test input
 context and a GTK entry (Tab commits once, Esc and any other key commit nothing, the previous engine is restored, a
-sensitive field is refused). **Not verified:** a real Command+Option+R press and Tab in the owner's chat apps; Esc and
+sensitive field is refused). **Not verified:** the quick actions in the owner's own Wayland session and Signal client (only the
+private X11 session above); in Chromium/Electron (notification path); a real Command+Option+R press and Tab in the owner's chat apps; Esc and
 focus-loss behaviour in Chromium; apps that expose no accessibility tree get no context. No settings panel yet (edit the
 JSON).
