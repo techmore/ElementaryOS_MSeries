@@ -96,6 +96,35 @@ a recommendation, not a record:
   installed on demand from the store layer.
 - Decision for later, when the store is designed: one suite or several (`stable`, `dev`, `apps`), and whether Flatpak stays the third-party route.
 
+### Defaults, login and deploying our apps (owner asks, 2026-10-23)
+
+**Default apps.** Ghostty is the default terminal and Herdr the default agent workspace, replacing `pantheon-terminal`.
+Neither is in the Arch Linux ARM repos (`ghostty` and `herdr` are absent from `core`, `extra` and `alarm`), so each needs a PKGBUILD of ours
+(or an AUR one we adopt), added to Phase B. Ghostty has a GTK4 front end on Linux, so it meets the native-port rule. Herdr is a Rust terminal
+multiplexer that tracks coding-agent state (blocked, working, done, idle) and runs inside Ghostty. **Licence check needed before bundling:**
+sources disagree on whether Herdr is AGPL-3.0 or Apache-2.0 and on which GitHub repo is canonical
+([overview](https://betterstack.com/community/guides/ai/herdr-ai-agent/)); read the repo's `LICENSE` first.
+
+**Login.** A clean, fast login is a greeter we own:
+
+- `greetd` (Arch `extra` 0.10.3) as the login daemon: tiny, PAM-based, no session logic of its own.
+- A Rust greeter written on the SDK, shown by our compositor in a greeter mode (no second compositor). One screen: user, password,
+  Touch ID, power; nothing else. Same visual language as the unlock screen and lock screen so the three feel like one thing.
+- Touch ID and the existing unlock/lock work plug in through PAM; they stay hardware-gated by the owner.
+- `lightdm-pantheon-greeter` (Arch `extra`) is the stopgap that boots on day one. It is replaced when the Rust greeter exists
+  (shell replacement order, step 6, moves earlier because login is the first thing seen).
+
+**Deploying our apps.** One path, the same for every app we write, and the answer to "we will be updating":
+
+1. `msdk pack` produces a PKGBUILD-built package with `.desktop`, icon, AppStream metadata and a version.
+2. CI builds it in a clean aarch64 chroot and publishes to the signed `dev` suite of our pacman repo on merge; `stable` on release.
+3. `mseries-update` (the Updates app's backend, switched from apt to pacman) pulls only our repo, takes a btrfs snapshot first, and never
+   restarts the shell or compositor mid-session; apps pick up the new version at next launch.
+4. Rollback is the snapshot. Dev machines can also run `msdk deploy` to push a build straight to the local machine for the fast loop.
+
+Blocker already on record: **the repo signing key does not exist yet** ([RELEASE-PIPELINE.md](RELEASE-PIPELINE.md)); until the owner creates it
+nothing can publish, apt or pacman. Until the Arch cutover, the same four steps run on the existing deb pipeline.
+
 ## 3. Development direction this implies
 
 1. **Do not start over.** The Rust compositor is already the session; the SDK core (`msdk`) exists; the Arch Pantheon group is a working
