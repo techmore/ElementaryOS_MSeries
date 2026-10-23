@@ -1,3 +1,16 @@
+## Signal theme cache upgrade and rollback — 2026-10-22
+
+Signal accent synchronization previously skipped work whenever the color matched,
+including after helper changes. The stamp now includes helper SHA256 and both
+archive identities, so old color-only stamps, helper updates and archive changes
+invalidate the cache. Nine tests pass, including real synthetic CLI migration,
+unchanged no-op, exact original restore and read-only --check behavior. The suite
+is now included in validate-mseries.yml. Reinstalled the helper; --sync confirms
+the unchanged installed archive is skipped. Source/installed helper SHA256:
+319f9b63f800d1f8b89b1e52ca28ee6951de48ad7da61147ec313a576c64d784.
+Signal remains running with its prior loaded resources; live reopen/visual and
+attachment acceptance remain open. No account or conversation data was accessed.
+
 ## Signal elementary palette deployment verified — 2026-10-22
 
 The installed accent helper was older than the reviewed PR #525 version. Ran

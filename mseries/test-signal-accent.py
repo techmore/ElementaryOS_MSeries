@@ -76,6 +76,67 @@ def asar_fixture(path):
 
 
 class PaletteTests(unittest.TestCase):
+    def test_cli_upgrades_legacy_stamp_skips_unchanged_and_restores(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            resources = Path(tmp) / 'resources'
+            resources.mkdir()
+            archive = resources / 'app.asar'
+            asar_fixture(archive)
+            original = archive.read_bytes()
+            stamp = resources / '.mseries-accent'
+            stamp.write_text('#3689e6\n')
+            command = [sys.executable, str(Path(accent.__file__)), '--appdir', tmp]
+            run = lambda *args: subprocess.run(command + list(args), check=True,
+                capture_output=True, text=True)
+            run('--sync', '--accent', '#3689e6')
+            self.assertNotEqual(archive.read_bytes(), original)
+            self.assertIn('helper', json.loads(stamp.read_text()))
+            before = archive.stat().st_mtime_ns
+            self.assertIn('already uses', run('--sync', '--accent', '#3689e6').stderr)
+            self.assertEqual(archive.stat().st_mtime_ns, before)
+            run('--restore')
+            self.assertEqual(archive.read_bytes(), original)
+            self.assertFalse(stamp.exists())
+            self.assertFalse((resources / 'app.asar.orig').exists())
+
+    def test_check_does_not_create_backup_or_stamp(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            resources = Path(tmp) / 'resources'
+            resources.mkdir()
+            archive = resources / 'app.asar'
+            asar_fixture(archive)
+            original = archive.read_bytes()
+            subprocess.run([sys.executable, str(Path(accent.__file__)), '--appdir', tmp,
+                '--check', '--accent', '#3689e6'], check=True, capture_output=True)
+            self.assertEqual(archive.read_bytes(), original)
+            self.assertEqual(sorted(p.name for p in resources.iterdir()), ['app.asar'])
+
+    def test_sync_cache_tracks_archives_and_helper_revision(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original = Path(tmp) / 'original.asar'
+            target = Path(tmp) / 'app.asar'
+            original.write_bytes(b'original')
+            target.write_bytes(b'patched')
+            first = accent.sync_stamp('#3689e6', target, original)
+            self.assertEqual(first, accent.sync_stamp('#3689e6', target, original))
+            self.assertNotEqual(first, accent.sync_stamp('#68b723', target, original))
+            self.assertNotEqual(first, '#3689e6')  # upgrade old accent-only stamps
+            target.write_bytes(b'updated application')
+            self.assertNotEqual(first, accent.sync_stamp('#3689e6', target, original))
+            second = accent.sync_stamp('#3689e6', target, original)
+            original.write_bytes(b'new upstream original')
+            self.assertNotEqual(second, accent.sync_stamp('#3689e6', target, original))
+            helper = Path(tmp) / 'helper.py'
+            helper.write_bytes(b'new implementation')
+            from unittest.mock import patch
+            with patch.object(accent, '__file__', str(helper)):
+                changed = accent.sync_stamp('#3689e6', target, original)
+            self.assertNotEqual(changed, accent.sync_stamp('#3689e6', target, original))
+
     def test_default_blue_uses_the_published_elementary_palette(self):
         palette = accent.palette_for(accent.ACCENTS['blue'])
         mapping = accent.build_map(accent.ACCENTS['blue'])

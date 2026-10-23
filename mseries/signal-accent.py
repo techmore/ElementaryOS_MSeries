@@ -350,6 +350,18 @@ def patch(original, target, accent, write=True):
     return build_map(accent), changed
 
 
+def sync_stamp(accent, asar, original):
+    """Invalidate cached theme work when the helper or either archive changes."""
+    def identity(path):
+        stat = os.stat(path)
+        return [stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns]
+    with open(__file__, "rb") as helper:
+        helper_digest = hashlib.sha256(helper.read()).hexdigest()
+    return json.dumps({"accent": accent, "helper": helper_digest,
+                       "asar": identity(asar), "original": identity(original)},
+                      sort_keys=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--appdir", default=os.environ.get("MSERIES_SIGNAL_APPDIR", DEFAULT_APPDIR))
@@ -381,7 +393,7 @@ def main():
     if args.sync:
         try:
             with open(stamp_path, encoding="ascii") as stamp:
-                if stamp.read().strip() == accent:
+                if stamp.read().strip() == sync_stamp(accent, asar, original):
                     log(f"Signal already uses the system accent {accent}")
                     return
         except OSError:
@@ -393,7 +405,7 @@ def main():
         f"to accent {accent}")
     if not args.check:
         with open(stamp_path, "w", encoding="ascii") as stamp:
-            stamp.write(accent + "\n")
+            stamp.write(sync_stamp(accent, asar, original) + "\n")
 
 
 if __name__ == "__main__":

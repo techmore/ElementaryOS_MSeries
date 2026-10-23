@@ -122,6 +122,9 @@ jobs:
       - name: Preserve screenshot originals across drag outcomes
         run: bash mseries/screenshot-shelf/test-retention.sh
 
+      - name: Verify Signal palette, cache migration and restore
+        run: python3 -B mseries/test-signal-accent.py
+
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
       - name: Build and test Orchard (machines, Incus, Podman) with the Wingpanel indicator
