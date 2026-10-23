@@ -953,6 +953,14 @@ fn check_actions(v: &Value, path: &str, payload: Payload, cx: &mut Cx) {
                     continue;
                 };
                 let fields = cx.types.get(&rec).cloned().unwrap_or_default();
+                if matches!(verb.as_str(), "patch" | "remove") && fields.get("id").map(String::as_str) != Some("text") {
+                    cx.err(
+                        &format!("{ap}/{verb}"),
+                        "needs-id-field",
+                        format!("record `{rec}` needs an `id: text` field for `{verb}`"),
+                        Some(format!("add \"id\": \"text\" to types/{rec}")),
+                    );
+                }
                 if verb.as_str() == "append" {
                     match obj.get("record").and_then(Value::as_object) {
                         Some(r) => {

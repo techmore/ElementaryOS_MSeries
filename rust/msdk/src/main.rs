@@ -2,7 +2,7 @@
 
 use std::process::ExitCode;
 
-use msdk::{Severity, check, schema, tokens, vocabulary};
+use msdk::{Severity, agent, check, gate, schema, tokens, vocabulary};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -15,9 +15,46 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Some("check") if args.len() > 1 => run_check(&args[1..]),
+        Some("describe") => match args.get(1) {
+            None => print_json(&agent::catalogue()),
+            Some(n) => match agent::describe(n) {
+                Some(v) => print_json(&v),
+                None => {
+                    eprintln!("nothing called `{n}`; run `msdk describe` for the catalogue");
+                    ExitCode::FAILURE
+                }
+            },
+        },
+        Some("explain") if args.len() > 1 => match agent::explain(&args[1]) {
+            Some(t) => {
+                println!("{t}");
+                ExitCode::SUCCESS
+            }
+            None => {
+                eprintln!("unknown code `{}`", args[1]);
+                ExitCode::FAILURE
+            }
+        },
+        Some("complete") if args.len() > 2 => {
+            let doc = match std::fs::read_to_string(&args[1])
+                .map_err(|e| e.to_string())
+                .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).map_err(|e| e.to_string()))
+            {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("{}: {e}", args[1]);
+                    return ExitCode::FAILURE;
+                }
+            };
+            for c in agent::complete(&doc, &args[2]) {
+                println!("{}\t{}", c.label, c.detail);
+            }
+            ExitCode::SUCCESS
+        }
+        Some("gate") if args.len() > 1 => run_gate(&args[1..]),
         _ => {
             eprintln!(
-                "usage: msdk check [--json] <file.ui.json>...\n       msdk schema | components | tokens [--json]"
+                "usage: msdk check [--json] <file.ui.json>...\n       msdk describe [Name] | explain <code> | complete <file> <json-pointer>\n       msdk gate <file.ui.json> [gates.json]\n       msdk schema | components | tokens [--json]"
             );
             ExitCode::from(2)
         }
@@ -70,4 +107,33 @@ fn run_check(args: &[String]) -> ExitCode {
         println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
     }
     if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+}
+
+fn run_gate(args: &[String]) -> ExitCode {
+    let read = |p: &str| {
+        std::fs::read_to_string(p)
+            .map_err(|e| e.to_string())
+            .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).map_err(|e| e.to_string()))
+    };
+    let doc = match read(&args[0]) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("{}: {e}", args[0]);
+            return ExitCode::FAILURE;
+        }
+    };
+    let gates = match args.get(1).map(|p| read(p)) {
+        Some(Ok(g)) => Some(g),
+        Some(Err(e)) => {
+            eprintln!("{}: {e}", args[1]);
+            return ExitCode::FAILURE;
+        }
+        None => None,
+    };
+    let results = gate::run(&doc, gates.as_ref());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&results.iter().map(|r| r.to_json()).collect::<Vec<_>>()).unwrap_or_default()
+    );
+    if results.iter().all(|r| r.passed) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }

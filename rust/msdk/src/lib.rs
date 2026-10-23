@@ -6,7 +6,10 @@
 //! [`check`] reports every problem as one line with a JSON path, a stable code and a suggested fix, so a small model can
 //! repair its own output.
 
+pub mod agent;
 mod check;
+pub mod gate;
+pub mod logic;
 pub mod schema;
 pub mod tokens;
 pub mod vocab;
