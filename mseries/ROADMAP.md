@@ -1,3 +1,27 @@
+## Combined Signal/Messages branch and shared pin-state compatibility — 2026-10-22
+
+Merged Signal branch 59cacc64 into the Rust Messages candidate, bringing its
+larger-text/cool-surface transform, cache invalidation, launcher and mature shelf
+retention fixes into the same ancestry. Resolved Python pin code with stable UUID
+identity, generation guards and the shared Secret Service schema preserved.
+
+The merge exposed Python pin-state v2 versus Rust v1 incompatibility. SDK now
+accepts v1/v2 and preserves bounded local_pins/hidden_imports, applies hidden-import
+and local-favorite order, validates duplicates/unknown overrides, and round-trips
+v2. Rust reimport retains local favorites and only relevant hidden overrides.
+Rust favorite editing still uses the backend starred API; local-pin editing/strip
+parity remains a follow-up, distinct from storage compatibility. No owner backend
+or qualified Python runtime was upgraded/restarted.
+
+Combined checks: 12 Python pin tests; private keyring round-trip; 76 Python GUI
+tests (one skipped); 10 Signal transform/cache tests; 13 shelf retention tests;
+Rust library and private GTK/badge tests; strict all-target Clippy and optimized
+ARM64 package all pass. Logs: /tmp/messages-merged-{pins,keyring,python-gui,
+signal,shelf,rust,sdk-final,rust-gui,clippy-direct,package}.log. User Rust preview
+updated without restart. Merged shelf source SHA matches installed helper
+(e87fd98e4a2247939444311d8d4146045b7c458e96253d02e35aed4db3d22c47).
+Physical capture and live phone/client acceptance remain open.
+
 ## Read state on window activation — 2026-10-22
 
 Messages now rechecks the selected unread conversation when its window becomes
@@ -188,6 +212,18 @@ GTK accessibility metadata, not screen-reader narration or complete keyboard ord
 No production binary changed in this batch. The compositor remains the old
 installed version and requires privileged installation/next login. Messages CI
 run 39876315164 was confirmed pending with no assigned jobs at inspection.
+## Signal theme cache upgrade and rollback — 2026-10-22
+
+Signal accent synchronization previously skipped work whenever the color matched,
+including after helper changes. The stamp now includes helper SHA256 and both
+archive identities, so old color-only stamps, helper updates and archive changes
+invalidate the cache. Nine tests pass, including real synthetic CLI migration,
+unchanged no-op, exact original restore and read-only --check behavior. The suite
+is now included in validate-mseries.yml. Reinstalled the helper; --sync confirms
+the unchanged installed archive is skipped. Source/installed helper SHA256:
+319f9b63f800d1f8b89b1e52ca28ee6951de48ad7da61147ec313a576c64d784.
+Signal remains running with its prior loaded resources; live reopen/visual and
+attachment acceptance remain open. No account or conversation data was accessed.
 
 ## Signal elementary palette deployment verified — 2026-10-22
 
@@ -618,6 +654,47 @@ alternatives retain the same minimum version. Shell syntax and dependency
 version comparisons pass; this metadata correction does not qualify a live
 phone or desktop. Next: finish current build/package CI and the outstanding
 visual, keyboard/accessibility and owner-phone acceptance.
+## Screenshot shelf capability detection — 2026-10-22
+
+The shelf queries the running compositor's ScreenshotShelfPlacementVersion
+property without D-Bus activation. Pantheon-R support selects native Wayland;
+older sessions retain Gala/XWayland detection and explicit override behavior.
+All 13 private shelf tests pass. Matching compositor source is PR #526; older
+installed binaries lack the property. Live attachment acceptance is still open.
+
+## Screenshot shortcut gap and shelf repair — 2026-10-22
+
+Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
++3 full-screen capture with camera sound and a three-second bottom-right shelf;
++4 crosshair drag selection, plus window hover/Space blue highlight and capture.
+The running session is pantheon-compositor, not Gala; the audited branch has no
+screenshot/screencopy path. Capture remains unimplemented/unqualified here.
+The shelf default now matches three seconds, and its installer stops only exact
+shelf argv matches instead of killing parent shells mentioning the path. All ten
+retention tests and shell syntax pass. The helper alone was deployed, source and
+installed hashes match, and a new process is running. The compositor/panel were
+not restarted; no live screenshot or message was taken/sent. Next: implement
+native compositor capture, selection and keybindings before attachment acceptance.
+
+## Signal system accent refresh and Messages local favorites — 2026-10-22
+
+Signal's installed launcher now checks the active elementary accent each time
+the official ARM64 Electron client opens and refreshes its user-level `app.asar`
+patch when the preference changed. The opt-in atomic installer keeps its signed
+release tree immutable and therefore retains upstream colors. This is only the
+current Signal transition path. The target is Rust GTK4/Granite first-party apps,
+with `claude-pantheon-rs` (T3 Code) as the reference: port Messages over
+BlueFerry's versioned session D-Bus API first; Signal needs a supported secure
+client/backend boundary before a Rust UI can replace Electron. The [Rust app
+plan](SIGNAL-PANTHEON-DESIGN.md) records the staged route. The actual shelf-to-compose drop
+preview, logged-in Signal appearance and owner desktop acceptance still need a
+real-session check; issue #227 remains open.
+
+Native Messages now supports local Add/Remove from Favorites in each conversation
+menu. Local favorites are stored in the desktop keyring per connected phone,
+follow a unique address through direct-chat promotion, and remain separate from
+the imported Apple pin snapshot. The Mac snapshot and iPhone are never changed.
+The local app integration has not been installed or exercised in this change.
 
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 

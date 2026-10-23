@@ -1,11 +1,12 @@
 #!/usr/bin/python3
-"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right, fixed size, for 4 seconds.
+"""Screenshot shelf: show recent screenshots in one thumbnail card for 3 seconds.
 
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
-watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
+watches that folder and shows the newest shot in a draggable thumbnail, like macOS.
 
-  Drag it into an app      offers a copy; the saved screenshot is always kept.
-  Click Copy               puts the image on the clipboard; the saved file is kept.
+  Drag it into an app      offers up to 12 recent screenshots; all originals stay saved.
+  Click Copy               puts the newest image on the clipboard; the saved file is kept.
+  Click Show               reveals the current batch of originals in Files.
   Click it                 opens Markup on the saved file; the file is kept.
   Ignore it or click x     dismisses the thumbnail; the saved file is kept.
 
@@ -115,19 +116,20 @@ STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
 EXPORT_GRACE_SECONDS = 120  # transient drag copy/export lifetime after the card closes; originals never expire
-SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "4"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
+SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "3"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
+MAX_DRAG_FILES = 12       # bound one compose drop and the number of portal exports it can create
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
 MARGIN = 24
 
 CSS = b"""
 window.shelf { background: transparent; box-shadow: none; }
-.shelf-card { background: #1c1c20; color: #ffffff; border-radius: 14px; padding: 10px;
-              border: 1px solid rgba(255,255,255,0.18); }
-.shelf-thumb { border-radius: 8px; background: rgba(255,255,255,0.06); }
-.shelf-hint { color: rgba(255,255,255,0.80); font-size: 0.9em; }
-.shelf-card button.flat { color: #ffffff; min-height: 22px; min-width: 22px; padding: 0 6px; }
-.shelf-card button.markup { background: rgba(255,255,255,0.14); color: #ffffff; border-radius: 8px; padding: 2px 10px; }
+.shelf-card { background: @theme_bg_color; color: @theme_fg_color; border-radius: 14px; padding: 10px;
+              border: 1px solid alpha(@theme_fg_color, 0.18); }
+.shelf-thumb { border-radius: 8px; background: alpha(@theme_fg_color, 0.06); }
+.shelf-hint { color: @theme_fg_color; font-size: 0.9em; }
+.shelf-card button.flat { min-height: 22px; min-width: 22px; padding: 0 6px; }
+.shelf-card button.markup { border-radius: 8px; padding: 2px 10px; }
 """
 
 
@@ -200,8 +202,9 @@ class PortalExport:
             self.shadow = self.path
             log("document portal is not mounted on the host; using a stand-in link for native apps")
 
-    def grant_running(self):
-        for app in running_flatpak_apps() - self.granted:
+    def grant_running(self, apps=None):
+        apps = running_flatpak_apps() if apps is None else apps
+        for app in apps - self.granted:
             try:
                 self.bus.call_sync(*DOCS, "GrantPermissions", GLib.Variant("(ssas)", (self.doc, app, ["read"])),
                                    None, Gio.DBusCallFlags.NONE, 2000, None)
@@ -246,18 +249,19 @@ class Thumb(Gtk.Widget):
 
 
 class Shelf(Gtk.Window):
-    """One thumbnail for one screenshot."""
+    """One transient thumbnail card for a bounded batch of recent screenshots."""
 
     def __init__(self, app, path, staged):
         super().__init__(application=app)
         self.app, self.path, self.staged = app, path, staged
+        self.captures = [{"path": path, "staged": staged, "export": None}]
         self.finished = False
         self.dragging = False
         self.cancelled = False
         self.hover = False
         self.timer = None
-        self.export = None
         self.offered = False
+        self.drag_count = 1
         self.pending_finish = None
         self.add_css_class("shelf")
         self.set_decorated(False)
@@ -276,23 +280,25 @@ class Shelf(Gtk.Window):
         picture = Thumb(texture)
         self.texture = texture
         self.picture = picture
+        self.update_preview_accessibility()
         card.append(picture)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.hint = Gtk.Label(label="Drag a copy · Saved", xalign=0, hexpand=True)
+        self.hint = Gtk.Label(label="Drag screenshot · Saved", xalign=0, hexpand=True)
         self.hint.set_ellipsize(3)   # Pango.EllipsizeMode.END: never widen the card
         self.hint.add_css_class("shelf-hint")
         copy = Gtk.Button(label="Copy")
         copy.add_css_class("markup")
-        copy.set_tooltip_text("Copy the image to the clipboard")
+        copy.set_tooltip_text("Copy the newest screenshot to the clipboard")
         copy.connect("clicked", lambda *_: self.copy_to_clipboard())
         self.copy_button = copy
         show = Gtk.Button(label="Show")
         show.add_css_class("markup")
-        show.set_tooltip_text("Show the saved file in Files, to attach or drag from there")
+        show.set_tooltip_text("Show all recent saved screenshots in Files")
         show.connect("clicked", lambda *_: self.show_in_files())
         markup = Gtk.Button(label="Markup")
         markup.add_css_class("markup")
+        markup.set_tooltip_text("Open the newest screenshot in Markup")
         markup.connect("clicked", lambda *_: self.open_markup())
         close = Gtk.Button(label="✕")
         close.add_css_class("flat")
@@ -378,39 +384,85 @@ class Shelf(Gtk.Window):
     def set_hover(self, value):
         self.hover = value
 
+    def add_capture(self, path, staged):
+        """Add a recent shot to this card; the visible preview always shows the newest one."""
+        self.captures.append({"path": path, "staged": staged, "export": None})
+        self.path, self.staged = path, staged
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(staged, THUMB_WIDTH * 2, THUMB_HEIGHT * 2, True)
+            texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+            self.texture = texture
+            self.picture.texture = texture
+            self.picture.queue_draw()
+        except GLib.Error as error:
+            log(f"could not preview {os.path.basename(path)}: {error.message}")
+        count = len(self.captures)
+        if count == 1:
+            label = "Drag screenshot · Saved"
+        elif count <= MAX_DRAG_FILES:
+            label = f"Drag {count} screenshots · Saved"
+        else:
+            label = f"Latest {MAX_DRAG_FILES} of {count} · Saved"
+        self.hint.set_label(label)
+        self.update_preview_accessibility()
+        self.copy_button.set_label("Copy")
+        self.restart_timer()
+
+    def update_preview_accessibility(self):
+        count = len(self.captures)
+        offered = min(count, MAX_DRAG_FILES)
+        if count == 1:
+            label = "Newest screenshot preview. Drag to attach this screenshot; click to edit it."
+        else:
+            label = f"Newest screenshot preview. Drag to attach the latest {offered} of {count} screenshots; click to edit the newest."
+        self.picture.update_property([Gtk.AccessibleProperty.LABEL], [label])
+        self.picture.set_tooltip_text(label)
+
+    def file_list_for_drag(self):
+        """Return a bounded list of recent staged files for one multi-image compose drop."""
+        captures = self.captures[-MAX_DRAG_FILES:]
+        self.drag_count = len(captures)
+        flatpak_apps = running_flatpak_apps()
+        return Gdk.FileList.new_from_list([
+            Gio.File.new_for_path(self.drop_path(capture, flatpak_apps)) for capture in captures
+        ])
+
     # ------------------------------------------------------------------ drag
 
-    def drop_path(self):
+    def drop_path(self, capture=None, flatpak_apps=None):
         """The path a drop target gets: a portal export only when a Flatpak app is running to read it.
 
         Native apps (Signal Beta is one) read the staged file directly. A portal path that does not exist
-        on the host (the FUSE mount can lag or lose exports) is a dead file URI and the drop is refused,
-        so it is never offered.
+        on the host (the FUSE mount can lag or lose exports) is a dead file URI and the drop is refused;
+        in that case the retained staged copy is offered for the user to retry through Copy or Show.
         """
-        if not running_flatpak_apps():
-            return self.staged
+        capture = capture or self.captures[-1]
+        flatpak_apps = running_flatpak_apps() if flatpak_apps is None else flatpak_apps
+        if not flatpak_apps:
+            return capture["staged"]
         try:
-            if self.export is None:
-                self.export = PortalExport(self.staged)
-            self.export.grant_running()
-            if os.path.exists(self.export.path):
-                return self.export.path
-            log("portal export not visible on the host; offering the staged path")
+            if capture["export"] is None:
+                capture["export"] = PortalExport(capture["staged"])
+            capture["export"].grant_running(flatpak_apps)
+            if os.path.exists(capture["export"].path):
+                return capture["export"].path
+            log("portal export not visible on the host; falling back to the staged path")
         except (GLib.Error, OSError) as error:
-            log(f"document portal unavailable ({error}); offering the staged path")
-        return self.staged
+            log(f"document portal unavailable ({error}); falling back to the staged path")
+        return capture["staged"]
 
     def on_prepare(self, source, _x, _y):
         self.offered = True
-        path = self.drop_path()
-        log(f"offering {path} (granted: {', '.join(sorted(self.export.granted)) if self.export else 'none'})")
-        return Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list([Gio.File.new_for_path(path)]))
+        file_list = self.file_list_for_drag()
+        paths = [file.get_path() for file in file_list.get_files()]
+        log(f"offering {len(paths)} screenshot(s)")
+        return Gdk.ContentProvider.new_for_value(file_list)
 
     def on_drag_begin(self, source, drag):
         self.dragging, self.cancelled = True, False
         if self.texture is not None:
             source.set_icon(self.texture, 0, 0)
-        log(f"drag begin {os.path.basename(self.path)}")
+        log(f"drag begin {self.drag_count} screenshot(s), newest {os.path.basename(self.path)}")
 
     def on_drag_cancel(self, _source, _drag, reason):
         self.cancelled = True
@@ -427,8 +479,13 @@ class Shelf(Gtk.Window):
         self.restart_timer()
         # GTK completion only confirms the protocol exchange. The target may still
         # fail to read the file or attach it, so keep the card available for retry.
-        self.hint.set_label("Not accepted · Saved" if self.cancelled else "Saved · Check attachment")
-        log("drag ended: saved original retained; target attachment unverified")
+        if self.cancelled:
+            self.hint.set_label("Not accepted · Saved")
+        elif self.drag_count > 1:
+            self.hint.set_label(f"Saved · Check {self.drag_count} attachments")
+        else:
+            self.hint.set_label("Saved · Check attachment")
+        log(f"drag ended with {self.drag_count} screenshot(s): originals retained; target attachment unverified")
 
     # ------------------------------------------------------------------ outcomes
 
@@ -443,17 +500,17 @@ class Shelf(Gtk.Window):
         self.clip_texture = texture   # keep the data alive while this process owns the clipboard
         self.copy_button.set_label("Copied")
         GLib.timeout_add_seconds(2, lambda: self.copy_button.set_label("Copy") and False)
-        log(f"copied {os.path.basename(self.path)} to the clipboard")
+        log(f"copied newest screenshot {os.path.basename(self.path)} to the clipboard")
 
     def show_in_files(self):
-        """Fallback when a drop is refused: reveal the saved file so it can be attached by hand."""
-        log(f"show {os.path.basename(self.path)}")
-        uri = Gio.File.new_for_path(self.path).get_uri()
+        """Fallback when a drop is refused: reveal the current batch of saved files."""
+        log(f"show {len(self.captures)} saved screenshot(s), newest {os.path.basename(self.path)}")
+        uris = [Gio.File.new_for_path(capture["path"]).get_uri() for capture in self.captures]
         try:
             Gio.DBusProxy.new_for_bus_sync(
                 Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None, "org.freedesktop.FileManager1",
                 "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1", None
-            ).call_sync("ShowItems", GLib.Variant("(ass)", ([uri], "mseries-shelf")), Gio.DBusCallFlags.NONE, 3000, None)
+            ).call_sync("ShowItems", GLib.Variant("(ass)", (uris, "mseries-shelf")), Gio.DBusCallFlags.NONE, 3000, None)
         except GLib.Error as error:
             log(f"file manager unavailable ({error.message}); opening the folder")
             try:
@@ -462,6 +519,7 @@ class Shelf(Gtk.Window):
                 log(f"could not open the folder: {failure}")
 
     def open_markup(self):
+        """Open the newest screenshot in the existing markup editor."""
         log(f"markup {os.path.basename(self.path)}")
         try:
             subprocess.Popen([MARKUP, self.path], env=clean_env(), start_new_session=True)
@@ -486,19 +544,20 @@ class Shelf(Gtk.Window):
         self.close()
 
     def cleanup(self):
-        # Snapshot fixtures use the input directly; never treat an original as staging.
-        if os.path.realpath(self.staged) == os.path.realpath(self.path):
-            return False
-        if self.export:
-            self.export.remove()
-        try:
-            os.remove(self.staged)
-        except OSError:
-            pass
-        try:
-            os.rmdir(os.path.dirname(self.staged))
-        except OSError:
-            pass
+        for capture in self.captures:
+            # Snapshot fixtures use the input directly; never treat an original as staging.
+            if os.path.realpath(capture["staged"]) == os.path.realpath(capture["path"]):
+                continue
+            if capture["export"]:
+                capture["export"].remove()
+            try:
+                os.remove(capture["staged"])
+            except OSError:
+                pass
+            try:
+                os.rmdir(os.path.dirname(capture["staged"]))
+            except OSError:
+                pass
         return False
 
 
@@ -540,10 +599,14 @@ class ShelfApp(Gtk.Application):
         except OSError as error:
             log(f"could not stage {path}: {error}")
             return False
-        if self.shelf:
-            self.shelf.finish("replaced")
-        log(f"showing {os.path.basename(path)}")
-        self.shelf = Shelf(self, path, staged)
+        if self.shelf and not self.shelf.finished and not self.shelf.dragging and self.shelf.pending_finish is None:
+            log(f"adding {os.path.basename(path)} to recent screenshot batch")
+            self.shelf.add_capture(path, staged)
+        else:
+            if self.shelf:
+                self.shelf.finish("replaced")
+            log(f"showing {os.path.basename(path)}")
+            self.shelf = Shelf(self, path, staged)
         return False
 
 
