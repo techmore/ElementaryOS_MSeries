@@ -1,6 +1,6 @@
 //! Native review and sequential comparison workspaces.
-use crate::{Recipe, recipe::load_outputs};
 use crate::style;
+use crate::{Recipe, recipe::load_outputs};
 use gtk::prelude::*;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
@@ -40,7 +40,11 @@ fn base() -> std::path::PathBuf {
 /// "Illustration · 512×768 · Misty alpine lake at dawn…" so images are recognisable in pickers.
 fn title(recipe: &Recipe) -> String {
     let prompt: String = recipe.prompt.chars().take(44).collect();
-    let ellipsis = if recipe.prompt.chars().count() > 44 { "…" } else { "" };
+    let ellipsis = if recipe.prompt.chars().count() > 44 {
+        "…"
+    } else {
+        ""
+    };
     format!(
         "{} · {}×{} · {}{}",
         recipe.intent, recipe.width, recipe.height, prompt, ellipsis
@@ -134,7 +138,10 @@ fn review_text(value: &serde_json::Value, path: &str) -> String {
 }
 
 pub fn review(on_reuse: Reuse) -> gtk::Widget {
-    let page = page("Review an image", "Compare a generated image with your goal and an optional reference. Qwen vision runs locally after generation unloads. Scores are advisory; each report records its evaluator, rubric, image digest and settings.");
+    let page = page(
+        "Review an image",
+        "Compare a generated image with your goal and an optional reference. Qwen vision runs locally after generation unloads. Scores are advisory; each report records its evaluator, rubric, image digest and settings.",
+    );
     let controls = gtk::Box::new(gtk::Orientation::Vertical, 10);
     controls.set_hexpand(true);
     let left = style::padded_card(12);
@@ -373,7 +380,10 @@ pub fn review(on_reuse: Reuse) -> gtk::Widget {
 }
 
 pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
-    let page = page("Compare runs", "Run a small, sequential sweep using the recipe in Create. Keep the seed fixed and change one variable. Each result retains its exact prompt, model, steps, sampler, timing and optional vision review.");
+    let page = page(
+        "Compare runs",
+        "Run a small, sequential sweep using the recipe in Create. Keep the seed fixed and change one variable. Each result retains its exact prompt, model, steps, sampler, timing and optional vision review.",
+    );
     let setup = style::padded_card(14);
     let setup_body = style::card_content(&setup);
     setup_body.set_spacing(12);
@@ -415,7 +425,7 @@ pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
         let status = status.clone();
         run_button.connect_clicked(move |button| {
         let recipe=snapshot();let plan=serde_json::json!({"kind":match mode.selected(){0=>"lighting",1=>"steps",_=>"models"},"review":review.is_active(),"rubric":goal.text().to_string()});
-        run(include_str!("sweep_runner.py"),vec![base().to_string_lossy().into_owned(),serde_json::to_string(&recipe).unwrap(),plan.to_string(),include_str!("local_generation.py").to_string(),include_str!("review_image.py").to_string()],&status,button);
+        run(include_str!("sweep_runner.py"),vec![base().to_string_lossy().into_owned(),serde_json::to_string(&recipe).unwrap(),plan.to_string(),crate::local_generation_worker(),include_str!("review_image.py").to_string()],&status,button);
     });
     }
     let mut previous = String::new();
@@ -467,10 +477,17 @@ pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
                             heading.set_hexpand(true);
                             head.append(&heading);
                             let state = item["status"].as_str().unwrap_or("Unknown");
-                            let failed = item["error"].is_string() || state.to_lowercase().contains("fail");
+                            let failed =
+                                item["error"].is_string() || state.to_lowercase().contains("fail");
                             head.append(&style::chip(
                                 state,
-                                if failed { "is-error" } else if state.starts_with("Complete") { "is-ok" } else { "is-accent" },
+                                if failed {
+                                    "is-error"
+                                } else if state.starts_with("Complete") {
+                                    "is-ok"
+                                } else {
+                                    "is-accent"
+                                },
                                 None,
                             ));
                             details.append(&head);

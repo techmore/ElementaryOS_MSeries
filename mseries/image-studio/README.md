@@ -17,6 +17,29 @@ The app appears as **Image Studio** in Applications. `--no-build` installs an al
 The executable is installed atomically under `~/.local/libexec/mseries-image-studio/`; updates do not
 replace the inode of a running process. Reopen the application to load a newly installed build.
 
+## UI and backend port
+
+The UI is Claude's native canvas, filmstrip, gallery, model cards and stylesheet
+from `claude/image-studio-native-ui`, including the working-tree source snapshot
+recorded in `UI-PROVENANCE.json`. The original worktree is not edited by this port.
+Backend integration adds settings roundtrip and readiness wiring without replacing
+those screens. No new inference, benchmarks or model downloads were run for this
+integration; validation is source inspection, Python syntax and Rust compile checking.
+
+- Decoder: explicit CPU/Vulkan placement, tiled full VAE, 1–16 CPU threads,
+  64–512 image-pixel tiles, saved disk/CPU/automatic weight placement and GPU budget.
+- Preview: TAESD when installed, strictly preview-only; final PNG uses the full VAE.
+  Preview interval is saved and restored, with real sampler steps distinct from frame count.
+- Reference: SD 1.5 Plus Face + matching FP16 CLIP Vision, CPU vision execution,
+  immutable image snapshot/hash, strength and component receipts retained per run.
+- Batches: Generate with image count >1 uses a sequential queue, preserving reference
+  and settings with a recorded seed per image; no automatic comparisons or reviews.
+- Diagnostics: embedded structured logger, distinct loading/sampling/decoding/error
+  states, no copied measurements from an older recipe, and shared generation locks.
+
+See [upstream choices](UPSTREAM-DIFFUSION.md) for models, settings and kernel/driver
+patch decisions. Runtime dependencies include `python3` and `python3-pil` for references.
+
 ## Design
 
 Image Studio follows elementary OS conventions with a Draw Things-style creative workflow:
@@ -37,31 +60,28 @@ data from `rust/mseries-image-studio/tests/demo_data.py`, not real renders.
 
 ## Workspaces
 
-- **Create:** a dotted canvas that shows the live projected-latent preview while sampling (status
-  and step in a glass pill, progress along the bottom edge) and reopens on the latest image, with
-  a history filmstrip down the left edge. A floating prompt dock holds the prompt, prompt type,
-  Suggest type, Improve prompt and a collapsible negative prompt, and a pill Generate button.
-  Chips under the dock summarize the next run. The inspector groups Model, Image, Sampling (real
-  sliders), Seed, Reference image, LoRA and Advanced into collapsible cards with Save recipe pinned
-  below. Header Stop cancels the current image, review or remaining sweep; Ctrl+Enter runs the recipe.
-  Below about 1100 px the inspector moves into a Settings popover.
-- **Library:** a gallery of every image; choosing one opens a detail pane with its prompt, settings,
-  measured timing and process memory, provenance, model notes, **Use these settings**, **Try a new
-  seed** and a full-size viewer. A Recipes tab holds saved prompt recipes. Completed jobs refresh the
-  Library automatically.
-- **Models:** SD 1.5 Q4 and Q8, SDXL Turbo FP16, Realistic Vision, the reference appearance bundle and
-  Qwen3-VL 2B with its required Q8 vision projector, each a card with an Installed badge;
-  revision-pinned, size/SHA-256 verified downloads with a progress bar and cancellation. Use selected
-  model loads starter defaults. Engine setup builds pinned stable-diffusion.cpp.
-- **Model guide:** task/capability cards, source links, supported settings and local qualification
+- **Create:** a dotted canvas showing actual intermediate TAESD or projected-latent images during
+  local sampling (status and step in a glass pill, progress along the bottom edge), reopening on the
+  latest image, with a history filmstrip. A floating prompt dock holds the prompt, prompt type, Suggest
+  type, Improve prompt, a collapsible negative prompt and the pill Generate button; chips under it
+  summarize the next run. The inspector groups Model, Image, Sampling (real sliders), Seed, Reference
+  image, LoRA and Advanced into collapsible cards with Save recipe pinned below. Header Stop and Reload
+  recipe stay available; Ctrl+Enter runs the current recipe. Below about 1100 px the inspector moves
+  into a Settings popover.
+- **Library:** a gallery of every image; choosing one opens a detail pane with prompt, settings,
+  measured timing and process memory, provenance, model notes, Use these settings, Try a new seed and a
+  full-size viewer. A Recipes tab holds saved recipes. Completed jobs refresh the Library automatically.
+- **Models:** SD 1.5 Q4/Q8, Realistic Vision FP16 + VAE, SDXL Turbo FP16, Qwen3-VL
+  with its projector, the reference bundle, and TAESD; revision-pinned, size/SHA-256 verified downloads with progress and cancellation.
+  Use selected model loads starter defaults. Engine setup builds pinned stable-diffusion.cpp.
+- **Model guide:** task/capability matrix, source links, supported settings and local qualification
   limits. Engine support is distinguished from a verified app workflow.
 - **Compare:** bounded sequential lighting, step or installed Q4/Q8 model sweeps with fixed seeds,
   saved manifests, per-result settings/measurements and optional vision review.
 - **Review:** local Qwen vision rubric and optional visual reference, advisory scores/explanations,
   retained evaluator identity, image digest and a suggested prompt the user can explicitly apply.
-- **Run logs:** bounded, read-only structured diagnostics for each render.
 
-The sidebar and Models show app model storage, shared AI model storage, images including previews,
+The sidebar and Models show app model storage, shared AI model storage, images including previews and reference snapshots,
 and the app-managed engine/source. Exported copies outside the app directory are not counted.
 
 Data lives in `$XDG_DATA_HOME/mseries-image-studio` (normally `~/.local/share/mseries-image-studio`).
@@ -79,15 +99,16 @@ process RSS was 1957 MiB, excluding GPU memory. Minimum observed available host 
 A sequential Qwen3-VL 2B Q4 / Q8-projector CPU review of that image completed in 94.439 s and
 saved an advisory 2.8/5 report. This establishes pipeline operation, not evaluator accuracy.
 
-Local inference is supervised calibration: estimated worker budgets plus a protected 6 GiB desktop
-reserve, continuously sampled during work. SD 1.5 Q4 requires 9 GiB available at admission, Q8
-9.5 GiB, Turbo 12 GiB; vision review requires 9 GiB. These estimates are not measured peak GPU
-allocations. Stop cancels the current run and remaining sweep. Image trials are limited to 15 minutes.
-Vision workers are CPU-only, sequential, and unloaded after review; existing services are not replaced.
+Local inference preserves a continuously checked 6 GiB desktop reserve. Admission uses
+selected dimensions, weight storage, GPU budget and reference components; figures are
+estimates, not measured GPU allocation. Stop cancels the current image and queued images.
+A run has a 15-minute limit. Vision review remains optional and runs after generation
+unloads. Nothing starts inference or review simply by opening the app.
 
-LoRA, inpainting and reference-conditioned local generation remain unqualified. Q8/Turbo hardware
-qualification remains outstanding. The matrix labels these limits. Prompt help uses only the already
-running assistant at `127.0.0.1:8766`; it does not launch another text model worker.
+SD 1.5 Plus Face reference conditioning and CPU/GPU VAE paths retain earlier local
+run evidence. This source-only integration makes no new image-quality or performance
+claim. LoRA and inpainting remain outside this port. Q8/Turbo hardware qualification
+remains outstanding. Prompt help uses the existing assistant at `127.0.0.1:8766`.
 
 ## Validation
 

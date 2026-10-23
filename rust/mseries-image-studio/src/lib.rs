@@ -66,3 +66,12 @@ pub mod model_notes;
 pub mod logs;
 
 pub mod style;
+
+/// Embed diagnostics with the worker so development and installed builds agree.
+pub fn local_generation_worker() -> String {
+    format!(
+        "{}\n{}",
+        include_str!("run_logging.py"),
+        include_str!("local_generation.py")
+    )
+}

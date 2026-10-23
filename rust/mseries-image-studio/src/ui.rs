@@ -158,8 +158,7 @@ impl ImageStudioWindow {
             let inspector = inspector.clone_refs();
             let stack = stack.clone();
             Rc::new(move |silent| {
-                let path =
-                    gtk::glib::user_data_dir().join("mseries-image-studio/current-job.json");
+                let path = gtk::glib::user_data_dir().join("mseries-image-studio/current-job.json");
                 let result = std::fs::read(path)
                     .ok()
                     .and_then(|raw| serde_json::from_slice::<serde_json::Value>(&raw).ok())
@@ -184,7 +183,16 @@ impl ImageStudioWindow {
 
         let action = inspector.generate.clone();
         let run_action = gio::SimpleAction::new("run", None);
-        run_action.connect_activate(move |_, _| action.emit_clicked());
+        run_action.connect_activate(move |_, _| {
+            if action.is_sensitive() {
+                action.emit_clicked();
+            }
+        });
+        inspector
+            .generate
+            .bind_property("sensitive", &run_action, "enabled")
+            .sync_create()
+            .build();
         application.add_action(&run_action);
         application.set_accels_for_action("app.run", &["<Control>Return"]);
         let stop = gtk::Button::from_icon_name("media-playback-stop-symbolic");
@@ -444,6 +452,7 @@ struct CreatePage {
     film_rail: gtk::Widget,
     dock_actions: gtk::Box,
     chips: gtk::FlowBox,
+    run_summary: gtk::Label,
 }
 
 #[derive(Clone)]
@@ -485,6 +494,7 @@ struct Inspector {
     reference_strength: gtk::SpinButton,
     vae_tile_size: gtk::SpinButton,
     cpu_threads: gtk::SpinButton,
+    preview_interval: gtk::SpinButton,
     params_backend: gtk::DropDown,
     max_vram_gib: gtk::SpinButton,
     scheduler: gtk::DropDown,
@@ -742,7 +752,14 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
             let available = host.available_gib();
             // Scale the meter to a 16 GiB window so headroom changes are visible.
             meter.set_value((available / 16.0).clamp(0.0, 1.0));
-            style::set_tone(&device_dot, if host.reserve_met() { "is-ok" } else { "is-warn" });
+            style::set_tone(
+                &device_dot,
+                if host.reserve_met() {
+                    "is-ok"
+                } else {
+                    "is-warn"
+                },
+            );
             hardware.set_text(&format!(
                 "{} · 6 GiB desktop reserve {}\n{}",
                 host.memory_summary(),
@@ -771,6 +788,7 @@ fn build_sidebar(stack: &gtk::Stack, create: &CreatePage, inspector: &Inspector)
 /// Live summary of the next run as chips, rebuilt only when it changes.
 fn install_recipe_chips(create: &CreatePage, settings: &Inspector) {
     let flow = create.chips.clone();
+    let run_summary = create.run_summary.clone();
     let settings = settings.clone_refs();
     let mut previous: Vec<(String, &'static str, Option<&'static str>)> = Vec::new();
     glib::timeout_add_local(Duration::from_millis(300), move || {
@@ -818,16 +836,31 @@ fn install_recipe_chips(create: &CreatePage, settings: &Inspector) {
                 None,
             ),
         ];
+        run_summary.set_text(&format!(
+            "VAE {} · {}px tiles · weights {} · GPU budget {:.1} GiB · preview every {} steps",
+            if settings.vae_on_cpu.is_active() {
+                "CPU"
+            } else {
+                "GPU"
+            },
+            settings.vae_tile_size.value_as_int(),
+            ["disk", "cpu", "auto"]
+                .get(settings.params_backend.selected() as usize)
+                .unwrap_or(&"disk"),
+            settings.max_vram_gib.value(),
+            settings.preview_interval.value_as_int()
+        ));
         if settings.batch.value_as_int() > 1 {
-            chips.push((format!("{} images", settings.batch.value_as_int()), "", None));
+            chips.push((
+                format!("{} images", settings.batch.value_as_int()),
+                "",
+                None,
+            ));
         }
         let reference = settings.reference_image.text();
         if !reference.is_empty() {
             chips.push((
-                format!(
-                    "Reference {:.2}",
-                    settings.reference_strength.value()
-                ),
+                format!("Reference {:.2}", settings.reference_strength.value()),
                 "",
                 Some("image-x-generic-symbolic"),
             ));
@@ -1029,11 +1062,13 @@ fn build_create_page() -> CreatePage {
     negative_box.set_margin_start(14);
     negative_box.set_margin_end(14);
     negative_box.set_margin_bottom(10);
-    negative_box.append(&gtk::Label::builder()
-        .label("Negative prompt · what to avoid")
-        .xalign(0.0)
-        .css_classes(["is-field-label"])
-        .build());
+    negative_box.append(
+        &gtk::Label::builder()
+            .label("Negative prompt · what to avoid")
+            .xalign(0.0)
+            .css_classes(["is-field-label"])
+            .build(),
+    );
     negative_box.append(&negative_scroll);
     let negative_revealer = gtk::Revealer::builder()
         .child(&negative_box)
@@ -1117,7 +1152,12 @@ fn build_create_page() -> CreatePage {
     chips.set_column_spacing(6);
     chips.set_row_spacing(6);
     chips.set_margin_start(2);
-    chips.update_property(&[gtk::accessible::Property::Label("Settings for the next run")]);
+    chips.update_property(&[gtk::accessible::Property::Label(
+        "Settings for the next run",
+    )]);
+
+    let run_summary = caption("");
+    run_summary.set_margin_start(6);
 
     let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
     page.set_margin_top(14);
@@ -1127,6 +1167,7 @@ fn build_create_page() -> CreatePage {
     page.append(&stage_overlay);
     page.append(&dock);
     page.append(&chips);
+    page.append(&run_summary);
     page.append(&hints);
 
     CreatePage {
@@ -1148,6 +1189,7 @@ fn build_create_page() -> CreatePage {
         film_rail: film_rail.upcast(),
         dock_actions,
         chips,
+        run_summary,
     }
 }
 
@@ -1171,7 +1213,9 @@ fn install_job_watch(stage: &Stage) {
             return gtk::glib::ControlFlow::Continue;
         }
         if let Ok(job) = serde_json::from_str::<serde_json::Value>(&raw) {
-            let status = job["status"].as_str().unwrap_or("Generation status unavailable");
+            let status = job["status"]
+                .as_str()
+                .unwrap_or("Generation status unavailable");
             stage.status.set_text(status);
             stage.empty_title.set_text(status);
             stage.empty_detail.set_text(&format!(
@@ -1189,7 +1233,9 @@ fn install_job_watch(stage: &Stage) {
             stage.spinner.set_spinning(running);
             let step = job["step"].as_f64().unwrap_or(0.0);
             let steps = job["steps"].as_f64().unwrap_or(0.0);
-            stage.progress.set_visible(running || steps > 0.0 && step < steps);
+            stage
+                .progress
+                .set_visible(running || steps > 0.0 && step < steps);
             if steps > 0.0 {
                 stage.progress.set_fraction((step / steps).clamp(0.0, 1.0));
             } else if running {
@@ -1198,7 +1244,9 @@ fn install_job_watch(stage: &Stage) {
                 stage.progress.set_fraction(if shown { 1.0 } else { 0.0 });
             }
             if running && steps > 0.0 {
-                stage.status.set_text(&format!("{status} · step {step:.0} of {steps:.0}"));
+                stage
+                    .status
+                    .set_text(&format!("{status} · step {step:.0} of {steps:.0}"));
             }
             let mut parts = Vec::new();
             if let Some(model) = job["model"].as_str() {
@@ -1248,6 +1296,7 @@ fn current_recipe(page: &CreatePage, settings: &Inspector) -> Recipe {
     recipe.reference_strength = settings.reference_strength.value();
     recipe.vae_tile_size = settings.vae_tile_size.value_as_int() as u32;
     recipe.cpu_threads = settings.cpu_threads.value_as_int() as u32;
+    recipe.preview_interval = settings.preview_interval.value_as_int() as u32;
     recipe.params_backend = ["disk", "cpu", "auto"]
         .get(settings.params_backend.selected() as usize)
         .unwrap_or(&"disk")
@@ -1325,6 +1374,9 @@ fn load_recipe(recipe: &Recipe, page: &CreatePage, settings: &Inspector) {
         .vae_tile_size
         .set_value(recipe.vae_tile_size as f64);
     settings.cpu_threads.set_value(recipe.cpu_threads as f64);
+    settings
+        .preview_interval
+        .set_value(recipe.preview_interval as f64);
     settings.params_backend.set_selected(
         ["disk", "cpu", "auto"]
             .iter()
@@ -1533,7 +1585,9 @@ fn build_inspector() -> Inspector {
     engine_dot.set_margin_start(12);
     engine_dot.set_valign(gtk::Align::Start);
     engine_dot.set_margin_top(14);
-    let engine = gtk::Label::new(Some("Image engine: not connected\nCompatibility: unverified"));
+    let engine = gtk::Label::new(Some(
+        "Image engine: not connected\nCompatibility: unverified",
+    ));
     engine.set_xalign(0.0);
     engine.set_wrap(true);
     engine.set_margin_top(10);
@@ -1575,12 +1629,13 @@ fn build_inspector() -> Inspector {
                 .to_string_lossy()
                 .to_lowercase();
             path.is_file()
-                && (name.ends_with(".gguf") || name.ends_with(".safetensors"))
-                && !name.contains("qwen")
-                && !name.contains("mmproj")
-                && !name.contains("clip")
-                && !name.contains("ip-adapter")
-                && !name.starts_with("vae")
+                && matches!(
+                    name.as_ref(),
+                    "stable-diffusion-v1-5-pruned-emaonly-q4_0.gguf"
+                        | "stable-diffusion-v1-5-pruned-emaonly-q8_0.gguf"
+                        | "sd_xl_turbo_1.0_fp16.safetensors"
+                        | "realistic_vision_v6.0_nv_b1_fp16.safetensors"
+                )
         })
         .collect();
     files.sort_by_key(|path| (!path.to_string_lossy().contains("Realistic"), path.clone()));
@@ -1630,8 +1685,7 @@ fn build_inspector() -> Inspector {
     panel.append(&model_section);
 
     // ----- Image -----
-    let (image_section, image_body) =
-        style::collapsible("Image", "image-x-generic-symbolic", true);
+    let (image_section, image_body) = style::collapsible("Image", "image-x-generic-symbolic", true);
     let dimensions = gtk::DropDown::from_strings(&[
         "512 × 512 · square",
         "768 × 768 · square",
@@ -1707,7 +1761,9 @@ fn build_inspector() -> Inspector {
     seed_row.append(&seed);
     seed_row.append(&random_seed);
     seed_body.append(&seed_row);
-    seed_body.append(&caption("−1 picks a new seed each run. Keep one fixed to compare changes fairly."));
+    seed_body.append(&caption(
+        "−1 picks a new seed each run. Keep one fixed to compare changes fairly.",
+    ));
     panel.append(&seed_section);
 
     // ----- Reference image -----
@@ -1776,7 +1832,10 @@ fn build_inspector() -> Inspector {
     reference_strength.set_value(0.8);
     reference_strength
         .update_property(&[gtk::accessible::Property::Label("Reference image strength")]);
-    reference_body.append(&style::slider_row("Reference strength", &reference_strength));
+    reference_body.append(&style::slider_row(
+        "Reference strength",
+        &reference_strength,
+    ));
     panel.append(&reference_section);
 
     // ----- LoRA -----
@@ -1815,9 +1874,12 @@ fn build_inspector() -> Inspector {
     vae_tile_size.set_value(256.0);
     let cpu_threads = gtk::SpinButton::with_range(1.0, 16.0, 1.0);
     cpu_threads.set_value(4.0);
+    let preview_interval = gtk::SpinButton::with_range(1.0, 10.0, 1.0);
+    preview_interval.set_value(3.0);
     for (title, control) in [
         ("Decoder tile size", &vae_tile_size),
         ("CPU threads", &cpu_threads),
+        ("Preview every N steps", &preview_interval),
     ] {
         control.update_property(&[gtk::accessible::Property::Label(title)]);
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
@@ -1927,6 +1989,7 @@ fn build_inspector() -> Inspector {
         reference_strength,
         vae_tile_size,
         cpu_threads,
+        preview_interval,
         params_backend,
         max_vram_gib,
         scheduler,
@@ -2021,12 +2084,18 @@ fn wire_actions(
             .recipe_status
             .set_text("Submitting supervised local calibration…");
         std::thread::spawn(move || {
-            let result = std::process::Command::new("python3")
-                .arg("-c")
-                .arg(include_str!("local_generation.py"))
-                .arg(base)
-                .arg(serde_json::to_string(&recipe).unwrap())
-                .output();
+            let mut command = std::process::Command::new("python3");
+            command.arg("-c");
+            if recipe.batch_size > 1 {
+                command.arg(include_str!("sweep_runner.py"))
+                    .arg(&base).arg(serde_json::to_string(&recipe).unwrap())
+                    .arg(serde_json::json!({"kind":"repeat","count":recipe.batch_size,"review":false}).to_string())
+                    .arg(crate::local_generation_worker()).arg(include_str!("review_image.py"));
+            } else {
+                command.arg(crate::local_generation_worker())
+                    .arg(&base).arg(serde_json::to_string(&recipe).unwrap());
+            }
+            let result = command.output();
             if let Err(error) = result {
                 eprintln!("Generation worker could not start: {error}");
             }
@@ -2334,13 +2403,21 @@ fn show_library_detail(
     // Actions
     let actions = gtk::Box::new(gtk::Orientation::Vertical, 6);
     let hosted = recipe.engine_id.contains("hosted");
-    let repeat = icon_button("document-revert-symbolic", "Use these settings", &["suggested-action", "is-pill"]);
+    let repeat = icon_button(
+        "document-revert-symbolic",
+        "Use these settings",
+        &["suggested-action", "is-pill"],
+    );
     repeat.set_tooltip_text(Some(if hosted {
         "Exact repeat is unavailable: the hosted provider did not expose its model and inference settings. Loads editable starter settings instead."
     } else {
         "Load this recipe and its saved seed into Create. Press Generate when ready."
     }));
-    let new_seed = icon_button("media-playlist-shuffle-symbolic", "Try a new seed", &["is-pill"]);
+    let new_seed = icon_button(
+        "media-playlist-shuffle-symbolic",
+        "Try a new seed",
+        &["is-pill"],
+    );
     new_seed.set_tooltip_text(Some(
         "Load this recipe with a fresh random seed. Press Generate when ready.",
     ));
@@ -2358,7 +2435,11 @@ fn show_library_detail(
         });
         actions.append(button);
     }
-    let view = icon_button("image-red-eye-symbolic", "Open full size", &["flat", "is-pill"]);
+    let view = icon_button(
+        "image-red-eye-symbolic",
+        "Open full size",
+        &["flat", "is-pill"],
+    );
     let image_path = recipe.image_path.clone();
     view.connect_clicked(move |button| {
         let viewer = gtk::Window::builder()
@@ -2382,9 +2463,16 @@ fn show_library_detail(
     let measure = style::padded_card(10);
     let measure_body = style::card_content(&measure);
     measure_body.set_spacing(8);
-    let grid = gtk::Grid::builder().column_spacing(14).row_spacing(8).column_homogeneous(true).build();
+    let grid = gtk::Grid::builder()
+        .column_spacing(14)
+        .row_spacing(8)
+        .column_homogeneous(true)
+        .build();
     let cells = [
-        ("Sampler", format!("{} · {}", recipe.sampler, recipe.scheduler)),
+        (
+            "Sampler",
+            format!("{} · {}", recipe.sampler, recipe.scheduler),
+        ),
         (
             "Time",
             recipe
@@ -2410,7 +2498,13 @@ fn show_library_detail(
         ("Engine", recipe.engine_id.clone()),
     ];
     for (index, (key, value)) in cells.iter().enumerate() {
-        grid.attach(&kv(key, value), (index % 2) as i32, (index / 2) as i32, 1, 1);
+        grid.attach(
+            &kv(key, value),
+            (index % 2) as i32,
+            (index / 2) as i32,
+            1,
+            1,
+        );
     }
     measure_body.append(&grid);
     let note = if recipe.engine_id.contains("hosted") {
@@ -2445,6 +2539,10 @@ fn show_library_detail(
         recipe.cpu_threads
     );
     content.append(&caption(&conditioning));
+    content.append(&caption(&format!(
+        "Weights {} · GPU budget {:.1} GiB · {} previews every {} steps",
+        recipe.params_backend, recipe.max_vram_gib, recipe.preview_method, recipe.preview_interval
+    )));
     if !recipe.settings_note.is_empty() {
         content.append(&caption(&recipe.settings_note));
     }
@@ -2480,7 +2578,11 @@ fn add_recipe_row(
             .build(),
     );
     head.append(&chip(&recipe.intent, "is-accent", None));
-    head.append(&chip(&format!("{}×{}", recipe.width, recipe.height), "", None));
+    head.append(&chip(
+        &format!("{}×{}", recipe.width, recipe.height),
+        "",
+        None,
+    ));
     text.append(&head);
     text.append(
         &gtk::Label::builder()
@@ -2588,8 +2690,37 @@ fn refresh_hardware(inspector: &Inspector) {
         "stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf" => 9.0,
         "stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf" => 9.5,
         "sd_xl_turbo_1.0_fp16.safetensors" => 12.0,
-        "Realistic_Vision_V6.0_NV_B1_fp16.safetensors" => 10.25,
+        "Realistic_Vision_V6.0_NV_B1_fp16.safetensors" => 10.0,
         _ => f64::INFINITY,
+    };
+    let dimensions = match inspector.dimensions.selected() {
+        1 => (768.0, 768.0),
+        2 => (1024.0, 1024.0),
+        3 => (512.0, 768.0),
+        4 => (768.0, 512.0),
+        5 => (768.0, 1024.0),
+        6 => (1024.0, 768.0),
+        _ => (512.0, 512.0),
+    };
+    let disk = inspector.params_backend.selected() == 0;
+    let working = if disk {
+        inspector.max_vram_gib.value().max(3.0)
+    } else {
+        required - 6.0
+    };
+    let reference = if inspector.reference_image.text().is_empty() {
+        0.0
+    } else if disk {
+        0.5
+    } else {
+        1.3
+    };
+    let required = if required.is_finite() {
+        6.0 + working
+            + reference
+            + (dimensions.0 * dimensions.1 / 262144.0 - 1.0_f64).max(0.0) * 0.5
+    } else {
+        required
     };
     let model = Path::new(&selected).is_file() && required.is_finite();
     let busy = base.join("generation.lock").exists() || base.join("batch.lock").exists();
@@ -2918,7 +3049,13 @@ fn build_model_guide(
         );
         head.append(&chip(qualification, tone, None));
         body.append(&head);
-        body.append(&gtk::Label::builder().label(best_for).xalign(0.0).wrap(true).build());
+        body.append(
+            &gtk::Label::builder()
+                .label(best_for)
+                .xalign(0.0)
+                .wrap(true)
+                .build(),
+        );
         body.append(&caption(settings));
         list.append(&card);
     }
@@ -2926,7 +3063,12 @@ fn build_model_guide(
     let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     for (label, steps, cfg, primary) in [
         ("Use portrait defaults · 20 steps", 20.0, 7.0, true),
-        ("Use speed test · 8 steps · reduced quality", 8.0, 7.0, false),
+        (
+            "Use speed test · 8 steps · reduced quality",
+            8.0,
+            7.0,
+            false,
+        ),
     ] {
         let button = gtk::Button::with_label(label);
         button.add_css_class("is-pill");
@@ -2942,7 +3084,13 @@ fn build_model_guide(
     page.append(&actions);
     let review = style::padded_card(12);
     let review_body = style::card_content(&review);
-    review_body.append(&gtk::Label::builder().label("Compare fairly").xalign(0.0).css_classes(["is-card-title"]).build());
+    review_body.append(
+        &gtk::Label::builder()
+            .label("Compare fairly")
+            .xalign(0.0)
+            .css_classes(["is-card-title"])
+            .build(),
+    );
     review_body.append(&gtk::Label::builder().label("Keep seed, dimensions and steps fixed; change one prompt phrase or model at a time. A vision grade should store the rubric, evaluator identity, explanations and run settings. It is advisory, not a guarantee of likeness or commercial image quality.").xalign(0.0).wrap(true).build());
     page.append(&review);
     page.append(&style::section_caption("Sources"));

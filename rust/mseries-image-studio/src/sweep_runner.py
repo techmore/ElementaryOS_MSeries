@@ -35,7 +35,12 @@ try:
     state['effective_seed']=recipe['seed']
     state['effective_base_recipe']=dict(recipe)
     variants=[]
-    if plan['kind']=='lighting':
+    if plan['kind']=='repeat':
+        count=int(plan.get('count',recipe.get('batch_size',1)))
+        if not 1<=count<=8:raise RuntimeError('Image batches are limited to eight sequential runs.')
+        for index in range(count):
+            variants.append((f'Image {index+1} of {count}',dict(recipe,seed=(recipe['seed']+index)%2147483648)))
+    elif plan['kind']=='lighting':
         for lighting in ['soft warm window light','dim amber fireplace light','warm desk lamp with subtle teal monitor light']:
             variants.append((lighting,dict(recipe,prompt=recipe['prompt']+'\nLighting variation: '+lighting)))
     elif plan['kind']=='steps':
@@ -61,13 +66,16 @@ try:
             row.update(status=stopped,error=result.stderr.strip()[-2000:],exit_code=result.returncode);state['status']=stopped;save();break
         job=json.loads((base/'current-job.json').read_text())
         metadata=Path(job['recipe_path']);output=json.loads(metadata.read_text())
+        if output.get('sweep_id')!=sweep_id or output.get('sweep_variant')!=label:
+            raise RuntimeError('Generation returned a different sweep recipe; result was not attributed to this comparison.')
+        if not Path(output['image_path']).is_file():raise RuntimeError('Generation completed without its saved image.')
         row.update(status='Complete',recipe_path=str(metadata),image_path=output['image_path'],elapsed_seconds=output.get('elapsed_seconds'),peak_memory_mib=output.get('peak_memory_mib'))
         save()
         if plan.get('review') and not cancel.exists():
             row['review_status']='Running';save()
             result=subprocess.run([sys.executable,'-c',review_code,str(base),str(metadata),plan.get('rubric','Evaluate prompt adherence, clothing, lighting, composition and visual artifacts.'),plan.get('reference','')],env=env,capture_output=True,text=True,preexec_fn=supervised_child)
             review_path=metadata.with_suffix('.review.json')
-            if result.returncode or not review_path.exists():row.update(review_status='Unavailable',review_error=result.stderr.strip()[-1000:])
+            if result.returncode or not review_path.exists():row.update(review_status='Cancelled' if cancel.exists() else 'Unavailable',review_error=result.stderr.strip()[-1000:])
             else:
                 review=json.loads(review_path.read_text());row.update(review_status='Complete',review_path=str(review_path),overall_score=review.get('overall_score'))
             save()
@@ -75,7 +83,10 @@ try:
     if cancel.exists():state['status']='Cancelled'
     save()
 except Exception as error:
-    if owned:state.update(status='Unavailable',error=str(error));save()
+    if owned:
+        state.update(status='Failed' if state['runs'] else 'Unavailable',error=str(error))
+        if state['runs'] and state['runs'][-1]['status']=='Running':state['runs'][-1].update(status='Failed',error=str(error))
+        save()
     print(str(error),file=sys.stderr);sys.exit(1)
 finally:
     if owned:

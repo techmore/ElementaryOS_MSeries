@@ -31,11 +31,18 @@ pub fn storage_tiles(compact: bool) -> gtk::Widget {
         .row_spacing(if compact { 6 } else { 4 })
         .build();
     let mut values = Vec::new();
-    for (index, caption_text) in ["Models", "Other AI", "Images", "Engine"].iter().enumerate() {
+    for (index, caption_text) in ["Models", "Other AI", "Images", "Engine"]
+        .iter()
+        .enumerate()
+    {
         let tile = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let value = gtk::Label::new(Some("…"));
         value.set_xalign(0.0);
-        value.add_css_class(if compact { "is-kv-val" } else { "is-stat-value" });
+        value.add_css_class(if compact {
+            "is-kv-val"
+        } else {
+            "is-stat-value"
+        });
         let caption = gtk::Label::new(Some(caption_text));
         caption.set_xalign(0.0);
         caption.add_css_class(if compact { "is-kv-key" } else { "is-caption" });
@@ -58,7 +65,8 @@ pub fn storage_tiles(compact: bool) -> gtk::Widget {
             let models = storage_bytes(&base.join("mseries-image-studio/models"));
             let shared = storage_bytes(&base.join("mseries-ai/models"));
             let images = storage_bytes(&base.join("mseries-image-studio/images"))
-                + storage_bytes(&base.join("mseries-image-studio/previews"));
+                + storage_bytes(&base.join("mseries-image-studio/previews"))
+                + storage_bytes(&base.join("mseries-image-studio/references"));
             let engine = storage_bytes(&base.join("mseries-image-studio/engine"))
                 + storage_bytes(&base.join("mseries-image-studio/engine-source"));
             let gib = |bytes: u64| format!("{:.2} GiB", bytes as f64 / 1073741824.0);
@@ -93,7 +101,7 @@ pub fn storage_tiles(compact: bool) -> gtk::Widget {
 }
 
 /// (name, role, size, kind, tone, files that must exist for "Installed")
-const CATALOG: [(&str, &str, &str, &str, &str, &[&str]); 6] = [
+const CATALOG: [(&str, &str, &str, &str, &str, &[&str]); 7] = [
     (
         "Stable Diffusion 1.5 · Q4",
         "Smallest first calibration candidate",
@@ -151,6 +159,14 @@ const CATALOG: [(&str, &str, &str, &str, &str, &[&str]); 6] = [
             "clip-vision-h-f16.gguf",
         ],
     ),
+    (
+        "TAESD · live previews",
+        "Preview decoder only; keeps the full VAE for the saved image",
+        "9.8 MB",
+        "Add-on",
+        "",
+        &["taesd.safetensors"],
+    ),
 ];
 
 pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
@@ -172,6 +188,7 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
         "Qwen3-VL 2B + projector · review images · 1.55 GB",
         "Realistic Vision V6 FP16 + VAE · photography · 2.47 GB",
         "Reference appearance · IP-Adapter Plus Face + vision encoder · 3.9 GB",
+        "TAESD · fast live previews for SD 1.5 · 9.8 MB",
     ]);
     page.append(&crate::style::section_caption("Available models"));
     let list = gtk::Box::new(gtk::Orientation::Vertical, 8);
@@ -227,8 +244,7 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
         let cards = cards.clone();
         let choices = choices.clone();
         move || {
-            let directory =
-                gtk::glib::user_data_dir().join("mseries-image-studio/models");
+            let directory = gtk::glib::user_data_dir().join("mseries-image-studio/models");
             for (index, (card, slot)) in cards.iter().enumerate() {
                 if choices.selected() as usize == index {
                     card.add_css_class("is-selected");
@@ -282,6 +298,7 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
             1 => "SD 1.5 Q8: estimated 3.5 GiB worker budget plus 6 GiB reserve. Same starter settings as Q4; use Compare to measure quality and speed differences.",
             2 => "SDXL Turbo: estimated 6 GiB worker budget plus 6 GiB reserve. Euler ancestral, 4 steps, engine guidance 1, no negative prompt, 512 × 512. Commercial use needs the applicable model license.",
             4 => "Realistic Vision V6: photographic portrait candidate. Downloads the full FP16 checkpoint and required VAE. Start at 512 × 768, 30 DPM++2M steps, Karras, CFG 5. Local image-quality validation is in progress.",
+            6 => "TAESD: lightweight SD 1.5 live-preview decoder (MIT). Final image still uses the full selected VAE. This is an auxiliary preview component, not an image-generation checkpoint.",
             5 => "Reference appearance bundle: SD 1.5 Plus Face adapter and CLIP vision encoder, converted to FP16 locally. Apache 2.0. Requires an installed engine, about 3.9 GB disk plus reserve, and separate inference-memory qualification. Not an image-generation checkpoint.",
             _ => "Qwen3-VL 2B: image reviewer, not an image generator. Downloads both the language weights and matching Q8 vision projector. Uses a separate CPU worker after image generation unloads. Requires 9 GiB available.",
         });
@@ -322,8 +339,8 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
         let choices = choices.clone();
         let status = status.clone();
         use_model.connect_clicked(move |_| {
-            if choices.selected() == 5 {
-                status.set_text("Reference bundle is used with an SD 1.5 checkpoint; choose a reference image in Create after download.");
+            if choices.selected() >= 5 {
+                status.set_text("Auxiliary component installed separately; keep an SD 1.5 checkpoint selected in Create.");
                 return;
             }
             let names = [
@@ -472,10 +489,14 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
         let _ = std::fs::remove_file(directory.join("download.cancel"));
         let (tx, rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
-            if index == 5 {
+            if index == 5 || index == 6 {
                 let message = match std::process::Command::new("python3")
                     .arg("-c")
-                    .arg(REFERENCE_BUNDLE_DOWNLOAD)
+                    .arg(if index == 6 {
+                        TAESD_DOWNLOAD
+                    } else {
+                        REFERENCE_BUNDLE_DOWNLOAD
+                    })
                     .arg(&directory)
                     .output()
                 {
@@ -523,7 +544,11 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
                         .output()
                     {
                         Ok(output) => {
-                            messages.push(String::from_utf8_lossy(&output.stdout).to_string());
+                            messages.push(format!(
+                                "{}{}",
+                                String::from_utf8_lossy(&output.stdout),
+                                String::from_utf8_lossy(&output.stderr)
+                            ));
                             if !output.status.success() {
                                 break;
                             }
@@ -589,6 +614,7 @@ os.umask(0o077)
 dest=Path(sys.argv[1]);dest.mkdir(parents=True,exist_ok=True)
 base=dest.parent;revision='018e402774aeeddd60609b4ecdb7e298259dc729'
 cancel=dest/'download.cancel';lock=dest/'reference-download.lock';owned=False
+generation_lock=base/'generation.lock';generation_owned=False
 engine_revision='fd21ecfceef2665d2c5f2db8536e3202d864fd30'
 def publish(phase,name='Reference appearance bundle',received=0,total=0):
     tmp=dest/'download-progress.reference.tmp'
@@ -622,9 +648,11 @@ try:
             if target.stat().st_size!=size or digest(target)!=expected:raise RuntimeError('Existing '+name+' differs from pinned source; preserved without overwrite.')
         else:
             if shutil.disk_usage(dest).free<size+int(1.4*1024**3)+2*1024**3:raise RuntimeError('Insufficient storage including conversion and 2 GiB disk reserve.')
+            part_created=False
             try:
                 received=0;last=0
                 with urllib.request.urlopen('https://huggingface.co/h94/IP-Adapter/resolve/'+revision+'/'+remote,timeout=60) as response,part.open('xb') as stream:
+                    part_created=True
                     while True:
                         cancelled();chunk=response.read(1024*1024)
                         if not chunk:break
@@ -633,7 +661,8 @@ try:
                         if time.monotonic()-last>1:publish('Downloading',name,received,size);last=time.monotonic()
                 if received!=size or digest(part)!=expected:raise RuntimeError('Reference integrity verification failed.')
                 os.replace(part,target)
-            finally:part.unlink(missing_ok=True)
+            finally:
+                if part_created:part.unlink(missing_ok=True)
         receipt(target,dict(repo='h94/IP-Adapter',revision=revision,source_path=remote,sha256=expected,size=size,license='apache-2.0',qualified=False))
     encoder=dest/'clip-vision-h.safetensors';output=dest/'clip-vision-h-f16.gguf';partial=dest/'clip-vision-h-f16.reference.tmp.gguf'
     source_sha=digest(encoder)
@@ -641,15 +670,25 @@ try:
         saved=json.loads(output.with_suffix(output.suffix+'.json').read_text())
         if saved.get('source_sha256')!=source_sha or saved.get('engine_revision')!=engine_revision or saved.get('sha256')!=digest(output):raise RuntimeError('Existing converted encoder has no matching verified receipt; preserved.')
     else:
+        generation_fd=os.open(generation_lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+        generation_owned=True
+        try:os.write(generation_fd,str(os.getpid()).encode())
+        finally:os.close(generation_fd)
+        if (base/'batch.lock').exists():raise RuntimeError('A comparison started; wait before converting the vision encoder.')
         available=next(int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))
         if available<9*1024**3:raise RuntimeError('FP16 conversion needs 9 GiB available including the protected desktop reserve.')
+        if partial.exists():raise RuntimeError('A previous conversion partial exists; inspect it before retrying.')
         publish('Converting vision encoder to FP16; cancellation remains available')
         command=[str(binary),'-M','convert','-m',str(encoder),'--type','f16','-o',str(partial)]
         try:
             with (dest/'reference-conversion.log').open('w') as log:
                 proc=subprocess.Popen(command,stdout=log,stderr=log)
                 try:
-                    while proc.poll() is None:cancelled();time.sleep(0.25)
+                    while proc.poll() is None:
+                        cancelled()
+                        free=next(int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))
+                        if free<6*1024**3:raise RuntimeError('Conversion stopped to preserve the 6 GiB desktop reserve.')
+                        time.sleep(0.25)
                 finally:
                     if proc.poll() is None:
                         proc.terminate()
@@ -666,5 +705,57 @@ try:
 except Exception as error:
     publish('Unavailable: '+str(error));print(str(error),file=sys.stderr);sys.exit(1)
 finally:
+    if generation_owned:generation_lock.unlink(missing_ok=True)
+    if owned:lock.unlink(missing_ok=True)
+"#;
+
+const TAESD_DOWNLOAD: &str = r#"
+import sys,os,json,urllib.request,hashlib,shutil,time
+from pathlib import Path
+os.umask(0o077)
+dest=Path(sys.argv[1]);dest.mkdir(parents=True,exist_ok=True)
+revision='614f76814bbe30edbe2e627ace1c2234c81a2c0e';repo='madebyollin/taesd';remote='diffusion_pytorch_model.safetensors'
+target=dest/'taesd.safetensors';part=dest/'taesd.safetensors.download.part';cancel=dest/'download.cancel'
+lock=dest/'taesd-download.lock';owned=False;created=False
+size=9793292
+def check():
+    if cancel.exists():raise RuntimeError('Preview decoder download cancelled.')
+def publish(phase,received=0):
+    tmp=dest/'download-progress.taesd.tmp';tmp.write_text(json.dumps(dict(file='TAESD',phase=phase,received=received,total=size)));os.replace(tmp,dest/'download-progress.json')
+def digest(path):
+    h=hashlib.sha256()
+    with path.open('rb') as f:
+        while True:
+            check();chunk=f.read(1024*1024)
+            if not chunk:break
+            h.update(chunk)
+    return h.hexdigest()
+try:
+    fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);os.close(fd);owned=True
+    check();publish('Reading pinned preview decoder metadata')
+    with urllib.request.urlopen('https://huggingface.co/api/models/'+repo+'/revision/'+revision+'?blobs=true',timeout=30) as response:info=json.load(response)
+    entry=next(x for x in info['siblings'] if x['rfilename']==remote);expected=entry['lfs']['sha256']
+    if entry['lfs']['size']!=size:raise RuntimeError('Pinned preview decoder size mismatch.')
+    if target.exists():
+        if target.stat().st_size!=size or digest(target)!=expected:raise RuntimeError('Existing TAESD differs from pinned source; preserved.')
+    else:
+        if shutil.disk_usage(dest).free<size+2*1024**3:raise RuntimeError('Insufficient disk space with 2 GiB reserve.')
+        received=0
+        with urllib.request.urlopen('https://huggingface.co/'+repo+'/resolve/'+revision+'/'+remote,timeout=60) as response,part.open('xb') as stream:
+            created=True
+            while True:
+                check();chunk=response.read(1024*1024)
+                if not chunk:break
+                stream.write(chunk);received+=len(chunk);publish('Downloading preview decoder',received)
+                if received>size:raise RuntimeError('Preview decoder exceeded declared size.')
+        if received!=size or digest(part)!=expected:raise RuntimeError('Preview decoder integrity verification failed.')
+        os.replace(part,target)
+    receipt=target.with_suffix(target.suffix+'.json');tmp=receipt.with_suffix('.tmp')
+    tmp.write_text(json.dumps(dict(repo=repo,revision=revision,source_path=remote,sha256=expected,size=size,license='MIT',purpose='preview-only; final image uses full VAE',qualified=False),indent=2));os.replace(tmp,receipt)
+    publish('Preview decoder verified',size);print('TAESD installed and verified for live previews; final images keep the selected full VAE.')
+except Exception as error:
+    publish('Unavailable: '+str(error));print(str(error),file=sys.stderr);sys.exit(1)
+finally:
+    if created:part.unlink(missing_ok=True)
     if owned:lock.unlink(missing_ok=True)
 "#;
