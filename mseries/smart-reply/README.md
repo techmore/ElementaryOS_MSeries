@@ -24,7 +24,7 @@ Each action shows `Drafting… Ns` again and replaces the draft; if the model fa
 why. The instruction sent is one fixed sentence per action (`mseries_ai::Instruction`), never conversation text; your extra context
 is added as your own words. The note you type is a line the input service draws as composing text, so nothing is typed into the app
 and nothing needs reading back or cleaning up (no paste or caret movement in it). The input service keeps the conversation lines the
-draft answered only while the draft is held (the trigger hands them over with `SetContext`) and forgets them with it. A draft
+draft answered only while the draft is held (the trigger hands them over with `SetContext`, together with the personal notes the first draft used, so a revision is written with the same knowledge) and forgets them with it. A draft
 handed over without a conversation (`Offer`) does not advertise the actions. Design and
 limits: [SMART-REPLY-DESIGN.md](../SMART-REPLY-DESIGN.md).
 
@@ -42,6 +42,7 @@ earlier Python bridge in place); remove with `--uninstall`. It needs the local m
 - `input-service` is the IBus engine service (`org.techmore.SmartReplyInput`, unit `mseries-smart-reply-input.service`).
   It refuses password and unknown fields with the same checks as the F5 dictation input, holds one draft, commits it on
   Tab, and restores the previous input method. F5 dictation is untouched.
+- `memory add|list|edit|rm|export|preview` manages the persona records described below.
 - `init-rules` writes the default rules file unless one exists. `probe [TITLE]` shows what the reader finds in a window
   (counts only, no message text). `rules`, `packet` and `draft` work on fixtures.
 
@@ -57,6 +58,38 @@ Chat bubbles in the accessibility tree are followed by a footer line (`09:14 · 
 treats those as who-wrote-it markers, not as messages: a delivery status marks the message before it as yours, anything else as the
 contact's.
 
+## Persona and what it knows about you
+
+Drafts are written by the owner's helpful chat assistant: it writes the message **you** would send, in your voice. To sound like
+you and know your people it is given a few records that **you** wrote, kept in the same owner-only database as the other AI
+settings (`$XDG_DATA_HOME/mseries-ai/assistant.sqlite3`). Nothing is learned automatically and nothing leaves the machine.
+
+```bash
+mseries-reply memory add profile "I'm Sean. I run a small manufacturing shop; I text in a dry, friendly way."
+mseries-reply memory add style "Short messages, lowercase is fine, no emoji."
+mseries-reply memory add contact "Sam Example" --alias Sammy --relationship brother --tone "teasing, relaxed" --notes "Lives in Denver."
+mseries-reply memory add topic "Planning a gravel ride in Moab the first weekend of May." --title "Moab ride" --keywords ride,moab --contact Sammy
+mseries-reply memory add fact "The shop is closed on Fridays in summer." --keywords friday,closed
+mseries-reply memory list            # ids: c1 contact, n3 note, m2 saved memory
+mseries-reply memory edit n3 --text "Ride moved to June."
+mseries-reply memory rm c1           # removing a contact removes its notes
+mseries-reply memory export notes.json
+mseries-reply memory preview --contact "Sam Example" "are you in for the ride?"
+```
+
+- A **contact** is matched when the chat's title/header contains its name or an alias (whole words, ignoring case). If two
+  different contacts match (a group chat), none is used. Profile and style notes are always considered; a **topic** or
+  **fact** is used when one of its keywords (or its title, if it has no keywords) appears in the title or the last six messages,
+  or when it is linked to the contact the chat is with.
+- At most **1,400 characters** of records go into one prompt, most important first (the contact, who you are, how you write,
+  topics, facts, older memories), so drafts stay quick on the 4B model.
+- Privacy: records are read only after the rules allowed the app, the field and the contact, and are also checked against your
+  contact block rules under every name the contact has, so a blocked contact is never read. Record text is treated as data: it
+  is never part of the instructions the model is given. The model still has no tools. The audit line (`personal` in the journal)
+  shows only counts. The quick actions above use the same notes. `trigger --dry-run` and `memory preview` print the records that would be used, to your terminal.
+- There is no settings panel for this yet; the command is the way to manage it. The database schema moved to version 2, so
+  other M-Series apps that share it (Messages) must be rebuilt together with this one.
+
 **Verified:** unit tests (rules, legacy file, bounded walker, gate order with read counts, Tab/Esc state machine, Alt-chord and
 note-entry key classification, the fixed instruction list, a fixture run of every action, IBus wire shapes);
 `quick-actions-smoke.py` (a private session with its own ibus-daemon, AT-SPI bus and input service, one real GTK 4 entry with
@@ -66,4 +99,6 @@ context and a GTK entry (Tab commits once, Esc and any other key commit nothing,
 sensitive field is refused). **Not verified:** the quick actions in the owner's own Wayland session and Signal client (only the
 private X11 session above); in Chromium/Electron (notification path); a real Command+Option+R press and Tab in the owner's chat apps; Esc and
 focus-loss behaviour in Chromium; apps that expose no accessibility tree get no context. No settings panel yet (edit the
-JSON).
+JSON; use `memory` for the personal records). The persona, retrieval and `memory` command have unit tests (retrieval matching and
+budget, a blocked contact reads no record, hostile record text cannot change the system prompt, the audit holds counts only) and
+one live draft against the local model with a throwaway database; whether the records measurably improve drafts has not been scored.

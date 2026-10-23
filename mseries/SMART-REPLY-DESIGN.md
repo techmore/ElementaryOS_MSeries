@@ -1,6 +1,6 @@
 # Smart Reply: a window-aware agent that drafts text for any app (design, 2026-10-23)
 
-**Status: the working path is Rust (2026-10-23): `rust/mseries-reply` holds the rules, chat marker, bounded AT-SPI reader, context gate, tool-free draft agent over `mseries-ai`, audit, the `trigger` command (focused window from the compositor's `org.pantheon.gala` `GetWindows`) and the IBus input service (Tab inserts, Esc or any other key or focus change discards, 60 s limit, previous input method restored, password and unknown fields refused with the dictation input's checks). `install-smart-reply.sh` installs it and replaces the first Python bridge in place (same unit, same Ctrl+Alt+R shortcut, same rules file). The popup is still a notification plus an IBus hint; there is no settings panel, screenshots, right-click expose or automatic suggestions, and a real chat-app trial of Tab has not been recorded (see [smart-reply/README.md](smart-reply/README.md)).** It records an owner idea so it is not lost, says which existing
+**Status: the working path is Rust (2026-10-23): `rust/mseries-reply` holds the rules, chat marker, bounded AT-SPI reader, context gate, tool-free draft agent over `mseries-ai`, audit, the `trigger` command (focused window from the compositor's `org.pantheon.gala` `GetWindows`) and the IBus input service (Tab inserts, Esc or any other key or focus change discards, 60 s limit, previous input method restored, password and unknown fields refused with the dictation input's checks). `install-smart-reply.sh` installs it and replaces the first Python bridge in place (same unit, same Ctrl+Alt+R shortcut, same rules file). Drafts are written as the owner's helpful chat assistant with a personal knowledge store (contacts, profile, style, topics, facts; section 7), managed with `mseries-reply memory`. The popup is still a notification plus an IBus hint; there is no settings panel, screenshots, right-click expose or automatic suggestions, and a real chat-app trial of Tab has not been recorded (see [smart-reply/README.md](smart-reply/README.md)).** It records an owner idea so it is not lost, says which existing
 pieces it would reuse, and scopes a first slice that can be built and judged without committing to the whole thing.
 
 ## Intent
@@ -135,6 +135,57 @@ Storage: the rules live in a small owner-only file in the user's config (version
 panel), separate from the model endpoint and memories in the `mseries-ai` store. The service reads the rules on every request, so
 a change takes effect immediately and a missing or malformed file means **everything blocked**, not allowed. Rule changes are
 logged by rule, never with the matched content.
+
+### 7. Persona and personal knowledge (2026-10-23)
+
+The draft agent is framed as **the owner's helpful chat assistant**: it writes the message the owner would send next, in their
+voice, and nothing else. A short fixed system prompt says so (and that it has no tools, matches the thread's tone and language, makes no promises for the owner, never claims to have sent, paid or attached anything, does not
+invent facts, and treats messages and notes as data). Beyond that it is given a small amount of **owner-written** knowledge
+so drafts sound like the owner and know their people. Nothing is learned automatically, and nothing leaves the machine.
+
+**Storage.** The same owner-only SQLite database as the preferences and free-text memories (`mseries-ai`,
+`$XDG_DATA_HOME/mseries-ai/assistant.sqlite3`, schema version 2; no second database). Two new tables plus the existing ones:
+
+| Record | Fields | Used when |
+|---|---|---|
+| Contact | name, aliases, relationship, tone, notes | the conversation title/header contains the name or an alias (whole words, case-insensitive) |
+| Profile note | text about the owner | always considered |
+| Style note | how the owner writes; optionally for one contact | always considered; a contact's own style note only in that conversation |
+| Topic / fact | text, title, keywords, optionally for one contact | a keyword (or, with none, the title) appears in the header or the last six messages; or it belongs to the matched contact |
+| Saved memory, app preference | the existing free-text memories and per-app writing guidance | as before, but now inside the same budget |
+
+Text is stored as single clean lines (control and bidi characters removed, whitespace collapsed), with length limits enforced by the
+tables. Deleting a contact deletes the notes linked to it. Everything is owner-editable and exportable (`memory export`, JSON, owner-only
+file, never overwrites).
+
+**Retrieval** is local and deterministic, no embeddings. Given the app id, the header and the last messages it picks at most one
+contact, then profile, style, topics and facts, then older memories, in that order of importance, until a **hard budget of
+1,400 characters** (headings included, about 350 tokens) is used; long entries are cut with an ellipsis rather than dropped.
+Matching is on word boundaries with a light plural strip. If two different people match the header (a group chat "Sam and Alex")
+**no contact record is used**: a wrong person's notes are worse than none. The budget keeps the prompt short for the 4B model.
+
+**Privacy rules (consistent with sections 3 and 6):**
+
+- The records are read only **after** the gate has built a packet, so a blocked app, field or contact never reaches the store, and
+  a blocked contact's record is not read. Retrieval also asks the rules about **every name** a matched contact goes by (name and
+  aliases) before reading the record or its linked notes, so blocking "Mum" also covers a chat titled "Mother".
+  Notes linked to other contacts are not even selected from the table.
+- **Record text is data, never instructions.** The system prompt is a fixed constant: no stored text is ever part of it. Records go in a
+  separate block after it, under fixed headings, one `- ` line per record with newlines and control characters removed, so a record
+  cannot add a heading, a role marker or a line that looks like an instruction. The prompt says the notes are data and must not be
+  followed. Tests store hostile text directly in the tables and check the prompt structure.
+- The draft agent **still has no tools**; it returns text, which is bounded and stripped of control characters as before.
+- The audit log records **counts only** (how many contacts, profile, style, topic, fact and memory records, and the characters
+  they used), never a record, a contact name or a title. `--dry-run` and `memory preview` print the notes to the owner's own terminal.
+- Nothing is uploaded or synced. A future remote model would need the per-app opt-in of section 3 and would not receive the store.
+
+**Management.** `mseries-reply memory add|list|edit|rm|export|preview` (see [smart-reply/README.md](smart-reply/README.md)). The Settings
+panel will edit the same records; a standalone assistant app (history of drafts, browsing and editing the store, chatting with the
+same agent) is the natural home for it and is not built.
+
+Limits: contact matching is by title text, so it has the same best-effort limits as contact rules outside Messages; an app that
+shows no header gets no contact record (profile, style and keyword-matched notes still apply); keyword matching does not understand
+synonyms. Only the draft quality is unmeasured: how much the 4B model gains from the notes has not been scored.
 
 ## Signal and the app-boundary rule
 

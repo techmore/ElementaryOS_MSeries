@@ -124,7 +124,7 @@ with tempfile.TemporaryDirectory(prefix="mseries-quick-") as d:
         def hold(draft, with_context=True):
             inline = call("Begin").unpack()[0]
             if with_context:
-                call("SetContext", GLib.Variant("(sa(bss))", ("org.example.Chat", lines)))
+                call("SetContext", GLib.Variant("(sa(bss)s)", ("org.example.Chat", lines, "")))
             call("Finish", GLib.Variant("(s)", (draft,)))
             return inline
 
