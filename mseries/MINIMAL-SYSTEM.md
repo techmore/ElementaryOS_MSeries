@@ -83,6 +83,19 @@ indicator replaces it. The libvirt stack (`libvirt-*`, `virt-manager`, `virtinst
 All compilers, LLVM/clang (~800 MB), `-dev` headers (112 build-only packages in all) and test tools move into the SDK build container. Nothing here ships to a
 user. This is also what keeps the SDK and benchmark runs fast.
 
+### App store: not in the base, but do not block it
+No app-store plan is written down in this repository (AppCenter's daemon is deliberately disabled by `install-system-tuning.sh`), so this is
+a recommendation, not a record:
+
+- **The base image ships only default apps with native ports** (the SDK-built Rust apps plus the few upstream apps we keep, e.g. Files and Terminal).
+  No store daemon, no catalogue service, nothing resident.
+- **A store is a later layer that costs almost nothing now if apps stay well-formed.** Every app, ours or ported, is its own package with
+  AppStream metainfo, a `.desktop` file and an icon, which `msdk pack` already has to produce. A store is then just a front end (an SDK app) over
+  the signed pacman `apps` suite for our apps, plus Flatpak for third-party ones.
+- **Native ports first, wrappers never in the base.** A third-party app enters the default set only as a native port; everything else is
+  installed on demand from the store layer.
+- Decision for later, when the store is designed: one suite or several (`stable`, `dev`, `apps`), and whether Flatpak stays the third-party route.
+
 ## 3. Development direction this implies
 
 1. **Do not start over.** The Rust compositor is already the session; the SDK core (`msdk`) exists; the Arch Pantheon group is a working
