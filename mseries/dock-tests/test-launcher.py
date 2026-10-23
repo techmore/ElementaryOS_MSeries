@@ -70,10 +70,21 @@ sys.exit(int(os.environ.get('CHILD_MODE', '0')))
             process.wait()
         self.addCleanup(cleanup)
         deadline = time.monotonic() + 3
-        while not self.child_pid.exists() and time.monotonic() < deadline:
+        child = None
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                break
+            try:
+                value = self.child_pid.read_text().strip()
+            except FileNotFoundError:
+                value = ''
+            if value.isdecimal():
+                child = int(value)
+                break
             time.sleep(.01)
-        self.assertTrue(self.child_pid.exists())
-        return process, int(self.child_pid.read_text())
+        self.assertIsNotNone(child, 'dock child did not publish a PID before timeout')
+        self.assertGreater(child, 0)
+        return process, child
 
     def test_user_disabled_blocks_patched_and_stock_fallback(self):
         marker = self.home / '.config/mseries/dock/user-disabled'

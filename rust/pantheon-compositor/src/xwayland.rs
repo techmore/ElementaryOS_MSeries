@@ -610,7 +610,9 @@ impl PantheonCompositor {
         window: &Window,
         serial: smithay::utils::Serial,
     ) {
-        if !window_accepts_focus(window) {
+        if !window_accepts_focus(window)
+            || self.window_app_id(window).as_deref() == Some("org.techmore.mseries.ScreenshotShelf")
+        {
             return;
         }
         let keep = window

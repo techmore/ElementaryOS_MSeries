@@ -468,6 +468,8 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
         // so the panel/dock keeps its reserved space.
         let surface_id = surface.id();
         let size = window.geometry().size;
+        let screenshot_shelf =
+            state.window_app_id(&window).as_deref() == Some("org.techmore.mseries.ScreenshotShelf");
         // Shell panels own their placement and must not take keyboard focus
         // when they first attach a buffer or reappear after autohide.
         if !state.is_panel_surface(surface)
@@ -510,6 +512,12 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                 .map(|work_area| {
                     let max_x = work_area.loc.x + (work_area.size.w - size.w).max(0);
                     let max_y = work_area.loc.y + (work_area.size.h - size.h).max(0);
+                    if screenshot_shelf {
+                        return (
+                            (max_x - 16).max(work_area.loc.x),
+                            (max_y - 16).max(work_area.loc.y),
+                        );
+                    }
                     let x = (work_area.loc.x + (work_area.size.w - size.w) / 2 + cascade)
                         .clamp(work_area.loc.x, max_x);
                     let y = (work_area.loc.y + (work_area.size.h - size.h) / 2 + cascade)
@@ -523,7 +531,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                 state.initially_positioned.insert(surface_id);
 
                 let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                if !state.session_locked {
+                if !state.session_locked && !screenshot_shelf {
                     state.focus_window_keyboard(&window, serial);
                 }
                 state.space.elements().for_each(|window| {

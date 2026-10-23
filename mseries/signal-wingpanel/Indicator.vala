@@ -112,6 +112,13 @@ private class TrayItem : Gtk.Box {
         });
         add_controller (context_click);
 
+        var activate_click = new Gtk.GestureClick () { button = Gdk.BUTTON_PRIMARY };
+        activate_click.pressed.connect ((n_press, x, y) => {
+            activate_click.set_state (Gtk.EventSequenceState.CLAIMED);
+            activate_item ();
+        });
+        add_controller (activate_click);
+
         initialize.begin ();
     }
 
@@ -151,6 +158,7 @@ private class TrayItem : Gtk.Box {
         if (value != null && value.length > 0) {
             title = value;
             set_tooltip_text (title);
+            image.update_property (Gtk.AccessibleProperty.LABEL, title, -1);
         }
     }
 
@@ -400,9 +408,13 @@ private class SignalTrayIndicator : Wingpanel.Indicator {
     }
 
     private void activate_signal () {
+        var launcher = Path.build_filename (Environment.get_home_dir (), ".local", "libexec", "mseries-signal-launcher");
         var binary = Path.build_filename (Environment.get_home_dir (), ".local", "bin", "signal-desktop");
         string[] argv;
-        if (FileUtils.test (binary, FileTest.IS_EXECUTABLE)) {
+        if (FileUtils.test (launcher, FileTest.IS_EXECUTABLE)) {
+            // Use the same theme-refresh path as the desktop launcher.
+            argv = { launcher };
+        } else if (FileUtils.test (binary, FileTest.IS_EXECUTABLE)) {
             argv = { binary, "--use-tray-icon" };
         } else {
             argv = { "flatpak", "run", "org.signal.Signal" };
