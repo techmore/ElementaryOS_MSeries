@@ -4,5 +4,6 @@
   "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
   "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
   "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
-  "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55"
+  "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55",
+  "0007-apple-m4-register-preserving-wfi.patch": "86af703ffcdc237eab43049202e0b15c610596a7b63f29dcbe92246a7d1ba3b8"
 }

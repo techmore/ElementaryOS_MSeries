@@ -4671,3 +4671,21 @@ or ISO. Receipts: 2026-10-22-r5-hosted-mesa6-image-intake.json and
 2026-10-22-r5-mesa6-full-graph-summary.json under mseries/m4-mini/receipts.
 Next: dispatch the full research-image workflow once at this reviewed branch,
 including the fresh EFI positive/negative fixtures and full ISO readback path.
+
+
+## M4 mini: complete R5/Mesa6 image and ISO assembled; live boot gap found — 2026-10-22
+
+Hosted run 39744832862 completed successfully at source 02e75c6960ed11a27269275b283e057a7555cb46. The selected kernel R5, Mesa6 and policy packages matched their retained hashes. The eleven-image graph, desktop live root, selected EFI handoff positive control and unsupported-page-size negative control passed. The 17,482,960,896-byte raw image passed GPT/ESP and verity data/hash readback. The assembled AArch64 UEFI ISO passed payload readback; its SHA-256 is 4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3.
+
+A separate read-only, networkless QEMU attempt reached UEFI and GRUB, then failed in Casper with “Unable to find a medium containing a live file system.” The hosted receipt correctly records no ISO boot test. The ISO archive itself matches its SHA-256; the failure is in live-media discovery under this QEMU setup and remains open. It does not establish an M4 failure or invalidate hosted assembly checks. No image is promoted and installer, trust enrollment, hardware and dual boot remain false.
+
+The refreshed upstream kernel audit found that current R5 enters plain WFI and lacks Aurora’s newer register-preserving M4 idle path and forced WFxT override. Candidate R6 adds a zero-fuzz adapted backport from AsahiLinux/linux c407e1097ba74b464982c66483ba507a50ed927a and 3f0822d73dbe341d8073a9db05b316cb564dc92f. Source patch/hash gates pass against GravityLinux/linux 4fc326f6c25ccceb7515e2635c22e01fde5d3bac. Hosted R6 compilation, independent package inspection, then a refreshed full image/ISO are the remaining build gates. Receipt: mseries/m4-mini/receipts/2026-10-22-r5-mesa6-full-image-iso.json.
+
+The live follow-up refresh found seven new Aurora commits and 174 new mainline
+commits. The mainline comparison has no changes to the selected Apple idle, J773g
+DT, Apple DRM/DCP, DART/IOMMU, NVMe, Aquantia or tg3 paths. Aurora's Apple
+watchdog config update is relevant to slow initramfs startup: the candidate now
+builds that driver in, alongside built-in ISO9660/SCSI CD-ROM support. Local
+resolved-config and R6 source-hash checks pass; native watchdog takeover and all
+hardware gates remain open. The M4 tester and all other selected refs were
+unchanged. See mseries/m4-mini/receipts/2026-10-22-upstream-source-reaudit.json.

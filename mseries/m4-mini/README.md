@@ -1,6 +1,9 @@
 # M4 Mac mini preparation
 
-**Hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs have succeeded.
+**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU boot diagnostics found that the R5 kernel recognizes a raw USB image as ISO9660 but cannot mount it (`No such device`); the R5 initramfs also did not expose the emulated optical drive as a block device. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. The resolved R6 config and source hash gates pass locally; hosted R6 build and corrected ISO boot remain pending. Nothing is qualified for installation or native M4 use.
+[Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
+
+**Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
 prepared inputs now build the complete mkosi image graph with hosted desktop,
 Mesa, ESP and GPT checks passing. Downloaded raw/GPT/ESP, active verity/signature
@@ -11,8 +14,8 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-These image results belong to the revision-2 baseline. The selected kernel-R5/
-Mesa6 research image rebuild is pending.
+The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
+assembled later; the current R6 kernel refresh is pending.
 
 The full revision-5 kernel build and independent downloaded package/source checks
 now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
@@ -32,8 +35,10 @@ Fresh hosted-input preparation and the exact eleven-image graph summary pass.
 The packaged R5 Image also reaches a minimal PID1 through ARM64 UEFI/GRUB under
 QEMU; this is a small fixture, not the desktop ISO or Apple firmware.
 [EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
-An updated full image/ISO remains pending. Native EGL
-import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
+This historical note predates the successful R5/Mesa6 image/ISO assembly in
+receipt `2026-10-22-r5-mesa6-full-image-iso.json`. Casper live-media discovery
+failed in local QEMU. Native EGL import/YUV, GPU/unload, installer and owner
+dual-boot acceptance remain unqualified; R6 is now the next kernel candidate.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
@@ -60,6 +65,21 @@ is the selected candidate: its project reports native HDMI/DCP and GPU support.
 The separate J713 Air and older mini diagnostic proposals are comparison
 material. Their admission strings, firmware contracts and display routing must
 not replace Gravity's matched mini profile.
+
+The separate Omarchy-M4-Native project now has a plain-M4 mini tester kit, but
+its published J773g assets use software rendering and firmware 26.6.2. The first
+reported mini boot reached OS approval without HDMI output; maintainers say no
+successful desktop boot is confirmed and the published kit has not been replaced
+by the source fix. Wired Ethernet is only expected in that kit, not verified at
+10 Gb. Omarchy-MX Mac is a separate M1/M2 project and does not add M4 mini support.
+
+The October 22 public-ref refresh found seven new Aurora kernel commits and 174
+new mainline commits. No mainline changes touched the reviewed Apple idle, J773g
+device-tree, Apple DRM/DCP, Apple DART/IOMMU, NVMe, Aquantia or tg3 paths. Aurora's
+new Apple-watchdog config change is adopted as built-in in R6; its later-firmware
+panel-property change does not apply to the selected 26.6.2 firmware contract.
+Gravity, Asahi, boot/installer, and M4 tester refs remained unchanged. See
+[source re-audit](receipts/2026-10-22-upstream-source-reaudit.json).
 
 DTBs, raw bootloader stages, U-Boot and Mesa have built locally. Selected AGX
 and software-rendering tests pass; the full kernel Image/modules/DTBs build now passes after the required

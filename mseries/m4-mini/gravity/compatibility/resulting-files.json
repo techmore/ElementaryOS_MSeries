@@ -8,5 +8,11 @@
   "rust/kernel/drm/device.rs": "716824518bbb481905145fe917a852d492549721755d0eac76551ec4f7411a36",
   "rust/kernel/drm/gem/mod.rs": "ed6bdf0619625e171c053a12754b6dfdeb3b63bec40c92899f0c1fb905a27dc5",
   "drivers/gpu/drm/asahi/queue/mod.rs": "6ecf440b04c0c51fb050e7dbbdc3cdf4407bfaf347075d880fa9d594a432d35d",
-  "drivers/gpu/drm/asahi/driver.rs": "45ce2157a6b59e879e5b3bbb1bcc6dec6b6458b67b5161a8a4a9e7a8293660b1"
+  "drivers/gpu/drm/asahi/driver.rs": "45ce2157a6b59e879e5b3bbb1bcc6dec6b6458b67b5161a8a4a9e7a8293660b1",
+  "arch/arm64/include/asm/apple-idle.h": "fb7b1c8b6c4ce5e2054831987eb32fcaa8c3ab9444748ec7eeee9dbc25eb2501",
+  "arch/arm64/include/asm/cputype.h": "3df0e51016f43a12d4432b1fc716318096cb034488d866fcfb4da750cfc874ce",
+  "arch/arm64/kernel/Makefile": "83c84acd640d302cb5ab5a499b1583d0ef5cdcbbc66b7234cd82226107e1741a",
+  "arch/arm64/kernel/idle-apple.S": "ae36d25beff91eecf643e7cbe5f9ce1112818461042213a1a8acd2ea618f019b",
+  "arch/arm64/kernel/idle.c": "175081aba8603d715493671b9e92e0b63ef84fc8b4159867d78778e5f6078667",
+  "arch/arm64/kernel/pi/idreg-override.c": "bfd3e97942abad57495980bd3577709e4c44eb474663ea0d5de604f42ce62dca"
 }

@@ -1,6 +1,21 @@
 # M4 Mac mini: Gravity Linux and upstream audit
 
-**Hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs have succeeded.
+**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. A local QEMU attempt reached UEFI and GRUB but Casper could not find live media; the ISO was assembled, not boot-qualified. This image still uses kernel R5. A newer M4 WFI/WFxT backport is staged as kernel R6; its hosted package build and a refreshed image/ISO are pending. Nothing is qualified for installation or native M4 use.
+[Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
+
+**Public source refresh, October 22:** the live Gravity kernel/Mesa/boot/installer
+refs, selected Asahi branches, Aurora integration, mainline, and both Omarchy
+projects were rechecked. Seven Aurora commits and 174 mainline commits moved;
+the current mainline comparison has no changes in the M4-relevant Apple idle,
+J773g DT, Apple DRM/DCP, DART/IOMMU, NVMe, Aquantia or tg3 paths. The relevant
+Aurora change makes Apple watchdog support built in. Candidate R6 now sets
+`CONFIG_APPLE_WATCHDOG=y`, alongside the R5 ISO-driver fix and the M4 WFI/WFxT
+backport. Aurora's panel-property change is limited to firmware 14.7+, while the
+selected mini firmware contract is 26.6.2. The Omarchy M4 tester remains without
+a confirmed successful mini desktop/HDMI or 10 Gb result. Full ref and commit
+notes: [source re-audit](receipts/2026-10-22-upstream-source-reaudit.json).
+
+**Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
 prepared inputs now build the complete mkosi image graph with hosted desktop,
 Mesa, ESP and GPT checks passing. Downloaded raw/GPT/ESP, active verity/signature
@@ -11,8 +26,8 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-These image results belong to the revision-2 baseline. The selected kernel-R5/
-Mesa6 research image rebuild is pending.
+The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
+assembled later; the current R6 kernel refresh is pending.
 
 The full revision-5 kernel build and independent downloaded package/source checks
 now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
@@ -32,8 +47,10 @@ Fresh hosted-input preparation and the exact eleven-image graph summary pass.
 The packaged R5 Image also reaches a minimal PID1 through ARM64 UEFI/GRUB under
 QEMU; this is a small fixture, not the desktop ISO or Apple firmware.
 [EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
-An updated full image/ISO remains pending. Native EGL
-import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
+This historical note predates the successful R5/Mesa6 image/ISO assembly in
+receipt `2026-10-22-r5-mesa6-full-image-iso.json`. Casper live-media discovery
+failed in local QEMU. Native EGL import/YUV, GPU/unload, installer and owner
+dual-boot acceptance remain unqualified; R6 is now the next kernel candidate.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant

@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import tarfile
 
@@ -55,12 +57,43 @@ def source_patch_gate(source, compatibility_version=None):
 def config_gate(path):
     values = dict(line.split('=', 1) for line in path.read_text().splitlines()
                   if line.startswith('CONFIG_') and '=' in line)
-    for key, value in {'CONFIG_ARM64_16K_PAGES': 'y', 'CONFIG_DRM_ASAHI_M4': 'm',
+    for key, value in {'CONFIG_ARCH_APPLE': 'y', 'CONFIG_ARM64_16K_PAGES': 'y',
+                       'CONFIG_BLK_DEV_SR': 'y', 'CONFIG_ISO9660_FS': 'y',
+                       'CONFIG_APPLE_WATCHDOG': 'y',
+                       'CONFIG_DRM_ASAHI_M4': 'm',
                        'CONFIG_RUST': 'y', 'CONFIG_DRM_APPLE': 'm',
                        'CONFIG_AQTION': 'm', 'CONFIG_TIGON3': 'm',
                        'CONFIG_LOCALVERSION': '"-elementary-m4-gravity1"'}.items():
         if values.get(key) != value:
             raise ValueError(f'resolved configuration must have {key}={value}')
+
+
+def check_apple_idle_image(build, output):
+    vmlinux = build / 'vmlinux'
+    if not vmlinux.is_file():
+        raise ValueError('linked vmlinux required for Apple idle verification')
+    nm = shutil.which('nm')
+    objdump = shutil.which('llvm-objdump') or shutil.which('objdump')
+    strings = shutil.which('strings')
+    if not nm or not objdump or not strings:
+        raise ValueError('nm, objdump and strings are required for Apple idle verification')
+    symbols = subprocess.check_output([nm, str(vmlinux)], text=True)
+    if not re.search(r'\bapple_cpu_wfi$', symbols, re.MULTILINE):
+        raise ValueError('linked apple_cpu_wfi symbol is missing')
+    if Path(objdump).name.startswith('llvm-'):
+        disassembly = subprocess.check_output([objdump, '--disassemble-symbols=apple_cpu_wfi', str(vmlinux)], text=True)
+    else:
+        disassembly = subprocess.check_output([objdump, '-d', '--disassemble=apple_cpu_wfi', str(vmlinux)], text=True)
+    required = ['dsb', 'wfi', 'isb', 'stp', 'str', 'ldp', 'x18', 'x19', 'x28', 'x29', 'x30']
+    missing = [token for token in required if not re.search(r'\b' + token + r'\b', disassembly.lower())]
+    if missing:
+        raise ValueError('apple_cpu_wfi disassembly lacks required instruction/registers: ' + ', '.join(missing))
+    output.write_text(disassembly)
+    literals = subprocess.check_output([strings, str(vmlinux)], text=True, errors='replace')
+    if 'id_aa64isar2.wfxt=0' not in literals:
+        raise ValueError('compiled Apple WFxT override literal is missing')
+    return {'apple_cpu_wfi_linked': True, 'state_save_restore_instructions_present': True,
+            'm4_wfxt_override_literal_present': True, 'disassembly_sha256': digest(output)}
 
 
 def main():
@@ -109,6 +142,7 @@ def main():
     run(base + ['olddefconfig'])
     config_gate(build / '.config')
     run(base + [f'-j{args.jobs}', 'Image', 'modules', 'dtbs'])
+    idle_checks = check_apple_idle_image(build, root / 'apple-idle-disassembly.txt')
     artifacts = ['arch/arm64/boot/Image', 'drivers/gpu/drm/asahi/asahi_m4.ko',
                  'arch/arm64/boot/dts/apple/t8132-j773g.dtb',
                  'drivers/net/ethernet/aquantia/atlantic/atlantic.ko',
@@ -118,6 +152,7 @@ def main():
                'source_archive_sha256': ARCHIVE_SHA256, 'kernel_release': RELEASE,
                'config_sha256': digest(build / '.config'), 'artifacts': hashes,
                'packaging_patches': patches, 'compatibility_patches': compatibility,
+               'm4_idle_checks': idle_checks,
                'status': 'source build only; no installation or J773g hardware qualification'}
     (root / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
 

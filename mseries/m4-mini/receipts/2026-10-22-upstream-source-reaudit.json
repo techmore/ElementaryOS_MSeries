@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "observed_date": "2026-10-22",
+  "observed_at_utc": "2026-10-23T00:16:24Z",
+  "scope": "Live public ref refresh and path-level review of selected M4 kernel, graphics, boot, packaging, firmware and adjacent plain-M4 tester sources; unchanged heads do not prove hardware support.",
+  "previous_receipt": "2026-10-22-upstream-head-refresh-3.json",
+  "hardware_validated": false,
+  "source_heads": [
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "gravity-m4",
+      "head": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "url": "https://github.com/GravityLinux/linux/commit/4fc326f6c25ccceb7515e2635c22e01fde5d3bac"
+    },
+    {
+      "repository": "GravityLinux/linux",
+      "ref": "master",
+      "head": "587858367581b9c55c3690f4e63382ad622719d4",
+      "url": "https://github.com/GravityLinux/linux/commit/587858367581b9c55c3690f4e63382ad622719d4"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "main",
+      "head": "87ac51d411f0e58a9433567ec2666f457be89e1d",
+      "url": "https://github.com/GravityLinux/mesa/commit/87ac51d411f0e58a9433567ec2666f457be89e1d"
+    },
+    {
+      "repository": "GravityLinux/mesa",
+      "ref": "pull/1/head",
+      "head": "208d4a484459a12c77bf073362613f842288c2e0",
+      "url": "https://github.com/GravityLinux/mesa/commit/208d4a484459a12c77bf073362613f842288c2e0"
+    },
+    {
+      "repository": "GravityLinux/bootloader",
+      "ref": "main",
+      "head": "f02d4a52017915febb222539636b5b025a70407a",
+      "url": "https://github.com/GravityLinux/bootloader/commit/f02d4a52017915febb222539636b5b025a70407a"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "gravity-alpha-20260925",
+      "head": "a2f6913694ff26908c16948af3f8372429782263",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a2f6913694ff26908c16948af3f8372429782263"
+    },
+    {
+      "repository": "GravityLinux/u-boot",
+      "ref": "main",
+      "head": "a44f46af0aa17e48572e0d46c0d082886ee353c3",
+      "url": "https://github.com/GravityLinux/u-boot/commit/a44f46af0aa17e48572e0d46c0d082886ee353c3"
+    },
+    {
+      "repository": "GravityLinux/packages",
+      "ref": "main",
+      "head": "711c2a110416d28010ccdd118b83111776bff207",
+      "url": "https://github.com/GravityLinux/packages/commit/711c2a110416d28010ccdd118b83111776bff207"
+    },
+    {
+      "repository": "GravityLinux/installer",
+      "ref": "main",
+      "head": "6420623289fe7544cb8589b658355e57f0290fcc",
+      "url": "https://github.com/GravityLinux/installer/commit/6420623289fe7544cb8589b658355e57f0290fcc"
+    },
+    {
+      "repository": "GravityLinux/kiwi-descriptions",
+      "ref": "main",
+      "head": "07bf52cb2866069c072eb03a8f23af9839d0397c",
+      "url": "https://github.com/GravityLinux/kiwi-descriptions/commit/07bf52cb2866069c072eb03a8f23af9839d0397c"
+    },
+    {
+      "repository": "GravityLinux/scripts",
+      "ref": "main",
+      "head": "12418e50125a72749a75917db578db55ea42704c",
+      "url": "https://github.com/GravityLinux/scripts/commit/12418e50125a72749a75917db578db55ea42704c"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi",
+      "head": "94fb23346d522edf53722357c426a3e58030beea",
+      "url": "https://github.com/AsahiLinux/linux/commit/94fb23346d522edf53722357c426a3e58030beea"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.4",
+      "head": "a8ac6027e82415f431bbba49ab535c44f2edaf4d",
+      "url": "https://github.com/AsahiLinux/linux/commit/a8ac6027e82415f431bbba49ab535c44f2edaf4d"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.4",
+      "head": "4edbfa916dbfba44af3ef2378cae2b2653c96058",
+      "url": "https://github.com/AsahiLinux/linux/commit/4edbfa916dbfba44af3ef2378cae2b2653c96058"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "asahi-wip-7.2",
+      "head": "236788cd2602a24c703fe7bdaddaf73ef77d2027",
+      "url": "https://github.com/AsahiLinux/linux/commit/236788cd2602a24c703fe7bdaddaf73ef77d2027"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/030-misc",
+      "head": "0003382398e6813b7288f9f60502f829ba41d484",
+      "url": "https://github.com/AsahiLinux/linux/commit/0003382398e6813b7288f9f60502f829ba41d484"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/210-gpu",
+      "head": "0ac1829d3f2048a6e57a0d508eb065e8c6729a16",
+      "url": "https://github.com/AsahiLinux/linux/commit/0ac1829d3f2048a6e57a0d508eb065e8c6729a16"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/dt-7.3",
+      "head": "6e890bf6442553c7bf56867a91c2dbcc2c295900",
+      "url": "https://github.com/AsahiLinux/linux/commit/6e890bf6442553c7bf56867a91c2dbcc2c295900"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "apple-soc/drivers-7.3",
+      "head": "fef9350c314bf089a11a62858261e6576ada867b",
+      "url": "https://github.com/AsahiLinux/linux/commit/fef9350c314bf089a11a62858261e6576ada867b"
+    },
+    {
+      "repository": "AsahiLinux/linux",
+      "ref": "bits/200-dcp",
+      "head": "172fa9c2711c66d7ecd3c0c5232d86fc6de767cb",
+      "url": "https://github.com/AsahiLinux/linux/commit/172fa9c2711c66d7ecd3c0c5232d86fc6de767cb"
+    },
+    {
+      "repository": "AsahiLinux/docs",
+      "ref": "main",
+      "head": "0d1f8917fa88745d62a4c05d802c4a7298c8616b",
+      "url": "https://github.com/AsahiLinux/docs/commit/0d1f8917fa88745d62a4c05d802c4a7298c8616b"
+    },
+    {
+      "repository": "AsahiLinux/asahi-installer",
+      "ref": "main",
+      "head": "e93743d52178b3e26e428fa05174ef549abf30cb",
+      "url": "https://github.com/AsahiLinux/asahi-installer/commit/e93743d52178b3e26e428fa05174ef549abf30cb"
+    },
+    {
+      "repository": "AsahiLinux/m1n1",
+      "ref": "main",
+      "head": "7cde7d1a784d851ebfee5579fa363c38b14150c0",
+      "url": "https://github.com/AsahiLinux/m1n1/commit/7cde7d1a784d851ebfee5579fa363c38b14150c0"
+    },
+    {
+      "repository": "aurora-silicon/linux",
+      "ref": "integration/aurora",
+      "head": "1fb1fa964e312309659a793d4a16b014f6de86ee",
+      "url": "https://github.com/aurora-silicon/linux/commit/1fb1fa964e312309659a793d4a16b014f6de86ee"
+    },
+    {
+      "repository": "torvalds/linux",
+      "ref": "master",
+      "head": "3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75",
+      "url": "https://github.com/torvalds/linux/commit/3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75"
+    },
+    {
+      "repository": "maralcbr/omarchy-mx-mac",
+      "ref": "main",
+      "head": "72f1906722fd042a54f1e1973610f62dd019531f",
+      "url": "https://github.com/maralcbr/omarchy-mx-mac/commit/72f1906722fd042a54f1e1973610f62dd019531f"
+    },
+    {
+      "repository": "maralcbr/omarchy-pkgs",
+      "ref": "asahi-quattro (default)",
+      "head": "7e2f6cfec1b3e412ad4fd6ed9611be275a246b30",
+      "url": "https://github.com/maralcbr/omarchy-pkgs/commit/7e2f6cfec1b3e412ad4fd6ed9611be275a246b30"
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "develop",
+      "head": "6c6d2e4dd48b6306416c28686b5212b6bc4f77dc",
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/commit/6c6d2e4dd48b6306416c28686b5212b6bc4f77dc"
+    },
+    {
+      "repository": "Kb2uka/Omarchy-M4-Native",
+      "ref": "v0.1.0-alpha.1-j773g-test.1",
+      "head": "df692997e5764efbcd0c44f7f92595bbe3783e1b",
+      "url": "https://github.com/Kb2uka/Omarchy-M4-Native/releases/tag/v0.1.0-alpha.1-j773g-test.1"
+    }
+  ],
+  "new_changes_reviewed": [
+    {
+      "repository": "aurora-silicon/linux",
+      "compare": "51cda529431d7ff56e1f370e74adb6e2711c08d5..1fb1fa964e312309659a793d4a16b014f6de86ee",
+      "commits": [
+        "4c784b88bfef53acb5ab2f96b5bbae2efefcb48f: shared Asahi config enables common Mac features",
+        "6710590f1c27209ff050a784b363ab747da4842d: build-script shell compatibility",
+        "8b647e02987901f0636000e17e73b4b857e4a328: DRM announcement test teardown drain",
+        "7f7ca4de90f53b0189cac0a1fa4debc692931622: build Apple watchdog driver into shared config",
+        "c73d038319680524bec8955322679090a0ea21bd: regulatory test harness fallback",
+        "7ec68060b9e988577d0833e5f8af7da9cb7d0f75: panel property 19 is level only on 14.7+ firmware",
+        "1fb1fa964e312309659a793d4a16b014f6de86ee: merge"
+      ],
+      "result": "Only direct boot-reliability candidate selected: CONFIG_APPLE_WATCHDOG=y in R6. Gravity currently builds it as a module while WATCHDOG_HANDLE_BOOT_ENABLED=y; built-in probing should take over the active boot watchdog before a slow initramfs reset. DCP change is for 14.7+ firmware and not the matched 26.6.2 stub; remaining changes are shared config, test, or tooling scope. This is source/config evidence; target boot still must verify it."
+    },
+    {
+      "repository": "torvalds/linux",
+      "compare": "a1c2b1da93f5f612aa7a33190c4900c98e51f6da..3ac032ef6ca8e47bb06d1e189dfcf88fa0a09c75",
+      "result": "174 mainline commits advanced. GitHub compare path filter found no changes to arm64/kernel/idle.c, Apple T8132 device trees, Apple DRM/DCP, Apple IOMMU/DART, Aquantia/tg3 Ethernet or NVMe. No new M4-specific mainline support found in this interval."
+    },
+    {
+      "repository": "GravityLinux/linux, Gravity Linux stack, AsahiLinux/linux, Asahi docs/installer/m1n1, Omarchy MX and Omarchy-M4-Native",
+      "result": "All audited refs unchanged since the prior refresh. The M4-native tester tag still has no confirmed successful desktop/HDMI boot or 10Gb result; Omarchy MX remains the separate M1/M2 project."
+    }
+  ],
+  "candidate_selection": {
+    "kernel": "GravityLinux/linux gravity-m4 4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "candidate_package": "7.1.13+elementary.m4.gravity1-6",
+    "r6_changes": [
+      "six scheduler compatibility fixes",
+      "M4+ register-preserving WFI and WFxT disabled",
+      "built-in ISO9660 and SCSI CD-ROM for live-media boot",
+      "built-in Apple watchdog takeover for initramfs boot reliability"
+    ],
+    "no_rebase": "No audited upstream head provided a reason to replace the matched Gravity M4 kernel/Mesa/boot/firmware contract."
+  }
+}

@@ -1,0 +1,194 @@
+From: ElementaryOS MSeries maintainers <builder@localhost>
+Subject: [PATCH] arm64: preserve Apple M4 state across WFI and disable WFxT
+
+Backport the two Aurora Linux changes below to Gravity Linux 7.1.13. Adapt
+the CPU part name to Gravity’s existing APPLE_CPU_PART_M4_DONAN_ECORE define.
+
+Upstream prerequisite: AsahiLinux/linux c407e1097ba74b464982c66483ba507a50ed927a
+Upstream M4 extension: AsahiLinux/linux 3f0822d73dbe341d8073a9db05b316cb564dc92f
+
+---
+--- a/arch/arm64/include/asm/apple-idle.h
++++ b/arch/arm64/include/asm/apple-idle.h
+@@ -0,0 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __ASM_APPLE_IDLE_H
++#define __ASM_APPLE_IDLE_H
++
++/* WFI that preserves x18-x30 on affected Apple cores. */
++void apple_cpu_wfi(void);
++
++#endif
+--- a/arch/arm64/include/asm/cputype.h
++++ b/arch/arm64/include/asm/cputype.h
+@@ -275,6 +275,13 @@
+ 	return read_cpuid(MIDR_EL1);
+ }
+ 
++/* Apple part numbers from M4 Donan onward identify M4 and later cores. */
++static inline bool midr_is_apple_m4_or_later(u32 midr)
++{
++	return MIDR_IMPLEMENTOR(midr) == ARM_CPU_IMP_APPLE &&
++	       MIDR_PARTNUM(midr) >= APPLE_CPU_PART_M4_DONAN_ECORE;
++}
++
+ /*
+  * Represent a range of MIDR values for a given CPU model and a
+  * range of variant/revision values.
+--- a/arch/arm64/kernel/Makefile
++++ b/arch/arm64/kernel/Makefile
+@@ -36,6 +36,8 @@
+ 			   syscall.o proton-pack.o idle.o patching.o pi/	\
+ 			   cpufeature_impdef.o					\
+ 			   rsi.o jump_label.o
++
++obj-$(CONFIG_ARCH_APPLE)	+= idle-apple.o
+ 
+ obj-$(CONFIG_COMPAT)			+= sys32.o signal32.o			\
+ 					   sys_compat.o
+--- a/arch/arm64/kernel/idle-apple.S
++++ b/arch/arm64/kernel/idle-apple.S
+@@ -0,0 +1,45 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#include <linux/linkage.h>
++#include <asm/assembler.h>
++
++/*
++ * Affected Apple cores can resume from WFI with cleared general registers.
++ * SP and stack memory survive. Preserve the AAPCS64 callee-saved registers
++ * and x18 (which may hold the shadow call stack), including the return PC.
++ * This follows the stateless-wait approach used during m1n1 M5 Windows
++ * bring-up. It does not configure an Apple deep-sleep state or DVFS policy.
++ *
++ * IRQ masking/context management remains with cpu_do_idle(). The direct
++ * function call tells its compiler that x0-x17 and flags are clobbered.
++ */
++	.macro apple_wait_save
++	stp	x29, x30, [sp, #-112]!
++	mov	x29, sp
++	stp	x19, x20, [sp, #16]
++	stp	x21, x22, [sp, #32]
++	stp	x23, x24, [sp, #48]
++	stp	x25, x26, [sp, #64]
++	stp	x27, x28, [sp, #80]
++	str	x18, [sp, #96]
++	dsb	sy
++	.endm
++
++	.macro apple_wait_restore
++	isb
++	ldr	x18, [sp, #96]
++	ldp	x19, x20, [sp, #16]
++	ldp	x21, x22, [sp, #32]
++	ldp	x23, x24, [sp, #48]
++	ldp	x25, x26, [sp, #64]
++	ldp	x27, x28, [sp, #80]
++	ldp	x29, x30, [sp], #112
++	ret
++	.endm
++
++	.pushsection .cpuidle.text, "ax"
++SYM_FUNC_START(apple_cpu_wfi)
++	apple_wait_save
++	wfi
++	apple_wait_restore
++SYM_FUNC_END(apple_cpu_wfi)
++	.popsection
+--- a/arch/arm64/kernel/idle.c
++++ b/arch/arm64/kernel/idle.c
+@@ -4,11 +4,16 @@
+  */
+ 
+ #include <linux/cpu.h>
++#include <linux/init.h>
+ #include <linux/irqflags.h>
++#include <linux/jump_label.h>
+ 
++#include <asm/apple-idle.h>
+ #include <asm/barrier.h>
+ #include <asm/cpuidle.h>
+ #include <asm/cpufeature.h>
++#include <asm/cputype.h>
++#include <asm/fpsimd.h>
+ #include <asm/sysreg.h>
+ 
+ enum {
+@@ -34,6 +39,35 @@
+ }
+ early_param("idle", setup_idle);
+ 
++#ifdef CONFIG_ARCH_APPLE
++/*
++ * Apple M4 and later secondary CPUs can return from WFI with general-purpose
++ * and FP/SIMD registers cleared. The key is enabled once at boot on those
++ * parts; everywhere else the check is a patched-out branch.
++ */
++static DEFINE_STATIC_KEY_FALSE(apple_wfi_loses_regs);
++
++static int __init apple_wfi_quirk_init(void)
++{
++	if (midr_is_apple_m4_or_later(read_cpuid_id())) {
++		static_branch_enable(&apple_wfi_loses_regs);
++		pr_info("Apple: preserving registers across WFI\n");
++	}
++	return 0;
++}
++early_initcall(apple_wfi_quirk_init);
++
++static __always_inline bool apple_wfi_needs_save(void)
++{
++	return static_branch_unlikely(&apple_wfi_loses_regs);
++}
++#else
++static __always_inline bool apple_wfi_needs_save(void)
++{
++	return false;
++}
++#endif
++
+ /*
+  *	cpu_do_idle()
+  *
+@@ -50,8 +84,18 @@
+ 	arm_cpuidle_save_irq_context(&context);
+ 
+ 	if (likely(idle == ARM64_IDLE_WFI)) {
+-		dsb(sy);
+-		wfi();
++		if (apple_wfi_needs_save()) {
++			/*
++			 * The FP/SIMD registers do not survive either: drop the
++			 * lazy ownership so the next return to userspace reloads
++			 * them, even when the same task resumes on this CPU.
++			 */
++			fpsimd_save_and_flush_cpu_state();
++			apple_cpu_wfi();
++		} else {
++			dsb(sy);
++			wfi();
++		}
+ 	} else if (idle == ARM64_IDLE_YIELD) {
+ 		dsb(sy);
+ 		asm volatile("yield" ::: "memory");
+--- a/arch/arm64/kernel/pi/idreg-override.c
++++ b/arch/arm64/kernel/pi/idreg-override.c
+@@ -12,6 +12,7 @@
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/cpufeature.h>
++#include <asm/cputype.h>
+ #include <asm/setup.h>
+ 
+ #include "pi.h"
+@@ -413,6 +414,11 @@
+ 
+ 	parse_cmdline(fdt, chosen);
+ 
++	/* Timed waits bypass the register-saving idle path on Apple M4+ cores. */
++	if (IS_ENABLED(CONFIG_ARCH_APPLE) &&
++	    midr_is_apple_m4_or_later(read_cpuid_id()))
++		__parse_cmdline("id_aa64isar2.wfxt=0", false);
++
+ 	for (i = 0; i < ARRAY_SIZE(regs); i++) {
+ 		reg = prel64_pointer(regs[i].reg);
+ 		override = prel64_pointer(reg->override);

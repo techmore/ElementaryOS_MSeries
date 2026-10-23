@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "scope": "hosted R5/Mesa6 research raw image and ARM64 UEFI ISO; local virtual boot attempted; no installer or hardware qualification",
+  "run": {
+    "id": 39744832862,
+    "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862",
+    "source_commit": "02e75c6960ed11a27269275b283e057a7555cb46",
+    "conclusion": "success"
+  },
+  "artifacts": {
+    "m4-image-candidate-39744832862": {
+      "id": 12411899921,
+      "size_bytes": 8156992741,
+      "zip_sha256": "e3fe91509df4440299b897ff16ddeb8e09d3bea5a866fca861de4699c89b6b28"
+    },
+    "m4-iso-candidate-39744832862": {
+      "id": 12413585187,
+      "size_bytes": 8080828995,
+      "zip_sha256": "e33ddc64d45fa48027af39730e963375976c338eb7b9f9ec487db6a88829b355"
+    },
+    "m4-image-record-39744832862": {
+      "id": 12412507717,
+      "size_bytes": 367375,
+      "zip_sha256": "4a869e242b2de24f10a6c3f92f396a03b77f216a2815237bc8dce59cf854a20a"
+    }
+  },
+  "components": {
+    "kernel": {
+      "version": "7.1.13+elementary.m4.gravity1-5",
+      "package_sha256": "522fe7216f05acad0e5e92eae4ef3186f0997ae35002d3110a05bbfa020dd628",
+      "image_sha256": "2817fd298819a1d9e4c12e7ac0bffc7636915c26a0a9b95212c939d4ce2e8f42"
+    },
+    "mesa": {
+      "version": "26.3.0~devel+gravity.87ac51d-6",
+      "package_sha256": "a240a2f2037c4f8f21b1c8a98da61c8299af5f42dc524e3484a69c127f4e6eb2"
+    },
+    "policy": {
+      "version": "20261021-2",
+      "package_sha256": "aa3154ba7dec80dea423b171a30e013542ddd426a12c4cafd2b3905dfb790199"
+    }
+  },
+  "image": {
+    "raw_sha256": "f352c8e3219c791346ce3ffb4e5fe7d864dd97f6cffc702cc6584178804d0f7b",
+    "raw_size_bytes": 17482960896,
+    "root_hash": "e863e1ebf4ac8e810678eb707af5e75aa5d7b4a4b1dd3b0dead766437de363c6",
+    "gpt_partitions": 7,
+    "checks": [
+      "11-image mkosi graph completed",
+      "selected EFI handoff passed positive and incompatible-page negative controls",
+      "actual desktop live-root/package and initramfs checks passed",
+      "GPT, ESP, verity data/hash and image readback passed",
+      "image inputs match the R5/Mesa6/policy candidate and source records"
+    ],
+    "external_signer_trust_verified": false,
+    "native_trust_enrolled": false
+  },
+  "iso": {
+    "file": "elementaryos-9.0-m4-mini-research-arm64.20261022080541.iso",
+    "size_bytes": 8080828416,
+    "sha256": "4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3",
+    "efi_path": "EFI/BOOT/BOOTAA64.EFI",
+    "efi_machine": "AArch64 (0xaa64)",
+    "efi_sha256": "3a4efdb0450a81425e92b25d0802de5ee01f298cf447fa41417ce54796913f7b",
+    "readback_payloads_verified": true,
+    "hosted_assembly_success": true,
+    "hosted_iso_boot_tested": false,
+    "local_qemu": {
+      "machine": "virt / TCG / Neoverse-N1",
+      "read_only_media": true,
+      "network": false,
+      "reached_uefi_and_grub": true,
+      "live_system_reached": false,
+      "media_attempts": [
+        {
+          "presentation": "SCSI/USB optical drive",
+          "result": "Linux detected the emulated SCSI/USB optical transport, but no usable /dev/sr0 block device was exposed; the initramfs could not find live media."
+        },
+        {
+          "presentation": "ISO attached as raw USB mass-storage disk",
+          "result": "Linux enumerated /dev/sda and blkid identified ISO9660, but Casper mount failed: mount -t iso9660 -o ro,noatime /dev/sda /cdrom returned No such device."
+        }
+      ],
+      "diagnosis": "R5 kernel configuration lacks CONFIG_BLK_DEV_SR and CONFIG_ISO9660_FS. R6 now requires both built in; this remains a QEMU live-media boot failure, not a native M4 test."
+    }
+  },
+  "factory_promotion": false,
+  "installer_admission": false,
+  "hardware_validated": false,
+  "dual_boot_validated": false
+}

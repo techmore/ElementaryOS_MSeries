@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 import subprocess
 import tempfile
@@ -41,9 +42,17 @@ def main():
     if (len(rows) != 3 or rows[0] != 'Package: linux-image-elementary-m4-gravity1'
             or rows[2] != 'Architecture: arm64' or rows[1] not in [
                 'Version: 7.1.13+elementary.m4.gravity1-2', 'Version: 7.1.13+elementary.m4.gravity1-3',
-                'Version: 7.1.13+elementary.m4.gravity1-4', 'Version: 7.1.13+elementary.m4.gravity1-5']):
+                'Version: 7.1.13+elementary.m4.gravity1-4', 'Version: 7.1.13+elementary.m4.gravity1-5',
+                'Version: 7.1.13+elementary.m4.gravity1-6']):
         raise ValueError('unexpected package identity')
     version = rows[1].removeprefix('Version: ')
+    if version == '7.1.13+elementary.m4.gravity1-6':
+        checks = build.get('m4_idle_checks', {})
+        if (checks.get('apple_cpu_wfi_linked') is not True
+                or checks.get('state_save_restore_instructions_present') is not True
+                or checks.get('m4_wfxt_override_literal_present') is not True
+                or not re.fullmatch(r'[0-9a-f]{64}', checks.get('disassembly_sha256', ''))):
+            raise ValueError('R6 Apple idle compile/disassembly receipt required')
     versions = json.loads((Path(__file__).parent / 'gravity/compatibility/package-versions.json').read_text())
     if version in versions and build.get('compatibility_patches') != versions[version]:
         raise ValueError('package version requires its exact reviewed scheduler compatibility patches')
