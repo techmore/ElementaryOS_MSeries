@@ -127,6 +127,7 @@ struct Live {
     history_cursor: Option<String>,
     has_more_history: bool,
     history_loading: bool,
+    history_task: Option<glib::JoinHandle<()>>,
     history_error: Option<String>,
     history_control: Option<gtk::Button>,
     view: ThreadView,
@@ -150,6 +151,13 @@ struct CacheMarker {
 
 fn cache_write_needed(current: &CacheMarker, persisted: Option<&CacheMarker>) -> bool {
     persisted != Some(current)
+}
+
+fn abort_history_load(live: &mut Live) {
+    if let Some(task) = live.history_task.take() {
+        task.abort();
+    }
+    live.history_loading = false;
 }
 
 /// A new thread being composed before its first message.
@@ -1866,7 +1874,9 @@ impl App {
                 return;
             }
             app.tunnel.borrow_mut().take();
-            *app.live.borrow_mut() = None;
+            if let Some(mut live) = app.live.borrow_mut().take() {
+                abort_history_load(&mut live);
+            }
             app.providers.borrow_mut().clear();
             app.reconnect_attempt.set(0);
             app.connecting.set(false);
@@ -2016,6 +2026,7 @@ impl App {
             if let Some(live) = app.live.borrow_mut().as_mut() {
                 live.sub_id = None;
                 live.stale = true;
+                abort_history_load(live);
                 app.subtitle.set_text(&format!("{} · offline · cached view", live.base_subtitle));
                 app.update_history_control(live);
             }
@@ -2755,6 +2766,7 @@ impl App {
         }
         let taken = self.live.borrow_mut().take();
         if let Some(mut live) = taken {
+            abort_history_load(&mut live);
             if !live.running {
                 self.persist_thread_cache(&mut live);
             }
@@ -2984,6 +2996,7 @@ impl App {
             history_cursor,
             has_more_history,
             history_loading: false,
+            history_task: None,
             history_error: None,
             history_control: None,
             view,
@@ -3150,7 +3163,7 @@ impl App {
     fn mark_thread_sync_interrupted(&self) {
         if let Some(live) = self.live.borrow_mut().as_mut() {
             live.stale = true;
-            live.history_loading = false;
+            abort_history_load(live);
             self.subtitle.set_text(&format!("{} · sync interrupted", live.base_subtitle));
             self.update_history_control(live);
         }
@@ -3189,6 +3202,9 @@ impl App {
                 let history_cursor = v.get("historyCursor").and_then(Value::as_str).map(str::to_string);
                 let has_more_history = v.get("hasMoreHistory").and_then(Value::as_bool).unwrap_or(false);
                 if let Some(live) = self.live.borrow_mut().as_mut() {
+                    if live.history_loading && live.history_cursor != history_cursor {
+                        abort_history_load(live);
+                    }
                     if live.sequence != sequence
                         || live.history_cursor != history_cursor
                         || live.has_more_history != has_more_history
@@ -3203,7 +3219,6 @@ impl App {
                     live.stale = true;
                     live.history_cursor = history_cursor;
                     live.has_more_history = has_more_history;
-                    live.history_loading = false;
                     live.history_error = None;
                     self.subtitle.set_text(&format!("{} · syncing", live.base_subtitle));
                 }
@@ -3368,7 +3383,7 @@ impl App {
             || live.history_error.is_some()
         {
             let button = gtk::Button::with_label(if live.history_loading {
-                "Loading earlier messages…"
+                "Cancel loading earlier messages"
             } else if live.history_error.is_some() {
                 "Retry loading earlier messages"
             } else {
@@ -3376,13 +3391,22 @@ impl App {
             });
             button.add_css_class("flat");
             button.set_halign(gtk::Align::Center);
-            button.set_sensitive(!live.history_loading && !live.stale);
+            button.set_sensitive(live.history_loading || !live.stale);
             button.set_tooltip_text(live.history_error.as_deref());
-            button.update_property(&[gtk::accessible::Property::Label("Load earlier messages")]);
+            button.update_property(&[gtk::accessible::Property::Label(if live.history_loading {
+                "Cancel loading earlier messages"
+            } else {
+                "Load earlier messages"
+            })]);
             let weak_app = Rc::downgrade(self);
             button.connect_clicked(move |_| {
                 if let Some(app) = weak_app.upgrade() {
-                    app.load_earlier_history();
+                    let loading = app.live.borrow().as_ref().is_some_and(|live| live.history_loading);
+                    if loading {
+                        app.cancel_history_load();
+                    } else {
+                        app.load_earlier_history();
+                    }
                 }
             });
             self.chat.append(&button);
@@ -3412,8 +3436,9 @@ impl App {
             (live.thread_id.clone(), cursor, (self.generation.get(), cred))
         };
         let (generation, cred) = generation;
+        let request_thread_id = thread_id.clone();
         let app = self.clone();
-        glib::spawn_future_local(async move {
+        let task = glib::spawn_future_local(async move {
             let result = t3::history::fetch_page(&cred, &thread_id, &cursor).await;
             if app.generation.get() != generation {
                 return;
@@ -3426,6 +3451,7 @@ impl App {
             }
             if live.history_cursor.as_deref() != Some(cursor.as_str()) {
                 live.history_loading = false;
+                live.history_task = None;
                 app.update_history_control(live);
                 return;
             }
@@ -3441,6 +3467,7 @@ impl App {
                     live.has_more_history = page.has_more_history && live.history_cursor.is_some();
                     live.cache_revision = live.cache_revision.wrapping_add(1);
                     live.history_loading = false;
+                    live.history_task = None;
                     live.history_error = None;
                     if added == 0 && live.has_more_history && live.history_cursor.as_deref() == Some(cursor.as_str()) {
                         live.has_more_history = false;
@@ -3471,11 +3498,29 @@ impl App {
                 }
                 Err(error) => {
                     live.history_loading = false;
+                    live.history_task = None;
                     live.history_error = Some(error);
                     app.update_history_control(live);
                 }
             }
         });
+        let mut state = self.live.borrow_mut();
+        if let Some(live) = state.as_mut().filter(|live| live.thread_id == request_thread_id && live.history_loading) {
+            live.history_task = Some(task);
+        } else {
+            task.abort();
+        }
+    }
+
+    fn cancel_history_load(&self) {
+        let mut state = self.live.borrow_mut();
+        let Some(live) = state.as_mut() else { return };
+        if !live.history_loading {
+            return;
+        }
+        abort_history_load(live);
+        live.history_error = None;
+        self.update_history_control(live);
     }
 
     /// Insert only the newly fetched history rows; recreating every existing message made older
@@ -3511,13 +3556,18 @@ impl App {
         }
         if let Some(button) = &live.history_control {
             button.set_label(if live.history_loading {
-                "Loading earlier messages…"
+                "Cancel loading earlier messages"
             } else if live.history_error.is_some() {
                 "Retry loading earlier messages"
             } else {
                 "Load earlier messages"
             });
-            button.set_sensitive(!live.history_loading && !live.stale);
+            button.set_sensitive(live.history_loading || !live.stale);
+            button.update_property(&[gtk::accessible::Property::Label(if live.history_loading {
+                "Cancel loading earlier messages"
+            } else {
+                "Load earlier messages"
+            })]);
             button.set_tooltip_text(live.history_error.as_deref());
         }
     }

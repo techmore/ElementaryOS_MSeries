@@ -103,8 +103,10 @@ retention window still falls back to T3's current snapshot.
 
 The full chat starts with T3's bounded thread window. Scrolling to the top loads the next older page from T3 using its
 opaque history cursor; older messages are prepended without moving the part of the conversation already on screen.
-Rows deduplicate by source thread and item identity, including inherited rows. A Load earlier / Retry control stays at
-the top as a fallback. History pages can be fetched while connected; the offline cache retains all loaded items with
+Rows deduplicate by source thread and item identity, including inherited rows. The Load earlier / Retry control stays
+at the top as a fallback and becomes Cancel while a page is in flight. Cancel, thread changes, cursor changes and
+disconnects abort the HTTP request without advancing the saved cursor. History pages can be fetched while connected;
+the offline cache retains all loaded items with
 their next cursor up to the 8 MiB record limit. If a larger thread no longer fits, the previous valid cache stays in
 place rather than advancing its cursor past unsaved history.
 
