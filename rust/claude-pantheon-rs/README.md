@@ -78,8 +78,9 @@ keeps the last successful snapshot as stale; normal application shutdown also ma
 additionally watches the client session D-Bus name, so an unclean process exit marks cached activity stale even when the
 client cannot write a shutdown snapshot. The Dock popover and quick window identify the selected provider separately
 from the paired T3 server; when no provider is selected, they say so instead of showing the server as an account. The
-Wingpanel summary scopes usage to the selected provider. Live activity also shows a thread's model when it belongs to
-that selected provider; other accounts' model names are omitted from the compact status feed. Stale status is treated
+Wingpanel summary scopes usage to the selected provider. Its activity rows show a thread's model on a separate
+caption line when it belongs to that provider, and the list scrolls within a bounded viewport. Other accounts' model
+names are omitted from the compact status feed. Stale status is treated
 as offline even if feed flags disagree, and stale activity cannot open a thread. Unpairing or switching environments
 clears the cache. The Wingpanel module is included in the Debian package by default. Set
 `CLAUDE_PANTHEON_ENABLE_INDICATOR=0` only for a non-Wingpanel build. Wingpanel loads modules from a system directory,

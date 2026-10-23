@@ -9,8 +9,9 @@ indicator (only a phone widget), so this is the only one.
 - **Popover:** only the provider selected in full chat, with the plan window nearest exhaustion and
   its reset countdown ("Codex session 59% · resets in 1 h 24 min (22:00)") and that provider's
   remaining windows as gauges (green under 60 %, amber under 90 %, red above). It then lists pending
-  prompts ("needs you") and running threads. Running rows show the thread title without its provider
-  account label. Other provider accounts remain in Settings. Clicking a thread opens it in the app through
+  prompts ("needs you") and running threads. Rows show the title and, when available, the model on a
+  separate caption line. The activity list scrolls inside a 260-pixel viewport when it grows. Other
+  provider accounts remain in Settings. Clicking a thread opens it in the app through
   `gapplication action io.github.techmore.ClaudePantheonRs open-thread '<id>'`, where the prompt is
   answered. A bottom bar shows the server and the feed's freshness, and an **Open Full Chat** button.
 

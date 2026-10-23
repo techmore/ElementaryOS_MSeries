@@ -34,6 +34,7 @@ public class ClaudePantheon.Feed : Object {
     public class Thread : Object {
         public string id = "";
         public string title = "";
+        public string model = "";
         public int count = 0;
     }
 
@@ -80,6 +81,8 @@ public class ClaudePantheon.Feed : Object {
                 var thread = new Thread ();
                 thread.id = t.get_string_member ("id");
                 thread.title = t.get_string_member ("title");
+                // The client writes this only for threads using the selected provider.
+                thread.model = t.has_member ("model") ? t.get_string_member ("model") : "";
                 thread.count = t.has_member ("count") ? (int) t.get_int_member ("count") : 0;
                 (key == "running" ? feed.running : feed.pending).add (thread);
             }
@@ -132,6 +135,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
     private Gtk.Box windows_box;
     private Gtk.Label next_label;
     private Gtk.Box threads_box;
+    private Gtk.ScrolledWindow threads_scroll;
     private Gtk.Label freshness;
     private GLib.FileMonitor? monitor = null;
     private uint app_watch_id = 0;
@@ -204,6 +208,13 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             next_label.add_css_class ("caption");
             var threads_header = new Granite.HeaderLabel ("Threads");
             threads_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            threads_scroll = new Gtk.ScrolledWindow () {
+                hscrollbar_policy = Gtk.PolicyType.NEVER,
+                vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
+                max_content_height = 260,
+                propagate_natural_height = true,
+            };
+            threads_scroll.child = threads_box;
             freshness = new Gtk.Label ("") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             freshness.add_css_class ("caption");
             freshness.add_css_class (Granite.CssClass.DIM);
@@ -215,7 +226,7 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             var bottom = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             bottom.append (freshness);
             bottom.append (open);
-            foreach (var w in new Gtk.Widget[] { headline, headline_detail, windows_box, next_label, threads_header, threads_box, bottom }) {
+            foreach (var w in new Gtk.Widget[] { headline, headline_detail, windows_box, next_label, threads_header, threads_scroll, bottom }) {
                 w.margin_start = 12;
                 w.margin_end = 12;
                 popover_widget.append (w);
@@ -250,6 +261,34 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
             box.remove (child);
             child = next;
         }
+    }
+
+    private Gtk.Button activity_button (Feed.Thread thread, bool pending, bool live) {
+        var button = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
+        button.add_css_class (Granite.STYLE_CLASS_FLAT);
+        string title = pending
+            ? live ? "? %s needs you (%d)".printf (thread.title, thread.count)
+                : "Last known · %s · %d request(s) at last sync".printf (thread.title, thread.count)
+            : live ? "▶ %s".printf (thread.title) : "Last known · %s".printf (thread.title);
+        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+        var primary = new Gtk.Label (title) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+        content.append (primary);
+        if (thread.model != "") {
+            var model = new Gtk.Label ("Model: %s".printf (thread.model)) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            model.add_css_class ("caption");
+            model.add_css_class (Granite.CssClass.DIM);
+            content.append (model);
+        }
+        button.child = content;
+        button.tooltip_text = live
+            ? pending ? "Open this thread to answer" : "Open this running thread"
+            : "Offline; this is last known activity";
+        string id = thread.id;
+        button.clicked.connect (() => {
+            launch (id);
+            close ();
+        });
+        return button;
     }
 
     public void reload () {
@@ -309,31 +348,10 @@ public class ClaudePantheon.Indicator : Wingpanel.Indicator {
         next_label.visible = false;
         clear (threads_box);
         foreach (var t in feed.pending) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
-            b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var label = live ? "? %s needs you (%d)".printf (t.title, t.count) : "Last known · %s · %d request(s) at last sync".printf (t.title, t.count);
-            var l = new Gtk.Label (label) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            b.child = l;
-            b.tooltip_text = live ? "Open this thread to answer" : "Offline; this request may no longer be pending";
-            var id = t.id;
-            b.clicked.connect (() => {
-                launch (id);
-                close ();
-            });
-            threads_box.append (b);
+            threads_box.append (activity_button (t, true, live));
         }
         foreach (var t in feed.running) {
-            var b = new Gtk.Button () { halign = Gtk.Align.FILL, sensitive = live };
-            b.add_css_class (Granite.STYLE_CLASS_FLAT);
-            var label = live ? "▶ %s".printf (t.title) : "Last known · %s".printf (t.title);
-            var l = new Gtk.Label (label) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            b.child = l;
-            var id = t.id;
-            b.clicked.connect (() => {
-                launch (id);
-                close ();
-            });
-            threads_box.append (b);
+            threads_box.append (activity_button (t, false, live));
         }
         if (feed.running.size == 0 && feed.pending.size == 0) {
             var l = new Gtk.Label (stale ? "No activity reported at last sync" : "Nothing running") { xalign = 0, margin_start = 6 };
