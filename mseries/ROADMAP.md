@@ -1,3 +1,19 @@
+## Favorite UI save, reopen and removal qualified privately — 2026-10-22
+
+The encrypted-keyring runner now also starts Rust Messages on Xvfb with a private
+synthetic BlueFerry API. Toggling the actual GTK star saves the preference and
+updates the strip; closing/rebuilding the app restores both star and strip from
+the encrypted record. Removing the favorite persists an empty local list.
+The fixture exposes no send/star mutation methods; all phone data is synthetic.
+
+Default, explicit elementary light and dark runs pass, together with the SDK
+Python/Rust round-trip and strict all-target Clippy. The same tests pass using
+exact CI-pinned BlueFerry source 60fd7ef1abbd25947981f0cf27a521d82784a75f;
+its module path was verified, avoiding reliance on the owner-installed package.
+Receipts: /tmp/messages-ui-keyring{,-light,-dark,-ci-pin,-clippy}.log.
+The CI keyring step now runs both SDK and UI tests. No runtime code/binary change
+was needed. Live paired-phone identity/behavior and owner UI acceptance remain.
+
 ## Successful encrypted Python/Rust favorites interoperability — 2026-10-22
 
 New rust/mseries-messages/test-keyring.sh provisions a private home, runtime,

@@ -16,7 +16,7 @@ This is an implementation inventory, not proof of live service behavior.
 | Tapbacks | SDK folding and removal/change tests | Phone-specific examples |
 | Media | Bounded public HTTPS image/GIF/WebP/YouTube previews; no private MAP attachment retrieval | Both clients depend on backend limits; live preview states |
 | Photos | Opt-in API, bounded decode, revision and phone cache invalidation | Live photos |
-| Pins | Stable UUID scope and shared Secret Service item; v1/v2 local-pin/hidden-import storage round-trip and order supported | Released BlueFerry lacks merged UUID field; Rust local-pin editing/strip implemented; successful private encrypted Rust/Python persistence verified; live acceptance remains |
+| Pins | Stable UUID scope and shared Secret Service item; v1/v2 local-pin/hidden-import storage round-trip and order supported | Released BlueFerry lacks merged UUID field; Rust local-pin editing/strip implemented; private encrypted Rust/Python and GTK save/reopen/remove persistence verified; live acceptance remains |
 | Navigation | Compact/regular resize; search shortcuts; Back draft retention | Refresh preserves focused inbox row by thread identity and reading position, follows when near bottom and offers Latest Messages; isolated sidebar/viewport regression passes |
 | Scaling/theme | Elementary light/dark, long-text and large-font isolated GTK passes | Hardware scales and assistive technology |
 | Localization | App gettext domain, 87 static source strings extracted, including accessible names/tooltips; English fallback and local calendar timestamps | Dynamic/plural strings and dynamic accessibility names and reviewed translated catalogs remain; gettext/template foundation is installed |
