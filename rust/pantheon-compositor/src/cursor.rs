@@ -133,6 +133,8 @@ where
     let scale = Scale::from(output.current_scale().fractional_scale());
     let cursor_status = if state.screenshot_selection.borrow().active() {
         CursorImageStatus::Named(CursorIcon::Crosshair)
+    } else if state.move_grab_active {
+        CursorImageStatus::Named(CursorIcon::Grabbing)
     } else {
         state.cursor_status.clone()
     };
