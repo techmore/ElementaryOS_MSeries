@@ -93,11 +93,12 @@ turns stay in memory and are persisted only after they settle, so token-by-token
 If the thread stream ends while the main connection remains open, the last view is marked interrupted and live
 actions stay disabled until the user retries synchronization.
 Live item updates use a process-local identity index, rebuilt from the cached projection on demand, so replaying
-large histories does not scan the full item list for every event. Version-3 cache records are still readable; the next
-cache write upgrades them without dropping their history cursor.
-Records are capped at 8 MiB each and 64 MiB / 32 entries per environment. Corrupt, wrong-scope and old-schema files
-are discarded; forgetting or removing an environment clears its thread cache. A replay gap beyond the server's
-retention window still falls back to T3's current snapshot.
+large histories does not scan the full item list for every event. Version-3 and version-4 JSON records remain readable;
+new version-5 records use LZ4 compression and preserve the same replay cursor.
+Compressed records are capped at 8 MiB each, with an uncompressed limit of 64 MiB per record and a 64 MiB / 32-entry
+disk budget per environment. This keeps large text histories available across restarts without unbounded cache growth.
+Corrupt, wrong-scope and old-schema files are discarded; forgetting or removing an environment clears its thread cache.
+A replay gap beyond the server's retention window still falls back to T3's current snapshot.
 
 ## Reading older chat history
 
@@ -106,9 +107,9 @@ opaque history cursor; older messages are prepended without moving the part of t
 Rows deduplicate by source thread and item identity, including inherited rows. The Load earlier / Retry control stays
 at the top as a fallback and becomes Cancel while a page is in flight. Cancel, thread changes, cursor changes and
 disconnects abort the HTTP request without advancing the saved cursor. History pages can be fetched while connected;
-the offline cache retains all loaded items with
-their next cursor up to the 8 MiB record limit. If a larger thread no longer fits, the previous valid cache stays in
-place rather than advancing its cursor past unsaved history.
+the offline cache compresses all loaded items together with their next cursor. If a record exceeds either its
+uncompressed or compressed size limit, the previous valid cache stays in place rather than advancing its cursor past
+unsaved history.
 
 ## Sidebar
 

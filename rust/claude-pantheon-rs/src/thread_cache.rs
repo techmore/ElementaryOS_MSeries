@@ -11,9 +11,11 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-const SCHEMA_VERSION: u32 = 4;
-const PREVIOUS_SCHEMA_VERSION: u32 = 3;
+const SCHEMA_VERSION: u32 = 5;
+const PREVIOUS_SCHEMA_VERSION: u32 = 4;
+const OLDER_SCHEMA_VERSION: u32 = 3;
 const MAX_RECORD_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_UNCOMPRESSED_RECORD_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_ENV_ENTRIES: usize = 32;
 const MAX_ENV_BYTES: u64 = 64 * 1024 * 1024;
 static NEXT_TEMP: AtomicU64 = AtomicU64::new(1);
@@ -104,7 +106,7 @@ impl CachedThread {
     }
 
     fn matches(&self, environment_id: &str, thread_id: &str) -> bool {
-        matches!(self.schema_version, SCHEMA_VERSION | PREVIOUS_SCHEMA_VERSION)
+        matches!(self.schema_version, SCHEMA_VERSION | PREVIOUS_SCHEMA_VERSION | OLDER_SCHEMA_VERSION)
             && self.environment_id == environment_id
             && self.thread_id == thread_id
     }
@@ -143,6 +145,10 @@ fn environment_dir(root: &Path, environment_id: &str) -> Option<PathBuf> {
 }
 
 fn record_path(root: &Path, environment_id: &str, thread_id: &str) -> Option<PathBuf> {
+    Some(environment_dir(root, environment_id)?.join(format!("{}.lz4", encoded_component(thread_id)?)))
+}
+
+fn legacy_record_path(root: &Path, environment_id: &str, thread_id: &str) -> Option<PathBuf> {
     Some(environment_dir(root, environment_id)?.join(format!("{}.json", encoded_component(thread_id)?)))
 }
 
@@ -166,20 +172,43 @@ fn load_from(root: &Path, environment_id: &str, thread_id: &str) -> Option<Cache
 fn read_from(root: &Path, environment_id: &str, thread_id: &str) -> Option<CachedThread> {
     let path = record_path(root, environment_id, thread_id)?;
     prune_environment(root, environment_id, &path);
-    let metadata = std::fs::metadata(&path).ok()?;
+    if let Ok(metadata) = std::fs::metadata(&path) {
+        if metadata.len() > MAX_RECORD_BYTES {
+            let _ = std::fs::remove_file(&path);
+        } else if let Ok(bytes) = std::fs::read(&path) {
+            if let Some(decoded) = decompress_record(&bytes) {
+                if let Ok(record) = serde_json::from_slice::<CachedThread>(&decoded)
+                    && record.matches(environment_id, thread_id)
+                {
+                    return Some(record);
+                }
+            }
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+    let legacy_path = legacy_record_path(root, environment_id, thread_id)?;
+    let metadata = std::fs::metadata(&legacy_path).ok()?;
     if metadata.len() > MAX_RECORD_BYTES {
-        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(legacy_path);
         return None;
     }
-    let bytes = std::fs::read(&path).ok()?;
-    let decoded = serde_json::from_slice::<CachedThread>(&bytes).ok();
-    match decoded {
-        Some(record) if record.matches(environment_id, thread_id) => Some(record),
+    let bytes = std::fs::read(&legacy_path).ok()?;
+    match serde_json::from_slice::<CachedThread>(&bytes) {
+        Ok(record) if record.matches(environment_id, thread_id) => Some(record),
         _ => {
-            let _ = std::fs::remove_file(path);
+            let _ = std::fs::remove_file(legacy_path);
             None
         }
     }
+}
+
+fn decompress_record(bytes: &[u8]) -> Option<Vec<u8>> {
+    let (size, payload) = bytes.split_at_checked(4)?;
+    let expected = u32::from_le_bytes(size.try_into().ok()?) as u64;
+    if expected > MAX_UNCOMPRESSED_RECORD_BYTES {
+        return None;
+    }
+    lz4_flex::decompress(payload, expected as usize).ok()
 }
 
 pub fn save(record: &CachedThread) -> Result<(), String> {
@@ -216,8 +245,15 @@ fn save_to(root: &Path, record: &CachedThread) -> Result<bool, String> {
     set_dir_mode(dir)?;
 
     let bytes = serde_json::to_vec(record).map_err(|e| e.to_string())?;
+    if bytes.len() as u64 > MAX_UNCOMPRESSED_RECORD_BYTES {
+        return Err(format!(
+            "uncompressed thread cache record exceeds {} MiB",
+            MAX_UNCOMPRESSED_RECORD_BYTES / 1024 / 1024
+        ));
+    }
+    let bytes = lz4_flex::compress_prepend_size(&bytes);
     if bytes.len() as u64 > MAX_RECORD_BYTES {
-        return Err(format!("thread cache record exceeds {} MiB", MAX_RECORD_BYTES / 1024 / 1024));
+        return Err(format!("compressed thread cache record exceeds {} MiB", MAX_RECORD_BYTES / 1024 / 1024));
     }
 
     // Never replace a newer record with a delayed or stale writer.
@@ -241,6 +277,9 @@ fn save_to(root: &Path, record: &CachedThread) -> Result<bool, String> {
     file.sync_all().map_err(|e| e.to_string())?;
     set_file_mode(&tmp)?;
     std::fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    if let Some(legacy_path) = legacy_record_path(root, &record.environment_id, &record.thread_id) {
+        let _ = std::fs::remove_file(legacy_path);
+    }
     if let Ok(dir) = std::fs::File::open(dir) {
         let _ = dir.sync_all();
     }
@@ -263,7 +302,7 @@ fn prune_environment(root: &Path, environment_id: &str, keep: &Path) {
             if !metadata.is_file() {
                 return None;
             }
-            if path.extension().is_none_or(|ext| ext != "json") {
+            if path.extension().is_none_or(|ext| ext != "json" && ext != "lz4") {
                 let _ = std::fs::remove_file(path);
                 return None;
             }
@@ -284,7 +323,11 @@ fn prune_environment(root: &Path, environment_id: &str, keep: &Path) {
 }
 
 pub fn remove(environment_id: &str, thread_id: &str) {
-    if let Some(path) = record_path(&root(), environment_id, thread_id) {
+    let root = root();
+    if let Some(path) = record_path(&root, environment_id, thread_id) {
+        let _ = std::fs::remove_file(path);
+    }
+    if let Some(path) = legacy_record_path(&root, environment_id, thread_id) {
         let _ = std::fs::remove_file(path);
     }
 }
@@ -393,7 +436,7 @@ mod tests {
         previous.schema_version = PREVIOUS_SCHEMA_VERSION;
         let mut legacy_json = serde_json::to_value(&previous).unwrap();
         legacy_json["view"]["history_item_keys"] = serde_json::json!(["thread-a\0item-1"]);
-        let path = record_path(&root, "env-a", "thread-a").unwrap();
+        let path = legacy_record_path(&root, "env-a", "thread-a").unwrap();
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, serde_json::to_vec(&legacy_json).unwrap()).unwrap();
 

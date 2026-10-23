@@ -10,6 +10,14 @@ only; no compiler, packaging or tests run for this change.
 
 ## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
 
+Large-history cache follow-up: thread snapshots now use schema-v5 LZ4 records, capped at 8 MiB on disk and 64 MiB
+decoded per thread, while preserving the projection and history cursor in one atomic record. Existing v3/v4 JSON
+records remain readable and migrate on their next save. If a thread still exceeds either cap, its prior valid cache is
+kept. The optimized ARM64 package was built at `/tmp/t3-cache-package-20261022/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`
+and installed under `~/.local`; the Dock was restarted for its launcher refresh. The running app was left in place so
+any unsent composer draft is not disturbed. `cargo check --release` and package compilation completed; no tests, CI,
+probes, or interactive UI checks were run.
+
 Issue intake now distinguishes **issue routing** (repo, lane, priority, readiness and acceptance criteria) from **provider/token routing** (the connected T3 account chosen for a model turn). Repos → Issues enables **Refine locally** when the ready `MSeries Assistant` ACP provider exists; it saves the local draft, opens an unsent intake prompt in a repo chat with that provider selected, and leaves filing/implementation to explicit later steps. The user can switch to another connected provider in the same composer for broader research. The intake asks for a concise problem, facts versus assumptions, observable success criteria, constraints/non-goals, and only material scope questions; it does not edit files, file the issue, or start implementation. The prompt caps input at 16,000 characters, saves rather than truncates an oversized draft, and asks for a maximum 220-word brief without repeating clear input. The composer label reports the ACP model alias (`MSeries Assistant · Default`) and says the underlying model is managed by the paired server and checked on Send. The draft fields scroll within the window and the five action buttons wrap at narrow widths. An isolated Xvfb GTK allocation at 360 px confirmed two action rows with no FlowBox child-width warnings after making the action container fill the available width. The standard **Refine in T3 chat** path remains available.
 
 The Repos page keeps repositories pinned in saved order and sorts the rest by latest chat activity. Each card shows up to five chats from matching T3 projects, sorted pinned-first, then by attention and recency. Rows include T3 branch, current checkout branch when readable, activity and age; they open the full thread and expose pin/unpin. A live-Git mismatch is labeled explicitly, while an unavailable checkout falls back to the T3 branch without claiming freshness. Branch probes run asynchronously once per project/pinned checkout during page load, not once per row. **New chat** targets that checkout and creates a T3 project if needed. The shell snapshot still supplies thread activity and repository identity.
@@ -56,9 +64,9 @@ top (with a retry control), using T3's opaque history cursor. The GTK transcript
 window's available height and does not propagate the full transcript's natural height, keeping the composer beneath
 the scrolling viewport. Older pages deduplicate by source thread/item identity and preserve the visible reading
 position. Pagination state is saved with the thread cache. Cache hit telemetry and large-history/poor-network profiling
-remain open. Cache records retain all loaded messages until the 8 MiB record cap;
-they no longer advance the history cursor past rows dropped from a 500-item cache slice. Older cache schema versions are
-discarded so any intermediate cursor-gap cache cannot be reused.
+remain open. Schema-v5 LZ4 records retain all loaded messages and their cursor within the 8 MiB compressed and 64 MiB
+decoded limits; v3/v4 JSON records remain readable. Over-limit updates keep the last valid record and do not advance
+its saved cursor past uncached history.
 
 The user clarified that the compact status should also be available from the System Tray/Wingpanel surface. Its icon now
 shows a hover summary for the provider selected in full chat, plus waiting-permission/running counts; clicking opens the

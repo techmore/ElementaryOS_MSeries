@@ -12,6 +12,7 @@ gtk = { package = "gtk4", version = "0.11", features = ["v4_20"] }
 granite = { package = "granite-rs", version = "3.3", features = ["v7_8", "gtk_v4_20"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+lz4_flex = "0.11"
 rayon = "1.10"
 futures-channel = "0.3"
 futures-util = { version = "0.3", default-features = false }
