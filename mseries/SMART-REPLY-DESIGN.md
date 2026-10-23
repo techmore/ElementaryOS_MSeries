@@ -225,6 +225,21 @@ drafting from the owner's past style, website rules, any change to Signal or Mes
 - Latency from hotkey to visible draft is measured and reported, along with RAM and fan state against the six-GiB and thermal guards; no pass is claimed without the numbers.
 - Per-app results are listed as pass, fail or not exposed. "Any chat app" is not claimed from three apps.
 
+## Defaults chosen (2026-10-23, owner: "use your best judgement")
+
+The owner delegated the open questions below. These are the working defaults; each is cheap to change and none is built yet.
+
+| Question | Default | Why |
+|---|---|---|
+| Policy | Ask-first allow list: only apps the owner allowed | A feature that reads other people's words should start from nothing |
+| Models | Local only; a remote model is not offered in the first slice | Nothing leaves the machine; revisit only with per-app opt-in and redaction |
+| Trial apps | Rust Messages, Newelle, the T3 port; Signal Desktop tried last, pass or fail | The first three can give structured context; Signal needs accessibility and is the contested boundary |
+| `mseries-ai` | Do not depend on #526 directly; extract just the crate (no UI, no Messages code) in its own PR when building starts | #526 is deferred and must not merge; the crate is small and has no UI |
+| Signal boundary | Accessibility read plus input-method insert only; Signal can be put on the deny list at any time | Touches none of Signal's data or code, but stays the owner's call |
+| Trigger | Hotkey only; automatic suggestions stay off. Hotkey chosen when building starts, checked against F5 and shell shortcuts | Each automatic suggestion reads a window and spends model time |
+| Display | IBus popup in the first slice; compositor overlay later if needed | No new protocol needed first |
+| Right-click expose | After the chat loop is trusted; compositor-owned gesture opening a small system menu | Apps' own context menus cannot be extended from outside |
+
 ## Open questions for the owner
 
 - Hotkey, and whether automatic suggestions are wanted at all.
