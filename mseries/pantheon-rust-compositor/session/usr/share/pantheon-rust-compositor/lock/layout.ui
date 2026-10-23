@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  elementary-style layout for gtklock 4 (GTK 3), modelled on io.elementary.greeter:
+  clock and date near the top over the wallpaper, a centred card with the user's
+  avatar, name and password field.
+
+  gtklock looks widgets up by these ids and connects the handlers below, so keep
+  them: window-box, info-box, time-box, clock-label, date-label, body-revealer,
+  body-grid, input-label, input-field, message-revealer, message-scrolled-window,
+  message-box, warning-label, error-label, unlock-button.
+  pantheon-lock replaces @AVATAR_INITIAL@ and @USER_NAME@ before loading it.
+-->
+<interface>
+	<object class="GtkBox" id="window-box">
+		<property name="name">window-box</property>
+		<property name="orientation">vertical</property>
+		<property name="hexpand">1</property>
+		<property name="vexpand">1</property>
+		<child>
+			<object class="GtkBox" id="info-box">
+				<property name="name">info-box</property>
+				<property name="halign">center</property>
+				<property name="valign">start</property>
+				<property name="orientation">vertical</property>
+				<child>
+					<object class="GtkBox" id="time-box">
+						<property name="name">time-box</property>
+						<property name="halign">center</property>
+						<property name="orientation">vertical</property>
+						<child>
+							<object class="GtkLabel" id="clock-label">
+								<property name="name">clock-label</property>
+								<property name="halign">center</property>
+								<style>
+									<class name="time"/>
+								</style>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel" id="date-label">
+								<property name="name">date-label</property>
+								<property name="halign">center</property>
+								<style>
+									<class name="date"/>
+								</style>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<child>
+			<object class="GtkRevealer" id="body-revealer">
+				<property name="transition-type">crossfade</property>
+				<property name="transition-duration">200</property>
+				<property name="reveal-child">0</property>
+				<property name="halign">center</property>
+				<property name="valign">center</property>
+				<property name="vexpand">1</property>
+				<child>
+					<object class="GtkOverlay" id="lock-overlay">
+						<child>
+							<object class="GtkBox" id="lock-card-column">
+								<property name="orientation">vertical</property>
+								<property name="margin-top">40</property>
+								<child>
+									<object class="GtkGrid" id="body-grid">
+										<property name="name">body-grid</property>
+										<property name="orientation">vertical</property>
+										<property name="row-spacing">0</property>
+										<property name="width-request">320</property>
+										<style>
+											<class name="card"/>
+											<class name="rounded"/>
+										</style>
+										<child>
+											<object class="GtkLabel" id="lock-user-name">
+												<property name="name">lock-user-name</property>
+												<property name="label">@USER_NAME@</property>
+												<property name="ellipsize">end</property>
+												<property name="halign">center</property>
+												<style>
+													<class name="h2"/>
+												</style>
+											</object>
+											<packing>
+												<property name="left-attach">0</property>
+												<property name="top-attach">0</property>
+											</packing>
+										</child>
+										<child>
+											<object class="GtkLabel" id="input-label">
+												<property name="name">input-label</property>
+												<property name="visible">0</property>
+												<property name="no-show-all">1</property>
+												<property name="halign">center</property>
+												<property name="wrap">1</property>
+												<property name="justify">center</property>
+												<style>
+													<class name="dim-label"/>
+												</style>
+											</object>
+											<packing>
+												<property name="left-attach">0</property>
+												<property name="top-attach">1</property>
+											</packing>
+										</child>
+										<child>
+											<object class="GtkBox" id="lock-entry-row">
+												<property name="spacing">0</property>
+												<style>
+													<class name="linked"/>
+												</style>
+												<child>
+													<object class="GtkEntry" id="input-field">
+														<property name="name">input-field</property>
+														<property name="hexpand">1</property>
+														<property name="visibility">0</property>
+														<property name="caps-lock-warning">0</property>
+														<property name="input-purpose">password</property>
+														<property name="placeholder-text" translatable="yes">Password</property>
+																<signal name="activate" handler="window_pw_check"/>
+													</object>
+												</child>
+												<child>
+													<object class="GtkButton" id="unlock-button">
+														<property name="name">unlock-button</property>
+														<property name="tooltip-text" translatable="yes">Unlock</property>
+														<style>
+															<class name="suggested-action"/>
+														</style>
+														<signal name="clicked" handler="window_pw_check"/>
+														<child>
+															<object class="GtkImage">
+																<property name="icon-name">go-next-symbolic</property>
+															</object>
+														</child>
+														<child internal-child="accessible">
+															<object class="AtkObject">
+																<property name="accessible-name" translatable="yes">Unlock</property>
+															</object>
+														</child>
+													</object>
+												</child>
+											</object>
+											<packing>
+												<property name="left-attach">0</property>
+												<property name="top-attach">2</property>
+											</packing>
+										</child>
+										<child>
+											<object class="GtkRevealer" id="message-revealer">
+												<property name="transition-type">none</property>
+												<property name="no-show-all">1</property>
+												<child>
+													<object class="GtkScrolledWindow" id="message-scrolled-window">
+														<property name="hscrollbar-policy">never</property>
+														<property name="max-content-height">160</property>
+														<property name="propagate-natural-height">1</property>
+														<child>
+															<object class="GtkViewport">
+																<child>
+																	<object class="GtkBox" id="message-box">
+																		<property name="orientation">vertical</property>
+																		<property name="homogeneous">1</property>
+																	</object>
+																</child>
+															</object>
+														</child>
+													</object>
+												</child>
+											</object>
+											<packing>
+												<property name="left-attach">0</property>
+												<property name="top-attach">3</property>
+											</packing>
+										</child>
+										<child>
+											<object class="GtkBox" id="lock-status-row">
+												<property name="halign">center</property>
+												<property name="spacing">8</property>
+												<child>
+													<object class="GtkLabel" id="warning-label">
+														<property name="name">warning-label</property>
+														<property name="wrap">1</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkLabel" id="error-label">
+														<property name="name">error-label</property>
+														<property name="wrap">1</property>
+													</object>
+												</child>
+											</object>
+											<packing>
+												<property name="left-attach">0</property>
+												<property name="top-attach">4</property>
+											</packing>
+										</child>
+									</object>
+								</child>
+							</object>
+						</child>
+						<child type="overlay">
+								<object class="GtkBox" id="lock-avatar">
+									<property name="name">lock-avatar</property>
+									<property name="halign">center</property>
+									<property name="valign">start</property>
+									<child>
+										<object class="GtkLabel" id="lock-avatar-initial">
+											<property name="name">lock-avatar-initial</property>
+											<property name="label">@AVATAR_INITIAL@</property>
+											<property name="hexpand">1</property>
+											<property name="halign">center</property>
+											<property name="valign">center</property>
+										</object>
+									</child>
+								</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+	</object>
+</interface>

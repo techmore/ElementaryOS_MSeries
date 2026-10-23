@@ -19,7 +19,9 @@
 # and X11 urgency mark the window demands-attention until it is focused (D3).
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-binary=${1:-$here/../../../rust/target/debug/pantheon-compositor}
+target_dir=$(cd "$here/../../../rust" && cargo metadata --format-version 1 --no-deps 2>/dev/null \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])' 2>/dev/null || echo "$here/../../../rust/target")
+binary=${1:-$target_dir/debug/pantheon-compositor}
 [[ -x $binary ]] || { echo "build it first: cargo build -p pantheon-compositor (or pass a path)" >&2; exit 2; }
 for tool in xvfb-run dbus-run-session xdotool python3; do
   command -v "$tool" >/dev/null || { echo "missing $tool" >&2; exit 2; }

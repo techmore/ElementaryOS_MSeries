@@ -17,6 +17,14 @@ log = os.environ["FAKE_GH_LOG"]
 active = os.environ.get("FAKE_ACTIVE", "alice")
 if args[:2] == ["auth", "status"]:
     if os.environ.get("FAKE_SIGNED_OUT"): sys.exit(1)
+    if os.environ.get("FAKE_NETWORK_DOWN"):
+        print("github.com\n  X Failed to log in to github.com account alice (keyring)\n  - Active account: true\n"
+              "  - The token in keyring is invalid.")
+        sys.exit(1)
+    if os.environ.get("FAKE_BOB_EXPIRED"):
+        print("github.com\n  ✓ Logged in to github.com account alice (keyring)\n  - Active account: false\n\n"
+              "github.com\n  X Failed to log in to github.com account bob (keyring)\n  - Active account: true")
+        sys.exit(1)
     print(f"github.com\n  ✓ Logged in to github.com account alice (keyring)\n  - Active account: {str(active == 'alice').lower()}\n"
           "  - Git operations protocol: https\n\ngithub.com\n  ✓ Logged in to github.com account bob (keyring)\n"
           f"  - Active account: {str(active == 'bob').lower()}\n\ncorp.example.com\n  ✓ Logged in to corp.example.com account carol (keyring)\n"
@@ -146,6 +154,24 @@ class RepoBarAccountsTest(unittest.TestCase):
         self.env["FAKE_SIGNED_OUT"] = "1"
         self.assertEqual(self.run_helper("snapshot", check=False).returncode, 1)
         self.assertEqual(self.calls(), [])
+
+    def test_network_down_keeps_showing_the_stale_snapshot(self):
+        self.cached_snapshot("alice")
+        self.env["FAKE_NETWORK_DOWN"] = "1"
+        result = json.loads(self.run_helper("--refresh", "snapshot").stdout)
+        self.assertTrue(result["stale"])
+        self.assertEqual(result["account"], "alice")
+        self.assertIn("last snapshot", result["error"])
+
+    def test_network_down_never_shows_another_accounts_snapshot(self):
+        self.cached_snapshot("bob")
+        self.env["FAKE_NETWORK_DOWN"] = "1"
+        self.assertEqual(self.run_helper("snapshot", check=False).returncode, 1)
+
+    def test_active_flag_of_a_failed_login_is_not_credited_to_the_previous_account(self):
+        self.env["FAKE_BOB_EXPIRED"] = "1"
+        accounts = json.loads(self.run_helper("auth", "accounts").stdout)["accounts"]
+        self.assertEqual([(a["login"], a["active"]) for a in accounts], [("alice", False)])
 
     def test_same_account_can_use_stale_snapshot_on_network_error(self):
         self.cached_snapshot("ALICE")
