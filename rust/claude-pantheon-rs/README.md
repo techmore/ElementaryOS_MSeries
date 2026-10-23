@@ -131,12 +131,14 @@ to another connected T3 provider in the same composer for research and refinemen
 is capped at 16,000 characters and asks for a compact brief; its underlying model is managed by the
 paired server and checked when you send. Issue labels and
 readiness control the repo workflow; provider selection remains a separate T3 decision. Draft fields
-scroll within the window, and the action buttons wrap on narrow layouts. Chats can be
-grouped beneath open issues and return to the repo chat list when an issue closes.
+scroll within the window, and the action buttons wrap on narrow layouts. The issue list includes up to 100 open and
+100 closed issues with Open, Resolved and All filters. Chats grouped beneath an issue remain browsable after it closes;
+repo backlog and runner counts continue to include open issues only.
 
 ## Composer
 
-The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
+The composer keeps a **Next message · Provider · Model** summary above its controls, while the thread header shows the
+provider's friendly model name when T3 supplies one. The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
 them: each becomes a chip, uploaded through the server's `attachments.createUploadUrl` and sent with
 the message (10 attachments, 10 MB per image, 50 MB per file). Typing `@` opens a fuzzy picker over the
 thread's project (`projects.searchEntries`) and inserts `@path`. The draft is kept per thread in
