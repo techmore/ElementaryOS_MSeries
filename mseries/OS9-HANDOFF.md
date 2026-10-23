@@ -1,3 +1,16 @@
+## Switcher and keyboard-help translation coverage — 2026-10-22
+
+Switcher tab titles, descriptions, launch buttons, accessible names and errors now
+use the app gettext domain; descriptions say Your iPhone/Signal conversations.
+Messages keyboard-help descriptions also use gettext. Template has 87 source
+strings; format validation, strict lint, isolated GTK/badge checks and optimized
+ARM64 packaging pass. Private fake-client tab clicks still activate both correct
+desktop targets; /tmp/messages-switcher-i18n-activation.log passes and the settled
+Signal-page capture was reviewed. Updated preview/switcher installed without
+restarting owner clients. Dynamic/plural/shared SDK strings and reviewed language
+catalogs remain incomplete. Owner confirms no logout/login yet; physical capture
+acceptance remains pending, with installed code staged for the next login.
+
 ## Dock badge wire contract verified — 2026-10-22
 
 The isolated Messages runner now also exercises the SDK DockBadge on a second
