@@ -1,3 +1,16 @@
+## Aurora pinned-source fetch follow-up — 2026-10-22
+
+PR #518's unified72 run [39770268111](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268111) and PR #528's
+first retry run [39836069576](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39836069576) both stopped at
+pinned-source preparation on repeated codeload HTTP 429 responses. The retry logic honored the bounded attempt/delay
+policy; the candidate profile passed source preparation and entered its isolated CI kernel build, while unified72 did
+not. This follow-up keeps the codeload checksum path, then falls back only for retryable HTTP errors to the explicitly
+pinned Git URL, commit and tree SHA-1 in `unified72/series.json`; it verifies both Git identities before archiving. Bad
+checksums and permanent HTTP errors still fail closed. The preparation receipt records the acquisition method and actual
+archive digest. Local tests cover retry and fallback behavior; they do not
+prove the remote Git fetch or a wip4 build. No source archive was fetched/prepared locally, and no hardware, installed
+kernel, boot payload or wip4 artifact was produced. PR #518 remains conflicted with `dev` and unreviewed. Next: let the
+updated CI validate the fallback and record candidate/unified72 build outcomes separately.
 ## Dock launcher regression harness startup race — 2026-10-22
 
 PR #518's validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)
