@@ -5,7 +5,7 @@ local model drafts a reply from the visible conversation. A notification shows t
 field, **Esc** (or any other key, or switching focus, or 60 seconds) discards it. It never sends anything.
 
 Feedback is in the message box itself, as underlined composing text: `Drafting… 3s` with a running timer while the model works, then the
-draft followed by the keys: `Tab insert · Alt+R reword · Alt+P polite · Alt+C concise · Alt+= more context · Esc discard`. Tab (or
+draft followed by the keys: `Tab insert · Alt+R reword · Alt+P polite · Alt+C concise · Alt+T think harder (slow) · Alt+= more context · Esc discard`. Tab (or
 Enter) inserts only the draft. This is used for GTK and Qt apps; for Chromium and Electron apps (which confirm composing text when
 focus moves) the draft appears in a notification instead, with the keys in its title.
 
@@ -17,6 +17,7 @@ typing (the engine only sees keys while a draft is held, and any plain key still
 | Alt+R | Reword: the same thing in different words |
 | Alt+P | More polite: warmer, not stiffer or longer |
 | Alt+C | More concise: shorter and more direct |
+| Alt+T | Think harder: the model's thinking switched on and a larger token budget (1200), slow: expect 30 to 120 seconds with the timer running; the reasoning is stripped before anything is shown. Normal drafts never think |
 | Alt+= (or Alt++) | More context: the field shows `Extra context (Enter redrafts · Esc back):` and you type a few words (up to 300 characters; Backspace edits, Esc goes back to the draft); Enter redrafts with them |
 
 Each action shows `Drafting… Ns` again and replaces the draft; if the model fails the old draft comes back with a notification saying

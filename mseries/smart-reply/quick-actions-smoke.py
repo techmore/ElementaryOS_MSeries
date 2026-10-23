@@ -161,15 +161,15 @@ with tempfile.TemporaryDirectory(prefix="mseries-quick-") as d:
         check("Tab inserts the revised draft (not empty, no hint text)", bool(revised) and "Alt+" not in revised and "—" not in revised, revised)
         pump(0.5)
 
-        # 1b. Alt+P and Alt+C go through the same path with their own instruction.
-        for chord, name in (("alt+p", "MorePolite"), ("alt+c", "MoreConcise")):
+        # 1b. Alt+P, Alt+C and Alt+T (thinking on) go through the same path with their own instruction.
+        for chord, name in (("alt+p", "MorePolite"), ("alt+c", "MoreConcise"), ("alt+t", "ThinkHarder")):
             clear()
             hold("Thai sounds great, see you at noon.")
             key(chord)
-            check(f"{chord} runs {name} to the end", wait_for(f"quick action {name} done", 90))
+            check(f"{chord} runs {name} to the end", wait_for(f"quick action {name} done", 200 if name == "ThinkHarder" else 90))
             pump(0.5)
             key("Tab")
-            check(f"{chord} result is inserted", bool(read(entry_text)) and "Alt+" not in read(entry_text), read(entry_text))
+            check(f"{chord} result is inserted", bool(read(entry_text)) and "Alt+" not in read(entry_text) and "think>" not in read(entry_text), read(entry_text))
 
         # 2. Alt+= takes a note typed into the engine's own line, then redrafts with it.
         clear()
