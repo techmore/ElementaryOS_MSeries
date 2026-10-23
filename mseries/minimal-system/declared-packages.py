@@ -14,7 +14,7 @@ for f in glob.glob(root+'/mkosi*/**/*.conf',recursive=True)+glob.glob(root+'/mko
         s=l.rstrip('\n')
         if re.match(r'^(\w+Packages|Packages|BuildPackages)=',s):
             inpk=True; rest=s.split('=',1)[1].strip()
-            for t in rest.split(): 
+            for t in rest.split():
                 if t in names: add(t,'mkosi:'+os.path.relpath(f,root))
             continue
         if inpk:

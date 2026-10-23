@@ -63,6 +63,29 @@ as_root() {
   sudo "$@"
 }
 
+# Always address the invoking desktop owner, including when invoked through sudo.
+user_systemctl() {
+  if (( EUID != 0 )); then
+    systemctl --user "$@"
+    return
+  fi
+  local owner=${SUDO_USER:-} uid runtime
+  [[ -n $owner && $owner != root ]] || return 1
+  uid=$(id -u -- "$owner") || return 1
+  runtime=/run/user/$uid
+  [[ -S $runtime/bus ]] || return 1
+  runuser -u "$owner" -- env XDG_RUNTIME_DIR="$runtime" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus" systemctl --user "$@"
+}
+
+reload_user_manager() {
+  if user_systemctl daemon-reload; then
+    log "desktop owner's user manager reloaded; no services restarted"
+  else
+    warn "package operation succeeded; desktop owner's user manager is unavailable. Units load at the next login."
+  fi
+}
+
 need_yes() {
   [[ $confirm == 1 ]] || die "refusing to act without --yes (read the safety design above)"
 }
@@ -137,15 +160,16 @@ for path in /usr/bin/pantheon-compositor /usr/bin/pantheon-rust-session \
             /usr/lib/systemd/user/pantheon-dock.service; do
   if [[ -e $path ]]; then log "present: $path"; else log "absent:  $path"; fi
 done
-if systemctl --user list-unit-files 2>/dev/null | grep -q '^pantheon-rust-compositor@'; then
-  log "user manager: pantheon-rust units known"
+if unit_files=$(user_systemctl list-unit-files 2>/dev/null); then
+  if grep -q '^pantheon-rust-compositor@' <<<"$unit_files"; then
+    log "user manager: pantheon-rust units known"
+  else
+    log "user manager: pantheon-rust units not known yet (a daemon-reload after install fixes this)"
+  fi
+  service_state=$(user_systemctl is-active "$compositor_unit" 2>/dev/null || true)
+  log "compositor service: ${service_state:-unknown}"
 else
-  log "user manager: pantheon-rust units not known yet (a daemon-reload after install fixes this)"
-fi
-if [[ $(systemctl --user is-active "$compositor_unit" 2>/dev/null || true) == active ]]; then
-  log "compositor service: active (this session already runs the Rust compositor)"
-else
-  log "compositor service: not active"
+  log "user manager: desktop owner's bus unavailable; loaded service state unknown"
 fi
 
 # ---------------------------------------------------------------- helpers
@@ -158,7 +182,7 @@ install_deb() {
   log "  sha256 $sha"
   dpkg-deb --info "$deb" | sed -n '/^ Package:/p;/^ Version:/p;/^ Depends:/p' | sed 's/^/  /'
   as_root dpkg -i "$deb"
-  as_root systemctl --user daemon-reload
+  reload_user_manager
   log "installed. The running session is unchanged; the Rust session is selectable at the next login."
 }
 
@@ -256,7 +280,7 @@ case $action in
       exit 0
     fi
     as_root dpkg -r pantheon-rust-compositor
-    as_root systemctl --user daemon-reload
+    reload_user_manager
     log "removed $installed_version"
     if [[ $autologin_session == "$session_name" ]]; then
       warn "autologin still selects the removed Rust session; run --restore-gala --yes"

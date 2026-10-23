@@ -17,8 +17,9 @@ over historical implementation notes, test receipts and installation reports.
   accepted. Do not infer completion from green checks or old handoff entries.
 - Preserve existing clients, accounts, data and rollback paths. Deferral is not
   authorization to uninstall apps or remove owner data.
-- Draft work remains in PRs #525 and #526; their code is not promoted by this
-  status update. On resumption, inspect current source and runtime evidence.
+- On 2026-10-23, the owner explicitly authorized merging PR #526 into dev. The
+  merge makes source available; it does not accept or complete the Signal/Messages
+  experience. Inspect current source and runtime evidence before further work.
 - Begin with the actual visible outcome and early running example required by
   [APP-BUILDING-GUIDE.md](APP-BUILDING-GUIDE.md).
 
