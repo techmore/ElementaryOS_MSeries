@@ -1,3 +1,13 @@
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
 ## T3-R Pantheon: assistant bridge and local model study — 2026-10-22
 
 Issue intake and model routing are now separate in PR [#521](https://github.com/techmore/ElementaryOS_MSeries/pull/521): when the paired `MSeries Assistant` is ready, **Refine locally** creates a reviewable, unsent first-pass prompt from the local issue draft. It structures the problem, confirmed facts/assumptions, success criteria, constraints and material scope questions without choosing a solution or starting work. Input is capped at 16,000 characters without silent truncation, and the requested brief is at most 220 words. The composer displays the T3 model alias (`Default`) and explains that the underlying model is server-managed and checked on Send. Issue-form fields scroll while action buttons wrap at narrow widths; isolated Xvfb allocation confirms two rows at 360 px. The owner can switch to a connected T3 provider for research, then file the accepted brief explicitly. Repo/lane/priority/readiness decide the workflow; T3's provider account and capacity decide which model handles a turn. Context efficiency relies on the client's bounded settled-thread cache and on-demand history paging, with prefix/KV caching left to T3/provider services; no second client-side API cache is added. Current local model endpoint is unavailable because the supervised model service fails its memory-reserve admission check; do not force start it.

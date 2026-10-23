@@ -1,3 +1,13 @@
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
 ## T3-R Pantheon: Dock quick panel, ACP providers, and taskbar sizing — 2026-10-22 (Codex)
 
 Issue intake now distinguishes **issue routing** (repo, lane, priority, readiness and acceptance criteria) from **provider/token routing** (the connected T3 account chosen for a model turn). Repos → Issues enables **Refine locally** when the ready `MSeries Assistant` ACP provider exists; it saves the local draft, opens an unsent intake prompt in a repo chat with that provider selected, and leaves filing/implementation to explicit later steps. The user can switch to another connected provider in the same composer for broader research. The intake asks for a concise problem, facts versus assumptions, observable success criteria, constraints/non-goals, and only material scope questions; it does not edit files, file the issue, or start implementation. The prompt caps input at 16,000 characters, saves rather than truncates an oversized draft, and asks for a maximum 220-word brief without repeating clear input. The composer label reports the ACP model alias (`MSeries Assistant · Default`) and says the underlying model is managed by the paired server and checked on Send. The draft fields scroll within the window and the five action buttons wrap at narrow widths. An isolated Xvfb GTK allocation at 360 px confirmed two action rows with no FlowBox child-width warnings after making the action container fill the available width. The standard **Refine in T3 chat** path remains available.
