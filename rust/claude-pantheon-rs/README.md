@@ -81,9 +81,10 @@ from the paired T3 server; when no provider is selected, they say so instead of 
 Wingpanel summary scopes usage to the selected provider. Live activity also shows a thread's model when it belongs to
 that selected provider; other accounts' model names are omitted from the compact status feed. Stale status is treated
 as offline even if feed flags disagree, and stale activity cannot open a thread. Unpairing or switching environments
-clears the cache. The Wingpanel module is
-included in the Debian package when built with `CLAUDE_PANTHEON_ENABLE_INDICATOR=1`;
-install it with `bash mseries/install-claude-pantheon-indicator.sh` if only the app package is installed.
+clears the cache. The Wingpanel module is included in the Debian package by default. Set
+`CLAUDE_PANTHEON_ENABLE_INDICATOR=0` only for a non-Wingpanel build. Wingpanel loads modules from a system directory,
+so a user-local app install alone cannot add the tray entry; install the Debian package on the target desktop to
+install both surfaces.
 
 ## Thread resume cache
 

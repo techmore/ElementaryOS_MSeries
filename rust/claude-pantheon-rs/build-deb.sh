@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Build claude-pantheon-rs_<version>_<arch>.deb from this source tree: the app (binary, Dock quick panel,
-# desktop entry with actions, D-Bus service, metainfo, hicolor icons). The Wingpanel indicator is optional.
+# desktop entry with actions, D-Bus service, metainfo, hicolor icons) and Wingpanel indicator.
 #   bash rust/claude-pantheon-rs/build-deb.sh            # writes build/claude-pantheon-rs-deb/*.deb
-# Needs: cargo, libgtk-4-dev, libgranite-7-dev, librsvg2-bin, dpkg-deb. Set
-# CLAUDE_PANTHEON_ENABLE_INDICATOR=1 to also package the legacy Wingpanel indicator.
+# Needs: cargo, libgtk-4-dev, libgranite-7-dev, libwingpanel-9-dev, libjson-glib-dev,
+# libgee-0.8-dev, meson, ninja-build, valac, pkg-config, librsvg2-bin and dpkg-deb. Set
+# CLAUDE_PANTHEON_ENABLE_INDICATOR=0 to omit the Wingpanel indicator.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,10 +20,10 @@ for tool in cargo dpkg-deb rsvg-convert; do
   command -v "$tool" >/dev/null || { echo "Missing build tool: $tool" >&2; exit 2; }
 done
 with_indicator=0
-if [[ ${CLAUDE_PANTHEON_ENABLE_INDICATOR:-0} == 1 && ${CLAUDE_PANTHEON_SKIP_INDICATOR:-0} != 1 ]]; then
+if [[ ${CLAUDE_PANTHEON_ENABLE_INDICATOR:-1} == 1 && ${CLAUDE_PANTHEON_SKIP_INDICATOR:-0} != 1 ]]; then
   with_indicator=1
-  for tool in meson ninja valac; do
-    command -v "$tool" >/dev/null || { echo "Missing build tool: $tool (or omit CLAUDE_PANTHEON_ENABLE_INDICATOR=1)" >&2; exit 2; }
+  for tool in meson ninja valac pkg-config; do
+    command -v "$tool" >/dev/null || { echo "Missing build tool: $tool (or set CLAUDE_PANTHEON_ENABLE_INDICATOR=0)" >&2; exit 2; }
   done
 fi
 

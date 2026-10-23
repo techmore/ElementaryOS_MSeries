@@ -19,6 +19,8 @@ binary and was installed under `~/.local`. The pinned Dock 8.3.3 source rebuilt 
 `~/.local/lib/mseries/dock`; its install restarted `pantheon-dock`. The app was not running, so its next launch will
 use the installed binary. Native builds completed; no tests, probes, CI, or interactive UI checks were run.
 
+The standard Debian package now includes the Wingpanel tray module by default; `CLAUDE_PANTHEON_ENABLE_INDICATOR=0` is an explicit non-Wingpanel opt-out. Built a combined ARM64 package at `/tmp/t3r-wingpanel-package-43615e1b/claude-pantheon-rs_0.1.0-1~mseries5_arm64.deb`, with the module at the expected `wingpanel-9` path. It is staged but not installed because non-interactive `sudo` is unavailable in this desktop session. The user-local client and Dock remain available. Meson/Ninja compiled the package and module; no probes or tests were run, and Wingpanel was not restarted.
+
 Large-history cache follow-up: thread snapshots now use schema-v5 LZ4 records, capped at 8 MiB on disk and 64 MiB
 decoded per thread, while preserving the projection and history cursor in one atomic record. Existing v3/v4 JSON
 records remain readable and migrate on their next save. If a thread still exceeds either cap, its prior valid cache is
