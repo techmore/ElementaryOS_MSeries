@@ -1,0 +1,257 @@
+drm/apple: stop a silent external DCP from pinning a Thunderbolt DP route
+
+Local patch (not upstream), written 2026-10-22 against the #158 source plus
+0001. Build-only; never booted. Evidence and reasoning:
+mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md
+
+On the J314S, the first dock plug of a boot can be routed to dcpext1
+(28cc00000). Its AppleDCPDPTXRemotePort service then never answers: the link
+validation times out, and so does every later call, including the release.
+dcp_tb_release_locked() treats a refused release as "keep the route owned",
+which is right for a refusal but wrong for a timeout: the port stays pinned to
+the dead pipeline, and each new request on it first tries to release it again
+and fails with -110 until reboot. Other ports are unaffected.
+
+ - A DPTX call that times out marks that DCP's pipeline unresponsive for 300 s
+   (cleared when a connect gets an answer).
+ - An unresponsive pipeline is not offered to new tunnels or direct routes and
+   is not planned onto, unless a tunnel already holds it. With no other
+   pipeline free the request returns -EBUSY, so the Thunderbolt side waits and
+   asks again (apple_dpin capacity_retry) and lands on dcpext0 meanwhile.
+ - A release that times out is completed without the firmware: our view of the
+   display is dropped and the crossbar route freed, instead of kept owned.
+
+Not covered: moving a tunnel that already attached to the silent pipeline,
+within the same plug, to another one. That needs the Thunderbolt side to
+re-request the tunnel; see the evidence note.
+
+diff --git a/drivers/gpu/drm/apple/dcp-fabric-core.c b/drivers/gpu/drm/apple/dcp-fabric-core.c
+--- a/drivers/gpu/drm/apple/dcp-fabric-core.c
++++ b/drivers/gpu/drm/apple/dcp-fabric-core.c
+@@ -118,7 +118,7 @@ EXPORT_SYMBOL_GPL(dcp_fabric_presence_expire);
+ bool dcp_fabric_available(const struct dcp_fabric_pipeline *pipeline,
+ 			  const struct dcp_fabric_policy *policy)
+ {
+-	return !pipeline->owned && !pipeline->fixed_busy &&
++	return !pipeline->owned && !pipeline->fixed_busy && !pipeline->unresponsive &&
+ 		(policy->dual_stream || pipeline->presence == DCP_FABRIC_ABSENT);
+ }
+ EXPORT_SYMBOL_GPL(dcp_fabric_available);
+@@ -262,7 +262,9 @@ void dcp_fabric_plan(struct dcp_fabric_pipeline *pipelines,
+ 		}
+ 		/* The adapter supplies pipelines in CRTC index order. */
+ 		for (pipeline = pipelines; pipeline; pipeline = pipeline->next)
+-			if (pipeline->tunnel_held || !pipeline->fixed_busy)
++			/* A held tunnel keeps its pairing; nothing new is planned onto a dead one. */
++			if (pipeline->tunnel_held ||
++			    (!pipeline->fixed_busy && !pipeline->unresponsive))
+ 				dcp_fabric_plan_pipeline(pipeline, ports,
+ 							 arriving, dpin);
+ 		again = false;
+diff --git a/drivers/gpu/drm/apple/dcp-fabric-core.h b/drivers/gpu/drm/apple/dcp-fabric-core.h
+--- a/drivers/gpu/drm/apple/dcp-fabric-core.h
++++ b/drivers/gpu/drm/apple/dcp-fabric-core.h
+@@ -29,6 +29,8 @@ struct dcp_fabric_pipeline {
+ 	enum dcp_fabric_presence_state presence;
+ 	bool terminal;
+ 	bool services_ready;
++	/* firmware DPTX service timed out lately: do not route a display here */
++	bool unresponsive;
+ 	bool external;
+ 	bool t6030_dpin;
+ };
+diff --git a/drivers/gpu/drm/apple/dcp-fabric-test.c b/drivers/gpu/drm/apple/dcp-fabric-test.c
+--- a/drivers/gpu/drm/apple/dcp-fabric-test.c
++++ b/drivers/gpu/drm/apple/dcp-fabric-test.c
+@@ -483,6 +483,50 @@ static void fabric_scenario_test(struct kunit *test)
+ 	}
+ }
+ 
++static void fabric_unresponsive_pipeline_test(struct kunit *test)
++{
++	struct fabric_fixture f;
++	struct dcp_fabric_route *route;
++	int error;
++
++	fabric_init(&f, false);
++	/* Without a fault the tunnel takes the lower-scoring pipeline 1. */
++	route = dcp_fabric_tunnel_candidate(&f.port[0], &f.policy, NULL, false,
++					    0, true, &error);
++	KUNIT_ASSERT_PTR_EQ(test, route, &f.route[0][1]);
++
++	/* A pipeline whose firmware service timed out is passed over. */
++	f.pipeline[1].unresponsive = true;
++	KUNIT_EXPECT_FALSE(test, dcp_fabric_available(&f.pipeline[1], &f.policy));
++	route = dcp_fabric_tunnel_candidate(&f.port[0], &f.policy, NULL, false,
++					    0, true, &error);
++	KUNIT_EXPECT_PTR_EQ(test, route, &f.route[0][0]);
++	KUNIT_EXPECT_EQ(test, error, 0);
++
++	/* With nothing else free the request waits for a pipeline. */
++	f.pipeline[0].unresponsive = true;
++	route = dcp_fabric_tunnel_candidate(&f.port[0], &f.policy, NULL, false,
++					    0, true, &error);
++	KUNIT_EXPECT_PTR_EQ(test, route, NULL);
++	KUNIT_EXPECT_EQ(test, error, -EBUSY);
++
++	/* Planning leaves the dead pipeline out, so the next stream goes dark. */
++	f.pipeline[0].unresponsive = false;
++	f.port[0].wanted = true;
++	f.port[0].hpd = true;
++	f.port[1].wanted = true;
++	f.port[1].hpd = true;
++	dcp_fabric_plan(f.pipeline, f.port, NULL, 0);
++	KUNIT_EXPECT_PTR_EQ(test, f.plan[0].target[0], &f.route[0][0]);
++	KUNIT_EXPECT_PTR_EQ(test, f.plan[1].target[0], NULL);
++
++	/* Once the hold-off lapses the pipeline is used again. */
++	f.pipeline[1].unresponsive = false;
++	dcp_fabric_plan(f.pipeline, f.port, NULL, 0);
++	KUNIT_EXPECT_PTR_EQ(test, f.plan[0].target[0], &f.route[0][0]);
++	KUNIT_EXPECT_PTR_EQ(test, f.plan[1].target[0], &f.route[1][1]);
++}
++
+ static void fabric_dark_tunnel_test(struct kunit *test)
+ {
+ 	struct fabric_fixture f;
+@@ -2290,6 +2334,7 @@ static struct kunit_case fabric_tests[] = {
+ 	KUNIT_CASE(fabric_capacity_notification_test),
+ 	KUNIT_CASE_PARAM(fabric_scenario_test, fabric_scenario_gen_params),
+ 	KUNIT_CASE(fabric_dark_tunnel_test),
++	KUNIT_CASE(fabric_unresponsive_pipeline_test),
+ 	KUNIT_CASE(fabric_effect_failure_core_test),
+ 	KUNIT_CASE(fabric_deactivate_failure_test),
+ 	KUNIT_CASE(fabric_unbound_and_mask_test),
+diff --git a/drivers/gpu/drm/apple/dcp-fabric.c b/drivers/gpu/drm/apple/dcp-fabric.c
+--- a/drivers/gpu/drm/apple/dcp-fabric.c
++++ b/drivers/gpu/drm/apple/dcp-fabric.c
+@@ -890,6 +890,7 @@ static void dcp_fabric_snapshot_port(struct apple_dcp_typec_port *port,
+ 		pipeline->terminal = tunnel && dcpext_scanout_terminal(dcp);
+ 		pipeline->services_ready = !tunnel ||
+ 					   dcp_tb_services_ready(dcp);
++		pipeline->unresponsive = dcp_dptx_held_off(dcp);
+ 		pipeline->external = dcp->external;
+ 		route->core.pipeline = pipeline;
+ 		route->core.tunnel = route->tunnel;
+@@ -2284,6 +2285,18 @@ static int dcp_tb_release_locked(struct apple_dcp_typec_port *port,
+ 	/* A refused display release keeps the route and its binding owned. */
+ 	if (port->hpd || dcp->typec_cable_connected) {
+ 		ret = dcp_dptx_disconnect_oob(to_platform_device(dcp->dev), 0);
++		if (ret == -ETIMEDOUT) {
++			/*
++			 * A service that does not answer cannot refuse: waiting for it
++			 * would keep this port on a dead pipeline, and every later
++			 * request would time out releasing it again. Free our side.
++			 */
++			dev_warn(dcp->dev,
++				 "DPTX service not answering; releasing its DP tunnel route without it\n");
++			dcp_dptx_note_timeout(dcp, ret);
++			dcp_dptx_abandon(dcp, 0);
++			ret = 0;
++		}
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -72,6 +72,9 @@ void dcp_retry_placeholder_edid(struct apple_dcp *dcp,
+ 				const struct drm_edid *drm_edid);
+ bool dcp_typec_relink(struct apple_dcp *dcp);
+ bool dcp_typec_sink_relink(struct apple_dcp *dcp);
++bool dcp_dptx_held_off(struct apple_dcp *dcp);
++void dcp_dptx_note_timeout(struct apple_dcp *dcp, int err);
++void dcp_dptx_abandon(struct apple_dcp *dcp, u32 port);
+ 
+ struct dcpav_service_epic;
+ 
+@@ -515,6 +518,9 @@ struct apple_dcp {
+ 	bool typec_cable_connected;
+ 	/* DPTX feeds a Thunderbolt DP IN adapter, not the Type-C PHY lanes */
+ 	bool dptx_tunnel;
++	/* DPTX RemotePort timed out: jiffies until which no display is routed here */
++	bool dptx_holdoff;
++	unsigned long dptx_holdoff_until;
+ 	/* DFP port in the DPTX target: 0 = dpphy, 1 = dpin0, 2 = dpin1 */
+ 	u8 dptx_dfp_port;
+ 	/* wakes/sleeps the Thunderbolt DP IN adapter from DCP Activate/Deactivate */
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -980,6 +980,8 @@ int dcp_get_connector_type(struct platform_device *pdev)
+ #define DPTX_TUNNEL_CONNECT_TIMEOUT msecs_to_jiffies(8000)
+ #define DPTX_RECONNECT_DELAY msecs_to_jiffies(1000)
+ #define DPTX_RECONNECT_RETRIES 5
++/* How long a pipeline whose DPTX service timed out is passed over. */
++#define DCP_DPTX_HOLDOFF msecs_to_jiffies(300 * MSEC_PER_SEC)
+ 
+ /*
+  * The connection a DPTX connect or queued reconnect belongs to: the Type-C
+@@ -1135,6 +1137,7 @@ static int dcp_dptx_connect_raw(struct apple_dcp *dcp, u32 port, bool *retryable
+ 			dev_err(dcp->dev,
+ 				"dcp_dptx_connect: failed to validate DPTX target %u:%u: %d\n",
+ 				dcp->dptx_die, dcp->dptx_phy, ret);
++			dcp_dptx_note_timeout(dcp, ret);
+ 			goto out_unlock;
+ 		}
+ 	}
+@@ -1151,8 +1154,11 @@ static int dcp_dptx_connect_raw(struct apple_dcp *dcp, u32 port, bool *retryable
+ 		dev_err(dcp->dev,
+ 			"dcp_dptx_connect: failed to connect DPTX target %u:%u: %d\n",
+ 			dcp->dptx_die, dcp->dptx_phy, ret);
++		dcp_dptx_note_timeout(dcp, ret);
+ 		goto out_unlock;
+ 	}
++	/* The service answered: whatever held this pipeline off is over. */
++	WRITE_ONCE(dcp->dptx_holdoff, false);
+ 
+ 	if (!dcp_connect_session_valid_locked(dcp, session, cable, recovery)) {
+ 		ret = -ESTALE;
+@@ -2188,6 +2194,47 @@ static int dcp_dptx_release_locked(struct apple_dcp *dcp, u32 port)
+ 	return 0;
+ }
+ 
++/*
++ * A DPTX RemotePort call that times out means the firmware service itself
++ * is not answering, not that it refused: every later call waits out its
++ * timeout too. Remember it for a while, so the display fabric routes new
++ * displays to another pipeline instead of back to this one.
++ */
++void dcp_dptx_note_timeout(struct apple_dcp *dcp, int err)
++{
++	if (err != -ETIMEDOUT)
++		return;
++	/* Each failed retry extends the hold-off; say so once. */
++	if (!dcp_dptx_held_off(dcp))
++		dev_warn(dcp->dev,
++			 "DPTX service not answering; routing displays elsewhere for %u s\n",
++			 jiffies_to_msecs(DCP_DPTX_HOLDOFF) / MSEC_PER_SEC);
++	WRITE_ONCE(dcp->dptx_holdoff_until, jiffies + DCP_DPTX_HOLDOFF);
++	WRITE_ONCE(dcp->dptx_holdoff, true);
++}
++
++bool dcp_dptx_held_off(struct apple_dcp *dcp)
++{
++	return READ_ONCE(dcp->dptx_holdoff) &&
++	       time_before(jiffies, READ_ONCE(dcp->dptx_holdoff_until));
++}
++
++/*
++ * Drop our own view of a display the firmware can no longer be asked to
++ * release, so that the route it held can be freed. If the firmware comes
++ * back, the next connection starts from scratch.
++ */
++void dcp_dptx_abandon(struct apple_dcp *dcp, u32 port)
++{
++	guard(mutex)(&dcp->hpd_mutex);
++	if (dcp->external) {
++		smp_store_release(&dcp->external_link_ready, false);
++		dcpext_scanout_invalidate(dcp);
++	}
++	dcp->dptxport[port].connected = false;
++	WRITE_ONCE(dcp->dptxport[port].tile_hint, false);
++}
++
+ int dcp_dptx_disconnect(struct apple_dcp *dcp, u32 port)
+ {
+ 	int ret;
