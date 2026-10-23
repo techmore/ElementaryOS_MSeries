@@ -24,8 +24,8 @@ are off unless named with `--with`.
 filters installed apps as you type: Enter launches, Up/Down select, Esc or
 clicking away closes, and pressing the shortcut again closes it. The setup
 script installs it to `~/.local/bin/mseries-launcher` and binds `<Control>space`
-(physical left Command, since Command is remapped to Ctrl) and `<Super>space`
-(right Command) as custom shortcuts. It clears Pantheon's default Super+Space
+(either physical Command key, since both map to Ctrl) and `<Super>space`
+(either physical Ctrl key) as custom shortcuts. It clears Pantheon's default Super+Space
 input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
 Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
@@ -40,10 +40,14 @@ and removing the two `mseries-launcher` entries from
 ## Command shortcuts and brightness
 
 Run `python3 mseries/apply-desktop-settings.py` as the desktop user.
-It preserves existing XKB options and adds `ctrl:swap_lwin_lctl`: left
-Command becomes Ctrl (C/V/A/Z/S etc.), and physical left Ctrl becomes Super.
-Right Command is unchanged. Remove that option from
-`org.gnome.desktop.input-sources xkb-options` to undo the keyboard change.
+It preserves existing XKB options and adds `ctrl:swap_lwin_lctl` and
+`ctrl:swap_rwin_rctl`: both Command keys become Ctrl (C/V/A/Z/S etc.), and both
+physical Ctrl keys become Super. It fills blank media-key bindings with the
+standard mute, volume-down and volume-up keys while preserving existing custom
+bindings. To undo the keyboard change, remove both options from
+`org.gnome.desktop.input-sources` → `xkb-options`; restore prior values for the
+`volume-mute`, `volume-down` and `volume-up` keys in
+`org.gnome.settings-daemon.plugins.media-keys` to undo the media-key setup.
 The script also uses title-bar layout `close:minimize,maximize`, adding a
 Minimize button beside Maximize. Restore `close:maximize` to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.

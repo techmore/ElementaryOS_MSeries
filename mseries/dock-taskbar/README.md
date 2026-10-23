@@ -6,6 +6,26 @@ CodexBar/Start-menu integration and app-tracking patches. It copies the CodexBar
 from `mseries/codexbar-wingpanel/` so account/quota fixes have one owner.
 `TaskbarCodexBar.vala` is the taskbar anchor; it does not replace the launcher model.
 
+## Launcher badge binding lifecycle backport
+
+The canonical source preparation applies
+`patches/dock-launcher-binding-lifecycle.patch`, backported from
+[elementary/dock commit `1f55ec4c5fda41b41f6c92e31e80122608500ce7`](https://github.com/elementary/dock/commit/1f55ec4c5fda41b41f6c92e31e80122608500ce7).
+That upstream change removes the retained `GLib.Binding` field and its explicit
+unbind during Launcher cleanup, and extracts the badge count transform into a
+static callback. The backport adapts upstream's newer `dispose` path to the
+pinned source's `cleanup` method. It is based on elementary/dock 8.3.3 source
+(`8b45a68a122947ad3a6427bf6e159ec2acf04ad0`) and retains that source's
+GPL-3.0 license/provenance. The upstream commit is reachable from elementary/dock
+`main` at `2b70be3e0cb39ff0e421f24bc1a2f733e0614eac`; the source pin is unchanged
+pending package/version coordination with task 03.
+
+The full clean build and `test-launcher-qualification` exercise the resulting
+production Launcher with pointer/keyboard actions in light and dark themes.
+These establish source compilation and interaction behavior; they do not measure
+long-running memory use or qualify the live dock session. Installation, service
+restart and native hardware acceptance remain separate gates.
+
 CodexBar sits left of Wi-Fi with a divider and 12 logical pixels on each side.
 Popup text is another 25% larger (1.5625em total), with a 400-pixel minimum body width and a
 480-pixel scroll viewport so the larger rows remain usable.

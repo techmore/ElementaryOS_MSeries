@@ -32,6 +32,21 @@ sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" \
   "$source_dir/src/AirDropPanel.vala" "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
+git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
+python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PY'
+import pathlib, sys
+source = pathlib.Path(sys.argv[1]).read_text()
+required = [
+    'app.bind_property ("current_count", badge, "label", SYNC_CREATE, app_badge_count_to_badge_string);',
+    'private static bool app_badge_count_to_badge_string (Binding binding, Value from_value, ref Value to_value)',
+]
+for token in required:
+    if token not in source:
+        raise SystemExit(f'Launcher binding lifecycle patch is missing: {token}')
+for token in ('private Binding current_count_binding;', 'current_count_binding.unbind ();'):
+    if token in source:
+        raise SystemExit(f'Launcher retains the old binding lifecycle: {token}')
+PY
 sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'

@@ -12,7 +12,8 @@ from gi.repository import Gio, GLib
 MEDIA = "org.gnome.settings-daemon.plugins.media-keys"
 BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
 LAUNCHER = str(Path.home() / ".local/bin/mseries-launcher")
-# Command is Ctrl here (ctrl:swap_lwin_lctl); <Super>space covers right Command.
+# Both Command keys are Ctrl (ctrl:swap_lwin_lctl + ctrl:swap_rwin_rctl); Super+Space
+# remains available from either physical Ctrl key.
 SHORTCUTS = [("mseries-launcher0", "<Control>space"), ("mseries-launcher1", "<Super>space")]
 
 

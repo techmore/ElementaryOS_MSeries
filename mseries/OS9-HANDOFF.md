@@ -42,6 +42,38 @@ requests are tracked in [#530](https://github.com/techmore/ElementaryOS_MSeries/
 for a Files-integrated Preview panel with MIME/details fallback and drag-and-drop,
 and [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531) for
 right-click image-conversion Quick Actions.
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The live `org.gnome.settings-daemon.plugins.media-keys` settings had empty
+`volume-mute`, `volume-down` and `volume-up` bindings. Filled them with the
+standard XF86 mute/lower/raise keys and added the right-side XKB Command/Ctrl
+swap alongside the existing left-side swap. The desktop setup script now makes
+those changes idempotently while preserving custom key bindings. Updated the
+launcher notes for symmetric Command mapping.
+
+Quick Settings volume mute now reads the current PipeWire state and writes an
+explicit mute value instead of issuing a blind toggle. It serializes mute clicks
+after pending slider writes, follows the actual state, and exposes Mute/Unmute
+as the icon button's accessible name. The pinned Quick Settings 1.4.0 source
+build passes. Applied the keyboard/media-key settings live and muted the current
+default sink with `wpctl set-mute @DEFAULT_AUDIO_SINK@ 1`; readback is
+`Volume: 0.63 [MUTED]`. No audio service, Wingpanel, or compositor was restarted.
+Physical key presses and the rebuilt panel module on the live desktop remain
+unverified; the source fix is staged for the next Quick Settings installation.
+Feature branch: `codex/audio-mute-keyboard-20261022`.
+## Aurora pinned-source fetch follow-up — 2026-10-22
+
+PR #518's unified72 run [39770268111](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268111) and PR #528's
+first retry run [39836069576](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39836069576) both stopped at
+pinned-source preparation on repeated codeload HTTP 429 responses. The retry logic honored the bounded attempt/delay
+policy; the candidate profile passed source preparation and entered its isolated CI kernel build, while unified72 did
+not. This follow-up keeps the codeload checksum path, then falls back only for retryable HTTP errors to the explicitly
+pinned Git URL, commit and tree SHA-1 in `unified72/series.json`; it verifies both Git identities before archiving. Bad
+checksums and permanent HTTP errors still fail closed. The preparation receipt records the acquisition method and actual
+archive digest. Local tests cover retry and fallback behavior; they do not
+prove the remote Git fetch or a wip4 build. No source archive was fetched/prepared locally, and no hardware, installed
+kernel, boot payload or wip4 artifact was produced. PR #518 remains conflicted with `dev` and unreviewed. Next: let the
+updated CI validate the fallback and record candidate/unified72 build outcomes separately.
 ## Dock launcher regression harness startup race — 2026-10-22
 
 PR #518's validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)
@@ -1798,6 +1830,29 @@ shared prepared source trees are byte-identical; core and extras native builds,
 three routing regressions, private fake-BlueZ probe, syntax and warning-level
 ShellCheck pass. No pin bump, live installation or service restart. Next: review
 Dock Launcher binding lifecycle with complete custom-source preservation.
+
+### Dock Launcher binding lifecycle follow-up — 2026-10-21
+
+Backported elementary/dock `1f55ec4c5fda41b41f6c92e31e80122608500ce7` against
+our pinned 8.3.3 source `8b45a68a122947ad3a6427bf6e159ec2acf04ad0`. Because the
+pin's `Launcher` uses `cleanup()` while upstream's newer patch uses `dispose()`,
+the adapted patch removes the retained `GLib.Binding` field and unbind from the
+actual pinned cleanup method, extracts the badge-count callback, and leaves the
+upstream source pin unchanged for task 03 coordination. The canonical
+`dock-taskbar/prepare-source.sh` applies it after app tracking and asserts the
+old field/unbind are absent. Documentation and evidence:
+`mseries/upstream-audits/desktop/2026-10-21T22-29-10-0400.md`.
+
+The full 8.3.3 customized dock source compiled (425/425 steps); private launcher
+marker, activation, context-menu, Escape and typing checks passed in light and
+dark. App resolver/running lifecycle tests passed 5/5. No installed file, dock,
+panel or compositor changed. The CodexBar hover probe passed in the first full
+run but that command exited nonzero during temporary-home cleanup; isolated
+retries later failed its existing simulated-hover visibility assertion. This
+probe does not cover the changed Launcher and remains an unresolved fixture
+stability result. Live session behavior and memory use are not verified. Next:
+preserve this result while task 03 coordinates the Dock source version; any live
+dock acceptance requires its existing explicit deployment/next-login gate.
 
 ## Touch ID page in System Settings — 2026-10-21
 
