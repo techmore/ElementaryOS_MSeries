@@ -552,6 +552,7 @@ impl App {
             .icon_name("io.github.techmore.ClaudePantheonRs")
             .child(&paned)
             .build();
+        window.add_css_class("t3-main-window");
         winstate::WindowState::load().apply(&window, &paned);
         {
             let paned = paned.clone();

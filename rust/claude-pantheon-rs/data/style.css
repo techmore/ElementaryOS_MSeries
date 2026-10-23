@@ -10,6 +10,7 @@ window.csd.unified decoration {
 window.csd:backdrop decoration { box-shadow: 0 0 0 1px alpha(black, 0.18); }
 
 /* Dock quick surface: compact, native and light enough to sit over the desktop. */
+window.t3-main-window, window.t3-quick-window { font-size: 1.08em; }
 window.t3-quick-window { background-color: transparent; }
 .t3-quick-surface {
   background-color: @theme_bg_color;
