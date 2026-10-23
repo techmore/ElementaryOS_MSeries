@@ -3,7 +3,8 @@
 
 Signal has no accent setting: its blue ("ultramarine", #2c6bed and a few tints) is compiled into the
 stylesheets inside resources/app.asar. This updates only Signal's application stylesheet, startup
-window accent, and embedded Signal logo marks. Palette data in chats, avatars, QR art, stickers, and
+window accent, and embedded Signal logo marks. UI text is modestly larger, and primary surfaces
+use a cool tint to distinguish Signal from Messages. Palette data in chats, avatars, QR art, stickers, and
 other images is not edited. Every replacement has the same byte length, so file offsets stay put and
 only the per-file integrity hashes in the asar header change (recomputed here).
 
@@ -204,7 +205,26 @@ OKLAB_SOURCES = (
 
 
 def patch_stylesheet(data, palette):
+    # Fixed-width UI stylesheet edits preserve ASAR offsets. They never touch
+    # conversation content or Electron's physical display scaling.
     count = 0
+    typography = {
+        b"--axo-text-body-large:.875rem": b"--axo-text-body-large:.975rem",
+        b"--axo-text-body-medium:.8125rem": b"--axo-text-body-medium:.9125rem",
+        b"--axo-text-body-small:.75rem": b"--axo-text-body-small:.85rem",
+        b"--axo-leading-body-large:1.25rem": b"--axo-leading-body-large:1.40rem",
+        b"--axo-leading-body-medium:1.125rem": b"--axo-leading-body-medium:1.275rem",
+        b"--axo-color-surface-primary:light-dark(#fafafa,#191919)":
+            b"--axo-color-surface-primary:light-dark(#eef3fa,#202936)",
+    }
+    for source, target in typography.items():
+        assert len(source) == len(target)
+        count += data.count(source)
+        data = data.replace(source, target)
+    def larger_font(match):
+        return b"font-size:" + str(int(match.group(1)) + 2).encode() + b"px"
+    data, enlarged = re.subn(rb"font-size:(12|13|14|15|16)px(?![\w.])", larger_font, data)
+    count += enlarged
     light_text, dark_text = text_stops(palette)
 
     # Signal's semantic tokens have distinct jobs. Foreground labels and text

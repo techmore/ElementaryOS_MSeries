@@ -76,6 +76,21 @@ def asar_fixture(path):
 
 
 class PaletteTests(unittest.TestCase):
+    def test_larger_reading_type_and_distinct_surface_preserve_archive_width(self):
+        source = (b'.message{font-size:14px}.caption{font-size:12px}'
+                  b'--axo-text-body-large:.875rem;--axo-text-body-medium:.8125rem;'
+                  b'--axo-text-body-small:.75rem;--axo-leading-body-large:1.25rem;'
+                  b'--axo-leading-body-medium:1.125rem;'
+                  b'--axo-color-surface-primary:light-dark(#fafafa,#191919)')
+        patched, count = accent.patch_stylesheet(source, accent.palette_for('#3689e6'))
+        self.assertEqual(len(source), len(patched))
+        self.assertIn(b'font-size:16px', patched)
+        self.assertIn(b'font-size:14px', patched)
+        self.assertIn(b'--axo-text-body-large:.975rem', patched)
+        self.assertIn(b'--axo-leading-body-large:1.40rem', patched)
+        self.assertIn(b'light-dark(#eef3fa,#202936)', patched)
+        self.assertEqual(count, 8)
+
     def test_cli_upgrades_legacy_stamp_skips_unchanged_and_restores(self):
         import subprocess
         import sys
