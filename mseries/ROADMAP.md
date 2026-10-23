@@ -1,3 +1,17 @@
+## Successful encrypted Python/Rust favorites interoperability — 2026-10-22
+
+New rust/mseries-messages/test-keyring.sh provisions a private home, runtime,
+D-Bus and unlocked encrypted GNOME Keyring, leaving owner state untouched.
+An ignored SDK test explicitly enabled by this runner verifies Python v2 write →
+Rust read, Rust update → Python read, Rust reload, second-phone isolation, and
+clear → empty state. Imported snapshots, choices, local favorites and hidden
+imports survive. Python UTC serialization uses +00:00; the fixture normalizes to
+that valid representation before equality checks. Full round-trip passes in
+/tmp/messages-rust-keyring.log; strict all-target Clippy passes in
+/tmp/messages-rust-keyring-clippy.log. CI includes dependencies, a pinned BlueFerry
+fixture source and the new check. No runtime code or installed binary changed.
+Live phone/profile switching and application persistence acceptance remain open.
+
 ## Rust local favorites and strip parity — 2026-10-22
 
 The Rust header star and row menu now edit shared local pin preferences instead of
