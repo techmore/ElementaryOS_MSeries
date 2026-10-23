@@ -1,3 +1,13 @@
+## Messages release-check coverage — 2026-10-22
+
+CI now checks formatting, all-target strict Clippy and unit tests for both Messages
+and its shared SDK, plus desktop validation for the Messages & Signal switcher.
+Local formatting and switcher desktop validation pass; the existing local SDK
+library/Clippy receipts cover the same targets. CI run 39878146738 (0966b03a)
+passed lint, unit and isolated GTK recovery steps and was building its package;
+latest-head CI remains queued. A preceding run 39877900306 (49b99b6c) succeeded.
+These results do not replace live owner acceptance.
+
 ## Installer owner-bus fix and keyboard menus — 2026-10-22
 
 Owner installed native capture package 0.1.0+gitb2887485 successfully. Its binary
