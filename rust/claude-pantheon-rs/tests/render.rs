@@ -12,6 +12,7 @@
 //!   CLAUDE_PANTHEON_SHOT_REPOS=<file.png> repos and issues (milestone 5), pinned repos from workflow.json
 //!   CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY=1 render isolated pinned repos and exit before live checks
 //!   CLAUDE_PANTHEON_SHOT_REPOS_LAYOUT=<file.png> screenshot for the isolated repo layout pass
+//!   CLAUDE_PANTHEON_EXPECT_REPO_THREAD_CONTEXT=<text> wait for and assert a synthetic T3 repo row
 //!   CLAUDE_PANTHEON_LIVE_SEND=1          start a real thread and wait for the answer (costs tokens)
 //!   CLAUDE_PANTHEON_DARK=1               dark style
 //! Plain `main`, not libtest: GTK must stay on one thread.
@@ -149,10 +150,24 @@ fn main() {
     let app = App::build(&application, Instant::now(), false);
     if std::env::var_os("CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY").is_some() {
         assert!(pump_until("the isolated app startup", 60, || !app.is_busy()));
+        let expected_thread_context = std::env::var("CLAUDE_PANTHEON_EXPECT_REPO_THREAD_CONTEXT").ok();
+        if expected_thread_context.is_some() {
+            assert!(pump_until("the synthetic T3 shell snapshot", 30, || {
+                !app.projects().is_empty() && !app.threads().is_empty()
+            }));
+        }
         app.show_repos();
         assert!(pump_until("the isolated repository cards", 30, || {
             shown(&app).iter().filter(|text| text.starts_with("layout-owner/")).count() >= 10
         }));
+        if let Some(expected) = expected_thread_context {
+            assert!(
+                pump_until("the T3 thread's saved and live branch labels", 30, || {
+                    shown(&app).iter().any(|text| text.contains(&expected))
+                }),
+                "the repo chat row shows `{expected}`"
+            );
+        }
         pump(300);
         let t = shown(&app);
         for expected in ["Pinned", "Issues", "Install runner", "Webhook", "New chat"] {

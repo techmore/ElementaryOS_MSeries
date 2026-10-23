@@ -491,6 +491,8 @@ jobs:
           cd rust
           dbus-run-session -- env -u WAYLAND_DISPLAY GDK_BACKEND=x11 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo \
             xvfb-run -a cargo test --release -p claude-pantheon-rs --test usage-metrics-render -- --test-threads=1
+      - name: Render repo chat rows with saved and live Git branches
+        run: python3 rust/claude-pantheon-rs/tests/render-branch-row.py
       # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
       - name: Contracts drift against pingdotgg/t3code main (advisory)
         continue-on-error: true
