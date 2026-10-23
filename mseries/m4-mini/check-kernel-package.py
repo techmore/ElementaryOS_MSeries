@@ -46,7 +46,8 @@ def main():
                 'Version: 7.1.13+elementary.m4.gravity1-6']):
         raise ValueError('unexpected package identity')
     version = rows[1].removeprefix('Version: ')
-    if version == '7.1.13+elementary.m4.gravity1-6':
+    is_r6 = version == '7.1.13+elementary.m4.gravity1-6'
+    if is_r6:
         checks = build.get('m4_idle_checks', {})
         if (checks.get('apple_cpu_wfi_linked') is not True
                 or checks.get('state_save_restore_instructions_present') is not True
@@ -67,8 +68,14 @@ def main():
             header = stream.read(64)
         if header[56:60] != b'ARM\x64' or ((struct.unpack_from('<Q', header, 24)[0] >> 1) & 3) != 2:
             raise ValueError('ARM64 16 KiB Image required')
-        if digest(module_root / ('config-' + RELEASE)) != build['config_sha256']:
+        config = module_root / ('config-' + RELEASE)
+        if digest(config) != build['config_sha256']:
             raise ValueError('kernel config mismatch')
+        if is_r6:
+            values = set(config.read_text().splitlines())
+            required = {'CONFIG_APPLE_WATCHDOG=y', 'CONFIG_BLK_DEV_SR=y', 'CONFIG_ISO9660_FS=y'}
+            if not required <= values:
+                raise ValueError('R6 built-in watchdog and live-media config required')
         dtb = module_root / 'dtbs/t8132-j773g.dtb'
         if digest(dtb) != build['artifacts']['arch/arm64/boot/dts/apple/t8132-j773g.dtb']:
             raise ValueError('DTB mismatch')
@@ -76,8 +83,9 @@ def main():
         if 'apple,j773g' not in compatible.split():
             raise ValueError('J773g board DTB required')
         count = len(list(module_root.rglob('*.ko')))
-        if count != 1598:
-            raise ValueError('unexpected module count')
+        expected_count = 1597 if is_r6 else 1598
+        if count != expected_count:
+            raise ValueError(f'unexpected module count: expected {expected_count}, found {count}')
         for name in MODULES:
             module = module_root / 'kernel' / name
             with module.open('rb') as stream:
