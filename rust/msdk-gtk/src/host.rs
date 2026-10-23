@@ -12,7 +12,7 @@ use gtk::prelude::*;
 use gtk::{gdk, glib};
 use serde_json::{Value, json};
 
-use crate::logic::{Effect, Logic, RulesLogic, Store, default_for};
+use crate::logic::{Effect, Logic, RulesLogic, Store};
 use crate::render::{self, D, Dispatcher, Refresh};
 
 /// A message from outside the widgets (a worker thread, a service): name and payload.
@@ -56,15 +56,7 @@ fn state_file(doc: &Value) -> Option<PathBuf> {
 }
 
 fn initial_store(doc: &Value) -> Store {
-    let mut st = Store::new();
-    for (k, t) in doc
-        .get("state")
-        .and_then(Value::as_object)
-        .into_iter()
-        .flatten()
-    {
-        st.insert(k.clone(), default_for(t.as_str().unwrap_or("text")));
-    }
+    let mut st = msdk::logic::initial_store(doc);
     if let Some(f) = state_file(doc)
         && let Ok(text) = std::fs::read_to_string(f)
         && let Ok(Value::Object(saved)) = serde_json::from_str(&text)

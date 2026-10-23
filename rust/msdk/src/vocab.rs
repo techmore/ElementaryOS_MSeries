@@ -352,7 +352,7 @@ pub const FEEDS: &[Feed] = &[Feed {
 
 /// Action verbs of an `update` rule.
 pub const ACTIONS: &[&str] =
-    &["set", "toggle", "append", "patch", "remove", "clear", "call", "toast", "open", "close", "quit", "when"];
+    &["set", "toggle", "add", "append", "patch", "remove", "clear", "call", "toast", "open", "close", "quit", "when"];
 
 pub fn service(name: &str) -> Option<&'static Service> {
     SERVICES.iter().find(|s| s.name == name)
