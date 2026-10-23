@@ -7,7 +7,7 @@ acceptance gate. It supersedes subjective percentage estimates.
 | Gate | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Shared Rust/GTK/Granite SDK use | Messages uses mseries-pantheon-kit; combined 30 library tests passed | SDK v1 stability audit remains issue #535 |
-| Messages package | Latest keyboard-fix ARM64 Debian build passed; runtime minima match GTK 4.20/Granite 7.8 | Install and launcher handoff |
+| Messages package | Latest ARM64 package installed user-locally; binary hash matches release and absolute launcher validates | Owner-session launch/UI acceptance |
 | Messages recovery and API errors | Private GTK/D-Bus test passes unavailable service, Retry, v99 rejection and v2 recovery | Actual owner service/session |
 | Messages compose/outbox | Synthetic confirmed, failed and unknown send outcomes pass through actual GTK app | Owner-approved live phone sends; no fixture result proves delivery |
 | Phone isolation | A/B/A drafts, mixed-refresh rejection and delayed old-phone response tests pass | Live phone switching; backend atomic snapshot identity contract |
