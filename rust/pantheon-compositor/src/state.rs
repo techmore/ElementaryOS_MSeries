@@ -119,6 +119,10 @@ pub struct PantheonCompositor {
     deferred_activations: usize,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
+    pub screenshot_requested: Cell<bool>,
+    pub screenshot_region: Cell<Option<crate::screenshot::Region>>,
+    pub screenshot_selection: std::cell::RefCell<crate::screenshot::Selection>,
+    pub screenshot_busy: Arc<std::sync::atomic::AtomicBool>,
     pub lock_surfaces: HashMap<String, LockSurface>,
     pub lock_owner: Option<smithay::reexports::wayland_server::backend::ObjectId>,
     pub lock_confirmation: Option<SessionLocker>,
@@ -228,6 +232,8 @@ pub struct PantheonCompositor {
     fractional_scale_fingerprint: Cell<Option<u64>>,
     /// Snap preview and OSD rectangles, kept so unchanged ones add no damage.
     pub(crate) solid_buffers: crate::cursor::SolidBuffers,
+    /// Cached physical-panel corner masks; no timers or per-frame raster work.
+    pub(crate) screen_corners: crate::screen_corners::ScreenCorners,
     /// Where wallpaper scaling threads deliver their result.
     pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
 
@@ -494,6 +500,10 @@ impl PantheonCompositor {
             deferred_activations: 0,
             session_lock_state,
             session_locked: false,
+            screenshot_requested: Cell::new(false),
+            screenshot_region: Cell::new(None),
+            screenshot_selection: std::cell::RefCell::new(Default::default()),
+            screenshot_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             lock_surfaces: HashMap::new(),
             lock_owner: None,
             lock_confirmation: None,
@@ -571,6 +581,7 @@ impl PantheonCompositor {
             gala_snapshot_at: Cell::new(None),
             fractional_scale_fingerprint: Cell::new(None),
             solid_buffers: Default::default(),
+            screen_corners: crate::screen_corners::ScreenCorners::from_environment(),
             wallpaper_scaled_sender,
             idle_monitor,
             idle_notifier_state,

@@ -15,11 +15,11 @@ mkdir -p "$OUTDIR/debian/pantheon-rust-compositor"
 PACKAGE_ROOT="$OUTDIR/debian/pantheon-rust-compositor"
 VERSION=${DEB_VERSION:-0.1.0+git$(git -C "$ROOT" rev-parse --short HEAD)}
 
-cargo build --release --manifest-path "$ROOT/rust/Cargo.toml" \
+cargo build --release --locked --manifest-path "$ROOT/rust/Cargo.toml" \
   -p pantheon-compositor --bin pantheon-compositor --features native-drm
 
 # Honor a shared Cargo target directory so isolated worktrees can reuse builds.
-TARGET_DIR=$(realpath "${CARGO_TARGET_DIR:-$ROOT/rust/target}")
+TARGET_DIR=$(cargo metadata --manifest-path "$ROOT/rust/Cargo.toml" --locked --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')
 BIN="$TARGET_DIR/release/pantheon-compositor"
 [[ -x $BIN ]] || { echo "error: compositor build produced no executable" >&2; exit 1; }
 if ldd "$BIN" | grep -q 'not found'; then
@@ -66,7 +66,7 @@ Package: pantheon-rust-compositor
 Version: $VERSION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland, python3-gi, zenity
+Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland, python3-gi, zenity, pipewire-bin, sound-theme-freedesktop
 Description: experimental Rust compositor for the Pantheon M-series session
  An opt-in Smithay Wayland compositor and a separate experimental GNOME session.
 EOF
