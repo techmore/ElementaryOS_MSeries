@@ -8,8 +8,9 @@ else was read from this repository. **[inference]** marks my judgement.
 ## 1. Decision
 
 The base becomes **Arch Linux ARM with the Asahi overlay** (what the installer calls Asahi Alarm), not
-an Ubuntu root with elementary packages. The Arch side already exists on the owner's machine as the
-boot host ([KERNEL-FLOW.md](KERNEL-FLOW.md)); the rebase makes it the only root.
+an Ubuntu root with elementary packages. [KERNEL-FLOW.md](KERNEL-FLOW.md) describes an Arch boot host, but the audit found that root is **already gone on the
+owner's machine** (see [ASAHI-ALARM-AUDIT-2026-10-23.md](ASAHI-ALARM-AUDIT-2026-10-23.md)); the rebase builds a fresh Arch root
+and keeps today's Ubuntu root as the fallback.
 
 Not decided here (see §7): how much of Pantheon survives the move.
 
@@ -19,7 +20,7 @@ Not decided here (see §7): how much of Pantheon survives the move.
 
 ### What gets simpler for good
 
-| Today (Ubuntu root on an Arch boot host) | After |
+| Today (Ubuntu root; design assumes an Arch boot host, now gone from the machine) | After |
 |---|---|
 | Two roots. The kernel and modules are installed by Arch and **copied** into `@elementary` by a pacman hook; firmware too ([KERNEL-FLOW.md](KERNEL-FLOW.md)) | One root. `pacman` installs the kernel, modules, firmware and initramfs; no sync hook |
 | `install-boot-isolation.sh` stops Ubuntu's `initramfs-tools`, `grub` and kernel packages from clobbering the ESP (apt pins, dpkg diversions, no-op stubs) | Not needed; there is no second package manager to fight |
@@ -47,7 +48,13 @@ discussions I found are from 2022 to 2023 and include concern about a stale aarc
 Treat it as a dependency with bus-factor risk: mirror what we depend on, keep the Asahi overlay's kernel
 and Mesa as the only ones we run, and re-check project health quarterly.
 
-### Caveat 4: the Asahi overlay for Arch is not the official flagship
+### Caveat 4: the Asahi overlay for Arch is not the official flagship (**audited 2026-10-23: resolved, with risks**)
+
+> **Audit result:** Asahi Alarm is healthy and current: kernel 7.2.12 published 2026-10-22, matching the upstream tag, with
+> 13 to 48 commits a month. The risks are a **bus factor of two**, a **single GitHub-Release package host**, and **no declared
+> licence**. Details and mitigations: [ASAHI-ALARM-AUDIT-2026-10-23.md](ASAHI-ALARM-AUDIT-2026-10-23.md). The text below is the
+> original, pre-audit concern, kept for the record.
+
 
 The same 2023 post announces **Fedora Asahi Remix as Asahi's flagship distribution**; Arch is no longer where
 the Asahi team's own packaging effort goes. "Asahi Alarm" (asahi-alarm.org, the installer this repo already uses)
@@ -101,8 +108,8 @@ Bootloader, kernel and audio changes on the owner's machine stay owner-initiated
 
 | Phase | Work | Exit criterion |
 |---|---|---|
-| **A Audit and inventory** | Audit Asahi Alarm (caveat 4). List every package and file the Ubuntu image installs (mkosi package lists, install scripts, patches); mark each: Arch official, Asahi overlay, AUR, ours, or drop | An audit note on Asahi Alarm's health and a table in this repo with one row per item and an owner |
-| **B Package** | PKGBUILDs for everything marked "ours" (compositor, apps, plugins, Vala-patched Gala/Wingpanel, kernel); build in a clean aarch64 chroot | Every item builds reproducibly in CI |
+| **A Audit and inventory** | Asahi Alarm audit **done** (link above). List every package and file the Ubuntu image installs (mkosi package lists, install scripts, patches); mark each: Arch official, Asahi overlay, AUR, ours, or drop | A table in this repo with one row per item and an owner (the audit note exists) |
+| **B Package** | Mirror the Asahi Alarm repo into ours; resolve where the Asahi Mesa driver ships; PKGBUILDs for everything marked "ours" (compositor, apps, plugins, Vala-patched Gala/Wingpanel, kernel); build in a clean aarch64 chroot | Every item builds reproducibly in CI |
 | **C Repo and CI** | Signed pacman repo with `dev` and `stable`; promotion by an install-and-launch test in a container or VM; same key policy as [release/KEY-RUNBOOK.md](release/KEY-RUNBOOK.md) | A package goes from PR to `dev` suite with no manual step |
 | **D Image and installer** | `pacstrap`-based root builder replacing the Ubuntu bootstrap in `elementary-mac-setup`/`transform/`; keep the Asahi Alarm installer, LUKS and unlock-screen work | A fresh root boots in a VM and on a spare partition |
 | **E Updater backend** | `mseries-update` drives pacman (`-Syu` against our repo only, never partial); channels = repos; atomic snapshot (btrfs) before each update | The Updates app updates and rolls back on the spare partition |
@@ -123,7 +130,7 @@ They stay on a `legacy/ubuntu-base` branch until Phase F has passed.
    as the shell for now, and replace pieces with SDK apps and `mseries-wm` over time. (b) Drop Pantheon on day one and ship only
    our compositor and SDK shell surfaces. **My lean: (a),** because (b) puts the compositor, panel, dock and settings on the critical
    path at the same time as the base swap. This plan assumes (a).
-2. **Overlay fallback.** If the Asahi Alarm audit shows it is stale, do we rebuild kernel/m1n1/U-Boot/Mesa packages from Asahi's public sources ourselves, or reconsider the base?
+2. **Contact the Asahi Alarm maintainers** (licence files, collaboration, upstreaming our Aurora patches). The message is the owner's to send; I can draft it.
 3. **Where Arch packages build.** A GitHub arm64 runner, SER8, or a dedicated builder. SER8's architecture was not checked.
 4. **Branding.** Keep "elementary OS" in names while Pantheon stays, or rename once it is replaced.
 5. **Spare partition** for Phase D/E trials: size and where.

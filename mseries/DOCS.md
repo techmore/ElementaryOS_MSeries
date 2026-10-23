@@ -40,6 +40,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [UPSTREAM-PINS.md](UPSTREAM-PINS.md) | Pinned upstream revisions and licences |
 | [PLATFORM-PLAN.md](PLATFORM-PLAN.md) | Proposal: split into kernel/display/wm/SDK repos, an SDK a small model can build apps with, pipeline and phases |
 | [ARCH-REBASE-PLAN.md](ARCH-REBASE-PLAN.md) | Decision and phased plan to rebase the platform on Arch Linux (Asahi Alarm): what gets simpler, caveats, decisions |
+| [ASAHI-ALARM-AUDIT-2026-10-23.md](ASAHI-ALARM-AUDIT-2026-10-23.md) | Audit of the Asahi Alarm base: maintainers, repo address, versions vs upstream, cadence, risks |
 | [GTK-PERFORMANCE-ASAHI.md](GTK-PERFORMANCE-ASAHI.md) | What keeps GTK4/Granite apps small and idle on Asahi (renderer, CSD shadow, cursor blink, animations, D-Bus), with every GTK app here listed |
 | [DEV-HYGIENE.md](DEV-HYGIENE.md) | Keeping the dev machine clean: the weekly `dev-clean` timer (build output, caches, session scratch, dated Codex exports), one shared cargo target dir, worktree discipline |
 
