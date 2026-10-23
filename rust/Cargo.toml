@@ -1,5 +1,5 @@
 [workspace]
-members = ["mseries-power", "granite-smoke", "pantheon-compositor", "mseries-update-core", "mseries-updates", "mseries-diskspace", "claude-pantheon-rs"]
+members = ["mseries-power", "granite-smoke", "pantheon-compositor", "mseries-update-core", "mseries-updates", "mseries-diskspace", "claude-pantheon-rs", "mseries-image-studio"]
 resolver = "2"
 
 # Smaller, faster binaries for the session components (the compositor runs on

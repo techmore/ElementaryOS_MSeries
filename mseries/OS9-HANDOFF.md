@@ -1,28 +1,27 @@
-## Native M-Series Image Studio prototype — 2026-10-22
+## Native M-Series Image Studio: Pantheon Rust workspace — 2026-10-22
 
-Added `mseries/image-studio/`, a GTK 4 + Granite 7 desktop app for guided image
-creation. It has a prompt-type picker, review-before-accept local LLM prompt help,
-model/LoRA and batch settings, Model readiness / LoRA comparison / Prompt type
-study presets, a recipe library, and device memory/render-node reporting. JSON
-recipes preserve prompt, workflow, model/LoRA identifiers, dimensions, batch,
-seed and tags. The output store saves PNGs with JSON sidecars, and the Library
-renders stored outputs with their metadata.
+The Image Studio is now a Rust GTK 4 + Granite 7 app in `rust/mseries-image-studio`, using this repo's
+`gtk4-rs 0.11` / `granite-rs 3.3` native Pantheon pattern. `mseries/image-studio/README.md` documents
+build and test commands. It opens on the requested adult Alexandra Daddario college-streamer series
+prompt. Model readiness, LoRA comparison, and prompt-type study presets set conservative repeatable
+values; prompt-type advice and prompt rewriting use only the already-running local assistant and show
+review-before-accept dialogs. Recipes store positive/negative prompts, model/LoRA notes and strength,
+dimensions, batch, seed, and tags. Library recipes load back into Create. PNG output storage writes a
+private JSON metadata sidecar; the Library renders saved outputs. Live host-memory/render-node status
+refreshes, with a protected 6 GiB desktop reserve.
 
-Validation on the ARM64 host: `meson setup build mseries/image-studio`,
-`meson compile -C build`, and `meson test -C build --print-errorlogs` pass (7
-core cases). Xvfb launch smoke passed for the Create and Library pages at
-1280×900; the Alexandra Daddario adult college-streamer prompt was saved and
-reloaded as a recipe. A one-pixel fixture exercised output metadata and thumbnail
-display. These are UI/data-path checks, not an AI render.
+Validation: Rust core tests 6/6; GTK render test under Xvfb drove the preset → save → Library → Load
+path; standalone Xvfb Create and Library screenshots rendered at 1380×900. Saved test recipe values
+were checked for the adult streamer subject, prompt type, 512×512, batch 1, seed 424242, and tags.
+These are UI/data checks, not an AI image generation run.
 
-Generation remains disabled. At the check, 7.3 GiB was available and the 6 GiB
-desktop reserve was met, but `mseries-ai-everyday.service` was failed, no local
-API endpoint was listening, and the cache held Qwen3.5 text weights but no
-diffusion model. No image-engine adapter is wired, and no model service or job
-was started. The M-Series ARM64/Vulkan image runtime, model/LoRA compatibility,
-and peak-memory tuple still need qualification before enabling generation or
-running the requested image series.
-Details and reproduction commands: [Image Studio README](image-studio/README.md).
+Generation remains disabled because no image runtime/model is connected or qualified. The latest host
+check showed 6.1 GiB available (just above the 6 GiB reserve), `mseries-ai-everyday.service` still
+failed, no local image/text API listening, and only Qwen text weights in the cache. The prompt helper
+therefore has no running API to contact. No worker or image job was started, and no generated image exists.
+Next: select a still-image engine for the M-Series ARM64/Vulkan target, qualify the model/LoRA and
+measured peak-memory tuple, wire live preview and output delivery, then run the requested three-scene
+series. Details: [Image Studio README](image-studio/README.md).
 
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 

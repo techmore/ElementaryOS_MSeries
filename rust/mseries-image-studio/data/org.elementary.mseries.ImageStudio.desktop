@@ -1,9 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Image Studio
-Comment=Guided local image generation for M-Series
+Comment=Guided local image creation for M-Series
 Exec=mseries-image-studio
 Icon=org.elementary.mseries.ImageStudio
 Terminal=false
 Categories=Graphics;Photography;
 StartupNotify=true
+DBusActivatable=true

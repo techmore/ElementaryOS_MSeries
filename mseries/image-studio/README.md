@@ -1,51 +1,23 @@
 # M-Series Image Studio
 
-Native GTK 4 + Granite 7 image-studio prototype for ElementaryOS_MSeries.
+The app source lives in [`rust/mseries-image-studio`](../../rust/mseries-image-studio): a native GTK 4 + Granite 7 app built with `gtk4-rs` and `granite-rs`, following the repo's Pantheon Rust application pattern.
 
-The first slice provides a guided creation workspace, prompt-type picker, optional
-prompt help through the already-running local M-Series assistant, model/LoRA and
-batch controls, three guided workflow presets, a saved-recipe library, and live
-memory/render-device reporting. Recipes persist prompt, prompt type, workflow,
-model/LoRA identifiers, dimensions, batch, seed and tags. `GenerationOutputStore`
-provides PNG plus JSON-sidecar persistence, and the Library reads those outputs
-with bounded thumbnails. No image-engine adapter is wired yet. The app never
-starts a local model worker.
-
-Generation stays disabled until a specific image engine/model/size tuple has a
-measured peak-memory budget and has been qualified on the target Vulkan stack.
-The prompt helper only contacts the already-running local M-Series text assistant
-and shows an editable suggestion for review before changing the prompt.
+Build and run it from the repository root:
 
 ```sh
-meson setup build mseries/image-studio
-meson compile -C build
-meson test -C build --print-errorlogs
+CARGO_TARGET_DIR="$HOME/.cache/cargo-target" cargo build --manifest-path rust/Cargo.toml -p mseries-image-studio
+"$HOME/.cache/cargo-target/debug/mseries-image-studio"
 ```
 
-Headless UI smoke for the requested adult streamer-series prompt:
+Run core and GTK interaction coverage:
 
 ```sh
-test_data_home=$(mktemp -d)
-M_SERIES_IMAGE_STUDIO_TEST_PROMPT='Alexandra Daddario portrayed as a 22-year-old adult college student and modern livestream creator in a three-image editorial character series: hosting a relaxed gaming stream, recording a campus-day vlog, and editing a video in a bright campus cafe. Casual clothing, friendly expression, natural light, consistent identity, no sexualization.' \
-M_SERIES_IMAGE_STUDIO_TEST_WORKFLOW='Prompt type study' \
-M_SERIES_IMAGE_STUDIO_TEST_SAVE_RECIPE=1 \
-M_SERIES_IMAGE_STUDIO_SCREENSHOT=/tmp/image-studio-smoke.png \
-M_SERIES_IMAGE_STUDIO_EXIT_AFTER=4 \
-XDG_DATA_HOME="$test_data_home" xvfb-run -a ./build/mseries-image-studio
+CARGO_TARGET_DIR="$HOME/.cache/cargo-target" cargo test --manifest-path rust/Cargo.toml -p mseries-image-studio --lib
+CARGO_TARGET_DIR="$HOME/.cache/cargo-target" dbus-run-session -- env -u WAYLAND_DISPLAY GDK_BACKEND=x11 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo xvfb-run -a -s "-screen 0 1440x1000x24" cargo test --manifest-path rust/Cargo.toml -p mseries-image-studio --test render
 ```
 
-The test-only launch hooks also include `M_SERIES_IMAGE_STUDIO_TEST_PAGE=library`
-to inspect saved recipes and generated-output metadata. Recipe JSON is saved under
-`$XDG_DATA_HOME/mseries-image-studio/recipes`; image PNGs and metadata sidecars
-are saved under `$XDG_DATA_HOME/mseries-image-studio/images` when a qualified
-engine returns an image.
+The window opens on the adult streamer-series prompt from the requested test case. Three workflow presets seed repeatable recipes; settings and prompt-type decisions can be reviewed and restored from Library. Recipes store prompts, model/LoRA notes and weight, output size, batch, seed, and tags. PNG output metadata uses the same JSON recipe format.
 
-## Current limit
+The app currently has no qualified image runtime connected. Generation remains disabled until an engine/model/size tuple has a measured memory budget and is qualified on this device. It also never starts a model worker. Prompt help and prompt-type suggestions call only the already-running loopback assistant at `127.0.0.1:8766`, and pause while the 6 GiB desktop reserve is unmet.
 
-No image-engine adapter or diffusion runtime has yet been qualified on the
-M-Series ARM64/Vulkan stack.
-On the implementation host, `mseries-ai-everyday.service` was failed, no local
-image or text API endpoint was listening, and the Hugging Face cache contained the
-Qwen text model but no diffusion model. The UI, recipe flow and output metadata
-store were tested; no AI image was generated. Choosing and qualifying the engine,
-model and LoRA remains necessary before the requested streamer-series render.
+On this host, 6.1 GiB was available at the latest check (just above the desktop reserve), but `mseries-ai-everyday.service` was still failed, no local image/text endpoint was listening, and the model cache contained Qwen text weights but no diffusion model. The UI/data path has been tested; no AI image was generated. See [OS9 handoff](../OS9-HANDOFF.md) and [roadmap](../ROADMAP.md) for the runtime qualification blocker.

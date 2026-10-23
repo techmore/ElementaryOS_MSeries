@@ -1,20 +1,21 @@
-## Native Image Studio: GTK workspace and metadata path — 2026-10-22
+## Native Image Studio: Pantheon Rust UI and recipe flow — 2026-10-22
 
-Added `mseries/image-studio/`: a GTK 4 + Granite 7 creation/library prototype
-with three guided workflows, prompt-type selection, reviewable local-assistant
-suggestions, device memory reporting, persistent recipes, and PNG + JSON output
-storage. Seven core tests pass. Xvfb Create/Library smoke passes with the adult
-Alexandra Daddario college-streamer prompt, including recipe reload and a fixture
-thumbnail/metadata display.
+`rust/mseries-image-studio` is a Rust GTK 4 + Granite 7 app (`gtk4-rs` and
+`granite-rs`) with guided workflows, prompt-type selection, reviewable local
+assistant suggestions, live memory/render-node reporting, editable generation
+settings, recipe restore, and PNG + JSON metadata storage. Six core tests pass;
+the Xvfb render interaction test covers preset → save → Library → Load. It opens
+with the requested adult streamer-series prompt.
 
-Generation is still gated and no image-engine adapter is wired. The
-implementation host has no running local image or text API and no diffusion model
-in its cache; `mseries-ai-everyday.service` is failed. No worker was started.
-Next: select an image runtime that is compatible
-with the M-Series ARM64/Vulkan stack, qualify model and LoRA files, measure a
-memory budget while preserving the desktop reserve, then connect the engine and
-run the real series. See [handoff](OS9-HANDOFF.md) and
-[app notes](image-studio/README.md).
+Image generation remains gated; there is no connected or qualified still-image
+runtime, no diffusion model in the cache, and `mseries-ai-everyday.service` is
+still failed. Available memory is 6.1 GiB, only just above the 6 GiB reserve, and
+the prompt assistant API is not listening. No image job was started, so the
+requested generated series is still outstanding. Next:
+choose and qualify an ARM64/Vulkan-compatible runtime/model/LoRA, measure the
+peak budget while preserving the desktop reserve, then add real generation,
+live preview, and output delivery. See [handoff](OS9-HANDOFF.md) and [app
+notes](image-studio/README.md).
 
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
