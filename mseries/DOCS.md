@@ -38,6 +38,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [STORAGE-PLAN.md](STORAGE-PLAN.md) | Partition and subvolume layout |
 | [PORT-MAP.md](PORT-MAP.md) | Which omarchy-mac fixes were ported to Ubuntu/Pantheon, and what is out of scope |
 | [UPSTREAM-PINS.md](UPSTREAM-PINS.md) | Pinned upstream revisions and licences |
+| [PLATFORM-PLAN.md](PLATFORM-PLAN.md) | Proposal: split into kernel/display/wm/SDK repos, an SDK a small model can build apps with, pipeline and phases |
 | [GTK-PERFORMANCE-ASAHI.md](GTK-PERFORMANCE-ASAHI.md) | What keeps GTK4/Granite apps small and idle on Asahi (renderer, CSD shadow, cursor blink, animations, D-Bus), with every GTK app here listed |
 | [DEV-HYGIENE.md](DEV-HYGIENE.md) | Keeping the dev machine clean: the weekly `dev-clean` timer (build output, caches, session scratch, dated Codex exports), one shared cargo target dir, worktree discipline |
 
