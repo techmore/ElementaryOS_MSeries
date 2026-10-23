@@ -176,6 +176,7 @@ pub fn init_winit(
                         state.confirm_lock_output_frame(&output.name());
                     }
 
+                    state.send_lock_surface_frames(&output, state.start_time.elapsed());
                     state.gesture_frame_windows().iter().for_each(|window| {
                         window.send_frame(
                             &output,
