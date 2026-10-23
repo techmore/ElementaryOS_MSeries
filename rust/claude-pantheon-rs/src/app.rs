@@ -346,6 +346,8 @@ impl App {
         // ---- main header ---------------------------------------------------------------------
         let main_header = header_bar();
         let title = label("T3-R Pantheon", &["title"]);
+        title.set_ellipsize(pango::EllipsizeMode::Middle);
+        title.set_tooltip_text(Some("T3-R Pantheon"));
         let subtitle = label("", &["subtitle", "dim-label"]);
         subtitle.set_visible(false);
         let titles = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -2191,6 +2193,7 @@ impl App {
                         let open = self.live.borrow().as_ref().is_some_and(|l| l.thread_id == t.id);
                         if open {
                             self.title.set_text(&t.title);
+                            self.title.set_tooltip_text(Some(&t.title));
                             self.window.set_title(Some(&format!("{} - T3-R Pantheon", t.title)));
                         }
                         if v.get("location").and_then(Value::as_str) == Some("archive") {
@@ -2771,6 +2774,7 @@ impl App {
         self.generation.set(generation);
         *self.current_session.borrow_mut() = Some(session.clone());
         self.title.set_text(&session.title);
+        self.title.set_tooltip_text(Some(&session.title));
         self.window.set_title(Some(&format!("{} - T3-R Pantheon", session.title)));
         self.subtitle.set_text(&format!("Offline transcript · {}", tilde(&session.cwd)));
         self.subtitle.set_visible(true);
@@ -2931,6 +2935,7 @@ impl App {
             if cached.is_some() { format!("{base_subtitle} · cached · syncing") } else { base_subtitle.clone() };
         let title = if thread.title.trim().is_empty() { "Untitled thread".to_string() } else { thread.title.clone() };
         self.title.set_text(&title);
+        self.title.set_tooltip_text(Some(&title));
         self.window.set_title(Some(&format!("{title} - T3-R Pantheon")));
         self.subtitle.set_visible(true);
         self.subtitle.set_text(&subtitle);
@@ -3244,6 +3249,7 @@ impl App {
                     "thread.updated" | "thread.created" => {
                         if let Some(t) = payload.get("title").and_then(Value::as_str) {
                             self.title.set_text(t);
+                            self.title.set_tooltip_text(Some(t));
                         }
                     }
                     _ => {}
