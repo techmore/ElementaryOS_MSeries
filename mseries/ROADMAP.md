@@ -54,28 +54,6 @@ only; no compiler, packaging or tests run for this change.
 
 ## J314S wip3 dock incident and wip4 build status — 2026-10-22
 
-The October 21 wip2 trial produced WD22TB4 picture on all three USB-C ports in
-one scoped plug cycle per port; that result remains specific to wip2. On October
-22, one wip3 trial produced no picture on dcpext1; same-port replug did not
-recover, and moving to another port restored 1080p/60. This does not establish
-sustained or all-port wip3 behavior. The immutable evidence is the
-[3ca5888 report](https://github.com/techmore/ElementaryOS_MSeries/blob/3ca5888000e9fa47df29d058d0cfbc033bbc749e/mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
-
-Current [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533)
-head `de375f38acdc8fb3bc88ed65982c09f619e1034d` passed the ARM64 wip4 candidate,
-unified72 and eGPU build/payload checks in
-[run 39860520050](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860520050)
-and M-series validation in
-[run 39860519355](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860519355).
-This is source/build evidence only. DCP KUnit, attended J314S boot, dock retry
-and recovery, suspend, long-run stability and paired power qualification remain
-open. No wip4 package was installed or armed, and no kernel or boot state changed.
-The earlier #518 codeload failure and #528 wip3 fallback remain historical, scoped
-results. The public page correction remains unpublished pending PR review, merge
-and successful Pages deployment.
-
-## J314S wip3 dock incident and wip4 build status — 2026-10-22
-
 The October 21 wip2 trial produced owner-confirmed WD22TB4 picture on all three
 USB-C ports at 1080p/60 in one observed cycle per port. On October 22, one wip3
 plug on dcpext1 produced no picture; same-port replug did not recover, while a
