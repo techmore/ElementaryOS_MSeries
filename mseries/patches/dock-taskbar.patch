@@ -398,7 +398,7 @@ index 0377885..40f991f 100644
 +        return get_render_icon_size () + get_padding () * 2;
 +    }
 +
-+    // Keep the shared size-system token intact; render taskbar launchers slightly smaller.
++    // Keep the shared size-system token intact; render Dock launchers slightly smaller.
 +    public static int get_icon_size () {
 +        if (settings == null) {
 +            settings = new Settings ("io.elementary.dock");
@@ -409,14 +409,14 @@ index 0377885..40f991f 100644
 +
 +    public static int get_render_icon_size () {
 +        int configured_size = get_icon_size ();
-+        return settings.get_boolean ("taskbar-mode") ? (int) Math.round (configured_size * 0.9) : configured_size;
++        return (int) Math.round (configured_size * 0.9);
 +    }
 +
 +    public static int get_padding () {
 +        if (settings == null) {
 +            settings = new Settings ("io.elementary.dock");
 +        }
-+        return settings.get_boolean ("taskbar-mode") ? 5 : Launcher.PADDING;
++        return settings.get_boolean ("taskbar-mode") ? 5 : Launcher.PADDING - 1;
      }
  }
 +

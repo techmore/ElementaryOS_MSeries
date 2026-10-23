@@ -11,12 +11,12 @@ shows only the selected provider account, and sends full chat/new thread/usage/s
 the installed T3-R app. The T3-R launcher replaces its shorter tooltip so two popovers do not race; this behavior is
 scoped to that app and does not change the Dock's taskbar-mode setting. The popover does not create another T3 connection.
 
-## Taskbar launcher sizing
+## Dock launcher sizing
 
-Taskbar mode renders launcher glyphs at 90% of the active size token and trims the item inset. The configured token is
-preserved for the shared size ladder and other taskbar elements. The unmanaged 48 px baseline renders at 43 px;
-size-managed 40 px renders at 36 px. Horizontal padding is 5 px and the top inset is 10 px. The rendering adjustment
-is taskbar-scoped, so floating and classic Dock layouts keep their configured size and upstream padding.
+All Dock layouts render launcher glyphs at 90% of the active size token and reduce launcher padding from six to five
+logical pixels. The configured token stays intact for the shared size ladder. The 48 px baseline renders at 43 px;
+size-managed 40 px renders at 36 px. The adjustment applies to Dock launchers while leaving the saved icon-size setting
+and unrelated taskbar elements unchanged.
 The linked sizing test checks the launcher, item-group width, and separator across size-policy changes. Run the full
 isolated build and interaction probes with `bash mseries/dock-taskbar/test-build.sh`; it does not install or restart
 the live Dock.
