@@ -64,7 +64,11 @@ the plan, and it decides whether the base is "pull from the overlay" or "we rebu
 public sources ourselves", a much larger Phase B. **Phase A therefore starts by auditing Asahi Alarm** (maintainers,
 repo, package versions against Asahi's upstream, release cadence) before anything else is estimated.
 
-### Caveat 3: Pantheon on Arch is community-maintained
+### Caveat 3: Pantheon on Arch is community-maintained (**update 2026-10-23: weaker than feared**)
+
+> Arch Linux ARM's `extra` repo ships a 65-package `pantheon` group at the versions we run (Gala 8.6.2, Wingpanel 8.0.4, Granite 7.8.1),
+> so Pantheon is officially packaged for aarch64. See [MINIMAL-SYSTEM.md](MINIMAL-SYSTEM.md). The text below is the original concern.
+
 
 The Arch Wiki says Pantheon and elementary's curated apps come from a `pantheon` package group, with
 many more (third-party apps, development builds) in the AUR, and that `pantheon-session` pulls in Gala,
