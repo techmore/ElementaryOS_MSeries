@@ -29,8 +29,8 @@ def images(result):
 
 default = images(resolve('--architecture=arm64'))
 m4 = images(resolve('--architecture=arm64', '--profile=m4-mini'))
-expected = {'linux-image-elementary-m4-gravity1=7.1.13+elementary.m4.gravity1-2',
-            'elementary-m4-gravity-mesa1=26.3.0~devel+gravity.87ac51d-4',
+expected = {'linux-image-elementary-m4-gravity1=7.1.13+elementary.m4.gravity1-6',
+            'elementary-m4-gravity-mesa1=26.3.0~devel+gravity.87ac51d-6',
             'elementary-m4-gravity-policy=20261021-2'}
 assert 'linux-image-generic' in default['base']['Packages']
 assert not any('gravity' in item for item in default['base']['Packages'])

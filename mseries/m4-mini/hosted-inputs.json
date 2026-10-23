@@ -3,8 +3,8 @@
   "scope": "reviewed successful research component builds; no installer admission",
   "components": {
     "kernel": {
-      "run": 39721608135,
-      "source": "ab32b7f0748f2898b5e19f4f60d5032917d93051"
+      "run": 39879062230,
+      "source": "7641b3dd4fff14a432defeff555b733f20c9ebc4"
     },
     "mesa": {
       "run": 39739936855,

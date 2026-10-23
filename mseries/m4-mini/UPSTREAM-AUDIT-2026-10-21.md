@@ -1,7 +1,10 @@
 # M4 Mac mini: Gravity Linux and upstream audit
 
-**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. A local QEMU attempt reached UEFI and GRUB but Casper could not find live media; the ISO was assembled, not boot-qualified. This image still uses kernel R5. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. Its hosted compile is running as [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230), before a refreshed full image/ISO. Nothing is qualified for installation or native M4 use.
-[Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
+**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded. The downloaded package and corresponding source pass independent local hash, Image/config/DTB, 16 KiB, module and package-hook checks. R6 carries 1,597 modules and the M4 WFI/WFxT changes, built-in ISO9660/SCSI CD-ROM support and built-in Apple watchdog. The profile and hosted input now select R6/Mesa6. The matching full image/ISO build and QEMU live-media retest remain pending. No native boot or installation is qualified.
+[Hosted R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json).
+
+**Latest complete image (R5/Mesa6):** hosted run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) passed the image graph, EFI controls, GPT/ESP/verity checks and ISO payload readback. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. Local QEMU reached UEFI and GRUB but Casper could not find live media. R6 is intended to address the unavailable ISO9660 and optical block devices.
+[Historical R5 image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
 
 **Public source refresh, October 22:** the live Gravity kernel/Mesa/boot/installer
 refs, selected Asahi branches, Aurora integration, mainline, and both Omarchy
@@ -31,31 +34,23 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
-assembled later; the R6 kernel refresh is building.
+The revision-2 artifacts are historical. R5/Mesa6 is the latest complete image; R6 kernel build and independent package checks pass, while its matching full image/ISO remains pending.
 
-The full revision-5 kernel build and independent downloaded package/source checks
-now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
-All six reviewed scheduler fixes are included. The opt-in profile and reviewed
-hosted kernel input now select revision 5. Its DTB still matches the reviewed
-boot bundle. Input preparation with the existing Mesa/policy also passes.
-[Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
+The R5 kernel build/package evidence is historical. R6 now passes full hosted build and independent downloaded package/source checks: ARM64 16 KiB Image, J773g DTB, 1,597 modules, dependencies and no package hooks. Its resolved configuration includes built-in Apple watchdog, ISO9660 and SCSI CD support. The current profile selects R6; native runtime and the R6 image/ISO are still pending.
+[Historical R5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json); [current R6 evidence](receipts/2026-10-23-hosted-kernel-r6-success.json).
 
 Mesa revision 6 now passes fresh local and hosted full builds, five AGX groups,
 seven NIR cases, eight allocation-helper cases, the integrated 24+4 external
 sampler matrix, packaging and independent downloaded package/source checks.
 It includes the four reviewed source phases and all eleven final source hashes.
 [Hosted Mesa6](receipts/2026-10-22-hosted-mesa6-success.json).
-The opt-in research profile and hosted inputs now select Mesa6 with kernel R5.
+The opt-in research profile and hosted inputs now select Mesa6 with kernel R6.
 Fresh hosted-input preparation and the exact eleven-image graph summary pass.
 [Input/graph evidence](receipts/2026-10-22-r5-mesa6-full-graph-summary.json).
 The packaged R5 Image also reaches a minimal PID1 through ARM64 UEFI/GRUB under
 QEMU; this is a small fixture, not the desktop ISO or Apple firmware.
 [EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
-This historical note predates the successful R5/Mesa6 image/ISO assembly in
-receipt `2026-10-22-r5-mesa6-full-image-iso.json`. Casper live-media discovery
-failed in local QEMU. Native EGL import/YUV, GPU/unload, installer and owner
-dual-boot acceptance remain unqualified; R6 is now the next kernel candidate.
+R5 image/ISO assembly is complete, but Casper live-media discovery failed in local QEMU. R6 adds the ISO9660/SCSI kernel support needed for a corrected image test. Native EGL import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
 
 **Conclusion:** Gravity has a substantive native J773g developer-alpha port with
 project-reported HDMI/DCP and GPU operation. It is the strongest directly relevant
@@ -63,7 +58,7 @@ public stack found in this audit. It does not establish that elementary OS or th
 owner's 16 GB / 1 TB / 10 Gb Ethernet / macOS 27 / HDMI configuration is qualified.
 
 Current elementary preparation: the opt-in M4 profile selects the matched
-kernel revision 5, Mesa revision 6 and temporary policy. The hosted baseline
+kernel revision 6, Mesa revision 6 and temporary policy. The hosted baseline
 passes 1,650-package base and 1,741-package live-root checks, desktop libraries/
 schemas, software rendering and Casper initramfs checks. LightDM selects Pantheon Wayland; unqualified graphical installer
 packages are omitted. The full baseline mkosi graph now builds and its raw artifact passes local verification.

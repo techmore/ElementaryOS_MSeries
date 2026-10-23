@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "scope": "Hosted R6 Gravity M4 kernel research candidate plus independent local inspection; no boot or hardware qualification",
+  "run": {
+    "id": 39879062230,
+    "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230",
+    "source_commit": "7641b3dd4fff14a432defeff555b733f20c9ebc4",
+    "conclusion": "success"
+  },
+  "artifacts": {
+    "m4-kernel-candidate-39879062230": {
+      "id": 12473316363,
+      "size_bytes": 300016962
+    },
+    "m4-kernel-record-39879062230": {
+      "id": 12473535902,
+      "size_bytes": 115456
+    }
+  },
+  "source": {
+    "repository": "GravityLinux/linux",
+    "commit": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+    "archive_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8",
+    "archive_file": "gravity-linux-corresponding-source.tar.gz",
+    "artifact_sha256": "045c64540fa4210394c899cad6320c5bf9090a66919938d986aeaad0033946e8"
+  },
+  "package": {
+    "name": "linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-6_arm64.deb",
+    "version": "7.1.13+elementary.m4.gravity1-6",
+    "sha256": "4d012fb0b88a138506ec4638c5030fd532429113e2b5d7c2d13f0757a3a21e67",
+    "kernel_release": "7.1.13-elementary-m4-gravity1",
+    "module_count": 1597
+  },
+  "build": {
+    "image_sha256": "41a7a702e5d84fb4ed3933b5428e3c1e4f16413b24e3afae03e74dc595da3735",
+    "dtb_sha256": "0fbc42cb2427289d400abb3eaa3e739f55fcb36a35f48e9f8e8df6e610c02f67",
+    "config_sha256": "bfb35965abcbba6493953ac74b80a4a0c3b4e0402b20b34614d61862fba70447",
+    "m4_idle_checks": {
+      "apple_cpu_wfi_linked": true,
+      "state_save_restore_instructions_present": true,
+      "m4_wfxt_override_literal_present": true,
+      "disassembly_sha256": "48fc5de9b3d57a7476b143e04c2643137c0af02b543d9fa132d3fe9324ac5c5b"
+    },
+    "compatibility_patches": {
+      "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+      "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b",
+      "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
+      "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
+      "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
+      "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55",
+      "0007-apple-m4-register-preserving-wfi.patch": "86af703ffcdc237eab43049202e0b15c610596a7b63f29dcbe92246a7d1ba3b8"
+    }
+  },
+  "checks": {
+    "hosted_package_check": true,
+    "artifact_sha256sums": true,
+    "independent_local_package_check": true,
+    "scope": "Image/config/DTB hashes, 16 KiB header, J773g, ELF/vermagic, module dependencies, no package hooks",
+    "specific_config": [
+      "CONFIG_APPLE_WATCHDOG=y",
+      "CONFIG_BLK_DEV_SR=y",
+      "CONFIG_ISO9660_FS=y"
+    ],
+    "native_boot_tested": false,
+    "factory_promotion": false,
+    "hardware_validated": false,
+    "installer_admission": false
+  }
+}

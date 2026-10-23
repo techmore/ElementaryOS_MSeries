@@ -1,7 +1,10 @@
 # M4 Mac mini preparation
 
-**Latest hosted image result:** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the full R5/Mesa6 research image and ARM64 UEFI ISO. Image graph, desktop payload, selected EFI positive/negative controls, GPT/ESP/verity checks and ISO payload readback passed. The downloaded ISO SHA-256 is `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU boot diagnostics found that the R5 kernel recognizes a raw USB image as ISO9660 but cannot mount it (`No such device`); the R5 initramfs also did not expose the emulated optical drive as a block device. R6 adds built-in ISO9660, SCSI CD-ROM and Apple watchdog support, plus the M4 WFI/WFxT backport. The resolved R6 config and source hash gates pass locally; hosted kernel run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) is compiling before the R6 full image and corrected ISO boot attempt. Nothing is qualified for installation or native M4 use.
-[Full image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
+**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded, and the downloaded Debian package and corresponding source passed independent local hash, Image/config/DTB, 16 KiB, module and package-hook checks. R6 contains 1,597 modules and enables built-in ISO9660, SCSI CD-ROM and Apple watchdog support with the M4 WFI/WFxT changes. The opt-in profile and hosted inputs now pin R6 with Mesa6. The matching full image/ISO build and corrected QEMU live-media test are still pending; R5 remains the latest complete image. No native M4 or installation qualification has run.
+[Hosted R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json).
+
+**Latest complete image (historical R5):** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the R5/Mesa6 image graph and ARM64 UEFI ISO. Its graph, desktop payload, selected EFI controls, GPT/ESP/verity checks and ISO payload readback passed. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU reached UEFI/GRUB but Casper could not find live media; the R5 kernel did not expose a usable optical device and could not mount the raw USB ISO. R6 is intended to address those specific kernel gaps.
+[Historical R5 image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
 
 **Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
 Downloaded kernel/Mesa packages and the boot bundle pass local checks. Their
@@ -14,31 +17,22 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The revision-2 artifacts are historical. The full R5/Mesa6 image and ISO were
-assembled later; the R6 kernel refresh is building.
+The revision-2 artifacts are historical. R5/Mesa6 is the latest complete image; R6 kernel build and independent package checks now pass, while the matching full image/ISO is pending.
 
-The full revision-5 kernel build and independent downloaded package/source checks
-now pass: 16 KiB Image, J773g DTB, 1,598 modules, dependencies and no package hooks.
-All six reviewed scheduler fixes are included. The opt-in profile and reviewed
-hosted kernel input now select revision 5. Its DTB still matches the reviewed
-boot bundle. Input preparation with the existing Mesa/policy also passes.
-[Revision-5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json).
+The R5 full kernel build and its 1,598-module package remain historical evidence. The current R6 package independently passes Image/config/J773g/16 KiB/module/dependency and no-hook checks, with 1,597 modules and the intended built-in ISO/CD/watchdog support. The opt-in profile and hosted input now select R6.
+[Historical R5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json); [current R6 evidence](receipts/2026-10-23-hosted-kernel-r6-success.json).
 
 Mesa revision 6 now passes fresh local and hosted full builds, five AGX groups,
 seven NIR cases, eight allocation-helper cases, the integrated 24+4 external
 sampler matrix, packaging and independent downloaded package/source checks.
 It includes the four reviewed source phases and all eleven final source hashes.
 [Hosted Mesa6](receipts/2026-10-22-hosted-mesa6-success.json).
-The opt-in research profile and hosted inputs now select Mesa6 with kernel R5.
+The opt-in research profile and hosted inputs now select Mesa6 with kernel R6.
 Fresh hosted-input preparation and the exact eleven-image graph summary pass.
 [Input/graph evidence](receipts/2026-10-22-r5-mesa6-full-graph-summary.json).
-The packaged R5 Image also reaches a minimal PID1 through ARM64 UEFI/GRUB under
-QEMU; this is a small fixture, not the desktop ISO or Apple firmware.
+The R5 packaged Image reaches a minimal PID1 through ARM64 UEFI/GRUB under QEMU; this small fixture is not the desktop ISO or Apple firmware. The R5 desktop ISO did not reach Casper live root in QEMU. The R6 full ISO retest remains pending.
 [EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
-This historical note predates the successful R5/Mesa6 image/ISO assembly in
-receipt `2026-10-22-r5-mesa6-full-image-iso.json`. Casper live-media discovery
-failed in local QEMU. Native EGL import/YUV, GPU/unload, installer and owner
-dual-boot acceptance remain unqualified; R6 is now the next kernel candidate.
+The R5 image/ISO assembly is complete, but Casper live-media discovery failed in local QEMU. The current R6 kernel adds the relevant kernel drivers; its full image/ISO and QEMU retest remain pending. Native EGL import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
