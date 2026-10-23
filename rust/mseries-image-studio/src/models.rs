@@ -22,11 +22,36 @@ pub fn storage_bytes(path: &Path) -> u64 {
         .sum()
 }
 
-pub fn storage_label() -> gtk::Label {
-    let label = gtk::Label::new(Some("Measuring storage…"));
-    label.set_wrap(true);
-    label.set_xalign(0.0);
-    let (tx, rx) = std::sync::mpsc::channel();
+/// Four storage figures (models, other AI, images, engine) as quiet stat tiles,
+/// measured on a worker thread so the window never waits on the disk.
+pub fn storage_tiles(compact: bool) -> gtk::Widget {
+    let grid = gtk::Grid::builder()
+        .column_homogeneous(true)
+        .column_spacing(if compact { 10 } else { 18 })
+        .row_spacing(if compact { 6 } else { 4 })
+        .build();
+    let mut values = Vec::new();
+    for (index, caption_text) in ["Models", "Other AI", "Images", "Engine"].iter().enumerate() {
+        let tile = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let value = gtk::Label::new(Some("…"));
+        value.set_xalign(0.0);
+        value.add_css_class(if compact { "is-kv-val" } else { "is-stat-value" });
+        let caption = gtk::Label::new(Some(caption_text));
+        caption.set_xalign(0.0);
+        caption.add_css_class(if compact { "is-kv-key" } else { "is-caption" });
+        tile.append(&value);
+        tile.append(&caption);
+        if compact {
+            grid.attach(&tile, (index % 2) as i32, (index / 2) as i32, 1, 1);
+        } else {
+            grid.attach(&tile, index as i32, 0, 1, 1);
+        }
+        values.push(value);
+    }
+    grid.set_tooltip_text(Some(
+        "Disk used by this app: downloaded models, shared AI models, images with previews, and the engine build",
+    ));
+    let (tx, rx) = std::sync::mpsc::channel::<[String; 4]>();
     let base = gtk::glib::user_data_dir();
     std::thread::spawn(move || {
         loop {
@@ -36,14 +61,14 @@ pub fn storage_label() -> gtk::Label {
                 + storage_bytes(&base.join("mseries-image-studio/previews"));
             let engine = storage_bytes(&base.join("mseries-image-studio/engine"))
                 + storage_bytes(&base.join("mseries-image-studio/engine-source"));
+            let gib = |bytes: u64| format!("{:.2} GiB", bytes as f64 / 1073741824.0);
             if tx
-                .send(format!(
-                    "Models  {:.2} GiB\nOther AI  {:.2} GiB\nImages  {:.1} MiB\nEngine  {:.2} GiB",
-                    models as f64 / 1073741824.0,
-                    shared as f64 / 1073741824.0,
-                    images as f64 / 1048576.0,
-                    engine as f64 / 1073741824.0
-                ))
+                .send([
+                    gib(models),
+                    gib(shared),
+                    format!("{:.1} MiB", images as f64 / 1048576.0),
+                    gib(engine),
+                ])
                 .is_err()
             {
                 break;
@@ -51,33 +76,95 @@ pub fn storage_label() -> gtk::Label {
             std::thread::sleep(std::time::Duration::from_secs(5));
         }
     });
-    let weak = label.downgrade();
+    let weak = grid.downgrade();
     gtk::glib::timeout_add_seconds_local(1, move || {
-        let Some(label) = weak.upgrade() else {
+        let Some(grid) = weak.upgrade() else {
             return gtk::glib::ControlFlow::Break;
         };
-        while let Ok(s) = rx.try_recv() {
-            label.set_text(&s);
+        let _ = grid;
+        while let Ok(update) = rx.try_recv() {
+            for (label, text) in values.iter().zip(update.iter()) {
+                label.set_text(text);
+            }
         }
         gtk::glib::ControlFlow::Continue
     });
-    label
+    grid.upcast()
 }
 
+/// (name, role, size, kind, tone, files that must exist for "Installed")
+const CATALOG: [(&str, &str, &str, &str, &str, &[&str]); 6] = [
+    (
+        "Stable Diffusion 1.5 · Q4",
+        "Smallest first calibration candidate",
+        "1.57 GB",
+        "Generator",
+        "is-accent",
+        &["stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf"],
+    ),
+    (
+        "Stable Diffusion 1.5 · Q8",
+        "Higher fidelity, same starter settings",
+        "1.76 GB",
+        "Generator",
+        "is-accent",
+        &["stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf"],
+    ),
+    (
+        "SDXL Turbo · FP16",
+        "Fast composition experiments",
+        "6.94 GB",
+        "Generator",
+        "is-accent",
+        &["sd_xl_turbo_1.0_fp16.safetensors"],
+    ),
+    (
+        "Qwen3-VL 2B + projector",
+        "Reviews images against a rubric",
+        "1.55 GB",
+        "Reviewer",
+        "is-warn",
+        &[
+            "Qwen3VL-2B-Instruct-Q4_K_M.gguf",
+            "mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf",
+        ],
+    ),
+    (
+        "Realistic Vision V6 FP16 + VAE",
+        "Photographic portraits and fashion",
+        "2.47 GB",
+        "Generator",
+        "is-accent",
+        &[
+            "Realistic_Vision_V6.0_NV_B1_fp16.safetensors",
+            "vae-ft-mse-840000-ema-pruned.safetensors",
+        ],
+    ),
+    (
+        "Reference appearance",
+        "IP-Adapter Plus Face + vision encoder",
+        "3.9 GB",
+        "Add-on",
+        "is-warn",
+        &[
+            "ip-adapter-plus-face_sd15.safetensors",
+            "clip-vision-h-f16.gguf",
+        ],
+    ),
+];
+
 pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 16);
-    page.add_css_class("pantheon-inset");
-    let title = gtk::Label::new(Some("Models for this Mac"));
-    title.add_css_class("title-2");
-    title.set_xalign(0.0);
-    page.append(&title);
-    let note = gtk::Label::new(Some(
+    let (scroller, page) = crate::style::page_body();
+    page.append(&crate::style::page_header(
+        "Models",
         "Apple Silicon · Linux ARM64 / Vulkan target. These compact downloads fit the disk budget; actual inference memory and GPU support still need qualification. macOS-only Metal / MLX packages are excluded.",
     ));
-    note.set_wrap(true);
-    note.set_xalign(0.0);
-    page.append(&note);
-    page.append(&storage_label());
+    let storage = crate::style::padded_card(14);
+    crate::style::card_content(&storage).append(&storage_tiles(false));
+    page.append(&storage);
+
+    // The dropdown stays as the single source of truth for the selection;
+    // the cards below drive it so download/use logic keeps one index.
     let choices = gtk::DropDown::from_strings(&[
         "Stable Diffusion 1.5 · Q4 · 1.57 GB",
         "Stable Diffusion 1.5 · Q8 · 1.76 GB",
@@ -86,13 +173,109 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
         "Realistic Vision V6 FP16 + VAE · photography · 2.47 GB",
         "Reference appearance · IP-Adapter Plus Face + vision encoder · 3.9 GB",
     ]);
-    page.append(&choices);
+    page.append(&crate::style::section_caption("Available models"));
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    let cards: std::rc::Rc<Vec<(gtk::Button, gtk::Box)>> = std::rc::Rc::new(
+        CATALOG
+            .iter()
+            .enumerate()
+            .map(|(index, (name, role, size, kind, tone, _))| {
+                let card = gtk::Button::new();
+                card.add_css_class("flat");
+                card.add_css_class("is-card");
+                card.add_css_class("is-selectable");
+                let row = gtk::Box::new(gtk::Orientation::Horizontal, 14);
+                row.set_margin_top(12);
+                row.set_margin_bottom(12);
+                row.set_margin_start(14);
+                row.set_margin_end(14);
+                let icon = gtk::Image::from_icon_name(match *kind {
+                    "Reviewer" => "image-red-eye-symbolic",
+                    "Add-on" => "insert-image-symbolic",
+                    _ => "applications-graphics-symbolic",
+                });
+                icon.set_pixel_size(28);
+                icon.add_css_class("is-dim");
+                let text = gtk::Box::new(gtk::Orientation::Vertical, 2);
+                text.set_hexpand(true);
+                text.append(
+                    &gtk::Label::builder()
+                        .label(*name)
+                        .xalign(0.0)
+                        .css_classes(["is-card-title"])
+                        .build(),
+                );
+                text.append(&crate::style::caption(role));
+                let status_slot = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                status_slot.set_valign(gtk::Align::Center);
+                row.append(&icon);
+                row.append(&text);
+                row.append(&crate::style::chip(kind, tone, None));
+                row.append(&crate::style::chip(size, "", None));
+                row.append(&status_slot);
+                card.set_child(Some(&row));
+                card.update_property(&[gtk::accessible::Property::Label(name)]);
+                let choices = choices.clone();
+                card.connect_clicked(move |_| choices.set_selected(index as u32));
+                list.append(&card);
+                (card, status_slot)
+            })
+            .collect(),
+    );
+    page.append(&list);
+    let refresh_cards = {
+        let cards = cards.clone();
+        let choices = choices.clone();
+        move || {
+            let directory =
+                gtk::glib::user_data_dir().join("mseries-image-studio/models");
+            for (index, (card, slot)) in cards.iter().enumerate() {
+                if choices.selected() as usize == index {
+                    card.add_css_class("is-selected");
+                } else {
+                    card.remove_css_class("is-selected");
+                }
+                let installed = CATALOG[index]
+                    .5
+                    .iter()
+                    .all(|file| directory.join(file).is_file());
+                while let Some(child) = slot.first_child() {
+                    slot.remove(&child);
+                }
+                slot.append(&if installed {
+                    crate::style::chip("Installed", "is-ok", Some("emblem-ok-symbolic"))
+                } else {
+                    crate::style::chip("Not downloaded", "", None)
+                });
+            }
+        }
+    };
+    refresh_cards();
+    {
+        let refresh_cards = refresh_cards.clone();
+        choices.connect_selected_notify(move |_| refresh_cards());
+    }
+    {
+        let weak = list.downgrade();
+        gtk::glib::timeout_add_seconds_local(2, move || {
+            if weak.upgrade().is_none() {
+                return gtk::glib::ControlFlow::Break;
+            }
+            refresh_cards();
+            gtk::glib::ControlFlow::Continue
+        });
+    }
+
+    // Selected model: requirements, license, actions, progress.
+    let detail = crate::style::padded_card(14);
+    let detail_body = crate::style::card_content(&detail);
+    detail_body.set_spacing(10);
     let requirements = gtk::Label::new(Some(
-        "SD 1.5 Q4: estimated 3 GiB worker budget plus 6 GiB desktop reserve. Start with Euler, 20 steps, guidance 7, 512 × 512. LoRAs must match SD 1.5.",
+        "SD 1.5 Q4: estimated 3 GiB worker budget plus 6 GiB desktop reserve. Euler, 20 steps, guidance 7, 512 × 512. Good first calibration candidate.",
     ));
     requirements.set_wrap(true);
     requirements.set_xalign(0.0);
-    page.append(&requirements);
+    detail_body.append(&requirements);
     choices.connect_selected_notify(move |choices| {
         requirements.set_text(match choices.selected() {
             0 => "SD 1.5 Q4: estimated 3 GiB worker budget plus 6 GiB desktop reserve. Euler, 20 steps, guidance 7, 512 × 512. Good first calibration candidate.",
@@ -103,33 +286,38 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
             _ => "Qwen3-VL 2B: image reviewer, not an image generator. Downloads both the language weights and matching Q8 vision projector. Uses a separate CPU worker after image generation unloads. Requires 9 GiB available.",
         });
     });
-    let license = gtk::Label::new(Some(
+    detail_body.append(&crate::style::caption(
         "SD 1.5: CreativeML Open RAIL-M · SDXL Turbo: Stability AI non-commercial community license. Review the model license before commercial fashion use.",
     ));
-    license.set_wrap(true);
-    license.set_xalign(0.0);
-    page.append(&license);
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     let button = gtk::Button::with_label("Download selected model");
     button.add_css_class("suggested-action");
-    button.set_halign(gtk::Align::Start);
-    page.append(&button);
+    button.add_css_class("is-pill");
     let cancel_download = gtk::Button::with_label("Cancel download");
-    cancel_download.set_halign(gtk::Align::Start);
+    cancel_download.add_css_class("is-pill");
     cancel_download.connect_clicked(move |_| {
         let directory = gtk::glib::user_data_dir().join("mseries-image-studio/models");
         let _ = std::fs::create_dir_all(&directory);
         let _ = std::fs::write(directory.join("download.cancel"), "cancel");
     });
-    page.append(&cancel_download);
     let use_model = gtk::Button::with_label("Use selected model");
-    use_model.set_halign(gtk::Align::Start);
-    page.append(&use_model);
+    use_model.add_css_class("is-pill");
+    actions.append(&button);
+    actions.append(&cancel_download);
+    actions.append(&use_model);
+    detail_body.append(&actions);
+    let download_bar = gtk::ProgressBar::new();
+    download_bar.set_visible(false);
+    detail_body.append(&download_bar);
     let status = gtk::Label::new(Some(
         "Downloads verify file size and SHA-256, and keep 2 GiB of disk space free. Installing a model does not qualify inference.",
     ));
     status.set_wrap(true);
     status.set_xalign(0.0);
-    page.append(&status);
+    status.add_css_class("is-caption");
+    detail_body.append(&status);
+    page.append(&detail);
+    let detail_body_for_progress = detail_body.clone();
     {
         let choices = choices.clone();
         let status = status.clone();
@@ -155,15 +343,53 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
             }
         });
     }
-    let install = gtk::Button::with_label("Install or rebuild local image engine");
-    install.set_halign(gtk::Align::Start);
-    page.append(&install);
+    page.append(&crate::style::section_caption("Image engine"));
+    let engine_card = crate::style::padded_card(14);
+    let engine_body = crate::style::card_content(&engine_card);
+    let engine_row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    let engine_dot = crate::style::dot("");
+    let engine_text = gtk::Box::new(gtk::Orientation::Vertical, 3);
+    engine_text.set_hexpand(true);
+    engine_text.append(
+        &gtk::Label::builder()
+            .label("Local image engine · stable-diffusion.cpp")
+            .xalign(0.0)
+            .css_classes(["is-card-title"])
+            .build(),
+    );
     let engine_status = gtk::Label::new(Some(
         "Requires Git, CMake, a C++ compiler and Vulkan development tools. Builds the pinned engine with two compiler jobs.",
     ));
     engine_status.set_wrap(true);
     engine_status.set_xalign(0.0);
-    page.append(&engine_status);
+    engine_status.add_css_class("is-caption");
+    engine_text.append(&engine_status);
+    let install = gtk::Button::with_label("Install or rebuild");
+    install.add_css_class("is-pill");
+    install.set_valign(gtk::Align::Center);
+    engine_row.append(&engine_dot);
+    engine_row.append(&engine_text);
+    engine_row.append(&install);
+    engine_body.append(&engine_row);
+    page.append(&engine_card);
+    {
+        let engine_dot = engine_dot.clone();
+        let weak = engine_card.downgrade();
+        let update = move || {
+            let installed = gtk::glib::user_data_dir()
+                .join("mseries-image-studio/engine/sd-cli")
+                .is_file();
+            crate::style::set_tone(&engine_dot, if installed { "is-ok" } else { "is-warn" });
+        };
+        update();
+        gtk::glib::timeout_add_seconds_local(3, move || {
+            if weak.upgrade().is_none() {
+                return gtk::glib::ControlFlow::Break;
+            }
+            update();
+            gtk::glib::ControlFlow::Continue
+        });
+    }
     install.connect_clicked(move |button| {
         button.set_sensitive(false);
         engine_status.set_text("Preparing the local engine… This can take several minutes.");
@@ -206,7 +432,9 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
     let progress = gtk::Label::new(None);
     progress.set_wrap(true);
     progress.set_xalign(0.0);
-    page.append(&progress);
+    progress.add_css_class("is-caption");
+    detail_body_for_progress.append(&progress);
+    let bar = download_bar.clone();
     let weak_progress = progress.downgrade();
     gtk::glib::timeout_add_seconds_local(1, move || {
         let Some(progress) = weak_progress.upgrade() else {
@@ -216,6 +444,12 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
             gtk::glib::user_data_dir().join("mseries-image-studio/models/download-progress.json");
         if let Ok(raw) = std::fs::read(path) {
             if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&raw) {
+                let received = value["received"].as_u64().unwrap_or(0) as f64;
+                let total = value["total"].as_u64().unwrap_or(0) as f64;
+                bar.set_visible(total > 0.0 && received < total);
+                if total > 0.0 {
+                    bar.set_fraction((received / total).clamp(0.0, 1.0));
+                }
                 progress.set_text(&format!(
                     "{} · {} · {:.1} / {:.1} MiB",
                     value["file"].as_str().unwrap_or("Model"),
@@ -344,11 +578,7 @@ pub fn page(on_select: std::rc::Rc<dyn Fn(&str)>) -> gtk::Widget {
             }
         });
     });
-    gtk::ScrolledWindow::builder()
-        .child(&page)
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .build()
-        .upcast()
+    scroller.upcast()
 }
 
 // Runs on the downloader worker thread, never on GTK's main loop.

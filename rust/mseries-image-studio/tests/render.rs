@@ -28,19 +28,35 @@ fn walk(widget: &gtk::Widget, visit: &mut dyn FnMut(&gtk::Widget)) {
     }
 }
 
+/// Find a button by its label, by a label inside its content, or by a tooltip prefix
+/// (icon-only header buttons are named by their tooltips).
 fn button(window: &gtk::ApplicationWindow, name: &str) -> gtk::Button {
     let mut found = None;
     walk(window.upcast_ref(), &mut |widget| {
-        if let Some(button) = widget.downcast_ref::<gtk::Button>() {
-            if button.label().is_some_and(|label| label == name) {
-                found = Some(button.clone());
+        let Some(button) = widget.downcast_ref::<gtk::Button>() else {
+            return;
+        };
+        let mut matches = button.label().is_some_and(|label| label == name)
+            || button
+                .tooltip_text()
+                .is_some_and(|tooltip| tooltip.starts_with(name));
+        if !matches {
+            if let Some(child) = button.child() {
+                walk(&child, &mut |inner| {
+                    if let Some(label) = inner.downcast_ref::<gtk::Label>() {
+                        matches |= label.text() == name;
+                    }
+                });
             }
+        }
+        if matches && found.is_none() || matches && button.is_mapped() {
+            found = Some(button.clone());
         }
     });
     found.unwrap_or_else(|| panic!("missing button {name}"))
 }
 
-fn select_sidebar_page(window: &gtk::ApplicationWindow, index: i32) {
+fn select_sidebar_page(window: &gtk::ApplicationWindow, page: &str) {
     let mut navigation = None;
     walk(window.upcast_ref(), &mut |widget| {
         if let Some(list) = widget.downcast_ref::<gtk::ListBox>()
@@ -50,8 +66,30 @@ fn select_sidebar_page(window: &gtk::ApplicationWindow, index: i32) {
         }
     });
     let navigation = navigation.expect("Pantheon navigation sidebar");
-    let row = navigation.row_at_index(index).expect("navigation row");
-    navigation.select_row(Some(&row));
+    let mut row = None;
+    let mut child = navigation.first_child();
+    while let Some(item) = child {
+        if item.widget_name() == page {
+            row = item.downcast::<gtk::ListBoxRow>().ok();
+            break;
+        }
+        child = item.next_sibling();
+    }
+    navigation.select_row(Some(&row.unwrap_or_else(|| panic!("navigation row {page}"))));
+}
+
+/// The stage picture that shows the live preview or the latest image.
+fn stage_picture(window: &gtk::ApplicationWindow) -> Option<gtk::gdk::Paintable> {
+    let mut found = None;
+    walk(window.upcast_ref(), &mut |widget| {
+        if let Some(picture) = widget.downcast_ref::<gtk::Picture>()
+            && picture.has_css_class("is-stage-frame")
+            && picture.is_mapped()
+        {
+            found = picture.paintable();
+        }
+    });
+    found
 }
 
 fn mapped_text(window: &gtk::ApplicationWindow) -> Vec<String> {
@@ -149,15 +187,20 @@ fn main() {
     }
     window.present();
     pump(Duration::from_millis(1400));
-    assert!(button(window, "Run").is_mapped());
-    assert!(button(window, "Run").is_sensitive());
+    // Generate is enabled only when an engine, model and enough memory exist on the host.
+    assert!(button(window, "Generate").is_mapped());
     assert_eq!(window.has_css_class("pantheon-compact"), compact);
+    let (minimum_width, ..) = window.measure(gtk::Orientation::Horizontal, -1);
+    assert!(
+        compact || minimum_width < mseries_pantheon_kit::text_unit(window, 76.0),
+        "regular layout minimum width {minimum_width} must stay under the compact breakpoint"
+    );
     if compact {
-        assert!(!button(window, "Save prompt recipe").is_mapped());
+        assert!(!button(window, "Save recipe").is_mapped());
         let mut settings_menu = None;
         walk(window.upcast_ref(), &mut |widget| {
             if let Some(menu) = widget.downcast_ref::<gtk::MenuButton>() {
-                if menu.label().as_deref() == Some("Settings") {
+                if menu.tooltip_text().as_deref() == Some("Generation settings") {
                     settings_menu = Some(menu.clone());
                 }
             }
@@ -165,7 +208,7 @@ fn main() {
         let settings_menu = settings_menu.expect("compact generation settings popover");
         settings_menu.popup();
         pump(Duration::from_millis(500));
-        assert!(button(window, "Save prompt recipe").is_mapped());
+        assert!(button(window, "Save recipe").is_mapped());
         settings_menu.popdown();
         pump(Duration::from_millis(500));
     }
@@ -182,25 +225,24 @@ fn main() {
     assert!(
         mapped_text(window)
             .iter()
-            .any(|text| text.contains("Complete · sample preview"))
+            .any(|text| text.contains("Complete · sample preview")),
+        "canvas status not shown; visible text: {:?}",
+        mapped_text(window)
     );
-    select_sidebar_page(window, 2);
+    select_sidebar_page(window, "models");
     pump(Duration::from_millis(500));
+    assert!(mapped_text(window).iter().any(|text| text == "Models"));
     assert!(
         mapped_text(window)
             .iter()
-            .any(|text| text == "Models for this Mac")
+            .any(|text| text == "Stable Diffusion 1.5 · Q4")
     );
     save_screenshot(window, "image-studio-models.png");
-    select_sidebar_page(window, 3);
+    select_sidebar_page(window, "guide");
     pump(Duration::from_millis(500));
-    assert!(
-        mapped_text(window)
-            .iter()
-            .any(|text| text == "Choose a model for your project")
-    );
+    assert!(mapped_text(window).iter().any(|text| text == "Model guide"));
     save_screenshot(window, "image-studio-guide.png");
-    select_sidebar_page(window, 4);
+    select_sidebar_page(window, "compare");
     pump(Duration::from_millis(500));
     assert!(
         mapped_text(window)
@@ -208,7 +250,7 @@ fn main() {
             .any(|text| text == "Compare runs")
     );
     assert!(button(window, "Run sweep").is_sensitive());
-    select_sidebar_page(window, 5);
+    select_sidebar_page(window, "review");
     pump(Duration::from_millis(500));
     assert!(
         mapped_text(window)
@@ -230,14 +272,30 @@ fn main() {
         ),
         (512, 512, 1, 424242)
     );
-    assert!(recipes[0].prompt.contains("Alexandra Daddario"));
-    assert!(recipes[0].prompt.contains("22-year-old adult"));
+    assert!(recipes[0].prompt.contains("original fictional adult"));
 
-    select_sidebar_page(window, 1);
+    select_sidebar_page(window, "library");
     pump(Duration::from_millis(350));
     assert!(mapped_text(window).iter().any(|text| text == "Library"));
+    // Choosing a tile opens its detail pane with the recorded prompt and settings.
+    let mut gallery = None;
+    walk(window.upcast_ref(), &mut |widget| {
+        if let Some(flow) = widget.downcast_ref::<gtk::FlowBox>()
+            && flow.has_css_class("is-gallery")
+        {
+            gallery = Some(flow.clone());
+        }
+    });
+    let gallery = gallery.expect("library gallery");
+    let tile = gallery.child_at_index(0).expect("one generated image tile");
+    gallery.select_child(&tile);
+    pump(Duration::from_millis(350));
     let library_text = mapped_text(window);
-    assert!(library_text.iter().any(|text| text == "Generated images"));
+    assert!(
+        library_text
+            .iter()
+            .any(|text| text.starts_with("1 image"))
+    );
     assert!(
         library_text
             .iter()
@@ -251,7 +309,25 @@ fn main() {
             .iter()
             .any(|text| text == "Test output image with recorded prompt metadata")
     );
-    select_sidebar_page(window, 1);
+    select_sidebar_page(window, "library");
+    let mut recipes_tab = None;
+    walk(window.upcast_ref(), &mut |widget| {
+        if let Some(toggle) = widget.downcast_ref::<gtk::ToggleButton>() {
+            let mut named = toggle.label().is_some_and(|label| label == "Recipes");
+            if let Some(child) = toggle.child() {
+                walk(&child, &mut |inner| {
+                    if let Some(label) = inner.downcast_ref::<gtk::Label>() {
+                        named |= label.text() == "Recipes";
+                    }
+                });
+            }
+            if named {
+                recipes_tab = Some(toggle.clone());
+            }
+        }
+    });
+    recipes_tab.expect("Recipes tab").emit_clicked();
+    pump(Duration::from_millis(350));
     button(window, "Load").emit_clicked();
     pump(Duration::from_millis(350));
     let visible = mapped_text(window);
@@ -259,7 +335,7 @@ fn main() {
     assert!(
         visible
             .iter()
-            .any(|text| text.contains("Alexandra Daddario")
+            .any(|text| text.contains("original fictional adult")
                 && text.contains("Three-image editorial series"))
     );
     button(window, "Reload recipe").emit_clicked();
@@ -271,6 +347,7 @@ fn main() {
     );
     let preview_dir = data_home.join("mseries-image-studio/previews");
     std::fs::create_dir_all(&preview_dir).unwrap();
+    let mut previous_frame = stage_picture(window);
     for frame in 1..=2 {
         let path = preview_dir.join(format!("fixture-frame-{frame}.png"));
         std::fs::write(&path, include_bytes!("fixtures/tiny.png")).unwrap();
@@ -284,19 +361,16 @@ fn main() {
                 .iter()
                 .any(|text| text == &format!("Rendering · fixture frame {frame}"))
         );
-        let mut has_frame = false;
-        walk(window.upcast_ref(), &mut |widget| {
-            if let Some(picture) = widget.downcast_ref::<gtk::Picture>() {
-                if picture.is_mapped()
-                    && picture.file().and_then(|file| file.path()).as_ref() == Some(&path)
-                {
-                    has_frame = true;
-                }
-            }
-        });
+        let shown = stage_picture(window);
         assert!(
-            has_frame,
+            shown.is_some(),
             "active preview did not display the new fixture frame"
         );
+        // Every transport tick decodes the frame again, so the paintable must be a fresh one.
+        assert!(
+            shown != previous_frame,
+            "preview frame {frame} did not replace the previous frame"
+        );
+        previous_frame = shown;
     }
 }

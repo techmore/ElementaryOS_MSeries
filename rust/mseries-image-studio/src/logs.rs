@@ -92,27 +92,22 @@ fn readable(path: &Path) -> String {
 }
 
 pub fn page(base: PathBuf) -> gtk::Widget {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    page.set_margin_top(18);
-    page.set_margin_bottom(18);
-    page.set_margin_start(18);
-    page.set_margin_end(18);
-    let heading = gtk::Label::new(Some("Run diagnostics"));
-    heading.add_css_class("title-2");
-    heading.set_xalign(0.0);
-    page.append(&heading);
-    let description = gtk::Label::new(Some(
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 14);
+    page.set_margin_top(22);
+    page.set_margin_bottom(24);
+    page.set_margin_start(26);
+    page.set_margin_end(26);
+    page.append(&crate::style::page_header(
+        "Run logs",
         "Model, preview progress and measured memory for each render. Private prompt text stays in the saved recipe. Showing the latest 64 KiB of each event log.",
     ));
-    description.set_wrap(true);
-    description.set_xalign(0.0);
-    page.append(&description);
     let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     let list = gtk::StringList::new(&[]);
     let dropdown = gtk::DropDown::new(Some(list.clone()), None::<gtk::Expression>);
     dropdown.set_hexpand(true);
     dropdown.set_tooltip_text(Some("Choose a render log"));
     let refresh = gtk::Button::with_label("Refresh");
+    refresh.add_css_class("is-pill");
     toolbar.append(&dropdown);
     toolbar.append(&refresh);
     page.append(&toolbar);
@@ -121,11 +116,15 @@ pub fn page(base: PathBuf) -> gtk::Widget {
     view.set_cursor_visible(false);
     view.set_wrap_mode(gtk::WrapMode::WordChar);
     view.set_monospace(true);
+    view.set_left_margin(14);
+    view.set_right_margin(14);
+    view.set_top_margin(12);
+    view.set_bottom_margin(12);
     view.buffer()
         .set_text("No render logs yet. Start a render to collect diagnostics.");
     let scroller = gtk::ScrolledWindow::new();
     scroller.set_vexpand(true);
-    scroller.add_css_class("frame");
+    scroller.add_css_class("is-code");
     scroller.set_child(Some(&view));
     page.append(&scroller);
     let paths = Rc::new(RefCell::new(Vec::<PathBuf>::new()));

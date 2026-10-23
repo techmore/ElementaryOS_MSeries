@@ -17,21 +17,49 @@ The app appears as **Image Studio** in Applications. `--no-build` installs an al
 The executable is installed atomically under `~/.local/libexec/mseries-image-studio/`; updates do not
 replace the inode of a running process. Reopen the application to load a newly installed build.
 
+## Design
+
+Image Studio follows elementary OS conventions with a Draw Things-style creative workflow:
+a flat header bar, a source-list sidebar (Studio and Setup sections, quick starts, and a live
+memory meter for this device) and one scoped stylesheet in `src/style.rs` built on the
+elementary stylesheet's named colors, so the accent, light/dark preference and fonts come from
+the desktop. Overlays over images use a fixed dark glass so they read on any picture.
+
+| Create | Library |
+| --- | --- |
+| ![Create](docs/screenshots/image-studio-create.png) | ![Library](docs/screenshots/image-studio-library.png) |
+
+More states: [generating](docs/screenshots/image-studio-create-generating.png),
+[light mode](docs/screenshots/image-studio-create-light.png),
+[models](docs/screenshots/image-studio-models.png) and
+[compare](docs/screenshots/image-studio-compare.png). All screenshots use the fictional demo
+data from `rust/mseries-image-studio/tests/demo_data.py`, not real renders.
+
 ## Workspaces
 
-- **Create:** header Run / Stop / Reload recipe; actual intermediate projected-latent images during
-  local sampling; explicit loading, error and completed states. Ctrl+Enter runs the current recipe.
-- **Library:** large image viewer, prompt/settings inspection, measured timing and process memory,
-  provenance and Use these settings. Completed jobs refresh the Library automatically.
-- **Models:** SD 1.5 Q4 and Q8, SDXL Turbo FP16, and Qwen3-VL 2B with its required Q8 vision
-  projector; revision-pinned, size/SHA-256 verified downloads with progress and cancellation.
-  Use selected model loads starter defaults. Engine setup builds pinned stable-diffusion.cpp.
-- **Model guide:** task/capability matrix, source links, supported settings and local qualification
+- **Create:** a dotted canvas that shows the live projected-latent preview while sampling (status
+  and step in a glass pill, progress along the bottom edge) and reopens on the latest image, with
+  a history filmstrip down the left edge. A floating prompt dock holds the prompt, prompt type,
+  Suggest type, Improve prompt and a collapsible negative prompt, and a pill Generate button.
+  Chips under the dock summarize the next run. The inspector groups Model, Image, Sampling (real
+  sliders), Seed, Reference image, LoRA and Advanced into collapsible cards with Save recipe pinned
+  below. Header Stop cancels the current image, review or remaining sweep; Ctrl+Enter runs the recipe.
+  Below about 1100 px the inspector moves into a Settings popover.
+- **Library:** a gallery of every image; choosing one opens a detail pane with its prompt, settings,
+  measured timing and process memory, provenance, model notes, **Use these settings**, **Try a new
+  seed** and a full-size viewer. A Recipes tab holds saved prompt recipes. Completed jobs refresh the
+  Library automatically.
+- **Models:** SD 1.5 Q4 and Q8, SDXL Turbo FP16, Realistic Vision, the reference appearance bundle and
+  Qwen3-VL 2B with its required Q8 vision projector, each a card with an Installed badge;
+  revision-pinned, size/SHA-256 verified downloads with a progress bar and cancellation. Use selected
+  model loads starter defaults. Engine setup builds pinned stable-diffusion.cpp.
+- **Model guide:** task/capability cards, source links, supported settings and local qualification
   limits. Engine support is distinguished from a verified app workflow.
 - **Compare:** bounded sequential lighting, step or installed Q4/Q8 model sweeps with fixed seeds,
   saved manifests, per-result settings/measurements and optional vision review.
 - **Review:** local Qwen vision rubric and optional visual reference, advisory scores/explanations,
   retained evaluator identity, image digest and a suggested prompt the user can explicitly apply.
+- **Run logs:** bounded, read-only structured diagnostics for each render.
 
 The sidebar and Models show app model storage, shared AI model storage, images including previews,
 and the app-managed engine/source. Exported copies outside the app directory are not counted.
@@ -69,7 +97,21 @@ python3 rust/mseries-image-studio/tests/adapters.py
 dbus-run-session -- env -u WAYLAND_DISPLAY CARGO_TARGET_DIR="$HOME/.cache/cargo-target" GDK_BACKEND=x11 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo xvfb-run -a cargo test --manifest-path rust/Cargo.toml -p mseries-image-studio --test render
 ```
 
-`M_SERIES_IMAGE_STUDIO_TEST_COMPACT=1` exercises the compact settings popover. Render fixtures and
+`M_SERIES_IMAGE_STUDIO_TEST_COMPACT=1` exercises the compact settings popover.
+
+For visual review without touching real data, build the fictional fixtures and run a second
+instance beside the installed app:
+
+```sh
+python3 rust/mseries-image-studio/tests/demo_data.py /tmp/demo --states   # fixtures, never real renders
+XDG_DATA_HOME=/tmp/demo M_SERIES_IMAGE_STUDIO_DEV=1 M_SERIES_IMAGE_STUDIO_TEST_PAGE=library \
+  M_SERIES_IMAGE_STUDIO_TEST_SELECT_IMAGE=1 M_SERIES_IMAGE_STUDIO_SCREENSHOT=/tmp/library.png \
+  M_SERIES_IMAGE_STUDIO_EXIT_AFTER=4 ~/.cache/cargo-target/debug/mseries-image-studio
+```
+
+`M_SERIES_IMAGE_STUDIO_DEV` makes the instance non-unique, `..._TEST_PAGE` picks a page,
+`..._TEST_SCHEME=light|dark` previews the other color scheme, and the screenshot hook clears the
+backdrop dimming an unfocused window would otherwise show. Render fixtures and
 transport tests are not AI inference; hardware measurements above come from the separate actual run.
 
 Sources: [engine and preview support](https://github.com/leejet/stable-diffusion.cpp),

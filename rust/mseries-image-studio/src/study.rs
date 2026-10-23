@@ -1,5 +1,6 @@
 //! Native review and sequential comparison workspaces.
 use crate::{Recipe, recipe::load_outputs};
+use crate::style;
 use gtk::prelude::*;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
@@ -12,13 +13,19 @@ fn label(text: &str) -> gtk::Label {
     label.set_wrap(true);
     label
 }
-fn page(title: &str) -> gtk::Box {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 16);
-    page.add_css_class("pantheon-inset");
-    let title = label(title);
-    title.add_css_class("title-2");
-    page.append(&title);
+fn page(title: &str, subtitle: &str) -> gtk::Box {
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 18);
+    page.set_margin_top(22);
+    page.set_margin_bottom(24);
+    page.set_margin_start(26);
+    page.set_margin_end(26);
+    page.append(&style::page_header(title, subtitle));
     page
+}
+fn field_label(text: &str) -> gtk::Label {
+    let paragraph = label(text);
+    paragraph.add_css_class("is-field-label");
+    paragraph
 }
 fn scroll(page: &gtk::Box) -> gtk::Widget {
     gtk::ScrolledWindow::builder()
@@ -30,11 +37,14 @@ fn scroll(page: &gtk::Box) -> gtk::Widget {
 fn base() -> std::path::PathBuf {
     gtk::glib::user_data_dir().join("mseries-image-studio")
 }
+/// "Illustration · 512×768 · Misty alpine lake at dawn…" so images are recognisable in pickers.
 fn title(recipe: &Recipe) -> String {
-    Path::new(&recipe.image_path)
-        .file_stem()
-        .map(|v| v.to_string_lossy().replace('-', " "))
-        .unwrap_or_else(|| recipe.intent.clone())
+    let prompt: String = recipe.prompt.chars().take(44).collect();
+    let ellipsis = if recipe.prompt.chars().count() > 44 { "…" } else { "" };
+    format!(
+        "{} · {}×{} · {}{}",
+        recipe.intent, recipe.width, recipe.height, prompt, ellipsis
+    )
 }
 fn text(view: &gtk::TextView) -> String {
     let buffer = view.buffer();
@@ -124,30 +134,39 @@ fn review_text(value: &serde_json::Value, path: &str) -> String {
 }
 
 pub fn review(on_reuse: Reuse) -> gtk::Widget {
-    let page = page("Review an image");
-    page.append(&label("Compare a generated image with your goal and an optional reference. Qwen vision runs locally after generation unloads. Scores are advisory; each report records its evaluator, rubric, image digest and settings."));
+    let page = page("Review an image", "Compare a generated image with your goal and an optional reference. Qwen vision runs locally after generation unloads. Scores are advisory; each report records its evaluator, rubric, image digest and settings.");
+    let controls = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    controls.set_hexpand(true);
+    let left = style::padded_card(12);
+    left.set_width_request(340);
+    left.set_valign(gtk::Align::Start);
+    let left_body = style::card_content(&left);
     let images = Rc::new(RefCell::new(Vec::<Recipe>::new()));
     let names = gtk::StringList::new(&[]);
     let selection = gtk::DropDown::new(Some(names.clone()), None::<gtk::Expression>);
     selection.update_property(&[gtk::accessible::Property::Label("Image to review")]);
-    page.append(&selection);
+    controls.append(&field_label("Image to review"));
+    controls.append(&selection);
     let reference_names = gtk::StringList::new(&["No reference"]);
     let reference = gtk::DropDown::new(Some(reference_names.clone()), None::<gtk::Expression>);
     reference.update_property(&[gtk::accessible::Property::Label("Optional reference image")]);
-    page.append(&label("Optional appearance or composition reference"));
-    page.append(&reference);
+    controls.append(&field_label("Optional appearance or composition reference"));
+    controls.append(&reference);
     let refresh = gtk::Button::with_label("Refresh image list");
     refresh.set_halign(gtk::Align::Start);
-    page.append(&refresh);
+    refresh.add_css_class("is-pill");
+    refresh.add_css_class("flat");
+    controls.append(&refresh);
     let picture = gtk::Picture::new();
     picture.set_can_shrink(true);
     picture.set_content_fit(gtk::ContentFit::Contain);
-    picture.set_size_request(-1, 280);
-    page.append(&picture);
+    picture.set_size_request(-1, 300);
+    left_body.append(&picture);
     let source = label("Select an image from Library.");
     source.set_lines(3);
     source.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    page.append(&source);
+    source.add_css_class("is-caption");
+    left_body.append(&source);
     let refill = {
         let images = images.clone();
         let names = names.clone();
@@ -185,32 +204,59 @@ pub fn review(on_reuse: Reuse) -> gtk::Widget {
             }
         });
     }
-    page.append(&label("What should the reviewer prioritize?"));
+    controls.append(&field_label("What should the reviewer prioritize?"));
     let rubric = gtk::TextView::new();
     rubric.update_property(&[gtk::accessible::Property::Label(
         "Vision review goal and rubric",
     )]);
     rubric.set_wrap_mode(gtk::WrapMode::WordChar);
     rubric.set_size_request(-1, 90);
+    rubric.set_left_margin(10);
+    rubric.set_right_margin(10);
+    rubric.set_top_margin(8);
+    rubric.set_bottom_margin(8);
     rubric.buffer().set_text("Natural adult expression, accurate cozy knitwear, warm comfortable lighting, coherent composition and believable hands. Preserve the subject and intent.");
-    page.append(&rubric);
+    let rubric_scroll = gtk::ScrolledWindow::builder()
+        .child(&rubric)
+        .min_content_height(90)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .build();
+    rubric_scroll.add_css_class("is-field");
+    controls.append(&rubric_scroll);
     let review = gtk::Button::with_label("Review selected image");
     review.add_css_class("suggested-action");
+    review.add_css_class("is-pill");
     review.set_halign(gtk::Align::Start);
-    page.append(&review);
+    controls.append(&review);
     let status = label(
         "Requires Qwen3-VL 2B, its matching vision projector, and the local llama-server runtime.",
     );
-    page.append(&status);
+    status.add_css_class("is-caption");
+    controls.append(&status);
     let report = gtk::TextView::new();
     report.set_editable(false);
     report.set_wrap_mode(gtk::WrapMode::WordChar);
-    report.set_size_request(-1, 220);
-    page.append(&report);
+    report.set_left_margin(12);
+    report.set_right_margin(12);
+    report.set_top_margin(10);
+    report.set_bottom_margin(10);
+    let columns = gtk::Box::new(gtk::Orientation::Horizontal, 22);
+    columns.append(&left);
+    columns.append(&controls);
+    page.append(&columns);
+    page.append(&field_label("Review report"));
+    let report_scroll = gtk::ScrolledWindow::builder()
+        .child(&report)
+        .min_content_height(200)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .build();
+    report_scroll.add_css_class("is-code");
+    page.append(&report_scroll);
     let suggestion = Rc::new(RefCell::new(String::new()));
     let report_recipe = Rc::new(RefCell::new(None::<Recipe>));
     let use_suggestion = gtk::Button::with_label("Use suggested prompt");
     use_suggestion.set_halign(gtk::Align::Start);
+    use_suggestion.add_css_class("is-pill");
     use_suggestion.set_sensitive(false);
     page.append(&use_suggestion);
     {
@@ -327,36 +373,40 @@ pub fn review(on_reuse: Reuse) -> gtk::Widget {
 }
 
 pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
-    let page = page("Compare runs");
-    page.append(&label("Run a small, sequential sweep using the recipe in Create. Keep the seed fixed and change one variable. Each result retains its exact prompt, model, steps, sampler, timing and optional vision review."));
+    let page = page("Compare runs", "Run a small, sequential sweep using the recipe in Create. Keep the seed fixed and change one variable. Each result retains its exact prompt, model, steps, sampler, timing and optional vision review.");
+    let setup = style::padded_card(14);
+    let setup_body = style::card_content(&setup);
+    setup_body.set_spacing(12);
     let mode = gtk::DropDown::from_strings(&[
         "Prompt sweep · three lighting variations",
         "Step sweep · 8 (speed test), 16, 24",
         "Model comparison · installed SD 1.5 Q4 and Q8",
     ]);
-    page.append(&mode);
+    setup_body.append(&field_label("Sweep"));
+    setup_body.append(&mode);
     let review = gtk::CheckButton::with_label(
         "Review each result with Qwen vision after generation unloads",
     );
-    page.append(&review);
+    setup_body.append(&review);
     mode.update_property(&[gtk::accessible::Property::Label("Sweep type")]);
     let goal = gtk::Entry::new();
     goal.update_property(&[gtk::accessible::Property::Label("Sweep review goal")]);
     goal.set_placeholder_text(Some(
         "Review goal: clothing, warm lighting, natural expression…",
     ));
-    page.append(&goal);
+    setup_body.append(&goal);
     let run_button = gtk::Button::with_label("Run sweep");
     run_button.add_css_class("suggested-action");
+    run_button.add_css_class("is-pill");
     run_button.set_halign(gtk::Align::Start);
-    page.append(&run_button);
+    setup_body.append(&run_button);
     let status = label(
         "Sweeps run one image at a time. Stop in the header cancels the current job and the remaining queue.",
     );
-    page.append(&status);
-    let results = gtk::ListBox::new();
-    results.set_selection_mode(gtk::SelectionMode::None);
-    results.add_css_class("boxed-list");
+    status.add_css_class("is-caption");
+    setup_body.append(&status);
+    page.append(&setup);
+    let results = gtk::Box::new(gtk::Orientation::Vertical, 10);
     page.append(&results);
     {
         let mode = mode.clone();
@@ -393,47 +443,76 @@ pub fn compare(snapshot: Snapshot, on_reuse: Reuse) -> gtk::Widget {
                     }
                     if let Some(runs) = manifest["runs"].as_array() {
                         for item in runs {
-                            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-                            row.add_css_class("pantheon-inset");
+                            let row = gtk::Box::new(gtk::Orientation::Horizontal, 14);
+                            row.add_css_class("is-row-card");
                             if let Some(path) = item["image_path"].as_str() {
+                                let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);
+                                spacer.set_size_request(150, 150);
+                                let thumb = gtk::Overlay::new();
+                                thumb.add_css_class("is-tile");
+                                thumb.set_overflow(gtk::Overflow::Hidden);
+                                thumb.set_valign(gtk::Align::Start);
+                                thumb.set_child(Some(&spacer));
                                 let picture = gtk::Picture::for_filename(path);
-                                picture.set_size_request(160, 120);
                                 picture.set_can_shrink(true);
-                                picture.set_content_fit(gtk::ContentFit::Contain);
-                                row.append(&picture);
+                                picture.set_content_fit(gtk::ContentFit::Cover);
+                                thumb.add_overlay(&picture);
+                                row.append(&thumb);
                             }
-                            let details = gtk::Box::new(gtk::Orientation::Vertical, 6);
+                            let details = gtk::Box::new(gtk::Orientation::Vertical, 8);
                             details.set_hexpand(true);
-                            details.append(&label(&format!(
-                                "{} · {}",
-                                item["label"].as_str().unwrap_or("Run"),
-                                item["status"].as_str().unwrap_or("Unknown")
-                            )));
-                            details.append(&label(&format!(
-                                "Time: {} · Peak process RSS: {} · Vision score: {}",
-                                item["elapsed_seconds"]
+                            let head = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                            let heading = label(item["label"].as_str().unwrap_or("Run"));
+                            heading.add_css_class("is-card-title");
+                            heading.set_hexpand(true);
+                            head.append(&heading);
+                            let state = item["status"].as_str().unwrap_or("Unknown");
+                            let failed = item["error"].is_string() || state.to_lowercase().contains("fail");
+                            head.append(&style::chip(
+                                state,
+                                if failed { "is-error" } else if state.starts_with("Complete") { "is-ok" } else { "is-accent" },
+                                None,
+                            ));
+                            details.append(&head);
+                            let stats = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                            stats.append(&style::chip(
+                                &item["elapsed_seconds"]
                                     .as_f64()
                                     .map(|v| format!("{v:.1} s"))
-                                    .unwrap_or_else(|| "Not measured".into()),
-                                item["peak_memory_mib"]
+                                    .unwrap_or_else(|| "Time not measured".into()),
+                                "",
+                                Some("content-loading-symbolic"),
+                            ));
+                            stats.append(&style::chip(
+                                &item["peak_memory_mib"]
                                     .as_u64()
-                                    .map(|v| format!("{v} MiB"))
-                                    .unwrap_or_else(|| "Not measured".into()),
-                                item["overall_score"]
+                                    .map(|v| format!("{v} MiB peak RSS"))
+                                    .unwrap_or_else(|| "Memory not measured".into()),
+                                "",
+                                None,
+                            ));
+                            stats.append(&style::chip(
+                                &item["overall_score"]
                                     .as_f64()
-                                    .map(|v| format!("{v:.2}/5 (advisory)"))
-                                    .unwrap_or_else(|| "Not reviewed".into())
-                            )));
+                                    .map(|v| format!("Vision {v:.2}/5 · advisory"))
+                                    .unwrap_or_else(|| "Not reviewed".into()),
+                                "",
+                                Some("image-red-eye-symbolic"),
+                            ));
+                            details.append(&stats);
                             if let Some(error) =
                                 item["error"].as_str().or(item["review_error"].as_str())
                             {
-                                details.append(&label(error));
+                                let message = label(error);
+                                message.add_css_class("is-caption");
+                                details.append(&message);
                             }
                             if let Some(path) = item["recipe_path"].as_str() {
                                 if let Ok(raw) = std::fs::read(path) {
                                     if let Ok(recipe) = serde_json::from_slice::<Recipe>(&raw) {
                                         let reuse = gtk::Button::with_label("Use this run");
                                         reuse.set_halign(gtk::Align::Start);
+                                        reuse.add_css_class("is-pill");
                                         let on_reuse = on_reuse.clone();
                                         reuse.connect_clicked(move |_| on_reuse(&recipe));
                                         details.append(&reuse);

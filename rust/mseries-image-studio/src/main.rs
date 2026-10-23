@@ -7,7 +7,16 @@ fn main() -> gtk::glib::ExitCode {
         // GTK reads this during startup. Keep the lightweight cairo renderer as the safe default on Asahi.
         unsafe { std::env::set_var("GSK_RENDERER", "cairo") };
     }
-    let application = gtk::Application::builder().application_id(APP_ID).build();
+    // M_SERIES_IMAGE_STUDIO_DEV lets a development build run beside the installed app.
+    let flags = if std::env::var_os("M_SERIES_IMAGE_STUDIO_DEV").is_some() {
+        gtk::gio::ApplicationFlags::NON_UNIQUE
+    } else {
+        gtk::gio::ApplicationFlags::FLAGS_NONE
+    };
+    let application = gtk::Application::builder()
+        .application_id(APP_ID)
+        .flags(flags)
+        .build();
     application.connect_startup(|app| {
         granite::init();
         gtk::Window::set_default_icon_name(APP_ID);
@@ -70,6 +79,8 @@ fn main() -> gtk::glib::ExitCode {
                     .program_name("Image Studio")
                     .version(env!("CARGO_PKG_VERSION"))
                     .comments("A native Pantheon image creation workspace for M-Series.")
+                    .logo_icon_name(APP_ID)
+                    .license_type(gtk::License::Gpl30Only)
                     .build();
                 dialog.present();
             }
