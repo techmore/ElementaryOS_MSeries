@@ -11804,6 +11804,15 @@ through the loaded local model (6.1 s, injection fixture, no secret in the answe
 IBus lease/popup, Settings panel or hotkey; nothing is installed, so the running desktop is unchanged. Next: mark Rust Messages,
 Newelle and the T3 port, then the AT-SPI fallback reader and the IBus input client.
 
+## Smart Reply chat-app markers — 2026-10-23
+
+`X-MSeries-Chat=true` added to the Rust Messages desktop entry (with `X-MSeries-Chat-Adapter=blueferry`) and the T3 port
+(`io.github.techmore.ClaudePantheonRs`). Newelle is a Flatpak, so `mseries/local-ai/mark-newelle-chat.py` (called from
+`install-assistants.sh`) writes a user-level copy of its exported entry with the marker; `--remove` deletes only its own copy. 4 unit
+tests pass, including one that the two repo entries carry the key. The key does nothing by itself: Smart Reply is off by default and
+its core (`rust/mseries-reply`) reads no window yet. Not installed on the running desktop, nothing restarted. The Messages & Signal
+launcher and Signal Desktop are not marked (deferred by the owner).
+
 ## SDK agent surface design — 2026-10-23
 
 New design note `mseries/SDK-AGENT-SURFACE.md` joins the SDK and the Pantheon MCP broker the way Apple's App Intents, entitlements and
@@ -11820,3 +11829,11 @@ MCP tool list. The T3 port declares 9 scopes, 5 entities and 5 intents and delib
 switch. 56 `msdk` tests pass; `msdk-gtk`, `claude-pantheon-rs` and `mseries-greeter` tests pass; clippy clean. Findings recorded in
 `mseries/SDK-AGENT-SURFACE.md` section 7 (single-parameter limit, `show`, risk floors). Not built: the broker, grants and Settings page,
 manifests for other apps, structured payloads. Nothing installed; the running desktop is unchanged.
+
+## Agent broker core — 2026-10-23
+
+New library `rust/mseries-broker`: decides Run / Ask / Refuse for an agent call against an SDK manifest. Per-agent, per-app, per-scope grants
+bound to the manifest hash; per-action approvals for external and privileged intents bound to the arguments and the state the confirmation
+shows; remembered denials, immediate revocation, content-free audit, owner-only grants file. 14 tests against the real T3 manifest, clippy
+clean. Library only: no service, consent dialog, Settings page or app-side dispatcher; the caller's identity is not yet taken from a
+connection. See `SDK-AGENT-SURFACE.md` section 8. Nothing installed.
