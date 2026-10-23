@@ -43,17 +43,25 @@ def main():
             or rows[2] != 'Architecture: arm64' or rows[1] not in [
                 'Version: 7.1.13+elementary.m4.gravity1-2', 'Version: 7.1.13+elementary.m4.gravity1-3',
                 'Version: 7.1.13+elementary.m4.gravity1-4', 'Version: 7.1.13+elementary.m4.gravity1-5',
-                'Version: 7.1.13+elementary.m4.gravity1-6']):
+                'Version: 7.1.13+elementary.m4.gravity1-6',
+                'Version: 7.1.13+elementary.m4.gravity1-7']):
         raise ValueError('unexpected package identity')
     version = rows[1].removeprefix('Version: ')
-    is_r6 = version == '7.1.13+elementary.m4.gravity1-6'
-    if is_r6:
+    is_live_media_candidate = version in {'7.1.13+elementary.m4.gravity1-6',
+                                         '7.1.13+elementary.m4.gravity1-7'}
+    is_r7 = version == '7.1.13+elementary.m4.gravity1-7'
+    if is_live_media_candidate:
         checks = build.get('m4_idle_checks', {})
         if (checks.get('apple_cpu_wfi_linked') is not True
                 or checks.get('state_save_restore_instructions_present') is not True
                 or checks.get('m4_wfxt_override_literal_present') is not True
                 or not re.fullmatch(r'[0-9a-f]{64}', checks.get('disassembly_sha256', ''))):
-            raise ValueError('R6 Apple idle compile/disassembly receipt required')
+            raise ValueError('R6+ Apple idle compile/disassembly receipt required')
+        if is_r7 and checks.get('apple_wfi_quirk_init_linked') is not True:
+            raise ValueError('R7 linked boot-CPU WFI selector receipt required')
+    if is_r7 and (build.get('source_contracts', {}).get('boot_cpu_wfi_selection_before_first_idle') is not True
+                  or build.get('source_contracts', {}).get('bcm4388_waits_for_wifi_function') is not True):
+        raise ValueError('R7 WFI and BCM4388 source contracts required')
     versions = json.loads((Path(__file__).parent / 'gravity/compatibility/package-versions.json').read_text())
     if version in versions and build.get('compatibility_patches') != versions[version]:
         raise ValueError('package version requires its exact reviewed scheduler compatibility patches')
@@ -71,7 +79,7 @@ def main():
         config = module_root / ('config-' + RELEASE)
         if digest(config) != build['config_sha256']:
             raise ValueError('kernel config mismatch')
-        if is_r6:
+        if is_live_media_candidate:
             values = set(config.read_text().splitlines())
             required = {'CONFIG_APPLE_WATCHDOG=y', 'CONFIG_BLK_DEV_SR=y', 'CONFIG_ISO9660_FS=y'}
             if not required <= values:
@@ -83,7 +91,7 @@ def main():
         if 'apple,j773g' not in compatible.split():
             raise ValueError('J773g board DTB required')
         count = len(list(module_root.rglob('*.ko')))
-        expected_count = 1597 if is_r6 else 1598
+        expected_count = 1597 if is_live_media_candidate else 1598
         if count != expected_count:
             raise ValueError(f'unexpected module count: expected {expected_count}, found {count}')
         for name in MODULES:

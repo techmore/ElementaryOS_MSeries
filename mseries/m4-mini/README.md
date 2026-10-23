@@ -1,9 +1,9 @@
 # M4 Mac mini preparation
 
-**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded, and the downloaded Debian package and corresponding source passed independent local hash, Image/config/DTB, 16 KiB, module and package-hook checks. R6 contains 1,597 modules and enables built-in ISO9660, SCSI CD-ROM and Apple watchdog support with the M4 WFI/WFxT changes. The opt-in profile and hosted inputs now pin R6 with Mesa6. The matching full image/ISO build and corrected QEMU live-media test are still pending; R5 remains the latest complete image. No native M4 or installation qualification has run.
-[Hosted R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json).
+**Current candidate status (2026-10-23):** Hosted kernel R6 run [39879062230](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39879062230) succeeded and its downloaded package passed independent checks, but the fresh source audit found that its Apple WFI selector initializes after the boot CPU may already idle. R6 is superseded; the attempted R6 full-image workflow [39887373141](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39887373141) was cancelled before completion. The current R7 patch set moves selection into `smp_prepare_boot_cpu()` and adds two BCM4388 fixes for shared calibration setup and Wi-Fi-before-Bluetooth probe order. Its source application and order gates pass locally. The R7 kernel build and matching image/ISO have not run yet; R5 remains the latest complete image. No native M4 or installation qualification has run.
+[Historical R6 kernel receipt](receipts/2026-10-23-hosted-kernel-r6-success.json); [fresh upstream refresh](receipts/2026-10-23-upstream-head-refresh-5.json).
 
-**Latest complete image (historical R5):** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the R5/Mesa6 image graph and ARM64 UEFI ISO. Its graph, desktop payload, selected EFI controls, GPT/ESP/verity checks and ISO payload readback passed. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU reached UEFI/GRUB but Casper could not find live media; the R5 kernel did not expose a usable optical device and could not mount the raw USB ISO. R6 is intended to address those specific kernel gaps.
+**Latest complete image (historical R5):** run [39744832862](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39744832862) completed the R5/Mesa6 image graph and ARM64 UEFI ISO. Its graph, desktop payload, selected EFI controls, GPT/ESP/verity checks and ISO payload readback passed. ISO SHA-256: `4e986036b5a0dd298c5fceb55fb0a1f141c3bd659fbec66ac430fb07ce3e0af3`. QEMU reached UEFI/GRUB but Casper could not find live media; the R5 kernel did not expose a usable optical device and could not mount the raw USB ISO. R7 keeps the ISO/CD driver fixes and is the next image candidate after its kernel build.
 [Historical R5 image/ISO receipt](receipts/2026-10-22-r5-mesa6-full-image-iso.json).
 
 **Historical hosted baseline result:** Revision-2 kernel, GLVND Mesa and boot-chain jobs succeeded.
@@ -17,22 +17,22 @@ ISO assembly, installation and native M4 support remain unvalidated.
 [boot chain](receipts/2026-10-21-hosted-boot-success.json),
 [full-graph preflight](receipts/2026-10-21-all-hosted-image-preflight.json).
 
-The revision-2 artifacts are historical. R5/Mesa6 is the latest complete image; R6 kernel build and independent package checks now pass, while the matching full image/ISO is pending.
+The revision-2 artifacts and R6 package are historical. R5/Mesa6 is still the latest complete image. R7 must pass its hosted kernel build before the full image/ISO can run.
 
-The R5 full kernel build and its 1,598-module package remain historical evidence. The current R6 package independently passes Image/config/J773g/16 KiB/module/dependency and no-hook checks, with 1,597 modules and the intended built-in ISO/CD/watchdog support. The opt-in profile and hosted input now select R6.
-[Historical R5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json); [current R6 evidence](receipts/2026-10-23-hosted-kernel-r6-success.json).
+R5 full-kernel checks and the R6 package are historical. R6 passed Image/config/J773g/16 KiB/module/dependency and no-hook checks, but its WFI selector was too late for the boot CPU. The opt-in profile and source gates now target R7; its build is pending.
+[Historical R5 evidence](receipts/2026-10-22-hosted-kernel-r5-success.json); [superseded R6 evidence](receipts/2026-10-23-hosted-kernel-r6-success.json).
 
 Mesa revision 6 now passes fresh local and hosted full builds, five AGX groups,
 seven NIR cases, eight allocation-helper cases, the integrated 24+4 external
 sampler matrix, packaging and independent downloaded package/source checks.
 It includes the four reviewed source phases and all eleven final source hashes.
 [Hosted Mesa6](receipts/2026-10-22-hosted-mesa6-success.json).
-The opt-in research profile and hosted inputs now select Mesa6 with kernel R6.
+The opt-in research profile selects Mesa6 with kernel R7; update the hosted input only after R7 builds and passes package inspection.
 Fresh hosted-input preparation and the exact eleven-image graph summary pass.
 [Input/graph evidence](receipts/2026-10-22-r5-mesa6-full-graph-summary.json).
-The R5 packaged Image reaches a minimal PID1 through ARM64 UEFI/GRUB under QEMU; this small fixture is not the desktop ISO or Apple firmware. The R5 desktop ISO did not reach Casper live root in QEMU. The R6 full ISO retest remains pending.
+The R5 packaged Image reaches a minimal PID1 through ARM64 UEFI/GRUB under QEMU; this small fixture is not the desktop ISO or Apple firmware. The R5 desktop ISO did not reach Casper live root in QEMU. The attempted R6 full-image workflow was cancelled before completion; R7 full ISO/QEMU testing remains pending.
 [EFI fixture](receipts/2026-10-22-kernel-efi-qemu-tests.json).
-The R5 image/ISO assembly is complete, but Casper live-media discovery failed in local QEMU. The current R6 kernel adds the relevant kernel drivers; its full image/ISO and QEMU retest remain pending. Native EGL import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
+The R5 image/ISO assembly is complete, but Casper live-media discovery failed in local QEMU. The current R7 kernel source preserves the R6 live-media driver fixes; its full image/ISO and QEMU retest remain pending. Native EGL import/YUV, GPU/unload, installer and owner dual-boot acceptance remain unqualified.
 
 Research target: expected Mac16,10 / J773g / T8132. Owner confirms 16 GB RAM,
 1 TB SSD, 10 Gb Ethernet, macOS 27 and HDMI output. Confirm the
@@ -67,18 +67,18 @@ successful desktop boot is confirmed and the published kit has not been replaced
 by the source fix. Wired Ethernet is only expected in that kit, not verified at
 10 Gb. Omarchy-MX Mac is a separate M1/M2 project and does not add M4 mini support.
 
-The October 22 public-ref refresh found seven new Aurora kernel commits and 174
-new mainline commits. No mainline changes touched the reviewed Apple idle, J773g
-device-tree, Apple DRM/DCP, Apple DART/IOMMU, NVMe, Aquantia or tg3 paths. Aurora's
-new Apple-watchdog config change is adopted as built-in in R6; its later-firmware
-panel-property change does not apply to the selected 26.6.2 firmware contract.
-Gravity, Asahi, boot/installer, and M4 tester refs remained unchanged. A later
-exact-ref refresh checked 34 kernel, graphics, boot, installer, partition,
-firmware and adjacent tester refs; all still match their reviewed pins.
-Aurora m1n1 PR #35 and U-Boot PR #7 remain open at their pinned commits. The
-un-pinned Gravity speaker-safety repository is not publicly reachable and is
-not used by this candidate. See the [source re-audit](receipts/2026-10-22-upstream-source-reaudit.json)
-and [latest ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
+The October 23 refresh checked all 34 tracked source refs. Aurora advanced 87
+commits and mainline Linux advanced 45; a semantic path review found the M4 boot
+CPU WFI ordering fix and two BCM4388 Bluetooth fixes, which are included in R7.
+T8132 split-channel ADMAC support from Aurora is already present and enabled in
+the pinned Gravity J773g tree. The 45 new mainline commits touch none of the
+reviewed Apple/Asahi, arm64 idle, T8132/J773g, DART, NVMe, Aquantia or tg3 paths.
+The systemd v259 annotated tag is unchanged; a prior peeled-commit comparison
+was a false positive. Other T6040/T6041 and G17 changes remain outside this
+plain M4 candidate. Aurora m1n1 PR #35 and U-Boot PR #7 remain open at their
+pinned commits. The unpinned Gravity speaker-safety repository remains unavailable
+and is not used. See the [fresh semantic re-audit](receipts/2026-10-23-upstream-head-refresh-5.json)
+and [previous exact-ref receipt](receipts/2026-10-23-upstream-head-refresh-4.json).
 
 DTBs, raw bootloader stages, U-Boot and Mesa have built locally. Selected AGX
 and software-rendering tests pass; the full kernel Image/modules/DTBs build now passes after the required

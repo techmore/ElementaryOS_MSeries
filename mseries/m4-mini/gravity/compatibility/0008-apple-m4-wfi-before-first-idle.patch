@@ -1,0 +1,91 @@
+From: ElementaryOS MSeries maintainers <builder@localhost>
+Subject: [PATCH] arm64: select register-preserving Apple WFI before first idle
+
+Aurora's follow-up showed that the boot CPU can enter its idle loop before
+initcalls. Replace R6's late early_initcall/static-key selection with an
+architecture setup call from smp_prepare_boot_cpu(), before the first idle.
+
+Upstream fix: aurora-silicon/linux 34649b455f4a
+
+---
+diff --git a/arch/arm64/include/asm/apple-idle.h b/arch/arm64/include/asm/apple-idle.h
+index c3b72f9..b0eb7ca 100644
+--- a/arch/arm64/include/asm/apple-idle.h
++++ b/arch/arm64/include/asm/apple-idle.h
+@@ -5,4 +5,11 @@
+ /* WFI that preserves x18-x30 on affected Apple cores. */
+ void apple_cpu_wfi(void);
+ 
++#ifdef CONFIG_ARCH_APPLE
++/* Called before the boot CPU can enter its first idle loop. */
++void apple_wfi_quirk_init(void);
++#else
++static inline void apple_wfi_quirk_init(void) { }
++#endif
++
+ #endif
+diff --git a/arch/arm64/kernel/idle.c b/arch/arm64/kernel/idle.c
+index f4032f4..da38572 100644
+--- a/arch/arm64/kernel/idle.c
++++ b/arch/arm64/kernel/idle.c
+@@ -6,7 +6,6 @@
+ #include <linux/cpu.h>
+ #include <linux/init.h>
+ #include <linux/irqflags.h>
+-#include <linux/jump_label.h>
+ 
+ #include <asm/apple-idle.h>
+ #include <asm/barrier.h>
+@@ -41,25 +40,23 @@ early_param("idle", setup_idle);
+ 
+ #ifdef CONFIG_ARCH_APPLE
+ /*
+- * Apple M4 and later secondary CPUs can return from WFI with general-purpose
+- * and FP/SIMD registers cleared. The key is enabled once at boot on those
+- * parts; everywhere else the check is a patched-out branch.
++ * Preserve general-purpose and FP/SIMD state across WFI on Apple M4 and
++ * later cores. This must be selected before the boot CPU's first idle, which
++ * can happen before initcalls run.
+  */
+-static DEFINE_STATIC_KEY_FALSE(apple_wfi_loses_regs);
++static bool apple_wfi_loses_regs __ro_after_init;
+ 
+-static int __init apple_wfi_quirk_init(void)
++void __init apple_wfi_quirk_init(void)
+ {
+ 	if (midr_is_apple_m4_or_later(read_cpuid_id())) {
+-		static_branch_enable(&apple_wfi_loses_regs);
++		apple_wfi_loses_regs = true;
+ 		pr_info("Apple: preserving registers across WFI\n");
+ 	}
+-	return 0;
+ }
+-early_initcall(apple_wfi_quirk_init);
+ 
+ static __always_inline bool apple_wfi_needs_save(void)
+ {
+-	return static_branch_unlikely(&apple_wfi_loses_regs);
++	return unlikely(READ_ONCE(apple_wfi_loses_regs));
+ }
+ #else
+ static __always_inline bool apple_wfi_needs_save(void)
+diff --git a/arch/arm64/kernel/smp.c b/arch/arm64/kernel/smp.c
+index 24f8448..9b1746b 100644
+--- a/arch/arm64/kernel/smp.c
++++ b/arch/arm64/kernel/smp.c
+@@ -37,6 +37,7 @@
+ #include <linux/nmi.h>
+ 
+ #include <asm/alternative.h>
++#include <asm/apple-idle.h>
+ #include <asm/atomic.h>
+ #include <asm/cacheflush.h>
+ #include <asm/cpu.h>
+@@ -455,6 +456,7 @@ void __init smp_prepare_boot_cpu(void)
+ 
+ 	cpuinfo_store_boot_cpu();
+ 	setup_boot_cpu_features();
++	apple_wfi_quirk_init();
+ 
+ 	/* Conditionally switch to GIC PMR for interrupt masking */
+ 	if (system_uses_irq_prio_masking())

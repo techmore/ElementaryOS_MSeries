@@ -169,7 +169,7 @@ jobs:
             --source "$RUNNER_TEMP/m4-kernel/linux-4fc326f6c25ccceb7515e2635c22e01fde5d3bac" \
             --build "$RUNNER_TEMP/m4-kernel/build" --output mkosi.packages-m4-research
           python3 mseries/m4-mini/check-kernel-package.py \
-            --package mkosi.packages-m4-research/linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-6_arm64.deb \
+            --package mkosi.packages-m4-research/linux-image-elementary-m4-gravity1_7.1.13+elementary.m4.gravity1-7_arm64.deb \
             --package-receipt mkosi.packages-m4-research/receipt.json \
             --build-receipt "$RUNNER_TEMP/m4-kernel/receipt.json" --receipt build-record/package-check.json
           mkdir -p mkosi.packages-m4-research/reproduction

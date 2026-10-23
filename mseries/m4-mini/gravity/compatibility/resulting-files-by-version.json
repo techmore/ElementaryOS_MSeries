@@ -38,5 +38,25 @@
     "arch/arm64/kernel/idle-apple.S": "ae36d25beff91eecf643e7cbe5f9ce1112818461042213a1a8acd2ea618f019b",
     "arch/arm64/kernel/idle.c": "175081aba8603d715493671b9e92e0b63ef84fc8b4159867d78778e5f6078667",
     "arch/arm64/kernel/pi/idreg-override.c": "bfd3e97942abad57495980bd3577709e4c44eb474663ea0d5de604f42ce62dca"
+  },
+  "7.1.13+elementary.m4.gravity1-7": {
+    "drivers/gpu/drm/scheduler/sched_main.c": "472a8898f6f74ce024dd397d89617484be0404b59a915418556ce019bffd88b8",
+    "rust/kernel/drm/sched.rs": "61fda9d31fe62722348a47bcc78df97539fa29db953ccd758fd6086ef9284941",
+    "include/drm/gpu_scheduler.h": "f6cb92b835484468c719286c249844eddbefc581d415c1a8210af6c8e95713e1",
+    "drivers/gpu/drm/asahi/g16_drm.rs": "ea399e483c9b7372725b6888a68a58e77092101e6f8c85324a0e1cf28f353ecf",
+    "drivers/gpu/drm/scheduler/sched_entity.c": "24720d2607b02d68f59068033cfa476afe66b8c28e66b5468d11bd8ad2d34ec3",
+    "rust/kernel/drm/driver.rs": "70e8531882929833ba0af490f3dcd709917ea2e8c443f061cc1d8274d60cf4d8",
+    "rust/kernel/drm/device.rs": "716824518bbb481905145fe917a852d492549721755d0eac76551ec4f7411a36",
+    "rust/kernel/drm/gem/mod.rs": "ed6bdf0619625e171c053a12754b6dfdeb3b63bec40c92899f0c1fb905a27dc5",
+    "drivers/gpu/drm/asahi/queue/mod.rs": "6ecf440b04c0c51fb050e7dbbdc3cdf4407bfaf347075d880fa9d594a432d35d",
+    "drivers/gpu/drm/asahi/driver.rs": "45ce2157a6b59e879e5b3bbb1bcc6dec6b6458b67b5161a8a4a9e7a8293660b1",
+    "arch/arm64/include/asm/apple-idle.h": "32090688bde41a0c23feffc93fd754ea2025eb73f8a9adeab5ec0cdcad38eca5",
+    "arch/arm64/include/asm/cputype.h": "3df0e51016f43a12d4432b1fc716318096cb034488d866fcfb4da750cfc874ce",
+    "arch/arm64/kernel/Makefile": "83c84acd640d302cb5ab5a499b1583d0ef5cdcbbc66b7234cd82226107e1741a",
+    "arch/arm64/kernel/idle-apple.S": "ae36d25beff91eecf643e7cbe5f9ce1112818461042213a1a8acd2ea618f019b",
+    "arch/arm64/kernel/idle.c": "c3667aaedcf476b2c87eb4c497cdab9cc37680abcab5e2788716981db17268d1",
+    "arch/arm64/kernel/pi/idreg-override.c": "bfd3e97942abad57495980bd3577709e4c44eb474663ea0d5de604f42ce62dca",
+    "arch/arm64/kernel/smp.c": "65fabdb0a9b08628f754e6e91c19598652099b95df63d536a7eaaf744c4baa07",
+    "drivers/bluetooth/hci_bcm4377.c": "c6ce08f9e0d7e1a16d4dd1b5d5d424aabe7ea866d478c9876b345333ba7f2af8"
   }
 }

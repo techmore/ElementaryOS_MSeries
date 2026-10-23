@@ -22,5 +22,17 @@
     "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
     "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55",
     "0007-apple-m4-register-preserving-wfi.patch": "86af703ffcdc237eab43049202e0b15c610596a7b63f29dcbe92246a7d1ba3b8"
+  },
+  "7.1.13+elementary.m4.gravity1-7": {
+    "0001-drm-scheduler-initialize-storage.patch": "dcf4ec926d19f8718ca50d7238f65e39a67f169924ba6d3b0429b128a17699d4",
+    "0002-m4-terminal-timeout-retention.patch": "151e9366751ebca92dd23c58362741ea90b650ab46e79ac150ce4616223aef1b",
+    "0003-scheduler-allocation-owner.patch": "00f5b32d531c967e406e0a5295fb25931d49fcc530eae51ab862e015c7debf42",
+    "0004-drm-module-and-work-lifetime.patch": "f002743ce94285fc961d88bed1df77fe7557fb0dcf179994b6dbbb86460a5a71",
+    "0005-scheduler-disjoint-timeout-state.patch": "bd33ff4539fc8ae935aee58dffd344e1a83b0e72f64621e2ddbe2df92f80c940",
+    "0006-scheduler-final-cancellation.patch": "04521a88611194d64e5b4f1e4b0d7d6e70da25577b2d021d353e897d0bc3ae55",
+    "0007-apple-m4-register-preserving-wfi.patch": "86af703ffcdc237eab43049202e0b15c610596a7b63f29dcbe92246a7d1ba3b8",
+    "0008-apple-m4-wfi-before-first-idle.patch": "28b4e2d2dd8b2e1b5635f710f7179d3cfdc42fb0e8d5c326f46332fd2dc5004f",
+    "0009-bcm4388-read-common-calibration.patch": "ac22dd5b99a3c98ee4541ea2bf7518fe83c2ee2e45af0abdb7fefc0a51148fc7",
+    "0010-bcm4388-wait-for-wifi.patch": "72997b7faa4ad192312e222701e6003d46b75f732a1edc78ad7f747e0e7bd06c"
   }
 }
