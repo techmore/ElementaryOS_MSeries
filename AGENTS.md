@@ -69,3 +69,20 @@ It maps the existing GTK/Granite, Wingpanel and Switchboard surfaces and records
 Apple's SwiftUI specialist skill and Human Interface Guidelines as reference
 guidance. The owner values Apple's design standards; express that quality
 through native elementary OS conventions and the target screen's actual toolkit.
+
+## App-building workflow
+
+Before app scaffolding, ports, SDK-driven UI work or app-building prompts, read
+[mseries/APP-BUILDING-GUIDE.md](mseries/APP-BUILDING-GUIDE.md) and
+[mseries/RUST-PANTHEON-SDK.md](mseries/RUST-PANTHEON-SDK.md). Establish the visible
+outcome, show a running primary flow early, use incremental development builds,
+and distinguish test/build evidence from owner acceptance. Do not expand app
+work into unrelated SDK projects. Honor stopped/deferred status.
+
+## Deferred Signal and Messages work
+
+**Signal and Messages are INCOMPLETE and DEFERRED by the owner (2026-10-22).**
+Read [mseries/MESSAGING-STATUS.md](mseries/MESSAGING-STATUS.md) before interpreting
+older app/status notes. The Messages & Signal launcher experience was rejected.
+Do not resume the build-out or claim completion without a new explicit owner
+request; installed previews and passing fixtures do not establish acceptance.
