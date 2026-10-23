@@ -11784,3 +11784,11 @@ PR 556 merged. The SDK now registers panel surfaces using the compositor's Panth
 tests pass, including one that the two repo entries carry the key. The key does nothing by itself: Smart Reply is off by default and
 its core (`rust/mseries-reply`) reads no window yet. Not installed on the running desktop, nothing restarted. The Messages & Signal
 launcher and Signal Desktop are not marked (deferred by the owner).
+
+## SDK agent surface design — 2026-10-23
+
+New design note `mseries/SDK-AGENT-SURFACE.md` joins the SDK and the Pantheon MCP broker the way Apple's App Intents, entitlements and
+TCC do: apps declare intents, entities, scopes and risk classes in the `.msdk` description; `msdk check` validates them,
+`msdk agent-manifest` generates the MCP manifest; the broker enforces owner grants bound to a manifest hash. Cross-links added to the MCP
+design, the introspection note and `DOCS.md`. Design only: no grammar, checker rule, generator, broker or settings page exists. Next:
+owner review of the vocabulary and open questions, then `msdk check` rules and a manifest for the T3 port.
