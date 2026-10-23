@@ -1,3 +1,14 @@
+## Owner deferral and app-building workflow correction — 2026-10-22
+
+Owner marked both Signal integration and Rust Messages incomplete and deferred;
+the current Messages & Signal launcher experience was rejected. Build-out remains
+paused. SDK and agent guidance now require an explicit visible outcome, early
+running primary flow, time checkpoints, focused scope and incremental debug builds.
+APP-BUILDING-GUIDE.md provides a reusable prompt and starter requirements. A future
+generator is a requirement, not an implemented command. No compiler or app build
+was run for this documentation update. Task workspace cleanup follows, preserving
+unrelated updater edits and the shared build cache.
+
 ## Favorite UI save, reopen and removal qualified privately — 2026-10-22
 
 The encrypted-keyring runner now also starts Rust Messages on Xvfb with a private

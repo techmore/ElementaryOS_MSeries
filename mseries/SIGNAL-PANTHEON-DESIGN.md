@@ -1,5 +1,15 @@
 # Rust Pantheon communications apps
 
+## Status: INCOMPLETE — deferred by owner (2026-10-22)
+
+Both the Signal Pantheon integration and Rust Messages experience are incomplete.
+The owner rejected the current Messages & Signal launcher experience and deferred
+further app work. Automated checks and installed previews do not constitute owner
+acceptance. Resume only on an explicit request. Remaining work includes the
+visible integration design, live client/phone acceptance, screenshot acceptance
+after a new login, and the open parity/accessibility/localization/release gates.
+Preserve the existing clients and source; do not mark these apps finished.
+
 ## Target
 
 The first-party Pantheon app suite should use Rust with GTK 4 and Granite-rs, following the existing `rust/claude-pantheon-rs` app (the T3 Code client) as its implementation and design reference. This request covers the T3 client, Signal and Messages as apps; it does not by itself change the compositor/session project.
