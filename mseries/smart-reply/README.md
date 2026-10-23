@@ -34,6 +34,10 @@ rules file allows by name. Terminals and password managers are always blocked, a
 group/other-writable file blocks everything. The model gets no tools and is told the conversation is data, not
 instructions. The `style` and `endpoint` keys of the old file are ignored: style and endpoint now come from `mseries-ai`.
 
+Chat bubbles in the accessibility tree are followed by a footer line (`09:14 · Delivered`, `09:13 · +1555… · Disappears in 3600 s`). The reader
+treats those as who-wrote-it markers, not as messages: a delivery status marks the message before it as yours, anything else as the
+contact's.
+
 **Verified:** unit tests (rules, legacy file, bounded walker, gate order with read counts, Tab/Esc state machine, IBus wire
 shapes); the reader on live Brave (Teams) and Signal windows; the input service on the real ibus-daemon with a test input
 context and a GTK entry (Tab commits once, Esc and any other key commit nothing, the previous engine is restored, a
