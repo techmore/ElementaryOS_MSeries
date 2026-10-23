@@ -250,6 +250,10 @@ pub fn new_id() -> String {
     glib::uuid_string_random().to_string()
 }
 
+fn saved_thread_branch(thread: &ThreadShell) -> Option<&str> {
+    thread.rest.get("branch").and_then(Value::as_str).map(str::trim).filter(|branch| !branch.is_empty())
+}
+
 impl App {
     pub fn build(application: &gtk::Application, started: Instant, quit_after_frame: bool) -> Rc<App> {
         Self::build_with_dock_surface(application, started, quit_after_frame, false)
@@ -2930,6 +2934,7 @@ impl App {
         self.window.set_title(Some(&format!("{title} - T3-R Pantheon")));
         self.subtitle.set_visible(true);
         self.subtitle.set_text(&subtitle);
+        self.subtitle.set_tooltip_text(Some(&base_subtitle));
         self.show_page(if cached.is_some() { "chat" } else { "busy" });
         self.composer.set_visible(true);
         self.composer_note.set_text(if cached.is_some() {
@@ -2980,6 +2985,39 @@ impl App {
             widgets: HashMap::new(),
             running,
         });
+        let project_path = self
+            .conn
+            .borrow()
+            .as_ref()
+            .and_then(|c| c.shell.projects.iter().find(|project| project.id == thread.project_id))
+            .map(|project| project.workspace_root.clone())
+            .filter(|path| !path.trim().is_empty());
+        if let Some(project_path) = project_path {
+            let saved_branch = saved_thread_branch(&thread).map(str::to_string);
+            let thread_id = thread.id.clone();
+            let app = self.clone();
+            glib::spawn_future_local(async move {
+                let Some(checkout_branch) = workflow::current_branch(&project_path).await else { return };
+                if app.generation.get() != generation {
+                    return;
+                }
+                let mut state = app.live.borrow_mut();
+                let Some(live) = state.as_mut().filter(|live| live.thread_id == thread_id) else { return };
+                let branch_context = match saved_branch.as_deref() {
+                    Some(saved) if saved == checkout_branch => "current checkout".to_string(),
+                    Some(_) => format!("checkout now {checkout_branch}"),
+                    None => format!("checkout branch {checkout_branch}"),
+                };
+                let previous = live.base_subtitle.clone();
+                let updated = format!("{previous} · {branch_context}");
+                live.base_subtitle = updated.clone();
+                let current = app.subtitle.text().to_string();
+                if let Some(suffix) = current.strip_prefix(&previous) {
+                    app.subtitle.set_text(&format!("{updated}{suffix}"));
+                    app.subtitle.set_tooltip_text(Some(&updated));
+                }
+            });
+        }
         if cached.is_some() {
             self.render_live();
             let note = label("Cached conversation · syncing current state…", &["caption", "dim-label"]);
@@ -3022,9 +3060,9 @@ impl App {
         let provider_name = provider.map(Provider::name).unwrap_or_else(|| thread.provider_instance_id.clone());
         let model = provider
             .and_then(|p| {
-                p.models
-                    .iter()
-                    .find(|m| m.key() == model_key || m.aliases.as_ref().is_some_and(|a| a.iter().any(|x| x == model_key)))
+                p.models.iter().find(|m| {
+                    m.key() == model_key || m.aliases.as_ref().is_some_and(|a| a.iter().any(|x| x == model_key))
+                })
             })
             .map(|m| m.display())
             .filter(|model| !model.is_empty())
@@ -3038,9 +3076,22 @@ impl App {
             .conn
             .borrow()
             .as_ref()
-            .and_then(|c| c.shell.projects.iter().find(|p| p.id == thread.project_id).map(|p| tilde(&p.workspace_root)))
-            .unwrap_or_default();
-        format!("{provider_name} · Model: {model} · {mode} · {project}")
+            .and_then(|c| c.shell.projects.iter().find(|p| p.id == thread.project_id).cloned());
+        let mut context = vec![format!("{provider_name} · Model: {model} · {mode}")];
+        if let Some(project) = &project {
+            if let Some(repo) = sidebar::repository_label(project) {
+                context.push(repo);
+            }
+        }
+        if let Some(branch) = saved_thread_branch(thread) {
+            context.push(format!("T3 branch {branch}"));
+        }
+        if let Some(path) =
+            project.as_ref().map(|project| tilde(&project.workspace_root)).filter(|path| !path.is_empty())
+        {
+            context.push(path);
+        }
+        context.join(" · ")
     }
 
     fn persist_thread_cache(&self, live: &mut Live) {

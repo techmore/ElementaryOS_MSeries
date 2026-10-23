@@ -138,8 +138,10 @@ to include open issues only.
 
 ## Composer
 
-The composer keeps a **Next message · Provider · Model** summary above its controls, while the thread header shows the
-provider's friendly model name when T3 supplies one. The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
+The composer keeps a **Next message · Provider · Model** summary above its controls. The thread header shows the
+provider's friendly model name, T3 repository identity and saved branch, project path, and the local checkout branch
+when that workspace is accessible. A differing checkout is shown alongside the saved T3 branch; the tooltip retains
+the full context if the header line is shortened. The message box grows to eight lines and then scrolls. Paste or drop images and files to attach
 them: each becomes a chip, uploaded through the server's `attachments.createUploadUrl` and sent with
 the message (10 attachments, 10 MB per image, 50 MB per file). Typing `@` opens a fuzzy picker over the
 thread's project (`projects.searchEntries`) and inserts `@path`. The draft is kept per thread in
