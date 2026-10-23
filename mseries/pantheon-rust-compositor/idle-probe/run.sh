@@ -28,7 +28,7 @@ xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session -- bash -c '
   export LOCK_LOG=$rt/locker.log
   printf "#!/bin/sh\nWAYLAND_DEBUG=1 exec gtklock 2>%s\n" "$LOCK_LOG" >"$rt/locker"; chmod +x "$rt/locker"
   env -u WAYLAND_DISPLAY PANTHEON_IDLE_LOCK=0 PANTHEON_LOCK_COMMAND="$rt/locker" "$BIN" --backend nested >"$LOG" 2>&1 &
-  comp=$!
+  comp=$!; export COMP_PID=$comp
   for _ in $(seq 1 60); do sock=$(ls "$rt" | grep "^wayland-[0-9]*$" | head -1 || true); [ -n "$sock" ] && break; sleep 0.25; done
   [ -n "${sock:-}" ] || { echo "compositor socket never appeared"; tail -5 "$LOG"; kill $comp; exit 3; }
   for _ in $(seq 1 40); do gdbus introspect --session --dest org.gnome.Mutter.IdleMonitor --object-path /org/gnome/Mutter/IdleMonitor/Core >/dev/null 2>&1 && break; sleep 0.25; done

@@ -1,0 +1,122 @@
+#!/usr/bin/python3 -I
+"""Lock the session with gtklock styled like elementary's greeter.
+
+The compositor runs this for org.gnome.ScreenSaver.Lock (Super+L) and for lock
+on idle. It reads the user's wallpaper, clock format, accent and light/dark
+preference, fills in their name and avatar, and execs gtklock with the layout
+and stylesheet from /usr/share/pantheon-rust-compositor/lock.
+
+PANTHEON_LOCK_DATA overrides the data directory (used by tests). Extra
+arguments are passed to gtklock.
+"""
+import html
+import os
+import pwd
+import sys
+import urllib.parse
+from pathlib import Path
+
+DATA = Path(os.environ.get('PANTHEON_LOCK_DATA', '/usr/share/pantheon-rust-compositor/lock'))
+
+# elementary accent → avatar gradient (light, dark), from the elementary palette.
+ACCENTS = {
+    'blueberry': ('#64baff', '#3689e6'), 'strawberry': ('#ff8c82', '#ed5353'),
+    'orange': ('#ffc27d', '#f37329'), 'banana': ('#fff394', '#f9c440'),
+    'lime': ('#d1ff82', '#68b723'), 'mint': ('#89ffdd', '#28bca3'),
+    'grape': ('#e4c6fa', '#a56de2'), 'bubblegum': ('#fe9ab8', '#de3e80'),
+    'cocoa': ('#a3907c', '#715344'), 'slate': ('#95a3ab', '#667885'),
+    'latte': ('#efdfc4', '#cfa25e'),
+}
+
+
+def setting(schema, key, default=None):
+    """A GSettings value, or `default` when gio, the schema or the key is missing."""
+    try:
+        import gi
+        gi.require_version('Gio', '2.0')
+        from gi.repository import Gio
+        source = Gio.SettingsSchemaSource.get_default()
+        found = source.lookup(schema, True) if source else None
+        if found is None or not found.has_key(key):
+            return default
+        return Gio.Settings.new(schema).get_value(key).unpack()
+    except Exception:  # never let a settings problem stop the session from locking
+        return default
+
+
+def wallpaper(dark):
+    uri = setting('org.gnome.desktop.background', 'picture-uri-dark' if dark else 'picture-uri', '') or ''
+    if dark and not uri:
+        uri = setting('org.gnome.desktop.background', 'picture-uri', '') or ''
+    if not uri.startswith('file://'):
+        return None
+    path = Path(urllib.parse.unquote(urllib.parse.urlparse(uri).path))
+    return path if path.is_file() else None
+
+
+def user_identity():
+    entry = pwd.getpwuid(os.getuid())
+    name = entry.pw_gecos.split(',')[0].strip() or entry.pw_name
+    for candidate in (Path('/var/lib/AccountsService/icons') / entry.pw_name, Path(entry.pw_dir) / '.face'):
+        if candidate.is_file() and os.access(candidate, os.R_OK):
+            return name, candidate
+    return name, None
+
+
+def css_url(path):
+    return 'file://' + urllib.parse.quote(str(path))
+
+
+def build(run_dir):
+    dark = setting('org.gnome.desktop.interface', 'color-scheme', '') == 'prefer-dark'
+    theme = setting('org.gnome.desktop.interface', 'gtk-theme', '') or 'io.elementary.stylesheet.blueberry'
+    accent = ACCENTS.get(theme.rsplit('.', 1)[-1], ACCENTS['blueberry'])
+    name, avatar = user_identity()
+    initial = name[:1].upper() or '?'
+
+    layout = (DATA / 'layout.ui').read_text()
+    layout = layout.replace('@USER_NAME@', html.escape(name)).replace('@AVATAR_INITIAL@', html.escape(initial))
+    style = (DATA / 'style.css').read_text()
+    style += f'\n/* per-user, written by pantheon-lock */\n#lock-avatar {{\n' \
+             f'    background-image: linear-gradient(to bottom, {accent[0]}, {accent[1]});\n}}\n' \
+             f'#unlock-button, #unlock-button:backdrop {{\n    background-color: {accent[1]};\n' \
+             f'    border-color: shade({accent[1]}, 0.8);\n}}\n' \
+             f'#unlock-button:hover {{\n    background-color: shade({accent[1]}, 1.08);\n}}\n' \
+             f'#unlock-button:active {{\n    background-color: shade({accent[1]}, 0.92);\n}}\n'
+    if avatar is not None:
+        style += f'#lock-avatar {{\n    background-image: url("{css_url(avatar)}");\n}}\n' \
+                 '#lock-avatar-initial {\n    opacity: 0;\n}\n'
+
+    (run_dir / 'layout.ui').write_text(layout)
+    (run_dir / 'style.css').write_text(style)
+
+    twelve_hour = setting('org.gnome.desktop.interface', 'clock-format', '24h') == '12h'
+    args = ['gtklock',
+            '--gtk-theme', theme,
+            '--layout', str(run_dir / 'layout.ui'),
+            '--style', str(run_dir / 'style.css'),
+            '--time-format', '%-l:%M' if twelve_hour else '%H:%M',
+            '--date-format', '%A, %B %-e']
+    picture = wallpaper(dark)
+    if picture is not None:
+        args += ['--background', str(picture)]
+    env = dict(os.environ)
+    if dark:
+        env['GTK_THEME'] = f'{theme}:dark'
+    return args, env
+
+
+def main():
+    runtime = Path(os.environ.get('XDG_RUNTIME_DIR') or f'/tmp/pantheon-lock-{os.getuid()}')
+    run_dir = runtime / 'pantheon-lock'
+    try:
+        run_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        args, env = build(run_dir)
+    except Exception as error:  # fall back to stock gtklock rather than not locking
+        print(f'pantheon-lock: {error}; starting gtklock unstyled', file=sys.stderr)
+        args, env = ['gtklock'], dict(os.environ)
+    os.execvpe(args[0], args + sys.argv[1:], env)
+
+
+if __name__ == '__main__':
+    main()

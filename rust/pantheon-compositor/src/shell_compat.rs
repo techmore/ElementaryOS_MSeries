@@ -372,8 +372,10 @@ fn serve_shell_compat(context: ShellCompatContext) {
         return;
     }
 
-    let lock_command =
-        std::env::var_os("PANTHEON_LOCK_COMMAND").unwrap_or_else(|| OsString::from("gtklock"));
+    let lock_command = lock_command(
+        std::env::var_os("PANTHEON_LOCK_COMMAND"),
+        std::path::Path::new(STYLED_LOCKER).is_file(),
+    );
     let lock_running = Arc::new(Mutex::new(false));
     let screensaver = ScreenSaverCompat {
         wayland_display,
@@ -429,6 +431,23 @@ fn serve_shell_compat(context: ShellCompatContext) {
             Err(_) => return,
         }
     }
+}
+
+/// The elementary-styled gtklock wrapper shipped with the session package.
+const STYLED_LOCKER: &str = "/usr/bin/pantheon-lock";
+
+/// `PANTHEON_LOCK_COMMAND` wins; otherwise the styled wrapper when it is
+/// installed, else stock gtklock.
+fn lock_command(configured: Option<OsString>, styled_installed: bool) -> OsString {
+    configured
+        .filter(|command| !command.is_empty())
+        .unwrap_or_else(|| {
+            OsString::from(if styled_installed {
+                STYLED_LOCKER
+            } else {
+                "gtklock"
+            })
+        })
 }
 
 fn run_osd_expiry(receiver: mpsc::Receiver<Instant>, redraw_sender: Sender<()>) {
@@ -508,4 +527,24 @@ pub(crate) fn matches_accelerator(
 
 fn same_accelerator(left: ParsedAccelerator, right: ParsedAccelerator) -> bool {
     left.keysym == right.keysym && left.modifiers == right.modifiers
+}
+
+#[cfg(test)]
+mod lock_command_tests {
+    use super::{STYLED_LOCKER, lock_command};
+    use std::ffi::OsString;
+
+    #[test]
+    fn styled_locker_is_the_default_when_installed() {
+        assert_eq!(lock_command(None, true), OsString::from(STYLED_LOCKER));
+        assert_eq!(lock_command(None, false), OsString::from("gtklock"));
+        assert_eq!(
+            lock_command(Some(OsString::from("swaylock")), true),
+            OsString::from("swaylock")
+        );
+        assert_eq!(
+            lock_command(Some(OsString::new()), true),
+            OsString::from(STYLED_LOCKER)
+        );
+    }
 }

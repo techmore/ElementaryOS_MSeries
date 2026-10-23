@@ -25,6 +25,11 @@ on:
       - "docs/local-build-status.html"
       - ".github/workflows/**"
 
+# New commits replace only checks for this workflow and PR. Publishing is not preempted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   teams-web:
     name: Teams desktop launcher contracts
@@ -261,23 +266,53 @@ jobs:
       - name: Syntax, shellcheck and unit checks (bash mseries/validate.sh)
         run: bash mseries/validate.sh
 
-      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290 after
-      # two one-second retries). Keep the pinned tarball in the Actions cache and,
-      # on a miss, retry for up to ~3 minutes before giving up.
+      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290, and again on 2026-10-23 for several
+      # branches at once, after six 30-second retries each). The tarball is kept in the Actions cache. On a miss:
+      # download with the job token (authenticated requests are limited separately), retry with growing waits, and
+      # fall back to a shallow `git fetch` of the same commit, which does not go through codeload. `git archive` with
+      # the same prefix gives the layout validate-dock-patches.py expects (`linux-<sha>/...`). The cache is saved
+      # right after a successful download, so a later failing step cannot throw the tarball away.
       - name: Restore the pinned Fairydust source tarball
         id: fairydust-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/fairydust.tar.gz
           key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Download the pinned Fairydust source tarball
         if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          curl --fail --location --retry 6 --retry-delay 30 --retry-all-errors \
-            --proto '=https' --tlsv1.2 \
-            https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
-            -o "$RUNNER_TEMP/fairydust.tar.gz"
+          sha=ce9f2eba72c061a50b2d790450e90af3439d8c24
+          out="$RUNNER_TEMP/fairydust.tar.gz"
+          fetched=false
+          for wait in 0 20 60 120; do
+            sleep "$wait"
+            if curl --fail --location --proto '=https' --tlsv1.2 \
+                 -H "Authorization: Bearer $GH_TOKEN" \
+                 "https://codeload.github.com/AsahiLinux/linux/tar.gz/$sha" -o "$out"; then
+              fetched=true
+              break
+            fi
+            echo "::warning::codeload download failed; retrying after the next wait"
+          done
+          if [ "$fetched" != true ]; then
+            echo "::warning::codeload kept failing; falling back to a shallow git fetch of $sha"
+            rm -f "$out"
+            src="$RUNNER_TEMP/fairydust-src"
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" fetch -q --depth 1 https://github.com/AsahiLinux/linux.git "$sha"
+            git -C "$src" archive --format=tar.gz --prefix="linux-$sha/" -o "$out" FETCH_HEAD
+          fi
+          test -s "$out"
+      - name: Save the pinned Fairydust source tarball
+        if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/fairydust.tar.gz
+          key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Validate experimental dock patches offline
         run: |
           set -euo pipefail
