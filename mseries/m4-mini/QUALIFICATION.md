@@ -23,6 +23,53 @@ repeatedly request an inventory until availability changes.
 | Dual boot | Full pinned installer has 26 passing fixture/mock tests; synthetic macOS 27 selects separate IPSW; M4 command-line installer refuses generic disk erase; graphical installer omitted | Metadata-preserving GPT/verity import, owner partition/free-space facts, macOS/Recovery round trip and recovery plan |
 | Lifecycle | Gravity reports flaky shutdown/reboot and unsupported sleep; sleep policy packaged | Physical restart/shutdown behavior; do not enable sleep based on assembly |
 
+## Native M4 acceptance sequence
+
+All steps below remain open. Start with a verified macOS backup. The first Linux
+session must boot from a disposable external device through the matched Apple
+boot chain; do not write to the internal SSD or change its partition map during
+hardware qualification.
+
+1. **Identify the exact machine and firmware.** In macOS, run
+   `bash macos-inventory.sh` and record model identifier, chip, memory, macOS
+   build, SSD capacity/free space, Ethernet PCI identity, and connected HDMI
+   mode. Confirm the expected J773g/Mac16,10 target rather than relying on the
+   order description. Record the selected Linux stub firmware version and the
+   external-boot/security approval state separately from macOS 27.
+2. **Prove boot and recovery paths.** Boot the research system from external
+   media with the matched m1n1/U-Boot/kernel/DTB/firmware set. Confirm the
+   `apple,j773g` board identity, 16 KiB kernel, built-in ISO/CD drivers, built-in
+   Apple watchdog, successful takeover before initramfs timeout, and the M4 WFI
+   preservation message. Boot back to macOS, then Recovery, before any internal
+   storage write.
+3. **Exercise CPU, memory, storage, USB, and PCIe.** Confirm all cores online,
+   the full 16 GB memory map, no kernel faults under sustained CPU and FP/SIMD
+   integrity stress, and clean NVMe/USB/PCIe enumeration. Check NVMe health and
+   run file-based read/write stress only on a disposable external filesystem;
+   never run raw-device write tests on the internal drive.
+4. **Qualify HDMI and graphics.** With the owner's monitor on the mini's HDMI
+   port, test cold boot, hotplug, supported modes, repeated modesets, video
+   playback, suspend-free screen blank/unblank, and GPU load. Capture kernel
+   logs and Mesa renderer/device identity. Check for display loss, GPU reset,
+   hangs, or corrupted rendering. Do not treat llvmpipe or QEMU output as a pass.
+5. **Qualify both network paths.** Record PCI IDs and driver binding. For the
+   10 Gb option, verify `ethtool` reports 10000 Mb/s full duplex against a
+   capable peer, run sustained bidirectional traffic, and check errors, link
+   recovery, reboot, and thermal behavior. Also test the 1 Gb path if present.
+   Test Wi-Fi/Bluetooth only with this mini's own calibration data; never copy
+   radio calibration from another Mac.
+6. **Check thermal, audio, and lifecycle limits.** Observe fan/temperature
+   behavior under CPU/GPU load. Test external audio first; internal-speaker
+   safety remains unqualified until protection assumptions are measured. Keep
+   suspend disabled. Test shutdown/reboot only after the external boot and
+   macOS/Recovery return paths are reliable because Gravity reports these as
+   flaky.
+7. **Only then evaluate dual boot.** Confirm actual free space, APFS/GPT layout,
+   backups, and a recovery plan. The current candidate has no installer
+   admission; persistent installation, metadata-preserving partition changes,
+   macOS boot, Linux boot, and Recovery round trips each need separate review
+   and acceptance before any internal-drive write.
+
 For host facts, run `bash macos-inventory.sh` on the mini in macOS. The script
 uses read-only commands and selects model/memory, host firmware, Ethernet PCI
 IDs, display mode and capacity fields. Serial-number/MAC-address fields are not
