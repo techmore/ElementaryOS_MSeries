@@ -46,7 +46,9 @@ sys.exit(int(os.environ.get('CHILD_MODE', '0')))
         generation = '\n'.join(f'{key}={shlex.quote(str(value))}' for key, value in variables.items())
         subprocess.run(['bash', '-c', generation + '\n' + launcher[0]], check=True)
         subprocess.run(['sh', '-n', self.wrapper], check=True)
-        self.env = os.environ | {'HOME': str(self.home), 'PATH': str(tools) + ':' + os.environ['PATH']}
+        # CI runners export XDG_CONFIG_HOME; keep the opt-out marker inside the private home.
+        self.env = os.environ | {'HOME': str(self.home), 'XDG_CONFIG_HOME': str(self.home / '.config'),
+                                 'PATH': str(tools) + ':' + os.environ['PATH']}
 
     @staticmethod
     def write_executable(path, content):
@@ -68,10 +70,36 @@ sys.exit(int(os.environ.get('CHILD_MODE', '0')))
             process.wait()
         self.addCleanup(cleanup)
         deadline = time.monotonic() + 3
-        while not self.child_pid.exists() and time.monotonic() < deadline:
+        child = None
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                break
+            try:
+                value = self.child_pid.read_text().strip()
+            except FileNotFoundError:
+                value = ''
+            if value.isdecimal():
+                child = int(value)
+                break
             time.sleep(.01)
-        self.assertTrue(self.child_pid.exists())
-        return process, int(self.child_pid.read_text())
+        self.assertIsNotNone(child, 'dock child did not publish a PID before timeout')
+        self.assertGreater(child, 0)
+        return process, child
+
+    def test_user_disabled_blocks_patched_and_stock_fallback(self):
+        marker = self.home / '.config/mseries/dock/user-disabled'
+        marker.parent.mkdir(parents=True)
+        marker.touch()
+        self.patched.unlink()  # Even a missing patched binary must not start stock.
+        process = subprocess.Popen(['sh', self.wrapper], env=self.env)
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                process.wait(timeout=.15)
+            self.assertFalse(self.stock_ran.exists())
+            self.assertFalse(self.child_pid.exists())
+        finally:
+            process.terminate()
+            process.wait(timeout=3)
 
     def test_normal_exit_does_not_fallback(self):
         self.assertEqual(self.run_wrapper(), 0)

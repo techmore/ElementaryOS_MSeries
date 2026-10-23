@@ -1,5 +1,31 @@
 # Hardware test receipts and release freezes
 
+
+## October 21 follow-up: all three dock ports show picture
+
+Owner's later rear-left confirmation supersedes initial failure. Front-left,
+rear-left and right each show external 1080p/60. Pilot one-cycle timings≈4.5s
+partner-detection→desktop per port; 0.5 s polling and corrections disclosed.
+[Follow-up](2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md).
+Source/kernel unchanged; no stable/recovery/suspend/power qualification follows.
+
+## October 21: first 7.2 wip2 boot, incomplete qualification
+
+[Report](2026-10-21-j314s-wip2-first-boot/REPORT.md): live Image/build ID,
+91 early modules, package and unchanged selected legacy shared DTB payload
+verified. Boot/PMP/idle, real M1 Pro shader/readback and 1 MiB fsync pass. Owner
+confirms internal display/input; front-left dock picture works with delay,
+hinge-side left fails, right untested. External 1080p/60 observed. One-shot
+consumed, `.20` default retained. Actual recovery/suspend/power acceptance remains
+open. This does not change existing frozen release labels.
+
+October 20 observation: `.20-enh1` is running with a matching live/image build
+ID, PMP ready and internal plus dock DP displays connected. Two retained earlier
+candidate captures passed scoped GPU/fsync smoke. This boot's automated capture
+failed on Rust DisplayConfig's missing `PowerSaveMode`; mode enumeration works.
+No suspend/recovery or matched power acceptance follows. Details are in the
+[desktop/kernel handoff](../../OS9-HANDOFF.md#window-snapping-recovery-and-dock-focus-audit--2026-10-20).
+
 ## Later hotplug and module cleanup — 2026-10-18
 
 [Follow-up report](2026-10-18-j314s-hotplug-and-module-cleanup.md): orphan `.19`/Fairydust module trees archived and

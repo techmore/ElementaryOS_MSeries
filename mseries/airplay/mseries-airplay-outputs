@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""AirPlay outputs: a clickable dot per AirPlay receiver; filled = active.
+"""AirPlay outputs: select the receivers to include in AirPlay Group.
 
 Active receivers are members of one combine-stream sink, "AirPlay Group", that plays to all of
 them at once. Choose "AirPlay Group" in Sound Output (or the button here) to send audio to it.
-Switching a dot only loads/unloads that one extra PipeWire module; the rest of the audio
+Changing a selection only loads/unloads that one extra PipeWire module; the rest of the audio
 graph and the default output are never touched unless you press the button.
 
   mseries-airplay-outputs                GTK window
@@ -13,7 +13,7 @@ graph and the default output are never touched unless you press the button.
   mseries-airplay-outputs apply          make the graph match the saved choice (login autostart)
   mseries-airplay-outputs --screenshot PATH   render the window to a PNG (use with MSERIES_AIRPLAY_FAKE=1)
 """
-import json, os, subprocess, sys, time
+import json, os, subprocess, sys, time, threading
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import airplay_core as core
@@ -99,84 +99,120 @@ def cli(argv):
 def gui(shot=None):
     import gi
     gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk, GLib
-    css = Gtk.CssProvider()
-    css.load_from_data(b"""
-      .dot { min-width: 22px; min-height: 22px; padding: 0; border-radius: 999px; border: 2px solid #8a8a8a; background: transparent; }
-      .dot.on { background: #3689e6; border-color: #3689e6; }
-      .dot:hover { border-color: #3689e6; }
-      .status { opacity: .65; }""")
-    Gtk.StyleContext.add_provider_for_screen(__import__("gi.repository.Gdk", fromlist=["Gdk"]).Screen.get_default(),
-                                             css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    from gi.repository import Gtk, GLib, Pango
     win = Gtk.Window(title="AirPlay Outputs")
     win.set_default_size(360, -1)
     win.set_border_width(12)
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     win.add(box)
     head = Gtk.Label(xalign=0)
-    head.set_markup("<b>AirPlay Outputs</b>")
+    head.set_markup("<b>AirPlay outputs</b>")
     box.pack_start(head, False, False, 0)
     rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
     box.pack_start(rows, False, False, 0)
     status = Gtk.Label(xalign=0, wrap=True)
-    status.get_style_context().add_class("status")
+    status.get_style_context().add_class("dim-label")
     use = Gtk.Button(label="Play to AirPlay Group")
     box.pack_start(status, False, False, 4)
     box.pack_start(use, False, False, 0)
-    saved = set(core.load_state())
+    saved = set()
+    alive = True
+    busy = False
+    destinations = []
 
     def say(text):
         status.set_text(text)
 
-    def on_dot(btn, key, name):
-        nonlocal saved
-        was = key in saved
-        try:
-            set_enabled(key, not was)
-        except Exception as e:  # noqa: BLE001 - show any failure in the window
-            say("Could not change %s: %s" % (name, e))
-            return
-        saved = set(core.load_state())
-        say("%s %s." % (name, "off" if was else "on"))
-        rebuild()
-
     def rebuild():
-        for c in rows.get_children():
-            rows.remove(c)
-        dests = core.destinations(pw_dump())
-        for d in dests:
+        for child in rows.get_children():
+            rows.remove(child)
+        for destination in destinations:
             row = Gtk.Box(spacing=10)
-            dot = Gtk.Button(relief=Gtk.ReliefStyle.NONE)
-            ctx = dot.get_style_context()
-            ctx.add_class("dot")
-            on = d["key"] in saved
-            if on:
-                ctx.add_class("on")
-            dot.set_tooltip_text("%s: %s" % (d["name"], "on – click to turn off" if on else "off – click to turn on"))
-            dot.get_accessible().set_name("%s, %s" % (d["name"], "on" if on else "off"))
-            dot.connect("clicked", on_dot, d["key"], d["name"])
-            row.pack_start(dot, False, False, 0)
-            row.pack_start(Gtk.Label(label=d["name"], xalign=0), True, True, 0)
+            on = destination["key"] in saved
+            # A persistent receiver selection is a native boolean control.
+            toggle = Gtk.CheckButton(label=destination["name"])
+            label = toggle.get_child()
+            label.set_line_wrap(True)
+            label.set_max_width_chars(34)
+            label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            toggle.set_active(on)
+            toggle.set_tooltip_text(destination["name"] + " — Include this receiver in AirPlay Group")
+            toggle.connect("toggled", on_toggle, destination["key"], destination["name"])
+            row.pack_start(toggle, True, True, 0)
             rows.pack_start(row, False, False, 3)
-        if not dests:
-            rows.pack_start(Gtk.Label(label="No AirPlay receivers found on the network.", xalign=0), False, False, 0)
-        n = len([d for d in dests if d["key"] in saved])
-        use.set_sensitive(n > 0)
-        if not status.get_text():
-            say("%d active. Active receivers play together as “AirPlay Group”." % n)
+        if not destinations:
+            label = Gtk.Label(label="No AirPlay receivers found. Check your network and try again.",
+                              xalign=0, wrap=True)
+            rows.pack_start(label, False, False, 0)
+        rows.set_sensitive(not busy)
+        use.set_sensitive(not busy and any(d["key"] in saved for d in destinations))
+        refresh.set_sensitive(not busy)
         rows.show_all()
 
-    def use_group(_b):
-        gid = core.group_sink(pw_dump())
-        if gid is None:
-            say("The AirPlay Group is not running yet.")
+    def complete(result, error, success_message):
+        nonlocal busy, saved, destinations
+        if not alive:
+            return False
+        busy = False
+        if error:
+            say("Could not update AirPlay receivers. Check your network and try again.")
+        else:
+            destinations, saved = result
+            say(success_message or "%d selected. Selected receivers play together as AirPlay Group." %
+                sum(d["key"] in saved for d in destinations))
+        rebuild()
+        return False
+
+    def start(operation=None, message="Finding AirPlay receivers…", success_message=None):
+        nonlocal busy
+        if busy or not alive:
             return
-        r = subprocess.run(["wpctl", "set-default", str(gid)], capture_output=True, text=True)
-        say("Default output is now AirPlay Group." if r.returncode == 0 else "wpctl failed: " + r.stderr.strip())
+        busy = True
+        rows.set_sensitive(False)
+        use.set_sensitive(False)
+        refresh.set_sensitive(False)
+        say(message)
+
+        def work():
+            try:
+                if operation is not None:
+                    operation()
+                result = (core.destinations(pw_dump()), set(core.load_state()))
+                error = None
+            except Exception as exc:  # Backend failures must not break the GTK loop.
+                result, error = None, type(exc).__name__
+            GLib.idle_add(complete, result, error, success_message)
+        threading.Thread(target=work, daemon=True).start()
+
+    def on_toggle(button, key, name):
+        on = button.get_active()
+        start(lambda: set_enabled(key, on), "Updating AirPlay receivers…",
+              "%s %s." % (name, "selected" if on else "removed"))
+
+    def use_group(_button):
+        def operation():
+            group = core.group_sink(pw_dump())
+            if group is None:
+                raise RuntimeError("AirPlay Group is not running")
+            if not FAKE:
+                result = subprocess.run(["wpctl", "set-default", str(group)],
+                                        capture_output=True, text=True, timeout=10)
+                if result.returncode:
+                    raise RuntimeError("Could not choose AirPlay Group")
+        start(operation, "Choosing AirPlay Group…", "Default output is now AirPlay Group.")
+
+    refresh = Gtk.Button(label="Refresh")
+    refresh.connect("clicked", lambda _button: start())
+    box.pack_start(refresh, False, False, 0)
+
+    def close(_window):
+        nonlocal alive
+        alive = False
+        Gtk.main_quit()
 
     use.connect("clicked", use_group)
-    rebuild()
-    win.connect("destroy", Gtk.main_quit)
+    start()
+    win.connect("destroy", close)
     win.show_all()
     if shot:
         def snap():
@@ -184,9 +220,9 @@ def gui(shot=None):
             w = win.get_window()
             pb = Gdk.pixbuf_get_from_window(w, 0, 0, w.get_width(), w.get_height())
             pb.savev(shot, "png", [], [])
-            Gtk.main_quit()
+            win.destroy()
         if FAKE and os.environ.get("MSERIES_AIRPLAY_CLICK"):
-            GLib.timeout_add(300, lambda: [b for b in rows.get_children()[0].get_children() if isinstance(b, Gtk.Button)][0].clicked() and False)
+            GLib.timeout_add(300, lambda: [b for b in rows.get_children()[0].get_children() if isinstance(b, Gtk.CheckButton)][0].set_active(True) and False)
         GLib.timeout_add(900, snap)
     Gtk.main()
 

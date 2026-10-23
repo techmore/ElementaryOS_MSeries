@@ -94,20 +94,91 @@ def account_row(row: dict[str, Any], now: dt.datetime) -> dict[str, Any] | None:
     usage = row.get("usage") if isinstance(row.get("usage"), dict) else {}
     windows = [w for w in (window("primary", "5 hour", 300, usage.get("fiveHour"), now),
                            window("secondary", "7 day", 10080, usage.get("sevenDay"), now)) if w]
+    # Model-scoped weekly caps (Fable today) ride along as extra windows. They are marked "scoped" so the panel
+    # draws them but never lets one cap decide which account has the most headroom for other models.
+    for item in usage.get("scoped") if isinstance(usage.get("scoped"), list) else []:
+        name = item.get("name") if isinstance(item, dict) else None
+        scoped = window("scoped", name.strip()[:16], 0, item, now) if isinstance(name, str) and name.strip() else None
+        if scoped:
+            scoped["scoped"] = True
+            windows.append(scoped)
     return {"number": number, "email": email, "active": bool(row.get("active")), "windows": windows,
             "status": row.get("usageStatus") if isinstance(row.get("usageStatus"), str) else ""}
 
 
+PLAN_TTL_SECONDS = 6 * 3600
+PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
+
+
+def plan_name(organization_type: Any, tier: Any) -> str:
+    """claude_max + default_claude_max_20x -> "max20x"; a subscription label, never an identifier."""
+    kind = organization_type.lower().removeprefix("claude_") if isinstance(organization_type, str) else ""
+    tier = tier.lower() if isinstance(tier, str) else ""
+    if kind == "max":
+        return "max20x" if "20x" in tier else "max5x" if "5x" in tier else "max"
+    return kind if kind in {"free", "pro", "team", "enterprise"} else ""
+
+
+def fetch_profile(token: str) -> dict[str, Any] | None:
+    """Anthropic's own profile endpoint for one login: its current plan, unlike the token's issue-time stamp."""
+    import urllib.request
+    request = urllib.request.Request(PROFILE_URL, headers={"Authorization": f"Bearer {token}",
+                                                           "anthropic-beta": "oauth-2025-04-20"})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            data = json.loads(response.read())
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def profile_plan(uuid: str, credentials: list[dict[str, Any]], now: float | None = None) -> str:
+    """The plan Anthropic reports now, cached per account; uses an unexpired saved token, never refreshes one."""
+    if not uuid:
+        return ""
+    now = time.time() if now is None else now
+    name = "claude-plan-" + re.sub(r"[^A-Za-z0-9-]", "", uuid)
+    entry = codexbar_cache.load(name).get("entry")
+    entry = entry if isinstance(entry, dict) else None
+    cached = entry.get("data") if entry and isinstance(entry.get("data"), str) else ""
+    if entry and (codexbar_cache.is_fresh(entry, PLAN_TTL_SECONDS, now) or codexbar_cache.in_backoff(entry, now)):
+        return cached
+    for data in credentials:
+        oauth = data.get("claudeAiOauth") if isinstance(data.get("claudeAiOauth"), dict) else {}
+        token, expires = oauth.get("accessToken"), oauth.get("expiresAt")
+        if not isinstance(token, str) or not isinstance(expires, (int, float)) or expires / 1000 < now + 60:
+            continue
+        profile = fetch_profile(token)
+        account = profile.get("account") if profile and isinstance(profile.get("account"), dict) else {}
+        organization = profile.get("organization") if profile and isinstance(profile.get("organization"), dict) else {}
+        if account.get("uuid") != uuid:
+            continue  # a token that answers for someone else is not this account's plan
+        plan = plan_name(organization.get("organization_type"), organization.get("rate_limit_tier"))
+        if plan:
+            codexbar_cache.store(name, {"entry": codexbar_cache.succeeded(plan, now)})
+            return plan
+    if any(isinstance(d.get("claudeAiOauth"), dict) for d in credentials):
+        codexbar_cache.store(name, {"entry": codexbar_cache.failed(entry, now)})
+    return cached
+
+
 def account_plan(number: int, email: str, active: bool = False) -> str:
-    """Read subscription metadata only; never return credentials or change a saved login."""
+    """Current subscription: Anthropic's profile, then the freshest local profile copy, then the token's stamp.
+
+    The token's subscriptionType is fixed when it is issued, so an upgrade (Pro to Max) never shows there.
+    Only plan labels leave this function; credentials and identifiers stay inside it.
+    """
     xdg = os.environ.get("XDG_DATA_HOME", "")
     root = pathlib.Path(xdg) if xdg and os.path.isabs(xdg) else pathlib.Path.home() / ".local/share"
     paths = (root / "claude-swap" / "credentials").glob(f".creds-{number}-*.enc")
     saved = next((p for p in paths if p.name == f".creds-{number}-{email}.enc"), None)
     credentials: list[dict[str, Any]] = []
+    profiles: list[dict[str, Any]] = []
     if active:
         home = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR") or pathlib.Path.home() / ".claude")
         credentials.append(read_json(home / ".credentials.json"))
+        base = os.environ.get("CLAUDE_CONFIG_DIR") or str(pathlib.Path.home())
+        profiles.append(read_json(pathlib.Path(base) / ".claude.json").get("oauthAccount") or {})
     if saved is not None:
         try:
             data = json.loads(base64.b64decode(saved.read_bytes(), validate=True))
@@ -115,6 +186,22 @@ def account_plan(number: int, email: str, active: bool = False) -> str:
                 credentials.append(data)
         except (OSError, ValueError):
             pass
+    configs = list((root / "claude-swap" / "configs").glob(f".claude-config-{number}-*.json"))
+    config = next((c for c in configs if c.name == f".claude-config-{number}-{email}.json"), None)
+    if config is not None:
+        profiles.append(read_json(config).get("oauthAccount") or {})
+    profiles = [p for p in profiles if isinstance(p, dict) and isinstance(p.get("emailAddress"), str)
+                and p["emailAddress"].lower() == email.lower()]
+    uuid = next((p["accountUuid"] for p in profiles if isinstance(p.get("accountUuid"), str)), "")
+    plan = profile_plan(uuid, credentials)
+    if plan:
+        return plan
+    profiles.sort(key=lambda p: p.get("profileFetchedAt") if isinstance(p.get("profileFetchedAt"), (int, float)) else 0,
+                  reverse=True)
+    for profile in profiles:
+        plan = plan_name(profile.get("organizationType"), profile.get("organizationRateLimitTier"))
+        if plan:
+            return plan
     for data in credentials:
         oauth = data.get("claudeAiOauth")
         plan = oauth.get("subscriptionType") if isinstance(oauth, dict) else None
@@ -553,11 +640,20 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
             account["desktopReady"] = True
         except (OSError, ValueError):
             account["desktopReady"] = False
+    # Desktop Code sessions use the app login. Keep CLI identity intact for switching,
+    # and explicitly select the account whose quota the desktop indicator presents.
+    display_uuid = desktop["accountUuid"] if desktop["installed"] else ""
+    for account in accounts:
+        account["panelActive"] = account["desktopActive"] if display_uuid else account["active"]
+    selected = next((a for a in accounts if a["panelActive"]), None)
+    display_email = (desktop["email"] if display_uuid else active_email)
+    display_plan = selected["plan"] if selected else ""
     note = desktop_note(desktop, active_email, cli_uuid)
     result: dict[str, Any] = {
         "available": True, "accounts": accounts, "activeEmail": active_email, "activePlan": active_plan,
         "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
-        "desktopNote": note, "desktopSnapshotError": snapshot_error}
+        "desktopNote": note, "desktopSnapshotError": snapshot_error,
+        "displayEmail": display_email, "displayPlan": display_plan}
     if listed is None:
         result["failed"] = True  # cswap did not answer; the caller may prefer its last good listing
     return result

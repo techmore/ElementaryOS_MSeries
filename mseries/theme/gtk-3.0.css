@@ -7,6 +7,11 @@
 @define-color STRAWBERRY_700 #c47e86;
 @define-color error_color #f0b5ba;
 
+/* Match GTK4 and Gala's provisional built-in display/window corner radius. */
+window.csd {
+  border-radius: 20px;
+}
+
 /* Muted rose feedback: retain a visible error cue without a vivid red edge. */
 @define-color STRAWBERRY_100 #f7d0d3;
 @define-color STRAWBERRY_900 #9a5d65;

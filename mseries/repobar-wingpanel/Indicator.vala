@@ -16,6 +16,7 @@ namespace MSeries {
         private Gtk.Label panel_prs;
         private Gtk.Label panel_issues;
         private Gtk.Label panel_alert;
+        private Gtk.Label panel_running;
         private Gtk.Box menu;
         private Gtk.ListBox repo_list;
         private Gtk.Overlay list_overlay;
@@ -49,10 +50,16 @@ namespace MSeries {
         private string last_render_key = "";
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
+        private bool notify_workflows = true;
+        private int merge_window_minutes = 60;
+        private string running_summary = "";
         private bool show_contributions = true;
         private string contribution_style = "dots";
         private bool contributions_expanded = false;
         private string local_root = "";
+        // "Show RepoBar in the panel" (settings.json showInPanel): off hides the module and stops refreshing and notifying.
+        private bool panel_enabled = true;
+        private uint settings_generation = 0;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -61,24 +68,39 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar");
 
-            // Panel item: GitHub mark, open PRs and issues, and a red mark only while default-branch CI fails.
+            // Panel item: GitHub mark, open PRs and issues, and a status dot (red failing, yellow pending, green recent merge).
             panel = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
             panel.add_css_class ("mseries-repobar-bar");
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
             mark.add_css_class ("repo-mark");
             panel.append (mark);
+            // Two stacked columns keep the readout narrow: PR over issue counts, then running workflows over a recent merge.
             // GitHub's own pull request and issue marks label the two counts.
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 2 });
-            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
+            var counts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            counts.add_css_class ("repo-counts");
+            var pull_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            pull_row.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_prs.add_css_class ("seg-value");
-            panel.append (panel_prs);
-            panel.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 4 });
-            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER };
+            pull_row.append (panel_prs);
+            counts.append (pull_row);
+            var issue_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            issue_row.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER });
+            panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START };
             panel_issues.add_css_class ("seg-value");
-            panel.append (panel_issues);
-            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, visible = false };
+            issue_row.append (panel_issues);
+            counts.append (issue_row);
+            panel.append (counts);
+            var alerts = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            alerts.add_css_class ("repo-alerts");
+            panel_running = new Gtk.Label ("") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
+            panel_running.add_css_class ("seg-alert");
+            panel_running.add_css_class ("alert-pending");
+            alerts.append (panel_running);
+            panel_alert = new Gtk.Label ("●") { valign = Gtk.Align.CENTER, halign = Gtk.Align.START, visible = false };
             panel_alert.add_css_class ("seg-alert");
-            panel.append (panel_alert);
+            alerts.append (panel_alert);
+            panel.append (alerts);
             panel.set_tooltip_text ("RepoBar · loading GitHub status… · Middle-click to refresh");
             var click = new Gtk.GestureClick () { button = 2 };
             click.released.connect (() => refresh ());
@@ -87,7 +109,7 @@ namespace MSeries {
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
                 margin_top = 8, margin_bottom = 6, margin_start = 8, margin_end = 8,
-                width_request = 360
+                width_request = 460
             };
             menu.add_css_class ("mseries-repobar");
             install_style (menu.get_display ());
@@ -219,6 +241,29 @@ namespace MSeries {
             watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
             // Draw the last cached snapshot at once; the helper's answer replaces it when it arrives.
+            apply_panel_enabled ();
+        }
+
+        private static bool read_panel_enabled () {
+            try {
+                var parser = new Json.Parser ();
+                parser.load_from_file (GLib.Path.build_filename (Environment.get_user_config_dir (), "mseries", "repobar", "settings.json"));
+                return parser.get_root ().get_object ().get_boolean_member_with_default ("showInPanel", true);
+            } catch (Error e) {
+                return true;
+            }
+        }
+
+        /* Applies the show-in-panel preference: hidden means no GitHub requests, timers or notifications until it is turned back on. */
+        private void apply_panel_enabled () {
+            panel_enabled = read_panel_enabled ();
+            this.visible = panel_enabled;
+            if (!panel_enabled) {
+                if (refresh_source != 0) Source.remove (refresh_source);
+                refresh_source = 0;
+                refresh_interval = 0;
+                return;
+            }
             render_cached ();
             schedule_refresh (300);
             load_snapshot ();
@@ -227,18 +272,18 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
-                ".mseries-repobar { font-size: 9pt; } " +
-                ".mseries-repobar .caption { font-size: 8pt; } " +
+                ".mseries-repobar { font-size: 1.3em; } " +
+                ".mseries-repobar .caption { font-size: 0.889em; } " +
                 ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar .repo-card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-repobar row:hover .repo-card { background: alpha(currentColor, 0.09); } " +
-                ".mseries-repobar .repo-name { font-weight: 700; font-size: 9.5pt; } " +
-                ".mseries-repobar .repo-owner { font-size: 8pt; opacity: 0.6; } " +
-                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .repo-name { font-weight: 700; font-size: 1.056em; } " +
+                ".mseries-repobar .repo-owner { font-size: 0.889em; opacity: 0.6; } " +
+                ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .count.zero { opacity: 0.45; font-weight: 400; } " +
-                ".mseries-repobar .window-name { font-weight: 700; font-size: 7.5pt; opacity: 0.75; } " +
-                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                ".mseries-repobar .window-name { font-weight: 700; font-size: 0.833em; opacity: 0.75; } " +
+                ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 0.833em; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-repobar .chip.bad { background: alpha(@error_color, 0.2); color: @error_color; } " +
                 ".mseries-repobar button.chip { min-height: 0; min-width: 0; } " +
@@ -255,12 +300,13 @@ namespace MSeries {
                 ".mseries-repobar button.compact { padding: 0 4px; min-height: 0; min-width: 0; } " +
                 ".mseries-repobar button.link-row { padding: 1px 4px; min-height: 0; border-radius: 6px; } " +
                 ".mseries-repobar button.link-row label { font-weight: 400; } " +
-                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 8pt; " +
+                ".mseries-repobar .detail-chips button { padding: 1px 8px; min-height: 0; min-width: 0; border-radius: 99px; font-size: 0.889em; " +
                 "  background: alpha(currentColor, 0.08); } " +
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
-                ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .section-title { font-weight: 700; font-size: 0.889em; opacity: 0.75; } " +
+                ".mseries-repobar list.repo-list > row .group-heading { margin-top: 2px; margin-bottom: -4px; } " +
                 ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
                 ".mseries-repobar .contribution-graph { color: @accent_color; } " +
                 ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
@@ -269,7 +315,7 @@ namespace MSeries {
                 ".mseries-repobar row:hover button.pin-off, .mseries-repobar row:focus-within button.pin-off { opacity: 0.55; } " +
                 ".mseries-repobar row:hover button.pin-off:hover, .mseries-repobar button.pin-off:focus { opacity: 1; } " +
                 ".mseries-repobar list.repo-list { background: transparent; } " +
-                ".mseries-repobar button.show-all { font-size: 8.5pt; padding: 2px 10px; } " +
+                ".mseries-repobar button.show-all { font-size: 0.944em; padding: 2px 10px; } " +
                 ".mseries-repobar list.repo-list > row { padding: 0; margin-bottom: 8px; border-radius: 8px; background: transparent; } " +
                 ".mseries-repobar list.repo-list > row:last-child { margin-bottom: 0; } " +
                 ".mseries-repobar list.repo-list > row:focus-visible { outline: 2px solid alpha(@accent_color, 0.6); outline-offset: -2px; } " +
@@ -280,12 +326,15 @@ namespace MSeries {
                 ".mseries-repobar .mseries-bar { margin-top: 2px; } " +
                 ".mseries-repobar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-repobar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
-                ".mseries-repobar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-repobar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-repobar-bar .seg-alert { font-size: 7pt; color: @error_color; } " +
+                ".mseries-repobar-bar label { font-size: 1.2em; font-feature-settings: \"tnum\"; } " +
+                ".mseries-repobar-bar .seg-value { font-size: 1.2em; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert { font-size: 1.1em; font-weight: 700; } " +
+                ".mseries-repobar-bar .seg-alert.alert-bad { color: @error_color; } " +
+                ".mseries-repobar-bar .seg-alert.alert-pending { color: @warning_color; } " +
+                ".mseries-repobar-bar .seg-alert.alert-good { color: @success_color; } " +
                 ".mseries-repobar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
                 ".mseries-repobar-bar .stale { opacity: 0.55; } " +
-                ".mseries-repobar-bar .repo-mark { color: @theme_fg_color; }");
+                ".mseries-repobar-bar .repo-mark { opacity: 0.92; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
@@ -320,7 +369,7 @@ namespace MSeries {
             };
             button.add_css_class ("flat");
             button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
-            button.clicked.connect (() => open_url ("https://" + host + path, button));
+            button.clicked.connect ((sender) => open_url ("https://" + host + path, sender));
             return button;
         }
 
@@ -384,7 +433,9 @@ namespace MSeries {
             if (refresh_source != 0) Source.remove (refresh_source);
             refresh_interval = seconds;
             refresh_source = Timeout.add_seconds (seconds, () => {
-                load_snapshot ();
+                // Ask for data older than the interval: the helper's own cache window equals the interval, so a bare
+                // tick landing a moment early would be answered from the cache and double the effective refresh time.
+                read_snapshot.begin (false, true);
                 return Source.CONTINUE;
             });
         }
@@ -399,8 +450,9 @@ namespace MSeries {
             refresh_button.set_sensitive (!busy);
         }
 
-        private async void read_snapshot (bool force) {
-            if (in_flight) return;
+        private async void read_snapshot (bool force, bool ticking = false) {
+            if (in_flight || !panel_enabled) return;
+            uint generation = settings_generation;
             in_flight = true;
             set_refreshing (true);
             if (force) subtitle_label.set_text ("Refreshing…");
@@ -409,6 +461,10 @@ namespace MSeries {
             try {
                 var argv = new string[] { executable };
                 if (force) argv += "--refresh";
+                else if (ticking) {
+                    argv += "--max-age";
+                    argv += ((int) refresh_interval - 15).to_string ();
+                }
                 var process = new Subprocess.newv (argv, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 yield process.communicate_utf8_async (null, null, out output, out error_text);
                 if (!process.get_successful () && output.strip ().length == 0) {
@@ -416,22 +472,31 @@ namespace MSeries {
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
-                last_snapshot_text = output;
-                render_snapshot (parser.get_root ().get_object ());
+                if (generation == settings_generation && panel_enabled) {
+                    last_snapshot_text = output;
+                    render_snapshot (parser.get_root ().get_object ());
+                }
             } catch (Error e) {
+                if (generation != settings_generation || !panel_enabled) {
+                    in_flight = false;
+                    set_refreshing (false);
+                    if (panel_enabled) load_snapshot ();
+                    return;
+                }
+                // Only the helper can authorize an offline snapshot for the current account.
+                clear_snapshot_state ();
                 set_chip ("Offline", true, "retry", e.message + "\nClick to try again");
                 subtitle_label.set_text ("GitHub status unavailable");
                 subtitle_label.set_tooltip_text (e.message);
-                if (last_snapshot_text.length == 0) {
-                    bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
-                    show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
-                        signed_out ? "Connect GitHub" : "GitHub unavailable",
-                        signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
-                        signed_out);
-                }
+                bool signed_out = e.message.contains ("auth") || e.message.contains ("login") || e.message.contains ("No such file");
+                show_state (signed_out ? "dialog-password-symbolic" : "network-error-symbolic",
+                    signed_out ? "Connect GitHub" : "GitHub unavailable",
+                    signed_out ? "RepoBar reads your repositories through the GitHub CLI. It never stores the token." : e.message,
+                    signed_out);
             }
             in_flight = false;
             set_refreshing (false);
+            if (generation != settings_generation && panel_enabled) load_snapshot ();
         }
 
         private void set_chip (string text, bool bad, string action = "retry", string tooltip = "") {
@@ -458,6 +523,8 @@ namespace MSeries {
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+                notify_workflows = settings.get_boolean_member_with_default ("notifyWorkflows", true);
+                merge_window_minutes = (int) settings.get_int_member_with_default ("mergeWindowMinutes", 60);
                 show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
                 contribution_style = settings.get_string_member_with_default ("contributionStyle", "dots");
                 local_root = settings.get_string_member_with_default ("localRoot", "");
@@ -465,19 +532,47 @@ namespace MSeries {
             if (error.length == 0 && fetched_at > last_notified_fetch) {
                 last_notified_fetch = fetched_at;
                 notify_ci_changes (repos);
+                notify_workflow_runs (snapshot);
             }
             int issues = 0;
             int prs = 0;
             int failing = 0;
+            int pending = 0;
             int attention = 0;
+            GLib.DateTime? last_merge = null;
+            string last_merge_repo = "";
             for (uint i = 0; i < repos.get_length (); i++) {
                 var repo = repos.get_object_element (i);
                 if (repo.get_string_member_with_default ("repoState", "visible") == "hidden") continue;
                 issues += (int) repo.get_int_member_with_default ("openIssues", 0);
                 prs += (int) repo.get_int_member_with_default ("openPullRequests", 0);
                 if (ci_failing (repo)) failing++;
+                if (ci_pending (repo)) pending++;
+                var merge = repo.get_member ("lastMerge") != null && repo.get_member ("lastMerge").get_node_type () == Json.NodeType.OBJECT
+                    ? repo.get_object_member ("lastMerge") : null;
+                if (merge != null) {
+                    var merged_at = new GLib.DateTime.from_iso8601 (merge.get_string_member_with_default ("mergedAt", ""), null);
+                    if (merged_at != null && (last_merge == null || merged_at.compare (last_merge) > 0)) {
+                        last_merge = merged_at;
+                        last_merge_repo = repo.get_string_member_with_default ("name", "");
+                    }
+                }
                 if (needs_attention (repo)) attention++;
             }
+
+            // Pending is real workflow runs (any branch or pull request) when the snapshot carries them.
+            string[] running_lines = {};
+            if (snapshot.has_member ("actions") && snapshot.get_member ("actions").get_node_type () == Json.NodeType.OBJECT) {
+                var running = snapshot.get_object_member ("actions").get_array_member ("running");
+                pending = (int) running.get_length ();
+                for (uint i = 0; i < running.get_length () && i < 6; i++) {
+                    var run = running.get_object_element (i);
+                    string repo_name = run.get_string_member_with_default ("repo", "");
+                    running_lines += "%s · %s (%s)".printf (repo_name.contains ("/") ? repo_name.substring (repo_name.index_of ("/") + 1) : repo_name,
+                        run.get_string_member_with_default ("name", "workflow"), run.get_string_member_with_default ("branch", ""));
+                }
+            }
+            running_summary = string.joinv ("\n", running_lines);
 
             // Bottom bar: account, freshness and API quota; the chip speaks only when something is wrong.
             string freshness;
@@ -511,7 +606,7 @@ namespace MSeries {
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
-            update_panel (prs, issues, failing, (int) repos.get_length (), stale || error.length > 0);
+            update_panel (prs, issues, pending, last_merge, last_merge_repo, (int) repos.get_length (), stale || error.length > 0);
 
             // Unchanged data and filters: keep the existing cards so open detail panes survive polling.
             string key = "%s|%d|%d|%s".printf (last_snapshot_text.hash ().to_string (), scope, filter, search_entry.get_text ());
@@ -551,8 +646,22 @@ namespace MSeries {
             if (scope == 2) visible.sort_with_data (compare_severity);
             else if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
             int shown = (int) visible.length;
+            // Dashboard with pins: label the two groups so pinned repositories read as a deliberate list.
+            int pinned_shown = 0;
+            if (scope == 0) {
+                for (int i = 0; i < shown; i++) {
+                    if (visible[i].get_string_member_with_default ("repoState", "visible") == "pinned") pinned_shown++;
+                }
+            }
+            bool grouped = pinned_shown > 0 && pinned_shown < shown;
             for (int i = 0; i < shown; i++) {
                 var repo = visible[i];
+                if (grouped && (i == 0 || i == pinned_shown)) {
+                    var heading = new Gtk.Label (i == 0 ? "Pinned" : "Recently updated") { xalign = 0, margin_start = 4 };
+                    heading.add_css_class ("section-title");
+                    heading.add_css_class ("group-heading");
+                    repo_list.append (new Gtk.ListBoxRow () { child = heading, activatable = false, focusable = false });
+                }
                 var row = new Gtk.ListBoxRow () { child = build_card (repo) };
                 row.set_data<string> ("url", repo.get_string_member_with_default ("url", ""));
                 row.update_property (Gtk.AccessibleProperty.LABEL, repo.get_string_member_with_default ("name", ""), -1);
@@ -583,14 +692,32 @@ namespace MSeries {
             }
         }
 
-        private void update_panel (int prs, int issues, int failing, int repo_count, bool stale) {
+        /* Panel dot: red while default-branch CI fails, yellow with a count while runs are pending, green when a pull
+           request merged within the configured window (an hour by default), and hidden when nothing is going on. */
+        private void update_panel (int prs, int issues, int pending, GLib.DateTime? last_merge,
+                                   string last_merge_repo, int repo_count, bool stale) {
             panel_prs.set_text (prs.to_string ());
             panel_issues.set_text (issues.to_string ());
-            panel_alert.set_visible (failing > 0);
+            int64 merge_age = last_merge != null ? (GLib.get_real_time () - last_merge.to_unix () * 1000000) / 1000000 : -1;
+            bool merged_recently = merge_age >= 0 && merge_age <= merge_window_minutes * 60;
+            // Yellow counts workflow runs in progress; green marks a recent merge. Failing CI is left to notifications.
+            panel_alert.remove_css_class ("alert-good");
+            string status = "";
+            if (merged_recently) {
+                panel_alert.set_text ("●");
+                panel_alert.add_css_class ("alert-good");
+            }
+            panel_alert.set_visible (merged_recently);
+            if (pending > 0) {
+                panel_running.set_text ("● %d".printf (pending));
+                status += " · %d workflow run%s in progress".printf (pending, pending == 1 ? "" : "s");
+            }
+            panel_running.set_visible (pending > 0);
+            if (running_summary.length > 0) status += "\n" + running_summary;
+            if (merged_recently) status += " · merged %s %d min ago".printf (last_merge_repo, (int) (merge_age / 60));
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
-                account.length > 0 ? " · " + account : "", repo_count, prs, issues,
-                failing > 0 ? " · CI failing on %d".printf (failing) : "", stale ? " · cached" : ""));
+                account.length > 0 ? " · " + account : "", repo_count, prs, issues, status, stale ? " · cached" : ""));
         }
 
         /* Attention: failing CI first, then the most open work (a pull request weighs twice an issue). */
@@ -662,10 +789,14 @@ namespace MSeries {
                 settings_monitor.changed.connect ((file, other, event) => {
                     string name = (other ?? file).get_basename ();
                     if (file.get_basename () != "settings.json" && name != "settings.json") return;
+                    settings_generation++;
+                    clear_snapshot_state ();
+                    show_state ("content-loading-symbolic", "Loading repositories…", "", false);
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
-                        load_snapshot ();
+                        if (read_panel_enabled () != panel_enabled) apply_panel_enabled ();
+                        else if (panel_enabled) load_snapshot ();
                         return Source.REMOVE;
                     });
                 });
@@ -871,6 +1002,71 @@ namespace MSeries {
             }
         }
 
+        /* Desktop notification for each workflow run that finished since the last refresh, on any branch or pull
+           request in recently active repositories. The first snapshot after login only records what was seen. */
+        private void notify_workflow_runs (Json.Object snapshot) {
+            if (!snapshot.has_member ("actions") || snapshot.get_member ("actions").get_node_type () != Json.NodeType.OBJECT) return;
+            string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "run-states.json");
+            var notified = new HashTable<string, bool> (str_hash, str_equal);
+            bool have_previous = false;
+            try {
+                string text;
+                FileUtils.get_contents (path, out text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (text);
+                var saved = parser.get_root ().get_object ().get_array_member ("notified");
+                for (uint i = 0; i < saved.get_length (); i++) notified.insert (saved.get_string_element (i), true);
+                have_previous = true;
+            } catch (Error e) {
+                // First run: record only.
+            }
+            var finished = snapshot.get_object_member ("actions").get_array_member ("finished");
+            string[] passed = {};
+            string[] failed = {};
+            string first_url = "";
+            var ids = new Json.Array ();
+            for (uint i = 0; i < finished.get_length (); i++) {
+                var run = finished.get_object_element (i);
+                string id = run.get_int_member_with_default ("id", 0).to_string ();
+                ids.add_string_element (id);
+                if (!have_previous || notified.contains (id)) continue;
+                string repo_name = run.get_string_member_with_default ("repo", "");
+                string short_name = repo_name.contains ("/") ? repo_name.substring (repo_name.index_of ("/") + 1) : repo_name;
+                string label = "%s · %s (%s)".printf (short_name, run.get_string_member_with_default ("name", "workflow"),
+                    run.get_string_member_with_default ("branch", ""));
+                string conclusion = run.get_string_member_with_default ("conclusion", "");
+                if (conclusion == "success") passed += label;
+                else if (conclusion == "failure" || conclusion == "timed_out" || conclusion == "startup_failure") {
+                    failed += label;
+                    if (first_url.length == 0) first_url = run.get_string_member_with_default ("url", "");
+                }
+            }
+            // Keep a window of recent ids so a run is announced once, even after it leaves the finished list.
+            foreach (var old in notified.get_keys ()) if (ids.get_length () < 200) ids.add_string_element (old);
+            try {
+                DirUtils.create_with_parents (GLib.Path.get_dirname (path), 0700);
+                var generator = new Json.Generator ();
+                var root = new Json.Node (Json.NodeType.OBJECT);
+                var object = new Json.Object ();
+                object.set_array_member ("notified", ids);
+                root.set_object (object);
+                generator.set_root (root);
+                FileUtils.set_contents_full (path, generator.to_data (null), -1, FileSetContentsFlags.CONSISTENT, 0600);
+                FileUtils.chmod (path, 0600);
+            } catch (Error e) {
+                // Without saved ids the next refresh records again instead of notifying.
+            }
+            if (!notify_workflows) return;
+            if (failed.length > 0) {
+                send_notification (failed.length == 1 ? "Workflow failed" : "%d workflows failed".printf (failed.length),
+                    string.joinv ("\n", failed), failed.length == 1 ? first_url : "https://" + host + "/" + account, "dialog-error");
+            }
+            if (passed.length > 0) {
+                send_notification (passed.length == 1 ? "Workflow passed" : "%d workflows passed".printf (passed.length),
+                    string.joinv ("\n", passed), "", "emblem-ok");
+            }
+        }
+
         private void send_notification (string title, string body, string url, string urgency_icon) {
             string[] argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", title, body };
             if (url.length > 0) argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", "--action=open=Open on GitHub", title, body };
@@ -902,6 +1098,11 @@ namespace MSeries {
         private static bool ci_failing (Json.Object repo) {
             string ci = repo.get_string_member_with_default ("ci", "");
             return ci == "FAILURE" || ci == "ERROR";
+        }
+
+        private static bool ci_pending (Json.Object repo) {
+            string ci = repo.get_string_member_with_default ("ci", "");
+            return ci == "PENDING" || ci == "EXPECTED";
         }
 
         private static bool needs_attention (Json.Object repo) {
@@ -941,16 +1142,15 @@ namespace MSeries {
             return object.has_member (member) && object.get_member (member).get_node_type () == Json.NodeType.OBJECT;
         }
 
+        private void clear_snapshot_state () {
+            last_snapshot_text = "";
+            // Reset summaries, account tooltip, contribution graph and cards together.
+            render_snapshot (new Json.Object ());
+        }
+
         private void render_cached () {
-            if (last_snapshot_text.length == 0) {
-                try {
-                    string contents;
-                    if (!FileUtils.get_contents (Environment.get_home_dir () + "/.cache/mseries/repobar/snapshot.json", out contents)) return;
-                    last_snapshot_text = contents;
-                } catch (Error e) {
-                    return;
-                }
-            }
+            // Disk snapshots must pass the helper's resolved-account validation first.
+            if (last_snapshot_text.length == 0) return;
             try {
                 var parser = new Json.Parser ();
                 parser.load_from_data (last_snapshot_text);
@@ -980,7 +1180,7 @@ namespace MSeries {
             var summary = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
             summary.set_cursor_from_name ("pointer");
             var open_click = new Gtk.GestureClick () { button = 1 };
-            open_click.released.connect (() => open_url (url, summary));
+            open_click.released.connect ((gesture, n_press, x, y) => open_url (url, gesture.get_widget ()));
             summary.add_controller (open_click);
             card.append (summary);
 
@@ -1021,7 +1221,7 @@ namespace MSeries {
                 site_button.add_css_class ("site-link");
                 site_button.update_property (Gtk.AccessibleProperty.LABEL,
                     (pages.length > 0 ? "Open GitHub Pages site for " : "Open website for ") + short_name, -1);
-                site_button.clicked.connect (() => open_url (site, site_button));
+                site_button.clicked.connect ((sender) => open_url (site, sender));
                 head.append (site_button);
             }
             if (state == "hidden") {
@@ -1166,12 +1366,26 @@ namespace MSeries {
             var button = new Gtk.Button () { child = row, tooltip_text = "Open %s in Files".printf (path) };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_folder (path, button));
+            button.clicked.connect ((sender) => open_folder (path, sender));
             return button;
         }
 
         /* One local checkout: folder name and branch, its state, and a terminal button; the row opens the folder. */
-        private static Gtk.Widget checkout_row (Json.Object checkout) {
+        /* Worktrees are usually named "<repo>-<topic>"; show just the topic so the names fit and stay distinct. */
+        private static string checkout_label (string path, string repo_name) {
+            string folder = GLib.Path.get_basename (path);
+            string repo = repo_name.contains ("/") ? repo_name.substring (repo_name.last_index_of ("/") + 1) : repo_name;
+            string lower = folder.casefold ();
+            string prefix = repo.casefold ();
+            if (lower == prefix) return "main checkout";
+            if (lower.has_prefix (prefix) && folder.length > repo.length + 1) {
+                unichar separator = folder.get_char (repo.length);
+                if (separator == '-' || separator == '_' || separator == '.') return folder.substring (repo.length + 1);
+            }
+            return folder;
+        }
+
+        private static Gtk.Widget checkout_row (Json.Object checkout, string repo_name) {
             string path = checkout.get_string_member_with_default ("path", "");
             int dirty = (int) checkout.get_int_member_with_default ("dirtyFileCount", 0);
             int behind = (int) checkout.get_int_member_with_default ("behind", 0);
@@ -1179,7 +1393,11 @@ namespace MSeries {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
             var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             content.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
-            var folder = new Gtk.Label (GLib.Path.get_basename (path)) { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 22 };
+            string label = checkout_label (path, repo_name);
+            var folder = new Gtk.Label (label) {
+                xalign = 0, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 18, width_chars = 12
+            };
+            if (label == "main checkout") folder.add_css_class ("dim-label");
             folder.add_css_class ("caption");
             content.append (folder);
             string branch_name = checkout.get_boolean_member_with_default ("detached", false) ? "detached" :
@@ -1192,17 +1410,19 @@ namespace MSeries {
             if (behind > 0) content.append (status_text ("↓%d".printf (behind), "text-low"));
             if (ahead > 0) content.append (status_text ("↑%d".printf (ahead), "dim-label"));
             if (dirty == 0 && behind == 0 && ahead == 0) content.append (status_text ("clean", "dim-label"));
-            var open = new Gtk.Button () { child = content, hexpand = true, tooltip_text = "Open %s in Files".printf (path) };
+            var open = new Gtk.Button () {
+                child = content, hexpand = true, tooltip_text = "%s\n%s\nOpen in Files".printf (path, branch_name)
+            };
             open.add_css_class ("flat");
             open.add_css_class ("link-row");
-            open.clicked.connect (() => open_folder (path, open));
+            open.clicked.connect ((sender) => open_folder (path, sender));
             line.append (open);
             var terminal = new Gtk.Button.from_icon_name ("utilities-terminal-symbolic") { tooltip_text = "Open in Terminal", valign = Gtk.Align.CENTER };
             terminal.add_css_class ("flat");
             terminal.add_css_class ("compact");
             terminal.add_css_class ("dim-label");
             terminal.update_property (Gtk.AccessibleProperty.LABEL, "Open %s in Terminal".printf (GLib.Path.get_basename (path)), -1);
-            terminal.clicked.connect (() => open_terminal (path, terminal));
+            terminal.clicked.connect ((sender) => open_terminal (path, sender));
             line.append (terminal);
             return line;
         }
@@ -1235,7 +1455,7 @@ namespace MSeries {
             var button = new Gtk.Button () { child = content, tooltip_text = title };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_url (url, button));
+            button.clicked.connect ((sender) => open_url (url, sender));
             return button;
         }
 
@@ -1313,8 +1533,8 @@ namespace MSeries {
             var button = new Gtk.Button () { child = new Gtk.Label (label) { xalign = 0 } };
             button.add_css_class ("flat");
             button.add_css_class ("menuitem");
-            button.clicked.connect (() => {
-                var popover = button.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
+            button.clicked.connect ((sender) => {
+                var popover = sender.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
                 if (popover != null) popover.popdown ();
                 action ();
             });
@@ -1336,17 +1556,17 @@ namespace MSeries {
             var list = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
             list.add_css_class ("detail-list");
             list.set_visible (false);
-            Gtk.ToggleButton? first = null;
+            unowned Gtk.ToggleButton? first = null;
             if (checkouts != null && checkouts.get_length () > 0) {
                 // Local checkouts come from the last scan, so this tab needs no GitHub request.
                 var chip = new Gtk.ToggleButton.with_label ("Checkouts %u".printf (checkouts.get_length ()));
                 chip.add_css_class ("flat");
                 first = chip;
-                chip.toggled.connect (() => {
-                    if (!chip.get_active ()) return;
+                chip.toggled.connect ((sender) => {
+                    if (!sender.get_active ()) return;
                     list.set_visible (true);
                     clear_box (list);
-                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i)));
+                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i), name));
                 });
                 chips.append (chip);
             }
@@ -1355,8 +1575,8 @@ namespace MSeries {
                 var chip = new Gtk.ToggleButton.with_label (DETAIL_TITLES[i]);
                 chip.add_css_class ("flat");
                 if (first != null) chip.set_group (first); else first = chip;
-                chip.toggled.connect (() => {
-                    if (!chip.get_active ()) return;
+                chip.toggled.connect ((sender) => {
+                    if (!sender.get_active ()) return;
                     list.set_visible (true);
                     load_repo_detail.begin (name, url, key, list);
                 });
@@ -1365,15 +1585,18 @@ namespace MSeries {
             pane.append (chips);
             pane.append (list);
             revealer.set_child (pane);
-            toggle.toggled.connect (() => {
-                revealer.set_reveal_child (toggle.get_active ());
-                toggle.set_icon_name (toggle.get_active () ? "pan-down-symbolic" : "pan-end-symbolic");
-                if (toggle.get_active () && first != null && !first.get_active ()) first.set_active (true);
+            toggle.toggled.connect ((sender) => {
+                revealer.set_reveal_child (sender.get_active ());
+                sender.set_icon_name (sender.get_active () ? "pan-down-symbolic" : "pan-end-symbolic");
+                if (sender.get_active () && first != null && !first.get_active ()) first.set_active (true);
             });
             return revealer;
         }
 
         private async void load_repo_detail (string name, string repo_url, string key, Gtk.Box content) {
+            // Clicking chips quickly starts several loads into one list; only the newest may draw.
+            var request = content.get_data<uint> ("detail-request") + 1;
+            content.set_data<uint> ("detail-request", request);
             clear_box (content);
             var loading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7) { margin_start = 4 };
             var spinner = new Gtk.Spinner ();
@@ -1395,8 +1618,10 @@ namespace MSeries {
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
+                if (content.get_data<uint> ("detail-request") != request) return;
                 render_repo_detail (key, parser.get_root (), repo_url, content);
             } catch (Error e) {
+                if (content.get_data<uint> ("detail-request") != request) return;
                 clear_box (content);
                 content.append (link_row ("dialog-error-symbolic", "Could not load " + key, "", ""));
                 content.get_last_child ().set_tooltip_text (e.message);
@@ -1496,7 +1721,7 @@ namespace MSeries {
             };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_url (url, button));
+            button.clicked.connect ((sender) => open_url (url, sender));
             return button;
         }
 

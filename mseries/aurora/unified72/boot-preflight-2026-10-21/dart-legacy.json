@@ -1,0 +1,312 @@
+{
+  "schema": 1,
+  "kind": "retained-dtb-dart-host-controls",
+  "dtb_sha256": "a29ff68864e785f05f5f3e44d5bea8ab3166ac52958ea52023c2fa40740fd306",
+  "production_source_sha256": "5c3cf935b6b70c6185153159df162b4b14cbe4c0e0f4e5a2553a7690ef3651dc",
+  "production_function_sha256": "be30c1e0d5217cd444d3e41173dc73a3b5c8547343affe4e5323b51598b9f746",
+  "fixture_sha256": "352bf589f9e635bee62cdaee2c80ad256bd83be2c11305c068b9d44e5c7f622b",
+  "providers": {
+    "/soc/iommu@285800000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@285810000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@285820000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@28e300000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@293808000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@38b304000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@38b30c000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 2130303778816,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@3952c0000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@3860e8000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@3860f4000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@3860fc000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@581008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@582008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@583008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@584008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@287010000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@289304000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@28930c000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 2130303778816,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@28c304000": {
+      "compatible": [
+        "apple,t6000-dart",
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@28c30c000": {
+      "compatible": [
+        "apple,t6000-dart",
+        "apple,t8110-dart"
+      ],
+      "base": 2130303778816,
+      "size": 4227858432,
+      "window_input": "DT property"
+    },
+    "/soc/iommu@39b004000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@39b008000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/cio@701ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@702f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@702f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/cio@b01ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@b02f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@b02f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/cio@f01ac0000/iommu@a80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@f02f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@f02f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@1302f00000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/iommu@1302f80000": {
+      "compatible": [
+        "apple,t6000-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "modeled 32-bit default; hardware parameter registers not emulated"
+    },
+    "/soc/usb4-pcie-tunnel-0/iommu@721008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "DT property"
+    },
+    "/soc/usb4-pcie-tunnel-1/iommu@b21008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "DT property"
+    },
+    "/soc/usb4-pcie-tunnel-2/iommu@f21008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "DT property"
+    },
+    "/soc/usb4-pcie-tunnel-3/iommu@1321008000": {
+      "compatible": [
+        "apple,t8110-dart"
+      ],
+      "base": 0,
+      "size": 4294967296,
+      "window_input": "DT property"
+    }
+  },
+  "legacy_client_specifiers": 36,
+  "stdout": "50 parser controls passed\n",
+  "result": "pass",
+  "limits": "Unmodified parser executed with DT-derived legacy geometry and synthetic new/invalid windows. Not a DART probe, firmware, complete DT compatibility or hardware boot qualification."
+}

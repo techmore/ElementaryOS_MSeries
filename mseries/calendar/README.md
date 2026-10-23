@@ -1,6 +1,6 @@
 # Pantheon calendar agenda
 
-The datetime indicator has **Events**, **Tasks** and **+** (Bible: a daily
+The datetime indicator has **Events**, **Tasks**, **GitHub** and **+** (Bible: a daily
 verse and a Titus study) tabs above the calendar's right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
 date independently of the left calendar selection. Ended events are omitted;
 ongoing events remain visible. **Month**, **Week** and **Day** are available as
@@ -168,6 +168,15 @@ Google Calendar and Google Tasks are different services. The Tasks tab reads
 whatever task lists elementary Tasks has configured; enabling Google Calendar
 does not imply that a Google Tasks list is available.
 
+## Continuous integration
+
+The **Calendar Events/Tasks/Homeboard agenda** job in `validate-mseries.yml` runs
+`mseries/calendar/ci-test-agenda.sh` on an arm64 Ubuntu runner: it builds the pinned
+indicator with our patch (Granite 7.7 and the Wingpanel indicator API come from
+`mseries/codexbar-wingpanel/probe/ci-build-deps.sh` when the runner lacks them),
+compiles the indicator's GSettings schema privately and runs every agenda group.
+Locally it reproduces the same run: `bash mseries/calendar/ci-test-agenda.sh /tmp/agenda`.
+
 ## Build and install
 
 Upstream: [elementary/panel-datetime](https://github.com/elementary/panel-datetime),
@@ -190,7 +199,33 @@ Factory builds use the same pin and patch in `build-desktop-indicators`; the
 account launcher is staged into immutable `/usr/bin`. A source build does not
 qualify a factory image or a Google account connection.
 
+### Package (`mseries-wingpanel-datetime`)
+
+`mseries/debs/build.sh` also builds the panel as
+`mseries-wingpanel-datetime_2.4.2-0mseries2_arm64.deb`. It uses the factory
+pin, applies the same patch and ships the plugin plus
+`/usr/bin/mseries-calendar-accounts`. It depends on
+`io.elementary.panel.datetime (>= 2.4.2~, << 2.4.3~)` (the `~` admits elementary's daily versions of 2.4.2 and rejects 2.4.3 dailies) and recommends
+`evolution-data-server`, `gnome-online-accounts-gtk` and `io.elementary.tasks`.
+Its preinst uses `dpkg-divert` to move the stock plugin aside, so an upgrade
+of the stock package can't overwrite ours. The manual installer above has no
+such protection. A new upstream minor version is refused by the dependency
+instead of loading a plugin built for another ABI. Installing or upgrading the package
+doesn't restart Wingpanel; the new plugin loads at the next login.
+
+The **M-series plugin packages** workflow builds it on every change to the
+patch, `mseries/calendar/` or the panel pins. It then runs
+`check-bundled-data.py`, which confirms that the verse and study data inside the
+patch match this directory, and runs `test-agenda.sh` against the library
+extracted from the package on a clean runner with elementary's daily packages.
+Publishing to the apt repository still waits on the signing-key decision (#52),
+so for now the package is a CI artifact.
+
 ## Validation
+
+`python3 mseries/calendar/check-bundled-data.py` checks, offline, that the
+verse and study data in the patch match `daily-verses.tsv` and
+`titus-study.tsv` here. Run it after `build-verses.py`.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
@@ -228,8 +263,15 @@ Google sign-in and are separate from these local tests.
 Tasks tab like any other list, with due dates, priority and project names; ticking
 or adding one here syncs to Homeboard within a few seconds. Install the bridge with
 `bash mseries/install-homeboard-sync.sh` (pinned `techmore/homeboard` revision, or
-`HOMEBOARD_SOURCE=/path/to/checkout`). It installs without the separate Homeboard
-indicator and starts in the background at login.
+`HOMEBOARD_SOURCE=/path/to/checkout`; `--uninstall` removes it). It installs
+without the separate Homeboard indicator, starts in the background at login, is
+restarted by the session if it exits, and is started on demand through D-Bus
+activation. Re-running the installer after a pin bump replaces the running bridge.
+The bridge backs off to at most 15 minutes while Homeboard is unreachable, reports
+a locked login keyring instead of waiting on it, and logs counts and failures (never
+task text or tokens) to the user journal. Deleting a Homeboard task in Tasks does
+not delete it on Homeboard; delete or archive it there. Details:
+`linux/README.md` in `techmore/homeboard`.
 
 When the bridge is installed, a **Homeboard** strip sits above the composer:
 the last sync ("Synced 12 tasks · 9 open · 2 min ago"), a spinner while syncing,
@@ -237,7 +279,7 @@ the last sync ("Synced 12 tasks · 9 open · 2 min ago"), a spinner while syncin
 sign-in in the browser; the owner's step). The strip reads the bridge's
 `~/.local/state/homeboard/panel.json` (no token is ever in it) and asks the
 bridge to act through its D-Bus actions (`org.techmore.Homeboard`, `app.sync` /
-`app.connect`), starting it in the background if it is not running. Without the
+`app.connect`); D-Bus activation starts the bridge if needed. Without the
 bridge the strip stays hidden. Older bridges that publish only a status sentence
 are still read.
 
@@ -281,3 +323,48 @@ ignored. Failed saves retain the draft and show a retry error; unavailable or
 read-only lists cannot receive new tasks. The private fixture checks Enter and
 Add, exact list identity, literal Unicode/markup titles, persisted metadata,
 duplicate suppression and draft/list recovery when sources become unavailable.
+
+## GitHub deployment outcomes
+
+The GitHub tab tracks persistent feature/outcome issues, independent of chats.
+It starts with [Rupert deployment ready](https://github.com/techmore/rupert/issues/207)
+and [Daedalus deployment ready](https://github.com/techmore/tm-daedalus/issues/17),
+in that order. Each card links to its blueprint and milestone, expands native
+GitHub sub-issue gates, shows the next unresolved gate, and reports default-branch
+CI with the observed commit. Counts describe completed gates, not estimated work.
+A closed-as-not-planned issue does not count as a completed gate.
+
+PRs are associated through GitHub closing references to the blueprint or its gates,
+within the same repository. The latest ten open PRs are inspected; the repository
+PR link exposes the complete list. PR checks must match the PR head commit. Missing,
+truncated, skipped, neutral or cancelled checks never become passing by inference.
+Release identity, recovery and human acceptance remain separate gates.
+
+Requires `python3`, `gh` and the user's existing `gh auth login` for github.com.
+No token is stored in the plugin or cache. GitHub calls are read-only, happen in a
+bounded subprocess off the GTK main thread, and refresh when the tab opens, on
+manual refresh, and every five minutes while visible. Closing the tab stops its
+periodic refresh. Failed refreshes retain the last evidence date and show an error;
+evidence over ten minutes old is marked stale. There are no background notifications.
+
+Optional `~/.config/mseries/github-tracker.json` (XDG_CONFIG_HOME respected):
+
+```json
+{"version":1,"targets":[
+  {"repo":"techmore/rupert","issue":207,"title":"Rupert deployment ready"},
+  {"repo":"techmore/tm-daedalus","issue":17,"title":"Daedalus deployment ready"}
+]}
+```
+
+Order is priority and never changes with recent activity. Up to twenty outcomes
+are supported. The private atomic snapshot is `~/.cache/mseries/github-tracker.json`
+(XDG_CACHE_HOME respected). Completed outcomes stay visible with a closed label;
+remove them from this configuration when ready to archive the view. The tab does
+not create, close, merge or deploy GitHub work.
+
+`test-github-tracker.py` covers CI ambiguity, exact-head and cross-repository PR
+association, gate completion, offline evidence and invalid configuration.
+`test-agenda.sh` uses an isolated cache and a failing fake `gh`; no personal
+GitHub credentials or network are used by the integration suite.
+
+GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).

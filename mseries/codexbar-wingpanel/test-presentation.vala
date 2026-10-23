@@ -243,5 +243,20 @@ int main (string[] args) {
         assert (MSeries.Presentation.dot_percent (0) == " 0%");
         assert (MSeries.Presentation.dot_percent (-1) == "");
     });
+    GLib.Test.add_func ("/presentation/account-legend", () => {
+        string[] emails = { "me@example.com", "", "Work@Example.org", "me@EXAMPLE.com", "not-an-email", " work@example.org ", "lab@example.edu" };
+        var legend = MSeries.Presentation.account_legend (emails);
+        assert (legend.length == 3);
+        assert (legend[0] == "me@example.com");
+        assert (legend[1] == "Work@Example.org");
+        assert (legend[2] == "lab@example.edu");
+        assert (MSeries.Presentation.legend_number (legend, "ME@example.com") == 1);
+        assert (MSeries.Presentation.legend_number (legend, "work@example.org") == 2);
+        assert (MSeries.Presentation.legend_number (legend, "other@example.com") == 0);
+        assert (MSeries.Presentation.account_hue (0) == "");
+        assert (MSeries.Presentation.account_hue (1) == "#3689e6");
+        assert (MSeries.Presentation.account_hue (2) == "#f37329");
+        assert (MSeries.Presentation.account_hue (7) == "#3689e6");
+    });
     return GLib.Test.run ();
 }

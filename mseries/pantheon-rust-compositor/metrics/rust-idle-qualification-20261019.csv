@@ -1,0 +1,14 @@
+# session=rust workload=idle-qualification display_mode=internal-3024x1964 duration_s=30 interval_s=5 started_utc=2026-10-19T15:56:18Z
+utc,session,workload,display_mode,pid,process,cpu_percent_one_core,ram_kib,elapsed_s,battery_power_mw,battery_percent
+2026-10-19T15:56:23Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,11.40,173472,5,NA,NA
+2026-10-19T15:56:23Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,1.00,472608,5,NA,NA
+2026-10-19T15:56:28Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,11.40,173472,10,NA,NA
+2026-10-19T15:56:28Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,1.00,472608,10,NA,NA
+2026-10-19T15:56:33Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,11.20,173488,15,NA,NA
+2026-10-19T15:56:33Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,0.80,472528,15,NA,NA
+2026-10-19T15:56:38Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,11.80,173520,20,NA,NA
+2026-10-19T15:56:38Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,1.00,472528,20,NA,NA
+2026-10-19T15:56:44Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,9.67,173616,26,NA,NA
+2026-10-19T15:56:44Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,1.33,472544,26,NA,NA
+2026-10-19T15:56:48Z,rust,idle-qualification,internal-3024x1964,410141,pantheon-compos,11.25,173616,30,NA,NA
+2026-10-19T15:56:48Z,rust,idle-qualification,internal-3024x1964,410246,io.elementary.w,2.00,472544,30,NA,NA

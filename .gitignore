@@ -22,9 +22,15 @@ local-build-records/
 *.efi
 __pycache__/
 *.pyc
+/rust/target/
 mseries/gala-drawers/build/
 mkosi.packages/
 /mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
 
-# Cargo build output (was tracked by mistake; 377 files)
+# Rust build output
 rust/target/
+
+# Local scratch: build copies, external symlinks and agent worktrees
+/work/
+/static
+/.claude/

@@ -4,8 +4,8 @@ Two long-lived branches:
 
 | Branch | Role | Who merges into it |
 | --- | --- | --- |
-| `main` | **Stable.** For now `main` is the `v0.0.1` stable line: what the owner runs and what release builds are cut from. | Only release PRs from `dev`, plus urgent hotfixes. |
-| `dev` | **Integration.** Every finished feature/fix branch lands here first. | Feature PRs (`claude/*`, `codex/*`, `deepseek/*`, …). |
+| `dev` | **Default branch, what the owner runs.** Every finished feature/fix branch lands here. | Feature PRs (`claude/*`, `codex/*`, `deepseek/*`, …). |
+| `main` | **Stable, effectively frozen.** The `v0.0.1` line: a known-good snapshot that release builds are cut from. It moves only on a deliberate release. | Only release PRs from `dev`, plus urgent hotfixes. |
 
 ## Day-to-day
 
@@ -15,10 +15,19 @@ Two long-lived branches:
 3. Merge into `dev` when CI passes and the change is reviewed. Deploy steps that
    AGENTS.md requires (for example `mseries/deploy-codexbar.sh`) still apply.
 
+## GitHub Pages
+
+The public website publishes `dev`'s `/docs` directory. The owner selected this
+source on October 21, 2026 so public documentation follows current development
+without promoting the OS to the frozen stable line. Website changes use normal
+PRs to `dev`; verify the corresponding Pages deployment and live page contents.
+The build monitor also follows `dev`. The separate `gh-pages` apt repository is
+not the website source and is not changed by documentation publishing.
+
 ## Promoting to stable
 
-When `dev` has a batch that has been running on the owner's machine without
-regressions, open a release PR `dev` → `main` titled `Release v0.0.N`, list what
+`main` stays frozen between releases. When `dev` has been running on the owner's
+machine without regressions and the owner asks for a release, open a release PR `dev` → `main` titled `Release v0.0.N`, list what
 changed and what was verified (and what was not), merge it with a merge commit,
 then tag `main`: `git tag -a v0.0.N -m "v0.0.N" origin/main && git push origin v0.0.N`.
 

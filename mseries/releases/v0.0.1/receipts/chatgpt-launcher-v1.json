@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:01:19+00:00",
+  "complete": true,
+  "passed": true,
+  "classification": "launcher staging only; running ChatGPT and physical F5 remain unverified",
+  "helper_sha256": "1deb4e851474ae3a206cdfb0ec716716963d9274828868c7a7964a43f3f1c1a9",
+  "source_helper_matches": true,
+  "desktop_resolves_to_user_override": true,
+  "url_field_code_preserved": true,
+  "override_sha256": "5dffc6d8dcecfaa0a91f018103434a3f3c92a39c18b7e300c4b9367107383eef",
+  "private_backup_retained": true,
+  "flags": [
+    "--force-renderer-accessibility"
+  ],
+  "input_environment": [
+    "GTK_IM_MODULE=ibus",
+    "QT_IM_MODULE=ibus",
+    "XMODIFIERS=@im=ibus"
+  ],
+  "owner_app_restarted": false,
+  "services_preserved": true,
+  "model_inference": false,
+  "microphone_recorded": false,
+  "activation": "full owner-controlled quit and launch from Applications required",
+  "human_acceptance": "pending after activation"
+}

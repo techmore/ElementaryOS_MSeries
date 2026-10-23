@@ -28,27 +28,26 @@ prefix=${HOME}/.local/lib/mseries/dock
 wrapper=${HOME}/.local/bin/io.elementary.dock
 patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
-patch=$repo/mseries/patches/dock-drawers.patch
-startup_patch=$repo/mseries/patches/dock-workspace-startup.patch
 
 mode=${1:-install}
-case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
+case $mode in install|--build-only|--build-running-apps-only|--revert) ;; *) echo "Usage: $0 [--build-only|--build-running-apps-only|--revert]" >&2; exit 2;; esac
 if [[ $mode == --revert ]]; then
-  rm -f "$wrapper"
+  rm -f "$wrapper" "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/pantheon-dock.service.d/keep-apps.conf"
+  systemctl --user daemon-reload 2>/dev/null || :
   echo "Reverted: the stock dock ($stock) is used at your next login."
   echo "The private build is left in $prefix (delete it to reclaim space)."
   exit 0
 fi
 
-for tool in git meson ninja valac pkg-config glib-compile-schemas; do
+for tool in git meson ninja valac pkg-config glib-compile-schemas python3 xvfb-run; do
   command -v "$tool" >/dev/null || { echo "Missing $tool." >&2; missing=1; }
 done
-for mod in gtk4 granite-7 libadwaita-1 gee-0.8 gala x11 wayland-client; do
+for mod in gtk4 granite-7 libadwaita-1 gee-0.8 gala x11 wayland-client wingpanel-9 json-glib-1.0; do
   pkg-config --exists "$mod" 2>/dev/null || { echo "Missing development files for $mod" >&2; missing=1; }
 done
 if [[ ${missing:-0} == 1 ]]; then
   echo 'Install build requirements with:' >&2
-  echo '  sudo apt install git meson ninja-build valac libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libgala-dev libx11-dev libwayland-dev' >&2
+  echo '  sudo apt install git meson ninja-build valac libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libgala-dev libx11-dev libwayland-dev libjson-glib-dev xvfb xauth' >&2
   exit 1
 fi
 
@@ -67,14 +66,19 @@ git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
-git -C "$source_dir" apply "$patch"
-git -C "$source_dir" apply "$startup_patch"
+bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
+# --build-running-apps-only is a build-only compatibility alias. Canonical
+# preparation now applies tracking and validates shared-source preservation.
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
+for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarNotifications DockAppResolver; do
+  strings "$build_dir/src/io.elementary.dock" | grep -F "$component" > /dev/null
+done
 glib-compile-schemas --strict --dry-run "$source_dir/data"
-if [[ $mode == --build-only ]]; then
+bash "$repo/mseries/dock-taskbar/test-hover.sh"
+if [[ $mode == --build-only || $mode == --build-running-apps-only ]]; then
   echo 'Native dock build and schema validation passed; installed dock unchanged.'
   exit 0
 fi
@@ -87,6 +91,10 @@ cat > "$wrapper" <<LAUNCHER
 #!/bin/sh
 # ElementaryOS_MSeries: run the patched dock (drawer slots) with a stock fallback.
 # Delete this file (or run install-dock-drawers.sh --revert) and log out/in to revert.
+# Preserve the owner's opt-out across installs and all fallback paths.
+if [ -e "\${XDG_CONFIG_HOME:-\$HOME/.config}/mseries/dock/user-disabled" ]; then
+  exec /usr/bin/sleep infinity
+fi
 flag="\$HOME/.cache/mseries-dock-failed"
 patched="$patched"
 stock="$stock"
@@ -133,6 +141,12 @@ fi
 exit "\$rc"
 LAUNCHER
 chmod 0755 "$wrapper"
+# Apps launched from the dock live in pantheon-dock.service's cgroup; the default KillMode would kill them
+# (ChatGPT, Codex, Claude...) whenever the dock is restarted. KillMode=process ends only the dock itself.
+dropin=${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/pantheon-dock.service.d
+mkdir -p "$dropin"
+printf '[Service]\n# Restarting the dock must not close apps launched from it.\nKillMode=process\n' > "$dropin/keep-apps.conf"
+systemctl --user daemon-reload 2>/dev/null || :
 # A successfully rebuilt dock gets another chance after a previous fallback.
 rm -f "${HOME}/.cache/mseries-dock-failed"
 

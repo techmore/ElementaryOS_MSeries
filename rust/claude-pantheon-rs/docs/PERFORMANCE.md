@@ -1,0 +1,105 @@
+# Performance
+
+Measured 2026-10-21 on elementary OS (Pantheon, Wayland) on an Apple Silicon Mac: 10 cores, 30 GB RAM,
+aarch64. The client is a release build of this repository (`cargo build --release`, cairo renderer);
+the T3 server is the user service `t3code.service` (node + resource-monitor sidecar + the Claude Code
+server-child it spawns) with four providers authenticated; the Electron app is
+`/usr/lib/claude-desktop/claude-desktop` idle with its Code tab open. All rows come from
+`./bench.sh <pattern> 20`, which sums RSS over the matched process tree and averages CPU from
+`/proc/<pid>/stat` deltas over 20 s. The client rows were taken under Xvfb (no screenshot or display
+tool on this host) after a 30 s settle, with `CLAUDE_PANTHEON_OPEN` selecting the chat.
+
+## Idle, with a chat open
+
+| Process tree | Processes | RSS avg (MB) | RSS peak (MB) | CPU % over 20 s |
+|---|---|---|---|---|
+| claude-pantheon-rs, connected, Claude thread (87 items) open | 1 | 60 | 60 | 0.0 |
+| claude-pantheon-rs, offline, 13.5 MB JSONL transcript open | 1 | 58 | 58 | 0.0 |
+| T3 server (`t3code.service`), idle, four providers | 4 | 237 | 237 | 1.0 |
+| client + server | 5 | ~300 | – | ~1 |
+| claude-desktop (Electron), idle, this run | 81 | 1661 | 1723 | 112.2 |
+| claude-desktop (Electron), `BASELINE.md` (19 processes sampled then) | 19 | 2330 – 2390 | – | 108 |
+
+The client alone is 1/28 of the Electron app's memory and uses no CPU at idle; with the server it is
+about 1/6 of the memory and 1 % of a core (the server's provider health probes), for every provider
+instead of one. The first bench run, taken 12 s after launch while the thread was still loading,
+showed 4.4 % CPU and 56 MB; the numbers above are after the window settled.
+
+Start-up has no persistent timers: the only recurring work while idle is one WebSocket ping every
+30 s and one `server.getConfig` call every five minutes for the plan windows.
+
+## Start-up
+
+`claude-pantheon-rs --quit-after-frame` prints the time from `main()` to the first frame
+(`add_tick_callback`), five launches in a row on the real Wayland display, warm page cache:
+**186, 184, 213, 188, 188 ms**; wall time from `exec` to exit (`/usr/bin/time`) 0.22 – 0.25 s. The
+offline index (141 sessions, cache warm) takes 1 ms; cold with the cache missing it scans 650 MB of
+transcripts with rayon in 53 ms. The server connection and the thread list arrive after the first frame.
+
+## Transcript parsing (gio thread pool)
+
+The 13.5 MB "Messages app UI/UX enhancement" transcript opens in well under a second: lines are read
+one at a time (`BufReader`, 256 KiB), only `user`/`assistant` records go through serde, tool results
+are joined onto their calls, and only the last 200 turns become widgets (a button reveals the rest).
+Tool-row details are built on first expand.
+
+## Targets
+
+| Target | Result |
+|---|---|
+| Under 120 MB RSS | 58 – 60 MB |
+| ~0 % CPU at idle with a transcript open | 0.0 % |
+| Start-up under 300 ms | ~190 ms to the first frame |
+
+## What it took
+
+The findings are shared with every GTK app in this repository:
+[`mseries/GTK-PERFORMANCE-ASAHI.md`](../../../mseries/GTK-PERFORMANCE-ASAHI.md) (cairo renderer by
+default with `CLAUDE_PANTHEON_RENDERER` to override, a 1 px CSD outline instead of the blurred
+shadow, cursor blink off, CSS animations gated on map, no synchronous D-Bus at start-up, heavy
+libraries linked but their widgets created lazily, the whole protocol on the GLib loop). What is
+specific here: the T3 WebSocket and HTTP clients sit on `gio::SocketClient` futures (no tokio),
+transcripts parse in `gio::spawn_blocking`, widgets exist only for the visible tail, and the
+sidebar is rebuilt once per burst of shell events.
+
+## Per-PR idle numbers
+
+Every PR re-runs `bench.sh` with a Claude thread open (connected, 30 s settle, 20 s sample) and the
+start-up probe; the table tracks drift per feature.
+
+| PR | Change | RSS avg MB | CPU % | Start-up ms (first frame) |
+|---|---|---|---|---|
+| #462 | initial import | 60 | 0.0 | 184 – 213 |
+| #463 | install target, .desktop actions, D-Bus activation, metainfo, icons | 59 | 0.0 | 187 – 205 |
+| #464 | Wingpanel indicator (separate process in the panel; app unchanged apart from the open-thread action) | 59 | 0.0 | 190 – 205 |
+| #465 | .deb package (app + indicator), CI build and release-pipeline artifact; app unchanged | 49 | 0.0 | 230 – 511 (machine loaded by parallel builds, load 12; same binary as #464) |
+| #466 | CI job: fmt --check, clippy -D warnings, tests; 8 clippy fixes (type aliases, while-let, collapsed ifs) | 58 | 0.0 | 194 – 269 |
+| #467 | HIG shortcuts, app menu with accelerator labels, Close Thread, About | 59 | 0.0 | 211 – 215 |
+| #468 | command palette (Ctrl+K) over threads, transcripts, projects, repos, issues and actions | 59 | 0.0 | 212 – 228 |
+| #469 | composer: 8-line growth, Enter sends, attachment chips (paste/drop, uploaded), @ file picker, drafts per thread | 59 | 0.0 | 213 – 230 |
+| #470 | pulldown-cmark renderer, GtkSourceView 5 code blocks (highlighting, copy, wrap), tables, quotes, links, images | 61 | 0.0 | 205 – 228 |
+| #471 | notifications (turn finished, prompt waiting) and dock badge/progress via Unity LauncherEntry; keyring lookups get a 3 s deadline | 61 | 0.0 | 214 – 268 |
+| #472 | sidebar polish: accent dots, running spinner, unread/needs-you badges, collapsible sections, drag-ordered projects, context menu (pin, rename, hand off, copy link, archive) | 64 | 0.0 | 189 – 201 |
+| #473 | permission prompts as cards: Allow once / Allow for this thread / Deny with reason, Y/N keys, notification mirror | 65 | 0.0 | 193 – 212 |
+| #474 | Changes page: file tree with status, inline/side-by-side GtkSourceView diff, per-hunk copy, restore to checkpoint | 65 | 0.0 | 219 – 240 |
+| #475 | vte4 terminal pane fed from the server's terminal stream (hidden by default; libvte linked at start) | 65 | 0.0 | 247 – 257 |
+| #476 | Settings window (appearance, defaults per project, server, notifications, renderer) | 64 | 0.0 | 304 – 717 (machine at load 16–19 from other agents; the window is built only when opened) |
+| #477 | SnapShot: portal screenshot + AT-SPI window title, attached to the draft (Ctrl+Shift+S) | 66 | 0.0 | 206 – 235 (load 5; the #476 figures were load, not the branch) |
+| #478 | Visual replies: WebKitGTK page cards, view and web process created only on Show page | 69 | 0.0 | 197 – 264 (+3 MB is libwebkitgtk linked in; no WebKit process while no page is shown) |
+| #484 | Protocol version guard and contracts drift check (build-time, no runtime cost) | 69 | 0.0 | 198 – 212 |
+| #479 | Environments switcher (direct, Tailscale, SSH tunnel, T3 Connect), per-environment credentials | 70 | 0.0 | 230 – 567 (machine at load 37–83 from other jobs during the samples) |
+| #480 | Empty states, skeleton loading rows (pulse only while mapped), retry toasts | 68 | 0.0 | 510 – 982 (machine at load 90 from other jobs; an ungated CSS pulse had cost 2.6 % idle, hence the map/unmap gate) |
+| #481 | Window state, text zoom (gtk-xft-dpi), HiDPI check at GDK_SCALE=2, accessible names, focus outlines | 68 | 0.0 | 370 – 611 (machine at load 80 from other jobs) |
+| #482 | Webhook runner tasks (issues.labeled) and per-run provider rotation every 5 min (one list RPC) | 68 | 0.0 | 456 – 696 (machine at load 90 from other jobs) |
+| #485 | Shared GTK-PERFORMANCE-ASAHI.md, standalone checkouts retired (docs only) | 68 | 0.0 | 374 – 731 (machine at load 75 from other jobs) |
+| #486 | dev-clean script, timer and DEV-HYGIENE.md in-repo (no app change) | 65 | 0.0 | 481 – 782 (machine at load 65–80 from other jobs) |
+| #483 | Voice input: pw-record capture + whisper.cpp transcription into the draft (processes only while recording) | 68 | 0.0 | 840 – 1403 (machine at load 95 from other jobs; nothing voice-related runs before the first frame) |
+
+## Reproduce
+
+```sh
+./bench.sh '^/home/me/.cache/cargo-target/release/claude-pantheon-rs' 20 "Rust client"
+./bench.sh '^/home/me/.local/share/t3code/home/runtime' 20 "T3 server"
+./bench.sh '^/usr/lib/claude-desktop/claude-desktop' 20 "Electron"
+for i in 1 2 3; do claude-pantheon-rs --quit-after-frame; done
+```

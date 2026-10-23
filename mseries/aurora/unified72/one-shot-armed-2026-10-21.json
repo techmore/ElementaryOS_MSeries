@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "kind": "owner-authorized-one-shot-arming",
+  "time_utc": "20261021T132318Z",
+  "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39601423970",
+  "ci_head": "ed08d502d294f6fa8c9160852e91f6f2ff5c802e",
+  "ci_conclusion": "success",
+  "trial_entry": "elementary-aurora72-wip2-trial",
+  "release": "7.2.10-elementary-aurora72-wip2",
+  "persistent_default": "elementary-aurora20",
+  "running_kernel": "7.1.12-elementary-aurora20-enh1",
+  "rebooted": false,
+  "backup_directory": "/var/lib/mseries-kernel-tests/arming/20261021T132318Z-aurora72-wip2",
+  "image_sha256": "894c420112c94a07bf70f38d1fad95dfd63fb1085550675d3e0e5f2af4123954",
+  "initramfs_sha256": "ae1ed9d872ccbffe2854ec93c6c3d2bee0631aa7dd0000b7fcb4130b1437688b",
+  "shared_boot_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+  "armed": true,
+  "next_entry": "elementary-aurora72-wip2-trial",
+  "grubenv_sha256": "59d367bbb761e4f93a16488a986df75c76b8ec11b0a4a03a6d05fe6b9560e8b2",
+  "other_protected_files_unchanged": true,
+  "grub_reboot_output": ""
+}

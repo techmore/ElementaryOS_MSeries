@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for M-series updates (and stage them if auto_stage is on)
+Documentation=https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/UPDATER-DESIGN.md
+ConditionACPower=true
+ConditionPathExists=/etc/mseries-update/sources.list.d/mseries.sources
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/mseries-update auto
+Nice=19
+IOSchedulingClass=idle

@@ -1,5 +1,7 @@
 # Aurora SEP kernel lane (Touch ID)
 
+**Current state (2026-10-21):** on the J314S the driver attaches and an enrolment completes in the enclave, but the xART guard blocks saving and matching. Read [XART-GUARD.md](XART-GUARD.md) first, and [UPSTREAM-MAP.md](UPSTREAM-MAP.md) for who maintains what and where to report.
+
 Optional second kernel for M-series Macs that enables Touch ID on Linux. It
 installs the community **Aurora** kernel (`omacom/linux-aurora`) beside the
 stock kernel. It is not the default: one extra GRUB entry, marked for clean
@@ -124,3 +126,10 @@ after the first boot.
   pattern for the fairydust lane
 - `mseries/BUG-FIX-ROADMAP.md` — Touch ID row and test order
 - `mseries/local-ai/touchid-watch.py` — upstream signal watcher
+
+## Settings page (preferred)
+
+`mseries/touchid-settings/` is the native GTK 4 Settings page (Settings → Personal → Touch ID) that
+supersedes the GTK 3 app above for enrolling fingers and choosing what they unlock. It reuses
+`mseries-aurora-touchid-apply-pam`, which now accepts `--only sudo|polkit-1`. Install with
+`bash mseries/install-touchid-settings.sh`; see [touchid-settings/README.md](../touchid-settings/README.md).

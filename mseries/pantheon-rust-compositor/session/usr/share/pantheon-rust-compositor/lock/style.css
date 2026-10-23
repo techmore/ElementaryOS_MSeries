@@ -1,0 +1,128 @@
+/*
+ * elementary-style lock screen for gtklock 4 (GTK 3).
+ * Clock and date values follow io.elementary.greeter's Application.css
+ * (Copyright 2018-2023 elementary, Inc., GPL-2.0-or-later); the card, avatar and
+ * entry use the elementary GTK 3 stylesheet's .card, .h2 and .linked styles.
+ * pantheon-lock appends per-user rules (avatar picture, accent) after this file.
+ */
+
+window {
+    background-color: #1a1a1a;
+}
+
+#window-box {
+    padding: 48px 24px 96px;
+}
+
+/* Clock and date: greeter values, white with soft shadows over the wallpaper. */
+#info-box {
+    margin-top: 6em;
+}
+
+.date,
+.time {
+    color: #fff;
+}
+
+#clock-label.time,
+window.focused:not(.hidden) #clock-label.time {
+    font-feature-settings: "cv01";
+    font-size: 10em;
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    text-shadow:
+        0 1px 2px alpha(black, 0.3),
+        0 3px 6px alpha(black, 0.15);
+}
+
+#date-label.date,
+window.focused:not(.hidden) #date-label.date {
+    font-size: 2em;
+    font-weight: 600;
+    margin-top: -0.5em;
+    opacity: 0.9;
+    text-shadow:
+        0 1px 2px alpha(black, 0.4),
+        0 1px 3px alpha(black, 0.1);
+}
+
+/* The card: avatar overlapping its top edge, name, password row. */
+#body-grid.card {
+    padding: 52px 24px 18px;
+    border-radius: 12px;
+    box-shadow:
+        0 0 0 1px alpha(black, 0.05),
+        0 3px 4px alpha(black, 0.15),
+        0 10px 24px alpha(black, 0.25);
+}
+
+#lock-avatar {
+    min-width: 80px;
+    min-height: 80px;
+    border-radius: 999px;
+    background-image: linear-gradient(to bottom, #64baff, #3689e6);
+    background-size: cover;
+    background-position: center;
+    box-shadow:
+        0 0 0 3px @base_color,
+        0 3px 6px alpha(black, 0.25);
+}
+
+#lock-avatar-initial {
+    color: #fff;
+    font-size: 32px;
+    font-weight: 600;
+    text-shadow: 0 1px 1px alpha(black, 0.2);
+}
+
+#lock-user-name.h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+#lock-status-row {
+    margin-top: 6px;
+}
+
+#input-label:not(:backdrop) {
+    font-size: 0.95em;
+}
+
+#input-field {
+    min-height: 34px;
+}
+
+/* elementary's suggested action: solid accent, white symbol. pantheon-lock
+   replaces the colour with the user's accent. */
+#unlock-button,
+#unlock-button:backdrop {
+    min-width: 34px;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-image: none;
+    background-color: #3689e6;
+    border-color: shade(#3689e6, 0.8);
+    color: #fff;
+    box-shadow:
+        inset 0 1px 0 0 alpha(white, 0.2),
+        0 1px 2px alpha(black, 0.15);
+    -gtk-icon-shadow: none;
+}
+
+#unlock-button:hover {
+    background-color: shade(#3689e6, 1.08);
+}
+
+#unlock-button:active {
+    background-color: shade(#3689e6, 0.92);
+}
+
+#warning-label {
+    color: @warning_color;
+}
+
+#error-label {
+    color: @error_color;
+    font-weight: 600;
+}

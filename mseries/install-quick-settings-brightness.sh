@@ -16,25 +16,18 @@ git init -q "$work/source"
 git -C "$work/source" remote add origin https://github.com/elementary/quick-settings.git
 git -C "$work/source" fetch -q --depth=1 origin fb721d4b5640a2a25ae011370c8fe8aaff8d93f4
 git -C "$work/source" checkout -q --detach FETCH_HEAD
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-brightness.patch"
-install -m644 "$repo/mseries/quick-settings/ScreenBrightness.vala" "$work/source/src/Widgets/ScreenBrightness.vala"
-install -m644 "$repo/mseries/quick-settings/KeyboardBrightness.vala" "$work/source/src/Widgets/KeyboardBrightness.vala"
-install -m644 "$repo/mseries/quick-settings/ChargeLimit.vala" "$work/source/src/Widgets/ChargeLimit.vala"
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-audio-output.patch"
-install -m644 "$repo/mseries/quick-settings/AudioOutputModel.vala" "$work/source/src/Widgets/AudioOutputModel.vala"
-install -m644 "$repo/mseries/quick-settings/AudioOutput.vala" "$work/source/src/Widgets/AudioOutput.vala"
-install -m644 "$repo/mseries/quick-settings/AirPlayOutputs.vala" "$work/source/src/Widgets/AirPlayOutputs.vala"
-git -C "$work/source" apply "$repo/mseries/patches/quick-settings-bluetooth.patch"
-install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Widgets/Bluetooth.vala"
+# Keep the core patch/copy stack identical to the factory and package builds.
+bash "$repo/mseries/quick-settings/prepare-source.sh" "$repo" "$work/source"
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
 install -m644 "$repo/mseries/quick-settings/AirDropPanel.vala" "$work/source/src/Widgets/AirDropPanel.vala"
 sed -i "s|    'Widgets' / 'ChargeLimit.vala',|    'Widgets' / 'ChargeLimit.vala',\n    'Widgets' / 'AirDropPanel.vala',\n    'Widgets' / 'ShareState.vala',\n    'Widgets' / 'ShareClient.vala',\n    'Widgets' / 'SharePanel.vala',|; s|        wl_client_dep,|        wl_client_dep,\n        dependency('json-glib-1.0'),\n        dependency('libsoup-3.0'),|" "$work/source/src/meson.build"
-sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });\n            main_box.append (new MSeries.AirDropPanel ());|' "$work/source/src/PopoverWidget.vala"
+sed -i 's|            // mseries:sharing|            var sharing = new Card ();\n            sharing.add_row (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });\n            sharing.add_row (new MSeries.AirDropPanel ());\n            main_box.append (sharing);|' "$work/source/src/PopoverWidget.vala"
 grep -q AirDropPanel "$work/source/src/PopoverWidget.vala" && grep -q SharePanel "$work/source/src/PopoverWidget.vala" && grep -q libsoup "$work/source/src/meson.build" && grep -q "'SharePanel.vala'" "$work/source/src/meson.build" \
   || { echo 'could not wire the share section into Quick Settings' >&2; exit 1; }
 install -m644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$work/mseries-share-eyes-symbolic.svg"
 install -m644 "$repo/mseries/quick-settings/airdrop.svg" "$work/mseries-airdrop-symbolic.svg"
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then

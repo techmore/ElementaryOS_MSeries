@@ -47,6 +47,22 @@ claude_ok = entry("claude", [window("primary", "5 hour", 300, 55, 120, "On pace"
                              window("secondary", "7 day", 10080, 81, 8000, "On pace")], plan="max")
 go_err = entry("opencodego", [], error="Usage unavailable. Check this provider’s CodexBar login/configuration.", plan="", age_min=0)
 go_err["updatedAt"] = ""
+# Grok as upstream v0.78.0 exports it: one weekly credits window, the reported SuperGrok tier, and
+# informational detail sections (product shares of the same pool, usage-limit reset coupons).
+grok_ok = entry("grok", [window("primary", "7 day", 10080, 76, 4000, "On pace")], plan="SuperGrok")
+grok_ok["details"] = [
+    {"title": "Usage breakdown", "rows": [{"label": "Grok Build", "value": "18%", "secondaryValue": ""},
+                                          {"label": "Grok Chat", "value": "6%", "secondaryValue": ""}], "chart": None},
+    {"title": "Limit Reset Credits", "rows": [{"label": "Available", "value": "1 available", "secondaryValue": ""}],
+     "chart": None},
+    {"title": "Malformed", "rows": ["not an object", 7, {"value": None}, {"label": "", "value": ""}], "chart": None},
+    "not a section",
+]
+grok_signed_out = entry("grok", [], error="Usage unavailable. Check this provider’s CodexBar login/configuration.",
+                        plan="", age_min=0)
+grok_signed_out["updatedAt"] = ""
+# Signed in on a plan with no credits pool: a clean fetch, no windows, no error.
+grok_free = entry("grok", [], plan="Free")
 
 scenarios = {
     "healthy": snap([codex_ok, claude_ok]),
@@ -60,6 +76,9 @@ scenarios = {
         window("secondary", "7 day", 10080, 68, 8000), window("tertiary", "30 day", 43200, 91, 30000)], plan="go")]),
     "stale": snap([codex_ok, claude_ok], stale=True, error="Network unreachable"),
     "empty": snap([]),
+    "grok": snap([codex_ok, claude_ok, grok_ok]),
+    "grok-signin": snap([codex_ok, grok_signed_out]),
+    "grok-free": snap([codex_ok, grok_free]),
 }
 busy = snap([]); busy["busy"] = True
 scenarios["busy"] = busy
@@ -72,7 +91,11 @@ sessions = {"updatedAt": iso(NOW), "sessions": [
      "periods": [{"label": "5 hours", "requests": 42, "tokens": 1850000, "costUSD": 0},
                  {"label": "7 days", "requests": 610, "tokens": 31200000, "costUSD": 0}],
      "note": "Local activity from Claude Code transcripts · not account quota (tokens include cache reads/writes)"},
-    {"id": "opencode", "name": "OpenCode", "state": "ok", "detail": "Local activity", "periods": [{"label":"7 days","tokens":120813143,"requests":565,"costUSD":0}]}]}
+    {"id": "opencode", "name": "OpenCode", "state": "ok", "detail": "Local activity", "periods": [{"label":"7 days","tokens":120813143,"requests":565,"costUSD":0}]},
+    {"id": "grok", "name": "Grok Build", "state": "ok", "detail": "Signed in · account credits come from CodexBar.",
+     "accountEmail": "me@grok.example",
+     "periods": [{"label": "7 days", "tokens": 762841, "requests": 1, "costUSD": 0}],
+     "note": "Local activity from Grok Build session usage · includes cached input and reasoning · not account quota"}]}
 write_fixture(here / "sessions.json", sessions)
 print("fixtures:", ", ".join(sorted(scenarios)))
 
@@ -107,3 +130,33 @@ for provider, value in hint_accounts.items():
 
 write_fixture(here / "opencode-compact.json", scenarios["connected"], indent=1)
 write_fixture(here / "accounts-opencode-single.json", {"accounts": [accounts["opencode"]["accounts"][0]]})
+
+# One person, three sign-ins shared across providers: the account-legend layout numbers each address once.
+write_fixture(here / "shared-accounts.json", scenarios["connected"], indent=1)
+shared = copy.deepcopy(accounts)
+shared["codex"]["accounts"] = [
+    {"email": "me@example.com", "id": "a", "active": True, "plan": "prolite", "windows": []},
+    {"email": "work@example.org", "id": "b", "active": False, "plan": "plus", "windows": [
+        window("primary", "5 hour", 300, 5, 65), window("secondary", "7 day", 10080, 62, 5000)]},
+    {"email": "lab@example.edu", "id": "c", "active": False, "plan": "plus", "windows": [
+        window("primary", "5 hour", 300, 88, 20), window("secondary", "7 day", 10080, 40, 7000)]}]
+shared["claude"].update(activeEmail="me@example.com", activePlan="max20x", displayEmail="me@example.com", displayPlan="max20x")
+shared["claude"]["desktop"]["email"] = "me@example.com"
+shared["claude"]["accounts"][0].update(email="me@example.com", plan="max20x")
+shared["claude"]["accounts"][1].update(email="work@example.org", plan="pro")
+shared["opencode"]["accounts"][0]["email"] = "me@example.com"
+shared["opencode"]["accounts"][1]["email"] = "work@example.org"
+for provider, value in shared.items():
+    write_fixture(here / f"accounts-{provider}-shared.json", value)
+
+# Different CLI/app logins: app quota must win even when the CLI account is exhausted.
+write_fixture(here / "claude-split.json", scenarios["connected"], indent=1)
+split = copy.deepcopy(accounts["claude"])
+split.update(activeEmail="work@claude.example", activePlan="max20x",
+             displayEmail="me@claude.example", displayPlan="pro")
+split["desktop"]["differs"] = True
+for row in split["accounts"]:
+    row["active"] = row["number"] == 2
+    row["panelActive"] = row["number"] == 1
+split["accounts"][1]["plan"] = "max20x"
+write_fixture(here / "accounts-claude-split.json", split)

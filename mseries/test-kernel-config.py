@@ -44,6 +44,23 @@ class KernelGateTests(unittest.TestCase):
         report = gate.inspect(Path(__file__).parent / 'fairydust/usb4/running-config', gate.BASELINE + gate.EXPERIMENTAL)
         self.assertEqual(report['missing_required'], [])
 
+    def test_preserved_kernel_configs_have_the_peripheral_drivers(self):
+        for name in ('running-config', 'config'):
+            report = gate.inspect(Path(__file__).parent / 'fairydust/usb4' / name, gate.PERIPHERALS)
+            self.assertEqual(report['missing_required'], [], name)
+
+    def test_peripherals_flag_names_the_missing_driver(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / 'config'
+            config.write_text(''.join('CONFIG_%s=m\n' % name for name in gate.PERIPHERALS
+                                      if name != 'HID_MAGICMOUSE') +
+                              ''.join('CONFIG_%s=y\n' % name for name in gate.BASELINE))
+            command = [sys.executable, str(Path(__file__).with_name('check-kernel-config.py')), str(config)]
+            self.assertEqual(subprocess.run(command, capture_output=True, text=True).returncode, 0)
+            result = subprocess.run(command + ['--peripherals'], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn('HID_MAGICMOUSE', result.stdout)
+
     def test_fairydust_build_config_has_builtin_vm_console(self):
         config = Path(__file__).parent / 'fairydust/usb4/config'
         report = gate.inspect(config, gate.VM_CONSOLE)

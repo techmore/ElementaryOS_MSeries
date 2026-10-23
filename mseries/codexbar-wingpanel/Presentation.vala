@@ -47,9 +47,43 @@ namespace MSeries {
             return label;
         }
 
+        /* Account legend: every distinct sign-in email gets one number and one hue across all
+         * providers, so the dropdown and the bar can show "1", "2"... instead of repeating addresses.
+         * The order is the caller's (signed-in accounts first); duplicates differ only in case. */
+        public static string[] account_legend (string[] emails) {
+            string[] legend = {};
+            var seen = new GenericSet<string> (str_hash, str_equal);
+            foreach (var email in emails) {
+                var key = email.strip ().down ();
+                if (key.length == 0 || !key.contains ("@") || seen.contains (key)) continue;
+                seen.add (key);
+                legend += email.strip ();
+            }
+            return legend;
+        }
+
+        /* 1-based position of `email` in `legend`, or 0 when it is not there. */
+        public static int legend_number (string[] legend, string email) {
+            var key = email.strip ().down ();
+            for (int i = 0; i < legend.length; i++) {
+                if (legend[i].down () == key) return i + 1;
+            }
+            return 0;
+        }
+
+        /* elementary palette hues, readable as a filled badge with white text in light and dark styles. */
+        public const string[] ACCOUNT_HUES = { "#3689e6", "#f37329", "#a56de2", "#28bca3", "#de3e80", "#7e5e3b" };
+
+        public static string account_hue (int number) {
+            if (number < 1) return "";
+            return ACCOUNT_HUES[(number - 1) % ACCOUNT_HUES.length];
+        }
+
         public static string plan_label (string plan) {
             var value = plan.strip ();
             if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "max20x") return "Max 20×";
+            if (value.down () == "max5x") return "Max 5×";
             if (value.down () == "prolite") return "Pro Lite";
             if (value.down () == "go") return "Go";
             return value.substring (0, 1).up () + value.substring (1);
@@ -128,8 +162,12 @@ namespace MSeries {
                 var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
                 var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
                 var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
-                var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
-                    : countdown_text (reset.to_unix () - now_unix);
+                // Explicit owned string: valac frees the owned inner value of a nested
+                // literal/call ternary before copying it (use-after-free in generated C).
+                string eta = "?";
+                if (reset != null) {
+                    eta = reset.to_unix () <= now_unix ? "now" : countdown_text (reset.to_unix () - now_unix);
+                }
                 if (parts.len > 0) parts.append (" · ");
                 parts.append (label);
                 if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));
@@ -167,6 +205,8 @@ namespace MSeries {
             double lowest = 101;
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
+                // A model-scoped cap (Fable) limits that model only; it never lowers the account's headroom.
+                if (JsonBoundary.flag (window, "scoped", false)) continue;
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
                 var remaining = node.get_double ();

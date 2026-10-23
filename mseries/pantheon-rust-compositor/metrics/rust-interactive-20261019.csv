@@ -1,0 +1,14 @@
+# session=rust workload=interactive display_mode=3024x1964 duration_s=30 interval_s=5 started_utc=2026-10-19T16:12:29Z
+utc,session,workload,display_mode,pid,process,cpu_percent_one_core,ram_kib,elapsed_s,battery_flow_mw,battery_status,ac_online,battery_percent
+2026-10-19T16:12:34Z,rust,interactive,3024x1964,433775,pantheon-compos,6.60,179536,5,0,Not charging,1,80
+2026-10-19T16:12:34Z,rust,interactive,3024x1964,433879,io.elementary.w,0.40,431200,5,0,Not charging,1,80
+2026-10-19T16:12:39Z,rust,interactive,3024x1964,433775,pantheon-compos,5.20,179568,10,0,Not charging,1,80
+2026-10-19T16:12:39Z,rust,interactive,3024x1964,433879,io.elementary.w,0.40,431200,10,0,Not charging,1,80
+2026-10-19T16:12:44Z,rust,interactive,3024x1964,433775,pantheon-compos,2.00,179568,15,0,Not charging,1,80
+2026-10-19T16:12:44Z,rust,interactive,3024x1964,433879,io.elementary.w,0.40,431200,15,0,Not charging,1,80
+2026-10-19T16:12:49Z,rust,interactive,3024x1964,433775,pantheon-compos,3.60,179600,20,0,Not charging,1,80
+2026-10-19T16:12:49Z,rust,interactive,3024x1964,433879,io.elementary.w,0.60,431200,20,0,Not charging,1,80
+2026-10-19T16:12:54Z,rust,interactive,3024x1964,433775,pantheon-compos,5.60,179616,25,0,Not charging,1,80
+2026-10-19T16:12:54Z,rust,interactive,3024x1964,433879,io.elementary.w,0.40,431200,25,0,Not charging,1,80
+2026-10-19T16:12:59Z,rust,interactive,3024x1964,433775,pantheon-compos,5.20,179648,30,0,Not charging,1,80
+2026-10-19T16:12:59Z,rust,interactive,3024x1964,433879,io.elementary.w,0.00,431200,30,0,Not charging,1,80

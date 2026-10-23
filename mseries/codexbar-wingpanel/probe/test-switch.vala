@@ -24,8 +24,13 @@ int main (string[] args) {
     window.present ();
     var loop = new MainLoop ();
     bool passed = false;
-    Timeout.add (700, () => {
+    // The account rows appear once the fake helpers answer; poll instead of a fixed wait so a
+    // heavier first layout (the popover renders at double text size) cannot race the lookup.
+    int waited = 0;
+    Timeout.add (100, () => {
         var button = find_button (menu, "Switch");
+        waited += 100;
+        if (button == null && waited < 5000) return Source.CONTINUE;
         assert (button != null);
         button.clicked ();
         // Churn temporary arrays after the originating row callback returns. The old

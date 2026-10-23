@@ -1,0 +1,1469 @@
+{
+  "schema": 1,
+  "kind": "independent-patch-applicability",
+  "captured_at": "2026-10-21T12:15:54.642548+00:00",
+  "source": "644133b7799f759c5bfd88507b6246d298b6509c",
+  "review_baseline": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "previous_unified72_source": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+  "counts": {
+    "patches": 64,
+    "forward_applies": 0,
+    "reverse_applies": 40,
+    "neither_applies": 24,
+    "source_files": 101,
+    "missing_at_new_source": 4
+  },
+  "source_file_sha256": {
+    "Documentation/PCI/controller/apple-t8140.rst": "257d5cca4179c2a9ea739d47fe722c35e4de0ef18f43d730bc04f61e4d04e021",
+    "Documentation/admin-guide/kernel-parameters.txt": "3475a2336be2d6207564b7ca709f48a53f315efc8e300487e12ba0adc374fffb",
+    "Documentation/admin-guide/media/apple-ave.rst": null,
+    "Documentation/arch/arm64/apple-j813.rst": "c08045c1f5d5492038300901510f5def299ae6004c7d80e0ae3ef319cb29a513",
+    "Documentation/arch/arm64/apple-m6-cpu.rst": "56cb2d7bf710dfc1bb784df7b2411ccb1826316562358f50d4b5862f1f3c2e44",
+    "Documentation/arch/arm64/apple-t8140-pmp-dvfs.rst": null,
+    "Documentation/arch/arm64/index.rst": "80cbcd1ef686f661fa4982e8e526129bd5b48809b83d4f16430c91fcc1ee0f6e",
+    "Documentation/arch/arm64/user4k.rst": "121d505b6d33ff3f1b14172a26904d893fe6ddaf6cc54d0db5001c7e656fbde6",
+    "Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml": "c6d8efca9cf55993c598781a7a9435412c8ddb0d14578d73ce2d7dc1019b9e1c",
+    "Documentation/gpu/apple-dcp-backlight.rst": "fa0e7617c40f90d871f89fcf92d340d85de899d6305b38e6bf7496d5f044a6c0",
+    "Documentation/gpu/drivers.rst": "b5ea0632c13cbf1d2d132d59071f02855bdd714abb2cf4d844eb0c84ee06914e",
+    "Documentation/mm/user_page_size.rst": "097bbc0bd9bccd88084c3473baace6e13549e9ae23e03eed0aa89a33a704653c",
+    "Documentation/rust/bindgen-layout-checks.rst": "221d9968188173653e70e1199c483e76407b7c467b3419dd13a9568488ea84c3",
+    "Documentation/soc/apple/t8140-pmp-dvfs.rst": null,
+    "MAINTAINERS": "4bd1cf05be4a129bad953fcf3a29db068bd619bce9be6f6475b6cb3a38f8bd91",
+    "arch/arm64/Kconfig.debug": "e35669f5b0b3df27483ac4943dff1429fce755c44df8bdda8b7d4b360969d678",
+    "arch/arm64/boot/dts/apple/t8140.dtsi": "c7f86b87f781ee9eeb80bfdfb5903865761334765312a1ecf65ea960e97a409a",
+    "arch/arm64/include/asm/mmu.h": "5c587d44cc5f6fa52aa754805d1db7ba57c336e47fcf8a8f80a6c8053d7ea6de",
+    "arch/arm64/include/asm/mmu_context.h": "a2c38c7ddbffb325e27e60d34f38df0877968e1bc2c524e5cf4237d7d28ecff1",
+    "arch/arm64/kernel/cpufeature.c": "1e46a8c3235611f235a12a98c6182edfa148d067e1f59b038ecfc8d2020d3861",
+    "arch/arm64/kernel/process.c": "d7c8231005296ae780a89dc2ced5439317faa36cacbe84825b405b64c928ad09",
+    "arch/arm64/mm/context.c": "29d16b5a18c611a2325f1d74d590478aa6ea8a7548570ca5d3d29d5945743d9c",
+    "arch/arm64/mm/user4k-test.c": "5e3abf3ef22ea47566fba3722b0a16be0eb6fed0712443feecc821d452b1ec39",
+    "block/blk-map.c": "b812c14bd4ea15b46569a33b4da3101006c8c6bd0595fc24ef720372ec5cbc7c",
+    "drivers/gpu/drm/Makefile": "aa1097d094602582c1408436c56fd6c8862d443d610d6626c37c0aba72710e79",
+    "drivers/gpu/drm/apple/Kconfig": "aab0e280af9df4d64ad9b8e51ce04e9e36a034ed48cc730add40d7e28164cf36",
+    "drivers/gpu/drm/apple/Makefile": "0d1aac886444568e6f283d1668e8d007af01017e09d5e93d6a9836f5c8ad8d6a",
+    "drivers/gpu/drm/apple/dcp-fabric-test.c": "3a15dcee84f35e8946e9495c3292fd398a5ca5cf7f67949a0087f00133f31587",
+    "drivers/gpu/drm/apple/dcp-fabric.c": "e067271dd2018f88eb74e3e122a36b29316f96b676f6fdb48612bc8021a94b36",
+    "drivers/gpu/drm/apple/dcp-internal.h": "58ce3683712b7790debc002501772d6b79ab6fc15098a157f609cbcba445d77b",
+    "drivers/gpu/drm/apple/dcp-relink.h": "4cc43a69deb661461be47ac2f1f5287fd30d698e58b81cb1a937bdf82acae252",
+    "drivers/gpu/drm/apple/dcp.c": "fc37f11a3c06dc389b272816773d9c11618e5def145f2788c419341c78402d11",
+    "drivers/gpu/drm/apple/dptxep.c": "5d855e76f1136579f74e8fe7bcb5fb701f4a7496b2c75253514ce20c7aafce67",
+    "drivers/gpu/drm/apple/parser-test.c": "6842aca65f22b892aae6ef55251a6db630a7292227ed4425565612c4b0092a28",
+    "drivers/gpu/drm/asahi/mem.rs": "f5099153964db1d4fd5c608ad5b765f3238897bf428be1d2d5041de91a382d8a",
+    "drivers/gpu/drm/asahi/queue/mod.rs": "4487dce9dd6062ee80ffcaf0f5cf1d52cf3d247a31f1449247911b09455afcf2",
+    "drivers/gpu/drm/asahi/util.rs": "fcbbeb3765bc8809809c141cdd7732592136cbeaef6844273ee04a9c3b5b81e6",
+    "drivers/gpu/drm/drm_gem_shmem_helper.c": "95ddb5c8610cfba4827835781caba36a419d9758e4f88f296618a840b1a14589",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c": "62dd4ec0ea2ea4ec291a834b28a2f00f092962070d7401887c747f9940ef7a15",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c": "d560f3173b0f6aa0cffa785f66dca4727e830817099564d2fb15494ed9f905d6",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h": "e4dbb3d8c661b94387b27b6c610a4ad42c41e8bba3d6e293f127cb9db09fefb3",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c": "7b25a18d8a40e41657235be54b0e680b4b04a948ead9ad6e540d2001015e6482",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c": "ff2682518d106dcdd501abb73af919da0481e00e6eced0102fb238540c99aa23",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c": "322ed47d2c0caebb6d92524f905627f0db567985ba844ce6229da15cf85e6bf9",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/vendor.h": "b8179845b48e4983d88874ff8cae9212783e02c266dee686bdfe8102e88df34f",
+    "drivers/pmdomain/apple/pmp-report.c": "aaa787641f17e46c6faafa61bdda442a2bf8b8ccf2995c5a233568cba196adf9",
+    "drivers/soc/apple/pm.rs": "bd0358ee7db06ed59d2867b760270b2c441305ffa667d295b3de0b2f38f08b72",
+    "drivers/soc/apple/pm_shim.c": "98d2321963c924f8e99e257e61eda06252d81dec6425547d95ac55acb7218402",
+    "drivers/soc/apple/sbio.rs": "545d74363f9eb81135d8672eb2e19f7b15349c2415350da69067a5bb2b8fc2c7",
+    "drivers/soc/apple/sep.rs": "d5e207e37b98105b0c287a815b9fe63d521d968687d1c2239a01bfab8c029cc1",
+    "drivers/soc/apple/shim.h": "c063758c7f773a213b0f300ae286a0fb8db40c2756bd07206dcd0893a8e884ce",
+    "drivers/soc/apple/store.rs": "e51531276a051fb3557b3440feb76b63cd05e1673af652d419b7251d98a64f90",
+    "drivers/spi/Kconfig": "3752a284faffe4778da8f5bed6a75198372275d9092a44ddf2e9502858834bae",
+    "drivers/spi/Makefile": "47b8ec942805e1ab9373b5c052e7115a026a6b7fc2528ad34353632fdd50a7ba",
+    "drivers/spi/spi-apple-qspi-policy-test.c": "e64a61e399b6570bac2bf8f14fd4b3ec31244b73ce6fbe3b27caf7d9da2b5c5c",
+    "drivers/spi/spi-apple-qspi-policy.h": "c1f4ae487ff2e2363469b018a76b4516fb534043b051512277f7a645a7377062",
+    "drivers/spi/spi-apple-qspi.c": "8de36648e6dd085c29b2b264fc3b50e7fb1d55e9fd7fca7d0fe88f2e28172121",
+    "drivers/usb/typec/tipd/Kconfig": "9574a0810560f293754b150adde751ea7a7a62d2a118114eaaa43f71929d5e1c",
+    "drivers/usb/typec/tipd/cd321x-pm-test.c": "daa34ef8f792e8a9048bcfefbf198a6337fb64e003c463ce82d922caf41bc67b",
+    "drivers/usb/typec/tipd/cd321x-pm.h": "c9751f037da606198c0e5b9161048cdd2c35d1b2c6ac4123a6e52829cdbc4795",
+    "drivers/usb/typec/tipd/core.c": "3b1b0a981f2a5653792a7dd8d57b35fa6c1db636bbf11f18c3c3641e4a9294d5",
+    "drivers/usb/typec/tipd/debugfs.c": "99c72f8bca32942d8e16e4fbd403b55e2a07c0d7ba059b6e5ce38714a03c3f38",
+    "drivers/vfio/Kconfig": "8a372864fa08a5d283065f2d6d547f92a3eee310aa03bf00e8427dcfa350c33f",
+    "drivers/vfio/vfio_iommu_type1.c": "6ff628b4a88d35006ac86260076547e9d34822001546877f4ce67dbe6c0336ce",
+    "drivers/vfio/vfio_iommu_type1_fragments.c": "9a3ac3b4f18582c73bede25e8611de03b441fb786d9eb1c70ff2edce64bf8bab",
+    "fs/exec.c": "72dcf0f816519dd94935846c2756d9b9cfaa500ac3d9b6a6a84ee81bcb890ef6",
+    "fs/ocfs2/file.c": "9b82ea43255adc24d45cfc387dd793fbd87d7a985de6547990a9bb7ff0cea4a3",
+    "fs/proc/task_mmu.c": "115da7578dd000bf89438056d1f3d1db6f267ee7428d27686d91402925f044f0",
+    "fs/userfaultfd.c": null,
+    "include/linux/binfmts.h": "50240d6c34e32a49f4df504d42cafdd9e5143f103d369dacaeb23d8e6a8fec71",
+    "include/linux/mm_granule.h": "c0498eda6d7688dc393d4dc5d57e4861e9a591c7a747f28fbcd5c72625bc1630",
+    "include/linux/pgtable.h": "1c6e3fab3e7e195f6353e847a91f632a555c83bbc5970c835e6957f75a555bf0",
+    "include/linux/shmem_fs.h": "f6764b924c7a2d8bea543470f6f17ba309d8df2508aa2a2b6506521357b0a960",
+    "include/uapi/linux/prctl.h": "77b2f619bbdaea0ed01310fc17b65c789902d8811cff72d01e316f6d415eb739",
+    "io_uring/rsrc.c": "a66479894bd9d53242dcc9e8260f6957490fe16817231b68b061f9d7910be408",
+    "kernel/events/core.c": "5d415fc3c5a05060577b88a7612cc1c7401b5ecdf94039bbae6d9b92b9a7a5f7",
+    "kernel/sys.c": "18eee4435a571f974cc945459ff9d7f3223f1c3860d27ba2489128da4d647b61",
+    "mm/internal.h": "759c9a3596d9c8ef647a9fdad80e104d37a7c8993576af131882fe64d7371549",
+    "mm/memory.c": "3043aac324de9dc9b5bb7d3bfc99ae0ebe04efe652dc06d75f3c3a5c1c3ed43d",
+    "mm/mmap.c": "fb0d220ddbd4c8b1f16b1864cb23bc537e72119407af3ad973784ba7930e7ef0",
+    "mm/page_io.c": "4d5552f36feebae7aa607e080138d4c6c55a900301ce715112e35ad9301e4897",
+    "mm/pagewalk.c": "47d5a4043554f945375aa5033b01e1895b92acab81501191492dd137e2c313b3",
+    "mm/process_vm_access.c": "8eb40bfac194668c4c951097c136ba4801e6ffd59d67bc3dc302ad980a47d1a9",
+    "mm/shmem.c": "42a84924bde1910390a25e54919abe05e92756090ec22b5ba5c74d2c19fdac92",
+    "mm/swapfile.c": "05956efd3ec7dc2762cd31e9285988a1a81c7d28bad9bff056240dbb16274a5a",
+    "mm/user-subpage.c": "332785497b9ceb40146035137428608de7452a7c5fd79eaf24837dedcece242d",
+    "mm/util.c": "8904b6ec26c6403ce8195f9f6fc4374f27b77539f8dc92c87984a18433c3a45f",
+    "mm/vmscan.c": "98a5551210092c4f34def5eb3a2caed2af5886620c80dfbdde8964dc915607a9",
+    "net/core/skbuff.c": "d6404a5fe1b952bef426b676ce1bc129fb3f6c785298ceaaa51a2d7ee41b9ea7",
+    "rust/Makefile": "524384d1130cb0c6422b9237907d81967573c411116f96fbb7a8926ac7bd4083",
+    "security/tomoyo/common.h": "1799f6cff9b1da5b7787f504d8e63aed08cbf0f9218da9671234060a4823b0a2",
+    "security/tomoyo/domain.c": "82123f57cda8bb7be1faa5e555d2188b33a0e0c92474fc0235edcaf2755a5f0c",
+    "tools/aurora-bindgen/README.rst": "c5d0cc3099eb44db1241e2a8a723a111b94ef99ed869fb94f2404e7dfc97b482",
+    "tools/aurora-bindgen/build.py": "0e63e0341703959d1f6f37c6a4c11d1033d1add1986f9698f631d81b72e9fee5",
+    "tools/aurora-sep/README.md": "dbcf59cecd62c0245cf39c3c8ee41e3088e2890da89288e91d1c53ee3f02cba4",
+    "tools/aurora-sep/neo/mesa-neo-env": "daff7b2e51b33a3904a991a410a736d93ee16f24c1fe0daf9a737090cbe87a50",
+    "tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD": "342fc8c0c7332fed4c9f25847501b97e7b92076873242442cd49380c5edbab7d",
+    "tools/aurora-sep/tests/test_neo_gpu.py": "f07840b8480ff13208b5e8bab5816e6015d2e7233e512a1799e5a5e7cdeaef08",
+    "tools/aurora-sep/tests/test_t8112_sep_dma.py": "c118e5d812e51fdfa57dbb979b32ed826561e474ffc6b1edf2b7bb3065964f46",
+    "tools/aurora-userpages/README.rst": "af5afebdb99186711b4ed854a82ff243d059d8218b4078c498f6c46080c48578",
+    "tools/aurora-userpages/userpages.c": "ed18373a56c80175fc72479c074c38133b1b84b5e7d7342739cf647a53ec66cb"
+  },
+  "checks": [
+    {
+      "sha": "7638540a67d8a8fd1a0f228ba119e14193702f9e",
+      "subject": "tools/aurora-userpages: say that 4K pages need user4k=on",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/7638540a67d8a8fd1a0f228ba119e14193702f9e.patch",
+      "patch_sha256": "6cec51120372da32e130b25db6be41ecf3cf711f7482fe8f6dd0a9529c4ea923",
+      "affected_files": [
+        "tools/aurora-userpages/README.rst",
+        "tools/aurora-userpages/userpages.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-userpages/README.rst:4",
+        "error: tools/aurora-userpages/README.rst: patch does not apply",
+        "error: patch failed: tools/aurora-userpages/userpages.c:19",
+        "error: tools/aurora-userpages/userpages.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2e6535a04c4efe07ecf041705e6e17cb81b17c7b",
+      "subject": "mm: user-subpage: skip the 4K page_ext record when user4k is off",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2e6535a04c4efe07ecf041705e6e17cb81b17c7b.patch",
+      "patch_sha256": "b83c002027a953a2a8954e902c92b6aa888d6c13c2d205283d588cf14aea1a1c",
+      "affected_files": [
+        "Documentation/admin-guide/kernel-parameters.txt",
+        "Documentation/arch/arm64/user4k.rst",
+        "Documentation/mm/user_page_size.rst",
+        "arch/arm64/Kconfig.debug",
+        "arch/arm64/include/asm/mmu.h",
+        "arch/arm64/mm/context.c",
+        "arch/arm64/mm/user4k-test.c",
+        "include/linux/mm_granule.h",
+        "mm/user-subpage.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/admin-guide/kernel-parameters.txt:8311",
+        "error: Documentation/admin-guide/kernel-parameters.txt: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:68",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply",
+        "error: patch failed: Documentation/mm/user_page_size.rst:65",
+        "error: Documentation/mm/user_page_size.rst: patch does not apply",
+        "error: patch failed: arch/arm64/Kconfig.debug:40",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "17059686aaa39e3892df7df6af6b5ca074f3e411",
+      "subject": "arm64: user4k: keep 4K userspace off unless booted with user4k=on",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/17059686aaa39e3892df7df6af6b5ca074f3e411.patch",
+      "patch_sha256": "a8fac55d260fe35aa2e50a07dab726d9f7bfd9d968468ff32381d9d6c13fab69",
+      "affected_files": [
+        "Documentation/admin-guide/kernel-parameters.txt",
+        "Documentation/arch/arm64/user4k.rst",
+        "Documentation/mm/user_page_size.rst",
+        "arch/arm64/Kconfig.debug",
+        "arch/arm64/include/asm/mmu.h",
+        "arch/arm64/include/asm/mmu_context.h",
+        "arch/arm64/kernel/cpufeature.c",
+        "arch/arm64/kernel/process.c",
+        "arch/arm64/mm/context.c",
+        "arch/arm64/mm/user4k-test.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/admin-guide/kernel-parameters.txt:8305",
+        "error: Documentation/admin-guide/kernel-parameters.txt: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:11",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply",
+        "error: patch failed: Documentation/mm/user_page_size.rst:59",
+        "error: Documentation/mm/user_page_size.rst: patch does not apply",
+        "error: patch failed: arch/arm64/Kconfig.debug:36",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: arch/arm64/mm/user4k-test.c:13744",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/context.c:39",
+        "error: arch/arm64/mm/context.c: patch does not apply",
+        "error: patch failed: arch/arm64/include/asm/mmu.h:17",
+        "error: arch/arm64/include/asm/mmu.h: patch does not apply",
+        "error: patch failed: arch/arm64/Kconfig.debug:36",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ]
+    },
+    {
+      "sha": "2a56089e5baf2bdd9d95760ca5b60e3ab76a9d0a",
+      "subject": "mm: pick the mmap layout from the mm being set up",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2a56089e5baf2bdd9d95760ca5b60e3ab76a9d0a.patch",
+      "patch_sha256": "1345f81710f72ba16094c9bf38e67c3be2ead68d5881b758a4b5e8b3e3095b23",
+      "affected_files": [
+        "mm/util.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/util.c:406",
+        "error: mm/util.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "249829c32c880ddba07771db7c9c95a2baa0dbd2",
+      "subject": "Documentation: arm64: user4k: say the option is on by default",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/249829c32c880ddba07771db7c9c95a2baa0dbd2.patch",
+      "patch_sha256": "f8a06049ddc1af29e1d24baef47c5ad81a05954787e5c31dc153327e0ff2a020",
+      "affected_files": [
+        "Documentation/arch/arm64/user4k.rst"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:19",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:19",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply"
+      ]
+    },
+    {
+      "sha": "d97563b36cd13a215367a44db6f8f4952b97f508",
+      "subject": "arm64: build mixed-granule userspace by default",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d97563b36cd13a215367a44db6f8f4952b97f508.patch",
+      "patch_sha256": "68cece4b2074b7b8209eb2d7a193f266bf6c31169b6ec2a0b4dc62d8eeb112b5",
+      "affected_files": [
+        "arch/arm64/Kconfig.debug"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:32",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:41",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ]
+    },
+    {
+      "sha": "e0bf77e8a3166a29a256995646e40e2db8b3beaa",
+      "subject": "arm64: make the mixed-granule KUnit tests depend on TMPFS",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/e0bf77e8a3166a29a256995646e40e2db8b3beaa.patch",
+      "patch_sha256": "5564143dcf6d0a85cf033410f6df0954c6fd984499bd3c959e9668a5b5e65abd",
+      "affected_files": [
+        "arch/arm64/Kconfig.debug"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:47",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "4154c885c0b9938379ffbeb6795260eb004db3b8",
+      "subject": "perf/core: restore the speculation bound on AUX page lookups",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/4154c885c0b9938379ffbeb6795260eb004db3b8.patch",
+      "patch_sha256": "ef821e50b560c75e13142b32aaeeccc13ffe93b399ce920236c043f3f97c5afb",
+      "affected_files": [
+        "kernel/events/core.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: kernel/events/core.c:58",
+        "error: kernel/events/core.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: kernel/events/core.c:58",
+        "error: kernel/events/core.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "632c8fade2c3cea620e02696905b867c4ed92c8e",
+      "subject": "mm: move the vmf_insert_pfn_prot_mkwrite() kernel-doc back",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/632c8fade2c3cea620e02696905b867c4ed92c8e.patch",
+      "patch_sha256": "07dd5cd54e816c5e48dfdbda2a3db68a3bac84b9d77eeeffd53eec9cfa120daf",
+      "affected_files": [
+        "mm/memory.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:3258",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5fc7e1d1fb9dfe1d1d9b78a7abf050c634cfafcd",
+      "subject": "mm: refuse HugeTLB mappings in mms with a non-native user granule",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/5fc7e1d1fb9dfe1d1d9b78a7abf050c634cfafcd.patch",
+      "patch_sha256": "9c788cbd936666542bd866aa3abf1e7f97408ea5ea4ad82c4546d917e03325c8",
+      "affected_files": [
+        "arch/arm64/mm/user4k-test.c",
+        "mm/mmap.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/mm/user4k-test.c:15",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: mm/mmap.c:352",
+        "error: mm/mmap.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "4f088212736f57544e4785cfe8a3392facd24790",
+      "subject": "exec: drop the user page-size preference on privilege-gaining exec",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/4f088212736f57544e4785cfe8a3392facd24790.patch",
+      "patch_sha256": "2ebb8ca75dce9830ff98eb0acf83b0d7c08e2ea72db796750beaf7a9b406827e",
+      "affected_files": [
+        "arch/arm64/kernel/process.c",
+        "arch/arm64/mm/user4k-test.c",
+        "fs/exec.c",
+        "include/linux/binfmts.h",
+        "include/uapi/linux/prctl.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/kernel/process.c:891",
+        "error: arch/arm64/kernel/process.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/user4k-test.c:33",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: fs/exec.c:1253",
+        "error: fs/exec.c: patch does not apply",
+        "error: patch failed: include/linux/binfmts.h:67",
+        "error: include/linux/binfmts.h: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: fs/exec.c:1253",
+        "error: fs/exec.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/user4k-test.c:33",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: arch/arm64/kernel/process.c:891",
+        "error: arch/arm64/kernel/process.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "2b1ceeb10e4736f733bbea2f233a03f4a0d1b542",
+      "subject": "vfio/type1: keep the previous locked_vm refund rules without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2b1ceeb10e4736f733bbea2f233a03f4a0d1b542.patch",
+      "patch_sha256": "cbafc335f88273d894b1e5e1f537066e0e790e8cea341c95b86d96458f42a3c5",
+      "affected_files": [
+        "drivers/vfio/Kconfig",
+        "drivers/vfio/vfio_iommu_type1.c",
+        "drivers/vfio/vfio_iommu_type1_fragments.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/Kconfig:56",
+        "error: drivers/vfio/Kconfig: patch does not apply",
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:470",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply",
+        "error: patch failed: drivers/vfio/vfio_iommu_type1_fragments.c:547",
+        "error: drivers/vfio/vfio_iommu_type1_fragments.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "3d100cb5a7670f62c9fe807d111a26ee86edeca4",
+      "subject": "vfio/type1: keep the IOMMU page size warnings without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/3d100cb5a7670f62c9fe807d111a26ee86edeca4.patch",
+      "patch_sha256": "c8b2c6bf52236adc78294e745b01579c23d8f10fcbbb4c9ef5d2bfadf2f42937",
+      "affected_files": [
+        "drivers/vfio/vfio_iommu_type1.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1671",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d698033b97a2179ac547ae9d6009f134e4cc615c",
+      "subject": "vfio/type1: skip the CAP_IPC_LOCK check when the DMA owner is unchanged",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d698033b97a2179ac547ae9d6009f134e4cc615c.patch",
+      "patch_sha256": "52d3480faaefc2a35b9a2570941264f63443e29802713ac3e6980728f96a493f",
+      "affected_files": [
+        "drivers/vfio/vfio_iommu_type1.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1929",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2bccca3035db9e41410fde2ede59864c3bf431dc",
+      "subject": "vfio/type1: keep native external pinning when MM_SUBPAGE is off",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2bccca3035db9e41410fde2ede59864c3bf431dc.patch",
+      "patch_sha256": "c6e749c686065b7ff26fb46d4b6f488291d2cab9f156dcb9ae6a641c7485044c",
+      "affected_files": [
+        "drivers/vfio/vfio_iommu_type1.c",
+        "drivers/vfio/vfio_iommu_type1_fragments.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:296",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply",
+        "error: patch failed: drivers/vfio/vfio_iommu_type1_fragments.c:596",
+        "error: drivers/vfio/vfio_iommu_type1_fragments.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "e0e270cd746e23a63170ba28f3f8f8e1e69af174",
+      "subject": "vfio/type1: compile out fragment provider paths without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/e0e270cd746e23a63170ba28f3f8f8e1e69af174.patch",
+      "patch_sha256": "be419a9a99f72ebf7269986f708bef4d616b30185c7292deaffd962009a950ca",
+      "affected_files": [
+        "drivers/vfio/vfio_iommu_type1.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:255",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1761",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "c21d8e24a99ea2e3e7ba7465d7def777096bfee6",
+      "subject": "proc: fold the PAGEMAP_SCAN page size without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/c21d8e24a99ea2e3e7ba7465d7def777096bfee6.patch",
+      "patch_sha256": "e2d052c8919043da267a0793090a0b6d59de5cf7e97265124e099edaa9d2a9ab",
+      "affected_files": [
+        "fs/proc/task_mmu.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: fs/proc/task_mmu.c:2491",
+        "error: fs/proc/task_mmu.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "fb16e8779391b801e22226f3faf68520c1dd69fb",
+      "subject": "tomoyo: keep the page-based argv dump without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/fb16e8779391b801e22226f3faf68520c1dd69fb.patch",
+      "patch_sha256": "ded59e7c38b0146dc5d8ae2cd678864cd9b0b2d6cf820770d3cd0e885d3a8aa9",
+      "affected_files": [
+        "security/tomoyo/common.h",
+        "security/tomoyo/domain.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: security/tomoyo/common.h:575",
+        "error: security/tomoyo/common.h: patch does not apply",
+        "error: patch failed: security/tomoyo/domain.c:903",
+        "error: security/tomoyo/domain.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "55a5ef43af232e5ee879de616bcde38c301ee228",
+      "subject": "userfaultfd: keep the UFFDIO_COPY source check without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/55a5ef43af232e5ee879de616bcde38c301ee228.patch",
+      "patch_sha256": "05376200321e96f158722f0688e8e7b40aa64809ffffb3d9eda6bc1753f6b160",
+      "affected_files": [
+        "fs/userfaultfd.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: fs/userfaultfd.c: No such file or directory"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: fs/userfaultfd.c: No such file or directory"
+      ]
+    },
+    {
+      "sha": "a07e98c6181d4fe90de13812fc5e9f1c531fdf30",
+      "subject": "drm/shmem-helper: keep native fault and mmap paths without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/a07e98c6181d4fe90de13812fc5e9f1c531fdf30.patch",
+      "patch_sha256": "b2c12712e7a0a403221fb594dc1956a23d05a695450b3bc43133028b00bd38bb",
+      "affected_files": [
+        "drivers/gpu/drm/drm_gem_shmem_helper.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/drm_gem_shmem_helper.c:763",
+        "error: drivers/gpu/drm/drm_gem_shmem_helper.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "c5a6961ce15a57575a07b0170a5c892c08119cab",
+      "subject": "io_uring/rsrc: limit the fragment-owner account skip to user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/c5a6961ce15a57575a07b0170a5c892c08119cab.patch",
+      "patch_sha256": "fb7f9460c829878b956fe3a8a5a6825288ecbe4ccb9a448e4459b57b779fff71",
+      "affected_files": [
+        "io_uring/rsrc.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: io_uring/rsrc.c:645",
+        "error: io_uring/rsrc.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: io_uring/rsrc.c:645",
+        "error: io_uring/rsrc.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "71a6bc1bec57b14bebe076aad5fb769e023ebccd",
+      "subject": "block: size user passthrough bios as before without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/71a6bc1bec57b14bebe076aad5fb769e023ebccd.patch",
+      "patch_sha256": "9b4b69bdaee4f2ce7df6c46633863e08db05a8f9e56f9e7e54746242c8959fdf",
+      "affected_files": [
+        "block/blk-map.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: block/blk-map.c:260",
+        "error: block/blk-map.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "ecc0c29cc3d0d5a177b92be3decf5c90652b5868",
+      "subject": "ocfs2: keep the native truncate unmap sequence without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/ecc0c29cc3d0d5a177b92be3decf5c90652b5868.patch",
+      "patch_sha256": "e1c0b0bc80fbc5ca7b783008d799304a7cf00d2b687f083cf387f3aecdec9fe2",
+      "affected_files": [
+        "fs/ocfs2/file.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: fs/ocfs2/file.c:504",
+        "error: fs/ocfs2/file.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "9a16d02736b70119652a7b273bbee7b3be614c64",
+      "subject": "prctl: build the page-size requests only with selectable granules",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/9a16d02736b70119652a7b273bbee7b3be614c64.patch",
+      "patch_sha256": "21b7dc78ec2c8d23f1dd0e5bef0f9adb318d47e5a4ea38f440ce7f92ad6140a4",
+      "affected_files": [
+        "kernel/sys.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: kernel/sys.c:2532",
+        "error: kernel/sys.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "1c76bc45a6a80d578118746495e0d76b898650bd",
+      "subject": "net: keep MSG_ZEROCOPY realloc semantics without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/1c76bc45a6a80d578118746495e0d76b898650bd.patch",
+      "patch_sha256": "be2f179755b26deb8c44e0c0fa340ebc48fc7d64aa060f17f6fc13c7e3cd9bc6",
+      "affected_files": [
+        "net/core/skbuff.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: net/core/skbuff.c:1768",
+        "error: net/core/skbuff.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2406596fa2c843abddb04418676b19b278caaaa2",
+      "subject": "mm/process_vm_access: keep allocation order without subpage",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2406596fa2c843abddb04418676b19b278caaaa2.patch",
+      "patch_sha256": "7777c7f67fd0b117001de1d1d69a86fdf5964eb808f9add89bbaa24eb35323bf",
+      "affected_files": [
+        "mm/process_vm_access.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/process_vm_access.c:242",
+        "error: mm/process_vm_access.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d2883a8fee2b670934471db3cb64f42c0403f450",
+      "subject": "mm/pagewalk: keep native walk_page_mapping() clip without subpage",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d2883a8fee2b670934471db3cb64f42c0403f450.patch",
+      "patch_sha256": "a06e55b458a699c3ebcdb235a8f8cc200d3c806a6d75a28ebd677d9c48cc93b7",
+      "affected_files": [
+        "mm/pagewalk.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/pagewalk.c:771",
+        "error: mm/pagewalk.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "0b87330a6e1e1fcbcc40b6786e05956fec1e8c30",
+      "subject": "mm/vmscan: gate MGLRU legacy-memcg writeback change on subpage",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/0b87330a6e1e1fcbcc40b6786e05956fec1e8c30.patch",
+      "patch_sha256": "17efcdb184c33540349085389eb7d2bf00fe9941608e769db2eeba1378f226ee",
+      "affected_files": [
+        "mm/vmscan.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/vmscan.c:4682",
+        "error: mm/vmscan.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: mm/vmscan.c:4682",
+        "error: mm/vmscan.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "058eb531de3984b2b694f069fdae2496329c55f3",
+      "subject": "mm/swap: keep native swap I/O unchanged without subpage support",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/058eb531de3984b2b694f069fdae2496329c55f3.patch",
+      "patch_sha256": "bda87055f851fdde37f6dc65a025013c5e97de5cc7d95601489d3106e612ae5a",
+      "affected_files": [
+        "mm/page_io.c",
+        "mm/swapfile.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/page_io.c:412",
+        "error: mm/page_io.c: patch does not apply",
+        "error: patch failed: mm/swapfile.c:1387",
+        "error: mm/swapfile.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5812ea2970fd22b805e943803ef2a53217f7e8b7",
+      "subject": "mm/shmem: skip i_pages lock round trip without uffd subpage data",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/5812ea2970fd22b805e943803ef2a53217f7e8b7.patch",
+      "patch_sha256": "2fb19790a3a4a0c862871e55ddf56a8fe0dbb4ce937133b6e84fd0da6d87336b",
+      "affected_files": [
+        "mm/shmem.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/shmem.c:2045",
+        "error: mm/shmem.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "ccd751939c152daa753e8c05c83dd2bd6d3e4d26",
+      "subject": "shmem: do not evaluate shmem_uffd_forget() arguments when unused",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/ccd751939c152daa753e8c05c83dd2bd6d3e4d26.patch",
+      "patch_sha256": "985352bbba43bef34a02ebe95ca3bd782caa8f2ffea149ef28f3eb9d7f8a12da",
+      "affected_files": [
+        "include/linux/shmem_fs.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: include/linux/shmem_fs.h:165",
+        "error: include/linux/shmem_fs.h: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "01996cd22edad30486432d12d07d8aeb2e0fcad3",
+      "subject": "mm: keep the single-page rmap walk bound for native geometry",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/01996cd22edad30486432d12d07d8aeb2e0fcad3.patch",
+      "patch_sha256": "dc218d21417005a5ab2fbd8b30a4e6277041f30e8de594f9aff20376cf028224",
+      "affected_files": [
+        "mm/internal.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/internal.h:1323",
+        "error: mm/internal.h: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "7607f149a410f426d115d4cd9b0a5531854bf2b4",
+      "subject": "mm: release exit_mmap commitment after the mmap lock again",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/7607f149a410f426d115d4cd9b0a5531854bf2b4.patch",
+      "patch_sha256": "e55631e32cc160a2541d946b9c893d6bda4af522c59019ce9f611e4042a8b351",
+      "affected_files": [
+        "mm/mmap.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/mmap.c:1371",
+        "error: mm/mmap.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "89337e112c8b333ea7fb7fe84de93586fa50f23b",
+      "subject": "mm: keep the native locked_vm accounting when user4k is off",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/89337e112c8b333ea7fb7fe84de93586fa50f23b.patch",
+      "patch_sha256": "a13a7b960567968dd4086cf595648a32718e5d39f1cde517fca51d85cc53a527",
+      "affected_files": [
+        "mm/util.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/util.c:516",
+        "error: mm/util.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "78404cee8c7659c6cf6370d5f32db1a38e4874a5",
+      "subject": "mm: skip zero-count folio reference adds on COW copies",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/78404cee8c7659c6cf6370d5f32db1a38e4874a5.patch",
+      "patch_sha256": "de3230dfffcb464fe35391919ecba1d0c00355f51478f05d64cb6b065f28327e",
+      "affected_files": [
+        "mm/memory.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:1098",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "996067c67d6f09b666f5b6621af0e91219b98c27",
+      "subject": "mm: keep generic_access_phys() lengths unchanged without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/996067c67d6f09b666f5b6621af0e91219b98c27.patch",
+      "patch_sha256": "af5b9195b4cca650a068c2a26acfd9504c58c52b37240d736bbf300d25aa19bf",
+      "affected_files": [
+        "mm/memory.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:8991",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "aeb594e25c1c5142fd60795a3ad1bede6a825fa7",
+      "subject": "mm: keep native remap and I/O memory range checks without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/aeb594e25c1c5142fd60795a3ad1bede6a825fa7.patch",
+      "patch_sha256": "b6df8fa7ad1e10a1550c72226c5fbc3b5f9add138bbe2e774eee7aad52b3f779",
+      "affected_files": [
+        "mm/memory.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:3655",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5264e477f5d111d0e9ed9d54c67067c0c68663a2",
+      "subject": "mm: restore native vm_insert_pages() and vm_map_pages() without user4k",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/5264e477f5d111d0e9ed9d54c67067c0c68663a2.patch",
+      "patch_sha256": "b5137ec4bcf473890d28353e1fa4c8f117dcd219f17dfd0c23da36755d720d66",
+      "affected_files": [
+        "mm/memory.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:2834",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "b1d8dfecce30887bb4fe71b418ad5b87627f5234",
+      "subject": "mm: keep the legacy bad-p4d handling for native-only geometry",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/b1d8dfecce30887bb4fe71b418ad5b87627f5234.patch",
+      "patch_sha256": "09f2cc9ccff0e1565fa3215f99c32d69e70b2aaa55a5ea0ed4eca2dd4b1393f6",
+      "affected_files": [
+        "include/linux/pgtable.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: include/linux/pgtable.h:1572",
+        "error: include/linux/pgtable.h: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d0565a858891cbeb7a5db56fe8aa33ea3ec03052",
+      "subject": "docs: index the new Apple documents and fix their title markup",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d0565a858891cbeb7a5db56fe8aa33ea3ec03052.patch",
+      "patch_sha256": "b43bcb1254c856d0948f1efb6a8a457e66848402d6261bc82b23c46854d7daa1",
+      "affected_files": [
+        "Documentation/PCI/controller/apple-t8140.rst",
+        "Documentation/admin-guide/media/apple-ave.rst",
+        "Documentation/arch/arm64/apple-j813.rst",
+        "Documentation/arch/arm64/apple-m6-cpu.rst",
+        "Documentation/arch/arm64/apple-t8140-pmp-dvfs.rst",
+        "Documentation/arch/arm64/index.rst",
+        "Documentation/arch/arm64/user4k.rst",
+        "Documentation/gpu/apple-dcp-backlight.rst",
+        "Documentation/gpu/drivers.rst",
+        "Documentation/soc/apple/t8140-pmp-dvfs.rst",
+        "MAINTAINERS"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/PCI/controller/apple-t8140.rst:1",
+        "error: Documentation/PCI/controller/apple-t8140.rst: patch does not apply",
+        "error: Documentation/admin-guide/media/apple-ave.rst: No such file or directory",
+        "error: patch failed: Documentation/arch/arm64/apple-j813.rst:179",
+        "error: Documentation/arch/arm64/apple-j813.rst: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/apple-m6-cpu.rst:1",
+        "error: Documentation/arch/arm64/apple-m6-cpu.rst: patch does not apply",
+        "error: Documentation/soc/apple/t8140-pmp-dvfs.rst: No such file or directory"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: MAINTAINERS:2001",
+        "error: MAINTAINERS: patch does not apply",
+        "error: patch failed: Documentation/gpu/drivers.rst:6",
+        "error: Documentation/gpu/drivers.rst: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/index.rst:10",
+        "error: Documentation/arch/arm64/index.rst: patch does not apply",
+        "error: Documentation/arch/arm64/apple-t8140-pmp-dvfs.rst: No such file or directory",
+        "error: Documentation/admin-guide/media/apple-ave.rst: No such file or directory"
+      ]
+    },
+    {
+      "sha": "0765e6acfd1ff2bd9250bfeb8dc9bee9f4742030",
+      "subject": "drm/apple: build the AFK service test only with the display driver",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/0765e6acfd1ff2bd9250bfeb8dc9bee9f4742030.patch",
+      "patch_sha256": "da39ca3a8b2ca303d0252bde8f11868ecf70da9dd26bbb3caff950743b72f44c",
+      "affected_files": [
+        "drivers/gpu/drm/Makefile",
+        "drivers/gpu/drm/apple/Kconfig",
+        "drivers/gpu/drm/apple/Makefile"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/Makefile:231",
+        "error: drivers/gpu/drm/Makefile: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/Kconfig:37",
+        "error: drivers/gpu/drm/apple/Kconfig: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/Makefile:34",
+        "error: drivers/gpu/drm/apple/Makefile: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/Makefile:34",
+        "error: drivers/gpu/drm/apple/Makefile: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/Kconfig:37",
+        "error: drivers/gpu/drm/apple/Kconfig: patch does not apply"
+      ]
+    },
+    {
+      "sha": "52841d18939ab9cb79b0b12ae012fdca6c43a80f",
+      "subject": "vfio/type1: make the retained-fragment KUnit tests depend on TMPFS",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/52841d18939ab9cb79b0b12ae012fdca6c43a80f.patch",
+      "patch_sha256": "aa778bc42a5b6212fdae91f1a3ff9224cb544c30d0b7a5c3c777722a43158758",
+      "affected_files": [
+        "arch/arm64/Kconfig.debug",
+        "drivers/vfio/Kconfig"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:82",
+        "error: arch/arm64/Kconfig.debug: patch does not apply",
+        "error: patch failed: drivers/vfio/Kconfig:57",
+        "error: drivers/vfio/Kconfig: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/vfio/Kconfig:57",
+        "error: drivers/vfio/Kconfig: patch does not apply"
+      ]
+    },
+    {
+      "sha": "b8c3c61294648b9263f208f7203a8bed8ba235e7",
+      "subject": "usb: typec: tipd: put the debugfs command file behind a Kconfig option",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/b8c3c61294648b9263f208f7203a8bed8ba235e7.patch",
+      "patch_sha256": "b498344b68bd89e2919d55f06d470dd3cd18e0312709785cac0ab85d45f58cd6",
+      "affected_files": [
+        "drivers/usb/typec/tipd/Kconfig",
+        "drivers/usb/typec/tipd/debugfs.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/Kconfig:28",
+        "error: drivers/usb/typec/tipd/Kconfig: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/debugfs.c:3",
+        "error: drivers/usb/typec/tipd/debugfs.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/Kconfig:28",
+        "error: drivers/usb/typec/tipd/Kconfig: patch does not apply"
+      ]
+    },
+    {
+      "sha": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "subject": "rust: restore --no-layout-tests, make layout checks opt-in",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7.patch",
+      "patch_sha256": "bba23efd3298c7f4fba31bde6a7a798b73fcbce7d07cb87683422d429615dedd",
+      "affected_files": [
+        "Documentation/rust/bindgen-layout-checks.rst",
+        "rust/Makefile",
+        "tools/aurora-bindgen/README.rst",
+        "tools/aurora-bindgen/build.py"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/rust/bindgen-layout-checks.rst:3",
+        "error: Documentation/rust/bindgen-layout-checks.rst: patch does not apply",
+        "error: patch failed: rust/Makefile:443",
+        "error: rust/Makefile: patch does not apply",
+        "error: patch failed: tools/aurora-bindgen/README.rst:25",
+        "error: tools/aurora-bindgen/README.rst: patch does not apply",
+        "error: patch failed: tools/aurora-bindgen/build.py:22",
+        "error: tools/aurora-bindgen/build.py: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "4bbc184bb298f3459f0cf3c5a695cd3b18ed0669",
+      "subject": "wifi: brcmfmac: run queued firmware events before stopping their worker",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/4bbc184bb298f3459f0cf3c5a695cd3b18ed0669.patch",
+      "patch_sha256": "10b5db503b5e3fa4e9613943995f2bd454250fb4046031330d91698069e3aeca",
+      "affected_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c:385",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "347adeccb0c8853d32bfca1ac7cf414bf0939bc9",
+      "subject": "wifi: brcmfmac: refuse AWDL on interface_create v1 and v2",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/347adeccb0c8853d32bfca1ac7cf414bf0939bc9.patch",
+      "patch_sha256": "47780c7f9bf837e938a5a841e8e59e40dc470edf7ce52d85a2e566e6f6a9fb70",
+      "affected_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:244",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "e75cc822fa9cac1727309129def86f5207c74a7c",
+      "subject": "wifi: brcmfmac: add an off-switch for AWDL interface creation",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/e75cc822fa9cac1727309129def86f5207c74a7c.patch",
+      "patch_sha256": "fcef37f5dc2eca005a3d3ca4f0456f814f101e38fdcf4af69f0994216e15efd9",
+      "affected_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c",
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c",
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h",
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c",
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/vendor.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c:8281",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c: patch does not apply",
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c:56",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c: patch does not apply",
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h:44",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h: patch does not apply",
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:27",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d4f767b6f7d373fc00d8e9824e6b5e00f7dc43a6",
+      "subject": "wifi: brcmfmac: drop the runtime AWDL interface_create parameters",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d4f767b6f7d373fc00d8e9824e6b5e00f7dc43a6.patch",
+      "patch_sha256": "f089101553cbaeae7b40e36a6cb285a172a1ed8fe80034ad41381acffb0d5cc9",
+      "affected_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:25",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:25",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "0a934a7b3115db29a4ad2ce638353c3ccb240d72",
+      "subject": "wifi: brcmfmac: msgbuf: look up the traced flowring under its lock",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/0a934a7b3115db29a4ad2ce638353c3ccb240d72.patch",
+      "patch_sha256": "069ce7316fa8746d4099333a15689a7eba1266bf52a746b43d28ff935bc3c18b",
+      "affected_files": [
+        "drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c:601",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "8af856032038b1794b40e59941d7aab6e762ecf6",
+      "subject": "drm/asahi: keep the range TLBI base address in its field",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/8af856032038b1794b40e59941d7aab6e762ecf6.patch",
+      "patch_sha256": "c4249450ffa2483ce860f31142b7f351800afd69b9c0e578bfb42f623ecb97bf",
+      "affected_files": [
+        "drivers/gpu/drm/asahi/mem.rs"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/mem.rs:143",
+        "error: drivers/gpu/drm/asahi/mem.rs: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "1b50cbd1e008f61375b34e09d121f0bff5aec2a6",
+      "subject": "drm/asahi: reject unsupported command fields on the M1/M2 queue path",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/1b50cbd1e008f61375b34e09d121f0bff5aec2a6.patch",
+      "patch_sha256": "aa35058ba4f2cd811091cdf36d9ae1a08d3de8fffaef9d67273ff09f4d697540",
+      "affected_files": [
+        "drivers/gpu/drm/asahi/queue/mod.rs",
+        "drivers/gpu/drm/asahi/util.rs"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/queue/mod.rs:590",
+        "error: drivers/gpu/drm/asahi/queue/mod.rs: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/asahi/util.rs:126",
+        "error: drivers/gpu/drm/asahi/util.rs: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/util.rs:196",
+        "error: drivers/gpu/drm/asahi/util.rs: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/asahi/queue/mod.rs:590",
+        "error: drivers/gpu/drm/asahi/queue/mod.rs: patch does not apply"
+      ]
+    },
+    {
+      "sha": "ba5563baba3f612a31861269b3b224191a23e9d9",
+      "subject": "drm/apple: expect a moved tunnel to start its route in the parser test",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/ba5563baba3f612a31861269b3b224191a23e9d9.patch",
+      "patch_sha256": "9e0fa121eeb77f60d7265b954068bef128f570d31850fde672e29d4a71018812",
+      "affected_files": [
+        "drivers/gpu/drm/apple/parser-test.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/parser-test.c:819",
+        "error: drivers/gpu/drm/apple/parser-test.c: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d25e17cc3e469a4bb0b51aa423bcd3689a40a638",
+      "subject": "drm: apple: answer DPTX group 1 calls 3 and 4 on 13.5 firmware again",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d25e17cc3e469a4bb0b51aa423bcd3689a40a638.patch",
+      "patch_sha256": "02781438fa86f5770f2ad39d37c2ed6d6db49096fd487018cef81c88dfad3293",
+      "affected_files": [
+        "drivers/gpu/drm/apple/dptxep.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dptxep.c:1048",
+        "error: drivers/gpu/drm/apple/dptxep.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dptxep.c:1113",
+        "error: drivers/gpu/drm/apple/dptxep.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "07fc9fe06c29194561a3e5fceb846cde39fea569",
+      "subject": "drm: apple: relink a Type-C sink only when DCP drops it at link-up",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/07fc9fe06c29194561a3e5fceb846cde39fea569.patch",
+      "patch_sha256": "7dfd2c1fffe958082758032feb0a22d9a769183c0522e37406d0ec4dc88c1d58",
+      "affected_files": [
+        "drivers/gpu/drm/apple/dcp-fabric-test.c",
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp-relink.h",
+        "drivers/gpu/drm/apple/dcp.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric-test.c:9",
+        "error: drivers/gpu/drm/apple/dcp-fabric-test.c: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:1568",
+        "error: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-internal.h:18",
+        "error: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply",
+        "error: drivers/gpu/drm/apple/dcp-relink.h: already exists in working directory",
+        "error: patch failed: drivers/gpu/drm/apple/dcp.c:751"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dcp.c:751",
+        "error: drivers/gpu/drm/apple/dcp.c: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-internal.h:18",
+        "error: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:1568",
+        "error: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric-test.c:2139",
+        "error: drivers/gpu/drm/apple/dcp-fabric-test.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "0378c54a442e13c8e3f94cefb5b17dc11d12d203",
+      "subject": "usb: typec: tipd: send each IRQ_HPD request to the display route once",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/0378c54a442e13c8e3f94cefb5b17dc11d12d203.patch",
+      "patch_sha256": "538fcbb7385b508788b5bacdd49486baa4362d275f926254b23aa6c6f8f56468",
+      "affected_files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/usb/typec/tipd/cd321x-pm-test.c",
+        "drivers/usb/typec/tipd/cd321x-pm.h",
+        "drivers/usb/typec/tipd/core.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:1432",
+        "error: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm-test.c:770",
+        "error: drivers/usb/typec/tipd/cd321x-pm-test.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm.h:4",
+        "error: drivers/usb/typec/tipd/cd321x-pm.h: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/core.c:671",
+        "error: drivers/usb/typec/tipd/core.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/core.c:710",
+        "error: drivers/usb/typec/tipd/core.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm.h:4",
+        "error: drivers/usb/typec/tipd/cd321x-pm.h: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm-test.c:770",
+        "error: drivers/usb/typec/tipd/cd321x-pm-test.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "418c346f87ebdf46936d0e35055d0f62ee879732",
+      "subject": "tools/aurora-sep: tests: Let the T8112 SEP DMA harness build again",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/418c346f87ebdf46936d0e35055d0f62ee879732.patch",
+      "patch_sha256": "3b016a67d8afb97830349f056f3340cf910114d50b9169bc131a16a20782cbca",
+      "affected_files": [
+        "tools/aurora-sep/tests/test_t8112_sep_dma.py"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-sep/tests/test_t8112_sep_dma.py:72",
+        "error: tools/aurora-sep/tests/test_t8112_sep_dma.py: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-sep/tests/test_t8112_sep_dma.py:72",
+        "error: tools/aurora-sep/tests/test_t8112_sep_dma.py: patch does not apply"
+      ]
+    },
+    {
+      "sha": "bf80deeb634ab95a865b6d08b3d234b65e9d88d6",
+      "subject": "soc: apple: sep: Let suspend proceed when a capture is slow to stop",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/bf80deeb634ab95a865b6d08b3d234b65e9d88d6.patch",
+      "patch_sha256": "3d5aa50fe45163c1d3b41e8ad07391ec9239c48bb926a55a9829f7f3df71b03e",
+      "affected_files": [
+        "drivers/soc/apple/pm.rs",
+        "drivers/soc/apple/pm_shim.c",
+        "drivers/soc/apple/sbio.rs",
+        "drivers/soc/apple/shim.h"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/soc/apple/pm.rs:21",
+        "error: drivers/soc/apple/pm.rs: patch does not apply",
+        "error: patch failed: drivers/soc/apple/pm_shim.c:14",
+        "error: drivers/soc/apple/pm_shim.c: patch does not apply",
+        "error: patch failed: drivers/soc/apple/sbio.rs:3081",
+        "error: drivers/soc/apple/sbio.rs: patch does not apply",
+        "error: patch failed: drivers/soc/apple/shim.h:25",
+        "error: drivers/soc/apple/shim.h: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/soc/apple/pm.rs:41",
+        "error: drivers/soc/apple/pm.rs: patch does not apply"
+      ]
+    },
+    {
+      "sha": "c80c151a1851ea49535777086adc6020d70e372a",
+      "subject": "soc: apple: sep: Initialise an empty host-state store file again",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/c80c151a1851ea49535777086adc6020d70e372a.patch",
+      "patch_sha256": "b408baf0cb75bbc3b7443f7df51d2359d172be14a37a23dfc720cc07dff71f5c",
+      "affected_files": [
+        "drivers/soc/apple/store.rs"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/soc/apple/store.rs:133",
+        "error: drivers/soc/apple/store.rs: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/soc/apple/store.rs:133",
+        "error: drivers/soc/apple/store.rs: patch does not apply"
+      ]
+    },
+    {
+      "sha": "1d66b81ec0ea1d51c26fc259532b36fbe3420f06",
+      "subject": "soc: apple: sep: Do not autoload the driver through a module alias",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/1d66b81ec0ea1d51c26fc259532b36fbe3420f06.patch",
+      "patch_sha256": "b4e7a2490396a68c52d9f1edd9849f2e53264324d638c7bcd3be70d774a0f89f",
+      "affected_files": [
+        "drivers/soc/apple/sep.rs",
+        "tools/aurora-sep/README.md",
+        "tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/soc/apple/sep.rs:2321",
+        "error: drivers/soc/apple/sep.rs: patch does not apply",
+        "error: patch failed: tools/aurora-sep/README.md:45",
+        "error: tools/aurora-sep/README.md: patch does not apply",
+        "error: patch failed: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD:7",
+        "error: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD:7",
+        "error: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD: patch does not apply"
+      ]
+    },
+    {
+      "sha": "d4b2c4ac469856efbfdb127b02ac6fb3d9515f73",
+      "subject": "spi: apple-qspi: keep the T8140 boot NOR read-only outside nvram",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/d4b2c4ac469856efbfdb127b02ac6fb3d9515f73.patch",
+      "patch_sha256": "ba2ab6454630eb25d4c65913b56dd4edc87317ce9a6d66971ba484406d2f977d",
+      "affected_files": [
+        "drivers/spi/Kconfig",
+        "drivers/spi/Makefile",
+        "drivers/spi/spi-apple-qspi-policy-test.c",
+        "drivers/spi/spi-apple-qspi-policy.h",
+        "drivers/spi/spi-apple-qspi.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/spi/Kconfig:140",
+        "error: drivers/spi/Kconfig: patch does not apply",
+        "error: patch failed: drivers/spi/Makefile:24",
+        "error: drivers/spi/Makefile: patch does not apply",
+        "error: drivers/spi/spi-apple-qspi-policy-test.c: already exists in working directory",
+        "error: patch failed: drivers/spi/spi-apple-qspi-policy.h:35",
+        "error: drivers/spi/spi-apple-qspi-policy.h: patch does not apply",
+        "error: patch failed: drivers/spi/spi-apple-qspi.c:14"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/spi/spi-apple-qspi.c:14",
+        "error: drivers/spi/spi-apple-qspi.c: patch does not apply",
+        "error: patch failed: drivers/spi/Kconfig:140",
+        "error: drivers/spi/Kconfig: patch does not apply"
+      ]
+    },
+    {
+      "sha": "df016a38440e7121cddc13e38016c5bdde5905c9",
+      "subject": "arm64: dts: apple: t8140: drop the t6000 fallback from the GFX report",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/df016a38440e7121cddc13e38016c5bdde5905c9.patch",
+      "patch_sha256": "e8e1bc1ed87af69b02cc84223b4240cfcf48e83f7720c556e65017e078b7d344",
+      "affected_files": [
+        "arch/arm64/boot/dts/apple/t8140.dtsi"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/boot/dts/apple/t8140.dtsi:491",
+        "error: arch/arm64/boot/dts/apple/t8140.dtsi: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "731e926b1912a2184feb886f6977d8a28d70abe7",
+      "subject": "dt-bindings: power: apple,t8140-pmp-report: drop the t6000 entry fallback",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/731e926b1912a2184feb886f6977d8a28d70abe7.patch",
+      "patch_sha256": "91a23f840da366d6851464235f886db423b1fd36217fcf5560ed300c13a57c3c",
+      "affected_files": [
+        "Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml:45",
+        "error: Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2bf01adf4862725d602e9d7fe38248f240624c29",
+      "subject": "pmdomain: apple: pmp-report: match T8140 report entries by compatible",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/2bf01adf4862725d602e9d7fe38248f240624c29.patch",
+      "patch_sha256": "57c80f2215290623d581357457058b6ce1d7be1c2e2f4c818c8b459e4eeac6c0",
+      "affected_files": [
+        "drivers/pmdomain/apple/pmp-report.c"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: drivers/pmdomain/apple/pmp-report.c:1719",
+        "error: drivers/pmdomain/apple/pmp-report.c: patch does not apply"
+      ],
+      "reverse_applies": false,
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/pmdomain/apple/pmp-report.c:1719",
+        "error: drivers/pmdomain/apple/pmp-report.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "3d255038f3b13757b7f3f035a58b23e4c8630f2b",
+      "subject": "aurora-sep: neo: accept both T8140 GPU and display driver names",
+      "author": "Chris Kearney",
+      "patch_url": "https://github.com/omacom/linux-aurora/commit/3d255038f3b13757b7f3f035a58b23e4c8630f2b.patch",
+      "patch_sha256": "de9d5ccc688d0435a6b06ef0f334e7527888c5cf73018300480aeb33245cc143",
+      "affected_files": [
+        "tools/aurora-sep/neo/mesa-neo-env",
+        "tools/aurora-sep/tests/test_neo_gpu.py"
+      ],
+      "forward_applies": false,
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-sep/neo/mesa-neo-env:47",
+        "error: tools/aurora-sep/neo/mesa-neo-env: patch does not apply",
+        "error: patch failed: tools/aurora-sep/tests/test_neo_gpu.py:127",
+        "error: tools/aurora-sep/tests/test_neo_gpu.py: patch does not apply"
+      ],
+      "reverse_applies": true,
+      "reverse_diagnostic": []
+    }
+  ],
+  "limits": "Only affected immutable files fetched; this is not a whole-tree digest or build. Independent forward/reverse git-apply checks do not prove semantic absence/presence, sequential compatibility, full 64-fix review parity, hardware safety or qualification. No patch was applied or adopted. Raw GitHub file downloads do not retain executable mode metadata; this comparison does not audit file-mode changes."
+}

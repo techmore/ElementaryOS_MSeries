@@ -35,6 +35,13 @@ int main (string[] args) {
         root.measure (Gtk.Orientation.VERTICAL, 400, out min, out nat, null, null);
         window.set_default_size (400, nat);
         Timeout.add (900, () => {
+            var requested_scale = Environment.get_variable ("GDK_SCALE");
+            assert (requested_scale == null || window.get_scale_factor () == int.parse (requested_scale));
+            try {
+                FileUtils.set_contents (args[1] + ".json",
+                    "{\"gdkScale\":%d,\"logicalWidth\":%d,\"logicalHeight\":%d}\n".printf (
+                        window.get_scale_factor (), root.get_width (), root.get_height ()));
+            } catch (Error e) { error ("%s", e.message); }
             var paintable = new Gtk.WidgetPaintable (root);
             var snapshot = new Gtk.Snapshot ();
             paintable.snapshot (snapshot, root.get_width (), root.get_height ());

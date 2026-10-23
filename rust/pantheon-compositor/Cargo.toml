@@ -1,0 +1,54 @@
+[package]
+name = "pantheon-compositor"
+default-run = "pantheon-compositor"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Mutter-minimal Rust Wayland compositor for elementary OS"
+
+[features]
+default = []
+# Private nested input socket for deterministic headless animation qualification.
+gesture-probe = []
+# Dependencies for the explicit opt-in native M-series DRM/session backend.
+native-drm = [
+    "smithay/backend_drm",
+    "smithay/backend_gbm",
+    "smithay/backend_libinput",
+    "smithay/backend_udev",
+    "smithay/backend_session_libseat",
+    "smithay/renderer_gl",
+    "smithay/renderer_multi",
+]
+
+[[bin]]
+name = "pantheon-compositor"
+path = "src/main.rs"
+
+[[bin]]
+name = "pantheon-shell-probe"
+path = "src/bin/pantheon-shell-probe.rs"
+
+[[bin]]
+name = "pantheon-drm-probe"
+path = "src/bin/pantheon-drm-probe.rs"
+required-features = ["native-drm"]
+
+[dependencies]
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tracing = "0.1"
+bitflags = "2.2.1"
+wayland-scanner = "0.31.11"
+wayland-backend = "0.3.17"
+wayland-client = "0.31.11"
+wayland-server = "0.31.14"
+zbus = "=5.19.0"
+gio = "0.22"
+xcursor = "0.3"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+
+[dependencies.smithay]
+git = "https://github.com/Smithay/smithay.git"
+rev = "023b78b1c5a05ca512767cacc07efca55fae8be4"
+default-features = false
+features = ["backend_winit", "backend_drm", "wayland_frontend", "desktop", "xwayland"]

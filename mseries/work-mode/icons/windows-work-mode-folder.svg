@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Original Windows 11-style folder for Windows Work Mode (CC0). Not a Microsoft asset. -->
+  <defs>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8a10c"/><stop offset="1" stop-color="#d48a00"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd75e"/><stop offset="1" stop-color="#f7b51c"/>
+    </linearGradient>
+  </defs>
+  <path d="M24 56a16 16 0 0 1 16-16h56l24 24h96a16 16 0 0 1 16 16v120a16 16 0 0 1-16 16H40a16 16 0 0 1-16-16z" fill="url(#back)"/>
+  <rect x="40" y="76" width="176" height="40" rx="6" fill="#ffffff" opacity="0.9"/>
+  <path d="M24 104a16 16 0 0 1 16-16h176a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H40a16 16 0 0 1-16-16z" fill="url(#front)"/>
+</svg>

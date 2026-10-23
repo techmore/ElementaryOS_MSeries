@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "kind": "native-arm64-build-artifact-audit",
+  "audited_at": "2026-10-21T12:39:09.753782+00:00",
+  "tested_repository_commit": "b21399953faa576b17f3121087742fb597c872a5",
+  "artifact_id": 12344789576,
+  "artifact_name": "elementary-aurora-enhancements-unified72-39595756051",
+  "artifact_zip_sha256": "f0be95387d5275fcc89d7902ae3b66a01ae28d39f9ac9ba635524ae8507edee2",
+  "github_artifact_digest_matched": true,
+  "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051",
+  "artifact_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39595756051/artifacts/12344789576",
+  "checksums_verified": {
+    "build.config": "005829aa9a52d1640e2bf82ed6c0eddd2ce2e4a78086397684452e4d50ad0c1a",
+    "linux-7.2.10-elementary-aurora72-wip2-source.tar.gz": "51ec735b5c80b066d48c23855366eadfb2264e81b9a0689d555d46f4838e0348",
+    "linux-image-elementary-aurora72-wip2_7.2.10+elementary.aurora72.wip2-1_arm64.deb": "f4297f70a266bf81bc8c4c25163548c62a051ef8759790c7a2db5b5b74104ef7",
+    "provenance.json": "c9250d7d95159a7a5d9664a00a182948ec19ccab662362850b37077cbdb79b70"
+  },
+  "prepared_source_tree_reconstructed_from_archive": "344d748b7e4f16aa7fc85576e7a73b0b3e3c588d993adaabd77afd93feef3313",
+  "source_archive_regular_files": 95945,
+  "source_archive_symlinks": 110,
+  "package": {
+    "control": "Package: linux-image-elementary-aurora72-wip2\nVersion: 7.2.10+elementary.aurora72.wip2-1\nArchitecture: arm64\nMaintainer: ElementaryOS MSeries contributors <builder@localhost>\nInstalled-Size: 154616\nSection: kernel\nPriority: optional\nDepends: kmod\nDescription: Experimental Aurora enhancement kernel payload\n Distinct modules directory, no boot hooks; requires explicit boot-chain staging.\n",
+    "control_files": [
+      "control"
+    ],
+    "module_files": 1876,
+    "apple_dtbs": 115,
+    "image_sha256": "894c420112c94a07bf70f38d1fad95dfd63fb1085550675d3e0e5f2af4123954"
+  },
+  "provenance": {
+    "profile": "unified72",
+    "kernel_release": "7.2.10-elementary-aurora72-wip2",
+    "base_pins": {
+      "repository": "omacom/linux-aurora",
+      "release": "aurora-2026.10.17.20",
+      "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+      "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+      "debian_package": "linux-image-elementary-aurora20",
+      "debian_version": "7.1.12+aurora.20261017.20-1",
+      "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+      "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+      "assets": {
+        "kernel": {
+          "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+          "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+        },
+        "recipe": {
+          "name": "linux-aurora-recipe-20261017.20.tar.gz",
+          "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+        },
+        "source": {
+          "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+          "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+        },
+        "m1n1": {
+          "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+          "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+        },
+        "m1n1_source": {
+          "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+          "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+          "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+        },
+        "touchid": {
+          "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+          "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+        },
+        "libfprint": {
+          "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+          "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+        }
+      }
+    },
+    "series_sha256": "1abdc9dd15f4977c6a5828b2f6a38d474c5cf7d620b155ee15b3fc9ab28c844c",
+    "patches": [],
+    "source_pin": {
+      "repository": "aurora-silicon/linux",
+      "commit": "644133b7799f759c5bfd88507b6246d298b6509c",
+      "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
+      "name": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c.tar.gz",
+      "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/644133b7799f759c5bfd88507b6246d298b6509c",
+      "archive_root": "linux-aurora-644133b7799f759c5bfd88507b6246d298b6509c",
+      "sha256": "10cc0be484644e98bf13ef181ddd268e50d4e4da0993e97d8e6b61cb6037e31a"
+    },
+    "source_tree_sha256": "344d748b7e4f16aa7fc85576e7a73b0b3e3c588d993adaabd77afd93feef3313",
+    "modified_files": {
+      "localversion.elementary": "509b35e2b95b369130b7a8d1823a39ad6101540807a6578c09a8221b4d0e219a",
+      "rust-toolchain.toml": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c"
+    },
+    "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+    "status": "ARM64 Image/modules/DTBs built; no hardware boot",
+    "package": "linux-image-elementary-aurora72-wip2_7.2.10+elementary.aurora72.wip2-1_arm64.deb",
+    "package_sha256": "f4297f70a266bf81bc8c4c25163548c62a051ef8759790c7a2db5b5b74104ef7",
+    "source_sha256": "51ec735b5c80b066d48c23855366eadfb2264e81b9a0689d555d46f4838e0348",
+    "resolved_config_sha256": "005829aa9a52d1640e2bf82ed6c0eddd2ce2e4a78086397684452e4d50ad0c1a",
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+    "clang": "Ubuntu clang version 22.1.2 (1ubuntu1)",
+    "package_compression": {
+      "format": "zstd",
+      "level": 3,
+      "max_threads": 4
+    }
+  },
+  "result": "pass",
+  "limits": "Artifact integrity, source/config binding and package/DTB inspection only; no install, boot, hardware, full review parity, suspend/recovery or power qualification.",
+  "ci_artifact_expires_at": "2026-10-28T12:37:36Z"
+}

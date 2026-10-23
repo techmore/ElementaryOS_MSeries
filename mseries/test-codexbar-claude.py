@@ -2,6 +2,7 @@
 """Tests for the claude-swap bridge. cswap is faked; no real Claude login is touched."""
 
 from contextlib import closing
+import copy
 import datetime as dt
 import importlib.util
 import os
@@ -84,6 +85,18 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual(data["accounts"][1]["windows"], [])
         self.assertNotIn("token", str(data))
 
+    def test_model_scoped_weekly_cap_is_an_extra_marked_window(self):
+        listing = copy.deepcopy(LIST)
+        listing["accounts"][0]["usage"]["scoped"] = [
+            {"name": "Fable", "pct": 45.0, "resetsAt": "2026-10-21T12:00:00Z"},
+            {"name": "", "pct": 10.0}, {"pct": 5.0}, "junk", {"name": "Bad", "pct": "x"}]
+        with mock.patch.object(MODULE, "run", return_value=listing):
+            data = MODULE.listing("cswap", NOW)
+        windows = data["accounts"][0]["windows"]
+        self.assertEqual([w["label"] for w in windows], ["5 hour", "7 day", "Fable"])
+        self.assertEqual((windows[2]["remaining"], windows[2]["minutes"], windows[2]["scoped"]), (55.0, 0, True))
+        self.assertNotIn("scoped", windows[0])
+
     def test_saved_plan_metadata_is_account_specific_and_contains_no_tokens(self):
         for number, email, plan in ((1, "work@example.com", "max"), (2, "me@example.com", "pro")):
             path = self.home / f".local/share/claude-swap/credentials/.creds-{number}-{email}.enc"
@@ -106,6 +119,18 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual([a["plan"] for a in data["accounts"]], ["", "pro"])
         self.assertEqual(data["activePlan"], "pro")
         self.assertNotIn(SECRET, MODULE.json.dumps(data))
+
+    def test_profile_upgrade_overrides_issue_time_plan_and_is_identity_checked(self):
+        credentials = [{"claudeAiOauth": {"accessToken": SECRET, "expiresAt": 9999999999999,
+                                          "subscriptionType": "pro"}}]
+        upgraded = {"account": {"uuid": "upgrade-test"}, "organization": {
+            "organization_type": "claude_max", "rate_limit_tier": "default_claude_max_20x"}}
+        with mock.patch.object(MODULE, "fetch_profile", return_value=upgraded) as fetch:
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1000), "max20x")
+            self.assertEqual(MODULE.profile_plan("upgrade-test", credentials, now=1001), "max20x")
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(MODULE.profile_plan("different-account", credentials, now=1000), "")
+        self.assertNotIn(SECRET, MODULE.json.dumps(MODULE.codexbar_cache.load("claude-plan-upgrade-test")))
 
     def test_missing_or_corrupt_plan_stays_unknown(self):
         path = self.home / ".local/share/claude-swap/credentials/.creds-1-work@example.com.enc"
@@ -183,6 +208,8 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["activeEmail"], "work@example.com")
+        self.assertEqual(data["displayEmail"], "me@example.com")
+        self.assertEqual([a["panelActive"] for a in data["accounts"]], [False, True])
         self.assertEqual([a["active"] for a in data["accounts"]], [True, False])
         self.assertEqual(data["desktop"], {"installed": True, "email": "me@example.com", "differs": True})
         self.assertIn("me@example.com", data["desktopNote"])
@@ -195,6 +222,7 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=LIST):
             data = MODULE.listing("cswap", NOW)
         self.assertEqual(data["desktop"], {"installed": True, "email": "", "differs": True})
+        self.assertFalse(any(a["panelActive"] for a in data["accounts"]))
         self.assertIn("a different account", data["desktopNote"])
 
     def test_add_explains_a_missing_login_and_reports_success(self):

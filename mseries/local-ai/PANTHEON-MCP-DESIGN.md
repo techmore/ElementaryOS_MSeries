@@ -10,6 +10,8 @@ The owner should be able to say “What needs my attention?”, hear a concise a
 
 Keep the existing Pantheon shell and applications usable throughout the rollout. Redesign their agent interfaces and shared interaction model incrementally; do not replace Gala, Wingpanel, the notification server or application data stores in one release.
 
+> **SDK link (2026-10-23):** for SDK apps the capability registry is generated from the app description (intents, scopes, risk classes, grants); see [../SDK-AGENT-SURFACE.md](../SDK-AGENT-SURFACE.md).
+
 ## Starting point: actual implementation
 
 | Area | Current evidence | Proposed extension |

@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+"""M-Series size system: one text-size ladder with matching dock and titlebar sizes.
+
+The ladder, dock tokens and font policy live in size-system.json. Quick Settings
+steps along the same ladder; --watch keeps the dependent sizes in step when the
+text size changes. Display scale, refresh rate and brightness are never touched.
+"""
+
+import argparse
+import json
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+INTERFACE = "org.gnome.desktop.interface"
+WM = "org.gnome.desktop.wm.preferences"
+DOCK = "io.elementary.dock"
+FONT_KEYS = {"ui": (INTERFACE, "font-name"), "document": (INTERFACE, "document-font-name"),
+             "monospace": (INTERFACE, "monospace-font-name"), "titlebar": (WM, "titlebar-font")}
+EXIT_UNMANAGED = 3
+
+
+def state_dir():
+    return Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "mseries"
+
+
+def system_path():
+    override = os.environ.get("MSERIES_UI_SCALE_SYSTEM")
+    if override:
+        return Path(override)
+    for candidate in (SCRIPT_DIR / "size-system.json",
+                      Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
+                      / "mseries" / "ui-scale" / "size-system.json"):
+        if candidate.is_file():
+            return candidate
+    raise SystemExit("size-system.json not found; reinstall with mseries/install-ui-scale.sh")
+
+
+def load_system(path=None):
+    system = json.loads(Path(path or system_path()).read_text(encoding="utf-8"))
+    factors = [step["text"] for step in system["steps"]]
+    if factors != sorted(factors) or len(set(factors)) != len(factors):
+        raise ValueError("size-system steps must have strictly increasing text factors")
+    return system
+
+
+def nearest_step(system, factor):
+    return min(system["steps"], key=lambda step: abs(step["text"] - factor))
+
+
+def on_ladder(system, factor):
+    return any(abs(step["text"] - factor) < 1e-4 for step in system["steps"])
+
+
+def in_ladder_range(system, factor):
+    """Values well outside the ladder (accessibility sizes from other tools) are left alone."""
+    steps = system["steps"]
+    return steps[0]["text"] - 0.1 <= factor <= steps[-1]["text"] + 0.1
+
+
+def find_step(system, name_or_factor):
+    for step in system["steps"]:
+        if step["name"] == name_or_factor.lower():
+            return step
+    try:
+        factor = float(name_or_factor.rstrip("%")) / (100 if name_or_factor.endswith("%") else 1)
+    except ValueError:
+        names = ", ".join(step["name"] for step in system["steps"])
+        raise SystemExit(f"unknown step {name_or_factor!r}; use one of: {names}")
+    return nearest_step(system, factor)
+
+
+def neighbour(system, factor, direction):
+    steps = system["steps"]
+    index = steps.index(nearest_step(system, factor))
+    if not on_ladder(system, factor):
+        # Off-ladder values step to the adjacent ladder value in the requested direction.
+        below = [s for s in steps if s["text"] < factor]
+        above = [s for s in steps if s["text"] > factor]
+        pool = above if direction > 0 else below
+        if pool:
+            return pool[0] if direction > 0 else pool[-1]
+        return steps[index]
+    return steps[max(0, min(len(steps) - 1, index + direction))]
+
+
+def dock_mode(work_state, taskbar):
+    work_state = work_state or {}
+    dock = work_state.get("dock")
+    # Newer Work Mode state (#329) records a status; "Default desktop" means the normal layout.
+    status = work_state.get("status")
+    if isinstance(status, str) and "work" not in status.lower():
+        return "native"
+    if work_state.get("applied", True) and isinstance(dock, dict) and dock.get("applied"):
+        return "work-taskbar" if taskbar else "work"
+    return "native"
+
+
+def plan(system, values, managed, work_state, taskbar):
+    """Return {(schema, key): value} writes that bring the desktop onto the ladder.
+
+    values maps (schema, key) to the current setting. Nothing changes while the
+    size system is unmanaged, and off-range text sizes are never snapped.
+    """
+    if not managed:
+        return {}
+    factor = values[(INTERFACE, "text-scaling-factor")]
+    step = nearest_step(system, factor)
+    writes = {}
+    if in_ladder_range(system, factor) and not on_ladder(system, factor):
+        writes[(INTERFACE, "text-scaling-factor")] = step["text"]
+    dock_key = (DOCK, "icon-size")
+    if dock_key in values:
+        size = step["dock"][dock_mode(work_state, taskbar)]
+        if values[dock_key] != size:
+            writes[dock_key] = size
+    return writes
+
+
+def font_plan(system, values):
+    return {FONT_KEYS[role]: font for role, font in system["fonts"].items()
+            if FONT_KEYS[role] in values and values[FONT_KEYS[role]] != font}
+
+
+# ---- desktop bindings -------------------------------------------------------
+
+def gio():
+    import gi
+    gi.require_version("Gio", "2.0")
+    from gi.repository import Gio, GLib
+    return Gio, GLib
+
+
+class Desktop:
+    def __init__(self):
+        Gio, _ = gio()
+        self.Gio = Gio
+        source = Gio.SettingsSchemaSource.get_default()
+        self.settings = {}
+        for schema in (INTERFACE, WM, DOCK):
+            if source.lookup(schema, True) is not None:
+                self.settings[schema] = Gio.Settings.new(schema)
+
+    def has(self, schema, key):
+        settings = self.settings.get(schema)
+        return settings is not None and settings.props.settings_schema.has_key(key)
+
+    def values(self):
+        values = {}
+        for schema, key in [(INTERFACE, "text-scaling-factor"), (DOCK, "icon-size"), *FONT_KEYS.values()]:
+            if self.has(schema, key):
+                value = self.settings[schema].get_value(key).unpack()
+                values[(schema, key)] = value
+        return values
+
+    def taskbar(self):
+        return self.has(DOCK, "taskbar-mode") and self.settings[DOCK].get_boolean("taskbar-mode")
+
+    def write(self, writes):
+        for (schema, key), value in writes.items():
+            settings = self.settings[schema]
+            if isinstance(value, float):
+                settings.set_double(key, value)
+            elif isinstance(value, int):
+                settings.set_int(key, value)
+            else:
+                settings.set_string(key, value)
+        if writes:
+            self.Gio.Settings.sync()
+
+
+def work_state_path():
+    return state_dir() / "work-mode.json"
+
+
+def read_json(path, default):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def own_state_path():
+    return state_dir() / "ui-scale.json"
+
+
+def is_managed():
+    return bool(read_json(own_state_path(), {}).get("managed"))
+
+
+def atomic_write(path, contents):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # --set and the watcher can publish together. Each writer owns its temporary.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=path.name + ".", delete=False) as output:
+        temporary = Path(output.name)
+        output.write(contents)
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def set_managed(managed):
+    path = own_state_path()
+    atomic_write(path, json.dumps({"managed": managed}, indent=2) + "\n")
+
+
+def publish_policy(managed):
+    """Publish the optional native taskbar adoption contract without subprocesses."""
+    path = state_dir() / "ui-scale-policy.ini"
+    contents = "[SizeSystem]\nversion=1\nmanaged=" + str(managed).lower() + "\n"
+    if path.is_file() and path.read_text(encoding="utf-8") == contents:
+        return
+    atomic_write(path, contents)
+
+
+def reconcile(system, desktop, managed=None):
+    managed = is_managed() if managed is None else managed
+    writes = plan(system, desktop.values(), managed, read_json(work_state_path(), {}), desktop.taskbar())
+    if managed:
+        writes.update(font_plan(system, desktop.values()))
+    # Publish before icon-size emits its change signal: native dock consumers
+    # must observe adoption when they read the newly written token.
+    publish_policy(managed)
+    desktop.write(writes)
+    return writes
+
+
+def describe(writes):
+    return ", ".join(f"{key}={value}" for (_, key), value in writes.items()) or "no changes"
+
+
+# ---- commands ---------------------------------------------------------------
+
+def cmd_status(system, desktop):
+    values = desktop.values()
+    factor = values[(INTERFACE, "text-scaling-factor")]
+    step = nearest_step(system, factor)
+    mode = dock_mode(read_json(work_state_path(), {}), desktop.taskbar())
+    print(f"Size system: {'managed' if is_managed() else 'not managed (run --set to adopt)'}")
+    marker = "" if on_ladder(system, factor) else f" (off ladder; nearest {step['text']:g})"
+    print(f"Text size: {factor:.3f} → {step['label']}{marker}")
+    if (DOCK, "icon-size") in values:
+        token = step["dock"][mode]
+        note = "" if values[(DOCK, "icon-size")] == token else f" (token {token})"
+        print(f"Dock ({mode}): {values[(DOCK, 'icon-size')]} px{note}")
+    for role, font in system["fonts"].items():
+        current = values.get(FONT_KEYS[role])
+        if current is not None:
+            print(f"Font {role}: {current}" + ("" if current == font else f" (policy {font})"))
+    return 0
+
+
+def cmd_list(system):
+    for step in system["steps"]:
+        dock = step["dock"]
+        default = " (default)" if step["name"] == system["default_step"] else ""
+        print(f"{step['name']:<8} {step['text']:>5.2f}  dock {dock['native']}/{dock['work']}/"
+              f"{dock['work-taskbar']} px{default}")
+    return 0
+
+
+def cmd_set(system, desktop, step):
+    set_managed(True)
+    desktop.write({(INTERFACE, "text-scaling-factor"): float(step["text"])})
+    writes = reconcile(system, desktop, managed=True)
+    fonts = font_plan(system, desktop.values())
+    desktop.write(fonts)
+    print(f"{step['label']} ({step['text']:g}); {describe({**writes, **fonts})}")
+    return 0
+
+
+def cmd_watch(system):
+    Gio, GLib = gio()
+    desktop = Desktop()
+    pending = {"id": 0, "adopt": False}
+
+    def run(adopt=False):
+        pending["id"] = 0
+        adopt = adopt or pending["adopt"]
+        pending["adopt"] = False
+        if adopt:
+            set_managed(True)
+        writes = reconcile(system, desktop)
+        if writes:
+            print(f"mseries-ui-scale: {describe(writes)}", flush=True)
+        return GLib.SOURCE_REMOVE
+
+    def schedule(adopt=False):
+        pending["adopt"] = pending["adopt"] or adopt
+        if pending["id"]:
+            GLib.source_remove(pending["id"])
+        pending["id"] = GLib.timeout_add(400, run, adopt)
+
+    # A text-size change from Quick Settings or --set adopts the size system;
+    # Work Mode transitions only reconcile once it is adopted.
+    desktop.settings[INTERFACE].connect("changed::text-scaling-factor", lambda *_: schedule(adopt=True))
+    if DOCK in desktop.settings and desktop.has(DOCK, "taskbar-mode"):
+        desktop.settings[DOCK].connect("changed::taskbar-mode", lambda *_: schedule())
+    monitor = Gio.File.new_for_path(str(work_state_path())).monitor_file(Gio.FileMonitorFlags.WATCH_MOVES, None)
+    monitor.connect("changed", lambda *_: schedule())
+    run(False)
+    GLib.MainLoop().run()
+    return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--status", action="store_true", help="show the current step, dock and fonts")
+    group.add_argument("--list", action="store_true", help="list the ladder")
+    group.add_argument("--set", metavar="STEP", help="adopt a step by name, factor or percent")
+    group.add_argument("--step", choices=("up", "down"), help="move one step along the ladder")
+    group.add_argument("--snap", action="store_true", help="adopt the nearest step to the current text size")
+    group.add_argument("--dock-size", metavar="MODE", choices=("native", "work", "work-taskbar"),
+                       help=f"print the dock token for the current step (exit {EXIT_UNMANAGED} if not managed)")
+    group.add_argument("--watch", action="store_true", help="keep dock size in step with text size")
+    group.add_argument("--unmanage", action="store_true", help="stop applying size-system tokens")
+    args = parser.parse_args(argv)
+
+    system = load_system()
+    if args.list:
+        return cmd_list(system)
+    if args.unmanage:
+        set_managed(False)
+        publish_policy(False)
+        print("Size system no longer manages dock size; current settings left as they are.")
+        return 0
+    if args.watch:
+        return cmd_watch(system)
+    desktop = Desktop()
+    factor = desktop.values()[(INTERFACE, "text-scaling-factor")]
+    if args.status:
+        return cmd_status(system, desktop)
+    if args.dock_size:
+        if not is_managed():
+            return EXIT_UNMANAGED
+        print(nearest_step(system, factor)["dock"][args.dock_size])
+        return 0
+    if args.set:
+        return cmd_set(system, desktop, find_step(system, args.set))
+    if args.step:
+        return cmd_set(system, desktop, neighbour(system, factor, 1 if args.step == "up" else -1))
+    return cmd_set(system, desktop, nearest_step(system, factor))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

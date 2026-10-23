@@ -1,0 +1,39 @@
+[Unit]
+Description=Pantheon Rust compositor (%I)
+OnFailure=gnome-session-shutdown.target
+OnFailureJobMode=replace-irreversibly
+CollectMode=inactive-or-failed
+RefuseManualStart=on
+RefuseManualStop=on
+
+After=gnome-session-manager.target
+Requisite=gnome-session-initialized.target
+PartOf=gnome-session-initialized.target
+Before=gnome-session-initialized.target
+ConditionEnvironment=XDG_SESSION_TYPE=%I
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+[Service]
+Slice=session.slice
+Type=notify
+TimeoutStartSec=90s
+# The compositor pings every 10 s from its event loop (and sets STATUS=); a
+# hung loop for 30 s is killed and restarted by Restart=on-failure. Owner
+# approved 2026-10-21. A restart ends every Wayland client in the session.
+WatchdogSec=30s
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=PANTHEON_WAYLAND_DISPLAY=wayland-0
+ExecStart=/usr/bin/pantheon-compositor --backend native --notify-systemd
+ExecStartPost=/usr/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY
+# Portal clients can request D-Bus activation before the compositor publishes
+# WAYLAND_DISPLAY. Queue portal startup after import; --no-block avoids a cycle
+# because xdg-desktop-portal is ordered after graphical-session.target.
+ExecStartPost=/usr/bin/systemctl --user start --no-block xdg-desktop-portal.service
+# Clear compositor-owned display variables and remove the fixed socket after
+# the session ends, including after an unexpected compositor failure.
+ExecStopPost=-/bin/sh -c 'test "$SERVICE_RESULT" != "exec-condition" && systemctl --user unset-environment GNOME_SETUP_DISPLAY WAYLAND_DISPLAY DISPLAY XAUTHORITY && rm -f "$XDG_RUNTIME_DIR/wayland-0" "$XDG_RUNTIME_DIR/wayland-0.lock"'
+Restart=on-failure
+RestartSec=2s
+TimeoutStopSec=5
+OOMScoreAdjust=-1000

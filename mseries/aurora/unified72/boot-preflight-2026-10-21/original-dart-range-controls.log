@@ -1,0 +1,30 @@
+/tmp/dart-range-76wppxcw/controls.c: In function ‘apple_dart_domain_flush_tlb_range’:
+/tmp/dart-range-76wppxcw/controls.c:44:15: error: unknown type name ‘u32’
+   44 |         const u32 op = DART_T8110_TLB_CMD_OP_FLUSH_SID;
+      |               ^~~
+/tmp/dart-range-76wppxcw/controls.c:67:25: error: too many arguments to function ‘apple_dart_hw_sync_locked’; expected 2, have 3
+   67 |                         apple_dart_hw_sync_locked(cfg, &stream, true) : 0;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~               ~~~~
+/tmp/dart-range-76wppxcw/controls.c:30:12: note: declared here
+   30 | static int apple_dart_hw_sync_locked(struct io_pgtable_cfg *cfg, struct apple_dart_stream_map *stream) {
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/dart-range-76wppxcw/controls.c:76:42: error: ‘struct apple_dart’ has no member named ‘fw_mirror’
+   76 |                 if (range && (stream.dart->fw_mirror || stream.dart->fw_handoff) &&
+      |                                          ^~
+/tmp/dart-range-76wppxcw/controls.c:76:68: error: ‘struct apple_dart’ has no member named ‘fw_handoff’
+   76 |                 if (range && (stream.dart->fw_mirror || stream.dart->fw_handoff) &&
+      |                                                                    ^~
+/tmp/dart-range-76wppxcw/controls.c:78:31: error: implicit declaration of function ‘apple_dart_fw_invalidate’ [-Wimplicit-function-declaration]
+   78 |                         ret = apple_dart_fw_invalidate(&stream, start, end);
+      |                               ^~~~~~~~~~~~~~~~~~~~~~~~
+Traceback (most recent call last):
+  File "<private-workspace>/work/aurora72-boot-prep/source/tools/asahi/apple-dart-range-tests.py", line 112, in <module>
+    main()
+    ~~~~^^
+  File "<private-workspace>/work/aurora72-boot-prep/source/tools/asahi/apple-dart-range-tests.py", line 107, in main
+    subprocess.run(['cc', '-std=gnu11', '-Werror', str(p / 'controls.c'), '-o', str(p / 'controls')], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['cc', '-std=gnu11', '-Werror', '/tmp/dart-range-76wppxcw/controls.c', '-o', '/tmp/dart-range-76wppxcw/controls']' returned non-zero exit status 1.

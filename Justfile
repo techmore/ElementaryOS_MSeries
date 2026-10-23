@@ -29,6 +29,11 @@ _get_timestamp:
     set -euo pipefail
     echo "$(cat ./mkosi.version)"
 
+# M-series wiring checks (what CI's validate-mseries.yml runs): `just check`,
+# `just check --list`, `just check --only codexbar`. No image build, no network.
+check *ARGS:
+    bash mseries/validate.sh {{ARGS}}
+
 genkey:
     just mkosi genkey
 

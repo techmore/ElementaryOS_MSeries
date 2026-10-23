@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Pantheon Rust Compositor
+Comment=Experimental native Wayland compositor for Pantheon
+Exec=/usr/bin/pantheon-compositor --backend native --notify-systemd
+TryExec=/usr/bin/pantheon-compositor
+NoDisplay=true
+X-GNOME-WMName=Pantheon Rust Compositor
+X-GNOME-Autostart-Phase=DisplayServer
+X-GNOME-Provides=windowmanager
+X-GNOME-Autostart-Notify=true
+X-GNOME-AutoRestart=false
+X-GNOME-HiddenUnderSystemd=true

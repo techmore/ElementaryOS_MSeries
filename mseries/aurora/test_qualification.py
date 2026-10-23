@@ -222,8 +222,30 @@ class QualificationTests(unittest.TestCase):
         data = candidate.series("unified72")
         self.assertIn(data["source"]["commit"], data["source"]["url"])
         self.assertRegex(data["source"]["sha256"], r"^[a-f0-9]{64}$")
-        self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.10-"))
-        self.assertEqual(data["patches"][0]["head"], "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7")
+        self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.11-"))
+        lane = candidate.HERE / "unified72"
+        # wip3 carries exactly the reviewed #157 display patch on the #158 source.
+        self.assertEqual([patch["file"] for patch in data["patches"]],
+                         ["0001-drm-apple-srgb-external-display-colour.patch"])
+        patch = data["patches"][0]
+        self.assertEqual(patch["profile"], "candidate")
+        self.assertEqual(candidate.sha256(lane / "patches" / patch["file"]), patch["sha256"])
+        self.assertEqual(data["superseded_patches"][0]["head"],
+                         "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7")
+        retired = data["superseded_patches"][0]
+        self.assertEqual(candidate.sha256(lane / "patches" / retired["file"]),
+                         retired["sha256"])
+        self.assertEqual(data["kernel_release"]["unified72"],
+                         "7.2.11-elementary-aurora72-wip3")
+        self.assertEqual(data["debian_package"], "linux-image-elementary-aurora72-wip3")
+        self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip2")
+        receipt = json.loads((lane / data["review_receipt"]).read_text())
+        self.assertEqual(receipt["source"], data["source"]["commit"])
+        self.assertEqual(receipt["archive_verification"]["sha256"], data["source"]["sha256"])
+        self.assertEqual(receipt["archive_verification"]["archive_root"],
+                         data["source"]["archive_root"])
+        self.assertEqual(receipt["patches"][0]["head"], patch["head"])
+        self.assertIn("not_rerun", receipt)
         self.assertEqual(candidate.settings(data, "unified72")["DRM_AMDGPU"], "n")
 
 

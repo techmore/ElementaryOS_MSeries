@@ -1,54 +1,58 @@
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 9b38b42..015d9e0 100644
+index 9b38b420..9bef1c8a 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
-@@ -17,6 +17,287 @@
+@@ -17,6 +17,323 @@
   * Boston, MA 02110-1301, USA.
   */
  
 +/*
 + * Battery dropdown: shows what the Battery logger writes to ~/.cache/mseries-battery/summary.txt (headline,
-+ * detail, six-hour watts sparkline, then stat/run/app/tip rows) and opens the Battery app when clicked.
++ * detail, six-hour watts sparkline, then stat/run/app/tip rows). An explicit button opens Battery.
 + * Hidden until the logger has data, in which case the stock device list stays.
 + */
-+public class Power.Widgets.HistoryCard : Gtk.Button {
++public class Power.Widgets.HistoryCard : Gtk.Box {
 +    private Gtk.Label headline_label;
 +    private Gtk.Label detail_label;
 +    private Gtk.DrawingArea spark;
 +    private Gtk.Box sections;
++    private Gtk.Box activity;
++    private Gtk.Expander details;
++    private uint refresh_timer = 0;
++    private string last_contents = "";
 +    private double[] points = {};
 +
 +    construct {
-+        add_css_class ("flat");
-+        margin_bottom = 3;
++        orientation = Gtk.Orientation.VERTICAL;
++        spacing = 10;
++        margin_top = 10; margin_bottom = 10; margin_start = 12; margin_end = 12;
++        add_css_class ("mseries-battery-summary");
++        var style = new Gtk.CssProvider ();
++        style.load_from_string (
++            ".mseries-battery-summary .battery-overview { padding: 12px; border-radius: 12px; background: alpha(currentColor, 0.05); } " +
++            ".mseries-battery-summary .battery-remaining { font-size: 1.6em; font-weight: 700; } " +
++            ".mseries-battery-summary .battery-stat .heading { font-size: 1.1em; font-weight: 600; } " +
++            ".mseries-battery-summary .battery-stat { padding: 8px; border-radius: 8px; background: alpha(currentColor, 0.04); }");
++        Gtk.StyleContext.add_provider_for_display (get_display (), style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 +
 +        headline_label = new Gtk.Label (null) {
 +            halign = START,
-+            xalign = 0
++            xalign = 0, wrap = true, max_width_chars = 28
 +        };
-+        headline_label.add_css_class ("h3");
++        headline_label.add_css_class ("battery-remaining");
 +
 +        detail_label = new Gtk.Label (null) {
 +            halign = START,
-+            xalign = 0
++            xalign = 0, wrap = true, max_width_chars = 32
 +        };
 +        detail_label.add_css_class ("dim-label");
 +
-+        var more = new Gtk.Label (_("Open Battery…")) {
-+            halign = END,
-+            hexpand = true,
-+            valign = START
-+        };
-+        more.add_css_class ("dim-label");
-+
-+        var top = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-+        var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
-+            hexpand = true
-+        };
-+        texts.append (headline_label);
-+        texts.append (detail_label);
-+        top.append (texts);
-+        top.append (more);
++        var top = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
++        var title = new Gtk.Label (_("Battery")) { xalign = 0 };
++        title.add_css_class ("heading");
++        top.append (title);
++        top.append (headline_label);
++        top.append (detail_label);
 +
 +        spark = new Gtk.DrawingArea () {
 +            content_height = 40,
@@ -59,25 +63,39 @@ index 9b38b42..015d9e0 100644
 +        sections = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
 +
 +        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-+            margin_top = 6,
-+            margin_bottom = 6,
-+            margin_start = 6,
-+            margin_end = 6,
-+            width_request = 300
++            width_request = 280
 +        };
 +        box.append (top);
 +        box.append (spark);
-+        box.append (sections);
-+        child = box;
++        box.add_css_class ("battery-overview");
++        append (box);
++        append (sections);
++        activity = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
++        details = new Gtk.Expander (_("Recent activity")) {
++            child = new Gtk.ScrolledWindow () {
++                child = activity, hscrollbar_policy = Gtk.PolicyType.NEVER,
++                propagate_natural_height = true, min_content_height = 160, max_content_height = 220
++            }
++        };
++        append (details);
++        var open = new Gtk.Button.with_label (_("Open Battery…"));
++        open.add_css_class ("suggested-action");
++        append (open);
 +
 +        refresh ();
-+        map.connect (refresh);
-+        Timeout.add_seconds (15, () => {
++        map.connect (() => {
 +            refresh ();
-+            return Source.CONTINUE;
++            if (refresh_timer != 0) return;
++            weak HistoryCard card = this;
++            refresh_timer = Timeout.add_seconds (15, () => {
++                if (card == null) return Source.REMOVE;
++                card.refresh ();
++                return Source.CONTINUE;
++            });
 +        });
++        unmap.connect (stop_refresh);
 +
-+        clicked.connect (() => {
++        open.clicked.connect (() => {
 +            var app = new DesktopAppInfo ("org.mseries.Battery.desktop");
 +            if (app == null) {
 +                return;
@@ -91,12 +109,22 @@ index 9b38b42..015d9e0 100644
 +        });
 +    }
 +
++    private void stop_refresh () {
++        if (refresh_timer != 0) { Source.remove (refresh_timer); refresh_timer = 0; }
++    }
++
++    public override void dispose () {
++        stop_refresh ();
++        base.dispose ();
++    }
++
 +    private Gtk.Label small_label (string text, bool dim, Gtk.Align align = Gtk.Align.START) {
 +        var label = new Gtk.Label (text) {
 +            halign = align,
 +            xalign = align == Gtk.Align.END ? 1 : 0,
 +            ellipsize = Pango.EllipsizeMode.END,
-+            max_width_chars = 34
++            max_width_chars = 24,
++            tooltip_text = text
 +        };
 +        if (dim) {
 +            label.add_css_class ("dim-label");
@@ -105,7 +133,7 @@ index 9b38b42..015d9e0 100644
 +    }
 +
 +    private Gtk.Label title_label (string text) {
-+        var label = small_label (text.up (), true);
++        var label = small_label (text, true);
 +        label.add_css_class ("caption-heading");
 +        label.margin_top = 4;
 +        return label;
@@ -128,6 +156,8 @@ index 9b38b42..015d9e0 100644
 +            return;
 +        }
 +
++        if (visible && contents == last_contents) return;
++        last_contents = contents;
 +        headline_label.label = lines[0];
 +        detail_label.label = lines.length > 1 ? lines[1] : "";
 +        double[] parsed = {};
@@ -137,6 +167,7 @@ index 9b38b42..015d9e0 100644
 +            }
 +        }
 +        points = parsed;
++        spark.visible = points.length >= 2;
 +        spark.queue_draw ();
 +
 +        Gtk.Widget? old;
@@ -144,8 +175,11 @@ index 9b38b42..015d9e0 100644
 +            sections.remove (old);
 +        }
 +
-+        var stats = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 16) {
-+            homogeneous = true
++        while (activity.get_first_child () != null) activity.remove (activity.get_first_child ());
++        var stats = new Gtk.FlowBox () {
++            homogeneous = true, selection_mode = Gtk.SelectionMode.NONE,
++            min_children_per_line = 1, max_children_per_line = 2,
++            column_spacing = 6, row_spacing = 6
 +        };
 +        var runs = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +        var apps = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
@@ -160,12 +194,13 @@ index 9b38b42..015d9e0 100644
 +                var cell = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) {
 +                    halign = START
 +                };
++                cell.add_css_class ("battery-stat");
 +                cell.append (small_label (f[1], true));
 +                var value = small_label (f[2], false);
 +                value.add_css_class ("heading");
 +                cell.append (value);
 +                cell.append (small_label (f[3], true));
-+                stats.append (cell);
++                stats.insert (cell, -1);
 +            } else if (f[0] == "run" && f.length >= 5) {
 +                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
 +                var when = small_label ("%s · %s".printf (f[1], f[2]), false);
@@ -215,32 +250,33 @@ index 9b38b42..015d9e0 100644
 +            sections.append (stats);
 +        }
 +        if (runs.get_first_child () != null) {
-+            sections.append (title_label (_("Recent runs on battery")));
-+            sections.append (runs);
++            activity.append (title_label (_("Recent runs on battery")));
++            activity.append (runs);
 +        }
 +        if (apps.get_first_child () != null) {
-+            sections.append (title_label (_("Biggest CPU users on battery")));
-+            sections.append (apps);
++            activity.append (title_label (_("Biggest CPU users on battery")));
++            activity.append (apps);
 +        }
 +        if (profiles.get_first_child () != null) {
-+            sections.append (title_label (_("Power profiles")));
-+            sections.append (profiles);
++            activity.append (title_label (_("Power profiles")));
++            activity.append (profiles);
 +        }
 +        if (events.get_first_child () != null) {
-+            sections.append (title_label (_("Recent power changes")));
-+            sections.append (events);
++            activity.append (title_label (_("Recent power changes")));
++            activity.append (events);
 +        }
 +        if (devices.get_first_child () != null) {
-+            sections.append (title_label (_("Accessories")));
-+            sections.append (devices);
++            activity.append (title_label (_("Accessories")));
++            activity.append (devices);
 +        }
 +        if (tip_title != null) {
-+            sections.append (title_label (_("Suggestion")));
++            activity.append (title_label (_("Suggestion")));
 +            var tip = small_label (tip_title, false);
 +            tip.add_css_class ("heading");
-+            sections.append (tip);
-+            sections.append (small_label (tip_body, true));
++            activity.append (tip);
++            activity.append (small_label (tip_body, true));
 +        }
++        details.visible = activity.get_first_child () != null;
 +        visible = true;
 +    }
 +
@@ -290,7 +326,7 @@ index 9b38b42..015d9e0 100644
  public class Power.Widgets.PopoverWidget : Gtk.Box {
      public bool is_in_session { get; construct; default = false; }
  
-@@ -97,8 +378,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -97,8 +414,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
              text = _("Power Settings…")
          };
  
@@ -302,7 +338,7 @@ index 9b38b42..015d9e0 100644
          append (device_list_revealer);
          append (device_separator_revealer);
  
-@@ -125,6 +409,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -125,6 +445,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
  
          settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
  
