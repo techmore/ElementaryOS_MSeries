@@ -29,7 +29,7 @@ app**, whose output then compiles into our Rust apps, so app work stops being th
 | Each native app is built directly on **gtk4-rs + granite-rs** (`gtk4 0.11` feature `v4_20`, `granite-rs 3.3`) and re-derives its own look, palette, skeleton/empty states, window state, settings window | No shared widget layer. `claude-pantheon-rs` has `look.rs`, `palette.rs`, `skeleton.rs`, `settings.rs`, `winstate.rs`; `mseries-diskspace` has its own `look.rs`, `layout.rs`, `paint.rs`. Same problems solved twice |
 | `claude-pantheon-rs/src/app.rs` is **3,426 lines**; `mseries-diskspace/src/app.rs` is 1,234 | Application logic and toolkit wiring are welded together; the unit of change is a giant file |
 | The same GTK/Granite pin comment and the `v4_20` workaround is **copy-pasted into four `Cargo.toml` files** | Toolkit quirks live in people's heads and comments, not in a library |
-| `claude-pantheon-rs`: 40 commits in ~29 h, with chains of `WIP …` / `Merge branch claude/cpr-47x into claude/cpr-47y` | Agents work in stacked, hand-merged branches; progress is real but the process is fragile |
+| `claude-pantheon-rs`: 40 commits between 2026-10-21 20:51 and 10-22 01:46 (~5 h on `dev`; ~6 h from the 20:00 backend spike), with chains of `WIP …` / `Merge branch claude/cpr-47x into claude/cpr-47y` | Agents work in stacked, hand-merged branches. **This is a counter-example to the 12 h claim:** a large app moved fast when the backend (T3 server) was a given. Commit times cannot show agent hours for the other apps (their history is squashed, see [sdk-bench/BASELINE.md](sdk-bench/BASELINE.md)) |
 | UI rules live in a skill (57 lines + references, 309 lines total) and in prose docs | Rules are advisory text. Nothing *rejects* a non-HIG screen mechanically |
 | Release pipeline exists but **publishes nothing** (no signing key); compositor and Claude client are **artifact-only**; factory ISO **boot unverified on hardware** | The last mile (an app a user can install and update) is not closed, so every app's "done" is fuzzy |
 
@@ -278,7 +278,7 @@ Order is by **value ÷ entanglement**: SDK first (biggest payoff, least coupled)
 
 | Phase | Work | Exit criterion |
 |---|---|---|
-| **0 Baseline** (days) | Write 6 app specs; record how long the current process takes on two of them (clock time, tokens, retries); define the rubric | A table of "before" numbers committed to the repo |
+| **0 Baseline** (days) | Specs, rubric and baseline notes are in [sdk-bench/](sdk-bench/) (done); retro-measure two past apps from session transcripts and run s01/s03 fresh; record how long the current process takes on two of them (clock time, tokens, retries); define the rubric | A table of "before" numbers committed to the repo |
 | **1 SDK spike** (1–2 wk) | Relm4-vs-own-runtime spike; `ui.msdk` schema v0; `msdk check` + `msdk shot`; re-express Disk Space as an SDK app | Disk Space rebuilt from ≤ 300 lines of `ui.msdk` + `logic.rs`, screenshot matches golden, `check` clean |
 | **2 Small-model trial** (1 wk) | Run Qwen ~4B on the 6 specs with constrained generation; iterate the *vocabulary and error messages*, not the model | Benchmark published; first-try validity measured; gap list |
 | **3 Extract `mseries-sdk`** | History-preserving extraction, CI, examples, `msdk pack` into the dev suite | Another app (Updates) ships via `msdk pack` |
