@@ -78,3 +78,11 @@ Before app scaffolding, ports, SDK-driven UI work or app-building prompts, read
 outcome, show a running primary flow early, use incremental development builds,
 and distinguish test/build evidence from owner acceptance. Do not expand app
 work into unrelated SDK projects. Honor stopped/deferred status.
+
+## Deferred Signal and Messages work
+
+**Signal and Messages are INCOMPLETE and DEFERRED by the owner (2026-10-22).**
+Read [mseries/MESSAGING-STATUS.md](mseries/MESSAGING-STATUS.md) before interpreting
+older app/status notes. The Messages & Signal launcher experience was rejected.
+Do not resume the build-out or claim completion without a new explicit owner
+request; installed previews and passing fixtures do not establish acceptance.
