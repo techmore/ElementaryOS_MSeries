@@ -1,3 +1,13 @@
+## Dock badge wire contract verified — 2026-10-22
+
+The isolated Messages runner now also exercises the SDK DockBadge on a second
+private D-Bus session, without the owner dock/display. It verifies coalescing
+before connection, application URI, i64 count bound, count visibility, clamped
+progress, NaN rejection, clearing and suppression of unchanged updates. All
+wire assertions and the complete Messages GTK scenario pass in
+/tmp/messages-dock-wire.log. Visual behavior on the owner dock remains unqualified.
+No runtime implementation or installed binaries changed in this batch.
+
 ## Automatic read-request parity — 2026-10-22
 
 Rust Messages now matches the qualified client's per-thread newest-message/read-count
