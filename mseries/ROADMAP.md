@@ -1,3 +1,21 @@
+## Superseded PR CI cancellation — 2026-10-22
+
+Source-only: all ten PR workflows now group by workflow name plus PR number
+(with branch ref as the non-PR fallback), cancelling in-progress runs only for
+`pull_request` events. This prevents old revisions of one PR from accumulating
+runner jobs across the shared account, as happened while Rupert awaited deployment.
+Different PRs/workflows stay independent; pushes/manual runs are not preempted.
+The package publisher keeps its global `mseries-apt-publish` lock and release-only
+workflows retain their existing policy. A lightweight workflow checks the policy
+on every workflow change, including future PR workflows.
+
+Validation: eight regression tests passed, including removal/misconfiguration
+mutations for every PR workflow, duplicate workflow names, group isolation, and
+release/publisher lock preservation. No desktop install or service restart.
+Next: merge into dev after CI; existing branches need a new PR run using this
+policy. Already-running legacy checks are not retroactively cancelled. This
+removes superseded-run backlog, not contention from legitimate current builds.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed

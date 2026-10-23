@@ -1,0 +1,38 @@
+name: Workflow cancellation policy
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'mseries/ci/**'
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/**'
+      - 'mseries/ci/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# New commits replace only checks for this workflow and PR. Publishing is not preempted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  policy:
+    name: Verify superseded PR cancellation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Install YAML parser
+        run: python3 -m pip install --disable-pip-version-check -r mseries/ci/requirements.txt
+      - name: Check all workflows and regression cases
+        run: |
+          python3 mseries/ci/workflow_policy.py
+          python3 -B -m unittest discover -s mseries/ci -p 'test_*.py' -v
