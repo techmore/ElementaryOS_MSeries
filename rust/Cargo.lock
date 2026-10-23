@@ -1611,6 +1611,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mseries-greeter"
+version = "0.1.0"
+dependencies = [
+ "futures-channel",
+ "futures-util",
+ "gtk4",
+ "msdk",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "mseries-power"
 version = "0.1.0"
 

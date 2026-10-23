@@ -23,7 +23,7 @@ const ENUMS: &[(&str, &[&str])] = &[
     ("spacing", &["small", "medium", "large"]),
     ("text_style", &["title", "heading", "body", "caption", "muted"]),
     ("button_style", &["suggested", "destructive", "flat"]),
-    ("entry_kind", &["text", "search", "multiline"]),
+    ("entry_kind", &["text", "search", "multiline", "password"]),
 ];
 
 const CAPABILITIES: &[&str] = &[
