@@ -17,7 +17,10 @@ use smithay::{
     wayland::compositor::with_states,
 };
 
-use crate::PantheonCompositor;
+use crate::{
+    PantheonCompositor,
+    corner_render::{CornerRenderer, RoundedClip},
+};
 
 /// Solid-colour overlay pieces kept across frames. A new `SolidColorBuffer`
 /// every frame has a new id, so the damage tracker repaints it every frame
@@ -69,11 +72,12 @@ pub(crate) fn output_pixel_size(
 }
 
 render_elements! {
-    pub CursorRenderElement<R> where R: ImportAll + ImportMem;
+    pub CursorRenderElement<R> where R: ImportAll + ImportMem + CornerRenderer;
     Surface=WaylandSurfaceRenderElement<R>,
     Memory=MemoryRenderBufferRenderElement<R>,
     Solid=SolidColorRenderElement,
     WrappedSurface=Wrap<WaylandSurfaceRenderElement<R>>,
+    Rounded=RoundedClip<WaylandSurfaceRenderElement<R>>,
     Animated=smithay::backend::renderer::element::utils::RelocateRenderElement<smithay::backend::renderer::element::utils::RescaleRenderElement<WaylandSurfaceRenderElement<R>>>,
 }
 
@@ -118,7 +122,7 @@ pub fn render_cursor_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let Some(output_geometry) = state.space.output_geometry(output) else {
@@ -211,7 +215,7 @@ pub fn render_wallpaper_element<R>(
     output: &smithay::output::Output,
 ) -> Option<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let wallpaper = state.wallpaper.as_ref()?;
@@ -241,7 +245,7 @@ fn render_shell_osd_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let Some(osd) = state.shell_compat.active_osd() else {
@@ -392,7 +396,7 @@ pub fn render_lock_surface_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let output_name = output.name();
@@ -402,6 +406,7 @@ where
     let scale = Scale::from(output.current_scale().fractional_scale());
     // The pointer (and any volume/brightness OSD) above the lock surface.
     let mut elements = render_cursor_elements(renderer, state, output);
+    elements.extend(render_screen_mask_elements(renderer, state, output));
     elements.extend(
         render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
             renderer,
@@ -415,6 +420,33 @@ where
     elements
 }
 
+/// The built-in display's rounded corners, above windows, the dock, panels and the lock
+/// screen. External outputs get none.
+fn render_screen_mask_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    let Some(pixels) = output_pixel_size(state, output) else {
+        return Vec::new();
+    };
+    crate::corner_render::screen_mask_elements(
+        renderer,
+        &state.corner_masks,
+        &state.corner_tokens,
+        output,
+        pixels,
+        output.current_scale().fractional_scale(),
+    )
+    .into_iter()
+    .map(CursorRenderElement::from)
+    .collect()
+}
+
 /// Snap Assist: live, scaled thumbnails of the other windows in the empty
 /// half, on plates over a dimmed backdrop, the selection on an accent plate.
 /// Clients are not resized. Front to back: thumbnails, plates, backdrop.
@@ -424,7 +456,7 @@ fn render_snap_assist_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use crate::snap_assist::{BACKDROP_ALPHA, PLATE_ALPHA};
@@ -513,7 +545,7 @@ pub fn render_desktop_elements<R>(
     output: &smithay::output::Output,
 ) -> Result<Vec<CursorRenderElement<R>>, smithay::output::OutputNoMode>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use crate::gesture_animation::PreviewKind;
@@ -522,6 +554,7 @@ where
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
     let mut elements = render_cursor_elements(renderer, state, output);
+    elements.extend(render_screen_mask_elements(renderer, state, output));
     elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
@@ -626,10 +659,25 @@ where
         // Not `space_render_elements`: that draws each window's popups at the
         // window's own place in the stack, so a lower window's menu was clipped
         // by a higher neighbour. This draws every popup above every toplevel.
+        let clipper = state.space.output_geometry(output).and_then(|geometry| {
+            crate::corner_render::Clipper::new(
+                renderer,
+                state.corner_tokens,
+                output,
+                geometry,
+                |window| {
+                    window
+                        .toplevel()
+                        .is_some_and(|toplevel| state.is_panel_surface(toplevel.wl_surface()))
+                },
+            )
+        });
         elements.extend(crate::popup_stack::stacked_render_elements::<
             R,
             CursorRenderElement<R>,
-        >(renderer, &state.space, output, 1.0));
+        >(
+            renderer, &state.space, output, 1.0, clipper.as_ref()
+        ));
     }
     if let Some(wallpaper) = render_wallpaper_element(renderer, state, output) {
         elements.push(wallpaper);
