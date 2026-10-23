@@ -6,6 +6,19 @@ and the agent broker ([local-ai/PANTHEON-MCP-DESIGN.md](local-ai/PANTHEON-MCP-DE
 API permissions and scopes. An app says what it can do and what it needs, the system checks it, and the user (not the model)
 grants access.
 
+## Owner decision (2026-10-23)
+
+**The SDK is where the MCP surface lives, and the desktop apps are rebuilt on the SDK so they get it.** An app's agent-facing tools are
+no longer written by hand per app and per broker adapter: they are generated from its description. The Pantheon MCP design's broker
+stays as the enforcement and consent point (grants, jobs, receipts, quiet admission), but for SDK apps its capability registry is
+fed by the SDK instead of by hand-written adapters. Apps that are not SDK apps keep the adapter, AT-SPI and portal paths. How I read
+"merge the MCP to the SDK": one source of truth in the description, not two parallel systems; correct me if you meant folding the
+broker itself into the SDK runtime.
+
+Consequences for the rebuild order: the SDK apps that already exist carry the first manifests (the T3 port, then the others built on
+the SDK), and each desktop app that is rebuilt on the SDK ships with its intents, scopes and fixtures as part of "done", not as a later
+integration.
+
 ## The idea in one paragraph
 
 An SDK app already declares what it **needs** (`needs "network:localhost", "notifications", "filesystem:data"`) and already has typed
@@ -114,6 +127,8 @@ ask-first default.
 - The permission UX and the exact scope vocabulary need the owner's review before any grammar is fixed.
 
 ## 6. Order
+
+0. (Decided) SDK owns the agent surface; new and rebuilt desktop apps are SDK apps.
 
 1. Agree the vocabulary here: `intent`, `entity`, `scope`, `risk`, `confirm`, `verify`, and the scope naming scheme.
 2. `msdk check` rules and `msdk agent-manifest` against the T3 port (it already has typed messages and a permission flow:
