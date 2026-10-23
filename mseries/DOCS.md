@@ -44,6 +44,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [MINIMAL-SYSTEM.md](MINIMAL-SYSTEM.md) | Layered minimum system: every package mapped to Arch/Asahi/ours/drop with why and the leanest form; Rust Pantheon replacement order |
 | [GTK-PERFORMANCE-ASAHI.md](GTK-PERFORMANCE-ASAHI.md) | What keeps GTK4/Granite apps small and idle on Asahi (renderer, CSD shadow, cursor blink, animations, D-Bus), with every GTK app here listed |
 | [DEV-HYGIENE.md](DEV-HYGIENE.md) | Keeping the dev machine clean: the weekly `dev-clean` timer (build output, caches, session scratch, dated Codex exports), one shared cargo target dir, worktree discipline |
+| [SMART-REPLY-DESIGN.md](SMART-REPLY-DESIGN.md) | Design only: a window-aware agent that drafts replies in any app (Tab inserts, Esc discards), what it reuses from dictation and the SDK, safety rules, and a scoped first slice |
 
 ## Kernel
 
