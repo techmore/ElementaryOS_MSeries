@@ -922,6 +922,16 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock Launcher binding lifecycle backport — 2026-10-21
+
+Backported elementary/dock `1f55ec4c5fda41b41f6c92e31e80122608500ce7` against
+the pinned 8.3.3 source. Canonical source preparation applies the adaptation
+after app tracking while retaining the complete taskbar, Start menu, CodexBar,
+RepoBar and notification stack. Clean build completed 425/425 steps; private
+Launcher pointer/keyboard checks and light/dark screenshots passed. App identity
+and running lifecycle tests passed 5/5. The CodexBar hover fixture remains
+intermittent; no live dock deployment or memory measurement. Source pin remains
+unchanged for task 03 coordination. [Audit and receipts](upstream-audits/desktop/2026-10-21T22-29-10-0400.md).
 ## Pinned Aurora source fetch follow-up — 2026-10-22
 
 Both #518 run 39770268111 and #528 run 39836069576 received repeated HTTP 429 responses from the pinned codeload URL;

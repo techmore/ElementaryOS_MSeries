@@ -1787,6 +1787,29 @@ three routing regressions, private fake-BlueZ probe, syntax and warning-level
 ShellCheck pass. No pin bump, live installation or service restart. Next: review
 Dock Launcher binding lifecycle with complete custom-source preservation.
 
+### Dock Launcher binding lifecycle follow-up — 2026-10-21
+
+Backported elementary/dock `1f55ec4c5fda41b41f6c92e31e80122608500ce7` against
+our pinned 8.3.3 source `8b45a68a122947ad3a6427bf6e159ec2acf04ad0`. Because the
+pin's `Launcher` uses `cleanup()` while upstream's newer patch uses `dispose()`,
+the adapted patch removes the retained `GLib.Binding` field and unbind from the
+actual pinned cleanup method, extracts the badge-count callback, and leaves the
+upstream source pin unchanged for task 03 coordination. The canonical
+`dock-taskbar/prepare-source.sh` applies it after app tracking and asserts the
+old field/unbind are absent. Documentation and evidence:
+`mseries/upstream-audits/desktop/2026-10-21T22-29-10-0400.md`.
+
+The full 8.3.3 customized dock source compiled (425/425 steps); private launcher
+marker, activation, context-menu, Escape and typing checks passed in light and
+dark. App resolver/running lifecycle tests passed 5/5. No installed file, dock,
+panel or compositor changed. The CodexBar hover probe passed in the first full
+run but that command exited nonzero during temporary-home cleanup; isolated
+retries later failed its existing simulated-hover visibility assertion. This
+probe does not cover the changed Launcher and remains an unresolved fixture
+stability result. Live session behavior and memory use are not verified. Next:
+preserve this result while task 03 coordinates the Dock source version; any live
+dock acceptance requires its existing explicit deployment/next-login gate.
+
 ## Touch ID page in System Settings — 2026-10-21
 
 New native Settings page, **Settings → Personal → Touch ID** (`mseries/touchid-settings/`, Vala, GTK 4 + libadwaita
