@@ -44,6 +44,10 @@ pub fn css() -> String {
          .msdk-error {{ color: @error_color; }}\n\
          .msdk-indicator {{ min-width: 18px; min-height: 3px; border-radius: 2px; background: alpha(currentColor, 0.45); }}\n\
          .msdk-indicator.focused {{ background: @accent_color; }}\n\
+         .msdk-bubble {{ background: alpha(currentColor, {sa}); border-radius: {card}px; padding: 8px 12px; }}\n\
+         .msdk-bubble-user {{ background: @accent_color; color: white; border-radius: {card}px; padding: 8px 12px; }}\n\
+         .msdk-code {{ font-family: monospace; background: alpha(currentColor, 0.08); border-radius: {control}px; padding: 8px 12px; }}\n\
+         .msdk-tool {{ font-size: {caption}em; opacity: 0.7; }}\n\
          .msdk-badge {{ background: @error_color; color: white; border-radius: 9px; padding: 0 5px; font-size: {caption}em; }}\n",
         px = w["outline_px"].as_i64().unwrap_or(1),
         a = w["outline_alpha"].as_f64().unwrap_or(0.28),

@@ -19,6 +19,22 @@ use crate::render::{self, D, Dispatcher, Refresh};
 pub type Event = (String, Option<Value>);
 
 /// Builds the app's Rust logic once the host exists; it gets a sender for events from its own threads.
+/// System access an app can plug in: named services (`call`) and live feeds. Crates such as the T3 client implement it;
+/// `FixtureServices` answers from a JSON file so an app can run before its real backend exists.
+pub trait Services {
+    /// Handles `service`; returns false when this provider does not own it. Replies go to `tx` as events.
+    fn call(
+        &self,
+        service: &str,
+        args: &std::collections::BTreeMap<String, Value>,
+        then: Option<String>,
+        error: Option<String>,
+        tx: UnboundedSender<Event>,
+    ) -> bool;
+    /// Starts `feed`, calling `push` with the whole list now and whenever it changes. False when not owned.
+    fn start_feed(&self, feed: &str, push: Rc<dyn Fn(Value)>) -> bool;
+}
+
 pub type LogicFactory = Box<dyn FnOnce(UnboundedSender<Event>) -> Box<dyn Logic>>;
 
 pub struct Host {
@@ -26,6 +42,8 @@ pub struct Host {
     store: RefCell<Store>,
     logic: RefCell<Box<dyn Logic>>,
     custom_logic: bool,
+    services: Option<Rc<dyn Services>>,
+    extra: RefCell<std::collections::HashMap<String, gtk::Window>>,
     refreshers: RefCell<Vec<Refresh>>,
     window: gtk::ApplicationWindow,
     holder: gtk::Box,
@@ -110,6 +128,19 @@ impl Host {
         logic: Option<LogicFactory>,
         watch: bool,
     ) -> Option<Rc<Host>> {
+        Host::open_with(app, doc, path, surface, logic, None, watch)
+    }
+
+    /// As [`Host::open_doc`], with a plug-in services provider.
+    pub fn open_with(
+        app: &gtk::Application,
+        doc: Value,
+        path: Option<&Path>,
+        surface: &str,
+        logic: Option<LogicFactory>,
+        services: Option<Rc<dyn Services>>,
+        watch: bool,
+    ) -> Option<Rc<Host>> {
         if report(&msdk::check(&doc)) {
             return None;
         }
@@ -165,6 +196,9 @@ impl Host {
             doc: RefCell::new(doc),
             logic: RefCell::new(logic),
             custom_logic,
+            services,
+            extra: RefCell::new(Default::default()),
+
             refreshers: RefCell::new(Vec::new()),
             window,
             holder,
@@ -219,6 +253,25 @@ impl Host {
             .cloned()
             .unwrap_or_default();
         for (key, name) in feeds {
+            if let Some(feed) = name.as_str()
+                && feed != "windows.list"
+                && let Some(sv) = &self.services
+            {
+                let (weak, key) = (self.me.borrow().clone(), key.clone());
+                let started = sv.start_feed(
+                    feed,
+                    Rc::new(move |list| {
+                        if let Some(h) = weak.upgrade() {
+                            h.set(&key, list);
+                            h.post("_feed", Some(json!(key)));
+                        }
+                    }),
+                );
+                if !started {
+                    eprintln!("msdk-run: nothing provides the feed `{feed}`");
+                }
+                continue;
+            }
             if name.as_str() == Some("windows.list") {
                 let weak = self.me.borrow().clone();
                 crate::services::watch_windows(move |list| {
@@ -339,6 +392,71 @@ impl Host {
         self.rebuild();
     }
 
+    /// Opens a `dialog` or `popover` surface in its own window, transient for the main one. The store is shared.
+    fn open_surface(&self, name: &str) {
+        if let Some(w) = self.extra.borrow().get(name) {
+            w.present();
+            return;
+        }
+        let doc = self.doc.borrow().clone();
+        let Some(surf) = doc["surfaces"].get(name) else {
+            return eprintln!("msdk-run: no surface `{name}`");
+        };
+        let kind = surf["kind"].as_str().unwrap_or("");
+        if !matches!(kind, "dialog" | "popover") {
+            return eprintln!(
+                "msdk-run: `{name}` is a {kind}; only dialogs and popovers open on demand"
+            );
+        }
+        let dialog = kind == "dialog";
+        let win = gtk::Window::builder()
+            .transient_for(&self.window)
+            .modal(dialog)
+            .decorated(dialog)
+            .title(surf["title"].as_str().unwrap_or(name))
+            .default_width(360)
+            .build();
+        let d = self.dispatcher();
+        let column = gtk::Box::new(gtk::Orientation::Vertical, 12);
+        column.set_margin_top(16);
+        column.set_margin_bottom(16);
+        column.set_margin_start(16);
+        column.set_margin_end(16);
+        let mut refreshers: Vec<Refresh> = Vec::new();
+        if let Some(body) = surf.get("body") {
+            let b = render::build_node(body, &d);
+            column.append(&b.widget);
+            refreshers.extend(b.refresh);
+        }
+        if dialog {
+            let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            actions.set_halign(gtk::Align::End);
+            for n in surf["actions"].as_array().into_iter().flatten() {
+                let b = render::build_node(n, &d);
+                actions.append(&b.widget);
+                refreshers.extend(b.refresh);
+            }
+            column.append(&actions);
+        }
+        win.set_child(Some(&column));
+        let snapshot = self.store.borrow().clone();
+        for r in &refreshers {
+            r(&snapshot);
+        }
+        self.refreshers.borrow_mut().extend(refreshers);
+        let (weak, key) = (self.me.borrow().clone(), name.to_string());
+        win.connect_close_request(move |_| {
+            if let Some(h) = weak.upgrade() {
+                h.extra.borrow_mut().remove(&key);
+            }
+            gtk::glib::Propagation::Proceed
+        });
+        self.extra
+            .borrow_mut()
+            .insert(name.to_string(), win.clone());
+        win.present();
+    }
+
     fn show_error(&self, text: &str) {
         self.banner.set_text(text);
         self.banner.set_visible(true);
@@ -382,8 +500,11 @@ impl Host {
         match e {
             Effect::Toast(t) => self.show_toast(&t),
             Effect::Quit => self.window.close(),
-            Effect::Open(_) | Effect::Close(_) => {
-                eprintln!("msdk-run: open/close of other surfaces is not implemented yet")
+            Effect::Open(name) => self.open_surface(&name),
+            Effect::Close(name) => {
+                if let Some(w) = self.extra.borrow_mut().remove(&name) {
+                    w.destroy();
+                }
             }
             Effect::Call {
                 service,
@@ -392,6 +513,11 @@ impl Host {
                 error,
             } => {
                 let tx = self.tx.clone();
+                if let Some(sv) = &self.services
+                    && sv.call(&service, &args, then.clone(), error.clone(), tx.clone())
+                {
+                    return;
+                }
                 let fail =
                     move |tx: &UnboundedSender<Event>, error: &Option<String>, why: String| {
                         if let Some(m) = error {

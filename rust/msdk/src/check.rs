@@ -62,6 +62,8 @@ struct Cx {
 #[derive(Clone, Default)]
 struct Scope {
     row: Option<Fields>,
+    /// The nearest enclosing `visible_if`, so controls on different pages are not counted together.
+    vis: Option<String>,
 }
 
 impl Cx {
@@ -639,10 +641,15 @@ fn node(v: &Value, path: &str, scope: &Scope, depth: usize, cx: &mut Cx) {
     {
         cx.err(&format!("{path}/id"), "duplicate-id", format!("id `{id}` is used twice"), None);
     }
+    let mut base = scope.clone();
+    if let Some(v) = obj.get("visible_if").and_then(Value::as_str) {
+        base.vis = Some(v.to_string());
+    }
+    let scope = &base;
     // A List's rows see the fields of its record type; everything else sees the outer scope.
     let mut item_type: Option<String> = None;
     let mut row_scope = scope.clone();
-    if ty == "List"
+    if matches!(ty, "List" | "Transcript")
         && let Some(items) = obj.get("items").and_then(Value::as_str)
         && let Some(t) = cx.lookup(items, scope)
         && let Some(rec) = t.strip_prefix("list<").and_then(|r| r.strip_suffix('>'))
@@ -674,11 +681,26 @@ fn node(v: &Value, path: &str, scope: &Scope, depth: usize, cx: &mut Cx) {
         let sc = if ty == "List" && p.name == "row" { &row_scope } else { scope };
         check_value(p, val, &vp, sc, depth, ty, item_type.as_deref(), cx);
     }
-    design_rules(ty, obj, path, cx);
+    design_rules(ty, obj, path, scope, cx);
+    if ty == "Transcript"
+        && let Some(rec) = &item_type
+    {
+        let fields = cx.types.get(rec).cloned().unwrap_or_default();
+        for f in ["id", "kind", "text"] {
+            if fields.get(f).map(String::as_str) != Some("text") {
+                cx.err(
+                    &format!("{path}/items"),
+                    "transcript-record-mismatch",
+                    format!("record `{rec}` needs `{f}: text` for a Transcript"),
+                    Some(format!("add \"{f}\": \"text\" to types/{rec}")),
+                );
+            }
+        }
+    }
 }
 
 /// HIG rules from `.agents/skills/elementaryos-mseries-ui-specialist` that a machine can enforce.
-fn design_rules(ty: &str, obj: &Map<String, Value>, path: &str, cx: &mut Cx) {
+fn design_rules(ty: &str, obj: &Map<String, Value>, path: &str, scope: &Scope, cx: &mut Cx) {
     let style = obj.get("button_style").and_then(Value::as_str);
     if matches!(ty, "Button" | "IconButton") {
         if style == Some("destructive") && !obj.contains_key("confirm") {
@@ -690,9 +712,7 @@ fn design_rules(ty: &str, obj: &Map<String, Value>, path: &str, cx: &mut Cx) {
             );
         }
         if style == Some("suggested") {
-            *cx.suggested
-                .entry(obj.get("visible_if").and_then(Value::as_str).unwrap_or("").to_string())
-                .or_insert(0) += 1;
+            *cx.suggested.entry(scope.vis.clone().unwrap_or_default()).or_insert(0) += 1;
         }
     }
     if ty == "Entry"
@@ -763,7 +783,7 @@ fn check_feeds(feeds: Option<&Value>, _caps: Option<&Value>, cx: &mut Cx) {
             continue;
         };
         let Some(feed) = vocab::feed(name) else {
-            let names: Vec<&str> = vocab::FEEDS.iter().map(|f| f.name).collect();
+            let names: Vec<&str> = vocab::feeds().into_iter().map(|f| f.name).collect();
             cx.err(
                 &path,
                 "unknown-feed",
@@ -1088,7 +1108,7 @@ fn check_actions(v: &Value, path: &str, payload: Payload, cx: &mut Cx) {
                     continue;
                 };
                 let Some(svc) = vocab::service(name) else {
-                    let names: Vec<&str> = vocab::SERVICES.iter().map(|s| s.name).collect();
+                    let names: Vec<&str> = vocab::services().into_iter().map(|s| s.name).collect();
                     cx.err(
                         &format!("{ap}/call"),
                         "unknown-service",
