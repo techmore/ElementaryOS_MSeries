@@ -3,7 +3,7 @@ namespace MSeries {
     public class PanelPreferences : GLib.Object {
         private Json.Object values = new Json.Object ();
         private string path;
-        private const string[] KEYS = { "showPercent", "showReset", "showAccounts", "showHints", "showTokens", "compactQuota", "showHoverInfo", "accountLegend" };
+        private const string[] KEYS = { "showPercent", "showReset", "showAccounts", "showHints", "showTokens", "compactQuota", "showHoverInfo", "accountLegend", "denseTable" };
         public string last_error { get; private set; default = ""; }
 
         public PanelPreferences () {

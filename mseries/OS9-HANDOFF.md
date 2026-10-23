@@ -1,3 +1,23 @@
+## CodexBar dropdown: 1.5x and a dense table — 2026-10-21 (Claude Code)
+
+- **What:** owner asked to bring the dropdown back 25% (2em → 1.5em) and show the data denser: vendors as header bands, one row
+  per account, alternating tones with account-colored cards. Fixed metrics scale to 3/4 of the 2x values (icons 36/24/64 → 27/18/48,
+  scroll area 225–450, bars 9 px, percent/reset labels 87/69); minimum width is 400 rather than 360 so the table's columns fit.
+  `render_dense_table` (`Indicator.vala`) is the new default, behind a `denseTable` preference (Settings → Wingpanel → "Dense table";
+  off restores the per-vendor cards). Each vendor band holds the status dot, company mark, hint badges, seven-day token chip and the
+  add-account button. Each account row holds the hue badge, address, plan and up to three quota cells (label + percent, bar, reset),
+  then Switch or the signed-in tick. Rows alternate `zebra-a/b` and take the account's legend hue as a left edge and tint. Identity and
+  trailing columns share size groups so cells align across vendors. The opt-in legend still sits above and below the table, and in
+  that mode rows keep only the numbered badge so each address is named once. The "no quota" notes moved into `append_no_quota`, shared
+  by both layouts. `ui-size-allowlist.json` follows the new sizes.
+- **Notifications:** `desktop-notifications/popup.py` now shows macOS-style traffic lights on the left of each popup: red dismisses
+  (reason 2), yellow minimizes (reason 4: the popup hides, the notification stays unread in the center). Placement under Wingpanel
+  already worked through the AT-SPI inset; a probe made while Wingpanel was restarting had read 0, which clears on the next 15 s refresh.
+- **Verified:** `meson test` 18/18 (the 10 failures on the first pass were a null `"".split()` and probe text assertions, fixed);
+  `check-ui-sizes` ok; render probe PNG for shared-accounts. Notification popup lands at y=140 under the 124 px bar.
+- **Not verified:** the traffic-light dots visually (the X capture came back empty) and the dense table in dark mode. Installed to
+  `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` and Wingpanel restarted by hand; previous library kept in the session scratchpad.
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
