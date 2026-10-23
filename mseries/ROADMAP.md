@@ -1,3 +1,13 @@
+## SDK app-building workflow published on dev — 2026-10-22
+
+Owner requested that future agents read the workflow correction from dev rather
+than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
+SDK guidance entry point. They cover early visible outcomes, a running example,
+time checkpoints, reusable prompt/starter requirements, incremental debug builds,
+cache preservation and evidence-based acceptance. No app implementation or draft
+SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
+only; no compiler, packaging or tests run for this change.
+
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 
 One app in `mseries/orchard/` (Machine Lab's UI, Orchard's name, icon, Incus REST client, Podman page and tests), installed
