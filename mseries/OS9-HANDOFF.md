@@ -1,3 +1,14 @@
+## Read state on window activation — 2026-10-22
+
+Messages now rechecks the selected unread conversation when its window becomes
+active, using the same coalesced per-message request path as selection/refresh.
+Inactive windows and local-only threads remain excluded. A private second GTK
+window plus actual X11 focus switching verifies no inactive request and exactly
+one request on return; full GTK/badge scenario and strict all-target Clippy pass.
+Receipts: /tmp/messages-activation-read.log and -clippy.log. Live phone read-state
+acceptance remains open; synthetic D-Bus read calls do not prove phone state.
+Optimized ARM64 package rebuilt and installed user-locally; clients not restarted.
+
 ## Switcher and keyboard-help translation coverage — 2026-10-22
 
 Switcher tab titles, descriptions, launch buttons, accessible names and errors now
