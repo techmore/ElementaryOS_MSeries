@@ -5,6 +5,8 @@ owner's request ("document the issue and plan it, then we implement"). Facts bel
 this repository on 2026-10-22; claims that are the owner's report or my inference are marked
 **[owner]** or **[inference]**. Numbers marked *proposed* are targets to argue about, not measurements.
 
+**Update 2026-10-22:** the owner decided to rebase on Arch Linux (Asahi Alarm); see [ARCH-REBASE-PLAN.md](ARCH-REBASE-PLAN.md). The repo split, SDK and benchmark here are unaffected; the apt/deb pipeline in §4 and `RELEASE-PIPELINE.md` become pacman repos.
+
 Related: [RUST-IN-THE-STACK.md](RUST-IN-THE-STACK.md), [RUST-UPSTREAM-MAINTENANCE.md](RUST-UPSTREAM-MAINTENANCE.md),
 [EDGE-AND-RUST-PLAN.md](EDGE-AND-RUST-PLAN.md), [RELEASE-PIPELINE.md](RELEASE-PIPELINE.md),
 [UPDATER-DESIGN.md](UPDATER-DESIGN.md), [KERNEL-FLOW.md](KERNEL-FLOW.md), [BRANCHING.md](BRANCHING.md).
