@@ -1,3 +1,26 @@
+## Image Studio upstream diffusion audit — 2026-10-22
+
+Reviewed Aurora, Asahi/Honeykrisp, omarchy-mlx, its TensorFold workflow and
+Mesa compute PR #6. [Pinned findings and patch plan](image-studio/UPSTREAM-DIFFUSION.md).
+Mesa #6 remains NOT READY; its targeted passes do not resolve prior wide-suite
+regressions. TensorFold's qualified video workflow needs 96 GB, unsuitable for
+this 32 GB host. No driver/kernel changes made. Running kernel is
+`7.2.11-elementary-aurora72-wip3`; Mesa package is `26.0.8-1ubuntu0.3`.
+
+Realistic Vision V6 FP16 plus external MSE VAE, 512×768, DPM++ 2M/Karras,
+30 steps, CFG 5, seed 424242 completed in 258.856 s with 30 previews and first
+preview at 7.292 s. Image is sharper than the old Q4 test, but subject consistency
+and prompt adherence remain insufficient for the owner's quality acceptance.
+A logging finalization bug incorrectly marked this successful engine output
+failed; retained metadata records that repair and source is fixed. GPU VAE
+trial stopped at the 6 GiB reserve after 3.18 s: no GPU-VAE qualification.
+
+Current source adds prominent short model/settings summary, larger native text,
+RV downloader and explicit VAE/sampler/scheduler controls, personal model notes,
+run logs, repeat/new-seed actions and reliable sweep state. Repeated recipes drop
+old measurements. Latest scoped `cargo check -p mseries-image-studio` passes;
+updated binary deployment and final quality acceptance remain outstanding.
+
 ## Image Studio: native app, live local previews and vision review — 2026-10-22
 
 Installed as **Image Studio** in Applications with its SVG icon, stable user-local executable and D-Bus

@@ -1,3 +1,11 @@
+## Image Studio upstream performance and quality — 2026-10-22
+
+Pinned [Aurora/Asahi/omarchy-mlx audit](image-studio/UPSTREAM-DIFFUSION.md)
+identifies safe app/runtime candidates and deferred driver experiments. RV FP16
+CPU-VAE run completed in 258.856 s; quality acceptance remains open. GPU VAE
+stopped at memory reserve, so is unqualified. Next: measured decoder optimization,
+reference consistency within the memory budget, final native app deployment.
+
 ## Image Studio: native app and local preview pipeline — 2026-10-22
 
 Applications launcher/icon installed. Native GTK/Granite/SDK layout now has visible Run/Stop, compact
