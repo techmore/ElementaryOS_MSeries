@@ -10,6 +10,8 @@
 //!   CLAUDE_PANTHEON_SHOT_M3=<file.png>   usage page (milestone 3)
 //!   CLAUDE_PANTHEON_SHOT_DIAG=<file.png> diagnostics page (milestone 4g)
 //!   CLAUDE_PANTHEON_SHOT_REPOS=<file.png> repos and issues (milestone 5), pinned repos from workflow.json
+//!   CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY=1 render isolated pinned repos and exit before live checks
+//!   CLAUDE_PANTHEON_SHOT_REPOS_LAYOUT=<file.png> screenshot for the isolated repo layout pass
 //!   CLAUDE_PANTHEON_LIVE_SEND=1          start a real thread and wait for the answer (costs tokens)
 //!   CLAUDE_PANTHEON_DARK=1               dark style
 //! Plain `main`, not libtest: GTK must stay on one thread.
@@ -145,6 +147,32 @@ fn main() {
         .set_gtk_application_prefer_dark_theme(env("CLAUDE_PANTHEON_DARK").is_some());
 
     let app = App::build(&application, Instant::now(), false);
+    if std::env::var_os("CLAUDE_PANTHEON_REPOS_LAYOUT_ONLY").is_some() {
+        assert!(pump_until("the isolated app startup", 60, || !app.is_busy()));
+        app.show_repos();
+        assert!(pump_until("the isolated repository cards", 30, || {
+            shown(&app).iter().filter(|text| text.starts_with("layout-owner/")).count() >= 10
+        }));
+        pump(300);
+        let t = shown(&app);
+        for expected in ["Pinned", "Issues", "Install runner", "Webhook", "New chat"] {
+            assert!(t.iter().any(|text| text == expected), "repository card shows {expected}: {t:?}");
+        }
+        let repo_scroll = widget_with_css(app.window().upcast_ref(), "repo-page-scroll")
+            .expect("the repository page has its own scroll viewport")
+            .downcast::<gtk::ScrolledWindow>()
+            .expect("repository viewport is a scrolled window");
+        let adjustment = repo_scroll.vadjustment();
+        assert!(
+            adjustment.upper() > adjustment.page_size() + 100.0,
+            "ten repository cards remain inside the page's scroll viewport"
+        );
+        let path = env("CLAUDE_PANTHEON_SHOT_REPOS_LAYOUT").expect("set a path for the isolated repo screenshot");
+        save_png(app.window(), &path);
+        app.window().destroy();
+        println!("PASS: isolated repository card layout");
+        return;
+    }
     assert!(pump_until("the index and the connection attempt", 60, || !app.is_busy()));
     pump(200);
     let sessions = app.sessions();

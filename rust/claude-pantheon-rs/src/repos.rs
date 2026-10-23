@@ -37,6 +37,13 @@ fn pill(text: &str, class: &str) -> gtk::Label {
     l
 }
 
+fn wrap_label(label: &gtk::Label) {
+    label.set_ellipsize(pango::EllipsizeMode::None);
+    label.set_wrap(true);
+    label.set_wrap_mode(pango::WrapMode::WordChar);
+    label.set_xalign(0.0);
+}
+
 fn project_matches_repo(project: &crate::t3::model::Project, repo: &PinnedRepo) -> bool {
     if project.deleted_at.is_some() {
         return false;
@@ -206,6 +213,7 @@ impl ReposPage {
             .hscrollbar_policy(gtk::PolicyType::Never)
             .vexpand(true)
             .build();
+        scroll.add_css_class("repo-page-scroll");
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         root.append(&scroll);
         ReposPage {
@@ -343,23 +351,39 @@ impl ReposPage {
             let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
             card.add_css_class("card");
             card.add_css_class("repo-card");
-            let head = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+            let head = gtk::Box::new(gtk::Orientation::Vertical, 6);
+            let identity = gtk::Box::new(gtk::Orientation::Horizontal, 8);
             let pin = gtk::CheckButton::with_label("Pinned");
             pin.set_active(pinned.iter().any(|p| p.repo == r.repo));
+            pin.set_valign(gtk::Align::Start);
             let name = label(&r.repo, &["title-4"]);
             name.set_hexpand(true);
-            head.append(&name);
-            head.append(&pin);
+            wrap_label(&name);
+            name.set_max_width_chars(48);
+            identity.append(&name);
+            identity.append(&pin);
+            let actions = gtk::FlowBox::new();
+            actions.set_selection_mode(gtk::SelectionMode::None);
+            actions.set_row_spacing(6);
+            actions.set_column_spacing(6);
+            actions.set_min_children_per_line(1);
+            actions.set_max_children_per_line(3);
+            actions.set_homogeneous(false);
+            actions.set_hexpand(true);
+            actions.set_halign(gtk::Align::Fill);
+            actions.update_property(&[gtk::accessible::Property::Label("Repository actions")]);
             let open = gtk::Button::with_label("Issues");
-            head.append(&open);
             let runner = gtk::Button::with_label("Install runner");
             runner.set_tooltip_text(Some("A T3 scheduled task every 5 minutes that takes the next agent:ready issue"));
-            head.append(&runner);
             let webhook = gtk::Button::with_label("Webhook");
             webhook.set_tooltip_text(Some(
                 "A webhook task that starts on GitHub's issues.labeled agent:ready within seconds; the GitHub hook is created when the server's endpoint is reachable (Tailscale or T3 Connect)",
             ));
-            head.append(&webhook);
+            actions.append(&open);
+            actions.append(&runner);
+            actions.append(&webhook);
+            head.append(&identity);
+            head.append(&actions);
             card.append(&head);
             let automation = {
                 let runner_state = if self.runner_id(&r.repo).is_some() { "installed" } else { "not installed" };
@@ -376,8 +400,10 @@ impl ReposPage {
                     &["caption", "dim-label"],
                 )
             };
+            wrap_label(&automation);
             card.append(&automation);
             let summary = label(&crate::look::tilde(&r.path), &["caption", "dim-label"]);
+            wrap_label(&summary);
             card.append(&summary);
 
             let repo_projects: Vec<_> = projects.iter().filter(|project| project_matches_repo(project, &r)).collect();
@@ -426,7 +452,7 @@ impl ReposPage {
                     "No chats in this repository yet. Start one here or use the chat list."
                 };
                 let empty = label(hint, &["caption", "dim-label"]);
-                empty.set_wrap(true);
+                wrap_label(&empty);
                 chats.append(&empty);
             } else {
                 for thread in repo_threads.iter().take(5) {
@@ -434,6 +460,7 @@ impl ReposPage {
                     let details = gtk::Box::new(gtk::Orientation::Vertical, 1);
                     details.set_hexpand(true);
                     let title = label(&thread_title(thread), &[]);
+                    wrap_label(&title);
                     title.set_max_width_chars(72);
                     details.append(&title);
 
@@ -455,6 +482,7 @@ impl ReposPage {
                     context.push(activity.to_string());
                     context.push(relative_time(iso_to_unix(&thread.updated_at), now_unix()));
                     let context = label(&context.join(" · "), &["caption", "dim-label"]);
+                    wrap_label(&context);
                     context.set_max_width_chars(64);
                     details.append(&context);
 
@@ -501,13 +529,14 @@ impl ReposPage {
                         ),
                         &["caption", "dim-label"],
                     );
-                    more.set_wrap(true);
+                    wrap_label(&more);
                     chats.append(&more);
                 }
             }
             card.append(&chats);
 
             let counts = label("", &["caption"]);
+            wrap_label(&counts);
             card.append(&counts);
             self.repo_list.append(&card);
 
@@ -717,8 +746,7 @@ impl ReposPage {
             "Describe the problem and the observable outcome. Keep implementation choices open for the agent and pull-request review.",
             &["dim-label"],
         );
-        intro.set_wrap(true);
-        intro.set_xalign(0.0);
+        wrap_label(&intro);
         root.append(&intro);
 
         let form_column = gtk::Box::new(gtk::Orientation::Vertical, 10);
@@ -773,8 +801,7 @@ impl ReposPage {
         root.append(&scroll);
 
         let status = label("", &["caption", "dim-label"]);
-        status.set_wrap(true);
-        status.set_xalign(0.0);
+        wrap_label(&status);
         root.append(&status);
 
         let actions = gtk::FlowBox::new();
@@ -1194,8 +1221,7 @@ impl ReposPage {
         root.set_margin_bottom(16);
         let intro =
             label(&format!("Choose chats to group under #{} while this issue is open.", issue.number), &["dim-label"]);
-        intro.set_wrap(true);
-        intro.set_xalign(0.0);
+        wrap_label(&intro);
         root.append(&intro);
 
         let list = gtk::Box::new(gtk::Orientation::Vertical, 4);
@@ -1205,13 +1231,13 @@ impl ReposPage {
             check.set_active(selected.contains(&thread.id));
             let item = gtk::Box::new(gtk::Orientation::Vertical, 2);
             let title = label(&thread_title(&thread), &[]);
-            title.set_xalign(0.0);
+            wrap_label(&title);
             let project = project_titles.get(&thread.project_id).map(String::as_str).unwrap_or("Project");
             let context = label(
                 &format!("{project} · {}", relative_time(iso_to_unix(&thread.updated_at), now_unix())),
                 &["caption", "dim-label"],
             );
-            context.set_xalign(0.0);
+            wrap_label(&context);
             item.append(&title);
             item.append(&context);
             check.set_child(Some(&item));
