@@ -22,7 +22,7 @@ Keyboard shortcuts:
 | Bottom left | Super+Alt+J | Super+keypad 1 |
 | Bottom right | Super+Alt+K | Super+keypad 3 |
 
-With this machine's Command/Ctrl swap, physical left **Ctrl** is Super.
+With this machine's Command/Ctrl swap, both physical **Ctrl** keys are Super.
 The keypad alternatives support Num Lock on and off. Super+Shift+arrows
 continue moving windows between monitors.
 

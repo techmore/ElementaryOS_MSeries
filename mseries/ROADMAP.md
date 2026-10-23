@@ -1,3 +1,13 @@
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The media-key handler had no `volume-mute`, `volume-down` or `volume-up`
+bindings, so the Mac function-row audio keys were ignored. `apply-desktop-settings.py`
+now fills those only when blank, and maps both Command keys to Ctrl with the
+matching right and left XKB swaps. Quick Settings mute now uses the fresh
+PipeWire state and an explicit set-mute value; pending slider writes finish
+before the mute action. Full pinned Quick Settings build succeeds. Live settings
+were applied and the default sink is currently muted; hardware key presses and
+loading the new panel module remain to be confirmed.
 ## PolyBagger multi-printer and USB reconnect support — 2026-10-22
 
 `mseries/polybagger-print-manager/` now supports multiple USB printer-class devices,
@@ -922,6 +932,15 @@ Launcher pointer/keyboard checks and light/dark screenshots passed. App identity
 and running lifecycle tests passed 5/5. The CodexBar hover fixture remains
 intermittent; no live dock deployment or memory measurement. Source pin remains
 unchanged for task 03 coordination. [Audit and receipts](upstream-audits/desktop/2026-10-21T22-29-10-0400.md).
+## Pinned Aurora source fetch follow-up — 2026-10-22
+
+Both #518 run 39770268111 and #528 run 39836069576 received repeated HTTP 429 responses from the pinned codeload URL;
+the retry policy exhausted before unified72 source preparation. The candidate profile passed prep and entered its isolated
+CI build. The current follow-up retains archive SHA-256 verification, retries transient responses, then uses the exact
+Git URL, commit and tree SHA-1 pinned in `aurora/unified72/series.json` only after a retryable HTTP error. Mocked checks
+cover both paths, and the preparation receipt records the acquisition method and archive digest; the remote fallback and
+wip4 build still need CI evidence. No local source fetch or hardware/kernel
+installation occurred. #518 remains conflicted with `dev` and unreviewed; verify updated CI before considering its refresh.
 ## Rust Pantheon SDK and app migration — 2026-10-22
 
 Started `rust/mseries-pantheon-kit`, a shared Rust GTK 4 / Granite SDK modeled

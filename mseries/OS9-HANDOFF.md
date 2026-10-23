@@ -1,3 +1,35 @@
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The live `org.gnome.settings-daemon.plugins.media-keys` settings had empty
+`volume-mute`, `volume-down` and `volume-up` bindings. Filled them with the
+standard XF86 mute/lower/raise keys and added the right-side XKB Command/Ctrl
+swap alongside the existing left-side swap. The desktop setup script now makes
+those changes idempotently while preserving custom key bindings. Updated the
+launcher notes for symmetric Command mapping.
+
+Quick Settings volume mute now reads the current PipeWire state and writes an
+explicit mute value instead of issuing a blind toggle. It serializes mute clicks
+after pending slider writes, follows the actual state, and exposes Mute/Unmute
+as the icon button's accessible name. The pinned Quick Settings 1.4.0 source
+build passes. Applied the keyboard/media-key settings live and muted the current
+default sink with `wpctl set-mute @DEFAULT_AUDIO_SINK@ 1`; readback is
+`Volume: 0.63 [MUTED]`. No audio service, Wingpanel, or compositor was restarted.
+Physical key presses and the rebuilt panel module on the live desktop remain
+unverified; the source fix is staged for the next Quick Settings installation.
+Feature branch: `codex/audio-mute-keyboard-20261022`.
+## Aurora pinned-source fetch follow-up — 2026-10-22
+
+PR #518's unified72 run [39770268111](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268111) and PR #528's
+first retry run [39836069576](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39836069576) both stopped at
+pinned-source preparation on repeated codeload HTTP 429 responses. The retry logic honored the bounded attempt/delay
+policy; the candidate profile passed source preparation and entered its isolated CI kernel build, while unified72 did
+not. This follow-up keeps the codeload checksum path, then falls back only for retryable HTTP errors to the explicitly
+pinned Git URL, commit and tree SHA-1 in `unified72/series.json`; it verifies both Git identities before archiving. Bad
+checksums and permanent HTTP errors still fail closed. The preparation receipt records the acquisition method and actual
+archive digest. Local tests cover retry and fallback behavior; they do not
+prove the remote Git fetch or a wip4 build. No source archive was fetched/prepared locally, and no hardware, installed
+kernel, boot payload or wip4 artifact was produced. PR #518 remains conflicted with `dev` and unreviewed. Next: let the
+updated CI validate the fallback and record candidate/unified72 build outcomes separately.
 ## Dock launcher regression harness startup race — 2026-10-22
 
 PR #518's validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)

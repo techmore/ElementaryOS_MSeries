@@ -78,6 +78,7 @@ namespace QuickSettings {
         protected Gtk.Scale slider;
         private Gtk.Image icon_image;
         private Gtk.Widget icon_widget;
+        private Gtk.Button? icon_button = null;
         private Gtk.Label percentage;
         private bool updating = false;
         private bool writing = false;
@@ -102,6 +103,7 @@ namespace QuickSettings {
                 var button = new Gtk.Button () { child = icon_image, valign = CENTER, tooltip_text = title };
                 button.clicked.connect (() => { icon_activated (); });
                 button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { title });
+                icon_button = button;
                 icon_widget = button;
             } else {
                 icon_widget = new Gtk.CenterBox () { center_widget = icon_image, valign = CENTER };
@@ -151,6 +153,15 @@ namespace QuickSettings {
 
         protected virtual void wrote () {}
 
+        protected void set_icon_action (string label, bool sensitive = true) {
+            if (icon_button == null) {
+                return;
+            }
+            icon_button.tooltip_text = label;
+            icon_button.sensitive = sensitive;
+            icon_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { label });
+        }
+
         // Moves the slider to a value read from the system without sending it back.
         protected void show_value (double value, bool dimmed = false) {
             updating = true;
@@ -159,7 +170,7 @@ namespace QuickSettings {
             update_display (dimmed);
         }
 
-        protected void update_display (bool dimmed = false) {
+        protected virtual void update_display (bool dimmed = false) {
             var value = slider.get_value ();
             percentage.label = "%.0f%%".printf (value);
             icon_image.icon_name = icon_for (value, dimmed);
@@ -212,6 +223,9 @@ namespace QuickSettings {
         private const string SINK = "@DEFAULT_AUDIO_SINK@";
         private bool muted = false;
         private bool refreshing = false;
+        private bool mute_busy = false;
+        private bool refresh_pending = false;
+        private uint pending_mute_toggles = 0;
         private uint poll_id = 0;
 
         public Volume () {
@@ -251,6 +265,20 @@ namespace QuickSettings {
             return value < 67 ? "audio-volume-medium-symbolic" : "audio-volume-high-symbolic";
         }
 
+        protected override void update_display (bool dimmed = false) {
+            base.update_display (dimmed || muted);
+            set_icon_action (muted ? _("Unmute") : _("Mute"), !mute_busy);
+        }
+
+        private static double parse_volume (string text, out bool is_muted) throws Error {
+            var parts = text.strip ().split (" ");
+            if (parts.length < 2 || parts[0] != "Volume:") {
+                throw new IOError.FAILED ("unexpected wpctl output");
+            }
+            is_muted = text.contains ("[MUTED]");
+            return double.parse (parts[1]);
+        }
+
         private static async string run (string[] args) throws Error {
             string[] argv = { "wpctl" };
             foreach (var arg in args) {
@@ -266,20 +294,18 @@ namespace QuickSettings {
         }
 
         private async void refresh () {
-            if (refreshing || busy) {
+            if (refreshing || busy || mute_busy) {
                 return;
             }
             refreshing = true;
             try {
                 // "Volume: 0.45" or "Volume: 0.45 [MUTED]"
                 var text = yield run ({ "get-volume", SINK });
-                var parts = text.strip ().split (" ");
-                if (parts.length < 2 || parts[0] != "Volume:") {
-                    throw new IOError.FAILED ("unexpected wpctl output");
-                }
-                muted = text.contains ("[MUTED]");
-                if (!busy) {
-                    show_value (Math.round (double.parse (parts[1]) * 100).clamp (0, 100), muted);
+                bool observed_muted;
+                var value = parse_volume (text, out observed_muted);
+                if (!busy && !mute_busy) {
+                    muted = observed_muted;
+                    show_value (Math.round (value * 100).clamp (0, 100), muted);
                 }
                 visible = true;
             } catch (Error e) {
@@ -287,18 +313,56 @@ namespace QuickSettings {
                 visible = false;
             }
             refreshing = false;
+            if (refresh_pending && !busy && !mute_busy) {
+                refresh_pending = false;
+                refresh.begin ();
+            }
         }
 
         protected override void icon_activated () {
-            toggle_mute.begin ();
+            pending_mute_toggles++;
+            process_mute_toggles.begin ();
         }
 
-        private async void toggle_mute () {
+        private async void process_mute_toggles () {
+            if (mute_busy || busy || pending_mute_toggles == 0) {
+                return;
+            }
+            pending_mute_toggles--;
+            mute_busy = true;
+            slider.sensitive = false;
+            set_icon_action (muted ? _("Unmute") : _("Mute"), false);
+            if (refreshing) {
+                refresh_pending = true;
+            }
             try {
-                yield run ({ "set-mute", SINK, "toggle" });
+                // Read current state, then write it explicitly so stale state and overlapping
+                // slider writes cannot turn a requested mute back off.
+                var text = yield run ({ "get-volume", SINK });
+                bool currently_muted;
+                parse_volume (text, out currently_muted);
+                var should_mute = !currently_muted;
+                yield run ({ "set-mute", SINK, should_mute ? "1" : "0" });
+                muted = should_mute;
             } catch (Error e) {
                 warning ("Could not change mute: %s", e.message);
             }
+            mute_busy = false;
+            if (pending_mute_toggles > 0) {
+                process_mute_toggles.begin ();
+                return;
+            }
+            slider.sensitive = true;
+            update_display (muted);
+            request_refresh ();
+        }
+
+        private void request_refresh () {
+            if (refreshing || busy || mute_busy) {
+                refresh_pending = true;
+                return;
+            }
+            refresh_pending = false;
             refresh.begin ();
         }
 
@@ -313,7 +377,11 @@ namespace QuickSettings {
 
         protected override void wrote () {
             update_display (muted);
-            refresh.begin ();
+            if (pending_mute_toggles > 0) {
+                process_mute_toggles.begin ();
+            } else {
+                request_refresh ();
+            }
         }
     }
 }
