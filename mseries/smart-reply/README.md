@@ -20,6 +20,20 @@ typing (the engine only sees keys while a draft is held, and any plain key still
 | Alt+T | Think harder: the model's thinking switched on and a larger token budget (1200), slow: expect 30 to 120 seconds with the timer running; the reasoning is stripped before anything is shown. Normal drafts never think |
 | Alt+= (or Alt++) | More context: the field shows `Extra context (Enter redrafts · Esc back):` and you type a few words (up to 300 characters; Backspace edits, Esc goes back to the draft); Enter redrafts with them |
 
+**The bar.** The same five actions are also offered as buttons: the input service publishes them as an IBus lookup table
+(`Alt+R Reword · Alt+P More polite · Alt+C More concise · Alt+T Think harder (slow) · Alt+= + context`, one horizontal row beside
+the caret) and runs the action when a button is clicked (`CandidateClicked`, left button), through the same code as the chord. The
+buttons are drawn by the IBus panel's candidate popup, which is not a window that can take keyboard focus, so the field keeps focus
+and the draft stays held; Tab, Esc and the chords work as before. **This needs an IBus panel to be running.** Where none is (this
+desktop starts `ibus-daemon --panel disable` and no `ibus-ui-gtk3`), nothing is drawn and the keys and the in-field hint still work.
+A panel surface of the Pantheon shell protocol was rejected for this: it reserves work area (windows would resize whenever a draft
+appears) and `hide_mode` cannot make it both visible and non-exclusive.
+
+**Reasons in the field.** When the shortcut is refused because of the conversation (no incoming message to reply to, no readable
+text, the context cap, not a message box), the reason now appears in the message box itself for 8 seconds (`Smart Reply: …`, typing
+or Esc dismisses it) through `Say`, instead of only in a notification. Blocked apps, unknown apps and sensitive fields still get a
+notification only: the input method is not touched there.
+
 Each action shows `Drafting… Ns` again and replaces the draft; if the model fails the old draft comes back with a notification saying
 why. The instruction sent is one fixed sentence per action (`mseries_ai::Instruction`), never conversation text; your extra context
 is added as your own words. The note you type is a line the input service draws as composing text, so nothing is typed into the app
@@ -94,9 +108,9 @@ mseries-reply memory preview --contact "Sam Example" "are you in for the ride?"
 note-entry key classification, the fixed instruction list, a fixture run of every action, IBus wire shapes);
 `quick-actions-smoke.py` (a private session with its own ibus-daemon, AT-SPI bus and input service, one real GTK 4 entry with
 `GTK_IM_MODULE=ibus`, real X key presses: Alt+R/P/C redraft with the local model and Tab inserts the result, Alt+= takes a note and
-redrafts with it, Esc in the note keeps the draft, a plain `r` abandons it and is typed, no conversation means no actions); the reader on live Brave (Teams) and Signal windows; the input service on the real ibus-daemon with a test input
+redrafts with it, Esc in the note keeps the draft, a plain `r` abandons it and is typed, no conversation means no actions; with a private `ibus-ui-gtk3` panel the bar is visible, a click on its first button runs Reword without moving focus and Tab then inserts the result; `Say` shows a reason that typing dismisses); the reader on live Brave (Teams) and Signal windows; the input service on the real ibus-daemon with a test input
 context and a GTK entry (Tab commits once, Esc and any other key commit nothing, the previous engine is restored, a
-sensitive field is refused). **Not verified:** the quick actions in the owner's own Wayland session and Signal client (only the
+sensitive field is refused). **Not verified:** the bar in the owner's own Wayland session (no IBus panel runs there, and how `ibus-ui-gtk3 --enable-wayland-im` places a popup under this compositor is untested), the quick actions in the owner's own Wayland session and Signal client (only the
 private X11 session above); in Chromium/Electron (notification path); a real Command+Option+R press and Tab in the owner's chat apps; Esc and
 focus-loss behaviour in Chromium; apps that expose no accessibility tree get no context. No settings panel yet (edit the
 JSON; use `memory` for the personal records). The persona, retrieval and `memory` command have unit tests (retrieval matching and
