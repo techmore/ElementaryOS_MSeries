@@ -241,6 +241,8 @@ pub struct PantheonCompositor {
     pub(crate) idle_inhibitors: HashSet<WlSurface>,
     /// The displays are blanked through DisplayConfig `PowerSaveMode`.
     pub(crate) displays_off: bool,
+    /// Pending lock after an idle blank (`lock-delay` > 0); input cancels it.
+    idle_lock_timer: Option<smithay::reexports::calloop::RegistrationToken>,
 }
 
 /// Everything the Gala snapshot depends on that can change between dispatches.
@@ -575,11 +577,13 @@ impl PantheonCompositor {
             _idle_inhibit_state: idle_inhibit_state,
             idle_inhibitors: HashSet::new(),
             displays_off: false,
+            idle_lock_timer: None,
         })
     }
 
     /// Any input from the user: reset idle time and wake blanked displays.
     pub(crate) fn note_user_activity(&mut self) {
+        self.cancel_idle_lock();
         self.idle_monitor.activity();
         let seat = self.seat.clone();
         self.idle_notifier_state.notify_activity(&seat);
@@ -628,7 +632,9 @@ impl PantheonCompositor {
             self.lock_confirmation_outputs.clear();
             self.finish_lock_confirmation_if_ready();
             tracing::info!("displays off (power save)");
+            self.schedule_idle_lock();
         } else {
+            self.cancel_idle_lock();
             self.displays_off = false;
             #[cfg(feature = "native-drm")]
             if let Some(backend) = self.native_backend.as_mut() {
@@ -2136,6 +2142,68 @@ impl PantheonCompositor {
         }
     }
 
+    /// Frame callbacks for this output's lock surface. The lock screen is not
+    /// a window, so the window frame-callback paths never reach it.
+    pub(crate) fn send_lock_surface_frames(
+        &self,
+        output: &smithay::output::Output,
+        time: Duration,
+    ) {
+        if !self.session_locked {
+            return;
+        }
+        if let Some(surface) = self.lock_surfaces.get(&output.name()) {
+            smithay::desktop::utils::send_frames_surface_tree(
+                surface.wl_surface(),
+                output,
+                time,
+                Some(Duration::ZERO),
+                |_, _| Some(output.clone()),
+            );
+        }
+    }
+
+    /// The displays were just blanked. If the user has been idle (gsd-power's
+    /// idle blank, not a lid or a manual switch-off) and `lock-enabled` is on,
+    /// lock after `lock-delay` seconds unless they come back first, as GNOME
+    /// Shell does.
+    fn schedule_idle_lock(&mut self) {
+        if self.session_locked || self.idle_monitor.idle_ms() < IDLE_LOCK_MIN_IDLE_MS {
+            return;
+        }
+        let Some(delay) = idle_lock_delay() else {
+            return;
+        };
+        self.cancel_idle_lock();
+        if delay.is_zero() {
+            tracing::info!("idle blank: locking the session");
+            self.shell_compat.request_lock();
+            return;
+        }
+        tracing::info!(
+            delay_s = delay.as_secs(),
+            "idle blank: locking after lock-delay"
+        );
+        let timer = smithay::reexports::calloop::timer::Timer::from_duration(delay);
+        match self.loop_handle.insert_source(timer, |_, _, state| {
+            state.idle_lock_timer = None;
+            if state.displays_off && !state.session_locked {
+                tracing::info!("lock-delay passed while idle: locking the session");
+                state.shell_compat.request_lock();
+            }
+            smithay::reexports::calloop::timer::TimeoutAction::Drop
+        }) {
+            Ok(token) => self.idle_lock_timer = Some(token),
+            Err(error) => tracing::warn!(%error, "could not arm the idle lock timer"),
+        }
+    }
+
+    fn cancel_idle_lock(&mut self) {
+        if let Some(token) = self.idle_lock_timer.take() {
+            self.loop_handle.remove(token);
+        }
+    }
+
     pub fn confirm_lock_output_frame(&mut self, output_name: &str) {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
@@ -2503,6 +2571,65 @@ mod stacking_tests {
     }
 }
 
+/// A blank only counts as idle (and may lock) after this long without input.
+const IDLE_LOCK_MIN_IDLE_MS: u64 = 5_000;
+
+/// How long after an idle blank to lock, or `None` not to lock. Reads
+/// `org.gnome.desktop.screensaver` `lock-enabled` / `lock-delay` and
+/// `org.gnome.desktop.lockdown` `disable-lock-screen` when the blank happens.
+/// `PANTHEON_IDLE_LOCK=off` disables it; `PANTHEON_IDLE_LOCK=<seconds>`
+/// overrides the delay (used by the nested probe).
+fn idle_lock_delay() -> Option<Duration> {
+    let override_value = std::env::var("PANTHEON_IDLE_LOCK").ok();
+    let enabled = gsettings_bool("org.gnome.desktop.screensaver", "lock-enabled");
+    let delay_s = gsettings_u32("org.gnome.desktop.screensaver", "lock-delay");
+    let lockdown = gsettings_bool("org.gnome.desktop.lockdown", "disable-lock-screen");
+    idle_lock_decision(override_value.as_deref(), enabled, delay_s, lockdown)
+}
+
+fn idle_lock_decision(
+    override_value: Option<&str>,
+    enabled: Option<bool>,
+    delay_s: Option<u32>,
+    lockdown: Option<bool>,
+) -> Option<Duration> {
+    match override_value.map(str::trim) {
+        Some("off" | "false" | "no") => return None,
+        Some(value) if !value.is_empty() => {
+            return value.parse::<u64>().ok().map(Duration::from_secs);
+        }
+        _ => {}
+    }
+    if lockdown == Some(true) || enabled != Some(true) {
+        return None;
+    }
+    Some(Duration::from_secs(u64::from(delay_s.unwrap_or(0))))
+}
+
+fn gsettings(schema: &str) -> Option<gio::Settings> {
+    // g_settings_new aborts on a missing schema, so look it up first.
+    gio::SettingsSchemaSource::default()?.lookup(schema, true)?;
+    Some(gio::Settings::new(schema))
+}
+
+fn gsettings_bool(schema: &str, key: &str) -> Option<bool> {
+    use gio::prelude::SettingsExt;
+    let settings = gsettings(schema)?;
+    settings
+        .settings_schema()?
+        .has_key(key)
+        .then(|| settings.boolean(key))
+}
+
+fn gsettings_u32(schema: &str, key: &str) -> Option<u32> {
+    use gio::prelude::SettingsExt;
+    let settings = gsettings(schema)?;
+    settings
+        .settings_schema()?
+        .has_key(key)
+        .then(|| settings.uint(key))
+}
+
 /// `PANTHEON_DISABLE_POWER_SAVE=1` (or `true`/`yes`) keeps the displays on.
 fn power_save_disabled(value: Option<&str>) -> bool {
     matches!(value.map(str::trim), Some("1" | "true" | "yes"))
@@ -2521,6 +2648,40 @@ mod power_save_tests {
         }
         assert_eq!(power_save_mode_turns_off(-1), None);
         assert_eq!(power_save_mode_turns_off(4), None);
+    }
+
+    #[test]
+    fn idle_lock_follows_gnome_settings() {
+        use super::idle_lock_decision;
+        use std::time::Duration;
+        // the owner's settings: lock-enabled, lock-delay 0 → lock at once
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(0), Some(false)),
+            Some(Duration::ZERO)
+        );
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(30), None),
+            Some(Duration::from_secs(30))
+        );
+        assert_eq!(idle_lock_decision(None, Some(false), Some(0), None), None);
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(0), Some(true)),
+            None,
+            "lockdown wins"
+        );
+        assert_eq!(
+            idle_lock_decision(None, None, None, None),
+            None,
+            "no schema, no lock"
+        );
+        assert_eq!(
+            idle_lock_decision(Some("off"), Some(true), Some(0), None),
+            None
+        );
+        assert_eq!(
+            idle_lock_decision(Some("2"), Some(false), None, None),
+            Some(Duration::from_secs(2))
+        );
     }
 
     #[test]
