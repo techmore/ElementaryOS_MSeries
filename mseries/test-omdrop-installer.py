@@ -18,6 +18,9 @@ class InstallerTests(unittest.TestCase):
                                 'repo=' + str(ROOT.parent))
         script = script.replace('/usr/', str(self.root / 'usr') + '/')
         script = script.replace('need_root install', ':').replace('need_root uninstall', ':')
+        # Preflight reads the Mac's Wi-Fi hardware, which a CI runner lacks; PREFLIGHT picks the outcome.
+        self.assertIn('  preflight || {', script)
+        script = script.replace('  preflight || {', '  "${PREFLIGHT:-true}" || {')
         self.script = self.root / 'installer.sh'
         self.script.write_text(script)
         bin_dir = self.root / 'bin'
@@ -50,6 +53,14 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 42)
         self.assertFalse(self.calls.exists())
         self.assertFalse((self.lib / '.mseries-installed-files').exists())
+
+    def test_failed_preflight_refuses_before_any_change(self):
+        self.env['PREFLIGHT'] = 'false'
+        result = self.run_script('install')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Refusing to install: preflight failed', result.stderr)
+        self.assertFalse(self.calls.exists())
+        self.assertFalse(self.lib.exists())
 
     def test_uninstall_without_manifest_leaves_services_alone(self):
         result = self.run_script('uninstall')
