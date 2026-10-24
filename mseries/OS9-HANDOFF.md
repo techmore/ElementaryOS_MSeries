@@ -1,3 +1,19 @@
+## Apple Dev: native window for omarchy-apple-dev — 2026-10-23 (Claude)
+
+New Rust Pantheon app `rust/mseries-apple-dev` (Apple Dev, `org.techmore.mseries.AppleDev`): a
+GTK 4/Granite/VTE front end for joshuaswarren/omarchy-apple-dev (iPhone and Mac apps from Linux,
+no Xcode). Sidebar with Toolchain (probe of Swift, darwin SDK, xtool, Apple ID, pymobiledevice3,
+usbmuxd, Flutter; Install/Repair/Sign In/Download), Devices (sysfs USB scan plus usbmux details,
+run target, pair, details, live log, Tailscale) and Projects (xtool, Flutter, Mac SwiftPM, Xcode
+import); header Build/Run/Stop. Every action runs the toolkit's own script in an embedded VTE
+Activity pane. Details: [rust/mseries-apple-dev/README.md](../rust/mseries-apple-dev/README.md).
+
+Validation: 23 unit tests, strict clippy, fmt; desktop/AppStream metadata validate; Xvfb renders of
+all pages in light and dark; Build run in the Activity pane reports the real exit status. Release
+build installed to `~/.local` with `install-local.sh` and launched on the owner's desktop.
+Not verified: real toolchain install, build, device install and upload (no Swift/xtool/iPhone set
+up on this machine; the installer targets Arch). New CI workflow `rust-pantheon-apple-dev.yml`.
+
 ## AirDrop controls and idle-radio recovery — 2026-10-22 (Codex)
 
 The Quick Settings AirDrop row now has a direct `Receive Files` switch while
