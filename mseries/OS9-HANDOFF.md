@@ -1,3 +1,19 @@
+## Apple Dev hardening after the first real iPhone build — 2026-10-23 (Claude)
+
+Rupert's iPhone app was built here (Xcode 27.1, Swift 6.4.1 from swift.org) and shipped to
+TestFlight through Apple Dev. Fixes from that run in `rust/mseries-apple-dev`: every job and the
+probe now set `SWIFT_BACKTRACE=enable=no` and `TMPDIR=~/.cache/apple-dev-tmp`, and pick up a
+user-prefix libimobiledevice at `~/.local/opt/libimobiledevice` (PATH, LD_LIBRARY_PATH,
+PKG_CONFIG_PATH; shown as its own Toolchain row). On Ubuntu-family hosts the Toolchain page lists
+the apt packages still missing (Install runs apt in Activity, Copy gives the line) and installs the
+swift.org Swift matching the cached SDK's Xcode into `~/.local/share/swift`. After Upload to
+TestFlight the project page shows the newest build's processing/TestFlight state (read-only App
+Store Connect query via the toolkit's `asc.py`), re-checked every 30 s while Apple processes it.
+Validation: 39 unit tests, clippy (all targets), fmt, Xvfb renders, the live App Store Connect query
+against Rupert build 202610240241 (VALID, IN_BETA_TESTING), the probe on this machine. Not run from
+the window: Install packages and Install Swift. Still manual: xtool (pinned 1.23.0 no longer builds
+libXADI.so upstream).
+
 ## Apple Dev: native window for omarchy-apple-dev — 2026-10-23 (Claude)
 
 New Rust Pantheon app `rust/mseries-apple-dev` (Apple Dev, `org.techmore.mseries.AppleDev`): a
