@@ -85,14 +85,14 @@ the existing `rust/` Cargo workspace, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-2,962 files (2,880 local and 82 elementary-owned upstream inputs) currently form
+2,964 files (2,882 local and 82 elementary-owned upstream inputs) currently form
 533 directory groups and 499 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
-current scope contains 1,271 implementation files (1,258 local), 86 upstream
+current scope contains 1,272 implementation files (1,259 local), 86 upstream
 patches, and 803 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
@@ -136,11 +136,13 @@ with dpkg-gencontrol, dpkg-deb and Debhelper, including documentation, checksums
 and reproducible native rebuilds (run 40238235136).
 The pinned upstream source's unchanged rules now pass 32 actual package
 comparisons in Linux run 40238779709, and all 32 native hashes match macOS builds.
-Fresh real-source/archive list regeneration, PPA membership and complete
-package/image qualification remain open.
+Fresh real-source/archive map/list generation also passes 33 byte-for-byte
+comparisons in Linux run 40240688243 using signed indexes and actual debootstrap.
+Production native acquisition, PPA installability and image admission remain open.
 Lexical seed variables now support the real live profile's language expansion;
 36 profile membership comparisons and the extended 56 map/list comparisons pass
-in Linux run 40239533941. Full matched real seed/archive generation stays open.
+in Linux run 40239533941. The full configured real seed/archive map/list stage now passes in run
+40240688243.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -334,7 +336,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
   while the owner's Signal/Messages deferral is in force. Full image admission
   remains open.
-- The full file inventory currently contains 2,962 items (2,880 M-series-maintained
+- The full file inventory currently contains 2,964 items (2,882 M-series-maintained
   and 82 elementary-owned upstream inputs), 533 directory groups, and 499
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

@@ -25,9 +25,12 @@ def invoke(command):
                           env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive'}).returncode
 
 
-def install(codename, architecture, root, run=invoke):
+def install(codename, architecture, root, run=invoke, packages=None):
     if architecture != 'arm64':
         raise ValueError('This installer is only for Ubuntu ARM64 CI')
+    packages = tuple(PACKAGES if packages is None else packages)
+    if not packages or any(not re.fullmatch(r'[a-z0-9][a-z0-9+.-]*', name) for name in packages):
+        raise ValueError('Expected explicit Debian package names')
     root = Path(root)
     root.chmod(0o755)  # APT's unprivileged downloader must traverse its scratch directory.
     source_dir = root / 'sources'
@@ -46,15 +49,15 @@ def install(codename, architecture, root, run=invoke):
             continue
         # Bound the download, not dpkg: a slow mirror must never strand an install.
         if run(['timeout', '--kill-after=15s', '240', *apt, '--download-only', '--no-install-recommends',
-                'install', '-y', *PACKAGES]) != 0:
+                'install', '-y', *packages]) != 0:
             continue
-        if run([*apt, '--no-download', '--no-install-recommends', 'install', '-y', *PACKAGES]) != 0:
+        if run([*apt, '--no-download', '--no-install-recommends', 'install', '-y', *packages]) != 0:
             raise RuntimeError('Package installation failed after verified download')
         return
     raise RuntimeError('Both Ubuntu mirrors failed or exceeded the download time budget')
 
 
-def main():
+def main(packages=None):
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.geteuid() != 0:
         raise RuntimeError('Run as root only on an ephemeral GitHub Actions runner')
     release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
@@ -62,7 +65,7 @@ def main():
         raise RuntimeError('Ubuntu runner required')
     architecture = subprocess.check_output(['dpkg', '--print-architecture'], text=True).strip()
     with tempfile.TemporaryDirectory(prefix='aurora-apt-') as folder:
-        install(release['VERSION_CODENAME'].strip('"'), architecture, folder)
+        install(release['VERSION_CODENAME'].strip('"'), architecture, folder, packages=packages)
 
 
 if __name__ == '__main__':

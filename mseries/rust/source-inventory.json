@@ -15,7 +15,7 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 2962,
+  "item_count": 2964,
   "component_count": 533,
   "project_count": 499,
   "components": [
@@ -1104,14 +1104,15 @@
     {
       "id": "mseries/ci",
       "ownership": "mseries-maintained",
-      "item_count": 6,
+      "item_count": 7,
       "rust_status_counts": {
-        "not-assessed": 4,
+        "not-assessed": 5,
         "recorded-non-code-input": 2
       },
       "items": [
         "mseries/ci/README.md",
         "mseries/ci/install_aurora_tools.py",
+        "mseries/ci/install_rust_tools.py",
         "mseries/ci/requirements.txt",
         "mseries/ci/test_aurora_tools.py",
         "mseries/ci/test_workflow_policy.py",
@@ -6231,10 +6232,10 @@
     {
       "id": "mseries/rust/seed-compiler",
       "ownership": "mseries-maintained",
-      "item_count": 19,
+      "item_count": 20,
       "rust_status_counts": {
         "candidate-implemented-unverified": 14,
-        "recorded-non-code-input": 5
+        "recorded-non-code-input": 6
       },
       "items": [
         "mseries/rust/seed-compiler/Cargo.lock",
@@ -6242,6 +6243,7 @@
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
         "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+        "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/deb_archive.rs",
         "mseries/rust/seed-compiler/src/deb_package.rs",
@@ -8504,10 +8506,10 @@
     {
       "id": "elementary/package-generator",
       "ownership": "mseries-maintained",
-      "item_count": 19,
+      "item_count": 20,
       "rust_status_counts": {
         "candidate-implemented-unverified": 14,
-        "recorded-non-code-input": 5
+        "recorded-non-code-input": 6
       },
       "items": [
         "mseries/rust/seed-compiler/Cargo.lock",
@@ -8515,6 +8517,7 @@
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
         "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+        "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/deb_archive.rs",
         "mseries/rust/seed-compiler/src/deb_package.rs",
@@ -9756,14 +9759,15 @@
     {
       "id": "mseries/ci",
       "ownership": "mseries-maintained",
-      "item_count": 6,
+      "item_count": 7,
       "rust_status_counts": {
-        "not-assessed": 4,
+        "not-assessed": 5,
         "recorded-non-code-input": 2
       },
       "items": [
         "mseries/ci/README.md",
         "mseries/ci/install_aurora_tools.py",
+        "mseries/ci/install_rust_tools.py",
         "mseries/ci/requirements.txt",
         "mseries/ci/test_aurora_tools.py",
         "mseries/ci/test_workflow_policy.py",
@@ -23936,6 +23940,16 @@
     {
       "id": "mseries/ci/install_aurora_tools.py",
       "path": "mseries/ci/install_aurora_tools.py",
+      "component_id": "mseries/ci",
+      "project_id": "mseries/ci",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/ci/install_rust_tools.py",
+      "path": "mseries/ci/install_rust_tools.py",
       "component_id": "mseries/ci",
       "project_id": "mseries/ci",
       "ownership": "mseries-maintained",
@@ -42726,6 +42740,16 @@
     {
       "id": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
       "path": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
+      "path": "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
       "component_id": "mseries/rust/seed-compiler",
       "project_id": "elementary/package-generator",
       "ownership": "mseries-maintained",

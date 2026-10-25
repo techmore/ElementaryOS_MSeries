@@ -215,7 +215,8 @@ variable classification and ordering. Linux [run 40239533941](https://github.com
 on `50b762905ce3298b4c836d33d34edeb5d6661f79` passed all 36 membership and
 56 map/list comparisons, the 30 unit tests and all existing package checks.
 All 32 actual package hashes still match the retained pre-change baseline.
-Fresh signed archive acquisition, full real list generation and image/runtime
+The qualification harness now captures signed real inputs and qualifies full
+real list generation below. Production native acquisition and image/runtime
 qualification remain open.
 
 
@@ -230,8 +231,13 @@ unknown-only signature rejection checks run too. An unavailable mirror is record
 only after every applicable index endpoint is confirmed unavailable; readable
 indexes without captured signed metadata cause failure.
 
-Local acquisition verified 30 indexes. The configured testing PPA is unavailable
-at all 60 applicable index URLs. The full Linux comparison is pending. It runs
+Local and Linux acquisition verified 30 indexes. The configured testing PPA is
+unavailable at all 60 applicable index URLs. Linux [run 40240688243](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243)
+on `b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea` passed all 33 byte-for-byte real
+map/list comparisons with debootstrap 1.0.142ubuntu2 (226 selected packages on
+each host). Input/output fingerprints and signature checks are permanently
+retained in [`real-list-parity-2026-10-25.json`](real-list-parity-2026-10-25.json).
+The comparison runs
 unchanged Germinate updater logic and actual debootstrap, records the exact
 bootstrap output, then compares all 33 native map/list files. Reference and Rust consume the same new snapshots and observed bootstrap sets. Source/seed/archive bytes stay temporary; CI exports only hash/identity
 receipts, including partial failures. `--acquire-only` supports signature/index

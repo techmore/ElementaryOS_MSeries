@@ -4,6 +4,7 @@ import unittest
 from unittest import mock
 
 import install_aurora_tools as tools
+import install_rust_tools as rust_tools
 import workflow_policy
 
 
@@ -58,6 +59,25 @@ class AuroraDownloadsTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Package installation failed'):
             self.execute([0, 0, 100])
 
+    def test_rust_profile_downloads_and_installs_only_its_selected_packages(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as folder:
+            tools.install('resolute', 'arm64', folder,
+                          lambda command: calls.append(command) or 0,
+                          packages=rust_tools.PACKAGES)
+        for command in calls[1:]:
+            self.assertEqual(rust_tools.PACKAGES, command[command.index('-y') + 1:])
+            self.assertIn('--no-install-recommends', command)
+            self.assertNotIn('clang-22', command)
+        self.assertIn('--download-only', calls[1])
+        self.assertIn('--no-download', calls[2])
+        with mock.patch.dict(tools.os.environ, {}, clear=True), self.assertRaisesRegex(RuntimeError, 'ephemeral GitHub'):
+            rust_tools.main()
+
+    def test_package_profiles_cannot_supply_apt_options(self):
+        with tempfile.TemporaryDirectory() as folder, self.assertRaises(ValueError):
+            tools.install('resolute', 'arm64', folder, mock.Mock(), packages=['--allow-unauthenticated'])
+
     def test_signed_sources_preserve_release_and_reject_unexpected_architecture_or_mirror(self):
         source = tools.sources('resolute', tools.MIRRORS[0])
         self.assertIn('resolute resolute-updates resolute-backports resolute-security', source)
@@ -74,6 +94,12 @@ class AuroraDownloadsTest(unittest.TestCase):
         step = next(s for s in workflow['jobs']['build']['steps'] if s.get('name') == 'Install native build tools')
         self.assertIn('install_aurora_tools.py', step['run'])
         self.assertIn('timeout --kill-after=15s 300 rustup', step['run'])
+        self.assertEqual('20', step['timeout-minutes'])
+        self.assertIn('mseries/ci/**', workflow['on']['pull_request']['paths'])
+        workflow = workflow_policy.load(workflow_policy.ROOT / '.github/workflows/rust-candidate-review.yml')
+        step = next(s for s in workflow['jobs']['rust-candidate']['steps'] if s.get('name') == 'Install Rust, SQLite, GIO, and D-Bus test tools')
+        self.assertIn('install_rust_tools.py', step['run'])
+        self.assertIn('--preserve-env=GITHUB_ACTIONS', step['run'])
         self.assertEqual('20', step['timeout-minutes'])
         self.assertIn('mseries/ci/**', workflow['on']['pull_request']['paths'])
 

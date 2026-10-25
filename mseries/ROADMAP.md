@@ -1,3 +1,30 @@
+## Real map/list stage passes; bounded CI profile pending — 2026-10-25
+
+[Run 40240688243](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243) on
+`b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea` passed all candidate checks and 33
+byte-for-byte real map/list comparisons with unchanged Germinate 2.49. Both hosts
+use the same 30 signed captured indexes and pinned seed/source collections;
+actual debootstrap 1.0.142ubuntu2 produced 226 package names per host. All 60
+applicable endpoints of the unavailable testing PPA were checked. Modified signed
+payloads and unknown-only signatures are rejected; unknown extra rotation
+co-signers gain no trust. Permanent fingerprints:
+`rust/seed-compiler/real-list-parity-2026-10-25.json`.
+
+The original run finished successfully before any replacement was submitted.
+Logs explain its delay: Azure downloaded 87.1 MB in 13m22s at 109 kB/s.
+Prepared for the next run: the existing signed/bounded ARM64 downloader now takes
+a Rust dependency profile, preserving Aurora defaults. Official ports is primary,
+Azure is fallback; metadata/download phases are bounded, installation follows
+verified download with no network. Explicit rust-clippy and python3-yaml support
+the tests without recommendations. Ten installer and nine workflow regressions
+pass locally; Linux qualification of this profile is pending. Inventory: 2,964
+files, 499 project records.
+
+Next: qualify the bounded CI profile, then connect fresh generated lists to native
+package assembly and check package installability. Production native acquisition,
+complete solver/project parity and image/runtime admission remain open. No live
+installation, desktop, kernel, boot or audio changes; PR #586 stays a draft.
+
 ## Signed real archive comparison — 2026-10-25
 
 The new real-list verifier derives every configured mirror/component/architecture
