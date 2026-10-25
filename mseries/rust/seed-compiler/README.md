@@ -116,7 +116,7 @@ cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- generate-meta
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- metapackage-substvars /path/to/metapackages arm64 elementary-desktop
 ```
 
-Next parity gates: Linux package comparisons, pinned real-source builds,
+Next parity gates: pinned real-source builds,
 feature-aware end-to-end generation, archive precedence/conflict semantics, and
 complete Germinate/apt solver comparisons. Synthetic stage receipts do not
 establish whole-project or image/runtime parity.
@@ -151,9 +151,12 @@ comparisons with actual `dpkg-gencontrol`, `dpkg-deb`, Debhelper documentation
 helpers and the pinned Germinate helper. Its 40 packages span both hosts,
 native/non-native and epoch versions, trimmed/full changelogs, `all`/wildcard
 architecture selection, multiline descriptions, relationship reduction and
-long ustar paths. These Linux comparisons are pending; even a pass will qualify
-synthetic metadata/documentation semantics, not byte equality with dpkg's
-compression or complete OS build parity.
+long ustar paths. Linux [run 40238235136](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136)
+on `ccff41c52ef002927bf782ff14ae9c4f8c39419b` passed all 40 comparisons using
+dpkg 1.23.7ubuntu1 and Debhelper 13.31ubuntu1, alongside all existing candidate
+checks. This qualifies the tested synthetic metadata/documentation semantics.
+Byte equality with Debian compression, pinned real-source builds and complete
+OS build parity remain unqualified.
 
 ```sh
 python3 mseries/rust/seed-compiler/test-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler

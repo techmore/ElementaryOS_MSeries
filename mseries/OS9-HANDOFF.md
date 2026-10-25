@@ -1,3 +1,23 @@
+## Native Debian metapackages qualified on synthetic inputs — 2026-10-25
+
+[Run 40238235136](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136)
+on `ccff41c52ef002927bf782ff14ae9c4f8c39419b` passed all 13 candidate crates'
+checks, 29 seed-compiler tests, eight substvars, 22 profile membership, 56 map/list
+file comparisons and all 40 new native-package comparisons. Debian control
+fields match dpkg-gencontrol at the dh_gencontrol staging boundary; installed
+documents match Debhelper after decompression. dpkg-deb accepts/extracts the
+archives, md5sums match, metadata is canonical and native rebuilds are byte
+reproducible. References: Germinate 2.49, Debhelper 13.31ubuntu1 and dpkg-dev
+1.23.7ubuntu1. The exact scoped receipt is in elementary-build-inputs.json.
+
+Both hosts, native/non-native/epoch versions, all/wildcard architecture selection,
+full/trimmed logs, descriptions, relationship reduction and long ustar paths are
+covered. This is synthetic package-stage qualification; actual Elementary source
+and PPA membership, arbitrary packaging, complete solver behavior and image/runtime
+parity remain open. Next: qualify the pinned real-source/input pipeline and
+preserve separate receipts for source selection, package generation and images.
+PR #586 remains a draft against dev; no deployment or live desktop changes.
+
 ## Debian size comparison correction — 2026-10-25
 
 Linux run 40237976728 on `7f189173` passed all existing candidate checks,

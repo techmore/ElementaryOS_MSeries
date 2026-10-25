@@ -122,7 +122,7 @@ its inherited ancestors, including dependency expansion; exclusions can make
 the resulting package set uninstallable. The CLI honors per-seed
 `follow-recommends` and `no-follow-recommends` flags. Apt/Germinate parity is
 not established: archive priority/conflicts, build-dependency features, snap
-selection, and Debian metapackage output remain open. Seed-entry and archive
+selection and real-source Debian package qualification remain open. Seed-entry and archive
 recommendations are emitted separately by its integrated profile command.
 Its `metapackage-substvars` command now renders Debian relationship fragments
 from supplied maps and architecture-specific package lists. A comparison with
@@ -131,8 +131,9 @@ A further 22 profile membership comparisons passed in Linux run 40235036913
 on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. A native multi-architecture map/list generator now reads supplied update.cfg,
 seed and archive inputs; 56 direct file comparisons with the pinned updater
 pass across four configurations in Linux run 40236407482.
-A native metadata-only Debian package builder now passes 40 local archive,
-checksum and reproducibility checks; Linux dpkg/Debhelper comparisons are pending.
+A native metadata-only Debian package builder now passes 40 Linux comparisons
+with dpkg-gencontrol, dpkg-deb and Debhelper, including documentation, checksums
+and reproducible native rebuilds (run 40238235136).
 Pinned real-source and complete package/image qualification remain open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay

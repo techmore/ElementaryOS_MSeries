@@ -1,3 +1,12 @@
+## Native metadata-only Debian packages verified — 2026-10-25
+
+Linux [run 40238235136](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136) on `ccff41c5` passes
+40 native package comparisons with dpkg-gencontrol/dpkg-deb and Debhelper,
+including installed docs, metadata, checksums and reproducibility. All existing
+candidate checks and the eight substvars/22 package-set/56 map-list comparisons
+also pass. Next: pinned real-source/input builds and actual PPA membership;
+whole-project, complete solver, image and runtime qualification remain open.
+
 ## Debian package oracle size correction — 2026-10-25
 
 The first Linux package comparison found size-accounting disagreement.

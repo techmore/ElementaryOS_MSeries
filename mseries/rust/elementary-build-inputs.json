@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate 2.49 (Ubuntu source archive pinned by SHA-256 in reference_projects)",
-    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, reads binary/source archive metadata, and generates multi-architecture metapackage maps/lists from update.cfg plus supplied debootstrap sets. Fresh Debian substvars are also rendered in Rust. A metadata-only Debian archive builder passes 40 local archive/checksum/reproducibility checks; Linux dpkg/Debhelper comparison is pending. Synthetic Linux comparisons qualify these stages; complete provider/solver and build-dependency behavior, live acquisition/bootstrap, changelog maintenance and Debian package output remain open.",
+    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, generates multi-architecture maps/lists from update.cfg and supplied bootstrap sets, renders substvars, and assembles metadata-only Debian packages. Linux synthetic comparisons qualify these stages. Pinned real-source/archive builds, complete solver/build-dependency behavior, live acquisition/bootstrap, changelog maintenance and full project/image/runtime parity remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
@@ -129,7 +129,7 @@
         "fresh multi-architecture metapackage-map and dependency/recommendation list artifacts from explicit seed entries",
         "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
         "Debian Sources index parsing with version-selected Binary declarations for source seed membership",
-        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; Linux oracle pending"
+        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; 40 synthetic Linux package comparisons passed"
       ],
       "not_implemented": [
         "advanced seed substvars, include/exclude directives, installer kernel-version pruning and complete pattern semantics",
@@ -141,7 +141,7 @@
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40236407482 on ff754d3c passed all candidate crate checks, 26 seed-compiler tests, eight Germinate 2.49/Debhelper substvars comparisons, 22 synthetic amd64/arm64 profile package-set comparisons, and 56 byte-for-byte map/list file comparisons across four configurations. The updater comparison freezes only the supplied debootstrap set/version boundary. Complete provider/solver, live bootstrap/acquisition, changelog and Debian package parity remain open.",
+      "parity_status": "Linux run 40238235136 on ccff41c5 passed all 13 candidate crate checks, 29 seed-compiler tests, eight Germinate substvars, 22 profile package-set, 56 map/list file comparisons across four configurations, and 40 native package comparisons with dpkg-gencontrol/dpkg-deb and Debhelper. These are synthetic stage comparisons with supplied bootstrap boundaries. Pinned real-input, complete solver, image and runtime qualification remain open.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established.",
       "parity_receipts": [
@@ -178,6 +178,31 @@
           "debhelper_version": "13.31ubuntu1",
           "crate_unit_tests": 26,
           "scope": "Synthetic runtime package membership, fresh substvars, and byte-for-byte metapackage map/list files. The unmodified updater consumes local archive/seed fixtures while debootstrap package-set/version output is fixed. Live debootstrap/acquisition, changelog changes, complete solver/reason/diagnostic semantics, Debian package output and image/runtime qualification are excluded."
+        },
+        {
+          "source_commit": "ccff41c52ef002927bf782ff14ae9c4f8c39419b",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "native_debian_package_comparisons": 40,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "binary_architectures": [
+            "amd64",
+            "arm64",
+            "all"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "crate_unit_tests": 29,
+          "scope": "Synthetic package binary-control field equality against dpkg-gencontrol at the dh_gencontrol staging boundary; installed documentation equality after decompression against Debhelper; dpkg-deb acceptance/extraction, payload md5sums, archive ownership/mode/timestamps and byte-reproducible native rebuilds. Both hosts, native/non-native/epoch versions, full/trimmed changelogs, architecture wildcards/all, relationship reduction, descriptions and long ustar paths are covered. No byte-equality claim against Debian compression, pinned real-source/PPA membership, arbitrary packaging, full solver, live bootstrap, image or runtime parity."
         }
       ]
     }
