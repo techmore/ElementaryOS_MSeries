@@ -75,8 +75,9 @@ retained for review. These do not establish a physical Files right-click test
 or owner acceptance on the target boot volume. #531 stays open for that gate.
 
 Contract format was inspected from first-party
-[elementary Contractor documentation](https://github.com/elementary/contractor#writing-contract-files)
-and its `ContractKeyFile.vala`/`ContractMatcher.vala` source on October 25, 2026.
+[elementary Contractor documentation](https://github.com/elementary/contractor/blob/78d82ee992fc6a618fbdbad3080369e8e0c68d79/README.md#writing-contract-files)
+and its `ContractKeyFile.vala`/`ContractMatcher.vala` source at
+`78d82ee992fc6a618fbdbad3080369e8e0c68d79`, inspected October 25, 2026.
 Only the documented format is used; no Contractor code or external media is
 vendored. Images in tests are generated fixture pixels. No user images or
 accounts are used by CI. New UI follows native theme preferences; the project
