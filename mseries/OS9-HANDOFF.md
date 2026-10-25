@@ -24,6 +24,32 @@ in light/dark at narrow/wide widths using inert tools, a private HOME and Xvfb.
 Check the PR's final CI and render artifacts before merge. Target installer
 repair, SDK rebuild, real phone actions and visual owner acceptance remain open.
 
+## Native T3 activity and supplemental subscription reports — 2026-10-25 (Codex)
+
+Issue #588 tracks this batch separately from #523's broader Dock/cache/live
+acceptance. The existing T3 window gains an Activity menu/palette action with
+local-day Git records from explicitly pinned checkouts, optional bounded GitHub
+search, per-source incomplete/unavailable/last-known states and Copy recap.
+Local commits, GitHub commits, merged PRs and closed authored issues stay
+distinct; none establishes a shipped release. No recap is automatically sent,
+saved to the repository or exported into an agent/Omi service.
+
+Usage also opens offline and reads existing supplemental quota JSON on this
+computer, clearly separate from the paired T3 server. It preserves published
+account windows, converts fraction units and marks stale/failed data. This
+reader does not install/run collectors, read credentials, rotate accounts,
+change T3 provider selection or write CodexBar configuration. Source receipt:
+[agent-usage-more audit](upstream-audits/apps/agent-usage-more-2026-10-25.md).
+
+Local verification uses production pure-model modules in a GTK-free harness;
+full GTK build/package and fixture-backed light/dark narrow/wide render gates
+run in Linux ARM64 CI. Consult the final PR checks and artifacts for the exact
+revision/evidence. This macOS session cannot establish installed/loaded Linux
+behavior, live provider compatibility or owner acceptance. #523 remains open;
+deferred Signal/Messages, kernels, bootloader, audio and Wingpanel are untouched.
+Omi's actual repository/API remains unidentified; omp auth-broker upstream is
+not assumed to be that service.
+
 ## Apple Dev hardening after the first real iPhone build — 2026-10-23 (Claude)
 
 Rupert's iPhone app was built here (Xcode 27.1, Swift 6.4.1 from swift.org) and shipped to

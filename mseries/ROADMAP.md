@@ -8,6 +8,15 @@ source updates alone do not rebuild tools. ARM64 build/package and isolated
 status renders are required in CI. Real toolchain refresh and phone workflows
 on the M1 Pro still need qualification; no OS hardware benefit is claimed.
 
+## Native T3: activity and supplemental subscription reports — 2026-10-25
+
+Issue #588: native Activity page (pinned checkouts, optional bounded GitHub
+activity, factual Copy recap) and supplemental local subscription reports on
+Usage, including offline access. Keep source completeness and account scope
+explicit. Source/model tests and isolated Linux render/build gates accompany
+the change; live desktop/provider acceptance remains separate. Omi adapter
+waits for a real service API. #523 retains its wider Dock/cache requirements.
+
 ## Apple Dev: native window for omarchy-apple-dev — 2026-10-23 (Claude)
 
 New Rust Pantheon app `rust/mseries-apple-dev` (Apple Dev, `org.techmore.mseries.AppleDev`): a
