@@ -1499,6 +1499,7 @@ impl App {
     }
 
     fn reconnect_current(self: &Rc<Self>) {
+        self.usage_page.offline();
         let app = self.clone();
         glib::spawn_future_local(async move {
             let taken = app.conn.borrow_mut().take();
@@ -1616,6 +1617,7 @@ impl App {
         };
         let app = self.clone();
         rpc.on_close(move |reason| {
+            app.usage_page.offline();
             *app.conn.borrow_mut() = None;
             app.set_env_state(environments::State::Offline);
             app.set_status(&format!("Disconnected: {reason}"), false);
@@ -1843,6 +1845,7 @@ impl App {
     }
 
     fn forget(self: &Rc<Self>) {
+        self.usage_page.offline();
         let app = self.clone();
         glib::spawn_future_local(async move {
             let taken = app.conn.borrow_mut().take();
