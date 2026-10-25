@@ -1,3 +1,15 @@
+## Debian size comparison correction — 2026-10-25
+
+Linux run 40237976728 on `7f189173` passed all existing candidate checks,
+including 29 seed-compiler tests, eight substvars, 22 package-set and 56 map/list
+comparisons, then exposed Installed-Size disagreement in the new package oracle.
+Review of dpkg-gencontrol and Debhelper confirms the scan includes the staging
+root and an empty DEBIAN directory before control/md5sums generation. Rust now
+counts those two directories; the oracle recreates that exact stage after
+extraction rather than counting the already-generated control/md5sums files.
+The fixture retains strict field/documentation comparisons and now reports all
+semantic mismatches in one run. Linux requalification is pending.
+
 ## Rust native metapackage archive builder — 2026-10-25
 
 The seed compiler now builds documentation-only `.deb` metapackages in Rust

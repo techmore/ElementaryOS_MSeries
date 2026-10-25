@@ -1,3 +1,10 @@
+## Debian package oracle size correction — 2026-10-25
+
+The first Linux package comparison found size-accounting disagreement.
+Both the native count and reference stage now follow dh_gencontrol's staging
+boundary: package root plus empty DEBIAN, before control/md5sums generation.
+Existing seed/list/substvars checks passed; corrected package oracle is pending.
+
 ## Native Debian metapackage candidate — 2026-10-25
 
 The seed compiler now builds documentation-only `.deb` metapackages in Rust

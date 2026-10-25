@@ -28,7 +28,9 @@ pub(crate) fn directories(files: &BTreeMap<String, Vec<u8>>) -> BTreeSet<String>
 }
 
 pub(crate) fn installed_size(files: &BTreeMap<String, Vec<u8>>) -> u64 {
-    directories(files).len() as u64
+    // dpkg-gencontrol scans the staging root and the empty DEBIAN directory;
+    // dh_md5sums and the generated control file come after that size scan.
+    2 + directories(files).len() as u64
         + files
             .values()
             .map(|data| (data.len() as u64).div_ceil(1024))

@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate 2.49 (Ubuntu source archive pinned by SHA-256 in reference_projects)",
-    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, reads binary/source archive metadata, and generates multi-architecture metapackage maps/lists from update.cfg plus supplied debootstrap sets. Fresh Debian substvars are also rendered in Rust. Synthetic Linux comparisons qualify these stages; complete provider/solver and build-dependency behavior, live acquisition/bootstrap, changelog maintenance and Debian package output remain open.",
+    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, reads binary/source archive metadata, and generates multi-architecture metapackage maps/lists from update.cfg plus supplied debootstrap sets. Fresh Debian substvars are also rendered in Rust. A metadata-only Debian archive builder passes 40 local archive/checksum/reproducibility checks; Linux dpkg/Debhelper comparison is pending. Synthetic Linux comparisons qualify these stages; complete provider/solver and build-dependency behavior, live acquisition/bootstrap, changelog maintenance and Debian package output remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [

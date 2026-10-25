@@ -100,7 +100,7 @@ def fixture(source, lists, version):
         "Package: fixture-empty\nArchitecture: any\nDepends: ${misc:Depends}, ${germinate:Depends}\n"
         "Recommends: ${germinate:Recommends}\nDescription: Empty metapackage\n No runtime payload.\n\n"
         "Package: fixture-all\nArchitecture: all\nHomepage: https://example.invalid/binary\n"
-        "Depends: ${germinate:Depends}\nDescription: Shared data selection\n\n"
+        "Depends: ${germinate:Depends}\nDescription: Shared data selection for ${Arch}\n\n"
         "Package: fixture-amd\nArchitecture: any-amd64\nDepends: tool:any (>= 2)\nDescription: Architecture selection\n\n"
         "Package: fixture-meta\nArchitecture: arm64\nDescription: Same source/binary name\n\n"
         f"Package: {LONG_PACKAGE}\nArchitecture: any\nPackage-Type: deb\n"
@@ -147,6 +147,7 @@ def main():
             environment.pop(name)
     environment["LC_ALL"] = "C.UTF-8" if not args.native_only else "C"
     count = 0
+    failures = []
     with tempfile.TemporaryDirectory(prefix="mseries-deb-parity-") as temporary:
         root = Path(temporary)
         helper = None if args.native_only else reference_helper(root, args.archive)
@@ -189,6 +190,10 @@ def main():
                             stage = case / f"unpacked-{package}"
                             run(["dpkg-deb", "--info", str(package_file)], cwd=source, env=env)
                             run(["dpkg-deb", "--raw-extract", str(package_file), str(stage)], cwd=source, env=env)
+                            # Model dh_gencontrol's stage: DEBIAN exists, but its
+                            # control and md5sums files have not been generated.
+                            shutil.rmtree(stage / "DEBIAN")
+                            (stage / "DEBIAN").mkdir()
                             run(["perl", str(helper), f"-p{package}"], cwd=source, env=env)
                             substvars = source / "debian" / f"{package}.substvars"
                             substvars.touch(exist_ok=True)
@@ -196,7 +201,7 @@ def main():
                             if metadata != fields(expected_control):
                                 for field in sorted(metadata.keys() | fields(expected_control).keys()):
                                     if metadata.get(field) != fields(expected_control).get(field):
-                                        raise AssertionError(f"{version}/{host}/{package}/{field}: Rust {metadata.get(field)!r} != dpkg {fields(expected_control).get(field)!r}")
+                                        failures.append(f"{version}/{host}/{full}/{package}/{field}: Rust {metadata.get(field)!r} != dpkg {fields(expected_control).get(field)!r}")
                             run(["dh_installdocs", f"-p{package}"], cwd=source, env=env)
                             run(["dh_installchangelogs", f"-p{package}"] + (["--no-trim"] if full else []), cwd=source, env=env)
                             run(["dh_compress", f"-p{package}"], cwd=source, env=env)
@@ -204,7 +209,7 @@ def main():
                             reference_data = {path.relative_to(reference_root).as_posix(): path.read_bytes()
                                               for path in reference_root.rglob("*") if path.is_file()}
                             if semantic_payload(data) != semantic_payload(reference_data):
-                                raise AssertionError(f"{package}: installed documentation differs from Debhelper")
+                                failures.append(f"{version}/{host}/{full}/{package}: installed documentation differs from Debhelper: Rust {semantic_payload(data)!r} != reference {semantic_payload(reference_data)!r}")
                         count += 1
                     if actual_packages != expected_packages:
                         raise AssertionError(f"incorrect selected packages: {actual_packages} != {expected_packages}")
@@ -216,6 +221,8 @@ def main():
         result = subprocess.run([str(args.binary), "build-metapackages", str(source), str(lists), "arm64", str(output)], env=environment, capture_output=True)
         if not result.returncode or output.exists():
             raise AssertionError("unsupported payload/script source emitted partial packages")
+    if failures:
+        raise AssertionError("\n".join(failures))
     if args.native_only:
         print(f"{count} native package archive/checksum/reproducibility checks passed; Linux oracle not run")
     else:
