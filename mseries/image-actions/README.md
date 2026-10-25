@@ -26,8 +26,8 @@ this action does not claim to preserve sequences, Live Photos or animation.
 ## Install on elementary
 
 Runtime dependencies: Python3 GI, GTK4, Granite7, GdkPixbuf and Contractor.
-HEIC support uses `heif-gdk-pixbuf` and the appropriate libheif decoder plugin
-on Ubuntu. This installer does not install system packages or restart Files,
+HEIC support uses `heif-gdk-pixbuf` and `libheif-plugin-libde265` for HEVC
+on Ubuntu. The loader package alone is insufficient. This installer does not install system packages or restart Files,
 Contractor, Wingpanel or another service.
 
 ```sh

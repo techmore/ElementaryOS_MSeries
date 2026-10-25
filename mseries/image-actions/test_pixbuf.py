@@ -12,7 +12,8 @@ from conversion import ConversionError, PixbufEncoder, convert
 try:
     import gi
     gi.require_version("GdkPixbuf", "2.0")
-    from gi.repository import GdkPixbuf, Gio, GLib
+    gi.require_version("GioUnix", "2.0")
+    from gi.repository import GdkPixbuf, Gio, GioUnix, GLib
 except ImportError:
     GdkPixbuf = None
 
@@ -84,7 +85,7 @@ class CodecTests(unittest.TestCase):
         key = GLib.KeyFile()
         data = raw.replace("[Contractor Entry]", "[Desktop Entry]").replace(" --format ", " --headless --format ") + "Type=Application\n"
         key.load_from_data(data, len(data.encode()), GLib.KeyFileFlags.NONE)
-        info = Gio.DesktopAppInfo.new_from_keyfile(key)
+        info = GioUnix.DesktopAppInfo.new_from_keyfile(key)
         self.assertIsNotNone(info)
         self.assertTrue(info.supports_uris())
         self.assertTrue(info.launch([Gio.File.new_for_path(str(self.source))], None))

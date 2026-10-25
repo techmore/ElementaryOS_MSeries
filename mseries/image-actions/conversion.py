@@ -107,4 +107,6 @@ class PixbufEncoder:
         except ConversionError:
             raise
         except Exception as error:
+            if "no decoding plugin installed" in str(error).lower():
+                raise ConversionError("The HEIC/HEIF decoder is unavailable. Install the matching libheif decoder plugin.") from error
             raise ConversionError(f"Could not decode or encode the image: {error}") from error

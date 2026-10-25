@@ -20,8 +20,8 @@ def contract(launcher, image_format, mimetypes):
     return ("[Contractor Entry]\n" + f"Name=Convert to {title}\n"
             + "Description=Save a new image copy beside the original\nIcon=image-x-generic\n"
             + "MimeType=" + ";".join(sorted(set(mimetypes))) + ";\n"
-            + "TryExec=" + str(launcher).replace("\\", "\\\\") + "\n"
-            + f"Exec={quoted_exec(launcher)} --format {image_format} -- %U\n")
+            + "TryExec=/usr/bin/python3\n"
+            + f"Exec=/usr/bin/python3 {quoted_exec(launcher)} --format {image_format} -- %U\n")
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
         else:
             path.unlink(missing_ok=True)
     desktop.write_text("[Desktop Entry]\nType=Application\nName=Image Conversion\nNoDisplay=true\n"
-                       + "Icon=image-x-generic\nExec=" + quoted_exec(launcher) + " -- %U\n")
+                       + "Icon=image-x-generic\nExec=/usr/bin/python3 " + quoted_exec(launcher) + " -- %U\n")
     print("Installed Convert to JPEG in Files. " +
           ("JPEG 2000 is also available." if "jpeg2000" in formats else "No JPEG 2000 encoder is installed; that action is hidden."))
 
