@@ -2,6 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 pub mod archive;
+mod deb_archive;
+pub mod deb_package;
+mod deb_relations;
 pub mod metapackage;
 pub mod metapackage_lists;
 

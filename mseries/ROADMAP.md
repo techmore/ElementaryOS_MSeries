@@ -1,3 +1,17 @@
+## Native Debian metapackage candidate — 2026-10-25
+
+The seed compiler now builds documentation-only `.deb` metapackages in Rust
+from source metadata and supplied qualified map/list artifacts. It handles
+control substitution/reduction, architecture selection, copyright/changelog
+installation, reproducible ar/ustar/gzip archives and md5sums without executing
+host packaging tools. Unsupported payload/scripts/hooks fail before output.
+Local checks pass: 29 unit tests, strict Clippy/release build and 40 independent
+archive/checksum/date/reproducibility cases. Linux CI now compares these packages
+with dpkg-gencontrol, dpkg-deb and Debhelper; that comparison is pending.
+Next: resolve any oracle discrepancies, then qualify the pinned actual
+Elementary source/input pipeline. Whole-project, image and runtime parity remain
+open. No desktop/boot/kernel/audio changes or deployment.
+
 ## Native map/list output qualified on synthetic inputs — 2026-10-25
 
 Linux run 40236407482 on `ff754d3c` passed 56 byte-for-byte map/list comparisons

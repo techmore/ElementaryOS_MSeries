@@ -1,4 +1,5 @@
 use elementary_seed_compiler::archive::PackageCatalog;
+use elementary_seed_compiler::deb_package::{self, BuildOptions};
 use elementary_seed_compiler::metapackage::MetapackageMap;
 use elementary_seed_compiler::metapackage_lists::{parse_bootstrap_packages, UpdatePlan};
 use elementary_seed_compiler::{SeedDocument, Structure};
@@ -12,6 +13,7 @@ fn usage() {
         r#"Usage:
   elementary-seed-compiler generate-metapackage-lists <source-directory> <STRUCTURE> <collection> <index-directory> <new-output-directory> [--dist=NAME] [included-collection=SEED-DIR ...]
   elementary-seed-compiler metapackage-substvars <package-list-directory> <binary-architecture> <package>
+  elementary-seed-compiler build-metapackages <source-directory> <package-list-directory> <host-architecture> <new-output-directory> [--epoch=SECONDS] [--full-changelog]
   elementary-seed-compiler inspect-seed <file> <architecture>
   elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]
   elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]
@@ -24,6 +26,60 @@ fn usage() {
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
+        Some("build-metapackages") if args.len() >= 6 => {
+            let mut options = BuildOptions::default();
+            for argument in &args[6..] {
+                if argument == "--full-changelog" {
+                    options.full_changelog = true;
+                } else if let Some(epoch) = argument.strip_prefix("--epoch=") {
+                    if options.epoch.is_some() {
+                        return Err("only one --epoch may be supplied".into());
+                    }
+                    options.epoch = Some(
+                        epoch
+                            .parse()
+                            .map_err(|_| "--epoch must be a nonnegative integer")?,
+                    );
+                } else {
+                    return Err(format!("unknown build option `{argument}`"));
+                }
+            }
+            if options.epoch.is_none() {
+                match env::var("SOURCE_DATE_EPOCH") {
+                    Ok(value) => {
+                        options.epoch = Some(
+                            value
+                                .parse()
+                                .map_err(|_| "SOURCE_DATE_EPOCH must be a nonnegative integer")?,
+                        )
+                    }
+                    Err(env::VarError::NotPresent) => {}
+                    Err(error) => return Err(error.to_string()),
+                }
+            }
+            if env::var("DEB_BUILD_OPTIONS")
+                .unwrap_or_default()
+                .split_whitespace()
+                .any(|option| option == "notrimdch")
+            {
+                options.full_changelog = true;
+            }
+            let packages = deb_package::build(
+                std::path::Path::new(&args[2]),
+                std::path::Path::new(&args[3]),
+                &args[4],
+                options,
+            )?;
+            let output = std::path::Path::new(&args[5]);
+            fs::create_dir(output).map_err(|error| format!("{}: {error}", output.display()))?;
+            for package in packages {
+                let path = output.join(&package.filename);
+                fs::write(&path, package.bytes)
+                    .map_err(|error| format!("{}: {error}", path.display()))?;
+                println!("built\t{}", package.filename);
+            }
+            Ok(())
+        }
         Some("generate-metapackage-lists") if args.len() >= 7 => {
             let source = std::path::Path::new(&args[2]);
             let read = |path: &std::path::Path| {

@@ -24,7 +24,7 @@ if both are supplied), and the CLI flag forces it on. Archive Recommends and
 parenthesized seed recommendations are emitted in separate streams, with a
 required package removed from the recommendation stream. Build-dependency
 features, complete provider/alternative selection, archive conflicts like apt,
-snap revision selection, and `.deb` metapackage generation remain open.
+snap revision selection, and general Debian package support remain open.
 
 `generate-metapackage-lists SOURCE-DIR STRUCTURE COLLECTION INDEX-DIR NEW-OUTPUT-DIR`
 implements the map/list build stage in Rust. `SOURCE-DIR` supplies `update.cfg`
@@ -47,7 +47,7 @@ these files. It retains the reference updater's distinction between excluding
 essential Depends and retaining essential Recommends. Source recommendation
 entries also follow the reference's planted classification. Remote acquisition,
 live debootstrap selection/version tracking, changelog/delta maintenance and
-complete Debian control/package output remain open. The new
+qualification on pinned real inputs remain open. The new
 `test-list-parity.py` runs the pinned updater's unchanged map/list code against
 local synthetic archives, freezing only debootstrap's package-set/version
 boundary. Linux [run 40236407482](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482)
@@ -66,8 +66,7 @@ produce an empty fragment. Use the binary package architecture (`all` for an
 architecture-independent package). The command validates both lists before
 printing, rejects ambiguous maps and unsafe file names, and does not merge an
 existing substvars file. Supply its fragment to `dpkg-gencontrol` along with
-other build substitutions. This implements the substitution stage; complete Debian control generation
-and `.deb` assembly are still open.
+other build substitutions. The native package builder below consumes these same fragments.
 
 The file and substitution contract is referenced from Elementary metapackages
 commit `6e6466507f7f5b32e73594c5e727a49f0be58d0f` and Germinate 2.49's
@@ -117,8 +116,45 @@ cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- generate-meta
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- metapackage-substvars /path/to/metapackages arm64 elementary-desktop
 ```
 
-Next parity gates: feature-aware end-to-end generation, archive precedence and
-conflict semantics, differential comparison against Germinate/apt, metapackage
-map/list qualification, and reproducible Debian control outputs for both arm64 and
-amd64. Unit tests only validate the implemented candidate behavior; Germinate
-or apt parity has not been demonstrated.
+Next parity gates: Linux package comparisons, pinned real-source builds,
+feature-aware end-to-end generation, archive precedence/conflict semantics, and
+complete Germinate/apt solver comparisons. Synthetic stage receipts do not
+establish whole-project or image/runtime parity.
+
+
+`build-metapackages SOURCE-DIR LIST-DIR HOST-ARCH NEW-OUTPUT-DIR` builds the
+metadata-only Elementary metapackages directly in Rust. It selects amd64/arm64
+or `all` binaries, renders control substitutions and relationships, installs
+copyright/changelog documentation, and writes reproducible Debian 2.0 packages
+with ustar/gzip members and md5sums. It invokes no host packaging/archive tools
+and never runs `debian/rules`. An explicit `--epoch=SECONDS` takes precedence over
+`SOURCE_DATE_EPOCH`, then the first changelog date. `--full-changelog` and
+`DEB_BUILD_OPTIONS=notrimdch` disable the Debhelper 13.31 default trimming policy.
+The output directory must be new; all logical validation/building completes
+before it is created.
+
+This supports the pinned Elementary source's minimal `dh --with germinate`
+layout. It rejects custom rules, payload/maintainer-script packaging files,
+unknown binary fields/substitutions and binary-only changelog entries rather
+than silently losing behavior. It is not a general replacement for dpkg or
+Debhelper. Compression uses locked pure-Rust `flate2`; `chrono` parses source
+dates and `md-5` provides the Debian payload checksums. No upstream packaging
+implementation is copied into this crate. Format/behavior references:
+[deb(5)](https://manpages.debian.org/trixie/dpkg-dev/deb.5.en.html),
+[dpkg-gencontrol(1)](https://manpages.debian.org/trixie/dpkg-dev/dpkg-gencontrol.1.en.html),
+[deb-substvars(5)](https://manpages.debian.org/trixie/dpkg-dev/deb-substvars.5.en.html),
+and Debhelper 13.31's installed documentation/changelog policy.
+
+Local checks pass 29 crate tests, strict Clippy/release build and 40 package
+archive/checksum/date/reproducibility checks. `test-deb-parity.py` adds Linux
+comparisons with actual `dpkg-gencontrol`, `dpkg-deb`, Debhelper documentation
+helpers and the pinned Germinate helper. Its 40 packages span both hosts,
+native/non-native and epoch versions, trimmed/full changelogs, `all`/wildcard
+architecture selection, multiline descriptions, relationship reduction and
+long ustar paths. These Linux comparisons are pending; even a pass will qualify
+synthetic metadata/documentation semantics, not byte equality with dpkg's
+compression or complete OS build parity.
+
+```sh
+python3 mseries/rust/seed-compiler/test-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+```

@@ -128,7 +128,8 @@
         "case-insensitive Task-Seeds/Task-Metapackage headers and preserved seed alternatives",
         "fresh multi-architecture metapackage-map and dependency/recommendation list artifacts from explicit seed entries",
         "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
-        "Debian Sources index parsing with version-selected Binary declarations for source seed membership"
+        "Debian Sources index parsing with version-selected Binary declarations for source seed membership",
+        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; Linux oracle pending"
       ],
       "not_implemented": [
         "advanced seed substvars, include/exclude directives, installer kernel-version pruning and complete pattern semantics",
@@ -136,7 +137,7 @@
         "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
         "complete Germinate provider and alternative selection semantics",
         "snap metadata and revision selection",
-        "complete Debian control/package generation, changelog/delta maintenance and live debootstrap/index acquisition",
+        "general Debian packaging, actual Elementary source/package qualification, changelog/delta maintenance and live debootstrap/index acquisition",
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],

@@ -80,6 +80,8 @@ jobs:
             mseries/rust/seed-compiler/target/release/elementary-seed-compiler
           /usr/bin/python3 mseries/rust/seed-compiler/test-list-parity.py \
             mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          /usr/bin/python3 mseries/rust/seed-compiler/test-deb-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-power-cap.py
 

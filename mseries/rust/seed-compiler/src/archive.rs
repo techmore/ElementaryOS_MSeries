@@ -208,7 +208,7 @@ pub fn parse_control_stanzas(input: &str) -> Result<Vec<ControlStanza>, ParseErr
             };
             let value = fields.get_mut(key).expect("last field remains in stanza");
             value.push('\n');
-            value.push_str(raw.trim());
+            value.push_str(&raw[1..]);
             continue;
         }
         let Some((key, value)) = raw.split_once(':') else {
@@ -372,7 +372,7 @@ fn parse_version_constraint(input: &str) -> Result<VersionConstraint, String> {
     })
 }
 
-fn valid_package_name(name: &str) -> bool {
+pub(crate) fn valid_package_name(name: &str) -> bool {
     name.as_bytes()
         .first()
         .is_some_and(u8::is_ascii_alphanumeric)
@@ -381,7 +381,7 @@ fn valid_package_name(name: &str) -> bool {
         })
 }
 
-fn valid_version(version: &str) -> bool {
+pub(crate) fn valid_version(version: &str) -> bool {
     let version = match version.split_once(':') {
         Some((epoch, rest)) => {
             if epoch.is_empty() || !epoch.bytes().all(|byte| byte.is_ascii_digit()) {
@@ -399,7 +399,7 @@ fn valid_version(version: &str) -> bool {
         && upstream.as_bytes()[0].is_ascii_digit()
         && upstream
             .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b".+~".contains(&byte))
+            .all(|byte| byte.is_ascii_alphanumeric() || b".+~:-".contains(&byte))
         && revision.is_none_or(|revision| {
             !revision.is_empty()
                 && revision
