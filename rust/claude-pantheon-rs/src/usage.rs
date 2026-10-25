@@ -8,7 +8,7 @@ use crate::t3::Rpc;
 use crate::t3::model::{Provider, UsageBucket, UsageSummary, UsageTotals, pick_provider};
 use gtk::{glib, pango, prelude::*};
 use serde_json::json;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -19,6 +19,7 @@ pub struct UsagePage {
     status: gtk::Label,
     summary: RefCell<Option<UsageSummary>>,
     local: Rc<crate::quota_view::QuotaView>,
+    generation: Cell<u64>,
 }
 
 pub fn tokens_text(n: u64) -> String {
@@ -179,7 +180,7 @@ impl UsagePage {
         root.append(&status);
         root.append(&windows);
         root.append(&scroll);
-        UsagePage { root, windows, content, status, summary: RefCell::new(None), local }
+        UsagePage { root, windows, content, status, summary: RefCell::new(None), local, generation: Cell::new(0) }
     }
 
     pub fn widget(&self) -> &gtk::Box {
@@ -199,6 +200,7 @@ impl UsagePage {
     }
 
     pub fn offline(&self) {
+        self.generation.set(self.generation.get().wrapping_add(1));
         while let Some(child) = self.windows.first_child() {
             self.windows.remove(&child);
         }
@@ -280,6 +282,8 @@ impl UsagePage {
     }
 
     pub fn load(&self, app: Rc<App>, rpc: Rpc) {
+        let generation = self.generation.get().wrapping_add(1);
+        self.generation.set(generation);
         self.render_windows(&app.providers());
         self.status.set_text("Reading usage…");
         if self.content.first_child().is_none() {
@@ -291,18 +295,18 @@ impl UsagePage {
         let payload = json!({"sinceDay": fmt(&since), "untilDay": fmt(&today), "timeZone": today.timezone().identifier().to_string()});
         let last7: Vec<String> = (0..7).rev().map(|i| fmt(&today.add_days(-i).unwrap())).collect();
         glib::spawn_future_local(async move {
-            match rpc.call("server.getUsageSummary", payload).await {
+            let response = rpc.call("server.getUsageSummary", payload).await;
+            if app.usage_page().generation.get() != generation {
+                return;
+            }
+            match response {
                 Ok(v) => match serde_json::from_value::<UsageSummary>(v) {
                     Ok(summary) => app.usage_page().render(&summary, &last7),
                     Err(e) => app.usage_page().status.set_text(&format!("Unexpected usage shape: {e}")),
                 },
                 Err(e) => {
                     app.usage_page().status.set_text(&format!("Usage failed: {}", e.message()));
-                    let r = rpc.clone();
-                    app.toast_retry(
-                        &format!("Usage failed: {}", e.message()),
-                        Rc::new(move |a| a.usage_page().load(a.clone(), r.clone())),
-                    );
+                    app.toast_retry(&format!("Usage failed: {}", e.message()), Rc::new(move |a| a.show_usage()));
                 }
             }
         });
