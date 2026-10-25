@@ -22,7 +22,12 @@ HERE = Path(__file__).resolve().parent
 
 
 def run(command, *, cwd, env):
-    return subprocess.run(command, cwd=cwd, env=env, text=True, capture_output=True, check=True)
+    result = subprocess.run(command, cwd=cwd, env=env, text=True, capture_output=True)
+    if result.returncode:
+        raise RuntimeError(
+            f"{command!r} exited {result.returncode}\n{result.stdout}{result.stderr}"
+        )
+    return result
 
 
 def main():
@@ -58,7 +63,6 @@ def main():
         (fixture / "metapackage-map").write_text(
             "desktop fixture-meta\ntools fixture-tools\ndata fixture-data\n"
         )
-        (fixture / "debian/compat").write_text("13\n")
         (fixture / "debian/changelog").write_text(
             "fixture (1.0) unstable; urgency=medium\n\n  * Synthetic parity fixture.\n\n"
             " -- Fixture <fixture@example.invalid>  Thu, 01 Jan 2026 00:00:00 +0000\n"

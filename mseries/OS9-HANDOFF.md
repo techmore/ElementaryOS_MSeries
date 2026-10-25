@@ -1,3 +1,13 @@
+## First Linux Rust-lane receipt — 2026-10-25
+
+Run 40234452971 on `7e665e17` passed inventory/register checks, all candidate
+crate test/lint/release builds, and the existing network, panel, keyboard,
+private D-Bus brightness, ISO-label and atomic-app fixtures. The new metapackage
+reference fixture failed during helper initialization: it declared compatibility
+both through `debian/compat` and `debhelper-compat`. The fixture now uses only
+the control declaration and prints captured helper diagnostics on failure.
+The eight Germinate substvars comparisons still require a successful rerun.
+
 ## Rust migration branch synced with dev — 2026-10-25
 
 Draft PR #586 now targets `dev`. This branch incorporates development source
