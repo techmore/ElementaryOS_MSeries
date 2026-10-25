@@ -1,3 +1,15 @@
+## First direct map/list receipt and source default — 2026-10-25
+
+Linux run 40236198140 on `ff616bf96e015865e1f1e8c95e67058775adddea`
+passed all candidate checks, including 26 seed-compiler unit tests, the existing
+8 substvars/22 package-set comparisons, and 56 byte-for-byte map/list file
+comparisons across four configurations. The reference updater and archive/seed
+reader are unchanged; only debootstrap's package-set/version boundary is frozen.
+Review also identified the reference's missing-Binary default in Sources:
+it uses the source package name. That native fix and a direct comparison case
+are now included and require the next Linux run. Complete package generation
+and live bootstrap/image qualification remain open.
+
 ## Rust metapackage map/list stage — 2026-10-25
 
 The native `generate-metapackage-lists` command now consumes supplied update.cfg,

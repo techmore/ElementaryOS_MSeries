@@ -87,7 +87,7 @@ def main():
             "minimal": "Task-Metapackage: custom-minimal\n * essential-core\n * boot\n * not-in-bootstrap\n * custom-minimal\n * (essential-rec)\n * (minimal-doc)\n",
             "standard": " * boot\n * standard-tool\n * (standard-doc)\n",
             "artwork": "Task-Metapackage: artwork-selected\n * wallpaper\n",
-            "desktop": "TaSk-MeTaPaCkAgE: native-desktop\nTask-Seeds: artwork\n * standard-tool\n * app-primary | app-fallback | missing-alternative\n * primary-missing | app-fallback\n * wildcard-*\n * single-?\n * virtual-choice\n * %source-bundle\n * %versioned-source\n * %missing-source\n * (%source-recommended)\n * (desktop-doc)\n * essential-top\n * !blocked\n * blocked\n * arch-tool [arm64]\n * native-desktop\n",
+            "desktop": "TaSk-MeTaPaCkAgE: native-desktop\nTask-Seeds: artwork\n * standard-tool\n * app-primary | app-fallback | missing-alternative\n * primary-missing | app-fallback\n * wildcard-*\n * single-?\n * virtual-choice\n * %source-bundle\n * %versioned-source\n * %missing-source\n * %default-source\n * (%source-recommended)\n * (desktop-doc)\n * essential-top\n * !blocked\n * blocked\n * arch-tool [arm64]\n * native-desktop\n",
             "bundle": " * (bundle-doc)\ntask-seeds: standard desktop\n",
             "empty": "Task-Name: Empty synthetic profile\n",
         }
@@ -120,6 +120,7 @@ def main():
             {"Package": "source-old", "Source": "versioned-source"},
             {"Package": "source-new", "Source": "versioned-source"},
             {"Package": "source-missing", "Source": "missing-source"},
+            {"Package": "default-source"},
         ]
         all_source_binaries = {}
         for architecture in ("amd64", "arm64"):
@@ -136,10 +137,11 @@ def main():
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(text if suffix.startswith("binary-") else "")
             for package in packages:
-                if package["Package"] not in ("source-orphan", "source-missing", "source-old", "source-new"):
+                if package["Package"] not in ("source-orphan", "source-missing", "source-old", "source-new", "default-source"):
                     all_source_binaries.setdefault(package.get("Source", package["Package"]), set()).add(package["Package"])
         source_text = "".join(f"Package: {name}\nVersion: 1\nBinary: {', '.join(sorted(names))}\n\n"
                               for name, names in all_source_binaries.items())
+        source_text += "Package: default-source\nVersion: 1\n\n"
         source_text += "Package: versioned-source\nVersion: 1\nBinary: source-old\n\nPackage: versioned-source\nVersion: 2\nBinary: source-new\n\n"
         source_path = mirror / "dists/sample/main/source/Sources"
         source_path.parent.mkdir(parents=True, exist_ok=True)

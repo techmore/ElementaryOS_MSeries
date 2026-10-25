@@ -607,8 +607,8 @@ impl PackageCatalog {
                 let binaries = stanza
                     .fields
                     .get("Binary")
-                    .into_iter()
-                    .flat_map(|value| value.split(','))
+                    .map_or(name, String::as_str)
+                    .split(',')
                     .map(str::trim)
                     .filter(|name| !name.is_empty())
                     .map(str::to_owned)

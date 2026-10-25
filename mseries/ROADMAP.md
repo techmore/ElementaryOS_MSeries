@@ -1,3 +1,11 @@
+## Metapackage map/list comparison passes — 2026-10-25
+
+Run 40236198140 passed 56 map/list file comparisons with pinned Germinate 2.49
+across four configurations, alongside all candidate crate checks. A final
+Sources missing-Binary default case has been added for the next Linux run.
+The debootstrap boundary remains supplied input; complete Debian package,
+bootstrap and image qualification remain open.
+
 ## Rust metapackage map/list generation — 2026-10-25
 
 A native build stage now renders all configured architectures' metapackage map
