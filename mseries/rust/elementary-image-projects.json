@@ -10,7 +10,7 @@
     "url": "https://github.com/elementary/metapackages",
     "ref": "resolute",
     "commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
-    "license": "GPL-2.0",
+    "license": "GPL-2.0-or-later",
     "license_file": "COPYING",
     "seed_files": [
       {
@@ -33,7 +33,11 @@
         "blob_sha": "33b2abb993e701f4b5bf5cf7fd449f18748f978d",
         "url": "https://github.com/elementary/metapackages/blob/6e6466507f7f5b32e73594c5e727a49f0be58d0f/pantheon-shell-arm64"
       }
-    ]
+    ],
+    "source_version": "1.582",
+    "source_archive": "https://codeload.github.com/elementary/metapackages/tar.gz/6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+    "source_archive_sha256": "8d719f353e0275d7b23b1513d1a40fda1488ad193c3b6be8c6552604cb541c82",
+    "license_evidence": "debian/copyright in the pinned source explicitly permits GPL version 2 or any later version; COPYING carries the GPL version 2 text."
   },
   "project_count": 59,
   "projects": [

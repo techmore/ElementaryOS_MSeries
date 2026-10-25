@@ -1,3 +1,17 @@
+## Pinned real-source metapackage comparison — 2026-10-25
+
+The complete Elementary metapackages source archive is now pinned by SHA-256
+(`8d719f35…cb541c82`) alongside commit `6e646650…be58d0f`, version 1.582 and
+its GPL-2.0-or-later copyright evidence. Native Rust assembly passes 32 local
+real-source cases: all eight binaries, both hosts, full/trimmed changelogs.
+A new Linux gate compares the unchanged upstream clean/binary rules with the
+Rust packages, retaining compat 7 and pinned Germinate 2.49 helpers/sequence.
+Metadata, control file membership, installed documentation, checksums, size
+accounting and native reproducibility are checked; hash-only receipts are retained.
+Linux comparison is pending. Live seed/archive regeneration, actual PPA package
+closure and image/runtime admission remain open. Next: resolve the real-source
+comparison, then qualify the real list-generation inputs. No live deployment.
+
 ## Native Debian metapackages qualified on synthetic inputs — 2026-10-25
 
 [Run 40238235136](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136)

@@ -67,7 +67,7 @@ def semantic_payload(files):
             for name, value in files.items()}
 
 
-def reference_helper(root, source_archive):
+def reference_archive(source_archive):
     reference = next(item for item in json.loads((HERE.parent / "elementary-build-inputs.json").read_text())["reference_projects"]
                      if item["id"] == "ubuntu/germinate")
     if source_archive:
@@ -77,6 +77,11 @@ def reference_helper(root, source_archive):
             data = response.read(8 * 1024 * 1024 + 1)
     if hashlib.sha256(data).hexdigest() != reference["source_archive_sha256"]:
         raise RuntimeError("Germinate reference SHA-256 mismatch")
+    return data
+
+
+def reference_helper(root, source_archive):
+    data = reference_archive(source_archive)
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:xz") as archive:
         source = archive.extractfile("work/debhelper/dh_germinate_metapackage")
         if source is None:

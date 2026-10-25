@@ -143,7 +143,7 @@
       "id": "elementary/metapackages",
       "url": "https://github.com/elementary/metapackages",
       "default_branch": "resolute",
-      "license": {"spdx": "GPL-2.0", "evidence": "COPYING at the pinned source revision."},
+      "license": {"spdx": "GPL-2.0-or-later", "evidence": "debian/copyright at the pinned source revision permits GPL version 2 or any later version; COPYING contains GPL version 2."},
       "pin": {"kind": "git-commit-audit-baseline", "value": "6e6466507f7f5b32e73594c5e727a49f0be58d0f", "record": "mseries/rust/elementary-image-projects.json", "meaning": "Pinned package-seed source snapshot for mapping the configured desktop image; the image currently consumes PPA-built metapackages rather than building this source checkout."},
       "local_consumers": ["mkosi.images/base/mkosi.conf.d/elementary.conf", "mseries/rust/elementary-image-projects.json"],
       "rust_target": "A separate Rust package-selection and metapackage generator preserving Elementary seed semantics, Debian package relationships, and amd64/arm64 outputs.",

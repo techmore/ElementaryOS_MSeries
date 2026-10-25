@@ -161,3 +161,26 @@ OS build parity remain unqualified.
 ```sh
 python3 mseries/rust/seed-compiler/test-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler
 ```
+
+
+`test-upstream-deb-parity.py` now downloads the SHA-256-pinned Elementary
+metapackages source at `6e6466507f7f5b32e73594c5e727a49f0be58d0f` and builds
+its eight version 1.582 packages for amd64/arm64 with trimmed/full changelogs.
+Local native-only checks pass all 32 cases. The Linux comparison runs the
+unchanged `debian/rules` clean/binary targets (including compat level 7) with
+checksum-pinned Germinate 2.49's helpers and sequence module in an isolated tool
+path. It uses fakeroot for the reference binary build. This comparison is
+pending. It compares control file membership, metadata, decompressed installed
+documentation and checksums, and verifies reproducible native rebuilds. Each
+package's Installed-Size is checked on its own compressed bytes at the actual
+control-generation stage; different compression can legitimately change that
+number. Source/list text remains temporary. CI retains a hash-only JSON receipt
+for 30 days, with source/package identities and native/reference archive digests.
+
+```sh
+python3 mseries/rust/seed-compiler/test-upstream-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler --report /tmp/elementary-package-receipt.json
+```
+
+This qualifies the checked-in upstream map/list-to-package stage. Regenerating
+those lists from live archives/seeds, PPA membership/installability, arbitrary
+Debian packaging and OS image/runtime admission remain separate gates.
