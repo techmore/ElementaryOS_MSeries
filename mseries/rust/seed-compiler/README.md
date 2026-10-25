@@ -211,6 +211,9 @@ The pinned seed/platform source archives are recorded by SHA-256 in
 checks pass 30 crate tests, strict Clippy/release build, and parsing/flattening the
 real `live` profile with its included platform structure for arm64. The profile
 comparison grows from 22 to 36 amd64/arm64 cases; map/list comparisons now include
-variable classification and ordering. Linux differential checks are pending.
+variable classification and ordering. Linux [run 40239533941](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941)
+on `50b762905ce3298b4c836d33d34edeb5d6661f79` passed all 36 membership and
+56 map/list comparisons, the 30 unit tests and all existing package checks.
+All 32 actual package hashes still match the retained pre-change baseline.
 Fresh signed archive acquisition, full real list generation and image/runtime
 qualification remain open.

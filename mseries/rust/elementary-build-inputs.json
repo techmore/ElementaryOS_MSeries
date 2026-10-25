@@ -149,7 +149,7 @@
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40238779709 on 317c69eb passed all 13 candidate crate checks, 29 seed-compiler tests, eight substvars, 22 profile membership, 56 map/list and 40 synthetic package comparisons, plus 32 actual Elementary 1.582 package comparisons against unchanged pinned upstream clean/binary rules. All 32 native hashes also match local macOS builds. This qualifies the checked-in map/list-to-package stage; fresh seed/archive list generation, PPA membership/installability, full solver, image and runtime qualification remain open.",
+      "parity_status": "Linux run 40239533941 on 50b76290 passed all candidate checks, 30 seed-compiler tests, eight substvars, 36 profile membership, 56 map/list, 40 synthetic package and 32 actual Elementary package comparisons. The new cases qualify lexical seed variable expansion and ordering, multiple Feature values, explicit package patterns and all seeded virtual providers. All 32 native package hashes remain equal to the retained 1.582 baseline. Real live-profile parsing succeeds with its pinned included platform structure; full matched real archive/seed generation, PPA installability, complete solver and image/runtime parity remain open.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established.",
       "parity_receipts": [
@@ -240,6 +240,30 @@
           "dpkg_dev_version": "1.23.7ubuntu1",
           "retained_package_fingerprints": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
           "scope": "Checked-in upstream map/list-to-package stage. Actual package build control metadata and control file membership, installed documentation after decompression, checksums and native reproducibility. Native Installed-Size is verified with dpkg-gencontrol on its own payload because full changelog compression differs (55 KiB native vs 54 KiB reference). No source/list text is vendored. Fresh seed/archive regeneration, PPA membership/installability, complete solver, general packaging and image/runtime parity are excluded."
+        },
+        {
+          "source_commit": "50b762905ce3298b4c836d33d34edeb5d6661f79",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "crate_unit_tests": 30,
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 36,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "synthetic_package_comparisons": 40,
+          "real_source_package_comparisons": 32,
+          "retained_native_baseline_hash_matches": 32,
+          "retained_package_fingerprints": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+          "package_receipt_artifact_sha256": "852d2545bab975a71a55256d007d527458397ba407ced896a4558feb1784ef8e",
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "scope": "Adds lexical case-insensitive substitutions, declaration shadowing, Cartesian combinations, architecture/recommendation classification, empty/undefined/nonrecursive values, source/pattern lookup order, multiple Feature values, explicit glob roots and all explicitly seeded virtual providers. Both synthetic membership and map/list comparisons use unmodified Germinate. All package comparisons repeat and native real-source hashes equal the retained baseline. Actual live-profile parsing with pinned source collections also succeeds locally; complete matched real archive/seed generation, diagnostics, remaining pattern/kernel/include/exclude semantics, full solver, PPA installability and image/runtime parity are unqualified."
         }
       ]
     }

@@ -1,3 +1,23 @@
+## Lexical seed expansion verified against Germinate — 2026-10-25
+
+[Run 40239533941](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941)
+on `50b762905ce3298b4c836d33d34edeb5d6661f79` passed all candidate checks, 30 seed-compiler
+tests, eight substvars, 36 profile package-set and 56 map/list comparisons.
+New direct cases cover lexical/case-insensitive/shadowed/Cartesian substitutions,
+empty/undefined/nonrecursive values, architecture/recommendation classification,
+pattern/source ordering, multiple Feature values, explicit glob roots and all
+seeded virtual providers. The reference remains unchanged Germinate 2.49.
+All 40 synthetic and 32 real-source package comparisons also pass; downloaded
+fingerprints confirm all 32 native archives equal the retained 1.582 baseline.
+
+Real live-profile parsing with the pinned included platform now succeeds, and
+both collection archives are SHA-256 pinned without vendoring seed text. Full
+matched real archive/seed list generation, signed acquisition/live bootstrap,
+remaining kernel/include/exclude/pattern/diagnostic semantics, PPA installability
+and image/runtime admission remain open. Next: acquire and record matched real
+archive inputs and compare full list generation, preserving those open gates.
+No deployment or live desktop changes; PR #586 stays a draft against dev.
+
 ## Real live-seed variable gap corrected — 2026-10-25
 
 Inspection of pinned real inputs found the native parser stopped at the live

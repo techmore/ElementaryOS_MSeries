@@ -121,8 +121,8 @@ retains its own exclusions and feature flags. Blocklists apply to that seed and
 its inherited ancestors, including dependency expansion; exclusions can make
 the resulting package set uninstallable. The CLI honors per-seed
 `follow-recommends` and `no-follow-recommends` flags. Apt/Germinate parity is
-not established: archive priority/conflicts, build-dependency features, snap
-selection and real-source Debian package qualification remain open. Seed-entry and archive
+incomplete: archive priority/conflicts, build-dependency features, snap
+selection and fresh real-source list generation remain open. Seed-entry and archive
 recommendations are emitted separately by its integrated profile command.
 Its `metapackage-substvars` command now renders Debian relationship fragments
 from supplied maps and architecture-specific package lists. A comparison with
@@ -138,6 +138,9 @@ The pinned upstream source's unchanged rules now pass 32 actual package
 comparisons in Linux run 40238779709, and all 32 native hashes match macOS builds.
 Fresh real-source/archive list regeneration, PPA membership and complete
 package/image qualification remain open.
+Lexical seed variables now support the real live profile's language expansion;
+36 profile membership comparisons and the extended 56 map/list comparisons pass
+in Linux run 40239533941. Full matched real seed/archive generation stays open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -153,7 +156,7 @@ audit.
 | `mseries/install-homeboard-launcher` | Writes the current user's Homeboard `.desktop` launcher | Rust candidate exists; the shell installer remains the active reference | `mseries/rust/homeboard-launcher/`; desktop-menu discovery remains unverified |
 | `elementary/metapackages` | Selects the default Elementary package sets and Pantheon components | Source is pinned as an audit baseline; Rust seed-to-Debian generator remains partial | `elementary-image-projects.json`; resolve package closure and amd64/arm64 output parity |
 | `elementary/package-generator` | Reads Elementary and Ubuntu package seeds to generate metapackages | Rust seed resolver plus Debian archive parser and integrated basic dependency-closure candidate exists; build-dependency features and apt/Germinate parity remain open | `seed-compiler/`; differential fixtures, archive precedence/conflicts, arm64/amd64 closure, and Debian output parity |
-| `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is pinned by verified archive SHA-256; eight substvars and 22 profile package-set comparisons pass in Linux | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
+| `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is pinned by verified archive SHA-256; eight substvars, 36 profile package-set and 56 map/list comparisons pass in Linux; 32 real-source package outputs are qualified | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
 | `elementary/seeds` | Defines Elementary desktop, Pantheon, and SDK package profiles | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; profile inheritance, qualifiers, and package-set parity |
 | `elementary/platform` | Supplies Ubuntu base profiles included by Elementary seeds | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; release/architecture package-set parity |
 | `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
