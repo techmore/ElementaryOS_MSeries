@@ -1,3 +1,20 @@
+## Corrected Germinate scope verified in Linux — 2026-10-25
+
+[Run 40235036913](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913)
+on `28eec704ba344af5d462babb52f329479a172933` passed all candidate crate
+checks, including 24 seed-compiler tests, eight direct substvars comparisons,
+and 22 direct amd64/arm64 profile package-set comparisons against unmodified
+Germinate 2.49. The archive is checksum-pinned; Debhelper was 13.31ubuntu1.
+The receipt is recorded in `mseries/rust/elementary-build-inputs.json`.
+This verifies the tested per-seed blocklist/Recommends behavior and fresh
+substvars output, not complete solver, diagnostics, or Debian package parity.
+
+The preceding Linux wiring run 40234661001 also passed all 88 central checks,
+including post-install timing and image staging that macOS could not execute.
+PR #586 remains a draft against dev. Next: finish profile map/list and Debian
+package generation, extend provider/alternative and build-dependency comparisons,
+and keep image/desktop qualification separate from synthetic fixture evidence.
+
 ## Germinate comparison and blocklist correction — 2026-10-25
 
 Run [40234661042](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40234661042)

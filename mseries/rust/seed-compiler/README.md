@@ -57,15 +57,17 @@ helper with real Debhelper, and compares eight amd64/arm64 cases, including
 `Architecture: all`, unmapped packages, duplicate relationships, alternatives,
 and recommendation-only lists. The Rust candidate workflow runs this check.
 Linux run [40234661042](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40234661042)
-on `8445173e` passed all eight comparisons with Debhelper 13.31ubuntu1. This
+on `8445173e` passed all eight comparisons with Debhelper 13.31ubuntu1.
+The corrected resolver revision `28eec704` repeated these successfully in
+[run 40235036913](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913). This
 receipt covers the substvars stage, not full seed expansion or package parity.
 
 `test-seed-parity.py` adds 22 synthetic profile package-set comparisons against
 the same unmodified Germinate release using system Python and `python3-apt`.
 It checks both architectures, blocklisted dependencies/alternatives/providers,
 inner and outer inheritance scope, recommendation roots, and per-seed features.
-This new comparison is pending Linux CI. It compares the union of runtime
-package membership; reason output, installability and full solver behavior are
+Run 40235036913 passed all 22 comparisons on `28eec704`. It compares the union
+of runtime package membership; reason output, installability and full solver behavior are
 separate gates.
 
 The upstream `elementary/seeds` and `elementary/platform` revisions are recorded

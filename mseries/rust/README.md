@@ -127,7 +127,8 @@ recommendations are emitted separately by its integrated profile command.
 Its `metapackage-substvars` command now renders Debian relationship fragments
 from supplied maps and architecture-specific package lists. A comparison with
 the pinned Germinate helper and real Debhelper passed eight Linux cases.
-A further 22 profile membership comparisons are pending Linux CI. Map/list generation and complete Debian package output remain open.
+A further 22 profile membership comparisons passed in Linux run 40235036913
+on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. Map/list generation and complete Debian package output remain open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that

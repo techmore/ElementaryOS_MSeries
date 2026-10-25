@@ -134,9 +134,27 @@
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40234661042 on 8445173e passed all candidate crate checks and eight Germinate 2.49/Debhelper substvars comparisons. Twenty-two synthetic profile package-set comparisons for corrected blocklist and per-seed feature behavior are added but their Linux run is pending. This remains a limited candidate; complete Germinate/apt parity is not established.",
+      "parity_status": "Linux run 40235036913 on 28eec704 passed all candidate crate checks, eight Germinate 2.49/Debhelper substvars comparisons, and 22 synthetic amd64/arm64 profile package-set comparisons. These scoped receipts do not establish complete Germinate provider/solver behavior, Debian package output, or apt equivalence.",
       "intentional_enhancements": [],
-      "enhancement_review_status": "No generator enhancements selected before package parity is established."
+      "enhancement_review_status": "No generator enhancements selected before package parity is established.",
+      "parity_receipts": [
+        {
+          "source_commit": "28eec704ba344af5d462babb52f329479a172933",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "crate_unit_tests": 24,
+          "scope": "Synthetic runtime package-set membership and fresh Debian substvars; excludes reason/diagnostic parity, complete provider/solver semantics, build dependencies, full Debian package output, and runtime/image qualification."
+        }
+      ]
     }
   ],
   "reference_projects": [

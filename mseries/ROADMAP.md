@@ -955,7 +955,8 @@ substvars comparisons against pinned Germinate 2.49 and Debhelper 13.31ubuntu1.
 Reference review then corrected the seed blocklist model: exclusions apply to
 that seed and its inherited ancestors, including dependencies. Each contributing
 seed now retains its own Recommends feature. The corrected resolver passes 24
-local unit cases; 22 new profile package-set comparisons await Linux CI.
+local unit cases; Linux run 40235036913 on `28eec704` passed all 22 profile
+package-set comparisons and repeated the eight substvars comparisons.
 Complete provider/solver behavior, build dependencies, Debian package output,
 and image/desktop qualification remain required.
 
