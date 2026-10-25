@@ -1,3 +1,22 @@
+## Matched real archive qualification gate — 2026-10-25
+
+The new real-list verifier derives every configured mirror/component/architecture
+from pinned update.cfg, verifies signed metadata with the existing factory keys
+and Ubuntu trust anchor, checks signed index bytes, and captures real seed inputs
+without vendoring them. Local acquisition verifies 30 indexes; all 60 applicable
+testing-PPA index endpoints are unavailable and explicitly recorded. A valid
+factory-trusted signature plus unknown rotation co-signer is accepted without
+trusting the new key. Modified signed payloads and unknown-only signatures are
+rejected by actual gpgv checks.
+
+Linux CI now runs unchanged Germinate updater logic and actual debootstrap against
+those verified local mirrors, records real bootstrap outputs, and compares all 33
+native map/list files. That full comparison is pending. Hash/identity receipts
+include partial failures; raw source/index text stays temporary. Inventory: 2,962
+files, 499 project records. Next: resolve the real comparison and retain its exact
+input/output receipt. Native production acquisition, PPA installability and full
+image/runtime qualification remain open. No live deployment or desktop changes.
+
 ## Lexical seed expansion verified against Germinate — 2026-10-25
 
 [Run 40239533941](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941)

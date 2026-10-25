@@ -217,3 +217,29 @@ on `50b762905ce3298b4c836d33d34edeb5d6661f79` passed all 36 membership and
 All 32 actual package hashes still match the retained pre-change baseline.
 Fresh signed archive acquisition, full real list generation and image/runtime
 qualification remain open.
+
+
+`test-real-list-parity.py` provisions a matched real archive/seed input bundle for
+Linux qualification. It derives archive order, components and architectures from
+the pinned source's unchanged update.cfg, verifies InRelease with the host Ubuntu
+keyring or existing factory Elementary keys, checks signed index SHA-256/size and
+metadata dates, and rewrites only acquisition locations to verified local mirrors.
+Unknown additional co-signers are recorded without gaining trust; one valid
+signature from the supplied trust anchor remains required. Actual tampering and
+unknown-only signature rejection checks run too. An unavailable mirror is recorded
+only after every applicable index endpoint is confirmed unavailable; readable
+indexes without captured signed metadata cause failure.
+
+Local acquisition verified 30 indexes. The configured testing PPA is unavailable
+at all 60 applicable index URLs. The full Linux comparison is pending. It runs
+unchanged Germinate updater logic and actual debootstrap, records the exact
+bootstrap output, then compares all 33 native map/list files. Reference and Rust consume the same new snapshots and observed bootstrap sets. Source/seed/archive bytes stay temporary; CI exports only hash/identity
+receipts, including partial failures. `--acquire-only` supports signature/index
+inspection without the Linux oracle, and `--index-cache DIR` reuses compressed
+bytes only after matching their signed digest and size. Native production network
+acquisition, PPA installability, changelog maintenance and image/runtime admission
+remain open.
+
+```sh
+/usr/bin/python3 mseries/rust/seed-compiler/test-real-list-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler --report /tmp/elementary-real-lists.json
+```

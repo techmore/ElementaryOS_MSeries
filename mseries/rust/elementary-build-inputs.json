@@ -285,5 +285,27 @@
       "pin_status": "Ubuntu Resolute source version 2.49 and source archive pinned; downloaded archive MD5 matches the recorded value and SHA-256 was verified on 2026-10-25. Git revision is not recorded.",
       "watch_status": "Not covered by the Elementary GitHub branch watcher; recheck Ubuntu Resolute source-package updates during the weekly dependency review."
     }
-  ]
+  ],
+  "real_archive_qualification": {
+    "verifier": "mseries/rust/seed-compiler/test-real-list-parity.py",
+    "status": "local-signed-acquisition-verified; full Linux generation pending",
+    "input_scope": "All update.cfg archive roots in their configured order, amd64/arm64 binary and installer indexes, default source mirrors and main/restricted/universe components. HTTP Ubuntu/Launchpad transport is mapped to official HTTPS endpoints. Pinned source and seed collections remain unchanged; only acquisition locations are rewritten to verified local mirrors.",
+    "trust_anchors": [
+      "Host Ubuntu archive keyring supplied to gpgv",
+      "repos/common-files/etc/apt/keyrings/elementary-os.gpg",
+      "repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg"
+    ],
+    "signature_contract": "At least one valid signature under the supplied trust anchor is required. Unknown additional co-signers are recorded, never imported as trusted keys. Bad/expired/revoked/malformed signatures are rejected. Signed SHA-256/size checks cover compressed and, when published, decoded indexes; metadata validity dates are checked.",
+    "local_capture": {
+      "verified_indexes": 30,
+      "unavailable_mirror": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/",
+      "unavailable_index_probes": 60,
+      "negative_signature_checks": [
+        "modified signed payload rejected",
+        "unknown-only signatures rejected"
+      ]
+    },
+    "production_boundary": "Python/gpgv/debootstrap are qualification oracles and test-input provisioning. Native Rust map/list generation consumes exactly the captured decoded Packages/Sources and observed bootstrap sets. Production native acquisition and complete image/runtime qualification remain open.",
+    "receipts": "CI exports hash/identity-only acquisition and comparison receipts, including partial failures; source/index text stays temporary."
+  }
 }

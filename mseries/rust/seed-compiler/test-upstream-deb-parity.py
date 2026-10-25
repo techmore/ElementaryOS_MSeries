@@ -47,9 +47,9 @@ def source_archive(record, local_archive):
     return data
 
 
-def extract_source(data, source, commit):
+def extract_source(data, source, commit, project="metapackages"):
     source.mkdir(parents=True)
-    prefix = PurePosixPath(f"metapackages-{commit}")
+    prefix = PurePosixPath(f"{project}-{commit}")
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
         for entry in archive.getmembers():
             name = PurePosixPath(entry.name)

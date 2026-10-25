@@ -85,7 +85,7 @@ the existing `rust/` Cargo workspace, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-2,961 files (2,879 local and 82 elementary-owned upstream inputs) currently form
+2,962 files (2,880 local and 82 elementary-owned upstream inputs) currently form
 533 directory groups and 499 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -334,7 +334,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
   while the owner's Signal/Messages deferral is in force. Full image admission
   remains open.
-- The full file inventory currently contains 2,961 items (2,879 M-series-maintained
+- The full file inventory currently contains 2,962 items (2,880 M-series-maintained
   and 82 elementary-owned upstream inputs), 533 directory groups, and 499
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity
