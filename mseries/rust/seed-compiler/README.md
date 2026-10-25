@@ -20,6 +20,39 @@ separate package sets. Build-dependency feature flags, archive priorities and
 conflicts like apt, snap revision selection, and `.deb` metapackage generation
 remain unimplemented.
 
+`metapackage-substvars DIRECTORY ARCHITECTURE PACKAGE` supplies the next build
+stage in Rust. It reads the supplied `metapackage-map`, selects that package's
+`SEED-ARCHITECTURE` and `SEED-recommends-ARCHITECTURE` files, and writes a fresh
+fragment containing `germinate:Depends` and `germinate:Recommends`. Relationships
+are sorted and deduplicated, with one relationship per input line; empty lists
+omit the variable. Unmapped packages
+produce an empty fragment. Use the binary package architecture (`all` for an
+architecture-independent package). The command validates both lists before
+printing, rejects ambiguous maps and unsafe file names, and does not merge an
+existing substvars file. Supply its fragment to `dpkg-gencontrol` along with
+other build substitutions. This implements one build stage; map/list generation,
+complete Debian control generation, and `.deb` assembly are still open.
+
+The file and substitution contract is referenced from Elementary metapackages
+commit `6e6466507f7f5b32e73594c5e727a49f0be58d0f` and Germinate 2.49's
+`dh_germinate_metapackage` documentation. Both references declare GPL version 2
+or later. No upstream implementation or seed text is vendored into this crate.
+The source archive's verified SHA-256 is recorded in
+`../elementary-build-inputs.json`.
+
+On Linux with `debhelper` and `dpkg-dev`, run the reference comparison:
+
+```sh
+python3 mseries/rust/seed-compiler/test-metapackage-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+```
+
+It downloads and verifies the pinned Germinate archive, runs its unmodified
+helper with real Debhelper, and compares eight amd64/arm64 cases, including
+`Architecture: all`, unmapped packages, duplicate relationships, alternatives,
+and recommendation-only lists. The Rust candidate workflow runs this check.
+The macOS host passes Rust unit/build checks; the Linux comparison has not run
+at this checkpoint and does not establish seed expansion or full package parity.
+
 The upstream `elementary/seeds` and `elementary/platform` revisions are recorded
 in `../elementary-build-inputs.json`. Their licenses are unverified, so no
 upstream seed data is copied into this crate. Parsing behavior is based on the
@@ -33,6 +66,7 @@ cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-seed 
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-seed-packages /path/to/seeds/STRUCTURE elementary.resolute desktop arm64 Packages platform.resolute=/path/to/platform
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- expand-source Packages arm64 elementary-desktop
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-packages Packages arm64 elementary-desktop
+cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- metapackage-substvars /path/to/metapackages arm64 elementary-desktop
 ```
 
 Next parity gates: feature-aware end-to-end generation, archive precedence and

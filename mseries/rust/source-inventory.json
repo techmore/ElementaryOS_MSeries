@@ -14,7 +14,7 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 796,
+  "item_count": 798,
   "component_count": 238,
   "project_count": 205,
   "components": [
@@ -2688,9 +2688,9 @@
     {
       "id": "mseries/rust/seed-compiler",
       "ownership": "mseries-maintained",
-      "item_count": 7,
+      "item_count": 9,
       "rust_status_counts": {
-        "candidate-implemented-unverified": 3,
+        "candidate-implemented-unverified": 5,
         "recorded-non-code-input": 4
       },
       "items": [
@@ -2700,7 +2700,9 @@
         "mseries/rust/seed-compiler/README.md",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/lib.rs",
-        "mseries/rust/seed-compiler/src/main.rs"
+        "mseries/rust/seed-compiler/src/main.rs",
+        "mseries/rust/seed-compiler/src/metapackage.rs",
+        "mseries/rust/seed-compiler/test-metapackage-parity.py"
       ]
     },
     {
@@ -3311,9 +3313,9 @@
     {
       "id": "elementary/package-generator",
       "ownership": "mseries-maintained",
-      "item_count": 7,
+      "item_count": 9,
       "rust_status_counts": {
-        "candidate-implemented-unverified": 3,
+        "candidate-implemented-unverified": 5,
         "recorded-non-code-input": 4
       },
       "items": [
@@ -3323,7 +3325,9 @@
         "mseries/rust/seed-compiler/README.md",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/lib.rs",
-        "mseries/rust/seed-compiler/src/main.rs"
+        "mseries/rust/seed-compiler/src/main.rs",
+        "mseries/rust/seed-compiler/src/metapackage.rs",
+        "mseries/rust/seed-compiler/test-metapackage-parity.py"
       ],
       "rust_target": "Independent Rust project replacing this project's executable behavior while preserving its current feature and interface contract.",
       "migration_status": "candidate-implemented-unverified",
@@ -14703,6 +14707,26 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/src/metapackage.rs",
+      "path": "mseries/rust/seed-compiler/src/metapackage.rs",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-implemented-unverified"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/test-metapackage-parity.py",
+      "path": "mseries/rust/seed-compiler/test-metapackage-parity.py",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
       "rust_status": "candidate-implemented-unverified"
     },
     {

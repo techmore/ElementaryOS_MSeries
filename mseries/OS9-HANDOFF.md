@@ -1,6 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
-## Rust OS migration checkpoint — 2026-10-20
+## Rust OS migration checkpoint — 2026-10-25
+
+The package generator now has a native Rust `metapackage-substvars` command.
+It reads a supplied map and architecture-specific package lists and emits the
+Debian relationship substitution fragment used in metapackage builds. All 23
+crate tests, strict Clippy, and the release build pass locally. The Germinate
+2.49 source archive now has a verified SHA-256 in `elementary-build-inputs.json`.
+A Linux harness compares eight substvars cases with that release's unmodified
+helper and real Debhelper; it is wired into candidate CI but has not run here
+(the local Docker daemon is unavailable). Next: run the Linux comparison, then
+finish seed-to-map/list generation and complete Debian package outputs.
+This command does not yet complete the Elementary metapackage project.
 
 The latest scope audit found 153 public repositories in the official
 Elementary GitHub organization. `mseries/rust/elementary-org-census.json` now

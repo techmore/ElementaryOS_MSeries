@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 pub mod archive;
+pub mod metapackage;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {

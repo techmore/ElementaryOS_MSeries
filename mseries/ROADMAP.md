@@ -1,6 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## Rust OS build pipeline — 2026-10-20
+## Rust OS build pipeline — 2026-10-25
+
+The package generator now emits Debian relationship substitution fragments in
+Rust from a supplied metapackage map and architecture-specific lists. Germinate
+2.49's source archive has a verified SHA-256, and an eight-case Linux harness
+compares this output with its unmodified helper and real Debhelper. The harness
+is wired into candidate CI; its Linux run is still pending because the macOS
+host has no running container daemon. Seed-to-map/list generation and complete
+Debian package assembly remain open.
 
 The `elementary/package-generator` crate now adds an independent Debian archive
 metadata layer: control stanzas, binary package relations, Debian version
@@ -9,7 +17,7 @@ closure. The integrated profile CLI applies seed package/source blocklists to
 explicit roots but leaves archive relationships intact; blocked packages may
 still reappear as dependencies. It honors the selected seed's Recommends
 feature and emits seed-entry recommendations separately from archive
-Recommends. All 20 crate tests, strict Clippy, a release build, and inventory
+Recommends. All 23 crate tests, strict Clippy, a release build, and inventory
 checks pass. This is not apt or Germinate parity. Germinate build-dependency
 semantics, archive precedence/conflicts, snap selection, and Debian metapackage
 outputs remain open; upstream seed content is still not copied because its

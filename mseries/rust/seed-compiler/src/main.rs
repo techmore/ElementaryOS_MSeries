@@ -1,4 +1,5 @@
 use elementary_seed_compiler::archive::PackageCatalog;
+use elementary_seed_compiler::metapackage::MetapackageMap;
 use elementary_seed_compiler::{SeedDocument, Structure};
 use std::collections::BTreeMap;
 use std::env;
@@ -6,12 +7,23 @@ use std::fs;
 use std::process::ExitCode;
 
 fn usage() {
+    eprintln!("Build output:\n  elementary-seed-compiler metapackage-substvars <package-list-directory> <binary-architecture> <package>");
     eprintln!("Usage:\n  elementary-seed-compiler inspect-seed <file> <architecture>\n  elementary-seed-compiler inspect-structure <file> <collection> <seed> [included-collection=STRUCTURE ...]\n  elementary-seed-compiler resolve-seed <STRUCTURE> <collection> <seed> <architecture> [included-collection=SEED-DIR ...]\n  elementary-seed-compiler resolve-seed-packages <STRUCTURE> <collection> <seed> <architecture> <Packages-file> [--follow-recommends] [included-collection=SEED-DIR ...]\n  elementary-seed-compiler expand-source <Packages-file> <architecture> <source ...>\n  elementary-seed-compiler resolve-packages <Packages-file> <architecture> [--follow-recommends] <root-package ...>");
 }
 
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
+        Some("metapackage-substvars") if args.len() == 5 => {
+            let directory = std::path::Path::new(&args[2]);
+            let path = directory.join("metapackage-map");
+            let text = fs::read_to_string(&path)
+                .map_err(|error| format!("{}: {error}", path.display()))?;
+            let map = MetapackageMap::parse(&text)
+                .map_err(|error| format!("{}: {error}", path.display()))?;
+            print!("{}", map.render_for(directory, &args[3], &args[4])?);
+            Ok(())
+        }
         Some("inspect-seed") if args.len() == 4 => {
             let text = fs::read_to_string(&args[2]).map_err(|e| format!("{}: {e}", args[2]))?;
             let seed = SeedDocument::parse(&text).map_err(|e| e.to_string())?;

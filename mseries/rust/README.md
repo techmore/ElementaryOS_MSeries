@@ -77,14 +77,14 @@ its declared build/customization scope, including the root ISO assembler, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-796 files (714 local and 82 elementary-owned upstream inputs) currently form
+798 files (716 local and 82 elementary-owned upstream inputs) currently form
 238 directory groups and 205 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
-current scope contains 264 implementation files (251 local), 41 upstream
+current scope contains 265 implementation files (252 local), 41 upstream
 patches, and 271 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
@@ -115,6 +115,10 @@ still appear as a dependency. The selected profile honors Germinate's
 not established: archive priority/conflicts, build-dependency features, snap
 selection, and Debian metapackage output remain open. Seed-entry and archive
 recommendations are emitted separately by its integrated profile command.
+Its `metapackage-substvars` command now renders Debian relationship fragments
+from supplied maps and architecture-specific package lists. A comparison with
+the pinned Germinate helper and real Debhelper is wired into Linux CI; that run
+is pending. Map/list generation and complete Debian package output remain open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -130,7 +134,7 @@ audit.
 | `mseries/install-homeboard-launcher` | Writes the current user's Homeboard `.desktop` launcher | Rust candidate exists; the shell installer remains the active reference | `mseries/rust/homeboard-launcher/`; desktop-menu discovery remains unverified |
 | `elementary/metapackages` | Selects the default Elementary package sets and Pantheon components | Source is pinned as an audit baseline; Rust seed-to-Debian generator remains partial | `elementary-image-projects.json`; resolve package closure and amd64/arm64 output parity |
 | `elementary/package-generator` | Reads Elementary and Ubuntu package seeds to generate metapackages | Rust seed resolver plus Debian archive parser and integrated basic dependency-closure candidate exists; build-dependency features and apt/Germinate parity remain open | `seed-compiler/`; differential fixtures, archive precedence/conflicts, arm64/amd64 closure, and Debian output parity |
-| `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is recorded separately; SHA-256 and direct differential comparison remain open | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
+| `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is pinned by verified archive SHA-256; the Linux substvars comparison is pending | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
 | `elementary/seeds` | Defines Elementary desktop, Pantheon, and SDK package profiles | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; profile inheritance, qualifiers, and package-set parity |
 | `elementary/platform` | Supplies Ubuntu base profiles included by Elementary seeds | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; release/architecture package-set parity |
 | `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
