@@ -1,3 +1,12 @@
+## Native map/list output qualified on synthetic inputs — 2026-10-25
+
+Linux run 40236407482 on `ff754d3c` passed 56 byte-for-byte map/list comparisons
+with Germinate 2.49 across four configurations, plus 26 crate tests and the
+existing eight substvars/22 package-set comparisons. Inputs include real-format
+Packages/Sources and fixed debootstrap sets. This qualifies that tested stage;
+complete Debian package output, live bootstrap/acquisition, full solver behavior
+and image/runtime admission remain open.
+
 ## Metapackage map/list comparison passes — 2026-10-25
 
 Run 40236198140 passed 56 map/list file comparisons with pinned Germinate 2.49

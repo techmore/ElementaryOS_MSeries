@@ -129,7 +129,8 @@ from supplied maps and architecture-specific package lists. A comparison with
 the pinned Germinate helper and real Debhelper passed eight Linux cases.
 A further 22 profile membership comparisons passed in Linux run 40235036913
 on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. A native multi-architecture map/list generator now reads supplied update.cfg,
-seed and archive inputs; its direct updater comparison is pending Linux CI.
+seed and archive inputs; 56 direct file comparisons with the pinned updater
+pass across four configurations in Linux run 40236407482.
 Complete Debian package output remains open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay

@@ -1,3 +1,23 @@
+## Native map/list stage verified in Linux — 2026-10-25
+
+[Run 40236407482](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482)
+on `ff754d3c710967a83c6e59f62090a191695ce5b0` passed all candidate crate
+checks, 26 seed-compiler tests, eight substvars comparisons, 22 profile
+package-set comparisons, and 56 byte-for-byte map/list file comparisons across
+four configurations. The new file comparison covers config/header precedence,
+selected output seeds, explicit maps, alternatives, virtual/source seeds,
+source-version/Binary declarations and defaults, essential Depends, minimal
+filtering, inheritance deduplication, architecture qualifiers and empty outputs.
+The upstream updater is unchanged; only debootstrap's package-set/version
+boundary is fixed to supplied data. No upstream Elementary seed data is vendored.
+
+The receipt is in `mseries/rust/elementary-build-inputs.json`; the Elementary
+metapackage record now marks the generator as a partial candidate rather than
+not started. Full provider/solver and advanced seed behavior, acquisition/live
+bootstrap, changelog/deltas, complete Debian package output and OS image/runtime
+qualification remain open. Next: finish native Debian control/package output
+from the qualified list/substvars artifacts, then qualify pinned real inputs.
+
 ## First direct map/list receipt and source default — 2026-10-25
 
 Linux run 40236198140 on `ff616bf96e015865e1f1e8c95e67058775adddea`

@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate 2.49 (Ubuntu source archive pinned by SHA-256 in reference_projects)",
-    "behavior_status": "An independently authored Rust candidate composes explicitly supplied seed collections, resolves inheritance, preserves each contributing seed's blocklist and Recommends scope, parses Debian binary Packages metadata, expands source names to binaries, and computes basic dependency closure. It also renders Debian substvars from supplied maps and lists. Complete Germinate build-dependency behavior, provider/alternative selection, apt solver behavior, and Debian package output parity remain open.",
+    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, reads binary/source archive metadata, and generates multi-architecture metapackage maps/lists from update.cfg plus supplied debootstrap sets. Fresh Debian substvars are also rendered in Rust. Synthetic Linux comparisons qualify these stages; complete provider/solver and build-dependency behavior, live acquisition/bootstrap, changelog maintenance and Debian package output remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
@@ -140,7 +140,7 @@
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40235036913 on 28eec704 passed all candidate crate checks, eight Germinate 2.49/Debhelper substvars comparisons, and 22 synthetic amd64/arm64 profile package-set comparisons. These scoped receipts do not establish complete Germinate provider/solver behavior, Debian package output, or apt equivalence. A new map/list generator passes local configuration/CLI checks; direct file comparison with the pinned updater across four configurations is pending Linux CI.",
+      "parity_status": "Linux run 40236407482 on ff754d3c passed all candidate crate checks, 26 seed-compiler tests, eight Germinate 2.49/Debhelper substvars comparisons, 22 synthetic amd64/arm64 profile package-set comparisons, and 56 byte-for-byte map/list file comparisons across four configurations. The updater comparison freezes only the supplied debootstrap set/version boundary. Complete provider/solver, live bootstrap/acquisition, changelog and Debian package parity remain open.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established.",
       "parity_receipts": [
@@ -159,6 +159,24 @@
           "debhelper_version": "13.31ubuntu1",
           "crate_unit_tests": 24,
           "scope": "Synthetic runtime package-set membership and fresh Debian substvars; excludes reason/diagnostic parity, complete provider/solver semantics, build dependencies, full Debian package output, and runtime/image qualification."
+        },
+        {
+          "source_commit": "ff754d3c710967a83c6e59f62090a191695ce5b0",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "crate_unit_tests": 26,
+          "scope": "Synthetic runtime package membership, fresh substvars, and byte-for-byte metapackage map/list files. The unmodified updater consumes local archive/seed fixtures while debootstrap package-set/version output is fixed. Live debootstrap/acquisition, changelog changes, complete solver/reason/diagnostic semantics, Debian package output and image/runtime qualification are excluded."
         }
       ]
     }

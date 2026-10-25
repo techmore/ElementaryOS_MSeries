@@ -50,7 +50,11 @@ live debootstrap selection/version tracking, changelog/delta maintenance and
 complete Debian control/package output remain open. The new
 `test-list-parity.py` runs the pinned updater's unchanged map/list code against
 local synthetic archives, freezing only debootstrap's package-set/version
-boundary. Its four-configuration Linux file comparison is pending.
+boundary. Linux [run 40236407482](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482)
+on `ff754d3c` passed 56 byte-for-byte map/list file comparisons across four
+configurations. The same run passed all candidate crate checks, including 26
+seed-compiler tests, and repeated the existing eight substvars and 22 profile
+package-set comparisons.
 
 `metapackage-substvars DIRECTORY ARCHITECTURE PACKAGE` supplies the next build
 stage in Rust. It reads the supplied `metapackage-map`, selects that package's
