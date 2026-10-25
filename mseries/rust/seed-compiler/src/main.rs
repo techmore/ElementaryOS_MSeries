@@ -1,7 +1,7 @@
 use elementary_seed_compiler::archive::PackageCatalog;
 use elementary_seed_compiler::metapackage::MetapackageMap;
 use elementary_seed_compiler::{SeedDocument, Structure};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::process::ExitCode;
@@ -170,20 +170,42 @@ fn run() -> Result<(), String> {
                     SeedDocument::parse(&text).map_err(|e| format!("{}: {e}", path.display()))?;
                 documents.insert(seed_name.clone(), document);
             }
-            let resolved = structure.resolve_seed(&args[4], &args[5], &documents)?;
-            let follow_recommends =
-                structure.follows_recommends(&args[4], &documents, force_follow_recommends)?;
+            let groups = structure.resolve_seed_groups(&args[4], &args[5], &documents)?;
             let package_text =
                 fs::read_to_string(&args[6]).map_err(|e| format!("{}: {e}", args[6]))?;
             let catalog = PackageCatalog::parse_packages(&package_text)
                 .map_err(|e| format!("{}: {e}", args[6]))?;
-            let roots = elementary_seed_compiler::archive::expand_resolved_seed(
-                &resolved, &catalog, &args[5],
-            )?;
-            let closure =
-                catalog.resolve_seed_package_closure(&roots, &args[5], follow_recommends)?;
-            let recommendation_closure =
-                catalog.resolve_seed_recommendation_closure(&roots, &args[5])?;
+            let mut roots = elementary_seed_compiler::archive::SeedPackageRoots::default();
+            let mut packages = BTreeSet::new();
+            let mut recommended_packages = BTreeSet::new();
+            for (name, resolved) in groups {
+                let follow_recommends =
+                    structure.follows_recommends(&name, &documents, force_follow_recommends)?;
+                let seed_roots = elementary_seed_compiler::archive::expand_resolved_seed(
+                    &resolved, &catalog, &args[5],
+                )?;
+                packages.extend(
+                    catalog
+                        .resolve_seed_package_closure(&seed_roots, &args[5], follow_recommends)?
+                        .packages,
+                );
+                recommended_packages.extend(
+                    catalog
+                        .resolve_seed_recommendation_closure(
+                            &seed_roots,
+                            &args[5],
+                            follow_recommends,
+                        )?
+                        .packages,
+                );
+                roots.depends.extend(seed_roots.depends);
+                roots.recommends.extend(seed_roots.recommends);
+                roots.snaps.extend(seed_roots.snaps);
+            }
+            roots
+                .recommends
+                .retain(|package| !roots.depends.contains(package));
+            recommended_packages.retain(|package| !packages.contains(package));
             for package in &roots.depends {
                 println!("root\tdepends\t{package}");
             }
@@ -193,10 +215,10 @@ fn run() -> Result<(), String> {
             for snap in &roots.snaps {
                 println!("snap\t{snap}");
             }
-            for package in closure.packages {
+            for package in packages {
                 println!("package\t{}\t{}", package.package, package.architecture);
             }
-            for package in recommendation_closure.packages {
+            for package in recommended_packages {
                 println!(
                     "recommended-package\t{}\t{}",
                     package.package, package.architecture

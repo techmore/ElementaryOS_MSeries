@@ -9,16 +9,22 @@ filters, and seed-level blacklists. An independently authored archive layer now
 parses Debian `Packages` control stanzas and relationships, expands source names
 to binaries, and computes a basic architecture-aware closure for Depends,
 Pre-Depends, and optionally Recommends. The integrated `resolve-seed-packages`
-command applies seed package/source blocklists to explicit roots, then expands
-archive relationships unchanged. A blocked package can therefore appear again
-as a dependency, and the resolver does not silently choose another alternative
-to work around a broken package relationship. `follow-recommends` in STRUCTURE
-or the selected seed enables recommendation closure; the selected seed's
-`no-follow-recommends` overrides that default, and the CLI flag can force it on.
-Archive Recommends and parenthesized seed recommendations are emitted as
-separate package sets. Build-dependency feature flags, archive priorities and
-conflicts like apt, snap revision selection, and `.deb` metapackage generation
-remain unimplemented.
+command preserves each contributing seed's blocklist and Recommends scope.
+A `!` exclusion applies to that seed and its inherited ancestors. Blocklisted
+packages and sources are omitted from roots and transitive dependencies; an
+allowed alternative may be chosen. If all available alternatives are blocked,
+the dependency is omitted, so the resulting set may be uninstallable. Apt does
+not know these exclusions and can still install a blocked dependency later.
+A normal seed named `blocklist` has no automatic global effect; Germinate's
+vestigial global source-blocklist report is not implemented.
+
+`follow-recommends` in STRUCTURE supplies the default. Each contributing seed's
+`follow-recommends` or `no-follow-recommends` overrides it (the positive flag wins
+if both are supplied), and the CLI flag forces it on. Archive Recommends and
+parenthesized seed recommendations are emitted in separate streams, with a
+required package removed from the recommendation stream. Build-dependency
+features, complete provider/alternative selection, archive conflicts like apt,
+snap revision selection, and `.deb` metapackage generation remain open.
 
 `metapackage-substvars DIRECTORY ARCHITECTURE PACKAGE` supplies the next build
 stage in Rust. It reads the supplied `metapackage-map`, selects that package's
@@ -50,8 +56,17 @@ It downloads and verifies the pinned Germinate archive, runs its unmodified
 helper with real Debhelper, and compares eight amd64/arm64 cases, including
 `Architecture: all`, unmapped packages, duplicate relationships, alternatives,
 and recommendation-only lists. The Rust candidate workflow runs this check.
-The macOS host passes Rust unit/build checks; the Linux comparison has not run
-at this checkpoint and does not establish seed expansion or full package parity.
+Linux run [40234661042](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40234661042)
+on `8445173e` passed all eight comparisons with Debhelper 13.31ubuntu1. This
+receipt covers the substvars stage, not full seed expansion or package parity.
+
+`test-seed-parity.py` adds 22 synthetic profile package-set comparisons against
+the same unmodified Germinate release using system Python and `python3-apt`.
+It checks both architectures, blocklisted dependencies/alternatives/providers,
+inner and outer inheritance scope, recommendation roots, and per-seed features.
+This new comparison is pending Linux CI. It compares the union of runtime
+package membership; reason output, installability and full solver behavior are
+separate gates.
 
 The upstream `elementary/seeds` and `elementary/platform` revisions are recorded
 in `../elementary-build-inputs.json`. Their licenses are unverified, so no

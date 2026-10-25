@@ -158,98 +158,109 @@ impl Structure {
         Ok(self.resolve_seed(seed, architecture, documents)?.entries)
     }
 
-    /// Resolve entries and retain blocklists for filtering explicit package roots.
+    /// Flatten a profile for seed-entry inspection. Archive callers should use
+    /// resolve_seed_groups so each contributing seed keeps its own exclusions.
     pub fn resolve_seed(
         &self,
         seed: &str,
         architecture: &str,
         documents: &BTreeMap<String, SeedDocument>,
     ) -> Result<ResolvedSeed, String> {
-        let mut resolved = BTreeMap::<(EntryKind, String), SeedEntry>::new();
-        let mut blacklist = BTreeSet::<(EntryKind, String)>::new();
-        let mut blacklisted_packages = BTreeSet::new();
-        let mut blacklisted_sources = BTreeSet::new();
-        let mut inheritance = self.inheritance_order(seed)?;
-        if seed != "blocklist" {
-            inheritance.retain(|inherited| inherited != "blocklist");
-        }
-        for inherited in inheritance {
-            let document = documents
-                .get(&inherited)
-                .ok_or_else(|| format!("seed file `{inherited}` was not supplied"))?;
-            for entry in document
-                .entries
-                .iter()
-                .filter(|entry| entry.architectures.applies_to(architecture))
-            {
-                if entry.kind == EntryKind::Snap && entry.recommended {
-                    // Germinate deliberately ignores recommended snaps.
-                    continue;
-                }
-                let key = match entry.kind {
-                    EntryKind::BlacklistPackage => (EntryKind::Package, entry.name.clone()),
-                    EntryKind::BlacklistSourcePackage => {
-                        (EntryKind::SourcePackage, entry.name.clone())
-                    }
-                    kind => (kind, entry.name.clone()),
-                };
-                match entry.kind {
-                    EntryKind::BlacklistPackage => {
-                        blacklisted_packages.insert(entry.name.clone());
-                        blacklist.insert(key.clone());
-                        resolved.remove(&key);
-                    }
-                    EntryKind::BlacklistSourcePackage => {
-                        blacklisted_sources.insert(entry.name.clone());
-                        blacklist.insert(key.clone());
-                        resolved.remove(&key);
-                    }
-                    _ if !blacklist.contains(&key) => {
-                        let replace_recommendation = resolved
-                            .get(&key)
-                            .is_some_and(|existing| existing.recommended && !entry.recommended);
-                        if !resolved.contains_key(&key) || replace_recommendation {
-                            resolved.insert(key, entry.clone());
-                        }
-                    }
-                    _ => {}
+        let groups = self.resolve_seed_groups(seed, architecture, documents)?;
+        let mut entries = BTreeMap::<(EntryKind, String), SeedEntry>::new();
+        let mut packages = groups[0].1.blacklisted_packages.clone();
+        let mut sources = groups[0].1.blacklisted_sources.clone();
+        for (_, group) in groups {
+            packages.retain(|name| group.blacklisted_packages.contains(name));
+            sources.retain(|name| group.blacklisted_sources.contains(name));
+            for entry in group.entries {
+                let key = (entry.kind, entry.name.clone());
+                if !entries.contains_key(&key)
+                    || entries
+                        .get(&key)
+                        .is_some_and(|old| old.recommended && !entry.recommended)
+                {
+                    entries.insert(key, entry);
                 }
             }
         }
-        if seed != "blocklist" && self.seeds.contains_key("blocklist") {
-            for inherited in self.inheritance_order("blocklist")? {
+        Ok(ResolvedSeed {
+            entries: entries.into_values().collect(),
+            blacklisted_packages: packages,
+            blacklisted_sources: sources,
+        })
+    }
+
+    /// Retain the origin of each seed's roots. A per-seed blocklist applies to
+    /// that seed and its inherited inner seeds, not to its outer descendants.
+    /// The scope is the selected profile and its ancestors.
+    pub fn resolve_seed_groups(
+        &self,
+        seed: &str,
+        architecture: &str,
+        documents: &BTreeMap<String, SeedDocument>,
+    ) -> Result<Vec<(String, ResolvedSeed)>, String> {
+        let order = self.inheritance_order(seed)?;
+        let ancestors = order
+            .iter()
+            .map(|name| Ok((name.clone(), self.inheritance_order(name)?)))
+            .collect::<Result<BTreeMap<_, _>, String>>()?;
+        let mut result = Vec::new();
+        for name in &order {
+            let mut packages = BTreeSet::new();
+            let mut sources = BTreeSet::new();
+            for outer in &order {
+                if !ancestors[outer].contains(name) {
+                    continue;
+                }
                 let document = documents
-                    .get(&inherited)
-                    .ok_or_else(|| format!("seed file `{inherited}` was not supplied"))?;
+                    .get(outer)
+                    .ok_or_else(|| format!("seed file `{outer}` was not supplied"))?;
                 for entry in document
                     .entries
                     .iter()
                     .filter(|entry| entry.architectures.applies_to(architecture))
                 {
-                    let (key, target) = match entry.kind {
-                        EntryKind::BlacklistPackage => (
-                            (EntryKind::Package, entry.name.clone()),
-                            Some(&mut blacklisted_packages),
-                        ),
-                        EntryKind::BlacklistSourcePackage => (
-                            (EntryKind::SourcePackage, entry.name.clone()),
-                            Some(&mut blacklisted_sources),
-                        ),
-                        _ => continue,
-                    };
-                    target
-                        .expect("blacklist entry has target set")
-                        .insert(entry.name.clone());
-                    blacklist.insert(key.clone());
-                    resolved.remove(&key);
+                    match entry.kind {
+                        EntryKind::BlacklistPackage => {
+                            packages.insert(entry.name.clone());
+                        }
+                        EntryKind::BlacklistSourcePackage => {
+                            sources.insert(entry.name.clone());
+                        }
+                        _ => {}
+                    }
                 }
             }
+            let document = documents
+                .get(name)
+                .ok_or_else(|| format!("seed file `{name}` was not supplied"))?;
+            let entries = document
+                .entries
+                .iter()
+                .filter(|entry| {
+                    entry.architectures.applies_to(architecture)
+                        && match entry.kind {
+                            EntryKind::Package => !packages.contains(&entry.name),
+                            EntryKind::SourcePackage => !sources.contains(&entry.name),
+                            EntryKind::Snap => !entry.recommended,
+                            EntryKind::BlacklistPackage | EntryKind::BlacklistSourcePackage => {
+                                false
+                            }
+                        }
+                })
+                .cloned()
+                .collect();
+            result.push((
+                name.clone(),
+                ResolvedSeed {
+                    entries,
+                    blacklisted_packages: packages,
+                    blacklisted_sources: sources,
+                },
+            ));
         }
-        Ok(ResolvedSeed {
-            entries: resolved.into_values().collect(),
-            blacklisted_packages,
-            blacklisted_sources,
-        })
+        Ok(result)
     }
 
     /// Determine Recommends behavior for one seed from Germinate's documented
@@ -266,6 +277,9 @@ impl Structure {
         let document = documents
             .get(seed)
             .ok_or_else(|| format!("seed file `{seed}` was not supplied"))?;
+        if document.features.contains("follow-recommends") {
+            return Ok(true);
+        }
         if document.features.contains("no-follow-recommends") {
             return Ok(false);
         }
@@ -579,7 +593,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             resolved.blacklisted_packages,
-            BTreeSet::from(["common".into(), "obsolete".into()])
+            BTreeSet::from(["common".into()])
         );
         assert!(resolved.blacklisted_sources.is_empty());
         let amd64 = structure
@@ -590,42 +604,44 @@ mod tests {
     }
 
     #[test]
-    fn special_blocklist_seed_applies_without_profile_inheritance() {
+    fn unrelated_seed_named_blocklist_has_no_global_effect() {
         let structure = Structure::parse("desktop:\nblocklist:\n").unwrap();
         let documents = BTreeMap::from([
             (
                 "desktop".into(),
-                SeedDocument::parse("* app\n* blocked\n").unwrap(),
+                SeedDocument::parse("* blocked\n").unwrap(),
             ),
             (
                 "blocklist".into(),
-                SeedDocument::parse("* !blocked\n* !%bad-source [arm64]\n* ignored\n").unwrap(),
+                SeedDocument::parse("* !blocked\n").unwrap(),
             ),
         ]);
-        let arm64 = structure
+        let resolved = structure
             .resolve_seed("desktop", "arm64", &documents)
             .unwrap();
-        assert_eq!(
-            arm64
-                .entries
-                .iter()
-                .map(|entry| entry.name.as_str())
-                .collect::<Vec<_>>(),
-            ["app"]
-        );
-        assert_eq!(
-            arm64.blacklisted_packages,
-            BTreeSet::from(["blocked".into()])
-        );
-        assert_eq!(
-            arm64.blacklisted_sources,
-            BTreeSet::from(["bad-source".into()])
-        );
-        assert!(structure
-            .resolve_seed("desktop", "amd64", &documents)
-            .unwrap()
-            .blacklisted_sources
-            .is_empty());
+        assert_eq!(resolved.entries[0].name, "blocked");
+        assert!(resolved.blacklisted_packages.is_empty());
+    }
+
+    #[test]
+    fn inner_blocklist_does_not_exclude_a_descendant_seed_entry() {
+        let structure = Structure::parse("base:\ndesktop: base\n").unwrap();
+        let documents = BTreeMap::from([
+            ("base".into(), SeedDocument::parse("* !blocked\n").unwrap()),
+            (
+                "desktop".into(),
+                SeedDocument::parse("* blocked\n").unwrap(),
+            ),
+        ]);
+        let groups = structure
+            .resolve_seed_groups("desktop", "arm64", &documents)
+            .unwrap();
+        assert!(groups[0].1.blacklisted_packages.contains("blocked"));
+        assert!(!groups[1].1.blacklisted_packages.contains("blocked"));
+        let resolved = structure
+            .resolve_seed("desktop", "arm64", &documents)
+            .unwrap();
+        assert_eq!(resolved.entries[0].name, "blocked");
     }
 
     #[test]

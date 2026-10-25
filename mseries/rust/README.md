@@ -85,7 +85,7 @@ the existing `rust/` Cargo workspace, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-2,952 files (2,870 local and 82 elementary-owned upstream inputs) currently form
+2,953 files (2,871 local and 82 elementary-owned upstream inputs) currently form
 533 directory groups and 499 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -116,17 +116,18 @@ The Homeboard desktop-entry installer has an independent Rust candidate; its
 desktop-menu discovery still needs a session check.
 The package-generator candidate now parses Debian binary `Packages` stanzas,
 expands source-package names to available binaries, and follows basic
-Depends/Pre-Depends closure with optional Recommends. It filters blocklisted
-seed roots but leaves archive relationships intact, so a blocked package can
-still appear as a dependency. The selected profile honors Germinate's
+Depends/Pre-Depends closure with optional Recommends. Each contributing seed
+retains its own exclusions and feature flags. Blocklists apply to that seed and
+its inherited ancestors, including dependency expansion; exclusions can make
+the resulting package set uninstallable. The CLI honors per-seed
 `follow-recommends` and `no-follow-recommends` flags. Apt/Germinate parity is
 not established: archive priority/conflicts, build-dependency features, snap
 selection, and Debian metapackage output remain open. Seed-entry and archive
 recommendations are emitted separately by its integrated profile command.
 Its `metapackage-substvars` command now renders Debian relationship fragments
 from supplied maps and architecture-specific package lists. A comparison with
-the pinned Germinate helper and real Debhelper is wired into Linux CI; that run
-is pending. Map/list generation and complete Debian package output remain open.
+the pinned Germinate helper and real Debhelper passed eight Linux cases.
+A further 22 profile membership comparisons are pending Linux CI. Map/list generation and complete Debian package output remain open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -320,7 +321,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
   while the owner's Signal/Messages deferral is in force. Full image admission
   remains open.
-- The full file inventory currently contains 2,952 items (2,870 M-series-maintained
+- The full file inventory currently contains 2,953 items (2,871 M-series-maintained
   and 82 elementary-owned upstream inputs), 533 directory groups, and 499
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

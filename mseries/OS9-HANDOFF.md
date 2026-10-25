@@ -1,3 +1,22 @@
+## Germinate comparison and blocklist correction — 2026-10-25
+
+Run [40234661042](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40234661042)
+on `8445173e` passed all 13 candidate crates' checks, the existing runtime
+fixtures, and eight direct substvars comparisons with Germinate 2.49 and
+Debhelper 13.31ubuntu1. This establishes that build stage's tested output;
+complete OS or Germinate parity is still unproven.
+
+Reviewing the pinned reference exposed a wrong earlier blocklist assumption.
+The resolver now preserves per-seed scopes, applies exclusions to that seed and
+its inherited ancestors including dependencies, and removes the invented global
+effect of an ordinary seed named `blocklist`. It also follows each contributing
+seed's Recommends flags and applies that flag to recommendation-root closure.
+The updated candidate passes 24 local unit cases, strict Clippy and release build.
+A new 22-case amd64/arm64 package-set comparison uses unmodified Germinate source
+and real python3-apt in Linux CI. That comparison is pending; full provider
+selection, diagnostics, build dependencies and Debian package output stay open.
+The inventory now contains 2,953 files and 499 project records.
+
 ## First Linux Rust-lane receipt — 2026-10-25
 
 Run 40234452971 on `7e665e17` passed inventory/register checks, all candidate
@@ -2118,10 +2137,12 @@ before claiming complete project coverage.
 The independently authored `mseries/rust/seed-compiler` candidate now also
 parses Debian binary `Packages` records and relationships, expands source names
 to target-architecture binaries, and provides an integrated profile-to-package
-closure command. Seed package/source blocklists filter explicit package roots;
-archive dependencies remain unchanged, so a blocked package can reappear
-through a dependency and alternatives are not rewritten to avoid it. This
-matches Germinate's documented warning that apt cannot see seed blocklists.
+closure command. The earlier root-only blocklist interpretation was incorrect.
+The candidate now keeps each contributing seed's scope: an exclusion applies to
+that seed and its inherited ancestors, including transitive dependencies.
+Blocked dependencies can be omitted, producing an uninstallable set; apt itself
+does not know these seed exclusions. An unrelated seed named `blocklist` has no
+automatic global effect. Direct Germinate profile comparisons are now required.
 The Rust resolver honors Structure and selected-seed `follow-recommends`, plus
 the selected seed's `no-follow-recommends` override. Archive Recommends and
 parenthesized seed recommendation outputs remain separate; build-dependency

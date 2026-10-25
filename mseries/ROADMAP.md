@@ -3,7 +3,7 @@
 ## Rust lane synced with current dev — 2026-10-25
 
 Draft PR #586 targets `dev` and includes the existing root Rust workspace
-in the per-project inventory (2,952 files, 499 records). The settings candidate
+in the per-project inventory (2,953 files, 499 records). The settings candidate
 now follows the latest Command/media-key/mouse policy; incoming calendar,
 UKI and installer timing behavior is preserved. Signal/Messages remain
 owner-deferred. Local candidate and inventory checks pass; Linux candidate
@@ -948,6 +948,17 @@ suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Direct Germinate comparisons — 2026-10-25
+
+Linux run 40234661042 passed all candidate crate checks and eight direct Debian
+substvars comparisons against pinned Germinate 2.49 and Debhelper 13.31ubuntu1.
+Reference review then corrected the seed blocklist model: exclusions apply to
+that seed and its inherited ancestors, including dependencies. Each contributing
+seed now retains its own Recommends feature. The corrected resolver passes 24
+local unit cases; 22 new profile package-set comparisons await Linux CI.
+Complete provider/solver behavior, build dependencies, Debian package output,
+and image/desktop qualification remain required.
+
 ## Rust OS build pipeline — 2026-10-25
 
 The package generator now emits Debian relationship substitution fragments in
@@ -961,11 +972,10 @@ Debian package assembly remain open.
 The `elementary/package-generator` crate now adds an independent Debian archive
 metadata layer: control stanzas, binary package relations, Debian version
 ordering, source-to-binary expansion, and basic architecture-aware dependency
-closure. The integrated profile CLI applies seed package/source blocklists to
-explicit roots but leaves archive relationships intact; blocked packages may
-still reappear as dependencies. It honors the selected seed's Recommends
-feature and emits seed-entry recommendations separately from archive
-Recommends. All 23 crate tests, strict Clippy, a release build, and inventory
+closure. The integrated profile CLI preserves each contributing seed's
+blocklist and Recommends scope; blocklists exclude roots and dependencies from
+that seed and its inherited ancestors. It emits seed-entry recommendations
+separately from required roots. All 24 crate tests, strict Clippy, a release build, and inventory
 checks pass. This is not apt or Germinate parity. Germinate build-dependency
 semantics, archive precedence/conflicts, snap selection, and Debian metapackage
 outputs remain open; upstream seed content is still not copied because its
