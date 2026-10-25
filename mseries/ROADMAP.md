@@ -1,3 +1,13 @@
+## Apple Dev toolchain status follows current upstream — 2026-10-25
+
+[Upstream refresh](upstream-audits/apps/apple-dev-2026-10-25.md) removes the old
+libXADI blocker from current guidance and makes the native app distinguish
+registered/current SDKs from stale or unverifiable ones. The existing Update
+then Install flow consumes upstream's xtool/runtime repair and Flutter fixes;
+source updates alone do not rebuild tools. ARM64 build/package and isolated
+status renders are required in CI. Real toolchain refresh and phone workflows
+on the M1 Pro still need qualification; no OS hardware benefit is claimed.
+
 ## Native T3: activity and supplemental subscription reports — 2026-10-25
 
 Issue #588: native Activity page (pinned checkouts, optional bounded GitHub

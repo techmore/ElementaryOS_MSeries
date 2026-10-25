@@ -1,3 +1,29 @@
+## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
+
+The linked `joshuaswarren/omarchy-apple-dev` repository is at `9e9ec1f4`.
+[Audit and source receipt](upstream-audits/apps/apple-dev-2026-10-25.md) records
+the October 25 libXADI/partial-runtime installer repair, stale SDK stamp rules,
+Flutter updates and scoped Ubuntu aarch64 evidence. The prior October 23
+libXADI blocker is fixed upstream; existing toolkit checkouts need Update, then
+Install to rebuild tools. No upstream install/build script is vendored here.
+
+Our Toolchain page now requires a successful exact `darwin` list entry and a
+stamp matching the selected toolkit's installer before reporting SDK Ready.
+Unknown/missing/stale stamps and a non-running xtool are Needs attention.
+Data-only parsing never sources the installer or repairs an SDK during a probe;
+full-mode stale SDKs require Install with a matching Xcode source. Existing
+ENV_SETUP, Ubuntu package/Swift choices, device jobs and TestFlight integration
+are preserved. No hardware, credentials, SDK or running desktop was changed.
+
+Validation at preparation: 43 production model tests and strict clippy in an
+isolated GTK-free harness pass on macOS; fmt/diff checks pass. Upstream's 11
+xcconfig tests pass locally; its framework suite has one macOS Bash 3 empty-array
+case, so pinned Linux CI covers all 16 cases and the SDK staleness fixtures.
+The existing ARM64 app build/package CI now also renders current/stale SDK rows
+in light/dark at narrow/wide widths using inert tools, a private HOME and Xvfb.
+Check the PR's final CI and render artifacts before merge. Target installer
+repair, SDK rebuild, real phone actions and visual owner acceptance remain open.
+
 ## Native T3 activity and supplemental subscription reports — 2026-10-25 (Codex)
 
 Issue #588 tracks this batch separately from #523's broader Dock/cache/live
