@@ -18,6 +18,7 @@ pub struct UsagePage {
     content: gtk::Box,
     status: gtk::Label,
     summary: RefCell<Option<UsageSummary>>,
+    local: Rc<crate::quota_view::QuotaView>,
 }
 
 pub fn tokens_text(n: u64) -> String {
@@ -164,11 +165,12 @@ impl UsagePage {
         let status = label("", &["dim-label"]);
         status.set_margin_start(24);
         status.set_margin_top(12);
-        let scroll = gtk::ScrolledWindow::builder()
-            .child(&content)
-            .hscrollbar_policy(gtk::PolicyType::Never)
-            .vexpand(true)
-            .build();
+        let body = gtk::Box::new(gtk::Orientation::Vertical, 8);
+        let local = crate::quota_view::QuotaView::new();
+        body.append(&content);
+        body.append(local.widget());
+        let scroll =
+            gtk::ScrolledWindow::builder().child(&body).hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).build();
         let windows = gtk::Box::new(gtk::Orientation::Vertical, 0);
         windows.set_margin_start(24);
         windows.set_margin_end(24);
@@ -177,7 +179,7 @@ impl UsagePage {
         root.append(&status);
         root.append(&windows);
         root.append(&scroll);
-        UsagePage { root, windows, content, status, summary: RefCell::new(None) }
+        UsagePage { root, windows, content, status, summary: RefCell::new(None), local }
     }
 
     pub fn widget(&self) -> &gtk::Box {
@@ -186,6 +188,25 @@ impl UsagePage {
 
     pub fn summary(&self) -> Option<UsageSummary> {
         self.summary.borrow().clone()
+    }
+
+    pub fn load_local(&self) {
+        self.local.load();
+    }
+
+    pub fn render_local(&self, snapshot: &crate::quota::Snapshot) {
+        self.local.render(snapshot);
+    }
+
+    pub fn offline(&self) {
+        while let Some(child) = self.windows.first_child() {
+            self.windows.remove(&child);
+        }
+        while let Some(child) = self.content.first_child() {
+            self.content.remove(&child);
+        }
+        *self.summary.borrow_mut() = None;
+        self.status.set_text("Connect to a T3 server for token history and server plan windows.");
     }
 
     /// Plan windows (5-hour session, weekly, monthly) per provider as gauges with reset countdowns,
