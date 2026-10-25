@@ -966,8 +966,7 @@ The package generator now emits Debian relationship substitution fragments in
 Rust from a supplied metapackage map and architecture-specific lists. Germinate
 2.49's source archive has a verified SHA-256, and an eight-case Linux harness
 compares this output with its unmodified helper and real Debhelper. The harness
-is wired into candidate CI; its Linux run is still pending because the macOS
-host has no running container daemon. Seed-to-map/list generation and complete
+passed in Linux runs 40234661042 and 40235036913. Seed-to-map/list generation and complete
 Debian package assembly remain open.
 
 The `elementary/package-generator` crate now adds an independent Debian archive

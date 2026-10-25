@@ -7,14 +7,16 @@ uses `SetBacklight` for the active `eDP-*` panel, with the existing power
 GSettings keys for idle dimming and automatic brightness.
 
 The Rust service is not installed. `mseries/brightness/shell-bridge.py`
-remains the runtime implementation until the exported service passes the
-private-bus fake-Mutter fixture, same-host behavior review, and arm64 image
+remains the runtime implementation until the exported service passes
+same-host behavior review and arm64 image
 admission. The fixture checks dim/restore, preserving manual changes,
 `BrightnessChanged`, automatic-target mapping/validation, and GSettings gates.
 The macOS build used for this candidate cannot start its packaged session bus:
 its `dbus-daemon` requires a launchd socket, and the sandbox blocks binding a
 private Unix socket. The arm64 CI job now runs this fixture under
-`dbus-run-session`; that CI result is still pending.
+`dbus-run-session`. That fixture passed in arm64 Linux runs 40234661042 and
+40235036913, including the current candidate's release build. This is private
+fixture evidence; live desktop behavior and image admission remain open.
 
 The implementation links to the system GIO library through `pkg-config`; the
 Apple Silicon mkosi build already installs GTK development packages, and the
