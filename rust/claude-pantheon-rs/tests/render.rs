@@ -104,6 +104,8 @@ fn shown(app: &App) -> Vec<String> {
 }
 
 fn save_png(window: &gtk::ApplicationWindow, path: &Path) {
+    // Capture settled GtkStack crossfades rather than blending the previous page into evidence.
+    pump(400);
     let mut node = None;
     for _ in 0..100 {
         pump(50);
@@ -660,7 +662,8 @@ fn activity_probe(app: &std::rc::Rc<App>, out: &Path) {
         save_png(app.window(), &out.join(format!("activity-{width}.png")));
     }
     app.zoom_to(1.2);
-    pump(150);
+    // The real zoom action posts a transient toast over the header; let it expire.
+    pump(3500);
     app.window().set_default_size(820, 900);
     pump(150);
     save_png(app.window(), &out.join("activity-large-text-820.png"));
