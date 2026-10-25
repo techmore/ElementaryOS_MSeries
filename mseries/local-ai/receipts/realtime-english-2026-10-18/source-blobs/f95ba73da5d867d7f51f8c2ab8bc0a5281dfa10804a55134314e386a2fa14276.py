@@ -1,0 +1,92 @@
+import importlib.util
+from pathlib import Path
+import unittest
+
+spec = importlib.util.spec_from_file_location('dictation_input', Path(__file__).with_name('dictation-input.py'))
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+class FocusTests(unittest.TestCase):
+    def ready(self):
+        state = module.FocusSession()
+        state.focus(object(), 'gtk3-im:synthetic')
+        state.content(0, 0)
+        return state
+
+    def test_unicode_and_literal_text(self):
+        s = self.ready()
+        s.accept(s.begin(), 'Café — 日本語\n$(literal) & +')
+
+    def test_sensitive_or_unknown_context(self):
+        for purpose, hints in [(None, 0), (8, 0), (9, 0), (0, 2048)]:
+            s = self.ready(); s.content(purpose, hints)
+            with self.assertRaises(ValueError): s.begin()
+
+    def test_xim_without_sensitive_field_metadata_is_refused(self):
+        s = self.ready(); s.focus(object(), 'xim'); s.content(0, 0)
+        with self.assertRaises(ValueError): s.begin()
+
+    def test_accessible_metadata_gate(self):
+        self.assertTrue(module.safe_accessible(79, True, True, True))
+        for args in [(40, True, True, True), (79, False, True, True),
+                     (79, True, False, True), (79, True, True, False), (0, True, True, True), (67, True, True, True)]:
+            self.assertFalse(module.safe_accessible(*args))
+
+    def test_native_source_fallback_preserves_layout_owner(self):
+        sources=[('xkb','fr+oss'),('ibus','mozc-jp')]
+        self.assertEqual(module.native_engine(sources,0),'xkb:us::eng')
+        self.assertEqual(module.native_engine(sources,1),'mozc-jp')
+        for rows,index in [([],0),(sources,-1),(sources,2),(sources,True),([('unknown','us')],0),([('ibus','')],0)]:
+            self.assertIsNone(module.native_engine(rows,index))
+
+    def test_metadata_budget_stops_slow_ancestor_queries(self):
+        elapsed=[0]
+        budget=module.MetadataBudget(.6,lambda:elapsed[0])
+        called=[]
+        def slow():
+            called.append(True);elapsed[0]+=.4
+            return 'metadata'
+        self.assertEqual(budget.call(slow),'metadata')
+        with self.assertRaises(ValueError):budget.call(slow)
+        with self.assertRaises(ValueError):budget.call(slow)
+        self.assertEqual(len(called),2)
+
+    def test_focus_scan_stops_requesting_children_after_budget(self):
+        class SlowNode:
+            elapsed = 0
+            def get_child_at_index(self, index):
+                self.elapsed += .3
+                return index
+        node = SlowNode()
+        children = module.bounded_children(node, 10000, .6, lambda: node.elapsed)
+        self.assertLessEqual(len(children), 3)
+        self.assertEqual(module.bounded_children(node, 10, 0, lambda: 1), [])
+
+    def test_focus_change_and_cancel(self):
+        for action in [lambda s: s.focus(object(), 'gtk3-im:other'), lambda s: s.invalidate(), lambda s: s.content(8, 0)]:
+            s = self.ready(); token = s.begin(); action(s)
+            with self.assertRaises(ValueError): s.accept(token, 'late text')
+
+    def test_expiry_and_wrong_session(self):
+        s = self.ready(); token = s.begin()
+        with self.assertRaises(ValueError): s.accept('another', 'text')
+        s.clock = lambda: s.deadline + 1
+        with self.assertRaises(ValueError): s.accept(token, 'text')
+
+    def test_pre_capture_check_does_not_commit_or_extend_session(self):
+        s = self.ready(); token = s.begin(); deadline = s.deadline
+        s.check(token)
+        self.assertEqual(s.characters, 0)
+        self.assertEqual(s.deadline, deadline)
+        for action in [lambda: s.invalidate(), lambda: s.focus(object(), 'gtk3-im:other')]:
+            s = self.ready(); token = s.begin(); action()
+            with self.assertRaises(ValueError): s.check(token)
+
+    def test_bounds_and_control_characters(self):
+        for text in ['', 'x' * 4001, '\x00', '\x1b', '\x7f']:
+            s = self.ready()
+            with self.assertRaises(ValueError): s.accept(s.begin(), text)
+
+
+if __name__ == '__main__': unittest.main()

@@ -1,0 +1,15 @@
+{
+  "passed": false,
+  "deployed": false,
+  "ordinary_keys": true,
+  "shift": true,
+  "backspace": true,
+  "dead_key_compose": false,
+  "expected": "\u00e9",
+  "actual": "e",
+  "scope": "Private Xvfb US international layout; no owner input source changed",
+  "source_sha256": {
+    "dictation-input.py": "d696195c4636103db7038dc1de464b2b8532c76e0aced337e3cf8327ad9617b8",
+    "gtk-input-smoke.py": "eede9b134c3734d9c37c63c4616744a960d48257e730de199b857ca771e0a6d4"
+  }
+}

@@ -1,0 +1,104 @@
+--- a/src/Widgets/PanelSpeed.vala
++++ b/src/Widgets/PanelSpeed.vala
+@@ -59,6 +59,11 @@
+     private int64 last_time = 0;
+     private bool have_baseline = false;
+ 
++    private double down = 0;
++    private double up = 0;
++    private bool have_rate = false;
++    private bool show_exact = false;
++
+     construct {
+         speed_label = new Gtk.Label (null) {
+             use_markup = true
+@@ -68,15 +73,69 @@
+         margin_start = 4;
+         visible = false;
+ 
++        tooltip_text = _("Hover to show measured speeds");
++        var motion = new Gtk.EventControllerMotion () {
++            propagation_phase = Gtk.PropagationPhase.CAPTURE
++        };
++        motion.enter.connect (() => {
++            show_exact = true;
++            render_rates ();
++        });
++        motion.leave.connect (stop_hover);
++        // Attach to the icon's whole display, including the text and icon hit areas.
++        notify["parent"].connect (() => {
++            if (motion.get_widget () != null) {
++                motion.get_widget ().remove_controller (motion);
++            }
++            if (parent != null) {
++                parent.add_controller (motion);
++            }
++        });
++        unmap.connect (stop_hover);
++
+         var settings = PanelSpeedSettings.get_default ();
+         settings.notify["enabled"].connect (sync);
+         sync ();
++    }
++
++    public override void dispose () {
++        stop_hover ();
++        if (timeout_id != 0) {
++            Source.remove (timeout_id);
++            timeout_id = 0;
++        }
++        base.dispose ();
++    }
++
++    private void stop_hover () {
++        show_exact = false;
++        render_rates ();
++    }
++
++    public static string format_panel_rate (double rate, bool exact) {
++        if (!exact && rate < 1000000.0) {
++            return "<1 MB/s";
++        }
++        return ThroughputWidget.format_rate (rate);
++    }
++
++    private void render_rates () {
++        if (!have_rate) {
++            return;
++        }
++        double down_capacity, up_capacity;
++        ThroughputWidget.get_capacity (out down_capacity, out up_capacity);
++        speed_label.label = "↓ %s  ↑ %s".printf (
++            ThroughputWidget.tint (Markup.escape_text (format_panel_rate (down, show_exact)), ThroughputWidget.is_saturated (down, down_capacity)),
++            ThroughputWidget.tint (Markup.escape_text (format_panel_rate (up, show_exact)), ThroughputWidget.is_saturated (up, up_capacity))
++        );
+     }
+ 
+     private void sync () {
+         if (PanelSpeedSettings.get_default ().enabled) {
+             if (timeout_id == 0) {
+                 have_baseline = false;
++                have_rate = false;
+                 speed_label.label = "↓ … ↑ …";
+                 visible = true;
+                 tick ();
+@@ -100,15 +159,10 @@
+         var now = get_monotonic_time ();
+         if (have_baseline && now > last_time && rx >= last_rx && tx >= last_tx) {
+             double seconds = (now - last_time) / 1000000.0;
+-            double down = (rx - last_rx) / seconds;
+-            double up = (tx - last_tx) / seconds;
+-            double down_capacity, up_capacity;
+-            ThroughputWidget.get_capacity (out down_capacity, out up_capacity);
+-
+-            speed_label.label = "↓ %s  ↑ %s".printf (
+-                ThroughputWidget.tint (ThroughputWidget.format_rate (down), ThroughputWidget.is_saturated (down, down_capacity)),
+-                ThroughputWidget.tint (ThroughputWidget.format_rate (up), ThroughputWidget.is_saturated (up, up_capacity))
+-            );
++            down = (rx - last_rx) / seconds;
++            up = (tx - last_tx) / seconds;
++            have_rate = true;
++            render_rates ();
+         }
+ 
+         last_rx = rx;

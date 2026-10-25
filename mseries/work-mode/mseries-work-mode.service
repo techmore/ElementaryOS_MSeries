@@ -1,0 +1,14 @@
+[Unit]
+Description=Apply scheduled Windows Work Mode settings
+# At login, run once the panel and dock are up so the taskbar look applies
+# without waiting for the first timer tick.
+After=pantheon-wingpanel.service pantheon-dock.service
+
+[Service]
+Type=oneshot
+# The compositor's panel interface can lag the panel unit by a moment.
+ExecStartPre=-/usr/bin/sleep 2
+ExecStart=%h/.local/bin/mseries-work-mode --tick
+
+[Install]
+WantedBy=gnome-session-initialized.target

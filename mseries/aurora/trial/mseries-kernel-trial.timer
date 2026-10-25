@@ -1,0 +1,10 @@
+[Unit]
+Description=Record the staged kernel trial after the next graphical login
+
+[Timer]
+OnStartupSec=2min
+AccuracySec=5s
+Unit=mseries-kernel-trial.service
+
+[Install]
+WantedBy=timers.target

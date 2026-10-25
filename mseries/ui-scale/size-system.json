@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "issue": "https://github.com/techmore/ElementaryOS_MSeries/issues/332",
+  "default_step": "default",
+  "fonts": {
+    "ui": "Inter 9",
+    "document": "Open Sans 10",
+    "monospace": "Roboto Mono 10",
+    "titlebar": "Inter Bold 9"
+  },
+  "steps": [
+    {
+      "name": "compact",
+      "label": "Compact",
+      "text": 0.85,
+      "dock": {
+        "native": 40,
+        "work": 32,
+        "work-taskbar": 40
+      }
+    },
+    {
+      "name": "small",
+      "label": "Small",
+      "text": 0.92,
+      "dock": {
+        "native": 44,
+        "work": 36,
+        "work-taskbar": 44
+      }
+    },
+    {
+      "name": "default",
+      "label": "Default",
+      "text": 1.0,
+      "dock": {
+        "native": 48,
+        "work": 40,
+        "work-taskbar": 48
+      }
+    },
+    {
+      "name": "large",
+      "label": "Large",
+      "text": 1.1,
+      "dock": {
+        "native": 52,
+        "work": 44,
+        "work-taskbar": 52
+      }
+    },
+    {
+      "name": "larger",
+      "label": "Larger",
+      "text": 1.25,
+      "dock": {
+        "native": 60,
+        "work": 48,
+        "work-taskbar": 60
+      }
+    },
+    {
+      "name": "largest",
+      "label": "Largest",
+      "text": 1.5,
+      "dock": {
+        "native": 72,
+        "work": 56,
+        "work-taskbar": 72
+      }
+    }
+  ],
+  "type_ramp": [
+    {
+      "role": "Large title",
+      "css": "title-1",
+      "granite": "24pt, bold"
+    },
+    {
+      "role": "Title",
+      "css": "title-2",
+      "granite": "18pt, light"
+    },
+    {
+      "role": "Section title",
+      "css": "title-3",
+      "granite": "11pt"
+    },
+    {
+      "role": "Heading",
+      "css": "title-4 or Granite.HeaderLabel",
+      "granite": "body size, bold"
+    },
+    {
+      "role": "Body",
+      "css": "(none)",
+      "granite": "UI font (Inter 9)"
+    },
+    {
+      "role": "Secondary",
+      "css": "dim-label",
+      "granite": "body size, 75% opacity"
+    },
+    {
+      "role": "Caption",
+      "css": "small-label",
+      "granite": "0.85rem"
+    },
+    {
+      "role": "Figures",
+      "css": "numeric",
+      "granite": "body size, tabular figures"
+    }
+  ],
+  "minimum_relative_text": 0.8,
+  "type_ramp_source": "/usr/share/themes/Granite/gtk-4.0/gtk.css (granite-7)"
+}

@@ -8,6 +8,15 @@ readiness refinements. The maintained default-branch refresh `222f7a8` to
 `ffe5246` changes tests/acceptance only. Historical rows below describe their
 original audit date; use the new audit for current implementation and gates.
 
+## Aurora source enhancements and package boundary — 2026-10-17
+
+[Enhancement candidate](aurora/enhancements/README.md) tracks public kernel
+patches and recipe hashes while producing native Debian payload packages.
+Arch's PKGBUILD/AUR packaging is not adopted by the Ubuntu/elementary base.
+The full recipe config is explicitly updated for udmabuf and optional eGPU
+profiles; copying the Asahi fragment alone would not configure this build.
+Existing Omarchy pacman/boot hooks remain outside the elementary port boundary.
+
 
 This map separates the historical scaffold from the maintained package
 reference and from hardware verification. Presence in the repository does not
@@ -29,7 +38,7 @@ The source boundary is documented in
 | `omarchy-mac/bin/omarchy-wifi-resume-fix` and its systemd unit | Recover supported Apple Broadcom Wi-Fi after resume. | The image layer has a systemd recovery unit and firmware provisioner. | Present in source; factory-image path not verified. |
 | `omarchy-mac/bin/omarchy-audio-asahi-mic-map` and WirePlumber configuration | Route the Asahi DSP microphone into the desktop audio graph. | Requires an Ubuntu audio-session integration and the Asahi DSP packages. | Headset-mic priority rule ported (`mseries/audio/asahi-headset-mic.conf`). The stereo-mapping tool (`omarchy-audio-asahi-mic-map`, a pactl/pw-dump/parec reconciler) is **deliberately not ported**: its stated reason is Quickshell-specific (that shell wants a stereo `Audio/Source` for its level meter and volume control). Pantheon's sound indicator uses libpulse and accepts a mono source. Revisit only if an app records silence from the built-in mic on this desktop. |
 | `omarchy-mac` speaker-safety preset and setup entrypoint | Keep the Apple speaker safety daemon installed and enabled. | Desktop install scripts provide speakersafetyd and an optional Asahi DSP chain; the factory image does not install this path yet. | Desktop audio output passed with the matched PipeWire LV2 plugin; preserve safety service. |
-| Optional Tether continuity add-on | Direct iPhone SMS/iMessage mirroring and OTP handoff to a Linux browser; does not require a Mac relay. | Removable ARM64 package installer and opt-in Brave native-host helper; keep out of the base image pending iPhone/Brave qualification. | Upstream v0.2.37 is MIT and checksum-pinned. Current BlueZ 5.85 is below the upstream 5.86 minimum for Messages; see `mseries/TETHER-CONTINUITY.md`. |
+| Optional Tether continuity add-on | Direct iPhone SMS/iMessage mirroring and OTP handoff to a Linux browser; does not require a Mac relay. | Removable ARM64 package installer and opt-in Brave native-host helper; keep out of the base image pending iPhone/Brave qualification. | Upstream v0.2.38 is MIT and checksum-pinned (latest release as of 2026-10-18). Current BlueZ 5.85 is below the upstream 5.86 minimum for Messages; see `mseries/TETHER-CONTINUITY.md`. |
 | `omarchy-mac-boot/files/etc/mkinitcpio.conf.d/92-omarchy-mac-hid.conf` | Load Apple input and dock drivers early in an Arch initramfs. | The image overlay uses initramfs-tools and carries its own Apple HID module list. | Present in source; factory-image path not verified. |
 | AVD dependencies documented by the package README and Omarchy runtime | Provide Apple video-decode firmware and the VA-API bridge. | Needs an Ubuntu kernel with AVD support, firmware provisioning, and userspace bridge. | VA-API bridge build integration is present at c653eaa; factory build, kernel/firmware provisioning and codec/client qualification remain open. |
 | `omarchy-mac/bin/omarchy-battery-charge-limit` | Configure a persistent Apple SMC charge threshold. | No equivalent M-Series settings interface is currently documented. | Candidate enhancement; first confirm supported sysfs controls on this host. |
@@ -68,7 +77,7 @@ Legend: **PORTED** = translated into `mseries/` in this commit.
 | `install/hardware/apple/video-decode.sh` | `avd-fw` firmware + `libva-v4l2_request-avd` VA-API bridge | **BRIDGE BUILD INTEGRATED; UNQUALIFIED** | Factory builds the pinned VA-API bridge into `/usr`. Firmware and `CONFIG_VIDEO_APPLE_AVD` remain separate gaps; upstream reports no supported matrix rows. Build and hardware codec/client qualification remain pending. |
 | `install/hardware/apple/fix-asahi-hid-race.sh` | early-load `hid_apple`, `hid_magicmouse` via mkinitcpio so trackpad never rebinds mid-boot | **PORTED** | Ubuntu uses initramfs-tools, not mkinitcpio: `mseries/initramfs-tools/modules.d/apple-silicon.conf`. See omarchy `docs/apple-silicon-trackpad.md` for the race analysis (linked, not copied). |
 | `install/hardware/apple/fix-wifi-resume.sh` | systemd unit after suspend that reloads `brcmfmac` when firmware wedges (BCM4378/BCM4387, aarch64 only) | **PORTED** | `mseries/systemd/system/omarchy-wifi-resume-fix.service` + `mseries/sbin/mseries-wifi-resume-fix`. Unit is init-system-agnostic systemd; script rewritten for `modprobe`/`NetworkManager` without pacman helpers. BCM4388 (M2 Max/Ultra) deliberately excluded per upstream testing. |
-| `install/hardware/apple/enable-notch.sh` | Enable notch pixels for notch-aware bars | **NOT ENABLED ON PANTHEON** | Wingpanel centers the clock and has no notch-avoidance support; the Apple Silicon image leaves the default cropped 16:10 mode enabled. |
+| `install/hardware/apple/enable-notch.sh` | Enable notch pixels for notch-aware bars | **NATIVE PROFILE AVAILABLE** | The J314 [desktop profile](display-space/README.md) builds a notch-aware Wingpanel and prepares full height on the same kernel; factory images retain the cropped initial mode. Full-height hardware boot pending. |
 | `bin/omarchy-hw-apple` | gate: aarch64 + `apple,` in device-tree compatible | **PORTED** (as pattern) | Every ported script keeps the same gate (`uname -m` + `/proc/device-tree/compatible` containing `apple,`) so a Raspberry Pi never picks up the Asahi stack. |
 | `bin/omarchy-audio-asahi-mic-map` + `default/wireplumber/…asahi-headset-mic.conf` | Asahi mic stereo-map reconciliation | **DOCUMENTED** | Python tool is largely distro-agnostic but plugs into Omarchy's WirePlumber/service layout; needs re-homing to elementary's audio session before carrying over. |
 | `bin/omarchy-brightness-display-apple` (`asdcontrol`) | Apple Studio/XDR display brightness | **DOCUMENTED** | `asdcontrol`/`tobi-try` are omarchy-edge-only packages (see `docs/arm-package-sources.md`); no Ubuntu source confirmed. |
@@ -94,5 +103,5 @@ Legend: **PORTED** = translated into `mseries/` in this commit.
 
 | omarchy source | Reason |
 |---|---|
-| `electron-gl.sh`, Hyprland monitor/bar configs, `enable-notch` *bar* intent | Hyprland/Electron launcher wrapping; elementary ships Gala/Pantheon. Notch modprobe option itself is carried (display full-height), bar integration is not. |
+| `electron-gl.sh`, Hyprland monitor/bar configs, `enable-notch` *bar* intent | Hyprland/Electron launcher wrapping; elementary ships Gala/Pantheon. The J314 native Wingpanel integration now lives in `display-space/`; Hyprland bar configuration is not imported. |
 | `install/helpers/arm-package-sources.sh`, `fix-arm-packages.sh`, mirror/channel/test scripts | pacman + omarchy edge-repo machinery; no Ubuntu equivalent in this commit. |

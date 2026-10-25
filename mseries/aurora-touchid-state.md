@@ -1,5 +1,7 @@
 # Aurora SEP / Touch ID install — state (2026-10-17)
 
+> **Historical log.** Current state, the xART guard finding and upstream status: [aurora-sep/XART-GUARD.md](aurora-sep/XART-GUARD.md) and [aurora-sep/UPSTREAM-MAP.md](aurora-sep/UPSTREAM-MAP.md) (2026-10-21).
+
 Goal: Touch ID on MacBook Pro 14" M1 Pro (j314s), elementary OS 9 on Asahi, so
 fingerprint unlocks sudo/polkit/login (reduce prompts in agent sessions).
 
@@ -248,3 +250,26 @@ sudo aurora-touchid-setup                    # enrol, then wire PAM
 
 If `fprintd-list` still says no devices, `dmesg | grep -iE "mesa|fingerprint|spi"`
 will say whether the controller probed and whether the sensor answered.
+
+## First Aurora boot with the patched DTB froze — 2026-10-17 21:56
+
+Booted `7.1.12-2-20261015.19-sep-ARCH`. `apple_sep` bound and the SEP came up
+(T6000/J316s profile, firmware accepted, 12 endpoints, hwrng registered,
+`apple-sep.service` finished). The journal stops at 21:56:47, about 34 s in: no
+panic/oops/shutdown, next boot (stock `7.1.13-3-2-ARCH`) reported "uncleanly shut
+down", `/sys/fs/pstore` empty. No fprintd/fingerprint-sensor lines and no
+`/dev/sep-bio` in that boot's log before the stop. Also logged:
+`xART: /chosen/apfs-preboot-uuid is unavailable`. Cause unknown (SEP, the new
+SPI sensor node, DCP, or unrelated). Next: read-only correlation of the freeze
+with first `/dev/sep-bio` access before any second boot.
+
+Timeline (monotonic, same boot): SEP ready and hwrng registered at 25.9 s;
+Gala/desktop session up by ~25 s; last journal entries ~34 s (gala assertions,
+Brave/ChatGPT starting). fprintd never started (it is activated on demand) and
+nothing opened `/dev/sep-bio`, so the freeze was not caused by enrollment or a
+sensor access. The 34 s may understate the real uptime: journald loses unsynced
+entries on a hard reset, so the hang could be somewhat later. No SEP- or
+DCP-related error precedes the stop. Remaining suspects: the SEP's ongoing
+background activity, the new `spi@39b108000` node, or an unrelated fault in this
+kernel build. A second boot should capture the screen/serial state and set
+`journald` `SyncIntervalSec=1`-style flushing beforehand (needs owner OK).

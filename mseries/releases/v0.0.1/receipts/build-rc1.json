@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:04:15+00:00",
+  "complete": true,
+  "passed": false,
+  "classification": "archive integrity/reproducibility passed; host preflight refused terminal input-error status",
+  "source_commit": "2f3fb13f909327a0fcc83518c3efe71e07805846",
+  "archive": {
+    "filename": "elementaryos-mseries-f5-0.0.1.tar.gz",
+    "sha256": "efe5922dc1cb8071aa82106460cda7f270de903dee4514a0217b9ea5191a1139",
+    "size": 75033
+  },
+  "all_three_artifacts_reproducible": true,
+  "outer_checksums_verified": true,
+  "complete_package_manifest_verified": true,
+  "host_checks_passed": 24,
+  "host_checks_failed": [
+    "F5 is idle in the existing CPU and IBus listener"
+  ],
+  "terminal_controller_phase": "error",
+  "failure_preserved": true,
+  "setup_mistakes_retained": [
+    "Initial install.sh command used repository cwd and did not execute",
+    "Initial SHA256SUMS check used extraction cwd, not artifact cwd; corrected artifact-directory check passed"
+  ],
+  "installer_run": false,
+  "model_inference": false,
+  "microphone_recorded": false,
+  "published": false
+}

@@ -1,0 +1,8 @@
+{
+  "repo": "handy-computer/nemotron-speech-streaming-en-0.6b-gguf",
+  "revision": "7df420cc3fb915a3b334560dac712af44fc41ef5",
+  "file": "nemotron-speech-streaming-en-0.6b-Q8_0.gguf",
+  "sha256": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110",
+  "publisher_lfs_digest_verified": true,
+  "scope": "Runtime-specific port; the earlier NVIDIA NeMo-Speech.cpp GGUF was rejected by transcribe.cpp and remains unsupported evidence."
+}

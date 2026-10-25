@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-21T13:53:54.194469+00:00",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "uptime_s": 712.87,
+  "physical_port": "rear-left nearest hinge",
+  "owner_confirmation": "Dock picture now visible after earlier no-picture report.",
+  "active_monitors": [
+    {
+      "connector": "eDP-1",
+      "width": 3024,
+      "height": 1964,
+      "refresh_hz": 120.0
+    },
+    {
+      "connector": "DP-1",
+      "width": 1920,
+      "height": 1080,
+      "refresh_hz": 60.0
+    }
+  ],
+  "thunderbolt": {
+    "domain0": {
+      "device_name": null,
+      "vendor_name": null,
+      "authorized": null
+    },
+    "0-0": {
+      "device_name": "iOS",
+      "vendor_name": "Apple Inc.",
+      "authorized": "1"
+    },
+    "0-1": {
+      "device_name": "WD22TB4 Thunderbolt Dock",
+      "vendor_name": "Dell",
+      "authorized": "1"
+    },
+    "0-0:1.1": {
+      "device_name": null,
+      "vendor_name": null,
+      "authorized": null
+    }
+  },
+  "limits": "Owner-confirmed physical port and current mode snapshot; elapsed training time and cause of earlier delay not isolated. No repeat stability/suspend/recovery claim."
+}

@@ -8,7 +8,7 @@
 #
 # Run it as your normal user, not with sudo: each privileged command uses sudo itself.
 # Steps (all idempotent; a replaced file is first copied to <file>.pre-mseries if no backup exists yet):
-#   wifi      install the fixed mseries-wifi-resume-fix, load brcmfmac if it is missing, clear the failed unit
+#   wifi      install the fixed mseries-wifi-resume-fix and mseries-wifi-doctor, load brcmfmac if it is missing, clear the failed unit
 #   power     drop the old multi-user.target link, reinstall mseries-power (WantedBy=graphical.target)
 #   polkit    install the DNS-logger rule so the ten-minute password prompt stops
 #   greeter   install the obexd stop-timeout drop-in for the LightDM greeter
@@ -52,6 +52,9 @@ backup_then_install() {  # backup_then_install MODE SRC DEST
 
 step_wifi() {
   backup_then_install 755 "$repo/mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix" /usr/sbin/mseries-wifi-resume-fix
+  backup_then_install 755 "$repo/mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-doctor" /usr/sbin/mseries-wifi-doctor
+  backup_then_install 644 "$repo/mkosi.images/apple-silicon/mkosi.extra/etc/NetworkManager/conf.d/90-mseries-wifi.conf" /etc/NetworkManager/conf.d/90-mseries-wifi.conf
+  run sudo systemctl reload NetworkManager
   if ! lsmod | awk '$1 == "brcmfmac" {found = 1} END {exit !found}'; then
     echo "  brcmfmac is not loaded: loading it (this is what brings Wi-Fi back)"
     run sudo modprobe brcmfmac

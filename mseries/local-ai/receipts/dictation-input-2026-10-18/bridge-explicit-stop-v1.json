@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "manual_stop_remains_stopped": true,
+  "stream_process_preserved": true,
+  "native_source_list_preserved": true,
+  "native_selection_repaired_only_when_empty": true,
+  "explicit_start_ready": true,
+  "microphone_recorded": false,
+  "owner_ibus_restarted": false,
+  "scope": "Owned bridge manual-stop/restart behavior under Restart=always; full earlier payload rollback receipts remain separate"
+}

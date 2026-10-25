@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "kind": "wip2-first-attended-boot-summary",
+  "recorded_at": "2026-10-21T13:50:48.713962+00:00",
+  "release": "7.2.10-elementary-aurora72-wip2",
+  "boot_id": "38b8049d-918a-4901-9441-17673d8a5d50",
+  "live_build_id": "e33ad2aa657320824a246a3b04814accdb31df1e",
+  "image_matches_live_build_id": true,
+  "result": "scoped boot/internal display/input/GPU/fsync and front-left dock picture pass; rear-left picture fails; incomplete qualification",
+  "one_shot_consumed": true,
+  "next_entry": "",
+  "persistent_default": "elementary-aurora20",
+  "fallback_files_unchanged": true,
+  "selected_shared_boot_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+  "selected_legacy_j314s_dtb_sha256": "a29ff68864e785f05f5f3e44d5bea8ab3166ac52958ea52023c2fa40740fd306",
+  "dtb_asset_note": "Hardware receipt modules/dtbs hash is the installed newer package asset. It is not the selected legacy boot DTB. Runtime37 DART providers all retain one-cell bindings; selected shared boot payload is unchanged.",
+  "checks": {
+    "boot": {
+      "result": "pass",
+      "scope": "running boot observed >=300 seconds; no recovery/soak claim",
+      "uptime_s": 305.17
+    },
+    "pmp": {
+      "result": "pass",
+      "scope": "firmware ready and PMGR ownership messages",
+      "lines": [
+        "apple-pmgr-misc 28e20c000.power-management: PMP manages fabric and DCS p-states",
+        "apple_pmp 28e700000.pmp: PMP firmware and endpoint ready",
+        "apple_pmp 28e700000.pmp: RTKit: syslog message: io.cpp:41: PMP started"
+      ]
+    },
+    "idle_counters": {
+      "result": "pass",
+      "scope": "nonnegative per-CPU idle-counter deltas; no efficiency improvement claim"
+    },
+    "gpu": {
+      "result": "pass",
+      "scope": "surfaceless GLES shader draw and 16-pixel RGBA readback; not GPU soak or compositor acceptance",
+      "renderer": "Apple M1 Pro (G13S C0)",
+      "version": "OpenGL ES 3.2 Mesa 26.0.8-1ubuntu0.3",
+      "verified_pixels": "16"
+    },
+    "temporary_file_fsync": {
+      "result": "pass",
+      "scope": "1 MiB temporary file fsync and SHA256 readback on work filesystem; not destructive media, suspend, or recovery testing",
+      "bytes": 1048576,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    "internal_display_and_input": {
+      "result": "pass",
+      "source": "owner report",
+      "scope": "internal screen, keyboard and trackpad/mouse functional; not all input acceptance"
+    },
+    "dock_front_left": {
+      "result": "pass-scoped",
+      "source": "owner explicit corrected report plus compositor/kernel observations",
+      "physical_location": "left port closest to owner/front edge, farther from hinge",
+      "observed_mode": "1920x1080@60Hz",
+      "owner_note": "Picture slow to appear, then functions",
+      "scope": "WD22TB4 HDMI setup in current trial; no long-run/suspend qualification"
+    },
+    "dock_rear_left": {
+      "result": "fail",
+      "source": "owner explicit correction overriding earlier button selection",
+      "physical_location": "left port nearest hinge",
+      "scope": "dock monitor does not work on this port; controller/physical-port mapping and root cause not established"
+    },
+    "dock_right": {
+      "result": "not-run"
+    },
+    "recovery_boot": {
+      "result": "not-run"
+    },
+    "suspend_resume": {
+      "result": "not-run"
+    },
+    "energy_ab": {
+      "result": "not-run"
+    }
+  },
+  "initial_mode": [
+    {
+      "connector": "eDP-1",
+      "width": 3024,
+      "height": 1964,
+      "refresh_hz": 120.0,
+      "refresh_mode": "unknown"
+    }
+  ],
+  "later_active_modes": [
+    {
+      "connector": "eDP-1",
+      "width": 3024,
+      "height": 1964,
+      "refresh_hz": 120.0
+    },
+    {
+      "connector": "DP-1",
+      "width": 1920,
+      "height": 1080,
+      "refresh_hz": 60.0
+    }
+  ],
+  "link_events": {
+    "both_controller_paths_observed": [
+      "701ac0000.cio",
+      "b01ac0000.cio"
+    ],
+    "details": "Both have link-training retries and Entering Connected messages; dock enumeration and dpin0 routing were observed in the boot. Physical port-to-controller attribution is not yet controlled. Owner visual rear-left failure remains authoritative.",
+    "previous_20_enh1_at_register_timeouts": 22,
+    "limits": "Previous boot also had AT-register retries. Different duration/cable actions; neither cause nor a new7.2 regression follows from counts."
+  },
+  "power": {
+    "interpretation": "Uncontrolled first desktop/hotplug observation; not a baseline or saving.",
+    "controls_unchanged": false,
+    "active_power_state_unknown": true
+  },
+  "severe_log_scan": "No selected panic/oops/lockup/I/O error patterns through post-smoke snapshot; other firmware warnings retained privately and compared with previous boot.",
+  "private_raw_logs_retained": true,
+  "source_sha256": {
+    "mseries/aurora/qualification.py": "50cd8ff01adf45c05c288310308fb200addf871042e6504ed2a469bcc1563047",
+    "mseries/hardware/kernel-smoke.py": "7192ef595a5a6e7a3e9f8edf03c7d965eb2a1d9604b51295bc07788c6bddf6d6",
+    "mseries/hardware/gpu-readback.c": "7236d2cc0336e25f9f0bd16d2e7b3366fb3319a90bf59b9c26d0a175be919609"
+  },
+  "agent_changed_boot_parameters_or_services": false,
+  "stable_promoted": false,
+  "next": [
+    "Keep a matched front-left/rear-left/right port evidence matrix before attributing regression.",
+    "Demonstrate attended return to default .20 before suspend/power work.",
+    "Retain complete semantic/source limitations; no stable promotion."
+  ]
+}

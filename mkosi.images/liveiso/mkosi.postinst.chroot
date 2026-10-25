@@ -9,3 +9,15 @@ fi
 if [[ -x /usr/libexec/mseries/verify-panel-packages ]]; then
     /usr/libexec/mseries/verify-panel-packages --root /
 fi
+
+# Refresh after ExtraTrees merges the YouTube launcher/icon into the final image.
+if [[ -f /usr/share/applications/mseries-brave-youtube.desktop ]]; then
+    desktop-file-validate /usr/share/applications/mseries-brave-youtube.desktop
+    update-desktop-database /usr/share/applications
+    gtk-update-icon-cache --force --ignore-theme-index /usr/share/icons/hicolor
+fi
+
+# Both ARM64 consumers must contain the offline browser and its runtime libraries.
+if [[ -f /usr/share/applications/mseries-brave-youtube.desktop ]]; then
+    /usr/libexec/mseries/verify-factory-brave --root / --ldd
+fi

@@ -1,0 +1,106 @@
+#!/bin/bash
+# YouTube-only Brave with hardware video decode, contained by bubblewrap.
+#
+# Why: Chromium's own sandbox denies /dev/media* to the VA-API v4l2-request driver, so the stock browser
+# falls back to software decode (omacom/linux-aurora#44). Here Chromium's sandbox is turned off INSIDE a
+# bubblewrap container that exposes only the GPU/decoder devices, display/audio sockets and one profile
+# directory. No access to $HOME, ssh keys or the normal Brave profile. Use only for YouTube.
+#
+#   brave-youtube [URL]      default https://www.youtube.com
+#   brave-youtube --probe    check the container (devices, vainfo) without starting Brave
+set -euo pipefail
+profile="${BRAVE_YT_PROFILE:-$HOME/.config/brave-youtube}"
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# The factory runtime is immutable; transformed desktops keep the native package.
+brave=/usr/lib/mseries-brave/brave
+[[ -x $brave ]] || brave=/opt/brave.com/brave/brave
+[[ -x $brave ]] || brave=$(readlink -f /usr/bin/brave-browser-stable)
+[[ -x $brave ]] || { echo 'brave-youtube: Brave runtime is missing' >&2; exit 1; }
+(umask 077; mkdir -p "$profile")
+
+# Widevine (DRM) for YouTube Movies: this profile is separate, so it never got the CDM the normal Brave has.
+# Only while this profile is not running (Brave rewrites Local State on exit). Copy the normal profile's CDM if it
+# loads here, else fetch the pinned one with install-brave-widevine.sh. Path must be inside $profile (only it is
+# visible in the container).
+ensure_widevine() {
+  local cdm=$profile/WidevineCdm main=$HOME/.config/BraveSoftware/Brave-Browser/WidevineCdm src ver
+  pgrep -u "$USER" -f -- "--user-data-dir=$profile( |$)" >/dev/null && return 0
+  # Provision before the first browser process too. Otherwise the first DRM
+  # movie cannot work until the user discovers that a relaunch is required.
+  # noclobber preserves a profile another launcher may have just initialized.
+  if [[ ! -e $profile/Local\ State ]]; then
+    (umask 077; set -o noclobber; printf '{}\n' > "$profile/Local State") 2>/dev/null ||
+      [[ -f $profile/Local\ State ]] || return 1
+  fi
+  if [[ -s $cdm/latest-component-updated-widevine-cdm ]] &&
+     python3 -I -c 'import json,sys;sys.exit(0 if json.load(open(sys.argv[1])).get("brave",{}).get("widevine_opted_in") else 1)' "$profile/Local State" 2>/dev/null; then
+    return 0
+  fi
+  src=$(python3 -I -c 'import json,sys;print(json.load(open(sys.argv[1]))["Path"])' "$main/latest-component-updated-widevine-cdm" 2>/dev/null || true)
+  if [[ -n $src && -f $src/_platform_specific/linux_arm64/libwidevinecdm.so ]] &&
+     python3 -I -c 'import ctypes,sys; ctypes.CDLL(sys.argv[1])' "$src/_platform_specific/linux_arm64/libwidevinecdm.so" 2>/dev/null; then
+    ver=$(basename "$src")
+    rm -rf "${cdm:?}/$ver"; install -d -m 0700 "$cdm"; cp -r "$src" "$cdm/$ver"
+    printf '{"Path":"%s"}\n' "$cdm/$ver" > "$cdm/latest-component-updated-widevine-cdm"
+    python3 -I - "$profile/Local State" <<'PY'
+import json, sys
+p = sys.argv[1]
+s = json.load(open(p))
+s.setdefault('brave', {})['widevine_opted_in'] = True
+json.dump(s, open(p, 'w'), separators=(',', ':'))
+PY
+    echo "brave-youtube: Widevine $ver copied into $profile" >&2
+  else
+    BRAVE_PROFILE_DIR=$profile bash "$(dirname "$(readlink -f "$0")")/../install-brave-widevine.sh" >&2 ||
+      echo 'brave-youtube: Widevine setup failed; DRM movies will not play' >&2
+  fi
+}
+[[ ${1:-} == --probe || ${1:-} == --test ]] || ensure_widevine
+
+args=(--die-with-parent --unshare-pid --unshare-ipc --unshare-uts --share-net
+  --ro-bind /usr /usr --symlink usr/lib /lib --symlink usr/bin /bin --symlink usr/sbin /sbin
+  --ro-bind /etc /etc --ro-bind /opt /opt --ro-bind /sys /sys
+  --proc /proc --dev /dev --tmpfs /tmp --tmpfs "$HOME" --tmpfs /run
+  --dev-bind /dev/dri /dev/dri --bind "$profile" "$profile"
+  --setenv HOME "$HOME" --setenv XDG_RUNTIME_DIR "$runtime"
+  --setenv LIBVA_DRIVER_NAME v4l2_request)
+for d in /dev/media* /dev/video*; do [[ -e $d ]] && args+=(--dev-bind "$d" "$d"); done
+args+=(--dir "$runtime")
+# DNS: /etc/resolv.conf points into /run/systemd/resolve (stub resolver); the tmpfs /run would hide it
+[[ -d /run/systemd/resolve ]] && args+=(--ro-bind /run/systemd/resolve /run/systemd/resolve)
+for s in "${WAYLAND_DISPLAY:-wayland-0}" pipewire-0 pulse/native; do
+  [[ -e $runtime/$s ]] && { [[ $s == pulse/native ]] && args+=(--dir "$runtime/pulse"); args+=(--bind "$runtime/$s" "$runtime/$s"); }
+done
+# Passkey QR code (hybrid/caBLE) needs Bluetooth through BlueZ on the system bus. Expose ONLY org.bluez via a
+# filtering proxy, never the raw system bus.
+if command -v xdg-dbus-proxy >/dev/null && [[ -S /run/dbus/system_bus_socket ]]; then
+  # Separate profiles can run together. Never unlink another launcher's socket.
+  proxy_dir=$(mktemp -d "$runtime/brave-youtube-sysbus.XXXXXX")
+  sysbus="$proxy_dir/bus"
+  xdg-dbus-proxy unix:path=/run/dbus/system_bus_socket "$sysbus" --filter --talk=org.bluez &
+  proxy_pid=$!
+  trap 'kill "$proxy_pid" 2>/dev/null || true; rm -f "$sysbus"; rmdir "$proxy_dir"' EXIT
+  for _ in $(seq 1 50); do [[ -S $sysbus ]] && break; sleep 0.1; done
+  args+=(--dir /run/dbus --bind "$sysbus" /run/dbus/system_bus_socket
+         --setenv DBUS_SYSTEM_BUS_ADDRESS unix:path=/run/dbus/system_bus_socket)
+fi
+
+if [[ ${1:-} == --probe ]]; then
+  bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"; echo "dns: $(getent hosts www.youtube.com | head -1)"; echo "bluez via proxy: $(busctl --system tree org.bluez 2>&1 | head -2 | tr "\n" " ")"; echo "other bus names blocked: $(busctl --system list 2>&1 | head -3 | tr "\n" " ")"'
+  exit 0
+fi
+
+if [[ ${1:-} == --test ]]; then   # headless capability + playback check against $profile/test/t.html (no window)
+  timeout 60 bwrap "${args[@]}" "$brave" --headless=new --no-sandbox --disable-gpu-sandbox \
+    --user-data-dir="$profile" --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
+    --ignore-gpu-blocklist --use-gl=angle --use-angle=gl-egl --no-first-run --autoplay-policy=no-user-gesture-required \
+    --enable-logging=stderr --v=0 --vmodule='*vaapi*=2,*v4l2*=2,*video_decode_accelerator*=2' \
+    --virtual-time-budget=15000 --dump-dom "file://$profile/test/t.html"
+  exit 0
+fi
+
+flags=(--user-data-dir="$profile" --no-sandbox --ozone-platform=wayland
+  "--enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks"
+  --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad --test-type)   # --test-type hides the "unsupported flag: --no-sandbox" bar; the bwrap container is the sandbox
+url="${1:-https://www.youtube.com}"
+bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"

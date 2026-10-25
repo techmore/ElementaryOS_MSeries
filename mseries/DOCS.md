@@ -11,6 +11,7 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [BACKUP-AND-REINSTALL.md](BACKUP-AND-REINSTALL.md) | Backing up before a reinstall |
 | [POST-BOOT-CHECKS.md](POST-BOOT-CHECKS.md) | Checklist after the first boot (trackpad, Wi-Fi, keys, display, video) |
 | [DESKTOP-SETUP.md](DESKTOP-SETUP.md) | Desktop tweaks, shortcuts, optional extras |
+| [Work Mode panel](work-mode/README.md) | Native System Settings toggle, Blue Flow work wallpaper, and weekday schedule |
 | [FIRMWARE-WIFI.md](FIRMWARE-WIFI.md) | Wi-Fi firmware provisioning |
 | [USB-C-DOCK-DP-ALT-MODE.md](USB-C-DOCK-DP-ALT-MODE.md) | External displays through a dock |
 
@@ -37,6 +38,15 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [STORAGE-PLAN.md](STORAGE-PLAN.md) | Partition and subvolume layout |
 | [PORT-MAP.md](PORT-MAP.md) | Which omarchy-mac fixes were ported to Ubuntu/Pantheon, and what is out of scope |
 | [UPSTREAM-PINS.md](UPSTREAM-PINS.md) | Pinned upstream revisions and licences |
+| [PLATFORM-PLAN.md](PLATFORM-PLAN.md) | Proposal: split into kernel/display/wm/SDK repos, an SDK a small model can build apps with, pipeline and phases |
+| [ARCH-REBASE-PLAN.md](ARCH-REBASE-PLAN.md) | Decision and phased plan to rebase the platform on Arch Linux (Asahi Alarm): what gets simpler, caveats, decisions |
+| [ASAHI-ALARM-AUDIT-2026-10-23.md](ASAHI-ALARM-AUDIT-2026-10-23.md) | Audit of the Asahi Alarm base: maintainers, repo address, versions vs upstream, cadence, risks |
+| [MINIMAL-SYSTEM.md](MINIMAL-SYSTEM.md) | Layered minimum system: every package mapped to Arch/Asahi/ours/drop with why and the leanest form; Rust Pantheon replacement order |
+| [SDK-PARITY.md](SDK-PARITY.md) | Frozen baselines (T3 original, Signal, Image Studio), unified standards, the parity score and the LLM pass loop |
+| [GTK-PERFORMANCE-ASAHI.md](GTK-PERFORMANCE-ASAHI.md) | What keeps GTK4/Granite apps small and idle on Asahi (renderer, CSD shadow, cursor blink, animations, D-Bus), with every GTK app here listed |
+| [DEV-HYGIENE.md](DEV-HYGIENE.md) | Keeping the dev machine clean: the weekly `dev-clean` timer (build output, caches, session scratch, dated Codex exports), one shared cargo target dir, worktree discipline |
+| [SMART-REPLY-DESIGN.md](SMART-REPLY-DESIGN.md) | Design only: a window-aware agent that drafts replies in any app (Tab inserts, Esc discards), what it reuses from dictation and the SDK, safety rules, and a scoped first slice |
+| [SDK-AGENT-SURFACE.md](SDK-AGENT-SURFACE.md) | Design only: SDK apps declare intents, entities, scopes and risk classes (like Apple's App Intents and entitlements); `msdk` validates them and generates the MCP manifest; the broker enforces user grants |
 
 ## Kernel
 
@@ -60,8 +70,10 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [rust/mseries-power/README.md](rust/mseries-power/README.md) | First isolated Rust candidate and its parity and rollout gates |
 | [rust/wifi-resume/README.md](rust/wifi-resume/README.md) | Apple Silicon Wi-Fi resume recovery Rust candidate and parity gates |
 | [ATOMIC-APP-DEPLOYMENT.md](ATOMIC-APP-DEPLOYMENT.md) | Requested atomic app updates, rollback, apt performance investigation and Flatpak/Nix evaluation |
+| [UPDATER-DESIGN.md](UPDATER-DESIGN.md) | Customer update mechanism: signed repo, channels, staged apply at next login, automatic rollback, owner decisions |
 | [BUG-FIX-ROADMAP.md](BUG-FIX-ROADMAP.md) | Upstream comparison and prioritised bug backlog |
 | [OMARCHY-AUDIT-2026-10.md](OMARCHY-AUDIT-2026-10.md) | Audit of omarchy-mac |
+| [UPGRADE-SURVEY-2026-10-18.md](UPGRADE-SURVEY-2026-10-18.md) | Pinned-vs-latest upgrade table, Aurora Silicon release lanes, upstream and own WIP branch merge recommendations |
 
 ## Factory ISO and VMs (unverified on hardware)
 

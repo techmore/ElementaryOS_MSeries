@@ -1,0 +1,60 @@
+{
+  "complete": true,
+  "passed": true,
+  "cohort": "native-automatic-idle-expiry-v1",
+  "phases": [
+    {
+      "phase": "before-native-import",
+      "rss_bytes": 40714240
+    },
+    {
+      "phase": "native-model-resident",
+      "rss_bytes": 931397632
+    },
+    {
+      "phase": "automatically-released",
+      "rss_bytes": 127057920
+    }
+  ],
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 3500,
+    "max_temp_c": 80,
+    "cool_fan_rpm": 2700,
+    "resume_fan_rpm": 2600,
+    "burst_s": 3,
+    "sample_s": 1
+  },
+  "model_sha256": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929",
+  "source_sha256": {
+    "stream-dictate.py": "b96645286ba7b60888de2d70d1ceadf61e319555683d9862d6f7cce96b259388",
+    "dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "idle-expiry-smoke.py": "0b919abb6bf6c8e7f68f59c711c1a4764c91faa13faf674a47a45248b0c72143",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "native_library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+  "released_rss_bytes": 804339712,
+  "inference_runs": 0,
+  "scope": "Real sixty-second controller idle expiry and SDK handle close; no inference or physical F5 trial.",
+  "resources": {
+    "samples": 61,
+    "min_available_bytes": 12163743744,
+    "max_fan_rpm": 0.0,
+    "max_temp_c": 39.986
+  },
+  "microphone_recorded": false,
+  "keyboard_device_opened": false,
+  "owner_windows_opened": false,
+  "automatic_release_s": 60.99550947999887,
+  "versions": {
+    "python": "3.14.4",
+    "transcribe_cpp": "0.4.0",
+    "numpy": "2.5.4"
+  },
+  "profile_sha256": "91481f19b7580180612e7c618c4843a7d9799e99371b686dcf0080a2e0ea77c5",
+  "deployment_scope": "Source candidate; existing owner speech service was not refreshed by this qualification.",
+  "memory_scope": "Within-process RSS observations on this pinned machine; freed native handles are checked. Retained library/allocator memory remains; no zero-overhead or long-run leak claim."
+}

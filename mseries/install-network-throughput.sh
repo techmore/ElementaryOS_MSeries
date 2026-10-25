@@ -58,6 +58,8 @@ git -C "$source_dir" apply "$repo/mseries/patches/network-throughput.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-null-devices.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-panel-speed.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-saturation.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/network-panel-compact.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/network-ethernet-icon.patch"
 git -C "$source_dir" apply \
   --include=data/Indicator.css \
   --include=src/Widgets/UsageWidget.vala \
@@ -65,6 +67,7 @@ git -C "$source_dir" apply \
   "$repo/mseries/netspeed/panel-network.patch"
 python3 "$repo/mseries/netspeed/wire-network-usage.py" "$source_dir"
 
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$build_dir" "$source_dir" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 built="$build_dir/libnetwork.so"

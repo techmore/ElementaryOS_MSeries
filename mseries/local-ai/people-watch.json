@@ -168,6 +168,12 @@
     "group": "desktop"
   },
   {
+    "repo": "steipete/RepoBar",
+    "who": "Peter Steinberger",
+    "why": "macOS GitHub repository dashboard reference; track feature changes for the independent elementary OS Wingpanel port",
+    "group": "apps"
+  },
+  {
     "repo": "elementary/os",
     "who": "elementary maintainers",
     "why": "Base OS image, mkosi and sysupdate contract; source baseline is pinned separately",

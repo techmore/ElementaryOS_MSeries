@@ -24,8 +24,8 @@ are off unless named with `--with`.
 filters installed apps as you type: Enter launches, Up/Down select, Esc or
 clicking away closes, and pressing the shortcut again closes it. The setup
 script installs it to `~/.local/bin/mseries-launcher` and binds `<Control>space`
-(physical left Command, since Command is remapped to Ctrl) and `<Super>space`
-(right Command) as custom shortcuts. It clears Pantheon's default Super+Space
+(either physical Command key, since both map to Ctrl) and `<Super>space`
+(either physical Ctrl key) as custom shortcuts. It clears Pantheon's default Super+Space
 input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
 Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
@@ -44,12 +44,14 @@ Run `bash mseries/post-install.sh --only settings` as the desktop user. The
 settings stage invokes `/usr/libexec/mseries/apply-desktop-settings`, built in
 Rust and included in the factory image. The former Python implementation stays
 in `mseries/apply-desktop-settings.py` as a behavior reference.
-It preserves existing XKB options and adds `ctrl:swap_lwin_lctl`: left
-Command becomes Ctrl (C/V/A/Z/S etc.), and physical left Ctrl becomes Super.
-Right Command is unchanged. Remove that option from
+It preserves existing XKB options and adds `ctrl:swap_lwin_lctl` and
+`ctrl:swap_rwin_rctl`: both Command keys become Ctrl (C/V/A/Z/S etc.), and both
+physical Ctrl keys become Super. It fills blank mute/volume bindings with the
+standard media keys while preserving custom bindings and enables natural mouse
+scrolling. Remove both XKB options from
 `org.gnome.desktop.input-sources xkb-options` to undo the keyboard change.
-The script also uses title-bar layout `close:minimize,maximize`, adding a
-Minimize button beside Maximize. Restore `close:maximize` to undo this.
+The script uses title-bar layout `close,minimize,maximize:`, placing those
+buttons on the left. Restore your previous `button-layout` value to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
 
 Physical Command+Shift+3 captures the full screen; Command+Shift+4 selects an
@@ -63,14 +65,26 @@ save automatically with native timestamped filenames and notifications.
 GNOME settings daemon 50 expects GNOME Shell to handle screen brightness
 keys. Pantheon has no GNOME Shell brightness implementation. The new
 `mseries-brightness` user helper grabs `XF86MonBrightnessUp/Down` through
-Gala's existing accelerator API and changes the internal `eDP-1` panel
-through Mutter DisplayConfig `SetBacklight`, showing Gala's brightness OSD.
-It reads the current backlight serial for each request and clamps to the
-panel's minimum/maximum, in 5% steps. Requires `python3-gi`.
+Gala's existing accelerator API and shows Gala's brightness OSD. The DCP
+panel backlight is calibrated in nits (0-500) and its hardware floor is
+2 nits, but Mutter's `SetBacklight` clamps to 1% (5 nits) and a linear 5% key
+step is 25 nits. The helper therefore writes `apple-panel-bl` through logind
+`Session.SetBrightness` (unprivileged for the active session, no floor; Mutter
+is only a fallback) and follows a perceptual curve,
+`nits = 2 + (max - 2) * level^2.2`. The keys walk a ladder of 25 distinct
+values (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110, ... 500), so the dim end
+has fine steps. The Quick Settings slider uses the same curve and path.
+Below 2 nits the keys add four software steps (about 0.7, 0.5, 0.35 and 0.25 of the 2-nit
+luminance) when the patched Gala from `install-gala-screen-corners.sh` is running: it paints a
+click-through black layer (`patches/gala-screen-dim.patch`) with the alpha in
+`$XDG_RUNTIME_DIR/mseries-dim`, hidden during screenshots. Without that Gala the keys stop at
+2 nits. Requires `python3-gi`.
 
 The user installer enables it on Pantheon login. Start immediately with
 `~/.local/libexec/mseries-brightness`; set a one-time level with
-`~/.local/libexec/mseries-brightness --set 60`. It never forces 60% at login.
+`~/.local/libexec/mseries-brightness --set 60` (60% on the perceptual scale, not 60% of
+nits) or an exact value with `--nits 3`; `--status` prints the level read-only. It never
+forces a level at login.
 Remove `~/.config/autostart/mseries-brightness.desktop` to disable it.
 The arm64 image overlay also includes the helper and autostart entry.
 Confirmed live: SetBacklight and OSD calls succeed; owner confirms brighter
@@ -90,6 +104,31 @@ opens multitasking, three-finger swipe left/right switches workspaces, and
 four-finger gestures are unset (`io.elementary.desktop.wm.gestures`). Remove
 everything with `bash mseries/install-touchegg.sh --uninstall`.
 
+## Discord
+
+Run `bash mseries/install-discord.sh`. Discord Inc. publishes no Linux ARM64
+build, so this installs [Vesktop](https://github.com/Vencord/Vesktop) (GPL-3.0),
+an Electron Discord client with native aarch64 releases, pinned to v1.6.7 and
+checked against its SHA-256 before install. It lands in `~/.local/lib/vesktop`
+with a `discord` launcher (native Wayland hint) and an app-menu entry. It is a
+third-party client, not Discord's own app. Remove with
+`bash mseries/install-discord.sh --uninstall` (login and settings in
+`~/.config/vesktop` are kept). Voice, screen share and login are not yet
+verified on this machine.
+
+### Official Discord (x86-64, emulated)
+
+Discord's own Linux build is amd64 only, so it runs under FEX. FEX aborts on this
+16 KB-page kernel, so `bash mseries/install-muvm.sh` builds muvm, libkrun and
+libkrunfw (pinned tags; the guest kernel uses 4 KB pages), adds the FEX PPA
+(key fingerprint pinned) and fetches the Ubuntu 24.04 x86-64 rootfs. Then
+`bash mseries/install-discord-official.sh` runs Discord's own updater
+bootstrap, which fetches the official app, and runs its unmodified `app.asar`
+and modules on stock Electron 43.2.0 x86-64, because Discord's bundled Electron
+42 dies with SIGTRAP under FEX 2610 (stock Electron 42.11.12 does too). Launch
+with `discord-official`. Login, voice (native modules were built for Electron
+42), rendering and speed are not verified. Third-party Vesktop stays as `discord`.
+
 ## Signal
 
 Run `bash mseries/install-signal.sh`. Installs the official ARM64 beta,
@@ -101,9 +140,26 @@ Signal's unread badge and activates the app when clicked. Install the optional
 Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
-supports automatic updates. Phone linking remains a user step: open Signal,
-then scan its QR code from Signal on your phone.
+supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to
+the elementary stylesheet palette (system accent by default; `--accent`, `--check`, `--restore`).
+The installed launcher checks the system accent each time Signal opens and
+reapplies it when needed. If Signal was already running when the preference
+changed, quit and reopen it to see the new colors. The optional `--atomic`
+release mode keeps its verified app tree immutable, so it retains Signal's
+upstream colors. This is the official Electron client with Pantheon integration,
+not a GTK or Granite replacement. Phone linking remains a user step: open Signal,
+then scan its QR code from Signal on your phone. The [Signal on Pantheon design
+note](SIGNAL-PANTHEON-DESIGN.md) records the maintainable integration boundary
+and remaining acceptance gates.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
+
+**Moving from the Flatpak.** `bash mseries/migrate-signal-flatpak.sh` copies the Flatpak account
+(`~/.var/app/org.signal.Signal/config/Signal`) to the native beta (`~/.config/Signal Beta`) so history and
+the device link carry over, then hides the Flatpak launcher. Quit both Signals first (the script refuses
+otherwise); `--check` previews; `--rollback` shows the Flatpak again and sets the native profile aside. The
+copy is the same linked device, so never run both. The native beta must be at least the Flatpak's version
+(Signal's database only migrates forward). Why native: the Flatpak has no filesystem access, so files dragged
+in from host apps are unreadable inside its sandbox.
 
 ## Tether: iPhone messages and OTP handoff
 
@@ -236,30 +292,22 @@ identified before enabling fingerprint login. See [the optimization audit](OMARC
 Issue [#8271](https://github.com/omacom/omarchy/issues/8271) concerns Intel T1
 firmware/EFI, not this Apple Silicon machine.
 
-## Camera notch and centered panel indicators
+## Camera notch and native dock
 
-Pantheon places its date/time indicator in the center of Wingpanel and does not
-avoid the MacBook camera notch. Keep `appledrm show_notch` disabled so the
-desktop receives the rectangular 16:10 mode; enabling the full-height mode can
-put the clock and other centered panel content behind the camera. The Apple
-Silicon image no longer opts in. On this transformed install, pass
-`appledrm.show_notch=0` on the custom elementary GRUB entry; the Asahi driver
-loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
-`initrd.img-*` files does not change this boot entry.
+The [full-height desktop profile](display-space/README.md) restores the 74-pixel
+camera strip on the 14-inch M1 Pro. Run `bash mseries/install-desktop-space.sh`
+as the desktop user and reboot when ready. Wingpanel moves its native clock
+and calendar beside the camera and keeps controls in two protected halves.
+The native dock uses 40-pixel icons, hides when any window overlaps, and saves
+Command-drag placement across restarts. Existing pinned apps and drawers stay.
 
-Verified 2026-10-14 on the M1 Pro 14-inch: with `appledrm.show_notch=0` on the
-elementary GRUB entry, Pantheon's stock centered date/time is visible and
-working in the middle of Wingpanel, so the right-side replacement is not needed
-there.
+`--build-only` checks both builds without installing; `--revert` restores the
+previous profile. Existing recovery entries and queued kernel trials survive.
+A queued one-shot kernel trial runs before the new normal-boot choice.
 
-If the centered date/time remains hidden, install a temporary right-side
-replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
-Wingpanel's weekday, date, 12/24-hour, and seconds preferences. To place it
-after Alerts and before Quick Settings, run
-`bash mseries/install-wingpanel-clock-position.sh`. This rebuilds the matching
-Wingpanel 8.0.4 revision and saves the original panel executable for rollback
-with `bash mseries/install-wingpanel-clock-position.sh --uninstall`. Log out
-and back in to load the indicator and ordering.
+Stock Wingpanel still centers the clock: keep the cropped mode until this native
+profile has built and installed successfully. Factory-image full-height boot
+and on-device post-reboot behavior remain unqualified.
 
 ## Boot and login timing
 
@@ -399,8 +447,10 @@ the Compact model pair. See [local AI setup and verification](local-ai/README.md
 rounded corners that the Linux desktop ignores. This builds Gala (pinned to the commit matching the
 installed 8.6.2) with `mseries/patches/gala-screen-corners.patch`, which adds a click-through overlay that
 draws black rounded masks over the four corners of the *built-in* display only (external monitors are
-left square), above the top bar, dock, windows and lock screen. Default radius 10 logical px
-(`GALA_SCREEN_CORNER_RADIUS` in the drop-in; 0 hides it).
+left square), above the top bar, dock, windows and lock screen. The source default is 20 logical px
+(`GALA_SCREEN_CORNER_RADIUS`); the matching window clip and GTK CSD radius also default to 20 logical
+px. This is a shared starting value, not a measured hardware claim; confirm the curve against the panel
+after login. Set either environment value to 0 to disable its mask.
 
 Safety: the patched Gala lives in `/usr/local/lib/mseries/gala`; `/usr/bin/gala` and the login screen are
 untouched. Only your user session is pointed at it (systemd drop-in under `~/.config`). The launcher falls
@@ -414,8 +464,8 @@ so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h
 
 **Colours and window radius** (`bash mseries/install-theme-tweaks.sh`): user stylesheets
 (`mseries/theme/gtk-4.0.css`, `gtk-3.0.css`) override the theme's named colours `BLUEBERRY_*` and
-`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
-window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
+`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and use a
+20 logical-pixel CSD radius aligned with the Gala window clip. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
 restores backups.
 
 ## System audit, 2026-10-12: findings and fixes
@@ -671,6 +721,15 @@ minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --
 edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
 window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
 the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+`bash mseries/install-window-snapping.sh` installs OS-level dconf defaults and
+locks so snapping stays enabled after settings resets. It also builds native
+quarter snapping for Gala 8.6.2 / Mutter 50: drag into any screen corner, or use
+Super+Alt+U/I/J/K for top-left/top-right/bottom-left/bottom-right. Super+keypad
+7/9/1/3 also works. Quarters activate at the next sign-in; the installer leaves
+open apps running. See [window-snapping/README.md](window-snapping/README.md)
+for verification and removal. Factory staging carries the half-snap policy;
+the quarter plugin requires the native installer build.
 
 The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=AirPlay Outputs (restore choice)
+Exec=@BIN@/mseries-airplay-outputs apply
+X-GNOME-Autostart-enabled=true
+NoDisplay=true

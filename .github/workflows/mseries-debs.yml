@@ -1,0 +1,389 @@
+# M-series signed packages: build the Wingpanel plugin debs and mseries-update once in CI, then
+# publish them into a static apt repository with two suites (mseries/RELEASE-PIPELINE.md).
+#
+#   push to dev   -> `dev` suite     versions carry ~dev<commit time>.<sha>
+#   push to main  -> `stable` suite  (merging a release PR dev -> main, or a hotfix)
+#   pull_request  -> build and test only; never publishes, never sees the key
+#
+# Publishing needs the MSERIES_APT_KEY secret (mseries/release/KEY-RUNBOOK.md) and fails closed:
+# an unsigned repository is never written. Until the key exists, merges to dev/main build and test
+# and publish nothing, with a warning. A manual run with publish=true fails if the key is missing.
+# The pantheon-rust-compositor deb is built as an artifact only; it joins the suites once the
+# updater's health check covers its recovery path.
+name: M-series plugin packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish this ref (dev -> dev suite, main -> stable suite); needs MSERIES_APT_KEY
+        type: boolean
+        required: false
+        default: false
+  push:
+    branches: [dev, main]
+    paths:
+      - "mseries/debs/**"
+      - "mseries/update/**"
+      - "mseries/release/**"
+      - "mseries/UPDATER-DESIGN.md"
+      - "mseries/RELEASE-PIPELINE.md"
+      - ".github/workflows/mseries-debs.yml"
+      - "mseries/panel-factory-pins.json"
+      - "mseries/patches/datetime-agenda-tabs.patch"
+      - "mseries/calendar/**"
+      - "mseries/quick-settings/**"
+      - "mseries/netspeed/**"
+      - "mseries/patches/network-*.patch"
+      - "rust/**"
+      - "mseries/pantheon-rust-compositor/**"
+      - "mseries/window-recovery/**"
+  # Build-only check (a release PR dev -> main builds the stable versions it would publish).
+  pull_request:
+    paths:
+      - "mseries/debs/**"
+      - "mseries/update/**"
+      - "mseries/release/**"
+      - "mseries/UPDATER-DESIGN.md"
+      - "mseries/RELEASE-PIPELINE.md"
+      - ".github/workflows/mseries-debs.yml"
+      - "mseries/panel-factory-pins.json"
+      - "mseries/patches/datetime-agenda-tabs.patch"
+      - "mseries/calendar/**"
+      - "mseries/quick-settings/**"
+      - "mseries/netspeed/**"
+      - "mseries/patches/network-*.patch"
+      - "rust/**"
+      - "mseries/pantheon-rust-compositor/**"
+      - "mseries/window-recovery/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # stable for main and for a release PR into main; dev for everything else.
+  MSERIES_CHANNEL: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'stable' || 'dev' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # Launchpad answers 503 now and then (it broke PR #429's first build); retry before failing.
+      - name: Add elementary daily PPA (build + gate headers)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
+
+      # The PPA's pool also answers 503 in bursts, so retry the downloads, not just the index.
+      - name: Install plugin build dependencies
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
+            dpkg-dev git meson ninja-build valac gettext pkg-config \
+            libwingpanel-9-dev libgranite-7-dev libgtk-4-dev \
+            libadwaita-1-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev \
+            libpulse-dev libcanberra-dev libgee-0.8-dev \
+            libgnome-desktop-4-dev libibus-1.0-dev \
+            libpackagekit-glib2-dev libportal-dev libaccountsservice-dev libwayland-dev \
+            libecal2.0-dev libedataserver1.2-dev libical-dev libjson-glib-dev \
+            io.elementary.panel.network io.elementary.quick-settings io.elementary.panel.datetime; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          echo "could not install the build dependencies" >&2
+          exit 1
+
+      - name: Style checks for the packaging scripts (bash mseries/validate.sh --only debs)
+        run: |
+          sudo apt-get install -y --no-install-recommends shellcheck
+          bash mseries/validate.sh --only debs
+
+      - name: Test apt assembly, signing and the version rules (throwaway key, no secrets)
+        run: |
+          sudo apt-get install -y --no-install-recommends apt-utils gnupg
+          bash mseries/release/test-assemble.sh
+
+      - name: Build plugin packages and the updater (${{ env.MSERIES_CHANNEL }} channel)
+        run: |
+          chmod +x mseries/debs/build.sh
+          OUTDIR=out/mseries-debs bash mseries/debs/build.sh
+
+      - name: Check the calendar data bundled in the patch
+        run: python3 mseries/calendar/check-bundled-data.py
+
+      - name: Test the packaged calendar panel (private EDS, Xvfb)
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends \
+            evolution-data-server gsettings-desktop-schemas dbus-x11 xvfb xauth accountsservice
+          # Granite reads the colour-scheme preference from AccountsService with
+          # elementary's io.elementary.pantheon extension on the system bus, as on
+          # every elementary desktop. The full elementary-default-settings package
+          # needs a newer flatpak than the runner has, so take only that interface.
+          for attempt in 1 2 3 4 5 6; do   # the PPA pool answers 503 in bursts
+            (cd "$RUNNER_TEMP" && apt-get download elementary-default-settings) && break
+            [[ $attempt -lt 6 ]] || { echo "could not download elementary-default-settings" >&2; exit 1; }
+            sleep $((attempt * 20))
+          done
+          dpkg-deb -x "$RUNNER_TEMP"/elementary-default-settings_*.deb "$RUNNER_TEMP/eds-settings"
+          sudo install -D -m 0644 \
+            "$RUNNER_TEMP/eds-settings/usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml" \
+            /usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml
+          sudo systemctl restart accounts-daemon
+          dpkg-deb -x out/mseries-debs/mseries-wingpanel-datetime_*.deb "$RUNNER_TEMP/datetime"
+          bash mseries/calendar/test-agenda.sh \
+            "$RUNNER_TEMP/datetime/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so"
+
+      - name: Verify package metadata and the channel version rule
+        run: |
+          set -e
+          for deb in out/mseries-debs/*.deb; do
+            dpkg-deb -f "$deb" Package Version Architecture Depends
+            version=$(dpkg-deb -f "$deb" Version)
+            if [[ $MSERIES_CHANNEL == dev ]]; then
+              [[ $version =~ '~dev'[0-9]{14}\.[0-9a-f]{7}$ ]] || { echo "dev version '$version' lacks ~dev<time>.<sha>" >&2; exit 1; }
+            else
+              [[ $version != *'~'* ]] || { echo "stable version '$version' carries a pre-release marker" >&2; exit 1; }
+            fi
+            case "$deb" in
+              */mseries-update_*) ;;   # the updater ships no plugin
+              *) dpkg-deb -c "$deb" | grep '\.so$' ;;
+            esac
+          done
+          cat out/mseries-debs/BUILD-PROVENANCE.txt
+          (cd out/mseries-debs && sha256sum --check SHA256SUMS)
+
+      - name: Prove each package survives a stock upgrade and rolls back cleanly
+        run: |
+          set -euo pipefail
+          d=out/mseries-debs
+          bash mseries/debs/test-divert.sh "$d"/mseries-wingpanel-datetime_*.deb \
+            io.elementary.panel.datetime 'verse-of-the-day.ini'
+          bash mseries/debs/test-divert.sh "$d"/mseries-wingpanel-network_*.deb \
+            io.elementary.panel.network 'Show speed in menu bar'
+          bash mseries/debs/test-divert.sh "$d"/mseries-quick-settings_*.deb \
+            io.elementary.quick-settings 'KeyboardBrightness'
+
+      - name: Install the updater package; it must enable and configure nothing
+        run: |
+          set -euo pipefail
+          sudo dpkg -i out/mseries-debs/mseries-update_*.deb
+          for unit in boot confirm; do
+            state=$(systemctl is-enabled "mseries-update-$unit.service" 2>&1 || true)
+            [[ $state == disabled ]] || { echo "mseries-update-$unit.service is '$state', expected disabled" >&2; exit 1; }
+          done
+          # The auto service has no [Install] section (only its timer starts it), so systemd calls it static;
+          # what must stay off is the timer, checked next.
+          state=$(systemctl is-enabled mseries-update-auto.service 2>&1 || true)
+          [[ $state == static || $state == disabled ]] || { echo "mseries-update-auto.service is '$state', expected static" >&2; exit 1; }
+          [[ $(systemctl is-enabled mseries-update-auto.timer 2>&1 || true) == disabled ]]
+          mseries-update status --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["state"]=="idle", r'
+          [[ ! -e /etc/mseries-update && ! -e /var/lib/mseries-update ]]
+          sudo dpkg -r mseries-update
+
+      - name: Upload plugin packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: mseries-plugin-debs-${{ github.run_id }}
+          path: out/mseries-debs/
+          retention-days: 14
+
+  # The Rust compositor is experimental and opt-in. Built here so a release cannot break it
+  # unnoticed; not published to either suite yet (UPDATER-DESIGN.md, decision 3).
+  compositor:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install compositor build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential dpkg-dev git pkg-config cargo rustc \
+            libseat-dev libinput-dev libgbm-dev libdrm-dev libudev-dev libxkbcommon-dev \
+            libwayland-dev libegl-dev libgles-dev libglib2.0-dev
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: compositor-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: compositor-${{ runner.arch }}-
+
+      - name: Build the compositor package
+        run: |
+          # A package version that sorts by commit time, so a later build always supersedes an earlier one.
+          stamp=$(TZ=UTC git show -s --format=%cd --date=format:%Y%m%d%H%M%S HEAD)
+          DEB_VERSION="0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
+            OUTDIR=out/compositor bash mseries/pantheon-rust-compositor/build-deb.sh
+
+      - name: Upload compositor package
+        uses: actions/upload-artifact@v7
+        with:
+          name: pantheon-rust-compositor-deb-${{ github.run_id }}
+          path: out/compositor/pantheon-rust-compositor_*.deb
+          retention-days: 14
+
+  # Claude for elementary OS (the native T3 client) and its Wingpanel indicator: built here on every push
+  # to dev/main so a release cannot break them unnoticed; an artifact only, not yet in the apt suites.
+  claude-pantheon-rs:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Add elementary daily PPA (wingpanel-9 for the indicator)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
+
+      - name: Install build dependencies
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
+              cargo rustc pkg-config libgtk-4-dev libgranite-7-dev \
+              meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
+              libgtksourceview-5-dev libvte-2.91-gtk4-dev libwebkitgtk-6.0-dev \
+              librsvg2-bin dpkg-dev; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          exit 1
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: claude-pantheon-rs-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: claude-pantheon-rs-${{ runner.arch }}-
+
+      - name: Build the Claude package (app and indicator)
+        run: CLAUDE_PANTHEON_OUTPUT_DIR=out/claude-pantheon-rs bash rust/claude-pantheon-rs/build-deb.sh
+
+      - name: Upload the Claude package
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-pantheon-rs-deb-${{ github.run_id }}
+          path: out/claude-pantheon-rs/claude-pantheon-rs_*.deb
+          retention-days: 14
+
+  publish:
+    needs: build
+    # Never on a pull request. A manual run publishes only when asked; the ref picks the suite.
+    if: >-
+      github.event_name == 'push'
+      || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    # Two runs (a dev merge and a release) must not interleave their pushes to gh-pages.
+    concurrency:
+      group: mseries-apt-publish
+      cancel-in-progress: false
+    env:
+      MSERIES_APT_KEY: ${{ secrets.MSERIES_APT_KEY }}
+    steps:
+      - name: Pick the suite from the ref
+        id: suite
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/dev) echo "channel=dev" >> "$GITHUB_OUTPUT" ;;
+            refs/heads/main) echo "channel=stable" >> "$GITHUB_OUTPUT" ;;
+            *) echo "only dev and main publish; $GITHUB_REF does not." >&2; exit 1 ;;
+          esac
+
+      # Fail closed. Automatic runs warn and publish nothing so the missing key is visible without
+      # turning every merge red; a manual publish that cannot sign is an error.
+      - name: Require the repository key
+        id: key
+        run: |
+          if [[ -n $MSERIES_APT_KEY ]]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+            echo "MSERIES_APT_KEY is not set; refusing to publish an unsigned repo." >&2
+            exit 1
+          else
+            echo "::warning title=Not published::MSERIES_APT_KEY is not set, so the ${{ steps.suite.outputs.channel }} suite was built and tested but not published."
+            echo "have=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.key.outputs.have == 'true'
+        with:
+          path: src
+          persist-credentials: false
+
+      - name: Download packages
+        if: steps.key.outputs.have == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: mseries-plugin-debs-${{ github.run_id }}
+          path: repo-incoming/
+
+      - name: Check out gh-pages (created on first publish)
+        if: steps.key.outputs.have == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth#AUTHORIZATION: basic }"
+          url="https://github.com/${GITHUB_REPOSITORY}.git"
+          if git -c "http.extraheader=$auth" ls-remote --exit-code --heads "$url" gh-pages >/dev/null; then
+            git -c "http.extraheader=$auth" clone --quiet --depth 1 --branch gh-pages "$url" pages
+          else
+            git init --quiet pages
+            git -C pages checkout --quiet --orphan gh-pages
+            git -C pages remote add origin "$url"
+          fi
+          echo "AUTH_HEADER=$auth" >> "$GITHUB_ENV"
+
+      - name: Assemble and sign the ${{ steps.suite.outputs.channel }} suite
+        if: steps.key.outputs.have == 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends apt-utils gnupg
+          bash src/mseries/release/assemble-apt.sh \
+            --channel "${{ steps.suite.outputs.channel }}" --incoming repo-incoming --tree pages/apt
+
+      - name: Commit the repository to gh-pages
+        if: steps.key.outputs.have == 'true'
+        run: |
+          set -euo pipefail
+          cd pages
+          git config user.name 'mseries-debs'
+          git config user.email 'mseries-debs@users.noreply.github.com'
+          git add apt/
+          git commit -m "mseries ${{ steps.suite.outputs.channel }} suite: ${GITHUB_SHA:0:7}, run ${{ github.run_id }}" || exit 0
+          for attempt in 1 2 3; do
+            if git -c "http.extraheader=$AUTH_HEADER" push origin gh-pages; then exit 0; fi
+            git -c "http.extraheader=$AUTH_HEADER" pull --rebase origin gh-pages
+          done
+          echo "could not push to gh-pages" >&2
+          exit 1

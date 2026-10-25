@@ -1,0 +1,967 @@
+{
+  "schema": 1,
+  "baseline": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "baseline_carries_all_review_fixes": true,
+  "upstream_review_head": "7638540a67d8a8fd1a0f228ba119e14193702f9e",
+  "unified72_source": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+  "count": 64,
+  "counts": {
+    "forward_applies": 10,
+    "reverse_applies": 30
+  },
+  "checks": [
+    {
+      "sha": "7638540a67d8a8fd1a0f228ba119e14193702f9e",
+      "subject": "tools/aurora-userpages: say that 4K pages need user4k=on",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-userpages/README.rst:4",
+        "error: tools/aurora-userpages/README.rst: patch does not apply",
+        "error: patch failed: tools/aurora-userpages/userpages.c:19"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2e6535a04c4efe07ecf041705e6e17cb81b17c7b",
+      "subject": "mm: user-subpage: skip the 4K page_ext record when user4k is off",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/admin-guide/kernel-parameters.txt:8311",
+        "error: Documentation/admin-guide/kernel-parameters.txt: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:68"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "17059686aaa39e3892df7df6af6b5ca074f3e411",
+      "subject": "arm64: user4k: keep 4K userspace off unless booted with user4k=on",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/admin-guide/kernel-parameters.txt:8305",
+        "error: Documentation/admin-guide/kernel-parameters.txt: patch does not apply",
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:11"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: arch/arm64/mm/user4k-test.c:13744",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/context.c:39"
+      ]
+    },
+    {
+      "sha": "2a56089e5baf2bdd9d95760ca5b60e3ab76a9d0a",
+      "subject": "mm: pick the mmap layout from the mm being set up",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/util.c:406",
+        "error: mm/util.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "249829c32c880ddba07771db7c9c95a2baa0dbd2",
+      "subject": "Documentation: arm64: user4k: say the option is on by default",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:19",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: Documentation/arch/arm64/user4k.rst:19",
+        "error: Documentation/arch/arm64/user4k.rst: patch does not apply"
+      ]
+    },
+    {
+      "sha": "d97563b36cd13a215367a44db6f8f4952b97f508",
+      "subject": "arm64: build mixed-granule userspace by default",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:32",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:41",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ]
+    },
+    {
+      "sha": "e0bf77e8a3166a29a256995646e40e2db8b3beaa",
+      "subject": "arm64: make the mixed-granule KUnit tests depend on TMPFS",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:47",
+        "error: arch/arm64/Kconfig.debug: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "4154c885c0b9938379ffbeb6795260eb004db3b8",
+      "subject": "perf/core: restore the speculation bound on AUX page lookups",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: kernel/events/core.c:58",
+        "error: kernel/events/core.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: kernel/events/core.c:58",
+        "error: kernel/events/core.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "632c8fade2c3cea620e02696905b867c4ed92c8e",
+      "subject": "mm: move the vmf_insert_pfn_prot_mkwrite() kernel-doc back",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:3258",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5fc7e1d1fb9dfe1d1d9b78a7abf050c634cfafcd",
+      "subject": "mm: refuse HugeTLB mappings in mms with a non-native user granule",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/mm/user4k-test.c:15",
+        "error: arch/arm64/mm/user4k-test.c: patch does not apply",
+        "error: patch failed: mm/mmap.c:352"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "4f088212736f57544e4785cfe8a3392facd24790",
+      "subject": "exec: drop the user page-size preference on privilege-gaining exec",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/kernel/process.c:891",
+        "error: arch/arm64/kernel/process.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/user4k-test.c:33"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: fs/exec.c:1253",
+        "error: fs/exec.c: patch does not apply",
+        "error: patch failed: arch/arm64/mm/user4k-test.c:33"
+      ]
+    },
+    {
+      "sha": "2b1ceeb10e4736f733bbea2f233a03f4a0d1b542",
+      "subject": "vfio/type1: keep the previous locked_vm refund rules without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/Kconfig:56",
+        "error: drivers/vfio/Kconfig: patch does not apply",
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:470"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "3d100cb5a7670f62c9fe807d111a26ee86edeca4",
+      "subject": "vfio/type1: keep the IOMMU page size warnings without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1671",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d698033b97a2179ac547ae9d6009f134e4cc615c",
+      "subject": "vfio/type1: skip the CAP_IPC_LOCK check when the DMA owner is unchanged",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1929",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2bccca3035db9e41410fde2ede59864c3bf431dc",
+      "subject": "vfio/type1: keep native external pinning when MM_SUBPAGE is off",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:296",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply",
+        "error: patch failed: drivers/vfio/vfio_iommu_type1_fragments.c:596"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "e0e270cd746e23a63170ba28f3f8f8e1e69af174",
+      "subject": "vfio/type1: compile out fragment provider paths without MM_SUBPAGE",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:255",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/vfio/vfio_iommu_type1.c:1761",
+        "error: drivers/vfio/vfio_iommu_type1.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "c21d8e24a99ea2e3e7ba7465d7def777096bfee6",
+      "subject": "proc: fold the PAGEMAP_SCAN page size without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: fs/proc/task_mmu.c:2491",
+        "error: fs/proc/task_mmu.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "fb16e8779391b801e22226f3faf68520c1dd69fb",
+      "subject": "tomoyo: keep the page-based argv dump without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: security/tomoyo/common.h:575",
+        "error: security/tomoyo/common.h: patch does not apply",
+        "error: patch failed: security/tomoyo/domain.c:903"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "55a5ef43af232e5ee879de616bcde38c301ee228",
+      "subject": "userfaultfd: keep the UFFDIO_COPY source check without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: fs/userfaultfd.c: No such file or directory"
+      ],
+      "reverse_diagnostic": [
+        "error: fs/userfaultfd.c: No such file or directory"
+      ]
+    },
+    {
+      "sha": "a07e98c6181d4fe90de13812fc5e9f1c531fdf30",
+      "subject": "drm/shmem-helper: keep native fault and mmap paths without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/drm_gem_shmem_helper.c:763",
+        "error: drivers/gpu/drm/drm_gem_shmem_helper.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "c5a6961ce15a57575a07b0170a5c892c08119cab",
+      "subject": "io_uring/rsrc: limit the fragment-owner account skip to user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: io_uring/rsrc.c:645",
+        "error: io_uring/rsrc.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: io_uring/rsrc.c:645",
+        "error: io_uring/rsrc.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "71a6bc1bec57b14bebe076aad5fb769e023ebccd",
+      "subject": "block: size user passthrough bios as before without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: block/blk-map.c:260",
+        "error: block/blk-map.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "ecc0c29cc3d0d5a177b92be3decf5c90652b5868",
+      "subject": "ocfs2: keep the native truncate unmap sequence without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: fs/ocfs2/file.c:504",
+        "error: fs/ocfs2/file.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "9a16d02736b70119652a7b273bbee7b3be614c64",
+      "subject": "prctl: build the page-size requests only with selectable granules",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: kernel/sys.c:2532",
+        "error: kernel/sys.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "1c76bc45a6a80d578118746495e0d76b898650bd",
+      "subject": "net: keep MSG_ZEROCOPY realloc semantics without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: net/core/skbuff.c:1768",
+        "error: net/core/skbuff.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "2406596fa2c843abddb04418676b19b278caaaa2",
+      "subject": "mm/process_vm_access: keep allocation order without subpage",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/process_vm_access.c:242",
+        "error: mm/process_vm_access.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d2883a8fee2b670934471db3cb64f42c0403f450",
+      "subject": "mm/pagewalk: keep native walk_page_mapping() clip without subpage",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/pagewalk.c:771",
+        "error: mm/pagewalk.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "0b87330a6e1e1fcbcc40b6786e05956fec1e8c30",
+      "subject": "mm/vmscan: gate MGLRU legacy-memcg writeback change on subpage",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/vmscan.c:4682",
+        "error: mm/vmscan.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: mm/vmscan.c:4682",
+        "error: mm/vmscan.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "058eb531de3984b2b694f069fdae2496329c55f3",
+      "subject": "mm/swap: keep native swap I/O unchanged without subpage support",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/page_io.c:412",
+        "error: mm/page_io.c: patch does not apply",
+        "error: patch failed: mm/swapfile.c:1387"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5812ea2970fd22b805e943803ef2a53217f7e8b7",
+      "subject": "mm/shmem: skip i_pages lock round trip without uffd subpage data",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/shmem.c:2045",
+        "error: mm/shmem.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "ccd751939c152daa753e8c05c83dd2bd6d3e4d26",
+      "subject": "shmem: do not evaluate shmem_uffd_forget() arguments when unused",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: include/linux/shmem_fs.h:165",
+        "error: include/linux/shmem_fs.h: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "01996cd22edad30486432d12d07d8aeb2e0fcad3",
+      "subject": "mm: keep the single-page rmap walk bound for native geometry",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/internal.h:1323",
+        "error: mm/internal.h: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "7607f149a410f426d115d4cd9b0a5531854bf2b4",
+      "subject": "mm: release exit_mmap commitment after the mmap lock again",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/mmap.c:1371",
+        "error: mm/mmap.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "89337e112c8b333ea7fb7fe84de93586fa50f23b",
+      "subject": "mm: keep the native locked_vm accounting when user4k is off",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/util.c:516",
+        "error: mm/util.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "78404cee8c7659c6cf6370d5f32db1a38e4874a5",
+      "subject": "mm: skip zero-count folio reference adds on COW copies",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:1098",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "996067c67d6f09b666f5b6621af0e91219b98c27",
+      "subject": "mm: keep generic_access_phys() lengths unchanged without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:8991",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "aeb594e25c1c5142fd60795a3ad1bede6a825fa7",
+      "subject": "mm: keep native remap and I/O memory range checks without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:3655",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "5264e477f5d111d0e9ed9d54c67067c0c68663a2",
+      "subject": "mm: restore native vm_insert_pages() and vm_map_pages() without user4k",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: mm/memory.c:2834",
+        "error: mm/memory.c: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "b1d8dfecce30887bb4fe71b418ad5b87627f5234",
+      "subject": "mm: keep the legacy bad-p4d handling for native-only geometry",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": true,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: include/linux/pgtable.h:1572",
+        "error: include/linux/pgtable.h: patch does not apply"
+      ],
+      "reverse_diagnostic": []
+    },
+    {
+      "sha": "d0565a858891cbeb7a5db56fe8aa33ea3ec03052",
+      "subject": "docs: index the new Apple documents and fix their title markup",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: Documentation/admin-guide/media/apple-ave.rst: No such file or directory",
+        "error: Documentation/soc/apple/t8140-pmp-dvfs.rst: No such file or directory",
+        "error: patch failed: Documentation/gpu/drivers.rst:6"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: MAINTAINERS:2001",
+        "error: MAINTAINERS: patch does not apply",
+        "error: patch failed: Documentation/gpu/drivers.rst:6"
+      ]
+    },
+    {
+      "sha": "0765e6acfd1ff2bd9250bfeb8dc9bee9f4742030",
+      "subject": "drm/apple: build the AFK service test only with the display driver",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/Makefile:231",
+        "error: drivers/gpu/drm/Makefile: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/Kconfig:37"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/Makefile:34",
+        "error: drivers/gpu/drm/apple/Makefile: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/Kconfig:37"
+      ]
+    },
+    {
+      "sha": "52841d18939ab9cb79b0b12ae012fdca6c43a80f",
+      "subject": "vfio/type1: make the retained-fragment KUnit tests depend on TMPFS",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: arch/arm64/Kconfig.debug:82",
+        "error: arch/arm64/Kconfig.debug: patch does not apply",
+        "error: patch failed: drivers/vfio/Kconfig:57"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/vfio/Kconfig:57",
+        "error: drivers/vfio/Kconfig: patch does not apply"
+      ]
+    },
+    {
+      "sha": "b8c3c61294648b9263f208f7203a8bed8ba235e7",
+      "subject": "usb: typec: tipd: put the debugfs command file behind a Kconfig option",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/Kconfig:28",
+        "error: drivers/usb/typec/tipd/Kconfig: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/debugfs.c:3",
+        "error: drivers/usb/typec/tipd/debugfs.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/Kconfig:28"
+      ]
+    },
+    {
+      "sha": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "subject": "rust: restore --no-layout-tests, make layout checks opt-in",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-bindgen/build.py:22",
+        "error: tools/aurora-bindgen/build.py: patch does not apply",
+        "error: patch failed: tools/aurora-bindgen/README.rst:25"
+      ]
+    },
+    {
+      "sha": "4bbc184bb298f3459f0cf3c5a695cd3b18ed0669",
+      "subject": "wifi: brcmfmac: run queued firmware events before stopping their worker",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c:385",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "347adeccb0c8853d32bfca1ac7cf414bf0939bc9",
+      "subject": "wifi: brcmfmac: refuse AWDL on interface_create v1 and v2",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:244",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "e75cc822fa9cac1727309129def86f5207c74a7c",
+      "subject": "wifi: brcmfmac: add an off-switch for AWDL interface creation",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:27",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/vendor.h:11",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/vendor.h: patch does not apply",
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:27"
+      ]
+    },
+    {
+      "sha": "d4f767b6f7d373fc00d8e9824e6b5e00f7dc43a6",
+      "subject": "wifi: brcmfmac: drop the runtime AWDL interface_create parameters",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c:25",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/interface_create.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "0a934a7b3115db29a4ad2ce638353c3ccb240d72",
+      "subject": "wifi: brcmfmac: msgbuf: look up the traced flowring under its lock",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c:601",
+        "error: drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "8af856032038b1794b40e59941d7aab6e762ecf6",
+      "subject": "drm/asahi: keep the range TLBI base address in its field",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/mem.rs:143",
+        "error: drivers/gpu/drm/asahi/mem.rs: patch does not apply"
+      ]
+    },
+    {
+      "sha": "1b50cbd1e008f61375b34e09d121f0bff5aec2a6",
+      "subject": "drm/asahi: reject unsupported command fields on the M1/M2 queue path",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/queue/mod.rs:850",
+        "error: drivers/gpu/drm/asahi/queue/mod.rs: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/asahi/util.rs:179"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/asahi/util.rs:126",
+        "error: drivers/gpu/drm/asahi/util.rs: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/asahi/queue/mod.rs:590"
+      ]
+    },
+    {
+      "sha": "ba5563baba3f612a31861269b3b224191a23e9d9",
+      "subject": "drm/apple: expect a moved tunnel to start its route in the parser test",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/parser-test.c:819",
+        "error: drivers/gpu/drm/apple/parser-test.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/parser-test.c:819",
+        "error: drivers/gpu/drm/apple/parser-test.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "d25e17cc3e469a4bb0b51aa423bcd3689a40a638",
+      "subject": "drm: apple: answer DPTX group 1 calls 3 and 4 on 13.5 firmware again",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dptxep.c:1048",
+        "error: drivers/gpu/drm/apple/dptxep.c: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dptxep.c:1048",
+        "error: drivers/gpu/drm/apple/dptxep.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "07fc9fe06c29194561a3e5fceb846cde39fea569",
+      "subject": "drm: apple: relink a Type-C sink only when DCP drops it at link-up",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dcp-fabric-test.c:2138",
+        "error: drivers/gpu/drm/apple/dcp-fabric-test.c: patch does not apply",
+        "error: patch failed: drivers/gpu/drm/apple/dcp-internal.h:18"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/gpu/drm/apple/dcp.c:751",
+        "error: drivers/gpu/drm/apple/dcp.c: patch does not apply",
+        "error: drivers/gpu/drm/apple/dcp-relink.h: No such file or directory"
+      ]
+    },
+    {
+      "sha": "0378c54a442e13c8e3f94cefb5b17dc11d12d203",
+      "subject": "usb: typec: tipd: send each IRQ_HPD request to the display route once",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm-test.c:770",
+        "error: drivers/usb/typec/tipd/cd321x-pm-test.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm.h:4"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/usb/typec/tipd/core.c:671",
+        "error: drivers/usb/typec/tipd/core.c: patch does not apply",
+        "error: patch failed: drivers/usb/typec/tipd/cd321x-pm.h:4"
+      ]
+    },
+    {
+      "sha": "418c346f87ebdf46936d0e35055d0f62ee879732",
+      "subject": "tools/aurora-sep: tests: Let the T8112 SEP DMA harness build again",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-sep/tests/test_t8112_sep_dma.py:72",
+        "error: tools/aurora-sep/tests/test_t8112_sep_dma.py: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-sep/tests/test_t8112_sep_dma.py:72",
+        "error: tools/aurora-sep/tests/test_t8112_sep_dma.py: patch does not apply"
+      ]
+    },
+    {
+      "sha": "bf80deeb634ab95a865b6d08b3d234b65e9d88d6",
+      "subject": "soc: apple: sep: Let suspend proceed when a capture is slow to stop",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/soc/apple/pm.rs:41",
+        "error: drivers/soc/apple/pm.rs: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/soc/apple/shim.h:25",
+        "error: drivers/soc/apple/shim.h: patch does not apply",
+        "error: patch failed: drivers/soc/apple/sbio.rs:3081"
+      ]
+    },
+    {
+      "sha": "c80c151a1851ea49535777086adc6020d70e372a",
+      "subject": "soc: apple: sep: Initialise an empty host-state store file again",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/soc/apple/store.rs:133",
+        "error: drivers/soc/apple/store.rs: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/soc/apple/store.rs:133",
+        "error: drivers/soc/apple/store.rs: patch does not apply"
+      ]
+    },
+    {
+      "sha": "1d66b81ec0ea1d51c26fc259532b36fbe3420f06",
+      "subject": "soc: apple: sep: Do not autoload the driver through a module alias",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD:40",
+        "error: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD: patch does not apply"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD:7",
+        "error: tools/aurora-sep/packaging/arch/aurora-sep/PKGBUILD: patch does not apply",
+        "error: patch failed: tools/aurora-sep/README.md:45"
+      ]
+    },
+    {
+      "sha": "d4b2c4ac469856efbfdb127b02ac6fb3d9515f73",
+      "subject": "spi: apple-qspi: keep the T8140 boot NOR read-only outside nvram",
+      "author": "Chris Kearney",
+      "forward_applies": false,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [
+        "error: patch failed: drivers/spi/Kconfig:140",
+        "error: drivers/spi/Kconfig: patch does not apply",
+        "error: patch failed: drivers/spi/spi-apple-qspi.c:14"
+      ],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/spi/spi-apple-qspi.c:14",
+        "error: drivers/spi/spi-apple-qspi.c: patch does not apply",
+        "error: patch failed: drivers/spi/spi-apple-qspi-policy.h:35"
+      ]
+    },
+    {
+      "sha": "df016a38440e7121cddc13e38016c5bdde5905c9",
+      "subject": "arm64: dts: apple: t8140: drop the t6000 fallback from the GFX report",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: arch/arm64/boot/dts/apple/t8140.dtsi:491",
+        "error: arch/arm64/boot/dts/apple/t8140.dtsi: patch does not apply"
+      ]
+    },
+    {
+      "sha": "731e926b1912a2184feb886f6977d8a28d70abe7",
+      "subject": "dt-bindings: power: apple,t8140-pmp-report: drop the t6000 entry fallback",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml:45",
+        "error: Documentation/devicetree/bindings/power/apple,t8140-pmp-report.yaml: patch does not apply"
+      ]
+    },
+    {
+      "sha": "2bf01adf4862725d602e9d7fe38248f240624c29",
+      "subject": "pmdomain: apple: pmp-report: match T8140 report entries by compatible",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: drivers/pmdomain/apple/pmp-report.c:1719",
+        "error: drivers/pmdomain/apple/pmp-report.c: patch does not apply"
+      ]
+    },
+    {
+      "sha": "3d255038f3b13757b7f3f035a58b23e4c8630f2b",
+      "subject": "aurora-sep: neo: accept both T8140 GPU and display driver names",
+      "author": "Chris Kearney",
+      "forward_applies": true,
+      "reverse_applies": false,
+      "limits": "Independent patch applicability; a reverse-check failure does not prove semantic absence. Sequential dependencies/rebase still require review.",
+      "forward_diagnostic": [],
+      "reverse_diagnostic": [
+        "error: patch failed: tools/aurora-sep/tests/test_neo_gpu.py:127",
+        "error: tools/aurora-sep/tests/test_neo_gpu.py: patch does not apply",
+        "error: patch failed: tools/aurora-sep/neo/mesa-neo-env:47"
+      ]
+    }
+  ],
+  "decision": "Build-only 7.2 candidate; reviewed .20 enhancement lane remains first hardware candidate. Do not claim complete #136 review parity from an ARM64 build.",
+  "ported_in_local_unified_series": [
+    "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7"
+  ],
+  "confirmed_shared_review_gaps": [
+    {
+      "scope": "M1/M2 GPU command admission",
+      "file": "drivers/gpu/drm/asahi/queue/mod.rs",
+      "finding": "Render/compute still call read_up_to without the reviewed read_supported tail validation."
+    },
+    {
+      "scope": "SEP loader ownership",
+      "file": "drivers/soc/apple/sep.rs",
+      "finding": "OF table still exports MODULE_OF_TABLE; the .20 no-autoload review fix is not present."
+    },
+    {
+      "scope": "SEP suspend and battery",
+      "file": "drivers/soc/apple/sbio.rs",
+      "finding": "sleep_prepare returns EBUSY after a 6-second capture drain timeout, aborting suspend; the .20 continue policy is not present. 7.2 entropy-hold changes require a deliberate rebase."
+    }
+  ]
+}

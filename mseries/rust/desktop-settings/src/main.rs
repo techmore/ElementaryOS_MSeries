@@ -31,9 +31,21 @@ fn apply() -> Result<()> {
     let assets = assets_dir()?;
 
     let mut options = get_strv(INPUT_SOURCES, "xkb-options")?;
-    if !options.iter().any(|value| value == "ctrl:swap_lwin_lctl") {
-        options.push("ctrl:swap_lwin_lctl".into());
-        set_strv(INPUT_SOURCES, "xkb-options", &options)?;
+    for option in ["ctrl:swap_lwin_lctl", "ctrl:swap_rwin_rctl"] {
+        if !options.iter().any(|value| value == option) {
+            options.push(option.into());
+        }
+    }
+    set_strv(INPUT_SOURCES, "xkb-options", &options)?;
+
+    for (action, binding) in [
+        ("volume-mute", "XF86AudioMute"),
+        ("volume-down", "XF86AudioLowerVolume"),
+        ("volume-up", "XF86AudioRaiseVolume"),
+    ] {
+        if get_strv(MEDIA_KEYS, action)?.iter().all(String::is_empty) {
+            set_strv(MEDIA_KEYS, action, &[binding.into()])?;
+        }
     }
 
     for (action, binding) in [
@@ -46,6 +58,12 @@ fn apply() -> Result<()> {
             set_strv(WM_KEYS, action, &existing)?;
         }
     }
+
+    set_boolean(
+        "org.gnome.desktop.peripherals.mouse",
+        "natural-scroll",
+        true,
+    )?;
 
     let launcher = home.join(".local/bin/mseries-launcher");
     copy_executable(&assets.join("mseries-launcher.py"), &launcher)?;
@@ -105,7 +123,7 @@ fn apply() -> Result<()> {
         &brightness,
     )?;
 
-    println!("Command acts as Ctrl; physical left Ctrl acts as Super. Command+Space opens the launcher. Brightness keys start at next login.");
+    println!("Both Command keys act as Ctrl; both physical Ctrl keys act as Super. Media keys control mute/volume. Command+Space opens the launcher. Brightness keys start at next login.");
     println!("To start now: {}", brightness.display());
     Ok(())
 }

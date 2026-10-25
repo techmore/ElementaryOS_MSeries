@@ -5,8 +5,26 @@
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/screenshot-shelf" && pwd)
 bin=$HOME/.local/bin libexec=$HOME/.local/libexec apps=$HOME/.local/share/applications auto=$HOME/.config/autostart
+stop_shelf() {
+  python3 - "$libexec/mseries-screenshot-shelf" <<'STOP'
+import os
+from pathlib import Path
+import signal
+import sys
+target = os.fsencode(sys.argv[1])
+for entry in Path('/proc').iterdir():
+    if not entry.name.isdigit():
+        continue
+    try:
+        args = (entry / 'cmdline').read_bytes().split(b'\0')
+        if args[0] == target or (len(args) > 1 and args[1] == target and os.path.basename(args[0]).startswith(b'python')):
+            os.kill(int(entry.name), signal.SIGTERM)
+    except (OSError, ProcessLookupError):
+        pass
+STOP
+}
 if [[ ${1:-} == --uninstall ]]; then
-  pkill -f "$libexec/mseries-screenshot-shelf" 2>/dev/null || true
+  stop_shelf
   rm -f "$libexec/mseries-screenshot-shelf" "$bin/mseries-markup" "$apps/mseries-markup.desktop" "$auto/mseries-screenshot-shelf.desktop"
   echo "Removed the shelf and Markup."; exit 0
 fi
@@ -14,9 +32,22 @@ command -v swappy >/dev/null || sudo apt-get install -y swappy
 mkdir -p "$bin" "$libexec" "$apps" "$auto"
 install -m 755 "$here/mseries-screenshot-shelf" "$libexec/mseries-screenshot-shelf"
 install -m 755 "$here/mseries-markup" "$bin/mseries-markup"
-install -m 644 "$here/mseries-markup.desktop" "$apps/mseries-markup.desktop"
-install -m 644 "$here/mseries-screenshot-shelf.desktop" "$auto/mseries-screenshot-shelf.desktop"
+# Desktop Exec does not expand %h or shell variables. Render absolute, quoted paths.
+python3 - "$here" "$apps" "$auto" "$bin" "$libexec" <<'DESKTOP'
+from pathlib import Path
+import sys
+source, apps, auto, bin_dir, libexec = map(Path, sys.argv[1:])
+def quoted(path):
+    text = str(path).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$')
+    return '"' + text.replace('%', '%%') + '"'
+for name, target, command in (
+    ('mseries-markup.desktop', apps, quoted(bin_dir / 'mseries-markup') + ' %f'),
+    ('mseries-screenshot-shelf.desktop', auto, quoted(libexec / 'mseries-screenshot-shelf')),
+):
+    lines = (source / name).read_text().splitlines()
+    (target / name).write_text('\n'.join('Exec=' + command if line.startswith('Exec=') else line for line in lines) + '\n')
+DESKTOP
 update-desktop-database "$apps" 2>/dev/null || true
-pkill -f "$libexec/mseries-screenshot-shelf" 2>/dev/null || true
+stop_shelf
 setsid nohup "$libexec/mseries-screenshot-shelf" >/dev/null 2>&1 &
 echo "Screenshot shelf running. Log: ~/.cache/mseries-screenshot-shelf.log"

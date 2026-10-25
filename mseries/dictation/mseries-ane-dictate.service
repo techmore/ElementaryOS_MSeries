@@ -1,0 +1,13 @@
+[Unit]
+Description=Dictation on the Apple Neural Engine (hold F5, text typed on release)
+After=ydotool.service
+Wants=ydotool.service
+Conflicts=voxtype.service mseries-stream-dictate.service mseries-aop-mic.service
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.local/share/mseries/ane-dictate/ane-dictate.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

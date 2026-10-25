@@ -1,0 +1,12 @@
+[Unit]
+Description=Built-in MacBook microphone (Apple AOP) as a PipeWire source
+After=pipewire.service wireplumber.service
+Before=voxtype.service
+
+[Service]
+ExecStart=/usr/local/libexec/mseries/aop-mic.sh
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

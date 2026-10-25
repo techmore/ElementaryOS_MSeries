@@ -6,6 +6,8 @@ bindings through GSettings, applies the existing Pantheon/window/power settings,
 creates the screenshot redirect only when safe, and installs user autostart files
 for the Rust launcher key watcher and brightness helper. Older images without
 the Rust watcher keep the Python helper fallback.
+The candidate follows the current reference's mapping for both Command keys,
+fills only blank mute/volume bindings, and enables natural mouse scrolling.
 
 The factory image stages the binary at
 `/usr/libexec/mseries/apply-desktop-settings` and stages its launcher assets under

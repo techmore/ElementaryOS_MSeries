@@ -5,11 +5,17 @@ on:
   pull_request:
     paths:
       - "mseries/aurora/**"
+      - "mseries/power/display_status.py"
       - "mseries/aurora-sep/install-aurora-sep.sh"
       - ".github/workflows/aurora-kernel.yml"
 
 permissions:
   contents: read
+
+# New commits replace only checks for this workflow and PR. Publishing is not preempted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   package:
@@ -20,10 +26,23 @@ jobs:
       - name: Install payload inspection tools
         run: sudo apt-get update && sudo apt-get install -y zstd device-tree-compiler shellcheck
       - name: Check installer and staging regressions
+        env:
+          FREEZE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           bash -n mseries/aurora-sep/install-aurora-sep.sh
           shellcheck -S warning mseries/aurora-sep/install-aurora-sep.sh
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -v
+          if [[ -n "$FREEZE_BASE_SHA" ]]; then
+            git fetch --no-tags --depth=1 origin "$FREEZE_BASE_SHA"
+            python3 mseries/aurora/check_freezes.py --base "$FREEZE_BASE_SHA"
+          else
+            python3 mseries/aurora/check_freezes.py
+          fi
+          python3 mseries/aurora/qualification.py verify \
+            mseries/aurora/frozen/mseries-aurora20-j314s-2026.10.18-exp1.json \
+            --pins mseries/aurora/frozen/pins/aurora20.json \
+            --evidence mseries/aurora/hardware-tests/2026-10-18-j314s-aurora20.json \
+            --binary-proof mseries/aurora/hardware-tests/2026-10-18-j314s-binary-verification.json
       - name: Package the unchanged public kernel and corresponding source
         run: |
           python3 mseries/aurora/package-release.py --cache "$RUNNER_TEMP/aurora-cache" --output "$RUNNER_TEMP/aurora-port"
@@ -42,7 +61,7 @@ jobs:
           validate_kernel(pathlib.Path(os.environ['RUNNER_TEMP']) / 'aurora-inspect')
           PY
       - name: Preserve candidate package, upstream binary, build recipe and corresponding source
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: elementary-aurora20-${{ github.run_id }}
           path: ${{ runner.temp }}/aurora-port/

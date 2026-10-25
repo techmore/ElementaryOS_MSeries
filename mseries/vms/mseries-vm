@@ -1,0 +1,947 @@
+#!/usr/bin/env bash
+# mseries-vm — create, fetch and run isolated ARM64 test guests under KVM.
+#
+# Guests: elementary OS (installer ISO from CI or local), Windows 11 ARM64 (UUP dump),
+# Omarchy 4 (prebuilt Arch Linux ARM image), and guidance for macOS (not possible here).
+#
+#   mseries-vm info                          host prerequisites and capabilities
+#   mseries-vm list                          defined VMs and their state
+#   mseries-vm create elementary [name]      new VM from an ISO (or the newest fetched one)
+#   mseries-vm create windows [name]         Windows 11 ARM64 VM (TPM 2.0, Secure Boot)
+#   mseries-vm import-omarchy IMAGE.zip      import the Omarchy 4 UTM/Arch ARM image
+#   mseries-vm start NAME [--headless] [--daemon] [...]
+#   mseries-vm stop NAME [--force]
+#   mseries-vm status NAME | serial NAME [-n N] | screenshot NAME [file.png]
+#   mseries-vm key NAME QCODE [QCODE...]     drive the guest, e.g. "key NAME ret"
+#   mseries-vm wait NAME --pattern REGEX [--timeout SEC]
+#   mseries-vm snapshot NAME save|restore|delete|list [tag]
+#   mseries-vm set NAME KEY VALUE            e.g. BOOT disk, ISO "", MEMORY_MB 8192
+#   mseries-vm delete NAME [--force]
+#   mseries-vm fetch elementary             newest successful CI installer ISO
+#   mseries-vm fetch windows [--convert]    UUP dump ARM64 set, optionally convert to ISO
+#   mseries-vm macos                        why a macOS guest is not possible here
+#
+# Safety: VMs live under ~/vms (MSERIES_VM_DIR), use user-mode networking unless you
+# choose --net none, attach installer media read-only, and never touch host disks.
+set -euo pipefail
+
+VMS_DIR=${MSERIES_VM_DIR:-$HOME/vms}
+AAVMF_DIR=${AAVMF_DIR:-/usr/share/AAVMF}
+DEFAULT_CPUS=4
+DEFAULT_MEMORY_MB=4096
+DEFAULT_DISK_GB=32
+WINDOWS_DISK_GB=64
+REPO_SLUG=${MSERIES_REPO_SLUG:-techmore/ElementaryOS_MSeries}
+UUP_API=${MSERIES_UUP_API:-https://api.uupdump.net}
+UUP_CONVERTER_REPO=${MSERIES_UUP_CONVERTER_REPO:-https://git.uupdump.net/uup-dump/converter}
+UUP_CONVERTER_PIN=dbc65def7a82cd4c4c8b912ac08283d60ecb483b
+UUP_BUILD=${MSERIES_UUP_BUILD:-}   # empty: resolve the newest arm64 build
+UUP_EDITION=${MSERIES_UUP_EDITION:-professional}
+UUP_LANG=${MSERIES_UUP_LANG:-en-us}
+
+die() { echo "mseries-vm: $*" >&2; exit 1; }
+note() { echo "mseries-vm: $*" >&2; }
+
+tool() {
+    local name=$1
+    command -v "$name" 2>/dev/null || die "$name not found; see 'mseries-vm info'"
+}
+
+vm_dir() { printf '%s/%s' "$VMS_DIR" "$1"; }
+
+load_vm() {
+    local dir
+    dir=$(vm_dir "$1")
+    [[ -f $dir/vm.conf ]] || die "no VM named '$1' under $VMS_DIR (see 'mseries-vm list')"
+    # shellcheck source=/dev/null
+    source "$dir/vm.conf"
+    [[ ${GUEST:-} == elementary || ${GUEST:-} == windows || ${GUEST:-} == omarchy ]] \
+        || die "VM '$1' has an unsupported GUEST value"
+    [[ ${CPUS:-} =~ ^[1-9][0-9]*$ ]] || die "VM '$1': bad CPUS"
+    [[ ${MEMORY_MB:-} =~ ^[1-9][0-9]*$ ]] || die "VM '$1': bad MEMORY_MB"
+}
+
+vm_pid() {
+    local dir pid
+    dir=$(vm_dir "$1")
+    [[ -f $dir/qemu.pid ]] || return 1
+    pid=$(cat "$dir/qemu.pid")
+    [[ $pid =~ ^[0-9]+$ ]] || return 1
+    kill -0 "$pid" 2>/dev/null || return 1
+    grep -qa 'qemu-system' "/proc/$pid/cmdline" 2>/dev/null || return 1
+    printf '%s' "$pid"
+}
+
+vm_running() { vm_pid "$1" >/dev/null 2>&1; }
+
+stop_swtpm() {
+    local dir pid
+    dir=$(vm_dir "$1")
+    [[ -f $dir/swtpm.pid ]] || return 0
+    pid=$(cat "$dir/swtpm.pid")
+    if [[ $pid =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+        kill "$pid" 2>/dev/null || true
+        for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.2; done
+    fi
+    rm -f "$dir/swtpm.pid" "$dir/swtpm.sock"
+}
+
+qmp_command() {
+    # qmp_command SOCKET JSON — run one QMP command, fail on an error reply.
+    python3 - "$1" "$2" <<'PY'
+import json, socket, sys
+sock_path, command = sys.argv[1], json.loads(sys.argv[2])
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(15)
+s.connect(sock_path)
+
+def read_message():
+    data = b""
+    while not data.endswith(b"\n"):
+        chunk = s.recv(65536)
+        if not chunk:
+            raise SystemExit("qmp: connection closed")
+        data += chunk
+    return json.loads(data)
+
+read_message()  # greeting
+s.sendall(json.dumps({"execute": "qmp_capabilities"}).encode() + b"\n")
+read_message()  # capabilities reply
+s.sendall(json.dumps(command).encode() + b"\n")
+while True:
+    message = read_message()
+    if "return" in message:
+        break
+    if "error" in message:
+        print(message["error"], file=sys.stderr)
+        raise SystemExit(1)
+PY
+}
+
+qmp_screendump() {
+    # qmp_screendump SOCKET FILE
+    python3 - "$1" "$2" <<'PY'
+import json, socket, sys
+sock_path, out = sys.argv[1], sys.argv[2]
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(30)
+s.connect(sock_path)
+
+def read_message():
+    data = b""
+    while not data.endswith(b"\n"):
+        chunk = s.recv(65536)
+        if not chunk:
+            raise SystemExit("qmp: connection closed")
+        data += chunk
+    return json.loads(data)
+
+read_message()
+s.sendall(json.dumps({"execute": "qmp_capabilities"}).encode() + b"\n")
+read_message()
+s.sendall(json.dumps({"execute": "screendump",
+                      "arguments": {"filename": out, "format": "png"}}).encode() + b"\n")
+while True:
+    message = read_message()
+    if "return" in message:
+        break
+    if "error" in message:
+        print(message["error"], file=sys.stderr)
+        raise SystemExit(1)
+PY
+}
+
+# ---------------------------------------------------------------- commands
+
+cmd_info() {
+    echo "VM directory: $VMS_DIR"
+    if [[ -e /dev/kvm ]]; then
+        local kvm_group
+        kvm_group=$(stat -Lc '%G' /dev/kvm)
+        if id -nG | tr ' ' '\n' | grep -qx "$kvm_group"; then
+            echo "/dev/kvm: present; you are in the '$kvm_group' group"
+        else
+            echo "/dev/kvm: present, but you are not in the '$kvm_group' group"
+        fi
+    else
+        echo "/dev/kvm: missing; KVM acceleration is unavailable"
+    fi
+    local qemu
+    if qemu=$(command -v qemu-system-aarch64); then
+        echo "QEMU: $($qemu --version | head -n1)"
+    else
+        echo "QEMU: qemu-system-aarch64 not found (sudo apt install qemu-system-arm)"
+    fi
+    for tool_name in qemu-img swtpm python3; do
+        if command -v "$tool_name" >/dev/null 2>&1; then
+            echo "$tool_name: $(command -v "$tool_name")"
+        else
+            echo "$tool_name: missing"
+        fi
+    done
+    for fw in AAVMF_CODE.no-secboot.fd AAVMF_VARS.fd AAVMF_CODE.ms.fd AAVMF_VARS.ms.fd; do
+        if [[ -f $AAVMF_DIR/$fw ]]; then
+            echo "firmware: $fw"
+        else
+            echo "firmware: $fw missing under $AAVMF_DIR"
+        fi
+    done
+    command -v gh >/dev/null 2>&1 && echo "gh: $(command -v gh) (used by 'fetch elementary')" || echo "gh: missing (elementary fetch unavailable)"
+    command -v aria2c >/dev/null 2>&1 && echo "aria2c: $(command -v aria2c) (used by 'fetch windows')" || echo "aria2c: missing ('fetch windows' installs it)"
+}
+
+cmd_list() {
+    [[ -d $VMS_DIR ]] || { echo "No VMs yet under $VMS_DIR."; return 0; }
+    local found=0 dir name
+    for dir in "$VMS_DIR"/*/; do
+        [[ -f $dir/vm.conf ]] || continue
+        found=1
+        name=$(basename "$dir")
+        # shellcheck source=/dev/null
+        source "$dir/vm.conf"
+        if vm_running "$name"; then
+            printf '%-16s %-11s running pid=%s\n' "$name" "$GUEST" "$(vm_pid "$name")"
+        else
+            printf '%-16s %-11s stopped\n' "$name" "$GUEST"
+        fi
+    done
+    (( found )) || echo "No VMs yet under $VMS_DIR."
+}
+
+write_vm_conf() {
+    # write_vm_conf DIR NAME GUEST
+    local dir=$1 name=$2 guest=$3
+    cat > "$dir/vm.conf" <<EOF
+# mseries-vm definition — safe to edit by hand, or use 'mseries-vm set $name KEY VALUE'.
+GUEST=$guest
+CPUS=$DEFAULT_CPUS
+MEMORY_MB=$DEFAULT_MEMORY_MB
+DISK=disk.qcow2
+DISK_BUS=virtio
+ISO=
+EXTRA_MEDIA=
+BOOT=iso
+VARS_FILE=vars.fd
+FIRMWARE=AAVMF_CODE.no-secboot.fd
+TPM=off
+NET=user
+HOSTFWD=
+AUDIO=on
+GL=off
+EOF
+}
+
+new_vm_dir() {
+    # new_vm_dir NAME — create a fresh directory, refusing to clobber a VM.
+    local name=$1 dir
+    dir=$(vm_dir "$name")
+    [[ $name =~ ^[A-Za-z0-9._-]+$ ]] || die "VM name may only contain letters, digits, '.', '_' and '-'"
+    [[ -e $dir ]] && die "VM '$name' already exists; pick another name or delete it first"
+    mkdir -p "$dir"
+    printf '%s' "$dir"
+}
+
+find_newest_iso() {
+    # find_newest_iso NAME-PATTERN (glob) — newest match under $VMS_DIR/downloads.
+    local pattern=$1
+    find "$VMS_DIR/downloads" -maxdepth 3 -type f -name "$pattern" -printf '%T@ %p\n' 2>/dev/null \
+        | sort -rn | head -n1 | cut -d' ' -f2-
+}
+
+cmd_create() {
+    local guest=${1:-}
+    case $guest in
+        elementary|windows) shift ;;
+        *) die "usage: mseries-vm create <elementary|windows> [name] [options]" ;;
+    esac
+    local name=$guest iso="" cpus=$DEFAULT_CPUS memory=$DEFAULT_MEMORY_MB
+    local disk_gb="" boot="" net="" virtio_media="" force=0
+    if [[ ${1:-} != --* && -n ${1:-} ]]; then
+        name=$1; shift
+    fi
+    while (( $# )); do
+        case $1 in
+            --iso) iso=${2:?--iso needs a path}; shift 2 ;;
+            --cpus) cpus=${2:?--cpus needs a number}; shift 2 ;;
+            --memory) memory=${2:?--memory needs MiB}; shift 2 ;;
+            --disk) disk_gb=${2:?--disk needs GiB}; shift 2 ;;
+            --net) net=${2:?--net needs user|none}; shift 2 ;;
+            --virtio-media) virtio_media=${2:?--virtio-media needs a path}; shift 2 ;;
+            --boot) boot=${2:?--boot needs iso|disk}; shift 2 ;;
+            --force) force=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    [[ $cpus =~ ^[1-9][0-9]*$ ]] || die "--cpus must be a positive integer"
+    [[ $memory =~ ^[1-9][0-9]*$ ]] || die "--memory must be a positive integer"
+    [[ -z $net || $net == user || $net == none ]] || die "--net must be user or none"
+    [[ -z $boot || $boot == iso || $boot == disk ]] || die "--boot must be iso or disk"
+
+    if [[ $guest == elementary ]]; then
+        [[ -n $iso ]] || iso=$(find_newest_iso 'elementaryos*arm64*.iso' || true)
+        [[ -n $iso ]] || die "no installer ISO found; run 'mseries-vm fetch elementary' or pass --iso PATH"
+        [[ -f $iso ]] || die "ISO not found: $iso"
+        disk_gb=${disk_gb:-$DEFAULT_DISK_GB}
+    else
+        [[ -n $iso ]] || die "Windows needs the ARM64 installer ISO; run 'mseries-vm fetch windows' or pass --iso PATH"
+        [[ -f $iso ]] || die "ISO not found: $iso"
+        disk_gb=${disk_gb:-$WINDOWS_DISK_GB}
+        boot=${boot:-iso}
+    fi
+    [[ -z $virtio_media || -f $virtio_media ]] || die "media not found: $virtio_media"
+    iso=$(realpath "$iso")
+    [[ -z $virtio_media ]] || virtio_media=$(realpath "$virtio_media")
+    [[ $iso != /dev/* && $iso != /proc/* && $iso != /sys/* ]] || die "refusing $iso"
+    [[ -z $virtio_media || ( $virtio_media != /dev/* && $virtio_media != /proc/* && $virtio_media != /sys/* ) ]] \
+        || die "refusing $virtio_media"
+
+    local dir
+    dir=$(new_vm_dir "$name") || exit 1
+    if ! cp "$AAVMF_DIR/AAVMF_VARS.fd" "$dir/vars.fd" 2>/dev/null; then
+        rm -rf "$dir"
+        die "cannot copy $AAVMF_DIR/AAVMF_VARS.fd (install qemu-efi-aarch64)"
+    fi
+    qemu-img create -q -f qcow2 "$dir/disk.qcow2" "${disk_gb}G"
+    write_vm_conf "$dir" "$name" "$guest"
+    { echo "ISO=$iso"
+      echo "EXTRA_MEDIA=$virtio_media"
+      [[ -z $net ]] || echo "NET=$net"
+      echo "CPUS=$cpus"
+      echo "MEMORY_MB=$memory"
+      [[ -z $boot ]] || echo "BOOT=$boot"
+    } >> "$dir/vm.conf"
+    if [[ $guest == windows ]]; then
+        cat >> "$dir/vm.conf" <<'EOF'
+# Windows 11 needs TPM 2.0 and Secure Boot; NVMe avoids requiring virtio drivers.
+# (Secure Boot on ARM comes from AAVMF_CODE.ms.fd alone; QEMU's virt machine has
+# no x86-style SMM, so none is configured.)
+DISK_BUS=nvme
+FIRMWARE=AAVMF_CODE.ms.fd
+TPM=on
+EOF
+        : > "$dir/notes.txt"
+        cat >> "$dir/notes.txt" <<'EOF'
+Windows 11 ARM64 setup notes
+- The installer boots from the attached ISO; install to the NVMe disk ("Drive 0").
+- If you pass --virtio-media virtio-win.iso, virtio drivers are available for
+  network/balloon devices; the disk itself needs no driver.
+- First boot after install may take a few minutes under emulated TPM.
+EOF
+    fi
+    echo "Created VM '$name' ($guest) in $dir"
+    echo "Start it with: mseries-vm start $name"
+}
+
+cmd_start() {
+    local name=${1:?usage: mseries-vm start NAME [--headless|--daemon|--force]}
+    shift
+    local headless=0 daemon=0 force=0
+    while (( $# )); do
+        case $1 in
+            --headless) headless=1; daemon=1; shift ;;
+            --daemon) daemon=1; shift ;;
+            --force) force=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    local dir
+    dir=$(vm_dir "$name")
+    load_vm "$name"
+    vm_running "$name" && die "VM '$name' is already running (pid $(vm_pid "$name"))"
+
+    if [[ ! -e /dev/kvm && ${MSERIES_VM_ALLOW_NO_KVM:-} != 1 ]]; then
+        die "/dev/kvm is missing; KVM acceleration is required (set MSERIES_VM_ALLOW_NO_KVM=1 only for tests)"
+    fi
+    local qemu swtpm
+    qemu=$(tool qemu-system-aarch64)
+    [[ -f $dir/$DISK ]] || die "disk $dir/$DISK is missing"
+    [[ -f $dir/$VARS_FILE ]] || die "$dir/$VARS_FILE is missing"
+    [[ -f $AAVMF_DIR/$FIRMWARE ]] || die "$AAVMF_DIR/$FIRMWARE is missing"
+    [[ -z $ISO || -f $ISO ]] || die "ISO not found: $ISO"
+    [[ -z $EXTRA_MEDIA || -f $EXTRA_MEDIA ]] || die "media not found: $EXTRA_MEDIA"
+
+    if [[ $TPM == on ]]; then
+        swtpm=$(tool swtpm)
+        mkdir -p "$dir/tpm"
+        rm -f "$dir/swtpm.sock" "$dir/swtpm.pid"
+        "$swtpm" socket --tpm2 --tpmstate "dir=$dir/tpm" \
+            --ctrl "type=unixio,path=$dir/swtpm.sock" \
+            --pid "file=$dir/swtpm.pid" --log "file=$dir/swtpm.log" --daemon
+    fi
+
+    rotate_file() { [[ -f $1 ]] && mv -f "$1" "$1.prev"; return 0; }
+    rotate_file "$dir/serial.log"
+    rotate_file "$dir/qemu.log"
+    rm -f "$dir/qmp.sock" "$dir/qmp-view.sock"
+
+    local machine="virt,accel=kvm"
+
+    local -a cmd=("$qemu" -name "mseries-$name" -machine "$machine" -cpu host
+        -smp "$CPUS" -m "$MEMORY_MB"
+        -drive "if=pflash,format=raw,readonly=on,file=$AAVMF_DIR/$FIRMWARE"
+        -drive "if=pflash,format=raw,file=$dir/$VARS_FILE")
+    if [[ $TPM == on ]]; then
+        # shellcheck disable=SC2054  # QEMU argument lists use commas by design.
+        cmd+=(-chardev "socket,id=chrtpm,path=$dir/swtpm.sock"
+              -tpmdev emulator,id=tpm0,chardev=chrtpm
+              -device tpm-tis-device,tpmdev=tpm0)
+    fi
+    if [[ ${GPU:-virtio} == ramfb ]]; then
+        # Windows setup draws through the firmware framebuffer; with virtio-gpu
+        # the screen stays stale or black until a guest driver is installed.
+        cmd+=(-device ramfb)
+    elif [[ $GL == on ]]; then
+        cmd+=(-device virtio-gpu-gl-pci)
+    else
+        cmd+=(-device virtio-gpu-pci)
+    fi
+    cmd+=(-device qemu-xhci -device usb-kbd -device usb-tablet)
+    if [[ $AUDIO == on ]]; then
+        # shellcheck disable=SC2054
+        cmd+=(-audiodev pipewire,id=snd0 -device virtio-sound-pci,audiodev=snd0)
+    fi
+    # shellcheck disable=SC2054
+    cmd+=(-object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0)
+    cmd+=(-device virtio-scsi-pci)
+    if [[ $DISK_BUS == nvme ]]; then
+        cmd+=(-drive "file=$dir/$DISK,if=none,id=disk0,format=qcow2"
+              -device "nvme,serial=mseries-$name,drive=disk0")
+    else
+        cmd+=(-drive "file=$dir/$DISK,if=virtio,format=qcow2")
+    fi
+    local -a cdroms=()
+    [[ -n $ISO ]] && cdroms+=("$ISO")
+    if [[ -n $EXTRA_MEDIA ]]; then
+        # shellcheck disable=SC2206  # simple space-separated list by design
+        cdroms+=($EXTRA_MEDIA)
+    fi
+    local index=0 boot_arg
+    for medium in "${cdroms[@]}"; do
+        boot_arg=""
+        if (( index == 0 )) && [[ $BOOT == iso ]] && [[ -n $ISO ]]; then
+            boot_arg=",bootindex=1"
+        fi
+        # Extra media can ride on USB: Windows PE reads USB storage with its
+        # in-box driver but has no virtio-scsi driver until you load one from it.
+        local cd_device=scsi-cd
+        if (( index > 0 )) && [[ ${EXTRA_BUS:-scsi} == usb ]]; then
+            cd_device=usb-storage
+        fi
+        cmd+=(-drive "if=none,id=cdrom$index,format=raw,media=cdrom,readonly=on,file=$medium"
+              -device "$cd_device,drive=cdrom$index$boot_arg")
+        index=$((index + 1))
+    done
+    if [[ $NET == none ]]; then
+        cmd+=(-nic none)
+    else
+        local nic="user,model=virtio-net-pci"
+        [[ -z ${HOSTFWD:-} ]] || nic+=",hostfwd=$HOSTFWD"
+        cmd+=(-nic "$nic")
+    fi
+    cmd+=(-serial "file:$dir/serial.log" -monitor none
+          -qmp "unix:$dir/qmp.sock,server=on,wait=off"
+          -qmp "unix:$dir/qmp-view.sock,server=on,wait=off"
+          -msg timestamp=on)
+    if [[ ${CLIPBOARD:-off} == on ]]; then
+        # Clipboard sharing: SPICE agent channel plus QEMU's D-Bus display (Machine Lab connects to it).
+        cmd+=(-chardev "qemu-vdagent,id=vdagent,clipboard=on,mouse=off"
+              -device virtio-serial-pci
+              -device "virtserialport,chardev=vdagent,name=com.redhat.spice.0")
+    fi
+    if (( headless )); then
+        if [[ ${CLIPBOARD:-off} == on || ${MSERIES_VM_DBUS_DISPLAY:-off} == on ]]; then
+            # QEMU's D-Bus display: clipboard, and the screen stream / resize for Machine Lab.
+            # shellcheck disable=SC2054
+            cmd+=(-display dbus,p2p=on)
+        else
+            cmd+=(-display none)
+        fi
+    elif [[ $GL == on ]]; then
+        # shellcheck disable=SC2054
+        cmd+=(-display gtk,gl=on)
+    else
+        cmd+=(-display gtk)
+    fi
+
+    printf '%s\n' "${cmd[@]}" > "$dir/qemu.args"
+    if (( daemon )); then
+        nohup "${cmd[@]}" </dev/null >>"$dir/qemu.log" 2>&1 &
+        echo $! > "$dir/qemu.pid"
+        sleep 1
+        if vm_running "$name"; then
+            echo "VM '$name' running (pid $(vm_pid "$name")); serial: $dir/serial.log"
+        else
+            stop_swtpm "$name"
+            die "VM '$name' failed to start; see $dir/qemu.log"
+        fi
+    else
+        echo "Starting VM '$name' in the foreground (Ctrl-C stops it)."
+        exec "${cmd[@]}"
+    fi
+}
+
+cmd_stop() {
+    local name=${1:?usage: mseries-vm stop NAME [--force]}
+    shift
+    local force=0
+    while (( $# )); do
+        case $1 in
+            --force) force=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    local dir pid
+    dir=$(vm_dir "$name")
+    [[ -d $dir ]] || die "no VM named '$name'"
+    if ! vm_running "$name"; then
+        stop_swtpm "$name"
+        echo "VM '$name' is not running."
+        return 0
+    fi
+    pid=$(vm_pid "$name")
+    if (( ! force )) && [[ -S $dir/qmp.sock ]]; then
+        qmp_command "$dir/qmp.sock" '{"execute":"system_powerdown"}' 2>/dev/null || true
+        for _ in $(seq 1 60); do
+            vm_running "$name" || break
+            sleep 1
+        done
+    fi
+    if vm_running "$name"; then
+        kill -TERM "$pid" 2>/dev/null || true
+        for _ in $(seq 1 15); do
+            vm_running "$name" || break
+            sleep 1
+        done
+    fi
+    if vm_running "$name"; then
+        note "guest did not shut down; sending SIGKILL (unsaved work in the guest is lost)"
+        kill -KILL "$pid" 2>/dev/null || true
+        sleep 1
+    fi
+    rm -f "$dir/qemu.pid" "$dir/qmp.sock" "$dir/qmp-view.sock"
+    stop_swtpm "$name"
+    echo "VM '$name' stopped."
+}
+
+cmd_status() {
+    local name=${1:?usage: mseries-vm status NAME}
+    load_vm "$name"
+    if vm_running "$name"; then
+        echo "running pid=$(vm_pid "$name")"
+    else
+        echo "stopped"
+    fi
+}
+
+cmd_serial() {
+    local name=${1:?usage: mseries-vm serial NAME [-n LINES]}
+    shift
+    local lines=40
+    [[ ${1:-} == -n ]] && { lines=${2:?}; shift 2; }
+    local dir
+    dir=$(vm_dir "$name")
+    [[ -f $dir/serial.log ]] || die "no serial log yet for '$name'; start it first"
+    tail -n "$lines" "$dir/serial.log"
+}
+
+cmd_wait() {
+    local name=${1:?usage: mseries-vm wait NAME --pattern REGEX [--timeout SEC]}
+    shift
+    local pattern="" timeout=900
+    while (( $# )); do
+        case $1 in
+            --pattern) pattern=${2:?--pattern needs a regex}; shift 2 ;;
+            --timeout) timeout=${2:?--timeout needs seconds}; shift 2 ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    [[ -n $pattern ]] || die "--pattern is required"
+    [[ $timeout =~ ^[1-9][0-9]*$ ]] || die "--timeout must be a positive integer"
+    local dir log start
+    dir=$(vm_dir "$name")
+    log=$dir/serial.log
+    [[ -f $log ]] || die "no serial log yet for '$name'"
+    start=$SECONDS
+    while (( SECONDS - start < timeout )); do
+        if grep -qE -- "$pattern" "$log" 2>/dev/null; then
+            echo "matched: $pattern"
+            return 0
+        fi
+        if ! vm_running "$name"; then
+            die "VM '$name' exited before matching: $pattern"
+        fi
+        sleep 2
+    done
+    die "timed out after ${timeout}s waiting for: $pattern"
+}
+
+cmd_key() {
+    local name=${1:?usage: mseries-vm key NAME QCODE [QCODE...]}
+    shift
+    (( $# )) || die "give at least one QEMU key code, e.g. ret, down, spc"
+    local dir qcode keys=""
+    dir=$(vm_dir "$name")
+    [[ -S $dir/qmp.sock ]] || die "'$name' is not running with QMP enabled"
+    for qcode in "$@"; do
+        [[ $qcode =~ ^[A-Za-z0-9_-]+$ ]] || die "bad key code '$qcode'"
+        keys+="{\"type\":\"qcode\",\"data\":\"$qcode\"},"
+    done
+    qmp_command "$dir/qmp.sock" "{\"execute\":\"send-key\",\"arguments\":{\"keys\":[${keys%,}]}}"
+    echo "Sent keys: $*"
+}
+
+cmd_screenshot() {
+    local name=${1:?usage: mseries-vm screenshot NAME [file.png]}
+    local file=${2:-}
+    local dir
+    dir=$(vm_dir "$name")
+    [[ -n $file ]] || file=$dir/screenshot-$(date +%Y%m%d-%H%M%S).png
+    [[ -S $dir/qmp.sock ]] || die "'$name' is not running with QMP enabled"
+    qmp_screendump "$dir/qmp.sock" "$file"
+    echo "Screenshot: $file"
+}
+
+cmd_snapshot() {
+    local name=${1:?usage: mseries-vm snapshot NAME save|restore|delete|list [tag]}
+    local action=${2:?usage: mseries-vm snapshot NAME save|restore|delete|list [tag]}
+    local tag=${3:-}
+    local dir
+    dir=$(vm_dir "$name")
+    load_vm "$name"
+    vm_running "$name" && die "stop VM '$name' before snapshot operations"
+    [[ -f $dir/$DISK ]] || die "disk $dir/$DISK is missing"
+    case $action in
+        save) [[ -n $tag ]] || tag=manual-$(date +%Y%m%d-%H%M%S)
+              qemu-img snapshot -c "$tag" "$dir/$DISK"; echo "Saved snapshot '$tag'." ;;
+        restore) [[ -n $tag ]] || die "restore needs a tag ('mseries-vm snapshot $name list')"
+                 qemu-img snapshot -a "$tag" "$dir/$DISK"; echo "Restored '$tag'." ;;
+        delete) [[ -n $tag ]] || die "delete needs a tag"
+                qemu-img snapshot -d "$tag" "$dir/$DISK"; echo "Deleted '$tag'." ;;
+        list) qemu-img snapshot -l "$dir/$DISK" ;;
+        *) die "unknown snapshot action $action" ;;
+    esac
+}
+
+cmd_set() {
+    local name=${1:?usage: mseries-vm set NAME KEY VALUE}
+    local key=${2:?usage: mseries-vm set NAME KEY VALUE}
+    local value=${3-}
+    local dir
+    dir=$(vm_dir "$name")
+    [[ -f $dir/vm.conf ]] || die "no VM named '$name'"
+    case $key in
+        ISO) [[ -z $value || -f $value ]] || die "not a file: $value"
+             [[ -z $value ]] || value=$(realpath "$value") ;;
+        EXTRA_MEDIA) ;;
+        BOOT) [[ $value == iso || $value == disk ]] || die "BOOT must be iso or disk" ;;
+        NET) [[ $value == user || $value == none ]] || die "NET must be user or none" ;;
+        HOSTFWD) [[ $value != *[[:space:]]* ]] || die "HOSTFWD must be a hostfwd rule, e.g. tcp::2222-:22" ;;
+        TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
+        AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
+        GPU) [[ $value == virtio || $value == ramfb ]] || die "GPU must be virtio or ramfb" ;;
+        CLIPBOARD) [[ $value == on || $value == off ]] || die "CLIPBOARD must be on or off" ;;
+        EXTRA_BUS) [[ $value == scsi || $value == usb ]] || die "EXTRA_BUS must be scsi or usb" ;;
+        CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
+        DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;
+        FIRMWARE) [[ -f $AAVMF_DIR/$value ]] || die "firmware not found: $AAVMF_DIR/$value" ;;
+        VARS_FILE) ;;
+        GUEST) die "GUEST cannot be changed after creation" ;;
+        *) die "unknown key $key" ;;
+    esac
+    if grep -q "^$key=" "$dir/vm.conf"; then
+        # Replace in place; keep everything else untouched.
+        python3 - "$dir/vm.conf" "$key" "$value" <<'PY'
+import sys
+path, key, value = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = open(path).read().splitlines(True)
+out = []
+for line in lines:
+    out.append(f"{key}={value}\n" if line.startswith(key + "=") else line)
+open(path, "w").writelines(out)
+PY
+    else
+        printf '%s=%s\n' "$key" "$value" >> "$dir/vm.conf"
+    fi
+    echo "$name: $key=$value"
+}
+
+cmd_delete() {
+    local name=${1:?usage: mseries-vm delete NAME --force}
+    shift
+    local force=0
+    while (( $# )); do
+        case $1 in
+            --force) force=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    local dir
+    dir=$(vm_dir "$name")
+    [[ -d $dir ]] || die "no VM named '$name'"
+    vm_running "$name" && die "VM '$name' is running; stop it first"
+    if (( ! force )); then
+        if [[ -t 0 ]]; then
+            read -r -p "Delete VM '$name' and all its disks? [y/N] " answer
+            [[ $answer == y || $answer == Y ]] || die "not deleted"
+        else
+            die "refusing to delete without --force (non-interactive)"
+        fi
+    fi
+    rm -rf -- "$dir"
+    echo "Deleted VM '$name'."
+}
+
+cmd_macos() {
+    cat <<'EOF'
+macOS guests are not possible on this machine, and no configuration changes that.
+
+A macOS guest on Apple Silicon needs Apple's Virtualization/Hypervisor frameworks and Apple's
+virtual hardware (paravirtual GPU, storage, boot-ROM handling). Those exist only on macOS hosts.
+Linux KVM on the M1 Pro does not provide them, and no open implementation boots macOS under it.
+x86-64 macOS under emulation would need full TCG translation on ARM and is not usable for testing.
+
+Options that do work:
+  1. Remote Mac: run UTM/Tart (or a real macOS VM) on a Mac that runs macOS and reach it over the
+     network. Keep that Mac's findings as the reference environment.
+  2. The internal macOS stays installed next to elementary OS: pick it at the boot picker
+     (hold power) or asahi-bless --set-boot-macos.
+  3. Keep macOS-look verification inside Linux: mseries theme/Gala work plus the test VMs that do
+     work here (elementary, Omarchy, Windows).
+
+See mseries/MACOS-VM.md for the full note.
+EOF
+}
+
+fetch_deps_windows() {
+    local missing=()
+    for dep in aria2c cabextract wimlib-imagex chntpw genisoimage; do
+        command -v "$dep" >/dev/null 2>&1 || missing+=("$dep")
+    done
+    if (( ${#missing[@]} )); then
+        note "installing UUP conversion dependencies: ${missing[*]}"
+        sudo apt-get install -y aria2 cabextract wimtools chntpw genisoimage
+    fi
+}
+
+cmd_fetch_elementary() {
+    local gh
+    gh=$(tool gh)
+    local run_id artifact
+    run_id=$("$gh" run list --repo "$REPO_SLUG" --workflow=daily-9.0.yml --status success \
+        --limit 1 --json databaseId --jq '.[0].databaseId')
+    [[ -n $run_id && $run_id != null ]] || die "no successful daily-9.0 build found"
+    artifact=$("$gh" run view "$run_id" --repo "$REPO_SLUG" --json artifacts \
+        --jq '[.artifacts[] | select(.name | startswith("os9-mseries-arm64"))] | .[0].name')
+    [[ -n $artifact && $artifact != null ]] || die "run $run_id has no ARM64 installer artifact"
+    local dest=$VMS_DIR/downloads/elementary-artifact
+    mkdir -p "$dest"
+    note "downloading artifact $artifact from run $run_id (multi-GB, resumable by rerunning)"
+    "$gh" run download "$run_id" --repo "$REPO_SLUG" -n "$artifact" -D "$dest"
+    local iso
+    iso=$(find "$dest" -name '*.iso' -print -quit)
+    [[ -n $iso ]] || die "artifact did not contain an ISO"
+    local sums
+    sums=$(find "$dest" -name 'INSTALLER-SHA256SUMS' -print -quit)
+    if [[ -n $sums ]]; then
+        (cd "$(dirname "$sums")" && sha256sum -c INSTALLER-SHA256SUMS) \
+            || die "installer checksum verification failed"
+        echo "Verified INSTALLER-SHA256SUMS."
+    fi
+    echo "elementary OS installer: $iso"
+    echo "Create the VM with: mseries-vm create elementary"
+}
+
+cmd_fetch_windows() {
+    local convert=0
+    while (( $# )); do
+        case $1 in
+            --convert) convert=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    fetch_deps_windows
+    local curl jar
+    curl=$(tool curl)
+    jar=$VMS_DIR/downloads/windows-uup
+    mkdir -p "$jar/UUPs"
+
+    local build_id=$UUP_BUILD
+    if [[ -z $build_id ]]; then
+        note "resolving the newest Windows 11 arm64 build from $UUP_API"
+        build_id=$("$curl" -fsS "$UUP_API/listid.php?search=24H2%20arm64&sortByDate=1" \
+            | python3 -c '
+import json, sys
+builds = json.load(sys.stdin).get("response", {}).get("builds", {})
+arm64 = [b for b in builds.values() if b.get("arch") == "arm64"]
+arm64.sort(key=lambda b: b.get("created", 0), reverse=True)
+print(arm64[0]["uuid"] if arm64 else "")
+')
+        [[ -n $build_id ]] || die "could not resolve an arm64 build from UUP dump"
+    fi
+    note "build id: $build_id (edition $UUP_EDITION, language $UUP_LANG)"
+    "$curl" -fsS "$UUP_API/get.php?id=$build_id&lang=$UUP_LANG&edition=$UUP_EDITION" \
+        -o "$jar/files.json"
+    # Verify already-downloaded files against files.json first, and hand aria2 only
+    # what is missing or corrupt. aria2 with --continue would otherwise re-hash and
+    # network-probe complete files, and its signed UUP URLs expire quickly, so a
+    # naive re-run drowns in stale-URL 403s and can take longer than the download.
+    local verify_rc=0
+    python3 - "$jar" <<'PY' || verify_rc=$?
+import hashlib, json, os, sys
+jar = sys.argv[1]
+meta = json.load(open(os.path.join(jar, "files.json"))).get("response", {})
+files = meta.get("files", {})
+if not files:
+    raise SystemExit("UUP dump returned no files for this build/edition/language")
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(4 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+todo = []
+for name, info in sorted(files.items()):
+    path = os.path.join(jar, "UUPs", name)
+    if os.path.isfile(path) and os.path.getsize(path) == int(info["size"]):
+        if not info.get("sha256") or sha256(path) == info["sha256"]:
+            continue
+    todo.append((name, info))
+
+if not todo:
+    total = sum(int(info["size"]) for info in files.values())
+    print(f"all {len(files)} files present and sha-256 verified ({total/1e9:.1f} GB)",
+          file=sys.stderr)
+    raise SystemExit(0)
+
+lines = ["# generated by mseries-vm fetch windows",
+         f"# {meta.get('updateName')} {meta.get('arch')} build {meta.get('build')}"]
+for name, info in todo:
+    lines.append(info["url"])
+    lines.append(f"  out={name}")
+    if info.get("sha256"):
+        lines.append(f"  checksum=sha-256={info['sha256']}")
+open(os.path.join(jar, "aria2-input.txt"), "w").write("\n".join(lines) + "\n")
+todo_gb = sum(int(info["size"]) for _, info in todo) / 1e9
+print(f"{len(todo)} of {len(files)} files to download ({todo_gb:.1f} GB); "
+      f"{len(files) - len(todo)} already verified", file=sys.stderr)
+raise SystemExit(10)
+PY
+    case $verify_rc in
+        0)
+            note "no download needed; the UUP set is complete and verified"
+            ;;
+        10)
+            note "downloading UUP files with aria2 (resumable; rerun this command to continue)"
+            aria2c -i "$jar/aria2-input.txt" -d "$jar/UUPs" \
+                -j 4 -x 4 -c --file-allocation=none --auto-file-renaming=false \
+                --console-log-level=warn --summary-interval=30
+            ;;
+        *)
+            die "verifying existing UUP downloads failed (exit $verify_rc)"
+            ;;
+    esac
+
+    if [[ ! -d $jar/converter ]]; then
+        note "cloning the pinned UUP converter"
+        git clone -q "$UUP_CONVERTER_REPO" "$jar/converter"
+    fi
+    git -C "$jar/converter" fetch -q origin || true
+    git -C "$jar/converter" checkout -q "$UUP_CONVERTER_PIN"
+    echo "Converter pinned at $UUP_CONVERTER_PIN."
+
+    if (( convert )); then
+        note "converting to ISO; this takes a while and logs to $jar/convert.log"
+        (cd "$jar" && bash converter/convert.sh wim "$jar/UUPs" 2>&1 | tee "$jar/convert.log")
+        local iso
+        iso=$(find "$jar" -maxdepth 2 -name '*.iso' -printf '%T@ %p\n' | sort -rn | head -n1 | cut -d' ' -f2-)
+        [[ -n $iso ]] || die "converter finished but no ISO was produced; see $jar/convert.log"
+        echo "Windows ISO: $iso"
+        echo "Create the VM with: mseries-vm create windows --iso \"$iso\""
+    else
+        echo "Download complete. Convert to ISO with:"
+        echo "  mseries-vm fetch windows --convert"
+    fi
+}
+
+cmd_import_omarchy() {
+    local source=${1:?usage: mseries-vm import-omarchy PATH.zip|PATH.utm [--name NAME] [--delete-source]}
+    shift
+    local name=omarchy delete_source=0
+    while (( $# )); do
+        case $1 in
+            --name) name=${2:?--name needs a value}; shift 2 ;;
+            --delete-source) delete_source=1; shift ;;
+            *) die "unknown option $1" ;;
+        esac
+    done
+    [[ -f $source || -d $source ]] || die "not found: $source"
+    local dir
+    dir=$(new_vm_dir "$name") || exit 1
+
+    local work=$dir/.import
+    mkdir -p "$work"
+    local bundle=$source
+    if [[ -f $source ]]; then
+        case $source in
+            *.zip) note "extracting $(basename "$source") (this takes a minute)"
+                   unzip -q -o "$source" -d "$work" ;;
+            *) die "import expects the .zip from archive.org or an extracted .utm bundle" ;;
+        esac
+        bundle=$(find "$work" -maxdepth 2 -type d -name '*.utm' -print -quit)
+        [[ -n $bundle ]] || bundle=$work
+    fi
+
+    local disk
+    disk=$(find "$bundle" -maxdepth 2 -type f \( -name '*.qcow2' -o -name '*.raw' -o -name '*.img' \) \
+        -printf '%s %p\n' | sort -rn | head -n1 | cut -d' ' -f2-)
+    [[ -n $disk ]] || { rm -rf "$dir"; die "no disk image inside $bundle"; }
+
+    local format
+    format=$(qemu-img info --output=json "$disk" | python3 -c 'import json,sys; print(json.load(sys.stdin)["format"])')
+    if [[ $format == qcow2 ]]; then
+        mv "$disk" "$dir/disk.qcow2"
+    else
+        note "converting $format disk to qcow2"
+        qemu-img convert -f "$format" -O qcow2 -o lazy_refcounts=on "$disk" "$dir/disk.qcow2"
+    fi
+    [[ -f $bundle/config.plist ]] && cp "$bundle/config.plist" "$dir/utm-config.plist" || true
+    cp "$AAVMF_DIR/AAVMF_VARS.fd" "$dir/vars.fd" || { rm -rf "$dir"; die "cannot copy firmware vars"; }
+    write_vm_conf "$dir" "$name" omarchy
+    { echo 'BOOT=disk'
+      echo '# Imported from the Omarchy ARM64 UTM image; the guest forces software'
+      echo '# rendering, so virtio-gpu (not GL) is the sensible default here.'
+    } >> "$dir/vm.conf"
+    rm -rf "$work"
+    (( delete_source )) && rm -f -- "$source"
+    echo "Imported Omarchy VM '$name' into $dir ($(qemu-img info "$dir/disk.qcow2" | awk -F': ' '/virtual size/ {print $2}'))"
+    echo "Start it with: mseries-vm start $name --headless    (then 'mseries-vm screenshot $name')"
+}
+
+usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; }
+
+case "${1:-}" in
+    info) cmd_info ;;
+    list) cmd_list ;;
+    create) shift; cmd_create "$@" ;;
+    start) shift; cmd_start "$@" ;;
+    stop) shift; cmd_stop "$@" ;;
+    status) shift; cmd_status "$@" ;;
+    serial) shift; cmd_serial "$@" ;;
+    wait) shift; cmd_wait "$@" ;;
+    screenshot) shift; cmd_screenshot "$@" ;;
+    key) shift; cmd_key "$@" ;;
+    snapshot) shift; cmd_snapshot "$@" ;;
+    set) shift; cmd_set "$@" ;;
+    delete) shift; cmd_delete "$@" ;;
+    fetch) shift; case "${1:-}" in
+               elementary) shift; cmd_fetch_elementary "$@" ;;
+               windows) shift; cmd_fetch_windows "$@" ;;
+               *) die "usage: mseries-vm fetch <elementary|windows>" ;;
+           esac ;;
+    import-omarchy) shift; cmd_import_omarchy "$@" ;;
+    macos) cmd_macos ;;
+    ''|-h|--help|help) usage ;;
+    *) usage >&2; exit 2 ;;
+esac

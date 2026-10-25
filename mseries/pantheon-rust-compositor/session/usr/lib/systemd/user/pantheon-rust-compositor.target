@@ -1,0 +1,9 @@
+[Unit]
+Description=Pantheon Rust compositor
+DefaultDependencies=no
+
+Requisite=gnome-session-initialized.target
+PartOf=gnome-session-initialized.target
+Before=gnome-session-initialized.target
+
+Wants=pantheon-rust-compositor@wayland.service

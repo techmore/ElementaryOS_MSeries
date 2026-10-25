@@ -18,6 +18,7 @@ DIRECTORIES = (
     "mkosi.conf.d",
     ".github/workflows",
     "mseries",
+    "rust",
 )
 ROOT_FILES = ("Justfile", "mkosi.conf", "packages.arm64", "assemble-iso.sh")
 RUST_CANDIDATE_PREFIXES = (
@@ -35,6 +36,7 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/seed-compiler/",
 )
 RUST_IMPLEMENTED_UNVERIFIED_PREFIXES = (
+    "rust/",
     "mseries/rust/iso-assembly/",
     "mseries/rust/desktop-settings/",
     "mseries/rust/launcher-keys/",
@@ -47,6 +49,7 @@ RUST_FUNCTIONAL_PREFIXES = (
     "mseries/rust/brightness-bridge/",
 )
 PROJECT_PREFIX_OVERRIDES = {
+    "rust/mseries-power/": "mseries/power",
     "mseries/rust/mseries-power/": "mseries/power",
     "mseries/rust/wifi-resume/": "mseries/wifi-resume",
     "mseries/rust/netusage/": "mseries/netspeed/netusage",
@@ -179,6 +182,8 @@ def component_id(path: Path) -> str:
         if directories:
             return "mseries/" + "/".join(directories[:2])
         return "mseries/" + path.stem.lower()
+    if parts[0] == "rust":
+        return "rust/" + (parts[1] if len(parts) > 2 else "workspace")
     if parts[:2] == ("mkosi.images", "apple-silicon"):
         return "mseries/apple-silicon-image"
     if parts[:1] == ("mkosi.images",):
@@ -215,6 +220,8 @@ def rust_status(text: str, local: bool, item_role: str) -> str:
         return "recorded-non-code-input"
     if not local:
         return "retain-upstream"
+    if text.startswith("rust/mseries-messages/"):
+        return "owner-deferred-incomplete"
     if text in RUST_IN_USE_PATHS:
         return "candidate-parity-verified-in-use"
     if text.startswith(RUST_IMPLEMENTED_UNVERIFIED_PREFIXES):
@@ -254,6 +261,9 @@ def migration_metadata(project: str, ownership: str, records: list[dict[str, str
     if "candidate-parity-verified-in-use" in statuses:
         migration = "rust-in-use-parity-verified"
         parity = "candidate-parity-evidence-present"
+    elif "owner-deferred-incomplete" in statuses:
+        migration = "owner-deferred-incomplete"
+        parity = "owner-deferred-incomplete"
     elif "candidate-functional-tests-passing-not-installed" in statuses:
         migration = "candidate-functional-tests-passing-not-installed"
         parity = "functional-checks-only"
@@ -271,7 +281,9 @@ def migration_metadata(project: str, ownership: str, records: list[dict[str, str
         "migration_status": migration,
         "parity_contract_status": parity,
         "parity_contract": (
-            "Feature-level behavior and interface baselines must be recorded before full parity can be claimed."
+            "Owner deferred this incomplete app on 2026-10-22; see mseries/MESSAGING-STATUS.md. Do not resume build-out or infer acceptance from existing tests."
+            if parity == "owner-deferred-incomplete"
+            else "Feature-level behavior and interface baselines must be recorded before full parity can be claimed."
             if parity == "not-defined"
             else "Implementation exists, but feature-level parity has not been verified."
             if parity == "implementation-present-unverified"
@@ -296,7 +308,7 @@ def render() -> str:
         text = path.as_posix()
         item_role = role(path)
         local = (
-            text.startswith(("bin/", "transform/", "repos/", "mkosi.conf.d/", ".github/workflows/", "mseries/"))
+            text.startswith(("bin/", "transform/", "repos/", "mkosi.conf.d/", ".github/workflows/", "mseries/", "rust/"))
             or text in ROOT_FILES
             or text.startswith("mkosi.images/apple-silicon/")
             or text in {

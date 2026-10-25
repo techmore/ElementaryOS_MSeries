@@ -1,0 +1,39 @@
+diff --git a/src/Services/PopoverManager.vala b/src/Services/PopoverManager.vala
+index ea74b34..18214fe 100644
+--- a/src/Services/PopoverManager.vala
++++ b/src/Services/PopoverManager.vala
+@@ -29,6 +29,9 @@ public class Wingpanel.Services.PopoverManager : Object {
+         }
+
+         set {
++            // Keep the old anchor alive until its popover has been detached. A model
++            // removal can leave this property as the anchor's final strong reference.
++            var previous_indicator = _current_indicator;
+             if (value == null && _current_indicator == null) {
+                 return;
+             }
+@@ -37,16 +40,18 @@ public class Wingpanel.Services.PopoverManager : Object {
+                 _current_indicator = value;
+                 indicator_open = true;
+             } else if (value == null && _current_indicator != null) { // Close requested
+-                _current_indicator.set_state_flags (NORMAL, true);
+-                _current_indicator.display_widget.has_tooltip = true;
+-                _current_indicator.base_indicator.closed ();
++                previous_indicator.set_state_flags (NORMAL, true);
++                previous_indicator.display_widget.has_tooltip = true;
++                previous_indicator.base_indicator.closed ();
+                 _current_indicator = null;
+                 popover.popdown ();
++                // Do not leave the popup parented to a removed anchor during animation.
++                if (popover.get_parent () != null) popover.unparent ();
+                 indicator_open = false;
+             } else { // Switch
+-                _current_indicator.set_state_flags (NORMAL, true);
+-                _current_indicator.display_widget.has_tooltip = true;
+-                _current_indicator.base_indicator.closed ();
++                previous_indicator.set_state_flags (NORMAL, true);
++                previous_indicator.display_widget.has_tooltip = true;
++                previous_indicator.base_indicator.closed ();
+                 _current_indicator = value;
+                 popover.unparent ();
+             }

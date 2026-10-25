@@ -10,6 +10,17 @@ package behavior is tracked at the separate main-branch pin in
 
 **Current status, open problems and stretch goals: [`ROADMAP.md`](ROADMAP.md). Benchmarks: [`benchmarks/`](benchmarks/README.md).**
 
+English F5 speech is merged and activated with Nemotron CPU and optional native
+ANE/MLX engines; seven installed app routes passed within the quiet and memory guards. Read its
+[qualification ledger](dictation/QUALIFICATION-INDEX.md) before speech benchmarks
+or continuation work. Reuse completed receipts, including failures, and inspect
+the existing owned queue before starting anything. Current controls and scoped
+results are in [English F5 acceptance](dictation/F5-ENGLISH-ACCEPTANCE.md).
+
+[v0.0.1](releases/v0.0.1/README.md) is an English STT-only desktop-update candidate.
+Physical F5 in ChatGPT failed before capture; an accessibility/IBus launcher fix
+is staged for its next full launch. Post-relaunch human acceptance is pending.
+
 Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
 - Apple Silicon hardware reference: [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs) (audit pin in UPSTREAM-PINS.md)
@@ -19,7 +30,10 @@ Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 The owner confirms elementary OS 9 boots on a 2021 14-inch M1 Pro using
 the transformed system. See [desktop setup](DESKTOP-SETUP.md) for reproducible
 Command shortcuts, Pantheon brightness keys, Signal ARM64, CodexBar Linux and
-its native Wingpanel quota dropdown.
+its native Wingpanel quota dropdown. The [full-height desktop profile](display-space/README.md)
+adds notch-aware Wingpanel layout and a compact dock with persistent placement.
+[RepoBar for elementary OS](REPOBAR-PORT.md) is an optional native Wingpanel
+dashboard for GitHub repository counts, default-branch CI and releases.
 [Ambient keyboard lighting](keyboard-backlight/README.md) is available through
 `bash mseries/install-keyboard-backlight.sh`, using the AOP sensor and UPower.
 

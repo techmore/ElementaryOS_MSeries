@@ -1,5 +1,14 @@
 # Build notes — road to a testable arm64 ISO
 
+## New installer and YouTube guest pass — 2026-10-18
+
+Run [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
+built the factory Brave image from `5c0c60e`. Independent checksum, blank-disk
+installation and default installed generic UKI boot passed. The installed launcher,
+YouTube dock logo and 480p/1080p video with decoded audio passed in an ARM64 KVM
+guest with virgl. [Receipt and limits](video-decode/receipts/factory-2026-10-18/README.md).
+Fairydust was disabled for this build; physical Apple qualification remains pending.
+
 ## Where upstream stands
 
 elementary/os `main` already builds **both** arches in CI
@@ -29,11 +38,18 @@ qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
    in `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`). The first arm64 build succeeded; next qualify the generic-kernel boot
    path and verify the produced installer (see FIRST-ISO-BUILD.md).
 3. **Asahi-origin packages.** `asahi-audio`, `alsa-ucm-conf-asahi`, and
-   `speakersafetyd` are available from Ubuntu resolute/universe and the
-   transformed desktop has passed an audio-output check with the matching
-   PipeWire LV2 filter plugin. Package that safe chain into the factory image.
-   `avd-fw` and `libva-v4l2_request-avd` still need a confirmed Ubuntu source
-   (see `packages.arm64`).
+   `speakersafetyd` are available from Ubuntu resolute/universe. The factory
+   image now packages and enables `speakersafetyd` alone; the first-boot DSP
+   chain remains excluded until its volume behavior is qualified. The
+   transformed desktop passed an output check with the matching PipeWire LV2
+   filter plugin, which does not qualify factory-image audio. `avd-fw` and
+   `libva-v4l2_request-avd` still need a confirmed Ubuntu source (see
+   `packages.arm64`). [Focused receipt](upstream-audits/factory/2026-10-21T2228-0400-speaker-safety.md).
+   The October 21 artifact-only run resolved `speakersafetyd` 1.1.2-4 and
+   passed the liveiso payload check, but failed later in sysupdate repart
+   (`Verity signature partition is empty`); it did not produce a complete ISO.
+   The release recipe masked the mkosi failure until checksum generation. Fix
+   that build path before claiming a completed artifact.
 4. **Bootloader on real hardware.** Apple Silicon boots via m1n1/u-boot;
    verify grub-efi-arm64 + shim path works from USB on a test machine, or
    document the Asahi-installer + chroot route as the interim install path.
@@ -53,3 +69,20 @@ qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
 - Hyprland/Omarchy desktop behavior — this is Pantheon/Gala.
 - Touching this Mac's bootloader or macOS install — builds happen in CI or
   containers; installs happen only to external media or a spare machine.
+
+## October 18 factory build and installed-boot corrections
+
+The factory builders run through `build-in-image.chroot` because the build tools
+and target development libraries are installed by BuildPackages inside the image;
+the mkosi tools tree is a different execution root. Builder pins and output
+paths are unchanged.
+
+Ubuntu ARM64's vmlinuz may be an EFI wrapper containing a `.linux` payload and
+DTB resources. Nesting that relocatable wrapper inside a generated systemd UKI
+fails the inner-kernel relocation check. The ARM64 overlay supplies
+`prepare-uki-kernels`; sysupdate runs it before generating UKIs. Original vendor
+bytes and hashes are retained under `/usr/share/doc/mseries-kernel-inputs`.
+Plain Linux EFI images and complete existing UKIs are left alone. Unexpected
+initrd/command-line payloads and invalid inner EFI images fail closed. The live
+ISO's GRUB/casper kernel path is unchanged. Apple DTB/boot qualification remains
+open; the installed generic-kernel diagnostic was performed only in QEMU/KVM.

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Rounded screen-corner masks on the built-in display (like macOS), via a patched Gala.
+# Continuous superellipse corner approximations on the built-in display, via patched Gala:
+#  * masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS),
+#  * the same curve on every standard window (GALA_WINDOW_CORNER_RADIUS), and
+#  * a software dim layer below the panel's 2-nit backlight floor (mseries-brightness keys
+#    use it; patches/gala-screen-dim.patch).
 #
-#   bash mseries/install-gala-screen-corners.sh [--radius N]   # build, install privately, enable for your session
+#   bash mseries/install-gala-screen-corners.sh [--radius N] [--window-radius N]
 #   bash mseries/install-gala-screen-corners.sh --disable      # go back to the stock Gala for your session
 #
 # SAFETY DESIGN
@@ -13,12 +17,22 @@
 #    starting, and stays on stock until you delete ~/.cache/mseries-gala-failed.
 #  * Takes effect at the next login (the compositor cannot be swapped inside a running session).
 #
-# Radius is in logical pixels (default 20; 0 hides the masks). Change it later by editing
-# GALA_SCREEN_CORNER_RADIUS in the drop-in below and logging out/in.
+# Radii are in logical pixels. The built-in screen mask and window clip share the same
+# provisional 20-pixel target (0 disables either mask). Confirm the exact panel match visually.
+# Change them later by editing
+# GALA_SCREEN_CORNER_RADIUS / GALA_WINDOW_CORNER_RADIUS in the drop-in below and logging out/in.
 #
 # It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
 # slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
 # Command-drag uses it; without this Gala the dock simply stays centred.
+# gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
+
+#
+# gala-screenshot-shelf-placement.patch puts the screenshot shelf (a plain Wayland window, so drops into
+# Wayland apps like Signal work) in the bottom-right corner; the shelf switches to it at the next login.
+#
+# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector, Space switches to
+# window mode (blue highlight on the window under the pointer, click captures it); dragging still selects an area.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -27,6 +41,7 @@ commit=f0791434ac40a50f2aec64700a47b3bb04145752   # elementary/gala matching gal
 dropin_dir=$HOME/.config/systemd/user/io.elementary.gala@wayland.service.d
 dropin=$dropin_dir/mseries-screen-corners.conf
 radius=20
+window_radius=20
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -36,6 +51,7 @@ while [[ $# -gt 0 ]]; do
       echo 'Disabled for your session (stock Gala at next login). The private build stays in '"$prefix"'.'
       exit 0 ;;
     --radius) radius=$2; shift 2 ;;
+    --window-radius) window_radius=$2; shift 2 ;;
     *) echo "Unknown option $1" >&2; exit 1 ;;
   esac
 done
@@ -68,12 +84,21 @@ git -C "$source_dir" remote add origin https://github.com/elementary/gala.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-dim.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
+
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-shelf-placement.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/gala"
 sudo meson install -C "$build_dir" --no-rebuild >/dev/null
+# Tells the screenshot shelf that a Gala started after this point places its Wayland window itself.
+sudo install -d "$prefix/share"
+sudo touch "$prefix/share/mseries-shelf-wayland"
 
 # Launcher with automatic fallback to the stock compositor.
 launcher=$prefix/bin/mseries-gala
@@ -83,6 +108,15 @@ sudo tee "$launcher" >/dev/null <<'LAUNCHER'
 flag="$HOME/.cache/mseries-gala-failed"
 patched=/usr/local/lib/mseries/gala/bin/gala
 libs=/usr/local/lib/mseries/gala/lib
+# Patched libmutter from install-gala-mutter-fix.sh, used only while it matches the system mutter.
+mfix=/usr/local/lib/mseries/gala/mutter-fix
+if [ -r "$mfix/mutter-version" ] && [ -e "$mfix/libmutter-18.so.0" ]; then
+  if [ "$(cat "$mfix/mutter-version")" = "$(dpkg-query -W -f='${Version}' libmutter-18-0 2>/dev/null)" ]; then
+    libs="$mfix:$libs"
+  else
+    logger -t mseries-gala "patched libmutter is for $(cat "$mfix/mutter-version"), system has another version; not using it"
+  fi
+fi
 
 use_stock() {
   logger -t mseries-gala "$1; starting stock /usr/bin/gala"
@@ -106,16 +140,17 @@ sudo chmod 0755 "$launcher"
 
 mkdir -p "$dropin_dir"
 cat > "$dropin" <<EOF
-# ElementaryOS_MSeries: run the patched Gala (rounded screen corners) for this user's session only.
+# ElementaryOS_MSeries: run the patched Gala (rounded screen corners and windows) for this user's session only.
 # Delete this file (or run install-gala-screen-corners.sh --disable) and log out/in to revert.
 [Service]
 NotifyAccess=all
 Environment=GALA_SCREEN_CORNER_RADIUS=$radius
+Environment=GALA_WINDOW_CORNER_RADIUS=$window_radius
 ExecStart=
 ExecStart=$launcher
 EOF
 systemctl --user daemon-reload
 systemd-analyze --user verify io.elementary.gala@wayland.service 2>&1 | grep -v '^$' | head -3 || true
 
-echo "Installed. Log out and back in to see the rounded corners (radius ${radius}px)."
+echo "Installed. Log out and back in to see the rounded corners (screen ${radius}px, windows ${window_radius}px) and enable dynamic dock space plus the brightness keys' sub-2-nit steps."
 echo "Revert: bash mseries/install-gala-screen-corners.sh --disable   (or delete $dropin)"

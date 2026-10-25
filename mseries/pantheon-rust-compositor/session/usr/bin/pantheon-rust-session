@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+
+# LightDM can start a new graphical session while the persistent user manager
+# is still stopping the previous GNOME session. Starting the new GNOME target
+# during that stop transaction is rejected by systemd as destructive.
+# Let the previous session's pre-target stop finish before gnome-session asks
+# systemd to start gnome-session@pantheon-rust-wayland.target.
+timeout=30
+elapsed=0
+while :; do
+    if ! jobs=$(/usr/bin/systemctl --user list-jobs --no-legend --no-pager 2>/dev/null); then
+        echo "pantheon-rust-session: could not inspect the user systemd job queue" >&2
+        exit 1
+    fi
+    if ! printf '%s\n' "$jobs" \
+        | awk '$2 == "gnome-session-pre.target" && $3 == "stop" { found = 1 }
+               END { exit !found }'; then
+        break
+    fi
+    if [ "$elapsed" -ge "$timeout" ]; then
+        echo "pantheon-rust-session: GNOME session shutdown is still pending after ${timeout}s" >&2
+        exit 1
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+done
+
+exec /usr/bin/gnome-session --session=pantheon-rust-wayland

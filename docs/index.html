@@ -13,18 +13,21 @@ th{background:#f4f4f4}
 .ok{color:#1a7f37;font-weight:bold}.no{color:#b42318;font-weight:bold}.part{color:#9a6700;font-weight:bold}.unk{color:#555}
 code{background:#f4f4f4;padding:.1rem .3rem;border-radius:.25rem}
 footer{margin-top:2rem;font-size:.85rem;color:#555}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}body{overflow-wrap:anywhere}img{max-width:100%;height:auto}
 </style>
 </head>
 <body>
 <h1>ElementaryOS M-Series</h1>
 <p>Experimental port of <a href="https://github.com/elementary/os">elementary OS 9</a> (Pantheon, Ubuntu-based) to Apple Silicon Macs (M1/M2/…), informed by the maintained Apple hardware packages in <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
-<div class="banner"><strong>Status: elementary OS 9 boots to Pantheon on an M1 Pro.</strong> This is an installed, transformed system using the experimental Fairydust USB4 kernel. The experimental mkosi arm64 ISO built successfully on October 13. Hardware boot is still unverified; no stable ISO release is published.</div>
+<div class="banner"><strong>Status: elementary OS 9 boots to Pantheon on an M1 Pro; factory-image boot remains unverified.</strong> The October 21 attended trial booted <code>7.2.10-elementary-aurora72-wip2</code>; all three USB-C ports produced WD22TB4 picture at 1080p/60 in that scoped test. On October 22, the wip3 trial had one dock-port failure: no picture on the first port, no recovery after same-port replug, and 1080p/60 restored on another port. As of October 23, wip4 candidate <a href="https://github.com/techmore/ElementaryOS_MSeries/pull/533">PR #533</a> is at head <code>266d54af</code>; ARM64 candidate, unified72 and eGPU build/payload checks passed in <a href="https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39944207967">run 39944207967</a>, and M-series validation passed in <a href="https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39944207727">run 39944207727</a>. The PR remains open and conflicts with current <code>dev</code>, so it needs a refresh before merge. This is source/build evidence; KUnit, attended J314S boot, dock recovery, suspend and long-run stability remain open. No wip4 package was installed or armed. Aurora .20 remains the documented persistent boot default. No stable ISO release is published.</div>
 
 <p><a href="local-ai.html">Local AI on M1 Pro 32 GB: measured model comparisons, personal memory and MCP app coverage</a>.</p>
 
+<p><a href="rust-compositor-performance.html">Rust compositor performance</a> — the experimental Smithay compositor beside Gala, with the measured numbers and what would count as a win.</p>
+
 <h2>Download</h2>
 <p><a href="build-status.html">Live build monitor</a> — latest arm64 build, validation, deployment, and when to poke Codex.</p>
-<p>An experimental installer and checksum are available in the <a href="https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396499561">successful build run</a> (artifact expires October 20). GitHub may require sign-in. The factory image uses Ubuntu kernel 7.0.0-38-generic and has not been hardware-booted. This is not a stable release.</p>
+<p>The October 13 experimental installer is no longer present in the <a href="https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396499561">historical build run</a>; its remaining artifact is a build record, not an installer. Check the <a href="build-status.html">latest development build and artifact list</a> for availability; a successful historical run does not guarantee a current download. GitHub may require sign-in. The factory image uses Ubuntu kernel 7.0.0-38-generic and has not been hardware-booted. This is not a stable release.</p>
 <ul>
 <li>Build instructions: <a href="https://github.com/elementary/os#building-testing-and-installation">upstream elementary/os</a>.</li>
 <li>Changes to the M-series image and transform paths trigger the <em>Validate M-series wiring</em> workflow on arm64 runners.</li>
@@ -33,7 +36,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <h2>Cutover quickstart (omarchy-mac side)</h2>
 <p>On a booted omarchy-mac, dry run first — changes nothing, uploads its log:</p>
 <pre><code>git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries &amp;&amp; sudo ./ElementaryOS_MSeries/transform/elementary-grow.sh --upload</code></pre>
-<p>Paste the printed gist URL back for review. Post-boot verification checklist: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/POST-BOOT-CHECKS.md">POST-BOOT-CHECKS.md</a>.</p>
+<p>Paste the printed gist URL back for review. Post-boot verification checklist: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/POST-BOOT-CHECKS.md">POST-BOOT-CHECKS.md</a>.</p>
 
 <h2>How this differs from Asahi / Omarchy installers</h2>
 <p>This project includes an <strong>image factory</strong> and an experimental <strong>transform path</strong>. The transform script adds an elementary boot entry beside an existing omarchy-mac install; review its dry-run output before applying it. The factory ISO is a separate path and is not yet hardware-verified.</p>
@@ -42,15 +45,18 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <p><a href="support.html">Support and evidence matrix</a> records what has actually been observed on the M1 Pro, separately from the unverified factory ISO. See the <a href="bug-fixes.html">specific bug-fix list</a> for resolved documentation/build gaps and the next hardware fixes.</p>
 
 <h2>M1 Pro features</h2>
-<p>Customizations on this desktop, Omarchy M-series parity and screenshots: <a href="features.html">features.html</a>. Bugs and fixes, ranked: <a href="bug-fixes.html">bug-fixes.html</a>. Last updated 2026-10-14; the Dell WD22TB4 dock now works for the hub, mouse and Ethernet, but not for displays.</p>
+<p><strong><a href="capabilities.html">Fixes &amp; enhancements: the evidence-backed capability audit</a></strong> — search the scoped areas, see what we add or integrate, and follow the next iteration for each.</p>
+<p>See <a href="features.html">features and customizations</a> and <a href="bug-fixes.html">bugs and remaining checks</a>. Reviewed October 21, 2026: the transformed desktop has working iPhone texting through native Messages, while Touch ID matching remains blocked by the xART guard. The factory image has its own qualification gates.</p>
+<p><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/REPORT.md">The 7.2 wip2 boot report</a> records boot/PMP/idle, GPU shader/readback and temporary-file fsync checks. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/aurora/hardware-tests/2026-10-21-j314s-wip2-first-boot/PORT-TIMINGS.md">All-port follow-up</a> records scoped dock picture confirmation on all three USB-C ports. One plug cycle per port does not establish sustained stability, suspend recovery or an energy improvement.</p>
 <h2>Source &amp; docs</h2>
+<p>This site follows <code>dev/docs</code>, the development documentation. <code>main</code> remains the frozen stable source line; development results are not a stable release.</p>
 <ul>
 <li>Repo: <a href="https://github.com/techmore/ElementaryOS_MSeries">techmore/ElementaryOS_MSeries</a></li>
-<li>Current hardware port map and legacy source notes: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">mseries/PORT-MAP.md</a></li>
-<li>Bug-fix audit and next steps: <a href="bug-fixes.html">bug-fixes.html</a> and <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">BUG-FIX-ROADMAP.md</a></li>
-<li>Kernel verdict: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/KERNEL-REPORT.md">mseries/KERNEL-REPORT.md</a></li>
-<li>Kernel source plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/KERNEL-SOURCE.md">mseries/KERNEL-SOURCE.md</a></li>
-<li>Wi-Fi firmware plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/FIRMWARE-WIFI.md">mseries/FIRMWARE-WIFI.md</a></li>
+<li>Current hardware port map and legacy source notes: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/PORT-MAP.md">mseries/PORT-MAP.md</a></li>
+<li>Bug-fix audit and next steps: <a href="bug-fixes.html">bug-fixes.html</a> and <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/BUG-FIX-ROADMAP.md">BUG-FIX-ROADMAP.md</a></li>
+<li>Kernel verdict: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/KERNEL-REPORT.md">mseries/KERNEL-REPORT.md</a></li>
+<li>Kernel source plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/KERNEL-SOURCE.md">mseries/KERNEL-SOURCE.md</a></li>
+<li>Wi-Fi firmware plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/FIRMWARE-WIFI.md">mseries/FIRMWARE-WIFI.md</a></li>
 </ul>
 <footer>Derivative of elementary/os (GPLv3, unchanged license). Apple firmware blobs are never redistributed by this project.</footer>
 </body>

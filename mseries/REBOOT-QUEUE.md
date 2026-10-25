@@ -1,5 +1,29 @@
 # Reboot queue — what is staged and what each reboot unlocks
 
+## Current state — 2026-10-18 23:20 EDT
+
+- **Running:** `7.1.12-elementary-aurora20-enh1` from the one-shot
+  `elementary-aurora20-enh1-diagnostic` entry. It reached the desktop
+  ([receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-boot.json)).
+  That is one boot; the candidate is still unqualified and the earlier hang is unexplained.
+- **Next normal reboot:** `mseries-full-height` on `.20` (GRUB `next_entry` is empty).
+- **Nothing is armed.** Booting enh1 again needs a new owner OK; promoting it to
+  default is DeepSeek's/owner's decision.
+- **Relogin not needed:** the running Gala already loads the #244 libmutter fix.
+  No Gala crash in the first 31 minutes of this session.
+
+The section below predates the enh1 trials and is kept as history.
+
+## Separate Aurora enhancement build — do not deploy with the .20 installer
+
+The [enhancement candidate](aurora/enhancements/README.md) is source/build work
+only, with distinct `7.1.12-elementary-aurora20-enh1` modules. It is not wired to
+the fixed-release installer/stager and has not armed a boot. Resume the saved
+installed-Linux preflight below and qualify the released .20 baseline first.
+A future candidate deployment needs its own initramfs/DT/m1n1/shared-boot fallback
+review. No new runtime or boot action is queued automatically by this merge.
+
+
 Updated 2026-10-17. This page exists because the work had spread across
 `ROADMAP.md`, `fairydust/usb4/*` and `gala-drawers/HANDOFF.md`, and the question
 "what is actually waiting for a reboot right now?" had no single answer.
@@ -105,9 +129,10 @@ restart. Only the gsettings hotkeys need the Gala restart.
 `bash mseries/install-gala-screen-corners.sh --disable` — both take effect at the
 next login.
 
-**Known gap:** the dock's slide offset is held in memory, so it resets to centred
-when the dock restarts. Persisting it needs a settings key on the dock's
-(system-wide) schema.
+**Updated 2026-10-18:** the [native desktop profile](display-space/README.md)
+adds a private GSettings offset key, restores it at dock startup and clamps it
+to the current monitor. The previous in-memory-only offset limitation is fixed
+in source; post-reboot placement still needs hardware confirmation.
 
 ### 2. Kernel boot — Touch ID / SEP (Aurora)
 

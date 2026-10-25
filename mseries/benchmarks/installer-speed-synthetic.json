@@ -1,0 +1,108 @@
+{
+  "jobs": 5,
+  "lock_graph_lower_bound_s": 2.42,
+  "module_seconds_unscaled": {
+    "battery-panel": {
+      "basis": "assumed",
+      "seconds": 20
+    },
+    "brave": {
+      "basis": "measured",
+      "seconds": 49
+    },
+    "desktop-user-deps": {
+      "basis": "assumed",
+      "seconds": 2
+    },
+    "files": {
+      "basis": "measured",
+      "seconds": 53
+    },
+    "gestures": {
+      "basis": "assumed",
+      "seconds": 30
+    },
+    "keyboard": {
+      "basis": "assumed",
+      "seconds": 18
+    },
+    "netusage-policy": {
+      "basis": "assumed",
+      "seconds": 1
+    },
+    "network": {
+      "basis": "assumed",
+      "seconds": 25
+    },
+    "osk": {
+      "basis": "assumed",
+      "seconds": 25
+    },
+    "quick": {
+      "basis": "assumed",
+      "seconds": 40
+    },
+    "sound": {
+      "basis": "assumed",
+      "seconds": 18
+    },
+    "video": {
+      "basis": "measured",
+      "seconds": 21
+    }
+  },
+  "note": "Fake modules that only sleep; durations are the issue's measured first-boot values for brave, video and files and assumptions for the rest. Shows the scheduler and lock graph, not real install speed: real modules contend for CPU, disk and network.",
+  "rows": [
+    {
+      "jobs": 1,
+      "label": "serial (default today)",
+      "peak_concurrency": 1,
+      "repeat": 5,
+      "speedup_vs_serial": 1.0,
+      "sum_task_wall_s": 6.477,
+      "wall_s_median": 6.497,
+      "wall_s_runs": [
+        6.471,
+        6.54,
+        6.386,
+        6.497,
+        6.663
+      ]
+    },
+    {
+      "jobs": 5,
+      "label": "parallel, 5 jobs, apt + Wingpanel locks",
+      "peak_concurrency": 5,
+      "repeat": 5,
+      "speedup_vs_serial": 2.49,
+      "sum_task_wall_s": 6.497,
+      "wall_s_median": 2.609,
+      "wall_s_runs": [
+        2.62,
+        2.601,
+        2.607,
+        2.609,
+        2.632
+      ]
+    },
+    {
+      "jobs": 5,
+      "label": "what-if: parallel, 5 jobs, Wingpanel lock removed",
+      "peak_concurrency": 5,
+      "repeat": 5,
+      "speedup_vs_serial": 3.74,
+      "sum_task_wall_s": 6.443,
+      "wall_s_median": 1.739,
+      "wall_s_runs": [
+        1.739,
+        1.73,
+        1.721,
+        1.844,
+        1.775
+      ]
+    }
+  ],
+  "scale": 0.02,
+  "synthetic": true,
+  "unscaled_serial_total_s": 302
+}

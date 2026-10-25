@@ -25,7 +25,7 @@ once their repositories are confirmed. Do not guess handles.
 | subedijaidip/dp-altmode-t8112 | Jaidip Subedi | USB-C external displays on M2 Air; our dock video gap |
 | joshuaswarren/mlx-omarchy | Joshua Warren | MLX over Vulkan; local AI |
 | RyanTheTide (user) | Ryan Murray | Kernel foundations, macOS tracing |
-| zackb/tether | zackb | iPhone continuity (we pin v0.2.37; v0.2.38 exists as of 2026-10-14) |
+| zackb/tether | zackb | iPhone continuity (we pin v0.2.38, the latest release as of 2026-10-18) |
 | erikwb/BlueFerry | erikwb | iPhone texts and codes |
 | OpenBubbles/openbubbles-app | OpenBubbles | iMessage candidate (SSPL core, never bundle) |
 | cameroncooper/keychain, Sank6/iCloud-Keychain-for-Linux | | iCloud Keychain clients |
@@ -35,6 +35,7 @@ once their repositories are confirmed. Do not guess handles.
 | bendews/apw | bendews | Apple Passwords CLI; GPL-3.0; 257 stars; last push 2026-08-24 |
 | dragosol/icloud-keychain-linux | dragosol | Read-only Keychain viewer; no license, so personal use only |
 | alex-mextner/passwords-app, deej1721/icloud-passwords-linux | | Two-way sync (MIT, created 2026-10-10) / Windows-helper-in-VM bridge (MIT) |
+| steipete/RepoBar | Peter Steinberger | macOS repository-dashboard reference for our independent elementary Wingpanel port |
 
 Their claims are leads, not evidence: Omarchy's post says Touch ID works and that M1/M2
 is the first release target, but its own status page still lists Touch ID as not in the

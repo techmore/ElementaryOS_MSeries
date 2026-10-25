@@ -1,0 +1,11 @@
+<schemalist>
+  <schema id="org.techmore.mseries.snapping" path="/org/techmore/mseries/snapping/">
+    <key name="top-left" type="as"><default>['&lt;Super&gt;KP_Home', '&lt;Super&gt;KP_7', '&lt;Super&gt;&lt;Alt&gt;u']</default></key>
+    <key name="top-right" type="as"><default>['&lt;Super&gt;KP_Prior', '&lt;Super&gt;KP_9', '&lt;Super&gt;&lt;Alt&gt;i']</default></key>
+    <key name="bottom-left" type="as"><default>['&lt;Super&gt;KP_End', '&lt;Super&gt;KP_1', '&lt;Super&gt;&lt;Alt&gt;j']</default></key>
+    <key name="bottom-right" type="as"><default>['&lt;Super&gt;KP_Next', '&lt;Super&gt;KP_3', '&lt;Super&gt;&lt;Alt&gt;k']</default></key>
+    <!-- Read by the Rust compositor only; the Gala plugin binds the four quarters. -->
+    <key name="maximize" type="as"><default>['&lt;Super&gt;Up']</default></key>
+    <key name="restore" type="as"><default>['&lt;Super&gt;Down']</default></key>
+  </schema>
+</schemalist>

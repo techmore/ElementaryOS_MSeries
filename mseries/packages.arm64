@@ -16,6 +16,15 @@ The safe Asahi DSP chain still needs image packaging (see below).
   HID early-load modules to `/etc/initramfs-tools/modules`; pruned from
   the final overlay by `mkosi.finalize`.
 
+The default YouTube menu/dock launcher and SVG are staged by `enhance.sh` into
+`/usr/share`, retained by the factory overlay, and use an installed executable
+rather than an owner's checkout. Both consumers install `bubblewrap`,
+`xdg-dbus-proxy`, `desktop-file-utils` and `libgtk-3-bin`; final hooks refresh the
+application/icon caches. The transformed install's first-boot job installs Brave;
+factory images include the pinned private Brave runtime under `/usr/lib/mseries-brave`.
+Its complete Ubuntu dependency list is in `video-decode/brave-factory.json`; all
+three image configs carry it, and final hooks verify hashes and shared libraries.
+
 ## From the Ubuntu archive (names confirmed by archive membership, not tested)
 
 - `pipewire-pulse` — PulseAudio-compat server (omarchy `audio.sh`: x86 gets
@@ -60,20 +69,26 @@ CONFIG_TYPEC_NVIDIA_ALTMODE=m
 CONFIG_TYPEC_TBT_ALTMODE=m
 ```
 
-## Available Asahi audio packages (not yet wired into the image)
+## Safe speaker support wired into the factory image
 
-These packages are available from Ubuntu resolute/universe on arm64 and were
-installed on the transformed M1 Pro:
+`speakersafetyd` 1.1.2-4 from Ubuntu resolute/universe is installed in the
+ARM64 Apple Silicon overlay, live installer and sysupdate images. The overlay
+retains an enablement link for `multi-user.target`, so a fresh install starts
+speaker protection at boot. This is the safety-only step; the DSP chain stays
+out of the factory image until its first-boot volume behavior is qualified.
 
-- `speakersafetyd` 1.1.2-4 — required to protect and unlock the internal
-  speaker amplifier safely.
-- `asahi-audio` 3.4-2 and `alsa-ucm-conf-asahi` 8-3 — model profile and DSP
-  chain. The transformed desktop's output test passed after also building the
-  matching PipeWire LV2 filter plugin with `mseries/install-pipewire-lv2.sh`.
+The package is built from Ubuntu source `rust-speakersafetyd` 1.1.2-4. Upstream
+source is [AsahiLinux/speakersafetyd](https://github.com/AsahiLinux/speakersafetyd)
+(MIT); the Ubuntu package remains installed from the signed Ubuntu archive, and
+its copyright metadata is retained by dpkg. Ubuntu lists an ARM64 build; the
+M1 Pro's transformed desktop has already run the matching speaker safety
+service. No Apple hardware boot or audio behavior is inferred from image build.
 
-The current factory-image package list does not yet include this audio path.
-Keep `speakersafetyd` enabled before the DSP chain, preserve the prior sink
-volume during setup, and do not expose the raw internal speaker as a fallback.
+`asahi-audio` 3.4-2 and `alsa-ucm-conf-asahi` 8-3 remain optional and unwired.
+The transformed desktop's output test passed with the matched PipeWire LV2
+plugin, but that does not qualify a first-boot factory DSP chain. Before adding
+it, preserve the prior sink volume and keep the raw internal speaker hidden as
+a fallback.
 
 ## Asahi-origin packages still missing a confirmed Ubuntu source
 

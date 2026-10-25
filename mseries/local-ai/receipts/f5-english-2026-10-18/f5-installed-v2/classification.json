@@ -1,0 +1,10 @@
+{
+  "complete": true,
+  "scope": "Incomplete-stage-only continuation of v1: Code/Newelle/Tasks had no case receipt or app launch because required --model was omitted. Corrected argv adds verified installed model path; --fixtures-only remains set. No ASR/model, no completed toolkit case repeated.",
+  "parent_attempt_sha256": {
+    "code-attempt.json": "59c349709661ae47165ecc2419d46f71a44e9345174e4706bf0338f70477f3c7",
+    "newelle-attempt.json": "a2617bede649fc165f6fbfecfa51314b6800d7e24a55d0f443277b0f374feac7",
+    "tasks-attempt.json": "1aa67bf080eda230ae611682836abcf191a5f5645e8e09d9133ff761ccf1024f"
+  },
+  "queue_sha256": "c78d9f60c425c12045948006e52252727bba8524a3394fde9d8acd21c24f1712"
+}

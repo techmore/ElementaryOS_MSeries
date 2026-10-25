@@ -8,7 +8,11 @@
         "agent/fambonsai",
         "agent/bonsai2-serving",
         "agent/OmlxCache-rows",
-        "w71/muse-gate-up-fusion"
+        "w71/muse-gate-up-fusion",
+        "agent/coreml-tdt-stream",
+        "agent/ParakeetWarm-w6Z",
+        "upstream/parakeet-worker-pcore",
+        "integration/tdt-decoder-stack"
       ],
       "open_prs": true,
       "discover_branches": true
@@ -47,9 +51,21 @@
       "branches": [
         "aurora-rc",
         "aurora-edge",
-        "fix/m1m2-regressions",
-        "fix/m1m2-typec-usb4-router"
+        "aurora-wip"
       ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/linux-aurora",
+      "base": "integration/aurora",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "aurora-silicon/m1n1",
+      "base_repo": "omacom/m1n1",
+      "base": "integration/aurora",
       "open_prs": true,
       "discover_branches": true
     },
@@ -65,6 +81,18 @@
       "base": "main",
       "discover_branches": true,
       "open_prs": true
+    },
+    {
+      "repo": "Blaizzy/mlx-audio",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "handy-computer/transcribe.cpp",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
     },
     {
       "repo": "elementary/os",

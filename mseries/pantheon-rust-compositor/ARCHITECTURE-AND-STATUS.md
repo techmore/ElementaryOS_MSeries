@@ -1,0 +1,190 @@
+# GUI stack comparison and development status
+
+This page shows where the compositor sits in the desktop stack, how the
+M-series prototype differs from the current Pantheon stack, and what the
+native development session has proved so far. It is a working architecture
+map, not a claim of feature parity.
+
+## Existing elementary OS / Pantheon on M-series
+
+Gala supplies Pantheon's window manager and compositor integration on top of
+libmutter. Mutter provides the Wayland display-server work and delegates
+device-level display support to Linux KMS/input drivers. Applications and
+shell surfaces are Wayland clients; X11 applications use XWayland. On this
+M1 Pro, rendering and display scanout use different DRM devices.
+
+```mermaid
+flowchart TD
+  Apps[GTK / Qt / other Wayland apps]
+  XApps[X11 apps]
+  Shell[Pantheon shell clients\nWingpanel + Dock + background]
+  Xwayland[XWayland]
+  Gala[Gala + libmutter\nPantheon window manager, shell integration\n+ Wayland compositor]
+  KMS[Linux DRM / KMS + libinput]
+  Asahi[Asahi GPU\ncard1 / renderD128\nrendering]
+  Apple[Apple display controller\ncard2 / KMS]
+  DCP[DCP firmware / kernel driver]
+  Panel[Built-in display / external display path]
+
+  Apps -->|Wayland| Gala
+  XApps --> Xwayland --> Gala
+  Shell -->|Wayland + Pantheon shell protocols| Gala
+  Gala -->|input + display requests| KMS
+  Gala -->|render buffers / DMA-BUF| Asahi
+  Asahi -->|imported scanout buffer| Apple
+  KMS --> Apple --> DCP --> Panel
+```
+
+The diagram is simplified: Gala is built against libmutter and uses its
+compositor APIs, so replacing Mutter under Gala is not a binary-compatible
+swap. Our Rust prototype keeps the existing shell applications as clients and
+implements the small set of compositor and shell-facing contracts it needs.
+The M-series graphics path is also layered: the compositor cannot replace
+missing kernel or firmware display support. The Asahi M1 feature matrix lists
+both GPU and DCP support in `linux-asahi`.
+
+## Omarchy running on Asahi
+
+Omarchy is an Arch-based desktop setup built around Hyprland and Quickshell.
+Its manual describes running it on Asahi Alarm on M1/M2 as a community
+workaround that takes effort; this is a different shell and workflow from
+Pantheon, not a Pantheon compositor port.
+
+```mermaid
+flowchart TD
+  Apps[Wayland apps]
+  XApps[X11 apps]
+  Shell[Omarchy shell / widgets\nQuickshell]
+  Xwayland[XWayland]
+  Hyprland[Hyprland\nWayland compositor + tiling WM]
+  Arch[Arch userspace\nAsahi Alarm base]
+  Kernel[Asahi Linux kernel\nDRM / input drivers]
+  GPU[Asahi GPU]
+  DCP[DCP firmware / kernel driver]
+  Displays[Built-in / supported external displays]
+
+  Apps -->|Wayland| Hyprland
+  XApps --> Xwayland --> Hyprland
+  Shell -->|Wayland clients| Hyprland
+  Hyprland --> Arch --> Kernel
+  Kernel --> GPU
+  Kernel --> DCP --> Displays
+```
+
+## Proposed minimal viable Pantheon compositor for M-series
+
+Keep the Pantheon apps, shell clients, and settings services. Replace the
+Gala/libmutter compositor layer with a Rust/Smithay process that speaks
+Wayland, implements the Pantheon shell protocol and required GNOME session
+bridges, and uses the existing Asahi rendering and Apple KMS path. Session
+management starts the compositor before Wingpanel and Dock. Wallpaper,
+lock-screen UI, accessibility, sharing, and other services remain separate
+desktop components; the compositor must provide the protocols and hooks their
+required workflows need.
+
+```mermaid
+flowchart TD
+  Apps[Existing Pantheon / GTK / Qt apps]
+  XApps[X11 apps]
+  Shell[Existing Pantheon shell clients\nWingpanel + Dock]
+  Settings[Existing desktop background settings\nwallpaper URI + picture options]
+  Services[GNOME / Pantheon session services\nsettings, IBus, accessibility, sharing, lock UI]
+  Xwayland[XWayland]
+  Session[GNOME session + systemd user units]
+  Rust[Minimal viable Rust compositor\nSmithay + Wayland + Pantheon shell / Mutter-compatible bridges]
+  Render[Asahi GPU renderer\ncard1 / renderD128]
+  Scanout[Apple DRM / KMS\ncard2]
+  DCP[DCP firmware / kernel driver]
+  Displays[Built-in / external displays]
+
+  Apps -->|Wayland| Rust
+  XApps --> Xwayland --> Rust
+  Shell -->|Wayland + Pantheon shell protocol| Rust
+  Settings -->|GSettings read at startup| Rust
+  Services <-->|required compositor bridges| Rust
+  Session -->|start compositor, then shell clients| Rust
+  Session --> Shell
+  Rust -->|render buffers / DMA-BUF| Render
+  Render -->|imported scanout buffer| Scanout
+  Rust -->|modesetting / input via kernel| Scanout
+  Scanout --> DCP --> Displays
+```
+
+**Current implementation detail:** the session file starts the compositor;
+new user units are staged to start Wingpanel and Dock after it. `After=` orders
+process startup but does not yet wait for the panel to map or prove the
+`wait-for-n-panels=1` shell-launcher contract. Package `0.1.0+git8c784dc` was
+installed for a second native qualification attempt, but its session handoff
+did not reach the compositor or shell units. The Dock unit now skips startup
+when the existing user-disabled marker is present,
+honoring the user's opt-out even though it invokes the distro executable by
+absolute path. The compositor loads the configured local wallpaper, renders it
+behind windows, and honors the `zoom` crop mode. It polls for URI or crop-mode
+changes every two seconds and requests a redraw; this path is build-checked but
+not runtime-qualified on native output. A private D-Bus/dconf + Xvfb smoke
+changed the wallpaper URI during compositor runtime; logs showed the changed
+selection and new image loading. Installed package `0.1.0+git8c784dc` includes
+the wallpaper renderer, live wallpaper settings watcher, shell units, and Dock
+opt-out guard. Its SHA-256 is
+`a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`. In the
+nested Winit backend, the default transform is set to compensate
+for the framebuffer orientation observed under Xvfb; this produced an upright
+wallpaper and top Wingpanel in a fresh nested run. It does not alter the native
+DRM output transform.
+
+**Development shell smoke:** the current release build rendered installed
+Wingpanel 8.0.4 across the top and the stock `/usr/bin/io.elementary.dock`
+along the bottom, over the wallpaper, in an isolated Xvfb session. Its Wayland
+trace shows the Dock binding the Pantheon panel protocol, requesting the bottom
+anchor and submitting shared-memory buffers. The normal local Dock command is
+a wrapper; its existing user-disabled marker makes it run `sleep infinity`, so
+the earlier “Dock process alive” check was a false positive. The marker remains
+untouched, and the visual test launched the stock executable directly only
+inside the private session. Hide/reveal also passed in private profiles using
+both `overlapping-focused` and `overlapping-window` (the user's saved value): a
+maximized GTK window hid the Dock, bottom-edge pointer motion revealed it over
+the window, and closing the window restored it. The user's live configuration
+was not modified. Native-session appearance remains unqualified. No Gala
+session was replaced.
+
+## What is complete and what has been tested
+
+| Area | Evidence | State |
+| --- | --- | --- |
+| Rust compositor and opt-in session package | Smithay prototype; nested Winit and native DRM backends; installed ARM64 package includes wallpaper, shell units and Dock opt-out guard; compositor remains separate from the default Gala session | Builds; latest session handoff fell back before compositor start; native shell service runtime remains open |
+| Native display path | Experimental LightDM login reached the M1 Pro internal display; kernel DRM state showed compositor-owned AR30 framebuffer at 3024×1964 | Native internal-panel scanout passed once |
+| Session recovery | Five-minute LightDM rollback returned to Gala; Wingpanel and background came back | Automatic rollback passed once |
+| XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
+| Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
+| Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, attached shared-memory buffers and rendered upright after the nested Winit transform correction | Nested visual smoke passed; panel absent from native session |
+| Pantheon shell clients | Current release rendered Wingpanel at top and stock Dock at bottom in isolated Xvfb. Hide/reveal passed with both private `overlapping-focused` and `overlapping-window` profiles; the latter matches the host's saved value. In native package `0.1.0+git8023955`, Wingpanel's user service became active; the Dock service was intentionally skipped by the existing `~/.config/mseries/dock/user-disabled` marker | Nested visual and hide/reveal smoke passed; native Wingpanel process is active, but native appearance has not been visually confirmed. Dock remains opted out by the user's saved marker |
+| Gala action compatibility | Existing Gala compatibility D-Bus path accepts `PerformAction` values | Actions 2 (toggle maximize) and 3 (hide/minimize) passed private Xvfb/Winit Wayland D-Bus smoke; XWayland and native qualification remain open. Action 4 launches the configured Wingpanel main-menu command; build-checked, runtime open. Action 1 now toggles a grid overview ("expose") mode: a private Xvfb/Winit smoke with two GTK Wayland windows opened the overview and closed it again through D-Bus, with the compositor logging both transitions |
+| Grid overview ("expose") | The explicit replacement for Gala's multitasking view and the target of `PerformAction(1)` and the upward swipe | Arranges each output's active-workspace windows into a centered grid inside the work area, saves and restores plain, tiled, maximized and fullscreen arrangements, focuses a clicked window, and closes on Escape or a second toggle. Unit tests cover the grid layout; the nested D-Bus smoke opened and closed the mode with two windows. Rendered scaled thumbnails, animations, drag-and-drop reorganization and native qualification remain open |
+| Trackpad gestures and device settings | PR #326 adds live GNOME touchpad/mouse settings on device hotplug and settings changes; elementary gesture bindings select workspace, move-window, window-cycle, overview and maximize actions; four-finger pinch-in opens the launcher. Unclaimed swipes, pinches and holds reach clients through `zwp_pointer_gestures_v1` v3 | Recognizer tests and nested GTK protocol smoke pass. Lock, session suspension and device removal cancel in-flight gestures. Installed for the next login from deployment source `314652f`; the running compositor still uses its previous executable. Finger-following workspace/overview previews, velocity-aware spring release, cancellation and edge resistance now pass the private nested GTK render probe; physical trackpad qualification, real application pinch zoom, native pacing and multi-output/mixed-XWayland previews remain open |
+| External monitor identity, dock replug recovery | Outputs publish the EDID vendor, model and serial to Wayland and `org.gnome.Mutter.DisplayConfig` (so display profiles can match); a connector whose byte-identical EDID duplicates a newer connector's is treated as disconnected (stale Thunderbolt dock route); `link-status = Bad` is answered by writing `Good`, bounded to 3 attempts | 55 unit tests; read-only probe on the J314S dock confirmed identity, blob recency and the stale pick. Not deployed: the `Good` write and resulting modeset need DRM master and a new session, see `hardware-tests/2026-10-21-j314s-dock-replug-stale-connector.md` |
+| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; a private dconf/Xvfb run changed the URI while running and logs confirmed the new image loaded | Nested visual and settings-reload smokes passed; native output and rendering remain open |
+| Native Rust session handoff | Package `0.1.0+git02447cb` was installed and selected through LightDM on 2026-10-19. GNOME entered `pantheon-rust-wayland`; compositor initialized the M1 Pro DRM/EGL path at 3024×1964, loaded the configured wallpaper and reported ready. Wingpanel and IBus services started; Dock was skipped because the saved user opt-out marker remains present | Native login and internal scanout passed again. The five-minute rollback timer completed and restored the existing Gala autologin. User reports the desktop felt responsive; an objective first-usable timestamp is still unavailable |
+| Startup timing | The boot report remains 20.838 seconds to `default.target` and 10.465 seconds to `graphical.target`. In the 12:10 EDT Rust login, the compositor service started at 12:10:00 and systemd marked it started about 0.46 seconds later; portal providers and the portal service were active about 0.8 seconds after compositor readiness | The tested package no longer reproduces the 120-second portal activation delay. These timings do not include firmware-to-kernel time or measure when the desktop first became usable; retain separate user-observed first-interaction timing |
+| Native full desktop | In the `0.1.0+git02447cb` run, compositor startup published `WAYLAND_DISPLAY`, Wingpanel and IBus became active, the portal service and Pantheon/GNOME portal providers started without the previous 120-second wait, and the Dock correctly honored its opt-out marker. The GNOME portal backend warned that `org.gnome.Mutter.ServiceChannel` has no owner, so dialogs may misbehave and screen-sharing behavior is not qualified. One initial DRM page-flip commit returned `Device or resource busy`; the compositor stayed active. Wingpanel logged EGL device lookup warnings and a GTK assertion | Startup ordering fix qualified on native hardware. Native IBus commit, portal dialogs/screen sharing, panel appearance, and sustained interaction still need qualification. Do not remove the Dock opt-out marker without the user's choice |
+| Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
+| Performance, power, reliability | Earlier thirty-second Rust idle sample: compositor 11.12% of one CPU core and 173,531 KiB RSS; Wingpanel 1.19% CPU and 472,560 KiB RSS. The 30-second 12:12 EDT interactive Rust sample measured 4.70% CPU and 179,589 KiB RSS for the compositor, plus 0.37% CPU and 431,200 KiB RSS for Wingpanel. The machine was on mains with battery at 80%, `Not charging`, and battery flow at 0 mW. Raw CSVs are in [`metrics/`](metrics/) | These are process measurements under unlike workloads, not a speed comparison. The plugged-in battery sample cannot quantify system power. Matched Gala/Rust interactive runs, battery-discharge or external power measurements, GPU/latency observations, and a crash-free soak remain open |
+
+The current login observation is useful development evidence, not a daily-use
+readiness result. Continue testing in the isolated experimental session while
+Gala remains the working fallback. The next development gate is visual and
+interactive qualification of Wingpanel, plus a separate Dock run only if the
+user opts in. The earlier compositor startup timing does not explain the
+owner's slower overall login; capture session, compositor, Wingpanel, Dock, and
+wallpaper timing separately.
+The existing user-disabled Dock marker should remain in effect unless the user
+explicitly chooses to re-enable Dock in the desktop session.
+After that, measure the same startup, idle and representative workloads under
+Gala and Rust, and record crashes and recovery behavior.
+
+## References
+
+- [Gala upstream README](https://github.com/elementary/gala/blob/main/README.md)
+- [Mutter upstream README](https://github.com/GNOME/mutter/blob/main/README.md)
+- [Omarchy manual](https://omarchy.org/manual/)
+- [Omarchy on Asahi manual](https://omarchy.org/manual/omarchy-on/)
+- [Asahi Linux M1 feature support](https://github.com/AsahiLinux/docs/blob/main/docs/platform/feature-support/m1.md)

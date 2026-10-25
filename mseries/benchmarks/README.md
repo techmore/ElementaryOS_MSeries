@@ -57,6 +57,66 @@ after a kernel or Mesa update and the table gets a new column.
   What our fixes changed is tracked in `mseries/ROADMAP.md` (login stall 119.7 s → 0.82 s).
 - No comparison machines are shown: numbers from other systems would need the same tools, kernel and settings.
 
+## Power scenarios (compositor and desktop A/B trials)
+
+`power_scenarios.py` measures one arm of an A/B trial: whole-system watts at 1 Hz (SMC Total System Power,
+found by label through `mseries/power/sensors.py`) after a warm-up, CPU busy %, the compositor's and
+Xwayland's CPU % and wakeups/s, display/AOP mailbox interrupt rates, and the compositor's redraw-stats
+journal lines. It refuses to run when load average is above 1 or the CPU is more than 5% busy; `--force`
+runs anyway and marks the result unqualified.
+
+```bash
+python3 mseries/benchmarks/power_scenarios.py run --label dmabuf-on --scenarios idle,scroll,video --video ~/Videos/1080p.mp4
+python3 mseries/benchmarks/power_scenarios.py compare mseries/benchmarks/results/power/*.json
+python3 mseries/benchmarks/run.py --only power      # 5-minute idle sample inside the normal suite (opt-in)
+```
+
+- **Scenarios**: `idle` (nothing opened), `scroll` (a throwaway Brave/Chromium profile scrolling a long page
+  every animation frame), `video` (`mpv` full-screen loop of a local file, hardware decode when available).
+  Anything opened is closed afterwards; the compositor, panels and dock are never restarted.
+- **Trials**: change one thing, then alternate arms A, B, A, B, A, B. `compare` only says "comparable" when two
+  labels strictly alternate at least three times each and every run was qualified; it reports the median
+  and p10/p90 of the per-run medians.
+- **Caveats**: fix brightness and refresh rate between arms (both are recorded); run over SSH or from a text
+  console when possible; redraw-stats lines are 30 s windows, so their totals overlap the scenario edges.
+  `mseries/power/audit/sample_power.sh N` is now a thin wrapper around `sensors.py`.
+
 ## Not measured yet
 
 Battery life, video playback, WebGL/JavaScript browser suites (Speedometer), compile times, Wi-Fi throughput.
+
+## Installer speed: serial vs parallel (synthetic) (#47)
+
+`installer-speed.py` compares running the first-boot modules one at a time with the opt-in parallel runner
+(`mseries/modrun.py`, graph in `mseries/enhance-modules.json`). **Every module is a fake that only sleeps.** It runs no
+apt, download, build or install script and touches nothing outside a temporary directory, so it can run anywhere and
+in CI. It measures the scheduler and the lock graph, not install speed.
+
+```bash
+python3 mseries/benchmarks/installer-speed.py --what-if --repeat 5 --out mseries/benchmarks/installer-speed-synthetic.json
+```
+
+Module durations are the issue's measured first-boot values for brave (49 s), video (21 s) and files (53 s) and round
+guesses for the others (marked `assumed` in the JSON), scaled by 0.02 so a run takes seconds. Median of 5, one machine:
+
+| Scenario (synthetic) | Wall time (scaled) | Speedup |
+|---|---|---|
+| Serial (what runs today) | 6.50 s | 1.00x |
+| Parallel, 5 jobs, apt and Wingpanel-plugin locks | 2.61 s | 2.49x |
+| What-if: same without the Wingpanel-plugin lock | 1.74 s | 3.74x |
+
+What this does and does not say:
+
+- The locked graph's floor is its longest lock chain (the five Wingpanel plugin modules, 121 of 302 modelled seconds,
+  2.42 s scaled), so the 2.49x is close to the most the current locks allow. Relaxing the Wingpanel lock is the only
+  large lever, and it is a what-if row, not a recommendation: it needs real per-module timings first.
+- Sleeping modules never compete for CPU, disk or network. Real builds do, so real speedups will be lower. The
+  real-install before/after numbers the issue asks for (first-boot wall time and CPU use on the Mac) are **not yet
+  measured**; run `sudo elementary-mac-enhance --run --parallel` against the default run and compare
+  `/var/lib/elementary-mac/enhance/timing-summary.json`.
+- `ccache` (`mseries/lib-build.sh`) is used when installed. It helps a second build of the same pinned source, not the
+  first one on a fresh machine, so it does not appear in this table at all.
+
+Every first-boot run now records per-module timing: `elementary-mac-enhance --timing` prints the table (slowest first,
+wall and CPU seconds) and the one-line summary, and the JSON is in `timing-summary.json` next to the state files.
+`post-install.sh` records the same per stage under `~/.local/state/mseries-post-install/`.

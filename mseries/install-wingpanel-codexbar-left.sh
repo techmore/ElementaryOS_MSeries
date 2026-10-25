@@ -4,17 +4,13 @@ set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 binary=/usr/bin/io.elementary.wingpanel
-backup=/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left
+MSERIES_BACKUP_DIR=/usr/local/lib/mseries/full-height
+source "$repo/mseries/lib-backup.sh"
 commit=6b8ae0453b1fd6dc07bd246642998011f04b2125
 mode=${1:-install}
 
 if [[ $mode == --uninstall ]]; then
-  if [[ ! -f $backup ]]; then
-    echo "No saved Wingpanel binary at $backup" >&2
-    exit 1
-  fi
-  sudo install -m 0755 "$backup" "$binary"
-  sudo rm -f "$backup"
+  mseries_restore "$binary" io.elementary.wingpanel
   echo 'Restored the previous Wingpanel binary. Log out and back in to reload it.'
   exit 0
 fi
@@ -48,11 +44,19 @@ git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/wingpanel.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
-git -C "$source_dir" apply --check --ignore-space-change "$repo/mseries/patches/wingpanel-codexbar-left.patch"
-git -C "$source_dir" apply --ignore-space-change "$repo/mseries/patches/wingpanel-codexbar-left.patch"
+git -C "$source_dir" apply --check --ignore-space-change "$repo/mseries/patches/wingpanel-full-height.patch"
+git -C "$source_dir" apply --ignore-space-change "$repo/mseries/patches/wingpanel-full-height.patch"
 # Keep the optional right-side clock ordering when that companion is installed.
 git -C "$source_dir" apply --check "$repo/mseries/patches/wingpanel-clockright-order.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-clockright-order.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-startup-layout.patch"
+
+# Keep an open popup's old anchor alive until it is detached during removal/switch.
+git -C "$source_dir" apply --check "$repo/mseries/patches/wingpanel-popover-lifetime.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-popover-lifetime.patch"
+
+# Enlarge all top-bar indicators together, preserving notch geometry.
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-content-scale.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release
 ninja -C "$build_dir"
@@ -70,8 +74,6 @@ if [[ $mode == --build-only ]]; then
   exit 0
 fi
 
-if [[ ! -f $backup ]]; then
-  sudo install -D -m 0755 "$binary" "$backup"
-fi
+mseries_backup "$binary" io.elementary.wingpanel
 sudo install -m 0755 "$staged_binary" "$binary"
-echo 'Installed CodexBar in Wingpanel’s left group, clear of the notch. Log out and back in to reload Wingpanel.'
+echo 'Installed the M-series native clock and CodexBar layout, clear of the notch. Log out and back in to reload Wingpanel.'

@@ -29,9 +29,9 @@ if [[ $root == / && $EUID != 0 ]]; then
 fi
 if [[ $root == / && $remove == 0 && $offline == 0 ]]; then
   # Offline staging never runs apt. Manual post-install gets its runtime tools.
-  if ! dpkg-query -W -f='${Status}\n' dbus-bin libnotify-bin pciutils rfkill 2>/dev/null | awk '
+  if ! dpkg-query -W -f='${Status}\n' bluez dbus-bin libnotify-bin pciutils rfkill 2>/dev/null | awk '
       $0 != "install ok installed" { bad=1 } END { exit bad }'; then
-    apt-get install -y dbus-bin libnotify-bin pciutils rfkill
+    apt-get install -y bluez dbus-bin libnotify-bin pciutils rfkill
   fi
 fi
 put() {
@@ -52,6 +52,7 @@ if (( remove )); then
     usr/share/applications/mseries-power-report.desktop \
     usr/libexec/mseries/power-report usr/libexec/mseries/sleep-cost \
     usr/libexec/mseries/bluetooth-supported usr/libexec/mseries/bluetooth-resume-fix \
+    usr/libexec/mseries/peripherals usr/lib/systemd/user/mseries-peripherals.service \
     usr/lib/systemd/system-sleep/mseries-sleep-cost \
     usr/lib/systemd/user/mseries-sleep-cost.service \
     usr/lib/systemd/system/mseries-bluetooth-resume-fix.service \
@@ -63,6 +64,8 @@ if (( remove )); then
   for pair in \
     'usr/bin/mseries-power-report|../libexec/mseries/power-report' \
     'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service|../mseries-sleep-cost.service' \
+    'usr/bin/mseries-peripherals|../libexec/mseries/peripherals' \
+    'usr/lib/systemd/user/graphical-session.target.wants/mseries-peripherals.service|../mseries-peripherals.service' \
     'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service|/usr/lib/systemd/system/mseries-bluetooth-resume-fix.service'; do
     file=${root%/}/${pair%%|*}
     if [[ -L $file && $(readlink "$file") == "${pair#*|}" ]]; then rm "$file"; fi
@@ -78,6 +81,10 @@ link ../libexec/mseries/power-report usr/bin/mseries-power-report
 put 755 power/mseries-sleep-cost-hook usr/lib/systemd/system-sleep/mseries-sleep-cost
 put 644 power/mseries-sleep-cost.service usr/lib/systemd/user/mseries-sleep-cost.service
 link ../mseries-sleep-cost.service usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service
+put 755 hardware/peripherals.py usr/libexec/mseries/peripherals
+put 644 hardware/mseries-peripherals.service usr/lib/systemd/user/mseries-peripherals.service
+link ../libexec/mseries/peripherals usr/bin/mseries-peripherals
+link ../mseries-peripherals.service usr/lib/systemd/user/graphical-session.target.wants/mseries-peripherals.service
 put 755 hardware/bluetooth-supported usr/libexec/mseries/bluetooth-supported
 put 755 hardware/bluetooth-resume-fix usr/libexec/mseries/bluetooth-resume-fix
 put 644 hardware/mseries-bluetooth-resume-fix.service usr/lib/systemd/system/mseries-bluetooth-resume-fix.service

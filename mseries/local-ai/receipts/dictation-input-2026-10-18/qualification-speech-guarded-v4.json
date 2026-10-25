@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "a1ef161bb8c908f6212e92478585d5e0e0192c3002ce088547fe6f0d524a8f89",
+    "dictation-input.py": "d8122c8b93fc84042bee6c1d25279c4f8118c570856e5bbbd5fa6d7903be69d8",
+    "dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "gtk-input-smoke.py": "247636d40cbc7fa3dff8d46ae97e9cc37cefa20107a7f5afda64d5430fd7e316",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "speech": {
+    "backend": "cpu",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+    "normalized_word_error_rate": 0.0,
+    "widget_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "first_widget_text_s": 4.312628181000036,
+    "elapsed_s": 12.0186055890008,
+    "min_available_bytes": 12402786304,
+    "max_fan_rpm": 2525.0,
+    "max_temp_c": 45.76,
+    "samples": 56,
+    "quiet_policy_passed": true,
+    "microphone_recorded": false
+  },
+  "keyboard": {
+    "ordinary_keys": true,
+    "shift": true,
+    "backspace": true,
+    "dead_key_compose": true,
+    "layout": "private Xvfb us(intl)"
+  },
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; CPU file ASR; no microphone",
+  "deployed": false,
+  "microphone_recorded": false,
+  "playback_performed": false,
+  "fixture": {
+    "name": "Existing project LibriSpeech English clip",
+    "source": "https://www.openslr.org/12",
+    "license": "CC-BY-4.0",
+    "attribution": "LibriSpeech, Vassil Panayotov, Guoguo Chen, Daniel Povey and Sanjeev Khudanpur; audio derived from LibriVox"
+  },
+  "versions": {
+    "transcribe_cpp": "0.4.0",
+    "transcribe_cpp_native": "0.4.0",
+    "numpy": "2.5.4"
+  },
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "threads": 6,
+  "scope": "One public-clip functional check; first text includes cold process/model startup and paced input. Aggregated sampled metrics, not acoustic noise or cross-backend speed comparison. Earlier source versions retained separately.",
+  "effective_policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 3500,
+    "max_temp_c": 80
+  }
+}

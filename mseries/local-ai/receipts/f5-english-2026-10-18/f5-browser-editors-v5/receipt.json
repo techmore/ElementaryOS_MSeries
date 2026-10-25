@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "complete": true,
+  "passed": true,
+  "cases": [
+    {
+      "field": "rich",
+      "native_preview_visible": false,
+      "browser_preview_suppressed": true,
+      "preview_clear_exact": true,
+      "multiline_literal_exact": true,
+      "cancel_drops_preview": true,
+      "stale_commit_refused": true,
+      "native_engine_restored": true,
+      "text": "Hello from the local English assistant.\nLiteral text: $() & <tag> \"quoted\".\nPlease keep these three lines.",
+      "composition_events": [],
+      "focus_change_clears_preview_and_refuses_commit": true
+    },
+    {
+      "field": "notes",
+      "native_preview_visible": false,
+      "browser_preview_suppressed": true,
+      "preview_clear_exact": true,
+      "multiline_literal_exact": true,
+      "cancel_drops_preview": true,
+      "stale_commit_refused": true,
+      "native_engine_restored": true,
+      "text": "Hello from the local English assistant.\nLiteral text: $() & <tag> \"quoted\".\nPlease keep these three lines.",
+      "composition_events": [],
+      "focus_change_clears_preview_and_refuses_commit": true
+    }
+  ],
+  "method": "Real Brave X11 private local synthetic contenteditable and textarea via current focus-bound IBus bridge",
+  "scope": "Gmail-style rich compose pattern only; no Gmail account or live mail integration tested",
+  "expected_preview_policy": "suppressed",
+  "editor_empty_policy": "Contenteditable empty DOM and its sole <br> placeholder are treated as empty; all nonempty text and multiline whitespace remain exact",
+  "microphone_recorded": false,
+  "audio_played": false,
+  "inference": false,
+  "owner_windows_opened": false,
+  "owner_profile_used": false,
+  "mail_sent": false,
+  "keyboard_device_opened": false,
+  "physical_f5_tested": false,
+  "runtime": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "browser": "Brave Browser 155.1.97.59"
+  },
+  "source_sha256": {
+    "dictation-input.py": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5",
+    "dictation-input-client.py": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+    "f5-browser-editors-smoke.py": "f492f60891da2d0232fe9dba37cc5192ecde9c680b8916eb8cd21b93a99e43fe",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "current_fixture": {
+    "field": "notes",
+    "after_focus_change": "Hello from the local English assistant.\nLiteral text: $() & <tag> \"quoted\".\nPlease keep these three lines.",
+    "inner_html": "",
+    "composition_events": []
+  },
+  "password_refused_and_untouched": true,
+  "resources": {
+    "samples": 16,
+    "min_available_bytes": 12987088896,
+    "max_fan_rpm": 2513.0,
+    "max_temp_c": 47.046
+  }
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily M-series update check (opt-in: systemctl enable --now mseries-update-auto.timer)
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=2h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

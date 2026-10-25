@@ -1,0 +1,102 @@
+{
+  "complete": true,
+  "passed": true,
+  "source_sha256": {
+    "dictation/stream-dictate.py": "452b3213c6d48a8b554275997728d34e6142f5ce37e65c62a23d54e451141c44",
+    "dictation/dictation-input.py": "fcafaa03ba33d4c3293adc41b5e1066d5e584e476293de32fb13ad6d28fbd50e",
+    "dictation/dictation-input-client.py": "e1bcf4ed72f33e801f1556efa78ecfb24a3453f23050c17bfc649b4aa50ed3d4",
+    "dictation/dictation-panel.py": "884b893cb502c2e6f060fb540a7cf6f16587c24b2d0be5b3a33011150c77e69d",
+    "dictation/dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+    "dictation/dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation/dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation/review-smoke.py": "6743da49000db364d0b74bfda9da1292746d58bfc872a04190c378eb76d007a9",
+    "dictation/panel-workflow-smoke.py": "ce6be6c09a7a5abfe4a683774682b43e91d40483299c85ff85375fe59fbe5527",
+    "local-ai/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "runtime": {
+    "runtime": {
+      "artifact_sha256": {
+        "libmlx": "1187d5715b66edd47518ba59950813bb78a7bd3383327ced369699bc9521c176",
+        "vulkan": "e92aa6fed95f1add1f712c28294937983583b52984bfc739f5840f30f86a2f8c",
+        "model_weights": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+      },
+      "versions": {
+        "mlx_omarchy": "0.32.4.dev202610160529+33630f9c",
+        "mlx_lm": "0.31.3",
+        "transformers": "5.16.1",
+        "numpy": "2.5.4"
+      }
+    },
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "profile_sha256": "65ec7a668cf2859d07c2756d05ef455f33bee75e523b197446016b313a90a3a4",
+    "source_sha256": {
+      "dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+      "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+      "review-smoke.py": "6743da49000db364d0b74bfda9da1292746d58bfc872a04190c378eb76d007a9",
+      "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+    },
+    "model_revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+    "model_weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+  },
+  "microphone_recorded": false,
+  "keyboard_device_opened": false,
+  "owner_windows_opened": false,
+  "method": "Existing public WAV, private Xvfb/IBus/GTK4 panel and clipboard, single existing supervised local model",
+  "model_stages": [
+    {
+      "mode": "translate",
+      "language": "French",
+      "synthetic_source": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+      "proposal": "Il espérait qu'il y aurait de la soupe pour le dîner, des navets et des carottes, des pommes de terre écrasées et des morceaux de mouton gras à verser dans une sauce épaisse, poivrée et épaissie à la farine.",
+      "completed": true,
+      "elapsed_s": 7.024656449000759
+    },
+    {
+      "mode": "grammar",
+      "language": "French",
+      "synthetic_source": "Il espérait qu'il y aurait de la soupe pour le dîner, des navets et des carottes, des pommes de terre écrasées et des morceaux de mouton gras à verser dans une sauce épaisse, poivrée et épaissie à la farine.",
+      "proposal": "Il espérait qu'il y aurait de la soupe pour le dîner, des navets et des carottes, des pommes de terre écrasées et des morceaux de mouton gras à verser dans une sauce épaisse, poivrée et épaissie à la farine.",
+      "completed": true,
+      "elapsed_s": 7.090019073999429
+    }
+  ],
+  "transcribe_library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+  "asr": {
+    "completed": true,
+    "normalized_word_error_rate": 0.0,
+    "original_transcript": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+    "first_widget_text_s": 4.996518657000706,
+    "elapsed_s": 12.801928601000327,
+    "backend": "cpu"
+  },
+  "original_preserved": true,
+  "intermediate_visible": true,
+  "private_clipboard_matches": true,
+  "automatic_owner_app_insertion": false,
+  "quality_scope": "Functional client/pipeline check; inspect synthetic translation and polish separately",
+  "resources": {
+    "samples": 29,
+    "min_available_bytes": 11855577088,
+    "max_fan_rpm": 0.0,
+    "max_temp_c": 40.168,
+    "quiet_policy_passed": true
+  },
+  "qualitative_inspection": {
+    "functional_result": "Public WAV reached actual GTK4 original field; both local model stages, intermediate view and private clipboard round trip passed.",
+    "translation_fidelity": "Meaning drift retained: stew became soupe (soup), and bruised potatoes became pommes de terre écrasées (crushed potatoes). This functional pass is not a translation fidelity pass.",
+    "grammar_stage": "Returned the intermediate translation unchanged; did not repair that meaning drift.",
+    "original_preserved": true,
+    "scope": "One public LibriSpeech clip; no physical F5, ambient microphone, general accuracy or acoustic qualification."
+  }
+}

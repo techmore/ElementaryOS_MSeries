@@ -1,0 +1,16 @@
+{
+  "refresh_passed": true,
+  "bridge_ready": true,
+  "output": "ibus",
+  "backend": "cpu",
+  "native_source_list_preserved": true,
+  "optional_panel_launcher_installed": false,
+  "owner_windows_changed": false,
+  "microphone_recorded": false,
+  "human_f5_passed": false,
+  "scope": "Timeout/metadata-budget/anonymous-error-diagnostic refresh; human popup/app detail still pending",
+  "installed_sha256": {
+    "stream-dictate.py": "452b3213c6d48a8b554275997728d34e6142f5ce37e65c62a23d54e451141c44",
+    "dictation-input.py": "c32a00a80cde33db6ab6861299b9059130584497e10d0037018eb42b0c4725c3"
+  }
+}

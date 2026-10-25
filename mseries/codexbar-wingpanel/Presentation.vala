@@ -3,6 +3,21 @@ namespace MSeries {
     internal enum QuotaLevel { UNKNOWN, OK, LOW, CRITICAL }
 
     internal class Presentation : GLib.Object {
+        // Dense bar dots deliberately use different thresholds from quota warnings.
+        public static QuotaLevel visual_level (double remaining) {
+            if (remaining < 0) return QuotaLevel.UNKNOWN;
+            return remaining > 70 ? QuotaLevel.OK : remaining >= 25 ? QuotaLevel.LOW : QuotaLevel.CRITICAL;
+        }
+
+        public static string dot_color (double remaining) {
+            var level = visual_level (remaining);
+            return level == QuotaLevel.OK ? "success_color" : level == QuotaLevel.LOW ? "warning_color" : "error_color";
+        }
+
+        public static string dot_percent (double remaining) {
+            return remaining >= 0 && remaining <= 15 ? " %0.0f%%".printf (remaining) : "";
+        }
+
         public static QuotaLevel level_for (double remaining) {
             if (remaining < 0) return QuotaLevel.UNKNOWN;
             if (remaining <= 10) return QuotaLevel.CRITICAL;
@@ -32,10 +47,46 @@ namespace MSeries {
             return label;
         }
 
+        /* Account legend: every distinct sign-in email gets one number and one hue across all
+         * providers, so the dropdown and the bar can show "1", "2"... instead of repeating addresses.
+         * The order is the caller's (signed-in accounts first); duplicates differ only in case. */
+        public static string[] account_legend (string[] emails) {
+            string[] legend = {};
+            var seen = new GenericSet<string> (str_hash, str_equal);
+            foreach (var email in emails) {
+                var key = email.strip ().down ();
+                if (key.length == 0 || !key.contains ("@") || seen.contains (key)) continue;
+                seen.add (key);
+                legend += email.strip ();
+            }
+            return legend;
+        }
+
+        /* 1-based position of `email` in `legend`, or 0 when it is not there. */
+        public static int legend_number (string[] legend, string email) {
+            var key = email.strip ().down ();
+            for (int i = 0; i < legend.length; i++) {
+                if (legend[i].down () == key) return i + 1;
+            }
+            return 0;
+        }
+
+        /* elementary palette hues, readable as a filled badge with white text in light and dark styles. */
+        public const string[] ACCOUNT_HUES = { "#3689e6", "#f37329", "#a56de2", "#28bca3", "#de3e80", "#7e5e3b" };
+
+        public static string account_hue (int number) {
+            if (number < 1) return "";
+            return ACCOUNT_HUES[(number - 1) % ACCOUNT_HUES.length];
+        }
+
         public static string plan_label (string plan) {
-            if (plan.length == 0) return "";
-            if (plan == "prolite") return "Pro Lite";
-            return plan.substring (0, 1).up () + plan.substring (1);
+            var value = plan.strip ();
+            if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "max20x") return "Max 20×";
+            if (value.down () == "max5x") return "Max 5×";
+            if (value.down () == "prolite") return "Pro Lite";
+            if (value.down () == "go") return "Go";
+            return value.substring (0, 1).up () + value.substring (1);
         }
 
         public static string age_text (int64 seconds) {
@@ -50,6 +101,12 @@ namespace MSeries {
             if (value >= 1000000) return "%.1fM".printf ((double) value / 1000000.0);
             if (value >= 1000) return "%.0fK".printf ((double) value / 1000.0);
             return value.to_string ();
+        }
+
+        /* count_text without the decimal once it adds nothing at panel density: "121M", "9.4M". */
+        public static string panel_count_text (int64 value) {
+            if (value >= 100000000 && value < 1000000000) return "%.0fM".printf ((double) value / 1000000.0);
+            return count_text (value);
         }
 
         /* Label the bar number when its window isn't the short session limit, so "35%" is never ambiguous. */
@@ -70,11 +127,180 @@ namespace MSeries {
             return remaining_text;
         }
 
+        /* Compact time to a reset for the panel: "38m", "4h44m", "6d22h"; empty when unknown or already due. */
+        public static string countdown_text (int64 seconds) {
+            if (seconds <= 0) return "";
+            if (seconds < 3600) return "%dm".printf ((int) ((seconds + 59) / 60));
+            if (seconds < 86400) return "%dh%02dm".printf ((int) (seconds / 3600), (int) (seconds % 3600 / 60));
+            return "%dd%dh".printf ((int) (seconds / 86400), (int) (seconds % 86400 / 3600));
+        }
+
+        /* The window that will stop you first: lowest measured remaining; a tie keeps the earlier (shorter) one. */
+        public static int binding_window (Json.Array windows) {
+            int best = -1;
+            double best_remaining = 0;
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var node = windows.get_object_element (i).get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var remaining = node.get_double ();
+                if (best < 0 || remaining < best_remaining) {
+                    best = (int) i;
+                    best_remaining = remaining;
+                }
+            }
+            return best;
+        }
+
+        /* Saved accounts retain every window: a weekly balance must never hide an empty 5-hour limit. */
+        public static string account_quota (Json.Array? windows, int64 now_unix, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
+            var parts = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
+                var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
+                // Explicit owned string: valac frees the owned inner value of a nested
+                // literal/call ternary before copying it (use-after-free in generated C).
+                string eta = "?";
+                if (reset != null) {
+                    eta = reset.to_unix () <= now_unix ? "now" : countdown_text (reset.to_unix () - now_unix);
+                }
+                if (parts.len > 0) parts.append (" · ");
+                parts.append (label);
+                if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));
+                if (show_reset) parts.append (" ↻" + eta);
+            }
+            return parts.len > 0 ? parts.str : "Quota unavailable";
+        }
+
+        public static string account_quota_markup (Json.Array? windows, int64 now_unix,
+                                                    string healthy, string low, string critical, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
+            var text = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var remaining = window.get_member ("remaining");
+                if (remaining == null || remaining.get_node_type () != Json.NodeType.VALUE) continue;
+                var single = new Json.Array ();
+                single.add_object_element (window.ref ());
+                var parts = account_quota (single, now_unix, show_percent, show_reset).split (" ↻", 2);
+                var level = visual_level (remaining.get_double ());
+                var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
+                if (text.len > 0) text.append (" · ");
+                text.append (color.length > 0
+                    ? "<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0]))
+                    : "<span weight=\"semibold\">%s</span>".printf (Markup.escape_text (parts[0])));
+                if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
+            }
+            return text.len > 0 ? text.str : "Quota unavailable";
+        }
+
+        /* Percent of quota is the only comparable unit supplied by these providers.
+         * The lowest window is usable headroom: 0% session + 90% weekly cannot win.
+         * Unknown/expired windows and stale accounts never earn a recommendation. */
+        public static double account_headroom (Json.Array? windows, int64 now_unix) {
+            double lowest = 101;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                // A model-scoped cap (Fable) limits that model only; it never lowers the account's headroom.
+                if (JsonBoundary.flag (window, "scoped", false)) continue;
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
+                var remaining = node.get_double ();
+                if (remaining < 0 || remaining > 100 || remaining.is_nan ()) return -1;
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
+                if (reset != null && reset.to_unix () <= now_unix) return -1;
+                lowest = double.min (lowest, remaining);
+            }
+            return lowest <= 100 ? lowest : -1;
+        }
+
+        public static int64 account_weekly_reset (Json.Array? windows, int64 now_unix) {
+            int64 earliest = 0;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var minutes = JsonBoundary.integer (window, "minutes", 0);
+                var label = JsonBoundary.text (window, "label", "").down ();
+                if (minutes != 10080 && !(minutes == 0 && (label.contains ("week")
+                    || label == "7d" || label.has_prefix ("7 day")))) continue;
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
+                if (reset != null && reset.to_unix () > now_unix && (earliest == 0 || reset.to_unix () < earliest)) {
+                    earliest = reset.to_unix ();
+                }
+            }
+            return earliest;
+        }
+
+        public static Json.Object account_hints (Json.Array accounts, int64 now_unix) {
+            var best = new Json.Array ();
+            var weekly = new Json.Array ();
+            double highest = 0;
+            int64 soonest = 0;
+            for (uint i = 0; i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (JsonBoundary.flag (account, "stale", false)) continue;
+                var id = JsonBoundary.text (account, "id", "");
+                if (id.length == 0) continue;
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
+                var remaining = account_headroom (windows, now_unix);
+                if (remaining > 0 && remaining >= highest) {
+                    if (remaining > highest) best = new Json.Array ();
+                    highest = remaining;
+                    best.add_string_element (id);
+                }
+                var reset = account_weekly_reset (windows, now_unix);
+                if (reset > 0 && (soonest == 0 || reset <= soonest)) {
+                    if (soonest == 0 || reset < soonest) weekly = new Json.Array ();
+                    soonest = reset;
+                    weekly.add_string_element (id);
+                }
+            }
+            var hints = new Json.Object ();
+            hints.set_array_member ("best", best);
+            hints.set_array_member ("weekly", weekly);
+            return hints;
+        }
+
+        /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
+        public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
+            return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),
+                requests == 1 ? "request" : "requests", count_text (tokens));
+        }
+
         /* The one line under a limit: when it resets, plus the forecast only when it is a warning. */
         public static string window_caption (string reset, EtaState state, string eta_detail) {
             if (state == EtaState.EXHAUSTED) return eta_detail;
             var base_text = reset.length > 0 ? reset : "Reset time unknown";
             return state == EtaState.DEPLETING ? base_text + " · " + eta_detail : base_text;
+        }
+
+        /* "2 resets" for an account line; empty when the count is unknown. */
+        public static string reset_count_text (int64 available) {
+            if (available < 0) return "";
+            return "%s %s".printf (available.to_string (), available == 1 ? "reset" : "resets");
+        }
+
+        /* "2 resets available · first expires in 3d4h"; the expiry is dropped when unknown or past. */
+        public static string reset_credits_line (int64 available, int64 seconds_to_expiry) {
+            if (available < 0) return "";
+            var text = "%s available".printf (reset_count_text (available));
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
+        }
+
+        /* One-row form for a header or account line: "2 resets · exp 3d4h"; the full sentence goes in the tooltip. */
+        public static string reset_credits_chip (int64 available, int64 seconds_to_expiry) {
+            var count = reset_count_text (available);
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? count + " · exp " + countdown : count;
+        }
+
+        /* Within a day of the first reset expiring, use it or lose it. */
+        public static bool reset_expiry_urgent (int64 available, int64 seconds_to_expiry) {
+            return available > 0 && seconds_to_expiry > 0 && seconds_to_expiry < 86400;
         }
     }
 }

@@ -1,0 +1,137 @@
+# GitHub repository dashboard in elementary OS
+
+`steipete/RepoBar` is a native macOS menu-bar app, so its application bundle
+does not run on elementary OS. This optional port provides the core repository
+overview as a native Pantheon Wingpanel indicator instead. It is an independent
+implementation; no macOS source or binary is copied into this project.
+
+## Ported features
+
+- Searchable dashboard with dashboard, all, pinned, issues, pull requests, and
+  needs-attention views. The dashboard defaults to 20 recently updated
+  repositories; pins stay visible. Forks and archived repositories are hidden
+  by default outside the all-repositories view.
+- Repository cards show open issue/PR counts, default-branch CI, stars, branch,
+  latest release, recent issue/PR/commit activity, and local branch health when
+  a projects folder is configured. Repository and activity links open in the
+  browser.
+- Each repository card includes default-branch commit counts for rolling 1-hour,
+  24-hour, and 30-day windows. Counts are returned with the paginated repository
+  snapshot and share its five-minute cache.
+- A status dot beside the panel counts shows GitHub Actions at a glance: red while
+  default-branch CI fails, yellow with a count while runs are pending, and green
+  when a pull request merged within the last hour (`mseries-repobar settings set
+  merge-window 5..1440` minutes). Nothing shows when all is quiet; the tooltip names
+  the last merge. Pending counts GitHub Actions runs in progress or queued on any branch or pull request in
+  recently active repositories (runs older than six hours are ignored); the tooltip lists them.
+  Desktop notifications announce each workflow run that finishes (RepoBar Settings → Notifications → Workflow runs,
+  `settings set notify-workflows true|false`).
+- The panel badge is the GitHub mark rendered as a GTK symbolic icon, so it
+  follows the current theme's foreground color.
+- The Wingpanel menu shares CodexBar's compact elementary OS styling: 9 pt body
+  text, 8 pt captions, softly raised cards, consistent popover spacing, and a
+  rounded refresh dock. Search, scope selection, and repository-specific details
+  keep their own useful width and hierarchy.
+- A globe beside the repository name opens its GitHub Pages site (custom
+  domains included), or the repository's website when it has no Pages site.
+- Details → Traffic shows 14 days of views and clones for repositories you can
+  push to.
+- With a projects folder set, cards show every local checkout and worktree
+  (Details → Checkouts) with branch and sync state, open them in Files or
+  Terminal, and offer Clone for repositories you have not cloned yet.
+- With pins, the dashboard shows them under a "Pinned" heading above
+  "Recently updated". Checkout lists show worktree names without the
+  repository prefix.
+- A contribution graph sits at the top of the dashboard. It starts collapsed to
+  one line (a toned mark per week plus this week's count); click its heading for
+  GitHub's day-by-day calendar (remembered). RepoBar Settings picks the style:
+  Dots (default), Fine dots (toned periods), or Squares, or turns it off
+  (`mseries-repobar settings set contribution-style dots|fine|squares`).
+- A For You card leads the dashboard with pull requests waiting on your review
+  and issues assigned to you. Optional desktop notifications announce a default
+  branch that starts failing CI or passes again (RepoBar Settings → Notifications).
+- Each repository card has a compact GTK disclosure menu for issues, pull
+  requests, workflow runs, releases, activity, commits, branches, and tags.
+  Categories fetch their data only when expanded; links open the matching GitHub
+  item. Search also matches repository topics, and the Local view filters to
+  checkouts found by the configured local scan.
+- Pin, unpin, hide, and show preferences are available from Wingpanel and CLI.
+- CLI details cover issues, pulls, CI runs, releases, activity, commits,
+  branches, tags, and commit activity. Additional commands report API quotas,
+  authentication, cache status, and preferences.
+- Uses GitHub CLI authentication and GraphQL/REST requests; the helper never
+  stores or prints the token. By default it follows the CLI's active account
+  and reads no token at all. Several accounts and hosts can be signed in:
+  RepoBar Settings → Account → Read as (or `mseries-repobar auth accounts`,
+  `auth use LOGIN[@HOST]`) picks the one RepoBar reads as, without running
+  `gh auth switch`, so git and other tools keep their own active account. For a
+  chosen account the helper asks `gh auth token --user` and hands the result
+  only to that request's `gh` child process environment. Snapshots and API
+  responses are cached per host and account. Cache and settings use private
+  permissions (`0700` directories, `0600` files) because they can contain
+  private repository names.
+- Optional local scanning skips hidden folders and symlinks and is bounded by
+  depth and directory count. `local sync` is explicit: it refuses dirty or
+  detached checkouts and only fast-forwards a clean branch after fetching.
+- RepoBar has no separate login item: the module loads with Wingpanel (and the
+  Windows-style taskbar). RepoBar Settings → Panel → Show RepoBar in the panel
+  (`settings set show-in-panel true|false`) is the launch-at-login preference: off
+  hides the module and stops all GitHub requests, timers and notifications, live
+  and at every later login; on brings it back. The installer adds a RepoBar
+  Settings launcher (`io.github.techmore.RepoBar.Settings.desktop`) so the pane stays
+  reachable while the module is hidden.
+- Refresh interval, repository limit, menu sort, host, fork/archive visibility,
+  and local scan root/depth are configurable with the CLI.
+
+This port implements the repository dashboard and CLI surfaces, not every
+macOS-only interaction.
+The CLI exposes a raw commit-activity endpoint. Upstream changes
+are never merged automatically; preserve this project's Pantheon UI and Linux
+integration.
+
+## Look and feel
+
+The popover follows the CodexBar indicator's elementary OS styling: a segmented
+scope switcher (Dashboard, Pinned, Attention, All), cards led by a CI status dot
+with PR and issue pills, a star to pin, a chevron for details, a right-click menu
+for open / copy link / pin / hide, and the same bottom bar (status chip,
+freshness, icon dock). Render it headlessly with
+`repobar-wingpanel/probe/run-probe.sh BUILD_DIR OUT_DIR [light|dark]` after
+`meson setup BUILD_DIR mseries/repobar-wingpanel && ninja -C BUILD_DIR`.
+The dock's gear opens **RepoBar Settings** (`mseries-repobar-settings`), a
+native window whose switches apply immediately. Keyboard: type to search,
+arrow keys and Enter on cards, Ctrl+F, Ctrl+R, Alt+1…4 for the tabs.
+`bash mseries/deploy-repobar.sh` rebuilds and installs the module and helper
+without apt; add `--restart` to reload Wingpanel.
+
+## Install on elementary OS
+
+Run `bash mseries/install-repobar-wingpanel.sh`. Then connect GitHub with
+`gh auth login` (or `mseries-repobar auth login`), reopen Wingpanel, and use the
+GitHub icon in the panel. The installer is optional and is not included in the
+base image. `gh` controls authentication; the port does not handle the token.
+
+Useful commands after installation:
+
+```sh
+mseries-repobar repos --scope all --search linux
+mseries-repobar issues owner/repository
+mseries-repobar rate-limits
+mseries-repobar settings set local-root ~/Projects
+mseries-repobar local scan
+mseries-repobar local sync ~/Projects/repository --yes
+```
+
+Local sync changes a checkout only after explicit `--yes` confirmation, and
+only when it is clean and can fast-forward.
+
+Remove the indicator and helper with
+`bash mseries/install-repobar-wingpanel.sh --uninstall`. This leaves the cached
+snapshot in `~/.cache/mseries/repobar/` so the user can remove it separately.
+
+## Source
+
+- Reference project: [steipete/RepoBar](https://github.com/steipete/RepoBar)
+- Linux implementation: `repobar.py` and `repobar-wingpanel/`
+- Wingpanel icon: GitHub mark path from [Simple Icons](https://github.com/simple-icons/simple-icons), whose GitHub entry points to [GitHub's logo assets](https://github.com/logos). The SVG is tintable for GTK's current theme; the mark remains GitHub's trademark.
+- Installer: `install-repobar-wingpanel.sh`

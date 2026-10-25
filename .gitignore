@@ -23,6 +23,15 @@ local-build-records/
 __pycache__/
 **/target/
 *.pyc
+/rust/target/
 mseries/gala-drawers/build/
 mkosi.packages/
 /mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
+
+# Rust build output
+rust/target/
+
+# Local scratch: build copies, external symlinks and agent worktrees
+/work/
+/static
+/.claude/

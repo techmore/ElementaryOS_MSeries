@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "app": "code",
+  "complete": true,
+  "passed": true,
+  "fixtures_only": true,
+  "source_sha256": {
+    "dictation/stream-dictate.py": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113",
+    "dictation/dictation-input.py": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5",
+    "dictation/dictation-input-client.py": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+    "dictation/dictation_status.py": "2e7411beb6b59af53f97d90a9f37ef21c746984b068fe303a629f579b8e7ac9b",
+    "dictation/dictation_resources.py": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe",
+    "dictation/dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation/dictation_ane.py": "fb7f752e8b64ea35e59611ad434d1e2aa86dc868ea817c78527aa3f51e1c617a",
+    "dictation/ane-worker-shim.py": "f5f3285aa9bb731bc49259e731b107e7b729b29c23e2fce0c46575be64c93935",
+    "dictation/dictation_mlx.py": "216125b79063ea2de46478a90aa8a64161ecf501aabdf5a0fe758f09636dcf10",
+    "dictation/mlx-speech-worker.py": "ad7c96191556c602d442574489debbd05c8bcfddc24826ba266419cb494649cf",
+    "dictation/dictation-engine.py": "b29363f5b03b30cf062375e590adac1e1f330e46255f190d6aa57f3a1d9e9f7e",
+    "dictation/dictation-launch.py": "62cb332684b24140385d8e11f45d21538534649309933456af79c9e9e790167c",
+    "dictation/dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+    "dictation/dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation/dictation_live.py": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+    "dictation/dictation-panel.py": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+    "dictation/dictation_voice.py": "837132a14283941d541b2ee10e22b31b4b8cf9679faf9584a0ef668feb9b3c32",
+    "dictation/voice-assistant.py": "384b715a264fdc848ec352de80a75101b02e70c450cb7ba9f60112975fd035ba",
+    "dictation/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+    "dictation/dictation-manage.py": "355e0e6e912c354ef006b310cf38ebae38c167c2ed258cc0d3c1e97a448edebc",
+    "dictation/dictation-english-manage.py": "05a7b233e440623e59f99b0f71ded0a4576a78beaef066b5d462e1392a2c9529",
+    "dictation/f5-real-apps-qualification.py": "acedc5c33c34a7aa8a50e9cf8466acd6b8e7361074d57faee7058d250cdcbb40",
+    "local-ai/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "evaluated_payload": "explicit-directory",
+  "language": "English",
+  "microphone_recorded": false,
+  "audio_played": false,
+  "owner_windows_opened": false,
+  "owner_profile_loaded": false,
+  "physical_f5_tested": false,
+  "chat_sent": false,
+  "task_saved": false,
+  "method": "Installed application, synthetic state and actual controller TEST_INSERT; private Xvfb/IBus/session bus",
+  "runtime": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+  },
+  "field_events": [],
+  "safety": {
+    "cancel_clears_provisional": true,
+    "cancel_revokes_lease": true,
+    "native_engine_restored": true,
+    "speculative_preview_suppressed": true
+  },
+  "installed_app": {
+    "executable": "io.elementary.code",
+    "sha256": "48e7b6da333577cd35225b5351dc262d51d5a95d210c7538080eac7d95ee060a"
+  },
+  "candidate_fields": [
+    {
+      "name": "",
+      "role": 61
+    }
+  ],
+  "private_window_focused_by_pid": true,
+  "field_metadata": {
+    "role": 61,
+    "name": "",
+    "editable": true,
+    "synthetic_state": true,
+    "ancestors": [
+      {
+        "role": 61,
+        "active": false,
+        "focused": true
+      },
+      {
+        "role": 49,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 53,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 20,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 20,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 53,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 20,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 53,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 39,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 23,
+        "active": true,
+        "focused": false
+      },
+      {
+        "role": 75,
+        "active": false,
+        "focused": false
+      },
+      {
+        "role": 14,
+        "active": false,
+        "focused": false
+      }
+    ],
+    "metadata_elapsed_s": 0.022554765000222687
+  }
+}

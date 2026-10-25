@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-19T01:09:30.995326+00:00",
+  "status": "diagnostic entry armed once; no reboot performed",
+  "entry_id": "elementary-aurora20-enh1-diagnostic",
+  "verified_next_entry": "elementary-aurora20-enh1-diagnostic",
+  "running_kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "normal_entry": "mseries-full-height",
+  "normal_kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "diagnostic_initrd_sha256": "b7c6a3e74e1c90d4d5925551cdfa44d41e38f1e0f83d456c4a5eb1bea9dd8c35",
+  "grub_consumes_next_entry_before_kernel": true,
+  "boot_result": "not tested"
+}

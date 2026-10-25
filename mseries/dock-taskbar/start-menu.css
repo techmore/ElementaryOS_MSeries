@@ -1,0 +1,161 @@
+/* Windows 11 Start appearance, owner requested 2026-10-20.
+ * Reference: https://support.microsoft.com/en-us/windows/experience/personalization/customize-the-windows-start-menu
+ * Scoped to the dock's existing native Start menu. */
+popover.start-menu {
+  font-family: "Segoe UI", "Noto Sans", sans-serif;
+  font-size: 1.167em;
+}
+popover.start-menu > contents {
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f3f3f3;
+  color: #1b1b1b;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+}
+popover.start-menu .start-search {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  color: #1b1b1b;
+  box-shadow: inset 0 -2px #0078d4;
+}
+popover.start-menu .start-search:focus-within {
+  box-shadow: inset 0 -2px #0078d4, 0 0 0 1px rgba(0,120,212,0.22);
+}
+popover.start-menu .start-section-title {
+  font-size: 1.167em;
+  font-weight: 600;
+  margin: 8px 0;
+}
+popover.start-menu .start-pill {
+  min-height: 24px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background-image: none;
+  background-color: #fafafa;
+  color: #1b1b1b;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+popover.start-menu .start-tile {
+  padding: 10px 3px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+popover.start-menu .start-tile label { font-size: 1.0em; }
+popover.start-menu .start-list { background: transparent; }
+popover.start-menu .start-list row {
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+popover.start-menu .start-tile:hover,
+popover.start-menu .start-list row:hover,
+popover.start-menu .start-pill:hover { background-color: rgba(0,0,0,0.045); }
+popover.start-menu .start-tile:focus-visible,
+popover.start-menu .start-list row:focus-visible,
+popover.start-menu button:focus-visible { outline: 2px solid #0078d4; outline-offset: -2px; }
+popover.start-menu .start-footer {
+  min-height: 56px;
+  padding: 6px 32px;
+  border-radius: 0 0 12px 12px;
+  background: #e9e9e9;
+  box-shadow: inset 0 1px rgba(0,0,0,0.06);
+}
+popover.start-menu .start-footer button {
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+popover.start-menu .start-footer button:hover { background: rgba(0,0,0,0.05); }
+dock-window.taskbar.dark popover.start-menu > contents {
+  background: #242424;
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+}
+dock-window.taskbar.dark popover.start-menu .start-search {
+  background: #1b1b1b;
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: inset 0 -2px #60cdff;
+}
+dock-window.taskbar.dark popover.start-menu .start-search:focus-within {
+  box-shadow: inset 0 -2px #60cdff, 0 0 0 1px rgba(96,205,255,0.22);
+}
+dock-window.taskbar.dark popover.start-menu .start-pill {
+  background: #323232;
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.07);
+}
+dock-window.taskbar.dark popover.start-menu .start-tile:hover,
+dock-window.taskbar.dark popover.start-menu .start-list row:hover,
+dock-window.taskbar.dark popover.start-menu .start-pill:hover { background: rgba(255,255,255,0.065); }
+dock-window.taskbar.dark popover.start-menu .start-footer {
+  background: #1c1c1c;
+  box-shadow: inset 0 1px rgba(255,255,255,0.055);
+}
+dock-window.taskbar.dark popover.start-menu .start-footer button:hover { background: rgba(255,255,255,0.065); }
+dock-window.taskbar.dark popover.start-menu .start-tile:focus-visible,
+dock-window.taskbar.dark popover.start-menu .start-list row:focus-visible,
+dock-window.taskbar.dark popover.start-menu button:focus-visible { outline-color: #60cdff; }
+popover.start-menu .start-footer button { color: #1b1b1b; }
+dock-window.taskbar.dark popover.start-menu .start-footer button { color: #ffffff; }
+dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
+/* Compact Windows 11 proportions and acrylic-like layered surfaces. */
+popover.start-menu { font-family: "Segoe UI", "Arimo", sans-serif; font-size: 1.083em; }
+popover.start-menu > contents {
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(243,246,252,0.98), rgba(242,242,247,0.97));
+}
+popover.start-menu .start-search {
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0 14px;
+  box-shadow: inset 0 -1px rgba(0,0,0,0.12);
+}
+popover.start-menu .start-search:focus-within { box-shadow: inset 0 -2px #0078d4; }
+popover.start-menu .start-section-title { font-size: 1.167em; margin: 4px 0; }
+popover.start-menu .start-tile { min-height: 66px; padding: 6px 0; border-radius: 4px; }
+popover.start-menu .start-tile label { font-size: 1.0em; }
+popover.start-menu .start-pill { min-height: 23px; font-size: 1.0em; padding: 0 9px; }
+popover.start-menu .start-recent { padding: 8px; border-radius: 4px; }
+popover.start-menu .start-recent:hover { background: rgba(0,0,0,0.045); }
+popover.start-menu .start-footer { min-height: 58px; padding: 4px 40px; border-radius: 0 0 8px 8px; background: rgba(225,229,238,0.85); }
+popover.start-menu .start-footer button image { border-radius: 999px; }
+dock-window.taskbar.dark popover.start-menu > contents {
+  background: linear-gradient(135deg, rgba(38,42,53,0.98), rgba(31,32,39,0.98));
+}
+dock-window.taskbar.dark popover.start-menu .start-search {
+  background: rgba(16,18,24,0.65);
+  box-shadow: inset 0 -1px rgba(255,255,255,0.12);
+}
+dock-window.taskbar.dark popover.start-menu .start-search:focus-within { box-shadow: inset 0 -2px #60cdff; }
+dock-window.taskbar.dark popover.start-menu .start-footer { background: rgba(23,25,32,0.85); }
+dock-window.taskbar.dark popover.start-menu .start-recent:hover { background: rgba(255,255,255,0.06); }
+popover.start-menu .start-recent { color: #1b1b1b; }
+popover.start-menu .start-recent .dim-label { color: #606060; opacity: 1; }
+popover.start-menu .start-search placeholder { color: #606060; }
+dock-window.taskbar.dark popover.start-menu .start-recent { color: #ffffff; }
+dock-window.taskbar.dark popover.start-menu .start-recent .dim-label { color: #bcbcbc; }
+dock-window.taskbar.dark popover.start-menu .start-search placeholder { color: #bcbcbc; }
+
+/* Restart and Shut Down: solid dark buttons so they read as deliberate actions. */
+popover.start-menu .start-footer button.start-power-action {
+  background: #101010;
+  color: #ffffff;
+  border-color: #000000;
+  margin: 0 3px;
+}
+popover.start-menu .start-footer button.start-power-action:hover { background: #000000; }
+dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action {
+  background: #000000;
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.14);
+}
+dock-window.taskbar.dark popover.start-menu .start-footer button.start-power-action:hover { background: #1a1a1a; }

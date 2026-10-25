@@ -1,0 +1,62 @@
+diff --git a/src/Application.vala b/src/Application.vala
+index eea910c..5a3d1d2 100644
+--- a/src/Application.vala
++++ b/src/Application.vala
+@@ -18,14 +18,17 @@ public class Dock.Application : Gtk.Application {
+
+     protected override void activate () {
+-        if (active_window == null) {
+-            var main_window = new MainWindow ();
++        // A supervisor or a second launcher can activate the existing instance.
++        // The compositor owns panel visibility; never request focus again here.
++        if (get_windows () != null) {
++            return;
++        }
+
+-            add_window (main_window);
++        var main_window = new MainWindow ();
++        add_window (main_window);
+
+-            unowned var unity_client = Unity.get_default ();
+-            unity_client.add_client (AppSystem.get_default ());
+-        }
++        unowned var unity_client = Unity.get_default ();
++        unity_client.add_client (AppSystem.get_default ());
+
+-        active_window.present ();
++        main_window.present ();
+     }
+
+diff --git a/src/WorkspaceSystem/WorkspaceSystem.vala b/src/WorkspaceSystem/WorkspaceSystem.vala
+index 36a8e64..adccaa2 100644
+--- a/src/WorkspaceSystem/WorkspaceSystem.vala
++++ b/src/WorkspaceSystem/WorkspaceSystem.vala
+@@ -19,9 +19,14 @@ public class Dock.WorkspaceSystem : Object {
+
+     public async void load () {
+-        yield sync_windows ();
+-
+-        WindowSystem.get_default ().notify["windows"].connect (sync_windows);
+-        WindowSystem.get_default ().notify["active-workspace"].connect (sync_active_workspace);
+-        WindowSystem.get_default ().workspace_removed.connect (remove_workspace);
++        unowned var window_system = WindowSystem.get_default ();
++        window_system.notify["windows"].connect (sync_windows);
++        window_system.notify["active-workspace"].connect (sync_active_workspace);
++        window_system.workspace_removed.connect (remove_workspace);
++
++        // WindowSystem connects to Gala asynchronously; its first window sync
++        // notifies "windows" and runs sync_windows then, so don't query Gala early.
++        if (window_system.desktop_integration != null) {
++            yield sync_windows ();
++        }
+     }
+
+@@ -85,4 +90,8 @@ public class Dock.WorkspaceSystem : Object {
+         }
+
++        if (index < 0 || index >= workspaces.get_n_items ()) {
++            return;
++        }
++
+         workspaces.remove (index);
+     }

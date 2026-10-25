@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "kind": "native-arm64-build-evidence",
+  "repository_head": "20befbb36fa863646d953b6378f919c0dacba632",
+  "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052",
+  "profiles": [
+    {
+      "profile": "candidate",
+      "result": "pass",
+      "ci_artifact_id": 12132971189,
+      "ci_artifact_zip_sha256": "2a6ef5dec5b2962b0df7e4300aeec2e690e7ee8e77f0f8e58cfa28d16d3621e3",
+      "artifact_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052/artifacts/12132971189",
+      "local_checksum_verification": "all original CI-SHA256SUMS entries passed",
+      "hardware_qualification": false,
+      "provenance": {
+        "profile": "candidate",
+        "kernel_release": "7.1.12-elementary-aurora20-enh1",
+        "base_pins": {
+          "repository": "omacom/linux-aurora",
+          "release": "aurora-2026.10.17.20",
+          "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+          "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+          "debian_package": "linux-image-elementary-aurora20",
+          "debian_version": "7.1.12+aurora.20261017.20-1",
+          "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+          "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+          "assets": {
+            "kernel": {
+              "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+              "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+            },
+            "recipe": {
+              "name": "linux-aurora-recipe-20261017.20.tar.gz",
+              "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+            },
+            "source": {
+              "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+              "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+            },
+            "m1n1": {
+              "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+              "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+            },
+            "m1n1_source": {
+              "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+              "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+              "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+            },
+            "touchid": {
+              "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+              "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+            },
+            "libfprint": {
+              "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+              "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+            }
+          }
+        },
+        "series_sha256": "74ffe79b5e043e17981ba7978753e97b83a597ff7a2f900c787676e186df4c9c",
+        "patches": [
+          {
+            "file": "0001-udmabuf.patch",
+            "sha256": "980e441601ce890741a2bf9c741556e299e5c1ac8f05000991f333fcacbacc6e",
+            "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+            "head": "6984b8c07e84b0cf528243db1838dade971ff513",
+            "profile": "candidate",
+            "note": "Unmodified public upstream patch"
+          },
+          {
+            "file": "0002-m3-thermal.patch",
+            "sha256": "510cff1505be35ed005079881d853f60fe86cc2f2a916d703aca293a3fe5f038",
+            "upstream": "https://github.com/omacom/linux-aurora/pull/135",
+            "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+            "profile": "candidate",
+            "note": "Unmodified public upstream patch"
+          },
+          {
+            "file": "0003-j613-camera-147.patch",
+            "sha256": "5d868e19e9b0edbac4ce19d4954558f471800925937347bc902bd362a706ede0",
+            "upstream": "https://github.com/omacom/linux-aurora/pull/134",
+            "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+            "profile": "candidate",
+            "note": "Unmodified public upstream patch"
+          },
+          {
+            "file": "0004-t8122-camera-2662.patch",
+            "sha256": "d8938f63279a913640d7af6abf00932298828f8968eba8c97e1ed311d9e7e310",
+            "upstream": "https://github.com/omacom/linux-aurora/pull/119",
+            "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+            "profile": "candidate",
+            "note": "Unmodified public upstream patch"
+          },
+          {
+            "file": "0005-macsmc-optional-properties.patch",
+            "sha256": "5b4f9ba92b99bf388be2c8a3ed11a8fb6caa760632e363aba3e53e5a6a66e5fe",
+            "upstream": "https://github.com/omacom/linux-aurora/commit/4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+            "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+            "profile": "candidate",
+            "note": "Rebased against .20; original author retained; only optional-property registration changed"
+          }
+        ],
+        "source_pin": null,
+        "source_tree_sha256": "989115032a6efa9881f3f4f26ca96b7aa696aec64c46366af706abe6fbe59c13",
+        "modified_files": {
+          "arch/arm64/configs/asahi.config": "a1e2457a6a00e07041bc9cd687f1dba025c5246067db04249260373a93340fbf",
+          "drivers/gpu/drm/asahi/m3_adt_config.rs": "d12d7daeca1ea7d2683401218dbb2473a23460c63c8a24f21c5d73de53ef752e",
+          "drivers/gpu/drm/asahi/m3_thermal.rs": "7cd7b1fb3a1981d8f22ab12398bf3179dea755c082352ae139086df998387241",
+          "drivers/gpu/drm/asahi/m3_thermal_policy.rs": "95ecb99eb56801ab029b81611efd323f11261378b881b2e1a449858ce0715f82",
+          "drivers/media/platform/apple/isp/isp-cam.c": "84693e8a69a370370367b4c84884f6e88b19c2b23eb9377985894a5f77da1f61",
+          "drivers/media/platform/apple/isp/isp-drv.c": "87a8bea14713558433872bb79e58eb68161fd42a23f27360f1dce4a9c411dc25",
+          "drivers/media/platform/apple/isp/isp-drv.h": "5e16b356d11317947b6a24bc8c0b9880dad7878ca4441fdd7c14f0e85ee4eb53",
+          "drivers/power/supply/macsmc-power.c": "80c46117b6019256a3127248e0e9d4a20d0e02e4cd47f07aa8b2bc86ac85e360",
+          "localversion.elementary": "8c47fc69e5fcd09200d2add0404ca2617f548668451fa9734392dc6d7d027191",
+          "rust-toolchain.toml": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c"
+        },
+        "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+        "status": "ARM64 Image/modules/DTBs built; no hardware boot",
+        "package": "linux-image-elementary-aurora-enhancements_7.1.12+elementary.aurora20.enh1-1_arm64.deb",
+        "package_sha256": "185f1fa6135739d3129a9d44025b92321d926df82a8a07fd5a3bc3fd95d34992",
+        "source_sha256": "376235456ec9ba009807aa800b7db289460c20e73e87483614d93fddc71507dd",
+        "resolved_config_sha256": "580c52afccefa9062ed784560a52b6c9efb99e1e6bc7c7d33145297bd9ae0b81",
+        "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+        "clang": "Ubuntu clang version 22.1.2 (1ubuntu1)",
+        "package_compression": {
+          "format": "zstd",
+          "level": 3,
+          "max_threads": 4
+        }
+      }
+    },
+    {
+      "profile": "unified72",
+      "result": "pass",
+      "ci_artifact_id": 12132058781,
+      "ci_artifact_zip_sha256": "e704e26ed9d8232c5357aeb4c1b99a0f427718b8c3997d8a3ffbd740d7cde1d8",
+      "artifact_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052/artifacts/12132058781",
+      "local_checksum_verification": "all original CI-SHA256SUMS entries passed",
+      "hardware_qualification": false,
+      "provenance": {
+        "profile": "unified72",
+        "kernel_release": "7.2.10-elementary-aurora72-wip1",
+        "base_pins": {
+          "repository": "omacom/linux-aurora",
+          "release": "aurora-2026.10.17.20",
+          "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+          "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+          "debian_package": "linux-image-elementary-aurora20",
+          "debian_version": "7.1.12+aurora.20261017.20-1",
+          "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+          "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+          "assets": {
+            "kernel": {
+              "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+              "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+            },
+            "recipe": {
+              "name": "linux-aurora-recipe-20261017.20.tar.gz",
+              "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+            },
+            "source": {
+              "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+              "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+            },
+            "m1n1": {
+              "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+              "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+            },
+            "m1n1_source": {
+              "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+              "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+              "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+            },
+            "touchid": {
+              "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+              "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+            },
+            "libfprint": {
+              "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+              "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+            }
+          }
+        },
+        "series_sha256": "6570462b68caab8a8e6010b8c22ee9a28fd56c5f36c815ef2d333e933217aae8",
+        "patches": [
+          {
+            "file": "0001-stock-bindgen-layout-policy.patch",
+            "sha256": "bba23efd3298c7f4fba31bde6a7a798b73fcbce7d07cb87683422d429615dedd",
+            "upstream": "https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+            "head": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+            "profile": "candidate",
+            "note": "Unmodified authored review fix from .20; applies cleanly to 7.2.10; stock bindgen default, opt-in layout checker retained"
+          }
+        ],
+        "source_pin": {
+          "repository": "aurora-silicon/linux",
+          "commit": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+          "upstream_pr": "https://github.com/omacom/linux-aurora/pull/139",
+          "name": "linux-aurora-582e9ef3d44c93082e8abc740ad3e0a8dde29752.tar.gz",
+          "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+          "archive_root": "linux-aurora-582e9ef3d44c93082e8abc740ad3e0a8dde29752",
+          "sha256": "47597a08b0d13cbace050ac16e0b5ad4b91fe3f0d307041bf7b6cec803b057fd"
+        },
+        "source_tree_sha256": "5b763ebe5ebed6463c98e05bbd79458e63501d4d92cfda8c6490b7c2ebc2c574",
+        "modified_files": {
+          "Documentation/rust/bindgen-layout-checks.rst": "221d9968188173653e70e1199c483e76407b7c467b3419dd13a9568488ea84c3",
+          "localversion.elementary": "2c9317021863dacf4684da6f45cb1b150b3c877974e1f328464741c6615afd3f",
+          "rust-toolchain.toml": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c",
+          "rust/Makefile": "524384d1130cb0c6422b9237907d81967573c411116f96fbb7a8926ac7bd4083",
+          "tools/aurora-bindgen/README.rst": "c5d0cc3099eb44db1241e2a8a723a111b94ef99ed869fb94f2404e7dfc97b482",
+          "tools/aurora-bindgen/build.py": "0e63e0341703959d1f6f37c6a4c11d1033d1add1986f9698f631d81b72e9fee5"
+        },
+        "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+        "status": "ARM64 Image/modules/DTBs built; no hardware boot",
+        "package": "linux-image-elementary-aurora72-wip1_7.2.10+elementary.aurora72.wip1-1_arm64.deb",
+        "package_sha256": "e8e8d944a315e75a6256dda763fc62f185fbf6e1e5d0cf05148acb095b4888fc",
+        "source_sha256": "1f52d1cef36232f8f0217f5bb77ad1f42bd9ecddc6c35bc777d6674ae64d3588",
+        "resolved_config_sha256": "f857f958c419d29cab7d5648ad4d8cdaf8a679b710f393e7d94588aa1dc57d87",
+        "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+        "clang": "Ubuntu clang version 22.1.2 (1ubuntu1)",
+        "package_compression": {
+          "format": "zstd",
+          "level": 3,
+          "max_threads": 4
+        }
+      }
+    }
+  ],
+  "reviewed_source_host_tree_matches_candidate": true,
+  "candidate_host_receipt": "2026-10-18-review-host-controls.json",
+  "unified72_disposition": "Build-only; GPU/SEP review parity gates remain open despite successful compilation."
+}

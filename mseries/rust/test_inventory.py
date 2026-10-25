@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import tomllib
 import unittest
 
 SPEC = importlib.util.spec_from_file_location("inventory", Path(__file__).with_name("inventory.py"))
@@ -13,6 +14,17 @@ SPEC.loader.exec_module(INVENTORY)
 
 
 class InventoryRoles(unittest.TestCase):
+    def test_root_workspace_members_have_independent_project_records(self):
+        document = json.loads(INVENTORY.render())
+        projects = {project["id"]: project for project in document["projects"]}
+        workspace = tomllib.loads((INVENTORY.ROOT / "rust/Cargo.toml").read_text())
+        for member in workspace["workspace"]["members"]:
+            project = "mseries/power" if member == "mseries-power" else f"rust/{member}"
+            with self.subTest(member=member):
+                self.assertIn(f"rust/{member}/Cargo.toml", projects[project]["items"])
+        messages = projects["rust/mseries-messages"]
+        self.assertEqual("owner-deferred-incomplete", messages["migration_status"])
+
     def test_elementary_seed_compiler_is_a_separate_unverified_project(self):
         document = json.loads(INVENTORY.render())
         project = next(

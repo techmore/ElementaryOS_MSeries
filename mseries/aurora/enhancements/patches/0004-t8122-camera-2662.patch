@@ -1,0 +1,170 @@
+From 4300575e2b54eaafe430b271fd39d6de57427d1e Mon Sep 17 00:00:00 2001
+From: Scott Jones <scottajones@gmail.com>
+Date: Tue, 13 Oct 2026 22:16:10 -0400
+Subject: [PATCH 1/2] media: apple: isp: recognise the 26.6.2 firmware
+
+m1n1 sets apple,firmware-version and apple,firmware-compat to 26.6.2 on a
+13" M3 MacBook Air (J613) whose stub runs macOS 26.6.2 (25G83) OS
+firmware. The driver did not know that version, so fw_compat was unknown
+and isp_cmd_ch_set_file_load() sent the 32-bit CH_SET_FILE_LOAD record.
+The 26.6.2 firmware reads the 64-bit layout: it took the setfile address
+from the wrong fields and faulted on it (FFW_Platform_Catch, far
+0x3c00101c000, the data surface at 0x101c000 with garbage above it), and
+every later command timed out.
+
+Recognise 26.6.2, which orders after 14.7, so the 64-bit record is used.
+That is the only place the driver compares fw_compat.
+
+Tested on J613 (system firmware 27.0, OS firmware 26.6.2): the setfile
+loads in about 1 ms instead of faulting.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Scott Jones <scottajones@gmail.com>
+---
+ drivers/media/platform/apple/isp/isp-drv.c | 4 ++++
+ drivers/media/platform/apple/isp/isp-drv.h | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/drivers/media/platform/apple/isp/isp-drv.c b/drivers/media/platform/apple/isp/isp-drv.c
+index 9f5f8f58b3748e..75e2ac8aae029d 100644
+--- a/drivers/media/platform/apple/isp/isp-drv.c
++++ b/drivers/media/platform/apple/isp/isp-drv.c
+@@ -300,6 +300,8 @@ static const char * isp_fw2str(enum isp_firmware_version version)
+ 		return "13.5";
+ 	case ISP_FIRMWARE_V_14_7:
+ 		return "14.7";
++	case ISP_FIRMWARE_V_26_6_2:
++		return "26.6.2";
+ 	default:
+ 		return "unknown";
+ 	}
+@@ -329,6 +331,8 @@ static enum isp_firmware_version isp_read_fw_version(struct device *dev,
+ 			return ISP_FIRMWARE_V_13_5;
+ 		else if (ver[0] == 14 && ver[1] == 7 && ver[2] == 0)
+ 			return ISP_FIRMWARE_V_14_7;
++		else if (ver[0] == 26 && ver[1] == 6 && ver[2] == 2)
++			return ISP_FIRMWARE_V_26_6_2;
+ 
+ 		dev_warn(dev, "unknown %s: %d.%d.%d\n", name, ver[0], ver[1], ver[2]);
+ 		break;
+diff --git a/drivers/media/platform/apple/isp/isp-drv.h b/drivers/media/platform/apple/isp/isp-drv.h
+index bb7725cbd02b05..71af093ece6598 100644
+--- a/drivers/media/platform/apple/isp/isp-drv.h
++++ b/drivers/media/platform/apple/isp/isp-drv.h
+@@ -76,6 +76,7 @@ enum isp_firmware_version {
+ 	ISP_FIRMWARE_V_12_4,
+ 	ISP_FIRMWARE_V_13_5,
+ 	ISP_FIRMWARE_V_14_7,
++	ISP_FIRMWARE_V_26_6_2,
+ };
+ 
+ struct isp_surf {
+
+From 4cf3221edd6befc79489ff4e2636e0b01e002ac7 Mon Sep 17 00:00:00 2001
+From: Scott Jones <scottajones@gmail.com>
+Date: Tue, 13 Oct 2026 22:17:43 -0400
+Subject: [PATCH 2/2] media: apple: isp: stream the IMX558 on 26.6.2 firmware
+
+With the 26.6.2 firmware recognised, the J613 IMX558 streams once two
+more things change for that firmware:
+
+- Setfile: use 1925_03, the header version 0x21 IMX558 setfile in the
+  26.6.2 (25G83) appleh16camerad, as the H17 firmware already does.
+  1925_03 is what this was tested with; 1921_01 crashed the firmware
+  before the CH_SET_FILE_LOAD fix and was not retried after it.
+
+- Temporal filter: do not enable MBNR, the temporal filter or motion
+  history. This firmware runs them through the neural engine (it logs
+  "MLVNR ... aneclient not ready"). With them enabled, the sensor
+  streams, but every frame stays in the temporal filter's input queue:
+  the firmware reports "Raw output buffer unavailable" and "Host
+  metadata unavailable", delivers nothing, and asserts in
+  CVideoFlowH15Cmd.cpp line 714 when the stream is stopped. With them
+  off, frames reach the host.
+
+H17 and older firmware are unchanged.
+
+Tested on J613 (system firmware 27.0, OS firmware 26.6.2, m1n1 with an
+ISP heap for T8122 on 26.6.2): 1920x1080 NV12 at 30 fps, exposed and in
+colour with the setfile; two streams in a row, with the firmware stopped
+and booted again in between.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Scott Jones <scottajones@gmail.com>
+---
+ drivers/media/platform/apple/isp/isp-cam.c | 46 +++++++++++++++-------
+ 1 file changed, 32 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/media/platform/apple/isp/isp-cam.c b/drivers/media/platform/apple/isp/isp-cam.c
+index 5090ed2ed5b985..616590de2f8734 100644
+--- a/drivers/media/platform/apple/isp/isp-cam.c
++++ b/drivers/media/platform/apple/isp/isp-cam.c
+@@ -119,8 +119,13 @@ static int isp_ch_get_sensor_id(struct apple_isp *isp, u32 ch)
+ 		id = ISP_IMX514_2820_01;
+ 		break;
+ 	case 0x558:
+-		/* The H17 firmware only parses header version 0x21 setfiles. */
+-		if (isp->hw->fw_abi == ISP_FW_ABI_H17)
++		/*
++		 * The H17 firmware only parses header version 0x21 setfiles.
++		 * 26.6.2 (J613) streams with 1925_03, the header version 0x21
++		 * setfile in that release's appleh16camerad.
++		 */
++		if (isp->hw->fw_abi == ISP_FW_ABI_H17 ||
++		    isp->fw_compat >= ISP_FIRMWARE_V_26_6_2)
+ 			id = ISP_IMX558_1925_03;
+ 		else
+ 			id = ISP_IMX558_1921_01;
+@@ -504,9 +509,19 @@ static int isp_ch_configure_capture(struct apple_isp *isp, u32 ch)
+ 	if (err)
+ 		return err;
+ 
+-	err = isp_cmd_ch_mbnr_enable(isp, ch, 0, ISP_MBNR_MODE_ENABLE, 1);
+-	if (err)
+-		return err;
++	/*
++	 * 26.6.2 firmware on T8122 runs MBNR and the temporal filter through
++	 * the neural engine ("aneclient not ready"). With neither started,
++	 * frames go straight to the host; with them, every frame waits in
++	 * the temporal filter until the firmware asserts.
++	 */
++	bool temporal = h17 || isp->fw_compat < ISP_FIRMWARE_V_26_6_2;
++
++	if (temporal) {
++		err = isp_cmd_ch_mbnr_enable(isp, ch, 0, ISP_MBNR_MODE_ENABLE, 1);
++		if (err)
++			return err;
++	}
+ 
+ 	/* The H17 firmware faults on this face-detection metering setup. */
+ 	if (!h17) {
+@@ -538,17 +553,20 @@ static int isp_ch_configure_capture(struct apple_isp *isp, u32 ch)
+ 			return err;
+ 	}
+ 
+-	err = isp_cmd_apple_ch_temporal_filter_start(isp, ch, isp->temporal_filter);
+-	if (err)
+-		return err;
++	if (temporal) {
++		err = isp_cmd_apple_ch_temporal_filter_start(isp, ch,
++							     isp->temporal_filter);
++		if (err)
++			return err;
+ 
+-	err = isp_cmd_apple_ch_motion_history_start(isp, ch);
+-	if (err)
+-		return err;
++		err = isp_cmd_apple_ch_motion_history_start(isp, ch);
++		if (err)
++			return err;
+ 
+-	err = isp_cmd_apple_ch_temporal_filter_enable(isp, ch);
+-	if (err)
+-		return err;
++		err = isp_cmd_apple_ch_temporal_filter_enable(isp, ch);
++		if (err)
++			return err;
++	}
+ 
+ 	if (h17)
+ 		return isp_cmd_ch_master_slave_sync_mode_set(isp, ch, 0);

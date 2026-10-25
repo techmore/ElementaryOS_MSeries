@@ -1,0 +1,518 @@
+{
+  "source": "<verified-corresponding-source>",
+  "sources": {
+    "drivers/gpu/drm/apple/afk-parser-test.c": "14ff87187e7196536e838b4e0f97dae2a0e62e110e6f987159a506e88026b339",
+    "drivers/gpu/drm/apple/afk-service-test.c": "a9138680a7d4e0e2c2092f8dea4fe1a1986575c9c272938ab101bc9dc0af8418",
+    "drivers/gpu/drm/apple/afk.c": "be72d59c3c411c97e1c86c88e7cce9ba0687b1b32bb4908883760f5e2bb95c77",
+    "drivers/gpu/drm/apple/afk.h": "d80155ab3cb506bfd49582969f2115a24db009303f36769d28f35584047084ba",
+    "drivers/gpu/drm/apple/afk_reply.h": "caf891f3a1f47158aa6b7c8f221813083e79085951fe5d78813e5b54398f2a1d",
+    "drivers/gpu/drm/apple/afk_test.c": "aa8a02433166da88e014865509a45af6046681fa256d50d98e06ef6f7e958d26",
+    "drivers/gpu/drm/apple/afkv2-codec.h": "a4aab16d351e7154f8e4b864585547f8001fa41263fa48d73478a3f84addbad2",
+    "drivers/gpu/drm/apple/afkv2-test.c": "bf0546a17800bf7812769f41c98c097e4b289d4fc8bb902c25b73c3f5079eacb",
+    "drivers/gpu/drm/apple/apple_boot_display.h": "3c68b3e11f24d5ab0b8e8d1c3e109f20ef84041bda109355e9c5764532847ebe",
+    "drivers/gpu/drm/apple/apple_boot_display_test.c": "23da6e9e4f1a874ddb34e3a69d68134ae4f5177b12960771c8690922623dd1e6",
+    "drivers/gpu/drm/apple/apple_drv.c": "731b22a4343ed89374fbcec1968bace6e30a63cb40e5351ea759a25401f9915e",
+    "drivers/gpu/drm/apple/apple_resume.c": "5681987f703a7853ae32fe1c9a68c6f926e5a0a6452fb2f20c367614be1ded7c",
+    "drivers/gpu/drm/apple/apple_resume.h": "74e8fcb406037eae2c921032dc96a983e2f722f697d51f0d46cff7597c734a81",
+    "drivers/gpu/drm/apple/apple_resume_test.c": "d86b52c9eed6242b75a86e6a7c6f7513794df31415ff604aeca2e379d39d26ae",
+    "drivers/gpu/drm/apple/audio.c": "99866cccb016cf919b594e8b86c54ec3e81c80f3592ebb0630ce07d13752b04a",
+    "drivers/gpu/drm/apple/audio.h": "99f1c58af02b7968342afb543125056f6b2075fe6903bd6650fe4a7e66d2961f",
+    "drivers/gpu/drm/apple/av.c": "88867a3139e15d7dc404ff181f0561cc00d9a50467b1b6676938c9dfd7497168",
+    "drivers/gpu/drm/apple/av.h": "977ae8ae3a915c5a3cfbd2cce639b4e0a96ba5d10bb946813931e46c25b59d38",
+    "drivers/gpu/drm/apple/connector.c": "19a67e8c9053e989755cefe3f3d0e0470b585d0ebf50c27260483030f528dd33",
+    "drivers/gpu/drm/apple/connector.h": "0cf8fdc4186a4676a335dd5cb6aa03737c871a1247f6ff6a85e65ea43519030f",
+    "drivers/gpu/drm/apple/dcp-180hz-policy.h": "27dd86ae83ce5e7ead44ab1ca48a02edb61f27b0d1b9d08bff6c29441d3ea4e6",
+    "drivers/gpu/drm/apple/dcp-180hz.c": "2cea7402d558999d8741242e24f5857c1238d76dc12499d61aa7011d9fb841aa",
+    "drivers/gpu/drm/apple/dcp-180hz.h": "1fd639f9e52e9daadc9883f65c605f1142c32989febc92eda3834ee83f8e0bd8",
+    "drivers/gpu/drm/apple/dcp-announce-test.c": "70e775500abcc551816c29251f0ad08b44372453b2146c68a1add15d5901e722",
+    "drivers/gpu/drm/apple/dcp-announce.h": "c043924724267bf40a8db5755ae217a9065479f5f4821c1d2564963425120302",
+    "drivers/gpu/drm/apple/dcp-display-metadata.c": "36e785783c75494fe89b9a5bb199ec99fcb88a74deb9cae8cb62351490ffdd27",
+    "drivers/gpu/drm/apple/dcp-display-metadata.h": "6ed2c8f63f93ee4a77fbda300cce81ac34d3888bcccd986ec49302d645839ac8",
+    "drivers/gpu/drm/apple/dcp-external-bw.h": "347d9853e48d9f3588e22aabaf73949079099bf2274c4c4ddf90eaae20d51e4b",
+    "drivers/gpu/drm/apple/dcp-fabric-core.c": "3b46fe705262e42bb60dc792e8222b462eae957cd2b57eb18f8ef5e5da05f79f",
+    "drivers/gpu/drm/apple/dcp-fabric-core.h": "e7ec7243f12b16686982b947fe68c5464656cad71677b882bc5ce34fea5a1582",
+    "drivers/gpu/drm/apple/dcp-fabric-effects.h": "5764eea8e0c9f3f978404fcaaffe75bfcaefad73fcfe8c6d8f1b99be300d9251",
+    "drivers/gpu/drm/apple/dcp-fabric-session.h": "32b9e84b9940591af21d8c19212e483b814bcc6487d68824f31168ddaaa2a802",
+    "drivers/gpu/drm/apple/dcp-fabric-test.c": "3a15dcee84f35e8946e9495c3292fd398a5ca5cf7f67949a0087f00133f31587",
+    "drivers/gpu/drm/apple/dcp-fabric.c": "e067271dd2018f88eb74e3e122a36b29316f96b676f6fdb48612bc8021a94b36",
+    "drivers/gpu/drm/apple/dcp-fabric.h": "8f184a4f27a3661858b014a0cccf068d55413a5be9ea19b7cc6d951b2fd70ad0",
+    "drivers/gpu/drm/apple/dcp-hdmi.c": "d4b905aebcc3d7d0da9ecaff9d46a49ce77e4ed308bb9fdd1003658dfd3aa072",
+    "drivers/gpu/drm/apple/dcp-hdmi.h": "b97fb65a5f7135fefc78f5bcdbfcd5b63a680ff18258df55ea855a295bf2629a",
+    "drivers/gpu/drm/apple/dcp-internal.h": "58ce3683712b7790debc002501772d6b79ab6fc15098a157f609cbcba445d77b",
+    "drivers/gpu/drm/apple/dcp-lifecycle.h": "4c0b556605688aaebee47ef771a31133b84fdf4c1423216ecca6cd3ae84e54a3",
+    "drivers/gpu/drm/apple/dcp-link.h": "51372b6307dec133e84c2177652a6fcc21ee6613655fd5374ffa15db15d9684b",
+    "drivers/gpu/drm/apple/dcp-metadata-epoch.h": "de0c88efa8e7a83770730f00a7c801988ae6c86c57c8f2cba61c6b46dc0a8e23",
+    "drivers/gpu/drm/apple/dcp-property.h": "4a1b90aadfdd01537e0971f7b2b77170669d5e78ab10e58b87236fd005ca7798",
+    "drivers/gpu/drm/apple/dcp-relink.h": "4cc43a69deb661461be47ac2f1f5287fd30d698e58b81cb1a937bdf82acae252",
+    "drivers/gpu/drm/apple/dcp.c": "fc37f11a3c06dc389b272816773d9c11618e5def145f2788c419341c78402d11",
+    "drivers/gpu/drm/apple/dcp.h": "9fa2531d015a376bb170d3534f7cdf27e937ad5d543f44826e7a6761e7ed3cdb",
+    "drivers/gpu/drm/apple/dcp_backlight.c": "f8b82803a62fc077711c97d4608a9b2c50016a790d26a3de085f302e87bddf80",
+    "drivers/gpu/drm/apple/dcp_backlight.h": "4fb45b1de7a3a2d9115434b764bfd82890f94028375fde42dff228b87766b9f4",
+    "drivers/gpu/drm/apple/dcp_backlight_test.c": "6a25ce8d896536c1bfdcb85000f3debfd0f82760df06d5778b23630bec855105",
+    "drivers/gpu/drm/apple/dcp_dropped_swap_test.c": "a69ef0a9d8fb12be4c6ce4f792cedccc15f1a425d57edaf29cd170be530ce267",
+    "drivers/gpu/drm/apple/dcp_external_announce_test.c": "7c291843233d650c7720d142d79d72ba653fa8661b5713f792bdd00d4a512c46",
+    "drivers/gpu/drm/apple/dcp_external_ready_test.c": "1a51516debbfd129318e408eb041c069d56b9b68269120cbd3474222d081a85c",
+    "drivers/gpu/drm/apple/dcp_external_relink_test.c": "44f0b3fa6b0065f1fb3fe888034866ca6e12a859070d973f7bfed040153fed93",
+    "drivers/gpu/drm/apple/dcp_external_resume_test.c": "5a1661a80aa6e798b7bdeafb85335e73e444efd4f485cc4794dfdd3e350cf815",
+    "drivers/gpu/drm/apple/dcp_trace.c": "73edc3671a058a66cd7d8788cf5fdd13d01523f0c64fffb9894cda9203301c4f",
+    "drivers/gpu/drm/apple/dcpext_drm.c": "5acb1fc1573ce05145eddfbaed80d477bdebf504f74c1faf8e0f30ad7b83d629",
+    "drivers/gpu/drm/apple/dcpext_drm.h": "4c5476268858f4e3da9b897df89399798696953f6d1d40c42743249c47170574",
+    "drivers/gpu/drm/apple/dcpext_mode.h": "9563cdae68a69a5fab9841d429fedb047452a4b1d048a989676a29cad1ce0cb0",
+    "drivers/gpu/drm/apple/dcpext_scanout.c": "0418c2f91e7eaaf1172695341db441026ea46d37edf3db8cacbacbab420272c0",
+    "drivers/gpu/drm/apple/dcpext_scanout.h": "536c91fbbb5ea94c3a3887d67105048aa60bf92b1f4d80b4afe28a25aac55834",
+    "drivers/gpu/drm/apple/dptx-j700-training.h": "97862697ef0934a79f575738155a51b38a661d6f22163dfe8a330444540049d6",
+    "drivers/gpu/drm/apple/dptx-service.h": "77dc72f3875e9d2bdeb75cfbb47b5b5b091d8b54793101bc00cb8f29d56648f3",
+    "drivers/gpu/drm/apple/dptxep.c": "5d855e76f1136579f74e8fe7bcb5fb701f4a7496b2c75253514ce20c7aafce67",
+    "drivers/gpu/drm/apple/dptxep.h": "3e13da5266e7cf326519df1c1051600b4760dc713d23f623a4380ea3c43467c2",
+    "drivers/gpu/drm/apple/epic/dpavserv-edid.h": "db92ea3c68befbb895200fefd31611664627754fb44fad241d0d23777b44e058",
+    "drivers/gpu/drm/apple/epic/dpavservep.c": "894179a1cb23820fea249142e6670f9886be192a56cbae8a93655c7681cbcdad",
+    "drivers/gpu/drm/apple/epic/dpavservep.h": "31863b57b775df4db382e550764525acce325a2c96e772e22ee087e24400001e",
+    "drivers/gpu/drm/apple/hdmi-codec-chmap.h": "15544ec641593e883b824e4db6b1fbdd7700575df8f51af28e0605fc945d4587",
+    "drivers/gpu/drm/apple/hotplug-test.c": "7c7a7fc266248e94d9903d5cddd44c3ab519a1091813ac4132eaf518925704cd",
+    "drivers/gpu/drm/apple/ibootep.c": "3bc4e0c9063ac80e8478a3a554438beb209211c6ac7fd2afc4c556abd645caf6",
+    "drivers/gpu/drm/apple/ibootep.h": "dcacef24ee189a1919caf30e270da4a979d9b7e09b920522e5f91526428d6faf",
+    "drivers/gpu/drm/apple/iomfb-parser-test.c": "92cea9fa76c96db5d5a5ebc5e86b206379b039de297762d3f2c97be1dbe1f3c6",
+    "drivers/gpu/drm/apple/iomfb-state-test.c": "f73740022eced5a190a7de2ca4bd8738f22578c3fd802b5564362b791c4b1be4",
+    "drivers/gpu/drm/apple/iomfb-state.h": "864e8e09beb18229a5b30e0e6592a814e2645f269aa12612e5f6e393ffa90de1",
+    "drivers/gpu/drm/apple/iomfb.c": "65624a6ecd0f6ba38f8eb5e16325e24b723e65fecc3a8e034c94d4d953a07893",
+    "drivers/gpu/drm/apple/iomfb.h": "a1ae73768c0c772a58ad4c17cc49f0129bf94ec59f56edb07dd1684928e75735",
+    "drivers/gpu/drm/apple/iomfb_h17p.c": "6b181c3f13113318ba286679a29cd5e1d609cde9996bd164232aaaea69334f8f",
+    "drivers/gpu/drm/apple/iomfb_h17p.h": "4da326f3f83850e33affbe4e59e06ef43f4e0caa56ba44359bb7237af40f49c5",
+    "drivers/gpu/drm/apple/iomfb_h17p_test.c": "6f1928eb949e59588d65c9c2b52a9e1e6e3f989f2f3ea111a34e1ab40921325b",
+    "drivers/gpu/drm/apple/iomfb_internal.h": "771c29cc3fb6dfd23138b73d7a22891fae97ab06e974ab0a838d9e4c6714c4f8",
+    "drivers/gpu/drm/apple/iomfb_plane.h": "d1d42da7bd623c1a740f9d45ddd0137d16d0c3bf367e099a04f3f46316e233b0",
+    "drivers/gpu/drm/apple/iomfb_template.c": "dd6e2b4fc44e170dcd7576f9dab6fe6238cfae3961f6ccb1fe0a5145c8f9994e",
+    "drivers/gpu/drm/apple/iomfb_template.h": "d9b3357218720503793f93ca272cfed32fb2525191dd49876b7e633d7c038f1c",
+    "drivers/gpu/drm/apple/iomfb_v12_3.c": "99630b2b13139d9401879fef53d010d4985d1f8f9c4651ea6869b4e274d47e5a",
+    "drivers/gpu/drm/apple/iomfb_v12_3.h": "fd8655f342ccad73b130038f8abd1cc5cddd40d0d6f5743914f7754622b94f29",
+    "drivers/gpu/drm/apple/iomfb_v13_3.c": "80bf45716db78d7cf83cedf893c32f142b722c6fefc4121dc616b07be570322c",
+    "drivers/gpu/drm/apple/iomfb_v13_3.h": "abbb838cf241d9d6c203febf7aae1881eebad690fef64bb89d095b9b64097a29",
+    "drivers/gpu/drm/apple/iomfb_v14_7.c": "a5dfa83c6624fa1aca235f79033a501da001995b17e33b0715a6d0cc388b9c6e",
+    "drivers/gpu/drm/apple/iomfb_v14_7.h": "38e2b9e9e4a14ae4c1506f94c1fbe5125e66eda3a86f0c8608e975196f4c78a2",
+    "drivers/gpu/drm/apple/iomfb_v14_7_board.h": "aabef394e82a0439e88bf100ac48ce507bfb6da4e4d7e1850b56324184fe0cea",
+    "drivers/gpu/drm/apple/iomfb_v14_7_link.c": "b214459740e56fa37bb04dea319958f2e0f665a43b28520fe6a1465eacd636c8",
+    "drivers/gpu/drm/apple/iomfb_v14_7_link.h": "60f0dec421221c54c7cb928a65433cbd4b0411900a2cf0595464e2f8648b4bc7",
+    "drivers/gpu/drm/apple/iomfb_v14_7_swap.h": "3aec1623a9996c8effebba8db9059234b0598bc1d35792cced37f7a887afe278",
+    "drivers/gpu/drm/apple/iomfb_v14_7_tpl.c": "e02135bb7917630fb3b6786f9673a36cfb52fa7791baa97550e178626f05938d",
+    "drivers/gpu/drm/apple/iomfb_v14_7_tpl.h": "0ef71f70f3fbe68b3c33bb079e0f78e6d74c4785b55d17cbf9956b1ff23d71ad",
+    "drivers/gpu/drm/apple/iomfb_v26_6.c": "7d6eff79b7685d7f2e3fe23e6a5866c16d964b31ee68b7aaf8a667e82f195240",
+    "drivers/gpu/drm/apple/iomfb_v26_6.h": "2f93e33414453b34175b4d1c49ca349fd8da6702caec0e40edbc4678652969d5",
+    "drivers/gpu/drm/apple/iomfb_v26_6_link.c": "d20c3acd091fbd1d4a2cccdf4a3e06f19e6f2ae46b3a09f6c39887e09002b225",
+    "drivers/gpu/drm/apple/iomfb_v26_6_link.h": "1d110f2e8e183cff3d81b741ae017ea2140f1f87d4ff7e91971c55a6524f1198",
+    "drivers/gpu/drm/apple/iomfb_v26_6_swap.h": "38a3a6e7de89552569c8b02a8e5f4b323ae6c3b99e927a38c7100604687c0c6c",
+    "drivers/gpu/drm/apple/j613-25g83.h": "26f7d53968b09cac150f72af1ba4b6ec21e4713a0251c89b31a26672820fd767",
+    "drivers/gpu/drm/apple/j613_dcp_activate.c": "424f6c3f9e92f73055316dc5eeffa8c473a7caa418d5376f3d3f50ee16975085",
+    "drivers/gpu/drm/apple/parser-test.c": "6842aca65f22b892aae6ef55251a6db630a7292227ed4425565612c4b0092a28",
+    "drivers/gpu/drm/apple/parser.c": "1523e6b8c95f751345daf30e8e7cf304e04f1c6d22b94d01b29f0500ed7cb363",
+    "drivers/gpu/drm/apple/parser.h": "8c841e8d84c7cf98bb17f110350ff0a9447e5535a1be7f710498869bab5e6142",
+    "drivers/gpu/drm/apple/parser_mode_test.c": "ddc847ccf4d8e3805252f21e3b566d4d8606a8db31eef860fdc6b8719880a110",
+    "drivers/gpu/drm/apple/parser_test.c": "506ea32c5917f914473d5859e1228cd13e3ca9bd00fd75cb1dd8b33931e0a6bf",
+    "drivers/gpu/drm/apple/plane.c": "9377666632c07f867e8e75d9244e18dc97c564696be6c1f457d971c9a6e90211",
+    "drivers/gpu/drm/apple/plane.h": "cb79a5d7bd4109db7696241cc12530b0ed315649f106af9a13607288387feea0",
+    "drivers/gpu/drm/apple/systemep.c": "010b62326e4dcd482e26143b0abd1ce4226beece92fdbc2eab94282e4b6f70de",
+    "drivers/gpu/drm/apple/trace.c": "1958fa5810f7db05c82fe2db2bc7d6df31991228b0bd9b7258e4d6d74e195a8d",
+    "drivers/gpu/drm/apple/trace.h": "4be7a0b33648ea62394fa8383935fbe749524216023c642fec8f0fce657cad54",
+    "drivers/gpu/drm/apple/v14-board-test.c": "4fc09693fc8aea06c1bde24b030bcafd1cf896e41167c53590c5595ce489a119",
+    "drivers/gpu/drm/apple/version_utils.h": "24882d2a39d8f71d8486506549844188fb7dcb7fbccd2fe231e6438033b2c109",
+    "drivers/phy/apple/atc-dp-tunables.h": "68112bafc0d5fc425658f7b30400c2a85d8343d7b10f635240878bdc4727723e",
+    "drivers/phy/apple/atc-j700-dp.h": "8677d22a076cb05c06a22e3e4737909941a1bba4f8a117c94d1e16b3bd9c8245",
+    "drivers/phy/apple/atc-t8122-dp-test.c": "8b5357449294c5863f84b186c03ff09faf88728d2f57e219a6ee5e84e2f14ff8",
+    "drivers/phy/apple/atc-t8122-dp.h": "9b2c0e78081abfc4d3304839c4f8553f2c546d36c468616d998d2a9924061389",
+    "drivers/phy/apple/atc-test.c": "573f724921dfdc23d01abeca0cd75e0145a1493c0774a0f9141db9d115b56771",
+    "drivers/phy/apple/atc-tunnel-test.c": "ce90c6817aefaa22b090f2e8fa5fcbe48aad64f181b909ad533b464db77b2042",
+    "drivers/phy/apple/atc-tunnel.h": "e3ae93f33138bc15b3209f24d67780da4e3c3d429cacf59ded3e934ae8c852c2",
+    "drivers/phy/apple/atc.c": "968544702978614bbeb6d8f618e5c20e6812c2f6c7d690575bc778b9884ae908",
+    "drivers/phy/apple/dptx.c": "a80b705c7d0959edb6814af9032c24f1fbacbf48d8de10bf7e230cc062927e60",
+    "drivers/phy/apple/dptx.h": "ff04f53368aaa1ae4c98f7bfd61cae97ccb19ad11c5c1584d10c16187071bd72",
+    "drivers/usb/dwc3/core.c": "287bc9995e6f90bbbe92d0ff9287498ba5ccceec3742c4decf7641fd1bebf754",
+    "drivers/usb/dwc3/core.h": "303658b86a61b1c847e6305529e19b4a2082f6514dfb2f09945887f119831fa5",
+    "drivers/usb/dwc3/debug.h": "67b753768a32050d566786ca4c332e49c19f7125451117515fd68e2628463acb",
+    "drivers/usb/dwc3/debugfs.c": "6e4de0fa39844cb56f972297c0c2125f91a81fa6ebd33c3a3690201667213345",
+    "drivers/usb/dwc3/drd.c": "e3e7aab9ba33d154bba8ef4bd04cae3cee5bfc6e455a60fb55ca9bd59c39cd52",
+    "drivers/usb/dwc3/dwc3-am62.c": "1a07cb76a79735cd19c62f5cfc87b9badf5161795feca9949268421e91d76350",
+    "drivers/usb/dwc3/dwc3-apple-state-test.c": "92aaf866d53fdaf3149c6163fcc56cf1f498fb42a0b33555374ac0b9372f70ec",
+    "drivers/usb/dwc3/dwc3-apple-state.h": "ea0fba45baf2dfd4ea34c1c07972735633f97971a52022d70c82fdf410a18230",
+    "drivers/usb/dwc3/dwc3-apple.c": "a8d647fcd741dd0b1fa3858b80a654f109a4e69231cfa86c035c6993e2b32b14",
+    "drivers/usb/dwc3/dwc3-exynos.c": "c1c7b34428b286818c411273fb7e44a74c0fb679e467a6df21f133762a34add6",
+    "drivers/usb/dwc3/dwc3-generic-plat.c": "1a4260310d6ccb9e3c3c39ab90be966a7a8fd444187a7081e7b14a095ca69a22",
+    "drivers/usb/dwc3/dwc3-google.c": "0172f925534a3035c422e95720ceda60985b0090074b47c4480d0c0b84f4121e",
+    "drivers/usb/dwc3/dwc3-haps.c": "8f4f4ed7fdf808c611c0257c0dd76a09bd0b6d9e25a5b26fabf30c289b47197d",
+    "drivers/usb/dwc3/dwc3-host-test.c": "fe8297b3f09a05668d5d64c2ade4a0a72b11f984d2424827a8b94453300fca5f",
+    "drivers/usb/dwc3/dwc3-imx.c": "ebf7d64743fdee3d6be59b218f4cfa268411cf168e5995d0033a59cf02a7eceb",
+    "drivers/usb/dwc3/dwc3-imx8mp.c": "00e4f7f3198452df3fbed9a590dc7ec6a2119ba66fc5e810ff47d205049743b3",
+    "drivers/usb/dwc3/dwc3-keystone.c": "10e7188257522e62f6eb921d542b2d43b82b519b22cac7e740c0c58274eda5b1",
+    "drivers/usb/dwc3/dwc3-meson-g12a.c": "efe0d730cda1a1ce53c7fcf525033670a3315e9d53003888292b080a98a2fea6",
+    "drivers/usb/dwc3/dwc3-octeon.c": "bbb82c66f4024b4f584f920fb160617d435c99b11a4f15c3196c88c3b7b30c93",
+    "drivers/usb/dwc3/dwc3-of-simple.c": "b251e769eab6a582b2876ae71231b6de5e3fbdb0962a2b4c572a968538a43a4d",
+    "drivers/usb/dwc3/dwc3-omap.c": "a9b15343b4cc46e8117361148c417644621ffefe9d12c975716634d4a15dea61",
+    "drivers/usb/dwc3/dwc3-pci.c": "be99125ff6a5a38ad92b817ee2b64a5e909d051f70c9c622a65a3732b5d26f5e",
+    "drivers/usb/dwc3/dwc3-qcom-legacy.c": "155d7937357339bf4dc1bcf36f8cf7b47b13c268946412a6f2c077066baa0e41",
+    "drivers/usb/dwc3/dwc3-qcom.c": "cf8257168ad0e8e201a003e7d2e3344cdfa08b33eb6ae6451728bc497d2ce008",
+    "drivers/usb/dwc3/dwc3-rtk.c": "2aa63e398e2c8c3e5c609d178bb08879fb043c7ba79b0cbc8f73a3272ddfb2c2",
+    "drivers/usb/dwc3/dwc3-st.c": "0b9306be3296a43956dc4bcce9b756bff9ff9f317b4d022d2c35ad6c8d752d2d",
+    "drivers/usb/dwc3/dwc3-xilinx.c": "b056299d8bd1f22a0f746f98bdbde9c513936c995dc49382cad0662e7d06080d",
+    "drivers/usb/dwc3/ep0.c": "ba5a0d8ce97272fb59680bf8c713e5f75ad2d1ebd61e2231829eead8cccd5a7b",
+    "drivers/usb/dwc3/gadget.c": "a8c05cb593092ec72395c3de60bff5971bbed1e7db9162562a3f0709cd481991",
+    "drivers/usb/dwc3/gadget.h": "93ed5b5b1e7fd3bc59b84228594982ae6957947cebd93c3903bec024d1fb3ea5",
+    "drivers/usb/dwc3/glue.h": "09e314435d47c14c069f9549b1c80cf3408f092c3637a67ead5be8860fec1d67",
+    "drivers/usb/dwc3/host.c": "62f7a565136d3ce1b5b6cdfd62b484c5648c0a2b833e756e52521419ecad54b8",
+    "drivers/usb/dwc3/io.h": "e0991e4f2fc453241072ef9481740a8685330de32d67d6b4e61f16789903bd94",
+    "drivers/usb/dwc3/trace.c": "188d53887dcd2025e3099d48a7dbc0a1fc18d4750c99eefd19e603f7d0c05801",
+    "drivers/usb/dwc3/trace.h": "c38609c6504b31d1805823325d47420a3fd4e5589ccf6fde3c1d1291b1a1c203",
+    "drivers/usb/dwc3/ulpi.c": "581fac10de2906ea8e2a2675c28f377320d39702599860d6708deda6b175acdf",
+    "drivers/usb/typec/tipd/cd321x-dp-test.c": "9a77f911bed27ac23ed05d8d27011d7d4262d1d4904ce610e65a2368e7cef21a",
+    "drivers/usb/typec/tipd/cd321x-dp.h": "fca52b67b1cf720da327f277c7be815aed0301be59466b598528c0089f570b67",
+    "drivers/usb/typec/tipd/cd321x-irq-test.c": "249a5b7624dda5acca249020981de8b20288b7ed2cecba41b3e6eab28309b5ff",
+    "drivers/usb/typec/tipd/cd321x-mux-test.c": "5752d51dbe29010afabcc215d18a978759c2313ae83e935213082e0085c687e0",
+    "drivers/usb/typec/tipd/cd321x-pm-test.c": "daa34ef8f792e8a9048bcfefbf198a6337fb64e003c463ce82d922caf41bc67b",
+    "drivers/usb/typec/tipd/cd321x-pm.h": "c9751f037da606198c0e5b9161048cdd2c35d1b2c6ac4123a6e52829cdbc4795",
+    "drivers/usb/typec/tipd/cd321x-setup.h": "5f1c188e9e1aa31590cd5c8bc1281c37725205d73ef417d02d0cd157d4f06af1",
+    "drivers/usb/typec/tipd/cd321x-tbt-test.c": "815f8818f1321f723ba890ae0e38425dbf6a8095c0110f7a7dd07e0af87353a7",
+    "drivers/usb/typec/tipd/core.c": "3b1b0a981f2a5653792a7dd8d57b35fa6c1db636bbf11f18c3c3641e4a9294d5",
+    "drivers/usb/typec/tipd/debugfs.c": "99c72f8bca32942d8e16e4fbd403b55e2a07c0d7ba059b6e5ce38714a03c3f38",
+    "drivers/usb/typec/tipd/i2c.c": "83b073b96215b7d0c31e2aca82b99fbd0f77cdd3fd627109dfb12b6fb632c1d7",
+    "drivers/usb/typec/tipd/sn201202x-pm-test.c": "de8bfcd4b37a1118d7d9b7b85a71f3d6303126379a07c88906dd53999cc29921",
+    "drivers/usb/typec/tipd/spmi.c": "19e7d880b08ff5c8b22ac6df2e8c48daa868e5fa67d1d8c4c20aae73d4424166",
+    "drivers/usb/typec/tipd/tps6598x.h": "30c7283b082fe68c9e35988b7c2c4fb9d70802d0eeec3b28c67a3a5d5c610ded",
+    "drivers/usb/typec/tipd/trace.c": "1aa4062980d6c62ddec438abdff474408ee6ff9c891ca134153a8187fbb92e87",
+    "drivers/usb/typec/tipd/trace.h": "550e67be313efe4f941a99f637d3acae8d66bcefc46ff230d80aae5bedca56e3"
+  },
+  "results": [
+    {
+      "name": "oslog-events",
+      "group": "boot",
+      "passed": true,
+      "translation_unit_sha256": "7be0bc6fdae7762cd1466a85a0499c72c517bfe1d252cc6c0aa000f6863dc449"
+    },
+    {
+      "name": "dpavserv-start",
+      "group": "edid",
+      "passed": true,
+      "translation_unit_sha256": "c8add4644d6b19de1f375563afd93d4a92e1b1c3c203690b06bdb00a5ae3dd2b"
+    },
+    {
+      "name": "service-rebind",
+      "group": "edid",
+      "passed": true,
+      "translation_unit_sha256": "5ec711383e3b6eb4fdf405df30c9ffa0f1011c6832e4d57bb21601dd13afb8bf"
+    },
+    {
+      "name": "provider-admission",
+      "group": "edid",
+      "passed": true,
+      "translation_unit_sha256": "e5fc8edf97f1a37d01056757f178452955ff0b6fe2117e071512c44113cb2b5a"
+    },
+    {
+      "name": "ordered-rx",
+      "group": "edid",
+      "passed": true,
+      "translation_unit_sha256": "2aa1c07dc01f7ae7ac188d94a832db1a7a4867d07442cd7aa6aab6dc96fe0298"
+    },
+    {
+      "name": "parser-policy",
+      "group": "rate",
+      "passed": true,
+      "translation_unit_sha256": "ec72f3720587f9d7ab6b0938c2a35ebdba48bceb73bd020ee1c0de5425981e44"
+    },
+    {
+      "name": "publication-hpd",
+      "group": "rate",
+      "passed": true,
+      "translation_unit_sha256": "fdde5e8812a57fb7b2968a48165a5f0a11eab6f4bc89161ba3532b552d215cc3"
+    },
+    {
+      "name": "metadata-decoder",
+      "group": "rate",
+      "passed": true,
+      "translation_unit_sha256": "dc3ac52d5b0ed69d6a30d7de0c8ef3160c6bbc6570bdd1940c32d18a78535d73"
+    },
+    {
+      "name": "bounded-retry",
+      "group": "rate",
+      "passed": true,
+      "translation_unit_sha256": "793c7289c7965277660aca6f6fc762b8848163c50f83c30b52cfffdadee413c2"
+    },
+    {
+      "name": "pm-ownership",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "5674b0997b19bcb6d7679119a3f65f8012a410d6735a2cb7664d14983d7cd024"
+    },
+    {
+      "name": "controller-lifecycle",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "097e2cdd988ea54377dd2ac85f319200babe934e1414ec9971287995d3513de9"
+    },
+    {
+      "name": "asynchronous-root-state",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "4741c350a06ca1eeda9985c7a999663d3b1d00877487dd19b5e3d5a805ffea23"
+    },
+    {
+      "name": "upstream-resume-boundary",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "d3e8d90a69181f251077b813b34f1a83df529f59db430d0c9e5c6106004d29ed"
+    },
+    {
+      "name": "usb-unreachable",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "d91fcb9b7c781d538004632135526752d60c669f1336d590c83faa0c663d4b4b"
+    },
+    {
+      "name": "cpuidle-s2idle",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "0e81e666fe0b7095e0217f4c722c4c995754914828f3786cbb54a29d424a36c3"
+    },
+    {
+      "name": "typec-probe",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "f1feac48647769c69bd6d2d654df597e8fe1a0bfae3b90d3984306f20314010e"
+    },
+    {
+      "name": "quiesce-before-safe",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "ad43e601ce3d4cf2c9fb830a6a6f37d9329065697d3337e5feadd5eb02e0b639"
+    },
+    {
+      "name": "probe-mux-pm-dispatch",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "e274ed97ce092b9519f1cb6176ed45fc1297ceeadfad96b1a7bf1356134004c2"
+    },
+    {
+      "name": "parking",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "8c87d4821ca558f2c460256c6eade3fbebaa5bf90ce79e931294fa14947be079"
+    },
+    {
+      "name": "adverse-retry",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "92614869978dbe7fe6af026fdd266f8779d4c1dd53f47d7ce80563dd315aca5e"
+    },
+    {
+      "name": "masked-context",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "a3d81c6f28e700b8537fd161664b93514d309595c1a74ced4cb67a7b35f4009f"
+    },
+    {
+      "name": "off-hardening",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "d554b19426c957cdeaa1ff5a4ff85752d497e146d5034d6c51232b08e836b4fb"
+    },
+    {
+      "name": "warm-reset",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "e869be38d84a457f6aa3aba7a20f988128cc8859e27a8fe834bd601d951b2745"
+    },
+    {
+      "name": "pipe",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "ee6649a2b048be61200d4e0c4d6d72d4b0095c7cfebb8f8915830191e0c1623e"
+    },
+    {
+      "name": "unwind",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "4a0415a7e63b028548ba89c403d6af0b0e4104d90447fde69998486315795722"
+    },
+    {
+      "name": "aux",
+      "group": "phy",
+      "passed": true,
+      "translation_unit_sha256": "6e19a507cd6833eaba2ad076d1f3048668e9a04a974434e865b7781d1c936148"
+    },
+    {
+      "name": "physical-disconnect",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "d81bc41ffdb278c5302282d8eb87e4a35f28f3e104828bd7fda547c28a850548"
+    },
+    {
+      "name": "fast-replug-bounce",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "35b4c855bcdeadff60b44faf329b108497597083ec63616b125e133ef11cb2ee"
+    },
+    {
+      "name": "stale-crtc-poweroff",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "6eca3ef5c0abeac5bd76dae47e6ccf09a890692e97a160b4c649dd0cbbb595fa"
+    },
+    {
+      "name": "dropped-swap-teardown",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "b46d05114ca790d96eace9f86e05263055f7182312891fa5cb2a63d0a96f104b"
+    },
+    {
+      "name": "dwc3-teardown",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "2cd38b2efcf88c0dd2ef3fd9ed2b151d7c735a7de1241e4804090943d7a4a7ef"
+    },
+    {
+      "name": "resource-profile",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "bfc0b0afe4991af0c74d62a7265ff1352e353da167a9fd66b6f681b102211901"
+    },
+    {
+      "name": "firmware-provider",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "158ee5a00d9fad08e1e5b2dcd7a22ddce7aefbb740198b486bc3a06b0bc00f12"
+    },
+    {
+      "name": "readiness",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "571d402e73b4b1a1908da7a0273584e43d3ee4981235d92fc6599ff51c6249a1"
+    },
+    {
+      "name": "vrr-rejection",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "4b01d40d880b10319fa88512957518c304652ade5f60b85b9979c9287eb45eec"
+    },
+    {
+      "name": "power-reply",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "516cc53343651041d6c44f3656d5913387765cc06a0b0dc1bcdc0fec5eaff02b"
+    },
+    {
+      "name": "dispatcher-scope",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "28f578b3ecf442d8d0b42800627e90c54c8f054b8562889a09b4eba405e1ad35"
+    },
+    {
+      "name": "generic-role-error-lost",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "11c96210d78c780a4e33a9402b4732dd3c7c53e5ed7ffb932b1ba7f316d31fba"
+    },
+    {
+      "name": "cd-second-role-error-lost",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "ed8747df12b60565474f34796be25037211a3dbff93b59303c59a5a56fbd7ddf"
+    },
+    {
+      "name": "actual-dcp-normal-safe",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "27e76156f7774d8ef34ab70fd6ffba5744722007a7091ab84e4e52b78497add0"
+    },
+    {
+      "name": "actual-dcp-finalizer-recovery",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "27e76156f7774d8ef34ab70fd6ffba5744722007a7091ab84e4e52b78497add0"
+    },
+    {
+      "name": "provider-order-releases-failed-lease",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "27e76156f7774d8ef34ab70fd6ffba5744722007a7091ab84e4e52b78497add0"
+    },
+    {
+      "name": "failed-safe-allows-new-dp-admission",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "27e76156f7774d8ef34ab70fd6ffba5744722007a7091ab84e4e52b78497add0"
+    },
+    {
+      "name": "altmode-safe-skips-quiescence",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "27e76156f7774d8ef34ab70fd6ffba5744722007a7091ab84e4e52b78497add0"
+    },
+    {
+      "name": "concurrent-prepare-set-stale-quiescence",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "c3be19c08caba49086986cb0423cb9a8081ae2503935002aaefb3402488d046c"
+    },
+    {
+      "name": "connector-context-lifetime",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "bd21ba7c7aeeb9a49673856fa90317a87adb3ba9f3c9793ea5c018d00e621819"
+    },
+    {
+      "name": "probe-transaction-rollback",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "f4f64ae68815f0aa1752a6d8e710fac2252dc972b657ffc74aab0ed8e9e23c09"
+    },
+    {
+      "name": "provider-unregister-drain",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "cafb0cba54ba89c1ca49a59596a3539778fae1ddbc94c05470019742b8d2051b"
+    },
+    {
+      "name": "park-before-host-role-exit",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "87382fa35e44ded9d868723af6349bb305f0d93ed083f9a7f11568fe9d7307f9"
+    },
+    {
+      "name": "same-handle-srcu-index",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "14b358a09deca9f75affd867c2faae2cc32fba34eafc0a8b71b8f029eafb2b79"
+    },
+    {
+      "name": "mux-release-stages",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "ec0033283672da415d73ac4f617c889e7ff12354f4d24d50a72f55e32e5fcde5"
+    },
+    {
+      "name": "single-safe-before-role-exit",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "f07aa131b39dcf3ffd86d96322e4ce2e6fee984d7aac013d35bafc73ed1531c0"
+    },
+    {
+      "name": "mux-get-put-balance",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "ab8086c3cb9e575067f823fa8d748532c5f79eba3cf067cc130e19c73cae6818"
+    },
+    {
+      "name": "lookup-unregister-module-lifetime",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "9d1627a96db221d8f6b1ce3beb564a7c1969dc398372f8e1ad4ea2887065640a"
+    },
+    {
+      "name": "kernel-module-conversion-balance",
+      "group": "lifecycle",
+      "passed": true,
+      "translation_unit_sha256": "81b3df995ab27bfcd0e1f38bbebc70ddad762fc3b2503d50fd5872120b8c5814"
+    },
+    {
+      "name": "usb-kconfig",
+      "group": "phy",
+      "passed": false,
+      "failure": "Traceback (most recent call last):\n  File \"<verified-corresponding-source>/tools/testing/selftests/drivers/gpu/apple-dcp/run.py\", line 106, in main\n    unit = build(root)\n  File \"<verified-corresponding-source>/tools/testing/selftests/drivers/gpu/apple-dcp/run.py\", line 98, in <lambda>\n    tests.append(('phy', 'usb-kconfig', lambda r: pm.kconfig(r, output), (), ()))\n                                                  ~~~~~~~~~~^^^^^^^^^^^\n  File \"<verified-corresponding-source>/tools/testing/selftests/drivers/gpu/apple-dcp/pm.py\", line 700, in kconfig\n    result.check_returncode()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/subprocess.py\", line 509, in check_returncode\n    raise CalledProcessError(self.returncode, self.args, self.stdout,\n                             self.stderr)\nsubprocess.CalledProcessError: Command '['<private-workspace>/work/aurora72-boot-prep/kconfig-host/conf', '--olddefconfig', 'work/aurora72-boot-prep/dcp-all-controls/usb-kconfig/Kconfig']' returned non-zero exit status 1.\n"
+    }
+  ]
+}

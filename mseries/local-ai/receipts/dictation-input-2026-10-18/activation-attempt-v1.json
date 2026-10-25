@@ -1,0 +1,15 @@
+{
+  "activated": false,
+  "attempt_head": "e366dcd9cb2dc19199cc907e1639ee0ba8f6ca61",
+  "failure": "IBus CLI selected the default-layout engine then returned failure while attempting a keyboard-map update; systemd stopped the provider.",
+  "automatic_rollback": {
+    "original_payload_restored": true,
+    "preferences_restored": true,
+    "original_speech_restarted": true,
+    "keyboard_engine_needed_explicit_repair": true
+  },
+  "repair": "Original xkb:us::eng restored explicitly; rollback now repairs empty/dummy engines via the IBus API.",
+  "microphone_recorded": false,
+  "owner_windows_closed": false,
+  "interpretation": "Failed rollout retained. No model-quality score."
+}

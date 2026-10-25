@@ -9,7 +9,11 @@ src="$repo/mseries/codexbar-wingpanel"
 if [[ ${1:-} == --uninstall ]]; then
   indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
   sudo rm -f "$indicators_dir/libcodexbar.so"
-  sudo rm -f /usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai-symbolic.svg
+  source "$repo/mseries/lib-codexbar.sh"
+  for mark in "${CODEXBAR_MARKS[@]}"; do
+    sudo rm -f "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
+  done
+  rm -f "$HOME/.local/bin/codexbar-settings"
   if command -v gtk-update-icon-cache >/dev/null; then
     sudo gtk-update-icon-cache -f /usr/share/icons/hicolor
   fi
@@ -19,13 +23,12 @@ fi
 
 mseries_apt_refresh
 sudo apt-get install -y meson ninja-build valac pkg-config \
-  libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
+  libwingpanel-9-dev libgranite-7-dev libjson-glib-dev \
+  python3-gi gir1.2-granite-7.0 gir1.2-webkit-6.0
 
-mkdir -p "$HOME/.local/lib/codexbar-cli"
-install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
-  "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
-install -m 0755 "$repo/mseries/codexbar-sessions.py" \
-  "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
+source "$repo/mseries/lib-codexbar.sh"
+# The panel runs these helpers directly (e.g. Claude switching imports the history and handoff modules).
+codexbar_install_helpers "$repo"
 
 for tool in meson ninja valac pkg-config; do
   command -v "$tool" >/dev/null || {

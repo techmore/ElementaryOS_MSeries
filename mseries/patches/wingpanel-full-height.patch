@@ -1,0 +1,263 @@
+diff --git a/src/PanelWindow.vala b/src/PanelWindow.vala
+index 88c2319..d5183f8 100644
+--- a/src/PanelWindow.vala
++++ b/src/PanelWindow.vala
+@@ -32,6 +32,10 @@ public class Wingpanel.PanelWindow : Gtk.Window {
+     private Pantheon.Desktop.Shell? desktop_shell;
+     private Pantheon.Desktop.Panel? desktop_panel;
+     private bool initialized_background_manager = false;
++    private Gdk.Monitor? notch_monitor;
++    private ulong geometry_handler;
++    private ulong scale_handler;
++    private ulong scale_factor_handler;
+
+     private Gtk.CssProvider? style_provider = null;
+
+@@ -89,14 +93,26 @@ public class Wingpanel.PanelWindow : Gtk.Window {
+         }
+     }
+
+-    private void on_enter_monitor (Gdk.Monitor new_monitor) {
+-        new_monitor.notify["geometry"].connect (queue_resize);
+-        new_monitor.notify["scale"].connect (queue_resize);
+-        new_monitor.notify["scale-factor"].connect (queue_resize);
+-
++    private void update_notch_layout () {
++        if (notch_monitor != null) {
++            panel.update_notch (notch_monitor);
++        }
+         queue_resize ();
+     }
+
++    private void on_enter_monitor (Gdk.Monitor new_monitor) {
++        if (notch_monitor != null) {
++            notch_monitor.disconnect (geometry_handler);
++            notch_monitor.disconnect (scale_handler);
++            notch_monitor.disconnect (scale_factor_handler);
++        }
++        notch_monitor = new_monitor;
++        geometry_handler = new_monitor.notify["geometry"].connect (update_notch_layout);
++        scale_handler = new_monitor.notify["scale"].connect (update_notch_layout);
++        scale_factor_handler = new_monitor.notify["scale-factor"].connect (update_notch_layout);
++        update_notch_layout ();
++    }
++
+     public void toggle_indicator (string name) {
+         panel.toggle_indicator (name);
+     }
+diff --git a/src/Widgets/IndicatorEntry.vala b/src/Widgets/IndicatorEntry.vala
+index 60e39de..af92886 100644
+--- a/src/Widgets/IndicatorEntry.vala
++++ b/src/Widgets/IndicatorEntry.vala
+@@ -147,6 +147,8 @@ public class Wingpanel.Widgets.IndicatorEntry : Granite.Bin {
+
+     private static int get_order (Wingpanel.Widgets.IndicatorEntry node) {
+         switch (node.base_indicator.code_name) {
++            case "codexbar": return 1;
++            case Indicator.DATETIME: return 2;
+             case Indicator.NIGHT_LIGHT: return 1;
+             case Indicator.KEYBOARD: return 2;
+             case Indicator.SOUND: return 3;
+diff --git a/src/Widgets/NotchLayout.vala b/src/Widgets/NotchLayout.vala
+new file mode 100644
+index 0000000..9a0446a
+--- /dev/null
++++ b/src/Widgets/NotchLayout.vala
+@@ -0,0 +1,28 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++// M-series J314 physical camera geometry; values below are logical pixel sizes.
++public class Wingpanel.Widgets.NotchLayout : Object {
++    public static bool is_active (string model, string? connector, string enabled, int width, int height) {
++        return model.contains ("14-inch, M1 Pro") && connector != null &&
++            connector.has_prefix ("eDP") && enabled.strip () == "Y" &&
++            (int64) width * 100 < (int64) height * 158;
++    }
++
++    public static int depth (int width) {
++        return (int) Math.ceil (74.0 * width / 3024.0);
++    }
++
++    public static int gap (int width) {
++        // Conservative 400 physical pixels, plus a logical margin for controls.
++        return (int) Math.ceil (400.0 * width / 3024.0) + 16;
++    }
++
++    public static Gtk.Box halves (Gtk.ScrolledWindow left, Gtk.ScrolledWindow right, int width) {
++        left.margin_end = right.margin_start = gap (width) / 2;
++        left.propagate_natural_width = right.propagate_natural_width = false;
++        left.hexpand = right.hexpand = true;
++        var box = new Gtk.Box (HORIZONTAL, 0) { homogeneous = true };
++        box.append (left);
++        box.append (right);
++        return box;
++    }
++}
+diff --git a/src/Widgets/Panel.vala b/src/Widgets/Panel.vala
+index 6092f37..721c14c 100644
+--- a/src/Widgets/Panel.vala
++++ b/src/Widgets/Panel.vala
+@@ -28,6 +28,88 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+     private Gtk.SortListModel sorted_indicator_entries;
+
+     private double current_scroll_delta = 0;
++    private bool notch_active = false;
++    private int notch_width = 1512;
++    private Gtk.CustomFilter left_filter;
++    private Gtk.CustomFilter center_filter;
++    private Gtk.CustomFilter right_filter;
++    private Gtk.ScrolledWindow left_scroll;
++    private Gtk.ScrolledWindow right_scroll;
++    private IndicatorBar center_menubar;
++
++    // Full-height J314 panel: use the existing native clock/popover beside the
++    // camera, with independently scrollable halves so crowded indicators cannot
++    // push controls into the cutout. No extra daemon or second clock.
++    public void update_notch (Gdk.Monitor monitor) {
++        string model = "";
++        string enabled = "";
++        try {
++            FileUtils.get_contents ("/proc/device-tree/model", out model);
++            FileUtils.get_contents ("/sys/module/appledrm/parameters/show_notch", out enabled);
++        } catch (FileError e) {
++            // Other computers keep the stock layout.
++        }
++        var geometry = monitor.geometry;
++        var active = NotchLayout.is_active (model, monitor.connector, enabled,
++            geometry.width, geometry.height);
++        var logical_width = geometry.width;
++        if (!Services.DisplayConfig.is_logical_layout ()) {
++            logical_width /= get_scale_factor ();
++        }
++        notch_width = logical_width;
++        var depth = active ? NotchLayout.depth (logical_width) : -1;
++        height_request = depth;
++        var gap = active ? NotchLayout.gap (logical_width) : 0;
++        left_scroll.margin_end = gap / 2;
++        right_scroll.margin_start = gap / 2;
++        if (active == notch_active) {
++            return;
++        }
++        notch_active = active;
++        // Remove the native clock from its old FlowBox before adding it to
++        // the other one; GTK widgets cannot have two parents during refiltering.
++        if (notch_active) {
++            center_filter.changed (DIFFERENT);
++            left_filter.changed (DIFFERENT);
++        } else {
++            left_filter.changed (DIFFERENT);
++            center_filter.changed (DIFFERENT);
++        }
++        right_filter.changed (DIFFERENT);
++        rebuild_layout ();
++    }
++
++    private void rebuild_layout () {
++        if (child is Gtk.CenterBox) {
++            var old = (Gtk.CenterBox) child;
++            old.set_start_widget (null);
++            old.set_center_widget (null);
++            old.set_end_widget (null);
++        } else if (child is Gtk.Box) {
++            var old = (Gtk.Box) child;
++            old.remove (left_scroll);
++            old.remove (right_scroll);
++        }
++        left_scroll.propagate_natural_width = !notch_active;
++        right_scroll.propagate_natural_width = !notch_active;
++        left_scroll.hexpand = right_scroll.hexpand = notch_active;
++        if (notch_active) {
++            child = NotchLayout.halves (left_scroll, right_scroll, notch_width);
++        } else {
++            var centered = new Gtk.CenterBox ();
++            centered.set_start_widget (left_scroll);
++            centered.set_center_widget (center_menubar);
++            centered.set_end_widget (right_scroll);
++            child = centered;
++        }
++    }
++
++    private Gtk.ScrolledWindow scroll_bar (IndicatorBar bar, Gtk.Align alignment) {
++        bar.halign = alignment;
++        var scroll = new Gtk.ScrolledWindow () { child = bar };
++        scroll.set_policy (EXTERNAL, NEVER);
++        return scroll;
++    }
+
+     public Panel (Services.PopoverManager popover_manager) {
+         Object (popover_manager : popover_manager);
+@@ -54,31 +136,31 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+             new Gtk.CustomSorter (IndicatorEntry.compare_func)
+         );
+
++        left_filter = new Gtk.CustomFilter (left_indicators_filter_func);
++        center_filter = new Gtk.CustomFilter (center_indicators_filter_func);
++        right_filter = new Gtk.CustomFilter (right_indicators_filter_func);
+         var left_indicator_entries = new Gtk.FilterListModel (
+             sorted_indicator_entries,
+-            new Gtk.CustomFilter (left_indicators_filter_func)
++            left_filter
+         );
+         var center_indicator_entries = new Gtk.FilterListModel (
+             sorted_indicator_entries,
+-            new Gtk.CustomFilter (center_indicators_filter_func)
++            center_filter
+         );
+         var right_indicator_entries = new Gtk.FilterListModel (
+             sorted_indicator_entries,
+-            new Gtk.CustomFilter (right_indicators_filter_func)
++            right_filter
+         );
+
+         var left_menubar = new IndicatorBar (left_indicator_entries);
+
+-        var center_menubar = new IndicatorBar (center_indicator_entries);
++        center_menubar = new IndicatorBar (center_indicator_entries);
+
+         var right_menubar = new IndicatorBar (right_indicator_entries);
+
+-        var center_box = new Gtk.CenterBox ();
+-        center_box.set_start_widget (left_menubar);
+-        center_box.set_center_widget (center_menubar);
+-        center_box.set_end_widget (right_menubar);
+-
+-        child = center_box;
++        left_scroll = scroll_bar (left_menubar, Gtk.Align.START);
++        right_scroll = scroll_bar (right_menubar, Gtk.Align.END);
++        rebuild_layout ();
+
+         unowned var indicator_manager = IndicatorManager.get_default ();
+         indicator_manager.indicator_added.connect (add_indicator);
+@@ -224,15 +306,17 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+         return ((IndicatorEntry) item).should_show_indicator;
+     }
+
+-    private static bool left_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
+-        return ((IndicatorEntry) item).base_indicator.code_name == Indicator.APP_LAUNCHER;
++    private bool left_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
++        var name = ((IndicatorEntry) item).base_indicator.code_name;
++        return name == Indicator.APP_LAUNCHER || name == "codexbar" ||
++            (notch_active && name == Indicator.DATETIME);
+     }
+
+-    private static bool center_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
+-        return ((IndicatorEntry) item).base_indicator.code_name == Indicator.DATETIME;
++    private bool center_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
++        return !notch_active && ((IndicatorEntry) item).base_indicator.code_name == Indicator.DATETIME;
+     }
+
+-    private static bool right_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
++    private bool right_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
+         return !left_indicators_filter_func (item) && !center_indicators_filter_func (item);
+     }
+
+diff --git a/src/meson.build b/src/meson.build
+index 0baef6e..7ea9929 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -8,5 +8,6 @@ wingpanel_files = files(
+     'Services/WMDBus.vala',
+     'Widgets/IndicatorEntry.vala',
+     'Widgets/IndicatorBar.vala',
++    'Widgets/NotchLayout.vala',
+     'Widgets/Panel.vala'
+ )

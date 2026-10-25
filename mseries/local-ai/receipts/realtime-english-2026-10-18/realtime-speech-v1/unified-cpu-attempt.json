@@ -1,0 +1,29 @@
+{
+  "engine": "unified-cpu",
+  "exit_code": 0,
+  "interruption": null,
+  "wall_s": 37.365602970000054,
+  "model_sha256": {
+    "weights": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929"
+  },
+  "identity": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "harness_sha256": "28ef14bdf53bdf8c1c3f2c0d8040fd6f3481a5d44ae3f65ba55ff323ef379d69"
+  },
+  "resources": {
+    "samples": 69,
+    "min_available_bytes": 18531811328,
+    "max_fan_rpm": 2531.0,
+    "max_temp_c": 47.76
+  },
+  "quality_score": "See each retained WER, not a pass/fail quality aggregate"
+}

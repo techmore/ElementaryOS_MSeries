@@ -1,0 +1,27 @@
+{
+  "removed_module_trees": [
+    "7.1.12-2-20261015.19-sep-ARCH",
+    "7.1.13-elementary-fairydust-usb4",
+    "7.1.13-elementary-fairydust-usb4-dptunnel"
+  ],
+  "verified_archived_files": 5771,
+  "archive_bytes": 130429171,
+  "running_kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "remaining_module_trees": [
+    "7.1.12-2-20261017.20-sep-ARCH",
+    "7.1.12-elementary-aurora20-enh1",
+    "7.1.13-3-2-ARCH"
+  ],
+  "boot_configuration_changed": false,
+  "display_configuration_changed": false,
+  "observations": [
+    "Saved monitor mode 3024x1890 at 120Hz was rejected; current eDP modes are 3024x1964.",
+    "Gala reported a panel startup timeout at 17.94 seconds after kernel start.",
+    "Dock hotplug logged USB -71 errors, PCIe tunnel reset timeout, and ATC pipehandler failure.",
+    "rtl_nic/rtl8153b-2.fw is missing.",
+    "Systemd reported kernel 7.560 seconds plus userspace 6.876 seconds."
+  ],
+  "archive_sha256": "afce98bf806fd6b4e5dce210f18cdb97b0c2cb7b14df4d15d909e7741c281df3",
+  "archive_location": "Private local Codex outputs: 2026-10-18/pok/outputs/old-kernel-modules.tar.gz (not uploaded)",
+  "qualification": "Host maintenance receipt; not a kernel qualification or release promotion"
+}

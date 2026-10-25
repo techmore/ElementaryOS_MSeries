@@ -37,6 +37,7 @@ trap 'rm -rf "$build_dir"' EXIT
 git clone -q https://github.com/elementary/files.git "$build_dir/src"
 git -C "$build_dir/src" checkout -q "$commit"
 git -C "$build_dir/src" apply "$patch"
+source "$repo/mseries/lib-build.sh" 2>/dev/null && mseries_ccache_enable || true   # optional ccache (#47)
 meson setup "$build_dir/build" "$build_dir/src" --prefix=/usr -Dwith-zeitgeist=disabled
 ninja -C "$build_dir/build" filechooser-portal/io.elementary.files.xdg-desktop-portal
 
