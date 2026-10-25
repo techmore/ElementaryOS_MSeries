@@ -116,7 +116,7 @@ cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- generate-meta
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- metapackage-substvars /path/to/metapackages arm64 elementary-desktop
 ```
 
-Next parity gates: pinned real-source builds,
+Next parity gates: fresh real-source/archive list generation,
 feature-aware end-to-end generation, archive precedence/conflict semantics, and
 complete Germinate/apt solver comparisons. Synthetic stage receipts do not
 establish whole-project or image/runtime parity.
@@ -155,8 +155,8 @@ long ustar paths. Linux [run 40238235136](https://github.com/techmore/Elementary
 on `ccff41c52ef002927bf782ff14ae9c4f8c39419b` passed all 40 comparisons using
 dpkg 1.23.7ubuntu1 and Debhelper 13.31ubuntu1, alongside all existing candidate
 checks. This qualifies the tested synthetic metadata/documentation semantics.
-Byte equality with Debian compression, pinned real-source builds and complete
-OS build parity remain unqualified.
+Byte equality with Debian compression, fresh real-source/archive list generation
+and complete OS build parity remain unqualified.
 
 ```sh
 python3 mseries/rust/seed-compiler/test-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler
@@ -170,12 +170,20 @@ Local native-only checks pass all 32 cases. The Linux comparison runs the
 unchanged `debian/rules` clean/binary targets (including compat level 7) with
 checksum-pinned Germinate 2.49's helpers and sequence module in an isolated tool
 path. It uses fakeroot for the reference binary build. This comparison is
-pending. It compares control file membership, metadata, decompressed installed
+now qualified by Linux [run 40238779709](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709)
+on `317c69eb08baf7e34c8fa0d14fbc8e00370bc268`. It compares control file membership,
+metadata, decompressed installed
 documentation and checksums, and verifies reproducible native rebuilds. Each
 package's Installed-Size is checked on its own compressed bytes at the actual
 control-generation stage; different compression can legitimately change that
 number. Source/list text remains temporary. CI retains a hash-only JSON receipt
 for 30 days, with source/package identities and native/reference archive digests.
+The verified fingerprints are retained permanently in
+[`elementary-1.582-parity.json`](elementary-1.582-parity.json). All 32 native
+archive hashes match separate macOS arm64 builds. Full-changelog packages report
+55 KiB installed size in Rust versus 54 KiB in the reference because compression
+bytes differ; each native value independently matches dpkg's accounting on that
+payload. Installed documents match exactly after decompression.
 
 ```sh
 python3 mseries/rust/seed-compiler/test-upstream-deb-parity.py mseries/rust/seed-compiler/target/release/elementary-seed-compiler --report /tmp/elementary-package-receipt.json

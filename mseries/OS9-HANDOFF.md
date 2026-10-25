@@ -1,3 +1,24 @@
+## Real Elementary metapackage build qualified — 2026-10-25
+
+[Run 40238779709](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709)
+on `317c69eb08baf7e34c8fa0d14fbc8e00370bc268` passed all existing candidate checks and
+32 new real-source package comparisons: all eight Elementary 1.582 binaries,
+amd64/arm64, full/trimmed changelogs. The reference executes unchanged upstream
+clean/binary rules with original compat 7 and pinned Germinate 2.49 helpers.
+Control metadata/file membership, installed documentation, checksums and native
+reproducibility pass. All 32 native archive hashes also match separate macOS
+arm64 builds. Full logs compress to a 55 KiB native versus 54 KiB reference
+Installed-Size; each native value is independently verified against dpkg on its
+own payload. References: Debhelper 13.31ubuntu1 and dpkg-dev 1.23.7ubuntu1.
+
+Permanent source/package fingerprints are in
+`rust/seed-compiler/elementary-1.582-parity.json`; the scoped receipt is also in
+`rust/elementary-build-inputs.json`. Inventory: 2,961 files, 499 project records.
+This qualifies the checked-in map/list-to-package stage. Next: fresh real-source
+seed/archive list generation and actual PPA membership/installability, then image
+admission. Complete solver/project/image/runtime parity remains open. PR #586
+stays a draft against dev; no live deployment or desktop changes.
+
 ## Pinned real-source metapackage comparison — 2026-10-25
 
 The complete Elementary metapackages source archive is now pinned by SHA-256

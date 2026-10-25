@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "source_commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+  "source_archive_sha256": "8d719f353e0275d7b23b1513d1a40fda1488ad193c3b6be8c6552604cb541c82",
+  "linux_oracle": true,
+  "source_date_epoch": 1700000000,
+  "packages": [
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-artwork",
+      "version": "1.582",
+      "native_sha256": "19df43947dedac6370c71a330b2915bf7a3d0655719c5ec7bb2ccaa7c3dd418d",
+      "installed_documentation_sha256": "8c7c60467b8d11cfde96d241f7d09944b338366ec56be58a1390f7372cba081c",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "5af13149f0daf271a903698da2171b52e84d7863ec7c5b6c20a7f3dd5e2cbdfa",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-desktop",
+      "version": "1.582",
+      "native_sha256": "671cd107a307e8ad412a8bf2a8e5459ab4dc71186e6cee2e2e9404512debf1cb",
+      "installed_documentation_sha256": "aba6bd840c6a49a4f47359b106c50164f35a5d3c676c77049911d896c1e54d80",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "08b0711fb230dd03ebe84fc9121386ef4f24672aaae566abd58b91678c5eaf27",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-live",
+      "version": "1.582",
+      "native_sha256": "1579f31eae4940118d5a8f951c2db3b0e0e517db69bae1eb197d8833479bc968",
+      "installed_documentation_sha256": "7bed022ec1522a7c023b929c84c31a5c29d84ea5ff66f17d1bab80faa82d199a",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "9d7c3cb261e0d0348fcc7aec0a5058bf9de41b174eb08e6d39f340182764339b",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-minimal",
+      "version": "1.582",
+      "native_sha256": "bb460fdc90de685f4e016e005969db8a01a598d52bf25bf1826947ecb28e04ee",
+      "installed_documentation_sha256": "b598ab76f2e378fda538a26064476a2a68ff5e741c5f10a10f1250e499fe2dc8",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "a3216984cfb8aeb1fdfa67128a5e1d952d4f0b17b423e177b499271caa7dbf55",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-sdk",
+      "version": "1.582",
+      "native_sha256": "a7bfcf3e330321019b42bf9637cbfd39591e07db2817df98f7e6f2dbb21e625b",
+      "installed_documentation_sha256": "9e4fd2c28f4e2621effcb7003db8d685b0e765a9db29721e10b9b0fdf4735735",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "446aa24cc28be7fde70cb1fff798f7e6f536830ee602c412d46edf67b0ea1d00",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "elementary-standard",
+      "version": "1.582",
+      "native_sha256": "a407547f741774c905d24f693aaa3af5ae6eee4bfee4e483f6c34cad251e4feb",
+      "installed_documentation_sha256": "33e60fce6c3f2b8dbf7a5d48fb050f925d4dd6f2319ccef16bd66ded6c75a7cd",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "32081fd397347e0ffd19fa8b7f50478f5f162fdd4b1a6b8b4f1019ebba7b012c",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "pantheon-shell",
+      "version": "1.582",
+      "native_sha256": "519ec4c26f5fda6d0096f38d8318f40fc05cb89c50a217f7bceead72467e7657",
+      "installed_documentation_sha256": "ea0baa6fe75aad60651e189a76a2aa0d98bd961da5dbb74861baaf8f85172909",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "efbb6133ef03e8b1d9a34f635b31e0a3aa69be06c93cb70dc82184f7ddb9b8b6",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": false,
+      "package": "pantheon",
+      "version": "1.582",
+      "native_sha256": "d935ce6d7448b0f500393932c7855acca7341e6f7824e37573e5f1854e75f6bf",
+      "installed_documentation_sha256": "424fc05c27c00d2e1b2e3744d2f53aa1707138111cf19d3c954aa329b47a545b",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "d87b33a58bc1780b480cf443c466cf5664b878a099dc7e8e84aed0f2e56b0318",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-artwork",
+      "version": "1.582",
+      "native_sha256": "6f1037358afc8dd04d856a38ce8f3540ca0ff23c13e0c0ac82e4333f3e01a4c4",
+      "installed_documentation_sha256": "173e49b833f0cb8fa8c6251a8d5082309fc8dd1ecb3cdc2481ab92f3043d28c9",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "e653d127667a621095a621ed722d2e65e460e6360dc9fb5f534693deebab5e27",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-desktop",
+      "version": "1.582",
+      "native_sha256": "c8af6efe9ae3ce64507c45b765564ca63e291482bd9797895493d5489e19ed59",
+      "installed_documentation_sha256": "e9b54f7e5a92cd5c3c21ba489410bdb59547252ad35fa5e510bb1995001ecfc3",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "3c745314a938ab075a3a761a17fb1f69071c49708979683a20b4beaf3aa3f111",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-live",
+      "version": "1.582",
+      "native_sha256": "469db53e199c4bb3da812db5dcb95439db3f679b8392c2f141ded04ada8723d0",
+      "installed_documentation_sha256": "7781264bfa9d47adaa49d5da22bc3496201c1cf29275d315369ed118e0b4d688",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "117d653e071da5b1afe21ca4a5caa0f8d3f4c6fdbd5d60dfc2b43900cbddd6a0",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-minimal",
+      "version": "1.582",
+      "native_sha256": "0205ae733c0927a4d37967522fbe62b0e6c153040fd4efd8e871df0a08f5b22e",
+      "installed_documentation_sha256": "baadac85a31c0f279b15d0324e8d20157e2b7af78e9ce2d403a1f698ea5b0ab6",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "7799badcc91687c3d0db11acd0e7502e6ecab3d26dd36170f5f12225baf61a86",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-sdk",
+      "version": "1.582",
+      "native_sha256": "1a7963addbdf97c469432144ceee9620bcde8c3acb5ddf8ddc766e95869f5df8",
+      "installed_documentation_sha256": "863c1645401c31daf63a2c8967ea684743839db6e2de20d105aa79fb8cc8cb6e",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "724cfa5f41526da465a2d88751fb162a17783f1239c697e98e783e4fb332d241",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "elementary-standard",
+      "version": "1.582",
+      "native_sha256": "c7cf3da1966dcd6d32d97a6bd45b55faa6dc6aeeca9a17ea6fbc5b5d7769073f",
+      "installed_documentation_sha256": "b88473eef60ea6e312d0a455a79a262e44fa08908575670adbe4822c58c21b4a",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "277f655749846cc0c4480fc7d52f6bc89e078d0cea6f66046e421ae0c61fa2b7",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "pantheon-shell",
+      "version": "1.582",
+      "native_sha256": "ce8d2b154a4e5162e9f40deff469829390fabaf41534bd171891b65d3f34462f",
+      "installed_documentation_sha256": "534a2320eac71d21c7cb77f0f07b2988dcb0f6340d9fa18685bc943bdc59daef",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "3992f4b2527458353c3bea5eb1daa59542ecf3cfe4ecb23a73baf98ad1225cb6",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "amd64",
+      "full_changelog": true,
+      "package": "pantheon",
+      "version": "1.582",
+      "native_sha256": "23993bc3f38459d3bd3155395196a69a91deb6d01edcf398b766b1f9ac79c281",
+      "installed_documentation_sha256": "e62d6b1f443b7c4bc62ce99da6587b273dfa01dd307180dd9aef754548a9c5b2",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "91c48333790db734066283a1cc5be6ba10f30425bbba011e237c0c85e808aaff",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-artwork",
+      "version": "1.582",
+      "native_sha256": "c25cccb22f2f78a2e43507aff833c9c310879345e9b970959e73ea4a1331af85",
+      "installed_documentation_sha256": "8c7c60467b8d11cfde96d241f7d09944b338366ec56be58a1390f7372cba081c",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "f982172dd768b3a10216837414e3a72d5f296fde9b7663746d815a33f8699179",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-desktop",
+      "version": "1.582",
+      "native_sha256": "797ea6000ec0987b3fa5d191f1ec1e3de80507dbf725e94ae5e5c7676a58a0ef",
+      "installed_documentation_sha256": "aba6bd840c6a49a4f47359b106c50164f35a5d3c676c77049911d896c1e54d80",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "2c5c60411f8d49b68c3fda810cf704eeb4ccc4ae82cd5d004d6d55f96574bef7",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-live",
+      "version": "1.582",
+      "native_sha256": "ab1f89efb300124643ba7e5863c67370db98ca89520c1d65925ad9e314cadc40",
+      "installed_documentation_sha256": "7bed022ec1522a7c023b929c84c31a5c29d84ea5ff66f17d1bab80faa82d199a",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "dfeb13b1352e9fa9b8b4ea9f2df725b81c6cf8417ebb16482d453a61c16eb4fa",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-minimal",
+      "version": "1.582",
+      "native_sha256": "4c734caaa206822b84c246a0b2fae1538e4de1587cced43f8d388bdab0b9f13c",
+      "installed_documentation_sha256": "b598ab76f2e378fda538a26064476a2a68ff5e741c5f10a10f1250e499fe2dc8",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "518a3dff82d6feef8113552bff32803da36ad22435e98ddab63786c22f074455",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-sdk",
+      "version": "1.582",
+      "native_sha256": "60d04272b2d419dd711ae73a0797b2b637fdf194538f1adfbeafbf841436cc1a",
+      "installed_documentation_sha256": "9e4fd2c28f4e2621effcb7003db8d685b0e765a9db29721e10b9b0fdf4735735",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "c9ff0b48d1ce4a8faee86ca7094f08304ffd789a4b586cf6cc6ce16892fcdddd",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "elementary-standard",
+      "version": "1.582",
+      "native_sha256": "e951f5b85cf1c657cda530c76b9a22f4aea78bfb88fa82ed8ee37d31bef673f9",
+      "installed_documentation_sha256": "33e60fce6c3f2b8dbf7a5d48fb050f925d4dd6f2319ccef16bd66ded6c75a7cd",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "2916154905c0fff69fb036269075622c920ea512567e3d70f7ac0d7b63483214",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "pantheon-shell",
+      "version": "1.582",
+      "native_sha256": "9fd9bfafc97f207565add2c28b4771dd489e9ad03da0a1b56a320491b21123bf",
+      "installed_documentation_sha256": "ea0baa6fe75aad60651e189a76a2aa0d98bd961da5dbb74861baaf8f85172909",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "94ccbeeb22831c13522a0f784c490a733f7fd65a2ad61e1628beee5b0c1dfdf2",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": false,
+      "package": "pantheon",
+      "version": "1.582",
+      "native_sha256": "1e7e3cd16ec0cc1861d8643c2958ed3acc200c169a588e1387e33d73b62ab8a7",
+      "installed_documentation_sha256": "424fc05c27c00d2e1b2e3744d2f53aa1707138111cf19d3c954aa329b47a545b",
+      "native_installed_size_kib": "21",
+      "reference_sha256": "48c13cdb1fa28781c1f91f746b7ba09be9f8d20a4a338bb58f90865dfef455e3",
+      "reference_installed_size_kib": "21"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-artwork",
+      "version": "1.582",
+      "native_sha256": "2b349f7e24d07d1ba0849a272e0f9205eeaadb90b07c942f2b8d48e3cae9921d",
+      "installed_documentation_sha256": "173e49b833f0cb8fa8c6251a8d5082309fc8dd1ecb3cdc2481ab92f3043d28c9",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "9848ee1b7d83657079d97dc83027f2b23acca49f7b03c2aa9d08568e2356d309",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-desktop",
+      "version": "1.582",
+      "native_sha256": "b8ce8924c1d83efa5beac189d1ab2efaf5240e5b7670734ea88885c67c97afcd",
+      "installed_documentation_sha256": "e9b54f7e5a92cd5c3c21ba489410bdb59547252ad35fa5e510bb1995001ecfc3",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "1b63161d05cb8f79f7bec3d0f2cf6ae84903b528ad0573b7f6980c6565637fab",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-live",
+      "version": "1.582",
+      "native_sha256": "09d5477ef101d422ef3d729ea2f7ab96798a163008a68a66616c6819e922bfa7",
+      "installed_documentation_sha256": "7781264bfa9d47adaa49d5da22bc3496201c1cf29275d315369ed118e0b4d688",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "07d44029690c9cdc340b8ae9cdb8e604de6552ad22341c3d25113969126098ca",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-minimal",
+      "version": "1.582",
+      "native_sha256": "32c9af5c8d97994570bc77a942fda6bb5667f010c5114e29bc041b6e65b51116",
+      "installed_documentation_sha256": "baadac85a31c0f279b15d0324e8d20157e2b7af78e9ce2d403a1f698ea5b0ab6",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "099d975f3c55abf80d8a41f2560ce2f0973a987a38f8e162993b75fc71f91eb4",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-sdk",
+      "version": "1.582",
+      "native_sha256": "ce2f3a3ca6460aff0a12b2d0c5216821931e8c29b0c791342da7bd8a2947ca08",
+      "installed_documentation_sha256": "863c1645401c31daf63a2c8967ea684743839db6e2de20d105aa79fb8cc8cb6e",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "ff4feb9f1594e4921d8690500ccad5b9e2f9b222ba3971d8a8537f752cadc253",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "elementary-standard",
+      "version": "1.582",
+      "native_sha256": "2d43be444bd8159f486e03b7a62ad39bc6f7ae07e5282db1e8a21bbb55190304",
+      "installed_documentation_sha256": "b88473eef60ea6e312d0a455a79a262e44fa08908575670adbe4822c58c21b4a",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "f1bcae56127f63ef692c9713d0fa91168242e21646d48945ba07d7f75bdd9475",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "pantheon-shell",
+      "version": "1.582",
+      "native_sha256": "53a227a57a74427e8862d5478572395a5204c9665c1de63561531db001f56d76",
+      "installed_documentation_sha256": "534a2320eac71d21c7cb77f0f07b2988dcb0f6340d9fa18685bc943bdc59daef",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "b4f758965c5315618e508b500d4e6407cbdfc59f0255149145d93d60d8420ceb",
+      "reference_installed_size_kib": "54"
+    },
+    {
+      "host_architecture": "arm64",
+      "full_changelog": true,
+      "package": "pantheon",
+      "version": "1.582",
+      "native_sha256": "24d1c8e22c510e9c947ba2e54da6ecd4c5e3003ae35865ee1155f864e49b066a",
+      "installed_documentation_sha256": "e62d6b1f443b7c4bc62ce99da6587b273dfa01dd307180dd9aef754548a9c5b2",
+      "native_installed_size_kib": "55",
+      "reference_sha256": "30ece0ff2554ba039224a1b4554072c82db9db4185b2b1713b235f95e950f77d",
+      "reference_installed_size_kib": "54"
+    }
+  ],
+  "debhelper_version": "13.31ubuntu1",
+  "dpkg_dev_version": "1.23.7ubuntu1",
+  "qualification_source": {
+    "candidate_commit": "317c69eb08baf7e34c8fa0d14fbc8e00370bc268",
+    "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709",
+    "artifact_name": "rust-upstream-metapackages-40238779709",
+    "artifact_file_sha256": "852d2545bab975a71a55256d007d527458397ba407ced896a4558feb1784ef8e"
+  },
+  "germinate_reference": {
+    "version": "2.49",
+    "source_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+    "scope": "Unchanged debhelper clean/metapackage helpers and sequence module from the checksum-pinned archive."
+  },
+  "cross_platform_native_reproducibility": {
+    "matching_archive_hashes": 32,
+    "platforms": [
+      "macOS arm64",
+      "Ubuntu 26.04 arm64 CI"
+    ],
+    "scope": "All native .deb hashes in this receipt match the separately built local native-only receipt for identical pinned source, host-architecture selection, changelog mode and SOURCE_DATE_EPOCH. Native build implementation and Cargo.lock are unchanged between ccff41c5 and this candidate commit."
+  },
+  "scope": "Checked-in upstream map/list-to-package stage using unchanged Elementary debian/rules clean/binary with compat 7. All control fields except compression-dependent Installed-Size match the actual upstream package builds; native Installed-Size is separately equal to dpkg-gencontrol on its own payload. Control file membership, installed documentation after decompression, payload checksums and native rebuild reproducibility pass. Excludes fresh seed/archive list regeneration, PPA membership/installability, arbitrary packaging, complete solver, image and runtime qualification."
+}

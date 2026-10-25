@@ -85,7 +85,7 @@ the existing `rust/` Cargo workspace, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-2,960 files (2,878 local and 82 elementary-owned upstream inputs) currently form
+2,961 files (2,879 local and 82 elementary-owned upstream inputs) currently form
 533 directory groups and 499 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
@@ -134,7 +134,10 @@ pass across four configurations in Linux run 40236407482.
 A native metadata-only Debian package builder now passes 40 Linux comparisons
 with dpkg-gencontrol, dpkg-deb and Debhelper, including documentation, checksums
 and reproducible native rebuilds (run 40238235136).
-Pinned real-source and complete package/image qualification remain open.
+The pinned upstream source's unchanged rules now pass 32 actual package
+comparisons in Linux run 40238779709, and all 32 native hashes match macOS builds.
+Fresh real-source/archive list regeneration, PPA membership and complete
+package/image qualification remain open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -328,7 +331,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
   while the owner's Signal/Messages deferral is in force. Full image admission
   remains open.
-- The full file inventory currently contains 2,960 items (2,878 M-series-maintained
+- The full file inventory currently contains 2,961 items (2,879 M-series-maintained
   and 82 elementary-owned upstream inputs), 533 directory groups, and 499
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

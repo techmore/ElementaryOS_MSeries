@@ -15,7 +15,7 @@
     "packages.arm64",
     "assemble-iso.sh"
   ],
-  "item_count": 2960,
+  "item_count": 2961,
   "component_count": 533,
   "project_count": 499,
   "components": [
@@ -6231,16 +6231,17 @@
     {
       "id": "mseries/rust/seed-compiler",
       "ownership": "mseries-maintained",
-      "item_count": 17,
+      "item_count": 18,
       "rust_status_counts": {
         "candidate-implemented-unverified": 13,
-        "recorded-non-code-input": 4
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/rust/seed-compiler/Cargo.lock",
         "mseries/rust/seed-compiler/Cargo.toml",
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/elementary-1.582-parity.json",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/deb_archive.rs",
         "mseries/rust/seed-compiler/src/deb_package.rs",
@@ -8502,16 +8503,17 @@
     {
       "id": "elementary/package-generator",
       "ownership": "mseries-maintained",
-      "item_count": 17,
+      "item_count": 18,
       "rust_status_counts": {
         "candidate-implemented-unverified": 13,
-        "recorded-non-code-input": 4
+        "recorded-non-code-input": 5
       },
       "items": [
         "mseries/rust/seed-compiler/Cargo.lock",
         "mseries/rust/seed-compiler/Cargo.toml",
         "mseries/rust/seed-compiler/LICENSE",
         "mseries/rust/seed-compiler/README.md",
+        "mseries/rust/seed-compiler/elementary-1.582-parity.json",
         "mseries/rust/seed-compiler/src/archive.rs",
         "mseries/rust/seed-compiler/src/deb_archive.rs",
         "mseries/rust/seed-compiler/src/deb_package.rs",
@@ -42717,6 +42719,16 @@
       "ownership": "mseries-maintained",
       "language": "markdown",
       "role": "documentation-or-record",
+      "rust_status": "recorded-non-code-input"
+    },
+    {
+      "id": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+      "path": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+      "component_id": "mseries/rust/seed-compiler",
+      "project_id": "elementary/package-generator",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "recorded-non-code-input"
     },
     {

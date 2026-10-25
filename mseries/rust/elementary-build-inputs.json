@@ -4,7 +4,7 @@
   "generator_contract": {
     "upstream_project": "elementary/metapackages",
     "reference_generator": "Germinate 2.49 (Ubuntu source archive pinned by SHA-256 in reference_projects)",
-    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, generates multi-architecture maps/lists from update.cfg and supplied bootstrap sets, renders substvars, and assembles metadata-only Debian packages. Linux synthetic comparisons qualify these stages. Pinned real-source/archive builds, complete solver/build-dependency behavior, live acquisition/bootstrap, changelog maintenance and full project/image/runtime parity remain open.",
+    "behavior_status": "An independently authored Rust candidate composes supplied seed collections, resolves basic runtime package closure with per-seed scope, generates multi-architecture maps/lists from update.cfg and supplied bootstrap sets, renders substvars, and assembles metadata-only Debian packages. Linux synthetic comparisons qualify those stages; unchanged pinned Elementary source rules additionally qualify 32 checked-in map/list-to-package cases. Fresh real-source/archive list generation, PPA membership, complete solver/build-dependency behavior, live acquisition/bootstrap, changelog maintenance and full project/image/runtime parity remain open.",
     "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
   },
   "inputs": [
@@ -129,7 +129,8 @@
         "fresh multi-architecture metapackage-map and dependency/recommendation list artifacts from explicit seed entries",
         "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
         "Debian Sources index parsing with version-selected Binary declarations for source seed membership",
-        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; 40 synthetic Linux package comparisons passed"
+        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; 40 synthetic Linux package comparisons passed",
+        "pinned Elementary metapackages 1.582 checked-in map/list-to-package stage: all eight binaries across amd64/arm64 and full/trimmed changelogs qualified against unchanged upstream rules; 32 native hashes also match local macOS and Linux CI builds"
       ],
       "not_implemented": [
         "advanced seed substvars, include/exclude directives, installer kernel-version pruning and complete pattern semantics",
@@ -137,11 +138,11 @@
         "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
         "complete Germinate provider and alternative selection semantics",
         "snap metadata and revision selection",
-        "general Debian packaging, actual Elementary source/package qualification, changelog/delta maintenance and live debootstrap/index acquisition",
+        "general Debian packaging, fresh real-source/archive list regeneration and actual PPA membership/installability, changelog/delta maintenance and live debootstrap/index acquisition",
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40238235136 on ccff41c5 passed all 13 candidate crate checks, 29 seed-compiler tests, eight Germinate substvars, 22 profile package-set, 56 map/list file comparisons across four configurations, and 40 native package comparisons with dpkg-gencontrol/dpkg-deb and Debhelper. These are synthetic stage comparisons with supplied bootstrap boundaries. Pinned real-input, complete solver, image and runtime qualification remain open.",
+      "parity_status": "Linux run 40238779709 on 317c69eb passed all 13 candidate crate checks, 29 seed-compiler tests, eight substvars, 22 profile membership, 56 map/list and 40 synthetic package comparisons, plus 32 actual Elementary 1.582 package comparisons against unchanged pinned upstream clean/binary rules. All 32 native hashes also match local macOS builds. This qualifies the checked-in map/list-to-package stage; fresh seed/archive list generation, PPA membership/installability, full solver, image and runtime qualification remain open.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established.",
       "parity_receipts": [
@@ -203,6 +204,35 @@
           "dpkg_dev_version": "1.23.7ubuntu1",
           "crate_unit_tests": 29,
           "scope": "Synthetic package binary-control field equality against dpkg-gencontrol at the dh_gencontrol staging boundary; installed documentation equality after decompression against Debhelper; dpkg-deb acceptance/extraction, payload md5sums, archive ownership/mode/timestamps and byte-reproducible native rebuilds. Both hosts, native/non-native/epoch versions, full/trimmed changelogs, architecture wildcards/all, relationship reduction, descriptions and long ustar paths are covered. No byte-equality claim against Debian compression, pinned real-source/PPA membership, arbitrary packaging, full solver, live bootstrap, image or runtime parity."
+        },
+        {
+          "source_commit": "317c69eb08baf7e34c8fa0d14fbc8e00370bc268",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709",
+          "reference_project": "elementary/metapackages",
+          "reference_source_commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+          "reference_source_version": "1.582",
+          "reference_archive_sha256": "8d719f353e0275d7b23b1513d1a40fda1488ad193c3b6be8c6552604cb541c82",
+          "reference_rules": "Unchanged debian/rules clean and binary; compat level 7; Germinate 2.49 helpers and sequence module",
+          "reference_germinate_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "real_source_package_comparisons": 32,
+          "binary_packages_per_host_and_mode": 8,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "changelog_modes": [
+            "default-trimmed",
+            "notrimdch-full"
+          ],
+          "cross_platform_native_archive_hash_matches": 32,
+          "platforms": [
+            "macOS arm64",
+            "Ubuntu 26.04 arm64 CI"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "retained_package_fingerprints": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+          "scope": "Checked-in upstream map/list-to-package stage. Actual package build control metadata and control file membership, installed documentation after decompression, checksums and native reproducibility. Native Installed-Size is verified with dpkg-gencontrol on its own payload because full changelog compression differs (55 KiB native vs 54 KiB reference). No source/list text is vendored. Fresh seed/archive regeneration, PPA membership/installability, complete solver, general packaging and image/runtime parity are excluded."
         }
       ]
     }
