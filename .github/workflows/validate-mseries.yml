@@ -416,6 +416,19 @@ jobs:
         run: |
           desktop-file-validate rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.desktop
           appstreamcli validate --no-net rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.metainfo.xml
+      - name: Native T3 activity and subscription render gates (isolated offline home)
+        run: |
+          CLAUDE_PANTHEON_RENDER_RELEASE=1 CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/light" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+          CLAUDE_PANTHEON_DARK=1 CLAUDE_PANTHEON_RENDER_RELEASE=1 \
+            CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/dark" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+      - name: Upload native T3 feature renders
+        uses: actions/upload-artifact@v7
+        with:
+          name: t3-feature-renders-${{ github.run_id }}
+          path: ${{ runner.temp }}/t3-features/
+          if-no-files-found: error
       - name: Indicator probe (headless)
         run: |
           meson setup "$RUNNER_TEMP/indicator" rust/claude-pantheon-rs/wingpanel-indicator
