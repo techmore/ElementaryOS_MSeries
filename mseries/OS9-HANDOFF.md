@@ -1,3 +1,295 @@
+## Real signed seed/archive generation verified — 2026-10-25
+
+[Run 40240688243](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243) on
+`b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea` passed all candidate checks and 33
+byte-for-byte real map/list comparisons with unchanged Germinate 2.49. Both hosts
+use the same 30 signed captured indexes and pinned seed/source collections;
+actual debootstrap 1.0.142ubuntu2 produced 226 package names per host. All 60
+applicable endpoints of the unavailable testing PPA were checked. Modified signed
+payloads and unknown-only signatures are rejected; unknown extra rotation
+co-signers gain no trust. Permanent fingerprints:
+`rust/seed-compiler/real-list-parity-2026-10-25.json`.
+
+The original run finished successfully before any replacement was submitted.
+Logs explain its delay: Azure downloaded 87.1 MB in 13m22s at 109 kB/s.
+Prepared for the next run: the existing signed/bounded ARM64 downloader now takes
+a Rust dependency profile, preserving Aurora defaults. Official ports is primary,
+Azure is fallback; metadata/download phases are bounded, installation follows
+verified download with no network. Explicit rust-clippy and python3-yaml support
+the tests without recommendations. Ten installer and nine workflow regressions
+pass locally; Linux qualification of this profile is pending. Inventory: 2,964
+files, 499 project records.
+
+Next: qualify the bounded CI profile, then connect fresh generated lists to native
+package assembly and check package installability. Production native acquisition,
+complete solver/project parity and image/runtime admission remain open. No live
+installation, desktop, kernel, boot or audio changes; PR #586 stays a draft.
+
+## Matched real archive qualification gate — 2026-10-25
+
+The new real-list verifier derives every configured mirror/component/architecture
+from pinned update.cfg, verifies signed metadata with the existing factory keys
+and Ubuntu trust anchor, checks signed index bytes, and captures real seed inputs
+without vendoring them. Local acquisition verifies 30 indexes; all 60 applicable
+testing-PPA index endpoints are unavailable and explicitly recorded. A valid
+factory-trusted signature plus unknown rotation co-signer is accepted without
+trusting the new key. Modified signed payloads and unknown-only signatures are
+rejected by actual gpgv checks.
+
+Linux CI now runs unchanged Germinate updater logic and actual debootstrap against
+those verified local mirrors, records real bootstrap outputs, and compares all 33
+native map/list files. That full comparison is pending. Hash/identity receipts
+include partial failures; raw source/index text stays temporary. Inventory: 2,962
+files, 499 project records. Next: resolve the real comparison and retain its exact
+input/output receipt. Native production acquisition, PPA installability and full
+image/runtime qualification remain open. No live deployment or desktop changes.
+
+## Lexical seed expansion verified against Germinate — 2026-10-25
+
+[Run 40239533941](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941)
+on `50b762905ce3298b4c836d33d34edeb5d6661f79` passed all candidate checks, 30 seed-compiler
+tests, eight substvars, 36 profile package-set and 56 map/list comparisons.
+New direct cases cover lexical/case-insensitive/shadowed/Cartesian substitutions,
+empty/undefined/nonrecursive values, architecture/recommendation classification,
+pattern/source ordering, multiple Feature values, explicit glob roots and all
+seeded virtual providers. The reference remains unchanged Germinate 2.49.
+All 40 synthetic and 32 real-source package comparisons also pass; downloaded
+fingerprints confirm all 32 native archives equal the retained 1.582 baseline.
+
+Real live-profile parsing with the pinned included platform now succeeds, and
+both collection archives are SHA-256 pinned without vendoring seed text. Full
+matched real archive/seed list generation, signed acquisition/live bootstrap,
+remaining kernel/include/exclude/pattern/diagnostic semantics, PPA installability
+and image/runtime admission remain open. Next: acquire and record matched real
+archive inputs and compare full list generation, preserving those open gates.
+No deployment or live desktop changes; PR #586 stays a draft against dev.
+
+## Real live-seed variable gap corrected — 2026-10-25
+
+Inspection of pinned real inputs found the native parser stopped at the live
+seed's Languages declaration. It now handles lexical case-insensitive variable
+values, Cartesian expansion, shadowing, empty/undefined values and nonrecursive
+substitution, while preserving archive pattern/source lookup ordering. Feature
+headers accept multiple values. Explicit runtime roots now expand known patterns
+and all explicit virtual providers and omit absent roots, matching planting;
+archive dependency failures remain errors. Unsupported kernel/include/exclude
+directives fail explicitly. Seed/platform archive hashes are pinned separately;
+no seed text is vendored and license gates remain unchanged.
+
+Local checks: 30 unit tests, strict Clippy/release build, and real live-profile
+parsing/flattening with the included platform structure. Linux now compares 36
+profile membership cases and adds variable cases to the existing 56 map/list
+comparisons; that new run is pending. Fresh signed archive acquisition, full real
+list generation, PPA installability and image/runtime qualification remain open.
+Next: resolve any direct comparison differences, then run the actual seed/archive
+pipeline against matched downloaded inputs. No deployment or desktop change.
+
+## Real Elementary metapackage build qualified — 2026-10-25
+
+[Run 40238779709](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709)
+on `317c69eb08baf7e34c8fa0d14fbc8e00370bc268` passed all existing candidate checks and
+32 new real-source package comparisons: all eight Elementary 1.582 binaries,
+amd64/arm64, full/trimmed changelogs. The reference executes unchanged upstream
+clean/binary rules with original compat 7 and pinned Germinate 2.49 helpers.
+Control metadata/file membership, installed documentation, checksums and native
+reproducibility pass. All 32 native archive hashes also match separate macOS
+arm64 builds. Full logs compress to a 55 KiB native versus 54 KiB reference
+Installed-Size; each native value is independently verified against dpkg on its
+own payload. References: Debhelper 13.31ubuntu1 and dpkg-dev 1.23.7ubuntu1.
+
+Permanent source/package fingerprints are in
+`rust/seed-compiler/elementary-1.582-parity.json`; the scoped receipt is also in
+`rust/elementary-build-inputs.json`. Inventory: 2,961 files, 499 project records.
+This qualifies the checked-in map/list-to-package stage. Next: fresh real-source
+seed/archive list generation and actual PPA membership/installability, then image
+admission. Complete solver/project/image/runtime parity remains open. PR #586
+stays a draft against dev; no live deployment or desktop changes.
+
+## Pinned real-source metapackage comparison — 2026-10-25
+
+The complete Elementary metapackages source archive is now pinned by SHA-256
+(`8d719f35…cb541c82`) alongside commit `6e646650…be58d0f`, version 1.582 and
+its GPL-2.0-or-later copyright evidence. Native Rust assembly passes 32 local
+real-source cases: all eight binaries, both hosts, full/trimmed changelogs.
+A new Linux gate compares the unchanged upstream clean/binary rules with the
+Rust packages, retaining compat 7 and pinned Germinate 2.49 helpers/sequence.
+Metadata, control file membership, installed documentation, checksums, size
+accounting and native reproducibility are checked; hash-only receipts are retained.
+Linux comparison is pending. Live seed/archive regeneration, actual PPA package
+closure and image/runtime admission remain open. Next: resolve the real-source
+comparison, then qualify the real list-generation inputs. No live deployment.
+
+## Native Debian metapackages qualified on synthetic inputs — 2026-10-25
+
+[Run 40238235136](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136)
+on `ccff41c52ef002927bf782ff14ae9c4f8c39419b` passed all 13 candidate crates'
+checks, 29 seed-compiler tests, eight substvars, 22 profile membership, 56 map/list
+file comparisons and all 40 new native-package comparisons. Debian control
+fields match dpkg-gencontrol at the dh_gencontrol staging boundary; installed
+documents match Debhelper after decompression. dpkg-deb accepts/extracts the
+archives, md5sums match, metadata is canonical and native rebuilds are byte
+reproducible. References: Germinate 2.49, Debhelper 13.31ubuntu1 and dpkg-dev
+1.23.7ubuntu1. The exact scoped receipt is in elementary-build-inputs.json.
+
+Both hosts, native/non-native/epoch versions, all/wildcard architecture selection,
+full/trimmed logs, descriptions, relationship reduction and long ustar paths are
+covered. This is synthetic package-stage qualification; actual Elementary source
+and PPA membership, arbitrary packaging, complete solver behavior and image/runtime
+parity remain open. Next: qualify the pinned real-source/input pipeline and
+preserve separate receipts for source selection, package generation and images.
+PR #586 remains a draft against dev; no deployment or live desktop changes.
+
+## Debian size comparison correction — 2026-10-25
+
+Linux run 40237976728 on `7f189173` passed all existing candidate checks,
+including 29 seed-compiler tests, eight substvars, 22 package-set and 56 map/list
+comparisons, then exposed Installed-Size disagreement in the new package oracle.
+Review of dpkg-gencontrol and Debhelper confirms the scan includes the staging
+root and an empty DEBIAN directory before control/md5sums generation. Rust now
+counts those two directories; the oracle recreates that exact stage after
+extraction rather than counting the already-generated control/md5sums files.
+The fixture retains strict field/documentation comparisons and now reports all
+semantic mismatches in one run. Linux requalification is pending.
+
+## Rust native metapackage archive builder — 2026-10-25
+
+The seed compiler now builds documentation-only `.deb` metapackages in Rust
+from source metadata and supplied qualified map/list artifacts. It handles
+control substitution/reduction, architecture selection, copyright/changelog
+installation, reproducible ar/ustar/gzip archives and md5sums without executing
+host packaging tools. Unsupported payload/scripts/hooks fail before output.
+Local checks pass: 29 unit tests, strict Clippy/release build and 40 independent
+archive/checksum/date/reproducibility cases. Linux CI now compares these packages
+with dpkg-gencontrol, dpkg-deb and Debhelper; that comparison is pending.
+Next: resolve any oracle discrepancies, then qualify the pinned actual
+Elementary source/input pipeline. Whole-project, image and runtime parity remain
+open. No desktop/boot/kernel/audio changes or deployment.
+
+## Native map/list stage verified in Linux — 2026-10-25
+
+[Run 40236407482](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482)
+on `ff754d3c710967a83c6e59f62090a191695ce5b0` passed all candidate crate
+checks, 26 seed-compiler tests, eight substvars comparisons, 22 profile
+package-set comparisons, and 56 byte-for-byte map/list file comparisons across
+four configurations. The new file comparison covers config/header precedence,
+selected output seeds, explicit maps, alternatives, virtual/source seeds,
+source-version/Binary declarations and defaults, essential Depends, minimal
+filtering, inheritance deduplication, architecture qualifiers and empty outputs.
+The upstream updater is unchanged; only debootstrap's package-set/version
+boundary is fixed to supplied data. No upstream Elementary seed data is vendored.
+
+The receipt is in `mseries/rust/elementary-build-inputs.json`; the Elementary
+metapackage record now marks the generator as a partial candidate rather than
+not started. Full provider/solver and advanced seed behavior, acquisition/live
+bootstrap, changelog/deltas, complete Debian package output and OS image/runtime
+qualification remain open. Next: finish native Debian control/package output
+from the qualified list/substvars artifacts, then qualify pinned real inputs.
+
+## First direct map/list receipt and source default — 2026-10-25
+
+Linux run 40236198140 on `ff616bf96e015865e1f1e8c95e67058775adddea`
+passed all candidate checks, including 26 seed-compiler unit tests, the existing
+8 substvars/22 package-set comparisons, and 56 byte-for-byte map/list file
+comparisons across four configurations. The reference updater and archive/seed
+reader are unchanged; only debootstrap's package-set/version boundary is frozen.
+Review also identified the reference's missing-Binary default in Sources:
+it uses the source package name. That native fix and a direct comparison case
+are now included and require the next Linux run. Complete package generation
+and live bootstrap/image qualification remain open.
+
+## Rust metapackage map/list stage — 2026-10-25
+
+The native `generate-metapackage-lists` command now consumes supplied update.cfg,
+Debian source control, seed collections, per-architecture Packages/Sources indexes and
+frozen debootstrap package sets. It renders the map and all configured package
+lists, honoring config/header precedence, inheritance deduplication, essential
+Depends and minimal filtering, availability, source/virtual entries and known
+alternatives. This is explicit seed planting; archive dependency closure remains
+separate. Existing directories are not overwritten. Shared seed loading now
+serves both resolver commands and this build stage.
+
+Local checks: 26 crate tests, strict Clippy/release build, and fresh-output CLI
+checks pass. The four-configuration direct comparison with the checksum-pinned
+Germinate updater is added to Linux CI; it freezes only debootstrap's package
+set/version boundary and has not run yet. Remote/index acquisition, live
+bootstrap behavior, changelog/deltas, complete Debian package generation, and
+full image/desktop qualification remain open. The inventory includes 2,955 files
+in 499 project records. Next: run and review the new file comparison, then use
+its qualified outputs to finish Debian control/package generation.
+
+## Corrected Germinate scope verified in Linux — 2026-10-25
+
+[Run 40235036913](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913)
+on `28eec704ba344af5d462babb52f329479a172933` passed all candidate crate
+checks, including 24 seed-compiler tests, eight direct substvars comparisons,
+and 22 direct amd64/arm64 profile package-set comparisons against unmodified
+Germinate 2.49. The archive is checksum-pinned; Debhelper was 13.31ubuntu1.
+The receipt is recorded in `mseries/rust/elementary-build-inputs.json`.
+This verifies the tested per-seed blocklist/Recommends behavior and fresh
+substvars output, not complete solver, diagnostics, or Debian package parity.
+
+The preceding Linux wiring run 40234661001 also passed all 88 central checks,
+including post-install timing and image staging that macOS could not execute.
+PR #586 remains a draft against dev. Next: finish profile map/list and Debian
+package generation, extend provider/alternative and build-dependency comparisons,
+and keep image/desktop qualification separate from synthetic fixture evidence.
+
+## Germinate comparison and blocklist correction — 2026-10-25
+
+Run [40234661042](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40234661042)
+on `8445173e` passed all 13 candidate crates' checks, the existing runtime
+fixtures, and eight direct substvars comparisons with Germinate 2.49 and
+Debhelper 13.31ubuntu1. This establishes that build stage's tested output;
+complete OS or Germinate parity is still unproven.
+
+Reviewing the pinned reference exposed a wrong earlier blocklist assumption.
+The resolver now preserves per-seed scopes, applies exclusions to that seed and
+its inherited ancestors including dependencies, and removes the invented global
+effect of an ordinary seed named `blocklist`. It also follows each contributing
+seed's Recommends flags and applies that flag to recommendation-root closure.
+The updated candidate passes 24 local unit cases, strict Clippy and release build.
+A new 22-case amd64/arm64 package-set comparison uses unmodified Germinate source
+and real python3-apt in Linux CI. That comparison is pending; full provider
+selection, diagnostics, build dependencies and Debian package output stay open.
+The inventory now contains 2,953 files and 499 project records.
+
+## First Linux Rust-lane receipt — 2026-10-25
+
+Run 40234452971 on `7e665e17` passed inventory/register checks, all candidate
+crate test/lint/release builds, and the existing network, panel, keyboard,
+private D-Bus brightness, ISO-label and atomic-app fixtures. The new metapackage
+reference fixture failed during helper initialization: it declared compatibility
+both through `debian/compat` and `debhelper-compat`. The fixture now uses only
+the control declaration and prints captured helper diagnostics on failure.
+The eight Germinate substvars comparisons still require a successful rerun.
+
+## Rust migration branch synced with dev — 2026-10-25
+
+Draft PR #586 now targets `dev`. This branch incorporates development source
+`386a0225b97362482e285ca01ece76c9c6d524ff` and preserves its installer timing,
+calendar indicator gates, UKI preparation, and Signal/Messages deferral. The
+Rust desktop-settings candidate now follows the current Python reference for
+both Command keys, blank-only media-key defaults, and natural mouse scrolling;
+Pantheon runtime parity remains open. The generic atomic-app candidate remains,
+while Signal's installers are preserved exactly from dev during the deferral.
+
+The inventory now includes the existing root `rust/` workspace: 2,952 files,
+533 path groups, and 499 project records. Each workspace crate has its own
+record; both power implementations share the power project. Rust Messages is
+explicitly owner-deferred and incomplete. These records still need semantic,
+license, and feature-contract review before any whole-OS parity claim.
+
+Local checks passed: four desktop-settings tests, strict Clippy/release build,
+five panel-provenance comparisons, nine atomic-app reference cases, seven
+inventory tests, two Elementary register tests, and the workflow policy plus
+17 CI regression cases. The post-install timing fixture cannot run under this
+host's Bash 3.2 (`local -n` is unsupported); its Linux CI run remains required.
+The image payload fixtures also await Linux: macOS `install` does not implement
+the GNU `-D` behavior used by their staging scripts.
+The package-generator's 23 tests passed before this merge. Next: push the sync,
+review Linux candidate CI including the pinned Germinate substvars comparison,
+and resolve any failures before advancing the metapackage build pipeline.
+
 ## Apple Dev hardening after the first real iPhone build — 2026-10-23 (Claude)
 
 Rupert's iPhone app was built here (Xcode 27.1, Swift 6.4.1 from swift.org) and shipped to
@@ -2046,6 +2338,78 @@ Installed privately and restarted only pantheon-dock.service; service is active.
 No live screenshot/owner visual confirmation is claimed.
 
 # OS 9 implementation / Claude Code handoff
+
+## Rust OS migration checkpoint — 2026-10-25
+
+The package generator now has a native Rust `metapackage-substvars` command.
+It reads a supplied map and architecture-specific package lists and emits the
+Debian relationship substitution fragment used in metapackage builds. All 23
+crate tests, strict Clippy, and the release build pass locally. The Germinate
+2.49 source archive now has a verified SHA-256 in `elementary-build-inputs.json`.
+A Linux harness compares eight substvars cases with that release's unmodified
+helper and real Debhelper; it is wired into candidate CI but has not run here
+(the local Docker daemon is unavailable). Next: run the Linux comparison, then
+finish seed-to-map/list generation and complete Debian package outputs.
+This command does not yet complete the Elementary metapackage project.
+
+The latest scope audit found 153 public repositories in the official
+Elementary GitHub organization. `mseries/rust/elementary-org-census.json` now
+records each repository separately with its default branch and explicit
+scope-review status. The configured ARM64 desktop seed snapshot maps 58
+candidate repositories plus the OS build repository. `elementary/metapackages`
+is separately pinned, and its two seed inputs, `elementary/seeds` and
+`elementary/platform`, now have distinct source records.
+Neither seed repository declares a license at the audited commit; their content
+is not copied into Rust. These records accompany ten direct
+image/customization source records. The 59-project image map has 48 projects
+still needing full pin, license, and parity review; the resolved PPA package closure also needs
+independent verification. The rename from
+`wingpanel-indicator-sound` to `panel-sound` is recorded as an alias. This
+census is discovery evidence, not proof that all image packages or upstream
+projects have been identified. Next, verify each of the 59 package/repository
+links against source package metadata, then pin the resolved PPA package set
+before claiming complete project coverage.
+
+The independently authored `mseries/rust/seed-compiler` candidate now also
+parses Debian binary `Packages` records and relationships, expands source names
+to target-architecture binaries, and provides an integrated profile-to-package
+closure command. The earlier root-only blocklist interpretation was incorrect.
+The candidate now keeps each contributing seed's scope: an exclusion applies to
+that seed and its inherited ancestors, including transitive dependencies.
+Blocked dependencies can be omitted, producing an uninstallable set; apt itself
+does not know these seed exclusions. An unrelated seed named `blocklist` has no
+automatic global effect. Direct Germinate profile comparisons are now required.
+The Rust resolver honors Structure and selected-seed `follow-recommends`, plus
+the selected seed's `no-follow-recommends` override. Archive Recommends and
+parenthesized seed recommendation outputs remain separate; build-dependency
+feature handling is still open.
+Its archive tests cover version constraints, virtual Provides, and Multi-Arch
+`:any`; these are local candidate tests, not Germinate/apt comparisons.
+Germinate build-dependency semantics, archive precedence/conflicts, snap
+resolution, metapackage output, and both-architecture differential receipts
+remain future gates. Seed licenses are still unverified, so the Rust crate does
+not vendor their contents.
+
+The launcher-key watcher and Homeboard launcher installer are committed Rust
+candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live
+desktop behavior remains unverified. The GTK launcher and core shell apps are
+still not ported.
+
+The local `rust` branch now has separate `atomic-app`, `iso-label`, and
+`iso-assembly` crates. `assemble-iso.sh` is a compatibility launcher for the
+Rust ISO orchestration; the inner xorriso container still runs its fixed Linux
+image commands. Atomic app activation is wired behind its opt-in Signal path.
+Cargo checks pass for the ISO crates. A full Linux image build and runtime
+parity review remain open; the macOS development host has no mkosi/podman.
+Continue the per-project inventory and core Elementary conversions before any
+claim of whole-OS parity or default cutover.
+
+The owner-session desktop settings coordinator has since been ported to
+`mseries/rust/desktop-settings`, staged as `/usr/libexec/mseries/apply-desktop-settings`,
+and called by the existing `settings` user stage. The old Python implementation
+is retained as a reference. GSettings/Pantheon runtime parity is still open;
+four GVariant transport unit cases pass, and the factory build has not yet been
+run on Linux from this checkpoint.
 
 ## Rust compositor: popups of unfocused windows clipped by a higher neighbour — 2026-10-21
 
@@ -9527,6 +9891,228 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## 2026-10-17 — Rust migration continuation
+
+Continued the isolated local `rust` branch from the available `origin/main`
+snapshot `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Added a standalone
+`mseries-netusage-rs` candidate and candidate systemd unit. The Rust daemon
+retains the current `ss`/resolved inputs, per-process and per-host counters,
+DNS aggregation, SQLite tables and retention policy. The existing Python
+service remains the installed writer; do not run both services against the
+same database.
+
+Focused Rust validation passed: `cargo fmt --check`, eight unit tests including
+SQLite flush/schema round trip and failure/retry restoration, 16 shared-fixture comparisons against the
+Python socket and DNS event parsers, `cargo clippy --all-targets -- -D warnings`,
+release build, inventory check (742 items: 660 local, 82 elementary) and
+`git diff --check`. Socket and DNS event parsing have same-fixture differential
+coverage; full daemon restart/flush/retry comparison, install/rollback rehearsal and
+desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
+
+The inventory now includes all scoped files rather than only selected source
+extensions: 742 paths are assigned to 228 first-pass path-derived component
+groups. This added extensionless hooks, workflow files, documents and inputs;
+semantic component boundaries and conversion status still need review.
+
+The panel provenance tool now replaces the Python commands in the Rust
+branch's three factory build scripts; the staged image exposes the Rust binary
+at the existing `verify-panel-packages` command path. Its unit checks and
+Python/Rust fixtures cover package version acceptance/rejection, `--only`,
+`--skip-plugins`, that legacy invocation path, artifact output, missing plugins
+and digest mismatch. Cargo is required both on the host finalizer and in the
+Apple Silicon BuildPackages environment. Full arm64 image admission remains
+open.
+
+Added `rust-candidate-review.yml`: it runs Rust parity/build checks daily and
+builds a non-publishing arm64 image artifact weekly after those checks pass.
+The repository's existing upstream watcher polls every six hours. GitHub only
+runs scheduled workflows from the default branch, so this schedule remains
+inactive while the Rust branch is only a local unpublished branch.
+
+Ran the workflow's Rust/parity command sequence locally on this checkout:
+13 power differential cases, 12 Wi-Fi differential cases, eight netusage unit
+cases plus 16 parser fixtures, and two panel-provenance unit checks plus four
+Python/Rust command tests all passed. Every crate passed format, Clippy and
+release build; inventory and workflow YAML checks passed. This is local CI
+evidence, not a GitHub Actions run or a completed arm64 image build.
+
+The Rust branch and this batch remain local. Public push was rejected by the
+automatic approval review because it would publish repository contents; no
+push or external publication has occurred. Next: get the panel tool candidate
+through a full arm64 image build, then continue with the brightness and keyboard
+backlight components. Full semantic inventory remains open; the cadence workflow
+is prepared but its scheduled runs are inactive until it reaches the default
+branch.
+
+## 2026-10-20 — Rust panel tool integration and parity follow-up
+
+The factory desktop-indicator, network-indicator and quick-settings build
+scripts now compile and call the Rust panel-provenance tool. The Rust executable
+is staged at the existing `verify-panel-packages` path, including matching
+Python/Rust command behavior for invalid CLI input. `cargo` is declared in the
+mkosi build environment, local preflight, and image-building CI dependencies.
+The Python tools remain the differential reference and rollback source.
+
+Validation passed: two Rust unit tests, five Python/Rust CLI parity tests,
+`cargo fmt --check`, Clippy with warnings denied, release build, three local
+preflight tests, workflow YAML parsing, shell syntax checks, inventory check and
+`git diff --check`. The full mkosi image was not built: this host lacks `just`,
+mkosi and podman. The weekly arm64 image job has not run, and no target image or
+device qualification is claimed. Changes remain on the local `rust` branch;
+no publication occurred. Next: run the arm64 image admission job when available,
+then continue the per-component inventory and parity conversions.
+
+The next component, ambient keyboard lighting, now has a dependency-free Rust
+candidate at `mseries/rust/keyboard-backlight/`. Six tests cover ALS sensor
+selection, Python-compatible rounding and curve behavior, manual override
+pause, deadband, and step sizing; format, Clippy, and release-build checks pass.
+The fake UPower/logind Python/Rust parity fixture passes too. It remains
+uninstalled pending live system integration and Apple Silicon image admission.
+The daily Rust candidate workflow now builds and parity-checks this crate too.
+The Rust brightness-bridge candidate now exports the existing GNOME contract
+through native GIO. Five policy tests, Clippy, and a release build pass on this
+host; the service remains uninstalled pending D-Bus runtime parity and arm64
+image admission.
+
+Inventory: 753 scoped files (671 local, 82 elementary-owned inputs) across
+230 path groups and 206 project IDs. Project IDs now join the power, Wi-Fi,
+netusage, panel-provenance, keyboard-lighting, and brightness-bridge Rust
+candidates to their reference implementations and related installer/tests. The
+project table also records the Asahi package source, M-series quick-settings widgets, and the
+optimization reference as distinct update items, and group local mkosi overlay
+files with the Apple Silicon image integration. Semantic boundary review remains
+open for the remaining groups.
+
+## 2026-10-20 — Rust brightness bridge D-Bus fixture
+
+Added a private session-bus integration harness for the Rust GNOME brightness
+service. Its fake Mutter endpoint implements `Backlight` and `SetBacklight`;
+the harness checks dim/restore, preserving a manual change during dimming,
+`BrightnessChanged`, ambient target conversion and validation, and both
+GSettings gates. The fixture compiles successfully with the host GIO headers,
+and the Rust crate still passes format, Clippy with warnings denied, and all
+five unit tests.
+
+The integration run could not start here: this macOS `dbus-daemon` requires a
+launchd session socket, while the sandbox denies binding a private Unix socket.
+The harness is now part of the arm64 CI candidate job; its run is pending. The
+Rust bridge remains uninstalled pending that result and full arm64 image
+admission. The current inventory is 756 scoped files (674 local and 82
+elementary-owned upstream inputs), 230 path groups, and 206 project IDs.
+
+## 2026-10-20 — project inventory and Elementary source watch
+
+Corrected source-role classification so unknown non-code files no longer count
+as executable implementations. The inventory now distinguishes implementation
+code, upstream patches, verification fixtures, documentation, binary assets,
+and declarative configuration. Added focused classifier checks to the daily
+Rust candidate workflow.
+
+Added separate six-hour watcher entries for the Elementary OS base, Gala,
+Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
+Sound Indicator, and Keyboard Indicator repositories. The branch/PR discovery
+watch also captures those ten repositories' branch and open PR heads. These are
+source observations only; they do not move build pins.
+The inventory covers 758 paths (676 maintained locally and 82 elementary
+upstream inputs), 230 path groups, and 206 project records. A machine-readable
+ledger now records source pins, license evidence, Rust targets, parity
+contracts, and intentional enhancements independently for the ten core
+Elementary repositories. Extending that contract to all remaining upstream and
+local project records remains open; all ten full-project Elementary Rust
+replacements are still unstarted.
+
+## 2026-10-20 — Elementary per-project Rust target register
+
+Added `mseries/rust/elementary-projects.json` for elementary/os, Gala,
+Wingpanel, Dock, Files, Quick Settings, Network Indicator, Power Indicator,
+Sound Indicator, Keyboard Indicator, metapackages, seeds, and platform. Added
+`elementary-build-inputs.json` with separate seed and platform commit/file hashes
+and explicit unverified-license status. Each record links its current source
+pin and consumers, license evidence, Rust replacement target, behavioral parity
+contract, and intentional M-series enhancements. The registry test checks that
+all ten sources appear in both upstream watchers and that pin values remain in
+their listed consumers. The daily Rust candidate workflow runs this check.
+
+Expanded `mseries/rust/README.md` to make full executable-stack replacement the
+long-term target while keeping declarative assets/configuration in their native
+formats and requiring explicit ownership for any native executable exception.
+The existing Rust candidates remain partial components; no full desktop or OS
+parity is claimed. Inventory now includes 758 scoped files (676 local, 82
+Elementary-owned upstream), 230 directory groups, and 206 project IDs. Next:
+expand the semantic project ledger beyond the ten core Elementary repositories
+and begin parity conversion one independently built project at a time. Changes
+remain local on `rust`; publication has not been authorized.
+
+## 2026-10-20 — Rust ISO volume-label conversion
+
+Added the dependency-free `mseries/rust/iso-label/` CLI and changed
+`assemble-iso.sh` to compute the ISO 9660 label through the Rust crate. The
+normalization preserves the shell helper's uppercase ASCII filtering,
+hyphen-to-underscore mapping, and 32-byte truncation. The old helper remains a
+differential reference. Two Rust unit tests and six Python/Rust vs shell cases
+pass; format, Clippy, release build, shell fixture, and assembly-script syntax
+checks pass. Both the daily Rust candidate and wiring-validation workflows now
+build and compare the Rust command.
+
+The inventory now includes the root ISO assembler and groups the Rust crate,
+legacy reference, and fixtures as one migration project: 764 items (682 local,
+82 Elementary-owned upstream), 232 path groups, and 206 project IDs. The Rust
+helper is in use in the ISO build path; this does not qualify the complete image
+or convert the rest of the assembly pipeline. Changes remain local on `rust`.
+
+Extended the generated inventory schema so all 206 project records now have a
+Rust target or non-code disposition, migration status, parity-contract status,
+and separate enhancement-review status. Candidate evidence is not represented
+as full project parity; projects without feature-level contracts remain marked
+for semantic review.
+
+## 2026-10-20 — atomic app activation Rust candidate
+
+Added the independent `mseries/rust/atomic-app/` Rust CLI for the existing
+Signal `--atomic` release flow. It validates release paths and entrypoints,
+preserves file permissions and modification times, stages and syncs complete
+trees, serializes writers with `flock`, atomically replaces the generation
+selector, and retains the Python implementation as the behavior reference.
+`mseries/stage-factory-enhancements.sh` builds the binary into
+`/usr/libexec/mseries/atomic-app`; the Signal installer copies that staged
+binary before opting into Rust. It can build from the checked-out crate when
+Cargo is available on a system without the staged binary.
+
+Validation: four Rust unit tests including post-switch sync failure, Clippy
+with warnings denied, release build, eight paired Python/Rust CLI scenarios
+(deploy/update, status, launch, rollback, validation failures, symlinks,
+concurrency, and metadata), plus all nine legacy Python tests pass. The former
+macOS path assertion was corrected to compare canonical temp paths. The full
+Apple Silicon image build and a real Signal ARM64 install/update/rollback cycle
+remain pending; the default non-atomic Signal install is unchanged.
+
+Updated both Rust CI workflows to build the crate and run the parity suite.
+Inventory now has 769 paths (687 local, 82 Elementary-owned upstream), 233
+directory groups, and 204 project records. This remains a candidate pending
+image and live application qualification. Changes remain local on `rust`.
+
+
+## 2026-10-20 — Elementary package-generator inputs
+
+Added separate source records for `elementary/seeds` and `elementary/platform`,
+which the pinned `elementary/metapackages` project consumes through Germinate.
+Their source commits and selected seed-file blob hashes are in
+`mseries/rust/elementary-build-inputs.json`; neither repository declares a
+license at the audited revision, so no seed content was copied into the Rust
+lane. That register separately pins Ubuntu Resolute Germinate 2.49 as the
+behavior reference, with source SHA-256 verification still open. An
+independently authored parser candidate handles seed structure, included
+collections, inheritance, headers, documented entry types, seed-level
+blacklists, and architecture qualifiers. It now also parses binary package
+metadata and computes basic architecture-aware Depends/Pre-Depends closure,
+with optional Recommends. Sixteen Rust unit tests, strict Clippy, and a release
+build pass. No apt/Germinate differential comparison or Debian output parity
+has run. The source register and branch/PR watchers now include both
+repositories. The generated file inventory has 796 paths (714 local, 82
+Elementary-owned upstream), 238 path groups, and 205 path-derived projects.
+The crate is an unqualified Rust candidate, not a package-generator or image
+parity claim. Changes remain local on `rust`.
 
 ## Dependency audit and CodexBar 0.77.0 pin — 2026-10-18
 

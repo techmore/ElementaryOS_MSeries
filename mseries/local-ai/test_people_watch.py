@@ -60,5 +60,26 @@ class PeopleWatch(unittest.TestCase):
         self.assertEqual(self.run_main(), 0)          # baseline was not overwritten
 
 
+class ElementaryProjectRoster(unittest.TestCase):
+    def test_each_core_elementary_source_is_watched_independently(self):
+        core = {
+            'elementary/os', 'elementary/gala', 'elementary/wingpanel',
+            'elementary/dock', 'elementary/files', 'elementary/quick-settings',
+            'elementary/panel-network', 'elementary/panel-power',
+            'elementary/wingpanel-indicator-sound', 'elementary/panel-keyboard',
+        }
+        people = json.loads((HERE / 'people-watch.json').read_text())
+        branches = json.loads((HERE / 'branch-watch.json').read_text())['sources']
+        people_repos = [entry['repo'] for entry in people if 'repo' in entry]
+        branch_repos = [entry['repo'] for entry in branches]
+        self.assertTrue(core.issubset(people_repos), sorted(core - set(people_repos)))
+        self.assertTrue(core.issubset(branch_repos), sorted(core - set(branch_repos)))
+        for repo in core:
+            self.assertEqual(people_repos.count(repo), 1, repo)
+            self.assertEqual(branch_repos.count(repo), 1, repo)
+            source = next(item for item in branches if item['repo'] == repo)
+            self.assertTrue(source['discover_branches'], repo)
+            self.assertTrue(source['open_prs'], repo)
+
 if __name__ == '__main__':
     unittest.main()

@@ -31,25 +31,27 @@ Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
 height up from the bottom (`HEIGHT_FROM_BOTTOM` in the script).
 The shortcuts are registered by `~/.local/libexec/mseries-launcher-keys`, which
-starts at Pantheon login and re-adds them if `custom-keybindings` is ever emptied
-(it was after one reboot, leaving the per-shortcut entries orphaned). Undo by
+starts at Pantheon login and re-adds them if `custom-keybindings` changes. The
+factory image installs this helper from the Rust `launcher-keys` crate; older
+images without the binary use the retained Python helper. Undo by
 deleting `~/.config/autostart/mseries-launcher-keys.desktop`, stopping that helper,
 and removing the two `mseries-launcher` entries from
 `org.gnome.settings-daemon.plugins.media-keys custom-keybindings`.
 
 ## Command shortcuts and brightness
 
-Run `python3 mseries/apply-desktop-settings.py` as the desktop user.
+Run `bash mseries/post-install.sh --only settings` as the desktop user. The
+settings stage invokes `/usr/libexec/mseries/apply-desktop-settings`, built in
+Rust and included in the factory image. The former Python implementation stays
+in `mseries/apply-desktop-settings.py` as a behavior reference.
 It preserves existing XKB options and adds `ctrl:swap_lwin_lctl` and
 `ctrl:swap_rwin_rctl`: both Command keys become Ctrl (C/V/A/Z/S etc.), and both
-physical Ctrl keys become Super. It fills blank media-key bindings with the
-standard mute, volume-down and volume-up keys while preserving existing custom
-bindings. To undo the keyboard change, remove both options from
-`org.gnome.desktop.input-sources` → `xkb-options`; restore prior values for the
-`volume-mute`, `volume-down` and `volume-up` keys in
-`org.gnome.settings-daemon.plugins.media-keys` to undo the media-key setup.
-The script also uses title-bar layout `close:minimize,maximize`, adding a
-Minimize button beside Maximize. Restore `close:maximize` to undo this.
+physical Ctrl keys become Super. It fills blank mute/volume bindings with the
+standard media keys while preserving custom bindings and enables natural mouse
+scrolling. Remove both XKB options from
+`org.gnome.desktop.input-sources xkb-options` to undo the keyboard change.
+The script uses title-bar layout `close,minimize,maximize:`, placing those
+buttons on the left. Restore your previous `button-layout` value to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
 
 Physical Command+Shift+3 captures the full screen; Command+Shift+4 selects an

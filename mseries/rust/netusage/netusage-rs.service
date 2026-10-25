@@ -1,0 +1,14 @@
+[Unit]
+Description=Per-process and per-host network usage logger (Rust candidate)
+
+[Service]
+ExecStart=%h/.local/lib/netusage/mseries-netusage-rs
+Restart=on-failure
+RestartSec=10
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=10%
+MemoryMax=96M
+
+[Install]
+WantedBy=default.target

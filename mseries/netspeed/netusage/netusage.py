@@ -146,6 +146,44 @@ def ignore_name(name):
     return name == "localhost" or name.endswith(".arpa") or name.endswith(".localhost")
 
 
+def decode_dns_message(msg, now, recent_a):
+    """Normalize one resolved monitor event for aggregation and fixture tests."""
+    try:
+        q = msg["question"][0]
+    except (TypeError, KeyError, IndexError):
+        return None
+    if not isinstance(q, dict):
+        return None
+    name = q.get("name", "").lower().rstrip(".")
+    if not name or ignore_name(name):
+        return None
+
+    qtype = q.get("type")
+    ok = msg.get("state") == "success"
+    answer_ips = []
+    if ok:
+        for entry in msg.get("answer") or ():
+            addr = entry.get("rr", {}).get("address")
+            if addr and len(addr) in (4, 16):
+                ip = addr_to_str(addr)
+                if ip:
+                    answer_ips.append(ip)
+
+    if qtype == 1:
+        recent_a[name] = now
+        count = True
+    elif qtype == 28:
+        count = now - recent_a.get(name, 0) > 3
+    else:
+        count = False
+    return {
+        "name": name,
+        "answer_ips": answer_ips,
+        "count": count,
+        "failure_count": int(count and not ok),
+    }
+
+
 def dns_monitor():
     """Runs in a thread; restarts the monitor if resolved restarts."""
     recent_a = {}
@@ -165,35 +203,21 @@ def dns_monitor():
                 break
             try:
                 msg = json.loads(line)
-                q = msg["question"][0]
-            except (ValueError, KeyError, IndexError):
+            except ValueError:
                 continue
-
-            name = q.get("name", "").lower().rstrip(".")
-            if not name or ignore_name(name):
-                continue
-
-            qtype = q.get("type")
-            ok = msg.get("state") == "success"
             now = time.time()
+            event = decode_dns_message(msg, now, recent_a)
+            if event is None:
+                continue
 
             with lock:
-                if ok:
-                    learn_answers(name, msg.get("answer"))
-
-                # Count one lookup per name: A queries, plus AAAA only when no A just preceded it.
-                count = False
-                if qtype == 1:
-                    recent_a[name] = now
-                    count = True
-                elif qtype == 28:
-                    count = now - recent_a.get(name, 0) > 3
-                if count:
+                for ip in event["answer_ips"]:
+                    ip_names[ip] = event["name"]
+                if event["count"]:
                     hour = int(now) // 3600 * 3600
-                    entry = pending_dns[(hour, name)]
+                    entry = pending_dns[(hour, event["name"])]
                     entry[0] += 1
-                    if not ok:
-                        entry[1] += 1
+                    entry[1] += event["failure_count"]
 
             if len(recent_a) > 2048:
                 recent_a.clear()

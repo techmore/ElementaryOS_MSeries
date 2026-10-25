@@ -30,7 +30,7 @@ source "$here/lib-timing.sh" 2>/dev/null || { timing_begin() { :; }; timing_end(
 
 # name|kind|default|script|what
 STAGES=(
-  "settings|user|on|apply-desktop-settings.py|Mac Command/Ctrl mapping, media keys, launcher, title buttons, screenshots, brightness keys"
+  "settings|user|on|apply-desktop-settings|Mac Command/Ctrl mapping, media keys, launcher, title buttons, screenshots, brightness keys"
   "brightness|user|on|install-brightness-bridge.sh|brightness bridge for Pantheon"
   "kbd-backlight|user|on|install-keyboard-backlight.sh|keyboard backlight helper"
   "screenshots|user|on|install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
@@ -128,10 +128,22 @@ done
 if (( dry )); then
   echo "dry run: nothing will be changed"
   for s in "${selected[@]}"; do
+    n=$(field "$s" 0)
     script=$here/$(field "$s" 3)
     runner=bash
-    [[ $script == *.py ]] && runner=python3
-    printf '  [%s] %s %s\n' "$(field "$s" 0)" "$runner" "$script"
+    shown=$script
+    if [[ $n == settings ]]; then
+      if [[ -x /usr/libexec/mseries/apply-desktop-settings ]]; then
+        runner=
+        shown=/usr/libexec/mseries/apply-desktop-settings
+      else
+        runner=python3
+        shown=$here/apply-desktop-settings.py
+      fi
+    elif [[ $script == *.py ]]; then
+      runner=python3
+    fi
+    printf '  [%s] %s%s\n' "$n" "${runner:+$runner }" "$shown"
   done
   exit 0
 fi
@@ -151,7 +163,19 @@ for s in "${selected[@]}"; do
   echo "==> $n: $(field "$s" 4)"
   # pipefail makes the pipeline status the installer's own, not tee's
   script=$here/$(field "$s" 3)
-  if [[ $script == *.py ]]; then
+  if [[ $n == settings ]]; then
+    if [[ -x /usr/libexec/mseries/apply-desktop-settings ]]; then
+      settings_command=(/usr/libexec/mseries/apply-desktop-settings)
+    else
+      echo "Rust desktop settings binary is not installed; using the retained Python implementation for this system." | tee -a "$LOG"
+      settings_command=(python3 "$here/apply-desktop-settings.py")
+    fi
+    if ( cd "$repo" && "${settings_command[@]}" ) 2>&1 | tee -a "$LOG"; then
+      ok+=("$n"); stage_status=ok stage_rc=0
+    else
+      failed+=("$n")
+    fi
+  elif [[ $script == *.py ]]; then
     if ( cd "$repo" && python3 "$script" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); stage_status=ok stage_rc=0; else failed+=("$n"); fi
   elif ( cd "$repo" && bash "$script" ) 2>&1 | tee -a "$LOG"; then
     ok+=("$n"); stage_status=ok stage_rc=0

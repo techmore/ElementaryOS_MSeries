@@ -1,0 +1,1043 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "observed_at": "2026-10-25T22:47:55.793790+00:00",
+  "metapackages_commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+  "metapackages_archive_sha256": "8d719f353e0275d7b23b1513d1a40fda1488ad193c3b6be8c6552604cb541c82",
+  "upstream_update_config_sha256": "7f6968cd061133d7d3938090808c2bb41291298482fc31f41c021de030fd3d14",
+  "distribution": "resolute",
+  "components": [
+    "main",
+    "restricted",
+    "universe"
+  ],
+  "seed_collections": [
+    {
+      "id": "elementary/seeds",
+      "commit": "14c2cf95b32962b857589a0bac3198f80a331bce",
+      "source_archive_sha256": "75a2205d87f73e27ea16dda8a22965344b0e0ee2b85b101a71af6a87dc35c8e9"
+    },
+    {
+      "id": "elementary/platform",
+      "commit": "6d11ad3e4e4d65a20c4b63e2a2159f0683f9bf4f",
+      "source_archive_sha256": "10cf9af7c4a8f26a385c1b47a14babdfe2f151634daa306dbdcbbdfb2c843609"
+    }
+  ],
+  "archives": [
+    {
+      "url": "https://archive.ubuntu.com/ubuntu/",
+      "id": "archive-0",
+      "key": "ubuntu",
+      "architectures": [
+        "amd64"
+      ],
+      "sources": true,
+      "inrelease_url": "https://archive.ubuntu.com/ubuntu/dists/resolute/InRelease",
+      "indexes": [
+        {
+          "path": "main/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/main/binary-amd64/by-hash/SHA256/ed9ac41cb263efaecc5a06a0742dc56570e2fb5ff94c4f2e4b2fbdcddd73cf24",
+          "cache_hit": false,
+          "encoded_sha256": "ed9ac41cb263efaecc5a06a0742dc56570e2fb5ff94c4f2e4b2fbdcddd73cf24",
+          "encoded_size": 1480032,
+          "decoded_sha256": "92eb335c0ed27983d41a5a0efdf0edce3e67bfa34e8e987af9df260ca72d9bf9",
+          "decoded_size": 7581722
+        },
+        {
+          "path": "main/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/main/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": false,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/source/Sources",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/main/source/by-hash/SHA256/dce0fc8e2a473b26f729b1204fd4c12ae068428f743f96761392a059ab7bbfcd",
+          "cache_hit": false,
+          "encoded_sha256": "dce0fc8e2a473b26f729b1204fd4c12ae068428f743f96761392a059ab7bbfcd",
+          "encoded_size": 1001572,
+          "decoded_sha256": "f54e264953689edeeb3e7d741ee94bc81aada8059ee62108500dda6392410446",
+          "decoded_size": 4890187
+        },
+        {
+          "path": "restricted/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/restricted/binary-amd64/by-hash/SHA256/147c90b597ef6c1d1480f9cfe44f49201e9c2c0a1071f3ebec9e4de51690ccbd",
+          "cache_hit": false,
+          "encoded_sha256": "147c90b597ef6c1d1480f9cfe44f49201e9c2c0a1071f3ebec9e4de51690ccbd",
+          "encoded_size": 151900,
+          "decoded_sha256": "a8dbe8c0a9c548652f85cb1ee93a0ce560c6ad3ca7269e13657d9481a289635d",
+          "decoded_size": 1087693
+        },
+        {
+          "path": "restricted/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/restricted/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "restricted/source/Sources",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/restricted/source/by-hash/SHA256/bc0aec973848975a9e274031ae7d6bbe2f1cc0a1a8dc58e91e8cdf78f1c807b4",
+          "cache_hit": false,
+          "encoded_sha256": "bc0aec973848975a9e274031ae7d6bbe2f1cc0a1a8dc58e91e8cdf78f1c807b4",
+          "encoded_size": 18600,
+          "decoded_sha256": "82e54d106764dd71bd8e07aac854753b832e6700fd68ae0f2e8a316d87d875a9",
+          "decoded_size": 212006
+        },
+        {
+          "path": "universe/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/universe/binary-amd64/by-hash/SHA256/1587be86d66d38542325215e0e109f75bd695c8f24d793ace2762038a6ad581e",
+          "cache_hit": false,
+          "encoded_sha256": "1587be86d66d38542325215e0e109f75bd695c8f24d793ace2762038a6ad581e",
+          "encoded_size": 15960824,
+          "decoded_sha256": "9c009342905706a05822f6e751f5b1ac34b687f054bfca9a0a652178445fc44c",
+          "decoded_size": 76792699
+        },
+        {
+          "path": "universe/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/universe/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "universe/source/Sources",
+          "status": "verified",
+          "url": "https://archive.ubuntu.com/ubuntu/dists/resolute/universe/source/by-hash/SHA256/9c732321580ae2824f7d8cb936e12cca435a60a252d0654b8cc2a0011dc82903",
+          "cache_hit": false,
+          "encoded_sha256": "9c732321580ae2824f7d8cb936e12cca435a60a252d0654b8cc2a0011dc82903",
+          "encoded_size": 13374880,
+          "decoded_sha256": "e324d966b70cedc32d7c308b96574d2205f15822c25b4e93d2f7607c22bcf6a7",
+          "decoded_size": 66145096
+        }
+      ],
+      "status": "verified",
+      "inrelease_sha256": "45f95ce276cdba3e41870516a130e03c58b8b7a79e9546b0efe9e526d255740c",
+      "release_date": "Thu, 23 Apr 2026 17:07:15 UTC",
+      "valid_until": null,
+      "signing_fingerprints": [
+        "F6ECB3762474EDA9D21B7022871920D1991BC93C"
+      ],
+      "unknown_cosigner_key_ids": [],
+      "keyring_sha256": "80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31"
+    },
+    {
+      "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/",
+      "id": "archive-1",
+      "key": "elementary-os.gpg",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "sources": true,
+      "inrelease_url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/InRelease",
+      "indexes": [
+        {
+          "path": "main/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/main/binary-amd64/by-hash/SHA256/1af03617007a75e85213b504fc9b20415f6394d728d14ba26cf5b9f376c7331b",
+          "cache_hit": false,
+          "encoded_sha256": "1af03617007a75e85213b504fc9b20415f6394d728d14ba26cf5b9f376c7331b",
+          "encoded_size": 35360,
+          "decoded_sha256": "b5b5af23507be1bace928ac3b8ca28980ea5fff1632348bf5561035721840ec9",
+          "decoded_size": 140053
+        },
+        {
+          "path": "main/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/main/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/main/binary-arm64/by-hash/SHA256/e0cd971d0698923b4456c398e37f6e6f47c6035816acf03c26b4ad6b4e7e32bf",
+          "cache_hit": false,
+          "encoded_sha256": "e0cd971d0698923b4456c398e37f6e6f47c6035816acf03c26b4ad6b4e7e32bf",
+          "encoded_size": 35392,
+          "decoded_sha256": "6bf9c41ba9520ac6dcec6cb9e8a8a28277f60ce00553c1fc3bc7bd15f8f3da53",
+          "decoded_size": 140144
+        },
+        {
+          "path": "main/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/main/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/source/Sources",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/daily/ubuntu/dists/resolute/main/source/by-hash/SHA256/2b5d830f44725a021d94166a96f15e88969a7b0e5530f9357fa905c613c99d1e",
+          "cache_hit": false,
+          "encoded_sha256": "2b5d830f44725a021d94166a96f15e88969a7b0e5530f9357fa905c613c99d1e",
+          "encoded_size": 34604,
+          "decoded_sha256": "28fac340bd7cd475f6cbcecf0a4ab842686b3a2a920b7a3111721d05a75749cb",
+          "decoded_size": 153856
+        },
+        {
+          "path": "restricted/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/source/Sources",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/source/Sources",
+          "status": "not-published"
+        }
+      ],
+      "status": "verified",
+      "inrelease_sha256": "a1c3e2fa3e7e797b92571c352635650e277386da4f2a84c87b3b0b2083517011",
+      "release_date": "Sun, 25 Oct 2026 20:51:49 UTC",
+      "valid_until": null,
+      "signing_fingerprints": [
+        "364837CF91E070910231C2FE8219B3A0AEF3D498"
+      ],
+      "unknown_cosigner_key_ids": [
+        "BF36996C4E1F8A59"
+      ],
+      "keyring_sha256": "6a6f875ae237a359419638bec9f43769dfb9d137a7d04b6821fe13dd5998ea03"
+    },
+    {
+      "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/",
+      "id": "archive-2",
+      "key": "elementary-os.gpg",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "sources": true,
+      "inrelease_url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/InRelease",
+      "indexes": [],
+      "status": "unavailable",
+      "inrelease_http_status": 403,
+      "unavailable_index_probes": [
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/debian-installer/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/source/Sources.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/source/Sources.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/source/Sources.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/main/source/Sources",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/debian-installer/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/source/Sources.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/source/Sources.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/source/Sources.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/restricted/source/Sources",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-amd64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-amd64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-amd64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-amd64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-arm64/Packages.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-arm64/Packages.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-arm64/Packages.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/debian-installer/binary-arm64/Packages",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/source/Sources.xz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/source/Sources.bz2",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/source/Sources.gz",
+          "http_status": 403
+        },
+        {
+          "url": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/dists/resolute/universe/source/Sources",
+          "http_status": 403
+        }
+      ]
+    },
+    {
+      "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/",
+      "id": "archive-3",
+      "key": "elementary-os-os-patches.gpg",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "sources": true,
+      "inrelease_url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/InRelease",
+      "indexes": [
+        {
+          "path": "main/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/main/binary-amd64/by-hash/SHA256/5283d3c3a2dc518843ff3f09d686bdc35025b09d3c24c2439a0c69d9c59a2d20",
+          "cache_hit": false,
+          "encoded_sha256": "5283d3c3a2dc518843ff3f09d686bdc35025b09d3c24c2439a0c69d9c59a2d20",
+          "encoded_size": 28312,
+          "decoded_sha256": "d8241a73d1afc6eff40fe1917ff5027572e049ff81ac9c9ce4b620a3f02e5e2c",
+          "decoded_size": 119352
+        },
+        {
+          "path": "main/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/main/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/main/binary-arm64/by-hash/SHA256/17589a179e50608fe366490a9865a036554af094a4b3be9b8496c18d11f8647c",
+          "cache_hit": false,
+          "encoded_sha256": "17589a179e50608fe366490a9865a036554af094a4b3be9b8496c18d11f8647c",
+          "encoded_size": 24340,
+          "decoded_sha256": "4b7d91f4f9e73dd18d56d98e1414ddd503a62c7b045781f252fe31c59f9af1e8",
+          "decoded_size": 98351
+        },
+        {
+          "path": "main/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/main/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/source/Sources",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/os-patches/ubuntu/dists/resolute/main/source/by-hash/SHA256/3456454c6dd73444ab0c1f3afb47f56e291dad76dcaf21afa21449a2c51522a3",
+          "cache_hit": false,
+          "encoded_sha256": "3456454c6dd73444ab0c1f3afb47f56e291dad76dcaf21afa21449a2c51522a3",
+          "encoded_size": 12412,
+          "decoded_sha256": "4bcf07a2529b497d9e6f203d04643fb20aabce0f9f7063f7e6641d3da461a4b1",
+          "decoded_size": 46618
+        },
+        {
+          "path": "restricted/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/source/Sources",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/source/Sources",
+          "status": "not-published"
+        }
+      ],
+      "status": "verified",
+      "inrelease_sha256": "678c82e78f183fa4e2fb76764be5bd1eaab2d81105873cd2b93f7db05ed7aef3",
+      "release_date": "Sun, 25 Oct 2026 10:21:24 UTC",
+      "valid_until": null,
+      "signing_fingerprints": [
+        "364837CF91E070910231C2FE8219B3A0AEF3D498"
+      ],
+      "unknown_cosigner_key_ids": [
+        "BF36996C4E1F8A59"
+      ],
+      "keyring_sha256": "e8695a039a8a8a197bfb386001ad66517061f7b215eee244aa1b7ae495ca208e"
+    },
+    {
+      "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/",
+      "id": "archive-4",
+      "key": "elementary-os.gpg",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "sources": true,
+      "inrelease_url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/InRelease",
+      "indexes": [
+        {
+          "path": "main/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/main/binary-amd64/by-hash/SHA256/b93dd233c20ac3fc27a91f65d0b14163467ad387f1ef5dfadc2dc8476b887327",
+          "cache_hit": false,
+          "encoded_sha256": "b93dd233c20ac3fc27a91f65d0b14163467ad387f1ef5dfadc2dc8476b887327",
+          "encoded_size": 5124,
+          "decoded_sha256": "ca55a68a5549535c4a03c09ee35159d7e7bef48f143d994143418a332d6e5a2d",
+          "decoded_size": 16255
+        },
+        {
+          "path": "main/debian-installer/binary-amd64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/main/debian-installer/binary-amd64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/main/binary-arm64/by-hash/SHA256/5585d448018ddb40c72beb4a5162fb6892badb646558365f9990e981c912686e",
+          "cache_hit": false,
+          "encoded_sha256": "5585d448018ddb40c72beb4a5162fb6892badb646558365f9990e981c912686e",
+          "encoded_size": 5120,
+          "decoded_sha256": "9eb36f2a22ff68f46ac7e62241e33af1355067640ac81d81b7185236619a237a",
+          "decoded_size": 16257
+        },
+        {
+          "path": "main/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/main/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "main/source/Sources",
+          "status": "verified",
+          "url": "https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/resolute/main/source/by-hash/SHA256/db17f3fbba74271addaec3b83410af7856fbfb10149f5a20d8c4ff6e69e8ae40",
+          "cache_hit": false,
+          "encoded_sha256": "db17f3fbba74271addaec3b83410af7856fbfb10149f5a20d8c4ff6e69e8ae40",
+          "encoded_size": 3740,
+          "decoded_sha256": "e81755fbcb99234def14855aa4d225c53695fc3486157061d5ef09e2eba3822f",
+          "decoded_size": 12362
+        },
+        {
+          "path": "restricted/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "restricted/source/Sources",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-amd64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/debian-installer/binary-arm64/Packages",
+          "status": "not-published"
+        },
+        {
+          "path": "universe/source/Sources",
+          "status": "not-published"
+        }
+      ],
+      "status": "verified",
+      "inrelease_sha256": "65ae00f465b4d9f9262f5db5c355e4695e88654f9b5434aa9926c37ba25ecfe0",
+      "release_date": "Sat, 10 Oct 2026 16:20:01 UTC",
+      "valid_until": null,
+      "signing_fingerprints": [
+        "364837CF91E070910231C2FE8219B3A0AEF3D498"
+      ],
+      "unknown_cosigner_key_ids": [
+        "BF36996C4E1F8A59"
+      ],
+      "keyring_sha256": "6a6f875ae237a359419638bec9f43769dfb9d137a7d04b6821fe13dd5998ea03"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/",
+      "id": "archive-5",
+      "key": "ubuntu",
+      "architectures": [
+        "arm64"
+      ],
+      "sources": false,
+      "inrelease_url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/InRelease",
+      "indexes": [
+        {
+          "path": "main/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/main/binary-arm64/by-hash/SHA256/537715817d9ed77cc919f5123edb91a48d9ae97abf05588a8f18208cc7227e08",
+          "cache_hit": false,
+          "encoded_sha256": "537715817d9ed77cc919f5123edb91a48d9ae97abf05588a8f18208cc7227e08",
+          "encoded_size": 1468492,
+          "decoded_sha256": "f1139a214af70f615388f8d4b377f591767bb52e45adb133679479c27a4dde8c",
+          "decoded_size": 7533190
+        },
+        {
+          "path": "main/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/main/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "restricted/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/restricted/binary-arm64/by-hash/SHA256/02ebbd91ed9b8c1f4bc6888397cbe64344e80bff4645a11df3eb71e3fe6d4b17",
+          "cache_hit": false,
+          "encoded_sha256": "02ebbd91ed9b8c1f4bc6888397cbe64344e80bff4645a11df3eb71e3fe6d4b17",
+          "encoded_size": 187120,
+          "decoded_sha256": "a1e7c14a6fe3be98e31c5cb46c3d9070fa0cd9f38177aac57d97ec6ae53b4bfe",
+          "decoded_size": 1300856
+        },
+        {
+          "path": "restricted/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/restricted/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        },
+        {
+          "path": "universe/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/universe/binary-arm64/by-hash/SHA256/0a68c22478773d9681e098a3a1e650464aa707c4a557b4c3020678d92dfb53c0",
+          "cache_hit": false,
+          "encoded_sha256": "0a68c22478773d9681e098a3a1e650464aa707c4a557b4c3020678d92dfb53c0",
+          "encoded_size": 16202372,
+          "decoded_sha256": "6d9808157b5ee63b0cfcea5ce0e87bfb62ae4fa730a9d49c6054726afea48c7b",
+          "decoded_size": 75859126
+        },
+        {
+          "path": "universe/debian-installer/binary-arm64/Packages",
+          "status": "verified",
+          "url": "https://ports.ubuntu.com/ubuntu-ports/dists/resolute/universe/debian-installer/binary-arm64/by-hash/SHA256/0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "cache_hit": true,
+          "encoded_sha256": "0040f94d11d0039505328a90b2ff48968db873e9e7967307631bf40ef5679275",
+          "encoded_size": 32,
+          "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "decoded_size": 0
+        }
+      ],
+      "status": "verified",
+      "inrelease_sha256": "45f95ce276cdba3e41870516a130e03c58b8b7a79e9546b0efe9e526d255740c",
+      "release_date": "Thu, 23 Apr 2026 17:07:15 UTC",
+      "valid_until": null,
+      "signing_fingerprints": [
+        "F6ECB3762474EDA9D21B7022871920D1991BC93C"
+      ],
+      "unknown_cosigner_key_ids": [],
+      "keyring_sha256": "80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "artwork-amd64",
+      "native_sha256": "5b390ca33adfadd9f0f35e787d7d6283c568b2497fef9f7663367c4004fd765a",
+      "reference_sha256": "5b390ca33adfadd9f0f35e787d7d6283c568b2497fef9f7663367c4004fd765a",
+      "line_count": 2
+    },
+    {
+      "name": "artwork-arm64",
+      "native_sha256": "5b390ca33adfadd9f0f35e787d7d6283c568b2497fef9f7663367c4004fd765a",
+      "reference_sha256": "5b390ca33adfadd9f0f35e787d7d6283c568b2497fef9f7663367c4004fd765a",
+      "line_count": 2
+    },
+    {
+      "name": "artwork-recommends-amd64",
+      "native_sha256": "4c93920142778e2baa114d61046440639a2ef14499147ee9d64e9f1c05ebfce6",
+      "reference_sha256": "4c93920142778e2baa114d61046440639a2ef14499147ee9d64e9f1c05ebfce6",
+      "line_count": 5
+    },
+    {
+      "name": "artwork-recommends-arm64",
+      "native_sha256": "4c93920142778e2baa114d61046440639a2ef14499147ee9d64e9f1c05ebfce6",
+      "reference_sha256": "4c93920142778e2baa114d61046440639a2ef14499147ee9d64e9f1c05ebfce6",
+      "line_count": 5
+    },
+    {
+      "name": "desktop-amd64",
+      "native_sha256": "7a1864860720ad2eff5a5e4c4b54fd1fd2d84a8e3de662d0240520ef9d66f9dd",
+      "reference_sha256": "7a1864860720ad2eff5a5e4c4b54fd1fd2d84a8e3de662d0240520ef9d66f9dd",
+      "line_count": 33
+    },
+    {
+      "name": "desktop-arm64",
+      "native_sha256": "7a1864860720ad2eff5a5e4c4b54fd1fd2d84a8e3de662d0240520ef9d66f9dd",
+      "reference_sha256": "7a1864860720ad2eff5a5e4c4b54fd1fd2d84a8e3de662d0240520ef9d66f9dd",
+      "line_count": 33
+    },
+    {
+      "name": "desktop-recommends-amd64",
+      "native_sha256": "ce6528a7ca652ac5a06515d9c6081594ea730f2e5dcb392873f07340e6e72f4b",
+      "reference_sha256": "ce6528a7ca652ac5a06515d9c6081594ea730f2e5dcb392873f07340e6e72f4b",
+      "line_count": 189
+    },
+    {
+      "name": "desktop-recommends-arm64",
+      "native_sha256": "ab9d707053f57d7ff3e6da5d9843b7751567f8580df73afc9da5937bbf5fbc42",
+      "reference_sha256": "ab9d707053f57d7ff3e6da5d9843b7751567f8580df73afc9da5937bbf5fbc42",
+      "line_count": 190
+    },
+    {
+      "name": "elementary-sdk-amd64",
+      "native_sha256": "125dad8aeb6407bcb1f4b9b298b815fbebcc707fa465be53f27aa2b1d582409d",
+      "reference_sha256": "125dad8aeb6407bcb1f4b9b298b815fbebcc707fa465be53f27aa2b1d582409d",
+      "line_count": 32
+    },
+    {
+      "name": "elementary-sdk-arm64",
+      "native_sha256": "125dad8aeb6407bcb1f4b9b298b815fbebcc707fa465be53f27aa2b1d582409d",
+      "reference_sha256": "125dad8aeb6407bcb1f4b9b298b815fbebcc707fa465be53f27aa2b1d582409d",
+      "line_count": 32
+    },
+    {
+      "name": "elementary-sdk-recommends-amd64",
+      "native_sha256": "d2ebcd1d117cfaf4d928efd8260250fd083d2c2220187fb980f2fb905b742b64",
+      "reference_sha256": "d2ebcd1d117cfaf4d928efd8260250fd083d2c2220187fb980f2fb905b742b64",
+      "line_count": 12
+    },
+    {
+      "name": "elementary-sdk-recommends-arm64",
+      "native_sha256": "d2ebcd1d117cfaf4d928efd8260250fd083d2c2220187fb980f2fb905b742b64",
+      "reference_sha256": "d2ebcd1d117cfaf4d928efd8260250fd083d2c2220187fb980f2fb905b742b64",
+      "line_count": 12
+    },
+    {
+      "name": "live-amd64",
+      "native_sha256": "c7b04ca62eb291134f449586a2c324669f677bf95a7a8b58254284e8fbc9a94c",
+      "reference_sha256": "c7b04ca62eb291134f449586a2c324669f677bf95a7a8b58254284e8fbc9a94c",
+      "line_count": 12
+    },
+    {
+      "name": "live-arm64",
+      "native_sha256": "0484f3ce097a1710bdb7a5c04403cd7535dd3825cf3563ccf468eaabac03ed82",
+      "reference_sha256": "0484f3ce097a1710bdb7a5c04403cd7535dd3825cf3563ccf468eaabac03ed82",
+      "line_count": 13
+    },
+    {
+      "name": "live-recommends-amd64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "live-recommends-arm64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "metapackage-map",
+      "native_sha256": "49ece0953a21a40d55a84a62deda92c5e6303686814f182ec15dd0b27d34b35e",
+      "reference_sha256": "49ece0953a21a40d55a84a62deda92c5e6303686814f182ec15dd0b27d34b35e",
+      "line_count": 8
+    },
+    {
+      "name": "minimal-amd64",
+      "native_sha256": "3c49a8525ef4c030a534e94ad67a82564022616641e054dbc98db80f26540faf",
+      "reference_sha256": "3c49a8525ef4c030a534e94ad67a82564022616641e054dbc98db80f26540faf",
+      "line_count": 35
+    },
+    {
+      "name": "minimal-arm64",
+      "native_sha256": "3c49a8525ef4c030a534e94ad67a82564022616641e054dbc98db80f26540faf",
+      "reference_sha256": "3c49a8525ef4c030a534e94ad67a82564022616641e054dbc98db80f26540faf",
+      "line_count": 35
+    },
+    {
+      "name": "minimal-recommends-amd64",
+      "native_sha256": "39b063d465329d10ae0cc8268c6604973ca135acb8e3a0430549da646db5dc68",
+      "reference_sha256": "39b063d465329d10ae0cc8268c6604973ca135acb8e3a0430549da646db5dc68",
+      "line_count": 1
+    },
+    {
+      "name": "minimal-recommends-arm64",
+      "native_sha256": "39b063d465329d10ae0cc8268c6604973ca135acb8e3a0430549da646db5dc68",
+      "reference_sha256": "39b063d465329d10ae0cc8268c6604973ca135acb8e3a0430549da646db5dc68",
+      "line_count": 1
+    },
+    {
+      "name": "pantheon-amd64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "pantheon-arm64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "pantheon-recommends-amd64",
+      "native_sha256": "1aa78a71dc0fb8cb4c89b148bb74ee98a3091354a74d80e12a1f9f0ce169503b",
+      "reference_sha256": "1aa78a71dc0fb8cb4c89b148bb74ee98a3091354a74d80e12a1f9f0ce169503b",
+      "line_count": 14
+    },
+    {
+      "name": "pantheon-recommends-arm64",
+      "native_sha256": "1aa78a71dc0fb8cb4c89b148bb74ee98a3091354a74d80e12a1f9f0ce169503b",
+      "reference_sha256": "1aa78a71dc0fb8cb4c89b148bb74ee98a3091354a74d80e12a1f9f0ce169503b",
+      "line_count": 14
+    },
+    {
+      "name": "pantheon-shell-amd64",
+      "native_sha256": "1521f5a06b6d30d1a58b6086f5cf0fc9c54643846de700713bcd0d1034a2c55f",
+      "reference_sha256": "1521f5a06b6d30d1a58b6086f5cf0fc9c54643846de700713bcd0d1034a2c55f",
+      "line_count": 5
+    },
+    {
+      "name": "pantheon-shell-arm64",
+      "native_sha256": "1521f5a06b6d30d1a58b6086f5cf0fc9c54643846de700713bcd0d1034a2c55f",
+      "reference_sha256": "1521f5a06b6d30d1a58b6086f5cf0fc9c54643846de700713bcd0d1034a2c55f",
+      "line_count": 5
+    },
+    {
+      "name": "pantheon-shell-recommends-amd64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "pantheon-shell-recommends-arm64",
+      "native_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "line_count": 0
+    },
+    {
+      "name": "standard-amd64",
+      "native_sha256": "da4514909603202db6e1b774648d82b155dda5a6d0682296cc952e33c0b1f693",
+      "reference_sha256": "da4514909603202db6e1b774648d82b155dda5a6d0682296cc952e33c0b1f693",
+      "line_count": 28
+    },
+    {
+      "name": "standard-arm64",
+      "native_sha256": "da4514909603202db6e1b774648d82b155dda5a6d0682296cc952e33c0b1f693",
+      "reference_sha256": "da4514909603202db6e1b774648d82b155dda5a6d0682296cc952e33c0b1f693",
+      "line_count": 28
+    },
+    {
+      "name": "standard-recommends-amd64",
+      "native_sha256": "86dd3f837518c93b94915266033a2cedb9c7cd259b203a7b40c05baa05f533a1",
+      "reference_sha256": "86dd3f837518c93b94915266033a2cedb9c7cd259b203a7b40c05baa05f533a1",
+      "line_count": 25
+    },
+    {
+      "name": "standard-recommends-arm64",
+      "native_sha256": "86dd3f837518c93b94915266033a2cedb9c7cd259b203a7b40c05baa05f533a1",
+      "reference_sha256": "86dd3f837518c93b94915266033a2cedb9c7cd259b203a7b40c05baa05f533a1",
+      "line_count": 25
+    }
+  ],
+  "negative_signature_checks": [
+    "modified-signed-payload-rejected",
+    "unknown-only-signatures-rejected"
+  ],
+  "germinate_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+  "debootstrap_version": "1.0.142ubuntu2",
+  "bootstrap_sets": [
+    {
+      "architecture": "amd64",
+      "sha256": "991ba88dc23e724c3b856be18feda8e5c19bba11d83e7fa2610e15c69bad667f",
+      "package_count": 226
+    },
+    {
+      "architecture": "arm64",
+      "sha256": "991ba88dc23e724c3b856be18feda8e5c19bba11d83e7fa2610e15c69bad667f",
+      "package_count": 226
+    }
+  ],
+  "qualification_source": {
+    "candidate_commit": "b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea",
+    "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243",
+    "artifact_name": "rust-real-list-parity-40240688243",
+    "artifact_file_sha256": "23650f5e4fd63f55a291907b8b8cadb338ade44e342b4694ef8a559bca35bd73"
+  },
+  "scope": "All eight configured metapackage profiles, amd64/arm64, main/restricted/universe, all configured mirrors in order. Thirty signed indexes are verified; the unavailable testing PPA is represented by sixty unavailable endpoint probes. The unchanged Germinate updater runs against the same captured decoded archive and pinned seed inputs with actual debootstrap commands. All 33 generated map/list files match byte-for-byte. Acquisition-location rewrites and process-output observation are confined to the test harness. Production native acquisition/bootstrap, complete solver semantics, package installability, changelog/delta maintenance and image/runtime qualification remain open."
+}

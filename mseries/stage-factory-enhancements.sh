@@ -11,8 +11,27 @@ if [[ -f $root/etc/dconf/profile/user ]]; then
     install -Dm644 "$root/etc/dconf/profile/user" "$stage/etc/dconf/profile/user"
 fi
 bash "$here/enhance.sh" --root "$stage" --only tuning,power,diagnostics,audio,session,theme,payload
+if ! command -v cargo >/dev/null 2>&1; then
+    echo 'cargo is required to build the Rust factory tools' >&2
+    exit 1
+fi
+cargo build --locked --release --manifest-path "$here/rust/panel-provenance/Cargo.toml"
+install -Dm755 "$here/rust/panel-provenance/target/release/mseries-panel-provenance-rs" \
+    "$stage/usr/libexec/mseries/verify-panel-packages"
+cargo build --locked --release --manifest-path "$here/rust/atomic-app/Cargo.toml"
+install -Dm755 "$here/rust/atomic-app/target/release/mseries-atomic-app" \
+    "$stage/usr/libexec/mseries/atomic-app"
+cargo build --locked --release --manifest-path "$here/rust/launcher-keys/Cargo.toml"
+install -Dm755 "$here/rust/launcher-keys/target/release/mseries-launcher-keys" \
+    "$stage/usr/libexec/mseries/launcher-keys"
+cargo build --locked --release --manifest-path "$here/rust/desktop-settings/Cargo.toml"
+install -Dm755 "$here/rust/desktop-settings/target/release/mseries-desktop-settings" \
+    "$stage/usr/libexec/mseries/apply-desktop-settings"
+install -Dm755 "$here/mseries-launcher.py" \
+    "$stage/usr/share/elementary-mac/mseries/mseries-launcher.py"
+install -Dm755 "$here/mseries-launcher-keys.py" \
+    "$stage/usr/share/elementary-mac/mseries/mseries-launcher-keys.py"
 install -Dm755 "$here/boot/prepare-uki-kernels.py" "$stage/usr/libexec/mseries/prepare-uki-kernels"
-install -Dm755 "$here/panel/verify-package-versions" "$stage/usr/libexec/mseries/verify-panel-packages"
 install -Dm644 "$here/panel-factory-pins.json" "$stage/usr/share/mseries/panel-factory-pins.json"
 install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
 install -Dm644 "$here/video-decode/90-mseries-avd.conf" "$stage/etc/sysctl.d/90-mseries-avd.conf"

@@ -1,0 +1,1329 @@
+//! Debian control and binary-package metadata used by the package-closure candidate.
+//! This is an independent implementation; it does not call apt or Germinate.
+
+use crate::{EntryKind, ParseError, ResolvedSeed, SeedEntry};
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+
+pub type ControlFields = BTreeMap<String, String>;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ControlStanza {
+    pub line: usize,
+    pub fields: ControlFields,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionConstraint {
+    pub operator: VersionOperator,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VersionOperator {
+    Less,
+    LessOrEqual,
+    Equal,
+    GreaterOrEqual,
+    Greater,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ArchitectureQualifier {
+    Unqualified,
+    Any,
+    Native,
+    Specific(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Alternative {
+    pub package: String,
+    pub architecture: ArchitectureQualifier,
+    pub version: Option<VersionConstraint>,
+}
+
+pub type DependencyGroup = Vec<Alternative>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MultiArch {
+    No,
+    Same,
+    Foreign,
+    Allowed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProvidedVirtual {
+    pub name: String,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinaryPackage {
+    pub package: String,
+    pub version: String,
+    pub architecture: String,
+    pub source: String,
+    pub multi_arch: MultiArch,
+    pub essential: bool,
+    pub depends: Vec<DependencyGroup>,
+    pub pre_depends: Vec<DependencyGroup>,
+    pub recommends: Vec<DependencyGroup>,
+    pub provides: Vec<ProvidedVirtual>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct PackageKey {
+    pub package: String,
+    pub architecture: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PackageClosure {
+    pub packages: BTreeSet<PackageKey>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SeedPackageRoots {
+    pub depends: BTreeSet<String>,
+    pub recommends: BTreeSet<String>,
+    pub snaps: BTreeSet<String>,
+    pub blacklisted_packages: BTreeSet<String>,
+    pub blacklisted_sources: BTreeSet<String>,
+}
+
+pub fn expand_seed_entries(
+    entries: &[SeedEntry],
+    catalog: &PackageCatalog,
+    architecture: &str,
+) -> Result<SeedPackageRoots, String> {
+    let mut roots = SeedPackageRoots::default();
+    for entry in entries {
+        match entry.kind {
+            EntryKind::Package | EntryKind::SourcePackage => {
+                let packages = if entry.kind == EntryKind::Package {
+                    catalog.seed_entry_binaries(entry, architecture)
+                } else {
+                    catalog.source_binaries(&entry.name, architecture)
+                };
+                let target = if entry.recommended {
+                    &mut roots.recommends
+                } else {
+                    &mut roots.depends
+                };
+                target.extend(packages);
+            }
+            EntryKind::Snap if !entry.recommended => {
+                roots.snaps.insert(entry.name.clone());
+            }
+            EntryKind::Snap => {
+                // Germinate ignores recommended snaps.
+            }
+            EntryKind::BlacklistPackage | EntryKind::BlacklistSourcePackage => {
+                return Err("seed blacklists must be applied before archive expansion".into());
+            }
+        }
+    }
+    roots
+        .recommends
+        .retain(|package| !roots.depends.contains(package));
+    Ok(roots)
+}
+
+pub fn expand_resolved_seed(
+    seed: &ResolvedSeed,
+    catalog: &PackageCatalog,
+    architecture: &str,
+) -> Result<SeedPackageRoots, String> {
+    let mut roots = expand_seed_entries(&seed.entries, catalog, architecture)?;
+    roots.blacklisted_packages = seed.blacklisted_packages.clone();
+    roots.blacklisted_sources = seed.blacklisted_sources.clone();
+    roots.depends.retain(|package| {
+        !catalog.seed_root_is_blacklisted(
+            package,
+            architecture,
+            &seed.blacklisted_packages,
+            &seed.blacklisted_sources,
+        )
+    });
+    roots.recommends.retain(|package| {
+        !catalog.seed_root_is_blacklisted(
+            package,
+            architecture,
+            &seed.blacklisted_packages,
+            &seed.blacklisted_sources,
+        )
+    });
+    Ok(roots)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PackageCatalog {
+    packages: BTreeMap<String, Vec<BinaryPackage>>,
+    sources: Option<BTreeMap<String, SourceBinaries>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SourceBinaries {
+    version: String,
+    binaries: Vec<String>,
+}
+
+pub fn parse_control_stanzas(input: &str) -> Result<Vec<ControlStanza>, ParseError> {
+    let mut stanzas = Vec::new();
+    let mut fields = ControlFields::new();
+    let mut last_key: Option<String> = None;
+    let mut stanza_line = 0;
+    let flush =
+        |fields: &mut ControlFields, stanza_line: &mut usize, stanzas: &mut Vec<ControlStanza>| {
+            if !fields.is_empty() {
+                stanzas.push(ControlStanza {
+                    line: *stanza_line,
+                    fields: std::mem::take(fields),
+                });
+            }
+            *stanza_line = 0;
+        };
+
+    for (index, raw) in input.lines().enumerate() {
+        let line_number = index + 1;
+        if raw.trim().is_empty() {
+            flush(&mut fields, &mut stanza_line, &mut stanzas);
+            last_key = None;
+            continue;
+        }
+        if raw.starts_with(' ') || raw.starts_with('\t') {
+            let Some(key) = &last_key else {
+                return Err(ParseError {
+                    line: line_number,
+                    message: "continuation line has no preceding control field".into(),
+                });
+            };
+            let value = fields.get_mut(key).expect("last field remains in stanza");
+            value.push('\n');
+            value.push_str(&raw[1..]);
+            continue;
+        }
+        let Some((key, value)) = raw.split_once(':') else {
+            return Err(ParseError {
+                line: line_number,
+                message: "expected a Debian control field in `Name: value` form".into(),
+            });
+        };
+        let key = key.trim();
+        if key.is_empty()
+            || !key
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        {
+            return Err(ParseError {
+                line: line_number,
+                message: format!("invalid Debian control field name `{key}`"),
+            });
+        }
+        if fields.contains_key(key) {
+            return Err(ParseError {
+                line: line_number,
+                message: format!("duplicate Debian control field `{key}`"),
+            });
+        }
+        let key = key.to_owned();
+        if fields.is_empty() {
+            stanza_line = line_number;
+        }
+        fields.insert(key.clone(), value.trim_start().to_owned());
+        last_key = Some(key);
+    }
+    flush(&mut fields, &mut stanza_line, &mut stanzas);
+    Ok(stanzas)
+}
+
+pub fn parse_relationships(input: &str) -> Result<Vec<DependencyGroup>, String> {
+    if input.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    split_top_level(input, ',')?
+        .into_iter()
+        .map(|group| {
+            let alternatives = split_top_level(group, '|')?
+                .into_iter()
+                .map(parse_alternative)
+                .collect::<Result<Vec<_>, _>>()?;
+            if alternatives.is_empty() {
+                return Err("empty dependency alternative group".into());
+            }
+            Ok(alternatives)
+        })
+        .collect()
+}
+
+fn split_top_level(input: &str, delimiter: char) -> Result<Vec<&str>, String> {
+    let mut round = 0_u32;
+    let mut square = 0_u32;
+    let mut start = 0;
+    let mut pieces = Vec::new();
+    for (index, character) in input.char_indices() {
+        match character {
+            '(' => round += 1,
+            ')' => {
+                round = round
+                    .checked_sub(1)
+                    .ok_or_else(|| "unmatched `)` in package relationship".to_owned())?;
+            }
+            '[' => square += 1,
+            ']' => {
+                square = square
+                    .checked_sub(1)
+                    .ok_or_else(|| "unmatched `]` in package relationship".to_owned())?;
+            }
+            _ => {}
+        }
+        if character == delimiter && round == 0 && square == 0 {
+            pieces.push(input[start..index].trim());
+            start = index + character.len_utf8();
+        }
+    }
+    if round != 0 || square != 0 {
+        return Err("unclosed delimiter in package relationship".into());
+    }
+    pieces.push(input[start..].trim());
+    if pieces.iter().any(|piece| piece.is_empty()) {
+        return Err("empty item in package relationship".into());
+    }
+    Ok(pieces)
+}
+
+fn parse_alternative(input: &str) -> Result<Alternative, String> {
+    let input = input.trim();
+    let (atom, constraint_text) = if let Some(open) = input.find('(') {
+        let close = input
+            .rfind(')')
+            .ok_or_else(|| "version constraint has no closing `)`".to_owned())?;
+        if close < open || !input[close + 1..].trim().is_empty() {
+            return Err(format!("malformed version constraint in `{input}`"));
+        }
+        (&input[..open], Some(input[open + 1..close].trim()))
+    } else {
+        if input.contains(')') {
+            return Err(format!("unmatched `)` in `{input}`"));
+        }
+        (input, None)
+    };
+    let mut words = atom.split_whitespace();
+    let package_atom = words
+        .next()
+        .ok_or_else(|| "missing package name in relationship".to_owned())?;
+    if words.next().is_some() {
+        return Err(format!("unexpected text after package name in `{input}`"));
+    }
+    let (package, architecture) = match package_atom.rsplit_once(':') {
+        Some((package, "any")) => (package, ArchitectureQualifier::Any),
+        Some((package, "native")) => (package, ArchitectureQualifier::Native),
+        Some((package, architecture)) => (
+            package,
+            ArchitectureQualifier::Specific(architecture.to_owned()),
+        ),
+        None => (package_atom, ArchitectureQualifier::Unqualified),
+    };
+    if !valid_package_name(package) {
+        return Err(format!("invalid package name `{package}`"));
+    }
+    if let ArchitectureQualifier::Specific(architecture) = &architecture {
+        if !valid_architecture(architecture) {
+            return Err(format!(
+                "invalid package architecture qualifier `{architecture}`"
+            ));
+        }
+    }
+    let version = constraint_text.map(parse_version_constraint).transpose()?;
+    Ok(Alternative {
+        package: package.to_owned(),
+        architecture,
+        version,
+    })
+}
+
+fn parse_version_constraint(input: &str) -> Result<VersionConstraint, String> {
+    let input = input.trim();
+    let (operator, version) = [
+        (">>", VersionOperator::Greater),
+        ("<<", VersionOperator::Less),
+        (">=", VersionOperator::GreaterOrEqual),
+        ("<=", VersionOperator::LessOrEqual),
+        ("=", VersionOperator::Equal),
+    ]
+    .into_iter()
+    .find_map(|(prefix, operator)| input.strip_prefix(prefix).map(|rest| (operator, rest)))
+    .ok_or_else(|| format!("unsupported Debian version relation `{input}`"))?;
+    let version = version.trim();
+    if !valid_version(version) {
+        return Err(format!("invalid version in relationship `{input}`"));
+    }
+    Ok(VersionConstraint {
+        operator,
+        version: version.to_owned(),
+    })
+}
+
+pub(crate) fn valid_package_name(name: &str) -> bool {
+    name.as_bytes()
+        .first()
+        .is_some_and(u8::is_ascii_alphanumeric)
+        && name.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"+.-".contains(&byte)
+        })
+}
+
+pub(crate) fn valid_version(version: &str) -> bool {
+    let version = match version.split_once(':') {
+        Some((epoch, rest)) => {
+            if epoch.is_empty() || !epoch.bytes().all(|byte| byte.is_ascii_digit()) {
+                return false;
+            }
+            rest
+        }
+        None => version,
+    };
+    let (upstream, revision) = match version.rsplit_once('-') {
+        Some((upstream, revision)) => (upstream, Some(revision)),
+        None => (version, None),
+    };
+    !upstream.is_empty()
+        && upstream.as_bytes()[0].is_ascii_digit()
+        && upstream
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b".+~:-".contains(&byte))
+        && revision.is_none_or(|revision| {
+            !revision.is_empty()
+                && revision
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"+.~".contains(&byte))
+        })
+}
+
+fn valid_architecture(architecture: &str) -> bool {
+    !architecture.is_empty()
+        && architecture
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+}
+
+impl BinaryPackage {
+    pub fn from_fields(fields: &ControlFields) -> Result<Self, String> {
+        let package = required(fields, "Package")?.to_owned();
+        if !valid_package_name(&package) {
+            return Err(format!("invalid Package field `{package}`"));
+        }
+        let version = required(fields, "Version")?.to_owned();
+        if !valid_version(&version) {
+            return Err(format!("invalid Version field `{version}`"));
+        }
+        let architecture = required(fields, "Architecture")?.to_owned();
+        if !valid_architecture(&architecture) {
+            return Err(format!("invalid Architecture field `{architecture}`"));
+        }
+        let source = fields
+            .get("Source")
+            .map(|value| parse_source_field(value))
+            .transpose()?
+            .unwrap_or_else(|| package.clone());
+        let multi_arch = match fields.get("Multi-Arch").map(String::as_str) {
+            None | Some("no") => MultiArch::No,
+            Some("same") => MultiArch::Same,
+            Some("foreign") => MultiArch::Foreign,
+            Some("allowed") => MultiArch::Allowed,
+            Some(other) => return Err(format!("unsupported Multi-Arch value `{other}`")),
+        };
+        let relationships = |field: &str| -> Result<Vec<DependencyGroup>, String> {
+            fields
+                .get(field)
+                .map(|value| parse_relationships(value))
+                .unwrap_or_else(|| Ok(Vec::new()))
+        };
+        let provides = fields
+            .get("Provides")
+            .map(|value| parse_provides(value))
+            .transpose()?
+            .unwrap_or_default();
+        Ok(Self {
+            package,
+            version,
+            architecture,
+            source,
+            multi_arch,
+            essential: fields.get("Essential").is_some_and(|value| value == "yes"),
+            depends: relationships("Depends")?,
+            pre_depends: relationships("Pre-Depends")?,
+            recommends: relationships("Recommends")?,
+            provides,
+        })
+    }
+}
+
+fn parse_provides(input: &str) -> Result<Vec<ProvidedVirtual>, String> {
+    let groups = parse_relationships(input)?;
+    let mut provided = Vec::new();
+    for group in groups {
+        if group.len() != 1 {
+            return Err("Provides does not support alternative groups".into());
+        }
+        let alternative = &group[0];
+        if alternative.architecture != ArchitectureQualifier::Unqualified {
+            return Err("Provides does not support architecture qualifiers".into());
+        }
+        if let Some(version) = &alternative.version {
+            if version.operator != VersionOperator::Equal {
+                return Err("versioned Provides must use the `=` relation".into());
+            }
+        }
+        provided.push(ProvidedVirtual {
+            name: alternative.package.clone(),
+            version: alternative
+                .version
+                .as_ref()
+                .map(|version| version.version.clone()),
+        });
+    }
+    Ok(provided)
+}
+
+fn required<'a>(fields: &'a ControlFields, name: &str) -> Result<&'a str, String> {
+    fields
+        .get(name)
+        .map(String::as_str)
+        .ok_or_else(|| format!("missing required `{name}` field"))
+}
+
+fn parse_source_field(value: &str) -> Result<String, String> {
+    let mut words = value.split_whitespace();
+    let name = words
+        .next()
+        .ok_or_else(|| "empty Source field".to_owned())?;
+    if !valid_package_name(name) {
+        return Err(format!("invalid source package name `{name}`"));
+    }
+    if let Some(version) = words.next() {
+        let version = version
+            .strip_prefix('(')
+            .and_then(|version| version.strip_suffix(')'))
+            .ok_or_else(|| format!("malformed Source field `{value}`"))?;
+        if !valid_version(version) {
+            return Err(format!("invalid source version `{version}`"));
+        }
+    }
+    if words.next().is_some() {
+        return Err(format!("unexpected text in Source field `{value}`"));
+    }
+    Ok(name.to_owned())
+}
+
+impl PackageCatalog {
+    /// Available binaries for an explicitly seeded name, pattern, or virtual
+    /// package. Germinate plants every provider of an explicitly seeded virtual.
+    pub fn seed_binaries(&self, name: &str, architecture: &str) -> Vec<String> {
+        self.seed_binaries_matching(name, architecture, true)
+    }
+
+    pub fn seed_entry_binaries(&self, entry: &SeedEntry, architecture: &str) -> Vec<String> {
+        self.seed_binaries_matching(&entry.name, architecture, !entry.literal)
+    }
+
+    fn seed_binaries_matching(
+        &self,
+        name: &str,
+        architecture: &str,
+        patterns: bool,
+    ) -> Vec<String> {
+        let available = |versions: &Vec<BinaryPackage>| {
+            versions.iter().any(|package| {
+                architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+            })
+        };
+        let mut names = if patterns && name.contains(['*', '?']) {
+            self.packages
+                .iter()
+                .filter(|(candidate, versions)| {
+                    seed_pattern_matches(name.as_bytes(), candidate.as_bytes())
+                        && available(versions)
+                })
+                .map(|(name, _)| name.clone())
+                .collect::<Vec<_>>()
+        } else if self.packages.get(name).is_some_and(available) {
+            vec![name.to_owned()]
+        } else {
+            Vec::new()
+        };
+        if names.is_empty() {
+            names = self
+                .packages
+                .values()
+                .flatten()
+                .filter(|package| {
+                    architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+                        && package
+                            .provides
+                            .iter()
+                            .any(|provided| provided.name == name)
+                })
+                .map(|package| package.package.clone())
+                .collect();
+            names.sort();
+            names.dedup();
+        }
+        names
+    }
+
+    pub fn is_essential(&self, name: &str, architecture: &str) -> bool {
+        self.packages
+            .get(name)
+            .into_iter()
+            .flatten()
+            .filter(|package| {
+                architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+            })
+            .max_by(|left, right| compare_versions(&left.version, &right.version))
+            .is_some_and(|package| package.essential)
+    }
+
+    pub fn parse_packages(input: &str) -> Result<Self, ParseError> {
+        let mut catalog = Self::default();
+        for stanza in parse_control_stanzas(input)? {
+            let package =
+                BinaryPackage::from_fields(&stanza.fields).map_err(|message| ParseError {
+                    line: stanza.line,
+                    message,
+                })?;
+            catalog.insert(package);
+        }
+        Ok(catalog)
+    }
+
+    /// Attach the source index used by Germinate's %source expansion. A source's
+    /// declared Binary list, rather than inferred binary Source fields, controls
+    /// membership; the newest indexed source version supplies that declaration.
+    pub fn with_sources(mut self, input: &str) -> Result<Self, ParseError> {
+        let mut sources: BTreeMap<String, SourceBinaries> = BTreeMap::new();
+        for stanza in parse_control_stanzas(input)? {
+            let parse = || -> Result<(String, SourceBinaries), String> {
+                let name = required(&stanza.fields, "Package")?;
+                let version = required(&stanza.fields, "Version")?;
+                if !valid_package_name(name) || !valid_version(version) {
+                    return Err("invalid source Package or Version field".into());
+                }
+                let binaries = stanza
+                    .fields
+                    .get("Binary")
+                    .map_or(name, String::as_str)
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|name| !name.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>();
+                if binaries.iter().any(|name| !valid_package_name(name)) {
+                    return Err("invalid source Binary field".into());
+                }
+                Ok((
+                    name.to_owned(),
+                    SourceBinaries {
+                        version: version.to_owned(),
+                        binaries,
+                    },
+                ))
+            };
+            let (name, record) = parse().map_err(|message| ParseError {
+                line: stanza.line,
+                message,
+            })?;
+            if sources.get(&name).is_none_or(|old| {
+                compare_versions(&record.version, &old.version) == Ordering::Greater
+            }) {
+                sources.insert(name, record);
+            }
+        }
+        self.sources = Some(sources);
+        Ok(self)
+    }
+
+    pub fn insert(&mut self, package: BinaryPackage) {
+        let entries = self.packages.entry(package.package.clone()).or_default();
+        if let Some(existing) = entries
+            .iter_mut()
+            .find(|existing| existing.architecture == package.architecture)
+        {
+            if compare_versions(&package.version, &existing.version) == Ordering::Greater {
+                *existing = package;
+            }
+        } else {
+            entries.push(package);
+            entries.sort_by(|left, right| left.architecture.cmp(&right.architecture));
+        }
+    }
+
+    pub fn package_names(&self) -> impl Iterator<Item = &str> {
+        self.packages.keys().map(String::as_str)
+    }
+
+    pub fn has_source_index(&self) -> bool {
+        self.sources.is_some()
+    }
+
+    pub fn source_binaries(&self, source: &str, architecture: &str) -> Vec<String> {
+        if let Some(sources) = &self.sources {
+            let mut names = sources
+                .get(source)
+                .into_iter()
+                .flat_map(|source| &source.binaries)
+                .filter(|name| {
+                    self.packages.get(*name).is_some_and(|versions| {
+                        versions.iter().any(|package| {
+                            package.architecture == architecture || package.architecture == "all"
+                        })
+                    })
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            names.sort();
+            names.dedup();
+            return names;
+        }
+        let mut names = self
+            .packages
+            .values()
+            .flatten()
+            .filter(|package| {
+                package.source == source
+                    && (package.architecture == architecture || package.architecture == "all")
+            })
+            .map(|package| package.package.clone())
+            .collect::<Vec<_>>();
+        names.sort();
+        names.dedup();
+        names
+    }
+
+    /// Resolve one seed's binary-package roots.
+    /// The feature flag applies only to archive Recommends. Parenthesized seed
+    /// entries remain in their own recommendation output. Per-seed blocklists
+    /// exclude packages from this output, including transitive dependencies.
+    pub fn resolve_seed_package_closure(
+        &self,
+        roots: &SeedPackageRoots,
+        architecture: &str,
+        follow_recommends: bool,
+    ) -> Result<PackageClosure, String> {
+        let package_roots = roots.depends.iter().cloned().collect::<Vec<_>>();
+        self.dependency_closure_with_blocklists(
+            &package_roots,
+            architecture,
+            follow_recommends,
+            Some(roots),
+        )
+    }
+
+    /// Resolve parenthesized seed entries and their hard dependencies into the
+    /// separate recommendation output, using the contributing seed's feature.
+    pub fn resolve_seed_recommendation_closure(
+        &self,
+        roots: &SeedPackageRoots,
+        architecture: &str,
+        follow_recommends: bool,
+    ) -> Result<PackageClosure, String> {
+        let package_roots = roots.recommends.iter().cloned().collect::<Vec<_>>();
+        self.dependency_closure_with_blocklists(
+            &package_roots,
+            architecture,
+            follow_recommends,
+            Some(roots),
+        )
+    }
+
+    pub fn dependency_closure(
+        &self,
+        roots: &[String],
+        architecture: &str,
+        follow_recommends: bool,
+    ) -> Result<PackageClosure, String> {
+        self.dependency_closure_with_blocklists(roots, architecture, follow_recommends, None)
+    }
+
+    fn dependency_closure_with_blocklists(
+        &self,
+        roots: &[String],
+        architecture: &str,
+        follow_recommends: bool,
+        blocklists: Option<&SeedPackageRoots>,
+    ) -> Result<PackageClosure, String> {
+        let mut closure = PackageClosure::default();
+        let mut queue = VecDeque::new();
+        for root in roots {
+            let alternative = Alternative {
+                package: root.clone(),
+                architecture: ArchitectureQualifier::Unqualified,
+                version: None,
+            };
+            let package = self
+                .select_alternative(&alternative, architecture, blocklists)
+                .ok_or_else(|| {
+                    format!("seed package `{root}` is unavailable for {architecture}")
+                })?;
+            let key = package_key(package);
+            if closure.packages.insert(key.clone()) {
+                queue.push_back(key);
+            }
+        }
+        while let Some(key) = queue.pop_front() {
+            let package = self
+                .get(&key)
+                .ok_or_else(|| format!("selected package {} disappeared", key.package))?;
+            let mut groups = package.pre_depends.clone();
+            groups.extend(package.depends.clone());
+            if follow_recommends {
+                groups.extend(package.recommends.clone());
+            }
+            for group in groups {
+                let already_selected = group.iter().any(|alternative| {
+                    closure.packages.iter().any(|selected| {
+                        self.get(selected).is_some_and(|package| {
+                            (package.package == alternative.package
+                                && self.package_satisfies(package, alternative, architecture))
+                                || package.provides.iter().any(|provided| {
+                                    provided.name == alternative.package
+                                        && self.provider_satisfies(
+                                            package,
+                                            provided,
+                                            alternative,
+                                            architecture,
+                                        )
+                                })
+                        })
+                    })
+                });
+                if already_selected {
+                    continue;
+                }
+                let selected = group.iter().find_map(|alternative| {
+                    self.select_alternative(alternative, architecture, blocklists)
+                });
+                let Some(selected) = selected else {
+                    if blocklists.is_some()
+                        && group.iter().any(|alternative| {
+                            self.select_alternative(alternative, architecture, None)
+                                .is_some()
+                        })
+                    {
+                        // Germinate omits blocklisted dependencies even when
+                        // that makes the resulting package set uninstallable.
+                        continue;
+                    }
+                    return Err(format!(
+                        "no available alternative satisfies dependency of `{}` for {architecture}",
+                        key.package
+                    ));
+                };
+                let selected_key = package_key(selected);
+                if closure.packages.insert(selected_key.clone()) {
+                    queue.push_back(selected_key);
+                }
+            }
+        }
+        Ok(closure)
+    }
+
+    fn get(&self, key: &PackageKey) -> Option<&BinaryPackage> {
+        self.packages
+            .get(&key.package)?
+            .iter()
+            .find(|package| package.architecture == key.architecture)
+    }
+
+    fn seed_root_is_blacklisted(
+        &self,
+        package: &str,
+        architecture: &str,
+        blacklisted_packages: &BTreeSet<String>,
+        blacklisted_sources: &BTreeSet<String>,
+    ) -> bool {
+        if blacklisted_packages.contains(package) {
+            return true;
+        }
+        let candidates = self
+            .packages
+            .get(package)
+            .into_iter()
+            .flatten()
+            .filter(|candidate| {
+                architecture_matches(candidate, &ArchitectureQualifier::Unqualified, architecture)
+            })
+            .collect::<Vec<_>>();
+        !candidates.is_empty()
+            && candidates
+                .iter()
+                .all(|candidate| blacklisted_sources.contains(&candidate.source))
+    }
+
+    fn select_alternative(
+        &self,
+        alternative: &Alternative,
+        architecture: &str,
+        blocklists: Option<&SeedPackageRoots>,
+    ) -> Option<&BinaryPackage> {
+        let allowed = |package: &&BinaryPackage| {
+            !blocklists.is_some_and(|roots| {
+                roots.blacklisted_packages.contains(&package.package)
+                    || roots.blacklisted_sources.contains(&package.source)
+            })
+        };
+        let direct = self
+            .packages
+            .get(&alternative.package)
+            .into_iter()
+            .flatten()
+            .filter(allowed)
+            .filter(|package| self.package_satisfies(package, alternative, architecture))
+            .max_by(|left, right| compare_versions(&left.version, &right.version));
+        direct.or_else(|| {
+            self.packages
+                .values()
+                .flatten()
+                .filter(allowed)
+                .filter(|provider| {
+                    provider.provides.iter().any(|provided| {
+                        provided.name == alternative.package
+                            && self.provider_satisfies(
+                                provider,
+                                provided,
+                                alternative,
+                                architecture,
+                            )
+                    })
+                })
+                .max_by(|left, right| compare_versions(&left.version, &right.version))
+        })
+    }
+
+    fn package_satisfies(
+        &self,
+        package: &BinaryPackage,
+        alternative: &Alternative,
+        architecture: &str,
+    ) -> bool {
+        if !architecture_matches(package, &alternative.architecture, architecture) {
+            return false;
+        }
+        alternative
+            .version
+            .as_ref()
+            .is_none_or(|constraint| version_matches(&package.version, constraint))
+    }
+
+    fn provider_satisfies(
+        &self,
+        provider: &BinaryPackage,
+        provided: &ProvidedVirtual,
+        alternative: &Alternative,
+        architecture: &str,
+    ) -> bool {
+        if !architecture_matches(provider, &alternative.architecture, architecture) {
+            return false;
+        }
+        match &alternative.version {
+            None => true,
+            Some(constraint) => provided
+                .version
+                .as_deref()
+                .is_some_and(|version| version_matches(version, constraint)),
+        }
+    }
+}
+
+fn seed_pattern_matches(pattern: &[u8], name: &[u8]) -> bool {
+    let mut reachable = vec![false; name.len() + 1];
+    reachable[0] = true;
+    for token in pattern {
+        let mut next = vec![false; name.len() + 1];
+        if *token == b'*' {
+            for index in 0..=name.len() {
+                next[index] = reachable[index] || (index > 0 && next[index - 1]);
+            }
+        } else {
+            for index in 0..name.len() {
+                next[index + 1] = reachable[index] && (*token == b'?' || *token == name[index]);
+            }
+        }
+        reachable = next;
+    }
+    reachable[name.len()]
+}
+
+fn package_key(package: &BinaryPackage) -> PackageKey {
+    PackageKey {
+        package: package.package.clone(),
+        architecture: package.architecture.clone(),
+    }
+}
+
+fn architecture_matches(
+    package: &BinaryPackage,
+    qualifier: &ArchitectureQualifier,
+    architecture: &str,
+) -> bool {
+    match qualifier {
+        ArchitectureQualifier::Unqualified => {
+            package.architecture == "all"
+                || package.architecture == architecture
+                || package.multi_arch == MultiArch::Foreign
+        }
+        ArchitectureQualifier::Any => package.multi_arch == MultiArch::Allowed,
+        ArchitectureQualifier::Native => {
+            package.architecture == "all" || package.architecture == architecture
+        }
+        ArchitectureQualifier::Specific(name) => {
+            package.architecture == "all" || package.architecture == name.as_str()
+        }
+    }
+}
+
+pub fn compare_versions(left: &str, right: &str) -> Ordering {
+    let (left_epoch, left_version) = split_epoch(left);
+    let (right_epoch, right_version) = split_epoch(right);
+    compare_numeric(left_epoch, right_epoch).then_with(|| {
+        let (left_upstream, left_revision) = split_revision(left_version);
+        let (right_upstream, right_revision) = split_revision(right_version);
+        verrevcmp(left_upstream, right_upstream)
+            .then_with(|| verrevcmp(left_revision, right_revision))
+    })
+}
+
+fn split_epoch(version: &str) -> (&str, &str) {
+    match version.split_once(':') {
+        Some((epoch, rest)) if epoch.bytes().all(|byte| byte.is_ascii_digit()) => (epoch, rest),
+        _ => ("0", version),
+    }
+}
+
+fn split_revision(version: &str) -> (&str, &str) {
+    match version.rsplit_once('-') {
+        Some((upstream, revision)) => (upstream, revision),
+        None => (version, "0"),
+    }
+}
+
+fn compare_numeric(left: &str, right: &str) -> Ordering {
+    let left = left.trim_start_matches('0');
+    let right = right.trim_start_matches('0');
+    left.len().cmp(&right.len()).then_with(|| left.cmp(right))
+}
+
+fn verrevcmp(left: &str, right: &str) -> Ordering {
+    let left = left.as_bytes();
+    let right = right.as_bytes();
+    let (mut i, mut j) = (0, 0);
+    while i < left.len() || j < right.len() {
+        while (i < left.len() && !left[i].is_ascii_digit())
+            || (j < right.len() && !right[j].is_ascii_digit())
+        {
+            let left_order = order_char(left.get(i).copied());
+            let right_order = order_char(right.get(j).copied());
+            if left_order != right_order {
+                return left_order.cmp(&right_order);
+            }
+            if i < left.len() {
+                i += 1;
+            }
+            if j < right.len() {
+                j += 1;
+            }
+        }
+        while i < left.len() && left[i] == b'0' {
+            i += 1;
+        }
+        while j < right.len() && right[j] == b'0' {
+            j += 1;
+        }
+        let mut first_difference = Ordering::Equal;
+        while i < left.len()
+            && j < right.len()
+            && left[i].is_ascii_digit()
+            && right[j].is_ascii_digit()
+        {
+            if first_difference == Ordering::Equal {
+                first_difference = left[i].cmp(&right[j]);
+            }
+            i += 1;
+            j += 1;
+        }
+        if i < left.len() && left[i].is_ascii_digit() {
+            return Ordering::Greater;
+        }
+        if j < right.len() && right[j].is_ascii_digit() {
+            return Ordering::Less;
+        }
+        if first_difference != Ordering::Equal {
+            return first_difference;
+        }
+    }
+    Ordering::Equal
+}
+
+fn order_char(character: Option<u8>) -> i32 {
+    match character {
+        Some(b'~') => -1,
+        None => 0,
+        Some(character) if character.is_ascii_digit() => 0,
+        Some(character) if character.is_ascii_alphabetic() => i32::from(character),
+        Some(character) => i32::from(character) + 256,
+    }
+}
+
+fn version_matches(candidate: &str, constraint: &VersionConstraint) -> bool {
+    let ordering = compare_versions(candidate, &constraint.version);
+    match constraint.operator {
+        VersionOperator::Less => ordering == Ordering::Less,
+        VersionOperator::LessOrEqual => ordering != Ordering::Greater,
+        VersionOperator::Equal => ordering == Ordering::Equal,
+        VersionOperator::GreaterOrEqual => ordering != Ordering::Less,
+        VersionOperator::Greater => ordering == Ordering::Greater,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_index_controls_declared_binaries_and_source_version() {
+        let catalog = PackageCatalog::parse_packages("Package: old\nVersion: 1\nArchitecture: arm64\nSource: sample\n\nPackage: current\nVersion: 1\nArchitecture: all\nSource: sample\n\nPackage: orphan\nVersion: 1\nArchitecture: arm64\nSource: sample\n")
+            .unwrap().with_sources("Package: sample\nVersion: 1\nBinary: old\n\nPackage: sample\nVersion: 2\nBinary: current, unavailable\n").unwrap();
+        assert_eq!(catalog.source_binaries("sample", "arm64"), ["current"]);
+        assert!(catalog.source_binaries("missing", "arm64").is_empty());
+    }
+
+    #[test]
+    fn control_parser_joins_continuations_and_rejects_malformed_fields() {
+        let stanzas = parse_control_stanzas(
+            "Package: demo\nVersion: 1.0\nDescription: first line\n continuation\n\n",
+        )
+        .unwrap();
+        assert_eq!(stanzas.len(), 1);
+        assert_eq!(stanzas[0].fields["Description"], "first line\ncontinuation");
+        assert!(parse_control_stanzas(" continuation without field\n").is_err());
+        assert!(parse_control_stanzas("Package: one\nPackage: two\n").is_err());
+        let error = PackageCatalog::parse_packages(
+            "Package: good\nVersion: 1\nArchitecture: arm64\n\nPackage: broken\n",
+        )
+        .unwrap_err();
+        assert_eq!(error.line, 5);
+    }
+
+    #[test]
+    fn relationship_parser_keeps_alternatives_and_versions_structured() {
+        let relations =
+            parse_relationships("libc6 (>= 2.38), mail-transport-agent | exim4:any (<< 5:6.0)")
+                .unwrap();
+        assert_eq!(relations.len(), 2);
+        assert_eq!(relations[0][0].package, "libc6");
+        assert_eq!(
+            relations[0][0].version.as_ref().unwrap().operator,
+            VersionOperator::GreaterOrEqual
+        );
+        assert_eq!(relations[1].len(), 2);
+        assert_eq!(relations[1][1].architecture, ArchitectureQualifier::Any);
+        assert_eq!(relations[1][1].version.as_ref().unwrap().version, "5:6.0");
+        assert!(parse_relationships("one, | two").is_err());
+        assert!(parse_relationships("package (>= not-a-version)").is_err());
+    }
+
+    #[test]
+    fn version_order_matches_debian_epoch_tilde_and_revision_rules() {
+        assert_eq!(compare_versions("1:1.0", "2.0"), Ordering::Greater);
+        assert_eq!(compare_versions("1.0~rc1", "1.0"), Ordering::Less);
+        assert_eq!(compare_versions("1.0-2", "1.0-10"), Ordering::Less);
+        assert_eq!(compare_versions("1.01", "1.1"), Ordering::Equal);
+    }
+
+    #[test]
+    fn package_closure_follows_predepends_depends_alternatives_and_optional_recommends() {
+        let packages = "Package: app\nVersion: 1.0\nArchitecture: arm64\nPre-Depends: init (>= 1)\nDepends: missing | libx (>= 2), tool\nRecommends: docs\n\nPackage: init\nVersion: 1.2\nArchitecture: arm64\n\nPackage: libx\nVersion: 2.4\nArchitecture: arm64\n\nPackage: tool\nVersion: 1.0\nArchitecture: all\n\nPackage: docs\nVersion: 1.0\nArchitecture: all\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        assert_eq!(catalog.packages["app"][0].pre_depends.len(), 1);
+        assert_eq!(catalog.packages["app"][0].depends.len(), 2);
+        let roots = vec!["app".into()];
+        let core = catalog.dependency_closure(&roots, "arm64", false).unwrap();
+        assert_eq!(core.packages.len(), 4);
+        assert!(!core.packages.iter().any(|key| key.package == "docs"));
+        let full = catalog.dependency_closure(&roots, "arm64", true).unwrap();
+        assert_eq!(full.packages.len(), 5);
+        assert!(full.packages.iter().any(|key| key.package == "docs"));
+    }
+
+    #[test]
+    fn package_closure_supports_virtual_providers_and_fails_on_missing_dependencies() {
+        let packages = "Package: app\nVersion: 1\nArchitecture: amd64\nDepends: mail-transport-agent\n\nPackage: postfix\nVersion: 3.9\nArchitecture: amd64\nProvides: mail-transport-agent\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        let closure = catalog
+            .dependency_closure(&["app".into()], "amd64", false)
+            .unwrap();
+        assert!(closure.packages.iter().any(|key| key.package == "postfix"));
+        assert!(catalog
+            .dependency_closure(&["missing".into()], "amd64", false)
+            .is_err());
+    }
+
+    #[test]
+    fn generic_closure_has_no_seed_blocklists() {
+        let packages = "Package: app\nVersion: 1\nArchitecture: amd64\nDepends: blocked | allowed, virtual\n\nPackage: blocked\nVersion: 1\nArchitecture: amd64\nSource: forbidden-source\n\nPackage: allowed\nVersion: 1\nArchitecture: amd64\n\nPackage: provider\nVersion: 1\nArchitecture: amd64\nSource: forbidden-source\nProvides: virtual\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        let closure = catalog
+            .dependency_closure(&["app".into()], "amd64", false)
+            .unwrap();
+        assert!(closure.packages.iter().any(|key| key.package == "blocked"));
+        assert!(!closure.packages.iter().any(|key| key.package == "allowed"));
+        assert!(closure.packages.iter().any(|key| key.package == "provider"));
+    }
+
+    #[test]
+    fn provides_accepts_only_policy_supported_version_form() {
+        for provides in ["virtual (= 2.0)", "virtual, another-virtual"] {
+            let fields = parse_control_stanzas(&format!(
+                "Package: provider\nVersion: 1\nArchitecture: amd64\nProvides: {provides}\n"
+            ))
+            .unwrap()
+            .remove(0)
+            .fields;
+            assert!(BinaryPackage::from_fields(&fields).is_ok(), "{provides}");
+        }
+        for package in ["-bad", ".bad", "+bad"] {
+            let fields = parse_control_stanzas(&format!(
+                "Package: {package}\nVersion: 1\nArchitecture: amd64\n"
+            ))
+            .unwrap()
+            .remove(0)
+            .fields;
+            assert!(BinaryPackage::from_fields(&fields).is_err(), "{package}");
+        }
+        for provides in [
+            "virtual (>= 2.0)",
+            "virtual:any",
+            "virtual | another-virtual",
+        ] {
+            let fields = parse_control_stanzas(&format!(
+                "Package: provider\nVersion: 1\nArchitecture: amd64\nProvides: {provides}\n"
+            ))
+            .unwrap()
+            .remove(0)
+            .fields;
+            assert!(BinaryPackage::from_fields(&fields).is_err(), "{provides}");
+        }
+    }
+
+    #[test]
+    fn package_catalog_selects_newest_version_and_expands_source_binaries() {
+        let packages = "Package: app\nVersion: 1\nArchitecture: arm64\nSource: desktop-source (2.0)\nDepends: library (>= 2)\n\nPackage: library\nVersion: 1\nArchitecture: arm64\n\nPackage: library\nVersion: 2\nArchitecture: arm64\n\nPackage: docs\nVersion: 1\nArchitecture: all\nSource: desktop-source\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        assert_eq!(
+            catalog.source_binaries("desktop-source", "arm64"),
+            ["app", "docs"]
+        );
+        let closure = catalog
+            .dependency_closure(&["app".into()], "arm64", false)
+            .unwrap();
+        assert!(closure.packages.iter().any(|key| key.package == "library"));
+    }
+
+    #[test]
+    fn source_field_accepts_optional_version_and_rejects_malformed_text() {
+        assert_eq!(
+            parse_source_field("source-name (2:1.0-3)").unwrap(),
+            "source-name"
+        );
+        for source in ["", "bad name extra", "source-name invalid", "-bad"] {
+            assert!(parse_source_field(source).is_err(), "{source:?}");
+        }
+    }
+
+    #[test]
+    fn any_qualified_dependency_requires_multi_arch_allowed() {
+        let packages = "Package: app\nVersion: 1\nArchitecture: arm64\nDepends: foreign-lib:any\n\nPackage: foreign-lib\nVersion: 1\nArchitecture: amd64\nMulti-Arch: allowed\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        let closure = catalog
+            .dependency_closure(&["app".into()], "arm64", false)
+            .unwrap();
+        assert!(closure.packages.contains(&PackageKey {
+            package: "foreign-lib".into(),
+            architecture: "amd64".into(),
+        }));
+    }
+
+    #[test]
+    fn seed_entries_expand_source_binaries_and_preserve_depends_recommends_and_snaps() {
+        let packages = "Package: runtime\nVersion: 1\nArchitecture: arm64\nSource: runtime-src\nRecommends: runtime-extra\n\nPackage: runtime-doc\nVersion: 1\nArchitecture: all\nSource: runtime-src\n\nPackage: optional-app\nVersion: 1\nArchitecture: arm64\n\nPackage: runtime-extra\nVersion: 1\nArchitecture: arm64\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        let seed = crate::SeedDocument::parse(
+            "* %runtime-src\n* (optional-app)\n* snap:sample\n* (snap:ignored)\n",
+        )
+        .unwrap();
+        let roots = expand_seed_entries(&seed.entries, &catalog, "arm64").unwrap();
+        assert_eq!(
+            roots.depends,
+            BTreeSet::from(["runtime".into(), "runtime-doc".into()])
+        );
+        assert_eq!(roots.recommends, BTreeSet::from(["optional-app".into()]));
+        assert_eq!(roots.snaps, BTreeSet::from(["sample".into()]));
+        let without_recommends = catalog
+            .resolve_seed_package_closure(&roots, "arm64", false)
+            .unwrap();
+        assert!(!without_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "optional-app"));
+        assert!(!without_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
+        let with_recommends = catalog
+            .resolve_seed_package_closure(&roots, "arm64", true)
+            .unwrap();
+        assert!(!with_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "optional-app"));
+        assert!(with_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
+        let seed_recommends = catalog
+            .resolve_seed_recommendation_closure(&roots, "arm64", false)
+            .unwrap();
+        assert!(seed_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "optional-app"));
+        assert!(!seed_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
+    }
+
+    #[test]
+    fn resolved_seed_blocklists_filter_roots_and_dependency_alternatives() {
+        let packages = "Package: app\nVersion: 1\nArchitecture: arm64\nDepends: blocked | allowed\n\nPackage: blocked\nVersion: 1\nArchitecture: arm64\nSource: blocked-source\n\nPackage: source-blocked\nVersion: 1\nArchitecture: arm64\nSource: blocked-source\n\nPackage: allowed\nVersion: 1\nArchitecture: arm64\n";
+        let catalog = PackageCatalog::parse_packages(packages).unwrap();
+        let structure = crate::Structure::parse("desktop:\n").unwrap();
+        let documents = BTreeMap::from([(
+            "desktop".into(),
+            crate::SeedDocument::parse("* app\n* source-blocked\n* !blocked\n* !%blocked-source\n")
+                .unwrap(),
+        )]);
+        let resolved = structure
+            .resolve_seed("desktop", "arm64", &documents)
+            .unwrap();
+        let roots = expand_resolved_seed(&resolved, &catalog, "arm64").unwrap();
+        assert!(!roots.depends.contains("source-blocked"));
+        let closure = catalog
+            .resolve_seed_package_closure(&roots, "arm64", false)
+            .unwrap();
+        assert!(!closure.packages.iter().any(|key| key.package == "blocked"));
+        assert!(closure.packages.iter().any(|key| key.package == "allowed"));
+    }
+}

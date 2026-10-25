@@ -1,0 +1,356 @@
+{
+  "schema": 1,
+  "description": "Pinned source records for Elementary's upstream metapackage generation inputs. These inputs are separate from the 59 candidate image-package repositories.",
+  "generator_contract": {
+    "upstream_project": "elementary/metapackages",
+    "reference_generator": "Germinate 2.49 (Ubuntu source archive pinned by SHA-256 in reference_projects)",
+    "behavior_status": "The independent Rust candidate generates map/list artifacts, substvars and metadata-only Debian packages. Linux synthetic comparisons qualify individual semantics; 32 pinned Elementary package builds qualify checked-in list-to-package assembly. Linux run 40240688243 additionally qualifies all 33 real seed/archive map/list outputs using 30 signed indexes, pinned source/seed collections and actual debootstrap sets. Production native acquisition/bootstrap, installability, changelog maintenance, complete solver/project parity and image/runtime admission remain open.",
+    "license_gate": "Do not vendor upstream seed files into the local Rust project; load the separately pinned input at build time and review licensing before redistributing source or generated seed data."
+  },
+  "inputs": [
+    {
+      "id": "elementary/seeds",
+      "url": "https://github.com/elementary/seeds",
+      "branch": "resolute",
+      "commit": "14c2cf95b32962b857589a0bac3198f80a331bce",
+      "license": {
+        "spdx": null,
+        "status": "unverified",
+        "evidence": "The pinned repository tree has no LICENSE, COPYING, or COPYRIGHT file, and GitHub repository metadata declares no license."
+      },
+      "role": "Elementary profile seed definitions consumed by Germinate and elementary/metapackages.",
+      "files": [
+        {
+          "path": "README.md",
+          "blob_sha": "978caa2d3d18d896fe2e5b8a7fd43d6c6772082d",
+          "role": "Identifies this repository as Germinate seed input."
+        },
+        {
+          "path": "STRUCTURE",
+          "blob_sha": "800aa37209ca1920ed8f0b11ed59cc0bf8620bff",
+          "role": "Profile inheritance, feature flags, and include platform.resolute."
+        },
+        {
+          "path": "desktop",
+          "blob_sha": "1dee7f0c6197fa857b8780cdb83716fcbbca1df3",
+          "role": "Desktop profile package seed."
+        },
+        {
+          "path": "pantheon-shell",
+          "blob_sha": "04fb661c3671a8eba44a311649618c1de44c3c4b",
+          "role": "Pantheon shell profile package seed."
+        },
+        {
+          "path": "artwork",
+          "blob_sha": "7d0657faafee7dca05852b6db1c67054af4cea61",
+          "role": "Artwork profile package seed."
+        }
+      ],
+      "rust_status": "source-license-unverified",
+      "rust_target": "Keep this upstream seed repository as a separately pinned data source; implement an independently authored Rust parser and profile resolver only after license review.",
+      "parity_contract": [
+        "profile inheritance and includes",
+        "feature and architecture qualifiers",
+        "package inclusion, recommendations, and exclusions",
+        "same resolved package sets for desktop and Pantheon profiles"
+      ],
+      "source_archive": "https://codeload.github.com/elementary/seeds/tar.gz/14c2cf95b32962b857589a0bac3198f80a331bce",
+      "source_archive_sha256": "75a2205d87f73e27ea16dda8a22965344b0e0ee2b85b101a71af6a87dc35c8e9"
+    },
+    {
+      "id": "elementary/platform",
+      "url": "https://github.com/elementary/platform",
+      "branch": "resolute",
+      "commit": "6d11ad3e4e4d65a20c4b63e2a2159f0683f9bf4f",
+      "license": {
+        "spdx": null,
+        "status": "unverified",
+        "evidence": "The pinned repository tree has no LICENSE, COPYING, or COPYRIGHT file, and GitHub repository metadata declares no license."
+      },
+      "role": "Ubuntu base platform seed structure and package seeds included by elementary/seeds STRUCTURE.",
+      "files": [
+        {
+          "path": "README.md",
+          "blob_sha": "448ff4d862cc6b54791b7814685f7fcb2fb9b566",
+          "role": "Documents the Ubuntu platform seed origin."
+        },
+        {
+          "path": "STRUCTURE",
+          "blob_sha": "b7bd5372bcaf4c7932417cac1f45ec2d02827c62",
+          "role": "Base profile relationships and Germinate features."
+        },
+        {
+          "path": "minimal",
+          "blob_sha": "37a6570770be006ae2f4853c8fd58e3c2fc84710",
+          "role": "Minimal base package seed."
+        },
+        {
+          "path": "standard",
+          "blob_sha": "8b4035f498c0732597286464bb10843eb5de3587",
+          "role": "Standard base package seed."
+        },
+        {
+          "path": "desktop-common",
+          "blob_sha": "45892598688a75afbfe3fd76758c79ea856bec54",
+          "role": "Common desktop package seed."
+        }
+      ],
+      "rust_status": "source-license-unverified",
+      "rust_target": "Keep this upstream seed repository as a separately pinned data source; implement an independently authored Rust parser and profile resolver only after license review.",
+      "parity_contract": [
+        "platform profile relationships",
+        "Germinate feature inheritance",
+        "same resolved package sets for the selected Ubuntu release and architectures"
+      ],
+      "source_archive": "https://codeload.github.com/elementary/platform/tar.gz/6d11ad3e4e4d65a20c4b63e2a2159f0683f9bf4f",
+      "source_archive_sha256": "10cf9af7c4a8f26a385c1b47a14babdfe2f151634daa306dbdcbbdfb2c843609"
+    }
+  ],
+  "local_projects": [
+    {
+      "id": "elementary/package-generator",
+      "path": "mseries/rust/seed-compiler/",
+      "license": "MIT",
+      "status": "candidate-implemented-unverified",
+      "implemented": [
+        "STRUCTURE declarations and included collection merge",
+        "seed inheritance graph",
+        "seed headers and documented entry forms",
+        "architecture include/exclude qualifiers",
+        "seed-level package and source blacklist filtering",
+        "Debian control stanza and binary Packages metadata parsing",
+        "Depends, Pre-Depends, Recommends, version relation, virtual Provides, and Multi-Arch parsing",
+        "Debian package-version ordering for parsed versions",
+        "source package to target-architecture binary expansion",
+        "basic architecture-aware dependency closure over Depends and Pre-Depends, optionally Recommends",
+        "seed entries to package/recommendation/snap root expansion",
+        "per-seed package/source exclusions carried into roots and transitive dependencies, scoped to that seed and its inherited ancestors",
+        "Structure and per-contributing-seed Recommends flags with separate seed recommendation output",
+        "integrated profile-to-package CLI with inherited seeds and optional recommendation closure",
+        "metapackage-map parsing and architecture-specific Debian substvars rendering from supplied package lists",
+        "Rust update.cfg selection with defaults, interpolation, output_seeds, seed_map and metapackage_map",
+        "case-insensitive Task-Seeds/Task-Metapackage headers and preserved seed alternatives",
+        "fresh multi-architecture metapackage-map and dependency/recommendation list artifacts from explicit seed entries",
+        "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
+        "Debian Sources index parsing with version-selected Binary declarations for source seed membership",
+        "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; 40 synthetic Linux package comparisons passed",
+        "pinned Elementary metapackages 1.582 checked-in map/list-to-package stage: all eight binaries across amd64/arm64 and full/trimmed changelogs qualified against unchanged upstream rules; 32 native hashes also match local macOS and Linux CI builds",
+        "lexically scoped case-insensitive seed variables with Cartesian value combinations, declaration shadowing, empty/undefined values and nonrecursive expansion",
+        "case-insensitive multi-value Feature declarations; binary substitutions retain reference pattern/source lookup ordering",
+        "explicit runtime package roots expand known package patterns and all virtual providers; absent seed roots are omitted while unresolved archive dependencies remain errors"
+      ],
+      "not_implemented": [
+        "seed include/exclude directives, installer kernel-version pruning and complete pattern semantics",
+        "Germinate Build-Depends and build-dependency feature semantics",
+        "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
+        "complete Germinate provider and alternative selection semantics",
+        "snap metadata and revision selection",
+        "general Debian packaging, production native bootstrap/index acquisition, actual PPA membership/installability and changelog/delta maintenance",
+        "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
+        "Germinate and apt differential parity for both arm64 and amd64"
+      ],
+      "parity_status": "Linux run 40240688243 on b1d4a171 passed all existing candidate checks (30 unit tests, eight substvars, 36 profile membership, 56 synthetic map/list files, 40 synthetic and 32 actual packages) and all 33 fresh real map/list files against unchanged Germinate, using signed captured archives and actual debootstrap 1.0.142ubuntu2 outputs (226 packages per host). The configured unavailable testing PPA is explicitly recorded. Production native acquisition, package installability, complete solver/project behavior and image/runtime qualification remain open.",
+      "intentional_enhancements": [],
+      "enhancement_review_status": "No generator enhancements selected before package parity is established.",
+      "parity_receipts": [
+        {
+          "source_commit": "28eec704ba344af5d462babb52f329479a172933",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "crate_unit_tests": 24,
+          "scope": "Synthetic runtime package-set membership and fresh Debian substvars; excludes reason/diagnostic parity, complete provider/solver semantics, build dependencies, full Debian package output, and runtime/image qualification."
+        },
+        {
+          "source_commit": "ff754d3c710967a83c6e59f62090a191695ce5b0",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40236407482",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "crate_unit_tests": 26,
+          "scope": "Synthetic runtime package membership, fresh substvars, and byte-for-byte metapackage map/list files. The unmodified updater consumes local archive/seed fixtures while debootstrap package-set/version output is fixed. Live debootstrap/acquisition, changelog changes, complete solver/reason/diagnostic semantics, Debian package output and image/runtime qualification are excluded."
+        },
+        {
+          "source_commit": "ccff41c52ef002927bf782ff14ae9c4f8c39419b",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238235136",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 22,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "native_debian_package_comparisons": 40,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "binary_architectures": [
+            "amd64",
+            "arm64",
+            "all"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "crate_unit_tests": 29,
+          "scope": "Synthetic package binary-control field equality against dpkg-gencontrol at the dh_gencontrol staging boundary; installed documentation equality after decompression against Debhelper; dpkg-deb acceptance/extraction, payload md5sums, archive ownership/mode/timestamps and byte-reproducible native rebuilds. Both hosts, native/non-native/epoch versions, full/trimmed changelogs, architecture wildcards/all, relationship reduction, descriptions and long ustar paths are covered. No byte-equality claim against Debian compression, pinned real-source/PPA membership, arbitrary packaging, full solver, live bootstrap, image or runtime parity."
+        },
+        {
+          "source_commit": "317c69eb08baf7e34c8fa0d14fbc8e00370bc268",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709",
+          "reference_project": "elementary/metapackages",
+          "reference_source_commit": "6e6466507f7f5b32e73594c5e727a49f0be58d0f",
+          "reference_source_version": "1.582",
+          "reference_archive_sha256": "8d719f353e0275d7b23b1513d1a40fda1488ad193c3b6be8c6552604cb541c82",
+          "reference_rules": "Unchanged debian/rules clean and binary; compat level 7; Germinate 2.49 helpers and sequence module",
+          "reference_germinate_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "real_source_package_comparisons": 32,
+          "binary_packages_per_host_and_mode": 8,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "changelog_modes": [
+            "default-trimmed",
+            "notrimdch-full"
+          ],
+          "cross_platform_native_archive_hash_matches": 32,
+          "platforms": [
+            "macOS arm64",
+            "Ubuntu 26.04 arm64 CI"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "retained_package_fingerprints": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+          "scope": "Checked-in upstream map/list-to-package stage. Actual package build control metadata and control file membership, installed documentation after decompression, checksums and native reproducibility. Native Installed-Size is verified with dpkg-gencontrol on its own payload because full changelog compression differs (55 KiB native vs 54 KiB reference). No source/list text is vendored. Fresh seed/archive regeneration, PPA membership/installability, complete solver, general packaging and image/runtime parity are excluded."
+        },
+        {
+          "source_commit": "50b762905ce3298b4c836d33d34edeb5d6661f79",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40239533941",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "crate_unit_tests": 30,
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 36,
+          "map_list_file_comparisons": 56,
+          "map_list_configurations": 4,
+          "synthetic_package_comparisons": 40,
+          "real_source_package_comparisons": 32,
+          "retained_native_baseline_hash_matches": 32,
+          "retained_package_fingerprints": "mseries/rust/seed-compiler/elementary-1.582-parity.json",
+          "package_receipt_artifact_sha256": "852d2545bab975a71a55256d007d527458397ba407ced896a4558feb1784ef8e",
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debhelper_version": "13.31ubuntu1",
+          "dpkg_dev_version": "1.23.7ubuntu1",
+          "scope": "Adds lexical case-insensitive substitutions, declaration shadowing, Cartesian combinations, architecture/recommendation classification, empty/undefined/nonrecursive values, source/pattern lookup order, multiple Feature values, explicit glob roots and all explicitly seeded virtual providers. Both synthetic membership and map/list comparisons use unmodified Germinate. All package comparisons repeat and native real-source hashes equal the retained baseline. Actual live-profile parsing with pinned source collections also succeeds locally; complete matched real archive/seed generation, diagnostics, remaining pattern/kernel/include/exclude semantics, full solver, PPA installability and image/runtime parity are unqualified."
+        },
+        {
+          "source_commit": "b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea",
+          "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243",
+          "reference_project": "ubuntu/germinate",
+          "reference_version": "2.49",
+          "reference_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+          "real_map_list_file_comparisons": 33,
+          "verified_archive_indexes": 30,
+          "configured_unavailable_mirror": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/",
+          "unavailable_index_endpoint_probes": 60,
+          "architectures": [
+            "amd64",
+            "arm64"
+          ],
+          "debootstrap_version": "1.0.142ubuntu2",
+          "bootstrap_sets": [
+            {
+              "architecture": "amd64",
+              "sha256": "991ba88dc23e724c3b856be18feda8e5c19bba11d83e7fa2610e15c69bad667f",
+              "package_count": 226
+            },
+            {
+              "architecture": "arm64",
+              "sha256": "991ba88dc23e724c3b856be18feda8e5c19bba11d83e7fa2610e15c69bad667f",
+              "package_count": 226
+            }
+          ],
+          "negative_signature_checks": [
+            "modified-signed-payload-rejected",
+            "unknown-only-signatures-rejected"
+          ],
+          "retained_input_output_fingerprints": "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
+          "crate_unit_tests": 30,
+          "substvars_comparisons": 8,
+          "profile_package_set_comparisons": 36,
+          "synthetic_map_list_file_comparisons": 56,
+          "synthetic_package_comparisons": 40,
+          "real_source_package_comparisons": 32,
+          "scope": "All eight configured metapackage profiles, amd64/arm64, main/restricted/universe, all configured mirrors in order. Thirty signed indexes are verified; the unavailable testing PPA is represented by sixty unavailable endpoint probes. The unchanged Germinate updater runs against the same captured decoded archive and pinned seed inputs with actual debootstrap commands. All 33 generated map/list files match byte-for-byte. Acquisition-location rewrites and process-output observation are confined to the test harness. Production native acquisition/bootstrap, complete solver semantics, package installability, changelog/delta maintenance and image/runtime qualification remain open."
+        }
+      ]
+    }
+  ],
+  "reference_projects": [
+    {
+      "id": "ubuntu/germinate",
+      "source_url": "https://git.launchpad.net/germinate",
+      "suite": "resolute",
+      "version": "2.49",
+      "source_archive": "https://archive.ubuntu.com/ubuntu/pool/main/g/germinate/germinate_2.49.tar.xz",
+      "source_archive_md5": "2979c65ed6220759c8730d882124126b",
+      "source_archive_sha256": "9045b2ee8db48502a67ca5541b799b11e23f86fd232ea73881280e572f1f5ddc",
+      "license": {
+        "spdx": "GPL-2.0-or-later",
+        "evidence": "Ubuntu Germinate manpages state GPL version 2 or later."
+      },
+      "role": "Behavior reference for seed expansion and metapackage generation; the Rust package-generator crate is intended to replace this build behavior.",
+      "pin_status": "Ubuntu Resolute source version 2.49 and source archive pinned; downloaded archive MD5 matches the recorded value and SHA-256 was verified on 2026-10-25. Git revision is not recorded.",
+      "watch_status": "Not covered by the Elementary GitHub branch watcher; recheck Ubuntu Resolute source-package updates during the weekly dependency review."
+    }
+  ],
+  "real_archive_qualification": {
+    "verifier": "mseries/rust/seed-compiler/test-real-list-parity.py",
+    "status": "Linux real seed/archive map/list stage qualified",
+    "input_scope": "All update.cfg archive roots in their configured order, amd64/arm64 binary and installer indexes, default source mirrors and main/restricted/universe components. HTTP Ubuntu/Launchpad transport is mapped to official HTTPS endpoints. Pinned source and seed collections remain unchanged; only acquisition locations are rewritten to verified local mirrors.",
+    "trust_anchors": [
+      "Host Ubuntu archive keyring supplied to gpgv",
+      "repos/common-files/etc/apt/keyrings/elementary-os.gpg",
+      "repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg"
+    ],
+    "signature_contract": "At least one valid signature under the supplied trust anchor is required. Unknown additional co-signers are recorded, never imported as trusted keys. Bad/expired/revoked/malformed signatures are rejected. Signed SHA-256/size checks cover compressed and, when published, decoded indexes; metadata validity dates are checked.",
+    "local_capture": {
+      "verified_indexes": 30,
+      "unavailable_mirror": "https://ppa.launchpadcontent.net/elementary-os/testing/ubuntu/",
+      "unavailable_index_probes": 60,
+      "negative_signature_checks": [
+        "modified signed payload rejected",
+        "unknown-only signatures rejected"
+      ]
+    },
+    "production_boundary": "Python/gpgv/debootstrap are qualification oracles and test-input provisioning. Native Rust map/list generation consumes exactly the captured decoded Packages/Sources and observed bootstrap sets. Production native acquisition and complete image/runtime qualification remain open.",
+    "receipts": "CI exports hash/identity-only acquisition and comparison receipts, including partial failures; source/index text stays temporary.",
+    "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40240688243",
+    "source_commit": "b1d4a1713469b5ebe1cd5f97df5aa5896143c5ea",
+    "retained_receipt": "mseries/rust/seed-compiler/real-list-parity-2026-10-25.json",
+    "debootstrap_version": "1.0.142ubuntu2",
+    "real_map_list_file_comparisons": 33
+  }
+}

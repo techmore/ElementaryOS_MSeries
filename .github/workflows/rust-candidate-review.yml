@@ -1,0 +1,166 @@
+name: Rust migration candidate review
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      full_image:
+        description: Build a non-publishing arm64 image candidate after checks
+        type: boolean
+        required: false
+        default: false
+  pull_request:
+    paths:
+      - 'mseries/rust/**'
+      - 'mseries/ci/**'
+      - 'rust/**'
+      - 'mseries/panel/**'
+      - 'mseries/panel-factory-pins.json'
+      - 'mseries/post-install.sh'
+      - 'mseries/stage-factory-enhancements.sh'
+      - 'mseries/netspeed/netusage/**'
+      - 'mseries/test-wifi-resume.py'
+      - 'mseries/test-power-cap.py'
+      - '.github/workflows/rust-candidate-review.yml'
+      - 'Justfile'
+      - 'assemble-iso.sh'
+      - 'mkosi.conf'
+      - 'mkosi.images/**'
+      - 'packages.arm64'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  rust-candidate:
+    name: Rust inventory, parity and release builds
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Rust, SQLite, GIO, and D-Bus test tools
+        timeout-minutes: 20
+        run: sudo --preserve-env=GITHUB_ACTIONS python3 mseries/ci/install_rust_tools.py
+      - name: Test bounded CI dependency downloads
+        run: /usr/bin/python3 mseries/ci/test_aurora_tools.py
+      - name: Check the full scoped inventory
+        run: python3 mseries/rust/inventory.py --check
+      - name: Test inventory classification
+        run: python3 mseries/rust/test_inventory.py
+      - name: Validate Elementary project register
+        run: python3 mseries/rust/test_elementary_projects.py
+      - name: Validate Rust candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for crate in mseries-power wifi-resume netusage panel-provenance keyboard-backlight brightness-bridge iso-label atomic-app iso-assembly desktop-settings launcher-keys homeboard-launcher seed-compiler; do
+            manifest="mseries/rust/$crate/Cargo.toml"
+            cargo fmt --check --manifest-path "$manifest"
+            cargo test --manifest-path "$manifest" --locked
+            cargo clippy --manifest-path "$manifest" --locked --all-targets -- -D warnings
+            cargo build --release --manifest-path "$manifest" --locked
+          done
+          python3 mseries/rust/netusage/test-parity.py \
+            mseries/rust/netusage/target/release/mseries-netusage-rs
+          python3 mseries/rust/panel-provenance/test-parity.py \
+            mseries/rust/panel-provenance/target/release/mseries-panel-provenance-rs
+          python3 mseries/rust/keyboard-backlight/test-parity.py \
+            mseries/rust/keyboard-backlight/target/release/mseries-keyboard-backlight-rs
+          python3 mseries/rust/brightness-bridge/test-dbus-runtime.py \
+            mseries/rust/brightness-bridge/target/release/mseries-brightness-bridge-rs
+          python3 mseries/rust/iso-label/test-parity.py \
+            mseries/rust/iso-label/target/release/mseries-iso-label
+          python3 mseries/rust/atomic-app/test-parity.py \
+            mseries/rust/atomic-app/target/release/mseries-atomic-app
+          python3 mseries/rust/seed-compiler/test-metapackage-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          /usr/bin/python3 mseries/rust/seed-compiler/test-seed-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          /usr/bin/python3 mseries/rust/seed-compiler/test-list-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          /usr/bin/python3 mseries/rust/seed-compiler/test-deb-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          /usr/bin/python3 mseries/rust/seed-compiler/test-upstream-deb-parity.py \
+            mseries/rust/seed-compiler/target/release/elementary-seed-compiler \
+            --report build-record/rust-upstream-metapackages.json
+          python3 mseries/test-wifi-resume.py
+          python3 mseries/test-power-cap.py
+      - name: Compare real signed archive and seed inputs
+        run: >-
+          /usr/bin/python3 mseries/rust/seed-compiler/test-real-list-parity.py
+          mseries/rust/seed-compiler/target/release/elementary-seed-compiler
+          --report build-record/rust-real-list-parity.json
+      - name: Preserve real archive list comparison receipt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-real-list-parity-${{ github.run_id }}
+          path: build-record/rust-real-list-parity.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Preserve real-source metapackage comparison receipt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-upstream-metapackages-${{ github.run_id }}
+          path: build-record/rust-upstream-metapackages.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  weekly-image:
+    name: Weekly non-publishing arm64 image candidate
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '41 5 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && inputs.full_image)
+    needs: rust-candidate
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - name: Free build space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - name: Install image build tools
+        run: sudo apt-get update && sudo apt-get install -y cargo rustc just mtools podman zstd rsync
+      - name: Record candidate source and pins
+        run: |
+          mkdir -p build-record
+          git rev-parse HEAD > build-record/source-commit.txt
+          cp mseries/UPSTREAM-PINS.md build-record/
+          cp mseries/rust/source-inventory.json build-record/
+          printf '%s\n' 'Weekly Rust-lane candidate; no signing or deployment.' > build-record/STATUS.txt
+      - name: Build unsigned local candidate image
+        shell: bash
+        run: |
+          set -euo pipefail
+          just genkey
+          just do-daily 2>&1 | tee build-record/build.log
+          python3 mseries/test-image-wiring.py --image-output mkosi.output \
+            | tee build-record/image-content.log
+          (cd mkosi.output && sha256sum elementaryos-*.iso > INSTALLER-SHA256SUMS)
+          cp mkosi.output/INSTALLER-SHA256SUMS build-record/
+      - name: Preserve candidate build and evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-image-candidate-${{ github.run_id }}
+          path: |
+            build-record/
+            mkosi.output/elementaryos-*.iso
+            mkosi.output/INSTALLER-SHA256SUMS
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14

@@ -145,7 +145,7 @@
   },
   {
     "repo": "JoseExposito/touchegg",
-    "who": "José Expósito",
+    "who": "Jos\u00e9 Exp\u00f3sito",
     "why": "Pinned gesture daemon baked into the immutable factory image; review releases for Gala compatibility",
     "group": "desktop"
   },
@@ -172,5 +172,71 @@
     "who": "Peter Steinberger",
     "why": "macOS GitHub repository dashboard reference; track feature changes for the independent elementary OS Wingpanel port",
     "group": "apps"
+  },
+  {
+    "repo": "elementary/os",
+    "who": "elementary maintainers",
+    "why": "Base OS image, mkosi and sysupdate contract; source baseline is pinned separately",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/gala",
+    "who": "elementary maintainers",
+    "why": "Pantheon compositor source and local patch compatibility",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/wingpanel",
+    "who": "elementary maintainers",
+    "why": "Panel host and indicator plugin API used by local indicators",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/dock",
+    "who": "elementary maintainers",
+    "why": "Dock source, drawer patch and local dock extensions",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/files",
+    "who": "elementary maintainers",
+    "why": "Files source and local portal behavior patch",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/quick-settings",
+    "who": "elementary maintainers",
+    "why": "Quick Settings host and local brightness widget ABI",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/panel-network",
+    "who": "elementary maintainers",
+    "why": "Network indicator source and local throughput/usage adaptations",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/metapackages",
+    "who": "elementary maintainers",
+    "why": "Package seeds define the default image and Pantheon application set; Rust migration needs package-closure parity",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/panel-power",
+    "who": "elementary maintainers",
+    "why": "Power indicator source used by the local battery ETA integration",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/seeds",
+    "who": "elementary maintainers",
+    "why": "Elementary package profile seed input for Germinate; source and license need ongoing review",
+    "group": "elementary"
+  },
+  {
+    "repo": "elementary/platform",
+    "who": "elementary maintainers",
+    "why": "Ubuntu base-platform seed input for Elementary package closure; source and license need ongoing review",
+    "group": "elementary"
   }
 ]

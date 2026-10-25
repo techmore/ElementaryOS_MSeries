@@ -1,0 +1,9 @@
+[package]
+name = "mseries-desktop-settings"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "mseries-desktop-settings"
+path = "src/main.rs"

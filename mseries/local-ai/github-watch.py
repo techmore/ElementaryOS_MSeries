@@ -40,7 +40,8 @@ def change_marker(value):
     """Keep enough change evidence without duplicating long metadata in the issue state."""
     if not isinstance(value, dict):
         return value
-    fields = ('sha', 'base_sha', 'branch', 'release', 'sha256', 'count', 'latest', 'pushed', 'ahead', 'behind', 'status')
+    fields = ('sha', 'base_sha', 'branch', 'release', 'sha256', 'count', 'latest', 'pushed',
+              'ahead', 'behind', 'status', 'pin_value', 'pin_sha', 'head_sha')
     return {k: value[k] for k in fields if k in value}
 
 
@@ -62,7 +63,8 @@ def decode_state(value):
 
 def render(state):
     lines = [MARKER, '# Public upstream watch', '',
-             'Checks every six hours. Close this issue to acknowledge the listed observations. '
+             'Checks every six hours. Elementary project heads are compared with their recorded pins. '
+             'Close this issue to acknowledge the listed observations. '
              'New changes reopen this same issue. Review licenses, hardware applicability and diffs before importing.', '',
              'This watcher does not merge, deploy, change build pins, or qualify hardware.', '',
              '## Changes awaiting review', '']
@@ -79,6 +81,57 @@ def render(state):
     return '\n'.join(lines)
 
 
+def elementary_sources(projects):
+    """Build the watch roster from the Rust lane's per-project source register."""
+    sources = []
+    for project in projects:
+        url = project.get('url', '')
+        prefix = 'https://github.com/'
+        if not url.startswith(prefix):
+            raise ValueError(f"Unsupported Elementary project URL: {url!r}")
+        repo = url.removeprefix(prefix).strip('/')
+        if len(repo.split('/')) != 2 or not project.get('default_branch'):
+            raise ValueError(f"Incomplete Elementary project source record: {project.get('id')}")
+        sources.append({'repo': repo, 'branch': project['default_branch']})
+    return sources
+
+
+def seed_project_pins(get, projects, snapshots, observations):
+    """Track default-branch drift from each recorded pin without advancing pins."""
+    errors = []
+    for project, source in zip(projects, elementary_sources(projects), strict=True):
+        repo = source['repo']
+        pin = project.get('pin', {})
+        value = pin.get('value')
+        if not value:
+            errors.append(f"{project.get('id')}: no source pin")
+            continue
+        key = 'elementary-pin:' + repo
+        previous = snapshots.get(key, {})
+        try:
+            if previous.get('pin_value') == value and previous.get('pin_sha') and pin.get('kind') != 'git-tag':
+                pin_sha = previous['pin_sha']
+            else:
+                pinned = get('/repos/' + repo + '/commits/' + quote(value, safe=''))
+                if not pinned or not pinned.get('sha'):
+                    raise ValueError(f"unable to resolve pin {value!r}")
+                pin_sha = pinned['sha']
+            head_sha = observations.get(repo, {}).get('sha')
+            status = 'head-unavailable' if not head_sha else ('aligned' if head_sha == pin_sha else 'upstream-ahead-or-pin-diverged')
+            marker = {'pin_value': value, 'pin_sha': pin_sha, 'head_sha': head_sha,
+                      'branch': source['branch'], 'status': status}
+            observations[key] = marker
+            if key not in snapshots:
+                # Make the initial pin the baseline so existing upstream drift
+                # is surfaced on the first dashboard run, including older issues.
+                snapshots[key] = marker if status == 'aligned' or status == 'head-unavailable' else {
+                    'pin_value': value, 'pin_sha': pin_sha, 'head_sha': pin_sha,
+                    'branch': source['branch'], 'status': 'aligned'}
+        except Exception as error:
+            errors.append(f"{project.get('id')}: {type(error).__name__}: {error}")
+    return errors
+
+
 def main():
     repository = os.environ['GITHUB_REPOSITORY']
     spec = importlib.util.spec_from_file_location('people_watch', HERE / 'people-watch.py')
@@ -86,9 +139,12 @@ def main():
     spec.loader.exec_module(watch)
     entries = json.loads((HERE / 'people-watch.json').read_text())
     refs = json.loads((HERE.parent / 'upstreams/omarchy-m.json').read_text())['projects']
+    elementary = json.loads((HERE.parent / 'rust/elementary-projects.json').read_text())['projects']
+    elementary_roster = elementary_sources(elementary)
     branches = {e['repo']: e['branch'] for e in refs}
+    branches.update({e['repo']: e['branch'] for e in elementary_roster})
     known = {e.get('repo') for e in entries}
-    entries += [e for e in refs if e['repo'] not in known]
+    entries += [e for e in refs + elementary_roster if e['repo'] not in known]
     # Include closed issues so acknowledgment never creates a duplicate dashboard.
     issues = []
     page = 1
@@ -128,18 +184,24 @@ def main():
                 observations[key] = {'latest': repos[0]['full_name'], 'pushed': repos[0]['pushed_at']} if repos else {'latest': None, 'pushed': None}
         except Exception as error:
             errors.append(f'{key}: {type(error).__name__}: {error}')
+    snapshots = previous.setdefault('snapshots', {})
+    errors.extend(seed_project_pins(watch.get, elementary, snapshots, observations))
     branch_spec = importlib.util.spec_from_file_location('branch_watch', HERE / 'branch-watch.py')
     branch_watch = importlib.util.module_from_spec(branch_spec)
     branch_spec.loader.exec_module(branch_watch)
     raw_heads = {}
+    branch_config = branch_watch.merge_registered_sources(
+        json.loads((HERE / 'branch-watch.json').read_text())['sources'], elementary)
     branch_observations, branch_errors = branch_watch.collect(
-        watch.get, json.loads((HERE / 'branch-watch.json').read_text())['sources'], raw_heads)
+        watch.get, branch_config, raw_heads)
     Path('mseries-upstream-branch-heads.json').write_text(json.dumps(raw_heads, indent=2) + '\n')
     observations.update(branch_observations)
     errors.extend(branch_errors)
     if not issue:
-        previous = {'snapshots': {e['repo']: dict(observations[e['repo']], sha=e['observed_revision'])
-                                  for e in refs if e['repo'] in observations}}
+        omarchy_snapshots = {e['repo']: dict(observations[e['repo']], sha=e['observed_revision'])
+                             for e in refs if e['repo'] in observations}
+        omarchy_snapshots.update(previous.get('snapshots', {}))
+        previous = {'snapshots': omarchy_snapshots}
     state = reconcile(previous, observations, errors, bool(issue and issue['state'] == 'closed'))
     body = render(state)
     if len(body) > 65000:

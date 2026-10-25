@@ -46,3 +46,15 @@ retries. Failure switches mirrors before dpkg begins. Once verified archives are
 ready, installation runs with `--no-download`. Both mirror failures stop CI.
 Normal Ubuntu archive signature verification remains enabled. Rustup and the
 overall workflow dependency step have separate time limits.
+
+
+## Rust candidate dependency downloads
+
+`install_rust_tools.py` selects the Rust-lane build/test packages using the same
+bounded signed download engine. Aurora's default package profile is preserved.
+The Rust profile includes explicit Clippy, debootstrap, gpgv and system Python
+YAML support and installs without recommendations. The workflow tests the shared
+installer, watches changes under `mseries/ci/`, and bounds the dependency step.
+Ten installer regressions plus nine workflow-policy checks pass locally; the
+new Rust profile still requires Linux CI qualification. This is CI bootstrap
+and oracle provisioning, not production native OS acquisition.

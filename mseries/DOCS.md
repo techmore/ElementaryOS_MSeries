@@ -66,6 +66,9 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [OS9-HANDOFF.md](OS9-HANDOFF.md) | Latest state, audit notes, verification results, blockers, next task |
 | [ROADMAP.md](ROADMAP.md) | Open problems and stretch goals |
 | [OMARCHY-M-ROADMAP.md](OMARCHY-M-ROADMAP.md) | Owner sequence: follow Omarchy M sources, integrate and qualify code, then migrate to Rust with measurements |
+| [rust/README.md](rust/README.md) | Rust branch scope, per-project register, parity contract, and daily/weekly upstream update rhythm |
+| [rust/mseries-power/README.md](rust/mseries-power/README.md) | First isolated Rust candidate and its parity and rollout gates |
+| [rust/wifi-resume/README.md](rust/wifi-resume/README.md) | Apple Silicon Wi-Fi resume recovery Rust candidate and parity gates |
 | [ATOMIC-APP-DEPLOYMENT.md](ATOMIC-APP-DEPLOYMENT.md) | Requested atomic app updates, rollback, apt performance investigation and Flatpak/Nix evaluation |
 | [UPDATER-DESIGN.md](UPDATER-DESIGN.md) | Customer update mechanism: signed repo, channels, staged apply at next login, automatic rollback, owner decisions |
 | [BUG-FIX-ROADMAP.md](BUG-FIX-ROADMAP.md) | Upstream comparison and prioritised bug backlog |

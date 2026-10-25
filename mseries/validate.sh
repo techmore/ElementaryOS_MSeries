@@ -200,6 +200,9 @@ check shellcheck 'codexbar' \
   'shellcheck -S warning mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh'
 
 # -- installer: the one-command install, first boot and the VM tool ----------
+check rust 'Rust migration inventory and project register' \
+  'python3 mseries/rust/inventory.py --check && python3 mseries/rust/test_inventory.py && python3 mseries/rust/test_elementary_projects.py'
+check rust 'atomic app reference fixtures' 'python3 mseries/test-atomic-app.py'
 check installer 'test-elementary-mac-setup.sh' 'bash mseries/test-elementary-mac-setup.sh'
 check installer 'test-installer-flow.sh' 'bash mseries/test-installer-flow.sh'
 check installer 'test-iso-label.sh' 'bash mseries/test-iso-label.sh'

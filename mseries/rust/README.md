@@ -1,0 +1,348 @@
+# Rust migration lane
+
+This branch is the tracked lane for rebuilding the executable parts of the
+elementary OS image and its M-series customizations in Rust. Every independently
+built or shipped upstream project gets its own source record and Rust target;
+every local customization gets its own migration record. Upstream source stays
+as the behavioral baseline until its Rust replacement passes parity and image
+qualification. The detailed source register covers ten direct Elementary
+image/customization dependencies, the metapackage source, and its two separate
+seed inputs (`elementary/seeds` and `elementary/platform`). The seed inputs are
+pinned in `elementary-build-inputs.json`; both currently lack license evidence,
+so no upstream seed content is copied into the Rust lane. The ARM64 desktop seed
+files map 58 repository candidates, plus the OS build repository, in
+`elementary-image-projects.json`; 48 still need repository/package, pin, and
+license confirmation. A separate dated census
+records all 153 repositories visible in the [official Elementary organization](https://github.com/orgs/elementary/repositories)
+on 2026-10-20; the other repositories remain individually marked for scope
+review. The census does not yet prove which repositories feed the selected
+image or finish their Rust conversion contracts.
+
+The current `dev` sync brings its existing compositor, SDK, broker and app
+candidates into this inventory as separate workspace-crate records. The
+workspace's older power candidate shares the power project's record. These
+entries preserve existing source and do not claim app acceptance or full
+upstream parity. Rust Messages is explicitly `owner-deferred-incomplete`, per
+`mseries/MESSAGING-STATUS.md`; Signal/Messages build-out remains deferred.
+
+## Goals
+
+- Keep upstream changes visible daily and produce a reviewed candidate at least
+  weekly; never turn a source update directly into a device update.
+- Give every upstream and local project its own source pin, license/provenance,
+  patch list, update owner, Rust target, compatibility status, and qualification
+  record.
+- Replace executable image, desktop, installer, and customization projects
+  with independent Rust implementations. An item may remain temporarily on its
+  old language only while conversion or an interface is unresolved, with that
+  blocker recorded explicitly.
+- Require observable behavioral parity before cutover. Record intentional
+  enhancements separately so parity and new behavior are independently
+  reviewable.
+- Preserve elementary's Ubuntu/mkosi packaging and the existing Asahi recovery
+  path. Do not import Arch-only package policy as if it were portable.
+
+## What “Rust branch” means
+
+Rust is the long-term implementation target for the complete OS product layer:
+image assembly and update tools, elementary desktop applications and services,
+M-series customization projects, and their installers. Each upstream project
+is tracked independently, migrated as its own Rust project, and compared against
+its pinned upstream behavior before the replacement becomes the default. Kernel,
+bootloader, firmware, and hardware drivers are also separate project items; a
+native-language exception must name its technical boundary, owner, and review
+date. Declarative configuration, artwork, translations, schemas, and protocol
+data stay in their appropriate formats and are not falsely counted as code
+ports. Intentional new behavior is tracked separately from parity work.
+
+The migration is staged, so a pin may continue to supply the comparison build
+while a Rust replacement is incomplete. A Rust adapter around an upstream binary
+does not count as converting that project. Keep each replacement in its own
+crate/package and preserve the current CLI, D-Bus, file, plugin, installer, or
+systemd contract until an explicit interface change is reviewed. Record source
+and license provenance for every copied or adapted implementation.
+
+Keep each replacement project in its own crate/package behind the current
+CLI, D-Bus, file, plugin, or systemd contract. This lets upstream pins move
+independently and each Rust port be compared with its own reference behavior. A
+shared Cargo workspace may be added later if the crates have compatible release
+and dependency needs; it is not a reason to couple unrelated projects.
+
+## Project register
+
+`elementary-projects.json` is the machine-readable source, pin, license,
+replacement target, parity contract, and separately scoped enhancement ledger
+for ten direct Elementary repositories, the metapackage generator, and two
+seed inputs. `elementary-build-inputs.json` also tracks the local
+`elementary/package-generator` crate as its own project and Ubuntu Germinate
+as its reference implementation. `source-inventory.json` covers the current
+repository paths and creates path-based item IDs, but semantic ownership
+review and complete project records are still needed before conversion.
+
+`source-inventory.json` is generated by `inventory.py` and gives every file in
+its declared build/customization scope, including the root ISO assembler and
+the existing `rust/` Cargo workspace, a
+path record, a path-derived
+`component_id`, and an explicit `project_id`. It includes documentation,
+extensionless hooks, presets, and packaged data as well as source files. The
+2,964 files (2,882 local and 82 elementary-owned upstream inputs) currently form
+533 directory groups and 499 project records. Explicit overrides join Rust
+candidates with their Python references, installers, and tests where those
+files live in separate directories, and group local mkosi overlays with the
+Apple Silicon image integration. The inventory classifier distinguishes
+implementation code, upstream patches, tests, documentation, assets, and
+declarative inputs instead of labeling unknown files as executable code. The
+current scope contains 1,272 implementation files (1,259 local), 86 upstream
+patches, and 803 configuration/data files. Semantic project boundaries and
+Rust decisions still need review against source licenses, interfaces, and
+conversion contracts.
+Each of the 499 generated project records now states its Rust target or
+non-code disposition, migration status, parity-contract status, and whether
+intentional enhancements have been reviewed. These path-derived records make
+the entire work list explicit; code projects still marked `not-started` need
+semantic ownership review and a feature-level parity contract before porting.
+Power, Wi-Fi, keyboard-backlight, and panel-provenance candidate
+files are marked `candidate-parity-verified-not-installed`; network-usage
+and brightness-bridge candidate files are
+`candidate-functional-tests-passing-not-installed`.
+The ISO assembler is now a Rust candidate, but full Linux image assembly and
+feature parity have not been verified; it is explicitly marked
+`candidate-implemented-unverified`.
+The per-user desktop-settings coordinator is also implemented in Rust and
+staged as a user-invoked image tool; its Pantheon/GSettings runtime parity is
+still unverified. The launcher key watchdog is also implemented in Rust and
+staged separately; its GSettings/Pantheon runtime behavior remains unverified.
+The Homeboard desktop-entry installer has an independent Rust candidate; its
+desktop-menu discovery still needs a session check.
+The package-generator candidate now parses Debian binary `Packages` stanzas,
+expands source-package names to available binaries, and follows basic
+Depends/Pre-Depends closure with optional Recommends. Each contributing seed
+retains its own exclusions and feature flags. Blocklists apply to that seed and
+its inherited ancestors, including dependency expansion; exclusions can make
+the resulting package set uninstallable. The CLI honors per-seed
+`follow-recommends` and `no-follow-recommends` flags. Apt/Germinate parity is
+incomplete: archive priority/conflicts, build-dependency features, snap
+selection and fresh real-source list generation remain open. Seed-entry and archive
+recommendations are emitted separately by its integrated profile command.
+Its `metapackage-substvars` command now renders Debian relationship fragments
+from supplied maps and architecture-specific package lists. A comparison with
+the pinned Germinate helper and real Debhelper passed eight Linux cases.
+A further 22 profile membership comparisons passed in Linux run 40235036913
+on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. A native multi-architecture map/list generator now reads supplied update.cfg,
+seed and archive inputs; 56 direct file comparisons with the pinned updater
+pass across four configurations in Linux run 40236407482.
+A native metadata-only Debian package builder now passes 40 Linux comparisons
+with dpkg-gencontrol, dpkg-deb and Debhelper, including documentation, checksums
+and reproducible native rebuilds (run 40238235136).
+The pinned upstream source's unchanged rules now pass 32 actual package
+comparisons in Linux run 40238779709, and all 32 native hashes match macOS builds.
+Fresh real-source/archive map/list generation also passes 33 byte-for-byte
+comparisons in Linux run 40240688243 using signed indexes and actual debootstrap.
+Production native acquisition, PPA installability and image admission remain open.
+Lexical seed variables now support the real live profile's language expansion;
+36 profile membership comparisons and the extended 56 map/list comparisons pass
+in Linux run 40239533941. The full configured real seed/archive map/list stage now passes in run
+40240688243.
+Documentation, binary assets, and declarative inputs are recorded as non-code
+inputs; remaining local implementation, verification, and patch items stay
+`not-assessed` until their conversion contracts are reviewed. CI checks that
+the generated inventory matches the scoped files. Project records do not
+replace upstream revision/license pins or complete the semantic ownership
+audit.
+
+| Project/item | Current boundary | Rust decision | Parity and update record |
+|---|---|---|---|
+| `image-build/assemble-iso` | Stages the mkosi output and creates the bootable live ISO | Rust crate owns orchestration; existing shell entry point launches it | `mseries/rust/iso-assembly/`; full Linux build and feature parity remain open |
+| `mseries/apply-desktop-settings` | Applies owner-session shortcuts, launcher, screenshot redirect, title buttons, and brightness autostart | Rust crate is staged as a user-invoked tool; the Python implementation remains its comparison reference | `mseries/rust/desktop-settings/`; GSettings and Pantheon runtime parity remain open |
+| `mseries/mseries-launcher-keys` | Re-registers launcher shortcuts when the media-keys shortcut list changes | Rust watcher is staged and selected by the settings coordinator; Python remains an older-image fallback | `mseries/rust/launcher-keys/`; unit-tested, live GSettings/Pantheon parity remains open |
+| `mseries/install-homeboard-launcher` | Writes the current user's Homeboard `.desktop` launcher | Rust candidate exists; the shell installer remains the active reference | `mseries/rust/homeboard-launcher/`; desktop-menu discovery remains unverified |
+| `elementary/metapackages` | Selects the default Elementary package sets and Pantheon components | Source is pinned as an audit baseline; Rust seed-to-Debian generator remains partial | `elementary-image-projects.json`; resolve package closure and amd64/arm64 output parity |
+| `elementary/package-generator` | Reads Elementary and Ubuntu package seeds to generate metapackages | Rust seed resolver plus Debian archive parser and integrated basic dependency-closure candidate exists; build-dependency features and apt/Germinate parity remain open | `seed-compiler/`; differential fixtures, archive precedence/conflicts, arm64/amd64 closure, and Debian output parity |
+| `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is pinned by verified archive SHA-256; eight substvars, 36 profile package-set and 56 map/list comparisons pass in Linux; 32 real-source package outputs are qualified | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
+| `elementary/seeds` | Defines Elementary desktop, Pantheon, and SDK package profiles | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; profile inheritance, qualifiers, and package-set parity |
+| `elementary/platform` | Supplies Ubuntu base profiles included by Elementary seeds | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; release/architecture package-set parity |
+| `elementary/os` | Image build, package set, mkosi and sysupdate | Replace executable build, installer and update tooling with Rust project(s); preserve declarative mkosi inputs | `elementary-projects.json`; image parity across architectures and update/rollback behavior |
+| `AsahiLinux/linux` (Fairydust) | Experimental Apple Silicon kernel and local dock/display patches | Track as its own Rust kernel replacement, including Rust-for-Linux interfaces and each hardware patch | Per-patch source and hardware gates in `mseries/fairydust/`; parity must include boot, devices and recovery |
+| `omacom/linux-aurora` | Released Apple Silicon kernel candidate and optional enhancements | Track an independent Rust kernel replacement and preserve matched recipe/config/package inputs | `mseries/aurora/release.json` and `mseries/aurora/enhancements/`; separate package and hardware qualification |
+| `omacom/m1n1` | Aurora's matched boot-stage source | Create a separate Rust boot-stage project preserving matched inputs and boot.bin interface | Source/package checks and shared `boot.bin` compatibility review; no boot claim without device evidence |
+| Asahi U-Boot | Bootloader package/source | Create a separate Rust bootloader project with recovery parity and matched source provenance | Preserve recovery entry and matched-input provenance; source checks do not count as boot qualification |
+| Ubuntu Asahi PPA | Signed package/source distribution for experimental boot inputs | Track the PPA signing key, release metadata, package versions, and hashes independently from source repositories | `UPSTREAM-PINS.md`; signature verification is not boot qualification |
+| Asahi firmware and device-tree artifacts | Boot and board enablement inputs | Keep each source/artifact under a separate pin and license record | Preserve matched-input provenance; source checks do not count as boot qualification |
+| `elementary/panel-network` | Patched network indicator and network-usage integration | Replace indicator and usage daemon with separately tested Rust projects | `elementary-projects.json`; network/VPN, rendering, persistence and DNS parity |
+| `elementary/quick-settings` | Factory quick-settings plugin and charge/screen/keyboard widgets | Replace host and widgets with separately tested Rust projects | Pinned source/hash and menu, controls, plugin lifecycle, accessibility parity |
+| `elementary/wingpanel` | Panel host and indicator extension interface | Replace host and indicators with a Rust panel/extension project | Six-hour upstream watch; test layout, loading, and session behavior |
+| `elementary/dock` | Dock and local drawers customization | Replace dock/window-switcher with a Rust project; track drawers as a separate enhancement | Six-hour upstream watch; compare launcher, window/workspace behavior and rollback |
+| `elementary/files` | Files app and local portal fix | Replace file manager with a Rust project; track portal fix as a parity item | Six-hour upstream watch; compare file, mount, portal and desktop behavior |
+| `elementary/panel-power` | Wingpanel power indicator used by battery ETA integration | Replace indicator with a Rust project; separately track ETA/watts additions | Six-hour upstream watch; compare power state, display and indicator behavior |
+| M-series quick-settings widgets | Charge, display-brightness, and keyboard-brightness Vala modules patched into Quick Settings | Port each widget to Rust and migrate the host/extension boundary as a separately tracked project | `mseries/quick-settings/` and `mseries/patches/`; compare D-Bus, controls, and rendered UI |
+| `elementary/wingpanel-indicator-sound` | Factory sound-indicator plugin | Replace plugin with a Rust indicator preserving media/audio controls | Source revision, license, patch and consumer hash in `elementary-projects.json` |
+| `elementary/panel-keyboard` | Factory keyboard-indicator plugin | Replace plugin with a Rust indicator preserving layout selection and accessibility | Source revision, license, patch and consumer hash in `elementary-projects.json` |
+| `elementary/gala` | Pantheon compositor and maintained upstream patches | Replace compositor/window manager with an independently qualified Rust project | Pin, clean patch comparison, build and compositor behavior are separate gates |
+| M-series Gala drawers plugin | Local Vala plugin and settings schema | Rust replacement is a separate item alongside the compositor; drawers are an enhancement | Compare hotkeys, show/hide, placement, monitor handling and launch behavior |
+| `JoseExposito/touchegg` | Optional gesture daemon source | If retained in the OS product, replace it with a separately tested Rust gesture daemon | Pinned source archive, license, packaging and gesture qualification in `UPSTREAM-PINS.md` |
+| `omacom/libva-v4l2_request` | Optional VA-API bridge for Apple video decode | Keep upstream implementation and its kernel/firmware contract | Pinned source and package checks in `UPSTREAM-PINS.md`; enabled codecs are not hardware qualification |
+| `omacom/omarchy-mac-pkgs` | Behavioral reference for Apple hardware support | Do not fork wholesale; translate only justified behavior for Ubuntu/Pantheon | `mseries/PORT-MAP.md`; retain source attribution and license |
+| `omacom/omarchy-mac` | Historical source for the original scaffold | Keep as historical provenance; maintained package changes follow `omarchy-mac-pkgs` | Pin is retained in `UPSTREAM-PINS.md`; do not confuse it with the current package source |
+| `omacom/omarchy-mac-installer` | Discovery/reference source for installer and recovery UX | Reference only unless separately approved for integration; Rust-port local installer behavior | Track observed revision in `upstreams/omarchy-m.json`; preserve Elementary installer/recovery contract |
+| `omacom/try-omarchy` | VM-preview and guest-integration reference | Discovery/reference only; any local preview component gets an individual Rust record | Track observed revision; do not merge source based on feature resemblance |
+| `subedijaidip/dp-altmode-t8112` | M2 Air USB-C display driver reference | Keep upstream kernel project; assess applicable behavior for local kernel work | Track license, exact revision and board boundary; this source targets different hardware |
+| `joshuaswarren/omarchy-mlx` | MLX/Vulkan and local-AI reference | Keep independent upstream project; Rust-port only local maintained integration | Track revision, license, supported devices and measured workloads |
+| `joshuaswarren/omarchy-ane` | Apple Neural Engine integration reference | Track independently; no image dependency until source, license, and hardware applicability are qualified | Discovery-only upstream item |
+| `omacom/mesa` | Private compute-Mesa source reference | Keep separate from elementary's desktop Mesa; track its own source pin and license | Never substitute it for system Mesa without a separate package and hardware review |
+| `joshuaswarren/mesa` | Mesa branch-discovery reference | Keep separate from `omacom/mesa` and system Mesa | Discovery-only upstream item |
+| `omacom/omarchy` | Desktop and package behavior reference | Do not copy its desktop wholesale; translate applicable local behavior into separate Rust components | Track observed revision; translate Arch/Hyprland contracts explicitly |
+| `techmore/ElementaryOS_MSeries_Optimization` | Power/performance tools and tuning reference | Track as a separate repository; import only reviewed, licensed features with their own parity plan | Pin in `UPSTREAM-PINS.md`; not a factory dependency |
+| `mseries-power` | Privileged charge/power command and profile policy | Rust candidate implemented in its own crate; not installed by default | Thirteen differential cases currently pass; full contracts and target-device qualification remain open; see `mseries-power/README.md` |
+| M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
+| Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Eight unit tests plus 16 same-fixture Python/Rust socket and DNS cases pass; daemon restart and device-session qualification remain open; see `netusage/README.md` |
+| Atomic app deployment | Verified release trees, per-app lock, durable generation switch, launch and rollback | Generic Rust CLI candidate built into the Apple Silicon factory staging layer; Python remains the behavior reference and Signal installers follow dev during the owner's deferral | Four Rust unit tests and eight paired Python/Rust CLI scenarios pass; existing nine-case Python suite passes; full arm64 image admission remains open; see `atomic-app/README.md` |
+| Ambient keyboard lighting | User service, AOP ALS sensor, UPower and logind session gates | Rust candidate in its own crate; current Python helper remains installed | Six Rust core tests and fake UPower/logind Python/Rust parity pass; live system and image admission remain open; see `keyboard-backlight/` |
+| Pantheon brightness compatibility | GNOME Shell Brightness D-Bus name, Mutter backlight property, GSettings policy, and BrightnessChanged signal | Rust GIO candidate added; Python bridge remains installed | Five Rust policy tests, native GIO build, and the private-bus fake-Mutter fixture pass in arm64 CI; same-host behavior and image admission remain open; see `brightness-bridge/README.md` |
+| Factory panel provenance tools | Package-version, ABI-path and plugin-digest gate used during image assembly | Rust `verify` and `record` now run in the image build and stage under the existing verifier path; Python remains as parity/rollback baseline | Rust unit checks and Python/Rust command parity fixtures pass; full arm64 image admission remains open; see `panel-provenance/README.md` |
+| ISO volume-label formatting | `mseries/iso-label.sh`, called by `assemble-iso.sh` | Replaced in the build path by the independent `mseries/rust/iso-label/` crate; legacy helper remains a comparison reference | Two Rust unit tests plus six Python/Rust vs shell normalization cases pass; CI builds and compares the release binary |
+| Image/install orchestration | `bin/`, `transform/`, mkosi hooks and installer scripts | Rust migration target for each executable project, including build and installer orchestration | Preserve resume, status, abort, rollback and failure semantics before each cutover |
+
+### Separately monitored discovery projects
+
+These repositories are monitored as individual projects, not dependencies of
+the OS image. Their update records remain separate; an observation does not
+authorize import or bundling.
+
+| Upstream project | Current relationship | Rust-branch action |
+|---|---|---|
+| `maralcbr/omarchy-mx-mac` | Feature-frozen reference; security/boot fixes only | Track separately; no wholesale fork |
+| `aurora-silicon/linux` | Hardware-qualified alternate kernel reference | Keep its kernel/source/package record separate |
+| `riverscn/omarchy-pkgs-aarch64` | ARM64 packaging reference | Track package licenses and compatibility per item |
+| `zackb/tether` | Optional iPhone continuity app | Keep app/source/license/package status separate |
+| `erikwb/BlueFerry` | Alternative iPhone continuity project | Discovery only; no image dependency |
+| `OpenBubbles/openbubbles-app` | iMessage app candidate | Track license and security status; not an image dependency |
+| `cameroncooper/keychain` | Read-only iCloud Keychain client candidate | Discovery only; no image dependency |
+| `Sank6/ICloud-Keychain-for-Linux` | Keychain/Brave extension candidate | Discovery only; evaluate each shipped feature independently |
+| `BlueBubblesApp/bluebubbles-app` | ARM64 client candidate | Track independently from its server and license |
+| `BlueBubblesApp/bluebubbles-server` | macOS server companion | Separate project; not an elementary image dependency |
+| `OpenBubbles/rustpush` | SSPL protocol core | Do not bundle; preserve its license restriction in the watch record |
+| `chrispouliot/bubbles` | GTK4 client candidate | Discovery only; no image dependency |
+| `tannerkrewson/LiteBubbles` | GNOME client candidate | Discovery only; no image dependency |
+| `bendews/apw` | Apple Passwords client/daemon candidate | Track license and platform status separately |
+| `dragosol/icloud-keychain-linux` | Keychain viewer candidate without a declared license | Do not import absent a license; keep its own watch record |
+| `alex-mextner/passwords-app` | Apple Passwords client candidate | Discovery only; no image dependency |
+| `deej1721/icloud-passwords-linux` | VM/Chrome bridge candidate | Discovery only; no image dependency |
+
+This list mirrors the repository projects named in
+`mseries/local-ai/people-watch.json`; reconcile it whenever that source roster
+changes. Each remains a separate record even when the decision is discovery-only.
+
+For each additional upstream repository or local component, add a distinct row
+before changing it; do not combine separate upstream repositories into one
+row. Record at minimum: repository and upstream URL; license; pinned
+revision and update signal; downstream files or patches; existing behavior and
+public interfaces; parity evidence; enhancement proposals; supported boards;
+build/package path; rollback; and current qualification state. Never merge
+unreviewed source just because it is newer.
+
+## Conversion contract
+
+Each port follows this sequence:
+
+1. Inventory the exact old implementation, callers, permissions, inputs,
+   outputs, service ordering, error handling, and supported hardware.
+2. Write behavior-level parity cases from the old implementation and known
+   regressions. Capture representative fixtures before rewriting it.
+3. Implement one independent Rust component with a narrow contract. Minimize
+   dependencies; forbid `unsafe` unless the record explains why and bounds it.
+4. Run the same cases against old and new implementations. Record build target,
+   package contents, diagnostics, and results. Add security/dependency review
+   for shipped crates.
+5. Install side by side behind an explicit opt-in or image profile. Confirm
+   rollback and run the relevant VM or hardware checks before changing the
+   default.
+6. Promote only after parity passes and the required hardware qualification is
+   recorded. Keep the old implementation through a release/rollback window.
+7. Track intentional enhancements in a separate section and separate tests;
+   do not let an enhancement conceal a parity regression.
+
+No code port should claim feature parity based only on successful compilation.
+For hardware-dependent behavior, report source/unit evidence separately from
+device evidence and state when the latter is still missing.
+
+## Upstream update rhythm
+
+- **Daily:** poll each registered upstream for new commits/releases, validate
+  pin metadata and license/source availability, and open or refresh a candidate
+  report. Do not automatically merge or deploy.
+- **Weekly:** review one candidate batch per project; rebase the branch, apply
+  local patches cleanly, build affected packages/images, run parity and VM
+  admission checks, inspect the diff, and publish a reviewable result.
+- **On source breakage:** hold that project's bump in its own record, capture
+  the failing revision and blocker, and continue updates for unrelated projects.
+- **On device promotion:** require green software checks, a preserved recovery
+  route, explicit owner approval for boot/kernel/audio changes, and a recorded
+  rollback. A CI build is not a successful boot or hardware result.
+
+The six-hour upstream watch consumes `elementary-projects.json` as the
+authoritative Elementary roster, compares each default branch against its
+recorded pin, and captures branch and pull-request heads. Changes appear in the
+existing review dashboard and retained workflow artifact; the watcher never
+changes a pin. Weekly admission remains a separate review of license, patches,
+build/parity evidence, and image qualification. Use `mseries/UPSTREAM-PINS.md`,
+CI, and `mseries/VM-SMOKE-TEST.md` for those gates.
+
+## Initial migration candidates
+
+The previous plan identifies `mseries-power`, Wi-Fi resume recovery, the
+network-usage logger, brightness bridge, and keyboard-backlight service as
+early Rust ports. This list is only the first sequence: the full target includes
+all locally maintained executable code, including installers and image
+orchestration. Prioritize by dependency ordering and failure impact, but do not
+drop difficult items from the register. Preserve the GTK launcher and
+troubleshooter interfaces during conversion; assess each local UI component
+individually.
+
+## Current state
+
+- Branch baseline: latest available `origin/main` snapshot at `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`.
+- The `mseries-power` candidate has an independent, dependency-free Rust crate,
+  a lockfile, a side-by-side parity suite (13 differential scenarios), and a CI
+  command. It is not wired into installation or the factory image.
+- The Wi-Fi resume candidate has a separate dependency-free Rust crate and 12
+  differential scenarios in CI; it is not wired into suspend hooks.
+- The network-usage logger has a separate Rust daemon candidate and candidate
+  systemd unit. Eight focused parser, DNS, counter-delta, retry and SQLite-schema tests plus 16
+  same-fixture Python/Rust socket/DNS cases pass. It is not installed;
+  daemon restart and desktop-session checks remain open.
+- The factory panel provenance gate has Rust `verify` and `record` commands.
+  Its package/version checks, ABI-path checks, SHA-256 artifact records,
+  `--only` filter and `--skip-plugins` behavior match the Python tools across
+  fixture scenarios. The branch's image build invokes Rust and stages the
+  existing `verify-panel-packages` command name; the full image has not yet
+  passed on this branch.
+- The keyboard-backlight service has a dependency-free Rust candidate with
+  six unit tests for sensor selection, rounding, manual override pause, and
+  deadband. Its fake UPower/logind Python/Rust integration fixture passes. It is
+  not installed; live system and image admission remain open.
+- The Pantheon brightness bridge has a Rust candidate that exports the existing
+  GNOME D-Bus contract using native GIO FFI. Five policy tests pass and the
+  candidate links against the host GIO development library. The Python service
+  remains installed until same-host behavior and image admission pass. The
+  private-bus fake-Mutter fixture passes in arm64 Linux run 40235036913.
+- The ISO volume-label helper is now a dependency-free Rust executable called
+  by `assemble-iso.sh`. It matches the legacy shell function on six
+  normalization cases and passes two Rust unit tests, format, Clippy, and
+  release build checks. The shell helper remains as a parity reference.
+- The opt-in atomic app deployment CLI now has a Rust candidate with locked
+  `serde_json`, `libc`, and UUID dependencies. It matches the Python reference
+  across eight paired release, update, launch, rollback, path-safety, and
+  concurrency scenarios. The factory staging script builds it into
+  `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
+  while the owner's Signal/Messages deferral is in force. Full image admission
+  remains open.
+- The full file inventory currently contains 2,964 items (2,882 M-series-maintained
+  and 82 elementary-owned upstream inputs), 533 directory groups, and 499
+  project records. Many non-candidate local code/configuration/patch items
+  still need semantic ownership review, a conversion contract, and a parity
+  plan.
+- The source-by-source register is still incomplete. The existing upstream
+  watcher polls every six hours. A Rust candidate workflow now defines daily
+  Rust checks and a Monday non-publishing arm64 image build. GitHub schedules
+  execute only from the default branch; the published `rust` draft branch has not
+  activated those schedules.

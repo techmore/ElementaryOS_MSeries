@@ -93,6 +93,84 @@
       "base": "main",
       "open_prs": true,
       "discover_branches": true
+    },
+    {
+      "repo": "elementary/os",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/gala",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/wingpanel",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/dock",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/files",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/quick-settings",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/panel-network",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/metapackages",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/panel-power",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/wingpanel-indicator-sound",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/panel-keyboard",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/seeds",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
+    },
+    {
+      "repo": "elementary/platform",
+      "base": "resolute",
+      "discover_branches": true,
+      "open_prs": true
     }
   ]
 }

@@ -1,0 +1,9 @@
+[package]
+name = "mseries-launcher-keys"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "mseries-launcher-keys"
+path = "src/main.rs"

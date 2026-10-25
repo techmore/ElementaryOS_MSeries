@@ -1,0 +1,9 @@
+[package]
+name = "mseries-homeboard-launcher"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "mseries-homeboard-launcher"
+path = "src/main.rs"

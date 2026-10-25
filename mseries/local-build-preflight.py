@@ -7,7 +7,7 @@ import platform
 import shutil
 
 MIN_FREE = 60 * 1024**3  # Conservative headroom, not a measured peak requirement.
-TOOLS = ('just', 'podman', 'zstd', 'rsync')
+TOOLS = ('just', 'podman', 'zstd', 'rsync', 'cargo')
 
 
 def existing_parent(path):

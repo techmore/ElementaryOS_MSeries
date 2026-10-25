@@ -24,6 +24,50 @@ The fetched `elementary/os` `main` reference on 2026-10-13 was
 `7024fd04646a6a8565bf6805989b59fd72de928c`. This is the comparison point for
 the OS 9 source audit; recheck the upstream branch before the next port.
 
+## Elementary desktop project watch records
+
+The upstream watch roster tracks Elementary application/image projects and
+build inputs separately: the ten direct image/customization dependencies,
+`elementary/metapackages`, `elementary/seeds`, and `elementary/platform`. The
+seed inputs are pinned in [`rust/elementary-build-inputs.json`](rust/elementary-build-inputs.json);
+their licenses are unverified and no seed data has been copied. The six-hour watcher reads
+this project roster from [`rust/elementary-projects.json`](rust/elementary-projects.json),
+compares default-branch heads to the recorded pins, and captures branch heads
+and open pull-request heads into a retained artifact. Changes surface in the
+review dashboard. The watcher never moves source pins.
+The exact source revisions consumed by each local installer/build recipe remain the
+admission pins and are deliberately not advanced by the watcher. The current
+revision, license evidence, Rust replacement target, parity contract, and
+separately scoped enhancements for these ten projects are recorded in
+[`rust/elementary-projects.json`](rust/elementary-projects.json). That ledger
+points to the installer/build consumers that carry each active pin; its CI test
+checks that the recorded pin still appears in those consumers. For each
+revision change, update the pin, preserve license and patch provenance, and run
+the project's parity/build checks before image review.
+
+Current source pin locations include `install-gala-*.sh` and
+`install-gala-drawers.sh` for Gala; `install-wingpanel-*.sh` for Wingpanel;
+`install-dock-drawers.sh` for Dock; `install-files-portal-fix.sh` for Files;
+`install-battery-eta.sh` for panel-power; `build-network-indicator` and
+`install-network-throughput.sh` for panel-network; `build-quick-settings` and
+`install-quick-settings-brightness.sh` for quick-settings; and the dedicated
+sound/keyboard indicator installers. The ten direct project pins are
+established; extending the same source/pin/license/parity contract to every
+other upstream dependency and every local project remains open.
+
+The configured Resolute desktop seed snapshot is tracked separately across
+`elementary/metapackages`, `elementary/seeds`, and `elementary/platform`; the latter
+two are generator inputs with unverified licenses. Their commits and selected
+file hashes are recorded in `mseries/rust/elementary-build-inputs.json`. The
+metapackage source is at at `6e6466507f7f5b32e73594c5e727a49f0be58d0f`.
+`mseries/rust/elementary-image-projects.json` maps its four ARM64 desktop and
+Pantheon seed files to 58 candidate Elementary repositories, plus the OS build
+repository, in the 59-project image source map. This is a package seed mapping,
+not an installed-package receipt: 46 repository mappings still need
+source-package confirmation (48 of the 59 source records do not yet have full
+pins/license/parity records), and the active PPA package versions are not
+pinned by this source commit.
+
 ## Wingpanel network speed readout
 
 The Apple Silicon image builds `elementary/panel-network` at

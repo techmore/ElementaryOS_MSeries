@@ -21,9 +21,11 @@ its own journal, health check and rollback: [UPDATER-DESIGN.md](UPDATER-DESIGN.m
 
 `bash mseries/install-signal.sh --atomic` downloads the upstream ARM64 beta,
 checks its signature against the existing pinned publisher fingerprint, extracts
-it, and passes the prepared tree to `atomic-app.py`. Default installation is
-unchanged. The utility accepts already verified trees; it does not verify a
-publisher merely because a fingerprint or digest was supplied on its CLI.
+it, and passes the prepared tree to the staged Rust `mseries-atomic-app` command.
+Default installation is unchanged. The command accepts already verified trees;
+it does not verify a publisher merely because a fingerprint or digest was
+supplied on its CLI. `mseries/atomic-app.py` remains the reference
+implementation during Rust parity qualification.
 
 Each deployment gets a new release directory and generation. A single atomic
 symlink replacement selects a generation containing both the app reference and
@@ -41,8 +43,8 @@ Signal account data stays in its existing user configuration directory.
 After at least two atomic installs, inspect or roll back with:
 
 ```sh
-python3 ~/.local/libexec/mseries-atomic-app --app signal-desktop-beta status
-python3 ~/.local/libexec/mseries-atomic-app --app signal-desktop-beta rollback
+~/.local/libexec/mseries-atomic-app --app signal-desktop-beta status
+~/.local/libexec/mseries-atomic-app --app signal-desktop-beta rollback
 ```
 
 Rollback changes the next app launch; quit the running instance before launching
