@@ -120,7 +120,7 @@ fn run() -> Result<(), String> {
                 .ok_or_else(|| "STRUCTURE path has no parent directory".to_owned())?;
             let mut available = BTreeMap::new();
             let mut directories = vec![root_dir.to_path_buf()];
-            let follow_recommends = args[7..].iter().any(|arg| arg == "--follow-recommends");
+            let force_follow_recommends = args[7..].iter().any(|arg| arg == "--follow-recommends");
             for item in args[7..]
                 .iter()
                 .filter(|arg| arg.as_str() != "--follow-recommends")
@@ -159,6 +159,8 @@ fn run() -> Result<(), String> {
                 documents.insert(seed_name.clone(), document);
             }
             let resolved = structure.resolve_seed(&args[4], &args[5], &documents)?;
+            let follow_recommends =
+                structure.follows_recommends(&args[4], &documents, force_follow_recommends)?;
             let package_text =
                 fs::read_to_string(&args[6]).map_err(|e| format!("{}: {e}", args[6]))?;
             let catalog = PackageCatalog::parse_packages(&package_text)
@@ -168,6 +170,8 @@ fn run() -> Result<(), String> {
             )?;
             let closure =
                 catalog.resolve_seed_package_closure(&roots, &args[5], follow_recommends)?;
+            let recommendation_closure =
+                catalog.resolve_seed_recommendation_closure(&roots, &args[5])?;
             for package in &roots.depends {
                 println!("root\tdepends\t{package}");
             }
@@ -179,6 +183,12 @@ fn run() -> Result<(), String> {
             }
             for package in closure.packages {
                 println!("package\t{}\t{}", package.package, package.architecture);
+            }
+            for package in recommendation_closure.packages {
+                println!(
+                    "recommended-package\t{}\t{}",
+                    package.package, package.architecture
+                );
             }
             Ok(())
         }

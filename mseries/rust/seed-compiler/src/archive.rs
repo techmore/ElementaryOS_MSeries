@@ -88,8 +88,6 @@ pub struct SeedPackageRoots {
     pub depends: BTreeSet<String>,
     pub recommends: BTreeSet<String>,
     pub snaps: BTreeSet<String>,
-    pub blacklisted_packages: BTreeSet<String>,
-    pub blacklisted_sources: BTreeSet<String>,
 }
 
 pub fn expand_seed_entries(
@@ -142,22 +140,22 @@ pub fn expand_resolved_seed(
     architecture: &str,
 ) -> Result<SeedPackageRoots, String> {
     let mut roots = expand_seed_entries(&seed.entries, catalog, architecture)?;
-    roots.blacklisted_packages = seed.blacklisted_packages.clone();
-    roots.blacklisted_sources = seed.blacklisted_sources.clone();
+    // Germinate blocklists filter seed inclusions. They do not rewrite archive
+    // relationships: a blocked package may still reappear as a dependency.
     roots.depends.retain(|package| {
         !catalog.seed_root_is_blacklisted(
             package,
             architecture,
-            &roots.blacklisted_packages,
-            &roots.blacklisted_sources,
+            &seed.blacklisted_packages,
+            &seed.blacklisted_sources,
         )
     });
     roots.recommends.retain(|package| {
         !catalog.seed_root_is_blacklisted(
             package,
             architecture,
-            &roots.blacklisted_packages,
-            &roots.blacklisted_sources,
+            &seed.blacklisted_packages,
+            &seed.blacklisted_sources,
         )
     });
     Ok(roots)
@@ -564,50 +562,37 @@ impl PackageCatalog {
         names
     }
 
-    pub fn dependency_closure(
-        &self,
-        roots: &[String],
-        architecture: &str,
-        follow_recommends: bool,
-    ) -> Result<PackageClosure, String> {
-        self.dependency_closure_excluding(
-            roots,
-            architecture,
-            follow_recommends,
-            &BTreeSet::new(),
-            &BTreeSet::new(),
-        )
-    }
-
-    /// Resolve one seed's binary-package roots while preserving its blocklists.
-    /// When Recommends are enabled, both seed recommendations and archive
-    /// Recommends are included in the returned closure.
+    /// Resolve one seed's binary-package roots.
+    /// The feature flag applies only to archive Recommends. Parenthesized seed
+    /// entries remain in their own recommendation output. Seed blocklists have
+    /// already filtered direct roots and are not passed into archive dependency
+    /// selection, matching Germinate's output behavior.
     pub fn resolve_seed_package_closure(
         &self,
         roots: &SeedPackageRoots,
         architecture: &str,
         follow_recommends: bool,
     ) -> Result<PackageClosure, String> {
-        let mut package_roots = roots.depends.iter().cloned().collect::<Vec<_>>();
-        if follow_recommends {
-            package_roots.extend(roots.recommends.iter().cloned());
-        }
-        self.dependency_closure_excluding(
-            &package_roots,
-            architecture,
-            follow_recommends,
-            &roots.blacklisted_packages,
-            &roots.blacklisted_sources,
-        )
+        let package_roots = roots.depends.iter().cloned().collect::<Vec<_>>();
+        self.dependency_closure(&package_roots, architecture, follow_recommends)
     }
 
-    pub fn dependency_closure_excluding(
+    /// Resolve parenthesized seed entries and their hard dependencies into the
+    /// separate recommendation output. Archive Recommends are not followed here.
+    pub fn resolve_seed_recommendation_closure(
+        &self,
+        roots: &SeedPackageRoots,
+        architecture: &str,
+    ) -> Result<PackageClosure, String> {
+        let package_roots = roots.recommends.iter().cloned().collect::<Vec<_>>();
+        self.dependency_closure(&package_roots, architecture, false)
+    }
+
+    pub fn dependency_closure(
         &self,
         roots: &[String],
         architecture: &str,
         follow_recommends: bool,
-        blacklisted_packages: &BTreeSet<String>,
-        blacklisted_sources: &BTreeSet<String>,
     ) -> Result<PackageClosure, String> {
         let mut closure = PackageClosure::default();
         let mut queue = VecDeque::new();
@@ -618,16 +603,9 @@ impl PackageCatalog {
                 version: None,
             };
             let package = self
-                .select_alternative(
-                    &alternative,
-                    architecture,
-                    blacklisted_packages,
-                    blacklisted_sources,
-                )
+                .select_alternative(&alternative, architecture)
                 .ok_or_else(|| {
-                    format!(
-                        "seed package `{root}` is unavailable or blacklisted for {architecture}"
-                    )
+                    format!("seed package `{root}` is unavailable for {architecture}")
                 })?;
             let key = package_key(package);
             if closure.packages.insert(key.clone()) {
@@ -666,14 +644,7 @@ impl PackageCatalog {
                 }
                 let selected = group
                     .iter()
-                    .find_map(|alternative| {
-                        self.select_alternative(
-                            alternative,
-                            architecture,
-                            blacklisted_packages,
-                            blacklisted_sources,
-                        )
-                    })
+                    .find_map(|alternative| self.select_alternative(alternative, architecture))
                     .ok_or_else(|| {
                         format!(
                             "no available alternative satisfies dependency of `{}` for {architecture}",
@@ -725,47 +696,31 @@ impl PackageCatalog {
         &self,
         alternative: &Alternative,
         architecture: &str,
-        blacklisted_packages: &BTreeSet<String>,
-        blacklisted_sources: &BTreeSet<String>,
     ) -> Option<&BinaryPackage> {
         let direct = self
             .packages
             .get(&alternative.package)
             .into_iter()
             .flatten()
-            .filter(|package| {
-                !self.is_blacklisted(package, blacklisted_packages, blacklisted_sources)
-                    && self.package_satisfies(package, alternative, architecture)
-            })
+            .filter(|package| self.package_satisfies(package, alternative, architecture))
             .max_by(|left, right| compare_versions(&left.version, &right.version));
         direct.or_else(|| {
             self.packages
                 .values()
                 .flatten()
                 .filter(|provider| {
-                    !self.is_blacklisted(provider, blacklisted_packages, blacklisted_sources)
-                        && provider.provides.iter().any(|provided| {
-                            provided.name == alternative.package
-                                && self.provider_satisfies(
-                                    provider,
-                                    provided,
-                                    alternative,
-                                    architecture,
-                                )
-                        })
+                    provider.provides.iter().any(|provided| {
+                        provided.name == alternative.package
+                            && self.provider_satisfies(
+                                provider,
+                                provided,
+                                alternative,
+                                architecture,
+                            )
+                    })
                 })
                 .max_by(|left, right| compare_versions(&left.version, &right.version))
         })
-    }
-
-    fn is_blacklisted(
-        &self,
-        package: &BinaryPackage,
-        blacklisted_packages: &BTreeSet<String>,
-        blacklisted_sources: &BTreeSet<String>,
-    ) -> bool {
-        blacklisted_packages.contains(&package.package)
-            || blacklisted_sources.contains(&package.source)
     }
 
     fn package_satisfies(
@@ -1010,34 +965,15 @@ mod tests {
     }
 
     #[test]
-    fn package_closure_applies_seed_blocklists_to_direct_and_virtual_dependencies() {
+    fn archive_relationships_are_not_rewritten_by_seed_blocklists() {
         let packages = "Package: app\nVersion: 1\nArchitecture: amd64\nDepends: blocked | allowed, virtual\n\nPackage: blocked\nVersion: 1\nArchitecture: amd64\nSource: forbidden-source\n\nPackage: allowed\nVersion: 1\nArchitecture: amd64\n\nPackage: provider\nVersion: 1\nArchitecture: amd64\nSource: forbidden-source\nProvides: virtual\n";
         let catalog = PackageCatalog::parse_packages(packages).unwrap();
-        let blocked_packages = BTreeSet::from(["blocked".to_owned()]);
-        let no_blocked_sources = BTreeSet::new();
         let closure = catalog
-            .dependency_closure_excluding(
-                &["app".into()],
-                "amd64",
-                false,
-                &blocked_packages,
-                &no_blocked_sources,
-            )
+            .dependency_closure(&["app".into()], "amd64", false)
             .unwrap();
-        assert!(!closure.packages.iter().any(|key| key.package == "blocked"));
-        assert!(closure.packages.iter().any(|key| key.package == "allowed"));
+        assert!(closure.packages.iter().any(|key| key.package == "blocked"));
+        assert!(!closure.packages.iter().any(|key| key.package == "allowed"));
         assert!(closure.packages.iter().any(|key| key.package == "provider"));
-
-        let blocked_sources = BTreeSet::from(["forbidden-source".to_owned()]);
-        assert!(catalog
-            .dependency_closure_excluding(
-                &["app".into()],
-                "amd64",
-                false,
-                &BTreeSet::new(),
-                &blocked_sources,
-            )
-            .is_err());
     }
 
     #[test]
@@ -1115,7 +1051,7 @@ mod tests {
 
     #[test]
     fn seed_entries_expand_source_binaries_and_preserve_depends_recommends_and_snaps() {
-        let packages = "Package: runtime\nVersion: 1\nArchitecture: arm64\nSource: runtime-src\n\nPackage: runtime-doc\nVersion: 1\nArchitecture: all\nSource: runtime-src\n\nPackage: optional-app\nVersion: 1\nArchitecture: arm64\n";
+        let packages = "Package: runtime\nVersion: 1\nArchitecture: arm64\nSource: runtime-src\nRecommends: runtime-extra\n\nPackage: runtime-doc\nVersion: 1\nArchitecture: all\nSource: runtime-src\n\nPackage: optional-app\nVersion: 1\nArchitecture: arm64\n\nPackage: runtime-extra\nVersion: 1\nArchitecture: arm64\n";
         let catalog = PackageCatalog::parse_packages(packages).unwrap();
         let seed = crate::SeedDocument::parse(
             "* %runtime-src\n* (optional-app)\n* snap:sample\n* (snap:ignored)\n",
@@ -1135,17 +1071,36 @@ mod tests {
             .packages
             .iter()
             .any(|key| key.package == "optional-app"));
+        assert!(!without_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
         let with_recommends = catalog
             .resolve_seed_package_closure(&roots, "arm64", true)
             .unwrap();
-        assert!(with_recommends
+        assert!(!with_recommends
             .packages
             .iter()
             .any(|key| key.package == "optional-app"));
+        assert!(with_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
+        let seed_recommends = catalog
+            .resolve_seed_recommendation_closure(&roots, "arm64")
+            .unwrap();
+        assert!(seed_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "optional-app"));
+        assert!(!seed_recommends
+            .packages
+            .iter()
+            .any(|key| key.package == "runtime-extra"));
     }
 
     #[test]
-    fn resolved_seed_blocklists_flow_into_binary_closure() {
+    fn resolved_seed_blocklists_filter_explicit_binary_roots() {
         let packages = "Package: app\nVersion: 1\nArchitecture: arm64\nDepends: blocked | allowed\n\nPackage: blocked\nVersion: 1\nArchitecture: arm64\nSource: blocked-source\n\nPackage: source-blocked\nVersion: 1\nArchitecture: arm64\nSource: blocked-source\n\nPackage: allowed\nVersion: 1\nArchitecture: arm64\n";
         let catalog = PackageCatalog::parse_packages(packages).unwrap();
         let structure = crate::Structure::parse("desktop:\n").unwrap();
@@ -1162,7 +1117,7 @@ mod tests {
         let closure = catalog
             .resolve_seed_package_closure(&roots, "arm64", false)
             .unwrap();
-        assert!(!closure.packages.iter().any(|key| key.package == "blocked"));
-        assert!(closure.packages.iter().any(|key| key.package == "allowed"));
+        assert!(closure.packages.iter().any(|key| key.package == "blocked"));
+        assert!(!closure.packages.iter().any(|key| key.package == "allowed"));
     }
 }

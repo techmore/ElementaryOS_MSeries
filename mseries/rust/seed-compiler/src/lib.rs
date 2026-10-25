@@ -157,7 +157,7 @@ impl Structure {
         Ok(self.resolve_seed(seed, architecture, documents)?.entries)
     }
 
-    /// Resolve entries and retain blocklists so archive closure cannot reintroduce them.
+    /// Resolve entries and retain blocklists for filtering explicit package roots.
     pub fn resolve_seed(
         &self,
         seed: &str,
@@ -168,7 +168,11 @@ impl Structure {
         let mut blacklist = BTreeSet::<(EntryKind, String)>::new();
         let mut blacklisted_packages = BTreeSet::new();
         let mut blacklisted_sources = BTreeSet::new();
-        for inherited in self.inheritance_order(seed)? {
+        let mut inheritance = self.inheritance_order(seed)?;
+        if seed != "blocklist" {
+            inheritance.retain(|inherited| inherited != "blocklist");
+        }
+        for inherited in inheritance {
             let document = documents
                 .get(&inherited)
                 .ok_or_else(|| format!("seed file `{inherited}` was not supplied"))?;
@@ -211,11 +215,61 @@ impl Structure {
                 }
             }
         }
+        if seed != "blocklist" && self.seeds.contains_key("blocklist") {
+            for inherited in self.inheritance_order("blocklist")? {
+                let document = documents
+                    .get(&inherited)
+                    .ok_or_else(|| format!("seed file `{inherited}` was not supplied"))?;
+                for entry in document
+                    .entries
+                    .iter()
+                    .filter(|entry| entry.architectures.applies_to(architecture))
+                {
+                    let (key, target) = match entry.kind {
+                        EntryKind::BlacklistPackage => (
+                            (EntryKind::Package, entry.name.clone()),
+                            Some(&mut blacklisted_packages),
+                        ),
+                        EntryKind::BlacklistSourcePackage => (
+                            (EntryKind::SourcePackage, entry.name.clone()),
+                            Some(&mut blacklisted_sources),
+                        ),
+                        _ => continue,
+                    };
+                    target
+                        .expect("blacklist entry has target set")
+                        .insert(entry.name.clone());
+                    blacklist.insert(key.clone());
+                    resolved.remove(&key);
+                }
+            }
+        }
         Ok(ResolvedSeed {
             entries: resolved.into_values().collect(),
             blacklisted_packages,
             blacklisted_sources,
         })
+    }
+
+    /// Determine Recommends behavior for one seed from Germinate's documented
+    /// Structure/seed flags. The CLI force option is an explicit opt-in override.
+    pub fn follows_recommends(
+        &self,
+        seed: &str,
+        documents: &BTreeMap<String, SeedDocument>,
+        force: bool,
+    ) -> Result<bool, String> {
+        if force {
+            return Ok(true);
+        }
+        let document = documents
+            .get(seed)
+            .ok_or_else(|| format!("seed file `{seed}` was not supplied"))?;
+        if document.features.contains("no-follow-recommends") {
+            return Ok(false);
+        }
+        Ok(self.features.contains("follow-recommends")
+            || document.features.contains("follow-recommends"))
     }
 
     fn visit(
@@ -532,6 +586,69 @@ mod tests {
             .unwrap();
         assert!(amd64.iter().any(|entry| entry.name == "amd-tool"));
         assert!(!amd64.iter().any(|entry| entry.name == "common"));
+    }
+
+    #[test]
+    fn special_blocklist_seed_applies_without_profile_inheritance() {
+        let structure = Structure::parse("desktop:\nblocklist:\n").unwrap();
+        let documents = BTreeMap::from([
+            (
+                "desktop".into(),
+                SeedDocument::parse("* app\n* blocked\n").unwrap(),
+            ),
+            (
+                "blocklist".into(),
+                SeedDocument::parse("* !blocked\n* !%bad-source [arm64]\n* ignored\n").unwrap(),
+            ),
+        ]);
+        let arm64 = structure
+            .resolve_seed("desktop", "arm64", &documents)
+            .unwrap();
+        assert_eq!(
+            arm64
+                .entries
+                .iter()
+                .map(|entry| entry.name.as_str())
+                .collect::<Vec<_>>(),
+            ["app"]
+        );
+        assert_eq!(
+            arm64.blacklisted_packages,
+            BTreeSet::from(["blocked".into()])
+        );
+        assert_eq!(
+            arm64.blacklisted_sources,
+            BTreeSet::from(["bad-source".into()])
+        );
+        assert!(structure
+            .resolve_seed("desktop", "amd64", &documents)
+            .unwrap()
+            .blacklisted_sources
+            .is_empty());
+    }
+
+    #[test]
+    fn recommend_feature_uses_structure_and_seed_override() {
+        let global = Structure::parse("feature follow-recommends\ndesktop:\n").unwrap();
+        let documents = BTreeMap::from([(
+            "desktop".into(),
+            SeedDocument::parse("* Feature: no-follow-recommends\n* app\n").unwrap(),
+        )]);
+        assert!(!global
+            .follows_recommends("desktop", &documents, false)
+            .unwrap());
+        assert!(global
+            .follows_recommends("desktop", &documents, true)
+            .unwrap());
+
+        let local = Structure::parse("desktop:\n").unwrap();
+        let documents = BTreeMap::from([(
+            "desktop".into(),
+            SeedDocument::parse("* Feature: follow-recommends\n* app\n").unwrap(),
+        )]);
+        assert!(local
+            .follows_recommends("desktop", &documents, false)
+            .unwrap());
     }
 
     #[test]

@@ -108,10 +108,13 @@ The Homeboard desktop-entry installer has an independent Rust candidate; its
 desktop-menu discovery still needs a session check.
 The package-generator candidate now parses Debian binary `Packages` stanzas,
 expands source-package names to available binaries, and follows basic
-Depends/Pre-Depends closure with optional Recommends. Apt/Germinate parity is
-not established: archive priority/conflicts, feature-aware end-to-end
-semantics, snap selection, and Debian metapackage output remain open. Its
-integrated profile command carries seed blacklists through dependency closure.
+Depends/Pre-Depends closure with optional Recommends. It filters blocklisted
+seed roots but leaves archive relationships intact, so a blocked package can
+still appear as a dependency. The selected profile honors Germinate's
+`follow-recommends` and `no-follow-recommends` flags. Apt/Germinate parity is
+not established: archive priority/conflicts, build-dependency features, snap
+selection, and Debian metapackage output remain open. Seed-entry and archive
+recommendations are emitted separately by its integrated profile command.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -126,7 +129,7 @@ audit.
 | `mseries/mseries-launcher-keys` | Re-registers launcher shortcuts when the media-keys shortcut list changes | Rust watcher is staged and selected by the settings coordinator; Python remains an older-image fallback | `mseries/rust/launcher-keys/`; unit-tested, live GSettings/Pantheon parity remains open |
 | `mseries/install-homeboard-launcher` | Writes the current user's Homeboard `.desktop` launcher | Rust candidate exists; the shell installer remains the active reference | `mseries/rust/homeboard-launcher/`; desktop-menu discovery remains unverified |
 | `elementary/metapackages` | Selects the default Elementary package sets and Pantheon components | Source is pinned as an audit baseline; Rust seed-to-Debian generator remains partial | `elementary-image-projects.json`; resolve package closure and amd64/arm64 output parity |
-| `elementary/package-generator` | Reads Elementary and Ubuntu package seeds to generate metapackages | Rust seed resolver plus Debian archive parser and integrated basic dependency-closure candidate exists; Germinate feature semantics and apt/Germinate parity remain open | `seed-compiler/`; differential fixtures, archive precedence/conflicts, arm64/amd64 closure, and Debian output parity |
+| `elementary/package-generator` | Reads Elementary and Ubuntu package seeds to generate metapackages | Rust seed resolver plus Debian archive parser and integrated basic dependency-closure candidate exists; build-dependency features and apt/Germinate parity remain open | `seed-compiler/`; differential fixtures, archive precedence/conflicts, arm64/amd64 closure, and Debian output parity |
 | `ubuntu/germinate` | Existing seed expansion and metapackage generator used as the behavioral reference | Resolute source package 2.49 is recorded separately; SHA-256 and direct differential comparison remain open | `elementary-build-inputs.json`; preserve package/profile outputs before retiring the reference tool |
 | `elementary/seeds` | Defines Elementary desktop, Pantheon, and SDK package profiles | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; profile inheritance, qualifiers, and package-set parity |
 | `elementary/platform` | Supplies Ubuntu base profiles included by Elementary seeds | Pinned data input; license unverified; parser does not copy or modify the source | `elementary-build-inputs.json`; release/architecture package-set parity |

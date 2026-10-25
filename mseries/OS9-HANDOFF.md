@@ -23,14 +23,20 @@ before claiming complete project coverage.
 The independently authored `mseries/rust/seed-compiler` candidate now also
 parses Debian binary `Packages` records and relationships, expands source names
 to target-architecture binaries, and provides an integrated profile-to-package
-closure command. Seed package/source blocklists carry through direct and
-transitive dependencies, including alternative selection and virtual providers.
+closure command. Seed package/source blocklists filter explicit package roots;
+archive dependencies remain unchanged, so a blocked package can reappear
+through a dependency and alternatives are not rewritten to avoid it. This
+matches Germinate's documented warning that apt cannot see seed blocklists.
+The Rust resolver honors Structure and selected-seed `follow-recommends`, plus
+the selected seed's `no-follow-recommends` override. Archive Recommends and
+parenthesized seed recommendation outputs remain separate; build-dependency
+feature handling is still open.
 Its archive tests cover version constraints, virtual Provides, and Multi-Arch
 `:any`; these are local candidate tests, not Germinate/apt comparisons.
-Germinate feature semantics, archive precedence/conflicts, snap resolution,
-metapackage output, and both-architecture differential receipts remain future
-gates. Seed licenses are still unverified, so the Rust crate does not vendor
-their contents.
+Germinate build-dependency semantics, archive precedence/conflicts, snap
+resolution, metapackage output, and both-architecture differential receipts
+remain future gates. Seed licenses are still unverified, so the Rust crate does
+not vendor their contents.
 
 The launcher-key watcher and Homeboard launcher installer are committed Rust
 candidates (`5609e4f`, `0249846`). Their unit/build checks pass, but their live

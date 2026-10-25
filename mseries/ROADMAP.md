@@ -5,13 +5,15 @@
 The `elementary/package-generator` crate now adds an independent Debian archive
 metadata layer: control stanzas, binary package relations, Debian version
 ordering, source-to-binary expansion, and basic architecture-aware dependency
-closure. The integrated profile CLI now carries seed package/source blocklists
-through direct and transitive dependency resolution. All 18 crate tests, strict
-Clippy, a release build, and inventory checks pass. This is not apt or Germinate
-parity. Feature-aware end-to-end
-resolution, archive precedence/conflicts, snap selection, and Debian
-metapackage outputs remain open; upstream seed content is still not copied
-because its license is unverified. See `mseries/rust/seed-compiler/README.md`
+closure. The integrated profile CLI applies seed package/source blocklists to
+explicit roots but leaves archive relationships intact; blocked packages may
+still reappear as dependencies. It honors the selected seed's Recommends
+feature and emits seed-entry recommendations separately from archive
+Recommends. All 20 crate tests, strict Clippy, a release build, and inventory
+checks pass. This is not apt or Germinate parity. Germinate build-dependency
+semantics, archive precedence/conflicts, snap selection, and Debian metapackage
+outputs remain open; upstream seed content is still not copied because its
+license is unverified. See `mseries/rust/seed-compiler/README.md`
 for the current contract.
 
 `assemble-iso.sh` now delegates to `mseries/rust/iso-assembly`, which owns

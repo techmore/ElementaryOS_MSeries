@@ -9,10 +9,16 @@ filters, and seed-level blacklists. An independently authored archive layer now
 parses Debian `Packages` control stanzas and relationships, expands source names
 to binaries, and computes a basic architecture-aware closure for Depends,
 Pre-Depends, and optionally Recommends. The integrated `resolve-seed-packages`
-command carries seed package/source blocklists into closure and emits package,
-recommendation, and snap roots. It does not yet apply Germinate feature flags,
-resolve archive priorities and conflicts like apt, select snap revisions, or
-generate `.deb` metapackages.
+command applies seed package/source blocklists to explicit roots, then expands
+archive relationships unchanged. A blocked package can therefore appear again
+as a dependency, and the resolver does not silently choose another alternative
+to work around a broken package relationship. `follow-recommends` in STRUCTURE
+or the selected seed enables recommendation closure; the selected seed's
+`no-follow-recommends` overrides that default, and the CLI flag can force it on.
+Archive Recommends and parenthesized seed recommendations are emitted as
+separate package sets. Build-dependency feature flags, archive priorities and
+conflicts like apt, snap revision selection, and `.deb` metapackage generation
+remain unimplemented.
 
 The upstream `elementary/seeds` and `elementary/platform` revisions are recorded
 in `../elementary-build-inputs.json`. Their licenses are unverified, so no
