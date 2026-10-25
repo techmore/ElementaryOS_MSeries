@@ -1,3 +1,11 @@
+## Files Quick Actions: image conversion — 2026-10-25
+
+Issue #531 implementation: user-local Contractor actions, native conversion
+progress/results, original-preserving collision-safe copies, optional JPEG 2000
+only when writable. Linux codec/GUI/notification probes accompany the change;
+owner Files installation/right-click acceptance remains open. See
+[image-actions](image-actions/README.md). Preview viewer #530 is separate.
+
 ## Apple Dev toolchain status follows current upstream — 2026-10-25
 
 [Upstream refresh](upstream-audits/apps/apple-dev-2026-10-25.md) removes the old

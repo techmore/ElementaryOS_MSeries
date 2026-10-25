@@ -1,3 +1,24 @@
+## Files image conversion actions — 2026-10-25 (Codex)
+
+Issue #531 now has a user-local Contractor implementation at
+[`image-actions/`](image-actions/README.md): Convert to JPEG, conditional JPEG
+2000, a GTK4/Granite progress/result dialog and native completion notification.
+The core stages encoded copies beside the source and publishes with a
+collision-safe hard link. It preserves originals, handles concurrent jobs,
+cleans handled failures and supports cancelling remaining work. Codec support
+comes from the host's GdkPixbuf loaders/writers; HEIC needs the loader and
+libheif codec plugins. No packages, contracts or source images were changed on
+the owner desktop by this macOS development session.
+
+Seven pure tests pass locally. Linux ARM64 CI covers real JPEG/HEIC conversion,
+hash/dimension checks, unsupported codecs, literal URI/Exec handling, installer
+capabilities/uninstall, and isolated GTK/notification probes with captures.
+Consult the PR checks and render artifacts for the final validation revision.
+The physical Files right-click workflow on the owner boot volume is still
+unverified; #531 stays open for installation/acceptance. #530 Preview remains
+separate. No Files binary, AirDrop destination, panel, audio or boot setting is
+modified. Install/uninstall commands and limits are in the README.
+
 ## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
 
 The linked `joshuaswarren/omarchy-apple-dev` repository is at `9e9ec1f4`.
