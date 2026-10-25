@@ -82,6 +82,11 @@ def main():
             {"Package": "base-extra"},
             {"Package": "leaf-app", "Depends": "blocked", "Recommends": "leaf-extra"},
             {"Package": "leaf-extra"},
+            *[{"Package": name} for name in (
+                "locale-en", "locale-fr", "locale-de", "word-en-a", "word-fr-a",
+                "word-en-b", "word-fr-b", "unknown-tail", "expanded-one",
+            )],
+            {"Package": "unexpanded-binary", "Source": "unexpanded-source"},
         ]
         cases = [
             ("plain", "desktop:\n", {"desktop": " * app\n"}, None),
@@ -101,6 +106,18 @@ def main():
              {"base": " * base-app\n", "desktop": " * leaf-app\n * !blocked\n"}, None),
             ("per-seed-feature", "feature follow-recommends\nbase:\ndesktop: base\n",
              {"base": " * Feature: no-follow-recommends\n * base-app\n", "desktop": " * leaf-app\n"}, None),
+            ("lexical-substitutions", "desktop:\n", {"desktop":
+             " * Languages: en fr\n * locale-${LANGUAGES}\n * Languages: de\n * (locale-${languages}) [arm64]\n"}, None),
+            ("cartesian-substitutions", "desktop:\n", {"desktop":
+             " * Languages: en fr\n * Suffix: a b\n * word-${Languages}-${Suffix}\n"}, None),
+            ("empty-undefined-and-nonrecursive-substitutions", "desktop:\n", {"desktop":
+             " * Empty:\n * ignored-${Empty}\n * unknown-${missing}tail\n * Inner: en\n * Outer: ${Inner}\n * locale-${Outer}\n"}, None),
+            ("substitution-order", "desktop:\n", {"desktop":
+             " * Pattern: expanded-*\n * ${Pattern}\n * Source: unexpanded-source\n * %${Source}\n"}, None),
+            ("multiple-features", "desktop:\n", {"desktop":
+             " * feature: no-follow-recommends follow-recommends\n * app\n"}, None),
+            ("explicit-virtual-providers", "desktop:\n", {"desktop": " * virtual\n"}, None),
+            ("explicit-package-pattern", "desktop:\n", {"desktop": " * locale-*\n"}, None),
         ]
         count = 0
         logging.getLogger("germinate").setLevel(logging.CRITICAL)
@@ -116,6 +133,8 @@ def main():
                     for name, contents in documents.items():
                         (seeds / name).write_text(contents)
                     packages = [{"Version": "1", "Architecture": architecture, **item} for item in base_packages]
+                    if label == "explicit-virtual-providers":
+                        packages.append({"Package": "provider-two", "Version": "1", "Architecture": architecture, "Provides": "virtual"})
                     if dependency is not None:
                         packages[0]["Depends"] = dependency
                     package_path = case / "Packages"

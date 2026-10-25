@@ -103,16 +103,10 @@ pub fn expand_seed_entries(
         match entry.kind {
             EntryKind::Package | EntryKind::SourcePackage => {
                 let packages = if entry.kind == EntryKind::Package {
-                    vec![entry.name.clone()]
+                    catalog.seed_entry_binaries(entry, architecture)
                 } else {
                     catalog.source_binaries(&entry.name, architecture)
                 };
-                if packages.is_empty() {
-                    return Err(format!(
-                        "seed source package `{}` has no binaries for {architecture}",
-                        entry.name
-                    ));
-                }
                 let target = if entry.recommended {
                     &mut roots.recommends
                 } else {
@@ -528,12 +522,25 @@ impl PackageCatalog {
     /// Available binaries for an explicitly seeded name, pattern, or virtual
     /// package. Germinate plants every provider of an explicitly seeded virtual.
     pub fn seed_binaries(&self, name: &str, architecture: &str) -> Vec<String> {
+        self.seed_binaries_matching(name, architecture, true)
+    }
+
+    pub fn seed_entry_binaries(&self, entry: &SeedEntry, architecture: &str) -> Vec<String> {
+        self.seed_binaries_matching(&entry.name, architecture, !entry.literal)
+    }
+
+    fn seed_binaries_matching(
+        &self,
+        name: &str,
+        architecture: &str,
+        patterns: bool,
+    ) -> Vec<String> {
         let available = |versions: &Vec<BinaryPackage>| {
             versions.iter().any(|package| {
                 architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
             })
         };
-        let mut names = if name.contains(['*', '?']) {
+        let mut names = if patterns && name.contains(['*', '?']) {
             self.packages
                 .iter()
                 .filter(|(candidate, versions)| {

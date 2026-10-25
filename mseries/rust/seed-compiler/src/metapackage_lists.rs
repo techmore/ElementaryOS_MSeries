@@ -242,13 +242,13 @@ fn plant_entries(
         let mut recommendations = BTreeSet::new();
         for entry in &entries {
             if entry.kind == EntryKind::Package && entry.recommended {
-                recommendations.extend(catalog.seed_binaries(&entry.name, architecture));
+                recommendations.extend(catalog.seed_entry_binaries(entry, architecture));
             }
         }
         let mut result = PlantedEntries::default();
         for entry in entries {
             let binaries = match entry.kind {
-                EntryKind::Package => catalog.seed_binaries(&entry.name, architecture),
+                EntryKind::Package => catalog.seed_entry_binaries(entry, architecture),
                 EntryKind::SourcePackage => catalog.source_binaries(&entry.name, architecture),
                 _ => continue,
             };

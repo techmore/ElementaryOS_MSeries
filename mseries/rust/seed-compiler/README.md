@@ -192,3 +192,25 @@ python3 mseries/rust/seed-compiler/test-upstream-deb-parity.py mseries/rust/seed
 This qualifies the checked-in upstream map/list-to-package stage. Regenerating
 those lists from live archives/seeds, PPA membership/installability, arbitrary
 Debian packaging and OS image/runtime admission remain separate gates.
+
+
+Real-input inspection found that the pinned Elementary `live` seed uses lexical
+`Languages` variables. The parser now accepts case-insensitive ` * Name: values`
+declarations, shadowing, Cartesian combinations, empty/undefined variables and
+nonrecursive substitutions. `Feature` accepts multiple values. Pattern selection
+precedes substitution: a glob supplied through a variable stays literal, and
+source names containing placeholders cannot be looked up before substitution.
+Unsupported kernel-version/include/exclude directives still fail explicitly.
+Undefined placeholders are omitted as in Germinate; diagnostic parity remains
+open. Direct runtime seed roots now expand existing patterns and all explicit
+virtual providers and omit unavailable roots, while unresolved archive dependency
+errors remain intact.
+
+The pinned seed/platform source archives are recorded by SHA-256 in
+`elementary-build-inputs.json` and are read only from temporary downloads. Local
+checks pass 30 crate tests, strict Clippy/release build, and parsing/flattening the
+real `live` profile with its included platform structure for arm64. The profile
+comparison grows from 22 to 36 amd64/arm64 cases; map/list comparisons now include
+variable classification and ordering. Linux differential checks are pending.
+Fresh signed archive acquisition, full real list generation and image/runtime
+qualification remain open.

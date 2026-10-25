@@ -53,7 +53,9 @@
         "feature and architecture qualifiers",
         "package inclusion, recommendations, and exclusions",
         "same resolved package sets for desktop and Pantheon profiles"
-      ]
+      ],
+      "source_archive": "https://codeload.github.com/elementary/seeds/tar.gz/14c2cf95b32962b857589a0bac3198f80a331bce",
+      "source_archive_sha256": "75a2205d87f73e27ea16dda8a22965344b0e0ee2b85b101a71af6a87dc35c8e9"
     },
     {
       "id": "elementary/platform",
@@ -99,7 +101,9 @@
         "platform profile relationships",
         "Germinate feature inheritance",
         "same resolved package sets for the selected Ubuntu release and architectures"
-      ]
+      ],
+      "source_archive": "https://codeload.github.com/elementary/platform/tar.gz/6d11ad3e4e4d65a20c4b63e2a2159f0683f9bf4f",
+      "source_archive_sha256": "10cf9af7c4a8f26a385c1b47a14babdfe2f151634daa306dbdcbbdfb2c843609"
     }
   ],
   "local_projects": [
@@ -130,10 +134,13 @@
         "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
         "Debian Sources index parsing with version-selected Binary declarations for source seed membership",
         "native metadata-only amd64/arm64/all Debian metapackage control, documentation, deterministic ar/ustar/gzip containers and md5sums; 40 synthetic Linux package comparisons passed",
-        "pinned Elementary metapackages 1.582 checked-in map/list-to-package stage: all eight binaries across amd64/arm64 and full/trimmed changelogs qualified against unchanged upstream rules; 32 native hashes also match local macOS and Linux CI builds"
+        "pinned Elementary metapackages 1.582 checked-in map/list-to-package stage: all eight binaries across amd64/arm64 and full/trimmed changelogs qualified against unchanged upstream rules; 32 native hashes also match local macOS and Linux CI builds",
+        "lexically scoped case-insensitive seed variables with Cartesian value combinations, declaration shadowing, empty/undefined values and nonrecursive expansion",
+        "case-insensitive multi-value Feature declarations; binary substitutions retain reference pattern/source lookup ordering",
+        "explicit runtime package roots expand known package patterns and all virtual providers; absent seed roots are omitted while unresolved archive dependencies remain errors"
       ],
       "not_implemented": [
-        "advanced seed substvars, include/exclude directives, installer kernel-version pruning and complete pattern semantics",
+        "seed include/exclude directives, installer kernel-version pruning and complete pattern semantics",
         "Germinate Build-Depends and build-dependency feature semantics",
         "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
         "complete Germinate provider and alternative selection semantics",

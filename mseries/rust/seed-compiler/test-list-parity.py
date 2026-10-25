@@ -87,7 +87,7 @@ def main():
             "minimal": "Task-Metapackage: custom-minimal\n * essential-core\n * boot\n * not-in-bootstrap\n * custom-minimal\n * (essential-rec)\n * (minimal-doc)\n",
             "standard": " * boot\n * standard-tool\n * (standard-doc)\n",
             "artwork": "Task-Metapackage: artwork-selected\n * wallpaper\n",
-            "desktop": "TaSk-MeTaPaCkAgE: native-desktop\nTask-Seeds: artwork\n * standard-tool\n * app-primary | app-fallback | missing-alternative\n * primary-missing | app-fallback\n * wildcard-*\n * single-?\n * virtual-choice\n * %source-bundle\n * %versioned-source\n * %missing-source\n * %default-source\n * (%source-recommended)\n * (desktop-doc)\n * essential-top\n * !blocked\n * blocked\n * arch-tool [arm64]\n * native-desktop\n",
+            "desktop": "TaSk-MeTaPaCkAgE: native-desktop\nTask-Seeds: artwork\n * standard-tool\n * app-primary | app-fallback | missing-alternative\n * primary-missing | app-fallback\n * wildcard-*\n * single-?\n * virtual-choice\n * %source-bundle\n * %versioned-source\n * %missing-source\n * %default-source\n * (%source-recommended)\n * (desktop-doc)\n * essential-top\n * !blocked\n * blocked\n * arch-tool [arm64]\n * native-desktop\n * Languages: en fr\n * locale-${Languages}\n * Languages: de\n * (locale-${languages})\n * Empty:\n * ignored-${Empty}\n * unknown-${missing}tail\n * Pattern: expanded-*\n * ${Pattern}\n * Source: unexpanded-source\n * %${Source}\n",
             "bundle": " * (bundle-doc)\ntask-seeds: standard desktop\n",
             "empty": "Task-Name: Empty synthetic profile\n",
         }
@@ -103,6 +103,7 @@ def main():
         mirror = root / "mirror"
         binaries = [
             {"Package": name} for name in (
+                "locale-en", "locale-fr", "locale-de", "unknown-tail", "expanded-one",
                 "boot", "not-in-bootstrap", "custom-minimal", "minimal-doc", "standard-tool",
                 "standard-doc", "wallpaper", "app-primary", "unseeded-dependency", "wildcard-one",
                 "wildcard-two", "single-a", "desktop-doc", "blocked", "arch-tool", "native-desktop", "bundle-doc",
@@ -121,6 +122,7 @@ def main():
             {"Package": "source-new", "Source": "versioned-source"},
             {"Package": "source-missing", "Source": "missing-source"},
             {"Package": "default-source"},
+            {"Package": "unexpanded-binary", "Source": "unexpanded-source"},
         ]
         all_source_binaries = {}
         for architecture in ("amd64", "arm64"):

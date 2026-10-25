@@ -171,14 +171,14 @@ impl Structure {
         documents: &BTreeMap<String, SeedDocument>,
     ) -> Result<ResolvedSeed, String> {
         let groups = self.resolve_seed_groups(seed, architecture, documents)?;
-        let mut entries = BTreeMap::<(EntryKind, String), SeedEntry>::new();
+        let mut entries = BTreeMap::<(EntryKind, String, bool), SeedEntry>::new();
         let mut packages = groups[0].1.blacklisted_packages.clone();
         let mut sources = groups[0].1.blacklisted_sources.clone();
         for (_, group) in groups {
             packages.retain(|name| group.blacklisted_packages.contains(name));
             sources.retain(|name| group.blacklisted_sources.contains(name));
             for entry in group.entries {
-                let key = (entry.kind, entry.name.clone());
+                let key = (entry.kind, entry.name.clone(), entry.literal);
                 if !entries.contains_key(&key)
                     || entries
                         .get(&key)
@@ -332,6 +332,9 @@ pub struct SeedEntry {
     pub recommended: bool,
     pub architectures: ArchitectureRule,
     pub alternatives: Vec<String>,
+    /// Substitution happens after archive pattern selection in Germinate.
+    /// A resulting name must therefore be resolved literally, not as a glob.
+    pub literal: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -371,6 +374,7 @@ impl SeedDocument {
             features: BTreeSet::new(),
             entries: Vec::new(),
         };
+        let mut variables = BTreeMap::<String, Vec<String>>::new();
         for (index, raw) in input.lines().enumerate() {
             let line_number = index + 1;
             let line = raw.trim();
@@ -401,21 +405,92 @@ impl SeedDocument {
             if entry_text.is_empty() {
                 continue;
             }
-            if let Some(value) = entry_text.strip_prefix("Feature:") {
-                let feature = value.trim();
-                if feature.is_empty() || feature.split_whitespace().count() != 1 {
-                    return Err(ParseError {
-                        line: line_number,
-                        message: "expected one feature name after `Feature:`".into(),
-                    });
+            if !entry_text.starts_with("snap:")
+                && !entry_text.starts_with("(snap:")
+                && !entry_text.starts_with("!snap:")
+            {
+                if let Some((name, value)) = entry_text.split_once(':') {
+                    let name = name.to_ascii_lowercase();
+                    let values = value
+                        .split_whitespace()
+                        .map(str::to_owned)
+                        .collect::<Vec<_>>();
+                    if name == "kernel-version"
+                        || name.ends_with("-include")
+                        || name.ends_with("-exclude")
+                    {
+                        return Err(ParseError {
+                            line: line_number,
+                            message: format!("seed directive `{name}` is not supported yet"),
+                        });
+                    }
+                    if name == "feature" {
+                        result.features.extend(values.iter().cloned());
+                    }
+                    variables.insert(name, values);
+                    continue;
                 }
-                result.features.insert(feature.to_owned());
-                continue;
             }
-            result.entries.push(parse_entry(entry_text, line_number)?);
+            let entry = parse_entry(entry_text, line_number)?;
+            if entry.name.contains("${") {
+                // Source names are looked up before substitution. Debian source
+                // names cannot contain ${...}, so such entries plant nothing.
+                if matches!(
+                    entry.kind,
+                    EntryKind::SourcePackage | EntryKind::BlacklistSourcePackage
+                ) {
+                    continue;
+                }
+                for name in substitute_seed_variables(&entry.name, &variables) {
+                    if !name.is_empty() {
+                        let mut expanded = entry.clone();
+                        expanded.name = name;
+                        expanded.literal = true;
+                        // Alternatives are keyed by the unexpanded primary name
+                        // in the reference and do not follow expanded roots.
+                        expanded.alternatives.clear();
+                        result.entries.push(expanded);
+                    }
+                }
+            } else {
+                result.entries.push(entry);
+            }
         }
         Ok(result)
     }
+}
+
+fn substitute_seed_variables(
+    input: &str,
+    variables: &BTreeMap<String, Vec<String>>,
+) -> Vec<String> {
+    let mut expanded = vec![String::new()];
+    let mut rest = input;
+    while let Some(open) = rest.find("${") {
+        let Some(close) = rest[open + 2..].find('}').map(|offset| open + 2 + offset) else {
+            break;
+        };
+        for value in &mut expanded {
+            value.push_str(&rest[..open]);
+        }
+        if let Some(values) = variables.get(&rest[open + 2..close].to_ascii_lowercase()) {
+            expanded = values
+                .iter()
+                .flat_map(|value| {
+                    expanded
+                        .iter()
+                        .map(move |prefix| format!("{prefix}{value}"))
+                })
+                .collect();
+        }
+        // Germinate omits an undefined placeholder after reporting it. The
+        // membership behavior is retained; diagnostic equivalence is separate.
+        rest = &rest[close + 1..];
+    }
+    for value in &mut expanded {
+        value.push_str(rest);
+    }
+    expanded
 }
 
 fn parse_entry(input: &str, line: usize) -> Result<SeedEntry, ParseError> {
@@ -519,12 +594,45 @@ fn parse_entry(input: &str, line: usize) -> Result<SeedEntry, ParseError> {
         recommended,
         architectures,
         alternatives,
+        literal: false,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn seed_variables_are_lexical_case_insensitive_and_expand_cartesian_values_once() {
+        let seed = SeedDocument::parse(
+            " * Languages: en fr\n * Suffix: a b\n * word-${LANGUAGES}-${Suffix}\n * languages: de\n * (word-${languages}) [arm64]\n * Empty:\n * ignored-${empty}\n * unknown-${missing}tail\n * Indirect: ${languages}\n * literal-${Indirect}\n * %source-${languages}\n * feature: follow-recommends no-follow-recommends\n",
+        ).unwrap();
+        let names = seed
+            .entries
+            .iter()
+            .map(|entry| entry.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            names,
+            [
+                "word-en-a",
+                "word-fr-a",
+                "word-en-b",
+                "word-fr-b",
+                "word-de",
+                "unknown-tail",
+                "literal-${languages}"
+            ]
+        );
+        assert!(seed.entries.iter().all(|entry| entry.literal));
+        assert!(seed.entries[4].recommended);
+        assert!(!seed.entries[4].architectures.applies_to("amd64"));
+        assert_eq!(
+            seed.features,
+            BTreeSet::from(["follow-recommends".into(), "no-follow-recommends".into()])
+        );
+        assert!(SeedDocument::parse(" * other-include: item\n").is_err());
+    }
 
     #[test]
     fn structure_tracks_features_includes_and_inheritance() {

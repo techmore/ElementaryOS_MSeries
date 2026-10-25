@@ -1,3 +1,23 @@
+## Rust seed variable semantics — 2026-10-25
+
+Inspection of pinned real inputs found the native parser stopped at the live
+seed's Languages declaration. It now handles lexical case-insensitive variable
+values, Cartesian expansion, shadowing, empty/undefined values and nonrecursive
+substitution, while preserving archive pattern/source lookup ordering. Feature
+headers accept multiple values. Explicit runtime roots now expand known patterns
+and all explicit virtual providers and omit absent roots, matching planting;
+archive dependency failures remain errors. Unsupported kernel/include/exclude
+directives fail explicitly. Seed/platform archive hashes are pinned separately;
+no seed text is vendored and license gates remain unchanged.
+
+Local checks: 30 unit tests, strict Clippy/release build, and real live-profile
+parsing/flattening with the included platform structure. Linux now compares 36
+profile membership cases and adds variable cases to the existing 56 map/list
+comparisons; that new run is pending. Fresh signed archive acquisition, full real
+list generation, PPA installability and image/runtime qualification remain open.
+Next: resolve any direct comparison differences, then run the actual seed/archive
+pipeline against matched downloaded inputs. No deployment or desktop change.
+
 ## Pinned Elementary package stage verified — 2026-10-25
 
 [Run 40238779709](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40238779709)
