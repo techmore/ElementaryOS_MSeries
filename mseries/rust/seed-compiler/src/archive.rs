@@ -66,6 +66,7 @@ pub struct BinaryPackage {
     pub architecture: String,
     pub source: String,
     pub multi_arch: MultiArch,
+    pub essential: bool,
     pub depends: Vec<DependencyGroup>,
     pub pre_depends: Vec<DependencyGroup>,
     pub recommends: Vec<DependencyGroup>,
@@ -166,6 +167,13 @@ pub fn expand_resolved_seed(
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PackageCatalog {
     packages: BTreeMap<String, Vec<BinaryPackage>>,
+    sources: Option<BTreeMap<String, SourceBinaries>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SourceBinaries {
+    version: String,
+    binaries: Vec<String>,
 }
 
 pub fn parse_control_stanzas(input: &str) -> Result<Vec<ControlStanza>, ParseError> {
@@ -450,6 +458,7 @@ impl BinaryPackage {
             architecture,
             source,
             multi_arch,
+            essential: fields.get("Essential").is_some_and(|value| value == "yes"),
             depends: relationships("Depends")?,
             pre_depends: relationships("Pre-Depends")?,
             recommends: relationships("Recommends")?,
@@ -516,6 +525,60 @@ fn parse_source_field(value: &str) -> Result<String, String> {
 }
 
 impl PackageCatalog {
+    /// Available binaries for an explicitly seeded name, pattern, or virtual
+    /// package. Germinate plants every provider of an explicitly seeded virtual.
+    pub fn seed_binaries(&self, name: &str, architecture: &str) -> Vec<String> {
+        let available = |versions: &Vec<BinaryPackage>| {
+            versions.iter().any(|package| {
+                architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+            })
+        };
+        let mut names = if name.contains(['*', '?']) {
+            self.packages
+                .iter()
+                .filter(|(candidate, versions)| {
+                    seed_pattern_matches(name.as_bytes(), candidate.as_bytes())
+                        && available(versions)
+                })
+                .map(|(name, _)| name.clone())
+                .collect::<Vec<_>>()
+        } else if self.packages.get(name).is_some_and(available) {
+            vec![name.to_owned()]
+        } else {
+            Vec::new()
+        };
+        if names.is_empty() {
+            names = self
+                .packages
+                .values()
+                .flatten()
+                .filter(|package| {
+                    architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+                        && package
+                            .provides
+                            .iter()
+                            .any(|provided| provided.name == name)
+                })
+                .map(|package| package.package.clone())
+                .collect();
+            names.sort();
+            names.dedup();
+        }
+        names
+    }
+
+    pub fn is_essential(&self, name: &str, architecture: &str) -> bool {
+        self.packages
+            .get(name)
+            .into_iter()
+            .flatten()
+            .filter(|package| {
+                architecture_matches(package, &ArchitectureQualifier::Unqualified, architecture)
+            })
+            .max_by(|left, right| compare_versions(&left.version, &right.version))
+            .is_some_and(|package| package.essential)
+    }
+
     pub fn parse_packages(input: &str) -> Result<Self, ParseError> {
         let mut catalog = Self::default();
         for stanza in parse_control_stanzas(input)? {
@@ -527,6 +590,52 @@ impl PackageCatalog {
             catalog.insert(package);
         }
         Ok(catalog)
+    }
+
+    /// Attach the source index used by Germinate's %source expansion. A source's
+    /// declared Binary list, rather than inferred binary Source fields, controls
+    /// membership; the newest indexed source version supplies that declaration.
+    pub fn with_sources(mut self, input: &str) -> Result<Self, ParseError> {
+        let mut sources: BTreeMap<String, SourceBinaries> = BTreeMap::new();
+        for stanza in parse_control_stanzas(input)? {
+            let parse = || -> Result<(String, SourceBinaries), String> {
+                let name = required(&stanza.fields, "Package")?;
+                let version = required(&stanza.fields, "Version")?;
+                if !valid_package_name(name) || !valid_version(version) {
+                    return Err("invalid source Package or Version field".into());
+                }
+                let binaries = stanza
+                    .fields
+                    .get("Binary")
+                    .into_iter()
+                    .flat_map(|value| value.split(','))
+                    .map(str::trim)
+                    .filter(|name| !name.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>();
+                if binaries.iter().any(|name| !valid_package_name(name)) {
+                    return Err("invalid source Binary field".into());
+                }
+                Ok((
+                    name.to_owned(),
+                    SourceBinaries {
+                        version: version.to_owned(),
+                        binaries,
+                    },
+                ))
+            };
+            let (name, record) = parse().map_err(|message| ParseError {
+                line: stanza.line,
+                message,
+            })?;
+            if sources.get(&name).is_none_or(|old| {
+                compare_versions(&record.version, &old.version) == Ordering::Greater
+            }) {
+                sources.insert(name, record);
+            }
+        }
+        self.sources = Some(sources);
+        Ok(self)
     }
 
     pub fn insert(&mut self, package: BinaryPackage) {
@@ -548,7 +657,29 @@ impl PackageCatalog {
         self.packages.keys().map(String::as_str)
     }
 
+    pub fn has_source_index(&self) -> bool {
+        self.sources.is_some()
+    }
+
     pub fn source_binaries(&self, source: &str, architecture: &str) -> Vec<String> {
+        if let Some(sources) = &self.sources {
+            let mut names = sources
+                .get(source)
+                .into_iter()
+                .flat_map(|source| &source.binaries)
+                .filter(|name| {
+                    self.packages.get(*name).is_some_and(|versions| {
+                        versions.iter().any(|package| {
+                            package.architecture == architecture || package.architecture == "all"
+                        })
+                    })
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            names.sort();
+            names.dedup();
+            return names;
+        }
         let mut names = self
             .packages
             .values()
@@ -799,6 +930,25 @@ impl PackageCatalog {
     }
 }
 
+fn seed_pattern_matches(pattern: &[u8], name: &[u8]) -> bool {
+    let mut reachable = vec![false; name.len() + 1];
+    reachable[0] = true;
+    for token in pattern {
+        let mut next = vec![false; name.len() + 1];
+        if *token == b'*' {
+            for index in 0..=name.len() {
+                next[index] = reachable[index] || (index > 0 && next[index - 1]);
+            }
+        } else {
+            for index in 0..name.len() {
+                next[index + 1] = reachable[index] && (*token == b'?' || *token == name[index]);
+            }
+        }
+        reachable = next;
+    }
+    reachable[name.len()]
+}
+
 fn package_key(package: &BinaryPackage) -> PackageKey {
     PackageKey {
         package: package.package.clone(),
@@ -933,6 +1083,14 @@ fn version_matches(candidate: &str, constraint: &VersionConstraint) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_index_controls_declared_binaries_and_source_version() {
+        let catalog = PackageCatalog::parse_packages("Package: old\nVersion: 1\nArchitecture: arm64\nSource: sample\n\nPackage: current\nVersion: 1\nArchitecture: all\nSource: sample\n\nPackage: orphan\nVersion: 1\nArchitecture: arm64\nSource: sample\n")
+            .unwrap().with_sources("Package: sample\nVersion: 1\nBinary: old\n\nPackage: sample\nVersion: 2\nBinary: current, unavailable\n").unwrap();
+        assert_eq!(catalog.source_binaries("sample", "arm64"), ["current"]);
+        assert!(catalog.source_binaries("missing", "arm64").is_empty());
+    }
 
     #[test]
     fn control_parser_joins_continuations_and_rejects_malformed_fields() {

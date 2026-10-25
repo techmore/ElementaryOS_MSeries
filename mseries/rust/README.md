@@ -85,14 +85,14 @@ the existing `rust/` Cargo workspace, a
 path record, a path-derived
 `component_id`, and an explicit `project_id`. It includes documentation,
 extensionless hooks, presets, and packaged data as well as source files. The
-2,953 files (2,871 local and 82 elementary-owned upstream inputs) currently form
+2,955 files (2,873 local and 82 elementary-owned upstream inputs) currently form
 533 directory groups and 499 project records. Explicit overrides join Rust
 candidates with their Python references, installers, and tests where those
 files live in separate directories, and group local mkosi overlays with the
 Apple Silicon image integration. The inventory classifier distinguishes
 implementation code, upstream patches, tests, documentation, assets, and
 declarative inputs instead of labeling unknown files as executable code. The
-current scope contains 1,267 implementation files (1,254 local), 86 upstream
+current scope contains 1,268 implementation files (1,255 local), 86 upstream
 patches, and 803 configuration/data files. Semantic project boundaries and
 Rust decisions still need review against source licenses, interfaces, and
 conversion contracts.
@@ -128,7 +128,9 @@ Its `metapackage-substvars` command now renders Debian relationship fragments
 from supplied maps and architecture-specific package lists. A comparison with
 the pinned Germinate helper and real Debhelper passed eight Linux cases.
 A further 22 profile membership comparisons passed in Linux run 40235036913
-on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. Map/list generation and complete Debian package output remain open.
+on `28eec704`; the machine-readable receipt is in `elementary-build-inputs.json`. A native multi-architecture map/list generator now reads supplied update.cfg,
+seed and archive inputs; its direct updater comparison is pending Linux CI.
+Complete Debian package output remains open.
 Documentation, binary assets, and declarative inputs are recorded as non-code
 inputs; remaining local implementation, verification, and patch items stay
 `not-assessed` until their conversion contracts are reviewed. CI checks that
@@ -322,7 +324,7 @@ individually.
   `/usr/libexec/mseries/atomic-app`. The existing Signal installers follow `dev`
   while the owner's Signal/Messages deferral is in force. Full image admission
   remains open.
-- The full file inventory currently contains 2,953 items (2,871 M-series-maintained
+- The full file inventory currently contains 2,955 items (2,873 M-series-maintained
   and 82 elementary-owned upstream inputs), 533 directory groups, and 499
   project records. Many non-candidate local code/configuration/patch items
   still need semantic ownership review, a conversion contract, and a parity

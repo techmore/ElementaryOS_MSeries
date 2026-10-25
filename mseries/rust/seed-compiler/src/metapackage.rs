@@ -64,7 +64,7 @@ impl MetapackageMap {
     }
 }
 
-fn safe_component(value: &str) -> bool {
+pub(crate) fn safe_component(value: &str) -> bool {
     value
         .as_bytes()
         .first()

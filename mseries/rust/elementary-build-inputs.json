@@ -123,18 +123,24 @@
         "per-seed package/source exclusions carried into roots and transitive dependencies, scoped to that seed and its inherited ancestors",
         "Structure and per-contributing-seed Recommends flags with separate seed recommendation output",
         "integrated profile-to-package CLI with inherited seeds and optional recommendation closure",
-        "metapackage-map parsing and architecture-specific Debian substvars rendering from supplied package lists"
+        "metapackage-map parsing and architecture-specific Debian substvars rendering from supplied package lists",
+        "Rust update.cfg selection with defaults, interpolation, output_seeds, seed_map and metapackage_map",
+        "case-insensitive Task-Seeds/Task-Metapackage headers and preserved seed alternatives",
+        "fresh multi-architecture metapackage-map and dependency/recommendation list artifacts from explicit seed entries",
+        "architecture availability, source/virtual seed expansion, ancestor deduplication, essential Depends exclusion and supplied minimal/debootstrap filtering",
+        "Debian Sources index parsing with version-selected Binary declarations for source seed membership"
       ],
       "not_implemented": [
+        "advanced seed substvars, include/exclude directives, installer kernel-version pruning and complete pattern semantics",
         "Germinate Build-Depends and build-dependency feature semantics",
         "APT archive source precedence, pin priority, conflicts, essential packages, and solver behavior",
         "complete Germinate provider and alternative selection semantics",
         "snap metadata and revision selection",
-        "metapackage-map generation and complete Debian control/package generation",
+        "complete Debian control/package generation, changelog/delta maintenance and live debootstrap/index acquisition",
         "vestigial global source-blocklist report and complete Germinate diagnostic/output reason semantics",
         "Germinate and apt differential parity for both arm64 and amd64"
       ],
-      "parity_status": "Linux run 40235036913 on 28eec704 passed all candidate crate checks, eight Germinate 2.49/Debhelper substvars comparisons, and 22 synthetic amd64/arm64 profile package-set comparisons. These scoped receipts do not establish complete Germinate provider/solver behavior, Debian package output, or apt equivalence.",
+      "parity_status": "Linux run 40235036913 on 28eec704 passed all candidate crate checks, eight Germinate 2.49/Debhelper substvars comparisons, and 22 synthetic amd64/arm64 profile package-set comparisons. These scoped receipts do not establish complete Germinate provider/solver behavior, Debian package output, or apt equivalence. A new map/list generator passes local configuration/CLI checks; direct file comparison with the pinned updater across four configurations is pending Linux CI.",
       "intentional_enhancements": [],
       "enhancement_review_status": "No generator enhancements selected before package parity is established.",
       "parity_receipts": [

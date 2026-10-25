@@ -26,6 +26,32 @@ required package removed from the recommendation stream. Build-dependency
 features, complete provider/alternative selection, archive conflicts like apt,
 snap revision selection, and `.deb` metapackage generation remain open.
 
+`generate-metapackage-lists SOURCE-DIR STRUCTURE COLLECTION INDEX-DIR NEW-OUTPUT-DIR`
+implements the map/list build stage in Rust. `SOURCE-DIR` supplies `update.cfg`
+and `debian/control`. `INDEX-DIR` supplies `Packages-ARCH`, `Sources-ARCH` and
+`debootstrap-ARCH` for every configured architecture; the latter is the frozen
+whitespace-separated package set from debootstrap. The command accepts
+`--dist=NAME` and the same included-collection arguments as seed resolution.
+It reads config defaults/interpolation, output selection and explicit maps,
+then applies case-insensitive `Task-Seeds`/`Task-Metapackage` headers, architecture
+availability, declared source Binary membership, ancestor deduplication, essential
+Depends filtering, and the
+minimal/debootstrap intersection. It preserves known seed alternatives, expands
+explicit source/virtual seeds, and writes a fresh `metapackage-map` plus sorted
+`SEED-ARCH` and `SEED-recommends-ARCH` files. Existing output directories are
+rejected and all logical input validation finishes before output creation.
+
+This stage follows explicit seed planting, rather than dependency closure:
+archive Depends/Recommends and seed blocklist weeding are not expanded into
+these files. It retains the reference updater's distinction between excluding
+essential Depends and retaining essential Recommends. Source recommendation
+entries also follow the reference's planted classification. Remote acquisition,
+live debootstrap selection/version tracking, changelog/delta maintenance and
+complete Debian control/package output remain open. The new
+`test-list-parity.py` runs the pinned updater's unchanged map/list code against
+local synthetic archives, freezing only debootstrap's package-set/version
+boundary. Its four-configuration Linux file comparison is pending.
+
 `metapackage-substvars DIRECTORY ARCHITECTURE PACKAGE` supplies the next build
 stage in Rust. It reads the supplied `metapackage-map`, selects that package's
 `SEED-ARCHITECTURE` and `SEED-recommends-ARCHITECTURE` files, and writes a fresh
@@ -36,8 +62,8 @@ produce an empty fragment. Use the binary package architecture (`all` for an
 architecture-independent package). The command validates both lists before
 printing, rejects ambiguous maps and unsafe file names, and does not merge an
 existing substvars file. Supply its fragment to `dpkg-gencontrol` along with
-other build substitutions. This implements one build stage; map/list generation,
-complete Debian control generation, and `.deb` assembly are still open.
+other build substitutions. This implements the substitution stage; complete Debian control generation
+and `.deb` assembly are still open.
 
 The file and substitution contract is referenced from Elementary metapackages
 commit `6e6466507f7f5b32e73594c5e727a49f0be58d0f` and Germinate 2.49's
@@ -83,11 +109,12 @@ cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-seed 
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-seed-packages /path/to/seeds/STRUCTURE elementary.resolute desktop arm64 Packages platform.resolute=/path/to/platform
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- expand-source Packages arm64 elementary-desktop
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- resolve-packages Packages arm64 elementary-desktop
+cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- generate-metapackage-lists /path/to/metapackages /path/to/seeds/STRUCTURE elementary.resolute /path/to/indices /path/to/new-output platform.resolute=/path/to/platform
 cargo run --manifest-path mseries/rust/seed-compiler/Cargo.toml -- metapackage-substvars /path/to/metapackages arm64 elementary-desktop
 ```
 
 Next parity gates: feature-aware end-to-end generation, archive precedence and
 conflict semantics, differential comparison against Germinate/apt, metapackage
-map generation, and reproducible Debian control outputs for both arm64 and
+map/list qualification, and reproducible Debian control outputs for both arm64 and
 amd64. Unit tests only validate the implemented candidate behavior; Germinate
 or apt parity has not been demonstrated.

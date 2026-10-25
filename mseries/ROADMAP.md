@@ -1,3 +1,13 @@
+## Rust metapackage map/list generation — 2026-10-25
+
+A native build stage now renders all configured architectures' metapackage map
+and explicit Depends/Recommends lists from supplied seed/archive/bootstrap
+inputs. It honors config overrides and Task headers, ancestor deduplication,
+known alternatives, essential Depends and minimal filtering. Local crate and CLI
+checks pass; direct file comparison against pinned Germinate's updater is wired
+into Linux CI and pending. Complete Debian package output and OS qualification
+remain open.
+
 ## Apple Dev: native window for omarchy-apple-dev — 2026-10-23 (Claude)
 
 ## Rust lane synced with current dev — 2026-10-25

@@ -1,3 +1,23 @@
+## Rust metapackage map/list stage — 2026-10-25
+
+The native `generate-metapackage-lists` command now consumes supplied update.cfg,
+Debian source control, seed collections, per-architecture Packages/Sources indexes and
+frozen debootstrap package sets. It renders the map and all configured package
+lists, honoring config/header precedence, inheritance deduplication, essential
+Depends and minimal filtering, availability, source/virtual entries and known
+alternatives. This is explicit seed planting; archive dependency closure remains
+separate. Existing directories are not overwritten. Shared seed loading now
+serves both resolver commands and this build stage.
+
+Local checks: 26 crate tests, strict Clippy/release build, and fresh-output CLI
+checks pass. The four-configuration direct comparison with the checksum-pinned
+Germinate updater is added to Linux CI; it freezes only debootstrap's package
+set/version boundary and has not run yet. Remote/index acquisition, live
+bootstrap behavior, changelog/deltas, complete Debian package generation, and
+full image/desktop qualification remain open. The inventory includes 2,955 files
+in 499 project records. Next: run and review the new file comparison, then use
+its qualified outputs to finish Debian control/package generation.
+
 ## Corrected Germinate scope verified in Linux — 2026-10-25
 
 [Run 40235036913](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40235036913)

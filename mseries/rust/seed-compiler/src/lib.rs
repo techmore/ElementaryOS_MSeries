@@ -3,6 +3,7 @@ use std::fmt;
 
 pub mod archive;
 pub mod metapackage;
+pub mod metapackage_lists;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
@@ -327,6 +328,7 @@ pub struct SeedEntry {
     pub name: String,
     pub recommended: bool,
     pub architectures: ArchitectureRule,
+    pub alternatives: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -373,14 +375,18 @@ impl SeedDocument {
                 continue;
             }
             let Some(entry_text) = line.strip_prefix("* ") else {
-                if result.entries.is_empty() {
-                    if let Some((key, value)) = line.split_once(':') {
-                        let key = key.trim();
-                        if key.starts_with("Task-") && !key.chars().any(char::is_whitespace) {
-                            result
-                                .headers
-                                .insert(key.to_owned(), value.trim().to_owned());
-                        }
+                if let Some((key, value)) = line.split_once(':') {
+                    let key = key.trim();
+                    if key.to_ascii_lowercase().starts_with("task-")
+                        && !key.chars().any(char::is_whitespace)
+                        && !result
+                            .headers
+                            .keys()
+                            .any(|old| old.eq_ignore_ascii_case(key))
+                    {
+                        result
+                            .headers
+                            .insert(key.to_owned(), value.trim().to_owned());
                     }
                 }
                 continue;
@@ -480,7 +486,16 @@ fn parse_entry(input: &str, line: usize) -> Result<SeedEntry, ParseError> {
             });
         }
     }
-    if text.is_empty() || text.chars().any(char::is_whitespace) {
+    let mut names = text.split('|').map(str::trim);
+    let name = names.next().unwrap_or_default();
+    let alternatives = names.map(str::to_owned).collect::<Vec<_>>();
+    if name.is_empty()
+        || name.chars().any(char::is_whitespace)
+        || alternatives
+            .iter()
+            .any(|value| value.is_empty() || value.chars().any(char::is_whitespace))
+        || (kind != EntryKind::Package && !alternatives.is_empty())
+    {
         return Err(ParseError {
             line,
             message: "expected one package, source package, or snap name".into(),
@@ -497,9 +512,10 @@ fn parse_entry(input: &str, line: usize) -> Result<SeedEntry, ParseError> {
     }
     Ok(SeedEntry {
         kind,
-        name: text.to_owned(),
+        name: name.to_owned(),
         recommended,
         architectures,
+        alternatives,
     })
 }
 
