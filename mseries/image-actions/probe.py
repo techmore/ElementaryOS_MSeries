@@ -65,7 +65,7 @@ with tempfile.TemporaryDirectory() as temp:
     original = source.read_bytes()
     deadline = time.monotonic() + 20
     state = [False]
-failures = []
+    failures = []
     def ready(application):
         Gtk.Settings.get_default().set_property("gtk-application-prefer-dark-theme", options.dark)
         application.window.set_default_size(options.width, 360)
