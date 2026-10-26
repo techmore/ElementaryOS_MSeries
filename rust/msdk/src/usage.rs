@@ -119,3 +119,84 @@ impl Tokens {
             && !matches!((self.reasoning, self.output), (Some(child), Some(parent)) if child > parent)
     }
 }
+
+/// Coverage describes whether a collector has observed the full scope it
+/// promises. Partial is not interchangeable with a complete empty result.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Coverage {
+    Complete,
+    Partial,
+    Unknown,
+}
+
+/// One provider aggregate or account at one source. Window identifiers are
+/// stable within this observation and are not interpreted as account IDs.
+#[derive(Clone)]
+pub struct Observation {
+    pub scope: Scope,
+    pub state: State,
+    pub observed_at: Option<i64>,
+    pub windows: Vec<Window>,
+    pub tokens: Option<Tokens>,
+}
+
+#[derive(Clone)]
+pub struct Window {
+    pub key: String,
+    pub quota: Option<Quota>,
+}
+
+/// Versioned in-memory boundary, not a wire format or collector protocol.
+/// Consumers can distinguish an empty complete collection from incomplete
+/// coverage without deduplicating or summing overlapping sources implicitly.
+pub struct Snapshot {
+    pub coverage: Coverage,
+    pub observations: Vec<Observation>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SnapshotError {
+    EmptyIdentity,
+    DuplicateScope,
+    DuplicateWindow,
+    FreshWithoutTimestamp,
+    InvalidTokenSubset,
+}
+
+impl Snapshot {
+    pub const VERSION: u32 = 1;
+
+    /// Validate structural facts only. This does not prove provider coverage,
+    /// authorize an account, or deduplicate overlapping upstream measurements.
+    pub fn validate(&self) -> Result<(), SnapshotError> {
+        let mut scopes = std::collections::HashSet::new();
+        for observation in &self.observations {
+            let scope = &observation.scope;
+            if scope.provider.trim().is_empty()
+                || scope.account.as_ref().is_some_and(|key| key.trim().is_empty())
+                || matches!(&scope.source, Source::Server(key) if key.trim().is_empty())
+            {
+                return Err(SnapshotError::EmptyIdentity);
+            }
+            if !scopes.insert(scope) {
+                return Err(SnapshotError::DuplicateScope);
+            }
+            if observation.state == State::Fresh && observation.observed_at.is_none() {
+                return Err(SnapshotError::FreshWithoutTimestamp);
+            }
+            if observation.tokens.is_some_and(|tokens| !tokens.subsets_valid()) {
+                return Err(SnapshotError::InvalidTokenSubset);
+            }
+            let mut windows = std::collections::HashSet::new();
+            for window in &observation.windows {
+                if window.key.trim().is_empty() {
+                    return Err(SnapshotError::EmptyIdentity);
+                }
+                if !windows.insert(&window.key) {
+                    return Err(SnapshotError::DuplicateWindow);
+                }
+            }
+        }
+        Ok(())
+    }
+}

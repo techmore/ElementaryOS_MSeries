@@ -1,3 +1,13 @@
+## Usage observation snapshots — 2026-10-26
+
+The candidate Rust usage data layer now supports explicit coverage and validates
+snapshot identity, duplicate scopes/windows, source timestamps for fresh
+observations and impossible token subsets. Distinct accounts and sources are
+not merged; unknown values remain optional. Full macOS core tests (106) and
+strict clippy pass. This is an in-memory API, not a wire protocol, collector,
+presentation or status host. Source-matched Linux and the remaining status-area
+integration and visual/interaction gates are still required.
+
 ## Usage observation semantics — 2026-10-26
 
 The candidate `msdk::usage` data API separates account/provider/source scope,

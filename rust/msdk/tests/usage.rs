@@ -36,3 +36,35 @@ fn account_aggregate_and_remote_sources_have_distinct_identity() {
     assert!(!format!("{remote:?}").contains("account-a"));
     assert_eq!([aggregate, first, second, remote].into_iter().collect::<HashSet<_>>().len(), 4);
 }
+
+#[test]
+fn snapshots_retain_distinct_accounts_and_reject_duplicate_or_invalid_data() {
+    use msdk::usage::{Coverage, Observation, Snapshot, SnapshotError, Window};
+    let scope =
+        Scope { provider: "claude".into(), source: Source::Server("paired".into()), account: Some("one".into()) };
+    let first = Observation {
+        scope: scope.clone(),
+        state: State::Fresh,
+        observed_at: Some(100),
+        windows: vec![Window { key: "week".into(), quota: Some(Quota::new(0, QuotaUnit::Used, 100, None).unwrap()) }],
+        tokens: None,
+    };
+    let second = Observation { scope: Scope { account: Some("two".into()), ..scope }, ..first.clone() };
+    let mut snapshot = Snapshot { coverage: Coverage::Partial, observations: vec![first.clone(), second] };
+    assert_eq!(Snapshot::VERSION, 1);
+    assert_eq!(snapshot.validate(), Ok(()));
+    snapshot.observations.push(first.clone());
+    assert_eq!(snapshot.validate(), Err(SnapshotError::DuplicateScope));
+    snapshot.observations.pop();
+    let duplicate = snapshot.observations[0].windows[0].clone();
+    snapshot.observations[0].windows.push(duplicate);
+    assert_eq!(snapshot.validate(), Err(SnapshotError::DuplicateWindow));
+    snapshot.observations[0].windows.pop();
+    snapshot.observations[0].observed_at = None;
+    assert_eq!(snapshot.validate(), Err(SnapshotError::FreshWithoutTimestamp));
+    snapshot.observations[0].observed_at = Some(101);
+    assert_eq!(snapshot.validate(), Ok(()), "window and summary source timestamps may differ");
+    snapshot.observations[0].observed_at = Some(100);
+    snapshot.observations[0].tokens = Some(Tokens { input: Some(1), cached_input: Some(2), ..Tokens::default() });
+    assert_eq!(snapshot.validate(), Err(SnapshotError::InvalidTokenSubset));
+}

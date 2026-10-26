@@ -25,3 +25,12 @@ added again. `subsets_valid` detects contradictions where a known subset
 exceeds its known parent. These helpers do not merge observations, establish
 provider coverage, deduplicate overlapping local/server data, or infer source
 semantics. Adapters must provide those guarantees from documented contracts.
+
+The in-memory `Snapshot` includes explicit complete/partial/unknown coverage
+and groups observations by distinct scope. `validate()` rejects empty identity
+keys, duplicate scopes or window keys, a fresh observation without a source
+timestamp, and contradictory known token subsets. A window has its own quota
+observation time; it need not equal the containing observation's timestamp.
+Validation is explicit: callers must invoke it before presenting a snapshot.
+This versioned Rust structure is not a versioned wire protocol and cannot by
+itself prove that the collector actually covered all configured accounts.
