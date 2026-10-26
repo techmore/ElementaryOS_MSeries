@@ -1,3 +1,12 @@
+## CodexBar snapshot decoder validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40398755850 passed on ee2eb68. Four decoder
+regressions cover aggregate scope and partial coverage, null quota, source-time
+freshness, future/expired values, malformed input, bounds and error redaction;
+a native GTK widget test renders a synthetic v1 snapshot. This validates the
+decoder against fixtures, not execution of a live collector, real accounts,
+account-specific coverage or either actual desktop host. Those remain open.
+
 ## CodexBar snapshot decoder — native validation pending, 2026-10-26
 
 A bounded read-only decoder maps the existing CodexBar v1 provider snapshot to
