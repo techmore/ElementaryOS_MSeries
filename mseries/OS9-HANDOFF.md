@@ -1,3 +1,12 @@
+## Golden-path version injection — validation pending, 2026-10-26
+
+Fixture files may specify an SDK extension `api_version` to exercise a visible
+version mismatch without a real backend; invalid version values are rejected.
+The golden-path guide describes the injection. A native regression checks the
+error and verifies no built-in process fallback executes. GTK compilation and
+source-matched native execution remain pending; this is not an OS backend
+protocol compatibility result or a measured developer trial.
+
 ## Context-bound feed validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40391629479 and SDK/System Monitor run

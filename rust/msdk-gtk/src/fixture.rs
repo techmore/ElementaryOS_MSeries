@@ -16,6 +16,7 @@ use crate::host::{Event, ServiceCall, Services};
 pub struct FixtureServices {
     feeds: BTreeMap<String, Value>,
     calls: BTreeMap<String, Value>,
+    api_version: u32,
 }
 
 impl FixtureServices {
@@ -29,18 +30,35 @@ impl FixtureServices {
         FixtureServices {
             feeds: map("feeds"),
             calls: map("calls"),
+            api_version: msdk::runtime::SERVICES_API_VERSION,
         }
+    }
+
+    /// Parse an optional fixture extension version for compatibility testing.
+    pub fn try_from_json(v: &Value) -> Result<FixtureServices, String> {
+        let mut fixture = Self::from_json(v);
+        if let Some(version) = v.get("api_version") {
+            fixture.api_version = version
+                .as_u64()
+                .and_then(|n| u32::try_from(n).ok())
+                .ok_or_else(|| {
+                    "fixture api_version must be an unsigned 32-bit integer".to_string()
+                })?;
+        }
+        Ok(fixture)
     }
 
     pub fn load(path: &std::path::Path) -> Result<FixtureServices, String> {
         let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-        serde_json::from_str(&text)
-            .map(|v| FixtureServices::from_json(&v))
-            .map_err(|e| e.to_string())
+        let value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        FixtureServices::try_from_json(&value)
     }
 }
 
 impl Services for FixtureServices {
+    fn api_version(&self) -> u32 {
+        self.api_version
+    }
     fn invoke(&self, call: ServiceCall) -> Result<bool, msdk::runtime::ServiceFailure> {
         let Some(value) = self.calls.get(&call.service) else {
             return Err(msdk::runtime::ServiceFailure::new(

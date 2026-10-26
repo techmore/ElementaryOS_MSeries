@@ -50,6 +50,12 @@ actual command. Check again remains available after failure. Run the app without
 the fixture to exercise recovery against the real read-only command. Fixture
 results are synthetic; do not report them as real backend qualification.
 
+To inject an incompatible SDK extension version instead, use the same preview
+command with a fixture containing `{"api_version":2,"calls":{}}`. The host
+must show the incompatibility and must not run the real command. The fixture
+version is an SDK extension interface version, not a backend OS protocol
+version. Invalid version values are rejected when the fixture is loaded.
+
 `cargo test -p msdk --test golden_path` checks rules, visible recovery text,
 duplicate calls and model generation. On Linux/macOS it also executes the exact
 command with a child-only missing HOME, handles its actual nonzero error, and

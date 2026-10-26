@@ -409,6 +409,45 @@ fn extension_mismatch_recovers_and_closed_hosts_kill_owned_commands() {
     fixture_host.window().close();
     drop(fixture_host);
 
+    let incompatible =
+        msdk_gtk::fixture::FixtureServices::try_from_json(&json!({"api_version":2,"calls":{}}))
+            .unwrap();
+    assert!(
+        msdk_gtk::fixture::FixtureServices::try_from_json(&json!({"api_version":"2"})).is_err()
+    );
+    assert!(
+        msdk_gtk::fixture::FixtureServices::try_from_json(&json!({"api_version":4294967296_u64}))
+            .is_err()
+    );
+    let mut mismatch_doc = document();
+    mismatch_doc["update"]["Run"][0]["args"]["command"] = json!(format!("touch '{quoted}'"));
+    let mismatch = Host::open_with(
+        &app,
+        mismatch_doc,
+        None,
+        "main",
+        None,
+        Some(Rc::new(incompatible)),
+        false,
+    )
+    .unwrap();
+    mismatch.post("Run", None);
+    pump_until(|| mismatch.get("failed") == Some(json!(true)));
+    assert!(
+        mismatch
+            .get("out")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .contains("incompatible")
+    );
+    assert!(
+        !path.exists(),
+        "incompatible fixture must never execute a real fallback"
+    );
+    mismatch.window().close();
+    drop(mismatch);
+
     let mut doc = document();
     doc["update"]["Run"][0]["args"]["command"] =
         json!(format!("printf '%s' \"$$\" > '{quoted}'; exec sleep 20"));
