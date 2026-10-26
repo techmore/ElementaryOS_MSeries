@@ -33,6 +33,10 @@ pub trait Services {
     ) -> bool;
     /// Starts `feed`, calling `push` with the whole list now and whenever it changes. False when not owned.
     fn start_feed(&self, feed: &str, push: Rc<dyn Fn(Value)>) -> bool;
+    /// Called once when this host closes. Implementations must cancel owned work
+    /// and retire callbacks; adapters shared across hosts must scope ownership.
+    /// The default is for providers with no ongoing work (e.g. fixtures).
+    fn stop(&self) {}
 }
 
 pub type LogicFactory = Box<dyn FnOnce(UnboundedSender<Event>) -> Box<dyn Logic>>;
@@ -54,6 +58,41 @@ pub struct Host {
     surface: String,
     mtime: Cell<Option<SystemTime>>,
     me: RefCell<Weak<Host>>,
+    closed: Cell<bool>,
+    reload_source: RefCell<Option<glib::SourceId>>,
+    window_watches: RefCell<Vec<crate::services::WindowWatch>>,
+}
+
+// Widgets keep a dispatcher, never the Host itself. Otherwise Host -> widgets
+// -> signal closures -> Host forms a permanent reference cycle after closing.
+struct WeakDispatcher(Weak<Host>);
+impl Dispatcher for WeakDispatcher {
+    fn send(&self, msg: &str, payload: Option<Value>) {
+        if let Some(host) = self.0.upgrade() {
+            Dispatcher::send(host.as_ref(), msg, payload);
+        }
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        self.0
+            .upgrade()
+            .and_then(|host| Dispatcher::get(host.as_ref(), key))
+    }
+    fn set(&self, key: &str, value: Value) {
+        if let Some(host) = self.0.upgrade() {
+            Dispatcher::set(host.as_ref(), key, value);
+        }
+    }
+    fn confirm(&self, text: &str, then: Box<dyn FnOnce()>) {
+        if let Some(host) = self.0.upgrade() {
+            Dispatcher::confirm(host.as_ref(), text, then);
+        }
+    }
+}
+
+impl Drop for Host {
+    fn drop(&mut self) {
+        self.dispose();
+    }
 }
 
 fn read_doc(path: &Path) -> Result<Value, String> {
@@ -210,26 +249,41 @@ impl Host {
             surface: surface.to_string(),
             mtime: Cell::new(path.and_then(mtime)),
             me: RefCell::new(Weak::new()),
+            closed: Cell::new(false),
+            reload_source: RefCell::new(None),
+            window_watches: RefCell::new(Vec::new()),
         });
         *host.me.borrow_mut() = Rc::downgrade(&host);
         host.rebuild();
-        let h = host.clone();
+        let weak = Rc::downgrade(&host);
         glib::spawn_future_local(async move {
             while let Some((msg, payload)) = rx.next().await {
-                h.send(&msg, payload);
+                let Some(host) = weak.upgrade() else { break };
+                host.send(&msg, payload);
+            }
+        });
+        let weak = Rc::downgrade(&host);
+        host.window.connect_unrealize(move |_| {
+            if let Some(host) = weak.upgrade() {
+                host.dispose();
             }
         });
         host.start_feeds();
         if watch && host.path.is_some() {
-            let h = host.clone();
-            glib::timeout_add_local(std::time::Duration::from_millis(400), move || {
-                let now = h.path.as_deref().and_then(mtime);
-                if now != h.mtime.get() {
-                    h.mtime.set(now);
-                    h.reload();
-                }
-                glib::ControlFlow::Continue
-            });
+            let weak = Rc::downgrade(&host);
+            let source =
+                glib::timeout_add_local(std::time::Duration::from_millis(400), move || {
+                    let Some(h) = weak.upgrade() else {
+                        return glib::ControlFlow::Break;
+                    };
+                    let now = h.path.as_deref().and_then(mtime);
+                    if now != h.mtime.get() {
+                        h.mtime.set(now);
+                        h.reload();
+                    }
+                    glib::ControlFlow::Continue
+                });
+            *host.reload_source.borrow_mut() = Some(source);
         }
         if host.doc.borrow()["surfaces"][surface]["kind"] == "panel" {
             let weak = Rc::downgrade(&host);
@@ -245,6 +299,25 @@ impl Host {
 
     pub fn window(&self) -> &gtk::ApplicationWindow {
         &self.window
+    }
+
+    /// Retire host-owned polling/reload work and provider callbacks exactly once.
+    /// Late events are ignored. Closing the primary window calls this automatically.
+    pub fn dispose(&self) {
+        if self.closed.replace(true) {
+            return;
+        }
+        if let Some(source) = self.reload_source.borrow_mut().take() {
+            source.remove();
+        }
+        self.window_watches.borrow_mut().clear();
+        if let Some(services) = &self.services {
+            services.stop();
+        }
+        let extra = std::mem::take(&mut *self.extra.borrow_mut());
+        for (_, window) in extra {
+            window.destroy();
+        }
     }
 
     /// Sends a message as if a control had (used for start-up messages and feeds).
@@ -283,18 +356,19 @@ impl Host {
             }
             if name.as_str() == Some("windows.list") {
                 let weak = self.me.borrow().clone();
-                crate::services::watch_windows(move |list| {
+                let watch = crate::services::watch_windows(move |list| {
                     if let Some(h) = weak.upgrade() {
                         h.set(&key, list);
                         h.post("_feed", Some(json!(key)));
                     }
                 });
+                self.window_watches.borrow_mut().push(watch);
             }
         }
     }
 
     fn dispatcher(&self) -> D {
-        self.me.borrow().upgrade().expect("host alive") as D
+        Rc::new(WeakDispatcher(self.me.borrow().clone()))
     }
 
     /// Builds the surface's widgets from the current document.
@@ -318,7 +392,6 @@ impl Host {
                 // menu beside them, the title in the middle and the app's own actions on the right.
                 let header = gtk::HeaderBar::new();
                 header.add_css_class("msdk-titlebar");
-                header.set_decoration_layout(Some("close,minimize,maximize:"));
                 header.pack_start(&self.options_button(&doc));
                 let items: Vec<&Value> = surf["header"]
                     .as_array()
@@ -390,6 +463,9 @@ impl Host {
 
     /// Re-reads the file. A description with errors keeps the previous UI and shows the first error in a banner.
     pub fn reload(&self) {
+        if self.closed.get() {
+            return;
+        }
         let Some(path) = &self.path else { return };
         let doc = match read_doc(path) {
             Ok(d) => d,
@@ -701,6 +777,9 @@ impl Host {
 
 impl Dispatcher for Host {
     fn send(&self, msg: &str, payload: Option<Value>) {
+        if self.closed.get() {
+            return;
+        }
         let effects = {
             let mut st = self.store.borrow_mut();
             self.logic.borrow_mut().update(&mut st, msg, payload)
@@ -717,10 +796,16 @@ impl Dispatcher for Host {
     }
 
     fn set(&self, key: &str, v: Value) {
+        if self.closed.get() {
+            return;
+        }
         self.store.borrow_mut().insert(key.to_string(), v);
     }
 
     fn confirm(&self, text: &str, then: Box<dyn FnOnce()>) {
+        if self.closed.get() {
+            return;
+        }
         let dlg = gtk::AlertDialog::builder()
             .message(text)
             .buttons(["Cancel", "Continue"])

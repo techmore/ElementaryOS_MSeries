@@ -35,10 +35,19 @@ jobs:
       - uses: actions/checkout@v7
       - name: Provision native SDK test environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cargo rustc rustfmt rust-clippy \
+          # The Azure mirror took >25 minutes for two Rust archives in run
+          # 40355512113. Use official Ubuntu ports with the existing signed trust.
+          sudo python3 - <<'PYTHON'
+          from pathlib import Path
+          import re
+          path = Path('/etc/apt/sources.list.d/ubuntu.sources')
+          text = path.read_text()
+          path.write_text(re.sub(r'(?m)^URIs:.*$', 'URIs: http://ports.ubuntu.com/ubuntu-ports', text))
+          PYTHON
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y --no-install-recommends cargo rustc rustfmt rust-clippy \
             build-essential pkg-config libgtk-4-dev libwayland-dev libwayland-bin \
-            xvfb xauth dbus-x11 at-spi2-core dpkg-dev desktop-file-utils appstream
+            xvfb xauth dbus-x11 at-spi2-core dpkg-dev desktop-file-utils appstream python3-jsonschema python3-pyatspi python3-dbus xdotool
       - uses: actions/cache@v6
         with:
           path: |
@@ -53,6 +62,8 @@ jobs:
           cargo fmt --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --check
           cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --all-targets -- -D warnings
+      - name: Independent schema and checker agreement
+        run: python3 mseries/sdk-tests/check-schema.py --msdk "$CARGO_TARGET_DIR/debug/msdk" --rust-root "$RUNNER_TEMP/sdk"
       - name: Build and test generated native application
         run: |
           mkdir -p "$RUNNER_TEMP/sdk-evidence"
@@ -71,6 +82,16 @@ jobs:
           cp "$RUNNER_TEMP/generated/Cargo.lock" "$RUNNER_TEMP/sdk-evidence/generated-Cargo.lock"
           git rev-parse HEAD > "$RUNNER_TEMP/sdk-evidence/source.txt"
           sha256sum "$CARGO_TARGET_DIR/debug/msdk-sdksettings" > "$RUNNER_TEMP/sdk-evidence/binary.sha256"
+      - name: Actual keyboard and accessibility controls
+        run: |
+          MSDK_PRIVATE_TEST_BUS=1 GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            python3 mseries/sdk-tests/controls.py --binary "$CARGO_TARGET_DIR/debug/msdk-sdksettings" --output "$RUNNER_TEMP/sdk-evidence/controls.json"
+      - name: Compact and larger-text render matrix
+        run: bash mseries/sdk-tests/render-matrix.sh "$CARGO_TARGET_DIR/debug/msdk-sdksettings" "$RUNNER_TEMP/sdk-evidence/matrix"
+      - name: Native host lifecycle
+        run: |
+          MSDK_PRIVATE_TEST_BUS=1 XDG_DATA_HOME="$RUNNER_TEMP/sdk-state" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle -- --test-threads=1
       - name: Package, install, reinstall and remove the generated app
         run: |
           "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \

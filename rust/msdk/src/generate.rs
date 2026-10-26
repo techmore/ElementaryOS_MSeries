@@ -146,7 +146,7 @@ pub fn project_with_manifests(
     }
     model = model.replace(
         "pub fn document() -> serde_json::Value {\n",
-        &format!("pub fn document() -> serde_json::Value {{\n{registration}"),
+        &format!("pub fn document() -> serde_json::Value {{\n    static REGISTER: std::sync::OnceLock<()> = std::sync::OnceLock::new();\n    REGISTER.get_or_init(|| {{\n{registration}    }});\n"),
     );
     files.insert("src/lib.rs".into(), model);
     files.insert(

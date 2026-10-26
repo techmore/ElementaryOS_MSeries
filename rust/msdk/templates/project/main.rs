@@ -18,6 +18,15 @@ fn main() -> gtk::glib::ExitCode {
     let app = gtk::Application::builder()
         .application_id(@APP_ID@)
         .build();
+    let quit = gtk::gio::SimpleAction::new("quit", None);
+    let weak = app.downgrade();
+    quit.connect_activate(move |_, _| {
+        if let Some(app) = weak.upgrade() {
+            for window in app.windows() { window.close(); }
+        }
+    });
+    app.add_action(&quit);
+    app.set_accels_for_action("app.quit", &["<Primary>q"]);
     let keep = RefCell::new(None::<Rc<msdk_gtk::host::Host>>);
     let failed = Rc::new(Cell::new(false));
     let failure = failed.clone();
@@ -40,6 +49,7 @@ fn main() -> gtk::glib::ExitCode {
                     eprintln!("screenshot failed: {error}");
                     failure.set(true);
                 }
+                host.window().close();
                 app.quit();
             });
         }

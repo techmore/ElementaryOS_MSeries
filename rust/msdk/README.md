@@ -33,7 +33,7 @@ qualification gates; the generator is not a native macOS GTK port.
 state round-trip test and app README. Number fields use `serde_json::Number` so
 large integer measurements remain exact. Source names are preserved in serde
 fields; Rust keywords/non-identifiers get collision-free Rust identifiers.
-The executable supports `--screenshot output.png` for isolated render checks and
+The executable provides standard Ctrl+Q and supports `--screenshot output.png` for isolated render checks and
 exits unsuccessfully if opening/rendering fails. Ordinary launches use the
 stable application ID and reactivate the existing window.
 
@@ -81,3 +81,10 @@ state remains under the runtime's XDG data location. Package correctness and
 source-to-installed identity are checked separately from target-desktop
 interaction, accessibility and acceptance. The native CI exercises fresh install,
 reinstall, installed launch and removal in a disposable Linux runner.
+
+Validation helpers live in `mseries/sdk-tests/`: independent JSON Schema versus
+checker scenarios, actual keyboard/AT-SPI controls, a real private D-Bus lifecycle
+test, and compact/light/dark render profiles with asserted GTK 10/15-point fonts.
+Run native probes under fresh Xvfb and D-Bus sessions with synthetic XDG state;
+never borrow the owner's desktop session. Exact remaining gates and environment
+limits are recorded in the completion ledger.

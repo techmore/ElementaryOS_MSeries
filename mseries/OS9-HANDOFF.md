@@ -1,3 +1,46 @@
+## SDK native validation and authoring repairs — 2026-10-26
+
+The SDK now has standalone typed Cargo generation and explicit ELF-to-Debian
+packaging. In a new disposable SER8 Ubuntu 26.04 x86_64 container (Rust 1.93.1,
+GTK 4.22.4), core tests, actual GTK lifecycle, generated-app keyboard/AT-SPI
+controls, metadata validation, install/reinstall/installed launch/binary equality
+and removal pass on the tested snapshots. Final source fingerprints/artifact
+receipts are being retained separately; this is not whole-SDK or target desktop
+acceptance. The owner's containers, desktop, panel, accounts and kernel remain
+unchanged. The temporary msdk-validation-20261026 container is scoped to this
+SDK goal; retain its build cache while work continues.
+
+Concrete repairs: weak Host dispatch/event ownership; cancelable/coalesced
+window polling with an owned handle; provider teardown hook and late-event
+rejection; accepted-close disposal (a vetoed close stays usable). Independent
+native D-Bus reads prove enabled/closed/disabled behavior and Host release.
+Generated apps have standard Ctrl+Q and native window-control layout. Visual
+review rejected oversized custom oval controls and a missing dropdown label;
+those are repaired. Original GDK_DPI_SCALE screenshots did not change text and
+are not larger-text evidence. The corrected private GTK 10/15-point profiles
+assert the effective font setting before capture. Physical scale/theme/owner
+acceptance remain open.
+
+The JSON schema previously omitted initial/persist/feeds/update/logic and could
+not accept the shipped starters. It now describes those and all rule verbs;
+an independent Draft 2020-12 validator accepts 11 real descriptions/metadata
+cases and rejects seven malformed action shapes also refused by the checker.
+Generated manifests register once; corrected package metadata passes actual
+AppStream validation. A stale probe selected static labels rather than their
+identically named controls; that failure is retained before its repaired live
+Switch/ComboBox/Button checks. Rust 1.93 strict lint exposed older boolean
+forms; equivalent rewrites retain lexer bounds ordering and pass native lint.
+
+Run 40355512113 reached its 25-minute limit during Azure package provisioning,
+not SDK tests. Its log shows the two Rust archives stalled for minutes. The
+workflow now selects official Ubuntu ports while preserving signed APT trust,
+adds bounded download waits, independent schema checking, actual keyboard and
+accessibility checks, native lifecycle and compact/larger-text rendering.
+Next: retain final source-matched receipts and arm64 CI; then finish versioned
+service/error/process cancellation contracts, reusable status module conformance,
+model-authored app trials/performance and target-host qualification. All remain
+open in SDK-COMPLETION.md. Signal/Messages remain deferred.
+
 ## SDK native compilation reached; warning correction — 2026-10-26
 
 Linux run 40354775593 passes the complete core suite and compiles/tests the

@@ -41,8 +41,18 @@ pub fn desktop_entry(doc: &Value) -> String {
 pub fn metainfo(doc: &Value) -> String {
     let id = xml(doc["app"]["id"].as_str().unwrap_or(""));
     let name = xml(doc["app"]["name"].as_str().unwrap_or(""));
+    let developer = xml(doc["app"]["id"]
+        .as_str()
+        .unwrap_or("")
+        .rsplit_once('.')
+        .map(|(owner, _)| owner)
+        .unwrap_or("org.example")
+        .to_ascii_lowercase()
+        .replace('_', "-")
+        .as_str());
+    let homepage = xml(doc["app"]["website"].as_str().unwrap_or("https://github.com/techmore/ElementaryOS_MSeries"));
     format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<component type=\"desktop-application\">\n  <id>{id}</id>\n  <metadata_license>CC0-1.0</metadata_license>\n  <project_license>GPL-3.0-only</project_license>\n  <name>{name}</name>\n  <summary>Native Pantheon application</summary>\n  <description><p>A native application built with the M-series app SDK.</p></description>\n  <launchable type=\"desktop-id\">{id}.desktop</launchable>\n  <provides><binary>{id}</binary></provides>\n  <developer id=\"{id}\"><name>Application developer</name></developer>\n  <content_rating type=\"oars-1.1\" />\n</component>\n"
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<component type=\"desktop-application\">\n  <id>{id}</id>\n  <metadata_license>CC0-1.0</metadata_license>\n  <project_license>GPL-3.0-only</project_license>\n  <name>{name}</name>\n  <summary>Native Pantheon application</summary>\n  <description><p>An application created with the M-series app SDK. It follows its declared interface and rules and integrates with native Pantheon desktop controls.</p></description>\n  <launchable type=\"desktop-id\">{id}.desktop</launchable>\n  <provides><binary>{id}</binary></provides>\n  <url type=\"homepage\">{homepage}</url>\n  <developer id=\"{developer}\"><name>Application developer</name></developer>\n  <content_rating type=\"oars-1.1\" />\n</component>\n"
     )
 }
 
