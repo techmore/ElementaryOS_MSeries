@@ -11,6 +11,7 @@ cp "$here/TaskbarNotifications.vala" "$source_dir/src/TaskbarNotifications.vala"
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
 cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
 cp "$here/TaskbarAirDrop.vala" "$source_dir/src/TaskbarAirDrop.vala"
+cp "$here/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3RPopover.vala"
 mkdir -p "$source_dir/src/codexbar"
 for source in Indicator JsonBoundary HelperProcess AccountDialog PanelPreferences RefreshPolicy QuotaEta Presentation; do
   cp "$repo/mseries/codexbar-wingpanel/$source.vala" "$source_dir/src/codexbar/"
@@ -30,9 +31,12 @@ PY
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" \
   "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" \
-  "$source_dir/src/AirDropPanel.vala" "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
+  "$source_dir/src/TaskbarT3RPopover.vala" "$source_dir/src/AirDropPanel.vala" \
+  "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
+# Attach T3's existing local-feed dropdown to its launcher in both Dock layouts.
+git -C "$source_dir" apply "$repo/mseries/patches/dock-taskbar-t3r-popup.patch"
 python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PY'
 import pathlib, sys
 source = pathlib.Path(sys.argv[1]).read_text()
@@ -53,8 +57,10 @@ python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
-    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala'],
+    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala'],
     'src/Taskbar.vala': ['new TaskbarCodexBar', 'new TaskbarRepoBar', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
+    'src/AppSystem/Launcher.vala': ['new TaskbarT3RPopover (this, app)', 't3r_popup.toggle_from_icon ()'],
+    'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"repositories"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
     'src/AirDropPanel.vala': ['Receive Files'],
     'src/MainWindow.vala': ['taskbar-mode', 'TaskbarRow'],

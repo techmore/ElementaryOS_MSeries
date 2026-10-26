@@ -80,6 +80,26 @@ Live Wayland hover/placement acceptance remains distinct from fixture results.
 
 Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).
 
+## T3 token dropdown
+
+The existing T3 launcher dropdown displays provider-wide token history (total,
+input, output, cached input, reasoning and available estimated cost), its date
+window and freshness. Provider totals include all accounts and are explicitly
+distinguished from the selected account's plan windows. Unknown or stale quota
+data never becomes a zero-percent or live gauge.
+
+The native T3 connection writes the local status snapshot; the Dock only watches
+that file and opens no second server connection. Native GTK/Granite controls
+follow the desktop theme. Hover, click pinning and launcher actions are retained
+in floating and taskbar layouts.
+
+The updated native producer and private Dock were built, installed and loaded
+on 2026-10-26. A connected snapshot supplied nonzero token totals with its source
+correctly marked stale. Native Rust tests passed (77), RepoBar tests passed (26),
+and the complete patched Dock linked successfully. Both-mode pointer acceptance
+and a physical reboot remain separate checks, not implied by these results.
+
+
 ## Reboot and update persistence
 
 The session unit starts `pantheon-rust-dock`, which selects the user wrapper and
