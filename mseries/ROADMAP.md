@@ -1,3 +1,12 @@
+## SDK Linux first-run dependency correction — 2026-10-26
+
+Native workflow run 40354229616 failed before GTK build: the generated-model
+integration test uses offline Cargo, but serde derive/proc-macro dependencies had
+not been provisioned by core Cargo tests. Added the actual test dependency and
+copied the parent lock into the generated fixture before offline compilation.
+This preserves offline test execution and pinned versions; it does not weaken
+or skip generated-code compilation. Native build/render checks remain pending.
+
 ## SDK standalone app generation and core reconciliation — 2026-10-26
 
 Added `msdk gen` for checked descriptions: independent Cargo project, inspectable
