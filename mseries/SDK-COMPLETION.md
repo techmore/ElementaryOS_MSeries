@@ -6,6 +6,17 @@ RUST-PANTHEON-SDK, the sdk-bench specs/rubric, and the Dock standard proposed in
 PR #605. Existing Signal/Messages deferral remains in force: use synthetic
 messaging data for SDK checks; do not resume or replace those clients.
 
+Owner scope clarification (2026-10-26): a native experience is **not required
+for every app**. Complete and validate the SDK's shipped capabilities and a
+small set of representative flows. Existing web interfaces, wrappers, webviews
+and hybrid apps can be retained where appropriate; do not turn SDK completion
+into a project-wide native UI migration. A frontend integration must actually
+exist and be tested before it is advertised; the current vocabulary does not
+ship a generic WebView component. Full T3/product feature parity, consumer
+redesigns and app-by-app native status ports are separate app work, not SDK
+completion gates. Applicable backend/lifecycle/security contracts still apply
+to interfaces the SDK actually ships or claims to support.
+
 A green compiler/test run is scoped evidence. SDK completion requires every
 applicable row below to have retained source-matched evidence; missing evidence
 is an open gate. No completion percentage is assigned.
@@ -18,10 +29,10 @@ is an open gate. No completion percentage is assigned.
 | Clean developer path | Clean checkout to useful app, recoverable service error, typed diagnostic/source context, optional capability, build/package/run guide; coding <=30 min and provisioning/wall time separately measured | Home Storage read-only sample and SDK-GOLDEN-PATH.md added; actual same-process keyboard/AT-SPI failure/retry, eight native reviewed captures, generated app build/lint and package lifecycle pass; measured novice/model trial still needed |
 | Services and errors | Version mismatch/unavailable/denied/malformed data through actual adapters; bounded async/cancel/retry behavior; privacy-safe structured diagnostics | Candidate typed async replies, extension ABI checks, safe diagnostics, owned process groups and bounded Rust streaming/partial output implemented; core streaming/context passes macOS and Linux checks; native typed error/recovery/fixture/close checks pass on exact source; backend OS protocols and streaming/app-specific GTK adapters remain open |
 | Optional lifecycle | Disabled/closed causes no extra reads, stale completions ignored, sources released; exact scope/account remains visible | Host/window watcher/process ownership and core scopes pass; explicit typed GTK reply bindings reject obsolete success/error including a second error-callback queue, with actual widget and release checks; legacy/built-in/feed/streaming/T3 context adapters and real account identity/teardown remain open |
-| Native toolkit/UI | Source-matched light/dark, regular/compact, default/larger text and supported scales; keyboard-only primary journey and live accessible names/roles | Generated settings app passes live keyboard/AT-SPI controls; settings and Home Storage compact/regular, light/dark, asserted 10/15-point matrices visually reviewed and retained; target Pantheon/physical scales/owner acceptance remain open |
+| SDK native host/components | Source-matched light/dark, regular/compact, default/larger text and supported scales; keyboard-only primary journeys and live accessible names/roles in representative SDK consumers | Settings and Home Storage keyboard/AT-SPI and reviewed matrices qualify the SDK host on tested snapshots; target Pantheon/physical scales/owner acceptance remain open. No every-app native UI requirement |
 | Shell/status module | Discoverable reusable CodexBar-derived provider/account module; Windows bottom-right and elementary status hosts; all semantics and exact interaction gates from #605 | Native T3 integration is separate from reusable SDK capability; no parity claim |
 | Installation/distribution | Correct executable/desktop ID/icon/metainfo; package validation, fresh install/reinstall/remove and source-installed-loaded identity | `msdk pack` implemented with actual ELF architecture/native-library dependency resolution and validated desktop/AppStream/icon/license assets; isolated x86_64 settings and current Home Storage package/install/reinstall/installed launch/binary equality/remove pass on source-matched snapshots; exact SDK/generated source fingerprints and binary/package hashes retained; arm64/target-distro/target-host qualification pending |
-| Reference consumers | T3 monitoring/GitHub actions through actual SDK adapters; comparable native/SDK semantics; read-only authority and account freshness | T3 core fixtures exist; full reference/host/real-account qualification open; Messages remains deferred |
+| Representative integrations | A small set of consumers or focused harnesses proves shipped SDK service, error, lifecycle and authority contracts; qualify any specifically advertised integration flow | Settings/Home Storage, real process work, private D-Bus and typed service/context cases supply evidence. Use existing frontends or focused adapters for any uncovered SDK contract; full T3/native product parity is separate. Messages remains deferred |
 | Performance | Same hardware/workload startup/RSS/idle CPU/wakeups/render metrics; explicit build/provision/queue timings | No new performance result claimed |
 | Model usability | Exact licensed model/runtime/weights/prompt/spec; clean isolated no-network trials, same rubric, failures/repairs/interventions retained; independent visual/behavior acceptance | Six fixed benchmark specs exist; controlled repeated runs and baseline comparisons remain open |
 | Release/API readiness | All above gates audited against final immutable artifacts, docs match shipped behavior, unsupported scope explicitly recorded | SDK v1 completion remains unproven |

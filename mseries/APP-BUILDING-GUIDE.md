@@ -8,6 +8,13 @@ The owner rejected the result. Both apps are incomplete and deferred.
 
 ## First establish what the person will experience
 
+The owner clarified on 2026-10-26 that not every app needs a native experience.
+Choose the UI architecture for the actual product journey: existing web UI,
+wrapper, webview/hybrid or native controls as appropriate. SDK completion needs
+reusable capabilities and representative integration proof, not native rewrites
+of every app or full feature parity with every existing client. Do not promise
+a WebView vocabulary component or other integration that has not been shipped.
+
 Write a short outcome contract before implementation:
 
 - What opens, which window owns navigation, and what each primary action does.
@@ -37,8 +44,9 @@ necessary. Do not add recurring notifications or timers just to enforce this rul
 
 ## Use the implemented SDK authoring path
 
-Descriptions (`.msdk` or JSON), rules and declared services are the primary
-authoring path. `msdk new` already generates a description, gates and README
+For SDK-rendered native UI, descriptions (`.msdk` or JSON), rules and declared
+services are the primary authoring path. This is not a requirement to replace
+an appropriate existing frontend. `msdk new` generates a description, gates and README
 from six templates; it does not generate a complete Cargo project, backend,
 standalone executable or package. Use app-local Rust `Services`/`Logic` only
 where the supported vocabulary is insufficient; record each escape hatch and

@@ -15,6 +15,13 @@ product work and scope changes. Continue independent work while awaiting feedbac
 
 ## SDK and template direction
 
+The owner clarified that not every app needs a native experience (2026-10-26).
+Focus SDK work on reusable capabilities and a small set of representative
+consumers. Keep an existing web UI, wrapper or hybrid architecture when it fits
+the app. Do not require a complete native port or native feature parity for each
+consumer before qualifying the SDK. A webview/hybrid integration is an explicit
+implementation choice, not a currently shipped generic WebView component.
+
 Version identifiers, ownership and qualification boundaries are published in
 [SDK compatibility](SDK-COMPATIBILITY.md). These are candidate development
 contracts; whole-SDK v1 release readiness remains unproven.
@@ -27,7 +34,8 @@ for SDK apps, with app-local Rust `Services`/`Logic` for documented gaps.
 Native Rust GTK/Granite helpers remain available in `mseries-pantheon-kit`.
 Native T3 (`claude-pantheon-rs`) and the SDK-hosted T3 executable
 (`claude-pantheon-sdk`) are separate consumers; native features do not imply
-SDK parity. Source inventory: [SDK audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum).
+SDK parity, and full product parity is not an SDK completion requirement.
+Source inventory: [SDK audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum).
 
 | Implemented path | Boundary |
 | --- | --- |

@@ -1,3 +1,19 @@
+## Owner SDK scope clarification: native is not mandatory for every app — 2026-10-26
+
+The owner explicitly said we do not need a native experience for all apps.
+SDK completion covers reusable SDK capabilities and a small set of representative
+consumer/integration flows. Preserve suitable web interfaces, wrappers, webview/
+hybrid architectures and existing clients; do not create a project-wide native
+porting or full app-parity prerequisite. Generic WebView hosting is not currently
+a shipped vocabulary component, so do not imply that integration already exists.
+
+Updated SDK-COMPLETION.md, RUST-PANTHEON-SDK.md and APP-BUILDING-GUIDE.md to apply
+this scope. Full T3/client parity and app-by-app native status ports are separate
+app work. SDK host quality, declared API/lifecycle/authority contracts, selected
+reference flows, distribution, developer usability and supported-host validation
+remain SDK work. Signal/Messages deferral stays in force. No new consumer app
+port or owner desktop/service/account changes were made for this clarification.
+
 ## Typed GTK reply contexts and ARM foundation pass — 2026-10-26
 
 ARM developer-path run 40375089386/job 121755848259 succeeded on pushed
