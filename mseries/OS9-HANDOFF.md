@@ -9,7 +9,15 @@ and logged `display teardown failed: -110`. This is a kernel/tunnel failure,
 not a display layout that can currently be restored in userspace. Historical
 wip3 evidence says changing physical USB-C ports restored one prior incident;
 the owner confirms the current cable is in rear-left, near the hinge. Requested
-moving to front-left or right to restore the link without changing boot state.
+
+The open wip4 candidate PR #533 contains patch 0002 for this exact DCP failure
+class: a timed-out DPTX pipeline is held off and its stale tunnel ownership is
+released. Its retained wip3 incident report confirms that same-port replug can
+hit the pinned DCP again, while another physical port recovered. The patch is
+build-checked but not booted on hardware; it prevents pinning for a subsequent
+request but does not reroute the already-failed plug in place. A reboot/trial
+and repeat plug/unplug qualification remain necessary before calling the kernel
+path durable.
 
 The active `mseries-display-profiles` watcher also had an independent confirmed
 bug: its `ApplyMonitorsConfig` GVariant signature omitted the per-logical-monitor
