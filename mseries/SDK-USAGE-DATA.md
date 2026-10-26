@@ -59,3 +59,13 @@ snapshot, then restores the prior numeric vertical scroll offset after layout,
 clamped for shorter content. It does not preserve a semantic row anchor, focus
 in interactive children, or provide refresh, subscriptions or host placement.
 The caller must apply context freshness and stop its own reads.
+
+`msdk_gtk::codexbar::decode_snapshot` is a candidate read-only decoder for
+CodexBar's version 1 `--snapshot` JSON. It accepts bounded bytes and an explicit
+clock/freshness policy, produces provider aggregate observations, and marks
+coverage partial because this format alone does not enumerate all accounts. It
+requires source timestamps for live values, rejects malformed fields and unknown
+schema versions, keeps null quotas unknown, and suppresses source payloads from
+decode errors. It neither runs the command nor polls or authenticates. Fresh
+read and actual account-specific adapters remain separate work; no real provider
+or account qualification is implied by synthetic fixtures.

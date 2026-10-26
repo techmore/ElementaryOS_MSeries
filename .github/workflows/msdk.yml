@@ -95,7 +95,7 @@ jobs:
         run: |
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --all-targets -- -D warnings
           MSDK_PRIVATE_TEST_BUS=1 XDG_DATA_HOME="$RUNNER_TEMP/sdk-state" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
-            cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime --test cli --test usage -- --test-threads=1
+            cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime --test cli --test usage --test codexbar -- --test-threads=1
       - name: Capture candidate usage rows for review
         run: |
           cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --example usage_preview

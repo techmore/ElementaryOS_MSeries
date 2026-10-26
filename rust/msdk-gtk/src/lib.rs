@@ -7,6 +7,7 @@
 pub mod host;
 pub use msdk::logic;
 pub mod autohide;
+pub mod codexbar;
 pub mod fixture;
 pub mod render;
 pub mod services;

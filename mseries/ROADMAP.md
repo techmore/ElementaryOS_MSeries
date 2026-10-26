@@ -1,3 +1,13 @@
+## CodexBar snapshot decoder — native validation pending, 2026-10-26
+
+A bounded read-only decoder maps the existing CodexBar v1 provider snapshot to
+candidate usage observations, retaining source timestamps and partial coverage.
+It never claims account-specific usage from provider aggregates. Synthetic
+regressions cover unknown, stale, future, expired and malformed data and a GTK
+rendering path. No process, live backend or owner account is touched. GTK
+compilation and source-matched native tests are pending; real collector reads,
+account adapters and status-host integration remain open.
+
 ## Usage viewport refresh validation — 2026-10-26
 
 Hosted ARM developer-path run 40397942393 passed on cc2dace. Its native widget

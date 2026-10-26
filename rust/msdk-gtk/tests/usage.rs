@@ -216,4 +216,20 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
             .any(|value| value == "Updated account · Selected")
     );
     window.close();
+    let source = br#"{"schemaVersion":1,"entries":[{"provider":"codex","updatedAt":"2026-01-01T00:00:00Z","windows":[{"key":"week","label":"7 day","remaining":75,"resetsAt":"2026-01-02T00:00:00Z"}]}]}"#;
+    let parsed = msdk_gtk::codexbar::decode_snapshot(source, 1_767_225_600, 300).unwrap();
+    let source_view = msdk_gtk::usage::render(&parsed, 1_767_225_600).unwrap();
+    let mut parsed_text = Vec::new();
+    labels(source_view.upcast_ref(), &mut parsed_text);
+    for expected in [
+        "Codex",
+        "Provider total",
+        "7 day: 75% remaining",
+        "Usage coverage is partial",
+    ] {
+        assert!(
+            parsed_text.iter().any(|value| value == expected),
+            "missing {expected}: {parsed_text:?}"
+        );
+    }
 }
