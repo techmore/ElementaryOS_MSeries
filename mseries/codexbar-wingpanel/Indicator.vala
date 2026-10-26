@@ -363,6 +363,8 @@ namespace MSeries {
                 Pid child_pid;
                 // Settings open our native window when it is installed; upstream's Qt window is the fallback.
                 var native_settings = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-settings");
+                if (!FileUtils.test (native_settings, FileTest.IS_EXECUTABLE))
+                    native_settings = Environment.find_program_in_path ("codexbar-settings") ?? native_settings;
                 var program = action == "--settings" && FileUtils.test (native_settings, FileTest.IS_EXECUTABLE) ? native_settings : executable;
                 string[] command = program == executable ? new string[] { executable, action } : new string[] { native_settings };
                 Process.spawn_async (null, command, null,

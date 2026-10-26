@@ -1,0 +1,11 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+PASS native T3 panel: hosted content, lazy usage, tabs, stopped closed polling, three launch/close routes
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+PASS native T3 panel: hosted content, lazy usage, tabs, stopped closed polling, three launch/close routes
+PASS module entrypoint and legacy deployment target selection
+PASS first migration stages outside live discovery and reserves unified selection
+Activated the unified T3 panel with legacy modules retired.
+PASS explicit cutover stops the host before migration and retains all rollback modules
+Staged unified T3 menu outside Wingpanel discovery. Activation requires explicit --activate; default staging never reloads the panel.

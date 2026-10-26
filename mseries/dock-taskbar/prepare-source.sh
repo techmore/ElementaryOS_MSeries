@@ -88,3 +88,12 @@ for filename, required in {
         if token not in text:
             raise SystemExit(f'Incomplete Windows taskbar source: {filename} lacks {token}')
 PY
+
+python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PYCODE'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+s = p.read_text()
+assert s.count('new TaskbarT3RPopover (this, app)') == 1
+p.write_text(s.replace('new TaskbarT3RPopover (this, app)', 'new TaskbarT3RPopover (this, ItemManager.get_icon_size () * 7 / 12)'))
+PYCODE

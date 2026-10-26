@@ -1,0 +1,1 @@
+option('install_indicator', type: 'boolean', value: true, description: 'Install standalone indicator (false when unified T3 owns the panel)')

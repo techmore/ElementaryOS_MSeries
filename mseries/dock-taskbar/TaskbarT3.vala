@@ -14,7 +14,7 @@ public class Dock.TaskbarT3 : Gtk.Box {
         icon = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs");
         button.child = icon;
         append (button);
-        menu = new TaskbarT3RPopover (button);
+        menu = new TaskbarT3RPopover (button, ItemManager.get_icon_size () * 7 / 12);
         button.clicked.connect (menu.toggle_from_icon);
         update_size ();
         settings.changed["icon-size"].connect (update_size);
