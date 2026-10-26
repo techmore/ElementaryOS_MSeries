@@ -96,6 +96,23 @@ jobs:
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --all-targets -- -D warnings
           MSDK_PRIVATE_TEST_BUS=1 XDG_DATA_HOME="$RUNNER_TEMP/sdk-state" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
             cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime --test cli --test usage -- --test-threads=1
+      - name: Capture candidate usage rows for review
+        run: |
+          cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --example usage_preview
+          for mode in light dark; do
+            theme=Adwaita
+            if [ "$mode" = dark ]; then theme=Adwaita:dark; fi
+            for points in 10 15; do
+              config="$RUNNER_TEMP/usage-config-$mode-$points"
+              mkdir -p "$config/gtk-4.0"
+              printf '[Settings]\ngtk-font-name=Sans %s\n' "$points" > "$config/gtk-4.0/settings.ini"
+              XDG_CONFIG_HOME="$config" GTK_THEME="$theme" GSK_RENDERER=cairo MSDK_MATRIX_POINTS="$points" \
+                xvfb-run -a dbus-run-session -- bash -eu -c '
+                  python3 mseries/sdk-tests/font-profile.py
+                  "$CARGO_TARGET_DIR/debug/examples/usage_preview" "$RUNNER_TEMP/sdk-evidence/usage-'"$mode"'-'"$points"'.png"
+                '
+            done
+          done
       - name: Package, install, reinstall and remove the generated app
         run: |
           "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \

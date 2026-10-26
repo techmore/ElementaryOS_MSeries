@@ -1,3 +1,11 @@
+## Synthetic usage preview — validation pending, 2026-10-26
+
+An isolated GTK example renders synthetic accounts and saves a window capture;
+the SDK workflow builds it and captures light/dark at Sans 10 and 15 for review.
+This is a candidate component preview, not a real status host or evidence of
+visual acceptance. GTK compilation, all four captures and independent visual
+review remain pending on the exact source. It must not read real account data.
+
 ## Candidate usage GTK rows — validation pending, 2026-10-26
 
 `msdk_gtk::usage::render` builds read-only provider/source and account rows from
