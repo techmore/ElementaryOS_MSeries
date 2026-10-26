@@ -91,9 +91,39 @@ retired. The Host clears owned handles on disposal.
 This is task-command ownership, not a sandbox or supervisor for privileged,
 daemonized, detached-session or OS-wide transactions. Use an explicit OS-owned
 service adapter for those lifecycles; do not route a long-running update
-transaction through a short task timeout. Streaming stdout/progress, retained
-partial output and the updater reference-app contract remain unfinished. Do not
-advertise them as implemented by this completed-output API.
+transaction through a short task timeout. The declarative `process.run` service
+still returns completed output; progress/update UI and the updater reference-app
+contract remain unfinished.
+
+### Rust streaming and partial output
+
+`msdk::process::spawn_streaming` returns `(Process, OutputStream)`. Retain both
+while the operation is wanted. Drain the stream on an app worker (never block a
+GTK main loop), forwarding only needed updates to the UI. Dropping either owner
+cancels silent or producing work. Cancellation and completion retain the same
+process-group cleanup and leader-reaping guarantees as `spawn`.
+
+Each `Chunk` identifies stdout/stderr and contains raw bytes. Byte order within
+each stream is preserved; cross-stream order is unspecified. Chunks may split
+lines or UTF-8 sequences: keep a separate decoder/buffer per stream, and choose
+an explicit policy for invalid bytes. Chunk Debug shows stream and byte count,
+never private content. Raw bytes and the final Output belong in private app UI,
+not public diagnostics or receipts.
+
+The queue holds at most 32 chunks of at most 8192 bytes each (256 KiB), in
+addition to the normal bounded final-output buffers. A full queue stops the
+command with `process-output-limit`; the worker never waits for a slow consumer.
+Already received and queued bytes remain available after timeout, cancellation,
+nonzero exit or output-limit failure. Output that exceeded either bound is not
+silently accepted. The completion callback is authoritative for terminal status;
+stream closure alone does not mean success. The sender closes before completion
+is reported, so consumers can then drain queued partial data to disconnection.
+The callback runs after process cleanup; keep it short and nonblocking.
+
+Discovery keeps `process.streaming: false` for the completed-output description
+service and reports the separate Rust streaming API/limits in
+`process.rust_streaming`. This core capability does not qualify a GTK progress
+adapter, stale-context handling or the updater app. Those remain open.
 
 ## Verification
 

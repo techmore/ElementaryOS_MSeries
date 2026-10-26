@@ -1,3 +1,23 @@
+## Bounded Rust process streaming — 2026-10-26
+
+`msdk::process::spawn_streaming` now supplies private raw stdout/stderr chunks
+before completion. Its owned subscription and process handle cancel on drop,
+including silent work. A 32 × 8192-byte queue uses nonblocking delivery; a slow
+consumer terminates the task with output-limit failure rather than hanging the
+worker. Already queued/consumed partial output survives cancellation and timeout;
+stream closure precedes completion, which remains the terminal-status authority.
+Raw bytes preserve invalid UTF-8; Chunk Debug omits payloads. Discovery records
+the Rust API/limits separately from completed-output `process.run`.
+
+Five new real-process checks pass on macOS: early private stdout/stderr plus
+cancel, raw byte fidelity, bounded slow-consumer failure, silent-task cancellation
+on subscription drop, and partial output after timeout. Full core suite (82
+checks), strict Clippy and formatting pass. Linux current-source qualification
+still awaits explicit source-transfer/destination approval; no remote retry was
+made. GTK streaming/progress adapter, stale-context protection and the updater
+reference consumer remain unfinished. See SDK-RUNTIME-CONTRACT.md for semantics.
+No owner desktop, services, accounts, kernel or panel changed.
+
 ## Typed SDK runtime and owned task commands — 2026-10-26
 
 ARM developer-path run 40363235712 passed on ed9bc5b. Continue that evidence; no

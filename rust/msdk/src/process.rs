@@ -4,11 +4,33 @@
 //! requests cancellation; daemon/privileged jobs need an OS-owned service adapter.
 
 use crate::runtime::{FailureKind, ServiceFailure};
+use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
+
+pub const STREAM_QUEUE_CHUNKS: usize = 32;
+pub const STREAM_CHUNK_BYTES: usize = 8192;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Stream {
+    Stdout,
+    Stderr,
+}
+
+/// Raw bytes: chunks need not align with UTF-8 or line boundaries. Private data
+/// is deliberately absent from Debug. Keep a decoder per stream in the client.
+pub struct Chunk {
+    pub stream: Stream,
+    pub bytes: Vec<u8>,
+}
+impl std::fmt::Debug for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Chunk").field("stream", &self.stream).field("byte_count", &self.bytes.len()).finish()
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
@@ -26,6 +48,24 @@ impl Default for Limits {
 pub struct Output {
     pub stdout: String,
     pub stderr: String,
+}
+
+/// An owned bounded output subscription. Dropping it cancels the task even
+/// while the command is silent. Retain it until the desired output is consumed.
+pub struct OutputStream {
+    receiver: Receiver<Chunk>,
+    _process: Process,
+}
+impl OutputStream {
+    pub fn recv(&self) -> Result<Chunk, mpsc::RecvError> {
+        self.receiver.recv()
+    }
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<Chunk, mpsc::RecvTimeoutError> {
+        self.receiver.recv_timeout(timeout)
+    }
+    pub fn try_recv(&self) -> Result<Chunk, mpsc::TryRecvError> {
+        self.receiver.try_recv()
+    }
 }
 
 struct Control {
@@ -74,6 +114,34 @@ pub fn spawn(
     operation: u64,
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<Process, ServiceFailure> {
+    spawn_inner(command, limits, operation, None, complete)
+}
+
+/// Bounded live output. Drain the receiver while retaining the Process handle.
+/// A full queue stops the owned command with OutputLimit; dropping the stream
+/// cancels the command, including silent work. Already received/queued chunks
+/// remain available after failure. Output delivery never invokes client code;
+/// only the terminal completion callback runs on the reader worker.
+/// Per-stream byte order is preserved; cross-stream ordering is not guaranteed.
+pub fn spawn_streaming(
+    command: String,
+    limits: Limits,
+    operation: u64,
+    complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
+) -> Result<(Process, OutputStream), ServiceFailure> {
+    let (tx, rx) = mpsc::sync_channel(STREAM_QUEUE_CHUNKS);
+    let process = spawn_inner(command, limits, operation, Some(tx), complete)?;
+    let subscription = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
+    Ok((process, subscription))
+}
+
+fn spawn_inner(
+    command: String,
+    limits: Limits,
+    operation: u64,
+    stream: Option<SyncSender<Chunk>>,
+    complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
+) -> Result<Process, ServiceFailure> {
     let control = Arc::new(Control {
         cancelled: AtomicBool::new(false),
         finished: AtomicBool::new(false),
@@ -83,7 +151,10 @@ pub fn spawn(
     std::thread::Builder::new()
         .name("msdk-process".into())
         .spawn(move || {
-            let result = run(command, limits, operation, &worker);
+            let result = run(command, limits, operation, &worker, stream.as_ref());
+            // Close the stream before reporting completion: clients can drain
+            // all queued bytes and then observe disconnection deterministically.
+            drop(stream);
             worker.finished.store(true, Ordering::SeqCst);
             complete(result);
         })
@@ -96,12 +167,24 @@ fn failure(kind: FailureKind, operation: u64) -> ServiceFailure {
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
-fn run(_: String, _: Limits, operation: u64, _: &Control) -> Result<Output, ServiceFailure> {
+fn run(
+    _: String,
+    _: Limits,
+    operation: u64,
+    _: &Control,
+    _: Option<&SyncSender<Chunk>>,
+) -> Result<Output, ServiceFailure> {
     Err(failure(FailureKind::Unavailable, operation))
 }
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
-fn run(command: String, limits: Limits, operation: u64, control: &Control) -> Result<Output, ServiceFailure> {
+fn run(
+    command: String,
+    limits: Limits,
+    operation: u64,
+    control: &Control,
+    stream: Option<&SyncSender<Chunk>>,
+) -> Result<Output, ServiceFailure> {
     use std::io::Read;
     use std::os::{fd::AsRawFd, unix::process::CommandExt};
     use std::process::{Command, Stdio};
@@ -154,8 +237,11 @@ fn run(command: String, limits: Limits, operation: u64, control: &Control) -> Re
             if start.elapsed() >= limits.timeout {
                 return Err(failure(FailureKind::TimedOut, operation));
             }
-            let mut buffer = [0_u8; 8192];
-            for (pipe, target) in [(&mut stdout as &mut dyn Read, &mut out), (&mut stderr as &mut dyn Read, &mut err)] {
+            let mut buffer = [0_u8; STREAM_CHUNK_BYTES];
+            for (pipe, target, channel) in [
+                (&mut stdout as &mut dyn Read, &mut out, Stream::Stdout),
+                (&mut stderr as &mut dyn Read, &mut err, Stream::Stderr),
+            ] {
                 loop {
                     if control.cancelled.load(Ordering::SeqCst) {
                         return Err(failure(FailureKind::Cancelled, operation));
@@ -169,6 +255,7 @@ fn run(command: String, limits: Limits, operation: u64, control: &Control) -> Re
                             if total.saturating_add(count) > limits.output_bytes {
                                 return Err(failure(FailureKind::OutputLimit, operation));
                             }
+                            deliver(stream, channel, &buffer[..count], operation)?;
                             target.extend_from_slice(&buffer[..count]);
                             total += count;
                         }
@@ -185,9 +272,10 @@ fn run(command: String, limits: Limits, operation: u64, control: &Control) -> Re
                 // Descendants must not keep pipe ownership alive after the leader
                 // exits. Clean the group and drain its finite buffered bytes next.
                 kill_group(pid);
-                for (pipe, target) in
-                    [(&mut stdout as &mut dyn Read, &mut out), (&mut stderr as &mut dyn Read, &mut err)]
-                {
+                for (pipe, target, channel) in [
+                    (&mut stdout as &mut dyn Read, &mut out, Stream::Stdout),
+                    (&mut stderr as &mut dyn Read, &mut err, Stream::Stderr),
+                ] {
                     loop {
                         match pipe.read(&mut buffer) {
                             Ok(0) => break,
@@ -195,6 +283,7 @@ fn run(command: String, limits: Limits, operation: u64, control: &Control) -> Re
                                 if total.saturating_add(count) > limits.output_bytes {
                                     return Err(failure(FailureKind::OutputLimit, operation));
                                 }
+                                deliver(stream, channel, &buffer[..count], operation)?;
                                 target.extend_from_slice(&buffer[..count]);
                                 total += count;
                             }
@@ -250,4 +339,24 @@ fn exited_without_reaping(pid: i32) -> std::io::Result<bool> {
     #[cfg(target_os = "macos")]
     let child = info.si_pid;
     Ok(child == pid)
+}
+
+fn deliver(
+    stream: Option<&SyncSender<Chunk>>,
+    channel: Stream,
+    bytes: &[u8],
+    operation: u64,
+) -> Result<(), ServiceFailure> {
+    if let Some(tx) = stream {
+        tx.try_send(Chunk { stream: channel, bytes: bytes.to_vec() }).map_err(|error| {
+            failure(
+                match error {
+                    mpsc::TrySendError::Full(_) => FailureKind::OutputLimit,
+                    mpsc::TrySendError::Disconnected(_) => FailureKind::Cancelled,
+                },
+                operation,
+            )
+        })?;
+    }
+    Ok(())
 }

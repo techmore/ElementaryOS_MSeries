@@ -29,6 +29,8 @@ fn runtime_discovery_and_explanations_match_actual_limits_and_failures() {
     assert_eq!(discovery["extension_api_version"], 1);
     assert_eq!(discovery["process"]["default_combined_output_bytes"], msdk::process::Limits::default().output_bytes);
     assert_eq!(discovery["process"]["streaming"], false);
+    assert_eq!(discovery["process"]["rust_streaming"]["queue_chunks"], msdk::process::STREAM_QUEUE_CHUNKS);
+    assert_eq!(discovery["process"]["rust_streaming"]["max_chunk_bytes"], msdk::process::STREAM_CHUNK_BYTES);
     for kind in FailureKind::ALL {
         assert_eq!(msdk::agent::explain(kind.code()), Some(kind.message()));
     }
