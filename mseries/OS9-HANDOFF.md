@@ -1,15 +1,14 @@
-## Work Mode Settings titlebar controls — 2026-10-26
+## Work Mode Settings close controls — 2026-10-26
 
-The Work Mode Switchboard plug now applies the selected button layout directly
-to the current GTK process when the mode setting changes. This keeps the open
-System Settings window's close, minimize and maximize buttons in sync with the
-mode, including when the GTK settings file would otherwise override the
-window-manager preference. The pre-mode GTK layout is restored when the mode or
-Windows button option is turned off.
-
-Built the plug with Meson/Ninja successfully. No live install or visual
-interaction was performed; the change is source-only until installed and the
-Settings window is reopened or its layout changes.
+Merged PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`). The Work Mode
+page now offers a visible **Close** action inside the settings content, even
+when the Settings window has no titlebar, and sets GTK's minimize/maximize/close
+layout while the page is open. Installed with `bash mseries/install-work-mode.sh`;
+the plug built successfully, full PR validation passed, and the Work Mode timer
+is active and enabled. Restarted the Settings service and opened
+`settings://personal/work-mode` so it loads the updated plug. A visual/click
+check of the rendered page is still unavailable from this session. Next: confirm
+the in-page Close action closes System Settings.
 
 ## Appearance integration qualification — 2026-10-26
 
