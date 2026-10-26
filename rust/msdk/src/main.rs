@@ -81,9 +81,10 @@ fn main() -> ExitCode {
         }
         Some("new") if args.len() > 2 => run_new(&args[1..]),
         Some("gen") if args.len() > 2 => run_gen(&args[1..]),
+        Some("pack") if args.len() > 1 => run_pack(&args[1..]),
         _ => {
             eprintln!(
-                "usage: msdk check [--json] <file.ui.json>...\n       msdk describe [Name] | explain <code> | complete <file> <json-pointer>\n       msdk gate <file.ui.json> [gates.json]\n       msdk agent-manifest <file> [--mcp] [--services f.json]\n       msdk render <file> [--surface NAME] [--state JSON] [--json]\n       msdk fmt [--check|--stdout] <file.msdk>... | text <file.ui.json> | json <file.msdk>\n       msdk templates | new <template> <dir> [--text] [--id ID] [--name NAME]\n       msdk gen <description> <new-dir> [--sdk-root <rust-dir>]\n       msdk schema | components | contrast [--json] | tokens [--json]"
+                "usage: msdk check [--json] <file.ui.json>...\n       msdk describe [Name] | explain <code> | complete <file> <json-pointer>\n       msdk gate <file.ui.json> [gates.json]\n       msdk agent-manifest <file> [--mcp] [--services f.json]\n       msdk render <file> [--surface NAME] [--state JSON] [--json]\n       msdk fmt [--check|--stdout] <file.msdk>... | text <file.ui.json> | json <file.msdk>\n       msdk templates | new <template> <dir> [--text] [--id ID] [--name NAME]\n       msdk gen <description> <new-dir> [--sdk-root <rust-dir>]\n       msdk pack <project> --binary <executable> --output <new.deb> [--version VERSION]\n       msdk schema | components | contrast [--json] | tokens [--json]"
             );
             ExitCode::from(2)
         }
@@ -136,6 +137,32 @@ fn run_gen(args: &[String]) -> ExitCode {
                 "created standalone Cargo application in {}; next: cargo run --manifest-path {}/Cargo.toml",
                 args[1], args[1]
             );
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_pack(args: &[String]) -> ExitCode {
+    let option = |name: &str| args.iter().position(|a| a == name).and_then(|index| args.get(index + 1));
+    let (Some(binary), Some(output)) = (option("--binary"), option("--output")) else {
+        eprintln!(
+            "usage: msdk pack <generated-project> --binary <built-executable> --output <new.deb> [--version VERSION]"
+        );
+        return ExitCode::from(2);
+    };
+    let result = msdk::package::pack(
+        std::path::Path::new(&args[0]),
+        std::path::Path::new(binary),
+        std::path::Path::new(output),
+        option("--version").map(String::as_str).unwrap_or("0.1.0"),
+    );
+    match result {
+        Ok(()) => {
+            println!("created {output}; no installation performed");
             ExitCode::SUCCESS
         }
         Err(error) => {

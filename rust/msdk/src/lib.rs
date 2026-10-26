@@ -14,6 +14,7 @@ pub mod generate;
 pub mod inspect;
 pub mod intents;
 pub mod logic;
+pub mod package;
 pub mod schema;
 pub mod templates;
 pub mod text;

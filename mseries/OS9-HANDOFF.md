@@ -1,3 +1,30 @@
+## SDK native compilation reached; warning correction — 2026-10-26
+
+Linux run 40354775593 passes the complete core suite and compiles/tests the
+generated GTK application. Strict lint then rejects unused serde imports in the
+empty generated records module (settings has no record types), so no screenshot
+was reached. Generated derives now use qualified serde paths without redundant
+imports; the all-starter generated-model fixture denies warnings to retain this
+regression. Native rendering and package qualification remain pending.
+
+## SDK explicit binary packaging — 2026-10-26
+
+Added `msdk pack <project> --binary <ELF> --output <new.deb>`: matching native
+architecture required, shared-library dependencies resolved from the supplied
+binary with dpkg-shlibdeps, metadata validated before archive publication,
+owned executable/desktop/icon/metainfo/license files included. Existing outputs
+are never replaced. No build, app execution, installation or background service
+is performed by the command. Generated projects now include icon/license assets
+and preserve declared-service manifests for packaging. App-specific attribution
+and production metadata remain release review work.
+
+Core architecture/metadata-injection/XML checks and strict lint pass on macOS;
+actual package/native runtime qualification is Linux-only and pending. The
+workflow now exercises package creation, installation, reinstall, installed
+binary equality/launch and removal on a disposable runner. Full target desktop,
+service/lifecycle, benchmark and owner acceptance gates remain open in the SDK
+completion ledger. No owner's desktop or running panel changes.
+
 ## SDK Linux first-run dependency correction — 2026-10-26
 
 Native workflow run 40354229616 failed before GTK build: the generated-model

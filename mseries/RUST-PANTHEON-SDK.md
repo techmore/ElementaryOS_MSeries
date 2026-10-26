@@ -38,7 +38,13 @@ implementations still require an app-local adapter. Custom Rust logic is rejecte
 with a LogicFactory instruction rather than replaced with a no-op. Generation
 never installs or executes application services. See the [CLI guide](../rust/msdk/README.md).
 
-`msdk pack`, `msdk parity` and a live introspection registry remain proposals.
+`msdk pack <generated-project> --binary <built-ELF> --output <new.deb>`
+assembles a Debian package on the matching Linux architecture using dpkg-dev,
+desktop-file-utils and appstream. It derives shared-library dependencies from
+the supplied executable, includes desktop/AppStream/icon/license assets, validates
+metadata and refuses existing outputs. It never builds, installs or runs the app.
+The exact supplied binary must separately be tied to the tested source/build.
+`msdk parity` and a live introspection registry remain proposals.
 Native build/run, packaging and full SDK readiness are tracked separately in
 [SDK-COMPLETION.md](SDK-COMPLETION.md). Follow the [T3 priority-slice gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates):
 token monitoring and RepoBar-derived GitHub overview first (#596), with

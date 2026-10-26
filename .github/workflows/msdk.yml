@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cargo rustc rustfmt rust-clippy \
             build-essential pkg-config libgtk-4-dev libwayland-dev libwayland-bin \
-            xvfb xauth dbus-x11 at-spi2-core
+            xvfb xauth dbus-x11 at-spi2-core dpkg-dev desktop-file-utils appstream
       - uses: actions/cache@v6
         with:
           path: |
@@ -71,6 +71,22 @@ jobs:
           cp "$RUNNER_TEMP/generated/Cargo.lock" "$RUNNER_TEMP/sdk-evidence/generated-Cargo.lock"
           git rev-parse HEAD > "$RUNNER_TEMP/sdk-evidence/source.txt"
           sha256sum "$CARGO_TARGET_DIR/debug/msdk-sdksettings" > "$RUNNER_TEMP/sdk-evidence/binary.sha256"
+      - name: Package, install, reinstall and remove the generated app
+        run: |
+          "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \
+            --binary "$CARGO_TARGET_DIR/debug/msdk-sdksettings" \
+            --output "$RUNNER_TEMP/sdk-evidence/settings.deb"
+          dpkg-deb --info "$RUNNER_TEMP/sdk-evidence/settings.deb" > "$RUNNER_TEMP/sdk-evidence/package-info.txt"
+          sudo dpkg --install "$RUNNER_TEMP/sdk-evidence/settings.deb"
+          sudo dpkg --install "$RUNNER_TEMP/sdk-evidence/settings.deb"
+          cmp "$CARGO_TARGET_DIR/debug/msdk-sdksettings" /usr/bin/io.github.techmore.SdkSettings
+          GTK_THEME=Adwaita GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            /usr/bin/io.github.techmore.SdkSettings --screenshot "$RUNNER_TEMP/sdk-evidence/installed.png"
+          sha256sum /usr/bin/io.github.techmore.SdkSettings > "$RUNNER_TEMP/sdk-evidence/installed.sha256"
+          sudo dpkg --remove msdk-io.github.techmore.sdksettings
+          test ! -e /usr/bin/io.github.techmore.SdkSettings
+          test ! -e /usr/share/applications/io.github.techmore.SdkSettings.desktop
+          test ! -e /usr/share/icons/hicolor/scalable/apps/io.github.techmore.SdkSettings.svg
       - uses: actions/upload-artifact@v7
         if: always()
         with:

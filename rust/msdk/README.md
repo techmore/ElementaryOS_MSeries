@@ -53,5 +53,31 @@ reviewing app-local changes. Views/rules stay inspectable in `app.ui.json`.
 `describe`, `complete`, `explain`, `schema` and `components` derive from the
 checker vocabulary. `render` produces a semantic tree; `gate` runs headless
 state/effect scenarios. Neither executes a real backend or proves live GTK
-accessibility. `msdk pack`, `parity`, Studio and a live introspection registry
-are not implemented commands.
+accessibility. `parity`, Studio and a live introspection registry are not
+implemented commands.
+
+## Package the application
+
+After building on the matching Linux architecture, with `dpkg-dev`,
+`desktop-file-utils` and `appstream` installed:
+
+```sh
+msdk pack /tmp/my-settings-app --binary /path/to/built/executable --output /tmp/my-settings.deb --version 0.1.0
+```
+
+Supply the actual executable path (including any `CARGO_TARGET_DIR` override).
+`pack` derives architecture from ELF and native-library dependencies using
+`dpkg-shlibdeps`, validates desktop/AppStream metadata and builds with
+`dpkg-deb --root-owner-group`. The installed executable/desktop/icon IDs all use
+the description's complete app ID. The package includes an editable generated
+SVG icon and the project's license. Generated code links the GPL-3.0-only SDK;
+review app metadata, attribution and assets before public distribution.
+
+Packaging never builds, installs or launches the app, and refuses an existing
+output. Use the platform's package manager for explicit installation/removal.
+There are no generated background units or removal scripts; removing the package
+retires its owned executable, launcher, metadata, icon and docs. Per-user app
+state remains under the runtime's XDG data location. Package correctness and
+source-to-installed identity are checked separately from target-desktop
+interaction, accessibility and acceptance. The native CI exercises fresh install,
+reinstall, installed launch and removal in a disposable Linux runner.

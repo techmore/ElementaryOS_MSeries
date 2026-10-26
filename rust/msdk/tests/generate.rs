@@ -67,7 +67,7 @@ fn generated_models_compile_and_preserve_state_and_events() {
     let workspace_lock = msdk.parent().unwrap().join("Cargo.lock");
     let lock = if local_lock.is_file() { local_lock } else { workspace_lock };
     std::fs::copy(lock, scratch.0.join("Cargo.lock")).unwrap();
-    let mut root = String::new();
+    let mut root = String::from("#![deny(warnings)]\n");
     let mut docs: Vec<Value> = templates::TEMPLATES.iter().map(|t| serde_json::from_str(t.ui).unwrap()).collect();
     // Keywords, escaped identifiers and a >2^53 integer must survive codegen.
     let mut unusual = docs[0].clone();

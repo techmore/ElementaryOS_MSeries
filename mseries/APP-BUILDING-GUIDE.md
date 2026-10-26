@@ -54,8 +54,10 @@ then the CLI's `describe`, `check` and `gate` commands. Consult
 [RUST-PANTHEON-SDK.md](RUST-PANTHEON-SDK.md) for boundaries. Use `msdk gen <description> <new-directory> --sdk-root <checkout>/rust`
 when a standalone Cargo executable and typed models are needed. It preserves
 rules and the GTK host; custom service backends are app-owned extension points.
-Do not present proposed `msdk pack`, `msdk parity` or live introspection commands
-as available. Keep native chrome, scaling, accessibility, recoverable states,
+Use `msdk pack <generated-project> --binary <built-ELF> --output <new.deb>`
+on the matching Linux architecture after building the intended artifact; package
+creation is separate from install/reinstall/remove and loaded-host qualification.
+Do not present proposed `msdk parity` or live introspection commands as available. Keep native chrome, scaling, accessibility, recoverable states,
 diagnostics and install/remove behavior in the delivered outcome contract.
 
 ## Keep development builds fast
