@@ -1,3 +1,13 @@
+## On-demand usage refresh validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40401954793 passed on ee9cd5e after the
+retained 58dd831 strict-lint failure. The native synthetic executable test
+checks no reads while closed or merely opened, duplicate refresh coalescing,
+source-age recheck at delivery, close/cancel, and a new refresh after reopening.
+The fixture does not prove real collector/account behavior, visible refresh
+controls, desktop-host integration or owner acceptance. No scheduled polling
+or owner desktop service was started.
+
 ## Refresh controller lint repair — 2026-10-26
 
 SDK developer-path run 40401485674 failed at GTK strict clippy on 58dd831:
