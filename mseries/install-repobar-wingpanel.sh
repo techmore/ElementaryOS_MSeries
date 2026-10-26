@@ -17,9 +17,12 @@ if [[ ${1:-} == --uninstall ]]; then
   if command -v gtk-update-icon-cache >/dev/null; then
     sudo gtk-update-icon-cache -f "$icon_theme_dir" >/dev/null
   fi
-  rm -f "$HOME/.local/bin/mseries-repobar" "$HOME/.local/bin/mseries-repobar-settings" "$HOME/.local/lib/mseries/repobar.py" \
+  rm -f "$HOME/.local/bin/mseries-repobar-settings" \
     "$HOME/.local/share/applications/io.github.techmore.RepoBar.Settings.desktop"
-  echo 'Removed the RepoBar Wingpanel indicator and per-user helper. Cached GitHub status remains in ~/.cache/mseries/repobar/snapshot.json.'
+  if ! command -v claude-pantheon-rs >/dev/null && ! command -v claude-pantheon-sdk >/dev/null; then
+    rm -f "$HOME/.local/bin/mseries-repobar" "$HOME/.local/lib/mseries/repobar.py"
+  fi
+  echo 'Removed the RepoBar indicator. The read-only helper is retained when T3 uses it; cached GitHub status remains.'
   exit 0
 fi
 
@@ -34,14 +37,9 @@ for tool in gh meson ninja valac pkg-config gtk-update-icon-cache; do
   }
 done
 
-install -d -m 0755 "$HOME/.local/lib/mseries" "$HOME/.local/bin"
-install -m 0644 "$repo/mseries/repobar.py" "$HOME/.local/lib/mseries/repobar.py"
-cat > "$HOME/.local/bin/mseries-repobar.new" <<'WRAPPER'
-#!/bin/sh
-exec /usr/bin/python3 "$HOME/.local/lib/mseries/repobar.py" "$@"
-WRAPPER
-chmod 0755 "$HOME/.local/bin/mseries-repobar.new"
-mv -f "$HOME/.local/bin/mseries-repobar.new" "$HOME/.local/bin/mseries-repobar"
+install -Dm0755 "$repo/mseries/repobar.py" "$HOME/.local/bin/mseries-repobar"
+# Retire the old wrapper payload; both T3 and RepoBar use the same executable.
+rm -f "$HOME/.local/lib/mseries/repobar.py"
 
 build_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-repobar.XXXXXX")
 trap 'rm -rf "$build_dir"' EXIT
