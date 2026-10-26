@@ -98,15 +98,24 @@ int main () {
         catch (Error e) { assert_not_reached (); }
         assert (calls.contains ("--activity"));
         button.clicked ();
-        find_action (popup.child, "Open T3").clicked ();
+        find_action (popup.child, "Fleet").clicked ();
         return Source.REMOVE;
     });
     Timeout.add (13500, () => {
         string calls;
         try { FileUtils.get_contents (Environment.get_home_dir () + "/action-calls", out calls); }
         catch (Error e) { assert_not_reached (); }
+        assert (calls.contains ("--fleet"));
+        button.clicked ();
+        find_action (popup.child, "Open T3").clicked ();
+        return Source.REMOVE;
+    });
+    Timeout.add (14000, () => {
+        string calls;
+        try { FileUtils.get_contents (Environment.get_home_dir () + "/action-calls", out calls); }
+        catch (Error e) { assert_not_reached (); }
         assert (calls.contains ("--full"));
-        print ("PASS Activity and Open T3 launch the declared desktop actions\n");
+        print ("PASS Activity, Fleet and Open T3 launch the declared desktop actions\n");
         loop.quit ();
         return Source.REMOVE;
     });

@@ -33,10 +33,13 @@ cat > "$work/home/.local/share/applications/io.github.techmore.ClaudePantheonRs.
 Type=Application
 Name=T3 fixture
 Exec=$work/home/.local/bin/t3-fixture --full
-Actions=activity;open-full;
+Actions=activity;open-full;fleet;
 [Desktop Action activity]
 Name=Activity
 Exec=$work/home/.local/bin/t3-fixture --activity
+[Desktop Action fleet]
+Name=Fleet
+Exec=$work/home/.local/bin/t3-fixture --fleet
 [Desktop Action open-full]
 Name=Open T3
 Exec=$work/home/.local/bin/t3-fixture --full

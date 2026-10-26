@@ -179,7 +179,11 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         };
         shiplog.hexpand = true;
         open_full.hexpand = true;
+        var machines = new Gtk.Button.with_label ("Fleet");
+        machines.tooltip_text = "Remote machine and agent status over SSH";
+        machines.clicked.connect (() => run_action ("fleet"));
         footer.append (shiplog);
+        footer.append (machines);
         footer.append (open_full);
         shell.append (footer);
         popup.child = new Gtk.ScrolledWindow () {

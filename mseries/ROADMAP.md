@@ -1,3 +1,40 @@
+## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
+
+PR #606 is merged into `dev` at `42180692` after all CI checks passed. The unified
+taskbar menu, native Activity route and nine pinned Tstack workflows are on dev;
+chat/delegation and owner live visual/account acceptance remain deferred/open.
+
+Implemented and installed native **Remote Machines** in T3, reachable through
+its menu/palette/desktop action and the unified dock's Fleet button. Explicit
+connector list/add/remove uses existing SSH aliases and private atomic config.
+Opening or editing settings never contacts a machine. Refresh runs bounded
+Herdr/OMP read-only probes; the page separates missing/partial/stale sources
+from real zero measurements. Open SSH Terminal provides an explicit interactive
+route. Machine Lab remains separate and has replaced Orchard; no local app
+replacement or remote provisioning/power controls were added.
+
+Upstream Fleet Shepherd collector is pinned to `b39cf962dcbbae397c1d21f4267c24ab49e5ddbc`,
+MIT notice retained. Native cancellation kills owned probe groups. 69 Python
+collector/adapter tests, 81 T3 library tests, strict clippy, native light/dark
+fixtures and the real GTK settings/add/remove/snapshot/terminal adapters through
+inert SSH/Herdr/OMP tools pass. The unified menu's light/dark desktop-action tests
+also cover Fleet. Release and app-only Debian packaging succeed.
+
+Installed and loaded the dock/T3 front end; no Wingpanel or T3-server restart.
+[Loaded hashes/PIDs](fleet-shepherd/receipts/2026-10-26/loaded.json) match installed
+binaries; panel PID 197327 and server PID 1581 remain unchanged. The live `fleet`
+action opens settings and the installed adapter reads the one existing local
+connector. No real SSH command or model turn was sent. User target aliases and
+live remote compatibility/owner acceptance remain open.
+
+[Native flow, source boundaries and evidence](fleet-shepherd/README.md).
+The current Windows taskbar cutover is loaded. Native top-panel consolidation
+and legacy standalone indicator retirement still need their own installed/loaded
+qualification without routine Wingpanel restarts; existing panel modules remain
+unchanged. Next: integrate this Fleet batch into dev, then finish that native
+panel replacement and validate real aliases when supplied. No factory hardware
+boot claim or deferred Signal/Messages work is part of this delivery.
+
 ## Unified T3 dock menu and Tstack workflows — 2026-10-26
 
 Replaced the separate taskbar CodexBar/RepoBar anchors with one native T3
