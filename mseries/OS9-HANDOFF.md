@@ -1,3 +1,15 @@
+## SDK benchmark packaging and quit checks — 2026-10-26
+
+The SDK authoring harness now exposes packaging through its fixed SDK tool
+surface and treats failure to quit on Ctrl+Q as a failed capture. An isolated
+uid2000 smoke built a real .deb and launched the generated settings window;
+a separate window that ignores Ctrl+Q produced the expected failure. Evidence
+is in `sdk-bench/receipts/2026-10-26-pack-preflight`. This smoke did not install
+or remove its package. Four boundary tests pass. The first model trial and
+independent acceptance remain open; the latest attempt to check SER8 timed out,
+so its current model residency is unknown. Native ports of every app are not a
+completion requirement.
+
 ## SDK authoring preflight retained; model admission deferred — 2026-10-26
 
 The full offline uid2000 tool preflight succeeds through generation, build,
