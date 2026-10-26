@@ -2,6 +2,23 @@
 //! focus/dismissal and provider collectors belong to separate adapters.
 use gtk::prelude::*;
 use msdk::usage::{Coverage, Observation, Snapshot, SnapshotError, State};
+use std::cell::Cell;
+
+thread_local! { static STYLE_INSTALLED: Cell<bool> = const { Cell::new(false) }; }
+
+fn install_style() {
+    STYLE_INSTALLED.with(|installed| {
+        if installed.get() {
+            return;
+        }
+        if let Some(display) = gtk::gdk::Display::default() {
+            let css = gtk::CssProvider::new();
+            css.load_from_string(".msdk-usage .usage-card { padding: 10px; border-radius: 10px; background: alpha(currentColor, 0.045); box-shadow: inset 0 0 0 1px alpha(currentColor, 0.06); } .msdk-usage .usage-provider { font-weight: 700; } .msdk-usage .usage-account { font-weight: 600; } .msdk-usage .usage-detail { opacity: 0.8; } ");
+            gtk::style_context_add_provider_for_display(&display, &css, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+            installed.set(true);
+        }
+    });
+}
 
 fn label(text: &str) -> gtk::Label {
     let label = gtk::Label::new(Some(text));
@@ -35,8 +52,14 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
         heading.to_string()
     };
     let row = gtk::Box::new(gtk::Orientation::Vertical, 3);
-    row.append(&label(&title));
-    row.append(&label(state_text(observation.state)));
+    let heading = label(&title);
+    heading.add_css_class("usage-account");
+    row.append(&heading);
+    if observation.state != State::Fresh {
+        let status = label(state_text(observation.state));
+        status.add_css_class("usage-detail");
+        row.append(&status);
+    }
     for window in &observation.windows {
         let value = match window.quota {
             Some(quota)
@@ -46,23 +69,23 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
                 ) =>
             {
                 let basis = quota.remaining_basis_points();
-                let freshness = if observation.state == State::Stale {
-                    " · Stale"
-                } else {
-                    ""
-                };
                 let reset = quota
                     .reset_at()
                     .and_then(|at| gtk::glib::DateTime::from_unix_local(at).ok())
                     .and_then(|at| at.format("%x %X").ok())
-                    .map(|at| format!(" · Resets {at}"))
-                    .unwrap_or_else(|| " · Reset unknown".into());
-                format!(
-                    "{}: {}.{:02}% remaining{reset}{freshness}",
-                    window.label,
-                    basis / 100,
-                    basis % 100
-                )
+                    .map(|at| format!("Resets {at}"))
+                    .unwrap_or_else(|| "Reset unknown".into());
+                let value = if basis % 100 == 0 {
+                    format!("{}%", basis / 100)
+                } else {
+                    format!("{}.{:02}%", basis / 100, basis % 100)
+                };
+                let detail = label(&reset);
+                detail.add_css_class("usage-detail");
+                let line = format!("{}: {value} remaining", window.label);
+                row.append(&label(&line));
+                row.append(&detail);
+                continue;
             }
             Some(quota) => format!(
                 "{}: {}",
@@ -76,7 +99,7 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
     if let Some(tokens) = observation.tokens {
         let value = match (observation.state, tokens.total()) {
             (State::Fresh, Some(total)) => format!("Tokens: {total}"),
-            (State::Stale, Some(total)) => format!("Tokens: {total} · Stale"),
+            (State::Stale, Some(total)) => format!("Tokens: {total}"),
             (_, Some(_)) => format!("Tokens: {}", state_text(observation.state)),
             (_, None) => "Tokens: Unknown".into(),
         };
@@ -90,7 +113,9 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
 /// host. This function neither starts polling nor performs account actions.
 pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> {
     let groups = snapshot.groups()?;
+    install_style();
     let root = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    root.add_css_class("msdk-usage");
     if groups.is_empty() {
         root.append(&label(match snapshot.coverage {
             Coverage::Complete => "No usage available",
@@ -100,11 +125,13 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
     }
     for group in groups {
         let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
-        card.add_css_class("card");
+        card.add_css_class("usage-card");
         let heading = label(group.label);
-        heading.add_css_class("heading");
+        heading.add_css_class("usage-provider");
         card.append(&heading);
-        card.append(&label(group.source_label));
+        let source = label(group.source_label);
+        source.add_css_class("usage-detail");
+        card.append(&source);
         if let Some(aggregate) = group.aggregate {
             append_observation(&card, aggregate, now);
         }

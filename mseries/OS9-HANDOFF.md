@@ -1,3 +1,13 @@
+## Usage card hierarchy refinement — validation pending, 2026-10-26
+
+The candidate usage rows now use a scoped, theme-derived card treatment based on
+CodexBar's existing card styling. Account headings have stronger hierarchy;
+stale is shown once per account, and reset text has a separate line for large
+text. The widget regression also checks stale versus expired presentation.
+This is not a provider mark, complete status control or visual acceptance.
+Source-matched native GTK build, tests, new captures and independent review
+are required before claiming an improvement.
+
 ## Candidate usage preview review — 2026-10-26
 
 Hosted ARM developer-path run 40395051297 passed on edf7a4e, including native
