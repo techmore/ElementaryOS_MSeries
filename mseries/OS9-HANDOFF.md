@@ -1,3 +1,13 @@
+## Scoped CodexBar read validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40399879070 passed on 9e8fecc. Its five
+CodexBar tests include an actual synthetic executable with a shell-sensitive
+filename, literal `--snapshot` argument, malformed output and a context switch
+that cancels the owned work and rejects the stale completion. The core test
+also checks literal argv and preserved scope across transformation. These are
+isolated synthetic executable tests, not a live collector or account read.
+Real provider coverage, polling lifecycle and desktop status hosts remain open.
+
 ## CodexBar bounded read adapter — native validation pending, 2026-10-26
 
 A scoped direct-executable SDK process API runs literal argv without a shell.
