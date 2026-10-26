@@ -79,7 +79,8 @@ and callback delivery, valid current recovery, visible GTK label updates,
 rebinding rejection, provider stop and Host release. These are explicit opt-in
 reply bindings. They do not automatically scope legacy raw event senders,
 feeds, built-in service dispatch, extension negotiation before provider invoke,
-streaming chunks, or T3/network adapters. Those app/backend gates remain open.
+streaming chunks, or T3/network adapters. The separate Rust scoped-stream API
+below is opt-in; those GTK and app/backend gates remain open.
 
 ## Errors and privacy
 
@@ -136,12 +137,19 @@ Its callback receives `Scoped<Result<Output, ServiceFailure>>`; forward that
 envelope to the state owner for final delivery. This cancels task work; it is
 not rollback for effects already performed by a command.
 
+`spawn_streaming_scoped` combines the same cancellation with a bounded
+`ScopedOutputStream`. Its receive methods return `Scoped<Chunk>`; retain each
+envelope through any UI queue and call `into_current()` on the state-owner
+thread immediately before applying the bytes. Its completion is scoped too.
+Dropping the subscription cancels owned work, and the usual queue/output limits
+apply. This API does not automatically scope GTK feeds or external subscriptions.
+
 Core tests cover queued/out-of-order success and error, independent contexts,
 return-to-account invalidation, last-owner drop, permanent close, an already
 closed request that never executes its command, and actual process cancellation/
 reaping followed by a successful new request. GTK typed ServiceReply supports
-the explicit binding described above. Streaming chunks and app-specific
-T3/network subscriptions are not automatically scoped. Their adapters must carry
+the explicit binding described above. App-specific T3/network subscriptions are
+not automatically scoped. Their adapters must carry
 tokens through final delivery and retire their own reads/resources; full app
 context-switch qualification remains open. Do not treat core or synthetic Host
 results as that broader lifecycle acceptance.

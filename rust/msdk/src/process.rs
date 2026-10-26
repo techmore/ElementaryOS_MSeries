@@ -68,6 +68,24 @@ impl OutputStream {
     }
 }
 
+/// A context-bound output subscription. Preserve each returned envelope until
+/// the state owner applies it, then call `into_current` on that same thread.
+pub struct ScopedOutputStream {
+    output: OutputStream,
+    context: crate::context::ContextToken,
+}
+impl ScopedOutputStream {
+    pub fn recv(&self) -> Result<crate::context::Scoped<Chunk>, mpsc::RecvError> {
+        self.output.recv().map(|chunk| self.context.wrap(chunk))
+    }
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<crate::context::Scoped<Chunk>, mpsc::RecvTimeoutError> {
+        self.output.recv_timeout(timeout).map(|chunk| self.context.wrap(chunk))
+    }
+    pub fn try_recv(&self) -> Result<crate::context::Scoped<Chunk>, mpsc::TryRecvError> {
+        self.output.try_recv().map(|chunk| self.context.wrap(chunk))
+    }
+}
+
 struct Control {
     cancelled: AtomicBool,
     finished: AtomicBool,
@@ -140,6 +158,25 @@ pub fn spawn_streaming(
     let process = spawn_inner(command, limits, operation, Some(tx), None, complete)?;
     let subscription = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
     Ok((process, subscription))
+}
+
+/// Stream output under an app-owned context. Expiration cancels owned work;
+/// queued chunks and completion remain scoped until final state-thread delivery.
+/// As with `spawn_streaming`, drain the bounded queue while work is active.
+pub fn spawn_streaming_scoped(
+    context: crate::context::ContextToken,
+    command: String,
+    limits: Limits,
+    operation: u64,
+    complete: impl FnOnce(crate::context::Scoped<Result<Output, ServiceFailure>>) + Send + 'static,
+) -> Result<(Process, ScopedOutputStream), ServiceFailure> {
+    let (tx, rx) = mpsc::sync_channel(STREAM_QUEUE_CHUNKS);
+    let reply = context.clone();
+    let process = spawn_inner(command, limits, operation, Some(tx), Some(context.clone()), move |result| {
+        complete(reply.wrap(result))
+    })?;
+    let output = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
+    Ok((process, ScopedOutputStream { output, context }))
 }
 
 /// Bind a task to the current account/page generation. Switching/closing the

@@ -23,7 +23,7 @@ pub fn description() -> Value {
             "default_timeout_ms":limits.timeout.as_millis(), "default_combined_output_bytes":limits.output_bytes,
             "host_max_concurrent":MAX_HOST_PROCESSES, "owned_handle_drop":"cancel same-group work and reap leader",
             "streaming":false,
-            "rust_streaming":{"api":"msdk::process::spawn_streaming", "queue_chunks":crate::process::STREAM_QUEUE_CHUNKS,
+            "rust_streaming":{"api":"msdk::process::spawn_streaming", "scoped_api":"msdk::process::spawn_streaming_scoped", "queue_chunks":crate::process::STREAM_QUEUE_CHUNKS,
                 "max_chunk_bytes":crate::process::STREAM_CHUNK_BYTES, "backpressure":"stop with process-output-limit",
                 "drop_subscription":"cancel owned command", "partial_output":"already received or queued raw bytes survive terminal failure"},
             "privileged_or_daemon_jobs":"use an OS-owned service adapter"},

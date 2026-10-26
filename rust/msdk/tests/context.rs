@@ -123,3 +123,33 @@ fn switching_context_cancels_and_reaps_real_work_then_allows_a_new_request() {
     assert_eq!(rx.recv_timeout(Duration::from_secs(2)).unwrap().into_current().unwrap().unwrap().stdout, "recovered");
     assert!(current.is_finished());
 }
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn scoped_stream_rejects_queued_chunks_and_cancels_on_context_switch() {
+    use msdk::process::{self, Limits};
+    use std::time::Duration;
+    let context = RequestContext::new();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (task, output) = process::spawn_streaming_scoped(
+        context.token().unwrap(),
+        "printf old; sleep 20".into(),
+        Limits::default(),
+        40,
+        move |result| tx.send(result).unwrap(),
+    )
+    .unwrap();
+    let queued = output.recv_timeout(Duration::from_secs(2)).unwrap();
+    let next = context.advance().unwrap();
+    assert!(queued.into_current().is_none(), "a chunk already in a UI queue must expire");
+    assert!(rx.recv_timeout(Duration::from_secs(2)).unwrap().into_current().is_none());
+    assert!(task.is_finished());
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (_task, output) = process::spawn_streaming_scoped(next, "printf new".into(), Limits::default(), 41, move |r| {
+        tx.send(r).unwrap();
+    })
+    .unwrap();
+    assert_eq!(output.recv_timeout(Duration::from_secs(2)).unwrap().into_current().unwrap().bytes, b"new");
+    assert!(rx.recv_timeout(Duration::from_secs(2)).unwrap().into_current().unwrap().is_ok());
+}
