@@ -138,6 +138,14 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
     .unwrap();
     let mut all_text = Vec::new();
     labels(view.upcast_ref(), &mut all_text);
+    assert_eq!(
+        all_text.first().map(String::as_str),
+        Some("Providers: Codex · Claude · Grok · OpenCode")
+    );
+    assert_eq!(
+        all_text.get(1).map(String::as_str),
+        Some("Usage coverage is partial")
+    );
     for expected in [
         "Codex account 1",
         "Claude account 1",

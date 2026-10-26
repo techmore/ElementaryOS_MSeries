@@ -141,6 +141,23 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
             Coverage::Partial => "Usage coverage is partial",
             Coverage::Unknown => "Usage coverage is unknown",
         }));
+    } else {
+        // Show provider coverage before the scrollable cards. A provider can
+        // appear at several sources; list its name once without merging cards.
+        let mut seen = std::collections::HashSet::new();
+        let names: Vec<&str> = groups
+            .iter()
+            .filter_map(|group| seen.insert(group.provider).then_some(group.label))
+            .collect();
+        if names.len() > 1 {
+            root.append(&label(&format!("Providers: {}", names.join(" · "))));
+        }
+        if !matches!(snapshot.coverage, Coverage::Complete) {
+            root.append(&label(match snapshot.coverage {
+                Coverage::Partial => "Usage coverage is partial",
+                _ => "Usage coverage is unknown",
+            }));
+        }
     }
     for group in groups {
         let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
@@ -163,12 +180,6 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
             append_observation(&card, account, now);
         }
         root.append(&card);
-    }
-    if !matches!(snapshot.coverage, Coverage::Complete) && !snapshot.observations.is_empty() {
-        root.append(&label(match snapshot.coverage {
-            Coverage::Partial => "Usage coverage is partial",
-            _ => "Usage coverage is unknown",
-        }));
     }
     Ok(root)
 }

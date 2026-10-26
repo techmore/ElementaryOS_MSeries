@@ -1,3 +1,12 @@
+## Usage provider overview — validation pending, 2026-10-26
+
+The candidate usage view now lists provider names and partial/unknown coverage
+before the provider cards. Repeated sources for one provider remain separate
+cards while the overview lists that provider once. The native regression checks
+that the four-provider overview and partial coverage precede all account rows.
+Source-matched GTK tests, top/end screenshots and visual review remain pending;
+this is not an interactive status host or evidence of complete provider coverage.
+
 ## Multi-provider usage fixture review — 2026-10-26
 
 Hosted ARM SDK run 40396405090 passed on 2111eb1. Native synthetic checks cover
