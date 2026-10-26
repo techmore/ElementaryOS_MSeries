@@ -1,3 +1,36 @@
+## T3/SDK audit and owner-priority issue queue — 2026-10-25
+
+Audited native T3 versus its separate SDK-hosted executable; current findings
+are in [SDK audit addendum](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum).
+Corrected the mandatory SDK/app-building guides: `msdk new` exists for
+description/gates/README starters; complete app/backend/package generation
+and `gen`/`pack`/`parity` are not established. Added observable behavior,
+freshness/identity, real-adapter, visual/accessibility, lifecycle and
+moderate-model qualification gates.
+
+Owner priority is token monitoring and RepoBar GitHub overview, not completing
+all chat first. #596 tracks this slice. Source findings include stale/unknown
+server quota presentation/recommendation risks, issue-centric native GitHub
+support rather than RepoBar PR/CI/release parity, and missing SDK monitoring
+feeds. No T3 implementation changes or completion claims in this audit.
+
+Filed open issues: #593 GUI/Dock usability in both requested modes (terminology
+awaits clarification), #594 Cua/Omarchy computer-use research and #595 native
+Shiplog integration reusing existing Activity/#588. Linked direction to #535.
+Rupert investigations are in its own repo: techmore/rupert#543 Nanbeige4.3-33B
+SER8 feasibility and #544 adapter/answer-quality/fallback evaluation; no model
+download, host change or production deployment performed.
+
+Observed smoke: `cargo run -q -p msdk -- templates` succeeds (six starters).
+Installed native T3 offline/Xvfb first-frame command prints 135 ms; binary is
+not source-matched and this proves startup only. No live monitoring, SDK-port
+flow, model trial or T3 visual/accessibility acceptance was run.
+Panel follow-through: Quick Settings package 0mseries4 built with the helper
+and declared runtime dependencies; extracted helper `status --json` succeeds.
+Production network-widget smoke reads live counters and renders two lines at
+50×25; Appearance light/dark 320px previews reviewed. Loaded Wingpanel maps
+show the replacement Quick Settings/network modules and no appearance module.
+
 ## Live Quick Settings appearance cutover and stacked network rates — 2026-10-25
 
 Quick Settings now owns Light/Dark/Automatic using the existing deployed

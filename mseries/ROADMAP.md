@@ -1,3 +1,23 @@
+## Owner-priority SDK/T3 qualification queue — 2026-10-25
+
+- #596: first qualify native T3 token monitoring and RepoBar-derived GitHub
+  overview; separate source/account/freshness and provide real SDK adapters.
+  [Source audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum)
+  and [observable gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates).
+- #593: GUI/Dock usability, lifecycle and both requested modes; owner mode
+  terminology remains unresolved and must not be silently narrowed.
+- #595: Shiplog native integration into existing T3 Activity, not another bar
+  plugin; compare with closed #588 before claiming new/upstream parity.
+- #594: source-pinned Cua/Omarchy computer-use investigation and permissioned
+  SDK boundary; no live enablement.
+- techmore/rupert#543 / #544: Nanbeige4.3-33B SER8 capacity/runtime feasibility,
+  then Rupert adapter/quality/safety evaluation. Investigation issues only.
+
+SDK discovery smoke lists all six actual starters; installed native T3's
+offline first frame succeeds. Neither proves the monitoring slice, a completed
+SDK app/package, moderate-model usability, or owner acceptance. Preserve
+Signal/Messages deferral and qualified release promotion through `dev`.
+
 ## Quick Settings appearance and stacked network rates — 2026-10-25
 
 Light/Dark/Automatic now live in the Quick Settings Appearance card, backed
