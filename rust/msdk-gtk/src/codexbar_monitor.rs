@@ -147,7 +147,7 @@ impl CodexBarMonitor {
                 None => reply.map(|_| Err(SnapshotReadError::Clock)),
             };
             match inner.panel.update_scoped(reply, time.unwrap_or(0)) {
-                Ok(ScopedUpdate::Expired) => return,
+                Ok(ScopedUpdate::Expired) => (),
                 Ok(ScopedUpdate::Applied) => {
                     inner.process.borrow_mut().take();
                     (inner.changed)(RefreshState::Updated);

@@ -1,3 +1,10 @@
+## Refresh controller lint repair — 2026-10-26
+
+SDK developer-path run 40401485674 failed at GTK strict clippy on 58dd831:
+`needless_return` in the expired-reply match arm. The arm now uses unit. Native
+controller tests did not run in that attempt and source-matched validation is
+still required. The earlier failed run remains evidence, not a passing test.
+
 ## On-demand usage refresh lifecycle — native validation pending, 2026-10-26
 
 A candidate CodexBarMonitor explicitly opens/closes a UsagePanel, starts one
