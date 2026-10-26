@@ -2,6 +2,8 @@
 """Private X11/AT-SPI probe for the candidate usage status anchor."""
 import argparse
 import datetime
+import ctypes
+import ctypes.util
 import hashlib
 import json
 import os
@@ -44,6 +46,32 @@ def point(item):
 
 def move_point(position):
     subprocess.run(['xdotool', 'mousemove', '--sync', *map(str, position)], check=True)
+
+
+def x11_pointer_child():
+    # XQueryPointer reports the actual root child receiving pointer input,
+    # including shaped popup windows; xdotool's WINDOW is the active window.
+    x = ctypes.CDLL(ctypes.util.find_library('X11'))
+    x.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x.XOpenDisplay.restype = ctypes.c_void_p
+    x.XDefaultRootWindow.argtypes = [ctypes.c_void_p]
+    x.XDefaultRootWindow.restype = ctypes.c_ulong
+    x.XQueryPointer.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong),
+                               ctypes.POINTER(ctypes.c_ulong), *([ctypes.POINTER(ctypes.c_int)] * 4),
+                               ctypes.POINTER(ctypes.c_uint)]
+    x.XCloseDisplay.argtypes = [ctypes.c_void_p]
+    display = x.XOpenDisplay(None)
+    if not display:
+        raise RuntimeError('cannot open X display for pointer diagnostic')
+    try:
+        root, child = ctypes.c_ulong(), ctypes.c_ulong()
+        rx, ry, wx, wy = (ctypes.c_int() for _ in range(4))
+        mask = ctypes.c_uint()
+        ok = x.XQueryPointer(display, x.XDefaultRootWindow(display), ctypes.byref(root), ctypes.byref(child),
+                             ctypes.byref(rx), ctypes.byref(ry), ctypes.byref(wx), ctypes.byref(wy), ctypes.byref(mask))
+        return {'ok': bool(ok), 'child': hex(child.value), 'root_x': rx.value, 'root_y': ry.value}
+    finally:
+        x.XCloseDisplay(display)
 
 
 with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
@@ -114,6 +142,7 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             report['x11_windows_before_travel'] = subprocess.check_output(
                 ['xwininfo', '-root', '-tree'], text=True)
             move_point(gtk_center(popup_bounds))
+            report['x11_pointer_child'] = x11_pointer_child()
             report['pointer_after_travel'] = subprocess.check_output(
                 ['xdotool', 'getmouselocation', '--shell'], text=True).strip()
             time.sleep(.2)
