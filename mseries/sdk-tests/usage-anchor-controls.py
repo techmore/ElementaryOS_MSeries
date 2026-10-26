@@ -42,20 +42,22 @@ def point(item):
     return str(rect.x + rect.width // 2), str(rect.y + rect.height // 2)
 
 
-def move(item):
-    subprocess.run(['xdotool', 'mousemove', '--sync', *point(item)], check=True)
+def move_point(position):
+    subprocess.run(['xdotool', 'mousemove', '--sync', *map(str, position)], check=True)
 
 
 with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
     root = Path(directory)
     marker, executable = root / 'reads', root / 'fixture'
+    geometry, popup_geometry = root / 'geometry.json', root / 'popup.json'
     observed = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
     snapshot = {'schemaVersion': 1, 'entries': [{'provider': 'codex', 'updatedAt': observed,
                 'windows': [{'key': 'week', 'label': '7 day', 'remaining': 75, 'resetsAt': ''}]}]}
     executable.write_text('#!/bin/sh\nprintf x >> ' + shlex.quote(str(marker)) + '\nprintf %s '
                           + shlex.quote(json.dumps(snapshot)) + '\n')
     executable.chmod(0o700)
-    env = dict(os.environ, XDG_DATA_HOME=str(root / 'data'), XDG_CONFIG_HOME=str(root / 'config'))
+    env = dict(os.environ, XDG_DATA_HOME=str(root / 'data'), XDG_CONFIG_HOME=str(root / 'config'),
+               MSDK_ANCHOR_GEOMETRY=str(geometry), MSDK_POPUP_GEOMETRY=str(popup_geometry))
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         subprocess.run(['xdotool', 'mousemove', '--sync', '0', '0'], check=True)
         process = subprocess.Popen([str(args.binary.resolve()), str(executable)], env=env, stdout=stdout, stderr=stderr)
@@ -80,6 +82,17 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             outside = wait(lambda: button('Outside'), 'missing outside fixture control')
             window = subprocess.check_output(['xdotool', 'search', '--sync', '--name', '^Usage status anchor test$'], text=True, timeout=8).splitlines()[0]
             subprocess.run(['xdotool', 'windowfocus', '--sync', window], check=True)
+            wait(geometry.exists, 'fixture did not export widget geometry')
+            bounds = json.loads(geometry.read_text())
+            window_geometry = dict(line.split('=', 1) for line in subprocess.check_output(
+                ['xdotool', 'getwindowgeometry', '--shell', window], text=True).splitlines() if '=' in line)
+            def gtk_center(rect):
+                assert rect['width'] > 0 and rect['height'] > 0, 'GTK widget has no bounds'
+                return (round(int(window_geometry['X']) + rect['x'] + rect['width'] / 2),
+                        round(int(window_geometry['Y']) + rect['y'] + rect['height'] / 2))
+            report['window_geometry'] = window_geometry
+            report['gtk_anchor_bounds'] = bounds['anchor']
+            report['gtk_anchor_center'] = gtk_center(bounds['anchor'])
             def reach(item):
                 for _ in range(32):
                     if item.getState().contains(pyatspi.STATE_FOCUSED):
@@ -90,18 +103,21 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             time.sleep(.6)
             assert not marker.exists(), 'closed anchor must not read'
             report['anchor_center'] = list(point(anchor))
-            move(anchor)
+            move_point(gtk_center(bounds['anchor']))
             report['pointer_after_hover'] = subprocess.check_output(['xdotool', 'getmouselocation', '--shell'], text=True).strip()
             refresh = wait(lambda: button('Refresh usage'), 'hover did not open usage popup')
             wait(lambda: marker.exists() and marker.read_text() == 'x', 'hover did not trigger one read')
             assert outside.getState().contains(pyatspi.STATE_FOCUSED), 'hover must not steal focus'
-            move(refresh)
+            wait(popup_geometry.exists, 'fixture did not export popup geometry')
+            popup_bounds = json.loads(popup_geometry.read_text())
+            report['gtk_popup_bounds'] = popup_bounds
+            move_point(gtk_center(popup_bounds))
             time.sleep(.65)
             assert button('Refresh usage') is not None, 'pointer travel closed popup'
             report['checks'].append('hover opens without stealing focus and pointer travel stays open')
-            move(anchor)
+            move_point(gtk_center(bounds['anchor']))
             subprocess.run(['xdotool', 'click', '1'], check=True)
-            move(outside)
+            move_point(gtk_center(bounds['outside']))
             time.sleep(.65)
             assert button('Refresh usage') is not None, 'hover-to-click did not pin popup'
             assert marker.read_text() == 'x', 'pinning must not duplicate read'

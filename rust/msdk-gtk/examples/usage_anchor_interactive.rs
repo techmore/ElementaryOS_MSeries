@@ -40,7 +40,8 @@ fn main() -> gtk::glib::ExitCode {
         row.set_halign(gtk::Align::End);
         row.set_margin_end(12);
         row.set_margin_bottom(12);
-        row.append(&gtk::Button::with_label("Outside"));
+        let outside = gtk::Button::with_label("Outside");
+        row.append(&outside);
         row.append(anchor.button());
         column.append(&row);
         let window = gtk::ApplicationWindow::builder()
@@ -50,6 +51,32 @@ fn main() -> gtk::glib::ExitCode {
             .default_height(500)
             .child(&column)
             .build();
+        if let Some(path) = std::env::var_os("MSDK_ANCHOR_GEOMETRY") {
+            let button = anchor.button().clone();
+            let window_for_bounds = window.clone();
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(800), move || {
+                if let (Some(anchor), Some(outside)) = (button.compute_bounds(&window_for_bounds), outside.compute_bounds(&window_for_bounds)) {
+                    let value = serde_json::json!({"anchor":{"x":anchor.x(),"y":anchor.y(),"width":anchor.width(),"height":anchor.height()},"outside":{"x":outside.x(),"y":outside.y(),"width":outside.width(),"height":outside.height()}});
+                    let _ = std::fs::write(path, value.to_string());
+                }
+            });
+        }
+        if let Some(path) = std::env::var_os("MSDK_POPUP_GEOMETRY") {
+            let weak_window = window.downgrade();
+            anchor.popover().connect_map(move |popup| {
+                let popup = popup.clone();
+                let path = path.clone();
+                let weak_window = weak_window.clone();
+                gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(150), move || {
+                    if let Some(window) = weak_window.upgrade()
+                        && let Some(rect) = popup.compute_bounds(&window)
+                    {
+                        let value = serde_json::json!({"x":rect.x(),"y":rect.y(),"width":rect.width(),"height":rect.height()});
+                        let _ = std::fs::write(path, value.to_string());
+                    }
+                });
+            });
+        }
         window.connect_close_request(move |_| {
             let _keep_alive = &anchor;
             gtk::glib::Propagation::Proceed

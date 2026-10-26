@@ -1,5 +1,7 @@
 ## Candidate anchor hover failure — 2026-10-26
 
+Candidate usage anchor: ARM run 40407270110 did not open on hover; diagnostics showed the test pointer on the X root and no synthetic read. The isolated fixture now exports GTK bounds for pointer placement. GTK documents that changing auto-hide hides a visible popover, so the candidate now closes and reopens on pinning without restarting its read; interaction validation remains pending. This is a reusable candidate, not an installed desktop host. See `sdk-tests/receipts/2026-10-26-usage-anchor-coordinates/`.
+
 SDK run 40406733431 compiled 5c7dcbc but failed the synthetic hover interaction:
 the Usage anchor was present while the popup was not observed. The failure is
 retained under sdk-tests/receipts/2026-10-26-usage-anchor-hover-fail; its cause

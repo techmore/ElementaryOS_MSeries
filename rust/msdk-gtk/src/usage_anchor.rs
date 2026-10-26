@@ -13,6 +13,7 @@ struct Inner {
     popup: gtk::Popover,
     control: UsageControl,
     pinned: Cell<bool>,
+    changing_mode: Cell<bool>,
     open_timer: RefCell<Option<gtk::glib::SourceId>>,
     close_timer: RefCell<Option<gtk::glib::SourceId>>,
 }
@@ -26,8 +27,14 @@ impl Inner {
         Self::cancel(&self.close_timer);
         if self.popup.is_mapped() {
             if interactive {
-                self.pinned.set(true);
+                // GTK hides a visible popover when autohide changes. Close and
+                // reopen it while retaining the same control/read lifecycle.
+                self.changing_mode.set(true);
+                self.popup.popdown();
                 self.popup.set_autohide(true);
+                self.pinned.set(true);
+                self.popup.popup();
+                self.changing_mode.set(false);
             }
             return;
         }
@@ -66,6 +73,9 @@ impl Inner {
         *this.close_timer.borrow_mut() = Some(source);
     }
     fn closed(&self) {
+        if self.changing_mode.get() {
+            return;
+        }
         self.pinned.set(false);
         Self::cancel(&self.open_timer);
         Self::cancel(&self.close_timer);
@@ -113,6 +123,7 @@ impl UsageAnchor {
             popup,
             control,
             pinned: Cell::new(false),
+            changing_mode: Cell::new(false),
             open_timer: RefCell::new(None),
             close_timer: RefCell::new(None),
         });
@@ -188,5 +199,10 @@ impl UsageAnchor {
     }
     pub fn button(&self) -> &gtk::Button {
         &self.inner.button
+    }
+    /// The host owns placement; exposing the popup also permits host-specific
+    /// positioning and isolated interaction inspection.
+    pub fn popover(&self) -> &gtk::Popover {
+        &self.inner.popup
     }
 }
