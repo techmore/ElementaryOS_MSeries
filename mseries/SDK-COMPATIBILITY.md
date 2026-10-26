@@ -70,7 +70,7 @@ are qualified. No released deprecation is currently declared by this document.
 | Environment | Evidence and limitation |
 | --- | --- |
 | macOS arm64 | Core checker/rules/generator/model and real process/streaming tests pass on retained revisions; this is not a Pantheon GUI or Debian install target |
-| Isolated Ubuntu 26.04 x86_64, Rust 1.93.1, GTK 4.22.4 | Prior source-matched GTK/settings app, keyboard/accessibility, light/dark/text-size and package lifecycle receipts exist; current runtime/reference/streaming/manifest changes pass source-matched core/native tests, lint, eight reference captures and package lifecycle; physical Pantheon qualification stays open |
+| Isolated Ubuntu 26.04 x86_64, Rust 1.93.1, GTK 4.22.4 | Prior source-matched GTK/settings app, keyboard/accessibility, light/dark/text-size and package lifecycle receipts exist; runtime/reference snapshot cb77b66 passes source-matched core/native tests, lint, eight reference captures and package lifecycle; newer typed GTK context binding has separate native regression receipts; physical Pantheon qualification stays open |
 | Linux arm64 CI | Developer-path run 40363235712 passed on ed9bc5b; this does not qualify newer source or physical M-series hardware |
 | Physical elementary/Pantheon on M-series | Target theme, Wayland surfaces, physical scales, hardware lifecycle and owner acceptance remain open |
 | Windows | Core Rust compilation and taskbar/status host parity are not qualified; process runner currently returns unavailable outside Linux/macOS |

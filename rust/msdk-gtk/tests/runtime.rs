@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use msdk_gtk::host::{Event, Host, ServiceCall, Services};
 use msdk_gtk::render::Dispatcher;
 use serde_json::{Value, json};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
@@ -70,6 +70,40 @@ impl Services for Typed {
     }
 }
 
+struct ContextServices {
+    context: msdk::context::RequestContext,
+    pending: Rc<RefCell<Vec<msdk_gtk::host::ServiceReply>>>,
+    deny: Rc<Cell<bool>>,
+    decline: Rc<Cell<bool>>,
+}
+impl Services for ContextServices {
+    fn invoke(&self, call: ServiceCall) -> Result<bool, msdk::runtime::ServiceFailure> {
+        if call.service == "sdktest.context.switch" {
+            self.context.advance().unwrap();
+            call.reply.success(None);
+        } else {
+            let reply = call.reply.in_context(self.context.token().unwrap())?;
+            if self.decline.get() {
+                return Ok(false);
+            }
+            if self.deny.get() {
+                return Err(msdk::runtime::ServiceFailure::new(
+                    msdk::runtime::FailureKind::PermissionDenied,
+                    "",
+                    "",
+                    0,
+                ));
+            }
+            self.pending.borrow_mut().push(reply);
+        }
+        Ok(true)
+    }
+    fn stop(&self) {
+        self.context.close();
+        self.pending.borrow_mut().clear();
+    }
+}
+
 fn pump_until(ready: impl Fn() -> bool) {
     let deadline = Instant::now() + Duration::from_secs(3);
     let context = gtk::glib::MainContext::default();
@@ -80,6 +114,22 @@ fn pump_until(ready: impl Fn() -> bool) {
         std::thread::sleep(Duration::from_millis(2));
     }
     assert!(ready(), "native runtime operation did not settle");
+}
+fn visible_labels(widget: &gtk::Widget) -> String {
+    if !widget.is_visible() {
+        return String::new();
+    }
+    let mut text = widget
+        .downcast_ref::<gtk::Label>()
+        .map(|label| label.text().to_string())
+        .unwrap_or_default();
+    let mut child = widget.first_child();
+    while let Some(node) = child {
+        text.push('\n');
+        text.push_str(&visible_labels(&node));
+        child = node.next_sibling();
+    }
+    text
 }
 fn document() -> Value {
     let mut doc: Value =
@@ -207,6 +257,135 @@ fn extension_mismatch_recovers_and_closed_hosts_kill_owned_commands() {
     assert_eq!(typed.get("failed"), Some(json!(false)));
     typed.window().close();
     drop(typed);
+
+    msdk::vocab::load_manifest(&json!({"services":[{"name":"sdktest.context.switch","capability":"subprocess","args":{}}]})).unwrap();
+    let scope = msdk::context::RequestContext::new();
+    let pending = Rc::new(RefCell::new(Vec::new()));
+    let deny = Rc::new(Cell::new(false));
+    let decline = Rc::new(Cell::new(false));
+    let provider = Rc::new(ContextServices {
+        context: scope.clone(),
+        pending: pending.clone(),
+        deny: deny.clone(),
+        decline: decline.clone(),
+    });
+    let mut scoped_doc = document();
+    scoped_doc["state"]["applied"] = json!("number");
+    for message in ["Done", "Failed"] {
+        scoped_doc["update"][message]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"add":"applied","by":1}));
+    }
+    scoped_doc["messages"]["RunSwitch"] = json!("none");
+    scoped_doc["messages"]["SwitchNow"] = json!("text");
+    scoped_doc["update"]["RunSwitch"] = json!([{"call":"process.run","args":{"command":"not executed"},"then":"SwitchNow","error":"Failed"}]);
+    scoped_doc["update"]["SwitchNow"] = json!([{"call":"sdktest.context.switch","args":{}}]);
+    let scoped =
+        Host::open_with(&app, scoped_doc, None, "main", None, Some(provider), false).unwrap();
+    scoped.post("Run", None);
+    scoped.post("Run", None);
+    let old = std::mem::take(&mut *pending.borrow_mut());
+    old[0].success(Some(json!("obsolete success")));
+    old[1].fail(msdk::runtime::ServiceFailure::new(
+        msdk::runtime::FailureKind::PermissionDenied,
+        "",
+        "",
+        0,
+    ));
+    scope.advance().unwrap();
+    scoped.post("Run", None);
+    let current = pending.borrow_mut().pop().unwrap();
+    assert_eq!(
+        current
+            .clone()
+            .in_context(scope.token().unwrap())
+            .err()
+            .unwrap()
+            .kind,
+        msdk::runtime::FailureKind::InvalidInput
+    );
+    current.success(Some(json!("fresh scoped result")));
+    pump_until(|| scoped.get("out") == Some(json!("fresh scoped result")));
+    assert_eq!(scoped.get("applied"), Some(json!(1)));
+    assert_eq!(scoped.get("failed"), Some(json!(false)));
+    let labels = visible_labels(scoped.window().upcast_ref());
+    assert!(labels.contains("fresh scoped result") && !labels.contains("obsolete success"));
+
+    // Host retains a reply clone before invoke(). A binding made inside the
+    // provider must also protect the Host's synchronous Err path.
+    deny.set(true);
+    scoped.post("Run", None);
+    scope.advance().unwrap();
+    deny.set(false);
+    scoped.post("Run", None);
+    pending
+        .borrow_mut()
+        .pop()
+        .unwrap()
+        .success(Some(json!("after synchronous denial")));
+    pump_until(|| scoped.get("out") == Some(json!("after synchronous denial")));
+    assert_eq!(scoped.get("applied"), Some(json!(2)));
+    assert_eq!(scoped.get("failed"), Some(json!(false)));
+
+    // A current error is processed first, enqueueing its callback. The next
+    // delivery switches contexts BEFORE that callback runs. The callback must
+    // carry its token across the second queue boundary too.
+    scoped.post("Run", None);
+    scoped.post("RunSwitch", None);
+    let transition = std::mem::take(&mut *pending.borrow_mut());
+    let previous = scope.token().unwrap();
+    transition[0].fail(msdk::runtime::ServiceFailure::new(
+        msdk::runtime::FailureKind::Io,
+        "",
+        "",
+        0,
+    ));
+    transition[1].success(Some(json!("switch")));
+    pump_until(|| !previous.is_current());
+    scoped.post("Run", None);
+    pending
+        .borrow_mut()
+        .pop()
+        .unwrap()
+        .success(Some(json!("after callback race")));
+    pump_until(|| scoped.get("out") == Some(json!("after callback race")));
+    assert_eq!(
+        scoped.get("applied"),
+        Some(json!(3)),
+        "obsolete error callback must not apply after a switch"
+    );
+    assert_eq!(scoped.get("failed"), Some(json!(false)));
+    decline.set(true);
+    scoped.post("Run", None);
+    pump_until(|| {
+        scoped
+            .get("out")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .contains("service is unavailable")
+    });
+    assert_eq!(scoped.get("failed"), Some(json!(true)));
+    assert_eq!(
+        scoped.get("applied"),
+        Some(json!(4)),
+        "a bound request cannot execute the real built-in fallback"
+    );
+    decline.set(false);
+    scoped.post("Run", None);
+    pending
+        .borrow_mut()
+        .pop()
+        .unwrap()
+        .success(Some(json!("after declined binding")));
+    pump_until(|| scoped.get("out") == Some(json!("after declined binding")));
+    assert_eq!(scoped.get("failed"), Some(json!(false)));
+    scoped.window().close();
+    assert!(scope.token().is_none());
+    let weak = Rc::downgrade(&scoped);
+    drop(scoped);
+    assert!(weak.upgrade().is_none());
 
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

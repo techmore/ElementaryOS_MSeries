@@ -44,6 +44,43 @@ raw event senders retain their own payload-validation and completion obligations
 compatibility does not qualify an old adapter automatically. Generic context
 switch cancellation and app-specific adapter migration remain open gates.
 
+### Typed GTK reply contexts
+
+Before starting asynchronous work, bind its reply with
+`let reply = call.reply.in_context(token)?;`. All clones share both the binding
+and first-completion state, including the Host's retained clone used for a
+synchronous `Err` from `invoke`. Binding twice, or after completion, returns a
+typed invalid-input failure. A request cannot be rebound to a newer account to
+make an old result current.
+
+Binding also claims the request's context ownership. A provider that binds and
+then returns `Ok(false)` receives an owned unavailable failure; the Host must not
+fall through to a real unscoped built-in action. Decline unowned service names
+before binding. Completing a reply and then declining likewise cannot execute
+fallback work.
+
+The Host retains the token across its typed delivery queue and checks it on the
+GTK thread immediately before applying a success or reporting a failure. An
+error callback retains that same token across its additional queue boundary.
+This matters when an error is current when received, but the app switches
+context before its callback runs. Such a callback must not overwrite the new
+page with an obsolete error. The first-terminal-reply rule remains shared
+across worker clones, and replies/queues do not retain the Host or GTK widgets.
+
+Keep `RequestContext::advance`/`close` and UI state application serialized on
+that state-owner thread. Retire provider-owned workers/subscriptions and close
+the provider's contexts in `Services::stop`. Scoped reply delivery prevents
+stale state mutation; it does not itself cancel a network operation or stop
+polling. Use scoped process ownership or the backend's explicit cancellation.
+
+Native private-session regression checks cover queued old success and failure,
+shared binding on synchronous provider error, a context switch between failure
+and callback delivery, valid current recovery, visible GTK label updates,
+rebinding rejection, provider stop and Host release. These are explicit opt-in
+reply bindings. They do not automatically scope legacy raw event senders,
+feeds, built-in service dispatch, extension negotiation before provider invoke,
+streaming chunks, or T3/network adapters. Those app/backend gates remain open.
+
 ## Errors and privacy
 
 `msdk::runtime::ServiceFailure` carries a `FailureKind`, service, source context,
@@ -102,11 +139,12 @@ not rollback for effects already performed by a command.
 Core tests cover queued/out-of-order success and error, independent contexts,
 return-to-account invalidation, last-owner drop, permanent close, an already
 closed request that never executes its command, and actual process cancellation/
-reaping followed by a successful new request. GTK typed ServiceReply dispatch,
-streaming chunks and app-specific T3/network subscriptions are not automatically
-scoped by this API. Their adapters must carry tokens through final delivery and
-retire their own reads/resources; native context-switch qualification remains
-open. Do not treat this core result as that broader lifecycle acceptance.
+reaping followed by a successful new request. GTK typed ServiceReply supports
+the explicit binding described above. Streaming chunks and app-specific
+T3/network subscriptions are not automatically scoped. Their adapters must carry
+tokens through final delivery and retire their own reads/resources; full app
+context-switch qualification remains open. Do not treat core or synthetic Host
+results as that broader lifecycle acceptance.
 
 The GUI-independent Rust API is `msdk::process::{spawn, Limits}`. Hold the returned
 `Process` for the lifetime of the operation. `cancel()` or dropping an unfinished

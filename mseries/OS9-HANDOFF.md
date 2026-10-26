@@ -1,3 +1,29 @@
+## Typed GTK reply contexts and ARM foundation pass — 2026-10-26
+
+ARM developer-path run 40375089386/job 121755848259 succeeded on pushed
+7a5f4d27deeabf6334ba9c3d441e39eb0374ed3a, including core/schema, generated app,
+keyboard/AT-SPI, text/theme captures, native CLI/lifecycle/runtime and package
+lifecycle. SDK/System Monitor run 40375089841 also passed. Preserve these
+completed runs; the newer scoped GTK reply work needs its own current CI.
+
+`ServiceReply::in_context(token)` now binds once before work, with binding and
+first completion shared across clones. The Host checks tokens at final typed
+GTK delivery. An error callback keeps its token through its additional queue;
+a context switch between error receipt and callback cannot mutate the new page.
+Synchronous invoke Err also uses the shared binding. Rebinding or binding after
+completion is invalid input. A provider that binds then declines gets an owned
+unavailable result; it cannot trigger a real unscoped built-in fallback. Replies/queues retain no GTK/Host ownership.
+
+Native regressions prove obsolete success/error rejection, synchronous denied
+reply after binding, the second-queue callback race, current recovery, actual
+visible GTK labels and Host release/stop. Core and existing lifecycle/CLI tests
+and strict lint pass in the disposable SER8 environment. The change is explicit
+opt-in: legacy raw events, feeds, built-ins/pre-invoke version failures,
+streaming and T3/network adapters are not automatically scoped. Real backends
+must retire reads/workers and preserve visible account identity separately.
+SDK-RUNTIME-CONTRACT.md documents those boundaries. No owner desktop/accounts/
+services/kernel/panel changes. Continue full ledger and final current CI.
+
 ## SDK current runtime/reference native qualification — 2026-10-26
 
 Resolved the prior source-transfer approval block with direct owner-machine

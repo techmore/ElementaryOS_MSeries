@@ -16,7 +16,7 @@ pub fn description() -> Value {
         "typed_failure":"msdk::runtime::ServiceFailure",
         "request_context":{"owner":"msdk::context::RequestContext", "token":"ContextToken",
             "delivery":"Scoped::into_current on the state-owner thread", "process_api":"msdk::process::spawn_scoped",
-            "gtk_adapter_automatic":false, "streaming_automatic":false},
+            "gtk_adapter_automatic":false, "gtk_typed_reply":"msdk_gtk::host::ServiceReply::in_context", "streaming_automatic":false},
         "failure_codes":FailureKind::ALL.iter().map(|kind| json!({"code":kind.code(), "recovery":kind.message()})).collect::<Vec<_>>(),
         "extension_negotiation":"Services::api_version is checked before calls/feeds; backend OS/network protocols require their own published contract",
         "process":{"rust_api":"msdk::process::{spawn, Limits}", "description_service":"process.run",

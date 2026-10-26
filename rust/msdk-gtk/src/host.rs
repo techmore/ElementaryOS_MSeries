@@ -25,9 +25,22 @@ pub struct ServiceCall {
     pub reply: ServiceReply,
 }
 
+enum ReplyOutcome {
+    Event(Event),
+    Failure(msdk::runtime::ServiceFailure, Option<String>),
+}
+struct ReplyDelivery {
+    outcome: ReplyOutcome,
+    context: Option<msdk::context::ContextToken>,
+}
+#[derive(Default)]
+struct ReplyState {
+    completed: bool,
+    context: Option<msdk::context::ContextToken>,
+}
 #[derive(Clone)]
 pub struct ServiceReply {
-    completed: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    state: std::sync::Arc<std::sync::Mutex<ReplyState>>,
     service: String,
     source: String,
     operation: u64,
@@ -35,9 +48,50 @@ pub struct ServiceReply {
     then: Option<String>,
     error: Option<String>,
     events: UnboundedSender<Event>,
-    failures: UnboundedSender<(msdk::runtime::ServiceFailure, Option<String>)>,
+    deliveries: UnboundedSender<ReplyDelivery>,
 }
 impl ServiceReply {
+    /// Bind once, before starting work. All clones share this binding and the
+    /// first-completion state. Host checks freshness at final callback delivery.
+    pub fn in_context(
+        self,
+        token: msdk::context::ContextToken,
+    ) -> Result<Self, msdk::runtime::ServiceFailure> {
+        {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            if state.completed || state.context.is_some() {
+                return Err(msdk::runtime::ServiceFailure::new(
+                    msdk::runtime::FailureKind::InvalidInput,
+                    &self.service,
+                    &self.source,
+                    self.operation,
+                ));
+            }
+            state.context = Some(token);
+        }
+        Ok(self)
+    }
+    fn claim(&self) -> Option<Option<msdk::context::ContextToken>> {
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        if state.completed {
+            return None;
+        }
+        state.completed = true;
+        Some(state.context.clone())
+    }
+    fn is_completed(&self) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .completed
+    }
+    fn is_bound(&self) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .context
+            .is_some()
+    }
     /// Validate the declared result before delivering it into app state.
     pub fn success(&self, payload: Option<Value>) {
         use msdk::vocab::Payload;
@@ -55,28 +109,28 @@ impl ServiceReply {
                 self.operation,
             ));
         }
-        if self
-            .completed
-            .swap(true, std::sync::atomic::Ordering::SeqCst)
-        {
+        let Some(context) = self.claim() else {
             return;
-        }
+        };
         if let Some(message) = &self.then {
-            let _ = self.events.unbounded_send((message.clone(), payload));
+            let _ = self.deliveries.unbounded_send(ReplyDelivery {
+                outcome: ReplyOutcome::Event((message.clone(), payload)),
+                context,
+            });
         }
     }
     /// Private detail may reach the app UI; it is omitted from diagnostics.
     pub fn fail(&self, mut failure: msdk::runtime::ServiceFailure) {
-        if self
-            .completed
-            .swap(true, std::sync::atomic::Ordering::SeqCst)
-        {
+        let Some(context) = self.claim() else {
             return;
-        }
+        };
         failure.service = self.service.clone();
         failure.source = self.source.clone();
         failure.operation = self.operation;
-        let _ = self.failures.unbounded_send((failure, self.error.clone()));
+        let _ = self.deliveries.unbounded_send(ReplyDelivery {
+            outcome: ReplyOutcome::Failure(failure, self.error.clone()),
+            context,
+        });
     }
 }
 
@@ -159,6 +213,7 @@ pub struct Host {
     processes: RefCell<Vec<msdk::process::Process>>,
     failures: UnboundedSender<(msdk::runtime::ServiceFailure, Option<String>)>,
     operation: Cell<u64>,
+    replies: UnboundedSender<ReplyDelivery>,
 }
 
 // Widgets keep a dispatcher, never the Host itself. Otherwise Host -> widgets
@@ -296,6 +351,7 @@ impl Host {
         }
         let (tx, mut rx) = unbounded::<Event>();
         let (failures, mut failure_events) = unbounded();
+        let (replies, mut reply_events) = unbounded::<ReplyDelivery>();
         let custom_logic = logic.is_some();
         let logic: Box<dyn Logic> = match logic {
             Some(make) => make(tx.clone()),
@@ -354,6 +410,7 @@ impl Host {
             processes: RefCell::new(Vec::new()),
             failures,
             operation: Cell::new(0),
+            replies,
         });
         *host.me.borrow_mut() = Rc::downgrade(&host);
         host.rebuild();
@@ -369,6 +426,25 @@ impl Host {
             while let Some((failure, callback)) = failure_events.next().await {
                 let Some(host) = weak.upgrade() else { break };
                 host.runtime_failure(failure, callback);
+            }
+        });
+        let weak = Rc::downgrade(&host);
+        glib::spawn_future_local(async move {
+            while let Some(delivery) = reply_events.next().await {
+                let Some(host) = weak.upgrade() else { break };
+                if delivery
+                    .context
+                    .as_ref()
+                    .is_some_and(|token| !token.is_current())
+                {
+                    continue;
+                }
+                match delivery.outcome {
+                    ReplyOutcome::Event((message, payload)) => host.send(&message, payload),
+                    ReplyOutcome::Failure(failure, callback) => {
+                        host.runtime_failure_in_context(failure, callback, delivery.context)
+                    }
+                }
             }
         });
         let weak = Rc::downgrade(&host);
@@ -499,6 +575,17 @@ impl Host {
     }
 
     fn runtime_failure(&self, failure: msdk::runtime::ServiceFailure, callback: Option<String>) {
+        self.runtime_failure_in_context(failure, callback, None);
+    }
+    fn runtime_failure_in_context(
+        &self,
+        failure: msdk::runtime::ServiceFailure,
+        callback: Option<String>,
+        context: Option<msdk::context::ContextToken>,
+    ) {
+        if context.as_ref().is_some_and(|token| !token.is_current()) {
+            return;
+        }
         if self.closed.get() {
             return;
         }
@@ -510,7 +597,10 @@ impl Host {
             message.push_str(detail);
         }
         if let Some(callback) = callback {
-            let _ = self.tx.unbounded_send((callback, Some(json!(message))));
+            let _ = self.replies.unbounded_send(ReplyDelivery {
+                outcome: ReplyOutcome::Event((callback, Some(json!(message)))),
+                context,
+            });
         } else {
             self.show_error(&message);
         }
@@ -860,7 +950,7 @@ impl Host {
                 let tx = self.tx.clone();
                 if let Some(sv) = &self.services {
                     let reply = ServiceReply {
-                        completed: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                        state: std::sync::Arc::new(std::sync::Mutex::new(ReplyState::default())),
                         service: service.clone(),
                         source: source.into(),
                         operation,
@@ -868,7 +958,7 @@ impl Host {
                         then: then.clone(),
                         error: error.clone(),
                         events: tx.clone(),
-                        failures: self.failures.clone(),
+                        deliveries: self.replies.clone(),
                     };
                     let reply_errors = reply.clone();
                     match sv.invoke(ServiceCall {
@@ -877,11 +967,16 @@ impl Host {
                         reply,
                     }) {
                         Ok(true) => return,
-                        Ok(false)
-                            if reply_errors
-                                .completed
-                                .load(std::sync::atomic::Ordering::SeqCst) =>
-                        {
+                        Ok(false) if reply_errors.is_completed() => {
+                            return;
+                        }
+                        Ok(false) if reply_errors.is_bound() => {
+                            reply_errors.fail(msdk::runtime::ServiceFailure::new(
+                                msdk::runtime::FailureKind::Unavailable,
+                                &service,
+                                source,
+                                operation,
+                            ));
                             return;
                         }
                         Ok(false) => {}
