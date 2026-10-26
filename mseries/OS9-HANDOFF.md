@@ -1,3 +1,13 @@
+## Usage observation semantics — 2026-10-26
+
+The candidate `msdk::usage` data API separates account/provider/source scope,
+used and remaining quota, expired windows, unknown values and token subsets.
+Debug omits scope identifiers. Three focused semantic tests and the complete
+105-test core suite plus strict clippy pass on macOS. This is data groundwork;
+collectors, cross-source deduplication, native presentation, both status hosts,
+real interaction/visual review and source-matched Linux validation remain open.
+The benchmark host is unreachable. See `SDK-USAGE-DATA.md` for the boundary.
+
 ## SDK accessibility failure diagnosis — 2026-10-26
 
 The synthetic failure artifact from developer-path run 40392328090 attempt 1

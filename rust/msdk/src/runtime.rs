@@ -14,6 +14,7 @@ pub fn description() -> Value {
         "extension_api_version":SERVICES_API_VERSION,
         "diagnostic_schema":"msdk.runtime.diagnostic.v1",
         "typed_failure":"msdk::runtime::ServiceFailure",
+        "usage_observation":{"rust_api":"msdk::usage", "status":"candidate-data-semantics-only", "status_host":false},
         "request_context":{"owner":"msdk::context::RequestContext", "token":"ContextToken",
             "delivery":"Scoped::into_current on the state-owner thread", "process_api":"msdk::process::spawn_scoped",
             "gtk_adapter_automatic":false, "gtk_typed_reply":"msdk_gtk::host::ServiceReply::in_context", "streaming_automatic":false},

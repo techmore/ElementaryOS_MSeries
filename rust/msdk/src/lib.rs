@@ -22,6 +22,7 @@ pub mod schema;
 pub mod templates;
 pub mod text;
 pub mod tokens;
+pub mod usage;
 pub mod vocab;
 
 pub use check::{Diagnostic, Severity, check};
