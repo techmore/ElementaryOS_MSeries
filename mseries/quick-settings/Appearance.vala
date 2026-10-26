@@ -1,75 +1,115 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
- * Explicit Light/Dark choice in the session Quick Settings panel.
+ * Use the same appearance backend as the former standalone panel indicator.
  */
 public class QuickSettings.Appearance : Gtk.Box {
-    private GLib.Settings settings;
     private Gtk.ToggleButton light_button;
     private Gtk.ToggleButton dark_button;
-    private bool updating = false;
+    private Gtk.ToggleButton auto_button;
+    private Gtk.Label detail;
+    private bool busy = false;
+    private bool refreshing = false;
+    private uint timer = 0;
 
     construct {
-        orientation = Gtk.Orientation.HORIZONTAL;
+        orientation = Gtk.Orientation.VERTICAL;
         spacing = 8;
         margin_start = 12;
         margin_end = 12;
-        margin_top = 2;
-        margin_bottom = 2;
+        margin_top = 8;
+        margin_bottom = 8;
 
-        settings = new GLib.Settings ("io.elementary.settings-daemon.prefers-color-scheme");
-
-        append (new Gtk.Image.from_icon_name ("dark-mode-symbolic") { pixel_size = 16 });
-        var title = new Gtk.Label (_("Appearance")) {
-            xalign = 0,
-            hexpand = true
-        };
+        var title = new Gtk.Label (_("Appearance")) { xalign = 0 };
+        title.add_css_class ("heading");
         append (title);
-
-        light_button = new Gtk.ToggleButton.with_label (_("Light"));
-        dark_button = new Gtk.ToggleButton.with_label (_("Dark"));
-        dark_button.set_group (light_button);
-        light_button.add_css_class ("flat");
-        dark_button.add_css_class ("flat");
+        light_button = new Gtk.ToggleButton.with_label (_("Light")) { hexpand = true };
+        dark_button = new Gtk.ToggleButton.with_label (_("Dark")) { hexpand = true, group = light_button };
+        auto_button = new Gtk.ToggleButton.with_label (_("Automatic")) { hexpand = true, group = light_button };
         light_button.tooltip_text = _("Use the light appearance");
         dark_button.tooltip_text = _("Use the dark appearance");
+        auto_button.tooltip_text = _("Follow the appearance schedule");
         light_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Light appearance") });
         dark_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Dark appearance") });
-
+        auto_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Automatic appearance") });
         var choices = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
         choices.add_css_class ("linked");
         choices.append (light_button);
         choices.append (dark_button);
+        choices.append (auto_button);
         append (choices);
-
-        light_button.toggled.connect (() => {
-            if (!updating && light_button.active) {
-                settings.set_enum ("color-scheme", Granite.Settings.ColorScheme.LIGHT);
+        detail = new Gtk.Label (_("Reading appearance…")) { xalign = 0, wrap = true, max_width_chars = 36 };
+        detail.add_css_class ("dim-label");
+        append (detail);
+        light_button.clicked.connect (() => choose.begin ("light"));
+        dark_button.clicked.connect (() => choose.begin ("dark"));
+        auto_button.clicked.connect (() => choose.begin ("auto"));
+        set_choices_sensitive (false);
+        map.connect (() => {
+            refresh.begin ();
+            timer = Timeout.add_seconds (10, () => {
+                refresh.begin ();
+                return Source.CONTINUE;
+            });
+        });
+        unmap.connect (() => {
+            if (timer != 0) {
+                Source.remove (timer);
+                timer = 0;
             }
         });
-        dark_button.toggled.connect (() => {
-            if (!updating && dark_button.active) {
-                settings.set_enum ("color-scheme", Granite.Settings.ColorScheme.DARK);
-            }
-        });
-
-        settings.changed["color-scheme"].connect (sync_selection);
-        settings.writable_changed["color-scheme"].connect (sync_selection);
-        sync_selection ();
     }
 
-    private void sync_selection () {
-        updating = true;
-        dark_button.active = settings.get_enum ("color-scheme") == Granite.Settings.ColorScheme.DARK;
-        // Elementary's no-preference default presents as light; make that state actionable and
-        // explicit by selecting Light until a dark preference is active.
-        light_button.active = !dark_button.active;
-        bool writable = settings.is_writable ("color-scheme");
-        light_button.sensitive = writable;
-        dark_button.sensitive = writable;
-        if (!writable) {
-            light_button.tooltip_text = _("Appearance is managed by your administrator");
-            dark_button.tooltip_text = _("Appearance is managed by your administrator");
+    private void set_choices_sensitive (bool value) {
+        light_button.sensitive = value;
+        dark_button.sensitive = value;
+        auto_button.sensitive = value;
+    }
+
+    private async string command (string[] args) throws Error {
+        var process = new Subprocess.newv (args, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+        string output;
+        string errors;
+        yield process.communicate_utf8_async (null, null, out output, out errors);
+        if (!process.get_successful () || errors.strip () != "") {
+            throw new IOError.FAILED (errors.strip () != "" ? errors.strip () : _("Appearance command failed"));
         }
-        updating = false;
+        return output;
+    }
+
+    private async void refresh () {
+        if (busy || refreshing) return;
+        refreshing = true;
+        try {
+            var output = yield command ({ "mseries-dark-mode", "status", "--json" });
+            var parser = new Json.Parser ();
+            parser.load_from_data (output);
+            var data = parser.get_root ().get_object ();
+            var mode = data.get_string_member ("mode");
+            light_button.active = mode == "light";
+            dark_button.active = mode == "dark";
+            auto_button.active = mode == "auto";
+            detail.label = data.get_string_member ("summary") + "\n" + data.get_string_member ("detail");
+            set_choices_sensitive (true);
+        } catch (Error e) {
+            detail.label = _("Appearance status unavailable: %s").printf (e.message);
+            set_choices_sensitive (false);
+        }
+        refreshing = false;
+    }
+
+    private async void choose (string mode) {
+        if (busy || refreshing) return;
+        busy = true;
+        set_choices_sensitive (false);
+        detail.label = _("Applying appearance…");
+        string? failure = null;
+        try {
+            yield command ({ "mseries-dark-mode", "appearance", mode });
+        } catch (Error e) {
+            failure = e.message;
+        }
+        busy = false;
+        yield refresh ();
+        if (failure != null) detail.label = _("Could not change appearance: %s").printf (failure);
     }
 }

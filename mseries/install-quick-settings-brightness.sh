@@ -36,6 +36,13 @@ if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
 fi
 mseries_backup "$plugin" io.elementary.quick-settings
 sudo install -m644 "$work/build/src/libquick-settings.so" "$plugin"
+# Retire the obsolete standalone appearance item only after the replacement builds.
+bash "$repo/mseries/install-dark-mode.sh"
+legacy="$(dirname "$plugin")/libmseries-appearance.so"
+if [[ -f "$legacy" ]]; then
+  sudo install -Dm644 "$legacy" /usr/local/lib/mseries/retired-indicators/libmseries-appearance.so
+  sudo rm -- "$legacy"
+fi
 bash "$repo/mseries/install-bluetooth-control-center.sh"
 # Dock app (eyes in the dock while a share is offered): per-user install, no sudo.
 meson setup "$work/share-app" "$repo/mseries/share-eyes-wingpanel" --prefix="$HOME/.local" --buildtype=release >/dev/null

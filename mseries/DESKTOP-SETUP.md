@@ -742,19 +742,26 @@ libadwaita, Flatpak apps (through the settings portal) and Chromium-based browse
 (1 dark, 2 light) and `org.gnome.desktop.interface color-scheme`. It never touches brightness,
 refresh rate or power.
 
+Quick Settings contains **Appearance → Light / Dark / Automatic**. Its installer
+(`bash mseries/install-quick-settings-brightness.sh`) also removes the obsolete
+standalone Dark/Auto menu-bar module, keeping a rollback copy outside Wingpanel's
+plugin directory. Reload Wingpanel explicitly to activate; in the Rust session:
+`systemctl --user restart pantheon-wingpanel.service`.
+
 ```bash
 mseries/install-dark-mode.sh              # install to ~/.local/bin
 mseries-dark-mode on | off | toggle | status
-mseries/install-dark-mode.sh --schedule  # user timer runs `auto` at login and every 15 minutes
+mseries/install-dark-mode.sh --schedule  # user timer runs `tick` at login and every 15 minutes
 mseries-dark-mode schedule 20:00 06:30   # fixed hours instead of sunset/sunrise
 mseries-dark-mode schedule sun           # back to sunset/sunrise (default)
 mseries-dark-mode location LAT LON       # override the stored Night Light coordinates
 ```
 
-`auto` is the macOS-style cut-over: dark from sunset to sunrise, computed from the coordinates
-Night Light already stores (NOAA solar maths, checked against Philadelphia: 07:10/18:21 on
-2026-10-16). It acts only when day/night changes, so a manual toggle sticks until the next
-transition, and it books a one-shot timer for that moment.
+`mseries-dark-mode appearance light|dark|auto` selects the persistent mode.
+Light and Dark pause automatic switching until Automatic is selected again.
+Automatic follows sunset/sunrise using Night Light coordinates (NOAA solar
+maths), or the configured fixed hours, and books a one-shot timer for the next
+transition. `status --json` exposes the selected mode and effective appearance.
 
 The pastel accent overrides in `theme/gtk-*.css` already use dark label text on pale fills, so they
 read in both schemes. Verified 2026-10-16: the settings portal reports dark (`org.freedesktop.appearance color-scheme` = 1), which is what Brave and Flatpak apps read. Not covered yet: Qt apps (`adwaita-qt` is not installed and no Qt style is forced) and Ghostty
