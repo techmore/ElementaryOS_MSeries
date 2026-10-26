@@ -71,21 +71,32 @@ impl Inner {
             return;
         }
         let weak = Rc::downgrade(this);
-        let source = gtk::glib::timeout_add_local_once(Duration::from_millis(450), move || {
-            if let Some(inner) = weak.upgrade() {
-                inner.close_timer.borrow_mut().take();
-                if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
-                    eprintln!(
-                        "anchor trace: close timer anchor={} popup={}",
-                        inner.anchor_motion.contains_pointer(),
-                        inner.popup_motion.contains_pointer()
-                    );
-                }
-                if !inner.anchor_motion.contains_pointer() && !inner.popup_motion.contains_pointer()
-                {
-                    inner.popup.popdown();
-                }
+        let source = gtk::glib::timeout_add_local(Duration::from_millis(450), move || {
+            let Some(inner) = weak.upgrade() else {
+                return gtk::glib::ControlFlow::Break;
+            };
+            // Crossing events can report a leave while the device is still on
+            // the popover's native surface. Check the surface itself and keep
+            // this UI-only timer alive until the pointer actually leaves.
+            let on_popup_surface = inner.popup.surface().is_some_and(|surface| {
+                inner
+                    .popup
+                    .display()
+                    .default_seat()
+                    .and_then(|seat| seat.pointer())
+                    .is_some_and(|pointer| {
+                        pointer.surface_at_position().0.as_ref() == Some(&surface)
+                    })
+            });
+            if inner.anchor_motion.contains_pointer()
+                || inner.popup_motion.contains_pointer()
+                || on_popup_surface
+            {
+                return gtk::glib::ControlFlow::Continue;
             }
+            inner.close_timer.borrow_mut().take();
+            inner.popup.popdown();
+            gtk::glib::ControlFlow::Break
         });
         *this.close_timer.borrow_mut() = Some(source);
     }
