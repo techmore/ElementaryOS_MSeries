@@ -1,5 +1,7 @@
 ## Candidate anchor hover failure — 2026-10-26
 
+ARM SDK run 40416161840 at 26a71f7 passed the candidate usage anchor interaction suite, including unpinned pointer exit, plus package lifecycle. The retained synthetic fixture receipt is `sdk-tests/receipts/2026-10-26-usage-anchor-final-pass/`; actual status-host integration and target acceptance remain open.
+
 ARM run 40415797379 at 7fa281f passed the candidate usage anchor synthetic hover travel, pin, outside dismissal and keyboard interactions, and package lifecycle; see `sdk-tests/receipts/2026-10-26-usage-anchor-pass/`. This does not qualify an installed desktop host. An added explicit unpinned pointer-leave check is pending.
 
 ARM run 40412642984 at 98867b8 passed core, generated app, accessibility, lifecycle and usage-refresh steps. The candidate anchor opened and read once, but failed pointer travel; pinning and subsequent steps were not reached. See `sdk-tests/receipts/2026-10-26-usage-anchor-travel-fail/`. X11 surface diagnostics are being added; native interaction validation remains open.
