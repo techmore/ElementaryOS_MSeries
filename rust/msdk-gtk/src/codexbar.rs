@@ -19,6 +19,54 @@ pub enum DecodeError {
     TooManyItems,
 }
 
+/// Public failures contain no command path, stdout, stderr or source payload.
+#[derive(Debug)]
+pub enum SnapshotReadError {
+    Process(msdk::runtime::ServiceFailure),
+    Decode(DecodeError),
+    Clock,
+}
+
+/// Perform one bounded, read-only `--snapshot` request against a trusted
+/// absolute executable. No polling or service management is started. The
+/// caller retains the returned process and forwards the scoped result to the
+/// state-owner thread for `into_current` immediately before applying it.
+pub fn read_snapshot_scoped(
+    context: msdk::context::ContextToken,
+    executable: std::path::PathBuf,
+    max_age_seconds: u64,
+    operation: u64,
+    complete: impl FnOnce(msdk::context::Scoped<Result<Snapshot, SnapshotReadError>>) + Send + 'static,
+) -> Result<msdk::process::Process, msdk::runtime::ServiceFailure> {
+    let limits = msdk::process::Limits {
+        timeout: std::time::Duration::from_secs(5),
+        output_bytes: MAX_BYTES,
+    };
+    msdk::process::spawn_program_scoped(
+        context,
+        executable,
+        vec!["--snapshot".into()],
+        limits,
+        operation,
+        move |reply| {
+            complete(reply.map(|result| {
+                let output = result.map_err(SnapshotReadError::Process)?;
+                // The process API returns lossy text. Reject replacement characters
+                // conservatively rather than accepting a potentially corrupted JSON.
+                if output.stdout.contains('\u{fffd}') {
+                    return Err(SnapshotReadError::Decode(DecodeError::Malformed));
+                }
+                let elapsed = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_err(|_| SnapshotReadError::Clock)?;
+                let now = i64::try_from(elapsed.as_secs()).map_err(|_| SnapshotReadError::Clock)?;
+                decode_snapshot(output.stdout.as_bytes(), now, max_age_seconds)
+                    .map_err(SnapshotReadError::Decode)
+            }))
+        },
+    )
+}
+
 fn optional_text<'a>(value: &'a Value, key: &str) -> Result<Option<&'a str>, DecodeError> {
     match value.get(key) {
         None | Some(Value::Null) => Ok(None),

@@ -176,3 +176,31 @@ fn scoped_stream_keeps_unread_bytes_and_completion_scoped_after_exit() {
     assert!(output.recv_timeout(Duration::from_secs(2)).unwrap().into_current().is_none());
     assert!(matches!(output.try_recv(), Err(std::sync::mpsc::TryRecvError::Disconnected)));
 }
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn direct_program_uses_literal_arguments_and_scoped_transform_retains_freshness() {
+    use msdk::process::{self, Limits};
+    use std::time::Duration;
+    let context = RequestContext::new();
+    let token = context.token().unwrap();
+    assert!(
+        process::spawn_program_scoped(token.clone(), "relative".into(), vec![], Limits::default(), 51, |_| {}).is_err()
+    );
+    let (tx, rx) = std::sync::mpsc::channel();
+    let task = process::spawn_program_scoped(
+        token,
+        "/usr/bin/printf".into(),
+        vec!["%s".into(), "$(literal);'not-shell'".into()],
+        Limits::default(),
+        52,
+        move |reply| tx.send(reply.map(|result| result.unwrap().stdout)).unwrap(),
+    )
+    .unwrap();
+    let reply = rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(task.is_finished());
+    assert_eq!(reply.into_current().as_deref(), Some("$(literal);'not-shell'"));
+    let old = context.token().unwrap().wrap(3).map(|n| n * 2);
+    context.advance().unwrap();
+    assert!(old.into_current().is_none());
+}

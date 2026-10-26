@@ -1,3 +1,12 @@
+## CodexBar bounded read adapter — native validation pending, 2026-10-26
+
+A scoped direct-executable SDK process API runs literal argv without a shell.
+The CodexBar adapter uses it for one five-second, two-MiB bounded `--snapshot`
+read, retaining context until delivery and leaving polling/service management
+to its caller. Synthetic executable tests cover arguments, malformed output and
+context cancellation. The full 107-test core suite and strict clippy pass on
+macOS; GTK adapter execution/source-matched Linux validation remain pending.
+No live collector, account data, desktop service or daemon was touched.
 ## CodexBar snapshot decoder validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40398755850 passed on ee2eb68. Four decoder

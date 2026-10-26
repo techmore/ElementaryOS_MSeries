@@ -69,3 +69,14 @@ schema versions, keeps null quotas unknown, and suppresses source payloads from
 decode errors. It neither runs the command nor polls or authenticates. Fresh
 read and actual account-specific adapters remain separate work; no real provider
 or account qualification is implied by synthetic fixtures.
+
+`msdk_gtk::codexbar::read_snapshot_scoped` performs one bounded `--snapshot`
+request using a caller-supplied trusted absolute executable and literal argv;
+it does not use a shell, schedule polling, start a daemon, or manage the existing
+collector. Hold the returned process; context expiry cancels owned work. Forward
+the scoped result to the state-owner thread and call `into_current` immediately
+before applying it. The caller controls retries and must keep freshness current
+as time passes. The result carries partial aggregate-only coverage. Diagnostic
+errors omit executable paths, output and private payloads. Because the shared
+process API decodes output lossily, this adapter conservatively rejects a Unicode
+replacement character rather than accepting potentially corrupted JSON.

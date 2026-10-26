@@ -20,7 +20,7 @@ pub fn description() -> Value {
             "gtk_adapter_automatic":false, "gtk_typed_reply":"msdk_gtk::host::ServiceReply::in_context", "streaming_automatic":false},
         "failure_codes":FailureKind::ALL.iter().map(|kind| json!({"code":kind.code(), "recovery":kind.message()})).collect::<Vec<_>>(),
         "extension_negotiation":"Services::api_version is checked before calls/feeds; backend OS/network protocols require their own published contract",
-        "process":{"rust_api":"msdk::process::{spawn, Limits}", "description_service":"process.run",
+        "process":{"rust_api":"msdk::process::{spawn, Limits}", "scoped_program_api":"msdk::process::spawn_program_scoped", "description_service":"process.run",
             "default_timeout_ms":limits.timeout.as_millis(), "default_combined_output_bytes":limits.output_bytes,
             "host_max_concurrent":MAX_HOST_PROCESSES, "owned_handle_drop":"cancel same-group work and reap leader",
             "streaming":false,

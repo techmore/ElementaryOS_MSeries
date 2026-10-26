@@ -139,7 +139,7 @@ pub fn spawn(
     operation: u64,
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<Process, ServiceFailure> {
-    spawn_inner(command, limits, operation, None, None, complete)
+    spawn_inner(CommandSpec::Shell(command), limits, operation, None, None, complete)
 }
 
 /// Bounded live output. Drain the receiver while retaining the Process handle.
@@ -155,7 +155,7 @@ pub fn spawn_streaming(
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<(Process, OutputStream), ServiceFailure> {
     let (tx, rx) = mpsc::sync_channel(STREAM_QUEUE_CHUNKS);
-    let process = spawn_inner(command, limits, operation, Some(tx), None, complete)?;
+    let process = spawn_inner(CommandSpec::Shell(command), limits, operation, Some(tx), None, complete)?;
     let subscription = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
     Ok((process, subscription))
 }
@@ -172,9 +172,10 @@ pub fn spawn_streaming_scoped(
 ) -> Result<(Process, ScopedOutputStream), ServiceFailure> {
     let (tx, rx) = mpsc::sync_channel(STREAM_QUEUE_CHUNKS);
     let reply = context.clone();
-    let process = spawn_inner(command, limits, operation, Some(tx), Some(context.clone()), move |result| {
-        complete(reply.wrap(result))
-    })?;
+    let process =
+        spawn_inner(CommandSpec::Shell(command), limits, operation, Some(tx), Some(context.clone()), move |result| {
+            complete(reply.wrap(result))
+        })?;
     let output = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
     Ok((process, ScopedOutputStream { output, context }))
 }
@@ -190,11 +191,37 @@ pub fn spawn_scoped(
     complete: impl FnOnce(crate::context::Scoped<Result<Output, ServiceFailure>>) + Send + 'static,
 ) -> Result<Process, ServiceFailure> {
     let reply = context.clone();
-    spawn_inner(command, limits, operation, None, Some(context), move |result| complete(reply.wrap(result)))
+    spawn_inner(CommandSpec::Shell(command), limits, operation, None, Some(context), move |result| {
+        complete(reply.wrap(result))
+    })
+}
+
+/// Run a trusted absolute executable with literal arguments, without a shell.
+/// Context expiry cancels the owned process and scopes its completion.
+pub fn spawn_program_scoped(
+    context: crate::context::ContextToken,
+    executable: std::path::PathBuf,
+    arguments: Vec<std::ffi::OsString>,
+    limits: Limits,
+    operation: u64,
+    complete: impl FnOnce(crate::context::Scoped<Result<Output, ServiceFailure>>) + Send + 'static,
+) -> Result<Process, ServiceFailure> {
+    if !executable.is_absolute() {
+        return Err(failure(FailureKind::InvalidInput, operation));
+    }
+    let reply = context.clone();
+    spawn_inner(CommandSpec::Program(executable, arguments), limits, operation, None, Some(context), move |result| {
+        complete(reply.wrap(result))
+    })
+}
+
+enum CommandSpec {
+    Shell(String),
+    Program(std::path::PathBuf, Vec<std::ffi::OsString>),
 }
 
 fn spawn_inner(
-    command: String,
+    command: CommandSpec,
     limits: Limits,
     operation: u64,
     stream: Option<SyncSender<Chunk>>,
@@ -228,7 +255,7 @@ fn failure(kind: FailureKind, operation: u64) -> ServiceFailure {
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
 fn run(
-    _: String,
+    _: CommandSpec,
     _: Limits,
     operation: u64,
     _: &Control,
@@ -239,7 +266,7 @@ fn run(
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 fn run(
-    command: String,
+    command: CommandSpec,
     limits: Limits,
     operation: u64,
     control: &Control,
@@ -255,25 +282,32 @@ fn run(
     if control.is_cancelled() {
         return Err(failure(FailureKind::Cancelled, operation));
     }
-    let mut child = Command::new("/bin/sh")
-        .arg("-c")
-        .arg(command)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .process_group(0)
-        .spawn()
-        .map_err(|error| {
-            failure(
-                match error.kind() {
-                    std::io::ErrorKind::PermissionDenied => FailureKind::PermissionDenied,
-                    std::io::ErrorKind::InvalidInput => FailureKind::InvalidInput,
-                    std::io::ErrorKind::NotFound => FailureKind::Unavailable,
-                    _ => FailureKind::Io,
-                },
-                operation,
-            )
-        })?;
+    let mut program = match command {
+        CommandSpec::Shell(command) => {
+            let mut shell = Command::new("/bin/sh");
+            shell.arg("-c").arg(command);
+            shell
+        }
+        CommandSpec::Program(executable, arguments) => {
+            let mut program = Command::new(executable);
+            program.args(arguments);
+            program
+        }
+    };
+    let mut child =
+        program.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).process_group(0).spawn().map_err(
+            |error| {
+                failure(
+                    match error.kind() {
+                        std::io::ErrorKind::PermissionDenied => FailureKind::PermissionDenied,
+                        std::io::ErrorKind::InvalidInput => FailureKind::InvalidInput,
+                        std::io::ErrorKind::NotFound => FailureKind::Unavailable,
+                        _ => FailureKind::Io,
+                    },
+                    operation,
+                )
+            },
+        )?;
     let pid = child.id() as i32;
     *control.group.lock().unwrap_or_else(|e| e.into_inner()) = Some(pid);
     let mut stdout = child.stdout.take().expect("piped stdout");

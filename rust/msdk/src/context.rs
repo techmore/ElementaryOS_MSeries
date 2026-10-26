@@ -80,6 +80,10 @@ pub struct Scoped<T> {
     value: T,
 }
 impl<T> Scoped<T> {
+    /// Transform a reply without discarding its final-delivery freshness check.
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Scoped<U> {
+        Scoped { token: self.token, value: f(self.value) }
+    }
     /// Consume on the UI/state owner's thread immediately before applying.
     /// This is a freshness snapshot, not a lock around arbitrary app mutation:
     /// serialize context switches and state application on that same thread.

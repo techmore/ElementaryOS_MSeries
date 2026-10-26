@@ -35,6 +35,7 @@ fn runtime_discovery_and_explanations_match_actual_limits_and_failures() {
     assert_eq!(discovery["rust_package_version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(discovery["process"]["default_combined_output_bytes"], msdk::process::Limits::default().output_bytes);
     assert_eq!(discovery["process"]["streaming"], false);
+    assert_eq!(discovery["process"]["scoped_program_api"], "msdk::process::spawn_program_scoped");
     assert_eq!(discovery["usage_observation"]["status_host"], false);
     assert_eq!(discovery["process"]["rust_streaming"]["scoped_api"], "msdk::process::spawn_streaming_scoped");
     assert_eq!(discovery["process"]["rust_streaming"]["queue_chunks"], msdk::process::STREAM_QUEUE_CHUNKS);

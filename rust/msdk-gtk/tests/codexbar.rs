@@ -99,3 +99,114 @@ fn failed_read_retains_stale_measurements_without_claiming_success() {
         7525
     );
 }
+
+#[cfg(unix)]
+#[test]
+fn bounded_reader_runs_a_synthetic_executable_and_expires_old_replies() {
+    use msdk::context::RequestContext;
+    use msdk_gtk::codexbar::{SnapshotReadError, read_snapshot_scoped};
+    use std::os::unix::fs::PermissionsExt;
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let dir =
+        std::env::temp_dir().join(format!("msdk-codexbar-test-{}-{stamp}", std::process::id()));
+    std::fs::create_dir(&dir).unwrap();
+    struct Cleanup(std::path::PathBuf);
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _cleanup = Cleanup(dir.clone());
+    let executable = dir.join("fixture ' ; not-a-shell-command");
+    let json = serde_json::to_string(&fixture()).unwrap();
+    std::fs::write(
+        &executable,
+        format!("#!/bin/sh\n[ \"$1\" = --snapshot ] || exit 9\nprintf '%s' '{json}'\n"),
+    )
+    .unwrap();
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let context = RequestContext::new();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let task = read_snapshot_scoped(
+        context.token().unwrap(),
+        executable.clone(),
+        u64::MAX,
+        71,
+        move |reply| tx.send(reply).unwrap(),
+    )
+    .unwrap();
+    let snapshot = rx
+        .recv_timeout(Duration::from_secs(3))
+        .unwrap()
+        .into_current()
+        .unwrap()
+        .unwrap();
+    assert!(task.is_finished());
+    assert_eq!(
+        snapshot.observations[0].windows[0]
+            .quota
+            .unwrap()
+            .remaining_basis_points(),
+        7525
+    );
+    assert_eq!(snapshot.coverage, Coverage::Partial);
+
+    std::fs::write(
+        &executable,
+        "#!/bin/sh\nprintf 'synthetic-private-error' >&2\nprintf 'not-json'\n",
+    )
+    .unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let _task = read_snapshot_scoped(
+        context.token().unwrap(),
+        executable.clone(),
+        300,
+        72,
+        move |reply| tx.send(reply).unwrap(),
+    )
+    .unwrap();
+    let result = rx
+        .recv_timeout(Duration::from_secs(3))
+        .unwrap()
+        .into_current()
+        .unwrap();
+    match result {
+        Err(SnapshotReadError::Decode(DecodeError::Malformed)) => (),
+        Err(error) => panic!("unexpected error: {error:?}"),
+        Ok(_) => panic!("malformed snapshot accepted"),
+    }
+
+    let marker = dir.join("started");
+    let marker_string = marker.to_str().unwrap().replace('\'', "'\\''");
+    std::fs::write(
+        &executable,
+        format!("#!/bin/sh\nprintf started > '{marker_string}'\nexec sleep 20\n"),
+    )
+    .unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let task = read_snapshot_scoped(
+        context.token().unwrap(),
+        executable,
+        300,
+        73,
+        move |reply| tx.send(reply).unwrap(),
+    )
+    .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while !marker.exists() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(marker.exists(), "the owned test executable must start");
+    context.advance().unwrap();
+    assert!(
+        rx.recv_timeout(Duration::from_secs(3))
+            .unwrap()
+            .into_current()
+            .is_none()
+    );
+    assert!(task.is_finished());
+}
