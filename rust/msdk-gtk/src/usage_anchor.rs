@@ -12,6 +12,8 @@ struct Inner {
     button: gtk::Button,
     popup: gtk::Popover,
     control: UsageControl,
+    anchor_motion: gtk::EventControllerMotion,
+    popup_motion: gtk::EventControllerMotion,
     pinned: Cell<bool>,
     changing_mode: Cell<bool>,
     open_timer: RefCell<Option<gtk::glib::SourceId>>,
@@ -67,7 +69,10 @@ impl Inner {
         let source = gtk::glib::timeout_add_local_once(Duration::from_millis(450), move || {
             if let Some(inner) = weak.upgrade() {
                 inner.close_timer.borrow_mut().take();
-                inner.popup.popdown();
+                if !inner.anchor_motion.contains_pointer() && !inner.popup_motion.contains_pointer()
+                {
+                    inner.popup.popdown();
+                }
             }
         });
         *this.close_timer.borrow_mut() = Some(source);
@@ -122,6 +127,8 @@ impl UsageAnchor {
             button,
             popup,
             control,
+            anchor_motion: gtk::EventControllerMotion::new(),
+            popup_motion: gtk::EventControllerMotion::new(),
             pinned: Cell::new(false),
             changing_mode: Cell::new(false),
             open_timer: RefCell::new(None),
@@ -138,7 +145,7 @@ impl UsageAnchor {
                 }
             }
         });
-        let motion = gtk::EventControllerMotion::new();
+        let motion = inner.anchor_motion.clone();
         let weak = Rc::downgrade(&inner);
         motion.connect_enter(move |_, _, _| {
             if let Some(inner) = weak.upgrade() {
@@ -152,7 +159,7 @@ impl UsageAnchor {
             }
         });
         inner.button.add_controller(motion);
-        let motion = gtk::EventControllerMotion::new();
+        let motion = inner.popup_motion.clone();
         let weak = Rc::downgrade(&inner);
         motion.connect_enter(move |_, _, _| {
             if let Some(inner) = weak.upgrade() {
