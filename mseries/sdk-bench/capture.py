@@ -39,6 +39,8 @@ try:
     print(json.dumps({'mapped_seconds': mapped, 'captured_seconds': captured,
                       'frame_bytes': Path(screenshot).stat().st_size,
                       'ctrl_q_clean': clean, 'content_review': 'pending independent review'}))
+    if not clean:
+        raise SystemExit(1)
 finally:
     if process.poll() is None:
         process.kill()

@@ -24,7 +24,10 @@ warmup are outside the model authoring timer and must be reported separately.
 
 The model can write bounded project source files, read its project/public SDK,
 and invoke a fixed command surface. No arbitrary host command tool is exposed.
-Builds are offline. `worker.py` rejects parent/absolute/hidden paths, writes to
+Builds are offline. The SDK-mode `pack` command packages a built Cargo binary
+into the owned evidence directory; it does not install or remove the package.
+Installation, removal and the remaining acceptance criteria require independent
+verification. `worker.py` rejects parent/absolute/hidden paths, writes to
 runner evidence/build output, oversized files and unknown commands. Code-level
 side effects are contained by the separate unprivileged offline instance, not
 by claiming a Rust compiler is a sandbox. Discard the owned instance after the
@@ -32,7 +35,8 @@ cohort is retained; never reuse untrusted trial state for a comparison run.
 
 `capture.py` is a shared external window/capture/Ctrl+Q probe. Handwritten code
 does not need a private screenshot flag. The model receives the latest actual
-frame for iterative feedback; independent review still judges the result.
+frame for iterative feedback; independent review still judges the result. The
+probe returns failure if Ctrl+Q does not close the captured application cleanly.
 Mapped/captured timestamps are candidate first-window evidence. Do not report
 them as a real-content first window until the image is reviewed. A `done`
 action merely submits a candidate: `t_done` stays not reached until every frozen
@@ -45,7 +49,7 @@ runner. Never compare an SDK discovery run with a differently provisioned or
 unmeasured native run and call the speed difference a result.
 
 Before inference, exercise the fixed settings smoke through new/gen/build/
-launch, verify native suites at the benchmark UID, archive that preflight, then
+pack/launch, verify native suites at the benchmark UID, archive that preflight, then
 reset only its owned project/state directories. `run-model.py` requires an empty
 project and refuses to overwrite an output directory. Example on the controlling
 host after provisioning and verification:

@@ -27,11 +27,11 @@ Actions:
 {"action":"write","files":{"relative/path":"complete UTF-8 file content"}}
 {"action":"read","path":"relative/path","start":0} (160 lines at a time)
 {"action":"list"}
-{"action":"run","command":"templates|describe|new|check|render|gate|gen|build|test|clippy|fmt|launch", ...}
+{"action":"run","command":"templates|describe|new|check|render|gate|gen|build|test|clippy|fmt|launch|pack", ...}
 {"action":"done","reason":"what is implemented and any remaining limitations"}
 run options: describe has topic; new has template and path (new directory);
 check/render/gate has path; gen has path and output (new directory);
-build/test/clippy/fmt/launch has project directory, default ".".
+build/test/clippy/fmt/launch/pack has project directory, default ".".
 launch can select binary if there is more than one. launch captures the real app
 and tests Ctrl+Q externally; your app need not implement a screenshot flag.
 Use SDK descriptions/rules and generated typed Rust. App-local Rust Logic/Services

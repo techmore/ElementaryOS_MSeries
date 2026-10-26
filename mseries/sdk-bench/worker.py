@@ -66,6 +66,17 @@ def run(argv, cwd=ROOT, seconds=120):
         return {'code': code, 'limit': reason, 'seconds': time.monotonic() - started,
                 'output': text, 'argv': argv}
 
+def binary_path(project, requested):
+    metadata = subprocess.check_output(['/usr/bin/cargo', 'metadata', '--offline', '--no-deps',
+                '--format-version', '1', '--manifest-path', str(project / 'Cargo.toml')],
+                text=True, env=dict(os.environ, CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(TARGET)))
+    binaries = [target['name'] for package in json.loads(metadata)['packages']
+                for target in package['targets'] if 'bin' in target['kind']]
+    selected = requested or (binaries[0] if len(binaries) == 1 else '')
+    if selected not in binaries or '/' in selected:
+        raise ValueError('select one built Cargo binary')
+    return TARGET / 'debug' / selected
+
 def execute(request):
     action = request.get('action')
     if action == 'list':
@@ -119,17 +130,11 @@ def execute(request):
             args += ['--all-targets', '--', '-D', 'warnings']
         return run(args, project)
     if command == 'launch':
-        metadata = subprocess.check_output(['/usr/bin/cargo', 'metadata', '--offline', '--no-deps',
-                    '--format-version', '1', '--manifest-path', str(project / 'Cargo.toml')], text=True, env=dict(os.environ, CARGO_TARGET_DIR=str(TARGET)))
-        binaries = [target['name'] for package in json.loads(metadata)['packages']
-                    for target in package['targets'] if 'bin' in target['kind']]
-        selected = request.get('binary', binaries[0] if len(binaries) == 1 else '')
-        if selected not in binaries or '/' in selected:
-            raise ValueError('select one built Cargo binary')
+        binary = binary_path(project, request.get('binary'))
         shot = ROOT / 'evidence' / f'frame-{time.time_ns()}.png'
         shot.parent.mkdir(exist_ok=True)
         result = run(['xvfb-run', '-a', 'dbus-run-session', '--', '/usr/bin/python3',
-                      '/opt/msdk-bench/capture.py', str(TARGET / 'debug' / selected), str(shot)], project, 30)
+                      '/opt/msdk-bench/capture.py', str(binary), str(shot)], project, 30)
         result['frame'] = str(shot.relative_to(ROOT)) if shot.is_file() else None
         return result
     if MODE != 'sdk':
@@ -149,6 +154,13 @@ def execute(request):
     if command == 'gen':
         return run([cli, 'gen', str(project_path(request.get('path', 'app.ui.json'))),
                     str(project_path(request.get('output', 'generated'))), '--sdk-root', str(SDK)])
+    if command == 'pack':
+        binary = binary_path(project, request.get('binary'))
+        package = ROOT / 'evidence' / f'package-{time.time_ns()}.deb'
+        package.parent.mkdir(exist_ok=True)
+        result = run([cli, 'pack', str(project), '--binary', str(binary), '--output', str(package)], project)
+        result['package'] = str(package.relative_to(ROOT)) if package.is_file() else None
+        return result
     raise ValueError('unknown fixed command')
 
 if __name__ == '__main__':
