@@ -13,5 +13,8 @@
   "t3_frontend_pid": 389368,
   "dock_installed_sha256": "8a44377607aad13e4c82da16f0efdcba8badc30d93fcab94907ab854a78d9a53",
   "remote_ssh_validation": false,
-  "owner_menu_acceptance": false
+  "owner_menu_acceptance": false,
+  "corrected_staging_panel_pid": 430738,
+  "corrected_staging_restart_count": 1,
+  "pending_module_sha256": "568885194479809e8d3812153ab37f068afec336f61ced46e60c7b3a00cf253a"
 }

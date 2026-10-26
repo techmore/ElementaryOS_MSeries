@@ -45,6 +45,12 @@ echo "Installed helpers, native settings, provider marks and $indicators_dir/lib
 # Keep the selected shared presentation current too, without hot-loading it.
 if [[ -f "$indicators_dir/libmseries-t3.so" || -f "$indicators_dir/../mseries-pending-indicators/libmseries-t3.so" ]]; then
   bash "$repo/mseries/install-t3-wingpanel.sh"
+  if "$restart"; then
+    bash "$repo/mseries/activate-t3-panel.sh"
+  else
+    echo 'Shared T3 module staged outside discovery; use explicit activation to load it. Wingpanel stays running.'
+  fi
+  exit 0
 fi
 
 if ! "$restart"; then

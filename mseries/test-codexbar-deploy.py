@@ -28,6 +28,7 @@ class DeployTest(unittest.TestCase):
             (repo / LIB.name).write_bytes(LIB.read_bytes())
             (repo / "lib-t3-panel.sh").write_bytes(SCRIPT.with_name("lib-t3-panel.sh").read_bytes())
             (repo / "install-t3-wingpanel.sh").write_text('echo stage-unified >> "$TEST_LOG"\n')
+            (repo / "activate-t3-panel.sh").write_text('echo activate-unified >> "$TEST_LOG"\n')
             for name in [*shared_list('CODEXBAR_HELPERS'), 'codexbar-opencode-wrapper.py']:
                 (repo / name).touch()
             icons = repo / 'codexbar-wingpanel/icons'
@@ -86,6 +87,13 @@ esac
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('/../mseries-retired-indicators/libcodexbar.so', log.read_text())
             self.assertIn('stage-unified', log.read_text())
+            self.assertNotIn('pkill ', log.read_text())
+            self.assertNotIn('activate-unified', log.read_text())
+            log.write_text('')
+            result = subprocess.run(['bash', str(repo / SCRIPT.name), '--restart'], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('stage-unified', log.read_text())
+            self.assertIn('activate-unified', log.read_text())
             self.assertNotIn('pkill ', log.read_text())
             log.write_text('')
             result = subprocess.run(['bash', str(repo / SCRIPT.name), '--bad-option'], env=env, capture_output=True)

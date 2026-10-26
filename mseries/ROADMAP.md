@@ -1,4 +1,4 @@
-## Unified native T3 panel staged — 2026-10-26
+## Unified native T3 panel integration — 2026-10-26
 
 Merged Fleet PR #607 at `04fe68e6`. Owner does not require particular remote
 SSH aliases; leave Fleet available with its existing local connector and no
@@ -11,9 +11,12 @@ live T3 status drives the badge, including expiry without collector polling.
 Native settings and icon assets are packaged. Supported legacy installers and
 deploys preserve the unified selection instead of restoring separate icons.
 
-Full clean dock/launcher suites, light/dark native host interactions, launch
+PR #608 is open against dev. Full clean dock/launcher suites, light/dark native host interactions, launch
 routes and closed polling pass. Custom CodexBar v0.78.0 port/schema check passes;
-Debian module package builds. Source and lifecycle reviewed; no model turn or
+Debian module package builds. Required post-push CodexBar and RepoBar deploys
+pass and preserve recovered panel PID 430738 (one automatic crash recovery).
+New panel/dock/T3 CI passes; an unrelated AirPlay timeout is being rerun.
+Source and lifecycle reviewed; no model turn or
 real SSH. See [installation and qualification boundaries](t3-wingpanel/README.md).
 Initial staging caused an unintended Wingpanel crash: its directory watcher
 hot-loaded `.so.new` against the legacy constructor ABI. Systemd recovered at
