@@ -34,7 +34,7 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
     } else {
         heading.to_string()
     };
-    let row = gtk::Box::new(gtk::Orientation::VERTICAL, 3);
+    let row = gtk::Box::new(gtk::Orientation::Vertical, 3);
     row.append(&label(&title));
     row.append(&label(state_text(observation.state)));
     for window in &observation.windows {
@@ -90,7 +90,7 @@ fn append_observation(parent: &gtk::Box, observation: &Observation, now: i64) {
 /// host. This function neither starts polling nor performs account actions.
 pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> {
     let groups = snapshot.groups()?;
-    let root = gtk::Box::new(gtk::Orientation::VERTICAL, 12);
+    let root = gtk::Box::new(gtk::Orientation::Vertical, 12);
     if groups.is_empty() {
         root.append(&label(match snapshot.coverage {
             Coverage::Complete => "No usage available",
@@ -99,7 +99,7 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
         }));
     }
     for group in groups {
-        let card = gtk::Box::new(gtk::Orientation::VERTICAL, 6);
+        let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
         card.add_css_class("card");
         let heading = label(group.label);
         heading.add_css_class("heading");

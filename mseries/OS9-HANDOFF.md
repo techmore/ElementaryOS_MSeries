@@ -1,3 +1,11 @@
+## Candidate usage GTK compile repair — 2026-10-26
+
+Developer-path run 40394710018 failed compiling d4bd990 because the candidate
+usage component used the Vala spelling `Orientation::VERTICAL` in Rust. The
+three sites now use the Rust GTK spelling `Orientation::Vertical`. No native
+widget test or screenshot ran in that attempt. Source-matched GTK validation
+and visual review remain required; retain this failed attempt in the record.
+
 ## Synthetic usage preview — validation pending, 2026-10-26
 
 An isolated GTK example renders synthetic accounts and saves a window capture;
