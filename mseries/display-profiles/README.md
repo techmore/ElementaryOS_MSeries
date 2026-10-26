@@ -72,16 +72,18 @@ exposed the missing logical-monitor properties element. The installed copy now
 includes both corrections and has been restarted. On October 26, an explicit
 `mseries-display-profiles apply aoc-dock` returned success and Gala reported the
 saved 1920x1080/60 layout at x=2419, scale 1.0. The desktop autostart entry is
-enabled and the watcher process is running. One same-front-left cable cycle was
-then observed: unplug restored `laptop-only`; on reconnect the kernel brought
-back 1920x1080/60 and the owner confirmed picture, but the EDID node was empty
-and Gala reported `Apple:DP-2:Unknown`. The watcher could not match the saved AOC
-profile on that reconnect. The profile source now records each output's connector
+enabled and the watcher process is running. The first same-front-left cable cycle
+showed unplug restoring `laptop-only`; on reconnect the kernel brought back
+1920x1080/60 and the owner confirmed picture, but the EDID node was empty and Gala
+reported `Apple:DP-2:Unknown`. The watcher could not match the saved AOC profile on
+that reconnect. The profile source now records each output's connector
 and uses it only as a fallback for this generic missing-EDID identity;
 stable vendor/product/serial matching remains the normal, port-independent path.
 The owner profile records AOC on DP-2 based on the observed pre-disconnect state.
 The watcher now makes up to six apply attempts and logs each retry/final
 failure. Its installed copy matches the repository version, selects `aoc-dock`
 with the missing EDID, and a manual apply restored x=2419. Eight unit tests pass.
-The automatic replug path after this fix and rear-left recovery still need
-hardware qualification.
+A second same-front-left cycle at 07:52 EDT passed automatically: unplug applied
+`laptop-only`, then reconnect applied `aoc-dock` and restored x=2419 at 1920x1080/60.
+This is one automatic post-fix cycle; repeat cycles and rear-left DCP recovery still
+need hardware qualification.

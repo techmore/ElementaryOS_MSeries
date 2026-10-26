@@ -48,10 +48,14 @@ identified the output as `Apple:DP-2:Unknown`, so the old watcher did not match
 fallback only for that connector when the monitor identity is missing. The matcher
 then selected `aoc-dock`; a manual apply restored its saved x=2419 layout. Up to
 six attempts with explicit retry/failure logging are now in the installed watcher.
-Eight profile tests pass. The revised automatic replug restore still needs another
-physical cycle. Rear-left recovery also remains unqualified; WIP4 and upstream review
-are complete, and the offline candidate and rollback are staged pending approval for
-an attended hardware trial. Do not claim permanent recovery yet. No boot state changed.
+Eight profile tests pass. At 07:52 EDT, a second same-front-left cycle passed with
+the revised watcher: unplug applied `laptop-only`; reconnect restored `aoc-dock`
+automatically despite the empty EDID, with DP-2 at 1920x1080/60 and x=2419. This
+qualifies the profile restore for two observed front-left cycles, including one after
+the fix, but does not resolve the kernel's rear-left DCP timeout. WIP4 and upstream
+review are complete, and the offline candidate and rollback are staged pending
+approval for an attended hardware trial. Do not claim permanent recovery yet. No
+boot state changed.
 
 ## Appearance integration qualification — 2026-10-26
 
