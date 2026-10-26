@@ -126,6 +126,12 @@ jobs:
                   "$CARGO_TARGET_DIR/debug/examples/usage_control_preview" "$RUNNER_TEMP/sdk-evidence/usage-error-$mode-$points.png" "$RUNNER_TEMP/usage-fixture-failure"
             done
           done
+      - name: Usage refresh keyboard and accessibility
+        run: |
+          MSDK_PRIVATE_TEST_BUS=1 GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            python3 mseries/sdk-tests/usage-controls.py \
+              --binary "$CARGO_TARGET_DIR/debug/examples/usage_control_interactive" \
+              --output "$RUNNER_TEMP/sdk-evidence/usage-controls.json"
       - name: Package, install, reinstall and remove the generated app
         run: |
           "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \

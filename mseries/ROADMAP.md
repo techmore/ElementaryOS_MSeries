@@ -1,3 +1,12 @@
+## Usage keyboard and AT-SPI probe — validation pending, 2026-10-26
+
+A private-session synthetic app and probe exercise the actual UsageControl via
+Tab and Space, inspect the accessible name/role, provoke a failed refresh, retry
+and close with Ctrl+Q. The probe records only synthetic data and checks private
+stderr does not enter the accessible tree. Native execution is pending. This
+standalone fixture does not prove keyboard behavior or focus in either actual
+status host and does not touch real accounts or the owner desktop.
+
 ## Usage refresh control validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40403452026 passed on e1c91a8. Native
