@@ -4,6 +4,8 @@ The Rust SDK now offers `spawn_streaming_scoped`: context expiry cancels the
 owned process, and chunks and completion carry their context to the final state
 owner. The test switches context after receiving a real process chunk, verifies
 the queued chunk and completion are rejected, and verifies a new stream works.
+A further macOS regression verifies unread buffered bytes and a completed reply
+are both rejected after the context closes, even after the process exits.
 The complete SDK core suite and strict clippy passed in a macOS SDK-only copy.
 This source change postdates the previous Linux/ARM and GTK qualification;
 source-matched Linux, ARM and release-host validation remain outstanding. It

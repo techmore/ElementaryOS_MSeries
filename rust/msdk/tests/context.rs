@@ -153,3 +153,26 @@ fn scoped_stream_rejects_queued_chunks_and_cancels_on_context_switch() {
     assert_eq!(output.recv_timeout(Duration::from_secs(2)).unwrap().into_current().unwrap().bytes, b"new");
     assert!(rx.recv_timeout(Duration::from_secs(2)).unwrap().into_current().unwrap().is_ok());
 }
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn scoped_stream_keeps_unread_bytes_and_completion_scoped_after_exit() {
+    use msdk::process::{self, Limits};
+    use std::time::Duration;
+    let context = RequestContext::new();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (task, output) = process::spawn_streaming_scoped(
+        context.token().unwrap(),
+        "printf queued".into(),
+        Limits::default(),
+        42,
+        move |result| tx.send(result).unwrap(),
+    )
+    .unwrap();
+    let completion = rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(task.is_finished());
+    context.close();
+    assert!(completion.into_current().is_none());
+    assert!(output.recv_timeout(Duration::from_secs(2)).unwrap().into_current().is_none());
+    assert!(matches!(output.try_recv(), Err(std::sync::mpsc::TryRecvError::Disconnected)));
+}
