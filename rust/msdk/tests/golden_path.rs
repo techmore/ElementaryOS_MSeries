@@ -13,7 +13,7 @@ fn home_storage_recovers_and_prevents_duplicate_work() {
     assert_eq!(service, "process.run");
     assert_eq!(then.as_deref(), Some("Loaded"));
     assert_eq!(error.as_deref(), Some("Failed"));
-    assert_eq!(args["command"], "LC_ALL=C df -h \"${HOME:?Home folder is unavailable}\"");
+    assert_eq!(args["command"], doc["update"]["Refresh"][0]["do"][5]["args"]["command"]);
     assert_eq!(state["busy"], true);
     assert!(logic.update(&mut state, "Refresh", None).is_empty());
     logic.update(&mut state, "Failed", Some(json!("Synthetic permission denial")));
@@ -58,12 +58,35 @@ fn home_storage_actual_command_fails_then_recovers() {
             let output = result.unwrap();
             // Assert useful output without copying a private home path or mount
             // identity into a public receipt or panic message.
-            assert!(output.stdout.contains("Filesystem"));
-            assert!(output.stdout.lines().count() >= 2);
+            assert!(output.stdout.contains("Available:") && output.stdout.contains("Used space:"));
+            assert_eq!(output.stdout.lines().count(), 4);
             logic.update(&mut state, then.as_deref().unwrap(), Some(json!(output.stdout)));
             assert_eq!(state["failed"], false);
         }
         assert!(task.is_finished());
         assert_eq!(state["ready"], true);
     }
+}
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn unsupported_storage_report_is_an_error_instead_of_invented_usage() {
+    let doc: Value = serde_json::from_str(include_str!("../examples/home-storage.ui.json")).unwrap();
+    let command = doc["update"]["Refresh"][0]["do"][5]["args"]["command"].as_str().unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    // Child-local function simulates an unsupported report, with no PATH or
+    // global environment mutation and no real filesystem side effects.
+    let task = msdk::process::spawn(
+        format!("df() {{ printf '%s\\n' header unsupported; }}\n{command}"),
+        msdk::process::Limits::default(),
+        1,
+        move |result| {
+            tx.send(result).unwrap();
+        },
+    )
+    .unwrap();
+    let failure = rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap().unwrap_err();
+    assert_eq!(failure.kind, msdk::runtime::FailureKind::ProcessFailed);
+    assert!(failure.detail().unwrap().contains("Storage report format is unavailable"));
+    assert!(task.is_finished());
 }

@@ -1,3 +1,35 @@
+## SDK current runtime/reference native qualification — 2026-10-26
+
+Resolved the prior source-transfer approval block with direct owner-machine
+context plus SSH/container identity evidence; automatic review accepted the
+scoped SDK-only transfer. Existing ephemeral SER8 container remained running;
+no owner desktop, accounts, panel, kernel or services changed. Current isolated
+Ubuntu 26.04 x86_64 / Rust 1.93.1 / GTK 4.22.4 qualification passes 100 core
+checks, three native suites (CLI failure exits, D-Bus lifecycle, typed runtime),
+SDK strict Clippy and generated Home Storage model/build/strict Clippy.
+
+The actual generated app's keyboard/AT-SPI flow proves an absent synthetic HOME
+causes a recoverable real command error, then a keyboard retry succeeds in the
+SAME process after the harness creates that folder. Ctrl+Q passes separately.
+Eight source/binary-matched light/dark, requested 480/900 widths and asserted
+10/15-point captures pass keyboard recovery and visual inspection. Original raw
+df table wrapped at larger text and was rejected; labeled figures now remain
+readable, and unsupported report shapes fail instead of inventing usage.
+
+Actual package creation, install, reinstall, installed-binary equality, installed
+launch and owned-file removal pass in the disposable container. Final executable
+SHA256 74b64bfb42c5a65a65e924e5d6ea49438f8e9f11471ce115f388798af40fb464;
+package d01aa58ba3a3b560c696806a788fd4772e206687ffd84241190bc19f0caf166e.
+All 80 SDK source/fixture hashes match the qualified code. Retain receipts under
+sdk-tests/receipts/2026-10-26-native-runtime-reference, including generated source,
+locks, raw synthetic logs, screenshots and rejected layout evidence.
+
+The full SDK goal stays active. Next: current ARM CI, GTK context/streaming and
+real backend adapters, shared CodexBar-derived status module/host conformance,
+controlled exact-model/novice trials and performance, then physical Pantheon/
+M-series acceptance and release audit. Existing ARM foundation run 40363235712
+on ed9bc5b is completed prior evidence, not current-runtime ARM acceptance.
+
 ## SDK request context ownership and stale reply delivery — 2026-10-26
 
 Added core RequestContext/ContextToken/Scoped<T> for app-owned account/page/
