@@ -1,14 +1,30 @@
 //! Native ownership checks. Run under a private D-Bus session and Xvfb.
 use gtk::prelude::*;
-use msdk_gtk::host::{Host, Services};
+use msdk_gtk::host::{FeedReply, Host, Services};
 use msdk_gtk::render::Dispatcher;
 use serde_json::{Value, json};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 struct Provider {
     stops: Rc<Cell<u32>>,
     feeds: Rc<Cell<u32>>,
+}
+
+struct ScopedProvider {
+    context: msdk::context::RequestContext,
+    sink: Rc<RefCell<Option<FeedReply>>>,
+    stops: Rc<Cell<u32>>,
+}
+impl Services for ScopedProvider {
+    fn start_feed_typed(&self, _: &str, reply: FeedReply) -> bool {
+        *self.sink.borrow_mut() = Some(reply.in_context(self.context.token().unwrap()).unwrap());
+        true
+    }
+    fn stop(&self) {
+        self.context.close();
+        self.stops.set(self.stops.get() + 1);
+    }
 }
 impl Services for Provider {
     fn api_version(&self) -> u32 {
@@ -188,5 +204,36 @@ fn closing_stops_owned_work_ignores_late_events_and_releases_the_host() {
     );
     disabled.window().close();
     drop(disabled);
+
+    let mut scoped_doc: Value =
+        serde_json::from_str(include_str!("../../msdk/templates/settings/app.ui.json")).unwrap();
+    scoped_doc["app"]["id"] = json!("com.example.MsdkScopedFeedTest");
+    scoped_doc["persist"] = json!([]);
+    scoped_doc["capabilities"] = json!(["network"]);
+    scoped_doc["types"] = json!({"Other":{"id":"text"}});
+    scoped_doc["state"]["other"] = json!("list<Other>");
+    scoped_doc["feeds"] = json!({"other":"sdktest.lifecycle.feed"});
+    let context = msdk::context::RequestContext::new();
+    let sink = Rc::new(RefCell::new(None));
+    let scoped_stops = Rc::new(Cell::new(0));
+    let provider = Rc::new(ScopedProvider {
+        context: context.clone(),
+        sink: sink.clone(),
+        stops: scoped_stops.clone(),
+    });
+    let scoped_host =
+        Host::open_with(&app, scoped_doc, None, "main", None, Some(provider), false).unwrap();
+    let old = sink.borrow().as_ref().unwrap().clone();
+    old.push(json!([{"id":"current"}]));
+    assert_eq!(scoped_host.get("other"), Some(json!([{"id":"current"}])));
+    context.advance().unwrap();
+    old.push(json!([{"id":"obsolete"}]));
+    assert_eq!(scoped_host.get("other"), Some(json!([{"id":"current"}])));
+    assert!(old.clone().in_context(context.token().unwrap()).is_err());
+    scoped_host.window().close();
+    assert_eq!(scoped_stops.get(), 1);
+    old.push(json!([{"id":"after-close"}]));
+    assert_eq!(scoped_host.get("other"), Some(json!([{"id":"current"}])));
+    drop(scoped_host);
     bus.unregister_object(registration).unwrap();
 }

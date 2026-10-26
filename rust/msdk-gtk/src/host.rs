@@ -134,6 +134,31 @@ impl ServiceReply {
     }
 }
 
+/// A feed delivery endpoint used on the GTK/state-owner thread. The context
+/// binding is opt-in and does not stop the provider's subscription or reads.
+#[derive(Clone)]
+pub struct FeedReply {
+    push: Rc<dyn Fn(Value)>,
+    context: Option<msdk::context::ContextToken>,
+}
+impl FeedReply {
+    /// Bind a fresh endpoint before starting work for an account or view.
+    /// Rebinding an endpoint would revive stale work, so it is rejected.
+    pub fn in_context(mut self, token: msdk::context::ContextToken) -> Result<Self, &'static str> {
+        if self.context.is_some() {
+            return Err("feed reply already has a context");
+        }
+        self.context = Some(token);
+        Ok(self)
+    }
+    /// Deliver on the same thread that owns the context and host state.
+    pub fn push(&self, value: Value) {
+        if self.context.as_ref().is_none_or(|token| token.is_current()) {
+            (self.push)(value);
+        }
+    }
+}
+
 /// Builds the app's Rust logic once the host exists; it gets a sender for events from its own threads.
 /// System access an app can plug in: named services (`call`) and live feeds. Crates such as the T3 client implement it;
 /// `FixtureServices` answers from a JSON file so an app can run before its real backend exists.
@@ -181,6 +206,11 @@ pub trait Services {
     /// Starts `feed`, calling `push` with the whole list now and whenever it changes. False when not owned.
     fn start_feed(&self, _feed: &str, _push: Rc<dyn Fn(Value)>) -> bool {
         false
+    }
+    /// Typed feed entry point. Override to bind a context before starting work;
+    /// legacy providers continue through `start_feed` without automatic scoping.
+    fn start_feed_typed(&self, feed: &str, reply: FeedReply) -> bool {
+        self.start_feed(feed, Rc::new(move |value| reply.push(value)))
     }
     /// Called once when this host closes. Implementations must cancel owned work
     /// and retire callbacks; adapters shared across hosts must scope ownership.
@@ -535,14 +565,17 @@ impl Host {
                     continue;
                 }
                 let (weak, key) = (self.me.borrow().clone(), key.clone());
-                let started = sv.start_feed(
+                let started = sv.start_feed_typed(
                     feed,
-                    Rc::new(move |list| {
-                        if let Some(h) = weak.upgrade() {
-                            h.set(&key, list);
-                            h.post("_feed", Some(json!(key)));
-                        }
-                    }),
+                    FeedReply {
+                        context: None,
+                        push: Rc::new(move |list| {
+                            if let Some(h) = weak.upgrade() {
+                                h.set(&key, list);
+                                h.post("_feed", Some(json!(key)));
+                            }
+                        }),
+                    },
                 );
                 if !started {
                     eprintln!("msdk-run: nothing provides the feed `{feed}`");

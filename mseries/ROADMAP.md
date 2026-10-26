@@ -1,3 +1,12 @@
+## SDK context-bound feeds — validation pending, 2026-10-26
+
+An opt-in typed feed endpoint carries an app-owned context to GTK delivery and
+rejects stale updates. Legacy feeds remain compatible and unscoped; providers
+must explicitly retire subscriptions and reads on context changes and close.
+A native lifecycle regression covers delivery, context advance, rebinding
+rejection and close. Source-matched Linux GTK compilation and execution are
+required before this feature is claimed as validated; SER8 remains unreachable.
+
 ## SDK source-matched ARM and native validation — 2026-10-26
 
 Developer-path run 40391194892 passed for b7b3a99 on hosted ARM Linux:

@@ -78,9 +78,21 @@ shared binding on synchronous provider error, a context switch between failure
 and callback delivery, valid current recovery, visible GTK label updates,
 rebinding rejection, provider stop and Host release. These are explicit opt-in
 reply bindings. They do not automatically scope legacy raw event senders,
-feeds, built-in service dispatch, extension negotiation before provider invoke,
+legacy feeds, built-in service dispatch, extension negotiation before provider invoke,
 streaming chunks, or T3/network adapters. The separate Rust scoped-stream API
 below is opt-in; those GTK and app/backend gates remain open.
+
+## Context-bound feeds
+
+Providers can override `Services::start_feed_typed` and bind the `FeedReply`
+to an app-owned `ContextToken` before starting a subscription. Deliver each
+update with `push` on the GTK/state-owner thread; it checks freshness immediately
+before applying the update. A bound endpoint cannot be rebound. Keep the
+unbound endpoint only for creating explicitly new subscriptions, and retire
+old subscriptions and reads when the context changes or the Host closes.
+Binding filters stale updates; it does not cancel backend work. Legacy
+`start_feed` providers continue to work without automatic context scoping.
+The app remains responsible for displaying account/scope identity.
 
 ## Errors and privacy
 
