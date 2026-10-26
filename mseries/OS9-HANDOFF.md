@@ -23,7 +23,10 @@ package assets, source hashes and license retained. See
 [Tstack receipt](upstream-audits/apps/tstack-2026-10-26.md). Remote servers need
 their own skill installation; Council/Sol delegation is not claimed validated.
 CodexBar pin remains v0.78.0; custom-port check passes. Required post-push
-CodexBar deployment stages the module without restarting the panel or daemon.
+CodexBar deployment passed 18/18 native suites and staged the module without
+restarting the panel or daemon; RepoBar deployment also succeeded. PR #606 is
+open against dev with CI running at this receipt. Panel modules remain staged
+until next login; the new dock and T3 application are loaded.
 
 Owner clarified **Machine Lab has replaced Orchard**. Historical source names
 and app IDs do not reverse that direction. Fleet belongs inside T3 for remote

@@ -66,3 +66,14 @@ the currently loaded panel modules remain the prior build until next login.
 
 Next: finish live menu review and dev integration, then implement the requested
 native Remote Machines flow from the source-pinned Fleet Shepherd audit.
+
+## Post-push staging and review
+
+Implementation commit `22185439278dcb5858e1bdf96c012d9d89f1f63c`,
+[PR #606](https://github.com/techmore/ElementaryOS_MSeries/pull/606), base `dev`.
+GitHub connector PR creation returned 403; the authenticated CLI created the PR.
+Required `bash mseries/deploy-codexbar.sh` then passed all 18 native suites and
+staged the module, helpers and settings. `bash mseries/deploy-repobar.sh` also
+succeeded. Both were run without `--restart`; Wingpanel and the collector remain
+running. Separate panel modules are installed but not reloaded. Initial PR checks
+are running; no final CI or merge success is claimed by this receipt.
